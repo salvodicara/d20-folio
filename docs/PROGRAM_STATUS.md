@@ -1,58 +1,57 @@
 # Program Status
 
-## Current frontier — P10 verified, integration ready (9 September 2026)
+## Current frontier — P10 complete; P11a next (9 September 2026)
 
-Astra owns P10 only, authorized by the current owner handoff and PRODUCT's standing delivery
-delegation. Dependencies P07–09 are integrated at fresh origin/v2
-`d6524012196780f75f28c37931da0427fa62957e`; origin/main remains
-`9b06b75313d7ee353c4072a20397c3092707648e`. No P11a or later block is started.
+Astra completed P10 creation and onboarding only. P11a — sheet, growth and print — is the first
+incomplete AGENT-PROGRAM row, with P08c/P09/P10 satisfied. P11a has not started.
 
-Owned topic: `codex/p10-creation-onboarding-20260908`, physical worktree
-`/Users/salvatoredicara/Workspace/Codex/d20-folio-p10-creation`. The task's detached control
-`/Users/salvatoredicara/Workspace/Codex/d20-folio-p10-control` was proved clean at the same fresh
-V2 SHA before topic creation. Other worktrees and the shared checkout are preserved.
-Pinned bootstrap completed. The primary composition now uses the isolated private metadata
-candidate `ceb45446e4420ae3e34852342473b345f26b37c7` through its exact `content-pack`
-subdirectory. The shared private checkout stays clean at `b6073dd0d15bcf2dc980b1e00c531b7a5330da8e`.
-The paired-change charter and sensitive catalogue evidence are external under
-`Workspace/Codex/d20-folio-p10-private-evidence`; no private payload belongs in public Git.
+P10 source integrated and remotely verified on `v2`:
+`59b20e7593c3df4d4aaaf2239bea361968adf8d2`, from base
+`d6524012196780f75f28c37931da0427fa62957e`. Paired private metadata was pushed first and verified
+at `ceb45446e4420ae3e34852342473b345f26b37c7`; old-public/new-private compatibility was proved
+before either push. Main remains `9b06b75313d7ee353c4072a20397c3092707648e`.
+The later closure commit carrying this record is documentation only; its final remote SHA and
+cleanup receipt are recorded in the external P10 integration receipt.
 
-The specification/plan (`5f3657b3`), import analysis/repository/rules, shared acquisition and
-initial-copy foundation, paired typed catalogue metadata, atomic five-document creation
-repository (`b45a0eeb`), complete catalogue composer (`b49586a5`) and controlled six-step
-wizard (`79570089`) have passed their bounded independent reviews and tests. Parent UI
-orchestration now retains drafts and the sole operation envelope, fences navigation/session
-changes, handles import reconciliation, and reads guided class/origin/initial-copy aggregates.
-Independent lifecycle, source-reader and shell reviews are closed. The r2 text-only
-navigation and table LED have been checked in actual optimized EN/IT images at 1440/1280/390;
-22 navigation tests pass. Owner steering supersedes P09's icon interpretation, including the
-explicit phone LED. P10 resumed after that correction.
+Delivered: complete guided six-step creation using typed catalogue and custom stable sources,
+shared acquisition composition, explicit exceptions/cascades and retained drafts, atomic
+five-document creation with exact receipt recovery, and import comparison/reconciliation that
+keeps format and D&D edition separate while preserving original/custom/override/private data.
+The new flow shares P09 navigation and P03 session/recovery authority. It does not bridge to a
+legacy runtime or claim that import/read/preview executes combat or completes mechanical migration.
 
-Fresh actual Google/Auth Emulator runtime has saved full Wizard and Fighter characters, a
-character using an authored stable custom species and a fourth boundary/recovery character.
-Manual exceptions, source cascades, offline retention and exact receipt recovery are exercised.
-All six originals were imported through UI with exact source/private-note recovery. Independent
-sessions prove import CAS/review, route invalidation, actual auth A→B→A and membership revocation
-of guided readers/copies. Synthetic 2014 input keeps schema/edition separate and preserves custom,
-overrides and future fields; rejected input preserves the prior valid draft. No mechanical
-conversion or combat execution is claimed by import, preview or saved readers.
+Owner's shell correction is integrated: four text-only destinations, mint table LED including
+phone, approved r2 account geometry. DESIGN and the P09 spec supersede the earlier icon
+interpretation. Independently reviewed actual EN/IT dark screenshots cover 1440/1280/390.
 
-Independent code/lifecycle/source/shell/import/paper reviews are closed. Current optimized build
-is `index-8AOJxCon.js`. The corrected wizard, recovery/cascade and final saved roster/inspection matrices are reviewed. Paper/export EN/IT was rerun
-where shared readers changed. Source-byte comparison confirms 890 composed and 574 SRD frozen
-snapshots are unchanged by label refactoring. No private fixture was changed.
+Final pinned G gates: composed919 files/19,929 application tests plus7 files/129 Functions tests,
+typecheck/zero-warning lint/build/PWA; SRD739 files/14,248 pass and2 intentional private-loader
+skips plus typecheck/build/PWA; full rules14 files/287 pass,0 skips, including both six-original
+snapshot/dry-run/repeated-apply/recovery tests. Before/after source and fixture hashes match;
+the integrated source matches those hashes. No private fixture was changed.
 
-Final pinned composed G passes: 919 application files/19,929 tests and 7 Functions files/129 tests,
-with typecheck, zero-warning lint and optimized build/PWA. Fresh full rules G passes all
-14 files/287 tests with zero skips, including both six-original repeated-apply/recovery scenarios.
-Before/after source and fixture hashes match. Final pinned SRD G passes 739 files/14,248 tests with the two intentional private-loader skips,
-plus typecheck/build/PWA. Private/public V2 integration remains open. Failed earlier gates and transient-loading screenshots are preserved
-and excluded, with explicit applicability; P09 evidence is historical, never a P10 pass.
-No public or private task commit has been pushed. P11a has not started. Owned worktrees/services
-will be removed after integration. Reviewed, verified approved-mock work may integrate into V2
-without another exhaustive owner visual verdict; actual screenshots and the full successor
-prompt remain mandatory after closure. No deployment, production writes, real migration, new
-cost or production switch is authorized.
+Actual optimized demo Google/Auth Emulator verification saved four guided characters, including
+an authored custom species and a voluntary exception; imported all six originals and a synthetic
+2014/custom/future-field case; proved offline/storage/unknown recovery, CAS with explicit review,
+route invalidation, actual auth A→B→A, independent-account denial and membership revocation of
+guided readers/copies. Exact final documents and sole receipts were read back. Source-byte checks
+preserve890 composed and574 SRD snapshots across presentation refactoring. Shared reader/export
+and76 pages of EN/IT print evidence were reviewed. Final runtime asset: `index-8AOJxCon.js`.
+
+Independent code/spec/lifecycle/source/UI/paper reviews are closed. Corrected screenshots and
+failed attempts have explicit applicability in `Workspace/Codex/d20-folio-p10-evidence`, with
+private metadata evidence in the sibling private-evidence directory. Earlier loading-only images
+and gates are historical, never a pass. The roster uses a localized custom label when the parent
+has no source name; authorized inspection preserves the authored name without extra subscriptions.
+
+Implementation leases are released. Only P10-owned worktrees/services are cleanup candidates;
+the external integration receipt verifies their removal after this documentation push. Shared
+checkouts, other tasks and preexisting Firestore PID86001/8080/9150 are preserved.
+Owner's standing delegation authorizes reviewed approved-mock V2 integration without another
+per-block visual verdict. Actual screenshots and one complete inline successor prompt remain
+mandatory. No deployment, production write/migration/switch, new cost or next-block execution
+is authorized. Production provider/App Check/IAM/indexes/HTTPS/device/installed-PWA verification
+remains separate staging/release work.
 
 ## Historical frontier — P09 verified; P10 next (8 September 2026)
 
