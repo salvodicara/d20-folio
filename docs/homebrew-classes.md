@@ -137,3 +137,12 @@ free-cast ability/rest uses. This is build composition, not automatic inventory 
 `conformClassPair` and `composeSubclassCasting` accept either an authentic Library parent
 or an explicit pinned catalogue parent. Parent source, revision/release/adapter, included
 definition and flat child closure must agree exactly; custom parent behavior is unchanged.
+
+## P10 initial class acquisition owner
+
+`ClassBuild` lives at character `classes/build`, separately from `origins/build`. Its schema1
+record contains character, revision, acquisitions and lastOperation. P10 accepts exactly one
+acquisition with ordinal0 and classLevel1; its immutable snapshot must be a class. The shared
+acquisition parser retains stable answer paths, selected snapshots and attributed exceptions without
+converting the class to an origin or inventing source metadata. Class progression/multiclass changes
+remain outside P10. This parser is a persistence boundary, not proof that choices are complete.

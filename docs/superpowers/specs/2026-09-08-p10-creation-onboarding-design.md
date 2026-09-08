@@ -255,3 +255,12 @@ The adapter verifier binds it together with the normalized definition. This pres
 mechanics that P10 does not execute without injecting unknown fields into strict acquisition data.
 It grants no facts by itself and is not a second engine, an automation result, or permission to
 interpret prose. The future common engine must explicitly normalize and verify those mechanics.
+
+### Base score method detail
+
+The standard array is a permutation of15,14,13,12,10,8. Point buy costs0,1,2,3,4,5,7,9
+for scores8–15 and permits at most27 spent points; unspent points remain visible for review.
+Manual scores are entered by the table, with ordinary rolled bounds3–18. Attributed owner
+exceptions may override ordinary method constraints within integer1–30; null, fractional,
+non-finite and out-of-model scores never become valid through an exception. Base scores remain
+separate from background increases, which the acquisition evaluator attributes once.

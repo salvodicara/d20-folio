@@ -1,3 +1,4 @@
+import { parseAcquisitionSelection } from "./acquisition-selection";
 import { equal } from "../shared/model";
 import { resolveCatalogueChoice, type ChoiceResolutionContext } from "./choice-pools";
 import { assertJsonBudget } from "../shared/json-budget";
@@ -10,7 +11,6 @@ import {
 } from "../identity/model";
 import type { LibraryVersion } from "../library/model";
 import {
-  parseDefinitionSnapshot,
   snapshotSource,
   canonicalSource as canonicalSourceOf,
   dependencySource,
@@ -23,7 +23,6 @@ import {
 import { conformDefinition } from "./conformance";
 import { ABILITIES, initializeDefinition } from "./model";
 import {
-  isOriginFamily,
   originFeatIdentity,
   originNodePath,
   originRecord,
@@ -162,63 +161,9 @@ export function parseOriginBuild(
     const ordinals = new Set<number>();
     for (const [id, value] of Object.entries(selections)) {
       identityId(id);
-      const s = record(value);
-      keys(s, [
-        "id",
-        "ordinal",
-        "snapshot",
-        "answers",
-        "exceptions",
-        ...(Object.hasOwn(s, "resolvedChoices") ? ["resolvedChoices"] : []),
-      ]);
-      if (Object.hasOwn(s, "resolvedChoices")) {
-        for (const [path, snapshots] of Object.entries(record(s.resolvedChoices))) {
-          if (
-            !path.startsWith("root/") ||
-            path.length > 8192 ||
-            !Array.isArray(snapshots) ||
-            snapshots.length > 32
-          )
-            fail();
-          snapshots.forEach((snapshot) =>
-            parseDefinitionSnapshot(snapshot, verifyCatalogue)
-          );
-        }
-      }
-      if (s.id !== id || !safeInt(s.ordinal) || ordinals.has(Number(s.ordinal))) fail();
-      ordinals.add(Number(s.ordinal));
-      const snapshot = parseDefinitionSnapshot(s.snapshot, verifyCatalogue);
-      if (!isOriginFamily(snapshot.definition.family)) fail();
-      const answers = record(s.answers);
-      if (Object.keys(answers).length > 1024) fail();
-      for (const [path, answer] of Object.entries(answers)) {
-        if (
-          !path.startsWith("root/") ||
-          path.length > 8192 ||
-          !Array.isArray(answer) ||
-          answer.length > 32 ||
-          answer.some((a) => typeof a !== "string" || a.length > 200) ||
-          new Set(answer).size !== answer.length
-        )
-          fail();
-      }
-      if (!Array.isArray(s.exceptions) || s.exceptions.length > 128) fail();
-      for (const value of s.exceptions) {
-        const e = record(value);
-        keys(e, ["path", "code", "reason", "authorUid"]);
-        if (
-          typeof e.path !== "string" ||
-          e.path.length > 8192 ||
-          typeof e.code !== "string" ||
-          e.code.length > 100 ||
-          typeof e.reason !== "string" ||
-          !e.reason.trim() ||
-          e.reason.length > 2000 ||
-          typeof e.authorUid !== "string"
-        )
-          fail();
-        identityId(e.authorUid);
-      }
+      const selection = parseAcquisitionSelection(value, "origin", verifyCatalogue);
+      if (selection.id !== id || ordinals.has(selection.ordinal)) fail();
+      ordinals.add(selection.ordinal);
     }
     return frozen(structuredClone(v)) as unknown as OriginBuild;
   } catch {
