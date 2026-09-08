@@ -109,15 +109,16 @@ carry optional prerequisites, benefits, choices and dependencies. This does not 
 Spell ability is an ability token, explicit `"none"`, or `{choice: string}`. A
 `{kind: "casting-ability", id, ability}` benefit binds that choice ID within the current acquired
 node; multiple traits normalized into one root may share it. Independent roots and included nodes
-remain separate. Pending spells resolve after their local choice; missing/conflicting answers are
-unresolved. Selecting an ability or acquiring a spell never proves a Spellcasting prerequisite.
+remain separate. Pending spells emit once as soon as their local ability is chosen, making their
+entitlements visible to subsequent pools; missing/conflicting answers remain unresolved. Selecting an ability or acquiring a spell never proves a Spellcasting prerequisite.
 
 Backgrounds may replace fixed tool, originFeat and equipment/equipmentGold fields with
 `toolChoice`, `originFeatChoice` and `equipmentChoice`, respectively, each naming an existing choice
-of the corresponding role. Fixed and selected modes are mutually exclusive. Inline equipment
+of the corresponding role. Required role choices must have parent:null so another answer cannot
+disable them; a pooled tool role accepts only the tool category. Fixed and selected modes are mutually exclusive. Inline equipment
 packages grant existing dependency quantities and gold; selected equipment emits an exact source
 entitlement. Background ASI still applies one three-point allocation. Species may replace fixed
-size with `sizeChoice`, naming a single-pick inline choice with one size benefit per option.
+size with `sizeChoice`, naming an unconditional single-pick inline choice with one size benefit per option.
 
 Additional attributed creation facts are hp-per-level (amount), movement-bonus (mode/meters),
 movement-equals-walk (non-walk mode/multiplier), and armor-class (base, ability array, condition

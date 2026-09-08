@@ -761,7 +761,8 @@ export function conformOriginDefinition(
       if (Object.hasOwn(d, "size")) add(prefix + "sizeChoice", "mixed-acquisition-mode");
       if (
         choice &&
-        (choice.count !== 1 ||
+        (choice.parent !== null ||
+          choice.count !== 1 ||
           !Array.isArray(choice.options) ||
           !choice.options.length ||
           choice.options.some((value) => {
@@ -817,7 +818,8 @@ export function conformOriginDefinition(
             ? choiceKey === "toolChoice"
               ? query.kind === "proficiency" &&
                 Array.isArray(query.categories) &&
-                query.categories.includes("tool")
+                query.categories.length === 1 &&
+                query.categories[0] === "tool"
               : choiceKey === "originFeatChoice"
                 ? query.kind === "feat" &&
                   Array.isArray(query.categories) &&
@@ -830,7 +832,8 @@ export function conformOriginDefinition(
                 const benefits = originRecord(value)?.benefits;
                 return Array.isArray(benefits) && benefits.some(matchesBenefit);
               });
-          if (!roleValid) add(prefix + choiceKey, "choice-acquisition-role");
+          if (choice.parent !== null || !roleValid)
+            add(prefix + choiceKey, "choice-acquisition-role");
         }
       }
       if (d.originFeatChoice === undefined && d.originFeat !== "") {

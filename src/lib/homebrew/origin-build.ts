@@ -427,6 +427,7 @@ export function composeAcquisitionBuilds(
         ? parsedClasses?.acquisitions[selection.id]?.classLevel
         : undefined;
     const localAbilities = new Map<string, Ability>();
+    const pendingSpells = new Map<string, (() => void)[]>();
     const conflictedAbilities = new Set<string>();
     const add = (
       path: string,
@@ -627,6 +628,9 @@ export function composeAcquisitionBuilds(
             return;
           }
           localAbilities.set(key, benefit.ability);
+          const pending = pendingSpells.get(key) ?? [];
+          pendingSpells.delete(key);
+          for (const emit of pending) emit();
         }
         if (benefit.kind === "spell" && typeof benefit.ability === "object") {
           const key = abilityScope + "/" + benefit.ability.choice;
@@ -635,13 +639,16 @@ export function composeAcquisitionBuilds(
             apply({ ...benefit, ability: resolved }, benefitPath);
             return;
           }
-          deferredSpells.push(() => {
+          let emitted = false;
+          const emit = () => {
             const ability = localAbilities.get(key);
-            if (!ability || conflictedAbilities.has(key)) {
-              add(benefitPath, "casting-ability-required", "unresolved");
-              return;
-            }
+            if (emitted || !ability || conflictedAbilities.has(key)) return;
+            emitted = true;
             apply({ ...benefit, ability }, benefitPath);
+          };
+          pendingSpells.set(key, [...(pendingSpells.get(key) ?? []), emit]);
+          deferredSpells.push(() => {
+            if (!emitted) add(benefitPath, "casting-ability-required", "unresolved");
           });
           return;
         }

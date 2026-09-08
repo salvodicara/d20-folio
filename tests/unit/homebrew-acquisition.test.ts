@@ -1,3 +1,4 @@
+import { includeOriginDependency } from "../../src/lib/homebrew/origins";
 import type { JsonValue } from "../../src/lib/library/model";
 import { describe, expect, it } from "vitest";
 import { initializeDefinition } from "../../src/lib/homebrew/model";
@@ -747,4 +748,201 @@ it("keeps the same dependency key in separate selected closures and scopes its a
       fact.benefit.kind === "spell" ? [fact.benefit.ability] : []
     )
   ).toEqual(["intelligence", "wisdom"]);
+});
+
+function requiredRoleBackground(): CatalogueSnapshot {
+  const source = snapshot("background", "background");
+  const included = includeOriginDependency(
+    source.definition,
+    snapshot("origin-feat", "feat")
+  );
+  source.definition = included.definition;
+  source.definition.payload.data.originFeat = included.key;
+  source.definition.payload.data.tool = "thieves-tools";
+  return source;
+}
+
+it.each(["sizeChoice", "toolChoice", "originFeatChoice", "equipmentChoice"] as const)(
+  "rejects an inactive required %s replacement",
+  (role) => {
+    const source =
+      role === "sizeChoice" ? snapshot("source", "species") : requiredRoleBackground();
+    const d = source.definition.payload.data;
+    d[role] = "required";
+    let required: JsonValue;
+    if (role === "sizeChoice") {
+      delete d.size;
+      required = inline("required", { kind: "size", size: "small" });
+    } else if (role === "toolChoice") {
+      delete d.tool;
+      required = inline("required", {
+        kind: "proficiency",
+        category: "tool",
+        id: "thieves-tools",
+      });
+    } else if (role === "originFeatChoice") {
+      delete d.originFeat;
+      required = {
+        id: "required",
+        name: "Feat",
+        count: 1,
+        parent: null,
+        options: [],
+        pool: {
+          kind: "catalogue",
+          catalogue: "test",
+          release: "1",
+          adapterVersion: 1,
+          query: { kind: "feat", categories: ["origin"] },
+        },
+      };
+    } else {
+      delete d.equipment;
+      delete d.equipmentGold;
+      required = inline("required", { kind: "gold", amount: 50 });
+    }
+    if (!required || typeof required !== "object" || Array.isArray(required))
+      throw new Error("fixture");
+    required.parent = { choiceId: "gate", optionId: "yes" };
+    d.choices = [
+      {
+        id: "gate",
+        name: "Gate",
+        count: 1,
+        parent: null,
+        options: [
+          { id: "yes", name: "Yes", benefits: [] },
+          { id: "no", name: "No", benefits: [] },
+        ],
+      },
+      required,
+    ];
+    const origin = selection(source);
+    origin.answers = {
+      "root/gate": ["no"],
+      ...(role === "sizeChoice"
+        ? {}
+        : {
+            "root/background-abilities": ["strength:2", "dexterity:1"],
+            "root/background-equipment": ["gold"],
+          }),
+    };
+    const result = composeAcquisitionBuilds(character, build(origin), null, {
+      verifyCatalogue,
+    });
+    expect(result.valid).toBe(false);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        path: "payload.data." + role,
+        code: "choice-acquisition-role",
+      })
+    );
+  }
+);
+
+it("rejects a mixed skill/tool pool replacing required background tool training", () => {
+  const source = requiredRoleBackground(),
+    d = source.definition.payload.data;
+  delete d.tool;
+  d.toolChoice = "tool";
+  d.choices = [
+    {
+      id: "tool",
+      name: "Tool",
+      count: 1,
+      parent: null,
+      options: [],
+      pool: {
+        kind: "catalogue",
+        catalogue: "test",
+        release: "1",
+        adapterVersion: 1,
+        query: { kind: "proficiency", categories: ["skill", "tool"] },
+      },
+    },
+  ];
+  const origin = selection(source);
+  origin.answers = {
+    "root/tool": ["arcana"],
+    "root/background-abilities": ["strength:2", "dexterity:1"],
+    "root/background-equipment": ["gold"],
+  };
+  const result = composeAcquisitionBuilds(character, build(origin), null, {
+    verifyCatalogue,
+    resolvePool: () => [
+      {
+        option: {
+          id: "arcana",
+          name: "Arcana",
+          benefits: [{ kind: "proficiency", category: "skill", id: "arcana" }],
+        },
+      },
+    ],
+  });
+  expect(result.valid).toBe(false);
+  expect(result.diagnostics).toContainEqual(
+    expect.objectContaining({
+      path: "payload.data.toolChoice",
+      code: "choice-acquisition-role",
+    })
+  );
+});
+
+it("makes a pending spellbook fact available as soon as its local casting ability is chosen", () => {
+  const source = snapshot("class", "class"),
+    spell = snapshot("light", "spell");
+  source.definition.payload.data.benefits = [
+    { kind: "spell", id: "light", policy: "spellbook", ability: { choice: "magic" } },
+  ];
+  source.definition.payload.data.choices = [
+    inline("ability", { kind: "casting-ability", id: "magic", ability: "intelligence" }),
+    {
+      id: "prepared",
+      name: "Prepared",
+      count: 1,
+      parent: null,
+      phase: "dependent",
+      options: [],
+      pool: {
+        kind: "catalogue",
+        catalogue: "test",
+        release: "1",
+        adapterVersion: 1,
+        query: {
+          kind: "spell",
+          minimumLevel: 0,
+          maximumLevel: 0,
+          acquiredPolicy: "spellbook",
+        },
+      },
+      selectedGrant: {
+        kind: "spell",
+        ability: { choice: "magic" },
+        entitlements: [{ policy: "prepared" }],
+      },
+    },
+  ];
+  const classes = classBuild(source),
+    cls = classes.acquisitions.class;
+  if (!cls) throw new Error("fixture");
+  cls.answers = { "root/ability": ["pick"], "root/prepared": ["light"] };
+  cls.resolvedChoices = { "root/prepared": [spell] };
+  const result = composeAcquisitionBuilds(character, null, classes, {
+    verifyCatalogue,
+    resolvePool: (_pool, facts) =>
+      facts.some(
+        (fact) =>
+          fact.benefit.kind === "spell" &&
+          fact.benefit.id === "light" &&
+          fact.benefit.policy === "spellbook"
+      )
+        ? [{ option: { id: "light", name: "Light", benefits: [] }, snapshot: spell }]
+        : [],
+  });
+  expect(result.diagnostics).toEqual([]);
+  expect(
+    result.facts.flatMap((fact) =>
+      fact.benefit.kind === "spell" ? [fact.benefit.policy] : []
+    )
+  ).toEqual(["spellbook", "prepared"]);
 });
