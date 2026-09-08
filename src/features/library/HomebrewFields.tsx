@@ -9,7 +9,6 @@ import {
   effectFields,
   blankEffect,
   initializeDefinition,
-  type AuthoringFamily,
 } from "@/lib/homebrew/model";
 import { conformDefinition } from "@/lib/homebrew/conformance";
 export function HomebrewFields({
@@ -24,6 +23,8 @@ export function HomebrewFields({
   loadOriginSources?: OriginFieldsProps["loadOriginSources"];
 }) {
   const label = useHomebrewLabel();
+  if (["class", "subclass"].includes(definition.family))
+    return <p className="homebrew-hint">{label("classes.importHelp")}</p>;
   if (!authoringFamily(definition.family)) return null;
   const data = definition.payload.data;
   if (data.authoringVersion !== 1)
@@ -36,9 +37,7 @@ export function HomebrewFields({
           <button
             type="button"
             disabled={disabled}
-            onClick={() =>
-              onChange(initializeDefinition(definition.family as AuthoringFamily).payload)
-            }
+            onClick={() => onChange(initializeDefinition(definition.family).payload)}
           >
             {label("setup." + definition.family)}
           </button>

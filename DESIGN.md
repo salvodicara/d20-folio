@@ -3326,3 +3326,16 @@ preparation state. Campaign rules expose activation and dependency conflicts. Un
 available in the common reader/print, and source removal archives a recoverable original first.
 The detailed behavior belongs to [homebrew authoring](docs/homebrew-authoring.md) and
 [campaign preparation](docs/homebrew-preparation.md); no combat simulation is embedded in an editor.
+
+### P08a class and subclass consultation
+
+The Library's existing metadata/version/import/recovery composition remains the surface. Class
+and subclass mechanics are read-only at this boundary; Import JSON adds complete definitions and
+metadata edits preserve their declarations. No partial guided editor, character growth or combat
+execution is presented. The common reader names starting-class versus multiclass-entry grants,
+ordered owning-class levels, parent class/version, inherited versus separate spellcasting and
+level-bound resources/programs. Unknown content remains available through complete declarations
+and original recovery. Class names and level names are authored content; UI labels are EN/IT.
+The dark Astra0.9.3 plus shell r2 layout, four scopes, language control and Account remain binding.
+Screenshots and printable pages require actual optimized runtime inspection. Owner delivery follows
+PRODUCT's standing reviewed-green V2 delegation, without repeated exhaustive visual approval.

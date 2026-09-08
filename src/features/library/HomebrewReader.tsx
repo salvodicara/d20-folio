@@ -1,3 +1,4 @@
+import { ClassReader, CLASS_READER_KEYS } from "./ClassReader";
 import { advancedCollections } from "@/lib/homebrew/advanced";
 import { AdvancedReader } from "./AdvancedFields";
 import { OriginReader } from "./OriginReader";
@@ -42,10 +43,14 @@ export function HomebrewReader({
         <pre>{JSON.stringify(data, null, 2)}</pre>
       </div>
     );
-  const fields = authoringFields(definition.family);
+  const classContent = ["class", "subclass"].includes(definition.family);
+  const fields = authoringFields(definition.family).filter(
+    (f) => !classContent || !CLASS_READER_KEYS.includes(f.key)
+  );
   const diagnostics = included ? [] : conformDefinition(definition);
   const originContent =
     isOriginFamily(definition.family) ||
+    classContent ||
     (!!originBundle &&
       ["choices", "benefits", "prerequisites"].some((key) => Object.hasOwn(data, key)));
   const collectionKeys = advancedCollections(definition.family).map((c) => c.key);
@@ -57,6 +62,7 @@ export function HomebrewReader({
           "effects",
           "authoringVersion",
           ...collectionKeys,
+          ...(classContent ? CLASS_READER_KEYS : []),
           ...(originContent
             ? ["prerequisites", "benefits", "choices", "dependencies", "equipment"]
             : []),
@@ -94,6 +100,13 @@ export function HomebrewReader({
           </dl>
         </section>
       ))}
+      {classContent && (
+        <ClassReader
+          definition={definition}
+          printable={printable}
+          bundle={originBundle}
+        />
+      )}
       <AdvancedReader definition={definition} printable={printable} />
       {originContent && (
         <OriginReader
