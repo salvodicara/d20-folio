@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { initializeDefinition } from "../../src/lib/homebrew/model";
 import { conformDefinition } from "../../src/lib/homebrew/conformance";
 
@@ -504,3 +504,10 @@ function chosen(b: OriginBuild, id = "chosen"): OriginSelection {
   if (!value) throw new Error("Missing test fixture selection");
   return value;
 }
+
+it("loads the pure build boundary before the authoring model in a fresh module graph", async () => {
+  vi.resetModules();
+  const { composeOriginBuild: compose } =
+    await import("../../src/lib/homebrew/origin-build");
+  expect(compose(character, null).valid).toBe(true);
+});

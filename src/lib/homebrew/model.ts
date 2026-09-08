@@ -1,11 +1,7 @@
-import {
-  originFields,
-  initializeOriginData,
-  isOriginFamily,
-  ORIGIN_FAMILIES,
-} from "./origins";
+import { originFields, initializeOriginData, isOriginFamily } from "./origins";
 import { advancedFields, advancedCollections } from "./advanced";
 import { blankDefinition, type LibraryDefinition } from "../library/model";
+export const ORIGIN_FAMILIES = ["species", "feat", "background"] as const;
 export const BASE_FAMILIES = ["weapon", "equipment", "spell", "feature"] as const;
 export type BaseFamily = (typeof BASE_FAMILIES)[number];
 export const AUTHORING_FAMILIES = [

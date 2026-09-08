@@ -1,7 +1,9 @@
 # Origin authoring and current-build composition
 
 P07 extends the shared authoring dispatcher to species, feat and background (nine authoring
-families; the four base families retain their boundary). Library definitions and immutable
+families; the four base families retain their boundary). Family constants live in the base
+authoring model so loading the pure build boundary first does not depend on initialization
+order across origin conformance modules. Library definitions and immutable
 versions are the sole template authority. This supports Astra full-lab 0.9.3 + shell r2 and
 D&D 2024 origin declarations. It does not execute combat, advancement or an old engine bridge.
 Same-engine custom automation, authoritative combat editing and causal undo remain later

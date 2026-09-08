@@ -1,5 +1,6 @@
 import {
   ABILITIES,
+  ORIGIN_FAMILIES,
   DAMAGE_TYPES,
   type AuthoringFamily,
   type FieldDescriptor,
@@ -17,7 +18,7 @@ import {
 } from "../library/model";
 import { conformDefinition, type AuthoringDiagnostic } from "./conformance";
 
-export const ORIGIN_FAMILIES = ["species", "feat", "background"] as const;
+export { ORIGIN_FAMILIES } from "./model";
 export type OriginFamily = (typeof ORIGIN_FAMILIES)[number];
 export type Ability = (typeof ABILITIES)[number];
 export const ORIGIN_SKILLS = [
