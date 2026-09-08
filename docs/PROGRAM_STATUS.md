@@ -1,6 +1,19 @@
 # Program Status
 
-## Current frontier — P08c verified; P09 next (8 September 2026)
+## Current frontier — P09 shell and orientation in progress (8 September 2026)
+
+Owner authorizes P09 only under permanent approved-mock delivery delegation. Astra owns the
+new isolated codex/p09-shell-orientation-20260908 candidate at Workspace/Codex/d20-folio-p09-shell.
+Fresh origin/v2 base c5350f44d49d63dd8508c6b2bda3e87ee7e45c83; main remains
+9b06b75313d7ee353c4072a20397c3092707648e. Clean detached p09-control is the verified invoker.
+P01–04 dependencies and P08c closure verified; no repeated freeze/owner visual gate reopened.
+Spec/plan: docs/superpowers/{specs,plans}/2026-09-08-p09-shell-orientation\*.md.
+Independent reference/contract reviewers own external evidence only; root owns implementation.
+Baseline focused identity/library tests: 2 files, 11 passed. Implementation, independent code/UI
+review, fresh optimized demo runtime, final gates, integration and cleanup are still open.
+No P10, main/production/deploy/real-data migration/cost. Evidence under Workspace/Codex/d20-folio-p09-evidence.
+
+## Historical frontier — P08c verified; P09 next (8 September 2026)
 
 Astra completed the guided subclass editor over the existing class/subclass model, root pinned
 closure and shared acquisition/resource/program composers. P09 Shell e orientamento is the first
