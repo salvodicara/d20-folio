@@ -126,3 +126,6 @@ Declaration, prepared-copy, operation and recovery archive IDs use UUIDs. The re
 Asynchronous acknowledgment cleanup rechecks the session ticket and the exact stored envelope, so an earlier operation cannot erase a later pending or invalidated operation.
 
 Multiline notes, material descriptions, agreements and trigger explanations use textarea descriptors. Readers preserve line breaks and use full-width prose; named A4 print pages carry 12 mm margins on every continuation page.
+
+Future authoring versions retain the creation name in the shared reader and printed output,
+alongside the exact preserved payload; unsupported structure never removes its identifying title.

@@ -119,3 +119,27 @@ it("includes advanced names unknown to this family in the printable retained pay
   );
   expect(view.container.textContent).toContain("future-resource");
 });
+
+it.each(["monster", "campaign-rule"] as const)(
+  "prints the identity and exact preserved future payload for %s",
+  async (family) => {
+    const definition = initializeDefinition(family);
+    definition.name = "Future table creation";
+    definition.payload.data.authoringVersion = 99;
+    definition.payload.data.future = { original: ["retained", 3] };
+    const original = JSON.stringify(definition.payload.data, null, 2);
+    const i18n = createInstance();
+    await i18n.init({
+      lng: "en",
+      resources: { en: { common: mergedUi("en") } },
+      defaultNS: "common",
+    });
+    const view = render(
+      <I18nextProvider i18n={i18n}>
+        <HomebrewReader definition={definition} printable />
+      </I18nextProvider>
+    );
+    expect(screen.getByRole("heading", { name: definition.name })).toBeTruthy();
+    expect(view.container.querySelector("pre")?.textContent).toBe(original);
+  }
+);

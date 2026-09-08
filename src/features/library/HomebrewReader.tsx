@@ -30,6 +30,7 @@ export function HomebrewReader({
   if (!authoringFamily(definition.family) || data.authoringVersion !== 1)
     return (
       <div className="homebrew-reader">
+        <h3>{definition.name}</h3>
         <p>{definition.description}</p>
         <p>{label("preservedPayload")}</p>
         <pre>{JSON.stringify(data, null, 2)}</pre>
