@@ -61,6 +61,8 @@ out of unfinished generic editing, EN/IT homebrew labels; focused reader test.
 - [x] Independent spec/correctness and visual review; reproduce and fix findings with targeted regressions.
 - [x] Run fresh composed just ci; SRD-only when seam changes; full rules if changed; six fixture recovery.
 - [x] Hash source/runtime/images and keep failed attempts separate. Update external HANDOFF/REPLAY/manifest.
-- [ ] Fresh fetch/rebase origin/v2, required final gate, hooked explicit HEAD:v2; verify remote SHA.
-- [ ] Update PROGRAM_STATUS closure, retain all evidence, stop only owned services and remove only clean
-      owned worktrees after remote proof. Send actual images and complete P08b successor without executing it.
+- [x] Fresh fetch/rebase origin/v2, required final gate, hooked explicit HEAD:v2; verify remote SHA.
+- [x] Update PROGRAM_STATUS closure, retain evidence and send actual images; stop only owned services.
+      Remove clean worker worktrees after remote proof and prepare the complete P08b successor.
+      Final parent/control removal and successor delivery are the external post-push tail recorded in
+      integration-preflight/RECEIPT.md; do not execute P08b.

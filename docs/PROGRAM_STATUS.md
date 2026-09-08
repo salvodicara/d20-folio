@@ -1,13 +1,15 @@
 # Program Status
 
-## Current frontier — P08a verified; V2 integration pending (8 September 2026)
+## Current frontier — P08a integrated; P08b next (8 September 2026)
 
 Astra completed the class/subclass model, conformance/codec, real immutable Library versions and
 minimal EN/IT consultation/print boundary. P08b/c guided editors, advancement and engine execution
-were not started. Source candidate42252a1fa269a484e99bfa7d89f41f1d8ad1605a; fresh origin/v2 remains
-c58f76ed11c2d6876984ea01f1394d192ec1de50 and main9b06b75313d7ee353c4072a20397c3092707648e.
-Final fresh fetch/rebase is a no-op. Standing owner delegation authorizes the explicit HEAD:v2 push
-once this verification record is committed; no production deployment or new approval is required.
+were not started. Source candidate42252a1fa269a484e99bfa7d89f41f1d8ad1605a; the source was based on
+c58f76ed11c2d6876984ea01f1394d192ec1de50. Main remains9b06b75313d7ee353c4072a20397c3092707648e.
+Final fresh fetch/rebase was a no-op. The standing-delegation-authorized hooked HEAD:v2 push
+succeeded, and remote ca8a61bfbd72e724b3f72bca279f48ab900b7e0c was verified with main unchanged.
+No production deployment occurred. This closure changes only documents/changeset; the final remote
+SHA after this document commit is recorded externally to avoid a self-referential SHA.
 
 Independent source/model/persistence/UI/paper reviews are closed. Final composed just ci exited0
 on a clean byte-identical isolated lane:886 app files/19509 tests and7 Functions files/129 tests,
@@ -33,9 +35,11 @@ attempts, hook failures and exact red/green evidence remain retained. No result 
 Evidence: /Users/salvatoredicara/Workspace/Codex/d20-folio-p08a-evidence, including HANDOFF/REPLAY,
 FIDELITY, source/scope/visual reviews, runtime-current and final gate manifests. Owned preview/demo/
 rules services are stopped, original Firestore86001/8080 preserved; private pack stays clean/read-only
-b6073dd0. Shared checkout keeps only its preexisting .playwright-cli. Owned worktrees remain until
-remote proof and clean removal. Final SHA/cleanup will be recorded in integration-preflight/RECEIPT.md.
-Only after integration/cleanup, deliver the complete P08b successor without executing it.
+b6073dd0. Shared checkout keeps only its preexisting .playwright-cli. Both isolated writer worktrees were removed cleanly after exact owned-file equivalence to the
+verified remote; their branches are retained. Parent/control removal follows the final document push,
+with final SHA and cleanup recorded in integration-preflight/RECEIPT.md. All tests/runtime/source
+hashes remain applicable after these document-only commits. Deliver the complete P08b successor only
+after that external cleanup tail; P08b is the first incomplete AGENT-PROGRAM row and is not executed.
 
 ## Historical frontier — P07 integrated; P08a next (8 September 2026)
 
