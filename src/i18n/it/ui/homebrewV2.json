@@ -493,7 +493,8 @@
       "parent-mechanic-mismatch": "L’identità di appartenenza differisce dalla classe registrata.",
       "parent-choice-order": "Disponi la scelta principale prima delle scelte dipendenti.",
       "subclass-start-level": "La sottoclasse deve iniziare al primo livello di sottoclasse previsto dalla classe.",
-      "subclass-feature-schedule": "Colloca i benefici della sottoclasse a un livello di privilegio previsto dalla classe."
+      "subclass-feature-schedule": "Colloca i benefici della sottoclasse a un livello di privilegio previsto dalla classe.",
+      "prerequisite-training": "L’addestramento richiesto nelle armature o nelle armi non è stato acquisito nelle scelte precedenti."
     },
     "fieldIssue": "Contenuto aggiuntivo",
     "instanceConflict": "Questa copia è cambiata altrove. Confronta lo stato salvato con la bozza prima di salvare di nuovo.",
@@ -734,7 +735,18 @@
       "historicalException": "Eccezione della fonte precedente: conservata come riferimento, non applicata. Registra una nuova eccezione se questa versione la richiede ancora.",
       "alreadySaved": "Queste scelte corrispondono già alla build salvata. Conferma per terminare la revisione.",
       "backgroundChoiceHelp": "Scegli +2 e +1 in due diverse caratteristiche indicate, oppure +1 in tutte e tre. Il massimo ordinario è 20. Il talento Origine incluso in questo background è mostrato sotto.",
-      "equipmentChoiceHelp": "Scegli il pacchetto di equipaggiamento di questo background oppure il suo oro iniziale. La scelta registra ciò che ti spetta; aggiungere oggetti e oro all’inventario è un passaggio separato."
+      "equipmentChoiceHelp": "Scegli il pacchetto di equipaggiamento di questo background oppure il suo oro iniziale. La scelta registra ciò che ti spetta; aggiungere oggetti e oro all’inventario è un passaggio separato.",
+      "training": {
+        "armor": "Addestramento nelle armature",
+        "weapon": "Addestramento nelle armi",
+        "shield": "Scudi",
+        "shields": "Scudi",
+        "simple": "Armi semplici",
+        "martial": "Armi da guerra",
+        "light-armor": "Armature leggere",
+        "medium-armor": "Armature medie",
+        "heavy-armor": "Armature pesanti"
+      }
     },
     "classes": {
       "summary": "Dettagli della classe",

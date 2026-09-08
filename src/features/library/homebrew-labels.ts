@@ -41,6 +41,9 @@ const shared: Record<string, string> = {
   "origin.baselineFacts.spellcasting": "identity.sheetFacts.spellcasting",
   "options.epic-boon": "feats.category_epic-boon",
   "options.fighting-style": "feats.category_fighting-style",
+  "options.heritage": "feats.category_heritage",
+  "options.planar-pact": "feats.category_planar-pact",
+  "options.dark-gift": "feats.category_dark-gift",
 
   "fields.armorClass": "character.armorClass",
   "fields.maxHp": "identity.sheet.hpMax",

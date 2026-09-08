@@ -22,6 +22,12 @@ export function originBenefitText(
       return label("origin.modes." + str(b.mode)) + ": " + String(b.meters) + " m";
     case "sense":
       return label("fields." + str(b.sense)) + ": " + String(b.meters) + " m";
+    case "training":
+      return (
+        label("origin.training." + str(b.category)) +
+        ": " +
+        label("origin.training." + str(b.id))
+      );
     case "proficiency":
       return (
         label("origin.categories." + str(b.category)) +
@@ -62,6 +68,7 @@ export function originRequirementText(
       return label("origin.minimumLevel") + ": " + String(p.minimum);
     case "ability":
       return label("options." + str(p.ability)) + " ≥ " + String(p.minimum);
+    case "training":
     case "proficiency":
       return originBenefitText(p, label, definition);
     case "spellcasting":

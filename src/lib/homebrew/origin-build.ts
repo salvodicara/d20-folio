@@ -520,6 +520,18 @@ export function composeAcquisitionBuilds(
             "prerequisite-proficiency",
             "unresolved"
           );
+        case "training":
+          return rule(
+            result.facts.some(
+              ({ benefit }) =>
+                benefit.kind === "training" &&
+                benefit.category === p.category &&
+                benefit.id === p.id
+            ),
+            path,
+            "prerequisite-training",
+            "unresolved"
+          );
         case "feat": {
           if (p.dependency !== undefined) {
             const dependency = table[p.dependency] as OriginDependency | undefined;
@@ -1017,6 +1029,7 @@ export function composeAcquisitionBuilds(
             "prerequisite-level",
             "prerequisite-ability",
             "prerequisite-proficiency",
+            "prerequisite-training",
             "prerequisite-feat",
             "prerequisite-spellcasting",
             "prerequisite-any",

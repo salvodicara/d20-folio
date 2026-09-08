@@ -33,6 +33,15 @@ import { conformDefinition, type AuthoringDiagnostic } from "./conformance";
 export { ORIGIN_FAMILIES } from "./model";
 export type OriginFamily = (typeof ORIGIN_FAMILIES)[number];
 export type Ability = (typeof ABILITIES)[number];
+export const FEAT_CATEGORIES = [
+  "origin",
+  "general",
+  "fighting-style",
+  "epic-boon",
+  "heritage",
+  "planar-pact",
+  "dark-gift",
+] as const;
 export const ORIGIN_SKILLS = [
   "acrobatics",
   "animal-handling",
@@ -62,7 +71,8 @@ export type OriginPrerequisite =
   | { kind: "ability"; ability: Ability; minimum: number }
   | { kind: "proficiency"; category: ProficiencyCategory; id: string }
   | { kind: "feat"; mechanicId: string; dependency?: string }
-  | { kind: "spellcasting" };
+  | { kind: "spellcasting" }
+  | { kind: "training"; category: "armor" | "weapon"; id: string };
 export type SpellAbility = Ability | "none" | { choice: string };
 export type SpellEntitlement =
   | { policy: "known" | "prepared" | "spellbook" }
@@ -156,7 +166,7 @@ export function originFields(family: AuthoringFamily): readonly FieldDescriptor[
     ];
   if (family === "feat")
     return [
-      s("category", ["origin", "general", "fighting-style", "epic-boon"]),
+      s("category", FEAT_CATEGORIES),
       { key: "repeatable", type: "boolean", group: "origin" },
     ];
   if (family === "background")
@@ -294,6 +304,12 @@ export function conformOriginDefinition(
       case "proficiency":
         fields.push("category", "id");
         proficiency(v, path);
+        break;
+      case "training":
+        fields.push("category", "id");
+        if (!token(v.category, ["armor", "weapon"]))
+          add(path + ".category", "unsupported-option", "unsupported");
+        if (!nonempty(v.id)) add(path + ".id", "required");
         break;
       case "feat":
         fields.push("mechanicId", "dependency");
@@ -777,6 +793,17 @@ export function conformOriginDefinition(
         add(prefix + "sizeChoice", "choice-acquisition-role");
     }
     if (node.family === "background") {
+      const featCategories =
+        d.originFeatCategories === undefined ? ["origin"] : d.originFeatCategories;
+      if (
+        !Array.isArray(featCategories) ||
+        !featCategories.length ||
+        new Set(featCategories).size !== featCategories.length ||
+        featCategories.some((category) => !token(category, FEAT_CATEGORIES))
+      )
+        add(prefix + "originFeatCategories", "invalid-feat-categories");
+      const acceptsFeat = (category: unknown) =>
+        Array.isArray(featCategories) && featCategories.includes(category as JsonValue);
       if (new Set([d.ability1, d.ability2, d.ability3]).size !== 3)
         add(prefix + "ability1", "distinct-abilities");
       if (d.skill1 === d.skill2) add(prefix + "skill2", "distinct-skills");
@@ -811,7 +838,7 @@ export function conformOriginDefinition(
             return (
               benefit?.kind === "reference" &&
               child?.family === "feat" &&
-              originRecord(originRecord(child.payload)?.data)?.category === "origin"
+              acceptsFeat(originRecord(originRecord(child.payload)?.data)?.category)
             );
           };
           const roleValid = query
@@ -823,8 +850,8 @@ export function conformOriginDefinition(
               : choiceKey === "originFeatChoice"
                 ? query.kind === "feat" &&
                   Array.isArray(query.categories) &&
-                  query.categories.length === 1 &&
-                  query.categories[0] === "origin"
+                  query.categories.length > 0 &&
+                  query.categories.every(acceptsFeat)
                 : query.kind === "equipment" &&
                   originRecord(choice.selectedGrant)?.kind === "equipment"
             : options.length > 0 &&
@@ -843,7 +870,7 @@ export function conformOriginDefinition(
             ?.definition
         );
         const data = originRecord(originRecord(child?.payload)?.data);
-        if (data && data.category !== "origin")
+        if (data && !acceptsFeat(data.category))
           add(prefix + "originFeat", "origin-feat-category");
       }
       if (d.equipmentChoice === undefined)

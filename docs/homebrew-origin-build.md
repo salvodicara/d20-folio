@@ -123,3 +123,8 @@ selected items. The exact snapshot is the materialization source; it is not a fi
 closure dependency. The evaluator itself performs no inventory writes or currency spending.
 Independent selected closures retain separate dependency traversal and local casting choices even
 when their local dependency keys coincide. Source snapshots remain immutable.
+
+Training prerequisites use `{kind:"training", category:"armor"|"weapon", id}` and require
+an earlier attributed training fact. A candidate cannot satisfy its own prerequisite.
+An explicit reason can override that rule, without overriding unsupported source data.
+Catalogue adaptation uses the same canonical training tokens as class foundations.

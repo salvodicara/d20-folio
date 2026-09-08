@@ -493,7 +493,8 @@
       "parent-mechanic-mismatch": "The parent identity differs from its recorded class.",
       "parent-choice-order": "Place a parent choice before its dependent choices.",
       "subclass-start-level": "The subclass must begin at the parent’s first subclass level.",
-      "subclass-feature-schedule": "Place subclass benefits at a feature level declared by the parent."
+      "subclass-feature-schedule": "Place subclass benefits at a feature level declared by the parent.",
+      "prerequisite-training": "The required armor or weapon training has not been acquired earlier in this build."
     },
     "fieldIssue": "Additional content",
     "instanceConflict": "This copy changed elsewhere. Compare the saved state with your draft before saving again.",
@@ -734,7 +735,18 @@
       "historicalException": "Previous source exception: kept for reference, not applied. Record a new exception if this version still needs one.",
       "alreadySaved": "These choices already match the saved build. Confirm to finish this review.",
       "backgroundChoiceHelp": "Choose +2 and +1 in two different listed abilities, or +1 in all three. The ordinary maximum is 20. The Origin feat included in this background is shown below.",
-      "equipmentChoiceHelp": "Choose this background’s equipment package or its starting gold. This records your entitlement; adding items and gold to your inventory is a separate step."
+      "equipmentChoiceHelp": "Choose this background’s equipment package or its starting gold. This records your entitlement; adding items and gold to your inventory is a separate step.",
+      "training": {
+        "armor": "Armor training",
+        "weapon": "Weapon training",
+        "shield": "Shields",
+        "shields": "Shields",
+        "simple": "Simple weapons",
+        "martial": "Martial weapons",
+        "light-armor": "Light armor",
+        "medium-armor": "Medium armor",
+        "heavy-armor": "Heavy armor"
+      }
     },
     "classes": {
       "summary": "Class details",

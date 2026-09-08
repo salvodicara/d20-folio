@@ -946,3 +946,30 @@ it("makes a pending spellbook fact available as soon as its local casting abilit
     )
   ).toEqual(["spellbook", "prepared"]);
 });
+
+it("requires prior armor training and cannot satisfy it with the candidate's own benefit", () => {
+  const source = snapshot("trained-origin", "species");
+  source.definition.payload.data.prerequisites = [
+    { kind: "training", category: "armor", id: "medium" },
+  ];
+  source.definition.payload.data.benefits = [
+    { kind: "training", category: "armor", id: "medium" },
+  ];
+  expect(conformAcquisitionSnapshot(source, verifyCatalogue)).toEqual([]);
+  expect(
+    composeAcquisitionBuilds(character, build(selection(source)), null, {
+      verifyCatalogue,
+    }).valid
+  ).toBe(false);
+  const cls = snapshot("class", "class");
+  cls.definition.payload.data.starting = {
+    prerequisites: [],
+    benefits: [{ kind: "training", category: "armor", id: "medium" }],
+    choices: [],
+  };
+  expect(
+    composeAcquisitionBuilds(character, build(selection(source)), classBuild(cls), {
+      verifyCatalogue,
+    }).valid
+  ).toBe(true);
+});

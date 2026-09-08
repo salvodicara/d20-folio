@@ -15,6 +15,7 @@ const EXCEPTIONS = [
   "prerequisite-level",
   "prerequisite-ability",
   "prerequisite-proficiency",
+  "prerequisite-training",
   "prerequisite-feat",
   "prerequisite-spellcasting",
   "prerequisite-any",

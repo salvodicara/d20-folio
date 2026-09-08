@@ -173,7 +173,7 @@ export function conformDefinition(
     "payload.data.",
     [
       ...(definition.family === "background"
-        ? ["toolChoice", "originFeatChoice", "equipmentChoice"]
+        ? ["toolChoice", "originFeatChoice", "equipmentChoice", "originFeatCategories"]
         : []),
       ...(definition.family === "species" ? ["sizeChoice"] : []),
       "effects",
