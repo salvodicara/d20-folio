@@ -421,8 +421,7 @@ export function composeOriginBuild(
   for (const { benefit } of result.facts) {
     if (benefit.kind === "proficiency" || benefit.kind === "expertise")
       proofs.add(benefit.category + ":" + benefit.id);
-    if (benefit.kind === "spellcasting" || benefit.kind === "spell")
-      hasSpellcasting = true;
+    if (benefit.kind === "spellcasting") hasSpellcasting = true;
     if (benefit.kind === "ability" && abilities[benefit.ability] !== null)
       abilities[benefit.ability] = (abilities[benefit.ability] ?? 0) + benefit.amount;
   }
@@ -585,8 +584,7 @@ export function composeOriginBuild(
           add(benefitPath, "expertise-proficiency", "unresolved");
           return;
         }
-        if (benefit.kind === "spellcasting" || benefit.kind === "spell")
-          hasSpellcasting = true;
+        if (benefit.kind === "spellcasting") hasSpellcasting = true;
         if (benefit.kind === "ability") {
           if (abilities[benefit.ability] === null) {
             add(benefitPath, "ability-context", "unresolved");
@@ -771,21 +769,24 @@ export function composeOriginBuild(
           add(choicePath, "choice-answer");
           continue;
         }
-        for (const selectedSnapshot of poolResult?.selectedSnapshots ?? []) {
+        for (const [index, selectedSnapshot] of (
+          poolResult?.selectedSnapshots ?? []
+        ).entries()) {
+          // The resolver binds snapshots in selected option order. Entry IDs are
+          // local to each source and can collide across owners or source kinds.
+          const selectedId = selected[index];
+          if (selectedId === undefined) continue;
+          const selectedPath = originNodePath(choicePath, selectedId);
           const childIssues = conformDefinition(selectedSnapshot.definition);
           if (childIssues.length) {
             childIssues.forEach((issue) =>
-              add(
-                choicePath + "/" + selectedSnapshot.entryId + "/" + issue.path,
-                issue.code,
-                issue.severity
-              )
+              add(selectedPath + "/" + issue.path, issue.code, issue.severity)
             );
             continue;
           }
           resolve(
             selectedSnapshot.definition,
-            originNodePath(choicePath, selectedSnapshot.entryId),
+            selectedPath,
             snapshotSource(selectedSnapshot),
             depth + 1,
             canonicalSourceOf(selectedSnapshot),

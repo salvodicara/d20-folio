@@ -6,6 +6,8 @@ import {
   type OriginBuild,
 } from "../../src/lib/homebrew/origin-build";
 import type { FolioCharacter } from "../../src/lib/identity/model";
+import type { OriginBenefit } from "../../src/lib/homebrew/origins";
+import type { LibraryVersion } from "../../src/lib/library/model";
 const character: FolioCharacter = {
   schema: 1,
   ownerUid: "owner",
@@ -260,3 +262,156 @@ function required<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) throw new Error("Missing test fixture");
   return value;
 }
+
+describe("catalogue prerequisite and child identity boundaries", () => {
+  const spellBenefits: OriginBenefit[] = [
+    { kind: "spell", id: "light", ability: "intelligence", policy: "known" },
+    { kind: "spell", id: "light", ability: "intelligence", policy: "prepared" },
+    { kind: "spell", id: "light", ability: "intelligence", policy: "spellbook" },
+    {
+      kind: "spell",
+      id: "light",
+      ability: "intelligence",
+      policy: "free-cast",
+      uses: 1,
+      rest: "long",
+    },
+  ];
+  it.each(spellBenefits)(
+    "does not infer a casting feature from $policy spell access",
+    (benefit) => {
+      const { build, options } = fixture();
+      required(build.selections.species).snapshot.definition.payload.data.prerequisites =
+        [{ kind: "spellcasting" }];
+      const inherited = composeOriginBuild(character, build, {
+        verifyCatalogue: () => true,
+        resolvePool: () => options,
+        inheritedFacts: [
+          {
+            selectionId: "class",
+            path: "root/innate",
+            source: { ownerUid: "owner", id: "class", version: 1 },
+            benefit,
+          },
+        ],
+      });
+      expect(inherited.valid).toBe(false);
+      expect(inherited.diagnostics).toContainEqual(
+        expect.objectContaining({ code: "prerequisite-spellcasting" })
+      );
+      required(build.selections.species).ordinal = 1;
+      build.selections.innate = {
+        id: "innate",
+        ordinal: 0,
+        snapshot: feat("innate"),
+        answers: {},
+        exceptions: [],
+      };
+      build.selections.innate.snapshot.definition.payload.data.benefits = [benefit];
+      const local = composeOriginBuild(character, build, {
+        verifyCatalogue: () => true,
+        resolvePool: () => options,
+      });
+      expect(local.valid).toBe(false);
+      expect(local.diagnostics).toContainEqual(
+        expect.objectContaining({ code: "prerequisite-spellcasting" })
+      );
+    }
+  );
+  it("accepts explicit attributed Spellcasting capability", () => {
+    const { build, options } = fixture();
+    required(build.selections.species).snapshot.definition.payload.data.prerequisites = [
+      { kind: "spellcasting" },
+    ];
+    expect(
+      composeOriginBuild(character, build, {
+        verifyCatalogue: () => true,
+        resolvePool: () => options,
+        inheritedFacts: [
+          {
+            selectionId: "class",
+            path: "root/casting",
+            source: { ownerUid: "owner", id: "class", version: 1 },
+            benefit: { kind: "spellcasting", ability: "intelligence", policy: "ability" },
+          },
+        ],
+      }).valid
+    ).toBe(true);
+  });
+  it.each(["library", "catalogue"])(
+    "keeps separate answers for Library and %s children sharing an entry ID",
+    (secondKind) => {
+      const { build } = fixture();
+      const root = required(build.selections.species);
+      root.snapshot.definition.payload.data.choices = [
+        {
+          id: "pool",
+          name: "Pool",
+          count: 2,
+          parent: null,
+          options: [],
+          pool: structuredClone(pool),
+        },
+      ];
+      const child = (ownerUid: string, skill: string): LibraryVersion => {
+        const definition = feat("same-id").definition;
+        definition.payload.data.choices = [
+          {
+            id: "pick",
+            name: "Pick",
+            count: 1,
+            parent: null,
+            options: [
+              {
+                id: skill,
+                name: skill,
+                benefits: [{ kind: "proficiency", category: "skill", id: skill }],
+              },
+            ],
+          },
+        ];
+        return {
+          schema: 1,
+          ownerUid,
+          entryId: "same-id",
+          version: 1,
+          definition,
+          provenance: null,
+          operationId: "published",
+        };
+      };
+      const a = child("authorA", "arcana");
+      const b = child("authorB", "history");
+      const second =
+        secondKind === "library" ? b : { ...feat("same-id"), definition: b.definition };
+      root.answers = {
+        "root/pool": ["a", "b"],
+        "root/pool/a/pick": ["arcana"],
+        "root/pool/b/pick": ["history"],
+      };
+      root.resolvedChoices = { "root/pool": [a, second] };
+      const result = composeOriginBuild(character, build, {
+        verifyCatalogue: () => true,
+        resolvePool: () => [
+          { option: { id: "a", name: "A", benefits: [] }, snapshot: a },
+          { option: { id: "b", name: "B", benefits: [] }, snapshot: second },
+        ],
+      });
+      expect(result.diagnostics).toEqual([]);
+      expect(result.valid).toBe(true);
+      expect(result.activeChoices.map(({ path }) => path)).toEqual([
+        "root/pool",
+        "root/pool/a/pick",
+        "root/pool/b/pick",
+      ]);
+      expect(
+        result.facts
+          .filter(({ benefit }) => benefit.kind === "proficiency")
+          .map(({ benefit }) => benefit)
+      ).toEqual([
+        { kind: "proficiency", category: "skill", id: "arcana" },
+        { kind: "proficiency", category: "skill", id: "history" },
+      ]);
+    }
+  );
+});

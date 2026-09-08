@@ -37,6 +37,8 @@ full selectable pool without a32-option truncation. Only selected content snapsh
 are frozen beside answers as `resolvedChoices[path]`; the root snapshot is unchanged.
 Content queries require snapshots; fact-only proficiency/mastery queries do not.
 Exact selected IDs, query/source tuples and adapter-produced snapshots must agree.
+Nested selected-child answer paths use the pool option ID, not the source-local
+entry ID, so different Library authors and catalogue entries retain independent answers.
 Changing a parent retains inactive/obsolete answers and snapshots but excludes them
 from current facts. Selecting a source without required resolver/verifier is invalid.
 A resolver is an injected trusted typed catalogue query, not untrusted wire data.
@@ -47,6 +49,8 @@ source/path/acquisition facts apply once; conflicting, conditional, unsupported 
 candidate-self facts cannot establish prerequisites. These facts are reprojected after
 ambiguous imported skills/casting are superseded, never copied into the stored parent.
 The originating class composer remains responsible for eligibility and attribution.
+Spell access (known, prepared, spellbook or free casting) does not establish a
+Spellcasting feature prerequisite; only explicit spellcasting capability does.
 
 Existing definition/origin/operation budgets still apply before sending: definition
 200000 UTF16/depth20, origin180000 UTF8/4096 nodes, full operation600000 UTF8.
