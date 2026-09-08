@@ -71,6 +71,7 @@ export interface OriginFieldsProps {
   disabled: boolean;
   onChange: (payload: LibraryDefinition["payload"]) => void;
   loadOriginSources?: () => Promise<LibraryVersion[]>;
+  scope?: "starting" | "multiclass" | { levelId: string };
 }
 
 /** Guided declarations edit the same typed payload used by conformance and immutable versions. */
@@ -79,13 +80,42 @@ export function OriginFields({
   disabled,
   onChange,
   loadOriginSources,
+  scope,
 }: OriginFieldsProps) {
   const label = useHomebrewLabel();
-  const data = definition.payload.data;
+  const root = definition.payload.data;
+  const levels = list(root.progression);
+  const levelIndex =
+    typeof scope === "object"
+      ? levels.findIndex((value) => row(value)?.id === scope.levelId)
+      : -1;
+  const scoped =
+    scope === undefined
+      ? root
+      : typeof scope === "string"
+        ? row(root[scope])
+        : levels.filter((value) => row(value)?.id === scope.levelId).length === 1
+          ? row(levels[levelIndex])
+          : null;
+  const data = scoped ?? {};
   const choices = list(data.choices);
-  const dependencies = row(data.dependencies) ?? {};
-  const edit = (key: string, value: JsonValue) =>
-    onChange({ ...definition.payload, data: { ...data, [key]: value } });
+  const dependencies = row(root.dependencies) ?? {};
+  const edit = (key: string, value: JsonValue) => {
+    if (!scoped || disabled) return;
+    const next = { ...data, [key]: value };
+    const updated =
+      scope === undefined
+        ? next
+        : typeof scope === "string"
+          ? { ...root, [scope]: next }
+          : {
+              ...root,
+              progression: levels.map((level, index) =>
+                index === levelIndex ? next : level
+              ),
+            };
+    onChange({ ...definition.payload, data: updated });
+  };
   const nameOf = (key: string) => {
     const d = row(row(dependencies[key])?.definition);
     return text(d?.name) || label("origin.missingDependency");
@@ -408,9 +438,11 @@ export function OriginFields({
       </div>
     );
   }
+  if (!scoped)
+    return preserved(typeof scope === "string" ? root[scope] : root.progression);
   return (
     <div className="origin-fields">
-      {definition.family === "background" && (
+      {scope === undefined && definition.family === "background" && (
         <fieldset className="homebrew-group" disabled={disabled}>
           <legend>{label("origin.backgroundPackage")}</legend>
           <p className="homebrew-hint">{label("origin.backgroundHelp")}</p>
@@ -468,25 +500,27 @@ export function OriginFields({
           )}
         </fieldset>
       )}
-      <fieldset disabled={disabled} className="homebrew-group">
-        <legend>{label("origin.dependencies")}</legend>
-        <p className="homebrew-hint">{label("origin.dependenciesHelp")}</p>
-        {Object.entries(dependencies).map(([key, value]) => (
-          <p className="origin-dependency" key={key}>
-            <strong>{nameOf(key)}</strong> · {label("version")}{" "}
-            {typeof row(value)?.sourceVersion === "number"
-              ? (row(value)?.sourceVersion as number)
-              : "—"}
-          </p>
-        ))}
-        <OriginDependencyPicker
-          disabled={disabled}
-          load={loadOriginSources}
-          onChoose={(version) =>
-            onChange(includeOriginDependency(definition, version).definition.payload)
-          }
-        />
-      </fieldset>
+      {scope === undefined && (
+        <fieldset disabled={disabled} className="homebrew-group">
+          <legend>{label("origin.dependencies")}</legend>
+          <p className="homebrew-hint">{label("origin.dependenciesHelp")}</p>
+          {Object.entries(dependencies).map(([key, value]) => (
+            <p className="origin-dependency" key={key}>
+              <strong>{nameOf(key)}</strong> · {label("version")}{" "}
+              {typeof row(value)?.sourceVersion === "number"
+                ? (row(value)?.sourceVersion as number)
+                : "—"}
+            </p>
+          ))}
+          <OriginDependencyPicker
+            disabled={disabled}
+            load={loadOriginSources}
+            onChoose={(version) =>
+              onChange(includeOriginDependency(definition, version).definition.payload)
+            }
+          />
+        </fieldset>
+      )}
       <fieldset disabled={disabled} className="homebrew-group">
         <legend>{label("origin.requirementsTitle")}</legend>
         <p className="homebrew-hint">{label("origin.requirementsHelp")}</p>
@@ -512,9 +546,9 @@ export function OriginFields({
           const field = (key: string, v: JsonValue) => patch({ ...value, [key]: v });
           const parent = row(value.parent),
             parentChoice = row(choices.find((v) => row(v)?.id === parent?.choiceId));
-          const others = choices.filter((v) => row(v)?.id !== value.id);
+          const others = choices.slice(0, index).filter((v) => row(v)?.id !== value.id);
           return (
-            <fieldset className="origin-choice" key={index}>
+            <fieldset className="origin-choice" key={text(value.id) || index}>
               <legend>
                 {label("origin.choice")} {index + 1}
               </legend>
@@ -563,7 +597,7 @@ export function OriginFields({
                     list(value.options).map((v, j) => (j === i ? next : v))
                   );
                 return (
-                  <fieldset className="origin-option" key={i}>
+                  <fieldset className="origin-option" key={text(option.id) || i}>
                     <legend>
                       {label("origin.option")} {i + 1}
                     </legend>
@@ -588,6 +622,20 @@ export function OriginFields({
                 );
               })}
               <div className="identity-actions">
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  onClick={() => {
+                    const next = [...choices];
+                    [next[index - 1], next[index]] = [
+                      next[index] ?? null,
+                      next[index - 1] ?? null,
+                    ];
+                    edit("choices", next);
+                  }}
+                >
+                  {label("moveEarlier")}
+                </button>
                 <button
                   type="button"
                   disabled={

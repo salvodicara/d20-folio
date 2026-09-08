@@ -143,3 +143,22 @@ the original draft/base intact; no truncation, automatic replay or new persisten
 
 Offer intents check the final envelope after its immutable operation ID is populated, so a
 boundary-sized offer cannot pass intent creation and then fail solely because that ID was added.
+
+## P08b shared class composers
+
+`OriginFields` accepts an optional `scope` (`starting`, `multiclass`, or `{levelId}`) for
+class acquisition declarations. Without it, the existing root authoring route is used.
+Each scoped change preserves the full root payload and unrelated acquisitions. Dependency
+lookup always uses the real root flat included table, with one root-only version picker;
+scoping never creates a second closure. Missing, malformed or ambiguous level scopes are
+preserved without replacement controls. Choices and options retain stable identity keys;
+choice parents are selected from earlier rows. Explicit move-earlier repairs ordering while
+retaining references and unsupported values, which remain subject to shared conformance.
+
+`AdvancedFields` accepts `guided` for the class editor. Resource and composed-program
+bindings select named declarations while storing their stable IDs. Unresolved imported
+references remain visible until explicitly changed. New program provenance defaults to
+the creation name (or `homebrew` when unnamed); generated row identities are read-only
+inside source-identity disclosure. The descriptor-driven renderer remains shared with
+other families, and all edits preserve unknown sibling fields. This is template authoring,
+not resource spending, character advancement or combat execution.

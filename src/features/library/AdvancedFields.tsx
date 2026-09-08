@@ -13,9 +13,11 @@ export function AdvancedFields({
   definition,
   disabled,
   onChange,
+  guided = false,
 }: {
   definition: LibraryDefinition;
   disabled: boolean;
+  guided?: boolean;
   onChange: (payload: LibraryDefinition["payload"]) => void;
 }) {
   const label = useHomebrewLabel();
@@ -26,6 +28,43 @@ export function AdvancedFields({
     path: string
   ) {
     const name = "homebrew-" + path + "-" + f.key;
+    if (guided && (f.key === "resourceId" || f.key === "programId")) {
+      const raw =
+        definition.payload.data[f.key === "resourceId" ? "resources" : "programs"];
+      const references = Array.isArray(raw) ? raw.filter(record) : [];
+      const current = typeof value === "string" ? value : "";
+      return (
+        <label key={f.key}>
+          <span>{label("fields." + f.key)}</span>
+          <select
+            name={name}
+            value={current}
+            disabled={disabled}
+            onChange={(e) => change(e.target.value)}
+          >
+            {((current !== "" && !references.some((r) => r.id === current)) ||
+              typeof value !== "string") && (
+              <option value={current}>
+                {label("preservedFields")}: {JSON.stringify(value)}
+              </option>
+            )}
+            <option value="">{label("options.none")}</option>
+            {references
+              .filter((r) => typeof r.id === "string" && r.id)
+              .map((r) => (
+                <option
+                  key={typeof r.id === "string" ? r.id : ""}
+                  value={typeof r.id === "string" ? r.id : ""}
+                >
+                  {typeof r.name === "string" && r.name
+                    ? r.name
+                    : label("origin.unnamedOption")}
+                </option>
+              ))}
+          </select>
+        </label>
+      );
+    }
     return (
       <label
         key={f.key}
@@ -68,6 +107,7 @@ export function AdvancedFields({
         ) : (
           <input
             name={name}
+            readOnly={guided && f.key === "id"}
             type={f.type === "number" ? "number" : "text"}
             min={f.min}
             max={f.max}
@@ -109,16 +149,27 @@ export function AdvancedFields({
                   : label("rows." + c.kind) + " " + String(i + 1)}
               </summary>
               <div className="homebrew-grid">
-                {c.fields.map((f) =>
-                  control(
-                    f,
-                    r[f.key],
-                    (v) =>
-                      change(rows.map((x, j) => (j === i ? { ...r, [f.key]: v } : x))),
-                    path + "-" + String(i)
-                  )
-                )}
+                {c.fields
+                  .filter((f) => !guided || f.key !== "id")
+                  .map((f) =>
+                    control(
+                      f,
+                      r[f.key],
+                      (v) =>
+                        change(rows.map((x, j) => (j === i ? { ...r, [f.key]: v } : x))),
+                      path + "-" + String(i)
+                    )
+                  )}
               </div>
+              {guided && c.fields.some((f) => f.key === "id") && (
+                <details className="origin-advanced">
+                  <summary>{label("origin.sourceIdentity")}</summary>
+                  <p className="homebrew-hint">{label("origin.sourceIdentityHelp")}</p>
+                  {c.fields
+                    .filter((f) => f.key === "id")
+                    .map((f) => control(f, r[f.key], () => {}, path + "-" + String(i)))}
+                </details>
+              )}
               {c.collections?.map((n) =>
                 collection(
                   n,
@@ -160,6 +211,8 @@ export function AdvancedFields({
           onClick={() => {
             const row = blankAdvancedRow(c.kind);
             if (Object.hasOwn(row, "id")) row.id = crypto.randomUUID();
+            if (guided && c.kind === "program")
+              row.source = definition.name || "homebrew";
             change([...rows, row]);
           }}
         >
