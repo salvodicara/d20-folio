@@ -153,6 +153,7 @@ vi.mock("@/features/identity/IdentityWorkspace", () => ({
           uid: props.uid,
           loading: props.loading,
           diceMode: props.diceMode,
+          activeId: props.activeId,
           characters: props.characters,
           campaignId: props.campaignId,
           inspected: props.inspected,
@@ -218,6 +219,7 @@ async function emit(kind: string, value: unknown) {
   await deliver(() => activeWatch(kind).emit(value));
 }
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   harness.authListeners.clear();
   harness.repositories.length = 0;
   harness.assetDisposers.length = 0;
@@ -370,4 +372,28 @@ describe("IdentityApp consumer session boundaries", () => {
     ).toHaveLength(1);
     expect(state().campaignId).toBeNull();
   });
+});
+
+it("restores a character deep link through authorized subscriptions without choosing an active actor", async () => {
+  window.history.replaceState(null, "", "#characters?owner=alice&character=pc");
+  render(<IdentityApp />);
+  await authenticate("alice");
+  await bootstrap();
+  await emit("inspection", character("alice"));
+  expect(state().inspected?.id).toBe("pc");
+  expect(state().activeId).toBeNull();
+});
+
+it("does not present the previous campaign under an inaccessible campaign URL", async () => {
+  render(<IdentityApp />);
+  await authenticate("alice");
+  await bootstrap();
+  fireEvent.click(screen.getByRole("button", { name: "Open campaign" }));
+  await deliver(() => {});
+  expect(state().campaignId).toBe("campaign");
+  await deliver(() => {
+    window.history.pushState(null, "", "#campaign?campaign=not-a-membership");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  expect(state().campaignId).toBeNull();
 });

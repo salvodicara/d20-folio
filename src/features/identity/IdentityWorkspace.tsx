@@ -1,7 +1,17 @@
+import { useNavigationPresentation } from "./navigation-presentation";
 import { useEffect, useRef, useState, type SubmitEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Search, Shield, UserRound, UsersRound, X } from "lucide-react";
+import {
+  Search,
+  Shield,
+  UserRound,
+  UsersRound,
+  X,
+  BookOpen,
+  Swords,
+  Flag,
+} from "lucide-react";
 import type {
   DiceMode,
   CharacterRef,
@@ -11,7 +21,16 @@ import type {
 } from "@/lib/identity/model";
 import "./identity.css";
 import { IdentityAccount, AccountNavigation } from "./IdentityAccount";
-import { accountSections, accountLabel, type AccountSection } from "./navigation";
+import {
+  accountSections,
+  type AccountSection,
+  type IdentityPage,
+  type IdentityRoute,
+  primaryDestinations,
+  featureDestinations,
+} from "./navigation";
+import { IdentityNavigation, useIdentityNavigation } from "./IdentityNavigation";
+export type { IdentityPage } from "./navigation";
 import { IdentitySheet } from "./IdentitySheet";
 import type { OriginProjection } from "@/lib/homebrew/origin-build";
 import identityMark from "./assets/d20-mark.svg";
@@ -22,36 +41,8 @@ import { ensureLocale } from "@/i18n";
 import { srdCatalogues } from "@/i18n/srd-en";
 import { CheckboxField } from "@/components/ui/selection";
 
-export type IdentityPage =
-  | AccountSection
-  | "characters"
-  | "invite"
-  | "campaign"
-  | "library";
 type Page = IdentityPage;
-const pages: readonly string[] = [
-  ...accountSections,
-  "characters",
-  "invite",
-  "campaign",
-  "library",
-];
-function urlPage(fallback: Page): Page {
-  const id = window.location.hash.slice(1);
-  return pages.includes(id) ? (id as Page) : fallback;
-}
-function historyIndex(): number {
-  const state: unknown = window.history.state;
-  if (state && typeof state === "object" && "folioIndex" in state) {
-    const index = state.folioIndex;
-    if (typeof index === "number" && Number.isSafeInteger(index) && index >= 0)
-      return index;
-  }
-  return 0;
-}
 export interface IdentityWorkspaceProps {
-  initialPage?: Page;
-  onPageChange?: (page: Page) => void;
   uid: string;
   displayName: string;
   diceMode?: DiceMode;
@@ -66,6 +57,7 @@ export interface IdentityWorkspaceProps {
   activeId: string | null;
   campaignId: string | null;
   inspected: Readonly<FolioCharacter> | null;
+  inspectionLoading?: boolean;
   originProjection?: OriginProjection;
   originLoading?: boolean;
   originUnavailable?: boolean;
@@ -100,6 +92,16 @@ export interface IdentityWorkspaceProps {
 }
 
 export function IdentityWorkspace(p: IdentityWorkspaceProps) {
+  return (
+    <IdentityNavigation uid={p.uid}>
+      <Workspace p={p} />
+    </IdentityNavigation>
+  );
+}
+function Workspace({ p }: { p: IdentityWorkspaceProps }) {
+  const { navigation, route, frame } = useIdentityNavigation();
+  useNavigationPresentation();
+  const page = route.page;
   const { t, i18n } = useTranslation("common");
   const label = (key: string, values?: Record<string, string | number>) =>
     t(`identity.${key}`, values);
@@ -108,9 +110,14 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [sectionsOpen, setSectionsOpen] = useState(false);
-  const [page, setPage] = useState<Page>(() => urlPage(p.initialPage ?? "account"));
-  const [filter, setFilter] = useState("all");
-  const [query, setQuery] = useState("");
+  const filter = route.filter ?? "all";
+  const setFilter = (value: string) =>
+    navigation.go(
+      { ...route, filter: value === "all" ? undefined : value },
+      { replace: true }
+    );
+  const query = frame.query ?? "";
+  const setQuery = (value: string) => navigation.updateFrame({ query: value });
   const [nameDraft, setName] = useState<string | null>(null);
   const name = nameDraft ?? p.displayName;
   const profileLocale = i18n.language.startsWith("it") ? "it" : "en";
@@ -126,54 +133,45 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
   const [campaignName, setCampaignName] = useState("");
   const [revokeUid, setRevokeUid] = useState<string | null>(null);
   const requestGeneration = useRef(0);
+  const localeGeneration = useRef(0);
   const dialogReturnFocus = useRef<HTMLElement | null>(null);
+  const shortcutPrefix = useRef(0);
   useEffect(
     () => () => {
       requestGeneration.current++;
+      localeGeneration.current++;
     },
     []
   );
-  const campaign = p.campaigns.find((c) => c.id === p.campaignId);
-  const navigate = (next: Page) => {
-    if (next !== page) {
-      const index = historyIndex();
-      if (!index) window.history.replaceState({ folioIndex: index }, "");
-      window.history.pushState({ folioIndex: index + 1 }, "", "#" + next);
-    }
+  const campaign = p.campaigns.find((c) => c.id === (route.campaign ?? p.campaignId));
+  const missingCampaign = !!route.campaign && !p.loading && !campaign;
+  const navigate = (next: Page, destination?: IdentityRoute) => {
+    closeOverlays();
+    navigation.go(destination ?? { page: next }, { resume: !destination });
+  };
+  const closeOverlays = () => {
     setSearchOpen(false);
     setHelpOpen(false);
     setAccountOpen(false);
     setSectionsOpen(false);
+    setAssignment(null);
+    setNewCampaign(false);
+    setRevokeUid(null);
     requestGeneration.current++;
     setInvite(null);
-    p.onClearInspection();
-    setPage(next);
-    p.onPageChange?.(next);
   };
-  const { onClearInspection, onPageChange } = p;
-  useEffect(() => {
-    const restore = () => {
-      requestGeneration.current++;
-      setInvite(null);
-      setSectionsOpen(false);
-      setAccountOpen(false);
-      setSearchOpen(false);
-      setHelpOpen(false);
-      setAssignment(null);
-      setNewCampaign(false);
-      setRevokeUid(null);
-      onClearInspection();
-      const next = urlPage("account");
-      setPage(next);
-      onPageChange?.(next);
-    };
-    window.addEventListener("popstate", restore);
-    window.addEventListener("hashchange", restore);
-    return () => {
-      window.removeEventListener("popstate", restore);
-      window.removeEventListener("hashchange", restore);
-    };
-  }, [onClearInspection, onPageChange]);
+  const routeKey = JSON.stringify(route);
+  const previousRoute = useRef(routeKey);
+  useEffect(
+    () =>
+      navigation.subscribe(() => {
+        const next = JSON.stringify(navigation.snapshot().route);
+        if (next === previousRoute.current) return;
+        previousRoute.current = next;
+        closeOverlays();
+      }),
+    [navigation]
+  );
   useEffect(() => {
     const keys = (event: KeyboardEvent) => {
       const target = event.target;
@@ -186,8 +184,26 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
               'input,textarea,select,[role="textbox"],[role="combobox"]'
             ))) ||
         document.querySelector('[role="dialog"]')
-      )
+      ) {
+        shortcutPrefix.current = 0;
         return;
+      }
+      if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+        const key = event.key.toLowerCase();
+        if (shortcutPrefix.current > Date.now()) {
+          shortcutPrefix.current = 0;
+          const destination = primaryDestinations.find((d) => d.key === key);
+          if (destination) {
+            event.preventDefault();
+            navigation.go({ page: destination.page }, { resume: true });
+          }
+          return;
+        }
+        if (key === "g") {
+          shortcutPrefix.current = Date.now() + 1800;
+          return;
+        }
+      } else shortcutPrefix.current = 0;
       if (
         event.key.toLowerCase() === "k" &&
         (event.ctrlKey || event.metaKey) &&
@@ -203,15 +219,15 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
     };
     document.addEventListener("keydown", keys);
     return () => document.removeEventListener("keydown", keys);
-  }, []);
+  }, [navigation]);
   const accountPage = accountSections.includes(page as AccountSection);
   const changeLocale = (locale: "en" | "it") => {
-    const generation = requestGeneration.current;
+    const generation = ++localeGeneration.current;
     void (async () => {
       await ensureLocale(locale);
-      if (generation !== requestGeneration.current) return;
+      if (generation !== localeGeneration.current) return;
       await p.onSaveLocale?.(locale);
-      if (generation !== requestGeneration.current) return;
+      if (generation !== localeGeneration.current) return;
       await i18n.changeLanguage(locale);
     })().catch(() => {});
   };
@@ -228,7 +244,13 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           : c.currentAssignment?.campaignId === filter)) &&
       c.name.toLocaleLowerCase().includes(query.toLocaleLowerCase())
   );
-  const title = label(page);
+  const title = label(
+    page === "unavailable"
+      ? "destinationUnavailableTitle"
+      : page === "table"
+        ? "atTable"
+        : page
+  );
   const portrait = (c: Readonly<FolioCharacter>) =>
     p.portraits?.[`${c.ownerUid}/${c.id}`];
   const fieldName = (id: string, kind: "classes" | "species") => {
@@ -237,6 +259,18 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
     ]?.[id]?.name;
     return typeof value === "string" ? value : id;
   };
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+  const foundFeatures = featureDestinations.filter((item) =>
+    `${label(item.label)} ${label("searchAliases." + item.aliases)}`
+      .toLocaleLowerCase()
+      .includes(normalizedSearch)
+  );
+  const foundCharacters = p.characters.filter((c) =>
+    c.name.toLocaleLowerCase().includes(normalizedSearch)
+  );
+  const foundCampaigns = p.campaigns.filter((c) =>
+    c.name.toLocaleLowerCase().includes(normalizedSearch)
+  );
   const modal = (
     open: boolean,
     close: () => void,
@@ -287,6 +321,16 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
   );
   return (
     <div className="identity-app">
+      <a
+        className="identity-skip"
+        href="#identity-main"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("identity-main")?.focus();
+        }}
+      >
+        {label("skipToContent")}
+      </a>
       <header className="identity-header">
         <button
           className="identity-brand"
@@ -297,32 +341,29 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           <span>D20 Folio</span>
         </button>
         <nav aria-label={label("mainNavigation")}>
-          <button
-            onClick={() => navigate("campaign")}
-            aria-current={page === "campaign" ? "page" : undefined}
-          >
-            {label("campaignNavigation")}
-          </button>
-          <button
-            className="identity-table-navigation"
-            disabled
-            title={label("notAvailable")}
-          >
-            {label("atTable")}
-          </button>
-          <button
-            onClick={() => navigate("characters")}
-            aria-current={page === "characters" ? "page" : undefined}
-          >
-            {label("character")}
-          </button>
-          <button
-            onClick={() => navigate("library")}
-            disabled={!p.library}
-            aria-current={page === "library" ? "page" : undefined}
-          >
-            {label("library")}
-          </button>
+          {primaryDestinations.map((destination) => {
+            const Icon = {
+              campaign: Flag,
+              table: Swords,
+              characters: UserRound,
+              library: BookOpen,
+            }[destination.icon];
+            return (
+              <button
+                key={destination.page}
+                onClick={() => navigate(destination.page)}
+                aria-current={
+                  page === destination.page ||
+                  (page === "invite" && destination.page === "campaign")
+                    ? "page"
+                    : undefined
+                }
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span>{label(destination.label)}</span>
+              </button>
+            );
+          })}
         </nav>
         <div className="identity-global">
           <button
@@ -376,11 +417,8 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
             <span>{label("yourSpace")}</span>
             <span aria-hidden="true">/</span>
             <strong>{title}</strong>
-            <button
-              className="identity-back"
-              disabled={!historyIndex()}
-              onClick={() => window.history.back()}
-            >
+            {campaign && <span className="identity-context-name">{campaign.name}</span>}
+            <button className="identity-back" onClick={navigation.back}>
               <img src={contextBackIcon} alt="" aria-hidden="true" />
               {label("back")}
             </button>
@@ -408,14 +446,18 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           </nav>
         </>
       )}
-      <main className={"identity-main" + (accountPage ? " identity-account-main" : "")}>
+      <main
+        id="identity-main"
+        tabIndex={-1}
+        className={"identity-main" + (accountPage ? " identity-account-main" : "")}
+      >
         {!accountPage && page !== "library" && (
           <div className="identity-page-heading">
             <div>
               <p className="identity-kicker">
                 {page === "characters" ? label("yourSpace") : "d20 Folio"}
               </p>
-              <h1>
+              <h1 tabIndex={-1}>
                 {page === "account"
                   ? label("welcome", { name: p.displayName })
                   : page === "invite"
@@ -450,6 +492,19 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
             )}
           </div>
         )}
+        {missingCampaign && (
+          <div role="alert" className="identity-error">
+            <p>{label("campaignUnavailable")}</p>
+            <button
+              onClick={() => {
+                p.onNavigateCampaign(null);
+                navigate("campaign", { page: "campaign", campaign: undefined });
+              }}
+            >
+              {label("chooseCampaign")}
+            </button>
+          </div>
+        )}
         {p.error && (
           <div role="alert" className="identity-error">
             <p>{label(i18n.exists("identity." + p.error) ? p.error : "requestFailed")}</p>
@@ -478,6 +533,16 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           />
         )}
         {page === "library" && p.library}
+        {(page === "table" || page === "unavailable") && (
+          <section className="identity-panel">
+            <p>
+              {label(page === "table" ? "tableUnavailable" : "destinationUnavailable")}
+            </p>
+            <button onClick={() => navigate("characters")}>
+              {label("openCharacters")}
+            </button>
+          </section>
+        )}
         {page === "characters" && (
           <>
             <div className="identity-toolbar">
@@ -507,6 +572,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
               <label className="identity-search">
                 <Search size={16} />
                 <input
+                  data-navigation-focus="character-search"
                   aria-label={label("searchCharacters")}
                   placeholder={label("searchCharacters")}
                   value={query}
@@ -551,6 +617,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                     <div className="identity-card-actions">
                       <button
                         className="identity-primary"
+                        data-navigation-focus={`character:${c.ownerUid}:${c.id}`}
                         onClick={() => p.onInspect({ ownerUid: c.ownerUid, id: c.id })}
                       >
                         {label("viewCharacter")}
@@ -734,6 +801,7 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                             </small>
                           </div>
                           <button
+                            data-navigation-focus={`character:${row.ownerUid}:${row.characterId}`}
                             onClick={() =>
                               p.onInspect({ ownerUid: row.ownerUid, id: row.characterId })
                             }
@@ -826,7 +894,16 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                 <kbd>Esc</kbd>
               </dd>
             </div>
+            {primaryDestinations.map((d) => (
+              <div key={d.page}>
+                <dt>{label(d.label)}</dt>
+                <dd>
+                  <kbd>G → {d.key.toUpperCase()}</kbd>
+                </dd>
+              </div>
+            ))}
           </dl>
+          <p>{label("navigationOnly")}</p>
         </div>
       )}
       {modal(
@@ -843,63 +920,65 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
           />
           <p>{label("searchScope")}</p>
           <div className="identity-search-results">
-            {(
-              [
-                ...accountSections,
-                "characters",
-                "invite",
-                "campaign",
-                "library",
-              ] as Page[]
-            )
-              .filter((id) =>
-                label(
-                  accountSections.includes(id as AccountSection)
-                    ? accountLabel(id as AccountSection)
-                    : id
-                )
-                  .toLocaleLowerCase()
-                  .includes(searchQuery.toLocaleLowerCase())
-              )
-              .map((id) => (
-                <button key={id} onClick={() => navigate(id)}>
-                  {label(
-                    accountSections.includes(id as AccountSection)
-                      ? accountLabel(id as AccountSection)
-                      : id
-                  )}
-                </button>
-              ))}
-            {p.characters
-              .filter((c) =>
-                c.name.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())
-              )
-              .map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => {
-                    setSearchOpen(false);
-                    p.onInspect({ ownerUid: c.ownerUid, id: c.id });
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
-            {p.campaigns
-              .filter((c) =>
-                c.name.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase())
-              )
-              .map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => {
-                    p.onNavigateCampaign(c.id);
-                    navigate("campaign");
-                  }}
-                >
-                  {c.name}
-                </button>
-              ))}
+            {(["campaign", "table", "characters", "library", "account"] as const).map(
+              (group) => {
+                const items = foundFeatures.filter((item) => item.group === group);
+                if (!items.length) return null;
+                return (
+                  <section key={group} className="identity-search-group">
+                    <h3>{label(group === "table" ? "atTable" : group)}</h3>
+                    {items.map((item) => (
+                      <button
+                        key={item.id}
+                        onClick={() => navigate(item.route.page, item.route)}
+                      >
+                        <span>{label(item.label)}</span>
+                        <small>
+                          {item.unavailable
+                            ? label("notAvailable")
+                            : item.route.page === page &&
+                                (!item.route.tab || item.route.tab === route.tab)
+                              ? label("currentLocation")
+                              : ""}
+                        </small>
+                      </button>
+                    ))}
+                  </section>
+                );
+              }
+            )}
+            {!foundFeatures.length &&
+              !foundCharacters.length &&
+              !foundCampaigns.length && (
+                <div role="status">
+                  <p>{label("searchEmpty")}</p>
+                  <button onClick={() => setSearchQuery("")}>
+                    {label("showAllFunctions")}
+                  </button>
+                </div>
+              )}
+            {foundCharacters.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  setSearchOpen(false);
+                  p.onInspect({ ownerUid: c.ownerUid, id: c.id });
+                }}
+              >
+                {c.name}
+              </button>
+            ))}
+            {foundCampaigns.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => {
+                  p.onNavigateCampaign(c.id);
+                  navigate("campaign");
+                }}
+              >
+                {c.name}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -982,10 +1061,10 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
         </form>
       )}
       {modal(
-        p.inspected !== null,
+        p.inspected !== null || !!route.character,
         p.onClearInspection,
         p.inspected?.name ?? label("viewCharacter"),
-        p.inspected && (
+        p.inspected ? (
           <>
             <p className="identity-inspection-label">
               <Shield size={15} />
@@ -1024,6 +1103,13 @@ export function IdentityWorkspace(p: IdentityWorkspaceProps) {
                 </button>
               )}
             </div>
+          </>
+        ) : (
+          <>
+            <p role="status">
+              {label(p.inspectionLoading ? "loading" : "inspectionUnavailable")}
+            </p>
+            <button onClick={p.onClearInspection}>{label("backToList")}</button>
           </>
         )
       )}

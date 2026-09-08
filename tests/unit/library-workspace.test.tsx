@@ -1,10 +1,11 @@
-import { it, expect, vi } from "vitest";
+import { it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { createInstance } from "i18next";
 import { LibraryWorkspace } from "@/features/library/LibraryWorkspace";
 import { SessionController } from "@/lib/identity/session";
 import { mergedUi } from "./__helpers__/ui-merged";
+beforeEach(() => window.history.replaceState(null, "", "#library"));
 it("keeps loading distinct from an empty library and makes no writes on navigation", async () => {
   const i18n = createInstance();
   await i18n.init({
@@ -114,10 +115,7 @@ it("preserves library selection through effect replay such as a locale suspense 
     campaignId: null,
     activeCharacterId: null,
   });
-  sessionStorage.setItem(
-    "folio-library-view:selection-owner",
-    JSON.stringify({ selected: { id: "lantern", family: "equipment" } })
-  );
+  window.history.replaceState(null, "", "#library?entry=lantern&kind=equipment");
   const entry = {
     schema: 1,
     ownerUid: "selection-owner",
@@ -244,4 +242,144 @@ it("distinguishes counterparties before revoking same-title offers and explains 
   expect(screen.getByRole("dialog")).not.toHaveTextContent(
     "Update only the selected copy"
   );
+});
+
+it("opens the shared-copy deep link and keeps a chosen family in the URL", async () => {
+  window.history.replaceState(null, "", "#library?tab=sharing");
+  const i18n = createInstance();
+  await i18n.init({
+    lng: "en",
+    resources: { en: { common: mergedUi("en") } },
+    defaultNS: "common",
+  });
+  const session = new SessionController();
+  session.transition({
+    uid: "navigation-owner",
+    campaignId: null,
+    activeCharacterId: null,
+  });
+  const repository = {
+    watchIssues: () => () => {},
+    watchEntries: (next: (v: []) => void) => {
+      next([]);
+      return () => {};
+    },
+    watchOffers: () => () => {},
+    watchSentOffers: () => () => {},
+    listSentOffers: () => Promise.resolve([]),
+  };
+  render(
+    <I18nextProvider i18n={i18n}>
+      <LibraryWorkspace
+        repository={repository as never}
+        session={session}
+        recipients={[]}
+        campaigns={[]}
+        campaignId={null}
+        onCampaignChange={() => {}}
+      />
+    </I18nextProvider>
+  );
+  expect(screen.getByRole("button", { name: "Sharing & copies" })).toHaveAttribute(
+    "aria-current",
+    "page"
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Custom creations" }));
+  fireEvent.change(screen.getByRole("combobox", { name: "Family" }), {
+    target: { value: "subclass" },
+  });
+  expect(window.location.hash).toContain("family=subclass");
+});
+
+it("does not turn a missing Library deep link into a new editable draft", async () => {
+  window.history.replaceState(null, "", "#library?entry=missing&kind=class");
+  const i18n = createInstance();
+  await i18n.init({
+    lng: "en",
+    resources: { en: { common: mergedUi("en") } },
+    defaultNS: "common",
+  });
+  const session = new SessionController();
+  session.transition({ uid: "missing-owner", campaignId: null, activeCharacterId: null });
+  const repository = {
+    watchIssues: () => () => {},
+    watchEntries: (cb: (v: []) => void) => {
+      cb([]);
+      return () => {};
+    },
+    watchOffers: () => () => {},
+    watchSentOffers: () => () => {},
+    load: () => Promise.resolve(null),
+    listSentOffers: () => Promise.resolve([]),
+  };
+  render(
+    <I18nextProvider i18n={i18n}>
+      <LibraryWorkspace
+        repository={repository as never}
+        session={session}
+        recipients={[]}
+        campaigns={[]}
+        campaignId={null}
+        onCampaignChange={() => {}}
+      />
+    </I18nextProvider>
+  );
+  expect(
+    await screen.findByText(
+      "This content is unavailable. Return to your creations or create a new entry explicitly."
+    )
+  ).toBeTruthy();
+  expect(screen.queryByRole("textbox", { name: "Name" })).toBeNull();
+  expect(sessionStorage.getItem("folio-library:missing-owner:missing")).toBeNull();
+});
+
+it("does not reopen a new draft when its loading completes after leaving Library", async () => {
+  const i18n = createInstance();
+  await i18n.init({
+    lng: "en",
+    resources: { en: { common: mergedUi("en") } },
+    defaultNS: "common",
+  });
+  const session = new SessionController();
+  session.transition({ uid: "late-owner", campaignId: null, activeCharacterId: null });
+  let release!: (value: null) => void;
+  const repository = {
+    watchIssues: () => () => {},
+    watchEntries: (cb: (v: []) => void) => {
+      cb([]);
+      return () => {};
+    },
+    watchOffers: () => () => {},
+    watchSentOffers: () => () => {},
+    load: () =>
+      new Promise<null>((resolve) => {
+        release = resolve;
+      }),
+    listSentOffers: () => Promise.resolve([]),
+    commit: vi.fn(),
+  };
+  render(
+    <I18nextProvider i18n={i18n}>
+      <LibraryWorkspace
+        repository={repository as never}
+        session={session}
+        recipients={[]}
+        campaigns={[]}
+        campaignId={null}
+        onCampaignChange={() => {}}
+      />
+    </I18nextProvider>
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Create content" }));
+  fireEvent.click(screen.getByRole("button", { name: "Classes" }));
+  act(() => {
+    window.history.pushState(null, "", "#account");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  await act(async () => {
+    release(null);
+    await Promise.resolve();
+  });
+  expect(window.location.hash).toBe("#account");
+  expect(repository.commit).not.toHaveBeenCalled();
 });

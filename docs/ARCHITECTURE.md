@@ -1,5 +1,26 @@
 # d20-folio architecture
 
+## V2 shell navigation boundary
+
+`src/features/identity/navigation.ts` owns typed browsing destinations, a safe hash codec and
+native History frames. `IdentityNavigation` supplies one controller to the authenticated app and
+its Library consumers. Account generation and SessionController invalidation delimit transient
+query/scroll/focus/history provenance; history never grants access or stores a draft. Shareable
+filters and requested detail identities are URL inputs resolved by authorized repositories.
+Inspected characters remain separate from the active character and any future Encounter actor.
+
+Four permanent destinations follow approved r2 order: Campaign, At the table, Character, Library.
+The destination registry supplies localized discovery and guarded go-to shortcuts. At the table
+is an explicit unavailable landing until its runtime is delivered. The dormant legacy router is
+not mounted. Account preferences continue to use FolioAccount and the existing save listener.
+
+Library creations and Bestiary use the same navigation seam for browsing state. Definitions,
+immutable versions, grants and local recovery remain in the existing Library/P03 controllers;
+no replacement draft or selection store is introduced. A direct missing entry cannot manufacture
+an editable draft. Explicit creation retains a real local draft before opening it. Async caller
+navigation is checked against its originating route as well as the authorized session, including
+leave/return and upstream version reads. A valid retained draft remains recoverable.
+
 ## V2 advanced homebrew boundary
 
 `src/lib/homebrew/advanced.ts` and the authoring model/conformance own typed monster and campaign-rule

@@ -1370,3 +1370,62 @@
   max-height: 220px;
   overflow: auto;
 }
+
+/* P09 keeps r2 geometry; domain glyphs and grouped discovery carry orientation. */
+.identity-header nav button svg {
+  flex: none;
+}
+.identity-search-group {
+  padding: 12px 0;
+  border-top: 1px solid var(--identity-line);
+}
+.identity-search-group h3 {
+  margin: 0 0 8px;
+  font:
+    500 17px "Alegreya Variable",
+    serif;
+  color: #d9bc83;
+}
+.identity-search-group button {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  min-height: 44px;
+}
+.identity-search-group small {
+  color: var(--identity-muted);
+  font-size: 11px;
+}
+.identity-context-name {
+  color: var(--identity-muted);
+  overflow-wrap: anywhere;
+}
+.identity-skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 1000;
+  padding: 12px;
+  background: #132128;
+  color: #a6e4ee;
+  transform: translateY(-150%);
+}
+.identity-skip:focus {
+  transform: none;
+}
+.library-breadcrumb button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  padding: 6px 0;
+}
+@media (max-width: 700px) {
+  .identity-header nav button {
+    gap: 4px;
+    min-height: 44px;
+  }
+  .identity-header nav button svg {
+    width: 13px;
+    height: 13px;
+  }
+}

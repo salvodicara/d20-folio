@@ -9,8 +9,11 @@ Fresh origin/v2 base c5350f44d49d63dd8508c6b2bda3e87ee7e45c83; main remains
 P01–04 dependencies and P08c closure verified; no repeated freeze/owner visual gate reopened.
 Spec/plan: docs/superpowers/{specs,plans}/2026-09-08-p09-shell-orientation\*.md.
 Independent reference/contract reviewers own external evidence only; root owns implementation.
-Baseline focused identity/library tests: 2 files, 11 passed. Implementation, independent code/UI
-review, fresh optimized demo runtime, final gates, integration and cleanup are still open.
+Implementation is present in the candidate. Independent source review has driven fixes for
+route/context isolation, missing entries and late authoring callbacks. Current focused verification:
+5 files, 41 tests passed. Optimized Google/demo journeys are running with failed harness attempts
+preserved separately; no runtime closure is claimed. Final code/UI review, gates, integration and
+cleanup remain open.
 No P10, main/production/deploy/real-data migration/cost. Evidence under Workspace/Codex/d20-folio-p09-evidence.
 
 ## Historical frontier — P08c verified; P09 next (8 September 2026)

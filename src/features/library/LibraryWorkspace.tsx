@@ -1,3 +1,7 @@
+import {
+  IdentityNavigation,
+  useIdentityNavigation,
+} from "@/features/identity/IdentityNavigation";
 import { Bestiary } from "./Bestiary";
 import { HomebrewImport } from "./HomebrewPortable";
 import { associateImportOriginal } from "./homebrew-files";
@@ -38,7 +42,14 @@ const marks: Record<LibraryFamily, string> = {
   subclass: "⌘",
 };
 type Recipient = { uid: string; name: string };
-export function LibraryWorkspace({
+export function LibraryWorkspace(props: Parameters<typeof LibraryContent>[0]) {
+  return (
+    <IdentityNavigation uid={props.session.scope().uid ?? ""}>
+      <LibraryContent {...props} />
+    </IdentityNavigation>
+  );
+}
+function LibraryContent({
   repository,
   session,
   recipients,
@@ -59,27 +70,33 @@ export function LibraryWorkspace({
   const label = (key: string) => t(libraryKey(key));
   const hb = useHomebrewLabel();
   const [importing, setImporting] = useState(false);
-  const viewKey = "folio-library-view:" + (session.scope().uid ?? "");
-  const [view] = useState(() => {
-    try {
-      return (JSON.parse(sessionStorage.getItem(viewKey) ?? "{}") ?? {}) as {
-        tab?: unknown;
-        query?: unknown;
-        family?: unknown;
-        selected?: { id: string; family: LibraryFamily };
-      };
-    } catch {
-      return {};
-    }
-  });
-  const [tab, setTab] = useState<"creations" | "sharing" | "bestiary">(
-      view.tab === "sharing" || view.tab === "bestiary" ? view.tab : "creations"
-    ),
-    [query, setQuery] = useState<string>(
-      typeof view.query === "string" ? view.query : ""
-    ),
-    [family, setFamily] = useState<string>(
-      typeof view.family === "string" ? view.family : "all"
+  const [creating, setCreating] = useState(false);
+  const { navigation, route, frame } = useIdentityNavigation();
+  const reuseCheck = navigation.ticket();
+  const guardedReuse = onReuse
+    ? (version: LibraryVersion) => {
+        try {
+          reuseCheck();
+        } catch {
+          return;
+        }
+        onReuse(version);
+      }
+    : undefined;
+  const tab = route.tab ?? "creations";
+  const query = frame.query ?? "";
+  const family = route.family ?? "all";
+  const setTab = (tab: "creations" | "sharing" | "bestiary") =>
+    navigation.go({ ...navigation.snapshot().route, page: "library", tab });
+  const setQuery = (query: string) => navigation.updateFrame({ query });
+  const setFamily = (family: string) =>
+    navigation.go(
+      {
+        ...navigation.snapshot().route,
+        page: "library",
+        family: family === "all" ? undefined : family,
+      },
+      { replace: true }
     );
   const [issues, setIssues] = useState<LibraryIssue[]>([]);
   const [entries, setEntries] = useState<LibraryEntry[] | null>(null),
@@ -87,11 +104,17 @@ export function LibraryWorkspace({
     [sent, setSent] = useState<LibraryOffer[]>([]),
     [loadError, setLoadError] = useState(false),
     [create, setCreate] = useState(false);
-  const [selected, setSelected] = useState<{ id: string; family: LibraryFamily } | null>(
-    view.selected && LIBRARY_FAMILIES.includes(view.selected.family)
-      ? view.selected
-      : null
-  );
+  const selected =
+    route.entry && route.kind && LIBRARY_FAMILIES.includes(route.kind as LibraryFamily)
+      ? { id: route.entry, family: route.kind as LibraryFamily }
+      : null;
+  const setSelected = (value: { id: string; family: LibraryFamily } | null) =>
+    navigation.go({
+      ...navigation.snapshot().route,
+      page: "library",
+      entry: value?.id,
+      kind: value?.family,
+    });
   const [share, setShare] = useState<LibraryVersion | null>(null),
     [read, setRead] = useState<LibraryOffer | null>(null),
     [revoke, setRevoke] = useState<LibraryOffer | null>(null),
@@ -99,7 +122,12 @@ export function LibraryWorkspace({
   const [destination, setDestination] = useState(""),
     [received, setReceived] = useState<string[]>([]);
   const refresh = async () => {
-    const check = session.ticket();
+    const scopeCheck = session.ticket();
+    const routeCheck = navigation.ticket();
+    const check = () => {
+      scopeCheck();
+      routeCheck();
+    };
     try {
       const value = await repository.listSentOffers();
       check();
@@ -148,7 +176,6 @@ export function LibraryWorkspace({
       setSent([]);
       setRead(null);
       setShare(null);
-      setSelected(null);
     });
     return () => {
       live = false;
@@ -156,13 +183,6 @@ export function LibraryWorkspace({
       untrack();
     };
   }, [repository, session]);
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(viewKey, JSON.stringify({ tab, query, family, selected }));
-    } catch {
-      /* Browsing remains usable when storage is unavailable. */
-    }
-  }, [viewKey, tab, query, family, selected]);
   useEffect(() => {
     let live = true;
     const check = session.ticket();
@@ -204,6 +224,9 @@ export function LibraryWorkspace({
       : (recipients.find((r) => r.uid === uid)?.name ??
         t("libraryV2.accountIdentity", { id: uid }));
   const selectedEntry = entries?.find((entry) => entry.id === selected?.id);
+  const selectedExists = rows?.some(
+    (entry) => entry.id === selected?.id && entry.draft.family === selected.family
+  );
   const copies = entries?.filter((entry) => !!entry.provenance) ?? [];
   const eligible = read
     ? copies.filter(
@@ -234,9 +257,18 @@ export function LibraryWorkspace({
   return (
     <div className="library-workspace">
       <div className="library-breadcrumb">
-        <span>{label("library")}</span>
+        <button onClick={() => navigation.go({ page: "library" })}>
+          {label("library")}
+        </button>
         <span aria-hidden="true">/</span>
         <strong>{tab === "bestiary" ? hb("bestiary") : label(tab)}</strong>
+        {selected && (
+          <>
+            <span aria-hidden="true">/</span>
+            <span>{selectedEntry?.draft.name || label("untitled")}</span>
+            <button onClick={navigation.back}>{t("identity.returnToOrigin")}</button>
+          </>
+        )}
       </div>
       <nav className="library-tabs" aria-label={label("library")}>
         <button
@@ -266,9 +298,15 @@ export function LibraryWorkspace({
           session={session}
           onClose={() => setImporting(false)}
           onImport={async (definition, originalId) => {
+            reuseCheck();
             const id = crypto.randomUUID();
             associateImportOriginal(session.scope().uid ?? "", id, originalId);
-            const check = session.ticket();
+            const scopeCheck = session.ticket();
+            const routeCheck = navigation.ticket();
+            const check = () => {
+              scopeCheck();
+              routeCheck();
+            };
             const editor = new LibraryDraftController(
               repository,
               session,
@@ -279,8 +317,8 @@ export function LibraryWorkspace({
             try {
               await editor.load();
               if (!editor.state.loaded) throw new Error("unavailable");
-              editor.edit(definition);
               check();
+              editor.edit(definition);
               if (editor.state.storageFailed) throw new Error("storage-failed");
               setSelected({ id, family: definition.family });
               setQuery("");
@@ -351,9 +389,13 @@ export function LibraryWorkspace({
       {tab === "bestiary" ? (
         <Bestiary
           entries={entries}
+          query={query}
+          onQueryChange={setQuery}
+          selected={selected?.id ?? null}
+          onSelect={(id) => setSelected({ id, family: "monster" })}
           repository={repository}
           session={session}
-          onReuse={onReuse}
+          onReuse={guardedReuse}
         />
       ) : tab === "creations" ? (
         <>
@@ -362,6 +404,7 @@ export function LibraryWorkspace({
               {label("search")}
               <input
                 type="search"
+                data-navigation-focus="library-search"
                 placeholder={label("searchPlaceholder")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -389,6 +432,7 @@ export function LibraryWorkspace({
                 </p>
                 {filtered.map((entry) => (
                   <button
+                    data-navigation-focus={`library:${entry.id}`}
                     className="library-entry"
                     key={entry.id}
                     aria-pressed={selected?.id === entry.id}
@@ -413,7 +457,14 @@ export function LibraryWorkspace({
                   <p>{label("noResults")}</p>
                 )}
               </aside>
-              {selected ? (
+              {selected && !selectedExists ? (
+                <section className="library-empty" role="status">
+                  <p>{t("identity.contentUnavailable")}</p>
+                  <button onClick={() => setSelected(null)}>
+                    {t("identity.backToList")}
+                  </button>
+                </section>
+              ) : selected ? (
                 <LibraryEditor
                   key={selected.id}
                   id={selected.id}
@@ -426,11 +477,20 @@ export function LibraryWorkspace({
                       ? participantName(selectedEntry.provenance.source.ownerUid)
                       : undefined
                   }
-                  onReuse={onReuse}
-                  onRemoved={() => setSelected(null)}
+                  onReuse={guardedReuse}
+                  onRemoved={() => {
+                    reuseCheck();
+                    setSelected(null);
+                  }}
                   onDuplicate={async (definition) => {
+                    reuseCheck();
                     const id = crypto.randomUUID();
-                    const check = session.ticket();
+                    const scopeCheck = session.ticket();
+                    const routeCheck = navigation.ticket();
+                    const check = () => {
+                      scopeCheck();
+                      routeCheck();
+                    };
                     const controller = new LibraryDraftController(
                       repository,
                       session,
@@ -452,6 +512,7 @@ export function LibraryWorkspace({
                     }
                   }}
                   onShare={(v) => {
+                    reuseCheck();
                     setRecipient("");
                     setShare(v);
                   }}
@@ -575,10 +636,42 @@ export function LibraryWorkspace({
             {LIBRARY_FAMILIES.map((f) => (
               <button
                 key={f}
+                disabled={creating}
                 onClick={() => {
-                  setSelected({ id: crypto.randomUUID(), family: f });
-                  setCreate(false);
-                  setTab("creations");
+                  const id = crypto.randomUUID();
+                  const scopeCheck = session.ticket();
+                  const routeCheck = navigation.ticket();
+                  const check = () => {
+                    scopeCheck();
+                    routeCheck();
+                  };
+                  const failed = session.guard(() => setLoadError(true));
+                  const done = session.guard(() => setCreating(false));
+                  const controller = new LibraryDraftController(
+                    repository,
+                    session,
+                    id,
+                    f,
+                    sessionStorage
+                  );
+                  setCreating(true);
+                  void controller
+                    .load()
+                    .then(() => {
+                      check();
+                      if (!controller.state.loaded || controller.state.storageFailed)
+                        throw new Error("unavailable");
+                      setSelected({ id, family: f });
+                      setCreate(false);
+                      setTab("creations");
+                    })
+                    .catch(() => {
+                      failed();
+                    })
+                    .finally(() => {
+                      controller.dispose();
+                      done();
+                    });
                 }}
               >
                 <span aria-hidden="true">{marks[f]}</span>

@@ -38,7 +38,8 @@ import {
   type RosterEntry,
 } from "@/lib/identity";
 import { ensureLocale } from "@/i18n";
-import { IdentityWorkspace, type IdentityPage } from "./IdentityWorkspace";
+import { IdentityWorkspace } from "./IdentityWorkspace";
+import { IdentityNavigation, useIdentityNavigation } from "./IdentityNavigation";
 
 export function IdentityApp() {
   const [principal, setPrincipal] = useState<{
@@ -61,10 +62,13 @@ export function IdentityApp() {
       </div>
     );
   return user ? (
-    <AuthenticatedIdentity
+    <IdentityNavigation
       key={user.uid + ":" + String(principal.generation)}
-      user={user}
-    />
+      uid={user.uid}
+      resumeHistory={principal.generation === 1}
+    >
+      <AuthenticatedIdentity user={user} />
+    </IdentityNavigation>
   ) : (
     <IdentityLogin />
   );
@@ -142,6 +146,7 @@ function IdentityLogin() {
 }
 
 function AuthenticatedIdentity({ user }: { user: User }) {
+  const { navigation, route } = useIdentityNavigation();
   const { t, i18n } = useTranslation("common");
   const appliedLocale = useRef(false);
   const [session] = useState(() => {
@@ -159,14 +164,19 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const [preparationId, setPreparationId] = useState("encounter");
   const [reuse, setReuse] = useState<LibraryVersion | null>(null);
   const [viewGeneration, setViewGeneration] = useState(0);
-  const [page, setPage] = useState<IdentityPage>("account");
   const [isAdmin, setIsAdmin] = useState(false);
   const [account, setAccount] = useState<FolioAccount | null>(null);
   const [characters, setCharacters] = useState<Readonly<FolioCharacter>[]>([]);
   const [campaigns, setCampaigns] = useState<FolioCampaign[]>([]);
   const [roster, setRoster] = useState<RosterEntry[]>([]);
   const [rosterNames, setRosterNames] = useState<Record<string, string>>({});
-  const [inspected, setInspected] = useState<Readonly<FolioCharacter> | null>(null);
+  const [inspectedSnapshot, setInspected] = useState<{
+    key: string;
+    character: Readonly<FolioCharacter> | null;
+  } | null>(null);
+  const inspectionKey = `${route.owner}/${route.character}`;
+  const inspected =
+    inspectedSnapshot?.key === inspectionKey ? inspectedSnapshot.character : null;
   const originBuild = useOriginBuild(inspected, origins, session, epoch);
   const originProjection = useMemo(
     () =>
@@ -184,8 +194,34 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       originBuild.base,
     ]
   );
-  const [inspectionRef, setInspectionRef] = useState<CharacterRef | null>(null);
-  const [privateNotes, setPrivateNotes] = useState("");
+  useEffect(() => {
+    let live = true;
+    const stop = session.track(() => {
+      if (live) {
+        navigation.invalidate();
+        setReuse(null);
+      }
+    });
+    return () => {
+      live = false;
+      stop();
+    };
+  }, [session, epoch, navigation]);
+  const inspectionRef = useMemo<CharacterRef | null>(
+    () =>
+      route.owner && route.character
+        ? { ownerUid: route.owner, id: route.character }
+        : null,
+    [route.owner, route.character]
+  );
+  const [privateNoteSnapshot, setPrivateNoteSnapshot] = useState<{
+    key: string;
+    value: string;
+  } | null>(null);
+  const privateNotes =
+    privateNoteSnapshot?.key === `${route.owner}/${route.character}`
+      ? privateNoteSnapshot.value
+      : "";
   const [dmNotes, setDmNotes] = useState("");
   const [portraits, setPortraits] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -194,9 +230,8 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const selectedCampaignRef = useRef<string | null>(null);
   const scope = session.scope();
   const clearInspection = useCallback(() => {
-    setInspectionRef(null);
     setInspected(null);
-    setPrivateNotes("");
+    setPrivateNoteSnapshot(null);
   }, []);
   const transition = useCallback(
     (campaignId: string | null, activeCharacterId: string | null) => {
@@ -214,6 +249,29 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       setViewGeneration((v) => v + 1);
     },
     [session, user.uid, clearInspection]
+  );
+  const availableCampaigns = useRef<readonly FolioCampaign[]>([]);
+  const synchronizingRoute = useRef(false);
+  const synchronizeCampaign = useCallback(() => {
+    if (synchronizingRoute.current) return;
+    const requested = navigation.snapshot().route;
+    const id =
+      requested.campaign &&
+      availableCampaigns.current.some((c) => c.id === requested.campaign)
+        ? requested.campaign
+        : null;
+    if (id === session.scope().campaignId) return;
+    synchronizingRoute.current = true;
+    try {
+      transition(id, session.scope().activeCharacterId);
+      navigation.go(requested, { replace: true });
+    } finally {
+      synchronizingRoute.current = false;
+    }
+  }, [navigation, session, transition]);
+  useEffect(
+    () => navigation.subscribe(synchronizeCampaign),
+    [navigation, synchronizeCampaign]
   );
   const failed = useCallback(
     (cause: unknown) => {
@@ -295,7 +353,11 @@ function AuthenticatedIdentity({ user }: { user: User }) {
             setCharacters(value);
             setLoading(false);
           }, failed),
-          repository.watchMemberships(setCampaigns, failed),
+          repository.watchMemberships((value) => {
+            availableCampaigns.current = value;
+            setCampaigns(value);
+            synchronizeCampaign();
+          }, failed),
           repository.watchAuthority((authority) => {
             setIsAdmin(authority?.status === "active" && authority.isAdmin);
             if (authority && authority.status !== "active") {
@@ -329,6 +391,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
     user.displayName,
     user.email,
     i18n,
+    synchronizeCampaign,
   ]);
   useEffect(() => {
     return () => session.revoke();
@@ -343,11 +406,31 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   }, [repository, session, epoch, campaigns, failed, user.uid]);
   useEffect(() => {
     if (!inspectionRef) return;
-    const stops = [repository.watchCharacter(inspectionRef, setInspected, failed)];
+    const stops = [
+      repository.watchCharacter(
+        inspectionRef,
+        (character) =>
+          setInspected({
+            key: `${inspectionRef.ownerUid}/${inspectionRef.id}`,
+            character,
+          }),
+        failed
+      ),
+    ];
     if (inspectionRef.ownerUid === user.uid)
-      stops.push(repository.watchPrivateNotes(inspectionRef, setPrivateNotes, failed));
+      stops.push(
+        repository.watchPrivateNotes(
+          inspectionRef,
+          (value) =>
+            setPrivateNoteSnapshot({
+              key: `${inspectionRef.ownerUid}/${inspectionRef.id}`,
+              value,
+            }),
+          failed
+        )
+      );
     return () => stops.forEach((stop) => stop());
-  }, [repository, inspectionRef, failed, user.uid]);
+  }, [repository, inspectionRef, failed, user.uid, epoch]);
   useEffect(() => {
     let live = true;
     const stops = roster
@@ -377,6 +460,26 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       stops.forEach((stop) => stop());
     };
   }, [repository, roster, failed, user.uid]);
+  const openInspection = (ref: CharacterRef) => {
+    const current = navigation.snapshot().route;
+    navigation.go({
+      ...current,
+      page: ["characters", "campaign", "library"].includes(current.page)
+        ? current.page
+        : "characters",
+      owner: ref.ownerUid,
+      character: ref.id,
+    });
+  };
+  const navigateCampaign = (id: string | null) => {
+    synchronizingRoute.current = true;
+    try {
+      transition(id, session.scope().activeCharacterId);
+      navigation.go({ ...navigation.snapshot().route, campaign: id ?? undefined });
+    } finally {
+      synchronizingRoute.current = false;
+    }
+  };
   const portraitPaths = characters
     .flatMap((c) => (c.portraitPath ? [c.portraitPath] : []))
     .sort()
@@ -421,8 +524,6 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   return (
     <IdentityWorkspace
       key={user.uid + ":" + String(viewGeneration)}
-      initialPage={page}
-      onPageChange={setPage}
       uid={user.uid}
       displayName={
         account?.displayName ?? user.displayName ?? user.email?.split("@")[0] ?? ""
@@ -440,19 +541,19 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       activeId={scope.activeCharacterId}
       campaignId={scope.campaignId}
       inspected={inspected}
+      inspectionLoading={
+        !!inspectionRef && !error && inspectedSnapshot?.key !== inspectionKey
+      }
       originProjection={originProjection}
       originLoading={originBuild.loading}
       originUnavailable={originBuild.error || originBuild.issues.length > 0}
       portraits={portraits}
       privateNotes={privateNotes}
       dmNotes={dmNotes}
-      onNavigateCampaign={(id) => transition(id, scope.activeCharacterId)}
+      onNavigateCampaign={navigateCampaign}
       onSelect={(id) => transition(scope.campaignId, id)}
-      onInspect={(ref) => {
-        clearInspection();
-        setInspectionRef(ref);
-      }}
-      onClearInspection={clearInspection}
+      onInspect={openInspection}
+      onClearInspection={() => (route.character ? navigation.back() : clearInspection())}
       assignmentEditor={(id, onDone) => {
         const character = characters.find((c) => c.id === id);
         return character ? (
@@ -487,7 +588,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         })
       }
       onCreateCampaign={(name) =>
-        run(() => repository.createCampaign(name)).then((id) => transition(id, null))
+        run(() => repository.createCampaign(name)).then((id) => navigateCampaign(id))
       }
       onSetJoinOpen={(id, open) => run(() => repository.setJoinOpen(id, open))}
       onRevoke={(id, uid) =>
@@ -523,7 +624,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
               session={session}
               campaigns={campaigns}
               campaignId={scope.campaignId}
-              onCampaignChange={(id) => transition(id, scope.activeCharacterId)}
+              onCampaignChange={navigateCampaign}
               recipients={Object.entries(
                 roster.reduce<Record<string, string[]>>(
                   (result, row) => {
@@ -549,11 +650,14 @@ function AuthenticatedIdentity({ user }: { user: User }) {
                 repository={preparations}
                 session={session}
                 onClose={() => setReuse(null)}
-                onOpen={(id) => {
+                onOpen={session.guard((id) => {
                   if (id) setPreparationId(id);
                   setReuse(null);
-                  window.location.hash = "campaign";
-                }}
+                  navigation.go({
+                    page: "campaign",
+                    campaign: scope.campaignId ?? undefined,
+                  });
+                })}
               />
             ) : reuse && isOriginFamily(reuse.definition.family) ? (
               <OriginReuse
@@ -564,10 +668,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
                 library={library}
                 session={session}
                 onClose={() => setReuse(null)}
-                onOpen={(character) => {
-                  clearInspection();
-                  setInspectionRef(character);
-                }}
+                onOpen={session.guard(openInspection)}
               />
             ) : (
               reuse && (
@@ -577,10 +678,7 @@ function AuthenticatedIdentity({ user }: { user: User }) {
                   repository={instances}
                   session={session}
                   onClose={() => setReuse(null)}
-                  onOpen={(character) => {
-                    clearInspection();
-                    setInspectionRef(character);
-                  }}
+                  onOpen={session.guard(openInspection)}
                 />
               )
             )}

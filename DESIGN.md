@@ -163,6 +163,26 @@ components:
 > reconciliation during the Tactical Codex cutover; it is evidence, not target authority, and is
 > deleted when the corresponding surface migrates.
 
+## V2 shell and orientation application
+
+The four permanent icon-and-label destinations use the approved r2 order: Campaign, At the table,
+Character, Library. Lucide package icons complement explicit labels without changing the existing
+font, palette or Account structure. Desktop discovery stays visible; phone uses its search icon.
+The question-mark button opens guidance, the language button names its destination language, and
+Account keeps its grouped sidebar or phone selector. No animation or shortcut product switches.
+
+Discovery groups real destinations, shows the current location and unavailable table runtime,
+and explains an empty result with a reset action. Breadcrumbs name the current authorized context;
+detail return, native Back/Forward and deep links share one navigation boundary. Non-sensitive
+filters can be shared in URLs; private search text, scroll and focus belong to account-scoped
+history frames. Creation and Bestiary selection return through that boundary. Drafts retain the
+existing Library/P03 lifetime, and opening a sheet does not choose the active character.
+
+Typing, composition and open dialogs protect keyboard input. G followed by C/T/P/L changes the
+browsing destination; Ctrl/Command K opens discovery, ? opens guidance and Escape closes dialogs.
+Unavailable or denied requested content explains a route back rather than fabricating content.
+New content is created explicitly and retained before its editor becomes the active destination.
+
 ## V2 screenshot delivery and review
 
 PRODUCT owns the8 September standing delegation: implement the approved mock, independently

@@ -185,3 +185,66 @@ describe("new identity workspace", () => {
     expect(actions).toEqual(["active:arin"]);
   });
 });
+
+describe("P09 orientation", () => {
+  it("opens a filtered character link and preserves its query when returning from Account", async () => {
+    window.history.replaceState(null, "", "#characters?filter=independent");
+    await mount();
+    expect(
+      screen.getByRole("button", { name: "Independent" }).getAttribute("aria-pressed")
+    ).toBe("true");
+    fireEvent.change(screen.getByRole("textbox", { name: "Search characters" }), {
+      target: { value: "Lyra" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Preferences" }));
+    fireEvent.click(screen.getByRole("button", { name: "Character" }));
+    expect(screen.getByRole("textbox", { name: "Search characters" })).toHaveValue(
+      "Lyra"
+    );
+    expect(screen.queryByText("Arin")).toBeNull();
+  });
+  it("explains unavailable destinations and recovers an unknown link", async () => {
+    window.history.replaceState(null, "", "#not-a-route");
+    await mount();
+    expect(screen.getByRole("heading", { name: "Destination unavailable" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Character" }));
+    fireEvent.click(screen.getByRole("button", { name: "At the table" }));
+    expect(
+      screen.getByText(
+        "Live play is not available yet. Your characters and library are available from the navigation above."
+      )
+    ).toBeTruthy();
+  });
+  it("finds functions through aliases and provides an actionable empty search", async () => {
+    await mount();
+    fireEvent.click(screen.getByRole("button", { name: "Search Folio" }));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "custom" } });
+    expect(screen.getByRole("button", { name: /Custom creations/ })).toBeTruthy();
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "zzzzz" } });
+    expect(
+      screen.getByText("No matching functions or accessible characters and campaigns.")
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Show all functions" }));
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+  });
+});
+
+it("finishes a requested locale across ordinary navigation while the account remains live", async () => {
+  const { i18n } = await mount();
+  let loaded!: () => void;
+  const load = vi.spyOn(localeTools, "ensureLocale").mockImplementationOnce(
+    () =>
+      new Promise<void>((resolve) => {
+        loaded = resolve;
+      })
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Switch to Italiano" }));
+  fireEvent.click(screen.getByRole("button", { name: "Character" }));
+  await act(async () => {
+    loaded();
+    await Promise.resolve();
+  });
+  expect(i18n.language).toBe("it");
+  load.mockRestore();
+});

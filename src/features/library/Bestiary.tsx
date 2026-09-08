@@ -15,7 +15,15 @@ export function Bestiary({
   repository,
   session,
   onReuse,
+  query,
+  onQueryChange,
+  selected,
+  onSelect,
 }: {
+  query: string;
+  onQueryChange: (query: string) => void;
+  selected: string | null;
+  onSelect: (id: string) => void;
   entries: LibraryEntry[] | null;
   repository: LibraryRepository;
   session: SessionController;
@@ -24,8 +32,6 @@ export function Bestiary({
   const label = useHomebrewLabel();
   const [versions, setVersions] = useState<LibraryVersion[]>([]);
   const [failed, setFailed] = useState(false);
-  const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     const check = session.ticket();
@@ -49,7 +55,6 @@ export function Bestiary({
     const stop = session.track(() => {
       if (live) {
         setVersions([]);
-        setSelected(null);
       }
     });
     return () => {
@@ -71,17 +76,23 @@ export function Bestiary({
     <section>
       <label>
         {label("bestiarySearch")}
-        <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <input
+          data-navigation-focus="bestiary-search"
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+        />
       </label>
       {failed && <p role="alert">{label("preparationFailed")}</p>}
       <div className="library-workbench">
         <aside className="library-shelf">
           {visible.map((v) => (
             <button
+              data-navigation-focus={`bestiary:${v.entryId}`}
               className="library-entry"
               key={v.entryId}
               aria-pressed={selected === v.entryId}
-              onClick={() => setSelected(v.entryId)}
+              onClick={() => onSelect(v.entryId)}
             >
               <span aria-hidden="true">♜</span>
               <span>

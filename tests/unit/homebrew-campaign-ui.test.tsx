@@ -254,6 +254,10 @@ it("bestiary reuses the immutable version instead of a newer draft", async () =>
   const onReuse = vi.fn();
   render(
     <Bestiary
+      query=""
+      onQueryChange={() => {}}
+      selected="source"
+      onSelect={() => {}}
       session={x.session}
       repository={{ readVersion } as never}
       entries={[
