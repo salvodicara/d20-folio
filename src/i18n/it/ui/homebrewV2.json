@@ -800,7 +800,6 @@
       "noPrograms": "Definisci le azioni in Meccaniche avanzate, poi selezionale qui per nome.",
       "levelResources": "Capacità delle risorse a questo livello",
       "capacityHelp": "Un collegamento rende disponibile una risorsa e imposta la capacità totale, sostituendo quella precedente. Le risorse omesse conservano la capacità precedente. Non ricarica gli utilizzi rimasti.",
-      "resource": "Risorsa",
       "capacity": "Capacità totale",
       "addCapacity": "Imposta capacità della risorsa",
       "noResources": "Definisci le risorse in Meccaniche avanzate, poi imposta qui la capacità.",
@@ -812,7 +811,9 @@
       "removeLevel": "Rimuovi riga di livello",
       "missingReference": "Riferimento mancante",
       "reuseVersion": "Riusa classe registrata",
-      "reuseHelp": "Crea una bozza indipendente nella biblioteca dall’ultima versione registrata. Duplica copia la bozza corrente. La scelta della classe del personaggio appartiene alla creazione e alla crescita."
+      "reuseHelp": "Crea una bozza indipendente nella biblioteca dall’ultima versione registrata. Duplica copia la bozza corrente. La scelta della classe del personaggio appartiene alla creazione e alla crescita.",
+      "requirementsHelp": "Devono essere soddisfatti tutti i prerequisiti sotto. I livelli si riferiscono a questa classe. Usa «Uno di questi» per le alternative.",
+      "benefitsHelp": "Questi benefici sono dichiarati per questa acquisizione o livello di classe. Aggiungi scelte per i benefici che il giocatore deve selezionare. Non modifica un personaggio."
     }
   }
 }

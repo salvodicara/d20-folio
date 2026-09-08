@@ -10,6 +10,7 @@ export const baseFamily = (family: string): family is BaseFamily =>
 export const authoringFamily = (family: string): family is AuthoringFamily =>
   AUTHORING_FAMILIES.includes(family as AuthoringFamily);
 const shared: Record<string, string> = {
+  "classEditor.resource": "features.tagResource",
   "classes.cantrips": "spells.cantrips",
   "classes.slots": "play.explain.slots.label",
   "classes.modes.none": "abilities.none",

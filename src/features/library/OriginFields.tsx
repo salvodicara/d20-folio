@@ -83,6 +83,7 @@ export function OriginFields({
   scope,
 }: OriginFieldsProps) {
   const label = useHomebrewLabel();
+  const classScope = ["class", "subclass"].includes(definition.family);
   const root = definition.payload.data;
   const levels = list(root.progression);
   const levelIndex =
@@ -361,7 +362,12 @@ export function OriginFields({
                   value.kind,
                   REQUIREMENTS,
                   (kind) => patch(changeKind(value, kind, requirementDefaults)),
-                  (v) => label("origin.requirements." + v)
+                  (v) =>
+                    label(
+                      classScope && v === "level"
+                        ? "classEditor.level"
+                        : "origin.requirements." + v
+                    )
                 )}
                 {value.kind === "level" &&
                   input(
@@ -523,12 +529,16 @@ export function OriginFields({
       )}
       <fieldset disabled={disabled} className="homebrew-group">
         <legend>{label("origin.requirementsTitle")}</legend>
-        <p className="homebrew-hint">{label("origin.requirementsHelp")}</p>
+        <p className="homebrew-hint">
+          {label(classScope ? "classEditor.requirementsHelp" : "origin.requirementsHelp")}
+        </p>
         {requirements(data.prerequisites, (v) => edit("prerequisites", v))}
       </fieldset>
       <fieldset disabled={disabled} className="homebrew-group">
         <legend>{label("origin.benefitsTitle")}</legend>
-        <p className="homebrew-hint">{label("origin.benefitsHelp")}</p>
+        <p className="homebrew-hint">
+          {label(classScope ? "classEditor.benefitsHelp" : "origin.benefitsHelp")}
+        </p>
         {benefits(data.benefits, (v) => edit("benefits", v))}
       </fieldset>
       <fieldset disabled={disabled} className="homebrew-group">

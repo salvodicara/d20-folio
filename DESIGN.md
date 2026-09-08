@@ -175,7 +175,8 @@ Detailed owner usability review follows the completed app; never describe it as 
 Class identity uses the approved two-column form, with shared/starting/multiclass declarations
 separated by labelled disclosure. Ordered stable level rows retain context and expose named
 features/choices/actions/resources, absolute casting totals and explicit carry-forward help.
-Errors identify the level or resource/action by name. Advanced source IDs are not ordinary input
+Errors identify the level or resource/action by name; scoped help distinguishes class levels and
+acquisitions from origin selection. Advanced source IDs are not ordinary input
 prerequisites. Reuse recorded class creates an independent Library draft from the last version;
 Duplicate uses the current draft. Existing copies never change implicitly. Dark EN/IT desktop and
 phone use the same shell r2, tokens and controls. No character advancement is performed here.

@@ -800,7 +800,6 @@
       "noPrograms": "Define actions in Advanced mechanics, then select them here by name.",
       "levelResources": "Resource capacities at this level",
       "capacityHelp": "A binding makes a resource available and sets its total capacity, replacing the previous capacity. Omitted resources keep their previous capacity. This does not refill remaining uses.",
-      "resource": "Resource",
       "capacity": "Total capacity",
       "addCapacity": "Set resource capacity",
       "noResources": "Define resources in Advanced mechanics, then set their capacity here.",
@@ -812,7 +811,9 @@
       "removeLevel": "Remove level row",
       "missingReference": "Missing reference",
       "reuseVersion": "Reuse recorded class",
-      "reuseHelp": "Create an independent library draft from the last recorded version. Duplicate copies the current draft. Character class selection belongs to character creation and advancement."
+      "reuseHelp": "Create an independent library draft from the last recorded version. Duplicate copies the current draft. Character class selection belongs to character creation and advancement.",
+      "requirementsHelp": "All requirements below must be met. Level requirements refer to this class. Use “Any of these” for alternatives.",
+      "benefitsHelp": "These benefits are declared for this acquisition or class level. Add choices for benefits the player must select. This does not change a character."
     }
   }
 }
