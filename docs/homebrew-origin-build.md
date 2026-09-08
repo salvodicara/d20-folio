@@ -82,3 +82,6 @@ grant another identity access or alter a sibling/foreign character. A subsequent
 repository read reports the original as incompatible with exact recovery instead
 of treating it as a missing build. Exception `authorUid` is descriptive metadata;
 the aggregate's authenticated receipt actor records who actually wrote the change.
+
+The maximum-bundle rules fixture retains the literal payload schema type (`1`)
+when constructing its LibraryVersion; this type annotation does not alter stored JSON.

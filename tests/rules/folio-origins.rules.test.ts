@@ -311,7 +311,7 @@ it("keeps 32 roots and a 32-node flat bundle in a single source-checked mutation
     definition: {
       ...snapshot.definition,
       payload: {
-        schema: 1,
+        schema: 1 as const,
         data: {
           dependencies: Object.fromEntries(
             Array.from({ length: 32 }, (_, i) => [
