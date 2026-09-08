@@ -19,7 +19,7 @@ vi.mock("@/lib/firebase", () => ({ db: {}, auth: {}, storage: {} }));
 vi.mock("@/lib/firestore", () => ({ createCharacter: createMock }));
 
 import { BgAsiPicker } from "@/features/creation/steps/AbilitiesStep";
-import { CreationWizard } from "@/features/creation/CreationWizard";
+import { CreationWizard } from "@/features/creation/LegacyCreationWizard";
 import { useAuthStore } from "@/stores/authStore";
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData } from "@/types/character";

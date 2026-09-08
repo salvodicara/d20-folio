@@ -23,7 +23,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 // `features/account` (Phase 6) and stays lazy — it's admin-only, so it must never
 // weigh on the player's initial bundle. The realm stubs load eagerly.
 const CreationWizard = lazy(() =>
-  import("@/features/creation/CreationWizard").then((m) => ({
+  import("@/features/creation/LegacyCreationWizard").then((m) => ({
     default: m.CreationWizard,
   }))
 );

@@ -38,7 +38,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 vi.mock("@/lib/firebase", () => ({}));
 vi.mock("@/lib/firestore", () => ({ createCharacter: vi.fn() }));
 
-import { CreationWizard } from "@/features/creation/CreationWizard";
+import { CreationWizard } from "@/features/creation/LegacyCreationWizard";
 import { useAuthStore } from "@/stores/authStore";
 import type { User } from "firebase/auth";
 

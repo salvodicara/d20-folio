@@ -44,7 +44,7 @@ vi.mock("@/lib/quickbuild-random", async (importOriginal) => ({
   },
 }));
 
-import { CreationWizard } from "@/features/creation/CreationWizard";
+import { CreationWizard } from "@/features/creation/LegacyCreationWizard";
 import {
   DEFAULT_QUICKBUILD_CLASS,
   DEFAULT_QUICKBUILD_PRESET,

@@ -128,7 +128,7 @@ const SRD_QUICKBUILD_PRESETS = {
     // Human Versatile — Alert, the follow-up-free origin feat (the Soldier
     // already grants Savage Attacker; origin feats never repeat).
     humanFeat: "alert",
-    choices: { tool: ["dice-set"] },
+    choices: { tool: ["dice-set"], feat: ["defense"] },
   },
   monk: {
     raceId: "elf",
@@ -170,8 +170,8 @@ const SRD_QUICKBUILD_PRESETS = {
     boost: ["DEX", "CON"],
     classSkills: ["perception", "investigation", "deception", "acrobatics"],
     languages: ["halfling", "elvish"],
-    // Thieves' Cant's extra language.
-    choices: { language: ["goblin"] },
+    // Thieves' Cant's extra language and expertise in two selected class skills.
+    choices: { language: ["goblin"], expertise: ["perception", "investigation"] },
   },
   sorcerer: {
     raceId: "tiefling",

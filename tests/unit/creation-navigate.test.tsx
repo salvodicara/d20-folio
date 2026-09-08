@@ -30,7 +30,7 @@ vi.mock("@/stores/authStore", () => ({
 }));
 
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { CreationWizard } from "@/features/creation/CreationWizard";
+import { CreationWizard } from "@/features/creation/LegacyCreationWizard";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
