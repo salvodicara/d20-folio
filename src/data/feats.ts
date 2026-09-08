@@ -15,6 +15,11 @@ const PUBLIC_FEATS: SrdFeatData[] = [
   },
   {
     id: "magic-initiate-cleric",
+    spellcastingAbility: {
+      kind: "choice",
+      id: "spellcasting-ability",
+      abilities: ["INT", "WIS", "CHA"],
+    },
     category: "origin",
     repeatable: false,
     mechanics: {
@@ -50,6 +55,11 @@ const PUBLIC_FEATS: SrdFeatData[] = [
   },
   {
     id: "magic-initiate-druid",
+    spellcastingAbility: {
+      kind: "choice",
+      id: "spellcasting-ability",
+      abilities: ["INT", "WIS", "CHA"],
+    },
     category: "origin",
     repeatable: false,
     mechanics: {
@@ -82,6 +92,11 @@ const PUBLIC_FEATS: SrdFeatData[] = [
   },
   {
     id: "magic-initiate-wizard",
+    spellcastingAbility: {
+      kind: "choice",
+      id: "spellcasting-ability",
+      abilities: ["INT", "WIS", "CHA"],
+    },
     category: "origin",
     repeatable: false,
     mechanics: {

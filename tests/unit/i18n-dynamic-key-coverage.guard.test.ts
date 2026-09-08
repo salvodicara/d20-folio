@@ -73,7 +73,7 @@ import { SENSE_KINDS, SPEED_KINDS, ADVANTAGE_MODES } from "@/lib/views/sheet-vie
 import { ATTACK_CLAUSE_SCOPES, AURA_AFFECTS } from "@/lib/grants";
 import { MANEUVER_SLOTS } from "@/data/maneuvers";
 import { REPORT_TYPES, REPORT_SEVERITIES } from "@/features/report/types";
-import { ALL_TOOL_CHOICE_KINDS } from "@/data/background-equipment";
+import { ALL_TOOL_CHOICE_KINDS } from "@/lib/background-equipment";
 import { CLASS_ROLE_IDS } from "@/features/creation/steps/class-roles";
 import { ALGO_ICONS } from "@/components/shared/icon-registry";
 import { CURRENCY_METALS } from "@/components/shared/currency";

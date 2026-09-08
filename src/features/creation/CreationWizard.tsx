@@ -55,7 +55,7 @@ import { SRD_BACKGROUNDS, getBackgroundEquipmentOptions } from "@/data/backgroun
 import {
   resolveStartingEquipment,
   type ToolChoiceContext,
-} from "@/data/background-equipment";
+} from "@/lib/background-equipment";
 import { FEATS_BY_ID } from "@/data/feats";
 import { buildGrantedFeatures } from "@/lib/character-build";
 import {

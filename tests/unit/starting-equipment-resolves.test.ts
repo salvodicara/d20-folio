@@ -15,7 +15,7 @@ import {
   resolveStartingEquipment,
   toolChoiceKind,
   toolChoiceKindCategory,
-} from "@/data/background-equipment";
+} from "@/lib/background-equipment";
 import {
   toolChoiceContextForClass,
   toolChoiceContextForSource,

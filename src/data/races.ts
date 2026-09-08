@@ -89,6 +89,16 @@ const PUBLIC_RACES: SrdRaceData[] = [
         // Speed 35 ft. Listed in the description; the chosen-lineage tracker
         // covers the shared "1 free spell at L3 + L5" pattern they share.
         id: "elven-lineage",
+        cantripReplacement: {
+          spellId: "prestidigitation",
+          classSpellList: "wizard",
+          boundary: "long-rest",
+        },
+        spellcastingAbility: {
+          kind: "choice",
+          id: "spellcasting-ability",
+          abilities: ["INT", "WIS", "CHA"],
+        },
         // Each leveled lineage spell is castable once per Long Rest without a slot
         // — modeled as PER-SPELL `free-cast-spell` grants (each its own 1/LR
         // counter via the per-spell source id), not one shared pool tracker.
@@ -131,6 +141,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "faerie-fire",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -143,6 +154,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "darkness",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -165,6 +177,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "detect-magic",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -177,6 +190,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "misty-step",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -203,6 +217,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "longstrider",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -215,6 +230,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "pass-without-trace",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -393,6 +409,11 @@ const PUBLIC_RACES: SrdRaceData[] = [
       {
         // M9 — Gnomish Lineage choice was missing from the 2024 species data.
         id: "gnomish-lineage",
+        spellcastingAbility: {
+          kind: "choice",
+          id: "spellcasting-ability",
+          abilities: ["INT", "WIS", "CHA"],
+        },
         // M-species-spells — single-select `choice-grant-bundle` (bundleKey
         // "gnome-lineage"). Forest Gnome → Minor Illusion (cantrip) + Speak
         // with Animals (always prepared). Rock Gnome → Mending + Prestidigitation
@@ -463,6 +484,11 @@ const PUBLIC_RACES: SrdRaceData[] = [
       },
       {
         id: "fiendish-legacy",
+        spellcastingAbility: {
+          kind: "choice",
+          id: "spellcasting-ability",
+          abilities: ["INT", "WIS", "CHA"],
+        },
         // Each legacy spell is castable once per Long Rest without a slot — modeled
         // as PER-SPELL `free-cast-spell` grants in the bundle options below (each
         // with its own 1/LR counter, via the per-spell source id), NOT a single
@@ -502,6 +528,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "ray-of-sickness",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -514,6 +541,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "hold-person",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -539,6 +567,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "false-life",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -551,6 +580,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "ray-of-enfeeblement",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -577,10 +607,11 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   // Per-spell free cast (its own 1/LR counter, via the bundle's
                   // per-spell source id — see grants.ts bundle descent). It only
                   // surfaces once the spell itself does (the always-prepared
-                  // `minLevel` gates appearance), so no separate level gate here.
+                  // `minLevel` gates both spell access and the free-cast entitlement.
                   {
                     type: "free-cast-spell",
                     spellId: "hellish-rebuke",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -593,6 +624,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "darkness",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -604,6 +636,11 @@ const PUBLIC_RACES: SrdRaceData[] = [
       },
       {
         id: "otherworldly-presence",
+        spellcastingAbility: {
+          kind: "choice",
+          id: "spellcasting-ability",
+          abilities: ["INT", "WIS", "CHA"],
+        },
         // The cantrip's casting ability is the species "choose INT/WIS/CHA"
         // pick (character.speciesSpellAbility, default CHA). `spellAbilitySource:
         // "species"` makes the injected ref defer to that pick rather than
@@ -628,6 +665,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
       {
         // M9 — level-gated: unavailable until character level 5.
         id: "large-form",
+        minLevel: 5,
         mechanics: {
           tracker: {
             total: "1",

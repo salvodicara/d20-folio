@@ -77,7 +77,15 @@ export const SORCERER_TABLE: SrdClassTable = {
     },
     { label: "B", items: [], gold: 50 },
   ],
-  spellcasting: { ability: "CHA", preparedCaster: true },
+  spellcasting: {
+    ability: "CHA",
+    preparedCaster: true,
+    policy: {
+      mode: "full",
+      multiclass: { contributes: true, divisor: 1, rounding: "down" },
+      acquisition: { kind: "selected-spells", replaceOn: "class-level", replaceCount: 1 },
+    },
+  },
   canSwapSpell: true,
   subclassLevel: 3,
   // Spellfire Sorcery grants always-prepared subclass spells at these levels.

@@ -32,7 +32,7 @@ import {
 import {
   resolveStartingEquipment,
   type ToolChoiceContext,
-} from "@/data/background-equipment";
+} from "@/lib/background-equipment";
 import { evaluateGrants } from "@/lib/grants";
 import { displayToolProficiencies } from "@/lib/views/sheet-view";
 import { SRD_TOOLS_2024 } from "@/lib/tools";

@@ -73,7 +73,15 @@ export const PALADIN_TABLE: SrdClassTable = {
     },
     { label: "B", items: [], gold: 150 },
   ],
-  spellcasting: { ability: "CHA", preparedCaster: true },
+  spellcasting: {
+    ability: "CHA",
+    preparedCaster: true,
+    policy: {
+      mode: "half",
+      multiclass: { contributes: true, divisor: 2, rounding: "up" },
+      acquisition: { kind: "selected-spells", replaceOn: "long-rest", replaceCount: 1 },
+    },
+  },
   subclassLevel: 3,
   subclassSpellLevels: [3, 5, 9, 13, 17],
   subclasses: [
@@ -99,6 +107,7 @@ export const PALADIN_TABLE: SrdClassTable = {
       },
     },
   ],
+  weaponMastery: { countKey: "weaponMastery", proficientOnly: true },
   levels: Array.from({ length: 20 }, (_, i) => {
     const level = i + 1;
     const featureIds: string[] = [];

@@ -90,6 +90,7 @@ export const FIGHTER_TABLE: SrdClassTable = {
       ],
     },
   ],
+  weaponMastery: { countKey: "weaponMastery", proficientOnly: true },
   levels: Array.from({ length: 20 }, (_, i) => {
     const level = i + 1;
     const featureIds: string[] = [];
@@ -150,6 +151,7 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
     id: "fighter-fighting-style",
     class: "fighter",
     level: 1,
+    grants: [{ type: "choice-feat", category: "fighting-style", amount: 1 }],
     source: "SRD",
   },
   {

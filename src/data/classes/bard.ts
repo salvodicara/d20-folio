@@ -119,7 +119,15 @@ export const BARD_TABLE: SrdClassTable = {
     },
     { label: "B", items: [], gold: 90 },
   ],
-  spellcasting: { ability: "CHA", preparedCaster: true },
+  spellcasting: {
+    ability: "CHA",
+    preparedCaster: true,
+    policy: {
+      mode: "full",
+      multiclass: { contributes: true, divisor: 1, rounding: "down" },
+      acquisition: { kind: "selected-spells", replaceOn: "class-level", replaceCount: 1 },
+    },
+  },
   canSwapSpell: true,
   subclassLevel: 3,
   subclasses: [

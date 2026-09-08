@@ -1,11 +1,7 @@
 import type { Grant } from "@/lib/grants";
-import { skillNameToId } from "@/lib/compute";
+import { skillNameToId } from "@/lib/skills";
 import type { SrdBackgroundData, SrdIndex, BackgroundEquipmentOption } from "./types";
-import {
-  STARTING_EQUIPMENT_BY_BG,
-  resolveStartingEquipment,
-  type ResolvedStartingEquipment,
-} from "./background-equipment";
+import { STARTING_EQUIPMENT_BY_BG } from "./background-equipment";
 import { backgroundIdByName } from "./srd-names";
 import { mergePack } from "@/lib/pack-merge";
 import { packBackgroundsRaw } from "@pack";
@@ -190,19 +186,4 @@ export function getBackgroundEquipmentOptions(
 ): ReadonlyArray<BackgroundEquipmentOption> {
   const bg = findBackground(value);
   return bg?.startingEquipment ?? [];
-}
-
-/**
- * Resolve a background's CHOSEN starting-equipment option into character
- * weapons / equipment / gold — the single override-first creation seam (mirrors
- * `getBackgroundOriginFeat`). `value` accepts the id / EN-name / IT-name forms
- * `findBackground` does; `optionLabel` is the player's pick ("A" / "B"), falling
- * back to Option A (the suggested gear default). Returns an empty payload for an
- * unknown background — never throws.
- */
-export function getBackgroundStartingEquipment(
-  value: string,
-  optionLabel?: string
-): ResolvedStartingEquipment {
-  return resolveStartingEquipment(getBackgroundEquipmentOptions(value), optionLabel);
 }

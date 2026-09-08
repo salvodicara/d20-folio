@@ -119,7 +119,15 @@ export const WARLOCK_TABLE: SrdClassTable = {
   // detected via the `pactMagic` flag on the spell-slot rows, not via
   // this flag. Previously flagged false (2014-era assumption) which
   // hid the prep toggle + over-cap warning from every Warlock player.
-  spellcasting: { ability: "CHA", preparedCaster: true },
+  spellcasting: {
+    ability: "CHA",
+    preparedCaster: true,
+    policy: {
+      mode: "pact",
+      multiclass: { contributes: false, divisor: 1, rounding: "down" },
+      acquisition: { kind: "selected-spells", replaceOn: "class-level", replaceCount: 1 },
+    },
+  },
   canSwapSpell: true,
   subclassLevel: 3,
   subclassSpellLevels: [3, 5, 7, 9],
@@ -142,6 +150,7 @@ export const WARLOCK_TABLE: SrdClassTable = {
       },
     },
   ],
+  invocationChoices: { countKey: "invocationsKnown" },
   levels: Array.from({ length: 20 }, (_, i) => {
     const level = i + 1;
     const featureIds: string[] = [];

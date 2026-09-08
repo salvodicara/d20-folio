@@ -24,10 +24,8 @@
  */
 import { classTables, getFeaturesAtLevel } from "@/data/classes";
 import { collectChoiceSlots, type FeatureChoiceSlots } from "@/lib/feature-choices";
-import {
-  STANDARD_LANGUAGE_IDS,
-  type LanguageChoiceSlot,
-} from "@/lib/feat-language-choices";
+import type { LanguageChoiceSlot } from "@/lib/feat-language-choices";
+import { SRD_ORIGIN_LANGUAGES } from "@/data/languages";
 import {
   resolveGrantSourcesForBackground,
   resolveGrantSourcesForClass,
@@ -35,14 +33,14 @@ import {
 } from "@/lib/resolve-grant-sources";
 
 /** The slot id of the 2024 origin-language pick. */
-export const ORIGIN_LANGUAGE_SLOT_ID = "origin";
+export const ORIGIN_LANGUAGE_SLOT_ID = SRD_ORIGIN_LANGUAGES.choice.id;
 
 /** The origin-language slot: two standard languages, Common excluded (seeded). */
 export const ORIGIN_LANGUAGE_SLOTS: readonly LanguageChoiceSlot[] = [
   {
     slotId: ORIGIN_LANGUAGE_SLOT_ID,
-    amount: 2,
-    options: STANDARD_LANGUAGE_IDS.filter((id) => id !== "common"),
+    amount: SRD_ORIGIN_LANGUAGES.choice.count,
+    options: SRD_ORIGIN_LANGUAGES.choice.options,
   },
 ];
 

@@ -72,6 +72,11 @@ export const ROGUE_TABLE: SrdClassTable = {
       ],
     },
   ],
+  weaponMastery: {
+    countKey: "weaponMastery",
+    proficientOnly: true,
+    propertiesAnyOf: ["finesse", "light"],
+  },
   levels: Array.from({ length: 20 }, (_, i) => {
     const level = i + 1;
     const featureIds: string[] = [];
@@ -134,7 +139,10 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     // rides as a `tool-proficiency` grant: it aggregates through evaluateGrants
     // and surfaces via `displayToolProficiencies` (same seam as Assassin's Tools).
     // Set-union dedupes the L6 Expertise re-grant.
-    grants: [{ type: "tool-proficiency", tool: "Thieves' Tools" }],
+    grants: [
+      { type: "tool-proficiency", tool: "Thieves' Tools" },
+      { type: "choice-expertise", amount: 2 },
+    ],
     source: "SRD",
   },
   {

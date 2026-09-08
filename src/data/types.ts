@@ -15,6 +15,8 @@ import type { DamageType } from "@/types/damage";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
 // 22): a class table references a proficiency KIND by id, never a display string.
 import type { ProficiencyToken } from "@/types/ids";
+import type { WeaponProperty } from "@/types/weapon-property";
+import type { ToolCategory } from "@/lib/tools";
 
 /**
  * Source book/setting for an SRD entry. `"SRD"` = the CC-BY 5.2.1 subset; the
@@ -2485,10 +2487,20 @@ export interface SrdClassTable {
    * as a creation pick and override-able. Optional — most classes omit it.
    */
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
+  /** Weapon-mastery selection count comes from the named classSpecific column. */
+  weaponMastery?: {
+    countKey: string;
+    proficientOnly: true;
+    propertiesAnyOf?: readonly WeaponProperty["kind"][];
+  };
+  /** Invocation count comes from the named classSpecific column. */
+  invocationChoices?: { countKey: string };
   /** Spellcasting info (null for non-casters) */
   spellcasting?: {
     ability: AbilityCode;
     preparedCaster: boolean;
+    /** Optional for older pack declarations; absence is not an inferred policy. */
+    policy?: ClassCastingPolicy;
   };
   /** Per-level progression data */
   levels: SrdClassLevel[];
@@ -2587,7 +2599,52 @@ export interface SrdRaceData {
   source: SrdSource;
 }
 
+/** Typed acquisition policy; slot counts and prepared counts remain in class rows. */
+export interface ClassCastingPolicy {
+  mode: "full" | "half" | "pact";
+  multiclass: { contributes: boolean; divisor: number; rounding: "down" | "up" };
+  acquisition:
+    | { kind: "prepared-list" }
+    | {
+        kind: "selected-spells";
+        replaceOn: "long-rest" | "class-level";
+        replaceCount: number;
+      }
+    | { kind: "spellbook"; initialSpells: number; initialSpellLevel: number };
+}
+
+/** Choice IDs are local to an acquired source, shared only when explicitly reused. */
+export type SourceSpellcastingAbility =
+  | { kind: "fixed"; ability: AbilityCode }
+  | { kind: "choice"; id: string; abilities: readonly AbilityCode[] }
+  | { kind: "not-required" };
+
+/** Typed baseline languages, separate from any species/background benefit. */
+export interface OriginLanguagePolicy {
+  known: readonly string[];
+  choice: { id: string; count: number; options: readonly string[] };
+}
+
+/** An explicit nested gear choice; its containing leaf remains an old-consumer fallback. */
+export type StartingEquipmentChoice = { id: string; count: number } & (
+  | {
+      pool:
+        | { kind: "tool"; category: ToolCategory }
+        | { kind: "equipment"; ids: readonly string[] };
+      options?: never;
+    }
+  | {
+      options: readonly { id: string; items: readonly BackgroundEquipmentItem[] }[];
+      pool?: never;
+    }
+);
+
 export interface SrdRaceTrait {
+  /** Absent means available at level one. */
+  minLevel?: number;
+  spellcastingAbility?: SourceSpellcastingAbility;
+  /** Applies only when this trait actually grants the named cantrip. */
+  cantripReplacement?: { spellId: string; classSpellList: string; boundary: "long-rest" };
   /**
    * Stable id — `slug(name.en)`, the trait's catalogue-key segment
    * (`<raceId>.traits.<id>`). The ONLY locale-free handle for a trait once its
@@ -2640,7 +2697,7 @@ export interface SrdRaceTrait {
  * Every form carries a `quantity` (default 1). Exactly one of `srdId` /
  * `fromToolChoice` is set; the resolver branches on which is present.
  */
-export type BackgroundEquipmentItem =
+export type BackgroundEquipmentItem = (
   | {
       /** A resolvable SRD item id (weapon / armor / gear). */
       srdId: string;
@@ -2667,7 +2724,8 @@ export type BackgroundEquipmentItem =
        */
       quantity?: number;
       srdId?: undefined;
-    };
+    }
+) & { choice?: StartingEquipmentChoice };
 
 /**
  * One selectable starting-equipment package for a background — the 2024
@@ -2767,6 +2825,7 @@ export interface SrdBackgroundData {
 // ============================================================
 
 export interface SrdFeatData {
+  spellcastingAbility?: SourceSpellcastingAbility;
   /** Unique ID: "alert", "lucky", "magic-initiate" */
   id: string;
   /** Feat category */

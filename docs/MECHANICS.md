@@ -1304,3 +1304,10 @@ and supported bounds. Unsupported kinds remain explicit and preserved. As requir
 custom declarations are first-class input to the same future engine as official content, with costs,
 effects, reactions, editable authoritative combat facts and causal correction/undo. P06 authoring and
 preparation verification does not replace the later real custom-combat acceptance.
+
+## Catalogue acquisition metadata
+
+[Source acquisition metadata](source-acquisition.md) owns the optional typed casting,
+source-local ability, level availability, initial choice and nested equipment policy
+read by creation adapters. These source declarations preserve raw mechanics without
+calling the legacy evaluator or implying combat execution.

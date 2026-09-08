@@ -76,7 +76,15 @@ export const WIZARD_TABLE: SrdClassTable = {
     },
     { label: "B", items: [], gold: 55 },
   ],
-  spellcasting: { ability: "INT", preparedCaster: true },
+  spellcasting: {
+    ability: "INT",
+    preparedCaster: true,
+    policy: {
+      mode: "full",
+      multiclass: { contributes: true, divisor: 1, rounding: "down" },
+      acquisition: { kind: "spellbook", initialSpells: 6, initialSpellLevel: 1 },
+    },
+  },
   subclassLevel: 3,
   subclasses: [
     {

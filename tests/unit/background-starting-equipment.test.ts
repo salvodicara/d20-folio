@@ -21,13 +21,13 @@ import { describe, expect, it } from "vitest";
 import {
   getBackground,
   getBackgroundEquipmentOptions,
-  getBackgroundStartingEquipment,
   SRD_BACKGROUNDS,
 } from "@/data/backgrounds";
+import { STARTING_EQUIPMENT_BY_BG } from "@/data/background-equipment";
 import {
   resolveStartingEquipment,
-  STARTING_EQUIPMENT_BY_BG,
-} from "@/data/background-equipment";
+  getBackgroundStartingEquipment,
+} from "@/lib/background-equipment";
 import { getEquipment } from "@/data/equipment";
 import { isCustomEquipment } from "@/types/character";
 

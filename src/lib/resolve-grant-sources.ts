@@ -32,7 +32,7 @@ import { SRD_MANEUVERS } from "@/data/maneuvers";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
 import { findBackground } from "@/data/backgrounds";
 import { getClassTable } from "@/data/classes";
-import type { ToolChoiceContext } from "@/data/background-equipment";
+import type { ToolChoiceContext } from "@/lib/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
 import type { SrdRaceTrait, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";

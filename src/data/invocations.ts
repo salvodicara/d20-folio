@@ -22,6 +22,12 @@ export interface SrdEldritchInvocation {
   id: string;
   /** Prerequisite text in English ("" when none). */
   prerequisite: string;
+  /** Structured eligibility; the legacy display string grants no authority. */
+  prerequisites?: {
+    minimumClassLevel: number;
+    invocationIds?: readonly string[];
+    cantrip?: { classId: string; damage: true; attackRoll?: boolean };
+  };
   /**
    * Declarative mechanics the invocation confers (senses, speeds, skill
    * proficiencies, at-will casts, …). When a chosen invocation carries grants
@@ -62,6 +68,10 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "agonizing-blast",
     prerequisite: "Level 2+ Warlock, a Warlock Cantrip That Deals Damage",
+    prerequisites: {
+      minimumClassLevel: 2,
+      cantrip: { classId: "warlock", damage: true },
+    },
     // +CHA mod to the damage rolls of the chosen damaging Warlock cantrip. The
     // chosen cantrip is parameterised via `choiceKey` (the invocation picker
     // writes the picked cantrip id to `session.grantBundleChoices`); until a
@@ -82,6 +92,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "armor-of-shadows",
     prerequisite: "",
+    prerequisites: { minimumClassLevel: 1 },
     // At-will Mage Armor on yourself. always-prepared makes the spell visible;
     // at-will-cast-spell adds the unbounded slotless cast option (CHA).
     grants: [
@@ -92,6 +103,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "ascendant-step",
     prerequisite: "Level 5+ Warlock",
+    prerequisites: { minimumClassLevel: 5 },
     grants: [
       { type: "always-prepared-spell", spellId: "levitate", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "levitate", casterAbility: "CHA" },
@@ -100,6 +112,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "devils-sight",
     prerequisite: "Level 2+ Warlock",
+    prerequisites: { minimumClassLevel: 2 },
     // Functionally darkvision (see in darkness within range); the closest
     // existing sense grant. The magical-darkness nuance stays in the prose —
     // there is no separate "sees-in-magical-darkness" sense in the model.
@@ -108,6 +121,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "devouring-blade",
     prerequisite: "Level 12+ Warlock, Thirsting Blade Invocation",
+    prerequisites: { minimumClassLevel: 12, invocationIds: ["thirsting-blade"] },
     // Upgrades Thirsting Blade — "two extra attacks rather than one" (3 total).
     // MAX merge means this wins over Thirsting Blade's count:1.
     grants: [{ type: "extra-attack", count: 2 }],
@@ -115,6 +129,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "eldritch-mind",
     prerequisite: "",
+    prerequisites: { minimumClassLevel: 1 },
     // 2024 RAW (warlock:eldritch-invocation, Eldritch Mind): "You have
     // Advantage on Constitution saving throws that you make to maintain
     // Concentration." Same primitive as War Caster (feats.ts).
@@ -129,6 +144,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "eldritch-smite",
     prerequisite: "Level 5+ Warlock, Pact of the Blade Invocation",
+    prerequisites: { minimumClassLevel: 5, invocationIds: ["pact-of-the-blade"] },
     // On-hit rider on the conjured pact weapon ONLY (not every weapon attack) →
     // the `pact-weapon-rider` primitive. Spend a Pact Magic slot for an extra
     // 1d8 Force, PLUS another 1d8 per slot LEVEL (scalesPerSlotLevel — the
@@ -151,6 +167,10 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "eldritch-spear",
     prerequisite: "Level 2+ Warlock, a Warlock Cantrip That Deals Damage",
+    prerequisites: {
+      minimumClassLevel: 2,
+      cantrip: { classId: "warlock", damage: true },
+    },
     // The chosen damaging cantrip's range grows by 30 ft × Warlock level → the
     // `cantrip-range-bonus` primitive (numeric sibling of `cantrip-effect-rider`).
     // Like Agonizing/Repelling Blast, the chosen cantrip is parameterised via
@@ -174,6 +194,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "fiendish-vigor",
     prerequisite: "Level 2+ Warlock",
+    prerequisites: { minimumClassLevel: 2 },
     // At-will False Life on yourself, AND the auto-max temp-HP rule is now
     // modelled declaratively: casting via this feature you don't roll — you
     // automatically get the highest number on the die. The 2024 False Life
@@ -204,6 +225,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
     // engine — override-first/display where a primitive would exist).
     id: "gaze-of-two-minds",
     prerequisite: "Level 5+ Warlock",
+    prerequisites: { minimumClassLevel: 5 },
     mechanics: {
       actions: [{ type: "bonus" }],
     },
@@ -211,6 +233,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "gift-of-the-depths",
     prerequisite: "Level 5+ Warlock",
+    prerequisites: { minimumClassLevel: 5 },
     // 2024 RAW (warlock:eldritch-invocation, Gift of the Depths): a Swim Speed
     // equal to your walking Speed, you can breathe underwater, AND you can cast
     // Water Breathing once per Long Rest without a slot. The cast is BOUNDED 1/LR
@@ -232,10 +255,12 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "gift-of-the-protectors",
     prerequisite: "Level 9+ Warlock, Pact of the Tome Invocation",
+    prerequisites: { minimumClassLevel: 9, invocationIds: ["pact-of-the-tome"] },
   },
   {
     id: "investment-of-the-chain-master",
     prerequisite: "Level 5+ Warlock, Pact of the Chain Invocation",
+    prerequisites: { minimumClassLevel: 5, invocationIds: ["pact-of-the-chain"] },
     // familiar-enhancement primitive: the five buffs this invocation layers on a
     // familiar summoned by Find Familiar (the familiar's own stat block lives on
     // the spell, so it can't be a feature-declared `companion`). Verified verbatim
@@ -262,6 +287,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "lessons-of-the-first-ones",
     prerequisite: "Level 2+ Warlock",
+    prerequisites: { minimumClassLevel: 2 },
     // choice-feat (origin-feat grant): grants ONE Origin feat of the player's
     // choice. The grant surfaces a pending feat pick the picker resolves into a
     // feat ref on `character.features`; the chosen feat's own grants/tracker/
@@ -273,6 +299,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "lifedrinker",
     prerequisite: "Level 9+ Warlock, Pact of the Blade Invocation",
+    prerequisites: { minimumClassLevel: 9, invocationIds: ["pact-of-the-blade"] },
     // On-hit rider on the conjured pact weapon ONLY → the `pact-weapon-rider`
     // primitive. +1d6 of a player-chosen type (Necrotic/Psychic/Radiant) PLUS the
     // on-hit self-heal (HD-spend): `healFromHitDie` drives the consumer to emit a
@@ -293,6 +320,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "mask-of-many-faces",
     prerequisite: "Level 2+ Warlock",
+    prerequisites: { minimumClassLevel: 2 },
     grants: [
       { type: "always-prepared-spell", spellId: "disguise-self", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "disguise-self", casterAbility: "CHA" },
@@ -301,6 +329,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "master-of-myriad-forms",
     prerequisite: "Level 5+ Warlock",
+    prerequisites: { minimumClassLevel: 5 },
     grants: [
       { type: "always-prepared-spell", spellId: "alter-self", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "alter-self", casterAbility: "CHA" },
@@ -309,6 +338,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "misty-visions",
     prerequisite: "Level 2+ Warlock",
+    prerequisites: { minimumClassLevel: 2 },
     grants: [
       { type: "always-prepared-spell", spellId: "silent-image", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "silent-image", casterAbility: "CHA" },
@@ -317,6 +347,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "one-with-shadows",
     prerequisite: "Level 5+ Warlock",
+    prerequisites: { minimumClassLevel: 5 },
     // The "while in Dim Light or Darkness" environmental gate stays in the
     // prose (the engine has no lighting state); the at-will cast is modelled.
     grants: [
@@ -327,6 +358,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "otherworldly-leap",
     prerequisite: "Level 2+ Warlock",
+    prerequisites: { minimumClassLevel: 2 },
     grants: [
       { type: "always-prepared-spell", spellId: "jump", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "jump", casterAbility: "CHA" },
@@ -335,6 +367,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "pact-of-the-blade",
     prerequisite: "",
+    prerequisites: { minimumClassLevel: 1 },
     // Pact of the Blade conjures a Simple/Martial Melee weapon of the player's
     // CHOICE — so the engine models the rules of the bond (proficiency + CHA
     // attack/damage + damage-type switch + Spellcasting Focus) via the
@@ -357,6 +390,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "pact-of-the-chain",
     prerequisite: "",
+    prerequisites: { minimumClassLevel: 1 },
     // "You learn the Find Familiar spell and can cast it as a Magic action without
     // expending a spell slot." → the at-will slotless self-cast primitive, exactly
     // like the other at-will invocations (Armor of Shadows, …). always-prepared
@@ -386,6 +420,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "pact-of-the-tome",
     prerequisite: "",
+    prerequisites: { minimumClassLevel: 1 },
     // Book of Shadows (warlock:eldritch-invocations): "choose three cantrips, and
     // choose two level 1 spells that have the Ritual tag. The spells can be from
     // any class's spell list … you have the chosen spells prepared, and they
@@ -412,6 +447,10 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
     id: "repelling-blast",
     prerequisite:
       "Level 2+ Warlock, a Warlock Cantrip That Deals Damage via an Attack Roll",
+    prerequisites: {
+      minimumClassLevel: 2,
+      cantrip: { classId: "warlock", damage: true, attackRoll: true },
+    },
     // On a HIT with the chosen attack-roll cantrip, push a Large-or-smaller
     // creature up to 10 ft straight away — a `cantrip-effect-rider` with the
     // `forced-movement` clause. Like Agonizing Blast, the chosen cantrip is
@@ -436,6 +475,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "thirsting-blade",
     prerequisite: "Level 5+ Warlock, Pact of the Blade Invocation",
+    prerequisites: { minimumClassLevel: 5, invocationIds: ["pact-of-the-blade"] },
     // Extra Attack ("attack twice") for the pact weapon → 1 EXTRA attack.
     // Devouring Blade (below) upgrades this to 2 via the MAX merge.
     grants: [{ type: "extra-attack", count: 1 }],
@@ -443,6 +483,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "visions-of-distant-realms",
     prerequisite: "Level 9+ Warlock",
+    prerequisites: { minimumClassLevel: 9 },
     grants: [
       { type: "always-prepared-spell", spellId: "arcane-eye", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "arcane-eye", casterAbility: "CHA" },
@@ -451,6 +492,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "whispers-of-the-grave",
     prerequisite: "Level 7+ Warlock",
+    prerequisites: { minimumClassLevel: 7 },
     grants: [
       { type: "always-prepared-spell", spellId: "speak-with-dead", spellAbility: "CHA" },
       { type: "at-will-cast-spell", spellId: "speak-with-dead", casterAbility: "CHA" },
@@ -459,6 +501,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "witch-sight",
     prerequisite: "Level 15+ Warlock",
+    prerequisites: { minimumClassLevel: 15 },
     grants: [{ type: "truesight", range: 30 }],
   },
 ];

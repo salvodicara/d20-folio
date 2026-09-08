@@ -47,7 +47,7 @@ import {
   expandToolChoiceItem,
   type ToolChoiceContext,
   type ToolChoiceKind,
-} from "@/data/background-equipment";
+} from "@/lib/background-equipment";
 import { localizeSrd } from "@/i18n/resolver";
 import {
   grantField,

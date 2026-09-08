@@ -47,7 +47,7 @@ import { packScenarios } from "@pack";
 import {
   resolveStartingEquipment,
   type ToolChoiceContext,
-} from "@/data/background-equipment";
+} from "@/lib/background-equipment";
 import { getBackgroundEquipmentOptions } from "@/data/backgrounds";
 import {
   toolChoiceContextForBackground,

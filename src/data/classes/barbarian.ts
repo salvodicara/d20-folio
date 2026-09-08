@@ -59,6 +59,7 @@ export const BARBARIAN_TABLE: SrdClassTable = {
       ],
     },
   ],
+  weaponMastery: { countKey: "weaponMastery", proficientOnly: true },
   levels: Array.from({ length: 20 }, (_, i) => {
     const level = i + 1;
     const featureIds: string[] = [];

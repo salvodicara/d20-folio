@@ -85,7 +85,15 @@ export const RANGER_TABLE: SrdClassTable = {
     },
     { label: "B", items: [], gold: 150 },
   ],
-  spellcasting: { ability: "WIS", preparedCaster: true },
+  spellcasting: {
+    ability: "WIS",
+    preparedCaster: true,
+    policy: {
+      mode: "half",
+      multiclass: { contributes: true, divisor: 2, rounding: "up" },
+      acquisition: { kind: "selected-spells", replaceOn: "long-rest", replaceCount: 1 },
+    },
+  },
   canSwapSpell: true,
   subclassLevel: 3,
   // 2024 Ranger subclass spells are PER-SUBCLASS, not class-wide: Fey Wanderer,
@@ -109,6 +117,7 @@ export const RANGER_TABLE: SrdClassTable = {
       ],
     },
   ],
+  weaponMastery: { countKey: "weaponMastery", proficientOnly: true },
   levels: Array.from({ length: 20 }, (_, i) => {
     const level = i + 1;
     const featureIds: string[] = [];

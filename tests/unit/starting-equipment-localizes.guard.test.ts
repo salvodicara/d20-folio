@@ -35,7 +35,7 @@ import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import {
   resolveStartingEquipment,
   type ToolChoiceContext,
-} from "@/data/background-equipment";
+} from "@/lib/background-equipment";
 import { resolveGrantSourcesForBackground } from "@/lib/resolve-grant-sources";
 import type { BackgroundEquipmentOption } from "@/data/types";
 import { getEquipment } from "@/data/equipment";

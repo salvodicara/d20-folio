@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/icon";
 import { WizardForkTab } from "@/features/wizard/chrome";
 import { equipmentSealIconById, toolSealIcon } from "@/components/shared/item-icons";
-import { toolChoiceKindCategory } from "@/data/background-equipment";
+import { toolChoiceKindCategory } from "@/lib/background-equipment";
 import type { StartingItemVM, StartingOptionVM } from "@/lib/views/creation-view";
 
 /**
