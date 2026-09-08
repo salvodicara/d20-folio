@@ -96,3 +96,15 @@ External /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence owns scri
 - [ ] Present only indispensable P07 owner visual/integration verdict after autonomous work.
 - [ ] With explicit verdict, fresh fetch/rebase/gates/hooked HEAD:v2, remote proof, owned cleanup,
       full handoff and single complete recursive next prompt. Never execute next block.
+
+## Mandatory preflight refinements
+
+Tasks 1–3 consume the spec's final review-resolution section. Dependencies are frozen inside the
+root LibraryVersion; P04 grant carries the entire bundle without new child grants or foreign reads.
+OriginBuild.selections is a max32 map; every intent changes exactly one root and verifies one root
+source. Task2 exposes saveIntent(character,base,targetId,selectionOrNull), with parseOriginBuild,
+OriginSelection from task1. Task1 owns projectOriginCharacter and ordered candidate-excluded
+eligibility, returning explicit unknown context rather than guessed class/legacy mechanics.
+Task3 must route all current identity/origin facts through that projection and show superseded
+imported baseline only as such. The final spec names field-level precedence/removal behavior.
+The nine review regressions in the spec are required behavioral tests and Task4 runtime scenarios.

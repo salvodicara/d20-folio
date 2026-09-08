@@ -157,3 +157,81 @@ Do not deliver a successor prompt during interim approval and do not execute P08
 Rules evidence consulted 8 September 2026: D&D Beyond Basic Rules 2024 Creating a Character and
 Character Origins; Larian Community Update 8 Character Creation is behavior reference only, not
 D&D2024 authority. Public test content is synthetic and SRD-compatible; private pack remains read-only.
+
+## Pre-code review resolutions: dependency bundles, budgets and projection
+
+These concrete contracts refine the general sections above.
+
+**Portable closure.** Selecting a stable feat/feature/spell dependency while authoring copies its
+complete immutable LibraryVersion into the root definition's `dependencies` bundle. The root
+records the chosen source identity/version and the complete content, including child choice
+programs. This is an intentional authored inclusion, displayed before recording/sharing the root.
+The root LibraryVersion freezes the whole closure. P04's existing offer and recipient version
+therefore carry it exactly; no extra recipient library entry, grant, queue or peer write is made.
+The recipient receives the bundle as part of the explicit root grant, not separate authority to
+read the creator's child library. Source revocation/deletion cannot break an already received
+bundle. A new dependency version requires deliberate selection and a new root version. Imported
+provenance is metadata, not proof of source authorization. Validate tuple identity cycles,
+family compatibility, missing references and the complete closure: at most32 definitions, depth8,
+within P04's existing JSON depth/size bounds. Reject overflow before publication, never truncate.
+
+**One root mutation per intent.** OriginBuild.selections is a map keyed by stable selection ID,
+maximum32 roots; nested bundled choices belong to their root and use stable dependency paths.
+Each operation targets exactly one root: insert/replace/version-update/answers/remove. All other
+root entries must be byte-equivalent to the loaded base. A source-changing intent verifies ONE
+owned immutable root LibraryVersion; that exact version already contains all child data. The
+aggregate/receipt remains one atomic CAS transition; there are no sequential hidden child commits.
+Rules use a bounded changed-key map check, owner/user read, character before/after, aggregate
+before/after, receipt and one root version before/after. Calculate distinct/cached access calls
+in implementation and prove maximum root/bundle shape on real rules. Reject two root introductions
+in one intent before send and in rules. This bounds authorization reads independently of32 roots.
+
+**Single projection contract.** `projectOriginCharacter(character, build)` is the only current
+origin projection consumed by IdentitySheet, identity headings and the origin reader. Preserve
+character.sheet and recovery original unchanged. Base scores come from build.abilities uppercase
+STR/DEX/CON/INT/WIS/CHA (CHARACTER_SCHEMA explicitly defines these as chosen base scores).
+For an unreplaced background, add only the explicitly stored asi.background; for a replaced
+background, use its selected distribution instead, never both. Preserve separately attributed
+non-origin input facts; never infer a missing class/feat grant by running the legacy evaluator.
+When species is selected, displayed species identity, movement/senses and species-origin entries
+come exclusively from that root. When background is selected, displayed background, background ASI,
+background-origin feat and declared background skills/tool/entitlement come from that root.
+Imported race/background IDs, asi.background, originFeats.species/background, humanOriginFeat and
+bgFeat remain accessible only as imported baseline detail for the replaced family, not active
+contributions. Selected standalone feats add their own attributable facts without suppressing the
+unreplaced species/background. Keep imported explicit non-origin skills/tools/languages/spellcasting
+visible; where origin attribution cannot be recovered, label the baseline unresolved rather than
+claiming the old source has been removed or summing it twice. Such an unresolved fact cannot certify
+a prerequisite affected by replacing its possible source. Removing a replacement explicitly
+previews restoration of that family's imported baseline. Removing a standalone feat removes only
+its contribution. A corrupt origin aggregate never silently falls back to presenting old data as
+current: expose recovery and unavailable projection. No live-data migration or write-back occurs.
+
+**Eligibility context.** Evaluate acquisition in stable root order and dependency order: prior
+accepted roots and a granting parent's already-resolved non-child benefits are available; the
+candidate's own benefits and later roots are excluded. Thus a +1 ability feat cannot satisfy its
+own threshold, and mutually requiring feats cannot bootstrap eligibility. On changing/removing
+a parent, reevaluate every dependent selection; keep its answers but exclude unresolved child
+contributions and require reconciliation or a scoped voluntary exception before confirmation.
+Base level is FolioCharacter.level; abilities use the projection described above. Explicit imported
+skills, toolProficiencyIds, languageIds, savingThrows and spellcasting describe only supplied known
+facts, not inferred class mechanics. Missing/ambiguous spellcasting/proficiency/acquired-feat facts
+are unknown, never silently true or false; normal acquisition cannot use unknown proof. Explain
+why and permit an intentional reasoned exception without changing those facts. Once acquired,
+revalidation uses the same candidate-excluded order rather than letting its own bonus justify it.
+
+Required regressions: share background containing private feat and child choice/spell, accept and
+insert after source revoke/removal without child reads; max32-root/32-definition bundle one-root
+mutation and two-root rejection; only-feat insertion preserves unrelated imported baseline;
+background replacement removes old ASI exactly and removal restores it; species heading matches
+current root; +1 feat below its own threshold, mutual feat prerequisites, parent removal and
+missing spellcasting context all remain ineligible/unknown until explicitly resolved.
+
+**Storage budget.** P04 parseDefinition already caps JSON string length at200000 and depth20.
+Origin conformance obeys both; flattened included dependency definitions avoid recursive wrapper
+inflation. Aggregate UTF-8 serialized size is bounded at180000 bytes and the complete operation
+at600000 bytes before storage/send, preserving room for Firestore names/type overhead and the
+full before/after envelope. Oversized drafts remain recoverable and cannot submit; do not trim.
+Rules enforce root count and bounded nested field shapes; emulator does not prove production
+byte/expression limits, so calculate sizes and record that staging gap separately. Max-bound tests
+cover multibyte text and full original-base/next-snapshot receipt, not only ASCII payloads.
