@@ -3,7 +3,9 @@ import type { Firestore } from "firebase/firestore";
 import { SessionController } from "../../src/lib/identity/session";
 import type { FolioCharacter } from "../../src/lib/identity/model";
 import { initializeDefinition } from "../../src/lib/homebrew/model";
-import type { OriginBuild } from "../../src/lib/homebrew/origin-build";
+import { parseOriginBuild, type OriginBuild } from "../../src/lib/homebrew/origin-build";
+import { includeOriginDependency, originRecord } from "../../src/lib/homebrew/origins";
+import { conformDefinition } from "../../src/lib/homebrew/conformance";
 import * as persistence from "../../src/lib/homebrew/origin-build-repository";
 const character: FolioCharacter = {
   schema: 1,
@@ -227,4 +229,92 @@ it("retains the explicit intent offline without sending it", async () => {
   } finally {
     vi.unstubAllGlobals();
   }
+});
+
+function legalMaximumClosure() {
+  let definition = initializeDefinition("species");
+  definition.name = "Root plus31 included features";
+  const references: { kind: string; dependency: string }[] = [];
+  for (let i = 0; i < 31; i++) {
+    const child = initializeDefinition("feature");
+    child.name = "Included feature " + String(i);
+    const included = includeOriginDependency(definition, {
+      ...selection.snapshot,
+      ownerUid: "private-author",
+      entryId: "child" + String(i),
+      definition: child,
+    });
+    definition = included.definition;
+    references.push({ kind: "reference", dependency: included.key });
+  }
+  definition.payload.data.benefits = references;
+  return { ...selection, snapshot: { ...selection.snapshot, definition } };
+}
+it("accepts a legal root plus31 included definitions and budgets its complete receipt", () => {
+  const { repo } = client();
+  const selected = legalMaximumClosure();
+  expect(conformDefinition(selected.snapshot.definition)).toEqual([]);
+  expect(
+    Object.keys(
+      originRecord(selected.snapshot.definition.payload.data.dependencies) ?? {}
+    )
+  ).toHaveLength(31);
+  const op = repo.saveIntent(character, null, "root", selected);
+  const stored = {
+    schema: 1,
+    character: op.character,
+    revision: 1,
+    selections: op.selections,
+    lastOperation: { uid: op.uid, opId: op.opId },
+  };
+  expect(parseOriginBuild(stored).selections.root?.snapshot).toEqual(selected.snapshot);
+  expect(() => persistence.assertOriginBuildBudget(stored)).not.toThrow();
+  expect(() =>
+    persistence.assertOriginBuildBudget({ operation: op, revision: 1 }, 600000)
+  ).not.toThrow();
+});
+it("rejects an oversized combination of maximum roots and legal closure without trimming the draft", () => {
+  const { repo } = client();
+  const selected = { ...legalMaximumClosure(), id: "last", ordinal: 31 };
+  const definition = initializeDefinition("feat");
+  definition.name = "Acquired feat";
+  const base: OriginBuild = {
+    schema: 1,
+    character: { ownerUid: "owner", id: "hero" },
+    revision: 31,
+    selections: Object.fromEntries(
+      Array.from({ length: 31 }, (_, ordinal) => [
+        "root" + String(ordinal),
+        {
+          ...selection,
+          id: "root" + String(ordinal),
+          ordinal,
+          snapshot: {
+            ...selection.snapshot,
+            entryId: "feat" + String(ordinal),
+            definition,
+          },
+        },
+      ])
+    ),
+    lastOperation: { uid: "owner", opId: "previous" },
+  };
+  const small = repo.saveIntent(character, base, "last", selected);
+  expect(Object.keys(small.selections)).toHaveLength(32);
+  expect(() =>
+    persistence.assertOriginBuildBudget({ operation: small, revision: 32 }, 600000)
+  ).not.toThrow();
+  // Individually valid multibyte drafts may exceed the aggregate budget in combination.
+  definition.description = "é".repeat(2000);
+  selected.snapshot.definition.description = "界".repeat(30000);
+  expect(parseOriginBuild(base)).toEqual(base);
+  expect(conformDefinition(selected.snapshot.definition)).toEqual([]);
+  expect(() =>
+    repo.saveIntent(character, null, "root", { ...selected, id: "root", ordinal: 0 })
+  ).not.toThrow();
+  const original = JSON.stringify({ base, selected });
+  expect(() => repo.saveIntent(character, base, "last", selected)).toThrow(
+    "origin-build-too-large"
+  );
+  expect(JSON.stringify({ base, selected })).toBe(original);
 });

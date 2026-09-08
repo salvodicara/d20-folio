@@ -85,3 +85,12 @@ the aggregate's authenticated receipt actor records who actually wrote the chang
 
 The maximum-bundle rules fixture retains the literal payload schema type (`1`)
 when constructing its LibraryVersion; this type annotation does not alter stored JSON.
+
+Maximum-shape evidence distinguishes coarse raw writes from legal authoring. The raw
+rules cardinality test deliberately stores unvalidated SDK placeholders and proves
+only one-root/source/ACL bounds. Separate tests use `includeOriginDependency` to
+construct one root plus31 conforming feature definitions, validate the full composed
+receipt budget, and persist/read the legal closure alongside31 valid acquired roots.
+Compact maxima fit; larger individually valid multibyte drafts may exceed the shared
+aggregate budget when combined. That path rejects before send and preserves the full
+base and selected draft. Cardinality limits never promise every size combination fits.

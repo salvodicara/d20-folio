@@ -292,7 +292,7 @@ it("blocked owner cannot write or read even with admin role", async () => {
   await assertFails(raw(client()));
   await assertFails(getDoc(doc(client(), path)));
 });
-it("keeps 32 roots and a 32-node flat bundle in a single source-checked mutation", async () => {
+it("bounds 32 raw roots while preserving unvalidated SDK payload placeholders", async () => {
   const db = client();
   const base: RawBuild = {
     schema: 1,
@@ -581,4 +581,72 @@ it("concurrent identical origin sends acknowledge one exact receipt", async () =
     expect(receipts[0]).toEqual(receipts[1]);
     expect((await repo.read(character))?.revision).toBe(i + 1);
   }
+});
+it("commits 32 conforming roots with a legal root-plus31-definition closure within full receipt budgets", async () => {
+  const { includeOriginDependency } = await import("../../src/lib/homebrew/origins");
+  const { conformDefinition } = await import("../../src/lib/homebrew/conformance");
+  const { assertOriginBuildBudget } =
+    await import("../../src/lib/homebrew/origin-build-repository");
+  const { parseOriginBuild } = await import("../../src/lib/homebrew/origin-build");
+  let definition = initializeDefinition("species");
+  definition.name = "Legal maximum closure";
+  const references: { kind: string; dependency: string }[] = [];
+  for (let i = 0; i < 31; i++) {
+    const child = initializeDefinition("feature");
+    child.name = "Included feature " + String(i);
+    const included = includeOriginDependency(definition, {
+      ...snapshot,
+      ownerUid: "private-creator",
+      entryId: "child" + String(i),
+      definition: child,
+    });
+    definition = included.definition;
+    references.push({ kind: "reference", dependency: included.key });
+  }
+  definition.payload.data.benefits = references;
+  expect(conformDefinition(definition)).toEqual([]);
+  const prior = initializeDefinition("feat");
+  prior.name = "Prior feat";
+  const base = parseOriginBuild({
+    schema: 1,
+    character: { ownerUid: "owner", id: "hero" },
+    revision: 31,
+    selections: Object.fromEntries(
+      Array.from({ length: 31 }, (_, ordinal) => [
+        "root" + String(ordinal),
+        {
+          ...selection,
+          id: "root" + String(ordinal),
+          ordinal,
+          snapshot: {
+            ...snapshot,
+            entryId: "prior" + String(ordinal),
+            definition: prior,
+          },
+        },
+      ])
+    ),
+    lastOperation: { uid: "owner", opId: "previous" },
+  });
+  const selected: OriginSelection = {
+    ...selection,
+    id: "last",
+    ordinal: 31,
+    snapshot: { ...snapshot, definition },
+  };
+  await env.withSecurityRulesDisabled(async (c) => {
+    await setDoc(doc(c.firestore(), path), base);
+    await setDoc(
+      doc(c.firestore(), "folioAccounts/owner/library/origin/versions/1"),
+      selected.snapshot
+    );
+  });
+  const { repo } = repository();
+  const op = repo.saveIntent(character as FolioCharacter, base, "last", selected);
+  const receipt = { operation: op, revision: 32 };
+  expect(() => assertOriginBuildBudget(receipt, 600000)).not.toThrow();
+  expect(await repo.commit(op)).toEqual(receipt);
+  const read = await repo.read(character);
+  expect(Object.keys(read?.selections ?? {})).toHaveLength(32);
+  expect(read?.selections.last?.snapshot).toEqual(selected.snapshot);
 });
