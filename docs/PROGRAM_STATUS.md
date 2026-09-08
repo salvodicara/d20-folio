@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P10 creation and onboarding in discovery (8 September 2026)
+## Current frontier — P10 creation and onboarding in implementation (8 September 2026)
 
 Astra owns P10 only, authorized by the current owner handoff and PRODUCT's standing delivery
 delegation. Dependencies P07–09 are integrated at fresh origin/v2
@@ -15,9 +15,12 @@ Pinned bootstrap completed; the read-only private pack is clean at
 `b6073dd0d15bcf2dc980b1e00c531b7a5330da8e`, linked to its exact `content-pack` subdirectory.
 External evidence and temporary files belong to `Workspace/Codex/d20-folio-p10-evidence`.
 
-Current work: read the approved creation/import experience and domain contracts, then reconcile
-P10 specification and implementation plan before product code. Creation needs one atomic
-character/choice/receipt transition; existing sequential origin saves do not certify that result.
+P10 specification and plan committed at `5f3657b3` before product code, after independent
+architecture review. Current work: shared snapshot/pool/initial-loadout foundation in isolated
+`codex/p10-sources-20260908` at `Workspace/Codex/d20-folio-p10-sources`, plus independent pure
+import analysis in the primary topic. Five-document creation and exact recovery remain to implement.
+The first focused import analysis/migration tests pass, including six exact fixture originals;
+this is not a full P10 runtime or final gate.
 All P10 runtime, independent review, screenshot, six-fixture, rules, SRD-only and final composed
 gates remain open. P09 evidence is historical applicability only, never a P10 pass.
 Reviewed, verified approved-mock work may integrate into V2 without another exhaustive owner

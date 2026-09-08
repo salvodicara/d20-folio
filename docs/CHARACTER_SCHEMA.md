@@ -1,5 +1,19 @@
 # The Locked Character Document Schema (v3)
 
+## P10 import comparison boundary (2026-09-08)
+
+`src/lib/character-creation/import-review.ts` analyses supplied schema-3 copies through the same
+P02 migration grammar. File schema never implies a D&D edition. Explicit root `edition` or
+`rulesEdition` string metadata may identify 2014 or 2024; missing, conflicting and future values
+remain distinct and the original text stays exact. Mechanical comparison categories expose paths,
+not private narrative. Unknown mechanical fields omitted from the authorized projection produce
+recovery-only warnings; malformed edition objects remain only in the exact original. A reviewed
+category acknowledges preservation and leaves mechanical categories unresolved; it does not certify rules
+conversion, execute mechanics or modify imported custom content/overrides.
+
+The pure analysis does not write data. Creation and reconciliation persistence are defined by the
+P10 spec and require their own atomic repository/rules implementation and runtime verification.
+
 ## P07 current origins and imported baseline (2026-09-08)
 
 `folioAccounts/{uid}/characters/{id}/origins/build` is the single mutable authority for the
