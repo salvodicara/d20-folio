@@ -16,7 +16,7 @@ export function assertJsonBudget(
       if (!Number.isFinite(v)) fail();
       return;
     }
-    if (typeof v !== "object" || ancestors.has(v)) fail();
+    if (typeof v !== "object" || ancestors.has(v)) return fail();
     ancestors.add(v);
     if (Array.isArray(v)) v.forEach((x) => walk(x, depth + 1));
     else {

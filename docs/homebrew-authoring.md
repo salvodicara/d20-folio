@@ -140,3 +140,6 @@ to600000 UTF-8 bytes/4096nodes before cloning or sending. The shared plain-JSON 
 also used by the unchanged180000-byte origin-build wrapper; that aggregate limit is not a class
 template limit. Definition depth20/200000UTF16 remains unchanged. Oversized operations fail with
 the original draft/base intact; no truncation, automatic replay or new persistence path is added.
+
+Offer intents check the final envelope after its immutable operation ID is populated, so a
+boundary-sized offer cannot pass intent creation and then fail solely because that ID was added.

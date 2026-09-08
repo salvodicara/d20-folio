@@ -389,10 +389,12 @@ export function createLibraryRepository(
         lastOperation: { uid: uid(), opId: "" },
       };
       const op = envelope("library-offer", null, null, offer, id);
-      return frozen({
+      const complete = {
         ...op,
         offer: { ...offer, lastOperation: { uid: uid(), opId: op.opId } },
-      });
+      };
+      validateClassOperation(complete);
+      return frozen(complete);
     },
     async acceptIntent(offer: LibraryOffer, existing: LibraryEntry | null = null) {
       check();

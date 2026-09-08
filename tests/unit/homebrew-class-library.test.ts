@@ -71,3 +71,52 @@ it("bounds repeated multibyte class drafts before issuing an operation and prese
     await deleteApp(app);
   }
 });
+it("refuses an offer whose final operation identifier crosses the receipt byte budget", async () => {
+  const app = initializeApp(
+    { projectId: "demo-d20folio", apiKey: "synthetic" },
+    "offer-budget"
+  );
+  try {
+    const session = new SessionController();
+    session.transition({ uid: "owner", campaignId: null, activeCharacterId: null });
+    const repo = createLibraryRepository(getFirestore(app), session);
+    const definition = {
+      ...blankDefinition("class"),
+      name: "A",
+      description: "漢".repeat(100000),
+    };
+    definition.payload.data = { unknown: "a".repeat(98000) };
+    const version = {
+      schema: 1 as const,
+      ownerUid: "owner",
+      entryId: "one",
+      version: 1,
+      definition,
+      provenance: null,
+      operationId: "published",
+    };
+    // A final offer carries this definition once; tune its multibyte size to cross only when opId is added.
+    let previousSize = 0,
+      rejected = false;
+    for (let n = 99000; n <= 100000; n++) {
+      definition.payload.data.unknown = "漢".repeat(n);
+      try {
+        const op = repo.offerIntent(structuredClone(version), "recipient");
+        previousSize = new TextEncoder().encode(
+          JSON.stringify({ operation: op, revision: op.baseRevision + 1 })
+        ).byteLength;
+        expect(previousSize).toBeLessThanOrEqual(600000);
+      } catch (error) {
+        if (error instanceof Error && error.message === "library-operation-too-large") {
+          rejected = true;
+          break;
+        }
+        throw error;
+      }
+    }
+    expect(rejected).toBe(true);
+    expect(previousSize).toBeGreaterThan(599900);
+  } finally {
+    await deleteApp(app);
+  }
+});
