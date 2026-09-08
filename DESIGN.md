@@ -3339,3 +3339,5 @@ and original recovery. Class names and level names are authored content; UI labe
 The dark Astra0.9.3 plus shell r2 layout, four scopes, language control and Account remain binding.
 Screenshots and printable pages require actual optimized runtime inspection. Owner delivery follows
 PRODUCT's standing reviewed-green V2 delegation, without repeated exhaustive visual approval.
+
+Shared acquisition requirements use family-neutral wording in origin and class consultation.

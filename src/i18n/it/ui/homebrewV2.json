@@ -610,7 +610,7 @@
       "language": "Nome della lingua",
       "includedBenefit": "Creazione inclusa",
       "requirement": "Requisito",
-      "requirementsTitle": "Requisiti per scegliere questa origine",
+      "requirementsTitle": "Requisiti di acquisizione",
       "requirementsHelp": "Tutti i requisiti sotto devono essere soddisfatti. Usa “Uno di questi” per le alternative. Il selettore del personaggio spiega i requisiti non soddisfatti e offre un’eccezione esplicita.",
       "addRequirement": "Aggiungi requisito",
       "addAlternative": "Aggiungi alternativa",

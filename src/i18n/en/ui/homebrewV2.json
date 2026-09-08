@@ -610,7 +610,7 @@
       "language": "Language name",
       "includedBenefit": "Included creation",
       "requirement": "Requirement",
-      "requirementsTitle": "Requirements to choose this origin",
+      "requirementsTitle": "Requirements for acquisition",
       "requirementsHelp": "All requirements below must be met. Use “Any of these” for alternatives. The character picker explains unmet requirements and offers an explicit exception.",
       "addRequirement": "Add requirement",
       "addAlternative": "Add alternative",
