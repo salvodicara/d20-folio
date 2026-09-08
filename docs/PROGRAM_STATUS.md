@@ -1,6 +1,29 @@
 # Program Status
 
-## Current frontier — P06 integration receipt; P07 next (2026-09-08)
+## Current frontier — P07 discovery and written contract (2026-09-08)
+
+Owner/writer: Astra, codex/p07-origins-feats-20260908 at
+/Users/salvatoredicara/Workspace/Codex/d20-folio-p07-origins-feats.
+Fresh origin/v2 is 5916356220adb6f5875c7af676f3ddd3bde003a6; origin/main remains
+9b06b75313d7ee353c4072a20397c3092707648e. P06 external final integration/cleanup receipt
+was read and matches fresh refs. P07 is authorized, P08 and later blocks are not.
+A new clean detached p07-control at that exact fresh ref invoked this new topic worktree.
+Shared/unrelated worktrees and preexisting .playwright-cli remain untouched. Pack is clean
+b6073dd0d15bcf2dc980b1e00c531b7a5330da8e, linked read-only to its physical content-pack.
+Pinned bootstrap completed successfully; Node24.16.0/pnpm11.2.2 and Temurin25 are available.
+Only preexisting Firestore PID86001/8080 listens among prior P06 ports; it is preserved.
+
+Spec and plan were written before application code:
+superpowers/specs/2026-09-08-p07-origins-feats-design.md and
+superpowers/plans/2026-09-08-p07-origins-feats.md. Independent read-only reference discovery
+inspected all three specific mock editors and r2 desktop/phone images, with central E18/E19
+cascades/derivation and relevant E05/E10/E11/E17/E21 declarations. Current frontier is contract
+review and model implementation preparation, not runtime acceptance. No P07 functional tests,
+optimized journeys, paper or new screenshots have passed yet. Owner screenshot and explicit
+P07 V2 integration gates remain open. No integration, deploy or production write authorized.
+External evidence: /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence.
+
+## Historical P06 integration receipt; P07 next (2026-09-08)
 
 Owner/writer: Astra, codex/p06-monsters-rules-20260907 at
 /Users/salvatoredicara/Workspace/Codex/d20-folio-p06-monsters-rules.
