@@ -466,6 +466,21 @@ export function conformOriginDefinition(
             ? parentData.subclassLevels
             : [];
           const rows = Array.isArray(d.progression) ? d.progression : [];
+          if (
+            d.castingRelationship === "augment" &&
+            parentData.authoringVersion === 1 &&
+            originRecord(parentData.spellcasting)?.mode === "none" &&
+            rows.some((value) => {
+              const casting = originRecord(originRecord(value)?.spellcasting);
+              return (
+                casting &&
+                [casting.cantrips, casting.prepared, casting.known].some(
+                  (count) => typeof count === "number" && count > 0
+                )
+              );
+            })
+          )
+            add(prefix + "castingRelationship", "noncasting-parent-augmentation");
           if (originRecord(rows[0])?.level !== schedule[0])
             add(prefix + "progression", "subclass-start-level");
           for (const [i, value] of rows.entries()) {

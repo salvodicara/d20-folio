@@ -75,3 +75,10 @@ multiclass choices, inherited/replaced casting, resource/program composition, in
 unknown/future/original recovery,20 rows and31 included definitions, and exact parent versions.
 These proofs do not establish future combat automation, in-use editing or causal undo. Those
 remain required for custom and official content through the same engine in later program blocks.
+
+Typed decoding checks native token and binding types without string coercion. Unknown casting
+mode/rounding tokens remain unsupported originals; semantic relationships are checked only when
+the relevant policies are known. Augment cannot introduce nonzero spell counts on a known
+noncasting parent: that requires a replacement policy with its own ability. Unmodeled class or
+subclass fields, including `equipment`, remain explicitly unsupported rather than bypassing
+validation through another family's field allowance.

@@ -211,6 +211,15 @@ export function conformClassDefinition(
     }
   }
   const casting = originRecord(d.spellcasting);
+  const modes = ["none", "full", "half", "third", "pact", "custom"];
+  const knownMode = typeof casting?.mode === "string" && modes.includes(casting.mode);
+  const knownAbility =
+    typeof casting?.ability === "string" &&
+    ["none", ...ABILITIES].includes(casting.ability);
+  const checkToken = (value: unknown, options: readonly string[], path: string) => {
+    if (typeof value !== "string") add(path, "invalid-text");
+    else if (!options.includes(value)) add(path, "unsupported-option", "unsupported");
+  };
   const contribution = originRecord(casting?.multiclass);
   if (!casting || !contribution) add("spellcasting", "invalid-spellcasting");
   else {
@@ -220,28 +229,29 @@ export function conformClassDefinition(
       ["contributes", "divisor", "rounding"],
       "spellcasting.multiclass"
     );
-    if (
-      !["none", "full", "half", "third", "pact", "custom"].includes(String(casting.mode))
-    )
-      add("spellcasting.mode", "unsupported-option", "unsupported");
-    if (!["none", ...ABILITIES].includes(casting.ability as Ability))
-      add("spellcasting.ability", "unsupported-option", "unsupported");
+    checkToken(casting.mode, modes, "spellcasting.mode");
+    checkToken(casting.ability, ["none", ...ABILITIES], "spellcasting.ability");
+    checkToken(contribution.rounding, ["down", "up"], "spellcasting.multiclass.rounding");
     if (
       typeof contribution.contributes !== "boolean" ||
-      !integer(contribution.divisor, 1, 20) ||
-      !["down", "up"].includes(String(contribution.rounding))
+      !integer(contribution.divisor, 1, 20)
     )
       add("spellcasting.multiclass", "invalid-multiclass-contribution");
-    if ((casting.mode === "none") !== (casting.ability === "none"))
+    if (
+      knownMode &&
+      knownAbility &&
+      (casting.mode === "none") !== (casting.ability === "none")
+    )
       add("spellcasting.ability", "casting-ability");
     if (
-      ["none", "pact"].includes(String(casting.mode)) &&
+      (casting.mode === "none" || casting.mode === "pact") &&
       contribution.contributes !== false
     )
       add("spellcasting.multiclass", "invalid-multiclass-contribution");
     if (
       definition.family === "subclass" &&
-      d.castingRelationship !== "replace" &&
+      (d.castingRelationship === "inherit" || d.castingRelationship === "augment") &&
+      knownMode &&
       (casting.mode !== "none" || contribution.contributes !== false)
     )
       add("spellcasting", "inherited-casting-contribution");
@@ -306,14 +316,16 @@ export function conformClassDefinition(
         return;
       }
       known(x, ["resourceId", "capacity"], q);
-      const resource = resources.get(String(x.resourceId));
+      const resource =
+        typeof x.resourceId === "string" ? resources.get(x.resourceId) : undefined;
       if (
+        typeof x.resourceId !== "string" ||
         !resource ||
         bound.has(x.resourceId) ||
         !integer(x.capacity, 0, Number(resource.capacity))
       )
         add(q, "invalid-resource-binding");
-      else capacities.set(String(x.resourceId), x.capacity);
+      else capacities.set(x.resourceId, x.capacity);
       bound.add(x.resourceId);
     });
     list(r.programIds, p + ".programIds").forEach((v) => {
@@ -364,7 +376,8 @@ export function conformClassDefinition(
       )
         add(p + ".spellcasting", "invalid-spellcasting");
       if (
-        casting?.mode !== "pact" &&
+        knownMode &&
+        casting.mode !== "pact" &&
         (Number(s.pactSlots) > 0 || Number(s.pactLevel) > 0)
       )
         add(p + ".spellcasting", "incompatible-pact-slots");

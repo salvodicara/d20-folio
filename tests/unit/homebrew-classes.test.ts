@@ -487,3 +487,94 @@ describe("class structural invariants", () => {
     );
   });
 });
+
+describe("reviewed native types and unsupported casting", () => {
+  it.each(["mode", "rounding", "resourceId"] as const)(
+    "never coerces malformed %s into typed data",
+    (field) => {
+      const d = named();
+      const casting = d.payload.data.spellcasting as Record<string, JsonValue>;
+      if (field === "mode") {
+        casting.mode = ["full"];
+        casting.ability = "wisdom";
+      }
+      if (field === "rounding")
+        (casting.multiclass as Record<string, JsonValue>).rounding = ["down"];
+      if (field === "resourceId") {
+        d.payload.data.resources = [
+          { ...blankAdvancedRow("resource"), id: "1", name: "Light", capacity: 3 },
+        ];
+        d.payload.data.progression = [
+          { ...row(1), resourceCapacities: [{ resourceId: 1, capacity: 1 }] },
+        ];
+      }
+      const original = JSON.stringify(d);
+      expect(decodeClassDefinition(d)).toMatchObject({
+        ok: false,
+        status: "invalid",
+        original: d,
+      });
+      expect(JSON.stringify(d)).toBe(original);
+    }
+  );
+  it.each(["mode", "rounding"] as const)(
+    "retains an unknown %s without interpreting its relationships",
+    (field) => {
+      const d = named();
+      const casting = d.payload.data.spellcasting as Record<string, JsonValue>;
+      if (field === "mode") casting.mode = "future";
+      else (casting.multiclass as Record<string, JsonValue>).rounding = "future";
+      expect(decodeClassDefinition(d)).toMatchObject({
+        ok: false,
+        status: "unsupported",
+        original: d,
+      });
+      expect(conformDefinition(d).some((i) => i.severity === "invalid")).toBe(false);
+    }
+  );
+  it("requires replacement casting when augmenting a known noncaster", () => {
+    const { child } = pair();
+    child.payload.data.castingRelationship = "augment";
+    child.payload.data.progression = [
+      {
+        ...row(3),
+        spellcasting: {
+          cantrips: 2,
+          known: 0,
+          prepared: 0,
+          slots: [],
+          pactSlots: 0,
+          pactLevel: 0,
+        },
+      },
+    ];
+    expect(codes(child)).toContain("noncasting-parent-augmentation");
+    const dependencies = child.payload.data.dependencies as Record<string, JsonValue>;
+    const parent = Object.values(dependencies)[0] as Record<string, JsonValue>;
+    const definition = parent.definition as Record<string, JsonValue>;
+    const payload = definition.payload as Record<string, JsonValue>;
+    const data = payload.data as Record<string, JsonValue>;
+    (data.spellcasting as Record<string, JsonValue>).mode = "future";
+    expect(decodeClassDefinition(child)).toMatchObject({
+      ok: false,
+      status: "unsupported",
+    });
+  });
+  it.each(["class", "subclass"] as const)(
+    "preserves unmodeled equipment on %s as unsupported",
+    (family) => {
+      const d = family === "class" ? named() : pair().child;
+      d.payload.data.equipment = { future: true };
+      expect(decodeClassDefinition(d)).toMatchObject({
+        ok: false,
+        status: "unsupported",
+        original: d,
+      });
+      expect(conformDefinition(d)).toContainEqual({
+        path: "payload.data.equipment",
+        code: "unsupported-field",
+        severity: "unsupported",
+      });
+    }
+  );
+});

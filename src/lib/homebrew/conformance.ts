@@ -143,8 +143,9 @@ export function conformDefinition(
     "effects",
     "unsupported",
     ...(isOriginFamily(definition.family) || isClassFamily(definition.family)
-      ? ["prerequisites", "benefits", "choices", "dependencies", "equipment"]
+      ? ["prerequisites", "benefits", "choices", "dependencies"]
       : []),
+    ...(isOriginFamily(definition.family) ? ["equipment"] : []),
     ...(isClassFamily(definition.family) ? CLASS_DATA_KEYS : []),
     ...advancedCollections(definition.family).map((c) => c.key),
   ]);
