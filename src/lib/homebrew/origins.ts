@@ -49,7 +49,7 @@ export type OriginPrerequisite =
   | { kind: "level"; minimum: number }
   | { kind: "ability"; ability: Ability; minimum: number }
   | { kind: "proficiency"; category: ProficiencyCategory; id: string }
-  | { kind: "feat"; mechanicId: string }
+  | { kind: "feat"; mechanicId: string; dependency?: string }
   | { kind: "spellcasting" };
 export type OriginBenefit =
   | { kind: "spellcasting"; ability: Ability; policy: "ability" }
@@ -206,7 +206,12 @@ export function conformOriginDefinition(
     )
       add(path + ".id", "unsupported-option", "unsupported");
   };
-  const prerequisite = (value: unknown, path: string, depth = 0): void => {
+  const prerequisite = (
+    value: unknown,
+    path: string,
+    reference: (value: unknown, path: string, allowed?: string[]) => void,
+    depth = 0
+  ): void => {
     const v = originRecord(value);
     if (!v || depth > 8) {
       add(path, "invalid-prerequisite");
@@ -221,7 +226,7 @@ export function conformOriginDefinition(
           const requirements = list(v.requirements, path + ".requirements");
           if (!requirements.length) add(path, "empty-prerequisite");
           requirements.forEach((r, i) =>
-            prerequisite(r, path + ".requirements." + String(i), depth + 1)
+            prerequisite(r, path + ".requirements." + String(i), reference, depth + 1)
           );
         }
         break;
@@ -240,8 +245,19 @@ export function conformOriginDefinition(
         proficiency(v, path);
         break;
       case "feat":
-        fields.push("mechanicId");
+        fields.push("mechanicId", "dependency");
         if (!nonempty(v.mechanicId)) add(path + ".mechanicId", "required");
+        if (Object.hasOwn(v, "dependency")) {
+          reference(v.dependency, path + ".dependency", ["feat"]);
+          if (typeof v.dependency === "string") {
+            const dependency = originRecord(table[v.dependency]);
+            const definition = originRecord(dependency?.definition);
+            const data = originRecord(originRecord(definition?.payload)?.data);
+            if (data && data.mechanicId !== v.mechanicId)
+              add(path + ".mechanicId", "prerequisite-mechanic-mismatch");
+          }
+        } else if (v.mechanicId === "custom")
+          add(path + ".mechanicId", "ambiguous-feat-prerequisite", "unsupported");
         break;
       case "spellcasting":
         break;
@@ -338,7 +354,7 @@ export function conformOriginDefinition(
     };
     if (isOriginFamily(node.family) || Object.hasOwn(d, "prerequisites"))
       list(d.prerequisites, prefix + "prerequisites").forEach((p, i) =>
-        prerequisite(p, prefix + "prerequisites." + String(i))
+        prerequisite(p, prefix + "prerequisites." + String(i), reference)
       );
     if (isOriginFamily(node.family) || Object.hasOwn(d, "benefits"))
       list(d.benefits, prefix + "benefits").forEach((b, i) =>
@@ -541,4 +557,23 @@ export function includeOriginDependency(
   const firstIssue = issues[0];
   if (firstIssue) throw new Error(firstIssue.code);
   return { definition: result, key };
+}
+
+/** Canonical acquisition identity shared by repeatability and pinned prerequisites.
+ * Content/library revisions intentionally do not turn the same feat into a new one.
+ */
+export function originFeatIdentity(
+  definition: LibraryDefinition,
+  canonicalSource: LibraryRef
+): string {
+  const d = definition.payload.data;
+  return typeof d.mechanicId === "string" && d.mechanicId !== "custom"
+    ? JSON.stringify([
+        "mechanic",
+        d.edition,
+        d.source,
+        d.source === "homebrew" ? canonicalSource.ownerUid : null,
+        d.mechanicId,
+      ])
+    : JSON.stringify([canonicalSource.ownerUid, canonicalSource.id]);
 }

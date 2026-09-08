@@ -577,3 +577,48 @@ it("keeps independent homebrew authors distinct and deduplicates canonical accep
     )
   ).toBe(true);
 });
+
+it("requires the pinned feat identity rather than an unrelated default custom mechanic", () => {
+  const target = version(named("feat"), "required");
+  const bundled = includeOriginDependency(named("feat"), target);
+  bundled.definition.payload.data.prerequisites = [
+    { kind: "feat", mechanicId: "custom", dependency: bundled.key },
+  ];
+  const b = build(named("feat"));
+  chosen(b).snapshot = version(named("feat"), "unrelated");
+  b.selections.dependent = {
+    id: "dependent",
+    ordinal: 1,
+    snapshot: version(bundled.definition, "dependent"),
+    answers: {},
+    exceptions: [],
+  };
+  expect(
+    composeOriginBuild(character, b).diagnostics.some(
+      (i) => i.code === "prerequisite-feat"
+    )
+  ).toBe(true);
+  chosen(b).snapshot = {
+    ...target,
+    entryId: "received-copy",
+    provenance: {
+      source: { ownerUid: "owner", id: "required" },
+      sourceVersion: 1,
+      senderUid: "owner",
+      offerId: "offer",
+      grantId: "owner~offer",
+    },
+  };
+  expect(composeOriginBuild(character, b).valid).toBe(true);
+});
+it("rejects missing pinned feat prerequisites and ambiguous legacy custom selectors", () => {
+  const d = named("feat");
+  d.payload.data.prerequisites = [
+    { kind: "feat", mechanicId: "custom", dependency: "missing" },
+  ];
+  expect(conformDefinition(d).some((i) => i.code === "missing-reference")).toBe(true);
+  d.payload.data.prerequisites = [{ kind: "feat", mechanicId: "custom" }];
+  expect(conformDefinition(d).some((i) => i.code === "ambiguous-feat-prerequisite")).toBe(
+    true
+  );
+});

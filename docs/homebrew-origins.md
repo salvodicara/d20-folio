@@ -75,3 +75,12 @@ are unchanged, and no migration or write-back occurs.
 Focused behavioral tests live in `tests/unit/homebrew-origins.test.ts`; P05/P06 authoring,
 preparation, instance and portable-codec tests cover the reused boundaries. Firebase ownership,
 atomic receipts, operation recovery and UI acceptance remain their own P07 evidence lanes.
+
+Guided acquired-feat prerequisites use `{ kind: "feat", mechanicId, dependency }`,
+where `dependency` identifies a pinned feat in the same flat bundle. Including that definition
+provides its stable identity and readable name; it does not grant it. Acquisition checks prior
+accepted feats with the shared `originFeatIdentity` policy used for repeatability, including
+canonical provenance on received copies. An unrelated default `custom` feat cannot prove this
+requirement. A missing/wrong-family dependency or mismatched companion mechanic ID blocks the
+declaration. Existing explicit named mechanic-only selectors remain supported; the unqualified
+legacy selector `custom` is preserved as unsupported and must be replaced by a pinned reference.

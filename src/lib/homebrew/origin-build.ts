@@ -10,6 +10,7 @@ import { conformDefinition } from "./conformance";
 import { ABILITIES } from "./model";
 import {
   isOriginFamily,
+  originFeatIdentity,
   originNodePath,
   originRecord,
   MOVEMENT_MODES,
@@ -419,8 +420,32 @@ export function composeOriginBuild(
             "prerequisite-proficiency",
             "unresolved"
           );
-        case "feat":
-          return rule(feats.has(p.mechanicId), path, "prerequisite-feat", "unresolved");
+        case "feat": {
+          if (p.dependency !== undefined) {
+            const dependency = dependencies[p.dependency] as OriginDependency | undefined;
+            if (!dependency) {
+              add(path, "missing-reference");
+              return false;
+            }
+            return rule(
+              acquired.has(
+                originFeatIdentity(
+                  dependency.definition,
+                  dependency.provenance?.source ?? dependency.source
+                )
+              ),
+              path,
+              "prerequisite-feat",
+              "unresolved"
+            );
+          }
+          return rule(
+            p.mechanicId !== "custom" && feats.has(p.mechanicId),
+            path,
+            "prerequisite-feat",
+            "unresolved"
+          );
+        }
         case "spellcasting":
           return rule(hasSpellcasting, path, "prerequisite-spellcasting", "unresolved");
         default:
@@ -440,16 +465,7 @@ export function composeOriginBuild(
         return;
       }
       const d = node.payload.data;
-      const identity =
-        typeof d.mechanicId === "string" && d.mechanicId !== "custom"
-          ? JSON.stringify([
-              "mechanic",
-              d.edition,
-              d.source,
-              d.source === "homebrew" ? canonicalSource.ownerUid : null,
-              d.mechanicId,
-            ])
-          : JSON.stringify([canonicalSource.ownerUid, canonicalSource.id]);
+      const identity = originFeatIdentity(node, canonicalSource);
       const prereqs = (Array.isArray(d.prerequisites)
         ? d.prerequisites
         : []) as unknown as OriginPrerequisite[];
@@ -461,7 +477,8 @@ export function composeOriginBuild(
       if (!rule(repeatable, path, "nonrepeatable-feat") || !eligible) return;
       if (node.family === "feat") {
         acquired.add(identity);
-        if (typeof d.mechanicId === "string") feats.add(d.mechanicId);
+        if (typeof d.mechanicId === "string" && d.mechanicId !== "custom")
+          feats.add(d.mechanicId);
       }
       const childReferences: { key: string; path: string }[] = [];
       const apply = (benefit: OriginBenefit, benefitPath: string) => {
