@@ -76,7 +76,11 @@ it("refuses an offer whose final operation identifier crosses the receipt byte b
   // A final offer carries this definition once; tune its multibyte size to cross only when opId is added.
   let previousSize = 0,
     rejected = false;
-  for (let n = 99000; n <= 100000; n++) {
+  // Locate the actual byte boundary without repeatedly cloning hundreds of large snapshots.
+  let low = 99000,
+    high = 100000;
+  while (low <= high) {
+    const n = Math.floor((low + high) / 2);
     definition.payload.data.unknown = "漢".repeat(n);
     try {
       const op = repo.offerIntent(structuredClone(version), "recipient");
@@ -84,10 +88,12 @@ it("refuses an offer whose final operation identifier crosses the receipt byte b
         JSON.stringify({ operation: op, revision: op.baseRevision + 1 })
       ).byteLength;
       expect(previousSize).toBeLessThanOrEqual(600000);
+      low = n + 1;
     } catch (error) {
       if (error instanceof Error && error.message === "library-operation-too-large") {
         rejected = true;
-        break;
+        high = n - 1;
+        continue;
       }
       throw error;
     }
