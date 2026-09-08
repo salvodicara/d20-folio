@@ -698,14 +698,18 @@ export function OriginFields({
     </div>
   );
 }
-function OriginDependencyPicker({
+export function OriginDependencyPicker({
   disabled,
   load,
   onChoose,
+  family,
+  chooseLabel = "origin.includeVersion",
 }: {
   disabled: boolean;
   load?: () => Promise<LibraryVersion[]>;
   onChoose: (v: LibraryVersion) => void;
+  family?: LibraryDefinition["family"];
+  chooseLabel?: string;
 }) {
   const label = useHomebrewLabel();
   const [sources, setSources] = useState<LibraryVersion[]>([]),
@@ -727,7 +731,9 @@ function OriginDependencyPicker({
     try {
       const result = await load();
       if (generation.current === token) {
-        setSources(result);
+        setSources(
+          family ? result.filter((v) => v.definition.family === family) : result
+        );
         setSelected("");
       }
     } catch {
@@ -755,6 +761,7 @@ function OriginDependencyPicker({
               {sources.map((v, i) => (
                 <option key={i} value={i}>
                   {v.definition.name} · {label("version")} {v.version}
+                  {family === "class" && " · " + v.ownerUid + " / " + v.entryId}
                 </option>
               ))}
             </select>
@@ -772,7 +779,7 @@ function OriginDependencyPicker({
               }
             }}
           >
-            {label("origin.includeVersion")}
+            {label(chooseLabel)}
           </button>
         </>
       )}

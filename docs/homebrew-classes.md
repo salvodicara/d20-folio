@@ -103,3 +103,25 @@ targets, costs, resources, effects, reactions, consequences and receipts; in-use
 with provenance/causal undo, separate from template versions with no silent propagation. Modeled
 deterministic mechanics cannot be relegated to manual handling. This editor's save/preview is not
 evidence of those future execution exits.
+
+## P08c guided subclass authoring
+
+SubclassFields binds a named recorded class version using the shared included-dependency picker,
+includeOriginDependency and conformClassPair. LibraryEditor exposes all recorded versions of owned
+class sources for this picker; equal names/versions are disambiguated by source owner/entry. The
+parent's exact definition and complete closure travel in the subclass version. Newer parent versions
+never update existing subclasses or granted copies implicitly. Selecting a parent preserves existing
+row/choice identities, unknown fields and casting declarations; incompatible calendars require
+explicit review. Malformed parent/dependency containers remain recoverable without replacement.
+
+ClassFields supplies the same progression, scoped acquisition, named program/resource bindings
+and casting policy controls for both class families. Class-only hit die/saves/starting/multiclass
+acquisitions remain on the class. Subclass relationship is explicit, with explanations of inherit,
+augment and replace, scheduled feature levels and casting-only intermediate rows. Reuse recorded
+subclass creates an independent Library draft from the stable version, distinct from Duplicate of
+the current draft. No character growth, store, combat executor or source propagation is introduced.
+
+The shared Library controller still owns loaded base, revision, envelope and receipt reconciliation.
+Unknown/future/incompatible originals remain intact and unsupported; no editor change interprets
+prose or claims deterministic combat execution. P10/P11 own character application, and later play
+blocks must still prove same-engine custom automation, authoritative in-use edits and causal undo.

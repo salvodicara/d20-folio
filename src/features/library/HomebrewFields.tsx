@@ -1,3 +1,4 @@
+import { SubclassFields } from "./SubclassFields";
 import { ClassFields } from "./ClassFields";
 import { AdvancedFields } from "./AdvancedFields";
 import { OriginFields, type OriginFieldsProps } from "./OriginFields";
@@ -25,8 +26,6 @@ export function HomebrewFields({
   loadOriginSources?: OriginFieldsProps["loadOriginSources"];
 }) {
   const label = useHomebrewLabel();
-  if (definition.family === "subclass")
-    return <p className="homebrew-hint">{label("classes.importHelp")}</p>;
   if (!authoringFamily(definition.family)) return null;
   const data = definition.payload.data;
   if (data.authoringVersion !== 1)
@@ -50,7 +49,7 @@ export function HomebrewFields({
     onChange({ ...definition.payload, data: { ...data, [key]: value } });
   const fields = authoringFields(definition.family);
   const origin = isOriginFamily(definition.family);
-  const classEditor = definition.family === "class";
+  const classEditor = ["class", "subclass"].includes(definition.family);
   const groups = [...new Set(fields.map((f) => f.group))].sort(
     (a, b) =>
       Number(["provenance", "notes"].includes(a)) -
@@ -175,8 +174,12 @@ export function HomebrewFields({
         "primaryAbilities",
         "savingThrows",
         "subclassLevels",
+        "parentClass",
+        "castingRelationship",
       ].includes(group)
-        ? "classes." + group
+        ? group === "parentClass"
+          ? "classes.parent"
+          : "classes." + group
         : group === "spellcasting"
           ? "classes.casting"
           : "checkContent"
@@ -212,6 +215,14 @@ export function HomebrewFields({
           <div key={group}>{content}</div>
         );
       })}
+      {definition.family === "subclass" && (
+        <SubclassFields
+          definition={definition}
+          disabled={disabled}
+          onChange={onChange}
+          loadOriginSources={loadOriginSources}
+        />
+      )}
       {classEditor && (
         <ClassFields
           definition={definition}

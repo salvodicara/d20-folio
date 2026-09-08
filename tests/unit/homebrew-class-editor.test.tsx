@@ -57,16 +57,13 @@ it("authors levels 1, 3, 5 and renumbers without replacing stable declarations",
     [rows[1]?.id, 6],
   ]);
 });
-it("preserves unknown data during known identity edits and leaves subclass editor deferred", async () => {
+it("preserves unknown data during known identity edits", async () => {
   const initial = initializeDefinition("class");
   initial.payload.data.future = { opaque: [1, "two"] };
   await editor(initial);
   fireEvent.change(screen.getByLabelText("Hit die"), { target: { value: "12" } });
   expect(actual().payload.data.hitDie).toBe(12);
   expect(actual().payload.data.future).toEqual({ opaque: [1, "two"] });
-  cleanup();
-  await editor(initializeDefinition("subclass"));
-  expect(screen.queryByLabelText("New class level")).toBeNull();
 });
 it("does not replace a malformed progression or future authoring payload", async () => {
   const initial = initializeDefinition("class");
@@ -81,69 +78,74 @@ it("does not replace a malformed progression or future authoring payload", async
   expect(actual().payload.data.authoringVersion).toBe(99);
 });
 
-it("reuses the recorded class as a library draft instead of applying character item state", async () => {
-  const { LibraryEditor } = await import("@/features/library/LibraryEditor");
-  const { SessionController } = await import("@/lib/identity/session");
-  const { act, waitFor } = await import("@testing-library/react");
-  const i18n = createInstance();
-  await i18n.init({ lng: "en", resources: { en: { common: mergedUi("en") } } });
-  const session = new SessionController();
-  session.transition({ uid: "class-reuse", campaignId: null, activeCharacterId: null });
-  const recorded = initializeDefinition("class");
-  recorded.name = "Recorded class";
-  const draft = structuredClone(recorded);
-  draft.description = "Unpublished change";
-  const version = {
-    schema: 1,
-    entryId: "class",
-    ownerUid: "class-reuse",
-    version: 1,
-    definition: recorded,
-    provenance: null,
-  };
-  const entry = {
-    schema: 1,
-    id: "class",
-    ownerUid: "class-reuse",
-    revision: 2,
-    stableVersion: 1,
-    draft,
-    provenance: null,
-    lastOperation: { uid: "class-reuse", opId: "saved" },
-  };
-  let duplicated: LibraryDefinition | undefined;
-  let characterRoute = false;
-  await act(async () => {
-    await Promise.resolve();
-    render(
-      <I18nextProvider i18n={i18n}>
-        <LibraryEditor
-          id="class"
-          family="class"
-          repository={
-            {
-              load: () => Promise.resolve(entry),
-              readVersion: () => Promise.resolve(version),
-            } as never
-          }
-          session={session}
-          revision={0}
-          onShare={() => {}}
-          onReuse={() => {
-            characterRoute = true;
-          }}
-          onDuplicate={(value) => {
-            duplicated = value;
-            return Promise.resolve();
-          }}
-        />
-      </I18nextProvider>
+it.each(["class", "subclass"] as const)(
+  "reuses the recorded %s as a library draft instead of applying character item state",
+  async (family) => {
+    const { LibraryEditor } = await import("@/features/library/LibraryEditor");
+    const { SessionController } = await import("@/lib/identity/session");
+    const { act, waitFor } = await import("@testing-library/react");
+    const i18n = createInstance();
+    await i18n.init({ lng: "en", resources: { en: { common: mergedUi("en") } } });
+    const session = new SessionController();
+    session.transition({ uid: "class-reuse", campaignId: null, activeCharacterId: null });
+    const recorded = initializeDefinition(family);
+    recorded.name = "Recorded class";
+    const draft = structuredClone(recorded);
+    draft.description = "Unpublished change";
+    const version = {
+      schema: 1,
+      entryId: "class",
+      ownerUid: "class-reuse",
+      version: 1,
+      definition: recorded,
+      provenance: null,
+    };
+    const entry = {
+      schema: 1,
+      id: "class",
+      ownerUid: "class-reuse",
+      revision: 2,
+      stableVersion: 1,
+      draft,
+      provenance: null,
+      lastOperation: { uid: "class-reuse", opId: "saved" },
+    };
+    let duplicated: LibraryDefinition | undefined;
+    let characterRoute = false;
+    await act(async () => {
+      await Promise.resolve();
+      render(
+        <I18nextProvider i18n={i18n}>
+          <LibraryEditor
+            id="class"
+            family={family}
+            repository={
+              {
+                load: () => Promise.resolve(entry),
+                readVersion: () => Promise.resolve(version),
+              } as never
+            }
+            session={session}
+            revision={0}
+            onShare={() => {}}
+            onReuse={() => {
+              characterRoute = true;
+            }}
+            onDuplicate={(value) => {
+              duplicated = value;
+              return Promise.resolve();
+            }}
+          />
+        </I18nextProvider>
+      );
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Reuse recorded " + family })
     );
-  });
-  fireEvent.click(await screen.findByRole("button", { name: "Reuse recorded class" }));
-  await waitFor(() => expect(duplicated).toEqual(recorded));
-  expect(characterRoute).toBe(false);
-});
+    await waitFor(() => expect(duplicated).toEqual(recorded));
+    expect(characterRoute).toBe(false);
+  }
+);
 
 it("names the affected level when an authored declaration is invalid", async () => {
   const { blankClassLevel } = await import("@/lib/homebrew/classes");

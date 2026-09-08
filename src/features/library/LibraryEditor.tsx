@@ -131,7 +131,8 @@ function EditorBody({
         state.base.stableVersion
       );
       check();
-      if (reuse && family === "class") await onDuplicate?.(v.definition);
+      if (reuse && ["class", "subclass"].includes(family))
+        await onDuplicate?.(v.definition);
       else if (reuse) onReuse?.(v);
       else onShare(v);
     } catch {
@@ -242,19 +243,26 @@ function EditorBody({
                   (entry) =>
                     entry.id !== id &&
                     entry.stableVersion &&
-                    ["feat", "feature", "spell", "weapon", "equipment"].includes(
-                      entry.draft.family
-                    )
+                    [
+                      "feat",
+                      "feature",
+                      "spell",
+                      "weapon",
+                      "equipment",
+                      ...(family === "subclass" ? ["class"] : []),
+                    ].includes(entry.draft.family)
                 )
                 .map((entry) =>
-                  repository.readVersion(
-                    { ownerUid: entry.ownerUid, id: entry.id },
-                    entry.stableVersion
-                  )
+                  entry.draft.family === "class" && family === "subclass"
+                    ? repository.listVersions(entry.id)
+                    : repository.readVersion(
+                        { ownerUid: entry.ownerUid, id: entry.id },
+                        entry.stableVersion
+                      )
                 )
             );
             check();
-            return versions;
+            return versions.flat();
           }}
         />
         <div className="identity-actions">
@@ -370,11 +378,17 @@ function EditorBody({
             disabled={!state.base?.stableVersion || op.busy || !state.online}
             onClick={() => void share(true)}
           >
-            {homebrewLabel(family === "class" ? "classEditor.reuseVersion" : "reuse")}
+            {homebrewLabel(
+              family === "subclass"
+                ? "subclassEditor.reuseVersion"
+                : family === "class"
+                  ? "classEditor.reuseVersion"
+                  : "reuse"
+            )}
           </button>
         )}
       </div>
-      {family === "class" && (
+      {["class", "subclass"].includes(family) && (
         <p className="homebrew-hint">{homebrewLabel("classEditor.reuseHelp")}</p>
       )}
       <details className="homebrew-preview">

@@ -329,7 +329,8 @@
       "species": "Configura specie",
       "feat": "Configura talento",
       "background": "Configura background",
-      "class": "Configura classe"
+      "class": "Configura classe",
+      "subclass": "Configura sottoclasse"
     },
     "diagnostics": {
       "invalid-definition": "Una definizione inclusa non può essere letta in modo sicuro.",
@@ -772,7 +773,10 @@
         "replace": "Sostituisce la magia della classe"
       },
       "localCasting": "Magia distinta della sottoclasse",
-      "noSeparateCasting": "Nessuna modalità distinta; segui il rapporto con la classe indicato sopra"
+      "noSeparateCasting": "Nessuna modalità distinta; segui il rapporto con la classe indicato sopra",
+      "composedCasting": "Magia con la classe madre",
+      "composedCastingHelp": "Queste dichiarazioni combinate si applicano una sola volta a questa classe. I livelli omessi mantengono i totali precedenti; la Magia del Patto resta separata dagli slot ordinari multiclasse.",
+      "compositionUnavailable": "La magia combinata non è disponibile finché le dichiarazioni conservate non sono compatibili."
     },
     "classEditor": {
       "identityHelp": "Modifichi il modello della biblioteca. Le copie dei personaggi e le versioni registrate conservano i propri contenuti.",
@@ -814,6 +818,20 @@
       "reuseHelp": "Crea una bozza indipendente nella biblioteca dall’ultima versione registrata. Duplica copia la bozza corrente. La scelta della classe del personaggio appartiene alla creazione e alla crescita.",
       "requirementsHelp": "Devono essere soddisfatti tutti i prerequisiti sotto. I livelli si riferiscono a questa classe. Usa «Uno di questi» per le alternative.",
       "benefitsHelp": "Questi benefici sono dichiarati per questa acquisizione o livello di classe. Aggiungi scelte per i benefici che il giocatore deve selezionare. Non modifica un personaggio."
+    },
+    "subclassEditor": {
+      "parentHelp": "Scegli una classe registrata. La sua versione esatta viene conservata con questa sottoclasse, incluse le creazioni richieste. Cambiando classe madre, livelli e scelte esistenti restano da verificare.",
+      "chooseParent": "Usa questa classe madre",
+      "noParent": "Scegli la classe madre prima di registrare una versione. Se manca, crea e registra prima la classe nella biblioteca.",
+      "scheduleHelp": "La prima riga deve coincidere con il primo livello indicato. Privilegi, scelte, azioni e risorse appartengono a questi livelli; le righe di sola magia possono essere intermedie.",
+      "relationship": "Rapporto con la magia della classe madre",
+      "relationshipHelp": "Eredita mantiene invariata la classe madre. Amplia aggiunge trucchetti e incantesimi mantenendone gli slot. Sostituisci definisce una sola politica magica per questa classe, incluso il contributo multiclasse. I valori esistenti restano da verificare.",
+      "castingHelp": "Dichiara solo la magia di questa sottoclasse. Eredita e Amplia non aggiungono slot o contributi multiclasse locali; Sostituisci definisce la politica per questa classe. La consultazione mostra le dichiarazioni combinate.",
+      "commonAcquisition": "Requisiti e privilegi comuni della sottoclasse",
+      "commonHelp": "Queste dichiarazioni appartengono alla sottoclasse. Usa le righe dei livelli per i privilegi acquisiti ai livelli previsti della classe.",
+      "reuseVersion": "Riusa sottoclasse registrata",
+      "versionOwner": "Registrata da",
+      "parentError": "Questa classe madre non può essere inclusa. Verifica le regole registrate e le dipendenze conservate, poi scegli una versione compatibile."
     }
   }
 }

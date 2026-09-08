@@ -22,6 +22,7 @@ export function ClassFields({
 }: OriginFieldsProps) {
   const label = useHomebrewLabel();
   const data = definition.payload.data;
+  const subclass = definition.family === "subclass";
   const [nextLevel, setNextLevel] = useState(3);
   const edit = (key: string, value: JsonValue) =>
     onChange({ ...definition.payload, data: { ...data, [key]: value } });
@@ -96,100 +97,118 @@ export function ClassFields({
     label("classEditor.missingReference") + " · " + text(id);
   return (
     <div className="class-fields">
-      <fieldset disabled={disabled} className="homebrew-group">
-        <legend>{label("classes.summary")}</legend>
-        <p className="homebrew-hint">{label("classEditor.identityHelp")}</p>
-        <div className="homebrew-grid">
-          {select(
-            label("classes.hitDie"),
-            data.hitDie,
-            ["6", "8", "10", "12"],
-            (v) => edit("hitDie", Number(v)),
-            (v) => "d" + v
-          )}
-          <fieldset className="class-ability-list">
-            <legend>{label("classes.primaryAbilities")}</legend>
-            {Array.isArray(data.primaryAbilities)
-              ? ABILITIES.map((a) => (
-                  <CheckboxField
-                    key={a}
-                    disabled={disabled}
-                    label={label("options." + a)}
-                    checked={rows(data.primaryAbilities).includes(a)}
-                    onCheckedChange={(checked) =>
-                      edit(
-                        "primaryAbilities",
-                        checked
-                          ? [...rows(data.primaryAbilities), a]
-                          : rows(data.primaryAbilities).filter((v) => v !== a)
-                      )
-                    }
-                  />
+      {!subclass && (
+        <fieldset disabled={disabled} className="homebrew-group">
+          <legend>{label("classes.summary")}</legend>
+          <p className="homebrew-hint">{label("classEditor.identityHelp")}</p>
+          <div className="homebrew-grid">
+            {select(
+              label("classes.hitDie"),
+              data.hitDie,
+              ["6", "8", "10", "12"],
+              (v) => edit("hitDie", Number(v)),
+              (v) => "d" + v
+            )}
+            <fieldset className="class-ability-list">
+              <legend>{label("classes.primaryAbilities")}</legend>
+              {Array.isArray(data.primaryAbilities)
+                ? ABILITIES.map((a) => (
+                    <CheckboxField
+                      key={a}
+                      disabled={disabled}
+                      label={label("options." + a)}
+                      checked={rows(data.primaryAbilities).includes(a)}
+                      onCheckedChange={(checked) =>
+                        edit(
+                          "primaryAbilities",
+                          checked
+                            ? [...rows(data.primaryAbilities), a]
+                            : rows(data.primaryAbilities).filter((v) => v !== a)
+                        )
+                      }
+                    />
+                  ))
+                : preserved(data.primaryAbilities)}
+            </fieldset>
+            {Array.isArray(data.savingThrows) && data.savingThrows.length === 2
+              ? data.savingThrows.map((v, i) => (
+                  <div key={i}>
+                    {select(
+                      label(i === 0 ? "classEditor.firstSave" : "classEditor.secondSave"),
+                      v,
+                      ABILITIES,
+                      (a) =>
+                        edit(
+                          "savingThrows",
+                          rows(data.savingThrows).map((x, j) => (i === j ? a : x))
+                        )
+                    )}
+                  </div>
                 ))
-              : preserved(data.primaryAbilities)}
-          </fieldset>
-          {Array.isArray(data.savingThrows) && data.savingThrows.length === 2
-            ? data.savingThrows.map((v, i) => (
-                <div key={i}>
-                  {select(
-                    label(i === 0 ? "classEditor.firstSave" : "classEditor.secondSave"),
-                    v,
-                    ABILITIES,
-                    (a) =>
-                      edit(
-                        "savingThrows",
-                        rows(data.savingThrows).map((x, j) => (i === j ? a : x))
-                      )
-                  )}
-                </div>
-              ))
-            : preserved(data.savingThrows)}
-        </div>
-        <details className="origin-advanced">
-          <summary>{label("classes.subclassLevels")}</summary>
-          <p className="homebrew-hint">{label("classEditor.subclassHelp")}</p>
-          <div className="class-schedule">
-            {Array.isArray(data.subclassLevels)
-              ? Array.from({ length: 20 }, (_, i) => i + 1).map((level) => (
-                  <CheckboxField
-                    key={level}
-                    label={String(level)}
-                    disabled={disabled}
-                    checked={rows(data.subclassLevels).includes(level)}
-                    onCheckedChange={(checked) =>
-                      edit(
-                        "subclassLevels",
-                        checked
-                          ? [...rows(data.subclassLevels), level].sort(
-                              (a, b) => Number(a) - Number(b)
-                            )
-                          : rows(data.subclassLevels).filter((v) => v !== level)
-                      )
-                    }
-                  />
-                ))
-              : preserved(data.subclassLevels)}
+              : preserved(data.savingThrows)}
           </div>
-        </details>
-      </fieldset>
+          <details className="origin-advanced">
+            <summary>{label("classes.subclassLevels")}</summary>
+            <p className="homebrew-hint">{label("classEditor.subclassHelp")}</p>
+            <div className="class-schedule">
+              {Array.isArray(data.subclassLevels)
+                ? Array.from({ length: 20 }, (_, i) => i + 1).map((level) => (
+                    <CheckboxField
+                      key={level}
+                      label={String(level)}
+                      disabled={disabled}
+                      checked={rows(data.subclassLevels).includes(level)}
+                      onCheckedChange={(checked) =>
+                        edit(
+                          "subclassLevels",
+                          checked
+                            ? [...rows(data.subclassLevels), level].sort(
+                                (a, b) => Number(a) - Number(b)
+                              )
+                            : rows(data.subclassLevels).filter((v) => v !== level)
+                        )
+                      }
+                    />
+                  ))
+                : preserved(data.subclassLevels)}
+            </div>
+          </details>
+        </fieldset>
+      )}
       <details className="origin-advanced">
-        <summary>{label("classEditor.commonAcquisition")}</summary>
-        <p className="homebrew-hint">{label("classEditor.commonHelp")}</p>
+        <summary>
+          {label(
+            subclass
+              ? "subclassEditor.commonAcquisition"
+              : "classEditor.commonAcquisition"
+          )}
+        </summary>
+        <p className="homebrew-hint">
+          {label(subclass ? "subclassEditor.commonHelp" : "classEditor.commonHelp")}
+        </p>
         {acquisition(undefined)}
       </details>
-      <details className="origin-advanced">
-        <summary>{label("classes.starting")}</summary>
-        <p className="homebrew-hint">{label("classEditor.startingHelp")}</p>
-        {record(data.starting) ? acquisition("starting") : preserved(data.starting)}
-      </details>
-      <details className="origin-advanced">
-        <summary>{label("classes.multiclass")}</summary>
-        <p className="homebrew-hint">{label("classEditor.multiclassHelp")}</p>
-        {record(data.multiclass) ? acquisition("multiclass") : preserved(data.multiclass)}
-      </details>
+      {!subclass && (
+        <>
+          <details className="origin-advanced">
+            <summary>{label("classes.starting")}</summary>
+            <p className="homebrew-hint">{label("classEditor.startingHelp")}</p>
+            {record(data.starting) ? acquisition("starting") : preserved(data.starting)}
+          </details>
+          <details className="origin-advanced">
+            <summary>{label("classes.multiclass")}</summary>
+            <p className="homebrew-hint">{label("classEditor.multiclassHelp")}</p>
+            {record(data.multiclass)
+              ? acquisition("multiclass")
+              : preserved(data.multiclass)}
+          </details>
+        </>
+      )}
       <fieldset disabled={disabled} className="homebrew-group">
         <legend>{label("classes.casting")}</legend>
-        <p className="homebrew-hint">{label("classEditor.castingHelp")}</p>
+        <p className="homebrew-hint">
+          {label(subclass ? "subclassEditor.castingHelp" : "classEditor.castingHelp")}
+        </p>
         {spellPolicy ? (
           <>
             <div className="homebrew-grid">

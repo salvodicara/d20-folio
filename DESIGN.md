@@ -3352,3 +3352,16 @@ Screenshots and printable pages require actual optimized runtime inspection. Own
 PRODUCT's standing reviewed-green V2 delegation, without repeated exhaustive visual approval.
 
 Shared acquisition requirements use family-neutral wording in origin and class consultation.
+
+## P08c subclass authoring application
+
+The approved Astra subclass form is implemented through the common Library layout under shell r2.
+The named parent/version picker displays its pinned schedule and preserves existing levels/choices
+when the parent changes. All recorded class versions are explicit candidates, with provenance to
+distinguish equal names. Shared level rows and progressive acquisition/resource/action controls
+retain familiar class-editor behavior. Casting relationship explains inherited, additional and
+replacement declarations; consultation/print presents the combined policy once for the owning class.
+Malformed or future content remains visibly preserved. Reuse recorded subclass starts a separate
+Library draft; the current draft's Duplicate action stays distinct. This is authoring, not character
+advancement or combat automation. Follow PRODUCT's standing delivery delegation and future custom
+same-engine automation/editable-combat obligations; actual screenshots remain required.

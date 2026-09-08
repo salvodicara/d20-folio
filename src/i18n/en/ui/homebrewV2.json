@@ -329,7 +329,8 @@
       "species": "Set up species",
       "feat": "Set up feat",
       "background": "Set up background",
-      "class": "Configure class"
+      "class": "Configure class",
+      "subclass": "Configure subclass"
     },
     "diagnostics": {
       "invalid-definition": "An included definition cannot be read safely.",
@@ -772,7 +773,10 @@
         "replace": "Replaces parent spellcasting"
       },
       "localCasting": "Separate subclass spellcasting",
-      "noSeparateCasting": "No separate policy; follow the parent relationship above"
+      "noSeparateCasting": "No separate policy; follow the parent relationship above",
+      "composedCasting": "Casting with the parent class",
+      "composedCastingHelp": "These combined declarations apply once to this class. Omitted levels keep the previous totals; Pact Magic remains separate from ordinary multiclass spell slots.",
+      "compositionUnavailable": "Combined casting is unavailable until the preserved declarations are compatible."
     },
     "classEditor": {
       "identityHelp": "Edit the library template. Existing character copies and recorded versions keep their own content.",
@@ -814,6 +818,20 @@
       "reuseHelp": "Create an independent library draft from the last recorded version. Duplicate copies the current draft. Character class selection belongs to character creation and advancement.",
       "requirementsHelp": "All requirements below must be met. Level requirements refer to this class. Use “Any of these” for alternatives.",
       "benefitsHelp": "These benefits are declared for this acquisition or class level. Add choices for benefits the player must select. This does not change a character."
+    },
+    "subclassEditor": {
+      "parentHelp": "Choose a recorded class. Its exact version is kept with this subclass, including any required creations. Changing the parent keeps your existing levels and choices for review.",
+      "chooseParent": "Use this parent class",
+      "noParent": "Choose the parent class before recording a version. Create and record the class in your library first if it is missing.",
+      "scheduleHelp": "The first row must match the first level shown. Features, choices, actions and resources belong to these levels; spellcasting-only rows may fall between them.",
+      "relationship": "Relationship to parent spellcasting",
+      "relationshipHelp": "Inherit keeps the parent unchanged. Augment adds cantrips and spells while retaining the parent’s slots. Replace supplies one casting policy for this class, including its multiclass contribution. Existing values are kept for review.",
+      "castingHelp": "Declare only this subclass’s casting. Inherit and Augment use no local slot or multiclass contribution; Replace supplies the policy for this class. The reader shows the combined declarations.",
+      "commonAcquisition": "Common subclass requirements and features",
+      "commonHelp": "These declarations belong to this subclass. Use the level rows below for features acquired at scheduled class levels.",
+      "reuseVersion": "Reuse recorded subclass",
+      "versionOwner": "Recorded by",
+      "parentError": "This parent cannot be included. Review its recorded rules and the preserved dependency data, then choose a compatible version."
     }
   }
 }
