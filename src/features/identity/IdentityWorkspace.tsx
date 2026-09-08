@@ -1,17 +1,9 @@
+import { creationFlowKey } from "@/i18n/creation-keys";
 import { useNavigationPresentation } from "./navigation-presentation";
 import { useEffect, useRef, useState, type SubmitEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import * as Dialog from "@radix-ui/react-dialog";
-import {
-  Search,
-  Shield,
-  UserRound,
-  UsersRound,
-  X,
-  BookOpen,
-  Swords,
-  Flag,
-} from "lucide-react";
+import { Search, Shield, UserRound, UsersRound, X } from "lucide-react";
 import type {
   DiceMode,
   CharacterRef,
@@ -87,6 +79,10 @@ export interface IdentityWorkspaceProps {
   dmNoteEditor?: ReactNode;
   homebrewSheet?: ReactNode;
   onImport?: (source: string) => Promise<void>;
+  onCreate?: () => void;
+  onBeginImport?: () => void;
+  onReviewImport?: (id: string) => void;
+  creation?: ReactNode;
   onRecover?: (id: string) => Promise<void>;
   onRetry: () => void;
 }
@@ -257,7 +253,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
     const value = srdCatalogues(i18n.language.startsWith("it") ? "it" : "en")?.[
       kind === "classes" ? "class" : "race"
     ]?.[id]?.name;
-    return typeof value === "string" ? value : id;
+    return typeof value === "string" ? value : t("identity.sheetFacts.custom");
   };
   const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
   const foundFeatures = featureDestinations.filter((item) =>
@@ -341,29 +337,28 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
           <span>D20 Folio</span>
         </button>
         <nav aria-label={label("mainNavigation")}>
-          {primaryDestinations.map((destination) => {
-            const Icon = {
-              campaign: Flag,
-              table: Swords,
-              characters: UserRound,
-              library: BookOpen,
-            }[destination.icon];
-            return (
-              <button
-                key={destination.page}
-                onClick={() => navigate(destination.page)}
-                aria-current={
-                  page === destination.page ||
-                  (page === "invite" && destination.page === "campaign")
-                    ? "page"
-                    : undefined
-                }
-              >
-                <Icon size={16} aria-hidden="true" />
-                <span>{label(destination.label)}</span>
-              </button>
-            );
-          })}
+          {primaryDestinations.map((destination) => (
+            <button
+              key={destination.page}
+              onClick={() => navigate(destination.page)}
+              aria-current={
+                page === destination.page ||
+                (page === "invite" && destination.page === "campaign")
+                  ? "page"
+                  : undefined
+              }
+            >
+              <span>
+                {label(destination.label)}
+                {destination.page === "table" && (
+                  <>
+                    {" "}
+                    <span className="identity-table-led" aria-hidden="true" />
+                  </>
+                )}
+              </span>
+            </button>
+          ))}
         </nav>
         <div className="identity-global">
           <button
@@ -411,7 +406,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
           </button>
         </div>
       </header>
-      {!accountPage && page !== "library" && (
+      {!accountPage && page !== "library" && !route.creation && (
         <>
           <div className="identity-context">
             <span>{label("yourSpace")}</span>
@@ -451,7 +446,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
         tabIndex={-1}
         className={"identity-main" + (accountPage ? " identity-account-main" : "")}
       >
-        {!accountPage && page !== "library" && (
+        {!accountPage && page !== "library" && !route.creation && (
           <div className="identity-page-heading">
             <div>
               <p className="identity-kicker">
@@ -466,6 +461,14 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
               </h1>
               <p>{label(`${page}Intro`)}</p>
             </div>
+            {page === "characters" && p.onCreate && (
+              <button className="identity-button" onClick={p.onCreate}>
+                {t(creationFlowKey("start"))}
+              </button>
+            )}
+            {page === "characters" && p.onBeginImport && (
+              <button onClick={p.onBeginImport}>{label("importCharacter")}</button>
+            )}
             {page === "characters" && p.onImport && (
               <label className="identity-button identity-import">
                 {label("importCharacter")}
@@ -476,10 +479,12 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
                   onChange={(event) => {
                     const file = event.currentTarget.files?.[0];
                     const generation = requestGeneration.current;
+                    const origin = navigation.ticket();
                     if (file)
                       void file
                         .text()
                         .then((text) => {
+                          origin();
                           if (generation === requestGeneration.current)
                             return p.onImport?.(text);
                           return undefined;
@@ -532,6 +537,21 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             changeLocale={changeLocale}
           />
         )}
+        {page === "account" && !p.loading && !p.characters.length && p.onCreate && (
+          <section className="identity-panel">
+            <h2>{t(creationFlowKey("startTitle"))}</h2>
+            <p>{t("creationFlow.startHelp")}</p>
+            <div className="identity-actions">
+              <button className="identity-primary" onClick={p.onCreate}>
+                {t(creationFlowKey("start"))}
+              </button>
+              {p.onBeginImport && (
+                <button onClick={p.onBeginImport}>{label("importCharacter")}</button>
+              )}
+            </div>
+          </section>
+        )}
+        {p.creation}
         {page === "library" && p.library}
         {(page === "table" || page === "unavailable") && (
           <section className="identity-panel">
@@ -543,7 +563,7 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             </button>
           </section>
         )}
-        {page === "characters" && !p.loading && (
+        {page === "characters" && !route.creation && !p.loading && (
           <>
             <div className="identity-toolbar">
               <div className="identity-filters">
@@ -1073,7 +1093,8 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             <p>
               {p.originLoading || p.originUnavailable
                 ? "—"
-                : p.originProjection?.species.selectionId
+                : p.originProjection?.species.selectionId &&
+                    !p.originProjection.species.catalogue
                   ? p.originProjection.species.name
                   : fieldName(p.inspected.speciesId, "species")}{" "}
               · {fieldName(p.inspected.classId, "classes")} ·{" "}
@@ -1093,6 +1114,17 @@ function Workspace({ p }: { p: IdentityWorkspaceProps }) {
             {p.inspected.ownerUid === p.uid && p.privateNoteEditor}
             <div className="identity-actions">
               <button onClick={p.onClearInspection}>{label("close")}</button>
+              {p.inspected.ownerUid === p.uid &&
+                p.inspected.id.startsWith("import-") &&
+                p.onReviewImport && (
+                  <button
+                    onClick={() => {
+                      if (p.inspected) p.onReviewImport?.(p.inspected.id);
+                    }}
+                  >
+                    {t("creationFlow.reconcileTitle")}
+                  </button>
+                )}
               {p.inspected.ownerUid === p.uid && p.onRecover && (
                 <button
                   onClick={() => {

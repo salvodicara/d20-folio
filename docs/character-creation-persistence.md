@@ -34,7 +34,7 @@ exact receipt; it cannot issue a new write ticket. An absent receipt remains unk
 permission to replay a restored envelope.
 
 Each origin, class and loadout aggregate retains its180000 UTF-8/4096-node budget. The complete
-operation, including every repeated snapshot, is bounded to600000 UTF-8/4096 nodes before intent
+operation, including every repeated snapshot, is bounded to600000 UTF-8/16384 nodes before intent
 and commit. Oversize data is rejected without truncation. There is no artificial item cap claiming
 that every catalogue/custom combination fits those limits.
 
@@ -72,3 +72,11 @@ ten calls per write and twenty per transaction. Grouped state rules use actor, p
 and receipt; direct Library updates additionally verify the version before/after. Client source
 reads do not add per-child rule lookups. Demo-emulator evidence does not prove production quotas,
 App Check, provider sign-in, HTTPS hosting, installed-PWA devices or UI runtime.
+
+The outer node limit covers the combined write set rather than reapplying one aggregate's
+4096-node ceiling to all three aggregates. An actual guided Dwarf/Sage/Wizard with prepared
+spells and both equipment packages has4997 candidate nodes across individually valid
+aggregates (largest2569), about95KB total. Complete composed class/species/background paths
+are checked through the real repository intent, not only the pure preview. Draft retention
+keeps its separate600000 UTF-8/4096-node bound; this correction does not expand individual
+source, aggregate, depth, byte, authorization or immutable-receipt limits.

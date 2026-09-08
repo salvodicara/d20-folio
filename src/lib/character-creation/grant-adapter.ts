@@ -1,3 +1,4 @@
+import { authoredAcquisitionEn, acquisitionSourceLabel } from "@/i18n/srd-en";
 import type { AbilityCode, SourceSpellcastingAbility } from "@/data/types";
 import type { Grant } from "@/lib/grants";
 import { ALL_SKILLS } from "../skills";
@@ -274,20 +275,26 @@ export function normalizeCreationGrants(
           });
           break;
         case "choice-resistance":
-          choice(grant.label?.en ?? "Damage resistance", grant.amount, {
-            options: grant.options.map((damageType) => ({
-              id: damageType,
-              name: damageType,
-              benefits: [{ kind: "resistance", damageType }],
-            })),
-          });
+          choice(
+            authoredAcquisitionEn(grant.label) ?? acquisitionSourceLabel("resistance"),
+            grant.amount,
+            {
+              options: grant.options.map((damageType) => ({
+                id: damageType,
+                name: damageType,
+                benefits: [{ kind: "resistance", damageType }],
+              })),
+            }
+          );
           break;
         case "choice-grant-bundle": {
-          const root = choice(grant.label?.en ?? "Feature option", 1, { options: [] });
+          const root = choice(authoredAcquisitionEn(grant.label) ?? "Feature option", 1, {
+            options: [],
+          });
           for (const option of grant.options) {
             const output: OriginOption = {
               id: option.id,
-              name: option.label?.en ?? option.id,
+              name: authoredAcquisitionEn(option.label) ?? option.id,
               benefits: [],
             };
             root.options.push(output);

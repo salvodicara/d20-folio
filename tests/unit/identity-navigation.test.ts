@@ -108,3 +108,19 @@ it("roundtrips a received Library copy using its domain identity", () => {
     page: "library",
   });
 });
+
+it("keeps guided creation steps in the existing route authority without private draft data", () => {
+  expect(parseRoute("#characters?creation=new&step=abilities&name=Secret")).toEqual({
+    page: "characters",
+    creation: "new",
+    step: "abilities",
+  });
+  expect(routeHash({ page: "characters", creation: "new", step: "equipment" })).toBe(
+    "#characters?creation=new&step=equipment"
+  );
+  expect(parseRoute("#library?creation=new&step=review")).toEqual({ page: "library" });
+  window.history.replaceState(null, "", "#characters?creation=new&step=review");
+  const navigation = new NavigationController("owner");
+  navigation.back();
+  expect(navigation.snapshot().route).toEqual({ page: "characters" });
+});

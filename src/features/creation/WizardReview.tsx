@@ -1,3 +1,4 @@
+import { includedCopyCatalogue } from "@/features/library/included-copy-source";
 import { ABILITIES } from "@/lib/homebrew/model";
 import {
   activeSelection,
@@ -63,7 +64,7 @@ export function WizardReview(p: WizardEditProps) {
     <>
       <p>
         <strong>{p.draft.name || l.w("unnamed")}</strong> ·{" "}
-        {l.t("srd.alignment_" + p.draft.alignment)}
+        {l.t(`srd.alignment_${p.draft.alignment}`)}
       </p>
       <p>
         {["common", ...p.draft.languages].map((id) => l.srd("language", id)).join(" · ")}
@@ -182,15 +183,20 @@ export function WizardReview(p: WizardEditProps) {
       <h3>{l.w("copies")}</h3>
       <ul className="wizard-copies">
         {Object.values(p.preview.loadout.instances).map((instance) => {
+          const catalogue = includedCopyCatalogue(
+            instance.snapshot,
+            p.preview.loadout.sources
+          );
           const source =
-            "kind" in instance.snapshot && instance.snapshot.kind === "bundled"
+            catalogue ??
+            ("kind" in instance.snapshot && instance.snapshot.kind === "bundled"
               ? p.preview.loadout.sources[instance.snapshot.sourceKey]
-              : instance.snapshot;
+              : instance.snapshot);
           return (
             <li key={instance.id}>
               {l.w("quantity", {
                 quantity: instance.state.quantity,
-                name: l.snapshot(instance.snapshot),
+                name: l.snapshot(catalogue ?? instance.snapshot),
               })}
               <small>{source && l.provenance(source)}</small>
             </li>

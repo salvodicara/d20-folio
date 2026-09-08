@@ -1,5 +1,12 @@
-import { isLibrarySnapshot } from "@/lib/homebrew/sources";
-import { isBundledSnapshot, instanceVersionLabel } from "@/lib/homebrew/instances";
+import { useAcquisitionLabels } from "./acquisition-presenters";
+import { verifyCatalogueSnapshot } from "@/lib/character-creation/catalogue";
+import { originRecord } from "@/lib/homebrew/origins";
+import { isLibrarySnapshot, type CatalogueSnapshot } from "@/lib/homebrew/sources";
+import {
+  isBundledSnapshot,
+  isInitialInstanceId,
+  instanceVersionLabel,
+} from "@/lib/homebrew/instances";
 import { Checkbox } from "@/components/ui/selection";
 import { useEffect, useRef, useState } from "react";
 import { characterPath, parseCharacter, type FolioCharacter } from "@/lib/identity/model";
@@ -13,6 +20,7 @@ import {
   type InstanceOperation,
   type InstanceRepository,
   type InstanceState,
+  type InitialLoadout,
 } from "@/lib/homebrew/instances";
 import { equal } from "@/lib/shared/model";
 import { conformDefinition } from "@/lib/homebrew/conformance";
@@ -83,7 +91,11 @@ export function HomebrewSheet(props: Props) {
     );
     const stopIssues = repository.watchIssues((issues) =>
       update({
-        issues: issues.filter((issue) => issue.path.startsWith(path + "/homebrew/")),
+        issues: issues.filter(
+          (issue) =>
+            issue.path.startsWith(path + "/homebrew/") ||
+            issue.path === path + "/loadout/initial"
+        ),
       })
     );
     const untrack = session.track(() => {
@@ -125,7 +137,8 @@ export function HomebrewSheet(props: Props) {
 }
 function restoreDraft(
   key: string,
-  item: HomebrewInstance
+  item: HomebrewInstance,
+  initial: InitialLoadout | null
 ): { draft: StateDraft | null; original: string | null; unreadable?: boolean } {
   let original: string | null = null;
   try {
@@ -133,7 +146,7 @@ function restoreDraft(
     if (original === null) return { draft: null, original: null };
     const value = JSON.parse(original) as Partial<StateDraft> | null;
     if (value?.schema !== 1) throw Error("incompatible-instance");
-    const base = parseInstance(value.base),
+    const base = parseInstance(value.base, initial?.sources, verifyCatalogueSnapshot),
       character = parseCharacter(value.character),
       state = parseInstanceState(value.state);
     if (
@@ -191,12 +204,28 @@ function HomebrewCopy({
   library,
   session,
 }: Props & { item: HomebrewInstance }) {
+  const acquisition = useAcquisitionLabels();
   const label = useHomebrewLabel(),
     { t } = useTranslation("common");
   const key =
     "instance:" + item.character.ownerUid + ":" + item.character.id + ":" + item.id;
   const storageKey = "folio-homebrew-state:" + (session.scope().uid ?? "") + ":" + key;
-  const [restored] = useState(() => restoreDraft(storageKey, item));
+  const initial = isInitialInstanceId(item.id)
+    ? (repository.loadedInitial?.(item.character) ?? null)
+    : null;
+  const includedSource = isBundledSnapshot(item.snapshot)
+    ? originRecord(
+        initial?.sources[item.snapshot.sourceKey]?.definition.payload.data.dependencies
+      )?.[item.snapshot.dependencyPath]
+    : item.snapshot;
+  const catalogue =
+    includedSource &&
+    typeof includedSource === "object" &&
+    "kind" in includedSource &&
+    includedSource.kind === "catalogue"
+      ? (includedSource as CatalogueSnapshot)
+      : undefined;
+  const [restored] = useState(() => restoreDraft(storageKey, item, initial));
   const [archive] = useState(() => {
     try {
       return { originals: readOriginals(storageKey), error: false };
@@ -305,10 +334,14 @@ function HomebrewCopy({
   return (
     <details className="homebrew-preview" open>
       <summary>
-        {item.snapshot.definition.name} · {label("version")}{" "}
-        {instanceVersionLabel(item.snapshot)}
+        {acquisition.snapshot(catalogue ?? item.snapshot)} · {label("version")}{" "}
+        {instanceVersionLabel(catalogue ?? item.snapshot)}
       </summary>
-      <HomebrewReader definition={item.snapshot.definition} />
+      <HomebrewReader
+        definition={item.snapshot.definition}
+        catalogue={catalogue}
+        included={isBundledSnapshot(item.snapshot)}
+      />
       {!isBundledSnapshot(item.snapshot) &&
         isLibrarySnapshot(item.snapshot) &&
         item.snapshot.provenance && (
@@ -513,6 +546,8 @@ function HomebrewCopy({
       <div className="identity-actions">
         <HomebrewExport
           definition={item.snapshot.definition}
+          catalogue={catalogue}
+          included={isBundledSnapshot(item.snapshot)}
           version={
             !isBundledSnapshot(item.snapshot) && isLibrarySnapshot(item.snapshot)
               ? item.snapshot
@@ -521,7 +556,14 @@ function HomebrewCopy({
         />
         <button
           onClick={() =>
-            downloadText(JSON.stringify(item, null, 2), "homebrew-instance.json")
+            downloadText(
+              JSON.stringify(
+                initial ? { instance: item, sources: initial.sources } : item,
+                null,
+                2
+              ),
+              "homebrew-instance.json"
+            )
           }
         >
           {label("recoverOriginal")}

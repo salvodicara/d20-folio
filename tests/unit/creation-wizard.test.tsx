@@ -1,3 +1,4 @@
+import { includedCopyCatalogue } from "@/features/library/included-copy-source";
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { createInstance } from "i18next";
@@ -385,4 +386,40 @@ it("blocks confirmation for an incomplete or disabled review", async () => {
   expect(
     screen.getByText("Complete the highlighted choices before creating your character.")
   ).toBeInTheDocument();
+});
+
+it("localizes frozen included personal copies in Italian without changing their bytes", async () => {
+  const draft = complete();
+  const preview = previewCreation(draft);
+  const original = JSON.stringify(preview.loadout);
+  const { view } = await mount({ draft, preview, step: "review" }, "it");
+  const copies = required(view.container.querySelector(".wizard-copies"));
+  expect(copies).toHaveTextContent("Cotta di Maglia");
+  expect(copies).toHaveTextContent("Spadone");
+  expect(copies).not.toHaveTextContent("Chain Mail");
+  expect(copies).not.toHaveTextContent("Greatsword");
+  expect(JSON.stringify(preview.loadout)).toBe(original);
+});
+
+it("does not substitute catalogue labels for missing or altered frozen copy sources", () => {
+  const { loadout } = previewCreation(complete());
+  const snapshot = required(
+    Object.values(loadout.instances).find(
+      (item) => "kind" in item.snapshot && item.snapshot.kind === "bundled"
+    )
+  ).snapshot;
+  expect(includedCopyCatalogue(snapshot, loadout.sources)).toBeDefined();
+  expect(includedCopyCatalogue(snapshot, {})).toBeUndefined();
+  const altered = structuredClone(snapshot);
+  altered.definition.name = "My authored armor";
+  expect(includedCopyCatalogue(altered, loadout.sources)).toBeUndefined();
+  if (!("kind" in snapshot) || snapshot.kind !== "bundled") throw Error("fixture");
+  const sources = structuredClone(loadout.sources);
+  const dependencies = sources[snapshot.sourceKey]?.definition.payload.data.dependencies;
+  if (!dependencies || typeof dependencies !== "object" || Array.isArray(dependencies))
+    throw Error("fixture");
+  const child = dependencies[snapshot.dependencyPath];
+  if (!child || typeof child !== "object" || Array.isArray(child)) throw Error("fixture");
+  child.release = "forged-release";
+  expect(includedCopyCatalogue(snapshot, sources)).toBeUndefined();
 });

@@ -737,10 +737,7 @@
       "backgroundChoiceHelp": "Scegli +2 e +1 in due diverse caratteristiche indicate, oppure +1 in tutte e tre. Il massimo ordinario è 20. Il talento Origine incluso in questo background è mostrato sotto.",
       "equipmentChoiceHelp": "Scegli il pacchetto di equipaggiamento di questo background oppure il suo oro iniziale. La scelta registra ciò che ti spetta; aggiungere oggetti e oro all’inventario è un passaggio separato.",
       "training": {
-        "armor": "Addestramento nelle armature",
         "weapon": "Addestramento nelle armi",
-        "shield": "Scudi",
-        "shields": "Scudi",
         "simple": "Armi semplici",
         "martial": "Armi da guerra",
         "light-armor": "Armature leggere",
@@ -846,6 +843,8 @@
       "parentError": "Questa classe madre non può essere inclusa. Verifica le regole registrate e le dipendenze conservate, poi scegli una versione compatibile.",
       "selectedParent": "Classe di appartenenza selezionata",
       "creationIdentity": "Identificativo della creazione in biblioteca"
-    }
+    },
+    "catalogueFields": "Sono mostrati i campi dichiarati dalla fonte fissata. Le altre meccaniche restano nell’originale; questa vista non le esegue.",
+    "catalogueOriginal": "Fonte originale del catalogo"
   }
 }

@@ -209,6 +209,8 @@ const CLASS_FIELDS: Readonly<Record<string, FieldRule>> = {
   armorProficiencies: compiled("system:class-progression"),
   weaponProficiencies: compiled("system:class-progression"),
   skillChoices: compiled("system:class-progression"),
+  weaponMastery: compiled("system:weapon-mastery-choice"),
+  invocationChoices: compiled("system:class-progression"),
   startingEquipment: compiled("equipment"),
   grants: compiled("grant"),
   spellcasting: compiled("system:spellcasting"),
@@ -239,6 +241,7 @@ const FEAT_FIELDS: Readonly<Record<string, FieldRule>> = {
   category: compiled("system:feat-choice"),
   repeatable: compiled("system:feat-choice"),
   prereq: compiled("system:feat-choice"),
+  spellcastingAbility: compiled("system:spellcasting"),
   mechanics: TRACKED_MECHANICS,
   classScope: compiled("system:fighting-style-choice"),
   grants: compiled("grant"),
@@ -306,6 +309,7 @@ const MAGIC_ITEM_FIELDS: Readonly<Record<string, FieldRule>> = {
 const INVOCATION_FIELDS: Readonly<Record<string, FieldRule>> = {
   id: IGNORE,
   prerequisite: compiled("system:class-progression"),
+  prerequisites: compiled("system:class-progression"),
   grants: compiled("grant"),
   mechanics: object({ actions: compiled("action") }),
 };
@@ -384,6 +388,9 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
   race: object(RACE_FIELDS),
   "race-trait": object({
     id: IGNORE,
+    minLevel: compiled("grant"),
+    spellcastingAbility: compiled("system:spellcasting"),
+    cantripReplacement: { kind: "manual-reference", boundary: "external-time" },
     mechanics: TRACKED_MECHANICS,
     grants: compiled("grant"),
   }),

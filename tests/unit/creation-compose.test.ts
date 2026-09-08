@@ -1,7 +1,14 @@
-import { composeAcquisitionBuilds } from "@/lib/homebrew/origin-build";
+vi.mock("firebase/firestore", () => ({}));
+import type { Firestore } from "firebase/firestore";
+import { createCreationRepository } from "@/lib/character-creation/repository";
+import { SessionController } from "@/lib/identity/session";
+import {
+  composeAcquisitionBuilds,
+  projectAcquisitionCharacter,
+} from "@/lib/homebrew/origin-build";
 import { verifyCatalogueSnapshot } from "@/lib/character-creation/catalogue";
 import { resolveCreationPool } from "@/lib/character-creation/catalogue-pools";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   newCreationDraft,
   selectCreationSource,
@@ -88,26 +95,36 @@ function complete(
   }
   throw new Error("creation-cascade-did-not-settle");
 }
-describe("guided creation composition", () => {
-  it("has a complete initial path for every composed class", () => {
-    for (const source of creationSources("class")) {
-      const { preview } = complete(source.id);
-      expect(preview.issues, source.key).toEqual([]);
-      expect(preview.valid, source.key).toBe(true);
-    }
+function expectRetainable(draft: ReturnType<typeof newCreationDraft>) {
+  const session = new SessionController();
+  session.transition({ uid: draft.ownerUid, campaignId: null, activeCharacterId: null });
+  const repository = createCreationRepository({} as Firestore, session, {
+    verifyCatalogue: verifyCatalogueSnapshot,
+    validateCandidate: validateCreationCandidate,
   });
-  it("has a complete first-level path for every species and background", () => {
-    for (const source of creationSources("species"))
-      expect(
-        complete("wizard", source.id, "soldier", true).preview.issues,
-        source.key
-      ).toEqual([]);
-    for (const source of creationSources("background"))
-      expect(
-        complete("wizard", "dwarf", source.id, true).preview.issues,
-        source.key
-      ).toEqual([]);
-  }, 30000);
+  const operation = repository.intent(creationCandidate(draft));
+  expect(() => repository.validateRecovered(structuredClone(operation))).not.toThrow();
+}
+describe("guided creation composition", () => {
+  it.each(creationSources("class"))("completes and retains class $id", (source) => {
+    const { draft, preview } = complete(source.id);
+    expectRetainable(draft);
+    expect(preview.issues, source.key).toEqual([]);
+    expect(preview.valid, source.key).toBe(true);
+  });
+  it.each(creationSources("species"))("completes and retains species $id", (source) => {
+    const { draft, preview } = complete("wizard", source.id, "soldier", true);
+    expect(preview.issues, source.key).toEqual([]);
+    expectRetainable(draft);
+  });
+  it.each(creationSources("background"))(
+    "completes and retains background $id",
+    (source) => {
+      const { draft, preview } = complete("wizard", "dwarf", source.id, true);
+      expect(preview.issues, source.key).toEqual([]);
+      expectRetainable(draft);
+    }
+  );
   it("derives starting HP and currency once without duplicating origin or class facts", () => {
     const { preview } = complete("fighter");
     expect(preview.abilities.constitution).toBe(14);
@@ -261,4 +278,23 @@ it("evaluates catalogue armor prerequisites against actual class training", () =
       (d) => d.selectionId === selection.id && d.code === "prerequisite-training"
     )
   ).toBe(true);
+});
+
+it("projects one class/origin composition with canonical catalogue identity and unchanged personal state", () => {
+  const { preview } = complete("fighter");
+  const projection = projectAcquisitionCharacter(
+    preview.character,
+    preview.origins,
+    preview.classes,
+    { verifyCatalogue: verifyCatalogueSnapshot, resolvePool: resolveCreationPool }
+  );
+  expect(projection.projectedCharacter.speciesId).toBe("dwarf");
+  expect(projection.projectedCharacter.classId).toBe("fighter");
+  expect(projection.projectedCharacter.sheet.build.classes).toEqual([
+    { classId: "fighter", level: 1 },
+  ]);
+  expect(projection.abilities).toEqual(preview.abilities);
+  expect(projection.projectedCharacter.sheet.state).toEqual(
+    preview.character.sheet.state
+  );
 });

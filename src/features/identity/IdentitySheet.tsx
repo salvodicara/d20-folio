@@ -278,7 +278,9 @@ export function IdentitySheet({
   const catalogues = srdCatalogues(i18n.language.startsWith("it") ? "it" : "en");
   const name = (kind: SrdKind, id: Json | undefined) => {
     if (typeof id !== "string") return "";
-    const translated = catalogues?.[kind]?.[id]?.name;
+    const translated =
+      catalogues?.[kind]?.[id]?.name ??
+      (kind === "proficiency" ? catalogues?.equipment[id]?.name : undefined);
     return typeof translated === "string" ? translated : id;
   };
   const knownName = (value: string) => {
@@ -518,7 +520,8 @@ export function IdentitySheet({
           <div>
             <dt>{text("background")}</dt>
             <dd>
-              {originProjection?.background.selectionId
+              {originProjection?.background.selectionId &&
+              !originProjection.background.catalogue
                 ? originProjection.background.name
                 : name("background", build.background)}
             </dd>

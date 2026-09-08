@@ -12,8 +12,10 @@ import {
 import type { FolioCharacter } from "../../src/lib/identity/model";
 const wire = vi.hoisted(() => ({
   docs: new Map<string, unknown>(),
+  hold: null as Promise<void> | null,
   writes: [] as string[],
   watchers: new Map<string, (snapshot: unknown) => void>(),
+  errors: new Map<string, (error: Error) => void>(),
 }));
 vi.mock("firebase/firestore", async (importOriginal) => {
   const actual = await importOriginal<typeof import("firebase/firestore")>();
@@ -28,16 +30,24 @@ vi.mock("firebase/firestore", async (importOriginal) => {
     doc: (_db: unknown, path: string) => ({ path }),
     collection: (_db: unknown, path: string) => ({ path }),
     getDocFromServer: (ref: { path: string }) => Promise.resolve(snapshot(ref.path)),
-    getDocsFromServer: (ref: { path: string }) =>
-      Promise.resolve({
+    getDocsFromServer: async (ref: { path: string }) => {
+      const gate = wire.hold;
+      if (gate) await gate;
+      return {
         docs: [...wire.docs.keys()]
           .filter(
             (p) =>
               p.startsWith(ref.path + "/") && !p.slice(ref.path.length + 1).includes("/")
           )
           .map(snapshot),
-      }),
-    onSnapshot: (ref: { path: string }, callback: (snapshot: unknown) => void) => {
+      };
+    },
+    onSnapshot: (
+      ref: { path: string },
+      callback: (snapshot: unknown) => void,
+      failed: (error: Error) => void
+    ) => {
+      wire.errors.set(ref.path, failed);
       wire.watchers.set(ref.path, callback);
       return () => wire.watchers.delete(ref.path);
     },
@@ -68,8 +78,10 @@ const character: FolioCharacter = {
 };
 function setup() {
   wire.docs.clear();
+  wire.hold = null;
   wire.writes = [];
   wire.watchers.clear();
+  wire.errors.clear();
   const session = new SessionController();
   session.transition({ uid: "owner", campaignId: null, activeCharacterId: "hero" });
   const snapshot = {
@@ -102,7 +114,7 @@ function setup() {
   wire.docs.set("users/owner", { status: "active" });
   wire.docs.set("folioAccounts/owner/characters/hero", character);
   const repository = createInstanceRepository({} as Firestore, session, () => true);
-  return { repository, group };
+  return { repository, group, session };
 }
 describe("unified grouped instance repository", () => {
   it("lists initial copies, edits one state through a whole-group receipt CAS, and preserves siblings", async () => {
@@ -285,4 +297,40 @@ it("updates a direct owned Library source inside the group with exact version va
   expect(after.instances.initial_a?.state).toEqual(item.state);
   expect(after.instances.initial_b).toEqual(group.instances.initial_b);
   expect(after.sources).toEqual(group.sources);
+});
+
+it("withdraws the cached frozen group after permission denial and ignores the other listener's late snapshot", () => {
+  const { repository, group } = setup(),
+    next = vi.fn(),
+    failed = vi.fn();
+  repository.watch(character, next, failed);
+  const groupedPath = initialLoadoutPath(character),
+    individualPath = "folioAccounts/owner/characters/hero/homebrew";
+  wire.watchers.get(groupedPath)?.({ exists: () => true, data: () => group });
+  wire.watchers.get(individualPath)?.({ docs: [] });
+  expect(repository.loadedInitial?.(character)).toEqual(group);
+  expect(next).toHaveBeenCalledOnce();
+  wire.errors.get(groupedPath)?.(new Error("permission-denied"));
+  expect(repository.loadedInitial?.(character)).toBeNull();
+  wire.watchers.get(individualPath)?.({ docs: [] });
+  wire.watchers.get(groupedPath)?.({ exists: () => true, data: () => group });
+  expect(repository.loadedInitial?.(character)).toBeNull();
+  expect(next).toHaveBeenCalledOnce();
+});
+
+it("does not let an old A read clear the new A cache after A to B to A", async () => {
+  const { repository, group, session } = setup();
+  let release = () => {};
+  wire.hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const old = repository.list(character).catch((error: unknown) => error);
+  session.transition({ uid: "other", campaignId: null, activeCharacterId: null });
+  session.transition({ uid: "owner", campaignId: null, activeCharacterId: "hero" });
+  wire.hold = null;
+  await repository.list(character);
+  expect(repository.loadedInitial?.(character)).toEqual(group);
+  release();
+  expect(await old).toBeInstanceOf(Error);
+  expect(repository.loadedInitial?.(character)).toEqual(group);
 });

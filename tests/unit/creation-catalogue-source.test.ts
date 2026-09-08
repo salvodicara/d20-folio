@@ -1,22 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { creationSources } from "@/lib/character-creation/catalogue-source";
+import {
+  creationSources,
+  type CreationSourceKind,
+} from "@/lib/character-creation/catalogue-source";
+import { classTables } from "@/data/classes";
+import { SRD_RACES } from "@/data/races";
+import { SRD_BACKGROUNDS } from "@/data/backgrounds";
+import { SRD_FEATS } from "@/data/feats";
+import { spells } from "@/data/spells";
+import { SRD_EQUIPMENT } from "@/data/equipment";
+import { SRD_INVOCATIONS } from "@/data/invocations";
+
+const catalogues = {
+  class: classTables,
+  species: SRD_RACES,
+  background: SRD_BACKGROUNDS,
+  feat: SRD_FEATS,
+  spell: spells,
+  equipment: SRD_EQUIPMENT,
+  invocation: SRD_INVOCATIONS,
+} satisfies Record<CreationSourceKind, readonly { id: string }[]>;
 describe("creation catalogue source inventory", () => {
   it("exposes the full source catalogue rather than the mock's sample options", () => {
-    expect(creationSources("class").length).toBeGreaterThanOrEqual(12);
-    expect(creationSources("species").length).toBeGreaterThanOrEqual(9);
-    expect(creationSources("spell").length).toBeGreaterThan(100);
-    expect(creationSources("feat").length).toBeGreaterThan(20);
-    expect(creationSources("invocation").length).toBeGreaterThan(20);
-    for (const kind of [
-      "class",
-      "species",
-      "background",
-      "feat",
-      "spell",
-      "equipment",
-      "invocation",
-    ] as const) {
-      const entries = creationSources(kind);
+    for (const [kind, values] of Object.entries(catalogues)) {
+      const sourceKind = kind as CreationSourceKind;
+      const entries = creationSources(sourceKind);
+      expect(entries.map((entry) => entry.key).sort()).toEqual(
+        values.map((value) => `${kind}:${value.id}`).sort()
+      );
+      expect(Object.fromEntries(entries.map((entry) => [entry.id, entry.value]))).toEqual(
+        Object.fromEntries(values.map((value) => [value.id, value]))
+      );
+      expect(entries.every((entry) => entry.kind === kind)).toBe(true);
       expect(new Set(entries.map((entry) => entry.key)).size).toBe(entries.length);
       expect(entries.every((entry) => entry.name.trim().length > 0)).toBe(true);
     }

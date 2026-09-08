@@ -109,8 +109,9 @@
   scrollbar-gutter: stable;
   padding: 3px;
 }
-.wizard-check {
+.identity-app .wizard-check {
   display: flex;
+  flex-direction: row;
   align-items: start;
   gap: 10px;
   padding: 9px 0;
@@ -118,7 +119,20 @@
   cursor: pointer;
   overflow-wrap: anywhere;
 }
-.wizard-check input {
+.identity-app .wizard-check .cb-field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wizard-check .cb-field-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--identity-muted, #b3c1c4);
+  overflow-wrap: anywhere;
+}
+.identity-app .wizard-check input {
+  min-height: 17px;
+  padding: 0;
   width: 17px;
   height: 17px;
   margin: 3px 0 0;

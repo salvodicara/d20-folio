@@ -1,3 +1,13 @@
+import { HomebrewReader } from "@/features/library/HomebrewReader";
+import { HomebrewExport } from "@/features/library/HomebrewPortable";
+import { downloadText } from "@/features/library/homebrew-files";
+import { CreationFlow } from "@/features/creation/CreationFlow";
+import { ImportFlow } from "@/features/creation/ImportFlow";
+import "@/features/creation/creation-flow.css";
+import { createClassBuildReader } from "@/lib/homebrew/class-build-repository";
+import { verifyCatalogueSnapshot } from "@/lib/character-creation/catalogue";
+import { resolveCreationPool } from "@/lib/character-creation/catalogue-pools";
+import { useClassBuild } from "./useClassBuild";
 import { PreparationReuse } from "@/features/library/PreparationReuse";
 import { CampaignHomebrew } from "@/features/library/CampaignHomebrew";
 import { createPreparationRepository } from "@/lib/homebrew/preparation-repository";
@@ -5,7 +15,7 @@ import { HomebrewReuse } from "@/features/library/HomebrewReuse";
 import { HomebrewSheet } from "@/features/library/HomebrewSheet";
 import { createInstanceRepository } from "@/lib/homebrew/instance-repository";
 import { createOriginBuildRepository } from "@/lib/homebrew/origin-build-repository";
-import { projectOriginCharacter } from "@/lib/homebrew/origin-build";
+import { projectAcquisitionCharacter } from "@/lib/homebrew/origin-build";
 import { isOriginFamily } from "@/lib/homebrew/origins";
 import { OriginBuildPanel } from "@/features/library/OriginBuild";
 import { useOriginBuild } from "@/features/library/useOriginBuild";
@@ -158,8 +168,18 @@ function AuthenticatedIdentity({ user }: { user: User }) {
   const shared = useMemo(() => createSharedRepository(db, session), [session]);
   const [epoch, setEpoch] = useState(0);
   const library = useMemo(() => createLibraryRepository(db, session), [session]);
-  const instances = useMemo(() => createInstanceRepository(db, session), [session]);
-  const origins = useMemo(() => createOriginBuildRepository(db, session), [session]);
+  const instances = useMemo(
+    () => createInstanceRepository(db, session, verifyCatalogueSnapshot),
+    [session]
+  );
+  const origins = useMemo(
+    () =>
+      createOriginBuildRepository(db, session, {
+        verifyCatalogue: verifyCatalogueSnapshot,
+        resolvePool: resolveCreationPool,
+      }),
+    [session]
+  );
   const preparations = useMemo(() => createPreparationRepository(db, session), [session]);
   const [preparationId, setPreparationId] = useState("encounter");
   const [reuse, setReuse] = useState<LibraryVersion | null>(null);
@@ -202,20 +222,46 @@ function AuthenticatedIdentity({ user }: { user: User }) {
       ? inspectedSnapshot.character
       : null;
   const originBuild = useOriginBuild(inspected, origins, session, epoch);
+  const classReader = useMemo(
+    () => createClassBuildReader(db, session, verifyCatalogueSnapshot),
+    [session]
+  );
+  const classBuild = useClassBuild(inspected, classReader, session, epoch);
+  const creationMarker = inspected?.sheet.build.creation;
+  const guidedCreation =
+    !!creationMarker &&
+    typeof creationMarker === "object" &&
+    !Array.isArray(creationMarker) &&
+    creationMarker.schema === 1 &&
+    creationMarker.kind === "guided";
+  const classUnavailable =
+    classBuild.error ||
+    !!classBuild.original ||
+    (guidedCreation && !classBuild.loading && !classBuild.base);
+  const originUnavailable =
+    originBuild.error ||
+    originBuild.issues.length > 0 ||
+    (guidedCreation && !originBuild.loading && !originBuild.base);
   const originProjection = useMemo(
     () =>
       inspected &&
       !originBuild.loading &&
-      !originBuild.error &&
-      !originBuild.issues.length
-        ? projectOriginCharacter(inspected, originBuild.base)
+      !originUnavailable &&
+      !classBuild.loading &&
+      !classUnavailable
+        ? projectAcquisitionCharacter(inspected, originBuild.base, classBuild.base, {
+            verifyCatalogue: verifyCatalogueSnapshot,
+            resolvePool: resolveCreationPool,
+          })
         : undefined,
     [
       inspected,
       originBuild.loading,
-      originBuild.error,
-      originBuild.issues.length,
+      originUnavailable,
       originBuild.base,
+      classBuild.loading,
+      classBuild.base,
+      classUnavailable,
     ]
   );
   useEffect(() => {
@@ -589,8 +635,8 @@ function AuthenticatedIdentity({ user }: { user: User }) {
         inspectedSnapshot?.key !== inspectionKey
       }
       originProjection={originProjection}
-      originLoading={originBuild.loading}
-      originUnavailable={originBuild.error || originBuild.issues.length > 0}
+      originLoading={originBuild.loading || classBuild.loading}
+      originUnavailable={originUnavailable || classUnavailable}
       portraits={portraits}
       privateNotes={privateNotes}
       dmNotes={dmNotes}
@@ -754,10 +800,45 @@ function AuthenticatedIdentity({ user }: { user: User }) {
               key={`origin:${epoch}:${inspected.ownerUid}:${inspected.id}`}
               character={inspected}
               loaded={originBuild}
+              editable={!guidedCreation}
+              composition={originProjection}
               repository={origins}
               library={library}
               session={session}
             />
+            {classBuild.original && (
+              <div role="alert">
+                <p>{t("homebrewV2.recoveryUnavailable")}</p>
+                <button
+                  onClick={() =>
+                    downloadText(classBuild.original ?? "", "class-build-original.json")
+                  }
+                >
+                  {t("homebrewV2.recoverOriginal")}
+                </button>
+              </div>
+            )}
+            {classBuild.base &&
+              Object.values(classBuild.base.acquisitions).map((acquisition) => (
+                <section className="homebrew-sheet" key={acquisition.id}>
+                  <h3>{t("identity.sheet.classes")}</h3>
+                  <HomebrewReader
+                    definition={acquisition.snapshot.definition}
+                    catalogue={
+                      "kind" in acquisition.snapshot ? acquisition.snapshot : undefined
+                    }
+                  />
+                  <HomebrewExport
+                    definition={acquisition.snapshot.definition}
+                    catalogue={
+                      "kind" in acquisition.snapshot ? acquisition.snapshot : undefined
+                    }
+                    version={
+                      "kind" in acquisition.snapshot ? undefined : acquisition.snapshot
+                    }
+                  />
+                </section>
+              ))}
             <HomebrewSheet
               key={`${epoch}:${inspected.ownerUid}:${inspected.id}`}
               character={inspected}
@@ -796,10 +877,28 @@ function AuthenticatedIdentity({ user }: { user: User }) {
           />
         ) : null
       }
-      onImport={(source) =>
-        run(async () => {
-          await repository.importLegacy(source);
-        })
+      onCreate={() =>
+        navigation.go({ page: "characters", creation: "new", step: "identity" })
+      }
+      onBeginImport={() => navigation.go({ page: "characters", creation: "import" })}
+      onReviewImport={(id) =>
+        navigation.go({ page: "characters", creation: "import", review: id })
+      }
+      creation={
+        <>
+          <CreationFlow
+            session={session}
+            library={library}
+            enabled={!loading && membershipsReady && !!account}
+            generation={epoch}
+          />
+          <ImportFlow
+            session={session}
+            enabled={!loading && membershipsReady && !!account}
+            characters={characters}
+            recoverOriginal={(id) => repository.recoverImport(id)}
+          />
+        </>
       }
       onRecover={(id) =>
         run(async () => {

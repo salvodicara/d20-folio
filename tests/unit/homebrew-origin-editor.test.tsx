@@ -183,7 +183,10 @@ it("compares actual concurrent answers on the same source version before rebasin
 });
 it("does not submit when the local envelope cannot be retained", async () => {
   const { commit } = await setup(version("Moon Kin"));
-  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+  vi.spyOn(
+    Object.getPrototypeOf(sessionStorage) as Storage,
+    "setItem"
+  ).mockImplementation(() => {
     throw Error("storage unavailable");
   });
   fireEvent.click(screen.getByRole("button", { name: "Confirm character build" }));

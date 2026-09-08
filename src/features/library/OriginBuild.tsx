@@ -1,8 +1,9 @@
+import { useAcquisitionLabels } from "./acquisition-presenters";
 import { isLibrarySnapshot, sourceVersionLabel } from "@/lib/homebrew/sources";
 import { useEffect, useRef, useState } from "react";
 import { type FolioCharacter } from "@/lib/identity/model";
 import type { SessionController } from "@/lib/identity/session";
-import { composeOriginBuild } from "@/lib/homebrew/origin-build";
+import { composeOriginBuild, type OriginComposition } from "@/lib/homebrew/origin-build";
 import type {
   OriginBuildRepository,
   OriginBuildOperation,
@@ -44,12 +45,15 @@ type Props = {
   repository: OriginBuildRepository;
   library: LibraryRepository;
   session: SessionController;
+  editable?: boolean;
+  composition?: OriginComposition;
 };
 export function OriginBuildPanel(props: Props) {
   const { character, loaded, session } = props;
   const label = useHomebrewLabel();
+  const acquisition = useAcquisitionLabels();
   const [editing, setEditing] = useState<string | null>(null);
-  const owner = character.ownerUid === session.scope().uid;
+  const owner = props.editable !== false && character.ownerUid === session.scope().uid;
   const selections = Object.values(loaded.base?.selections ?? {}).sort(
     (a, b) => a.ordinal - b.ordinal
   );
@@ -75,7 +79,7 @@ export function OriginBuildPanel(props: Props) {
       {selections.map((selection) => (
         <article className="origin-selected" key={selection.id}>
           <h4>
-            {selection.snapshot.definition.name} · {label("version")}{" "}
+            {acquisition.snapshot(selection.snapshot)} · {label("version")}{" "}
             {sourceVersionLabel(selection.snapshot)}
           </h4>
           <p>
@@ -83,20 +87,31 @@ export function OriginBuildPanel(props: Props) {
           </p>
           <details>
             <summary>{label("origin.currentChoices")}</summary>
-            <HomebrewReader definition={selection.snapshot.definition} />
+            <HomebrewReader
+              definition={selection.snapshot.definition}
+              catalogue={"kind" in selection.snapshot ? selection.snapshot : undefined}
+            />
             <dl className="homebrew-facts">
-              {composeOriginBuild(character, loaded.base)
-                .activeChoices.filter((c) => c.selectionId === selection.id)
+              {(
+                props.composition ?? composeOriginBuild(character, loaded.base)
+              ).activeChoices
+                .filter((c) => c.selectionId === selection.id)
                 .map((c) => (
                   <div key={c.path}>
-                    <dt>{c.choice.name}</dt>
+                    <dt>{acquisition.choice(c, selection.snapshot)}</dt>
                     <dd>
                       {c.selected
-                        .map(
-                          (id) =>
-                            c.choice.options.find((o) => o.id === id)?.name ??
-                            label("origin.obsoleteOption")
-                        )
+                        .map((id, index) => {
+                          const option = c.choice.options.find((o) => o.id === id);
+                          return option
+                            ? acquisition.option(
+                                option,
+                                selection.snapshot,
+                                selection.resolvedChoices?.[c.path]?.[index],
+                                c.choice.id
+                              )
+                            : label("origin.obsoleteOption");
+                        })
                         .join(", ") || "—"}
                       {!c.active ? " · " + label("origin.choiceInactive") : ""}
                     </dd>
@@ -106,6 +121,7 @@ export function OriginBuildPanel(props: Props) {
           </details>
           <HomebrewExport
             definition={selection.snapshot.definition}
+            catalogue={"kind" in selection.snapshot ? selection.snapshot : undefined}
             version={
               isLibrarySnapshot(selection.snapshot) ? selection.snapshot : undefined
             }

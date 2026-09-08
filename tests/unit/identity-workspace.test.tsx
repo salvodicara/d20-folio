@@ -12,7 +12,8 @@ async function mount(
     id: string;
     name: string;
     joinOpen: boolean;
-  } | null> = () => Promise.resolve(null)
+  } | null> = () => Promise.resolve(null),
+  sourceIds: { speciesId?: string; classId?: string } = {}
 ) {
   const i18n = createInstance();
   await i18n.init({ lng: "en", resources: { en: { common: en } }, defaultNS: "common" });
@@ -29,8 +30,8 @@ async function mount(
             ownerUid: "marco",
             id: "lyra",
             name: "Lyra Voss",
-            speciesId: "human",
-            classId: "bard",
+            speciesId: sourceIds.speciesId ?? "human",
+            classId: sourceIds.classId ?? "bard",
             level: 9,
             revision: 0,
             currentAssignment: null,
@@ -80,6 +81,23 @@ async function mount(
 
 beforeEach(() => window.history.replaceState(null, "", "/"));
 describe("new identity workspace", () => {
+  it("keeps the approved textual mast and table LED with accessible destination names", async () => {
+    await mount();
+    const navigation = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(
+      within(navigation)
+        .getAllByRole("button")
+        .map((button) => button.textContent.trim())
+    ).toEqual(["Campaign", "At the table", "Character", "Library"]);
+    expect(navigation.querySelectorAll("svg")).toHaveLength(0);
+    const table = within(navigation).getByRole("button", {
+      name: "At the table",
+    });
+    expect(table.querySelector('[aria-hidden="true"]')).toBeTruthy();
+    fireEvent.click(table);
+    expect(table.getAttribute("aria-current")).toBe("page");
+    expect(window.location.hash).toBe("#table");
+  });
   it("opens the actual library and restores its destination from browser history", async () => {
     await mount();
     fireEvent.click(screen.getByRole("button", { name: "Library" }));
@@ -250,3 +268,28 @@ it("finishes a requested locale across ordinary navigation while the account rem
   expect(i18n.language).toBe("it");
   load.mockRestore();
 });
+
+it.each(["en", "it"] as const)(
+  "does not expose custom source identifiers in the %s roster without a loaded source name",
+  async (locale) => {
+    const sourceId = "83cb4001-4051-40fd-b4cd-77f078b5f663";
+    const { i18n } = await mount(undefined, {
+      speciesId: sourceId,
+      classId: "custom-class-id",
+    });
+    i18n.addResourceBundle("it", "common", mergedUi("it"));
+    await act(() => i18n.changeLanguage(locale));
+    fireEvent.click(
+      screen.getByRole("button", { name: locale === "it" ? "Personaggio" : "Character" })
+    );
+    expect(screen.queryByText(new RegExp(sourceId))).toBeNull();
+    expect(screen.queryByText(/custom-class-id/)).toBeNull();
+    expect(
+      screen.getByText(
+        locale === "it"
+          ? /Voce personalizzata · Voce personalizzata/
+          : /Custom entry · Custom entry/
+      )
+    ).toBeTruthy();
+  }
+);

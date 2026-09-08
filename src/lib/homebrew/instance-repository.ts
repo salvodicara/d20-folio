@@ -59,6 +59,7 @@ export function createInstanceRepository(
 ): InstanceRepository {
   const tickets = new Map<string, { fence: () => void; operation: InstanceOperation }>();
   const initialBases = new Map<string, InitialLoadout>();
+  const readGenerations = new Map<string, number>();
   const sources = new Map<string, InstanceIssue[]>();
   const listeners = new Set<(issues: InstanceIssue[]) => void>();
   const uid = () => {
@@ -237,7 +238,19 @@ export function createInstanceRepository(
       throw new Error("intent-mismatch");
     return frozen(structuredClone(r));
   }
+  const withdraw = (character: CharacterRef) => {
+    const path = characterPath(character);
+    readGenerations.set(path, (readGenerations.get(path) ?? 0) + 1);
+    initialBases.delete(initialLoadoutPath(character));
+    for (const key of sources.keys()) if (key.startsWith(path + "/")) sources.delete(key);
+    for (const listener of listeners) listener([...sources.values()].flat());
+  };
   const api: InstanceRepository = {
+    loadedInitial(character) {
+      check();
+      ensureIssues();
+      return initialBases.get(initialLoadoutPath(character)) ?? null;
+    },
     watchIssues(listener) {
       ensureIssues();
       const callback = session.guard(listener);
@@ -247,44 +260,62 @@ export function createInstanceRepository(
     },
     async list(character) {
       check();
-      const done = session.ticket();
-      const [individual, grouped] = await Promise.all([
-        getDocsFromServer(collection(db, characterPath(character) + "/homebrew")),
-        getDocFromServer(doc(db, initialLoadoutPath(character))),
-      ]);
-      done();
-      return [...records(character, individual), ...initialRecords(character, grouped)];
+      const done = session.ticket(),
+        path = characterPath(character),
+        generation = readGenerations.get(path) ?? 0;
+      try {
+        const [individual, grouped] = await Promise.all([
+          getDocsFromServer(collection(db, characterPath(character) + "/homebrew")),
+          getDocFromServer(doc(db, initialLoadoutPath(character))),
+        ]);
+        done();
+        if ((readGenerations.get(path) ?? 0) !== generation)
+          throw Error("permission-denied");
+        return [...records(character, individual), ...initialRecords(character, grouped)];
+      } catch (error) {
+        done();
+        withdraw(character);
+        throw error;
+      }
     },
     watch(character, onData, onError) {
       check();
+      let failed = false;
+      const failure = (error: Error) => {
+        failed = true;
+        withdraw(character);
+        onError(error);
+      };
       let individual: HomebrewInstance[] | null = null;
       let grouped: HomebrewInstance[] | null = null;
       const emit = () => {
-        if (individual && grouped) onData([...individual, ...grouped]);
+        if (!failed && individual && grouped) onData([...individual, ...grouped]);
       };
       const stopIndividual = onSnapshot(
         collection(db, characterPath(character) + "/homebrew"),
         session.guard((snapshot: QuerySnapshot) => {
+          if (failed) return;
           try {
             individual = records(character, snapshot);
             emit();
           } catch (error) {
-            onError(error as Error);
+            failure(error as Error);
           }
         }),
-        session.guard(onError)
+        session.guard(failure)
       );
       const stopGrouped = onSnapshot(
         doc(db, initialLoadoutPath(character)),
         session.guard((snapshot: DocumentSnapshot) => {
+          if (failed) return;
           try {
             grouped = initialRecords(character, snapshot);
             emit();
           } catch (error) {
-            onError(error as Error);
+            failure(error as Error);
           }
         }),
-        session.guard(onError)
+        session.guard(failure)
       );
       return session.track(() => {
         stopIndividual();

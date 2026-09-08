@@ -1,3 +1,8 @@
+import { verifyCatalogueSnapshot } from "@/lib/character-creation/catalogue";
+import type { CatalogueSnapshot } from "@/lib/homebrew/sources";
+import { equal } from "@/lib/shared/model";
+import { srdCatalogues, type SrdKind } from "@/i18n/srd-en";
+import { useTranslation } from "react-i18next";
 import { ClassReader, CLASS_READER_KEYS } from "./ClassReader";
 import { advancedCollections } from "@/lib/homebrew/advanced";
 import { AdvancedReader } from "./AdvancedFields";
@@ -12,13 +17,30 @@ export function HomebrewReader({
   printable = false,
   originBundle,
   included = false,
+  catalogue,
 }: {
   definition: LibraryDefinition;
   printable?: boolean;
   originBundle?: Record<string, JsonValue>;
   included?: boolean;
+  catalogue?: CatalogueSnapshot;
 }) {
   const label = useHomebrewLabel();
+  const { i18n } = useTranslation("common");
+  const authenticated =
+    !!catalogue &&
+    equal(catalogue.definition, definition) &&
+    verifyCatalogueSnapshot(catalogue, included);
+  const [sourceKind, ...sourceId] = authenticated ? catalogue.entryId.split(":") : [];
+  const kind = sourceKind === "species" ? "race" : sourceKind;
+  const entry = kind
+    ? srdCatalogues(i18n.language.startsWith("it") ? "it" : "en")?.[kind as SrdKind]?.[
+        sourceId.join(":")
+      ]
+    : undefined;
+  const name = typeof entry?.name === "string" ? entry.name : definition.name;
+  const description =
+    typeof entry?.description === "string" ? entry.description : definition.description;
   const data = definition.payload.data;
   const value = (v: JsonValue | undefined, options?: readonly string[]): string =>
     typeof v === "boolean"
@@ -37,17 +59,19 @@ export function HomebrewReader({
   if (!authoringFamily(definition.family) || data.authoringVersion !== 1)
     return (
       <div className="homebrew-reader">
-        <h3>{definition.name}</h3>
-        <p>{definition.description}</p>
+        <h3>{name}</h3>
+        <p>{description}</p>
         <p>{label("preservedPayload")}</p>
         <pre>{JSON.stringify(data, null, 2)}</pre>
       </div>
     );
   const classContent = ["class", "subclass"].includes(definition.family);
   const fields = authoringFields(definition.family).filter(
-    (f) => !classContent || !CLASS_READER_KEYS.includes(f.key)
+    (f) =>
+      (!classContent || !CLASS_READER_KEYS.includes(f.key)) &&
+      (!authenticated || Object.hasOwn(data, f.key))
   );
-  const diagnostics = included ? [] : conformDefinition(definition);
+  const diagnostics = included || authenticated ? [] : conformDefinition(definition);
   const originContent =
     isOriginFamily(definition.family) ||
     classContent ||
@@ -73,8 +97,19 @@ export function HomebrewReader({
 
   return (
     <article className="homebrew-reader">
-      <h3>{definition.name}</h3>
-      <p className="library-description">{definition.description}</p>
+      <h3>{name}</h3>
+      <p className="library-description">{description}</p>
+      {authenticated && (
+        <>
+          <p>{label("catalogueFields")}</p>
+          <details open={printable}>
+            <summary>{label("catalogueOriginal")}</summary>
+            <pre>
+              {JSON.stringify(catalogue.sourceData ?? catalogue.definition, null, 2)}
+            </pre>
+          </details>
+        </>
+      )}
       {[...new Set(fields.map((f) => f.group))].map((group) => (
         <section key={group}>
           <h4>{label("groups." + group)}</h4>
@@ -105,6 +140,7 @@ export function HomebrewReader({
           definition={definition}
           printable={printable}
           bundle={originBundle}
+          catalogue={authenticated ? catalogue : undefined}
         />
       )}
       <AdvancedReader definition={definition} printable={printable} />
@@ -113,6 +149,7 @@ export function HomebrewReader({
           definition={definition}
           printable={printable}
           bundle={originBundle}
+          catalogue={authenticated ? catalogue : undefined}
           included={included}
         />
       )}

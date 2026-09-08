@@ -153,7 +153,7 @@ describe("reviewed import intent authority", () => {
     const { repo } = client();
     const initial = await repo.intent(original, review);
     await repo.commit(initial);
-    const base = await repo.read(initial.character);
+    const base = await repo.read(initial.output);
     const update = await repo.reviewIntent(initial.output, original, base, {
       ...review,
       declaredEdition: "2024",

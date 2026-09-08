@@ -1,3 +1,4 @@
+import type { CatalogueSnapshot } from "@/lib/homebrew/sources";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { LibraryDefinition, LibraryVersion } from "@/lib/library/model";
@@ -170,9 +171,13 @@ export function HomebrewImport({
 export function HomebrewExport({
   definition,
   version,
+  catalogue,
+  included = false,
 }: {
   definition: LibraryDefinition;
   version?: LibraryVersion;
+  catalogue?: CatalogueSnapshot;
+  included?: boolean;
 }) {
   const label = useHomebrewLabel();
   const [printing, setPrinting] = useState(false);
@@ -190,7 +195,9 @@ export function HomebrewExport({
         type="button"
         onClick={() =>
           downloadText(
-            encodePortable(definition, version),
+            catalogue
+              ? JSON.stringify(catalogue, null, 2)
+              : encodePortable(definition, version),
             "homebrew-" + (version ? `v${version.version}` : "draft") + ".json"
           )
         }
@@ -204,10 +211,18 @@ export function HomebrewExport({
         createPortal(
           <div className="homebrew-print">
             <p>
-              d20 Folio · {label(version ? "stableExport" : "draftExport")}{" "}
+              d20 Folio ·{" "}
+              {label(
+                catalogue ? "catalogueOriginal" : version ? "stableExport" : "draftExport"
+              )}{" "}
               {version?.version ?? ""}
             </p>
-            <HomebrewReader definition={definition} printable />
+            <HomebrewReader
+              definition={definition}
+              catalogue={catalogue}
+              included={included}
+              printable
+            />
             {version && (
               <p>
                 {label("source")} · {version.ownerUid} · {label("version")}{" "}

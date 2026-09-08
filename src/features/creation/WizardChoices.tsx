@@ -1,3 +1,4 @@
+import { CheckboxField } from "@/components/ui/selection";
 import { useId, useState } from "react";
 import {
   answerCreationChoice,
@@ -116,30 +117,26 @@ export function WizardChoice({ c, ...p }: WizardEditProps & { c: ActiveOriginCho
       <div className="wizard-option-list" aria-describedby={id + "-count"}>
         {visible.map((o) => (
           <div className="wizard-option" key={o.option.id}>
-            <label className="wizard-check">
-              <input
-                type="checkbox"
-                checked={c.selected.includes(o.option.id)}
-                disabled={
-                  !c.selected.includes(o.option.id) &&
-                  c.choice.count !== 1 &&
-                  c.selected.length >= c.choice.count
-                }
-                onChange={(e) =>
-                  change(
-                    e.target.checked
-                      ? c.choice.count === 1
-                        ? [o.option.id]
-                        : [...c.selected, o.option.id]
-                      : c.selected.filter((v) => v !== o.option.id)
-                  )
-                }
-              />
-              <span>
-                {label(o)}
-                {o.snapshot && <small>{l.provenance(o.snapshot)}</small>}
-              </span>
-            </label>
+            <CheckboxField
+              className="wizard-check"
+              checked={c.selected.includes(o.option.id)}
+              disabled={
+                !c.selected.includes(o.option.id) &&
+                c.choice.count !== 1 &&
+                c.selected.length >= c.choice.count
+              }
+              onCheckedChange={(checked) =>
+                change(
+                  checked
+                    ? c.choice.count === 1
+                      ? [o.option.id]
+                      : [...c.selected, o.option.id]
+                    : c.selected.filter((v) => v !== o.option.id)
+                )
+              }
+              label={label(o)}
+              hint={o.snapshot ? l.provenance(o.snapshot) : undefined}
+            />
             {o.snapshot && (
               <details className="wizard-option-reading">
                 <summary>{l.w("readOption", { name: l.snapshot(o.snapshot) })}</summary>

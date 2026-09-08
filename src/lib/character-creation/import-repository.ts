@@ -63,7 +63,7 @@ export function parseImportReconciliation(
       Object.keys(data).length !== 9 ||
       data.schema !== 1 ||
       data.sourceSchema !== 3 ||
-      !equal(data.character, character) ||
+      !equal(data.character, { ownerUid: character.ownerUid, id: character.id }) ||
       typeof data.sourceHash !== "string" ||
       !/^[a-f0-9]{64}$/.test(data.sourceHash) ||
       !Number.isSafeInteger(data.revision) ||
@@ -162,6 +162,68 @@ export function createImportRepository(db: Firestore, session: SessionController
     return { uid, fence, sourceHash };
   }
   const api = {
+    validateRecovered(operation: ImportOperation): void {
+      const raw = object(operation);
+      if (
+        Object.keys(raw).length !== 10 ||
+        !["character-import", "import-review"].includes(operation.kind) ||
+        operation.uid !== owner()
+      )
+        throw Error("invalid-import-operation");
+      identityId(operation.opId);
+      budget(operation);
+      const character = object(operation.character);
+      if (
+        Object.keys(character).length !== 2 ||
+        character.ownerUid !== operation.uid ||
+        typeof character.id !== "string"
+      )
+        throw Error("invalid-import-operation");
+      identityId(character.id);
+      if (!Number.isSafeInteger(operation.baseRevision) || operation.baseRevision < 0)
+        throw Error("invalid-import-operation");
+      const scope = object(operation.scope),
+        authority = object(operation.authority);
+      if (
+        Object.keys(scope).length !== 3 ||
+        scope.uid !== operation.uid ||
+        ![null, "string"].includes(
+          scope.campaignId === null ? null : typeof scope.campaignId
+        ) ||
+        ![null, "string"].includes(
+          scope.activeCharacterId === null ? null : typeof scope.activeCharacterId
+        ) ||
+        Object.keys(authority).length !== 3
+      )
+        throw Error("invalid-import-operation");
+      parseImportReconciliation(
+        {
+          ...operation.review,
+          schema: 1,
+          character: operation.character,
+          sourceHash: operation.sourceHash,
+          sourceSchema: 3,
+          revision: 0,
+          lastOperation: { uid: operation.uid, opId: operation.opId },
+        },
+        operation.character
+      );
+      if (operation.kind === "character-import") {
+        const output = parseCharacter(operation.output);
+        if (
+          output.ownerUid !== operation.uid ||
+          output.id !== operation.character.id ||
+          operation.baseRevision !== 0 ||
+          !equal(operation.authority, {
+            characterRevision: null,
+            assignment: null,
+            campaignRevision: null,
+          })
+        )
+          throw Error("invalid-import-operation");
+      } else if (operation.base !== null)
+        parseImportReconciliation(operation.base, operation.character);
+    },
     async intent(
       original: string,
       review: ImportReview

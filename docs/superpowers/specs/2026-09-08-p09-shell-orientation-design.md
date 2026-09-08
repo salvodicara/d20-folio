@@ -40,13 +40,14 @@ an independent router to each workspace. No new package is required.
 - FolioAccount remains sole owner of displayName, locale and digital/physical dice preference;
   existing watch/save seams are reused. No extra preference store or polling.
 - IdentityWorkspace/IdentityAccount own layout and actions, identity.css existing r2 tokens,
-  EN/IT identity strings own all new user-visible copy. Package Lucide icons supply navigation.
+  EN/IT identity strings own all new user-visible copy. The current mast styling is owned by DESIGN.md.
 
 ## Routes, context and return behavior
 
 Permanent mast order follows actual approved r2 images: Campaign, At the table, Character,
 Library. EXPERIENCE-MAP's domain table is taxonomy, not an instruction to reorder that mast.
-Add restrained icon+label as explicitly required by P09; retain all other font/palette/assets.
+The 8 September owner correction supersedes the original icon-plus-label interpretation:
+retain the approved text-only r2 mast and its At the table LED, as recorded in DESIGN.md.
 Account is global with seven stable sections and grouped desktop sidebar/phone selector.
 
 Routes cover Account sections, own characters, invitation, selected campaign, Library creations,

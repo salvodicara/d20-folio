@@ -314,3 +314,24 @@ export function srdAllLocaleValues(kind: SrdKind, key: string, field: string): s
   }
   return [...new Set(out)];
 }
+
+/** Canonical authored acquisition label; independent of the active UI language. */
+export function authoredAcquisitionEn(value: unknown): string | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const text = (value as Record<string, unknown>).en;
+  return typeof text === "string" ? text : undefined;
+}
+
+const choiceSources: Record<string, readonly [SrdKind, string]> = {
+  resistance: ["race", "dragonborn.traits.damage-resistance"],
+  mastery: ["class-feature", "rogue-weapon-mastery"],
+  invocations: ["class-feature", "warlock-eldritch-invocations"],
+};
+/** V1 acquisition snapshots pin English sentence-case choice labels, independent of UI locale. */
+export function acquisitionSourceLabel(key: keyof typeof choiceSources): string {
+  const source = choiceSources[key];
+  if (!source) throw Error("catalogue-choice-label-missing");
+  const text = srdEn(source[0], source[1], "name");
+  if (!text) throw Error("catalogue-choice-label-missing");
+  return text.slice(0, 1) + text.slice(1).toLowerCase();
+}

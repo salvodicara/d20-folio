@@ -14,6 +14,15 @@ const CALL = /\b(?:Math\.random|crypto\.getRandomValues|crypto\.randomUUID)\s*\(
 
 /** Every production file that calls a random source, with the reason it may. */
 const ALLOWED: Readonly<Record<string, string>> = {
+  "src/features/creation/CreationFlow.tsx": "new character identity, never dice results",
+  "src/features/library/useLibraryOperation.ts":
+    "immutable malformed-envelope archive identity, never dice results",
+  "src/lib/character-creation/draft.ts":
+    "immutable retained-original archive identity, never dice results",
+  "src/lib/character-creation/import-repository.ts":
+    "stable import and review operation identities, never dice results",
+  "src/lib/character-creation/repository.ts":
+    "stable creation operation identity retained across retries, never dice results",
   "src/features/identity/navigation.ts":
     "scoped browser-history lifetime identity only; never dice results",
   "src/features/library/ClassFields.tsx":

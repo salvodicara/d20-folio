@@ -11,32 +11,60 @@ export function useLibraryOperation<
   repository: {
     commit(operation: O, check?: () => void): Promise<R>;
     reconcile(operation: O): Promise<R | null>;
+    validateRecovered?(operation: O): void;
   },
   session: SessionController,
   key: string,
   onAck: (operation: O) => void | Promise<void>
 ) {
   const storageKey = "folio-library-operation:" + (session.scope().uid ?? "") + ":" + key;
-  const [state, setState] = useState<OperationState<O, R> | null>(() => {
+  const readPending = (): {
+    state: OperationState<O, R> | null;
+    original: string | null;
+    failed: boolean;
+  } => {
+    let original: string | null = null;
     try {
-      const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? "null") as {
-        envelope: O;
-        invalidated: boolean;
+      original = sessionStorage.getItem(storageKey);
+      if (original === null) return { state: null, original: null, failed: false };
+      const saved = JSON.parse(original) as {
+        envelope?: Partial<O>;
+        invalidated?: boolean;
       } | null;
-      return saved?.envelope
-        ? {
-            envelope: saved.envelope,
-            status:
-              saved.invalidated || !equal(saved.envelope.scope, session.scope())
-                ? "invalidated"
-                : "unknown",
-          }
-        : null;
+      if (
+        !saved ||
+        typeof saved !== "object" ||
+        Object.keys(saved).length !== 2 ||
+        typeof saved.invalidated !== "boolean" ||
+        !saved.envelope ||
+        typeof saved.envelope !== "object" ||
+        typeof saved.envelope.opId !== "string" ||
+        typeof saved.envelope.uid !== "string" ||
+        !saved.envelope.scope ||
+        typeof saved.envelope.scope !== "object"
+      )
+        throw Error("incompatible-operation");
+      repository.validateRecovered?.(saved.envelope as O);
+      return {
+        state: {
+          envelope: saved.envelope as O,
+          status:
+            saved.invalidated || !equal(saved.envelope.scope, session.scope())
+              ? "invalidated"
+              : "unknown",
+        },
+        original: null,
+        failed: false,
+      };
     } catch {
-      return null;
+      return { state: null, original, failed: true };
     }
-  });
-  const [error, setError] = useState(false),
+  };
+  const [initial] = useState(readPending);
+  const [state, setState] = useState<OperationState<O, R> | null>(initial.state);
+  const [recoveryOriginal, setRecoveryOriginal] = useState(initial.original);
+  const [storageBlocked, setStorageBlocked] = useState(initial.failed);
+  const [error, setError] = useState(initial.failed),
     [preparing, setPreparing] = useState(false);
   const controller = useRef<OperationController<O, R> | null>(null);
   const detach = useRef(() => {}),
@@ -80,6 +108,18 @@ export function useLibraryOperation<
     }
     const c = new OperationController(envelope, repository);
     try {
+      const existing = readPending();
+      if (existing.failed) {
+        setRecoveryOriginal(existing.original);
+        setStorageBlocked(true);
+        throw Error("operation-storage");
+      }
+      if (
+        existing.state &&
+        !equal(existing.state.envelope, envelope) &&
+        !equal(existing.state.envelope, currentState.current?.envelope)
+      )
+        throw Error("newer-operation");
       const original = JSON.stringify({ envelope, invalidated: false });
       sessionStorage.setItem(storageKey, original);
       if (sessionStorage.getItem(storageKey) !== original) throw new Error("storage");
@@ -103,8 +143,10 @@ export function useLibraryOperation<
               envelope?: unknown;
               invalidated?: boolean;
             } | null;
-            if (saved && !saved.invalidated && equal(saved.envelope, c.state.envelope))
+            if (saved && !saved.invalidated && equal(saved.envelope, c.state.envelope)) {
               sessionStorage.removeItem(storageKey);
+              if (sessionStorage.getItem(storageKey) !== null) throw Error("storage");
+            }
           })
           .catch(() => {
             if (live.current) setError(true);
@@ -126,6 +168,61 @@ export function useLibraryOperation<
   return {
     state,
     error,
+    recoveryOriginal,
+    storageBlocked,
+    retryStorage: async () => {
+      const restored = readPending();
+      setRecoveryOriginal(restored.original);
+      setStorageBlocked(restored.failed);
+      setError(restored.failed);
+      if (!controller.current && !restored.failed) {
+        setState(restored.state);
+        currentState.current = restored.state;
+      }
+      if (!restored.failed && controller.current?.state.status === "acknowledged") {
+        try {
+          const check = session.ticket(),
+            envelope = controller.current.state.envelope;
+          await ack.current(envelope);
+          check();
+          if (!live.current) return false;
+          const saved = readPending();
+          if (saved.failed) throw Error("storage");
+          if (saved.state && equal(saved.state.envelope, envelope)) {
+            sessionStorage.removeItem(storageKey);
+            if (sessionStorage.getItem(storageKey) !== null) throw Error("storage");
+          }
+        } catch {
+          setError(true);
+          return false;
+        }
+      }
+      return !restored.failed;
+    },
+    preserveUnreadable: () => {
+      const restored = readPending();
+      if (!restored.failed || restored.original === null) return false;
+      try {
+        const archive = storageKey + ":original:" + crypto.randomUUID();
+        sessionStorage.setItem(archive, restored.original);
+        if (
+          sessionStorage.getItem(archive) !== restored.original ||
+          sessionStorage.getItem(storageKey) !== restored.original
+        )
+          throw Error("storage");
+        sessionStorage.removeItem(storageKey);
+        if (sessionStorage.getItem(storageKey) !== null) throw Error("storage");
+        setRecoveryOriginal(null);
+        setStorageBlocked(false);
+        setError(false);
+        setState(null);
+        currentState.current = null;
+        return true;
+      } catch {
+        setError(true);
+        return false;
+      }
+    },
     preparing,
     busy: preparing || state?.status === "pending" || state?.status === "unknown",
     retry: () => (state ? dispatch(state.envelope, true) : Promise.resolve()),
@@ -180,7 +277,13 @@ export function useLibraryOperation<
       }
     },
     run: async (make: () => O | null | Promise<O | null>) => {
-      if (preparing || state?.status === "pending" || state?.status === "unknown") return;
+      if (
+        storageBlocked ||
+        preparing ||
+        state?.status === "pending" ||
+        state?.status === "unknown"
+      )
+        return;
       const check = session.ticket();
       setPreparing(true);
       setError(false);

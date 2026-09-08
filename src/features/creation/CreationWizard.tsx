@@ -1,3 +1,4 @@
+import { CheckboxField } from "@/components/ui/selection";
 import { useEffect, useRef } from "react";
 import type { LibraryVersion } from "@/lib/library/model";
 import { SRD_ORIGIN_LANGUAGES } from "@/data/languages";
@@ -130,7 +131,7 @@ export function CreationWizard(p: CreationWizardProps) {
                   >
                     {ALIGNMENTS.map((id) => (
                       <option key={id} value={id}>
-                        {l.t("srd.alignment_" + id)}
+                        {l.t(`srd.alignment_${id}`)}
                       </option>
                     ))}
                   </select>
@@ -140,25 +141,23 @@ export function CreationWizard(p: CreationWizardProps) {
                   <p>{l.w("languageHint")}</p>
                   <div className="wizard-option-list">
                     {SRD_ORIGIN_LANGUAGES.choice.options.map((id) => (
-                      <label key={id} className="wizard-check">
-                        <input
-                          type="checkbox"
-                          checked={p.draft.languages.includes(id)}
-                          disabled={
-                            !p.draft.languages.includes(id) &&
-                            p.draft.languages.length >= 2
-                          }
-                          onChange={(e) =>
-                            edit.onChange({
-                              ...p.draft,
-                              languages: e.target.checked
-                                ? [...p.draft.languages, id]
-                                : p.draft.languages.filter((v) => v !== id),
-                            })
-                          }
-                        />
-                        <span>{l.srd("language", id)}</span>
-                      </label>
+                      <CheckboxField
+                        key={id}
+                        className="wizard-check"
+                        label={l.srd("language", id)}
+                        checked={p.draft.languages.includes(id)}
+                        disabled={
+                          !p.draft.languages.includes(id) && p.draft.languages.length >= 2
+                        }
+                        onCheckedChange={(checked) =>
+                          edit.onChange({
+                            ...p.draft,
+                            languages: checked
+                              ? [...p.draft.languages, id]
+                              : p.draft.languages.filter((v) => v !== id),
+                          })
+                        }
+                      />
                     ))}
                   </div>
                 </fieldset>
@@ -305,7 +304,7 @@ export function CreationWizard(p: CreationWizardProps) {
               l.w("choose")}
           </p>
           <p role="status">{l.w(p.retained ? "saved" : "unsaved")}</p>
-          {p.preview.maxHp > 0 && (
+          {p.preview.classes && p.preview.maxHp > 0 && (
             <dl className="wizard-summary">
               <div>
                 <dt>{l.w("hp")}</dt>

@@ -1,3 +1,4 @@
+import { acquisitionSourceLabel } from "@/i18n/srd-en";
 import { initializeDefinition } from "../homebrew/model";
 import { blankClassLevel } from "../homebrew/classes";
 import {
@@ -303,7 +304,7 @@ export function creationRootDefinition(
         throw new Error("catalogue-mastery-count");
       progression.choices.push({
         id: "mastery",
-        name: "Weapon mastery",
+        name: acquisitionSourceLabel("mastery"),
         count,
         parent: null,
         options: [],
@@ -323,7 +324,7 @@ export function creationRootDefinition(
         throw new Error("catalogue-invocation-count");
       progression.choices.push({
         id: "invocations",
-        name: "Eldritch invocations",
+        name: acquisitionSourceLabel("invocations"),
         count,
         options: [],
         parent: null,

@@ -100,8 +100,13 @@ export interface OriginComposition {
 }
 export interface OriginProjection extends OriginComposition {
   abilities: Record<Ability, number | null>;
-  species: { id: string; name: string; selectionId: string | null };
-  background: { id: string; name: string; selectionId: string | null };
+  species: { id: string; name: string; selectionId: string | null; catalogue?: boolean };
+  background: {
+    id: string;
+    name: string;
+    selectionId: string | null;
+    catalogue?: boolean;
+  };
   baseline: { build: JsonObject; superseded: string[]; unresolved: string[] };
   available: boolean;
   projectedCharacter: FolioCharacter;
@@ -1062,7 +1067,19 @@ export function projectOriginCharacter(
   build: OriginBuild | null,
   context: ChoiceResolutionContext = {}
 ): OriginProjection {
-  const composition = composeOriginBuild(character, build, context);
+  return projectAcquisitionCharacter(character, build, null, context);
+}
+export function projectAcquisitionCharacter(
+  character: FolioCharacter,
+  build: OriginBuild | null,
+  classes: ClassBuild | null,
+  context: ChoiceResolutionContext = {}
+): OriginProjection {
+  const composition = composeAcquisitionBuilds(character, build, classes, context);
+  const mechanic = (snapshot: DefinitionSnapshot) => {
+    const id = snapshot.definition.payload.data.mechanicId;
+    return "kind" in snapshot && typeof id === "string" ? id : snapshot.entryId;
+  };
   const validAggregate = !composition.diagnostics.some((d) =>
     ["incompatible-origin-build", "character-mismatch"].includes(d.code)
   );
@@ -1089,8 +1106,8 @@ export function projectOriginCharacter(
     unresolved: [] as string[],
   };
   if (species) {
-    projectedCharacter.speciesId = species.snapshot.entryId;
-    b.race = species.snapshot.entryId;
+    projectedCharacter.speciesId = mechanic(species.snapshot);
+    b.race = mechanic(species.snapshot);
     baseline.superseded.push("race", "originFeats.species", "humanOriginFeat");
     delete b.humanOriginFeat;
     baseline.superseded.push("speed", "speeds", "senses", "size");
@@ -1100,7 +1117,7 @@ export function projectOriginCharacter(
     delete b.size;
   }
   if (background) {
-    b.background = background.snapshot.entryId;
+    b.background = mechanic(background.snapshot);
     baseline.superseded.push(
       "background",
       "asi.background",
@@ -1110,6 +1127,18 @@ export function projectOriginCharacter(
     delete b.bgFeat;
     const asi = originRecord(b.asi);
     if (asi) delete asi.background;
+  }
+  if (
+    classes &&
+    !composition.diagnostics.some((d) => d.code === "incompatible-class-build")
+  ) {
+    const acquiredClasses = Object.values(classes.acquisitions);
+    const first = acquiredClasses[0];
+    if (first) projectedCharacter.classId = mechanic(first.snapshot);
+    b.classes = acquiredClasses.map((c) => ({
+      classId: mechanic(c.snapshot),
+      level: c.classLevel,
+    }));
   }
   const originFeats = originRecord(b.originFeats);
   if (originFeats) {
@@ -1176,6 +1205,31 @@ export function projectOriginCharacter(
       }
     }
   }
+  const speeds = originRecord(b.speeds) ?? {};
+  const bonus = (mode: string) =>
+    composition.facts.reduce(
+      (sum, { benefit }) =>
+        sum +
+        (benefit.kind === "movement-bonus" && benefit.mode === mode ? benefit.meters : 0),
+      0
+    );
+  const walk =
+    Math.max(Number(speeds.walk ?? 0), typeof b.speed === "number" ? b.speed : 0) +
+    bonus("walk");
+  if (walk || Object.hasOwn(speeds, "walk")) {
+    speeds.walk = walk;
+    b.speed = walk;
+  }
+  for (const mode of MOVEMENT_MODES.filter((mode) => mode !== "walk")) {
+    const relationships = composition.facts.flatMap(({ benefit }) =>
+      benefit.kind === "movement-equals-walk" && benefit.mode === mode
+        ? [walk * benefit.multiplier]
+        : []
+    );
+    const value = Math.max(Number(speeds[mode] ?? 0), ...relationships) + bonus(mode);
+    if (value || Object.hasOwn(speeds, mode)) speeds[mode] = value;
+  }
+  if (Object.keys(speeds).length) b.speeds = speeds as JsonObject;
   // Base scores remain base scores; derived scores are a separate projection value.
   return {
     ...composition,
@@ -1183,13 +1237,14 @@ export function projectOriginCharacter(
     available,
     projectedCharacter,
     species: {
-      id: species?.snapshot.entryId ?? character.speciesId,
+      id: species ? mechanic(species.snapshot) : character.speciesId,
       name: species?.snapshot.definition.name ?? character.speciesId,
       selectionId: species?.id ?? null,
+      catalogue: !!species && "kind" in species.snapshot,
     },
     background: {
       id:
-        background?.snapshot.entryId ??
+        (background ? mechanic(background.snapshot) : undefined) ??
         (typeof character.sheet.build.background === "string"
           ? character.sheet.build.background
           : ""),
@@ -1199,6 +1254,7 @@ export function projectOriginCharacter(
           ? character.sheet.build.background
           : ""),
       selectionId: background?.id ?? null,
+      catalogue: !!background && "kind" in background.snapshot,
     },
     baseline,
   };

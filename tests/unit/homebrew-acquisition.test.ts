@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { initializeDefinition } from "../../src/lib/homebrew/model";
 import {
   composeAcquisitionBuilds,
+  projectAcquisitionCharacter,
   type OriginBuild,
   type OriginSelection,
 } from "../../src/lib/homebrew/origin-build";
@@ -972,4 +973,23 @@ it("requires prior armor training and cannot satisfy it with the candidate's own
       verifyCatalogue,
     }).valid
   ).toBe(true);
+});
+
+it("projects unconditional movement bonuses before walking-speed relationships without changing stored state", () => {
+  const source = snapshot("water-walker", "species");
+  source.definition.payload.data.walkSpeed = 9;
+  source.definition.payload.data.benefits = [
+    { kind: "movement-bonus", mode: "walk", meters: 1.5 },
+    { kind: "movement-equals-walk", mode: "swim", multiplier: 1 },
+    { kind: "movement-bonus", mode: "swim", meters: 3 },
+  ];
+  const result = projectAcquisitionCharacter(character, build(selection(source)), null, {
+    verifyCatalogue,
+  });
+  expect(result.projectedCharacter.sheet.build.speed).toBe(10.5);
+  expect(result.projectedCharacter.sheet.build.speeds).toMatchObject({
+    walk: 10.5,
+    swim: 13.5,
+  });
+  expect(result.projectedCharacter.sheet.state).toEqual(character.sheet.state);
 });

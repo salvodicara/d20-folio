@@ -1,3 +1,4 @@
+import { CREATION_STEPS, type CreationStep } from "@/lib/character-creation/steps";
 import { LIBRARY_FAMILIES, libraryId } from "@/lib/library/model";
 export const accountSections = [
   "account",
@@ -22,6 +23,9 @@ export type IdentityPage =
   | "unavailable";
 export interface IdentityRoute {
   page: IdentityPage;
+  creation?: "new" | "import";
+  review?: string;
+  step?: CreationStep;
   tab?: "creations" | "sharing" | "bestiary";
   family?: string;
   filter?: string;
@@ -71,12 +75,24 @@ export function parseRoute(hash: string): IdentityRoute {
     }
   }
   if (page === "characters") {
+    const creation = params.get("creation"),
+      step = params.get("step");
+    if (creation === "new" || creation === "import") {
+      route.creation = creation;
+      const review = params.get("review");
+      if (creation === "import" && safeId(review)) route.review = review;
+      if (creation === "new")
+        route.step = CREATION_STEPS.includes(step as CreationStep)
+          ? (step as CreationStep)
+          : "identity";
+    }
     const filter = params.get("filter");
     if (safeId(filter) && filter !== "all") route.filter = filter;
   }
   const owner = params.get("owner"),
     character = params.get("character");
   if (
+    !route.creation &&
     safeId(owner) &&
     safeId(character) &&
     ["characters", "campaign", "library"].includes(page)
@@ -97,6 +113,9 @@ export function routeHash(route: IdentityRoute): string {
     "character",
     "entry",
     "kind",
+    "creation",
+    "review",
+    "step",
   ] as const) {
     if (route[key]) params.set(key, route[key]);
   }
@@ -112,12 +131,18 @@ export function routeHash(route: IdentityRoute): string {
     "character",
     "entry",
     "kind",
+    "creation",
+    "review",
+    "step",
   ] as const)
     if (valid[key]) clean.set(key, valid[key]);
   return `#${valid.page}${clean.size ? "?" + clean.toString() : ""}`;
 }
 export function parentRoute(route: IdentityRoute): IdentityRoute {
   const parent = { ...route };
+  delete parent.creation;
+  delete parent.review;
+  delete parent.step;
   delete parent.owner;
   delete parent.character;
   delete parent.entry;
@@ -327,10 +352,10 @@ export class NavigationController {
 }
 
 export const primaryDestinations = [
-  { page: "campaign", label: "campaignNavigation", icon: "campaign", key: "c" },
-  { page: "table", label: "atTable", icon: "table", key: "t" },
-  { page: "characters", label: "character", icon: "characters", key: "p" },
-  { page: "library", label: "library", icon: "library", key: "l" },
+  { page: "campaign", label: "campaignNavigation", key: "c" },
+  { page: "table", label: "atTable", key: "t" },
+  { page: "characters", label: "character", key: "p" },
+  { page: "library", label: "library", key: "l" },
 ] as const;
 export const featureDestinations: readonly {
   id: string;

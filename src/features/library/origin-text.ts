@@ -26,7 +26,7 @@ export function originBenefitText(
       return (
         label("origin.training." + str(b.category)) +
         ": " +
-        label("origin.training." + str(b.id))
+        label("origin.catalog.training." + str(b.id))
       );
     case "proficiency":
       return (

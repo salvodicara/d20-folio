@@ -41,6 +41,14 @@ vi.mock("@/lib/homebrew/origin-build-repository", () => ({
     watchIssues: () => () => {},
   }),
 }));
+vi.mock("@/lib/homebrew/class-build-repository", () => ({
+  createClassBuildReader: (_db: unknown, session: SessionController) => ({
+    watch: (_ref: unknown, next: (value: { base: null; original: null }) => void) => {
+      next({ base: null, original: null });
+      return session.track(() => {});
+    },
+  }),
+}));
 vi.mock("@/lib/firebase", () => ({ auth: {}, db: {}, storage: {} }));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({

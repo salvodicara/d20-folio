@@ -72,6 +72,7 @@ export interface InstanceIssue {
   error: "incompatible-instance";
 }
 export interface InstanceRepository {
+  loadedInitial?(character: CharacterRef): InitialLoadout | null;
   list(character: CharacterRef): Promise<HomebrewInstance[]>;
   watch(
     character: CharacterRef,

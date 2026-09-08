@@ -1,0 +1,46 @@
+.creation-flow {
+  max-width: 1180px;
+  margin-inline: auto;
+}
+.creation-flow h1 {
+  font-family: var(--font-heading, Georgia, serif);
+}
+.creation-flow > [role="alert"],
+.creation-flow > [role="status"] {
+  padding: 1rem;
+  margin-block: 1rem;
+  border: 1px solid currentColor;
+}
+.creation-import {
+  display: grid;
+  gap: 1.25rem;
+}
+.creation-import > button {
+  justify-self: start;
+}
+.creation-import .identity-panel {
+  display: grid;
+  gap: 1rem;
+}
+.creation-import-category {
+  padding-block: 1rem;
+  border-top: 1px solid var(--border, #41464b);
+}
+.creation-import-category h3 {
+  margin-bottom: 0.5rem;
+}
+.creation-import pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 24rem;
+  overflow: auto;
+  font-size: 0.8rem;
+}
+.creation-import input[type="file"] {
+  max-width: 100%;
+}
+.creation-import select {
+  display: block;
+  margin-top: 0.5rem;
+  min-height: 2.75rem;
+}

@@ -1,4 +1,4 @@
-import { isCatalogueSnapshot } from "@/lib/homebrew/sources";
+import { isCatalogueSnapshot, type CatalogueSnapshot } from "@/lib/homebrew/sources";
 import type { JsonValue, LibraryDefinition } from "@/lib/library/model";
 import { originRecord } from "@/lib/homebrew/origins";
 import { composeSubclassCasting } from "@/lib/homebrew/class-composition";
@@ -16,10 +16,12 @@ export function ClassReader({
   definition,
   printable = false,
   bundle,
+  catalogue,
 }: {
   definition: LibraryDefinition;
   printable?: boolean;
   bundle?: Record<string, JsonValue>;
+  catalogue?: CatalogueSnapshot;
 }) {
   const label = useHomebrewLabel(),
     data = definition.payload.data;
@@ -47,6 +49,7 @@ export function ClassReader({
         }}
         printable={printable}
         bundle={dependencies}
+        catalogue={catalogue}
         included
       />
     ) : (
@@ -210,7 +213,8 @@ export function ClassReader({
           return (
             <section className="origin-read-choice" key={i}>
               <h5>
-                {label("options.level")} {text(row.level)} · {text(row.name)}
+                {label("options.level")} {text(row.level)}
+                {!catalogue && <> · {text(row.name)}</>}
               </h5>
               {scope(
                 Object.fromEntries(

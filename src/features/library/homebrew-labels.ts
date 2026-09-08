@@ -10,6 +10,9 @@ export const baseFamily = (family: string): family is BaseFamily =>
 export const authoringFamily = (family: string): family is AuthoringFamily =>
   AUTHORING_FAMILIES.includes(family as AuthoringFamily);
 const shared: Record<string, string> = {
+  "origin.training.armor": "identity.sheetFacts.armorProficiencies",
+  "origin.training.shield": "equipment.shields",
+  "origin.training.shields": "equipment.shields",
   "classEditor.resource": "features.tagResource",
   "classes.cantrips": "spells.cantrips",
   "classes.slots": "play.explain.slots.label",
@@ -211,8 +214,20 @@ export function useHomebrewLabel() {
       const [, , category, ...parts] = key.split(".");
       const id = parts.join(".");
       const catalog = srdCatalogues(i18n.language.startsWith("it") ? "it" : "en");
+      const trainingId =
+        (
+          {
+            simple: "simple-weapons",
+            martial: "martial-weapons",
+            shield: "shields",
+          } as Record<string, string>
+        )[id] ?? id;
       const name =
-        category === "tool" ? catalog?.equipment[id]?.name : catalog?.language[id]?.name;
+        category === "training"
+          ? catalog?.proficiency[trainingId]?.name
+          : category === "tool"
+            ? catalog?.equipment[id]?.name
+            : catalog?.language[id]?.name;
       return typeof name === "string" ? name : id;
     }
     return t(homebrewKey(key));

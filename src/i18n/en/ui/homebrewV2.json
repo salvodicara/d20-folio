@@ -737,10 +737,7 @@
       "backgroundChoiceHelp": "Choose +2 and +1 in two different listed abilities, or +1 in all three. The ordinary maximum is 20. The Origin feat included in this background is shown below.",
       "equipmentChoiceHelp": "Choose this background’s equipment package or its starting gold. This records your entitlement; adding items and gold to your inventory is a separate step.",
       "training": {
-        "armor": "Armor training",
         "weapon": "Weapon training",
-        "shield": "Shields",
-        "shields": "Shields",
         "simple": "Simple weapons",
         "martial": "Martial weapons",
         "light-armor": "Light armor",
@@ -846,6 +843,8 @@
       "parentError": "This parent cannot be included. Review its recorded rules and the preserved dependency data, then choose a compatible version.",
       "selectedParent": "Selected parent class",
       "creationIdentity": "Library creation identifier"
-    }
+    },
+    "catalogueFields": "Pinned catalogue fields are shown where declared. Other mechanics remain in the original; this reader does not execute them.",
+    "catalogueOriginal": "Original catalogue source"
   }
 }

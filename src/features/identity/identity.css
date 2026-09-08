@@ -143,7 +143,8 @@
   background: transparent;
 }
 .identity-header nav button[aria-current="page"] {
-  border-bottom: 1px solid var(--identity-text);
+  color: #d9bc83;
+  border-bottom: 2px solid #d9bc83;
 }
 .identity-context {
   min-height: 64px;
@@ -890,10 +891,18 @@
   padding: 0 6px;
   border-radius: 0;
   font: 14px system-ui;
+  color: #c3c2b6;
+  gap: 0;
 }
-/* Keep the reference's live-status slot empty until the table exists. */
-.identity-header nav .identity-table-navigation {
-  padding-right: 24px;
+.identity-table-led {
+  display: inline-block;
+  flex: 0 0 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8dcbba;
+  margin-left: 8px;
+  box-shadow: 0 0 8px #8dcbba88;
 }
 .identity-global {
   gap: 12px;
@@ -926,7 +935,7 @@
 }
 .identity-global .identity-account-button {
   margin-left: 3px;
-  padding: 0 0 0 14px;
+  padding: 1px 6px 1px 14px;
   border-left: 1px solid var(--identity-line);
 }
 .identity-account-name strong {
@@ -1239,10 +1248,19 @@
     display: none;
   }
   .identity-global .identity-help {
+    position: relative;
     width: 44px;
     min-width: 44px;
     height: 44px;
     padding: 5px;
+    border: 0;
+  }
+  .identity-global .identity-help::after {
+    content: "";
+    position: absolute;
+    inset: 2px 4px;
+    border: 1px solid var(--identity-line);
+    pointer-events: none;
   }
   .identity-global .identity-locale {
     font-size: 12px;
@@ -1277,12 +1295,9 @@
     height: 42px;
   }
   .identity-header nav button {
-    font-size: 11px;
-    padding-inline: 3px;
+    font-size: 12px;
+    padding-inline: 5px;
     white-space: nowrap;
-  }
-  .identity-header nav .identity-table-navigation {
-    padding-right: 3px;
   }
   .identity-app .identity-account-main {
     padding: 32px 16px 40px;
@@ -1371,10 +1386,7 @@
   overflow: auto;
 }
 
-/* P09 keeps r2 geometry; domain glyphs and grouped discovery carry orientation. */
-.identity-header nav button svg {
-  flex: none;
-}
+/* Grouped discovery retains the approved textual shell navigation. */
 .identity-search-group {
   padding: 12px 0;
   border-top: 1px solid var(--identity-line);
@@ -1421,11 +1433,6 @@
 }
 @media (max-width: 700px) {
   .identity-header nav button {
-    gap: 4px;
     min-height: 44px;
-  }
-  .identity-header nav button svg {
-    width: 13px;
-    height: 13px;
   }
 }

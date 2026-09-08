@@ -1,3 +1,7 @@
+import { verifyCatalogueSnapshot } from "@/lib/character-creation/catalogue";
+import { useAcquisitionLabels } from "./acquisition-presenters";
+import type { OriginChoice, OriginOption } from "@/lib/homebrew/origins";
+import type { CatalogueSnapshot } from "@/lib/homebrew/sources";
 import { HomebrewReader } from "./HomebrewReader";
 import { parseDefinition } from "@/lib/library/model";
 import { originRecord } from "@/lib/homebrew/origins";
@@ -11,12 +15,15 @@ export function OriginReader({
   printable = false,
   bundle,
   included = false,
+  catalogue,
 }: {
   definition: LibraryDefinition;
   printable?: boolean;
   bundle?: Record<string, JsonValue>;
   included?: boolean;
+  catalogue?: CatalogueSnapshot;
 }) {
+  const acquisition = useAcquisitionLabels();
   const label = useHomebrewLabel(),
     data = definition.payload.data;
   const declarations = [
@@ -53,6 +60,11 @@ export function OriginReader({
         <>
           <HomebrewReader
             definition={child}
+            catalogue={
+              node?.kind === "catalogue"
+                ? (node as unknown as CatalogueSnapshot)
+                : undefined
+            }
             printable={printable}
             originBundle={dependencies as Record<string, JsonValue>}
             included
@@ -76,9 +88,28 @@ export function OriginReader({
     }
   };
   const choiceList = Array.isArray(data.choices) ? data.choices : [];
-  const depName = (key: unknown) =>
-    str(originRecord(originRecord(dependencies[str(key)])?.definition)?.name) ||
-    label("origin.missingDependency");
+  const depName = (key: unknown) => {
+    const node = originRecord(dependencies[str(key)]);
+    if (node?.kind === "catalogue") {
+      const source = node as unknown as CatalogueSnapshot;
+      if (verifyCatalogueSnapshot(source, true)) return acquisition.snapshot(source);
+    }
+    return str(originRecord(node?.definition)?.name) || label("origin.missingDependency");
+  };
+  // Only HomebrewReader's authenticated source supplies typed catalogue declarations.
+  const choiceName = (choice: Record<string, unknown> | null) =>
+    catalogue && choice
+      ? acquisition.choice({ choice: choice as unknown as OriginChoice }, catalogue)
+      : str(choice?.name) || label("origin.unnamedChoice");
+  const optionName = (option: Record<string, unknown> | null, choiceId: string) =>
+    catalogue && option
+      ? acquisition.option(
+          option as unknown as OriginOption,
+          catalogue,
+          undefined,
+          choiceId
+        )
+      : str(option?.name) || label("origin.unnamedOption");
   return (
     <div className="origin-reader">
       {Array.isArray(data.prerequisites) && data.prerequisites.length > 0 && (
@@ -116,16 +147,16 @@ export function OriginReader({
               : null;
             return (
               <section className="origin-read-choice" key={i}>
-                <h5>{str(choice.name) || label("origin.unnamedChoice")}</h5>
+                <h5>{choiceName(choice)}</h5>
                 <p>
                   {label("origin.chooseCount")}: {String(choice.count)}
                   {parent
                     ? " · " +
                       label("origin.availableAfter") +
                       ": " +
-                      (str(parentChoice?.name) || label("origin.unnamedChoice")) +
+                      choiceName(parentChoice) +
                       " → " +
-                      (str(parentOption?.name) || label("origin.unnamedOption"))
+                      optionName(parentOption, str(parentChoice?.id))
                     : ""}
                 </p>
                 {Array.isArray(choice.options) &&
@@ -133,9 +164,7 @@ export function OriginReader({
                     const option = originRecord(v);
                     return (
                       <div className="origin-read-option" key={n}>
-                        <strong>
-                          {str(option?.name) || label("origin.unnamedOption")}
-                        </strong>
+                        <strong>{optionName(option, str(choice.id))}</strong>
                         {benefitList(option?.benefits as JsonValue)}
                       </div>
                     );
@@ -173,7 +202,12 @@ export function OriginReader({
             return (
               <section key={key}>
                 <h5>
-                  {depName(key)} · {label("version")} {String(node?.sourceVersion)}
+                  {depName(key)} · {label("version")}{" "}
+                  {str(node?.release) ||
+                    (typeof node?.sourceVersion === "number" ||
+                    typeof node?.sourceVersion === "string"
+                      ? String(node.sourceVersion)
+                      : "—")}
                 </h5>
                 {renderIncluded(value)}
               </section>

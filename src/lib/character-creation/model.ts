@@ -11,15 +11,8 @@ import { frozen, identityId, object } from "../identity/model";
 import { assertJsonBudget } from "../shared/json-budget";
 import type { CreationMethod, CreationScores } from "./abilities";
 
-export const CREATION_STEPS = [
-  "identity",
-  "origins",
-  "class",
-  "abilities",
-  "equipment",
-  "review",
-] as const;
-export type CreationStep = (typeof CREATION_STEPS)[number];
+import { CREATION_STEPS, type CreationStep } from "./steps";
+export { CREATION_STEPS, type CreationStep } from "./steps";
 export type CreationRole = "species" | "background" | "class";
 export interface CreationDraft {
   schema: 1;

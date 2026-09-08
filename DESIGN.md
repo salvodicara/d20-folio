@@ -3385,3 +3385,14 @@ Malformed or future content remains visibly preserved. Reuse recorded subclass s
 Library draft; the current draft's Duplicate action stays distinct. This is authoring, not character
 advancement or combat automation. Follow PRODUCT's standing delivery delegation and future custom
 same-engine automation/editable-combat obligations; actual screenshots remain required.
+
+## Shell correction — owner direction, 8 September 2026
+
+The approved r2 mast uses text-only Campaign / At the table / Character / Library destinations.
+The mint six-pixel LED follows At the table with the reference spacing and glow. It is a
+stable visual marker, hidden from accessibility APIs, not a live presence count or a claim
+that a session exists. Primary destinations do not gain decorative domain icons. Active
+navigation retains the reference gold text and underline. Desktop and phone geometry,
+search, help, locale and Account controls follow the r2 reference. This owner correction
+supersedes P09's icon-plus-label interpretation; adding navigation capabilities does not
+authorize redesigning the approved mast.

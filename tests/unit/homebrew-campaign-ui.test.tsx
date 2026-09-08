@@ -200,14 +200,12 @@ it("does not submit when the pending operation cannot be durably stored", async 
     target: { value: "7" },
   });
   const originalSet = sessionStorage.setItem.bind(sessionStorage);
-  const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
-    this: Storage,
-    k: string,
-    v: string
-  ) {
-    if (k.startsWith("folio-library-operation:")) throw new Error("quota");
-    originalSet(k, v);
-  });
+  const spy = vi
+    .spyOn(Object.getPrototypeOf(sessionStorage) as Storage, "setItem")
+    .mockImplementation(function (this: Storage, k: string, v: string) {
+      if (k.startsWith("folio-library-operation:")) throw new Error("quota");
+      originalSet(k, v);
+    });
   try {
     fireEvent.click(screen.getByRole("button", { name: "saveCopyState" }));
     await screen.findByRole("alert");

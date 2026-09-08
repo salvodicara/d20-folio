@@ -8,6 +8,13 @@
 
 ## Status legend
 
+The recursive corpus registry includes P10 acquisition metadata: weapon mastery and invocation
+selection, source-local casting ability, invocation prerequisites and trait minimum levels map
+to their existing typed acquisition handlers. A trait's `cantripReplacement` declaration remains
+an explicit bilingual manual boundary: long-rest replacement is not implemented by initial
+creation. Each replacement leaf requires the owning trait's EN/IT description as presenter
+evidence; declaring the metadata does not certify later spell replacement automation.
+
 | Status        | Meaning                                                        |
 | ------------- | -------------------------------------------------------------- |
 | **automated** | Mechanics modeled as Grants the engine evaluates + renders.    |

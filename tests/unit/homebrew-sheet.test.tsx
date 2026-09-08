@@ -20,7 +20,12 @@ import {
 vi.mock("@/features/library/homebrew-labels", () => ({
   useHomebrewLabel: () => (key: string) => key,
 }));
-vi.mock("react-i18next", () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: "en", exists: () => false },
+  }),
+}));
 vi.mock("@/lib/homebrew/conformance", () => ({ conformDefinition: () => [] }));
 vi.mock("@/features/library/HomebrewReader", () => ({ HomebrewReader: () => null }));
 vi.mock("@/features/library/HomebrewPortable", () => ({ HomebrewExport: () => null }));
@@ -363,11 +368,10 @@ it("blocks draft replacement when the incompatible original cannot be archived",
   sessionStorage.setItem(stateStorageKey, original);
   setup();
   const nativeSet = Storage.prototype.setItem.bind(sessionStorage);
-  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
-    this: Storage,
-    key: string,
-    value: string
-  ) {
+  vi.spyOn(
+    Object.getPrototypeOf(sessionStorage) as Storage,
+    "setItem"
+  ).mockImplementation(function (this: Storage, key: string, value: string) {
     if (key.startsWith(stateStorageKey + ":original:"))
       throw new DOMException("full", "QuotaExceededError");
     nativeSet(key, value);

@@ -164,6 +164,15 @@ describe("atomic guided creation", () => {
     huge.character.sheet.build.large = "é".repeat(400000);
     expect(() => repo.intent(huge)).toThrow("creation-operation-too-large");
   });
+  it("retains independent aggregate and outer traversal limits", () => {
+    const { repo } = client();
+    const outer = creationCandidate();
+    outer.character.sheet.build.excess = Array.from({ length: 16400 }, () => 0);
+    expect(() => repo.intent(outer)).toThrow("creation-operation-too-large");
+    const aggregate = creationCandidate();
+    Object.assign(aggregate.loadout, { excess: Array.from({ length: 4100 }, () => 0) });
+    expect(() => repo.intent(aggregate)).toThrow();
+  });
   it("requires semantic validation and catalogue verification before issuing a ticket", () => {
     const { session } = client(),
       validateCandidate = () => {

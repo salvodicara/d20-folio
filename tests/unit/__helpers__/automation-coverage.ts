@@ -301,7 +301,23 @@ export async function buildCurrentAutomationCorpus(): Promise<AutomationCorpusEn
           `race-trait:${race.id}:${trait.id}`,
           "race-trait",
           trait,
-          presentersForPrefix(claims, "race", prefix)
+          presentersForPrefix(claims, "race", prefix),
+          trait.cantripReplacement
+            ? Object.fromEntries(
+                Object.keys(trait.cantripReplacement).map((field) => [
+                  `cantripReplacement.${field}`,
+                  {
+                    key: `race.${prefix}.description`,
+                    resolvedLocales: (["en", "it"] as const).filter((locale) =>
+                      presenterText(
+                        catalogue(claims, locale, "race")[prefix],
+                        "description"
+                      )
+                    ),
+                  },
+                ])
+              )
+            : undefined
         )
       );
     }

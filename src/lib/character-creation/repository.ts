@@ -54,7 +54,8 @@ export interface CreationValidation {
 }
 function budget(value: unknown) {
   try {
-    assertJsonBudget(value, 600000, 4096);
+    // Three independently bounded acquisition aggregates plus the small parent/envelope.
+    assertJsonBudget(value, 600000, 16384);
   } catch {
     throw new Error("creation-operation-too-large");
   }
@@ -179,6 +180,9 @@ export function createCreationRepository(
     return [...sources.values()].filter(isLibrarySnapshot);
   }
   const api = {
+    validateRecovered(operation: CreationOperation): void {
+      validate(operation);
+    },
     intent(candidate: CreationCandidate): CreationOperation {
       budget(candidate);
       const uid = owner(),

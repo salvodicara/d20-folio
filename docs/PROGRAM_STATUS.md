@@ -1,6 +1,6 @@
 # Program Status
 
-## Current frontier — P10 creation and onboarding in implementation (8 September 2026)
+## Current frontier — P10 verified, integration ready (9 September 2026)
 
 Astra owns P10 only, authorized by the current owner handoff and PRODUCT's standing delivery
 delegation. Dependencies P07–09 are integrated at fresh origin/v2
@@ -11,27 +11,48 @@ Owned topic: `codex/p10-creation-onboarding-20260908`, physical worktree
 `/Users/salvatoredicara/Workspace/Codex/d20-folio-p10-creation`. The task's detached control
 `/Users/salvatoredicara/Workspace/Codex/d20-folio-p10-control` was proved clean at the same fresh
 V2 SHA before topic creation. Other worktrees and the shared checkout are preserved.
-Pinned bootstrap completed; the read-only private pack is clean at
-`b6073dd0d15bcf2dc980b1e00c531b7a5330da8e`, linked to its exact `content-pack` subdirectory.
-External evidence and temporary files belong to `Workspace/Codex/d20-folio-p10-evidence`.
+Pinned bootstrap completed. The primary composition now uses the isolated private metadata
+candidate `ceb45446e4420ae3e34852342473b345f26b37c7` through its exact `content-pack`
+subdirectory. The shared private checkout stays clean at `b6073dd0d15bcf2dc980b1e00c531b7a5330da8e`.
+The paired-change charter and sensitive catalogue evidence are external under
+`Workspace/Codex/d20-folio-p10-private-evidence`; no private payload belongs in public Git.
 
-P10 specification and plan committed at `5f3657b3` before product code, after independent
-architecture review. Current work: shared snapshot/pool/initial-loadout foundation in isolated
-`codex/p10-sources-20260908` at `Workspace/Codex/d20-folio-p10-sources`, plus independently reviewed import analysis and an import transaction repository in the primary
-topic. The foundation candidate ad9220af plus corrective8e716d02 passed independent review and were
-composed into the primary topic at069cea77/84f244ca. Import repository1d3379b5 passed scoped
-review and23 focused tests; its rules slice now passes41 focused emulator tests including six
-original-copy recovery cases. These are bounded slice receipts, not final P10 certification.
-Five-document character creation, UI orchestration, draft recovery and creation/grouped-item rules
-remain to implement. A separate paired metadata topic is active under the task's external private
-charter, from verified fresh public/private V2 bases; shared pack remains unchanged and read-only.
-The first focused import analysis/migration tests pass, including six exact fixture originals;
-this is not a full P10 runtime or final gate.
-All P10 runtime, independent review, screenshot, six-fixture, rules, SRD-only and final composed
-gates remain open. P09 evidence is historical applicability only, never a P10 pass.
-Reviewed, verified approved-mock work may integrate into V2 without another exhaustive owner
-visual verdict; actual screenshots and the full successor prompt remain mandatory after closure.
-No deployment, production writes, real migration, new cost or production switch is authorized.
+The specification/plan (`5f3657b3`), import analysis/repository/rules, shared acquisition and
+initial-copy foundation, paired typed catalogue metadata, atomic five-document creation
+repository (`b45a0eeb`), complete catalogue composer (`b49586a5`) and controlled six-step
+wizard (`79570089`) have passed their bounded independent reviews and tests. Parent UI
+orchestration now retains drafts and the sole operation envelope, fences navigation/session
+changes, handles import reconciliation, and reads guided class/origin/initial-copy aggregates.
+Independent lifecycle, source-reader and shell reviews are closed. The r2 text-only
+navigation and table LED have been checked in actual optimized EN/IT images at 1440/1280/390;
+22 navigation tests pass. Owner steering supersedes P09's icon interpretation, including the
+explicit phone LED. P10 resumed after that correction.
+
+Fresh actual Google/Auth Emulator runtime has saved full Wizard and Fighter characters, a
+character using an authored stable custom species and a fourth boundary/recovery character.
+Manual exceptions, source cascades, offline retention and exact receipt recovery are exercised.
+All six originals were imported through UI with exact source/private-note recovery. Independent
+sessions prove import CAS/review, route invalidation, actual auth A→B→A and membership revocation
+of guided readers/copies. Synthetic 2014 input keeps schema/edition separate and preserves custom,
+overrides and future fields; rejected input preserves the prior valid draft. No mechanical
+conversion or combat execution is claimed by import, preview or saved readers.
+
+Independent code/lifecycle/source/shell/import/paper reviews are closed. Current optimized build
+is `index-8AOJxCon.js`. The corrected wizard, recovery/cascade and final saved roster/inspection matrices are reviewed. Paper/export EN/IT was rerun
+where shared readers changed. Source-byte comparison confirms 890 composed and 574 SRD frozen
+snapshots are unchanged by label refactoring. No private fixture was changed.
+
+Final pinned composed G passes: 919 application files/19,929 tests and 7 Functions files/129 tests,
+with typecheck, zero-warning lint and optimized build/PWA. Fresh full rules G passes all
+14 files/287 tests with zero skips, including both six-original repeated-apply/recovery scenarios.
+Before/after source and fixture hashes match. Final pinned SRD G passes 739 files/14,248 tests with the two intentional private-loader skips,
+plus typecheck/build/PWA. Private/public V2 integration remains open. Failed earlier gates and transient-loading screenshots are preserved
+and excluded, with explicit applicability; P09 evidence is historical, never a P10 pass.
+No public or private task commit has been pushed. P11a has not started. Owned worktrees/services
+will be removed after integration. Reviewed, verified approved-mock work may integrate into V2
+without another exhaustive owner visual verdict; actual screenshots and the full successor
+prompt remain mandatory after closure. No deployment, production writes, real migration, new
+cost or production switch is authorized.
 
 ## Historical frontier — P09 verified; P10 next (8 September 2026)
 

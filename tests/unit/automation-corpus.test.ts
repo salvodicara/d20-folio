@@ -33,6 +33,56 @@ function feature(
 }
 
 describe("automation corpus adapter", () => {
+  it("requires bilingual manual evidence for later cantrip replacement", () => {
+    const subject: AutomationCorpusEntity = {
+      entityKey: "race-trait:example:magic",
+      schema: "race-trait",
+      data: {
+        id: "magic",
+        minLevel: 1,
+        spellcastingAbility: { kind: "choice", id: "casting", abilities: ["INT", "WIS"] },
+        cantripReplacement: {
+          spellId: "prestidigitation",
+          classSpellList: "wizard",
+          boundary: "long-rest",
+        },
+      },
+    };
+    expect(compileAutomationCorpusEntity(subject).errors).toContain(
+      "manual data path cantripReplacement.spellId has no presenter evidence"
+    );
+    const paths = ["spellId", "classSpellList", "boundary"].map(
+      (field) => `cantripReplacement.${field}`
+    );
+    subject.manualPresenters = Object.fromEntries(
+      paths.map((path) => [
+        path,
+        {
+          key: "race.example.traits.magic.description",
+          resolvedLocales: ["en", "it"] as const,
+        },
+      ])
+    );
+    const result = compileAutomationCorpusEntity(subject);
+    expect(result.errors).toEqual([]);
+    expect(
+      result.receipt?.clauses
+        .filter((c) => c.handler === "manual:external-time")
+        .flatMap((c) => c.consumedPaths)
+    ).toEqual([...paths].sort());
+    expect(
+      result.receipt?.clauses
+        .filter((c) => !c.handler.startsWith("manual:"))
+        .flatMap((c) => c.consumedPaths)
+    ).toEqual(
+      expect.arrayContaining([
+        "minLevel",
+        "spellcastingAbility.kind",
+        "spellcastingAbility.abilities[0]",
+      ])
+    );
+  });
+
   it("recursively receipts every structured leaf", () => {
     const result = compileAutomationCorpusEntity({
       entityKey: "equipment:test-blade",
