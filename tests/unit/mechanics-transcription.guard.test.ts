@@ -180,7 +180,8 @@ describe("corpus transcription", () => {
         (spell) => transcribeSpell(spell).program !== null
       ).length;
       writeFileSync(
-        resolve(process.cwd(), "docs/automation-coverage.generated.json"),
+        // v1 coverage ledger, frozen under docs/archive/v1 on 2026-09-09; this guard leaves with the mechanics kernel.
+        resolve(process.cwd(), "docs/archive/v1/automation-coverage.generated.json"),
         `${JSON.stringify(
           {
             entities,
@@ -247,7 +248,11 @@ describe("corpus transcription", () => {
         ];
       });
       writeFileSync(
-        resolve(process.cwd(), "docs/automation-coverage.feature-actions.generated.json"),
+        // v1 coverage ledger, frozen under docs/archive/v1 on 2026-09-09; this guard leaves with the mechanics kernel.
+        resolve(
+          process.cwd(),
+          "docs/archive/v1/automation-coverage.feature-actions.generated.json"
+        ),
         `${JSON.stringify(
           {
             entities,

@@ -12,7 +12,7 @@
  *  - `{ plumbing }` — deliberately NON-rendered, with the written justification
  *    (a choice-engine seam, an equivalent code path, a dormant duplicate).
  *  - `{ open }` — a KNOWN exposure gap, recorded as a ranked OPEN item in
- *    docs/AUTOMATION_COVERAGE.md (the doc must mention the kind, so the gap
+ *    docs/archive/v1/AUTOMATION_COVERAGE.md (the doc must mention the kind, so the gap
  *    can't silently vanish from the backlog).
  *
  * Adding a NEW Grant kind without registering it here fails CI; so does a
@@ -579,8 +579,9 @@ describe("grant-kind exposure guard — no Grant kind ships invisible", () => {
     expect(failures).toEqual([]);
   });
 
-  it("every OPEN gap is recorded in docs/AUTOMATION_COVERAGE.md (the backlog can't lose it)", () => {
-    const doc = read("docs/AUTOMATION_COVERAGE.md");
+  it("every OPEN gap is recorded in docs/archive/v1/AUTOMATION_COVERAGE.md (the backlog can't lose it)", () => {
+    // v1 coverage ledger, frozen under docs/archive/v1 on 2026-09-09; this guard leaves with the mechanics kernel.
+    const doc = read("docs/archive/v1/AUTOMATION_COVERAGE.md");
     const missing = Object.entries(EXPOSURE)
       .filter((e): e is [string, { open: string }] => "open" in e[1])
       .map(([kind]) => kind)

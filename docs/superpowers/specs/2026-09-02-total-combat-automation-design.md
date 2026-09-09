@@ -851,9 +851,10 @@ sink swap; not adopted (third party, cost, friends' data).
 when present) → conform every `Mechanic` → for every program and step derive a status from the
 data alone: `automated` (reducer handles it), `physical-input` (dice/answer), `declared-fact`
 (relation), `table` (a `manual-table` step), `unsupported` (conformance failure, with path).
-Output `docs/automation-coverage.json`; `docs/AUTOMATION_COVERAGE.md` becomes a generated
-rendering or is deleted. The guard fails when the committed JSON differs from the regenerated
-one. Per-kind exposure is exhaustiveness, not a token search.
+Output `docs/automation-coverage.json`; `docs/archive/v1/AUTOMATION_COVERAGE.md` (the v1 hand-kept
+rendering, archived 2026-09-09) becomes a generated rendering or is deleted. The guard fails when
+the committed JSON differs from the regenerated one. Per-kind exposure is exhaustiveness, not a
+token search.
 
 ## 11. Layering and boundary rules
 
@@ -882,7 +883,8 @@ stage-1 program plan. The items below are kept as the record of what was propose
   copy") becomes an enforced rule: the campaign document carries no member snapshot.
 - `docs/MECHANICS.md` §"Non-automatable residuals": replace the per-target, targeted-buff and
   geometry entries with the residual list of §13; cover (RA-31) moves to "declared relation".
-- `docs/AUTOMATION_BACKLOG.md` RA-31: verdict reversed under D2, with the reasoning of §7.15.
+- `docs/archive/v1/AUTOMATION_BACKLOG.md` RA-31: verdict reversed under D2, with the reasoning of
+  §7.15.
 - `CLAUDE.md` §"Architecture in one breath": "Mechanics are typed data, never prose parsing: a
   source declares a `Mechanic` (passive `Grant`s and active `Program`s); the pure combat reducer
   folds an append-only action log into an entity-generic `Encounter`; presenters localize; UI

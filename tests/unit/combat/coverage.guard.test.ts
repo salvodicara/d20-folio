@@ -10,7 +10,11 @@ import { buildCatalogue } from "@/lib/combat/catalogue";
 import { coverageFor, type CoverageRow } from "@/lib/combat/coverage";
 import { PROTOTYPE_MECHANICS } from "@/data/combat/prototype-catalogue";
 
-const OUTPUT = resolvePath(process.cwd(), "docs/automation-coverage.prototype.json");
+// v1 coverage ledger, frozen under docs/archive/v1 on 2026-09-09; this guard leaves with the mechanics kernel.
+const OUTPUT = resolvePath(
+  process.cwd(),
+  "docs/archive/v1/automation-coverage.prototype.json"
+);
 
 describe("coverage — derived from the catalogue", () => {
   const { catalogue } = buildCatalogue(PROTOTYPE_MECHANICS);
