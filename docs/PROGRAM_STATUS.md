@@ -20,7 +20,10 @@ the owner's 2026-09-09 feedback. Its exit acceptance
 - Both sides of progressive disclosure proven: expert speed with no mandatory explanation, and
   beginner discovery that teaches while playing.
 
-PD research half delivered (Claude, 2026-09-09); visual half open (Astra).
+PD research half delivered (Claude, 2026-09-09 afternoon); rule 30 audit, game-feel rules,
+reference dossiers and the creation engine seams delivered (Claude, 2026-09-09 evening:
+`docs/superpowers/research/2026-09-09-rule-30-audit.md`, `2026-09-09-game-feel.md`,
+`docs/superpowers/specs/2026-09-09-pd-reference-dossiers.md`); visual half open (Astra).
 The owner's verdict closes PD. **P11a does not start before that verdict.**
 
 Knowledge-base reset (2026-09-09): integrated on `v2` through `1cc5d32e` (this record is the commit after it; see `docs/program/NEXT.md` → Closed).

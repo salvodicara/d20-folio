@@ -5,17 +5,29 @@ The only handoff. Rewrite this file at the end of every session; never copy cont
 ## Current block
 
 **PD — Engagement and progressive-disclosure design**, inserted between P10 and P11a by the owner's
-feedback of 9 September 2026. Its entry conditions and exit are in
-[`PROGRAM.md`](PROGRAM.md#pd--engagement-and-progressive-disclosure): study BG3 and D&D Beyond for
-real and record the evidence, redesign the character-creation journey as the representative path,
-produce a raster art direction for spells and combat actions with concrete examples and
-coherence/legibility criteria, and prove both speed for the expert and discovery for the beginner.
-The owner's verdict closes PD. **P11a does not start before that verdict.**
+feedback of 9 September 2026. Entry conditions and exit are in
+[`PROGRAM.md`](PROGRAM.md#pd--engagement-and-progressive-disclosure). The owner's verdict closes
+PD. **P11a does not start before that verdict.**
 
 Split (owner, 2026-09-09 afternoon): Astra owns the visual/taste half, Claude owns the rest.
-Claude's research half is delivered:
-`docs/superpowers/research/2026-09-09-pd-bg3-dndbeyond-research.md` (evidence in
-`docs/superpowers/research/2026-09-09-pd/`).
+Claude's half is delivered in two passes:
+
+- Research (2026-09-09 afternoon):
+  `docs/superpowers/research/2026-09-09-pd-bg3-dndbeyond-research.md` + `2026-09-09-pd/`.
+- Rule 30 audit and game feel (2026-09-09 evening): the audit table
+  `docs/superpowers/research/2026-09-09-rule-30-audit.md`, the game-feel rules and copy set
+  `docs/superpowers/research/2026-09-09-game-feel.md`, the reference evidence
+  `docs/superpowers/research/2026-09-09-rule-30/`, and the dossier drafts Astra's specs carry
+  verbatim `docs/superpowers/specs/2026-09-09-pd-reference-dossiers.md`. Engine and data seams
+  delivered with tests: SRD class and species descriptions (EN/IT), the ten creation glossary
+  terms, `applyRecommendedBuild` (`src/lib/character-creation/recommended.ts`),
+  `forecastCreation`/`speculate` (`src/lib/views/creation-forecast.ts`), and
+  `creationIssueMessage` with `creationV2.fix.*` (`src/lib/views/creation-issues.ts`).
+
+**Astra takes over from here:** open the audit §1 and §2.3–§2.4 rows marked `M`, then the dossiers
+D1–D9 (creation), then D10–D12 (landing, hub, roster). Every redesigned surface's spec starts with
+its dossier entry (rule 30 gate). Screens wire the three seams above; no new pattern is invented
+where the dossier names one.
 
 ## Closed (SHA)
 
@@ -41,44 +53,42 @@ P01 is a documentary candidate with no separate integration receipt. For P08b, P
 above is the verified integrated source; their final remote receipts were kept in external evidence
 folders — see `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md` for the full historical record.
 
-Knowledge-base reset (2026-09-09): one program in `docs/program/`, one-page ledger, v1 docs
-archived, map documents rewritten with archify diagrams, graph committed and hook-refreshed,
-skills unified — integrated on `v2` through `1cc5d32e` (the commit after it is this record).
+Knowledge-base reset (2026-09-09): integrated on `v2` through `1cc5d32e`.
 
 ## Open
 
-- **PD** — the current block; the research half is delivered.
-- PD visual half (Astra): redesigned creation screens + raster art direction, from the research;
-  owner verdict closes PD.
-- **P11a → P30** — not started; the order and dependencies are in [`PROGRAM.md`](PROGRAM.md).
-- The per-family definitions E01–E22 and the nine player-freedom scenarios still live only in the
-  lab (`~/Workspace/Codex/d20-design-dialogue/full-lab/docs/RULES-EXCEPTION-CATALOG.md`,
-  `PLAYER-FREEDOM-CONTRACT.md`); rule 36 requires them in the repository before P14a starts — that
-  import is a P14a entry condition.
-- **Out-of-combat mechanical freedom** (owner, 2026-09-03) still needs its own design pass: players
-  resolve spells and other mechanics outside a formal encounter, and whether the personal
-  `Encounter` aggregate is usable independently of a campaign lease is unverified.
+- **PD** — Claude's research and audit halves are delivered; Astra's visual half is open (creation
+  screens + raster art direction); owner verdict closes PD.
+- Owner questions from the audit that only the owner answers: a ≤ 3-input quick path at the door
+  (research §9.1); a remembered "help text" preference versus the 2026-09-07 no-switch decision
+  (§9.5); art in creation and a portrait step (§9.3).
+- Screen-owned follow-ups the audit lists for the blocks (audit §5): draft storage
+  `sessionStorage` → `localStorage`, locale-aware distance units, invite token replacing the raw
+  campaign id, default route to the last campaign hub, the copy rewrite of the four creation and
+  library shards against the game-feel rules.
+- Preset drift the engine tests pin (pack-side, `content-pack/data/quickbuild.ts`): the artificer
+  preset names a tool the class already grants; a human's size falls to the first pool option unless
+  the preset carries a `lineage` value.
+- **P11a → P30** — not started; order and dependencies in [`PROGRAM.md`](PROGRAM.md).
+- E01–E22 and the nine player-freedom scenarios still live only in the lab; rule 36 requires them in
+  the repository before P14a starts.
+- **Out-of-combat mechanical freedom** (owner, 2026-09-03) still needs its own design pass.
 - No deployment, production write, real-data migration, release or new cost is authorised.
 
 ## Recent owner decisions (dates)
 
 Full text in [`DECISIONS.md`](DECISIONS.md); the newest dated statement always wins.
 
+- **2026-09-09 (evening)** — raster art generated with GPT, BG3-inspired, never identical; rule 30
+  is a gate: every spec carries a reference dossier.
 - **2026-09-09 (afternoon)** — Astra owns visual/taste decisions; Claude owns architecture, graph,
   research, cleanup, engine.
-- **2026-09-09** — knowledge-base reset: one program in the repository, v1 documents archived, the
-  repository is the only memory, the graph committed and hook-refreshed, one short handoff.
-- **2026-09-09** — the nine reset decisions (`DECISIONS.md`).
-- **2026-09-09** — the experience is too cold and administrative; progressive disclosure for expert
-  and beginner; raster art for spells and combat actions; BG3 and D&D Beyond studied for real.
-- **2026-09-08** — standing delivery delegation: reviewed, gate-green work integrates into `v2`
-  without a per-block visual verdict; screenshots stay mandatory. Clarity and familiar patterns.
-- **2026-09-07** — custom content drives the same engine and combat stays editable on authoritative
-  facts; shell and Account r2 corrections; the successor handoff only when the work is truly done.
-- **2026-09-06** — V2 is a completely new application; the approved mock 0.9.3 is the binding
-  reference; depth is delegated to the implementation blocks; agents may push on `v2`.
-- **2026-09-05** — immersive-v2 is the accepted visual base; d20 Folio and the D20 mark confirmed;
-  dark theme only, IT and EN.
+- **2026-09-09** — knowledge-base reset; the nine reset decisions; the experience is too cold and
+  administrative; progressive disclosure for expert and beginner; BG3 and D&D Beyond studied for real.
+- **2026-09-08** — standing delivery delegation; clarity and familiar patterns.
+- **2026-09-07** — custom content drives the same engine; shell and Account r2 corrections.
+- **2026-09-06** — V2 is a completely new application; mock 0.9.3 is the binding reference.
+- **2026-09-05** — immersive-v2 accepted; d20 Folio and the D20 mark; dark theme only, IT and EN.
 - **2026-09-03** — giants' shoulders; the app rolls dice; CI under 15 minutes; no dead weight.
 
 ## Opening prompt
