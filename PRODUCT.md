@@ -106,7 +106,9 @@ always wins. What each date settled for this document:
 - **2026-09-07** — custom content drives the same engine and combat stays editable (below); every
   block iterates on the actual running application, with independent authenticated clients and the
   optimized build on Firebase demo emulators, and emulator acceptance never authorises deployment,
-  production writes or new cost.
+  production writes or new cost. Aim for production fidelity without claiming exact equivalence:
+  document emulator and environment gaps and verify them in the separately authorized
+  staging/release gates before switching users.
 - **2026-09-06** — V2 is a completely new application: the approved mock
   `d20-folio-html-0.9.3-2026-09-06` is the binding experience reference and never a ceiling on
   depth; existing code, engines and screenshots carry no reuse or compatibility claim; no legacy
@@ -126,8 +128,9 @@ fresh exhaustive screenshot approval at every block. Always verify the real runt
 and deliver curated actual screenshots in chat, followed by the successor handoff once the block and
 its integration are finished. Do not expect the owner to inspect every control, repeat this consent,
 or perform the agent's verification: the detailed hands-on usability review happens when the
-application is complete and usable. This is delegated implementation acceptance, not evidence that
-the owner audited every pixel.
+application is complete and usable. Defer fine visual and interaction polishing to that final
+review rather than repeatedly seeking decisions on minor details. This is delegated implementation
+acceptance, not evidence that the owner audited every pixel.
 
 It preserves independent review, real-runtime evidence, safety and quality gates, full functional
 depth and mock fidelity. Resolve routine design and technical details autonomously; ask only for a
@@ -232,7 +235,9 @@ observe the corresponding BG3 sequence, organization and feedback, then demonstr
 counterpart through actual gestures and visual comparisons. Adopt useful capabilities from D&D
 Beyond, Roll20 and Owlbear too. D&D 2024 governs the rules — BG3 rule variants are never imported —
 and player freedom and the physical-dice alternative remain binding. A concrete incompatibility is
-resolved with the owner using that example; never silently cut the product.
+resolved with the owner using that example; never silently cut the product or ask for another
+general reference interview. No new 3D world, backend, cost or privacy policy follows by
+implication.
 
 ## Brand Personality
 

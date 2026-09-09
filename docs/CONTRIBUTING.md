@@ -33,18 +33,18 @@ assert private catalogue facts live under `content-pack/tests/`, never under the
 Every check runs mandatorily before code reaches a user, each in exactly one lane, never twice on
 one path (golden rule 14). The v2 gate is fast by mandate — the target is under fifteen minutes.
 
-| Lane                   | What it runs                                                                                 | Where                          |
-| ---------------------- | -------------------------------------------------------------------------------------------- | ------------------------------ |
-| **pre-commit**         | staged-changeset guard · graphify refresh when staged code changed · `lint-staged`           | `.githooks/pre-commit`         |
-| **pre-push → topic**   | nothing — a topic branch is a recoverable remote checkpoint                                  | `.githooks/pre-push`           |
-| **pre-push → `main`**  | typecheck ∥ lint ∥ unit + coverage concurrently, then `vite build` · budget · rules (scoped) | `.githooks/pre-push`           |
-| **`just ci`**          | typecheck · lint · app tests · Functions tests · build, composed                             | local, before integration      |
-| **`just ci-srd-only`** | `typecheck:srd-only` · `test:srd-only` · `build:srd-only`                                    | local, licensing seam          |
-| **`pnpm test:rules`**  | the Firestore rules suite on the emulator (needs the JDK; `demo-` project, no cost)          | local, rules changes           |
-| **budget**             | `pnpm build && pnpm test:budget` — bundle and precache ceilings                              | inside pre-push and CI         |
-| **per merge — CI**     | the SRD-only gate as parallel jobs                                                           | `.github/workflows/ci.yml`     |
-| **per merge — Verify** | the composed verdict (pack checked out, composed unit suite)                                 | `.github/workflows/verify.yml` |
-| **deploy**             | promotes a verified SHA; owner-fired only                                                    | `.github/workflows/deploy.yml` |
+| Lane                   | What it runs                                                                                                                                                                                                                                                    | Where                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| **pre-commit**         | staged-changeset guard · graphify refresh when staged code changed · `lint-staged`                                                                                                                                                                              | `.githooks/pre-commit`         |
+| **pre-push → topic**   | nothing — a topic branch is a recoverable remote checkpoint                                                                                                                                                                                                     | `.githooks/pre-push`           |
+| **pre-push → `main`**  | typecheck ∥ lint ∥ unit + coverage concurrently, then `vite build` · budget · rules (scoped)                                                                                                                                                                    | `.githooks/pre-push`           |
+| **`just ci`**          | typecheck · lint · app tests · Functions tests · build, composed                                                                                                                                                                                                | local, before integration      |
+| **`just ci-srd-only`** | `typecheck:srd-only` · `test:srd-only` · `build:srd-only`                                                                                                                                                                                                       | local, licensing seam          |
+| **`pnpm test:rules`**  | the Firestore rules suite on the emulator (needs the JDK; `demo-` project, no cost)                                                                                                                                                                             | local, rules changes           |
+| **budget**             | `pnpm build && pnpm test:budget` — bundle and precache ceilings                                                                                                                                                                                                 | inside pre-push and CI         |
+| **per merge — CI**     | the SRD-only gate as parallel jobs                                                                                                                                                                                                                              | `.github/workflows/ci.yml`     |
+| **per merge — Verify** | the composed verdict (pack checked out, composed unit suite); triggers only on a push to `main`, never on `v2`, and still carries the 8-shard Playwright e2e matrix `v2` no longer has — reconciling the workflow with the rebuilt portfolio is a separate task | `.github/workflows/verify.yml` |
+| **deploy**             | promotes a verified SHA; owner-fired only                                                                                                                                                                                                                       | `.github/workflows/deploy.yml` |
 
 **The pre-push hook special-cases `main` only.** A push to `v2` runs no hook gate, so run `just ci`
 (plus `just ci-srd-only` and `pnpm test:rules` when their surfaces moved) locally on the rebased tree
@@ -61,11 +61,8 @@ by [Test portfolio](TEST_PORTFOLIO.md), not by this page.
 **Never use `--no-verify`, and never add a slow check to a hook "to be safe."** If a check is slow it
 belongs in a remote per-merge lane. Keep `--cache` wherever it helps so a no-op re-run is seconds.
 
-**Test altitude.** Write the cheapest test that pins the fact, at the lowest lane that can observe
-it: pure function → store/hook → thin render → browser. Every test names a regression someone could
-plausibly cause; a bug fix ships exactly one regression test at the seam the root cause lives in;
-superseded tests are deleted with the code they pinned. A guard derives its inputs from the artifact,
-asserts the derived set is non-empty, states its blind spot, and is proved by mutation.
+**Test altitude.** Governed by [Golden Rules](GOLDEN_RULES.md) rule 13 (TDD for behavior changes) —
+the cheapest test that pins the fact, at the lowest lane that can observe it.
 
 ## Commits and changesets
 
@@ -108,8 +105,8 @@ Review replaces PR review; it never replaces tests or screenshot evidence.
 
 ## Lessons that became rules
 
-Thirty rules distilled from real sessions in this repository. They add to the golden rules, never
-replace them; each names the situation first.
+Twenty-nine rules distilled from real sessions in this repository. They add to the golden rules,
+never replace them; each names the situation first.
 
 **Design and planning**
 
@@ -160,41 +157,39 @@ replace them; each names the situation first.
     honest update to the existing changeset. Never create a second artifact to satisfy a hook.
 17. Before an amend rewrites text a specification owns, re-read that specification: a hook adds a
     delivery condition, never authority over spec-owned literals.
-18. Read `.githooks/pre-push` before your first integration and run locally exactly what it runs; a
-    push that fails after an eight-minute hook run is the price of a gate list that was a subset.
-19. Evidence extraction must be more inert than the command whose evidence it reads: single-quote
+18. Evidence extraction must be more inert than the command whose evidence it reads: single-quote
     patterns containing backticks, never name a zsh scratch variable `path`, and fix a failing probe
     before concluding anything about the product. Toolchain pinning counts only when the child
     process, not just the parent, is proved to resolve to the pinned executable.
 
 **Tests**
 
-20. "No test files found", a resolver error or the wrong runner project is a command defect, never
+19. "No test files found", a resolver error or the wrong runner project is a command defect, never
     RED. Prove the command enumerates the expected file count before trusting a failure.
-21. A RED that dies at a strict fail-closed boundary may be exposing the bug: trace the value into
+20. A RED that dies at a strict fail-closed boundary may be exposing the bug: trace the value into
     that boundary before weakening the fixture, and keep the literal assertion for GREEN.
-22. Destructive transitions need exact negatives — `toEqual({})`, `toHaveLength(0)`, explicit key
+21. Destructive transitions need exact negatives — `toEqual({})`, `toHaveLength(0)`, explicit key
     absence. `toMatchObject({ nested: {} })` accepts a non-empty object.
-23. A fixture standing in for a production boundary satisfies that boundary's complete contract:
+22. A fixture standing in for a production boundary satisfies that boundary's complete contract:
     emit at least one fixture through the real producer and name the adversarial omissions.
-24. Install fake timers before the timer under test is scheduled, and reset stateful mocks'
+23. Install fake timers before the timer under test is scheduled, and reset stateful mocks'
     implementations as well as their calls — a leaked `mockImplementationOnce` cascades.
-25. Geometry oracles fail closed: require at least one selected element, assert width and height,
+24. Geometry oracles fail closed: require at least one selected element, assert width and height,
     measure the painted hit area, and give only CSS-pixel comparisons a named epsilon (≤ 0.01px)
     proved to still reject the real regression.
-26. The expensive test layer is default-deny: a browser test needs a named cross-boundary risk and
+25. The expensive test layer is default-deny: a browser test needs a named cross-boundary risk and
     proof that cheaper layers cannot cover it.
 
 **Debugging**
 
-27. Reconcile concurrent private state by replaying the authoritative transition through its owning
+26. Reconcile concurrent private state by replaying the authoritative transition through its owning
     reducer onto local state — never by choosing or shallow-merging whole snapshots; a failed guard
     is an explicit conflict.
-28. When independent reviews keep rediscovering the same invariant failure at later boundaries, the
+27. When independent reviews keep rediscovering the same invariant failure at later boundaries, the
     primitive is wrong: move to a transactional one (immutable value plus compare-and-swap,
     no-replace claims) instead of spending another round on local checks.
-29. Strict-mode replays effects without recreating refs: reset liveness and generation refs in every
+28. Strict-mode replays effects without recreating refs: reset liveness and generation refs in every
     effect setup, and keep the first successful acquisition's pre-mutation snapshot across the replay.
-30. Migration atomicity covers every fact used to authorize a projection, not only the documents
+29. Migration atomicity covers every fact used to authorize a projection, not only the documents
     whose bytes change; and every parser reused by an audit, hash or backup carries a deep
     no-mutation contract.

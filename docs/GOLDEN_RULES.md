@@ -93,9 +93,10 @@ the new durable decision or kept explicitly one-off.
     the intended reason, implement the smallest sound change, and keep the cheapest test that pins the
     fact. Guard inputs derive from the artifact and state their blind spots; prove guards by mutation.
 14. **Every check has one lane.** Keep pre-commit fast, the integration pre-push gate authoritative,
-    and deploy a promotion of a verified SHA. The v2 gate stays under fifteen minutes and never
-    duplicates a check another lane already runs. Never use `--no-verify` or add a slow check to a
-    hook "for safety."
+    and deploy a promotion of a verified SHA. The `main` pre-push gate is authoritative for
+    production; `just ci` is authoritative before an integration push to `v2` (topic pushes run no
+    hook gate). The v2 gate stays under fifteen minutes and never duplicates a check another lane
+    already runs. Never use `--no-verify` or add a slow check to a hook "for safety."
 15. **Verify behavior in the environment that can observe it.** Use Superpowers verification before
     completion. For UI, layout, motion, service workers, and accessibility, use a real browser and the
     relevant locale/theme/viewport matrix; jsdom is not visual proof.
@@ -133,7 +134,8 @@ the new durable decision or kept explicitly one-off.
     the owner's phone; a local path or a written report is not delivery. On `v2` that evidence
     accompanies integration under the owner's standing delivery delegation of 8 September 2026 — send
     the images, integrate reviewed gate-green work, and never demand a per-block visual verdict; the
-    owner's hands-on review of the whole application comes at P28–P30. On production `main`, owner
+    owner's hands-on review of the whole application comes when the application is complete and
+    usable (the P29 group session), per PRODUCT. On production `main`, owner
     approval of the screenshots remains a blocking per-change gate before integration. Deployment is a
     separate gate in both cases.
 26. **Discover ambiguous product intent before implementation.** Use Superpowers brainstorming and,
