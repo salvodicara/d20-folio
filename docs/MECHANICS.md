@@ -8,7 +8,7 @@ which stays as the historical design record. Where that spec and the code disagr
 what is written here and the difference is named.
 
 Boundaries, layers and persistence are [`ARCHITECTURE.md`](ARCHITECTURE.md); stored character
-shapes are `CHARACTER_SCHEMA.md`; the delivery order is
+shapes are [`CHARACTER_SCHEMA.md`](CHARACTER_SCHEMA.md); the delivery order is
 [`program/PROGRAM.md`](program/PROGRAM.md). The v1 mechanics document is history at
 [`archive/v1/MECHANICS.md`](archive/v1/MECHANICS.md).
 

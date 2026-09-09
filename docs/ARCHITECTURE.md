@@ -24,8 +24,9 @@ seam, the gates. It does not own:
   PD) and the frontier in [`PROGRAM_STATUS.md`](PROGRAM_STATUS.md);
 - **product intent and rules** — [`../PRODUCT.md`](../PRODUCT.md),
   [`PRODUCT_CONSTITUTION.md`](PRODUCT_CONSTITUTION.md), [`GOLDEN_RULES.md`](GOLDEN_RULES.md);
-- **stored shapes** — `CHARACTER_SCHEMA.md`; **rules automation** —
-  [`MECHANICS.md`](MECHANICS.md); **the visual contract** — `../DESIGN.md`.
+- **stored shapes** — [`CHARACTER_SCHEMA.md`](CHARACTER_SCHEMA.md); **rules automation** —
+  [`MECHANICS.md`](MECHANICS.md); **the visual contract** — [`../DESIGN.md`](../DESIGN.md);
+  **where the program stands** — [`../PROGRESS.md`](../PROGRESS.md).
 
 The v1 architecture document is history at [`archive/v1/ARCHITECTURE.md`](archive/v1/ARCHITECTURE.md).
 
@@ -382,8 +383,8 @@ the same lanes and run only in pack mode (`vitest.config.ts`).
   any new eager chunk. Raise a ceiling only with deliberate headroom, never to an exact-fit
   measured value, and update the constant and the recorded baseline in the same commit.
 
-Suite composition, measured durations and what was deleted belong to `TEST_PORTFOLIO.md`
-(ADR-0007).
+Suite composition, measured durations and what was deleted belong to
+[`TEST_PORTFOLIO.md`](TEST_PORTFOLIO.md) (ADR-0007).
 
 ## 12. ADR index
 
