@@ -1,38 +1,50 @@
 {
   "barbarian": {
+    "description": "You fight on instinct and fury. Rage makes you tougher and hits harder, and you shrug off blows that would fell others.",
     "name": "Barbarian"
   },
   "bard": {
+    "description": "You weave magic through music and words. Your inspiration lifts your companions, and your spells bend hearts and minds.",
     "name": "Bard"
   },
   "cleric": {
+    "description": "You channel the power of a god. You heal, protect and smite, and your armour lets you stand in the front line.",
     "name": "Cleric"
   },
   "druid": {
+    "description": "You draw magic from nature itself. You call storms and vines, and you take the shape of beasts.",
     "name": "Druid"
   },
   "fighter": {
+    "description": "You master weapons and armour. Second Wind heals you in a pinch and Action Surge gives you a burst of extra actions.",
     "name": "Fighter"
   },
   "monk": {
+    "description": "You turn discipline into power. You fight unarmed, move faster than anyone, and spend Focus on bursts of speed and strikes.",
     "name": "Monk"
   },
   "paladin": {
+    "description": "You bind yourself to an oath and back it with divine magic. You heal by touch and pour that power into your strikes.",
     "name": "Paladin"
   },
   "ranger": {
+    "description": "You hunt at the edge of the wild. You track, you strike from range, and your spells mark and ensnare your prey.",
     "name": "Ranger"
   },
   "rogue": {
+    "description": "You strike where it hurts and vanish. Sneak Attack turns one precise hit into a devastating one, and your skills open every door.",
     "name": "Rogue"
   },
   "sorcerer": {
+    "description": "Magic is in your blood. You cast by instinct and reshape your spells with Sorcery Points.",
     "name": "Sorcerer"
   },
   "warlock": {
+    "description": "You struck a pact with an otherworldly patron. Eldritch Blast is your signature, and your few spells return after every short rest.",
     "name": "Warlock"
   },
   "wizard": {
+    "description": "You study magic as a science. Your spellbook holds more spells than any other class, and you choose which to prepare each day.",
     "name": "Wizard"
   }
 }

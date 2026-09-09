@@ -1,38 +1,50 @@
 {
   "barbarian": {
+    "description": "Combatti d'istinto e di furia. L'Ira ti rende più resistente e i tuoi colpi più pesanti, e reggi ferite che abbatterebbero altri.",
     "name": "Barbaro"
   },
   "bard": {
+    "description": "Intrecci la magia con musica e parole. La tua ispirazione sostiene i compagni e i tuoi incantesimi piegano cuori e menti.",
     "name": "Bardo"
   },
   "cleric": {
+    "description": "Incanali il potere di una divinità. Curi, proteggi e colpisci, e l'armatura ti permette di stare in prima linea.",
     "name": "Chierico"
   },
   "druid": {
+    "description": "Attingi la magia dalla natura stessa. Evochi tempeste e rampicanti, e assumi la forma delle bestie.",
     "name": "Druido"
   },
   "fighter": {
+    "description": "Padroneggi armi e armature. Recupero Energie ti cura al momento giusto e Azione Impetuosa ti dà una raffica di azioni extra.",
     "name": "Guerriero"
   },
   "monk": {
+    "description": "Trasformi la disciplina in potere. Combatti a mani nude, ti muovi più veloce di chiunque e spendi Concentrazione in scatti e colpi.",
     "name": "Monaco"
   },
   "paladin": {
+    "description": "Ti leghi a un giuramento e lo sostieni con magia divina. Curi con un tocco e riversi quel potere nei tuoi colpi.",
     "name": "Paladino"
   },
   "ranger": {
+    "description": "Cacci ai confini delle terre selvagge. Segui le tracce, colpisci da lontano e i tuoi incantesimi marchiano e intrappolano la preda.",
     "name": "Ranger"
   },
   "rogue": {
+    "description": "Colpisci dove fa male e sparisci. L'Attacco Furtivo trasforma un colpo preciso in uno devastante, e le tue abilità aprono ogni porta.",
     "name": "Ladro"
   },
   "sorcerer": {
+    "description": "La magia ti scorre nel sangue. Lanci d'istinto e rimodelli gli incantesimi con i Punti Stregoneria.",
     "name": "Stregone"
   },
   "warlock": {
+    "description": "Hai stretto un patto con un patrono ultraterreno. Deflagrazione Occulta è la tua firma e i tuoi pochi incantesimi tornano dopo ogni riposo breve.",
     "name": "Warlock"
   },
   "wizard": {
+    "description": "Studi la magia come una scienza. Il tuo libro degli incantesimi ne contiene più di ogni altra classe, e ogni giorno scegli quali preparare.",
     "name": "Mago"
   }
 }

@@ -1,5 +1,6 @@
 {
   "dragonborn": {
+    "description": "Dragon blood runs in you. You breathe elemental energy and resist the damage type of your ancestry.",
     "name": "Dragonborn"
   },
   "dragonborn.traits.breath-weapon": {
@@ -66,6 +67,7 @@
     "summary": "Spectral wings: Fly Speed = Speed for 10 minutes"
   },
   "dwarf": {
+    "description": "Stout and stubborn, you see in the dark, resist poison and gain extra hit points at every level.",
     "name": "Dwarf"
   },
   "dwarf.traits.darkvision": {
@@ -94,6 +96,7 @@
     "description": "Gain Tremorsense 60 ft for 10 min"
   },
   "elf": {
+    "description": "Keen senses and a touch of magic. You see in the dark, resist charms and sleep, and your lineage grants a spell.",
     "name": "Elf"
   },
   "elf.traits.darkvision": {
@@ -132,6 +135,7 @@
     "name": "Trance"
   },
   "gnome": {
+    "description": "Small, clever and curious. You see in the dark, shrug off mental magic, and your lineage grants a trick or two.",
     "name": "Gnome"
   },
   "gnome.traits.darkvision": {
@@ -165,6 +169,7 @@
     "label": "Rock Gnome"
   },
   "goliath": {
+    "description": "Giant blood makes you tall and powerful. You carry more, and your ancestry gives you a giant's gift in battle.",
     "name": "Goliath"
   },
   "goliath.traits.giant-ancestry": {
@@ -243,6 +248,7 @@
     "description": "Ability checks to end the Grappled condition"
   },
   "halfling": {
+    "description": "Small and lucky. You reroll natural 1s, hide behind bigger folk, and fear rarely takes hold of you.",
     "name": "Halfling"
   },
   "halfling.traits.brave": {
@@ -265,6 +271,7 @@
     "name": "Naturally Stealthy"
   },
   "human": {
+    "description": "Adaptable and quick to learn. You start with an extra skill and an extra origin feat.",
     "name": "Human"
   },
   "human.traits.resourceful": {
@@ -280,6 +287,7 @@
     "name": "Versatile"
   },
   "orc": {
+    "description": "Strong and relentless. You see in the dark, push past exhaustion with Adrenaline Rush, and refuse to drop.",
     "name": "Orc"
   },
   "orc.traits.adrenaline-rush": {
@@ -298,6 +306,7 @@
     "name": "Relentless Endurance"
   },
   "tiefling": {
+    "description": "Fiendish ancestry marks you. You see in the dark, resist your lineage's damage type and cast its spells.",
     "name": "Tiefling"
   },
   "tiefling.traits.darkvision": {

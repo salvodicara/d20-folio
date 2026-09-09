@@ -4,12 +4,12 @@
 - cluster-only mode — file stats not available
 
 ## Summary
-- 31030 nodes · 41666 edges · 3202 communities (2601 shown, 601 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 3335 edges (avg confidence: 0.8)
+- 31207 nodes · 41889 edges · 3206 communities (2621 shown, 585 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 3336 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `86851947`
+- Built from commit: `aac3e5fe`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -689,9 +689,9 @@
 - [[_COMMUNITY_Community 672|Community 672]]
 - [[_COMMUNITY_Community 673|Community 673]]
 - [[_COMMUNITY_Community 674|Community 674]]
+- [[_COMMUNITY_Community 675|Community 675]]
 - [[_COMMUNITY_Community 676|Community 676]]
 - [[_COMMUNITY_Community 677|Community 677]]
-- [[_COMMUNITY_Community 678|Community 678]]
 - [[_COMMUNITY_Community 679|Community 679]]
 - [[_COMMUNITY_Community 680|Community 680]]
 - [[_COMMUNITY_Community 681|Community 681]]
@@ -750,14 +750,14 @@
 - [[_COMMUNITY_Community 734|Community 734]]
 - [[_COMMUNITY_Community 735|Community 735]]
 - [[_COMMUNITY_Community 736|Community 736]]
+- [[_COMMUNITY_Community 737|Community 737]]
 - [[_COMMUNITY_Community 738|Community 738]]
 - [[_COMMUNITY_Community 739|Community 739]]
+- [[_COMMUNITY_Community 740|Community 740]]
 - [[_COMMUNITY_Community 741|Community 741]]
-- [[_COMMUNITY_Community 742|Community 742]]
 - [[_COMMUNITY_Community 743|Community 743]]
 - [[_COMMUNITY_Community 744|Community 744]]
 - [[_COMMUNITY_Community 745|Community 745]]
-- [[_COMMUNITY_Community 746|Community 746]]
 - [[_COMMUNITY_Community 747|Community 747]]
 - [[_COMMUNITY_Community 748|Community 748]]
 - [[_COMMUNITY_Community 749|Community 749]]
@@ -858,22 +858,22 @@
 - [[_COMMUNITY_Community 844|Community 844]]
 - [[_COMMUNITY_Community 845|Community 845]]
 - [[_COMMUNITY_Community 846|Community 846]]
+- [[_COMMUNITY_Community 847|Community 847]]
 - [[_COMMUNITY_Community 848|Community 848]]
 - [[_COMMUNITY_Community 849|Community 849]]
 - [[_COMMUNITY_Community 850|Community 850]]
 - [[_COMMUNITY_Community 851|Community 851]]
 - [[_COMMUNITY_Community 852|Community 852]]
 - [[_COMMUNITY_Community 853|Community 853]]
-- [[_COMMUNITY_Community 854|Community 854]]
 - [[_COMMUNITY_Community 855|Community 855]]
+- [[_COMMUNITY_Community 856|Community 856]]
+- [[_COMMUNITY_Community 857|Community 857]]
 - [[_COMMUNITY_Community 858|Community 858]]
+- [[_COMMUNITY_Community 859|Community 859]]
+- [[_COMMUNITY_Community 860|Community 860]]
 - [[_COMMUNITY_Community 861|Community 861]]
 - [[_COMMUNITY_Community 862|Community 862]]
-- [[_COMMUNITY_Community 863|Community 863]]
-- [[_COMMUNITY_Community 864|Community 864]]
 - [[_COMMUNITY_Community 865|Community 865]]
-- [[_COMMUNITY_Community 866|Community 866]]
-- [[_COMMUNITY_Community 867|Community 867]]
 - [[_COMMUNITY_Community 868|Community 868]]
 - [[_COMMUNITY_Community 869|Community 869]]
 - [[_COMMUNITY_Community 870|Community 870]]
@@ -992,24 +992,24 @@
 - [[_COMMUNITY_Community 983|Community 983]]
 - [[_COMMUNITY_Community 984|Community 984]]
 - [[_COMMUNITY_Community 985|Community 985]]
+- [[_COMMUNITY_Community 986|Community 986]]
 - [[_COMMUNITY_Community 987|Community 987]]
 - [[_COMMUNITY_Community 988|Community 988]]
 - [[_COMMUNITY_Community 989|Community 989]]
-- [[_COMMUNITY_Community 990|Community 990]]
+- [[_COMMUNITY_Community 991|Community 991]]
 - [[_COMMUNITY_Community 992|Community 992]]
 - [[_COMMUNITY_Community 993|Community 993]]
 - [[_COMMUNITY_Community 994|Community 994]]
-- [[_COMMUNITY_Community 995|Community 995]]
+- [[_COMMUNITY_Community 996|Community 996]]
 - [[_COMMUNITY_Community 997|Community 997]]
 - [[_COMMUNITY_Community 998|Community 998]]
 - [[_COMMUNITY_Community 999|Community 999]]
-- [[_COMMUNITY_Community 1000|Community 1000]]
 - [[_COMMUNITY_Community 1001|Community 1001]]
 - [[_COMMUNITY_Community 1002|Community 1002]]
+- [[_COMMUNITY_Community 1003|Community 1003]]
 - [[_COMMUNITY_Community 1004|Community 1004]]
-- [[_COMMUNITY_Community 1006|Community 1006]]
+- [[_COMMUNITY_Community 1005|Community 1005]]
 - [[_COMMUNITY_Community 1007|Community 1007]]
-- [[_COMMUNITY_Community 1008|Community 1008]]
 - [[_COMMUNITY_Community 1009|Community 1009]]
 - [[_COMMUNITY_Community 1010|Community 1010]]
 - [[_COMMUNITY_Community 1011|Community 1011]]
@@ -1017,10 +1017,10 @@
 - [[_COMMUNITY_Community 1013|Community 1013]]
 - [[_COMMUNITY_Community 1014|Community 1014]]
 - [[_COMMUNITY_Community 1015|Community 1015]]
+- [[_COMMUNITY_Community 1016|Community 1016]]
 - [[_COMMUNITY_Community 1017|Community 1017]]
 - [[_COMMUNITY_Community 1018|Community 1018]]
 - [[_COMMUNITY_Community 1019|Community 1019]]
-- [[_COMMUNITY_Community 1020|Community 1020]]
 - [[_COMMUNITY_Community 1021|Community 1021]]
 - [[_COMMUNITY_Community 1022|Community 1022]]
 - [[_COMMUNITY_Community 1023|Community 1023]]
@@ -1029,10 +1029,10 @@
 - [[_COMMUNITY_Community 1026|Community 1026]]
 - [[_COMMUNITY_Community 1027|Community 1027]]
 - [[_COMMUNITY_Community 1028|Community 1028]]
+- [[_COMMUNITY_Community 1029|Community 1029]]
 - [[_COMMUNITY_Community 1030|Community 1030]]
 - [[_COMMUNITY_Community 1031|Community 1031]]
 - [[_COMMUNITY_Community 1032|Community 1032]]
-- [[_COMMUNITY_Community 1033|Community 1033]]
 - [[_COMMUNITY_Community 1034|Community 1034]]
 - [[_COMMUNITY_Community 1035|Community 1035]]
 - [[_COMMUNITY_Community 1036|Community 1036]]
@@ -1242,14 +1242,15 @@
 - [[_COMMUNITY_Community 1240|Community 1240]]
 - [[_COMMUNITY_Community 1241|Community 1241]]
 - [[_COMMUNITY_Community 1242|Community 1242]]
+- [[_COMMUNITY_Community 1243|Community 1243]]
 - [[_COMMUNITY_Community 1244|Community 1244]]
 - [[_COMMUNITY_Community 1245|Community 1245]]
 - [[_COMMUNITY_Community 1246|Community 1246]]
 - [[_COMMUNITY_Community 1247|Community 1247]]
 - [[_COMMUNITY_Community 1248|Community 1248]]
 - [[_COMMUNITY_Community 1249|Community 1249]]
-- [[_COMMUNITY_Community 1250|Community 1250]]
 - [[_COMMUNITY_Community 1251|Community 1251]]
+- [[_COMMUNITY_Community 1252|Community 1252]]
 - [[_COMMUNITY_Community 1253|Community 1253]]
 - [[_COMMUNITY_Community 1254|Community 1254]]
 - [[_COMMUNITY_Community 1255|Community 1255]]
@@ -1258,8 +1259,8 @@
 - [[_COMMUNITY_Community 1258|Community 1258]]
 - [[_COMMUNITY_Community 1259|Community 1259]]
 - [[_COMMUNITY_Community 1260|Community 1260]]
-- [[_COMMUNITY_Community 1261|Community 1261]]
 - [[_COMMUNITY_Community 1262|Community 1262]]
+- [[_COMMUNITY_Community 1263|Community 1263]]
 - [[_COMMUNITY_Community 1264|Community 1264]]
 - [[_COMMUNITY_Community 1265|Community 1265]]
 - [[_COMMUNITY_Community 1266|Community 1266]]
@@ -1268,7 +1269,6 @@
 - [[_COMMUNITY_Community 1269|Community 1269]]
 - [[_COMMUNITY_Community 1270|Community 1270]]
 - [[_COMMUNITY_Community 1271|Community 1271]]
-- [[_COMMUNITY_Community 1272|Community 1272]]
 - [[_COMMUNITY_Community 1273|Community 1273]]
 - [[_COMMUNITY_Community 1274|Community 1274]]
 - [[_COMMUNITY_Community 1275|Community 1275]]
@@ -1294,22 +1294,23 @@
 - [[_COMMUNITY_Community 1295|Community 1295]]
 - [[_COMMUNITY_Community 1296|Community 1296]]
 - [[_COMMUNITY_Community 1297|Community 1297]]
+- [[_COMMUNITY_Community 1298|Community 1298]]
 - [[_COMMUNITY_Community 1299|Community 1299]]
+- [[_COMMUNITY_Community 1300|Community 1300]]
 - [[_COMMUNITY_Community 1301|Community 1301]]
 - [[_COMMUNITY_Community 1302|Community 1302]]
 - [[_COMMUNITY_Community 1303|Community 1303]]
-- [[_COMMUNITY_Community 1304|Community 1304]]
 - [[_COMMUNITY_Community 1305|Community 1305]]
+- [[_COMMUNITY_Community 1307|Community 1307]]
 - [[_COMMUNITY_Community 1308|Community 1308]]
 - [[_COMMUNITY_Community 1309|Community 1309]]
 - [[_COMMUNITY_Community 1310|Community 1310]]
 - [[_COMMUNITY_Community 1311|Community 1311]]
-- [[_COMMUNITY_Community 1312|Community 1312]]
+- [[_COMMUNITY_Community 1313|Community 1313]]
 - [[_COMMUNITY_Community 1314|Community 1314]]
 - [[_COMMUNITY_Community 1315|Community 1315]]
 - [[_COMMUNITY_Community 1316|Community 1316]]
 - [[_COMMUNITY_Community 1317|Community 1317]]
-- [[_COMMUNITY_Community 1318|Community 1318]]
 - [[_COMMUNITY_Community 1319|Community 1319]]
 - [[_COMMUNITY_Community 1320|Community 1320]]
 - [[_COMMUNITY_Community 1321|Community 1321]]
@@ -2493,74 +2494,74 @@
 - [[_COMMUNITY_Community 2499|Community 2499]]
 - [[_COMMUNITY_Community 2500|Community 2500]]
 - [[_COMMUNITY_Community 2501|Community 2501]]
+- [[_COMMUNITY_Community 2502|Community 2502]]
+- [[_COMMUNITY_Community 2503|Community 2503]]
 - [[_COMMUNITY_Community 2504|Community 2504]]
 - [[_COMMUNITY_Community 2505|Community 2505]]
+- [[_COMMUNITY_Community 2506|Community 2506]]
 - [[_COMMUNITY_Community 2507|Community 2507]]
+- [[_COMMUNITY_Community 2508|Community 2508]]
+- [[_COMMUNITY_Community 2509|Community 2509]]
+- [[_COMMUNITY_Community 2510|Community 2510]]
+- [[_COMMUNITY_Community 2511|Community 2511]]
+- [[_COMMUNITY_Community 2512|Community 2512]]
 - [[_COMMUNITY_Community 2513|Community 2513]]
+- [[_COMMUNITY_Community 2514|Community 2514]]
+- [[_COMMUNITY_Community 2515|Community 2515]]
 - [[_COMMUNITY_Community 2516|Community 2516]]
 - [[_COMMUNITY_Community 2517|Community 2517]]
 - [[_COMMUNITY_Community 2518|Community 2518]]
 - [[_COMMUNITY_Community 2519|Community 2519]]
+- [[_COMMUNITY_Community 2520|Community 2520]]
 - [[_COMMUNITY_Community 2521|Community 2521]]
-- [[_COMMUNITY_Community 2524|Community 2524]]
+- [[_COMMUNITY_Community 2522|Community 2522]]
+- [[_COMMUNITY_Community 2525|Community 2525]]
 - [[_COMMUNITY_Community 2526|Community 2526]]
-- [[_COMMUNITY_Community 2527|Community 2527]]
 - [[_COMMUNITY_Community 2528|Community 2528]]
-- [[_COMMUNITY_Community 2530|Community 2530]]
-- [[_COMMUNITY_Community 2531|Community 2531]]
-- [[_COMMUNITY_Community 2532|Community 2532]]
 - [[_COMMUNITY_Community 2534|Community 2534]]
-- [[_COMMUNITY_Community 2535|Community 2535]]
+- [[_COMMUNITY_Community 2537|Community 2537]]
 - [[_COMMUNITY_Community 2538|Community 2538]]
 - [[_COMMUNITY_Community 2539|Community 2539]]
 - [[_COMMUNITY_Community 2540|Community 2540]]
 - [[_COMMUNITY_Community 2542|Community 2542]]
 - [[_COMMUNITY_Community 2543|Community 2543]]
-- [[_COMMUNITY_Community 2544|Community 2544]]
-- [[_COMMUNITY_Community 2545|Community 2545]]
 - [[_COMMUNITY_Community 2546|Community 2546]]
-- [[_COMMUNITY_Community 2547|Community 2547]]
 - [[_COMMUNITY_Community 2548|Community 2548]]
 - [[_COMMUNITY_Community 2549|Community 2549]]
-- [[_COMMUNITY_Community 2551|Community 2551]]
+- [[_COMMUNITY_Community 2550|Community 2550]]
 - [[_COMMUNITY_Community 2552|Community 2552]]
 - [[_COMMUNITY_Community 2553|Community 2553]]
 - [[_COMMUNITY_Community 2554|Community 2554]]
 - [[_COMMUNITY_Community 2556|Community 2556]]
 - [[_COMMUNITY_Community 2557|Community 2557]]
 - [[_COMMUNITY_Community 2560|Community 2560]]
+- [[_COMMUNITY_Community 2561|Community 2561]]
 - [[_COMMUNITY_Community 2562|Community 2562]]
-- [[_COMMUNITY_Community 2563|Community 2563]]
 - [[_COMMUNITY_Community 2564|Community 2564]]
+- [[_COMMUNITY_Community 2565|Community 2565]]
 - [[_COMMUNITY_Community 2566|Community 2566]]
+- [[_COMMUNITY_Community 2567|Community 2567]]
+- [[_COMMUNITY_Community 2568|Community 2568]]
 - [[_COMMUNITY_Community 2569|Community 2569]]
 - [[_COMMUNITY_Community 2570|Community 2570]]
 - [[_COMMUNITY_Community 2571|Community 2571]]
-- [[_COMMUNITY_Community 2572|Community 2572]]
+- [[_COMMUNITY_Community 2573|Community 2573]]
 - [[_COMMUNITY_Community 2574|Community 2574]]
 - [[_COMMUNITY_Community 2575|Community 2575]]
-- [[_COMMUNITY_Community 2580|Community 2580]]
-- [[_COMMUNITY_Community 2581|Community 2581]]
+- [[_COMMUNITY_Community 2576|Community 2576]]
+- [[_COMMUNITY_Community 2578|Community 2578]]
+- [[_COMMUNITY_Community 2579|Community 2579]]
 - [[_COMMUNITY_Community 2582|Community 2582]]
-- [[_COMMUNITY_Community 2583|Community 2583]]
 - [[_COMMUNITY_Community 2584|Community 2584]]
 - [[_COMMUNITY_Community 2585|Community 2585]]
 - [[_COMMUNITY_Community 2586|Community 2586]]
-- [[_COMMUNITY_Community 2587|Community 2587]]
 - [[_COMMUNITY_Community 2588|Community 2588]]
-- [[_COMMUNITY_Community 2589|Community 2589]]
-- [[_COMMUNITY_Community 2590|Community 2590]]
 - [[_COMMUNITY_Community 2591|Community 2591]]
 - [[_COMMUNITY_Community 2592|Community 2592]]
 - [[_COMMUNITY_Community 2593|Community 2593]]
 - [[_COMMUNITY_Community 2594|Community 2594]]
-- [[_COMMUNITY_Community 2595|Community 2595]]
 - [[_COMMUNITY_Community 2596|Community 2596]]
 - [[_COMMUNITY_Community 2597|Community 2597]]
-- [[_COMMUNITY_Community 2598|Community 2598]]
-- [[_COMMUNITY_Community 2599|Community 2599]]
-- [[_COMMUNITY_Community 2600|Community 2600]]
-- [[_COMMUNITY_Community 2601|Community 2601]]
 - [[_COMMUNITY_Community 2602|Community 2602]]
 - [[_COMMUNITY_Community 2603|Community 2603]]
 - [[_COMMUNITY_Community 2604|Community 2604]]
@@ -2924,52 +2925,56 @@
 - [[_COMMUNITY_Community 2962|Community 2962]]
 - [[_COMMUNITY_Community 2963|Community 2963]]
 - [[_COMMUNITY_Community 2964|Community 2964]]
-- [[_COMMUNITY_Community 2969|Community 2969]]
-- [[_COMMUNITY_Community 2971|Community 2971]]
+- [[_COMMUNITY_Community 2965|Community 2965]]
+- [[_COMMUNITY_Community 2966|Community 2966]]
+- [[_COMMUNITY_Community 2967|Community 2967]]
+- [[_COMMUNITY_Community 2968|Community 2968]]
 - [[_COMMUNITY_Community 2973|Community 2973]]
-- [[_COMMUNITY_Community 2976|Community 2976]]
+- [[_COMMUNITY_Community 2975|Community 2975]]
 - [[_COMMUNITY_Community 2977|Community 2977]]
-- [[_COMMUNITY_Community 2978|Community 2978]]
-- [[_COMMUNITY_Community 2979|Community 2979]]
+- [[_COMMUNITY_Community 2980|Community 2980]]
 - [[_COMMUNITY_Community 2981|Community 2981]]
 - [[_COMMUNITY_Community 2982|Community 2982]]
+- [[_COMMUNITY_Community 2983|Community 2983]]
+- [[_COMMUNITY_Community 2985|Community 2985]]
 - [[_COMMUNITY_Community 2986|Community 2986]]
 - [[_COMMUNITY_Community 2990|Community 2990]]
-- [[_COMMUNITY_Community 2993|Community 2993]]
 - [[_COMMUNITY_Community 2994|Community 2994]]
-- [[_COMMUNITY_Community 2999|Community 2999]]
-- [[_COMMUNITY_Community 3002|Community 3002]]
+- [[_COMMUNITY_Community 2997|Community 2997]]
+- [[_COMMUNITY_Community 2998|Community 2998]]
 - [[_COMMUNITY_Community 3003|Community 3003]]
-- [[_COMMUNITY_Community 3004|Community 3004]]
-- [[_COMMUNITY_Community 3005|Community 3005]]
+- [[_COMMUNITY_Community 3006|Community 3006]]
+- [[_COMMUNITY_Community 3007|Community 3007]]
 - [[_COMMUNITY_Community 3008|Community 3008]]
-- [[_COMMUNITY_Community 3010|Community 3010]]
-- [[_COMMUNITY_Community 3011|Community 3011]]
+- [[_COMMUNITY_Community 3009|Community 3009]]
+- [[_COMMUNITY_Community 3012|Community 3012]]
 - [[_COMMUNITY_Community 3014|Community 3014]]
+- [[_COMMUNITY_Community 3015|Community 3015]]
 - [[_COMMUNITY_Community 3018|Community 3018]]
-- [[_COMMUNITY_Community 3021|Community 3021]]
+- [[_COMMUNITY_Community 3022|Community 3022]]
 - [[_COMMUNITY_Community 3025|Community 3025]]
-- [[_COMMUNITY_Community 3031|Community 3031]]
-- [[_COMMUNITY_Community 3037|Community 3037]]
-- [[_COMMUNITY_Community 3040|Community 3040]]
-- [[_COMMUNITY_Community 3045|Community 3045]]
-- [[_COMMUNITY_Community 3046|Community 3046]]
+- [[_COMMUNITY_Community 3029|Community 3029]]
+- [[_COMMUNITY_Community 3035|Community 3035]]
+- [[_COMMUNITY_Community 3041|Community 3041]]
+- [[_COMMUNITY_Community 3044|Community 3044]]
 - [[_COMMUNITY_Community 3049|Community 3049]]
 - [[_COMMUNITY_Community 3050|Community 3050]]
-- [[_COMMUNITY_Community 3052|Community 3052]]
 - [[_COMMUNITY_Community 3053|Community 3053]]
-- [[_COMMUNITY_Community 3058|Community 3058]]
-- [[_COMMUNITY_Community 3059|Community 3059]]
+- [[_COMMUNITY_Community 3054|Community 3054]]
+- [[_COMMUNITY_Community 3056|Community 3056]]
+- [[_COMMUNITY_Community 3057|Community 3057]]
 - [[_COMMUNITY_Community 3062|Community 3062]]
 - [[_COMMUNITY_Community 3063|Community 3063]]
 - [[_COMMUNITY_Community 3066|Community 3066]]
-- [[_COMMUNITY_Community 3069|Community 3069]]
-- [[_COMMUNITY_Community 3074|Community 3074]]
-- [[_COMMUNITY_Community 3075|Community 3075]]
-- [[_COMMUNITY_Community 3076|Community 3076]]
-- [[_COMMUNITY_Community 3086|Community 3086]]
-- [[_COMMUNITY_Community 3088|Community 3088]]
-- [[_COMMUNITY_Community 3089|Community 3089]]
+- [[_COMMUNITY_Community 3067|Community 3067]]
+- [[_COMMUNITY_Community 3070|Community 3070]]
+- [[_COMMUNITY_Community 3073|Community 3073]]
+- [[_COMMUNITY_Community 3078|Community 3078]]
+- [[_COMMUNITY_Community 3079|Community 3079]]
+- [[_COMMUNITY_Community 3080|Community 3080]]
+- [[_COMMUNITY_Community 3090|Community 3090]]
+- [[_COMMUNITY_Community 3092|Community 3092]]
+- [[_COMMUNITY_Community 3093|Community 3093]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `combat` - 465 edges
@@ -2998,7 +3003,7 @@
 ## Import Cycles
 - 3-file cycle: `src/lib/homebrew/conformance.ts -> src/lib/homebrew/origins.ts -> src/lib/homebrew/sources.ts -> src/lib/homebrew/conformance.ts`
 
-## Communities (3202 total, 601 thin omitted)
+## Communities (3206 total, 585 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.00
@@ -3029,8 +3034,8 @@ Cohesion: 0.01
 Nodes (198): identity, acceptInvitations, accessRevoked, account, accountAutosave, accountIntro, accountNavigation, accountSection (+190 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.01
-Nodes (163): ability-context, ability-maximum, activation-kind, activation-time, ambiguous-feat-prerequisite, area-required, area-unused, armor-base-required (+155 more)
+Cohesion: 0.03
+Nodes (132): ActionProgram, AdvancedCollection, advancedCollections(), advancedFields(), AdvancedResource, advancedRowFields(), AdvancedRowKind, b() (+124 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.01
@@ -3038,35 +3043,35 @@ Nodes (163): ability-context, ability-maximum, activation-kind, activation-time,
 
 ### Community 9 - "Community 9"
 Cohesion: 0.01
-Nodes (152): sheetFacts, ability, abilityBudget, ac, actions, activeFeatures, activeSpellCastLevels, alignment (+144 more)
+Nodes (163): ability-context, ability-maximum, activation-kind, activation-time, ambiguous-feat-prerequisite, area-required, area-unused, armor-base-required (+155 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.01
 Nodes (152): sheetFacts, ability, abilityBudget, ac, actions, activeFeatures, activeSpellCastLevels, alignment (+144 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.04
-Nodes (102): advancedCollections(), IS_PROD, localizeSrdList(), missing(), srdCatalogues(), useAcquisitionLabels(), AdvancedFields(), AdvancedReader() (+94 more)
+Cohesion: 0.01
+Nodes (152): sheetFacts, ability, abilityBudget, ac, actions, activeFeatures, activeSpellCastLevels, alignment (+144 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.02
-Nodes (98): AdminPage(), AdminSheet(), AdminSheetView(), LibraryMount(), SettingsPage(), useLoadExample(), CampaignArtControl(), CampaignHub() (+90 more)
+Cohesion: 0.03
+Nodes (104): RetainedCreation, StoragePort, ImportDraft, parseImportDraft(), createImportRepository(), exactReceipt(), ImportOperation, ImportReceipt (+96 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.01
-Nodes (138): options, 0, 1, 10, 11, 12, 13, 14 (+130 more)
+Cohesion: 0.04
+Nodes (97): srdCatalogues(), useAcquisitionLabels(), AdvancedFields(), AdvancedReader(), Bestiary(), archiveKeys(), CampaignHomebrew(), CopyEditor() (+89 more)
 
 ### Community 14 - "Community 14"
+Cohesion: 0.03
+Nodes (131): getEquipment(), getRace(), rawRaceTraitCatKey(), isPoolAltRecovery(), aggregationActiveKeys(), vitalTrackerUsed(), trackerResources(), ConformedFeatures (+123 more)
+
+### Community 15 - "Community 15"
 Cohesion: 0.01
 Nodes (138): options, 0, 1, 10, 11, 12, 13, 14 (+130 more)
 
-### Community 15 - "Community 15"
-Cohesion: 0.03
-Nodes (118): withArmorEquipped(), getEquipment(), getRace(), rawRaceTraitCatKey(), isPoolAltRecovery(), speciesGrantsVersatileFeat(), totalLevel(), matchRaceTrait() (+110 more)
-
 ### Community 16 - "Community 16"
-Cohesion: 0.02
-Nodes (125): create, abilityMethod, abilityScoreInput, abilityScores, backgroundLabel, bgAsiConfirmed, bgAsiEligible, bgAsiMode111 (+117 more)
+Cohesion: 0.01
+Nodes (138): options, 0, 1, 10, 11, 12, 13, 14 (+130 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.02
@@ -3074,7 +3079,7 @@ Nodes (125): create, abilityMethod, abilityScoreInput, abilityScores, background
 
 ### Community 18 - "Community 18"
 Cohesion: 0.02
-Nodes (125): ability, ability1, ability2, ability3, acquisitionLevel, activation, agreement, alignment (+117 more)
+Nodes (125): create, abilityMethod, abilityScoreInput, abilityScores, backgroundLabel, bgAsiConfirmed, bgAsiEligible, bgAsiMode111 (+117 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.02
@@ -3082,71 +3087,71 @@ Nodes (125): ability, ability1, ability2, ability3, acquisitionLevel, activation
 
 ### Community 20 - "Community 20"
 Cohesion: 0.02
-Nodes (120): character, abilityScores, activeFeatures, activeFeaturesHint, addCondition, addDefense, addDefenseHint, addFeature (+112 more)
+Nodes (125): ability, ability1, ability2, ability3, acquisitionLevel, activation, agreement, alignment (+117 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.02
-Nodes (120): character, abilityScores, activeFeatures, activeFeaturesHint, addCondition, addDefense, addDefenseHint, addFeature (+112 more)
+Cohesion: 0.03
+Nodes (107): abilityModifier(), ABILITY_CODES, ALL_ABILITIES, ARMOR_CATEGORY_TOKEN_PREFIX, buildInitiativeBreakdown(), buildPassiveBreakdown(), buildSaveBreakdown(), buildSkillBreakdown() (+99 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.03
-Nodes (102): ABILITIES, saves(), abilityModifier(), computeCharacterMaxHp(), computeCharacterMaxHpBreakdown(), hpPerLevelGrantParts(), concentrationSaveD20Context(), ABILITY_CODES (+94 more)
+Cohesion: 0.02
+Nodes (120): character, abilityScores, activeFeatures, activeFeaturesHint, addCondition, addDefense, addDefenseHint, addFeature (+112 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.02
-Nodes (114): srd, alignment_any, alignment_chaotic-evil, alignment_chaotic-good, alignment_chaotic-neutral, alignment_lawful-evil, alignment_lawful-good, alignment_lawful-neutral (+106 more)
+Nodes (120): character, abilityScores, activeFeatures, activeFeaturesHint, addCondition, addDefense, addDefenseHint, addFeature (+112 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.02
-Nodes (114): srd, alignment_any, alignment_chaotic-evil, alignment_chaotic-good, alignment_chaotic-neutral, alignment_lawful-evil, alignment_lawful-good, alignment_lawful-neutral (+106 more)
+Cohesion: 0.03
+Nodes (78): AdminPage(), AdminSheet(), AdminSheetView(), LibraryMount(), SettingsPage(), useLoadExample(), CampaignArtControl(), CampaignHub() (+70 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.02
-Nodes (111): creationV2, abilityPending, acquired, always, armor, armor-class, arrayHint, background-distribution (+103 more)
+Cohesion: 0.04
+Nodes (109): PcCombatantCard(), derivePartyMemberStats(), derivePcLive(), hydrateMemberDoc(), PartyMemberSave, PartyMemberStats, CombatHeader(), CombatResolver() (+101 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.02
-Nodes (111): creationV2, abilityPending, acquired, always, armor, armor-class, arrayHint, background-distribution (+103 more)
+Cohesion: 0.03
+Nodes (101): getSubclassFeatures(), classNameById(), subclassNameById(), buildGrantedFeatures(), deriveOriginFeats(), GrantedFeatureInput, syncOriginFeats(), buildCharacterCache() (+93 more)
 
 ### Community 27 - "Community 27"
 Cohesion: 0.02
-Nodes (104): abilities, abilityScoreAria, abilityScores, abilityScoresMeta, acLabel, advantage, advantages, armorProfs (+96 more)
+Nodes (114): srd, alignment_any, alignment_chaotic-evil, alignment_chaotic-good, alignment_chaotic-neutral, alignment_lawful-evil, alignment_lawful-good, alignment_lawful-neutral (+106 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.02
-Nodes (104): abilities, abilityScoreAria, abilityScores, abilityScoresMeta, acLabel, advantage, advantages, armorProfs (+96 more)
+Nodes (114): srd, alignment_any, alignment_chaotic-evil, alignment_chaotic-good, alignment_chaotic-neutral, alignment_lawful-evil, alignment_lawful-good, alignment_lawful-neutral (+106 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.03
-Nodes (52): mageDoc(), monkAtLevel(), capturePrepared(), chooseSubtleFireBolt(), Probe(), sorcerer(), spellAction(), fixture() (+44 more)
+Cohesion: 0.02
+Nodes (111): creationV2, abilityPending, acquired, always, armor, armor-class, arrayHint, background-distribution (+103 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.03
-Nodes (88): subclassNameById(), buildGrantedFeatures(), deriveOriginFeats(), GrantedFeatureInput, syncOriginFeats(), HitDie, HpClassContribution, inferFeatures() (+80 more)
+Cohesion: 0.02
+Nodes (111): creationV2, abilityPending, acquired, always, armor, armor-class, arrayHint, background-distribution (+103 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.02
-Nodes (102): barbarian-berserker-frenzy.grants.0, label, barbarian-berserker-intimidating-presence, description, name, barbarian-berserker-mindless-rage.grants.0, label, barbarian-berserker-retaliation.mechanics.actions.0 (+94 more)
+Nodes (104): abilities, abilityScoreAria, abilityScores, abilityScoresMeta, acLabel, advantage, advantages, armorProfs (+96 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.02
-Nodes (102): barbarian-berserker-frenzy.grants.0, label, barbarian-berserker-intimidating-presence, description, name, barbarian-berserker-mindless-rage.grants.0, label, barbarian-berserker-retaliation.mechanics.actions.0 (+94 more)
+Nodes (104): abilities, abilityScoreAria, abilityScores, abilityScoresMeta, acLabel, advantage, advantages, armorProfs (+96 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.04
-Nodes (85): ActionProgram, AdvancedCollection, advancedFields(), AdvancedResource, advancedRowFields(), AdvancedRowKind, b(), blankAdvancedRow() (+77 more)
+Nodes (85): advanceSoloWorldTurn(), endSoloWorldEncounter(), enteredInitiativeRoll(), soloWorldFor(), EngineCommitMirror, reverseEngineAction(), restThroughWorld(), adjustmentPhase() (+77 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.05
-Nodes (73): createCreationRepository(), validResourceId(), createOriginBuildRepository(), OriginBuildIssue, OriginBuildReceipt, OriginBuildRepository, defaultPreparedState(), integer() (+65 more)
+Cohesion: 0.02
+Nodes (102): barbarian-berserker-frenzy.grants.0, label, barbarian-berserker-intimidating-presence, description, name, barbarian-berserker-mindless-rage.grants.0, label, barbarian-berserker-retaliation.mechanics.actions.0 (+94 more)
 
 ### Community 35 - "Community 35"
 Cohesion: 0.02
-Nodes (88): srdArraySegment(), srdGrantSegment(), srdKey(), srdSlug(), collectGrantBundles(), AcFormula, ActivatableGroup, AdvantageClause (+80 more)
+Nodes (102): barbarian-berserker-frenzy.grants.0, label, barbarian-berserker-intimidating-presence, description, name, barbarian-berserker-mindless-rage.grants.0, label, barbarian-berserker-retaliation.mechanics.actions.0 (+94 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.04
-Nodes (75): catalogueSnapshot(), catalogueSource(), families, leafDefinition(), creationPool(), proficientWeapon(), resolveCreationPool(), snapshots (+67 more)
+Cohesion: 0.06
+Nodes (96): isEffectOccurrence(), resolveOccurrenceAuthority(), activeInventorySourceKeys(), allocateTimelineBoundary(), beginMechanicsBoundaryFromCausalState(), beginMechanicsBoundaryFromState(), betweenTurnsEconomy(), boundaryOwnedFactsMatch() (+88 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.02
@@ -3157,232 +3162,232 @@ Cohesion: 0.02
 Nodes (95): armor-of-invulnerability.grants.3, label, armor-of-resistance.grants.0, label, armor-of-resistance.grants.0.options.acid, label, armor-of-resistance.grants.0.options.cold, label (+87 more)
 
 ### Community 39 - "Community 39"
-Cohesion: 0.02
-Nodes (92): libraryV2, accept, accepted, acceptHelp, acceptTitle, accountIdentity, acknowledged, active (+84 more)
+Cohesion: 0.03
+Nodes (40): raceTraitCatKey(), actionText(), loc(), srd(), srdBi(), ABILITY_CODES, setToArr(), SheetDump (+32 more)
 
 ### Community 40 - "Community 40"
 Cohesion: 0.02
 Nodes (92): libraryV2, accept, accepted, acceptHelp, acceptTitle, accountIdentity, acknowledged, active (+84 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.05
-Nodes (79): commitPartyAttackParticipation(), advanceSoloWorldTurn(), endSoloWorldEncounter(), enteredInitiativeRoll(), soloWorldFor(), reverseEngineAction(), restThroughWorld(), concentrationValue() (+71 more)
+Cohesion: 0.02
+Nodes (92): libraryV2, accept, accepted, acceptHelp, acceptTitle, accountIdentity, acknowledged, active (+84 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.05
-Nodes (84): advanceEncounterTurn(), appendChronicleChapter(), appendCombatEffectOp(), appendPersistentCombatEffect(), appendPersistentCombatEffectOp(), appendPersistentCombatEffectOpOptimistic(), applyDeclaredCombatEffects(), applyPersistentCombatEffectOperation() (+76 more)
+Cohesion: 0.02
+Nodes (91): abilityMapSchema, abilitySchema, ACTION_BASE, actionSchema, answerSchema, answersSchema, areaShapeSchema, automationSchema (+83 more)
 
 ### Community 43 - "Community 43"
 Cohesion: 0.03
-Nodes (71): PcCombatantCard(), derivePartyMemberStats(), derivePcLive(), hydrateMemberDoc(), PartyMemberSave, PartyMemberStats, CombatHeader(), CombatResolver() (+63 more)
+Nodes (47): mageDoc(), monkAtLevel(), fixture(), planned(), clericDoc(), healerDoc(), marcoDoc(), projected() (+39 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.02
-Nodes (90): abilityMapSchema, abilitySchema, ACTION_BASE, actionSchema, answerSchema, answersSchema, areaShapeSchema, automationSchema (+82 more)
+Nodes (90): levelUp, advanceTo, advanceWhich, applying, average, buildChoices, checklistAsi, checklistLearnCantrip (+82 more)
 
 ### Community 45 - "Community 45"
 Cohesion: 0.02
 Nodes (90): levelUp, advanceTo, advanceWhich, applying, average, buildChoices, checklistAsi, checklistLearnCantrip (+82 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.02
-Nodes (90): levelUp, advanceTo, advanceWhich, applying, average, buildChoices, checklistAsi, checklistLearnCantrip (+82 more)
+Cohesion: 0.05
+Nodes (84): advanceEncounterTurn(), appendChronicleChapter(), appendCombatEffectOp(), appendPersistentCombatEffect(), appendPersistentCombatEffectOp(), appendPersistentCombatEffectOpOptimistic(), applyDeclaredCombatEffects(), applyDeclaredEffectsOptimistic() (+76 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.03
-Nodes (36): raceTraitCatKey(), actionText(), loc(), srd(), srdBi(), BARBARIAN_7, CHAMPION_7_SENTINEL, HALFLING_ROGUE (+28 more)
+Cohesion: 0.04
+Nodes (76): EN_TO_TOKEN, enToProficiencyToken(), KNOWN_TOKENS, ABILITY_CODES, ARMOR_CATEGORIES, ArmorCategory, asString(), BUILD_PASSTHROUGH (+68 more)
 
 ### Community 48 - "Community 48"
-Cohesion: 0.04
-Nodes (52): AppShell(), HoverTip(), PlayRefDeepLink(), TAB_DEFS, TabDef, TabBody(), TabsProvider(), TabStrip() (+44 more)
-
-### Community 49 - "Community 49"
-Cohesion: 0.04
-Nodes (77): potentialPcDamageTargetIds(), characterWorldValue(), clampedExhaustion(), omitKeys(), recoveredCharacterState(), recoveredTrackerUsed(), REST_SECONDS, restFinalizedSession() (+69 more)
-
-### Community 50 - "Community 50"
-Cohesion: 0.07
-Nodes (83): driveBoundary(), planWorldRest(), advanceMechanicsBoundary(), allocateTimelineBoundary(), beginMechanicsBoundary(), beginMechanicsBoundaryFromCausalState(), beginMechanicsBoundaryFromState(), betweenTurnsEconomy() (+75 more)
-
-### Community 51 - "Community 51"
-Cohesion: 0.04
-Nodes (63): MovementSlider(), MovementSliderProps, snapClamp(), CONDITION_ICONS, StatusLedge(), EconFilterType, ThisTurnTracker(), advanceSharedTurn() (+55 more)
-
-### Community 52 - "Community 52"
 Cohesion: 0.03
 Nodes (85): ActionAttack, ActionCheckBonus, ActionConditionRemoval, ActionCureCondition, ActionDamageReduction, ActionEconomyCategory, ActionHeal, ActionTargeting (+77 more)
 
+### Community 49 - "Community 49"
+Cohesion: 0.06
+Nodes (81): authenticReviewedIntents, bindingsFor(), canonicalResourceCandidates(), characterMaterialRef(), comparison(), compilationPredicateContext(), conformAnswersStructure, conformIntentStructure (+73 more)
+
+### Community 50 - "Community 50"
+Cohesion: 0.02
+Nodes (82): aid.components, material, alarm.components, material, animal-friendship.components, material, animal-messenger.components, material (+74 more)
+
+### Community 51 - "Community 51"
+Cohesion: 0.02
+Nodes (82): common, account, accountSettings, add, added, addToCharacter, advantage, all (+74 more)
+
+### Community 52 - "Community 52"
+Cohesion: 0.02
+Nodes (82): aid.components, material, alarm.components, material, animal-friendship.components, material, animal-messenger.components, material (+74 more)
+
 ### Community 53 - "Community 53"
-Cohesion: 0.04
-Nodes (76): hasActiveSpendOwner(), attunementSatisfied(), EquipRef, requiresAttunement(), effectiveUnarmedStrike(), effectiveWeaponDie(), heavyWeaponDisadvantage(), isArmorProficient() (+68 more)
+Cohesion: 0.02
+Nodes (82): common, account, accountSettings, add, added, addToCharacter, advantage, all (+74 more)
 
 ### Community 54 - "Community 54"
 Cohesion: 0.06
-Nodes (80): authenticReviewedIntents, bindingsFor(), canonicalResourceCandidates(), characterMaterialRef(), comparison(), compilationPredicateContext(), conformAnswersStructure, conformIntentStructure (+72 more)
+Nodes (72): AbilityIssue, checkCreationAbilities(), CreationMethod, CreationScores, POINT_COST, STANDARD_SCORES, active(), creationCandidate() (+64 more)
 
 ### Community 55 - "Community 55"
-Cohesion: 0.04
-Nodes (74): enToProficiencyToken(), ABILITY_CODES, ARMOR_CATEGORIES, ArmorCategory, asString(), BUILD_PASSTHROUGH, buildToMin(), CharacterEnvelope (+66 more)
+Cohesion: 0.07
+Nodes (71): validResourceId(), decodePortable(), encodePortable(), exact(), object(), parseVersion(), PortableResult, same() (+63 more)
 
 ### Community 56 - "Community 56"
-Cohesion: 0.02
-Nodes (82): aid.components, material, alarm.components, material, animal-friendship.components, material, animal-messenger.components, material (+74 more)
+Cohesion: 0.07
+Nodes (79): conformDiceFormula(), ABILITY_CODES, allOccurrenceRefsResolve(), ARMOR_CATEGORIES, CharacterMaterialRef, conformInventoryInstance(), conformMaterialEntity(), conformNewInventoryInstance() (+71 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.02
-Nodes (82): common, account, accountSettings, add, added, addToCharacter, advantage, all (+74 more)
+Cohesion: 0.03
+Nodes (74): AcFormula, ActivatableGroup, AdvantageClause, AggregatedGrants, ATTACK_CLAUSE_SCOPES, AttackClauseScope, AtWillCastEntry, AURA_AFFECTS (+66 more)
 
 ### Community 58 - "Community 58"
-Cohesion: 0.02
-Nodes (82): aid.components, material, alarm.components, material, animal-friendship.components, material, animal-messenger.components, material (+74 more)
+Cohesion: 0.06
+Nodes (59): CmpSeal(), CompendiumVerdict, defineFilter(), FilterGroup, Locale, PickerDetailView, PickerRowView, RowState (+51 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.02
-Nodes (82): common, account, accountSettings, add, added, addToCharacter, advantage, all (+74 more)
+Cohesion: 0.04
+Nodes (56): advanceGlobalCombat(), pendingApplies(), reconcileCombatPublish(), syncPipToStatus(), addMonster(), advanceTurn(), applyHp(), applyInitiativeSwaps() (+48 more)
 
 ### Community 60 - "Community 60"
-Cohesion: 0.04
-Nodes (61): RetainedCreation, StoragePort, ImportDraft, parseImportDraft(), createImportRepository(), exactReceipt(), ImportOperation, ImportReceipt (+53 more)
+Cohesion: 0.03
+Nodes (79): roster, actionsFor, atCharCap, bulkDelete, bulkDeleteAllFailed, bulkDeleteConfirm_one, bulkDeleteConfirm_other, bulkDeleted_one (+71 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.07
-Nodes (68): CreationPreview, InitialImportOperation, budget(), CreationCandidate, CreationOperation, CreationReceipt, CreationRepository, CreationValidation (+60 more)
+Cohesion: 0.03
+Nodes (79): roster, actionsFor, atCharCap, bulkDelete, bulkDeleteAllFailed, bulkDeleteConfirm_one, bulkDeleteConfirm_other, bulkDeleted_one (+71 more)
 
 ### Community 62 - "Community 62"
-Cohesion: 0.07
-Nodes (79): ABILITY_CODES, allOccurrenceRefsResolve(), ARMOR_CATEGORIES, CharacterMaterialRef, conformInventoryInstance(), conformMaterialEntity(), conformNewInventoryInstance(), conformNewMaterialEntity() (+71 more)
+Cohesion: 0.03
+Nodes (77): admin, accessDesc, accessRequired, active, activeUsers, adminTag, backToConsole, backToHome (+69 more)
 
 ### Community 63 - "Community 63"
 Cohesion: 0.03
-Nodes (50): fmtMod(), InputAnswer, ItemResourceCommandProvider(), PendingInput, CommittedItemResourceBoundary, CommittedItemResourceCommand, createItemResourcePaymentCycle(), ItemResourceCommandApi (+42 more)
+Nodes (77): admin, accessDesc, accessRequired, active, activeUsers, adminTag, backToConsole, backToHome (+69 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.06
-Nodes (69): AbilityIssue, checkCreationAbilities(), CreationMethod, CreationScores, POINT_COST, STANDARD_SCORES, active(), creationCandidate() (+61 more)
+Cohesion: 0.05
+Nodes (66): seamAuthorityDefinition(), conformMechanicsAuthorityDefinition(), conformMechanicsAuthorityDefinitionStructure, conformMechanicsAuthoritySnapshot(), conformMechanicsAuthoritySnapshotStructure, definitionClosureSemantics(), definitionSemantics(), factGuardKey() (+58 more)
 
 ### Community 65 - "Community 65"
-Cohesion: 0.03
-Nodes (79): roster, actionsFor, atCharCap, bulkDelete, bulkDeleteAllFailed, bulkDeleteConfirm_one, bulkDeleteConfirm_other, bulkDeleted_one (+71 more)
+Cohesion: 0.04
+Nodes (55): EncounterStatblockModal(), EncounterBudgetReadout(), MovementSlider(), MovementSliderProps, snapClamp(), CONDITION_ICONS, StatusLedge(), EconFilterType (+47 more)
 
 ### Community 66 - "Community 66"
-Cohesion: 0.03
-Nodes (79): roster, actionsFor, atCharCap, bulkDelete, bulkDeleteAllFailed, bulkDeleteConfirm_one, bulkDeleteConfirm_other, bulkDeleted_one (+71 more)
+Cohesion: 0.05
+Nodes (63): Badge(), BadgeProps, BadgeSize, BadgeVariant, VARIANT_CLASS, BrandMark(), BrandMarkProps, BrandMarkSize (+55 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.04
-Nodes (64): classFeatureIndex, classFeatures, classTableIndex, classTables, getClassFeatures(), getClassTable(), getFeaturesAtLevel(), getSubclassFeatures() (+56 more)
+Cohesion: 0.08
+Nodes (73): actionBody(), actionFits(), actionJournalByteLength(), actionJournalCanonicalJson(), actualAtPath(), applyTransition(), boundedCommittedActions(), compareByKey() (+65 more)
 
 ### Community 68 - "Community 68"
 Cohesion: 0.03
-Nodes (77): admin, accessDesc, accessRequired, active, activeUsers, adminTag, backToConsole, backToHome (+69 more)
+Nodes (74): spells, ability, addSpell, allClasses, allLevels, atHigherLevels, cantrip, cantrips (+66 more)
 
 ### Community 69 - "Community 69"
 Cohesion: 0.03
-Nodes (77): admin, accessDesc, accessRequired, active, activeUsers, adminTag, backToConsole, backToHome (+69 more)
+Nodes (74): spells, ability, addSpell, allClasses, allLevels, atHigherLevels, cantrip, cantrips (+66 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.04
-Nodes (47): monsterInstanceName(), InitVital(), CombatantCard(), CombatWrite, EncounterStatblockModal, HpVital(), MonsterCard(), MonsterHpControl() (+39 more)
-
-### Community 71 - "Community 71"
-Cohesion: 0.04
-Nodes (52): addMonster(), advanceTurn(), applyHp(), applyInitiativeSwaps(), beginEncounterTurns(), deadMonsterIds(), EncounterPcSeed, encounterRollFor() (+44 more)
-
-### Community 72 - "Community 72"
-Cohesion: 0.03
-Nodes (74): spells, ability, addSpell, allClasses, allLevels, atHigherLevels, cantrip, cantrips (+66 more)
-
-### Community 73 - "Community 73"
-Cohesion: 0.03
-Nodes (74): spells, ability, addSpell, allClasses, allLevels, atHigherLevels, cantrip, cantrips (+66 more)
-
-### Community 74 - "Community 74"
-Cohesion: 0.06
-Nodes (70): recordDirectPcEffectEvents(), reduceDeclaredEffects(), appendEvent(), DistributiveOmit, mapEvent(), NewChronicleEvent, recordCondition(), recordMonsterDamage() (+62 more)
-
-### Community 75 - "Community 75"
-Cohesion: 0.08
-Nodes (72): actionBody(), actionFits(), actionJournalByteLength(), actionJournalCanonicalJson(), actualAtPath(), applyTransition(), boundedCommittedActions(), compareByKey() (+64 more)
-
-### Community 76 - "Community 76"
 Cohesion: 0.03
 Nodes (73): ACTION_FACT_SCHEMA, CANONICAL_FINGERPRINT_SCHEMA, CONDITION_IMMUNITY_OVERRIDE_SCHEMA, DAMAGE_RESOLUTION_VALUE_SCHEMA, END_RULE_VALUE_SCHEMA, ENTITY_REF_SCHEMA, EntityAvailabilityFacts, EntityControllerFacts (+65 more)
 
-### Community 77 - "Community 77"
+### Community 71 - "Community 71"
 Cohesion: 0.04
 Nodes (29): customInstanceId(), ringOfProtection(), SCORES, portraitToDataUrl, concentrationWorld(), rawWorld(), vitalsDoc(), BARBARIAN (+21 more)
 
-### Community 78 - "Community 78"
+### Community 72 - "Community 72"
 Cohesion: 0.06
-Nodes (49): pipScenarioCampaign(), asRaceId(), asAlignmentId(), assertNonEmptyString(), nonEmptyString, mkDruid(), mk(), mk() (+41 more)
+Nodes (65): ActionClaim, AttackActionClaim, attackOption(), AttackOptionUse, AttackUse, attackUseInState(), BonusActionClaim, budgetFor() (+57 more)
+
+### Community 73 - "Community 73"
+Cohesion: 0.05
+Nodes (55): planWorldRest(), createEmptyCharacterMaterialState(), beginMechanicsCausalState(), finalizeMechanicsCausalEndWave(), isMechanicsWorld(), parseMechanicsWorld(), pushMechanicsPendingFrame(), rebaseMechanicsCausalState() (+47 more)
+
+### Community 74 - "Community 74"
+Cohesion: 0.06
+Nodes (48): pipScenarioCampaign(), asRaceId(), asAlignmentId(), assertNonEmptyString(), nonEmptyString, mkDruid(), mk(), mk() (+40 more)
+
+### Community 75 - "Community 75"
+Cohesion: 0.05
+Nodes (66): deleteCampaign(), deleteSession(), dmNotesCollection(), notesCollection(), sessionsCollection(), writeCampaignCombatEffect(), collection(), stampEffectiveAc() (+58 more)
+
+### Community 76 - "Community 76"
+Cohesion: 0.04
+Nodes (32): conc(), concentratingCharacter(), bardWithFont(), REST_BLOCK_CASES, RestBlockCause, barbarianDoc(), charWithEquipment(), concentratingOnShieldOfFaith() (+24 more)
+
+### Community 77 - "Community 77"
+Cohesion: 0.08
+Nodes (58): creationCandidate(), creationCatalogue(), creationWithOwnedEquipment(), ownedCreationEquipment(), conformCataloguePool(), resolveCatalogueChoice(), ResolvedPoolOption, conformAcquisitionSnapshot() (+50 more)
+
+### Community 78 - "Community 78"
+Cohesion: 0.05
+Nodes (65): actionFactKey(), CAUSE_CONTEXT, causeAuthorizedByPendingTop(), conformCauseStructure, conformMaterialEntityRef(), conformMaterialRef, conformMechanicsOperation(), conformMechanicsOperationCause() (+57 more)
 
 ### Community 79 - "Community 79"
-Cohesion: 0.07
-Nodes (64): ActionClaim, AttackActionClaim, attackOption(), AttackOptionUse, AttackUse, attackUseInState(), BonusActionClaim, budgetFor() (+56 more)
+Cohesion: 0.03
+Nodes (68): equipment, ac, acMaxDex, addEquipment, addItem, armor, armors, attune (+60 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.05
-Nodes (60): Badge(), BadgeProps, BadgeSize, BadgeVariant, VARIANT_CLASS, BrandMark(), BrandMarkProps, BrandMarkSize (+52 more)
+Cohesion: 0.03
+Nodes (68): equipment, ac, acMaxDex, addEquipment, addItem, armor, armors, attune (+60 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.04
-Nodes (67): actionFactKey(), CAUSE_CONTEXT, causeAuthorizedByPendingTop(), concentrationsForTarget(), conformCauseStructure, conformMaterialEntityRef(), conformMaterialRef, conformMechanicsOperation() (+59 more)
+Cohesion: 0.03
+Nodes (41): monsterInstanceName(), InitVital(), CombatantCard(), CombatWrite, EncounterStatblockModal, MonsterCard(), MonsterHpControl(), MonsterInitChip() (+33 more)
 
 ### Community 82 - "Community 82"
-Cohesion: 0.05
-Nodes (52): createEmptyCharacterMaterialState(), reviewMechanicsIntent(), beginMechanicsCausalState(), conformMechanicsCausalState(), isMechanicsWorld(), parseMechanicsWorld(), rebaseMechanicsCausalState(), planEngineConcentrationEnd() (+44 more)
+Cohesion: 0.06
+Nodes (53): catalogueSnapshot(), catalogueSource(), families, leafDefinition(), creationPool(), proficientWeapon(), resolveCreationPool(), snapshots (+45 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.03
-Nodes (68): equipment, ac, acMaxDex, addEquipment, addItem, armor, armors, attune (+60 more)
+Cohesion: 0.05
+Nodes (48): createTurnEconomyState(), encounterWorld(), alive(), appendZeroedRoot(), AUTHORITIES_BY_CAUSE, authoritySnapshotFor(), CAPABILITY, causalState() (+40 more)
 
 ### Community 84 - "Community 84"
-Cohesion: 0.03
-Nodes (68): equipment, ac, acMaxDex, addEquipment, addItem, armor, armors, attune (+60 more)
+Cohesion: 0.07
+Nodes (51): HpVital(), MonsterHpStat(), ReadOnlyHpChip(), DamageReactionBanner(), DamageReactionPrompt(), DyingBanner(), bloodiedFromHp(), canCharacterRest() (+43 more)
 
 ### Community 85 - "Community 85"
-Cohesion: 0.04
-Nodes (43): CampaignInvite(), CampaignCard(), partyLevelRange(), CreateCampaignModal(), inviteLinkFromCode(), devHpHydrateDelay(), useCharacters(), UseCharactersResult (+35 more)
+Cohesion: 0.06
+Nodes (38): fmtMod(), HeaderHpControl(), HoverTip(), PlayRefDeepLink(), TAB_DEFS, TabDef, TabBody(), TabsProvider() (+30 more)
 
 ### Community 86 - "Community 86"
-Cohesion: 0.04
-Nodes (54): applyExpertisePicks(), EXPERTISE_FEATURE_IDS, listExpertiseEligibleSkills(), arePicksComplete(), applyExpertiseChoicePicks(), ExpertiseChoicePicks, ExpertiseChoiceSlot, isExpertisePicksComplete() (+46 more)
+Cohesion: 0.05
+Nodes (28): loadPackSrdCatalogues(), HERE, I18N_ROOT, Json, mergedUi(), loadSrdCatalogues(), registerSrdCatalogues(), consult() (+20 more)
 
 ### Community 87 - "Community 87"
 Cohesion: 0.04
-Nodes (28): conc(), ALL_DOCS, canonical(), CROP, lift(), concentratingCharacter(), bardWithFont(), REST_BLOCK_CASES (+20 more)
+Nodes (39): InputAnswer, ItemResourceCommandProvider(), PendingInput, CommittedItemResourceBoundary, CommittedItemResourceCommand, createItemResourcePaymentCycle(), ItemResourceCommandApi, ItemResourceCommandContext (+31 more)
 
 ### Community 88 - "Community 88"
-Cohesion: 0.05
-Nodes (47): alive(), appendZeroedRoot(), AUTHORITIES_BY_CAUSE, authoritySnapshotFor(), CAPABILITY, causalState(), CHARACTER, concentratingWorld() (+39 more)
+Cohesion: 0.07
+Nodes (58): answerNumber(), answerPosition(), AreaResolution, areaShapeFrom(), adjustPacket(), applyDamage(), applyHealing(), DamageOptions (+50 more)
 
 ### Community 89 - "Community 89"
 Cohesion: 0.05
-Nodes (27): loadPackSrdCatalogues(), HERE, I18N_ROOT, Json, mergedUi(), loadSrdCatalogues(), registerSrdCatalogues(), consult() (+19 more)
+Nodes (46): potentialPcDamageTargetIds(), getSpellById(), spellIndex, spells, CreationChoiceInput, creationChoiceSlots(), ORIGIN_LANGUAGE_SLOTS, resolveScenarioToolKit() (+38 more)
 
 ### Community 90 - "Community 90"
-Cohesion: 0.12
-Nodes (60): conformEntityRef(), checkpointStateValid(), completionStateValid(), completionWorld(), conformBoundaryCursor(), conformBoundaryEncounterCursor(), conformBoundaryParticipantCursor(), conformEncounterSeed() (+52 more)
+Cohesion: 0.05
+Nodes (52): reduceDirectPcEffects(), reducePersistentMonsterDamage(), monsterDamageDefenses(), Lifetime, ActiveIncomingAttackModeAdjustment, ActiveRollDieAdjustment, activeRollDieAdjustments(), ActiveRollModeAdjustment (+44 more)
 
 ### Community 91 - "Community 91"
+Cohesion: 0.05
+Nodes (50): label(), classFeatureIndex, classFeatures, classTableIndex, classTables, getClassFeatures(), getClassTable(), getFeaturesAtLevel() (+42 more)
+
+### Community 92 - "Community 92"
+Cohesion: 0.04
+Nodes (38): CommandPalette, GlobalCombatMount, LibraryMount, ShortcutsSheet, importCampaigns(), importCockpit(), prefetchLikelyRoutes(), AdminPage (+30 more)
+
+### Community 93 - "Community 93"
 Cohesion: 0.04
 Nodes (56): AMOUNT_SPEC_SCHEMA, AmountSpecSchemaShape, COMMON_INPUT_FIELDS, COMMON_STEP_FIELDS, COMPARISON_SCHEMA, D20_OUTCOME_ID_SCHEMA, D20_REQUEST_SPEC_VALUE_SCHEMA, D20RequestSpecSchemaShape (+48 more)
 
-### Community 92 - "Community 92"
-Cohesion: 0.07
-Nodes (41): CmpSeal(), defineFilter(), TFn, CATEGORIES, equipmentSpec, itemText(), FEAT_CATEGORIES, featSpec (+33 more)
-
-### Community 93 - "Community 93"
-Cohesion: 0.06
-Nodes (53): notesCollection(), collection(), stampEffectiveAc(), AdminCampaignSummary, DEV_CHARACTER_COUNTS, DEV_USER_CHARACTERS, DevAdminUser, DevBugReport (+45 more)
-
 ### Community 94 - "Community 94"
-Cohesion: 0.07
-Nodes (53): blueprintEntityKey(), causesFor(), compileMechanicsFrame(), compilerContinuation(), CompilerCoordination, compilerFiberMatches(), compilerFibers, compilerInputBinding() (+45 more)
+Cohesion: 0.04
+Nodes (40): readOpen(), SectionPanel(), cn(), WhyProse(), ChoicePickerCard(), ChoicePickerCardProps, CollapsibleSearch(), Props (+32 more)
 
 ### Community 95 - "Community 95"
-Cohesion: 0.07
-Nodes (49): conformMechanicsProgram(), conformProgramStructure, allOf(), attackInput(), attackLanded(), attackOutcomeSelector(), CANONICAL_ROLL_RULES, cantripScaledCount() (+41 more)
+Cohesion: 0.04
+Nodes (39): actionAtCastLevel(), replaceBaseFormula(), ScalableCombatSummary, scaleCombatSummaryAtCastLevel(), srdEffectText(), avatarTint(), displayAc(), formatWeight() (+31 more)
 
 ### Community 96 - "Community 96"
 Cohesion: 0.04
@@ -3394,387 +3399,387 @@ Nodes (55): combatChronicle, attributeLabel, attributeSkip, bardicInspirationGra
 
 ### Community 98 - "Community 98"
 Cohesion: 0.04
-Nodes (54): ABILITY_SCHEMA, COMMON_REQUEST_FIELDS, D20_TEST_OBSERVATION_SCHEMA, D20_TEST_REQUEST_SCHEMA, D20EnteredModifier, D20EnteredModifierRule, D20FaceFloorRule, D20Modifier (+46 more)
+Nodes (31): abilityMod(), buildDevRosterDocs(), buildDevScenario(), buildScenario(), DEV_SCENARIOS, devPortrait(), PUBLIC_SCENARIOS, ScenarioSpec (+23 more)
 
 ### Community 99 - "Community 99"
-Cohesion: 0.04
-Nodes (54): CLAIM_ACTION_PAYLOAD_SCHEMA, CLAIM_REACTION_PAYLOAD_SCHEMA, ID_SCHEMA, NONNEGATIVE_INTEGER_SCHEMA, NULLABLE_POSITIVE_INTEGER_SCHEMA, OVERRIDABLE_NONNEGATIVE_SCHEMA, OVERRIDABLE_ONE_SCHEMA, OVERRIDABLE_POSITIVE_ONE_SCHEMA (+46 more)
+Cohesion: 0.07
+Nodes (52): blueprintEntityKey(), causesFor(), compileMechanicsFrame(), compilerContinuation(), CompilerCoordination, compilerFiberMatches(), compilerFibers, compilerInputBinding() (+44 more)
 
 ### Community 100 - "Community 100"
-Cohesion: 0.05
-Nodes (44): createTurnEconomyState(), alive(), AUTHORITIES_BY_CAUSE, authoritySnapshotFor(), CAPABILITY, causalState(), context(), createFrame() (+36 more)
+Cohesion: 0.04
+Nodes (54): ABILITY_SCHEMA, COMMON_REQUEST_FIELDS, D20_TEST_OBSERVATION_SCHEMA, D20_TEST_REQUEST_SCHEMA, D20EnteredModifier, D20EnteredModifierRule, D20FaceFloorRule, D20Modifier (+46 more)
 
 ### Community 101 - "Community 101"
 Cohesion: 0.04
-Nodes (53): aboleth, name, adult-black-dragon, name, adult-blue-dragon, name, adult-brass-dragon, name (+45 more)
+Nodes (54): CLAIM_ACTION_PAYLOAD_SCHEMA, CLAIM_REACTION_PAYLOAD_SCHEMA, ID_SCHEMA, NONNEGATIVE_INTEGER_SCHEMA, NULLABLE_POSITIVE_INTEGER_SCHEMA, OVERRIDABLE_NONNEGATIVE_SCHEMA, OVERRIDABLE_ONE_SCHEMA, OVERRIDABLE_POSITIVE_ONE_SCHEMA (+46 more)
 
 ### Community 102 - "Community 102"
 Cohesion: 0.04
-Nodes (53): custom, acBonus, acBonusPlaceholder, armorCategory, armorHeavy, armorLight, armorMedium, armorShield (+45 more)
+Nodes (53): aboleth, name, adult-black-dragon, name, adult-blue-dragon, name, adult-brass-dragon, name (+45 more)
 
 ### Community 103 - "Community 103"
 Cohesion: 0.04
-Nodes (53): aboleth, name, adult-black-dragon, name, adult-blue-dragon, name, adult-brass-dragon, name (+45 more)
+Nodes (53): custom, acBonus, acBonusPlaceholder, armorCategory, armorHeavy, armorLight, armorMedium, armorShield (+45 more)
 
 ### Community 104 - "Community 104"
 Cohesion: 0.04
-Nodes (53): custom, acBonus, acBonusPlaceholder, armorCategory, armorHeavy, armorLight, armorMedium, armorShield (+45 more)
+Nodes (53): aboleth, name, adult-black-dragon, name, adult-blue-dragon, name, adult-brass-dragon, name (+45 more)
 
 ### Community 105 - "Community 105"
 Cohesion: 0.04
-Nodes (53): CHARACTER_MATERIAL_REF_SCHEMA, CountResourceCell, CURRENCY_DENOMINATION_SCHEMA, CurrencyDenomination, DICE_FORMULA_SCHEMA, DICE_OBSERVATION_SCHEMA, DICE_RESOLUTION_SCHEMA, ENTITY_REF_SCHEMA (+45 more)
+Nodes (53): custom, acBonus, acBonusPlaceholder, armorCategory, armorHeavy, armorLight, armorMedium, armorShield (+45 more)
 
 ### Community 106 - "Community 106"
+Cohesion: 0.04
+Nodes (53): CHARACTER_MATERIAL_REF_SCHEMA, CountResourceCell, CURRENCY_DENOMINATION_SCHEMA, CurrencyDenomination, DICE_FORMULA_SCHEMA, DICE_OBSERVATION_SCHEMA, DICE_RESOLUTION_SCHEMA, ENTITY_REF_SCHEMA (+45 more)
+
+### Community 107 - "Community 107"
 Cohesion: 0.07
 Nodes (50): acyclic(), canonicalClone(), canonicalKey(), canonicalOccurrence(), conformEndRule(), conformEndRuleStructure, conformIntegerAtLeast(), conformNewMechanicOccurrence() (+42 more)
 
-### Community 107 - "Community 107"
+### Community 108 - "Community 108"
 Cohesion: 0.05
 Nodes (32): BARBARIAN_FEATURES, BARBARIAN_TABLE, BARD_FEATURES, BARD_TABLE, SPELL_SLOTS, CLERIC_FEATURES, CLERIC_TABLE, FULL_CASTER_SLOTS (+24 more)
 
-### Community 108 - "Community 108"
-Cohesion: 0.09
-Nodes (46): BundledSnapshot, decodePortable(), encodePortable(), exact(), object(), parseVersion(), PortableResult, same() (+38 more)
-
 ### Community 109 - "Community 109"
-Cohesion: 0.09
-Nodes (47): answerNumber(), answerPosition(), AreaResolution, areaShapeFrom(), adjustPacket(), applyDamage(), applyHealing(), DamageOptions (+39 more)
+Cohesion: 0.07
+Nodes (49): RollRecord, EndResult, FoldResult, ActionId, EffectId, EntityId, LabelId, WindowId (+41 more)
 
 ### Community 110 - "Community 110"
 Cohesion: 0.07
-Nodes (43): ABILITIES, automaticOutcome(), boundedUniqueSources(), conformD20TestObservation(), conformD20TestRequest(), conformObservationStructure, conformRequestStructure, D20_SCHEMA_CONTEXT (+35 more)
+Nodes (36): ArmorCard, ArmorCardCallbacks, ArmorCardProps, ChargeUse(), GearCard, GearCardCallbacks, GearCardProps, damageTypeAbbr() (+28 more)
 
 ### Community 111 - "Community 111"
-Cohesion: 0.04
-Nodes (50): DICE_ACCEPTANCE_POLICY_SCHEMA, DICE_ACCEPTANCE_RULE_SCHEMA, DICE_AGGREGATE_OBSERVATION_SCHEMA, DICE_AGGREGATE_REQUIREMENT_SCHEMA, DICE_FORMULA_SCHEMA, DICE_FORMULA_TERM_SCHEMA, DICE_INTEGER_REQUIREMENT_SCHEMA, DICE_OBSERVATION_SCHEMA (+42 more)
+Cohesion: 0.07
+Nodes (44): ABILITIES, automaticOutcome(), boundedUniqueSources(), conformD20TestObservation(), conformD20TestRequest(), conformObservationStructure, conformRequestStructure, D20_SCHEMA_CONTEXT (+36 more)
 
 ### Community 112 - "Community 112"
-Cohesion: 0.04
-Nodes (49): ABILITY_SCHEMA, ABILITY_SCORE_SCHEMA, ABILITY_SCORES_SCHEMA, ACTION_TYPE_SCHEMA, CHARACTER_BUILD_SCHEMA, CharacterBuildSchemaCustomTypes, CharacterBuildSchemaShape, CLASS_CHOICES_SCHEMA (+41 more)
+Cohesion: 0.13
+Nodes (52): conformEntityRef(), acceptMechanicsPendingFramePhaseTransition(), causeKey(), checkpointStateValid(), completionStateValid(), completionWorld(), conformBoundaryCursor(), conformBoundaryEncounterCursor() (+44 more)
 
 ### Community 113 - "Community 113"
-Cohesion: 0.05
-Nodes (36): cn(), BreakdownTip(), BreakdownTipProps, RUBRIC_KEY, WhyProse(), ChoicePickerCard(), ChoicePickerCardProps, CollapsibleSearch() (+28 more)
+Cohesion: 0.06
+Nodes (42): tempHpRollFormula(), armorSealIcon(), CATEGORY_ICON, EQUIPMENT_BY_ID, equipmentCategoryIcon(), equipmentSealIcon(), equipmentSealIconById(), GEAR_ICON (+34 more)
 
 ### Community 114 - "Community 114"
 Cohesion: 0.04
-Nodes (50): term, abilityScores, armorClass, attackRoll, attunement, bardicInspirationDie, cantrip, challengeRating (+42 more)
+Nodes (50): DICE_ACCEPTANCE_POLICY_SCHEMA, DICE_ACCEPTANCE_RULE_SCHEMA, DICE_AGGREGATE_OBSERVATION_SCHEMA, DICE_AGGREGATE_REQUIREMENT_SCHEMA, DICE_FORMULA_SCHEMA, DICE_FORMULA_TERM_SCHEMA, DICE_INTEGER_REQUIREMENT_SCHEMA, DICE_OBSERVATION_SCHEMA (+42 more)
 
 ### Community 115 - "Community 115"
 Cohesion: 0.04
-Nodes (50): term, abilityScores, armorClass, attackRoll, attunement, bardicInspirationDie, cantrip, challengeRating (+42 more)
+Nodes (49): ABILITY_SCHEMA, ABILITY_SCORE_SCHEMA, ABILITY_SCORES_SCHEMA, ACTION_TYPE_SCHEMA, CHARACTER_BUILD_SCHEMA, CharacterBuildSchemaCustomTypes, CharacterBuildSchemaShape, CLASS_CHOICES_SCHEMA (+41 more)
 
 ### Community 116 - "Community 116"
-Cohesion: 0.06
-Nodes (36): LevelUpWizard(), primaryClassId(), AsiChoice, AsiChoiceMode, emptyAsiChoice(), isAsiChoiceComplete(), eligibleManeuvers(), listManeuvers() (+28 more)
+Cohesion: 0.05
+Nodes (48): identifier(), occurrenceBelongsToCurrentFrame(), deriveMechanicsSourceEndingEvents(), matcherAccepts(), mechanicsProgramEffectOccurrenceId(), CHARACTER_MATERIAL_REF_SCHEMA, CharacterMaterialRefSchemaShape, CLOCK_REF_SCHEMA (+40 more)
 
 ### Community 117 - "Community 117"
 Cohesion: 0.04
-Nodes (49): sheet, ac, acBonus, attackBonusOverride, background, castingTime, classes, conditions (+41 more)
+Nodes (50): term, abilityScores, armorClass, attackRoll, attunement, bardicInspirationDie, cantrip, challengeRating (+42 more)
 
 ### Community 118 - "Community 118"
 Cohesion: 0.04
-Nodes (49): sheet, ac, acBonus, attackBonusOverride, background, castingTime, classes, conditions (+41 more)
+Nodes (50): term, abilityScores, armorClass, attackRoll, attunement, bardicInspirationDie, cantrip, challengeRating (+42 more)
 
 ### Community 119 - "Community 119"
-Cohesion: 0.04
-Nodes (48): DAMAGE_ALLOCATION_OBSERVATION_SCHEMA, DAMAGE_ALLOCATION_OBSERVATIONS_SCHEMA, DAMAGE_ALLOCATION_PART_SCHEMA, DAMAGE_ALLOCATION_REQUIREMENT_SCHEMA, DAMAGE_AMOUNT_SCHEMA, DAMAGE_COMPUTATION_SCHEMA, DAMAGE_COMPUTED_EFFECTIVE_SCHEMA, DAMAGE_DEFENSE_PROFILE_SCHEMA (+40 more)
+Cohesion: 0.08
+Nodes (35): buildCatalogue(), Catalogue, mechanicOf(), programOf(), checkpointThrough(), compact(), ENCODER, encounterBytes() (+27 more)
 
 ### Community 120 - "Community 120"
-Cohesion: 0.08
-Nodes (40): description, name, I18N_ROOT, mergedUi(), PACK_I18N_ROOT, readShard(), shardNames(), srdCatalogue() (+32 more)
+Cohesion: 0.06
+Nodes (45): hasSrd(), localizeSrd(), listFightingStyles(), listMasterableWeapons(), CR_BANDS, monName(), monsterProse(), monsterProseCache (+37 more)
 
 ### Community 121 - "Community 121"
 Cohesion: 0.04
-Nodes (47): campaigns, atCap, cardActionsFor, cardActive, cardDm, cardLevels, cardMoreActions, cardNoDm (+39 more)
+Nodes (49): sheet, ac, acBonus, attackBonusOverride, background, castingTime, classes, conditions (+41 more)
 
 ### Community 122 - "Community 122"
 Cohesion: 0.04
-Nodes (47): campaigns, atCap, cardActionsFor, cardActive, cardDm, cardLevels, cardMoreActions, cardNoDm (+39 more)
+Nodes (49): sheet, ac, acBonus, attackBonusOverride, background, castingTime, classes, conditions (+41 more)
 
 ### Community 123 - "Community 123"
-Cohesion: 0.06
-Nodes (43): applyDeclaredEffectsOptimistic(), campaignMemberHpMax(), conditionEffectIdsRemovedBy(), memberCombatMax(), pcCombatantRef(), reduceDirectPcEffects(), reducePersistentMonsterDamage(), monsterDamageDefenses() (+35 more)
+Cohesion: 0.04
+Nodes (48): DAMAGE_ALLOCATION_OBSERVATION_SCHEMA, DAMAGE_ALLOCATION_OBSERVATIONS_SCHEMA, DAMAGE_ALLOCATION_PART_SCHEMA, DAMAGE_ALLOCATION_REQUIREMENT_SCHEMA, DAMAGE_AMOUNT_SCHEMA, DAMAGE_COMPUTATION_SCHEMA, DAMAGE_COMPUTED_EFFECTIVE_SCHEMA, DAMAGE_DEFENSE_PROFILE_SCHEMA (+40 more)
 
 ### Community 124 - "Community 124"
-Cohesion: 0.07
-Nodes (42): hasSrd(), localizeSrd(), listFightingStyles(), listMasterableWeapons(), srdOptionParts(), ToolOption, descriptionSearch(), assertResolves() (+34 more)
+Cohesion: 0.08
+Nodes (40): description, name, I18N_ROOT, mergedUi(), PACK_I18N_ROOT, readShard(), shardNames(), srdCatalogue() (+32 more)
 
 ### Community 125 - "Community 125"
-Cohesion: 0.10
-Nodes (44): analyzeConformedResolutionGroup(), analyzeResolutionGroup(), collisionAddress(), conformOrderingObservation(), conformOrderingObservationValue(), conformResolutionGroup(), conformResolutionGroupContext(), conformResolutionGroupContextValue() (+36 more)
+Cohesion: 0.06
+Nodes (35): LevelUpWizard(), AsiChoice, AsiChoiceMode, emptyAsiChoice(), isAsiChoiceComplete(), eligibleManeuvers(), listManeuvers(), maneuversKnownAt() (+27 more)
 
 ### Community 126 - "Community 126"
-Cohesion: 0.04
-Nodes (46): homebrewV2, added, addEffect, attuned, authoringOnly, capacityMismatch, checkContent, checkUpdate (+38 more)
+Cohesion: 0.08
+Nodes (45): conformMechanicsProgram(), conformProgramStructure, allOf(), attackInput(), attackLanded(), attackOutcomeSelector(), CANONICAL_ROLL_RULES, cantripScaledCount() (+37 more)
 
 ### Community 127 - "Community 127"
 Cohesion: 0.04
-Nodes (46): homebrewV2, added, addEffect, attuned, authoringOnly, capacityMismatch, checkContent, checkUpdate (+38 more)
+Nodes (47): campaigns, atCap, cardActionsFor, cardActive, cardDm, cardLevels, cardMoreActions, cardNoDm (+39 more)
 
 ### Community 128 - "Community 128"
-Cohesion: 0.10
-Nodes (28): BrowserProps, CompendiumBrowser(), EntryView(), EntryViewProps, FacetsProps, CompendiumPicker(), CompendiumPickerProps, CompendiumDetailBody() (+20 more)
+Cohesion: 0.04
+Nodes (47): campaigns, atCap, cardActionsFor, cardActive, cardDm, cardLevels, cardMoreActions, cardNoDm (+39 more)
 
 ### Community 129 - "Community 129"
-Cohesion: 0.09
-Nodes (42): acceptedTrailFace(), addBounds(), aggregateId(), conformAcceptancePolicyStructure, conformDiceAcceptancePolicy(), conformDiceFormula(), conformDiceObservation(), conformDiceReplacementPolicy() (+34 more)
+Cohesion: 0.05
+Nodes (40): hasActiveSpendOwner(), applyActionConcentration(), localizeCustom(), attunementSatisfied(), EquipRef, requiresAttunement(), isArmorProficient(), customConcentrationValue() (+32 more)
 
 ### Community 130 - "Community 130"
-Cohesion: 0.04
-Nodes (45): magicItems, attunement, attunementNone, attunementRequired, attunementShort, rarity, rarity_artifact, rarity_common (+37 more)
+Cohesion: 0.05
+Nodes (42): app_1, auth_1, billing_1, budget_kill_1, delete_user_plan_1, fetchPortrait(), firestore_1, firestore_2 (+34 more)
 
 ### Community 131 - "Community 131"
 Cohesion: 0.04
-Nodes (45): magicItems, attunement, attunementNone, attunementRequired, attunementShort, rarity, rarity_artifact, rarity_common (+37 more)
+Nodes (46): homebrewV2, added, addEffect, attuned, authoringOnly, capacityMismatch, checkContent, checkUpdate (+38 more)
 
 ### Community 132 - "Community 132"
 Cohesion: 0.04
-Nodes (45): CREATURE_DAMAGE_INPUT_SCHEMA, CREATURE_HEALING_INPUT_SCHEMA, CREATURE_MAXIMUM_SYNC_INPUT_SCHEMA, CREATURE_REVIVAL_INPUT_SCHEMA, CREATURE_VITALS_SCHEMA, CREATURE_ZERO_HIT_POINTS_INPUT_SCHEMA, CreatureDamageFacts, CreatureDamageInput (+37 more)
+Nodes (46): homebrewV2, added, addEffect, attuned, authoringOnly, capacityMismatch, checkContent, checkUpdate (+38 more)
 
 ### Community 133 - "Community 133"
+Cohesion: 0.07
+Nodes (31): devHpHydrateDelay(), useCharacters(), UseCharactersResult, useRosterCombatStates(), LongPressHandlers, useLongPress(), UseLongPressOptions, BulkStatusResult (+23 more)
+
+### Community 134 - "Community 134"
+Cohesion: 0.09
+Nodes (42): acceptedTrailFace(), addBounds(), aggregateId(), conformAcceptancePolicyStructure, conformDiceAcceptancePolicy(), conformDiceObservation(), conformDiceReplacementPolicy(), conformDiceResolution() (+34 more)
+
+### Community 135 - "Community 135"
+Cohesion: 0.06
+Nodes (38): applyExpertisePicks(), EXPERTISE_FEATURE_IDS, listExpertiseEligibleSkills(), arePicksComplete(), applyExpertiseChoicePicks(), ExpertiseChoicePicks, ExpertiseChoiceSlot, isExpertisePicksComplete() (+30 more)
+
+### Community 136 - "Community 136"
+Cohesion: 0.10
+Nodes (43): analyzeConformedResolutionGroup(), analyzeResolutionGroup(), collisionAddress(), conformOrderingObservation(), conformOrderingObservationValue(), conformResolutionGroup(), conformResolutionGroupContext(), conformResolutionGroupContextValue() (+35 more)
+
+### Community 137 - "Community 137"
+Cohesion: 0.04
+Nodes (45): dragonborn.traits.breath-weapon.mechanics.actions.0, description, dragonborn.traits.draconic-ancestry.grants.0.options.blue, label, dragonborn.traits.draconic-ancestry.grants.0.options.brass, label, dragonborn.traits.draconic-ancestry.grants.0.options.copper, label (+37 more)
+
+### Community 138 - "Community 138"
+Cohesion: 0.04
+Nodes (45): magicItems, attunement, attunementNone, attunementRequired, attunementShort, rarity, rarity_artifact, rarity_common (+37 more)
+
+### Community 139 - "Community 139"
+Cohesion: 0.04
+Nodes (45): dragonborn.traits.breath-weapon.mechanics.actions.0, description, dragonborn.traits.draconic-ancestry.grants.0.options.black, label, dragonborn.traits.draconic-ancestry.grants.0.options.blue, label, dragonborn.traits.draconic-ancestry.grants.0.options.brass, label (+37 more)
+
+### Community 140 - "Community 140"
+Cohesion: 0.04
+Nodes (45): magicItems, attunement, attunementNone, attunementRequired, attunementShort, rarity, rarity_artifact, rarity_common (+37 more)
+
+### Community 141 - "Community 141"
+Cohesion: 0.04
+Nodes (45): CREATURE_DAMAGE_INPUT_SCHEMA, CREATURE_HEALING_INPUT_SCHEMA, CREATURE_MAXIMUM_SYNC_INPUT_SCHEMA, CREATURE_REVIVAL_INPUT_SCHEMA, CREATURE_VITALS_SCHEMA, CREATURE_ZERO_HIT_POINTS_INPUT_SCHEMA, CreatureDamageFacts, CreatureDamageInput (+37 more)
+
+### Community 142 - "Community 142"
+Cohesion: 0.07
+Nodes (40): loadPackLazySrd(), bootstrap(), changeLanguage(), ensureLocale(), ensureSrdKind(), inflight, inflightKind, uiLoaded (+32 more)
+
+### Community 143 - "Community 143"
 Cohesion: 0.04
 Nodes (44): CLOCK_REF, COMMON_MECHANICS_BOUNDARY_VARIANTS, DAMAGE_DEFENSE_RULE, EFFECT_BASE, END_RULE, END_RULE_SCHEMA, EndRuleSchemaShape, ENTITY_REF (+36 more)
 
-### Community 134 - "Community 134"
+### Community 144 - "Community 144"
 Cohesion: 0.06
 Nodes (39): deleteUser, fetchPortrait(), finiteNonNegative(), framePortrait(), GITHUB_REPO, GITHUB_TOKEN, hasExactKeys(), loadPublicCharacterProjection() (+31 more)
 
-### Community 135 - "Community 135"
-Cohesion: 0.07
-Nodes (33): listSharedCampaigns(), readDevCampaign(), subscribeToSharedCampaigns(), DEV_PIP_EPOCHS, DEV_PIP_INIT_TABLES, devEmpty(), devEncounterInitSeed(), devPcEntry() (+25 more)
-
-### Community 136 - "Community 136"
-Cohesion: 0.05
-Nodes (43): functions, dependencies, firebase-admin, firebase-functions, @google-cloud/billing, @google-cloud/functions-framework, nodemailer, @octokit/rest (+35 more)
-
-### Community 137 - "Community 137"
-Cohesion: 0.07
-Nodes (32): creationCandidate(), creationCatalogue(), creationWithOwnedEquipment(), ownedCreationEquipment(), createClassBuildReader(), AuthoringFamily, initializeDefinition(), includeOriginDependency() (+24 more)
-
-### Community 138 - "Community 138"
-Cohesion: 0.06
-Nodes (31): expectLegalPreset(), listAvailableForLanguageSlot(), AppliedQuickbuild, backgroundSkillIds(), canonical(), classSkillPool(), deal(), presetChoiceSlots() (+23 more)
-
-### Community 139 - "Community 139"
-Cohesion: 0.09
-Nodes (39): canonicalDamageDefenseRule(), allocationInvariant(), applyBinaryDefenses(), applyFlatAdjustments(), canonicalAllocation(), canonicalSubset(), conformAllocationsStructure, conformComputationStructure (+31 more)
-
-### Community 140 - "Community 140"
-Cohesion: 0.08
-Nodes (35): isPortraitLoaded(), loadedPortraitUrls, cropFocalPosition(), cropToBackgroundPosition(), cropToCssStyle(), cropZoomFactor(), normalizePortraitCrop(), buildPublicCharacterProjection() (+27 more)
-
-### Community 141 - "Community 141"
-Cohesion: 0.05
-Nodes (43): rest, currentStatus, exhaustionReduced, healAndRest, hitDice, hitDiceAvailable, hitDiceRecovered, hitDiceSpent (+35 more)
-
-### Community 142 - "Community 142"
-Cohesion: 0.05
-Nodes (43): rest, currentStatus, exhaustionReduced, healAndRest, hitDice, hitDiceAvailable, hitDiceRecovered, hitDiceSpent (+35 more)
-
-### Community 143 - "Community 143"
-Cohesion: 0.10
-Nodes (40): Catalogue, RollRecord, ActionId, EffectId, EntityId, LabelId, MechanicId, Seq (+32 more)
-
-### Community 144 - "Community 144"
-Cohesion: 0.06
-Nodes (36): buildCharacterPdf(), CharacterPdfExport, decodeDataUrl(), downloadCharacterPdf(), pdfFilename(), triggerDownload(), actionSummary(), buildSpellcastingVM() (+28 more)
-
 ### Community 145 - "Community 145"
-Cohesion: 0.06
-Nodes (17): ClassSorcererIcon(), FolioBurstIcon(), FolioChecklistIcon(), FolioCombatIcon(), FolioControlIcon(), FolioDangerIcon(), FolioDefendIcon(), FolioFocusIcon() (+9 more)
+Cohesion: 0.09
+Nodes (42): commitBoundary(), commitPartyAttackParticipation(), endLocalEncounter(), firePassedTurnBoundaries(), observePartyWorldFights(), OpenCharacterWorld, PartyFightSnapshot, reconcileLease() (+34 more)
 
 ### Community 146 - "Community 146"
 Cohesion: 0.05
-Nodes (42): dragonborn.traits.breath-weapon.mechanics.actions.0, description, dragonborn.traits.draconic-ancestry.grants.0.options.blue, label, dragonborn.traits.draconic-ancestry.grants.0.options.brass, label, dragonborn.traits.draconic-ancestry.grants.0.options.copper, label (+34 more)
+Nodes (43): functions, dependencies, firebase-admin, firebase-functions, @google-cloud/billing, @google-cloud/functions-framework, nodemailer, @octokit/rest (+35 more)
 
 ### Community 147 - "Community 147"
-Cohesion: 0.05
-Nodes (42): amountLabel, amountPrompt, armorClassPrompt, attackTitle, attackVs, booleanCure, booleanPrompt, booleanTopple (+34 more)
+Cohesion: 0.09
+Nodes (39): canonicalDamageDefenseRule(), allocationInvariant(), applyBinaryDefenses(), applyFlatAdjustments(), canonicalAllocation(), canonicalSubset(), conformAllocationsStructure, conformComputationStructure (+31 more)
 
 ### Community 148 - "Community 148"
 Cohesion: 0.05
-Nodes (42): dragonborn.traits.breath-weapon.mechanics.actions.0, description, dragonborn.traits.draconic-ancestry.grants.0.options.blue, label, dragonborn.traits.draconic-ancestry.grants.0.options.brass, label, dragonborn.traits.draconic-ancestry.grants.0.options.copper, label (+34 more)
+Nodes (43): rest, currentStatus, exhaustionReduced, healAndRest, hitDice, hitDiceAvailable, hitDiceRecovered, hitDiceSpent (+35 more)
 
 ### Community 149 - "Community 149"
 Cohesion: 0.05
-Nodes (42): amountLabel, amountPrompt, armorClassPrompt, attackTitle, attackVs, booleanCure, booleanPrompt, booleanTopple (+34 more)
+Nodes (43): rest, currentStatus, exhaustionReduced, healAndRest, hitDice, hitDiceAvailable, hitDiceRecovered, hitDiceSpent (+35 more)
 
 ### Community 150 - "Community 150"
-Cohesion: 0.08
-Nodes (40): buildCatalogue(), ABILITY_SET, abilityOf(), ADJACENT_TARGET, areaSpec(), attackProgram(), CharacterSeat, CORE_COVERED_ROWS (+32 more)
+Cohesion: 0.09
+Nodes (39): dueAt(), endEffects(), cellUnderFog(), DropPlan, hideRect(), isCoord(), isMapBackground(), isMapCell() (+31 more)
 
 ### Community 151 - "Community 151"
-Cohesion: 0.10
-Nodes (38): dueAt(), endEffects(), cellUnderFog(), DropPlan, hideRect(), isCoord(), isMapBackground(), isMapGrid() (+30 more)
+Cohesion: 0.06
+Nodes (17): ClassSorcererIcon(), FolioBurstIcon(), FolioChecklistIcon(), FolioCombatIcon(), FolioControlIcon(), FolioDangerIcon(), FolioDefendIcon(), FolioFocusIcon() (+9 more)
 
 ### Community 152 - "Community 152"
-Cohesion: 0.06
-Nodes (34): booleanSchema, canonicalExactOutputs, clonePlainJson(), conformedBySchema, ConformedValue, conformExact(), conformExactRuntime(), conformNode() (+26 more)
+Cohesion: 0.05
+Nodes (42): amountLabel, amountPrompt, armorClassPrompt, attackTitle, attackVs, booleanCure, booleanPrompt, booleanTopple (+34 more)
 
 ### Community 153 - "Community 153"
 Cohesion: 0.05
-Nodes (40): identifier(), mechanicsProgramEffectOccurrenceId(), CHARACTER_MATERIAL_REF_SCHEMA, CharacterMaterialRefSchemaShape, CLOCK_REF_SCHEMA, ClockRefSchemaShape, conformClockRef(), conformClockRefStructure (+32 more)
+Nodes (42): amountLabel, amountPrompt, armorClassPrompt, attackTitle, attackVs, booleanCure, booleanPrompt, booleanTopple (+34 more)
 
 ### Community 154 - "Community 154"
-Cohesion: 0.08
-Nodes (35): CatalogueError, mechanicOf(), programOf(), conformMechanicShape, parseMechanicValue(), coverageFor(), CoverageRow, CoverageStatus (+27 more)
+Cohesion: 0.06
+Nodes (34): booleanSchema, canonicalExactOutputs, clonePlainJson(), conformedBySchema, ConformedValue, conformExact(), conformExactRuntime(), conformNode() (+26 more)
 
 ### Community 155 - "Community 155"
 Cohesion: 0.07
-Nodes (36): diceCount(), DiceTerm, DIE_SIDES, DIE_SIDES_SET, DieSides, evaluate(), EvaluatedTerm, Evaluation (+28 more)
+Nodes (39): reviewedPaymentsAreAffordable(), characterParts(), commandOfIntent(), conformInitializationObservationsStructure, conformResourceOperation(), conformResourceOperationStructure, conformResourceRecoveryTrigger(), conformResourceRef() (+31 more)
 
 ### Community 156 - "Community 156"
-Cohesion: 0.10
-Nodes (36): slotUsageKey(), slotResources(), addressIsValid(), addressKey(), applyMechanicsPlanToCharacter(), buildConversionCtx(), commandIsValid(), ConversionCtx (+28 more)
+Cohesion: 0.07
+Nodes (34): alive(), AUTHORITIES_BY_CAUSE, authoritySnapshotFor(), CAPABILITY, causalState(), context(), createFrame(), damageOperation() (+26 more)
 
 ### Community 157 - "Community 157"
-Cohesion: 0.06
-Nodes (35): resolveCastingModifier(), resolveCompanion(), resolveFamiliarEnhancements(), resolveSpellDieAugment(), selectCompanionVariant(), resolveSpellAbility(), canRitualCast(), casterClassAbilities() (+27 more)
+Cohesion: 0.11
+Nodes (38): recordDirectPcEffectEvents(), reduceDeclaredEffects(), appendEvent(), DistributiveOmit, mapEvent(), NewChronicleEvent, recordCondition(), recordMonsterDamage() (+30 more)
 
 ### Community 158 - "Community 158"
 Cohesion: 0.07
-Nodes (28): avatarTint(), displayAc(), formatCr(), formatWeight(), idToHue(), localeDistance(), scaleCantripDice(), auraEffectLine() (+20 more)
+Nodes (36): diceCount(), DiceTerm, DIE_SIDES, DIE_SIDES_SET, DieSides, evaluate(), EvaluatedTerm, Evaluation (+28 more)
 
 ### Community 159 - "Community 159"
-Cohesion: 0.08
-Nodes (31): castingTimeI18nKey(), CASTING_TIMES, castingTimeOption(), CustomSpellEditForm(), EngineSpellGateInput, buildFacts(), buildGloss(), buildMaterialCostTag() (+23 more)
+Cohesion: 0.05
+Nodes (40): creationFlow, archiveOnly, backCharacters, checkReceipt, chooseFile, confirmImport, declareEdition, destination (+32 more)
 
 ### Community 160 - "Community 160"
 Cohesion: 0.05
 Nodes (40): creationFlow, archiveOnly, backCharacters, checkReceipt, chooseFile, confirmImport, declareEdition, destination (+32 more)
 
 ### Community 161 - "Community 161"
-Cohesion: 0.05
-Nodes (40): creationFlow, archiveOnly, backCharacters, checkReceipt, chooseFile, confirmImport, declareEdition, destination (+32 more)
+Cohesion: 0.06
+Nodes (26): AppShell(), CockpitView(), FamiliarFormPicker, FamiliarPanel(), FamiliarPanelProps, useEditModeShortcut(), GlobalShortcutsOptions, useGlobalShortcuts() (+18 more)
 
 ### Community 162 - "Community 162"
-Cohesion: 0.08
-Nodes (36): loadPackLazySrd(), bootstrap(), changeLanguage(), ensureLocale(), ensureSrdKind(), inflight, inflightKind, uiLoaded (+28 more)
+Cohesion: 0.09
+Nodes (28): INITIAL, withArmorEquipped(), BgAsiPicker(), CLASS_ROLE_FALLBACK, CLASS_ROLE_IDS, CLASS_ROLES, ClassIcon, ClassRole (+20 more)
 
 ### Community 163 - "Community 163"
-Cohesion: 0.06
-Nodes (27): getSpellById(), spellIndex, spells, ABILITY_CODES, dumpSheet(), fmt(), setToArr(), SheetDump (+19 more)
+Cohesion: 0.10
+Nodes (35): slotUsageKey(), slotResources(), addressIsValid(), addressKey(), applyMechanicsPlanToCharacter(), buildConversionCtx(), commandIsValid(), ConversionCtx (+27 more)
 
 ### Community 164 - "Community 164"
 Cohesion: 0.14
 Nodes (38): executeOperation(), execution(), maximumExecution(), maximumRejection(), applyCreatureDamage(), applyDeathSaveOutcome(), applyObjectDamage(), canonicalAfter() (+30 more)
 
 ### Community 165 - "Community 165"
-Cohesion: 0.05
-Nodes (39): monster, blindBeyond, condNote_except-vampire-master, condNote_with-mind-blank, crRubric, darkvisionMagical, defenseNote_bless-weapon, defenseNote_draconic-origin (+31 more)
+Cohesion: 0.08
+Nodes (31): EconomyPill(), EconomyPillProps, ROMAN, SIGNS, Hotbar(), HotbarProps, initials(), TAB_LABEL (+23 more)
 
 ### Community 166 - "Community 166"
 Cohesion: 0.05
 Nodes (39): monster, blindBeyond, condNote_except-vampire-master, condNote_with-mind-blank, crRubric, darkvisionMagical, defenseNote_bless-weapon, defenseNote_draconic-origin (+31 more)
 
 ### Community 167 - "Community 167"
-Cohesion: 0.06
-Nodes (24): abilityMod(), applyStartingForm(), buildDevRosterDocs(), buildDevScenario(), buildScenario(), DEV_SCENARIOS, devPortrait(), PUBLIC_SCENARIOS (+16 more)
+Cohesion: 0.05
+Nodes (39): monster, blindBeyond, condNote_except-vampire-master, condNote_with-mind-blank, crRubric, darkvisionMagical, defenseNote_bless-weapon, defenseNote_draconic-origin (+31 more)
 
 ### Community 168 - "Community 168"
-Cohesion: 0.09
-Nodes (32): compressImage(), campaignMapUsage(), deleteMapBackground(), MAP_UPLOAD_META, mapBackgroundPath(), mapsPrefix(), MapUploadArgs, MapUploadRefusal (+24 more)
+Cohesion: 0.07
+Nodes (36): advancePulse(), AUTHORED_SPELL_IDS, authorityReceipt(), castAuthored(), drive(), DriveScript, HERO, heroState() (+28 more)
 
 ### Community 169 - "Community 169"
 Cohesion: 0.09
 Nodes (35): amountSpecs(), answerPredicateKind(), answerPredicateReferenceMatches(), authoredBindingIds(), canonicalSubset(), collectPredicateReferences(), conformMechanicsPredicate(), conformPredicateStructure (+27 more)
 
 ### Community 170 - "Community 170"
-Cohesion: 0.08
-Nodes (36): reviewedPaymentsAreAffordable(), characterParts(), conformInitializationObservationsStructure, conformResourceOperation(), conformResourceOperationStructure, conformResourceRecoveryTrigger(), conformResourceRef(), conformResourceRefStructure (+28 more)
+Cohesion: 0.05
+Nodes (38): algorithm, addBullet, addStep, addSubStep, bulletPlaceholder, chooseIcon, empty, icon (+30 more)
 
 ### Community 171 - "Community 171"
-Cohesion: 0.18
-Nodes (39): bubble(), caption(), captionCenter(), chip(), clip(), drawAbilities(), drawAbilityBox(), drawAppearance() (+31 more)
+Cohesion: 0.05
+Nodes (38): algorithm, addBullet, addStep, addSubStep, bulletPlaceholder, chooseIcon, empty, icon (+30 more)
 
 ### Community 172 - "Community 172"
-Cohesion: 0.05
-Nodes (38): algorithm, addBullet, addStep, addSubStep, bulletPlaceholder, chooseIcon, empty, icon (+30 more)
+Cohesion: 0.06
+Nodes (26): storedTargetCombatState(), applyCombatToRosterDoc(), cacheToRosterCharacter(), cacheToRosterDoc(), CharacterCache, readCache(), RosterCharacter, RosterCharacterDoc (+18 more)
 
 ### Community 173 - "Community 173"
-Cohesion: 0.05
-Nodes (38): algorithm, addBullet, addStep, addSubStep, bulletPlaceholder, chooseIcon, empty, icon (+30 more)
+Cohesion: 0.07
+Nodes (25): appendPersistentCombatEffect(), applyDeclaredCombatEffects(), revokePersistentCombatEffect(), revokePersistentCombatEffectsBySource(), Locale, restoreTurnEconomy(), selectedAction(), snapshotTurnEconomy() (+17 more)
 
 ### Community 174 - "Community 174"
 Cohesion: 0.10
-Nodes (30): redactIdentifiers(), captureScreenshot(), downscale(), Screenshot, toBlob(), buildCrashPrefill(), reportCrash(), stackHead() (+22 more)
-
-### Community 175 - "Community 175"
-Cohesion: 0.06
-Nodes (24): applyCombatToRosterDoc(), buildCharacterCache(), cacheToRosterCharacter(), cacheToRosterDoc(), CharacterCache, readCache(), RosterCharacter, RosterCharacterDoc (+16 more)
-
-### Community 176 - "Community 176"
-Cohesion: 0.08
-Nodes (28): AddCreature(), AddCreatureProps, EconomyPill(), EconomyPillProps, ROMAN, SIGNS, Hotbar(), HotbarProps (+20 more)
-
-### Community 177 - "Community 177"
-Cohesion: 0.10
 Nodes (26): CreationFlow(), AccountNavigation(), IdentityAccount(), AuthenticatedIdentity(), IdentityNavigation(), NavigationContext, useIdentityNavigation(), IdentityWorkspace() (+18 more)
 
-### Community 178 - "Community 178"
-Cohesion: 0.07
-Nodes (28): SHEET_FONT_BYTES, BAND, BORDER, drawFooter(), drawStatBar(), FAINT, fleuron(), Fonts (+20 more)
-
-### Community 179 - "Community 179"
+### Community 175 - "Community 175"
 Cohesion: 0.05
 Nodes (36): D20_OBSERVATION_SCHEMA, DICE_OBSERVATION_SCHEMA, ENTITY_REF_SCHEMA, FINGERPRINT_SCHEMA, ID_SCHEMA, INSTALLED_INVOCATION_REF_SCHEMA, INVOCATION_REF_SCHEMA, MECHANICS_COMMAND_ANSWER_SCHEMA (+28 more)
 
-### Community 180 - "Community 180"
+### Community 176 - "Community 176"
 Cohesion: 0.11
 Nodes (35): asString(), Coin, COIN_KEYS, COMBAT_STATE_KEY_SET, CompactPlayState, CompactSessionState, CompactTrackerState, expandUsed() (+27 more)
 
-### Community 181 - "Community 181"
+### Community 177 - "Community 177"
+Cohesion: 0.10
+Nodes (29): captureScreenshot(), downscale(), Screenshot, toBlob(), buildCrashPrefill(), reportCrash(), stackHead(), openReport() (+21 more)
+
+### Community 178 - "Community 178"
+Cohesion: 0.05
+Nodes (36): barbarian, description, name, bard, description, name, cleric, description (+28 more)
+
+### Community 179 - "Community 179"
 Cohesion: 0.05
 Nodes (36): chaotic-evil, chaotic-good, chaotic-neutral, lawful-evil, lawful-good, lawful-neutral, neutral-evil, neutral-good (+28 more)
+
+### Community 180 - "Community 180"
+Cohesion: 0.05
+Nodes (36): wizard, allSpent, asksDecision, asksMore, atCap, bgAsiAfter, bgBonus, choose (+28 more)
+
+### Community 181 - "Community 181"
+Cohesion: 0.05
+Nodes (36): barbarian, description, name, bard, description, name, cleric, description (+28 more)
 
 ### Community 182 - "Community 182"
 Cohesion: 0.05
-Nodes (36): wizard, allSpent, asksDecision, asksMore, atCap, bgAsiAfter, bgBonus, choose (+28 more)
+Nodes (36): chaotic-evil, chaotic-good, chaotic-neutral, lawful-evil, lawful-good, lawful-neutral, neutral-evil, neutral-good (+28 more)
 
 ### Community 183 - "Community 183"
 Cohesion: 0.05
-Nodes (36): chaotic-evil, chaotic-good, chaotic-neutral, lawful-evil, lawful-good, lawful-neutral, neutral-evil, neutral-good (+28 more)
-
-### Community 184 - "Community 184"
-Cohesion: 0.05
 Nodes (36): wizard, allSpent, asksDecision, asksMore, atCap, bgAsiAfter, bgBonus, choose (+28 more)
 
-### Community 185 - "Community 185"
+### Community 184 - "Community 184"
 Cohesion: 0.06
 Nodes (36): CONDITION_ID_SCHEMA, CONDITION_IDS, CONDITION_INSTANCE_IDENTITY_SCHEMA, CONDITION_INSTANCE_SCHEMA, CONDITION_INSTANCES_SCHEMA, ConditionEconomySlot, ConditionId, ConditionInstance (+28 more)
 
-### Community 186 - "Community 186"
+### Community 185 - "Community 185"
 Cohesion: 0.08
-Nodes (26): appendPersistentCombatEffect(), applyDeclaredCombatEffects(), revokePersistentCombatEffect(), revokePersistentCombatEffectsBySource(), ADJUSTMENT_DIE_SIDES, AttackInstanceReview, COMBAT_ABILITIES, DEFAULT_ATTACK_REVIEW (+18 more)
+Nodes (26): listSessions(), DEV_PIP_EPOCHS, DEV_PIP_INIT_TABLES, devEmpty(), devEncounterInitSeed(), devPcEntry(), devPipMode, devPipScenario (+18 more)
 
-### Community 187 - "Community 187"
-Cohesion: 0.13
-Nodes (33): applyActionConcentration(), confirmConcentrationSwap(), characterVitals(), isRecord(), nonNegativeInteger(), reconciled(), vitalConcentration(), vitalConditions() (+25 more)
-
-### Community 188 - "Community 188"
+### Community 186 - "Community 186"
 Cohesion: 0.06
 Nodes (31): AUTOMATION_CORPUS_SCHEMAS, AutomationCorpusAudit, AutomationCorpusEntity, AutomationCorpusEntityResult, AutomationCorpusManualPresenter, AutomationCorpusPresenter, AutomationCorpusSchema, AutomationCorpusSummary (+23 more)
 
+### Community 187 - "Community 187"
+Cohesion: 0.07
+Nodes (31): buildCastOptions(), CastLevelOption, CastRecoveryCadence, classifySpellCastingTime(), FreeCastSource, isActionCastingTime(), MasterySource, MetamagicCastOption (+23 more)
+
+### Community 188 - "Community 188"
+Cohesion: 0.10
+Nodes (31): purgeBugReports(), compressImage(), campaignMapUsage(), deleteMapBackground(), MAP_UPLOAD_META, mapBackgroundPath(), mapsPrefix(), MapUploadArgs (+23 more)
+
 ### Community 189 - "Community 189"
-Cohesion: 0.16
-Nodes (36): boundaryRulesUseCurrentAllocation(), controllerWouldCycle(), documentFor(), entityCandidate(), entityExists(), entityGenerationExists(), exactKeys(), exhaustionFor() (+28 more)
+Cohesion: 0.06
+Nodes (35): acceptedDirection, contentRootAlgorithm, contentRootSha256, createdAt, files, historicalEvidencePolicy, mutableRecords, ownerApproval (+27 more)
 
 ### Community 190 - "Community 190"
 Cohesion: 0.06
-Nodes (35): acceptedDirection, contentRootAlgorithm, contentRootSha256, createdAt, files, historicalEvidencePolicy, mutableRecords, ownerApproval (+27 more)
+Nodes (35): pdf, footer, inspirationShort, recoveryDawn, sheet, spellAbility, spellcasting, weaponsAndCantrips (+27 more)
 
 ### Community 191 - "Community 191"
 Cohesion: 0.06
 Nodes (35): pdf, footer, inspirationShort, recoveryDawn, sheet, spellAbility, spellcasting, weaponsAndCantrips (+27 more)
 
 ### Community 192 - "Community 192"
-Cohesion: 0.06
-Nodes (35): pdf, footer, inspirationShort, recoveryDawn, sheet, spellAbility, spellcasting, weaponsAndCantrips (+27 more)
-
-### Community 193 - "Community 193"
 Cohesion: 0.08
 Nodes (25): DraftPortrait, MonsterEntry, MonsterPortraitPanel, PortraitCropModal, customMonsterToInput(), toMonsterInput(), makeEncounterMonsterSpec(), MonsterInput (+17 more)
+
+### Community 193 - "Community 193"
+Cohesion: 0.12
+Nodes (22): BrowserProps, CompendiumBrowser(), EntryView(), EntryViewProps, CompendiumFacets(), FacetsProps, useActiveTabScroll(), CompendiumPicker() (+14 more)
 
 ### Community 194 - "Community 194"
 Cohesion: 0.06
@@ -3785,394 +3790,384 @@ Cohesion: 0.11
 Nodes (30): auditCombatState(), auditDocument(), auditEnvelope(), auditLibrary(), auditPortableExport(), AuditVerdict, classify(), classifyPath() (+22 more)
 
 ### Community 196 - "Community 196"
-Cohesion: 0.06
-Nodes (34): area, areaCaption, targets, cellTitle, roundMark, unknownCharacter, refused, play (+26 more)
+Cohesion: 0.15
+Nodes (35): boundaryRulesUseCurrentAllocation(), controllerWouldCycle(), documentFor(), entityCandidate(), entityExists(), entityGenerationExists(), exhaustionFor(), locateInventoryInstance() (+27 more)
 
 ### Community 197 - "Community 197"
+Cohesion: 0.09
+Nodes (26): castingTimeI18nKey(), CASTING_TIMES, castingTimeOption(), CustomSpellEditForm(), EngineSpellGateInput, buildFacts(), buildGloss(), buildMaterialCostTag() (+18 more)
+
+### Community 198 - "Community 198"
+Cohesion: 0.10
+Nodes (22): CONTENT_PACK_ENTRY, CONTENT_PACK_ITEM_ART_ENTRY, CONTENT_PACK_MONSTER_ART_ENTRY, CONTENT_PACK_MONSTERS_ENTRY, contentPackEnabled(), fsAllowRoots(), PACK_EMPTY_ENTRY, packAliasTarget() (+14 more)
+
+### Community 199 - "Community 199"
 Cohesion: 0.06
 Nodes (34): area, areaCaption, targets, cellTitle, roundMark, unknownCharacter, refused, play (+26 more)
 
-### Community 198 - "Community 198"
+### Community 200 - "Community 200"
+Cohesion: 0.06
+Nodes (34): area, areaCaption, targets, cellTitle, roundMark, unknownCharacter, refused, play (+26 more)
+
+### Community 201 - "Community 201"
 Cohesion: 0.06
 Nodes (34): compilerOptions, allowImportingTsExtensions, allowUnreachableCode, allowUnusedLabels, erasableSyntaxOnly, forceConsistentCasingInFileNames, jsx, lib (+26 more)
 
-### Community 199 - "Community 199"
+### Community 202 - "Community 202"
 Cohesion: 0.11
 Nodes (29): addPendingEffect(), addPendingRoot(), addRoot(), addToState(), betweenTurns(), character(), characterWorld(), countCell() (+21 more)
 
-### Community 200 - "Community 200"
+### Community 203 - "Community 203"
 Cohesion: 0.08
 Nodes (22): Chapter, splitChapters(), flush(), PainterSnapshot, readPainter(), transitionBackdrop(), BlockMarkdown(), BlockMarkdownProps (+14 more)
 
-### Community 201 - "Community 201"
-Cohesion: 0.10
-Nodes (31): activateActionState(), concentrationKeysToRestoreOnUndo(), acFromAggregate(), activeKeysForConcentration(), aggregateCharacterGrants(), aggregationActiveKeys(), AggregationSession, computeCharacterAC() (+23 more)
-
-### Community 202 - "Community 202"
-Cohesion: 0.09
-Nodes (30): firstOf(), authorsOf(), { catalogue }, Client, clientFor(), compactAndVerify(), connect(), converge() (+22 more)
-
-### Community 203 - "Community 203"
-Cohesion: 0.07
-Nodes (19): initiativeToNumber(), sessionToCombatState(), persistCombat(), allocateRevision(), authState, combatCb(), {
-  debouncedSave,
-  debouncedFlush,
-  debouncedCancel,
-  createDebouncedSaveMock,
-  subscribeMock,
-  refreshAttachedSheetsMock,
-  createTrackerMock,
-  combatSubscribeMock,
-  writeCombatStateMock,
-}, lastSave() (+11 more)
-
 ### Community 204 - "Community 204"
 Cohesion: 0.09
-Nodes (25): useRulesTextHighlight(), formatModifier(), StatCard(), StatCardProps, Tracker(), TrackerColor, TrackerProps, KIND_ICON (+17 more)
+Nodes (30): CatalogueError, conformMechanicShape, parseMechanicValue(), coverageFor(), CoverageRow, CoverageStatus, programStatus(), stepStatus() (+22 more)
 
 ### Community 205 - "Community 205"
-Cohesion: 0.06
-Nodes (31): ActionData, CharacterData, CharacterDoc, CharacterLore, CharacterTag, ClassEntry, CombatAlgorithmStep, ContentBlockData (+23 more)
+Cohesion: 0.08
+Nodes (31): fmt(), localeRangePair(), buildFeatureVMs(), CharacterIdentityLine(), Props, SrdRaceSelect(), backgroundNameMap, classNameMap (+23 more)
 
 ### Community 206 - "Community 206"
 Cohesion: 0.09
-Nodes (24): EncounterParse, Action, appendAction(), createEncounter(), encounterRef(), EncounterSnapshot, personalEncounterRef(), characterRef() (+16 more)
+Nodes (28): ALLOWED_COLLISIONS, AllowedCollision, allStrings(), Ent, findCollisions(), findRetiredInProse(), findRetiredInUi(), findRetiredNames() (+20 more)
 
 ### Community 207 - "Community 207"
 Cohesion: 0.09
-Nodes (28): arrowBundle(), book(), calligraphersSupplies(), holySymbol(), OPTION_B, parchment(), pouch(), PUBLIC_STARTING_EQUIPMENT_BY_BG (+20 more)
+Nodes (30): firstOf(), authorsOf(), { catalogue }, Client, clientFor(), compactAndVerify(), connect(), converge() (+22 more)
 
 ### Community 208 - "Community 208"
-Cohesion: 0.08
-Nodes (25): conformCounter(), conformHomebrewDefinitionOwnerRef(), conformHomebrewDefinitionOwnerRefStructure, conformMechanicsCapabilityInstallationRef(), conformMechanicsCapabilityInstallationRefStructure, conformMechanicsCapabilityRef(), conformMechanicsCapabilityRefStructure, conformMechanicsDefinitionRef() (+17 more)
+Cohesion: 0.10
+Nodes (21): useRealmBackdrop(), rankedSearch(), featPickCategories(), MorphValue(), WizardForkTab(), WizardFrame(), WizardNav(), WizardStepDef (+13 more)
 
 ### Community 209 - "Community 209"
-Cohesion: 0.06
-Nodes (32): 0. What this replaces, in one paragraph, 10. Coverage, machine-derived, 11. Layering and boundary rules, 12. Constitution and document conflicts (proposed wording for ratification), 13. Residuals (structural, never to be rediscovered), 14. Risk register, 1. Invariants this design keeps, 2.1 The aggregate (+24 more)
+Cohesion: 0.09
+Nodes (25): useRulesTextHighlight(), formatModifier(), StatCard(), StatCardProps, Tracker(), TrackerColor, TrackerProps, KIND_ICON (+17 more)
 
 ### Community 210 - "Community 210"
 Cohesion: 0.06
-Nodes (32): cleave, description, name, summary, graze, description, name, summary (+24 more)
+Nodes (31): ActionData, CharacterData, CharacterDoc, CharacterLore, CharacterTag, ClassEntry, CombatAlgorithmStep, ContentBlockData (+23 more)
 
 ### Community 211 - "Community 211"
-Cohesion: 0.06
-Nodes (33): effectReview, abilityCheck, changeAnswer, chooseOne, conditions, consumedState, d20Aria, deathSaveTrack (+25 more)
+Cohesion: 0.07
+Nodes (15): initiativeToNumber(), sessionToCombatState(), attachEncounterEffects(), CharacterState, CombatHydrationPatch, D20CommandSnapshot, D20TestCommitResult, effectiveCombatEffects() (+7 more)
 
 ### Community 212 - "Community 212"
-Cohesion: 0.06
-Nodes (33): closeTip, edit, filter, filters, foot, hiddenRolls, hiddenRollsTip, hiddenTokens (+25 more)
+Cohesion: 0.07
+Nodes (28): ChoiceResistancePicker(), byId, loggedName(), RAW, ridersFor(), S, buildRiders(), localizeText() (+20 more)
 
 ### Community 213 - "Community 213"
-Cohesion: 0.06
-Nodes (32): cleave, description, name, summary, graze, description, name, summary (+24 more)
+Cohesion: 0.08
+Nodes (30): buildCharacterPdf(), CharacterPdfExport, decodeDataUrl(), downloadCharacterPdf(), pdfFilename(), triggerDownload(), actionSummary(), CharacterPdfViewModel (+22 more)
 
 ### Community 214 - "Community 214"
 Cohesion: 0.06
-Nodes (33): effectReview, abilityCheck, changeAnswer, chooseOne, conditions, consumedState, d20Aria, deathSaveTrack (+25 more)
+Nodes (32): 0. What this replaces, in one paragraph, 10. Coverage, machine-derived, 11. Layering and boundary rules, 12. Constitution and document conflicts (proposed wording for ratification), 13. Residuals (structural, never to be rediscovered), 14. Risk register, 1. Invariants this design keeps, 2.1 The aggregate (+24 more)
 
 ### Community 215 - "Community 215"
 Cohesion: 0.06
-Nodes (33): closeTip, edit, filter, filters, foot, hiddenRolls, hiddenRollsTip, hiddenTokens (+25 more)
+Nodes (32): cleave, description, name, summary, graze, description, name, summary (+24 more)
 
 ### Community 216 - "Community 216"
-Cohesion: 0.08
-Nodes (32): ActionPreferences, CharacterClockBinding, CharacterMaterialParseResult, CharacterMaterialState, CharacterResources, CreatureEntityTemplate, CreatureMaterialEntity, CustomArmorMechanics (+24 more)
+Cohesion: 0.06
+Nodes (33): effectReview, abilityCheck, changeAnswer, chooseOne, conditions, consumedState, d20Aria, deathSaveTrack (+25 more)
 
 ### Community 217 - "Community 217"
-Cohesion: 0.08
-Nodes (29): advanceFrame(), AdvanceRootReceipt, advanceSuspension(), authoredProgram(), authorityReceipt(), CAPABILITY, createFrame(), CreateRootReceipt (+21 more)
+Cohesion: 0.06
+Nodes (33): closeTip, edit, filter, filters, foot, hiddenRolls, hiddenRollsTip, hiddenTokens (+25 more)
 
 ### Community 218 - "Community 218"
-Cohesion: 0.08
-Nodes (19): AdminCharIndex, AdminMatchHint, AdminSearchUser, buildAdminMatches(), AdminUser, campaignTallies(), formatDate(), RosterState (+11 more)
+Cohesion: 0.06
+Nodes (32): cleave, description, name, summary, graze, description, name, summary (+24 more)
 
 ### Community 219 - "Community 219"
-Cohesion: 0.10
-Nodes (23): getDB(), loadBreadcrumbs(), persistBreadcrumbs(), buildReport(), byteLength(), clock(), context, diagnosticsLog() (+15 more)
+Cohesion: 0.06
+Nodes (33): effectReview, abilityCheck, changeAnswer, chooseOne, conditions, consumedState, d20Aria, deathSaveTrack (+25 more)
 
 ### Community 220 - "Community 220"
-Cohesion: 0.14
-Nodes (22): ArmorCard, ArmorCardCallbacks, ArmorCardProps, ChargeUse(), GearCard, GearCardCallbacks, GearCardProps, damageTypeAbbr() (+14 more)
+Cohesion: 0.06
+Nodes (33): closeTip, edit, filter, filters, foot, hiddenRolls, hiddenRollsTip, hiddenTokens (+25 more)
 
 ### Community 221 - "Community 221"
 Cohesion: 0.08
-Nodes (20): entryToCharacterItem(), AddItemModalProps, ItemTab, KINDS, CustomEquipmentForm(), CustomEquipmentFormProps, CustomFeatureForm(), CustomFeatureFormProps (+12 more)
+Nodes (32): ActionPreferences, CharacterClockBinding, CharacterMaterialParseResult, CharacterMaterialState, CharacterResources, CreatureEntityTemplate, CreatureMaterialEntity, CustomArmorMechanics (+24 more)
 
 ### Community 222 - "Community 222"
-Cohesion: 0.06
-Nodes (31): report, attachDisclosure, description, detected, errorNoUser, fieldDescription, fieldDescriptionHelp, fieldDescriptionPlaceholder (+23 more)
+Cohesion: 0.08
+Nodes (29): advanceFrame(), AdvanceRootReceipt, advanceSuspension(), authoredProgram(), authorityReceipt(), CAPABILITY, createFrame(), CreateRootReceipt (+21 more)
 
 ### Community 223 - "Community 223"
+Cohesion: 0.08
+Nodes (19): AdminCharIndex, AdminMatchHint, AdminSearchUser, buildAdminMatches(), AdminUser, campaignTallies(), formatDate(), RosterState (+11 more)
+
+### Community 224 - "Community 224"
+Cohesion: 0.08
+Nodes (27): srdArraySegment(), srdGrantSegment(), srdKey(), srdSlug(), resolveCompanion(), selectCompanionVariant(), collectGrantBundles(), childGrantRef() (+19 more)
+
+### Community 225 - "Community 225"
 Cohesion: 0.06
 Nodes (31): report, attachDisclosure, description, detected, errorNoUser, fieldDescription, fieldDescriptionHelp, fieldDescriptionPlaceholder (+23 more)
 
-### Community 224 - "Community 224"
-Cohesion: 0.09
-Nodes (20): PLAY_REF_ANCHOR, PLAY_REF_SECTIONS, PlayRefSection, ReferenceSection(), ImportError, isValidStep(), normalizeStep(), parseAlgorithmJson() (+12 more)
-
-### Community 225 - "Community 225"
-Cohesion: 0.11
-Nodes (25): checkpointThrough(), compact(), ENCODER, encounterBytes(), pruneRolls(), shouldCompact(), throughNow(), encounterWriteData() (+17 more)
-
 ### Community 226 - "Community 226"
-Cohesion: 0.09
-Nodes (27): ABILITIES, BINDINGS, { catalogue }, CONTROLLER, DAMAGE, ENTITY_IDS, Gen, genAction() (+19 more)
+Cohesion: 0.06
+Nodes (31): report, attachDisclosure, description, detected, errorNoUser, fieldDescription, fieldDescriptionHelp, fieldDescriptionPlaceholder (+23 more)
 
 ### Community 227 - "Community 227"
-Cohesion: 0.12
-Nodes (25): Surface, GUIDED_STEP_SLUGS, LEGACY_SURFACE_ROUTES, SURFACE_CENSUS, SURFACE_ROUTES, SurfaceRoute, assertSurfaceCensus(), ATLAS_BOARDS (+17 more)
+Cohesion: 0.09
+Nodes (28): genPlayable(), seqFactory(), planIntent(), { catalogue }, Fake, fakeTable(), fixtureLog(), mount() (+20 more)
 
 ### Community 228 - "Community 228"
-Cohesion: 0.10
-Nodes (30): BoundaryKind, exactBoundary(), factKey(), ItemResourceBoundaryFact, ItemResourceBoundaryInputRequest, ItemResourceBoundaryPreparation, ItemResourceBoundaryRejection, ItemResourceBoundaryReplayPreparation (+22 more)
+Cohesion: 0.08
+Nodes (26): STARTING_EQUIPMENT_BY_BG, BACKGROUNDS_BY_ID, buildBackgroundGrants(), findBackground(), getBackground(), getBackgroundFeatOptions(), getBackgroundOriginFeat(), RAW_BACKGROUNDS (+18 more)
 
 ### Community 229 - "Community 229"
 Cohesion: 0.11
-Nodes (19): rankedSearch(), featPickCategories(), MorphValue(), WizardForkTab(), WizardNav(), WizardStepDef, FeatEntry, WizardFeatList() (+11 more)
+Nodes (22): getDB(), loadBreadcrumbs(), persistBreadcrumbs(), buildReport(), byteLength(), clock(), context, diagnosticsLog() (+14 more)
 
 ### Community 230 - "Community 230"
-Cohesion: 0.06
-Nodes (30): careful-spell, description, name, distant-spell, description, name, empowered-spell, description (+22 more)
+Cohesion: 0.12
+Nodes (25): Surface, GUIDED_STEP_SLUGS, LEGACY_SURFACE_ROUTES, SURFACE_CENSUS, SURFACE_ROUTES, SurfaceRoute, assertSurfaceCensus(), ATLAS_BOARDS (+17 more)
 
 ### Community 231 - "Community 231"
-Cohesion: 0.06
-Nodes (30): features, alwaysActive, classFeatures, custom, delete, feats, formulaAbilityModifier, formulaClassLevel (+22 more)
+Cohesion: 0.10
+Nodes (30): BoundaryKind, exactBoundary(), factKey(), ItemResourceBoundaryFact, ItemResourceBoundaryInputRequest, ItemResourceBoundaryPreparation, ItemResourceBoundaryRejection, ItemResourceBoundaryReplayPreparation (+22 more)
 
 ### Community 232 - "Community 232"
-Cohesion: 0.06
-Nodes (30): encounter, global, palette, compendiumClose, dismiss, edit, goAdmin, goCampaigns (+22 more)
+Cohesion: 0.12
+Nodes (26): cellCenterPx(), cellsRect(), cellToPx(), DEFAULT_GRID, feetToMetres(), fitViewport(), Ground, groundOf() (+18 more)
 
 ### Community 233 - "Community 233"
-Cohesion: 0.06
-Nodes (30): careful-spell, description, name, distant-spell, description, name, empowered-spell, description (+22 more)
+Cohesion: 0.21
+Nodes (31): caption(), chip(), clip(), drawAbilities(), drawAbilityBox(), drawAppearance(), drawBackstory(), drawCoins() (+23 more)
 
 ### Community 234 - "Community 234"
 Cohesion: 0.06
-Nodes (30): features, alwaysActive, classFeatures, custom, delete, feats, formulaAbilityModifier, formulaClassLevel (+22 more)
+Nodes (30): careful-spell, description, name, distant-spell, description, name, empowered-spell, description (+22 more)
 
 ### Community 235 - "Community 235"
 Cohesion: 0.06
-Nodes (30): encounter, global, palette, compendiumClose, dismiss, edit, goAdmin, goCampaigns (+22 more)
+Nodes (30): features, alwaysActive, classFeatures, custom, delete, feats, formulaAbilityModifier, formulaClassLevel (+22 more)
 
 ### Community 236 - "Community 236"
-Cohesion: 0.11
-Nodes (27): EndResult, RunHeld, StepResult, isMapCell(), EventSelector, applyConditionOverride(), applyOverride(), conditionEffectsOn() (+19 more)
+Cohesion: 0.06
+Nodes (30): encounter, global, palette, compendiumClose, dismiss, edit, goAdmin, goCampaigns (+22 more)
 
 ### Community 237 - "Community 237"
-Cohesion: 0.11
-Nodes (27): ALLOWED_COLLISIONS, AllowedCollision, allStrings(), Ent, findCollisions(), findRetiredInProse(), findRetiredInUi(), findRetiredNames() (+19 more)
+Cohesion: 0.06
+Nodes (30): careful-spell, description, name, distant-spell, description, name, empowered-spell, description (+22 more)
 
 ### Community 238 - "Community 238"
-Cohesion: 0.08
-Nodes (26): localizeCustom(), ChoiceResistancePicker(), ridersFor(), S, buildRiders(), localizeText(), resolveWhy(), activatableToggles() (+18 more)
+Cohesion: 0.06
+Nodes (30): features, alwaysActive, classFeatures, custom, delete, feats, formulaAbilityModifier, formulaClassLevel (+22 more)
 
 ### Community 239 - "Community 239"
-Cohesion: 0.08
-Nodes (25): ABILITY_CHECKS, ATTACKS, CONDITION_GATES, ConditionGate, GatedSlot, hasConcentrationSaveAdvantage(), INCAPACITATED_SLOTS, netRollState() (+17 more)
+Cohesion: 0.06
+Nodes (30): encounter, global, palette, compendiumClose, dismiss, edit, goAdmin, goCampaigns (+22 more)
 
 ### Community 240 - "Community 240"
+Cohesion: 0.10
+Nodes (19): PLAY_REF_ANCHOR, PLAY_REF_SECTIONS, PlayRefSection, ReferenceSection(), ImportError, isValidStep(), normalizeStep(), parseAlgorithmJson() (+11 more)
+
+### Community 241 - "Community 241"
+Cohesion: 0.10
+Nodes (26): ABILITIES, BINDINGS, { catalogue }, CONTROLLER, DAMAGE, ENTITY_IDS, Gen, genAction() (+18 more)
+
+### Community 242 - "Community 242"
 Cohesion: 0.12
 Nodes (26): answersAreCanonical(), answerSemantics(), COMMAND_CONTEXT, conformAnswerStructure, conformCommandStructure, conformedExecutionFrames, conformExecutionFrameStructure, conformMechanicsCommand() (+18 more)
 
-### Community 241 - "Community 241"
+### Community 243 - "Community 243"
 Cohesion: 0.12
 Nodes (27): assertTargetProject(), BackupInputDocument, BackupManifestEntry, decodedNumber(), decodeFirestoreValue(), discoverDocuments(), DiscoveredDocument, DiscoveryMatcher (+19 more)
 
-### Community 242 - "Community 242"
-Cohesion: 0.07
-Nodes (30): scripts, build, build:srd-only, changeset, changeset:status, changeset:tag, changeset:version, dev (+22 more)
-
-### Community 243 - "Community 243"
-Cohesion: 0.07
-Nodes (29): featChoices, complete, completeTitle, noMatches, noProficientSkills, noSpellsAvailable, pickCantrips_one, pickCantrips_other (+21 more)
-
 ### Community 244 - "Community 244"
-Cohesion: 0.07
-Nodes (29): featChoices, complete, completeTitle, noMatches, noProficientSkills, noSpellsAvailable, pickCantrips_one, pickCantrips_other (+21 more)
+Cohesion: 0.09
+Nodes (20): MapViewportApi, AddCreature(), AddCreatureProps, CreatureOption, InitiativeStrip(), InitiativeStripProps, StripCell, Aiming (+12 more)
 
 ### Community 245 - "Community 245"
 Cohesion: 0.07
-Nodes (29): DayPhaseBoundaryInput, EncounterParticipantSeed, EncounterSeed, MechanicsBoundaryCheckpoint, MechanicsBoundaryCommand, MechanicsBoundaryCompletion, MechanicsBoundaryContinuation, MechanicsBoundaryCursor (+21 more)
+Nodes (30): scripts, build, build:srd-only, changeset, changeset:status, changeset:tag, changeset:version, dev (+22 more)
 
 ### Community 246 - "Community 246"
-Cohesion: 0.13
-Nodes (23): BYSTANDER, { catalogue }, DM, fogged(), P1, P2, run(), table() (+15 more)
+Cohesion: 0.09
+Nodes (18): AddItemModalProps, ItemTab, KINDS, CustomEquipmentForm(), CustomEquipmentFormProps, CustomFeatureForm(), CustomFeatureFormProps, CustomSpellForm() (+10 more)
 
 ### Community 247 - "Community 247"
-Cohesion: 0.09
-Nodes (20): MapViewportApi, InitiativeStrip(), InitiativeStripProps, StripCell, conditionName(), createPlayLabels(), monsterLabelId(), PlayLabelArgs (+12 more)
+Cohesion: 0.07
+Nodes (29): featChoices, complete, completeTitle, noMatches, noProficientSkills, noSpellsAvailable, pickCantrips_one, pickCantrips_other (+21 more)
 
 ### Community 248 - "Community 248"
 Cohesion: 0.07
-Nodes (29): dependencies, class-variance-authority, clsx, fflate, @fontsource/source-serif-4, @fontsource-variable/alegreya, @fontsource-variable/cinzel, html2canvas-pro (+21 more)
+Nodes (29): featChoices, complete, completeTitle, noMatches, noProficientSkills, noSpellsAvailable, pickCantrips_one, pickCantrips_other (+21 more)
 
 ### Community 249 - "Community 249"
 Cohesion: 0.07
-Nodes (28): dm, entities, x, y, x, y, expect, applied (+20 more)
+Nodes (29): DayPhaseBoundaryInput, EncounterParticipantSeed, EncounterSeed, MechanicsBoundaryCheckpoint, MechanicsBoundaryCommand, MechanicsBoundaryCompletion, MechanicsBoundaryContinuation, MechanicsBoundaryCursor (+21 more)
 
 ### Community 250 - "Community 250"
-Cohesion: 0.07
-Nodes (28): 1. Ranked table of jobs, 2. Job groups, 3. Non-goal candidates (do not absorb), 4. Summary (12 lines), Calendar (in-world) and weather, Campaign chronicle / journal and timeline, Character art and tokens, Dice (+20 more)
+Cohesion: 0.13
+Nodes (23): BYSTANDER, { catalogue }, DM, fogged(), P1, P2, run(), table() (+15 more)
+
+### Community 251 - "Community 251"
+Cohesion: 0.11
+Nodes (26): appendDiff(), appendMutation(), factSortKey(), isJsonObject(), journalScopeValid(), jsonEqual(), JsonObject, MechanicsActionIdentity (+18 more)
 
 ### Community 252 - "Community 252"
 Cohesion: 0.07
-Nodes (28): ammunition, name, arrow, name, bolt, name, bullet, name (+20 more)
+Nodes (29): dependencies, class-variance-authority, clsx, fflate, @fontsource/source-serif-4, @fontsource-variable/alegreya, @fontsource-variable/cinzel, html2canvas-pro (+21 more)
 
 ### Community 253 - "Community 253"
 Cohesion: 0.07
-Nodes (28): familiar, bonusActionAttack, bonusActionAttackValue, changeForm, damageConversion, dismissedChip, dismissForever, dismissTemp (+20 more)
+Nodes (28): dm, entities, x, y, x, y, expect, applied (+20 more)
 
 ### Community 254 - "Community 254"
 Cohesion: 0.07
+Nodes (28): 1. Ranked table of jobs, 2. Job groups, 3. Non-goal candidates (do not absorb), 4. Summary (12 lines), Calendar (in-world) and weather, Campaign chronicle / journal and timeline, Character art and tokens, Dice (+20 more)
+
+### Community 256 - "Community 256"
+Cohesion: 0.07
 Nodes (28): ammunition, name, arrow, name, bolt, name, bullet, name (+20 more)
 
-### Community 255 - "Community 255"
+### Community 257 - "Community 257"
 Cohesion: 0.07
 Nodes (28): familiar, bonusActionAttack, bonusActionAttackValue, changeForm, damageConversion, dismissedChip, dismissForever, dismissTemp (+20 more)
 
-### Community 256 - "Community 256"
+### Community 258 - "Community 258"
+Cohesion: 0.07
+Nodes (28): ammunition, name, arrow, name, bolt, name, bullet, name (+20 more)
+
+### Community 259 - "Community 259"
+Cohesion: 0.07
+Nodes (28): familiar, bonusActionAttack, bonusActionAttackValue, changeForm, damageConversion, dismissedChip, dismissForever, dismissTemp (+20 more)
+
+### Community 260 - "Community 260"
 Cohesion: 0.09
 Nodes (20): browserStorage(), buildPipModel(), CombatStatusStore, GlobalCombat, overlayOpenCampaign(), PendingTurn, pickPrimaryCampaignId(), PinStore (+12 more)
 
-### Community 257 - "Community 257"
+### Community 261 - "Community 261"
 Cohesion: 0.09
 Nodes (14): CARRIED, { catalogue }, encounterFromReplay(), LogEntry, populatedFoldedState(), Replay, REPLAY_DIR, block (+6 more)
 
-### Community 258 - "Community 258"
+### Community 262 - "Community 262"
+Cohesion: 0.09
+Nodes (21): seqKey(), conditionName(), createPlayLabels(), monsterLabelId(), PlayLabelArgs, SRD_KINDS, { catalogue }, useBestiary() (+13 more)
+
+### Community 263 - "Community 263"
 Cohesion: 0.07
 Nodes (26): ImportFlow(), port, emulators, auth, firestore, functions, hosting, singleProjectMode (+18 more)
 
-### Community 259 - "Community 259"
-Cohesion: 0.13
-Nodes (17): CombatConditionLifetime, SrdSpellData, SRD_CANTRIPS, CastLevelDurationTier, ConditionCastLevelDurationTier, conditionLifetimeAtCastLevel(), timedConditionLifetime(), timedSpellDuration() (+9 more)
-
-### Community 260 - "Community 260"
-Cohesion: 0.10
-Nodes (25): seqFactory(), { catalogue }, Fake, fixtureLog(), mount(), RAPIER, asAction(), cast() (+17 more)
-
-### Community 261 - "Community 261"
+### Community 264 - "Community 264"
 Cohesion: 0.09
 Nodes (23): FAMILY_COLORS, formatLogTime(), LogHueFamily, LogStyle, LucideGlyph, resolveLogStyle(), SLOT_FAMILY, STYLED_LOG_TYPES (+15 more)
 
-### Community 262 - "Community 262"
+### Community 265 - "Community 265"
 Cohesion: 0.11
 Nodes (21): canonicalBuild(), canonicalFeatureChoice(), canonicalSet(), canonicalSpellChoice(), canonicalTags(), CHARACTER_BUILD_CONTEXT, conformCharacterBuildStructure, conformInteger() (+13 more)
 
-### Community 263 - "Community 263"
-Cohesion: 0.14
-Nodes (24): cellCenterPx(), cellsRect(), cellToPx(), DEFAULT_GRID, feetToMetres(), fitViewport(), Ground, groundOf() (+16 more)
-
-### Community 264 - "Community 264"
-Cohesion: 0.07
-Nodes (27): 0. Source list (28 sources), 1.1 Field order (synthesis), 1.2 Two tooltip species, deliberately different, 1.3 Density devices that keep the screen clean, 1. Anatomy of the best tooltip / explain panel, 2.1 Mouse, 2.2 Keyboard, 2.3 Touch (+19 more)
-
-### Community 265 - "Community 265"
-Cohesion: 0.07
-Nodes (27): 1.1 What the exemplars actually do (evidence), 1.2 Refactoring UI (Wathan & Schoger, 2018, refactoringui.com) — the rules that still hold, 1.3 Apple HIG 2025 — Liquid Glass direction (WWDC25 session 356, June 2025; HIG "Materials"), 1.4 Material 3 Expressive (Google, I/O May 2025; design.google research write-up), 1.5 Rauno Freiberg, Web Interface Guidelines (github.com/raunofreiberg/interfaces; public repo since May 2023), 1.6 Vercel Web Interface Guidelines (vercel.com/design/guidelines, 2025), 1.7 Emil Kowalski, animation principles (emilkowal.ski/ui/great-animations; course animations.dev), 1.8 Synthesis: the premium recipe (what to copy, not who to copy) (+19 more)
-
 ### Community 266 - "Community 266"
-Cohesion: 0.07
-Nodes (27): computedHash, skillPath, source, sourceType, computedHash, skillPath, source, sourceType (+19 more)
+Cohesion: 0.13
+Nodes (27): ABILITY_SET, abilityOf(), ADJACENT_TARGET, areaSpec(), attackProgram(), CharacterSeat, CORE_COVERED_ROWS, costsFor() (+19 more)
 
 ### Community 267 - "Community 267"
-Cohesion: 0.07
-Nodes (27): combatLog, actionUse, actionUseAttackOf, concentrationStart, conditionGain, conditionLoss, deathSaveFailure, deathSaveSuccess (+19 more)
+Cohesion: 0.10
+Nodes (25): BAND, BORDER, drawClassFeatures(), drawFeats(), drawSpeciesTraits(), FAINT, Fonts, HAIR (+17 more)
 
 ### Community 268 - "Community 268"
 Cohesion: 0.07
-Nodes (27): combatLog, actionUse, actionUseAttackOf, concentrationStart, conditionGain, conditionLoss, deathSaveFailure, deathSaveSuccess (+19 more)
+Nodes (27): 0. Source list (28 sources), 1.1 Field order (synthesis), 1.2 Two tooltip species, deliberately different, 1.3 Density devices that keep the screen clean, 1. Anatomy of the best tooltip / explain panel, 2.1 Mouse, 2.2 Keyboard, 2.3 Touch (+19 more)
 
 ### Community 269 - "Community 269"
 Cohesion: 0.07
-Nodes (27): CharacterBuild, CharacterBuildClass, CharacterBuildIdentity, CharacterBuildOrigin, CharacterBuildOverrides, CharacterBuildParseResult, CharacterBuildProficiencies, CharacterBuildSeed (+19 more)
+Nodes (27): 1.1 What the exemplars actually do (evidence), 1.2 Refactoring UI (Wathan & Schoger, 2018, refactoringui.com) — the rules that still hold, 1.3 Apple HIG 2025 — Liquid Glass direction (WWDC25 session 356, June 2025; HIG "Materials"), 1.4 Material 3 Expressive (Google, I/O May 2025; design.google research write-up), 1.5 Rauno Freiberg, Web Interface Guidelines (github.com/raunofreiberg/interfaces; public repo since May 2023), 1.6 Vercel Web Interface Guidelines (vercel.com/design/guidelines, 2025), 1.7 Emil Kowalski, animation principles (emilkowal.ski/ui/great-animations; course animations.dev), 1.8 Synthesis: the premium recipe (what to copy, not who to copy) (+19 more)
 
 ### Community 270 - "Community 270"
-Cohesion: 0.13
-Nodes (17): INITIAL, BgAsiPicker(), EquipmentPickerSection(), SkillsPickerSection(), QuickChapter(), HpModeSelector(), MissingRequirements(), ReviewLedger() (+9 more)
+Cohesion: 0.07
+Nodes (27): computedHash, skillPath, source, sourceType, computedHash, skillPath, source, sourceType (+19 more)
 
 ### Community 271 - "Community 271"
-Cohesion: 0.09
-Nodes (22): commandFor(), GainInputs, hasCanonicalIdentity(), ItemResourceCommandPreparation, ItemResourceCommandRecipe, ItemResourceCommandRejection, PreparedItemResourceCommand, prepareItemResourceCommand() (+14 more)
+Cohesion: 0.07
+Nodes (27): combatLog, actionUse, actionUseAttackOf, concentrationStart, conditionGain, conditionLoss, deathSaveFailure, deathSaveSuccess (+19 more)
 
 ### Community 272 - "Community 272"
+Cohesion: 0.07
+Nodes (27): combatLog, actionUse, actionUseAttackOf, concentrationStart, conditionGain, conditionLoss, deathSaveFailure, deathSaveSuccess (+19 more)
+
+### Community 273 - "Community 273"
+Cohesion: 0.15
+Nodes (24): ownerLocale(), resolveImage(), asOgLocale(), OgLocale, ogStrings, STRINGS, artCache, artDataUri() (+16 more)
+
+### Community 274 - "Community 274"
+Cohesion: 0.07
+Nodes (27): CharacterBuild, CharacterBuildClass, CharacterBuildIdentity, CharacterBuildOrigin, CharacterBuildOverrides, CharacterBuildParseResult, CharacterBuildProficiencies, CharacterBuildSeed (+19 more)
+
+### Community 275 - "Community 275"
+Cohesion: 0.09
+Nodes (17): AppRouter(), BeforeInstallPromptEvent, PWAInstallState, usePWAInstall(), ensureUserDocument(), FirestoreUserDoc, googleProvider, initAuthListener() (+9 more)
+
+### Community 276 - "Community 276"
+Cohesion: 0.14
+Nodes (16): CombatConditionLifetime, SrdSpellData, SRD_CANTRIPS, CastLevelDurationTier, ConditionCastLevelDurationTier, timedConditionLifetime(), timedSpellDuration(), SRD_SPELLS_LEVEL1 (+8 more)
+
+### Community 277 - "Community 277"
 Cohesion: 0.15
 Nodes (27): parseCustomItemResource(), parseResourceCell(), applied(), baseCapacityValue(), canonicalCell(), capacityValue(), conformResourceCell(), conformResourceCellStructure (+19 more)
 
-### Community 273 - "Community 273"
+### Community 278 - "Community 278"
 Cohesion: 0.11
 Nodes (24): createOccurrenceState(), ACTOR, addOccurrence(), authoredProgram(), COMPANION, condition(), effectOrigin(), ENCOUNTER_CLOCK (+16 more)
 
-### Community 274 - "Community 274"
-Cohesion: 0.10
-Nodes (23): diceCount(), RollPanel(), RollPanelProps, RollPrompt, RollView, VERDICT_TONE, answersOnly(), formulaOf() (+15 more)
-
-### Community 275 - "Community 275"
-Cohesion: 0.07
-Nodes (26): dm, entities, x, y, expect, applied, rejections, state (+18 more)
-
-### Community 276 - "Community 276"
-Cohesion: 0.13
-Nodes (19): CONTENT_PACK_ENTRY, CONTENT_PACK_ITEM_ART_ENTRY, CONTENT_PACK_MONSTER_ART_ENTRY, CONTENT_PACK_MONSTERS_ENTRY, contentPackEnabled(), fsAllowRoots(), PACK_EMPTY_ENTRY, packAliasTarget() (+11 more)
-
-### Community 277 - "Community 277"
-Cohesion: 0.07
-Nodes (26): allosaurus, name, attack.beak, name, attack.fist, name, attack.sting, name (+18 more)
-
-### Community 278 - "Community 278"
-Cohesion: 0.07
-Nodes (26): capped, floor, formBase, magic, breakdown, ac, base, featureBonus (+18 more)
-
 ### Community 279 - "Community 279"
-Cohesion: 0.07
-Nodes (27): held, lost, concentrationEnded, effectEnded, hpZero, aria, concentration, declare (+19 more)
+Cohesion: 0.19
+Nodes (27): applyResourceOperation(), conformCommandIntent(), decodeCausalHead(), decodeCounterMap(), decodeCounterState(), decodeIntentInputs(), decodeItemResourceDisposition(), decodeItemResourceState() (+19 more)
 
 ### Community 280 - "Community 280"
 Cohesion: 0.07
-Nodes (26): allosaurus, name, attack.beak, name, attack.fist, name, attack.sting, name (+18 more)
+Nodes (26): dm, entities, x, y, expect, applied, rejections, state (+18 more)
 
 ### Community 281 - "Community 281"
 Cohesion: 0.07
-Nodes (26): capped, floor, formBase, magic, breakdown, ac, base, featureBonus (+18 more)
+Nodes (26): attack.beak, name, attack.fist, name, attack.sting, name, black-bear, name (+18 more)
 
 ### Community 282 - "Community 282"
 Cohesion: 0.07
-Nodes (27): held, lost, concentrationEnded, effectEnded, hpZero, aria, concentration, declare (+19 more)
+Nodes (26): capped, floor, formBase, magic, breakdown, ac, base, featureBonus (+18 more)
 
 ### Community 283 - "Community 283"
-Cohesion: 0.16
-Nodes (23): ownerLocale(), resolveImage(), asOgLocale(), OgLocale, ogStrings, STRINGS, artCache, artDataUri() (+15 more)
+Cohesion: 0.07
+Nodes (27): held, lost, concentrationEnded, effectEnded, hpZero, aria, concentration, declare (+19 more)
 
 ### Community 284 - "Community 284"
-Cohesion: 0.09
-Nodes (22): backgroundName(), ClassGalleryVM, className(), classStartingEquipment(), classTip(), CreationOptionVM, equipmentCategory(), featName() (+14 more)
+Cohesion: 0.07
+Nodes (26): attack.beak, name, attack.claw, name, attack.fist, name, attack.sting, name (+18 more)
 
 ### Community 285 - "Community 285"
-Cohesion: 0.12
-Nodes (24): storedCharacterConcentration(), conformActiveCombatEffects(), CombatStateParseResult, isPlainJson(), isRecord(), KNOWN_COMBAT_STATE_KEY_MAP, KNOWN_COMBAT_STATE_KEYS, parseAppliedEncounterEffects() (+16 more)
+Cohesion: 0.07
+Nodes (26): capped, floor, formBase, magic, breakdown, ac, base, featureBonus (+18 more)
 
 ### Community 286 - "Community 286"
-Cohesion: 0.16
-Nodes (24): writeCampaignCombatEffect(), defaultCombatState(), combatStateForDevWrite(), CombatStateMeta, combatStateRef(), devBypassEnabled(), devCombatId(), subscribeCombatState() (+16 more)
+Cohesion: 0.07
+Nodes (27): held, lost, concentrationEnded, effectEnded, hpZero, aria, concentration, declare (+19 more)
 
 ### Community 287 - "Community 287"
 Cohesion: 0.11
 Nodes (22): ChronicleFeed(), EndEncounterDialog(), FeedLine(), MemberDetails, useChronicleResolvers(), base, localize(), resolveCondition() (+14 more)
 
 ### Community 288 - "Community 288"
-Cohesion: 0.10
-Nodes (20): seqKey(), CreatureOption, nextMonsterOrdinal(), seatableCharacter(), { catalogue }, useBestiary(), PlayScreenProps, readServerCombatState() (+12 more)
-
-### Community 289 - "Community 289"
 Cohesion: 0.08
 Nodes (25): packBackgroundEquipment, packBackgroundNames, packBackgroundsRaw, packBeasts, packClassFeatures, packClassNames, packClassTables, packFeats (+17 more)
 
-### Community 290 - "Community 290"
+### Community 289 - "Community 289"
 Cohesion: 0.15
 Nodes (25): addProvenance(), applyLongRestExhaustion(), canonicalKey(), canonicalValue(), CONDITION_RULES, CONDITION_SCHEMA_CONTEXT, conformConditionIdentity(), conformConditionInstances() (+17 more)
 
+### Community 290 - "Community 290"
+Cohesion: 0.16
+Nodes (24): setCharacterSharing(), buildPublicCharacterProjection(), buildPublicCharacterProjectionFromStoredParent(), CACHE_KEYS, CharacterStatus, CLASS_KEYS, cloneCache(), copyStringArray() (+16 more)
+
 ### Community 291 - "Community 291"
-Cohesion: 0.13
-Nodes (25): creatureVitalsFor(), directConditionInstances(), documentFor(), projectEntityConditions(), projectResolvedEntityConditions(), resolvedEntityConditions(), isEffectOccurrence(), resolveOccurrenceAuthority() (+17 more)
+Cohesion: 0.10
+Nodes (21): commandFor(), GainInputs, hasCanonicalIdentity(), ItemResourceCommandPreparation, ItemResourceCommandRecipe, ItemResourceCommandRejection, PreparedItemResourceCommand, prepareItemResourceCommand() (+13 more)
 
 ### Community 292 - "Community 292"
 Cohesion: 0.08
@@ -4183,44 +4178,44 @@ Cohesion: 0.08
 Nodes (26): devDependencies, @axe-core/playwright, @changesets/cli, eslint, @eslint/js, eslint-plugin-react-hooks, eslint-plugin-react-refresh, firebase-admin (+18 more)
 
 ### Community 294 - "Community 294"
-Cohesion: 0.08
-Nodes (25): dm, entities, expect, applied, rejections, state, generated, initiative (+17 more)
+Cohesion: 0.10
+Nodes (22): diceCount(), RollPanel(), RollPanelProps, RollPrompt, RollView, VERDICT_TONE, answersOnly(), formulaOf() (+14 more)
 
 ### Community 295 - "Community 295"
 Cohesion: 0.08
-Nodes (25): 10. Attack/action list and per-attack row, 11. Spell list (levels, slots, prepare, cast), 12. Inventory / equipment rows (equip, attune, quantity, weight, currency), 13. Features / traits cards and limited-use trackers, 14. Stat block (monster) reading layout, 15. Compendium list + filters + detail, 16. Campaign page & party block, 17. Initiative / encounter tracker (DM) (+17 more)
+Nodes (25): dm, entities, expect, applied, rejections, state, generated, initiative (+17 more)
 
 ### Community 296 - "Community 296"
 Cohesion: 0.08
-Nodes (25): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, moduleResolution, noEmit (+17 more)
+Nodes (25): 10. Attack/action list and per-attack row, 11. Spell list (levels, slots, prepare, cast), 12. Inventory / equipment rows (equip, attune, quantity, weight, currency), 13. Features / traits cards and limited-use trackers, 14. Stat block (monster) reading layout, 15. Compendium list + filters + detail, 16. Campaign page & party block, 17. Initiative / encounter tracker (DM) (+17 more)
 
 ### Community 297 - "Community 297"
+Cohesion: 0.08
+Nodes (25): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, lib, module, moduleDetection, moduleResolution, noEmit (+17 more)
+
+### Community 298 - "Community 298"
+Cohesion: 0.11
+Nodes (19): Effect, encounterRef(), personalEncounterRef(), characterRef(), EncounterLease, joinTable(), leaveTable(), PersonalWriteBack (+11 more)
+
+### Community 299 - "Community 299"
 Cohesion: 0.21
 Nodes (17): ALIGNMENTS, CreationWizard(), CreationWizardProps, activeSelection(), choiceSource(), isGearChoice(), record(), wizardRoles (+9 more)
 
-### Community 298 - "Community 298"
+### Community 300 - "Community 300"
 Cohesion: 0.08
 Nodes (24): boundaries, cards, components, connections, diagram_type, layout, cellH, cellW (+16 more)
 
-### Community 299 - "Community 299"
-Cohesion: 0.11
-Nodes (23): localeRangePair(), backgroundNameMap, classNameMap, grantSourceName(), Locale, localizeWeaponCategory(), localizeWeaponMastery(), localizeWeaponProperty() (+15 more)
-
-### Community 300 - "Community 300"
-Cohesion: 0.08
-Nodes (24): barbarian, name, bard, name, cleric, name, druid, name (+16 more)
-
 ### Community 301 - "Community 301"
-Cohesion: 0.08
-Nodes (24): berserker, name, champion, name, circle-of-the-land, name, college-of-lore, name (+16 more)
+Cohesion: 0.14
+Nodes (24): catalogueDefault(), counterFromCharges(), counterFromTracker(), createItemInstanceId(), isItemInstanceId(), isRecord(), isWhole(), ItemInstanceIdFactory (+16 more)
 
 ### Community 302 - "Community 302"
 Cohesion: 0.08
-Nodes (24): palette, actionImport, actionLangToEn, actionLangToIt, actionNewCampaign, actionNewCharacter, actionReport, actionSignOut (+16 more)
+Nodes (24): berserker, name, champion, name, circle-of-the-land, name, college-of-lore, name (+16 more)
 
 ### Community 303 - "Community 303"
 Cohesion: 0.08
-Nodes (24): barbarian, name, bard, name, cleric, name, druid, name (+16 more)
+Nodes (24): palette, actionImport, actionLangToEn, actionLangToIt, actionNewCampaign, actionNewCharacter, actionReport, actionSignOut (+16 more)
 
 ### Community 304 - "Community 304"
 Cohesion: 0.08
@@ -4231,164 +4226,174 @@ Cohesion: 0.08
 Nodes (24): palette, actionImport, actionLangToEn, actionLangToIt, actionNewCampaign, actionNewCharacter, actionReport, actionSignOut (+16 more)
 
 ### Community 306 - "Community 306"
-Cohesion: 0.10
-Nodes (18): byId, loggedName(), RAW, attacksRemainingInAction(), CLASS_LEVEL_PHRASE, CombatAction, fitsEffectBudget(), formatActionHeal() (+10 more)
-
-### Community 307 - "Community 307"
-Cohesion: 0.10
-Nodes (20): importCampaigns(), importCockpit(), prefetchLikelyRoutes(), AdminPage, AdminSheetView, CampaignHubPage, CampaignsListPage, CharacterCockpit (+12 more)
-
-### Community 308 - "Community 308"
 Cohesion: 0.16
 Nodes (19): ARMOR_BY_ID, getArmor(), getArmorByCategory(), getWearableArmor(), SRD_ARMOR, SRD_EQUIPMENT, GEAR_BY_ID, getAdventuringGear() (+11 more)
 
-### Community 309 - "Community 309"
+### Community 307 - "Community 307"
 Cohesion: 0.12
-Nodes (21): actionAtCastLevel(), replaceBaseFormula(), ScalableCombatSummary, scaleCombatSummaryAtCastLevel(), resolveGrantActiveKey(), whileActiveDurationAtCastLevel(), advanceEffectTimers(), castSourceIdFromActiveKey() (+13 more)
+Nodes (18): conformMechanicsProgramAuthorityReceipt(), conformMechanicsProgramAuthorityReceiptStructure, EntityInstallationOwner, InstallationOwner, isEntityActor(), mechanicsProgramAuthorityReceiptFingerprint(), MechanicsProgramAuthorityReceiptSchemaRefTypes, receiptSemantics() (+10 more)
+
+### Community 308 - "Community 308"
+Cohesion: 0.13
+Nodes (18): artCache, artDataUri(), campaignSvg(), characterSvg(), chrome(), esc(), FONT_FILES, imageEtag() (+10 more)
+
+### Community 309 - "Community 309"
+Cohesion: 0.08
+Nodes (23): eyebrow, title, add, banner, confirm, cropperError, eyebrow, invalidCrop (+15 more)
 
 ### Community 310 - "Community 310"
 Cohesion: 0.08
 Nodes (23): eyebrow, title, add, banner, confirm, cropperError, eyebrow, invalidCrop (+15 more)
 
 ### Community 311 - "Community 311"
-Cohesion: 0.08
-Nodes (23): eyebrow, title, add, banner, confirm, cropperError, eyebrow, invalidCrop (+15 more)
-
-### Community 312 - "Community 312"
-Cohesion: 0.14
-Nodes (22): fallbackCard(), resolveCard(), characterImageData, campaignCard(), CampaignDocLike, campaignImageUrl(), CharacterCacheLike, characterCard() (+14 more)
-
-### Community 313 - "Community 313"
 Cohesion: 0.12
 Nodes (21): { catalogue }, EN, encounterOf(), GOBLIN, HERO, IT, lines(), MARCO (+13 more)
 
-### Community 314 - "Community 314"
-Cohesion: 0.13
-Nodes (22): trailIds(), actionInput(), AttackCastPlan, authorityReceipt(), authoritySnapshot(), CASCADE_PROGRAM, causalState(), conformed() (+14 more)
+### Community 312 - "Community 312"
+Cohesion: 0.10
+Nodes (19): backgroundName(), ClassGalleryVM, className(), CreationOptionVM, equipmentCategory(), featName(), languageName(), LineageBundleVM (+11 more)
 
-### Community 315 - "Community 315"
+### Community 313 - "Community 313"
 Cohesion: 0.12
 Nodes (13): reduceCampaignCombatMutation(), storedCharacterLifecycleEligible(), clampTemp(), HpAfterDamage, CombatSessionHydrationResult, initiativeToString(), mergeCombatTrio(), reduceCondition() (+5 more)
 
-### Community 316 - "Community 316"
+### Community 314 - "Community 314"
+Cohesion: 0.13
+Nodes (21): storedCharacterConcentration(), conformActiveCombatEffects(), CombatStateParseResult, isPlainJson(), isRecord(), KNOWN_COMBAT_STATE_KEY_MAP, KNOWN_COMBAT_STATE_KEYS, parseAppliedEncounterEffects() (+13 more)
+
+### Community 315 - "Community 315"
 Cohesion: 0.09
 Nodes (19): CORE_MECHANIC_IDS, CORE_MECHANICS, dash, disengage, dodge, help, hide, move (+11 more)
 
-### Community 317 - "Community 317"
+### Community 316 - "Community 316"
 Cohesion: 0.09
 Nodes (22): 1. The reference is the frozen mock, not a resemblance, 2. Dark only, 3. What the code renders today, 4. The four scopes, 5. Standing corrections — 7 September 2026, 6. The open design question — PD, engagement and disclosure, 7. Explain on demand, everywhere, 8. Delivery and evidence (+14 more)
+
+### Community 317 - "Community 317"
+Cohesion: 0.10
+Nodes (14): childDomainKey(), isCharacterDocValue(), parentDomainKey(), reconciledDomainEquals(), serializeCharacterEnvelope(), canonical(), canonicalJsonEquals(), CharacterSnapshotReconciler (+6 more)
 
 ### Community 318 - "Community 318"
 Cohesion: 0.09
 Nodes (16): LIBRARY_KIND_LABEL_KEY, LIBRARY_KINDS, LibraryDraft, LibraryEntry, LibraryKind, SheetLibraryDraft, SheetLibraryEntry, SheetLibraryKind (+8 more)
 
 ### Community 319 - "Community 319"
-Cohesion: 0.09
-Nodes (22): alchemists-fire, description, name, artisans-tools, name, calligraphers-supplies, description, name (+14 more)
+Cohesion: 0.14
+Nodes (19): DmDrawer(), DmDrawerProps, DRAWER_TAB_LABEL, HiddenRow, CONDITIONS, HpEdit, HpEditor(), HpEditorProps (+11 more)
 
 ### Community 320 - "Community 320"
 Cohesion: 0.09
 Nodes (22): alchemists-fire, description, name, artisans-tools, name, calligraphers-supplies, description, name (+14 more)
 
 ### Community 321 - "Community 321"
-Cohesion: 0.10
-Nodes (15): arrowsQty(), currentDoc(), equipQty(), mount(), S, SelectProbe(), spec, weaponAction() (+7 more)
+Cohesion: 0.09
+Nodes (22): alchemists-fire, description, name, artisans-tools, name, calligraphers-supplies, description, name (+14 more)
 
 ### Community 322 - "Community 322"
-Cohesion: 0.16
-Nodes (16): commitBoundary(), endLocalEncounter(), firePassedTurnBoundaries(), observePartyWorldFights(), OpenCharacterWorld, PartyFightSnapshot, reconcileLease(), sameFight() (+8 more)
+Cohesion: 0.15
+Nodes (21): fallbackCard(), resolveCard(), campaignCard(), CampaignDocLike, campaignImageUrl(), CharacterCacheLike, characterCard(), characterImageUrl() (+13 more)
 
 ### Community 323 - "Community 323"
-Cohesion: 0.11
-Nodes (14): EngineCommitMirror, registerEngineCommitUndo(), OperationController, OperationState, OperationStatus, OperationTransport, registerUndoable(), registerUndoableResult() (+6 more)
-
-### Community 324 - "Community 324"
-Cohesion: 0.13
-Nodes (16): { catalogue }, goblin, intent(), ranger, visibility(), attack(), { catalogue }, foe (+8 more)
-
-### Community 325 - "Community 325"
 Cohesion: 0.09
 Nodes (21): 1.1 Reconciled scope, 1. Product Vision, 2.1 Action Economy Is A First-Class Feature, 2.2 Dice: In-App By Default, External Always Allowed, 2.3 Progressive Disclosure Is Mandatory, 2.4 Character Understanding, 2.5 Search & Discovery, 2.6 Resource Awareness (+13 more)
 
-### Community 326 - "Community 326"
+### Community 324 - "Community 324"
 Cohesion: 0.17
 Nodes (18): seedLang(), seedUI(), B01_MOTION_FRAMES, assertUniqueArtifactPaths(), assertVisualMarkers(), CENSUS_DIRECTORY, CensusFragmentModule, fragmentFiles() (+10 more)
 
-### Community 327 - "Community 327"
+### Community 325 - "Community 325"
 Cohesion: 0.19
 Nodes (19): asRecord(), assertEveryCatalogueEntryClaimed(), auditCurrentAutomationCorpus(), AUDITED_CATALOGUES, beastTraitPresenters(), buildCurrentAutomationCorpus(), catalogue(), CatalogueClaims (+11 more)
+
+### Community 326 - "Community 326"
+Cohesion: 0.13
+Nodes (20): acFromAggregate(), AggregationSession, computeCharacterAC(), computeCharacterAcBreakdown(), computeCharacterMaxHp(), computeCharacterMaxHpBreakdown(), effectiveAC(), effectiveEquipmentForItemResources() (+12 more)
+
+### Community 327 - "Community 327"
+Cohesion: 0.11
+Nodes (20): ACTOR_DISADVANTAGE_CONDITIONS, CombatAttackContextEffect, CombatAttackContextFact, CombatAttackCover, CombatAttackModeAdjustment, CombatAttackRangeBand, CombatAttackTableFacts, CombatEnteredD20Facts (+12 more)
 
 ### Community 328 - "Community 328"
 Cohesion: 0.13
 Nodes (12): resolveFamiliarForms(), SRD_MONSTERS_A_B, SRD_MONSTERS_C_D, SRD_MONSTERS_E_G, SRD_MONSTERS_H_K, filterMonsters(), MONSTER_INDEX, MONSTERS (+4 more)
 
 ### Community 329 - "Community 329"
-Cohesion: 0.15
-Nodes (21): catalogueDefault(), counterFromCharges(), counterFromTracker(), createItemInstanceId(), isItemInstanceId(), isRecord(), isWhole(), ItemInstanceIdFactory (+13 more)
-
-### Community 330 - "Community 330"
-Cohesion: 0.16
-Nodes (18): parseCustomWeapon(), conformCapabilitiesStructure, conformCapabilityStructure, conformPropertyStructure, conformRangeStructure, conformWeaponCapabilities(), conformWeaponCapability(), conformWeaponProperty() (+10 more)
-
-### Community 331 - "Community 331"
 Cohesion: 0.09
 Nodes (21): 1. Executive summary — what the best do that d20 Folio must match (ranked), 2.10 Video-game UI craft (benchmark ceiling), 2.11 Indie companions, trackers and PWAs (2024–2026), 2.1 D&D Beyond (web sheet, mobile app, Maps, Sigil, encounter builder, campaigns), 2.2 Demiplane (NEXUS: Pathfinder, Daggerheart, Cyberpunk RED, Marvel, VtM, ALIEN, Cosmere, Fallout; D&D NEXUS reader via Roll20), 2.3 Roll20 (Roll20 Tabletop / Jumpgate, Beacon sheets, Roll20 Characters, new D&D sheet), 2.4 Foundry VTT v13 (ApplicationV2, Theme V2), 2.5 Alchemy RPG (+13 more)
 
-### Community 332 - "Community 332"
+### Community 330 - "Community 330"
 Cohesion: 0.09
 Nodes (21): 0. Executive summary, 1.10 Tabletop Simulator, Menyr, Arkenforge, 1.11 Physical-table hybrids (TV/projector + phones), 1.12 Companion-only apps (no map), 1.1 Foundry VTT (core + dnd5e system v4/v5) and the automation stack, 1.2 Roll20 (2024 sheet, Jumpgate, Beyond20), 1.3 D&D Beyond Maps (and the Sigil postscript), 1.4 Alchemy RPG (+13 more)
 
+### Community 331 - "Community 331"
+Cohesion: 0.09
+Nodes (22): privacy, changesD, changesT, childrenD, childrenT, closeLabel, collectD, collectT (+14 more)
+
+### Community 332 - "Community 332"
+Cohesion: 0.09
+Nodes (22): privacy, changesD, changesT, childrenD, childrenT, closeLabel, collectD, collectT (+14 more)
+
 ### Community 333 - "Community 333"
-Cohesion: 0.09
-Nodes (22): privacy, changesD, changesT, childrenD, childrenT, closeLabel, collectD, collectT (+14 more)
-
-### Community 334 - "Community 334"
-Cohesion: 0.09
-Nodes (22): privacy, changesD, changesT, childrenD, childrenT, closeLabel, collectD, collectT (+14 more)
-
-### Community 335 - "Community 335"
 Cohesion: 0.09
 Nodes (21): ManualInstruction, MechanicsAnswer, MechanicsAnswers, MechanicsD20Requirement, MechanicsDiceRequirement, MechanicsIntent, MechanicsPaymentRequirement, MechanicsProgramCompilationContext (+13 more)
 
+### Community 334 - "Community 334"
+Cohesion: 0.12
+Nodes (13): allocateRevision(), authState, combatCb(), {
+  debouncedSave,
+  debouncedFlush,
+  debouncedCancel,
+  createDebouncedSaveMock,
+  subscribeMock,
+  refreshAttachedSheetsMock,
+  createTrackerMock,
+  combatSubscribeMock,
+  writeCombatStateMock,
+}, lastSave(), monkFocusDoc(), openCharacter(), openTracker() (+5 more)
+
+### Community 335 - "Community 335"
+Cohesion: 0.13
+Nodes (15): { catalogue }, goblin, intent(), ranger, visibility(), attack(), { catalogue }, foe (+7 more)
+
 ### Community 336 - "Community 336"
+Cohesion: 0.11
+Nodes (14): expectLegalPreset(), applyLanguagePicks(), isLanguageId(), LANGUAGE_IDS, LanguageChoicePicks, LanguageChoiceSlot, listAvailableForLanguageSlot(), pendingLanguageSlotsForFeat() (+6 more)
+
+### Community 337 - "Community 337"
 Cohesion: 0.19
 Nodes (11): HERE, isUnder(), SRC_ROOT, srcFiles(), SrcFilesOptions, CANONICAL, CANONICAL, ALLOW (+3 more)
 
-### Community 337 - "Community 337"
-Cohesion: 0.11
-Nodes (19): ACTOR_DISADVANTAGE_CONDITIONS, CombatAttackContextEffect, CombatAttackContextFact, CombatAttackCover, CombatAttackModeAdjustment, CombatAttackRangeBand, CombatAttackTableFacts, CombatEnteredD20Facts (+11 more)
-
 ### Community 338 - "Community 338"
-Cohesion: 0.16
-Nodes (17): DmDrawer(), DmDrawerProps, DRAWER_TAB_LABEL, HiddenRow, CONDITIONS, HpEdit, HpEditor(), HpEditorProps (+9 more)
+Cohesion: 0.17
+Nodes (17): conformCapabilitiesStructure, conformCapabilityStructure, conformPropertyStructure, conformRangeStructure, conformWeaponCapabilities(), conformWeaponCapability(), conformWeaponProperty(), conformWeaponRangePair() (+9 more)
 
 ### Community 339 - "Community 339"
 Cohesion: 0.10
 Nodes (20): 1. Summary recommendation (max 6 additions → only 2 real additions + 1 update + 1 enable), 2. Per-candidate evidence, 3. Overlap map against installed tools, 4. What NOT to install and why, 5. Install commands (run only after owner approval where marked), 6. Suggested workflow mapping (no new tools), 7. Sources (accessed 2026-09-02), Accessibility (+12 more)
 
 ### Community 340 - "Community 340"
+Cohesion: 0.15
+Nodes (18): closingParen(), expandImportMetaGlob(), globKey(), globToRegExp(), HERE, load(), maskComments(), matchGlob() (+10 more)
+
+### Community 341 - "Community 341"
 Cohesion: 0.25
 Nodes (18): act(), billing_account_open(), billing_enabled(), cmd_arm(), cmd_restore(), cmd_status(), die(), iam_bound() (+10 more)
 
-### Community 341 - "Community 341"
-Cohesion: 0.10
-Nodes (20): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+12 more)
-
 ### Community 342 - "Community 342"
 Cohesion: 0.10
-Nodes (20): snapshots, button, confirmRestore, deleteError, deleting, empty, emptyEyebrow, emptyTitle (+12 more)
+Nodes (20): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+12 more)
 
 ### Community 343 - "Community 343"
 Cohesion: 0.10
-Nodes (20): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+12 more)
+Nodes (20): snapshots, button, confirmRestore, deleteError, deleting, empty, emptyEyebrow, emptyTitle (+12 more)
 
 ### Community 344 - "Community 344"
 Cohesion: 0.10
-Nodes (20): snapshots, button, confirmRestore, deleteError, deleting, empty, emptyEyebrow, emptyTitle (+12 more)
+Nodes (20): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+12 more)
 
 ### Community 345 - "Community 345"
 Cohesion: 0.10
-Nodes (9): attachEncounterEffects(), CharacterState, CombatHydrationPatch, D20CommandSnapshot, D20TestCommitResult, effectiveCombatEffects(), MechanicsPlanCommitResult, projectCombatHydration() (+1 more)
+Nodes (20): snapshots, button, confirmRestore, deleteError, deleting, empty, emptyEyebrow, emptyTitle (+12 more)
 
 ### Community 346 - "Community 346"
 Cohesion: 0.10
@@ -4408,279 +4413,299 @@ Nodes (19): createAdapterFixture(), createAuthorizedAdapterFixture(), createBoot
 
 ### Community 350 - "Community 350"
 Cohesion: 0.12
-Nodes (11): dmNotesCollection(), subscribeToCampaignNotes(), fireSnap(), NoteWire, parseCampaignWire(), parseDmWire(), parseRevealedWire(), PLAY_STATE (+3 more)
+Nodes (16): conformCampaignMembers(), listSharedCampaigns(), readDevCampaign(), toCampaignDoc(), toChronicleDoc(), toSessionLogDoc(), toSharedNote(), TimeoutError (+8 more)
 
 ### Community 351 - "Community 351"
 Cohesion: 0.11
 Nodes (12): Snapshot, useGatheringScrollAnchor(), CampaignDocMemberDetails, CampaignMember, CombatLayer(), EncounterAddMonsterBody, importBestiary(), MemberCardCtx (+4 more)
 
 ### Community 352 - "Community 352"
-Cohesion: 0.13
-Nodes (15): resolveDevDoc(), loadSharedCharacter(), LoadState, SharedCharacterView(), useNoIndex(), devCharacterDocumentId(), DevCharacterParent, mergeDevCharacterParent() (+7 more)
+Cohesion: 0.10
+Nodes (12): useItemResourceCommands(), RestBoundaryKind, RestModal(), RestPhase, RestSummary, StatusCell(), SummaryRow(), Harness() (+4 more)
 
 ### Community 353 - "Community 353"
 Cohesion: 0.12
-Nodes (15): { catalogue }, declareAction(), encounter(), intentAction(), Replay, replayEncounter(), rollAction(), tableEncounter() (+7 more)
+Nodes (13): registerEngineCommitUndo(), OperationController, OperationState, OperationStatus, OperationTransport, registerUndoable(), registerUndoableResult(), registerUndoableToast() (+5 more)
 
 ### Community 354 - "Community 354"
+Cohesion: 0.12
+Nodes (15): { catalogue }, declareAction(), encounter(), intentAction(), Replay, replayEncounter(), rollAction(), tableEncounter() (+7 more)
+
+### Community 355 - "Community 355"
 Cohesion: 0.10
 Nodes (19): compilerOptions, esModuleInterop, forceConsistentCasingInFileNames, lib, module, moduleResolution, noFallthroughCasesInSwitch, noImplicitReturns (+11 more)
 
-### Community 355 - "Community 355"
+### Community 356 - "Community 356"
+Cohesion: 0.16
+Nodes (19): CharacterConcentrationSaveD20Context, CharacterD20ContextBase, CharacterD20ModifierTerm, CharacterD20TestContext, CharacterDeathSaveD20Context, CharacterEnteredD20Result, CharacterReviewedD20Outcome, concentrationSaveD20Context() (+11 more)
+
+### Community 357 - "Community 357"
 Cohesion: 0.13
 Nodes (15): actionHasDamage(), actionHasHealing(), actionHasTempHp(), actionRiderConditions(), combatDamageParts(), CombatDamagePartSpec, CombatOutcome, CombatResolutionKind (+7 more)
 
-### Community 356 - "Community 356"
-Cohesion: 0.13
-Nodes (15): asLocale(), Locale, LOCALES, CLASS_ROLE_FALLBACK, CLASS_ROLE_IDS, CLASS_ROLES, ClassIcon, ClassRole (+7 more)
-
-### Community 357 - "Community 357"
+### Community 358 - "Community 358"
 Cohesion: 0.10
 Nodes (19): Global Constraints, Self-review, Task A1: one skill layer, symlinks only, Task A2: one global briefing for both harnesses, Task A3: memory hygiene, Task A4: worktrees, branches and external evidence, Task A5: task-observer review (after Track B), Task B0: graph, hook, plan (+11 more)
 
-### Community 358 - "Community 358"
+### Community 359 - "Community 359"
 Cohesion: 0.16
 Nodes (19): initiativeOrder(), readyForTurns(), PlayScreen(), collectTiles(), CORE_ICON, DAMAGE_ICON, damageOf(), economyOf() (+11 more)
-
-### Community 359 - "Community 359"
-Cohesion: 0.10
-Nodes (20): hud, abilities, activePotions, auras, companions, cycleSaveProf, cycleSkillProf, defenses (+12 more)
 
 ### Community 360 - "Community 360"
 Cohesion: 0.10
 Nodes (20): hud, abilities, activePotions, auras, companions, cycleSaveProf, cycleSkillProf, defenses (+12 more)
 
 ### Community 361 - "Community 361"
+Cohesion: 0.10
+Nodes (20): hud, abilities, activePotions, auras, companions, cycleSaveProf, cycleSkillProf, defenses (+12 more)
+
+### Community 362 - "Community 362"
+Cohesion: 0.12
+Nodes (10): subscribeToCampaignNotes(), fireSnap(), NoteWire, parseCampaignWire(), parseDmWire(), parseRevealedWire(), PLAY_STATE, {
+  setDocMock,
+  updateDocMock,
+  getDocMock,
+  getDocsMock,
+  getDocsFromServerMock,
+  docMock,
+  collectionMock,
+  queryMock,
+  whereMock,
+  arrayUnionMock,
+  arrayRemoveMock,
+  deleteFieldMock,
+  serverTimestampMock,
+  onSnapshotMock,
+  deleteDocMock,
+  limitMock,
+  orderByMock,
+  incrementMock,
+  runTransactionMock,
+} (+2 more)
+
+### Community 363 - "Community 363"
+Cohesion: 0.14
+Nodes (14): resolveDevDoc(), loadSharedCharacter(), LoadState, SharedCharacterView(), useNoIndex(), devCharacterDocumentId(), DevCharacterParent, mergeDevCharacterParent() (+6 more)
+
+### Community 364 - "Community 364"
 Cohesion: 0.11
 Nodes (18): 0.11.1 — 2026-06-15, 0.15.1, 0.15.2, 0.16.3, 0.1.0 — Pre-audit baseline (2025–2026 incremental), 0.23.1, 0.2.0 — 2026-05-28, 0.3.0 — 2026-05-28 (+10 more)
 
-### Community 362 - "Community 362"
-Cohesion: 0.14
-Nodes (14): ImportError, ImportResult, isRecovery(), serializeCharacter(), buildCharacterExport(), buildCharactersZip(), CharacterExport, downloadCharacterJSON() (+6 more)
-
-### Community 363 - "Community 363"
-Cohesion: 0.12
-Nodes (17): newActionId(), ActionDraft, { catalogue }, CHARACTERS, DevScene, entity(), FIREBALL, LYRA_MECHANICS (+9 more)
-
-### Community 364 - "Community 364"
-Cohesion: 0.16
-Nodes (17): appendDiff(), appendMutation(), factSortKey(), isJsonObject(), journalScopeValid(), jsonEqual(), JsonObject, MechanicsActionIdentity (+9 more)
-
 ### Community 365 - "Community 365"
-Cohesion: 0.20
-Nodes (18): conformMechanicsAuthorityDefinition(), conformMechanicsAuthorityDefinitionStructure, conformMechanicsAuthoritySnapshot(), conformMechanicsAuthoritySnapshotStructure, definitionClosureSemantics(), definitionSemantics(), factGuardKey(), guardsAreCanonical() (+10 more)
+Cohesion: 0.16
+Nodes (17): driveBoundary(), canonicalFingerprint, canonicalJson(), conformCanonicalFingerprint(), frozenCanonicalFingerprints, frozenCanonicalJson, requiredWord(), rotateRight() (+9 more)
 
 ### Community 366 - "Community 366"
 Cohesion: 0.14
-Nodes (16): currentTurnPhase(), activeEffectEntries(), ActiveEffectEntry, ActiveMechanicsEffectMatcher, documentFor(), MaterializedMechanicsStandingFact, MechanicsLifetimeResolutionContext, MechanicsProgramEffectIdentity (+8 more)
+Nodes (14): ImportError, ImportResult, isRecovery(), serializeCharacter(), buildCharacterExport(), buildCharactersZip(), CharacterExport, downloadCharacterJSON() (+6 more)
 
 ### Community 367 - "Community 367"
-Cohesion: 0.14
-Nodes (13): conformMechanicsProgramAuthorityReceipt(), conformMechanicsProgramAuthorityReceiptStructure, EntityInstallationOwner, InstallationOwner, isEntityActor(), mechanicsProgramAuthorityReceiptFingerprint(), MechanicsProgramAuthorityReceiptSchemaRefTypes, receiptSemantics() (+5 more)
+Cohesion: 0.12
+Nodes (17): newActionId(), ActionDraft, { catalogue }, CHARACTERS, DevScene, entity(), FIREBALL, LYRA_MECHANICS (+9 more)
 
 ### Community 368 - "Community 368"
-Cohesion: 0.11
-Nodes (18): dm, entities, x, y, expect, applied, rejections, state (+10 more)
+Cohesion: 0.14
+Nodes (16): currentTurnPhase(), activeEffectEntries(), ActiveEffectEntry, ActiveMechanicsEffectMatcher, documentFor(), MaterializedMechanicsStandingFact, MechanicsLifetimeResolutionContext, MechanicsProgramEffectIdentity (+8 more)
 
 ### Community 369 - "Community 369"
-Cohesion: 0.11
-Nodes (18): dm, entities, expect, applied, rejections, state, initiative, hero (+10 more)
+Cohesion: 0.13
+Nodes (12): isPortraitLoaded(), loadedPortraitUrls, cropFocalPosition(), cropToBackgroundPosition(), cropToCssStyle(), cropZoomFactor(), normalizePortraitCrop(), PortraitCropModal() (+4 more)
 
 ### Community 370 - "Community 370"
 Cohesion: 0.11
-Nodes (18): 10. Tabletop Simulator — `crops/tts-physics-dice.jpg`, 11. Menyr — `crops/menyr-*` (Steam 2499260), 12. Arkenforge — `pages/arkenforge.png`, 13. Dice references — `crops/*dice*`, `foundry-dsn-*`, `ddb-3d-dice-*`, `obr-dice-*`, 14. BG3 HUD — `crops/bg3-*` (Steam 1086940), 1. Foundry VTT (v13/v14) — `crops/foundry-*`, 2. Roll20 (Jumpgate + 2024 toolbar) — `crops/roll20-*`, 3. D&D Beyond Maps — `crops/ddb-*` (+10 more)
+Nodes (18): dm, entities, x, y, expect, applied, rejections, state (+10 more)
 
 ### Community 371 - "Community 371"
 Cohesion: 0.11
-Nodes (15): EQUIP_KINDS, ItemEntry, ItemKind, ITEMS, itemsSpec, KIND_LABEL_KEY, KIND_ORDER, MAGIC_ONLY_KINDS (+7 more)
+Nodes (18): dm, entities, expect, applied, rejections, state, initiative, hero (+10 more)
 
 ### Community 372 - "Community 372"
 Cohesion: 0.11
-Nodes (19): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+11 more)
+Nodes (18): 10. Tabletop Simulator — `crops/tts-physics-dice.jpg`, 11. Menyr — `crops/menyr-*` (Steam 2499260), 12. Arkenforge — `pages/arkenforge.png`, 13. Dice references — `crops/*dice*`, `foundry-dsn-*`, `ddb-3d-dice-*`, `obr-dice-*`, 14. BG3 HUD — `crops/bg3-*` (Steam 1086940), 1. Foundry VTT (v13/v14) — `crops/foundry-*`, 2. Roll20 (Jumpgate + 2024 toolbar) — `crops/roll20-*`, 3. D&D Beyond Maps — `crops/ddb-*` (+10 more)
 
 ### Community 373 - "Community 373"
 Cohesion: 0.11
 Nodes (19): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+11 more)
 
 ### Community 374 - "Community 374"
-Cohesion: 0.14
-Nodes (12): childDomainKey(), isCharacterDocValue(), parentDomainKey(), reconciledDomainEquals(), serializeCharacterEnvelope(), canonical(), canonicalJsonEquals(), CharacterSnapshotReconciler (+4 more)
+Cohesion: 0.11
+Nodes (19): skills, acrobatics, animal-handling, arcana, athletics, deception, history, insight (+11 more)
 
 ### Community 375 - "Community 375"
+Cohesion: 0.17
+Nodes (15): monsterMechanics(), ABILITIES, conditionImmunities(), projectMonster(), saves(), seatedMechanics(), spellcasting(), Ability (+7 more)
+
+### Community 376 - "Community 376"
 Cohesion: 0.14
 Nodes (17): AUTOMATION_HANDLERS, AutomationClause, AutomationClauseReceipt, AutomationCompileInput, AutomationCompileResult, AutomationCoverageReceipt, AutomationHandler, canonical() (+9 more)
 
-### Community 376 - "Community 376"
-Cohesion: 0.17
-Nodes (17): toolChoiceKindCategory(), armorSealIcon(), CATEGORY_ICON, EQUIPMENT_BY_ID, equipmentCategoryIcon(), equipmentSealIcon(), equipmentSealIconById(), GEAR_ICON (+9 more)
-
 ### Community 377 - "Community 377"
-Cohesion: 0.12
-Nodes (14): PcDamageIntake, PcDamageState, PcDamageTransitionEvent, PcDamageTransitionInput, PcDamageTransitionResult, reducePcDamage(), DamageDefenses, DamageInstance (+6 more)
-
-### Community 378 - "Community 378"
-Cohesion: 0.21
-Nodes (14): documentFor(), exactMaterialEntity(), insertResolvedMaterialResource(), locateMaterialResource(), locateResolvedMaterialResource(), MaterialResourceLocation, removeResolvedMaterialResource(), replaceResolvedMaterialResource() (+6 more)
-
-### Community 379 - "Community 379"
 Cohesion: 0.11
 Nodes (17): ACTION_FACT_VALUE_SCHEMA, CHARACTER_MATERIAL_REF_VALUE_SCHEMA, D20_OBSERVATION_VALUE_SCHEMA, DICE_OBSERVATION_VALUE_SCHEMA, ENTITY_REF_VALUE_SCHEMA, ID_SCHEMA, MECHANICS_ANSWERS_SCHEMA, MECHANICS_EXECUTION_FRAME_VALUE_SCHEMA (+9 more)
 
-### Community 380 - "Community 380"
+### Community 378 - "Community 378"
+Cohesion: 0.17
+Nodes (13): pick(), required(), Rng, rollQuickbuildFlavor(), sample(), BASES, COLLECTIONS, Envelope (+5 more)
+
+### Community 379 - "Community 379"
 Cohesion: 0.11
 Nodes (18): terms, closeLabel, conductD, conductT, contentD, contentT, effective, heading (+10 more)
+
+### Community 380 - "Community 380"
+Cohesion: 0.11
+Nodes (18): dice-count, die-sides, empty, face-range, faces-count, flat-range, keep-count, no-dice (+10 more)
 
 ### Community 381 - "Community 381"
 Cohesion: 0.11
-Nodes (18): dice-count, die-sides, empty, face-range, faces-count, flat-range, keep-count, no-dice (+10 more)
+Nodes (17): settings, appearance, darkMode, hint, language, languageHelp, lightMode, noIdentity (+9 more)
 
 ### Community 382 - "Community 382"
 Cohesion: 0.11
-Nodes (17): settings, appearance, darkMode, hint, language, languageHelp, lightMode, noIdentity (+9 more)
+Nodes (18): terms, closeLabel, conductD, conductT, contentD, contentT, effective, heading (+10 more)
 
 ### Community 383 - "Community 383"
 Cohesion: 0.11
-Nodes (18): terms, closeLabel, conductD, conductT, contentD, contentT, effective, heading (+10 more)
+Nodes (18): dice-count, die-sides, empty, face-range, faces-count, flat-range, keep-count, no-dice (+10 more)
 
 ### Community 384 - "Community 384"
 Cohesion: 0.11
-Nodes (18): dice-count, die-sides, empty, face-range, faces-count, flat-range, keep-count, no-dice (+10 more)
+Nodes (17): settings, appearance, darkMode, hint, language, languageHelp, lightMode, noIdentity (+9 more)
 
 ### Community 385 - "Community 385"
 Cohesion: 0.11
-Nodes (17): settings, appearance, darkMode, hint, language, languageHelp, lightMode, noIdentity (+9 more)
-
-### Community 386 - "Community 386"
-Cohesion: 0.11
 Nodes (17): EffectOccurrence, EndRule, JsonScalar, MechanicOccurrence, MechanicsEndCause, MutableProjection, NewMechanicOccurrence, ObservedMechanicsBoundary (+9 more)
 
-### Community 387 - "Community 387"
+### Community 386 - "Community 386"
 Cohesion: 0.16
 Nodes (16): authoredProgram(), characterState(), creature(), entityAuthority(), GHOST, item(), livingVitals(), materialLifecycle() (+8 more)
 
-### Community 388 - "Community 388"
+### Community 387 - "Community 387"
 Cohesion: 0.12
 Nodes (17): ANCHORS, CAPABILITY, CATALOGUE_DEFINITION, CHARACTER_BUILD_DEFINITION, ENTITY, ENTITY_DEFINITION, executableSnapshot(), INSTALLATION (+9 more)
 
-### Community 389 - "Community 389"
+### Community 388 - "Community 388"
 Cohesion: 0.13
 Nodes (14): collectTransitiveImports(), directImports(), FILE_CACHE, FORBIDDEN_IMPORT_PATTERNS, PURE_MODULES, read(), REPO_ROOT, RESOLVE_CACHE (+6 more)
 
-### Community 390 - "Community 390"
+### Community 389 - "Community 389"
 Cohesion: 0.19
 Nodes (15): FORBIDDEN, KERNEL_DIR, MODULE_DIRS, opened(), initialState(), opened(), opened(), { catalogue } (+7 more)
 
-### Community 391 - "Community 391"
+### Community 390 - "Community 390"
 Cohesion: 0.18
 Nodes (8): SrdMagicItemData, MAGIC_ITEMS_BY_ID, SRD_MAGIC_ITEMS, MAGIC_ITEMS_PART_1, MAGIC_ITEMS_PART_2, MAGIC_ITEMS_PART_3, RESISTANCE_TYPE_BUNDLE(), RESISTANCE_TYPES
 
-### Community 392 - "Community 392"
-Cohesion: 0.18
-Nodes (16): CharacterConcentrationSaveD20Context, CharacterD20ContextBase, CharacterD20ModifierTerm, CharacterD20TestContext, CharacterDeathSaveD20Context, CharacterEnteredD20Result, CharacterReviewedD20Outcome, deathSaveD20Context() (+8 more)
+### Community 391 - "Community 391"
+Cohesion: 0.12
+Nodes (10): useCoarsePointer(), useMediaQuery(), isMac(), shortcutLabel(), ShortcutChips(), ShortcutsSheet(), CombatPip, HubLink (+2 more)
 
-### Community 393 - "Community 393"
+### Community 392 - "Community 392"
 Cohesion: 0.12
 Nodes (16): CAST_LEVELS_SCHEMA, CAST_SOURCE_OVERRIDES_SCHEMA, CASTING_ABILITY_SCHEMA, ChoiceGrantBundleSchemaShape, ChoiceGrantOptionSchemaShape, Grant, GRANT_SCHEMA, GRANT_SCHEMA_DEFINITION (+8 more)
 
+### Community 393 - "Community 393"
+Cohesion: 0.12
+Nodes (7): emptyAggregate(), srdOptionParts(), ToolOption, toolOptions(), HeaderWithTagPicker(), aggregateWith(), agg()
+
 ### Community 394 - "Community 394"
-Cohesion: 0.26
-Nodes (17): acceptMechanicsPendingFramePhaseTransition(), advanceMechanicsPendingFrameSlot(), advanceMechanicsPendingFrameStep(), exactCausalState(), exactEqual(), exactExecutionFrame(), popMechanicsPendingFrame(), pushMechanicsPendingFrame() (+9 more)
+Cohesion: 0.12
+Nodes (10): asLocale(), Locale, LOCALES, Props, SpellSlotPicker(), FeatAbilityPick, FeatAbilityPicker(), Props (+2 more)
 
 ### Community 395 - "Community 395"
+Cohesion: 0.22
+Nodes (13): documentFor(), exactMaterialEntity(), insertResolvedMaterialResource(), locateMaterialResource(), locateResolvedMaterialResource(), MaterialResourceLocation, removeResolvedMaterialResource(), replaceResolvedMaterialResource() (+5 more)
+
+### Community 396 - "Community 396"
+Cohesion: 0.19
+Nodes (14): collectDebugContext(), DebugContext, g, parseIds(), readJson(), readLocale(), readTheme(), safeString() (+6 more)
+
+### Community 397 - "Community 397"
 Cohesion: 0.15
 Nodes (15): D20_REST, drawD20(), FACE_NUMS, FACES, gold(), lerp(), LIGHT, LM (+7 more)
 
-### Community 396 - "Community 396"
-Cohesion: 0.12
-Nodes (16): eldritch-mind.grants.0, description, eldritch-smite.grants.eldritch-smite, name, gaze-of-two-minds.mechanics.actions.0, description, lifedrinker.grants.lifedrinker, name (+8 more)
-
-### Community 397 - "Community 397"
-Cohesion: 0.12
-Nodes (17): vitals, ac, acFull, init, initAdvActive, initAdvAuto, initAdvDis, initAdvOff (+9 more)
-
 ### Community 398 - "Community 398"
 Cohesion: 0.12
-Nodes (17): reason, already-undone, invalid-roll, invalid-table-op, invalid-target, missing-answer, no-such-check, no-window (+9 more)
+Nodes (16): eldritch-mind.grants.0, description, eldritch-smite.grants.eldritch-smite, name, gaze-of-two-minds.mechanics.actions.0, description, lifedrinker.grants.lifedrinker, name (+8 more)
 
 ### Community 399 - "Community 399"
 Cohesion: 0.12
-Nodes (16): polymorph, activeForm, crShort, noForms, referenceHint, referenceTab, revert, rubric (+8 more)
+Nodes (17): vitals, ac, acFull, init, initAdvActive, initAdvAuto, initAdvDis, initAdvOff (+9 more)
 
 ### Community 400 - "Community 400"
 Cohesion: 0.12
-Nodes (16): eldritch-mind.grants.0, description, eldritch-smite.grants.eldritch-smite, name, gaze-of-two-minds.mechanics.actions.0, description, lifedrinker.grants.lifedrinker, name (+8 more)
+Nodes (17): reason, already-undone, invalid-roll, invalid-table-op, invalid-target, missing-answer, no-such-check, no-window (+9 more)
 
 ### Community 401 - "Community 401"
 Cohesion: 0.12
-Nodes (17): vitals, ac, acFull, init, initAdvActive, initAdvAuto, initAdvDis, initAdvOff (+9 more)
+Nodes (16): polymorph, activeForm, crShort, noForms, referenceHint, referenceTab, revert, rubric (+8 more)
 
 ### Community 402 - "Community 402"
 Cohesion: 0.12
-Nodes (17): reason, already-undone, invalid-roll, invalid-table-op, invalid-target, missing-answer, no-such-check, no-window (+9 more)
+Nodes (16): eldritch-mind.grants.0, description, eldritch-smite.grants.eldritch-smite, name, gaze-of-two-minds.mechanics.actions.0, description, lifedrinker.grants.lifedrinker, name (+8 more)
 
 ### Community 403 - "Community 403"
 Cohesion: 0.12
-Nodes (16): polymorph, activeForm, crShort, noForms, referenceHint, referenceTab, revert, rubric (+8 more)
+Nodes (17): vitals, ac, acFull, init, initAdvActive, initAdvAuto, initAdvDis, initAdvOff (+9 more)
 
 ### Community 404 - "Community 404"
+Cohesion: 0.12
+Nodes (17): reason, already-undone, invalid-roll, invalid-table-op, invalid-target, missing-answer, no-such-check, no-window (+9 more)
+
+### Community 405 - "Community 405"
+Cohesion: 0.12
+Nodes (16): polymorph, activeForm, crShort, noForms, referenceHint, referenceTab, revert, rubric (+8 more)
+
+### Community 406 - "Community 406"
+Cohesion: 0.13
+Nodes (9): BioTab(), EditableInput(), localizeAlignment(), ORIGIN_FEATS, SrdBackgroundSelect(), SrdClassSelect(), SrdSubclassSelect(), localizeBackgroundName() (+1 more)
+
+### Community 407 - "Community 407"
 Cohesion: 0.13
 Nodes (16): CampaignDoc, CampaignTreasury, ChronicleDoc, ChronicleVersion, CombatDefenseSnapshot, CustomMonster, EncounterCombatant, EncounterCombatantBase (+8 more)
 
-### Community 405 - "Community 405"
+### Community 408 - "Community 408"
 Cohesion: 0.14
 Nodes (12): collectTs(), ENGINE_DIRS, filesWithLocaleIndex(), I18N_ROOT, isUnderViews(), PDF_ROOT, SRD_EN_MODULE, SRD_KEY_MODULE (+4 more)
 
-### Community 406 - "Community 406"
+### Community 409 - "Community 409"
 Cohesion: 0.16
 Nodes (12): action(), allyPc(), appendPersistentMock, applyMock, deflectAction(), feySleepImmuneAlly(), healingPoolAction(), pc() (+4 more)
 
-### Community 407 - "Community 407"
+### Community 410 - "Community 410"
 Cohesion: 0.15
 Nodes (8): ErrorImage, ErrorReader, FakeImage, FastImage, FastLoadImage, SmallImage, TallImage, WideImage
 
-### Community 408 - "Community 408"
+### Community 411 - "Community 411"
 Cohesion: 0.12
 Nodes (15): ADR-0010: Rolls are log actions with provenance; randomness for dice lives in one seam, Alternative 1: Faces inside the intent's answers (no roll action), Alternative 2: Hidden faces in a DM-private document, Alternative 3: Server-side or third-party random source (a "verified roll" service), Alternatives Considered, Amendment (2026-09-03, stage-1 review), Amendment (2026-09-04, stage 4), Consequences (+7 more)
 
-### Community 409 - "Community 409"
-Cohesion: 0.16
-Nodes (10): CommandPalette, GlobalCombatMount, LibraryMount, ShortcutsSheet, positions, ScrollRestorer(), DevActAsDock(), DockTarget (+2 more)
+### Community 412 - "Community 412"
+Cohesion: 0.24
+Nodes (15): subscribeToSharedCampaigns(), browserStorage(), clearDevDocuments(), decode(), emit(), encode(), listeners, memoryFallback (+7 more)
 
-### Community 410 - "Community 410"
+### Community 413 - "Community 413"
 Cohesion: 0.14
 Nodes (13): PUBLIC_RACES, PUBLIC_RACES_WITH_PACK_GRANTS, raceFeatureEntries, RaceFeatureEntry, raceFeatureIndex, RACES_BY_ID, SRD_RACES, ExtraTrackerSpec (+5 more)
 
-### Community 411 - "Community 411"
-Cohesion: 0.16
-Nodes (10): i18nReady, IdentityApp(), IdentityBoundary, recoverFromChunkPreloadError(), installDomResilience(), NodeTreePrimitives, warned, warnOnce() (+2 more)
-
-### Community 412 - "Community 412"
+### Community 414 - "Community 414"
 Cohesion: 0.30
 Nodes (6): historyObject(), HistoryRecord, NavigationController, parentRoute(), parseRoute(), routeHash()
 
-### Community 413 - "Community 413"
-Cohesion: 0.36
-Nodes (16): seamAuthorityDefinition(), mechanicsAuthorityDefinitionFingerprint(), entityAddressSegments(), materialAddressSegments(), mechanicsDefinitionFactAddress(), mechanicsInstallationFactAddress(), positiveIntegerSegment(), mechanicsCapabilitySnapshotFingerprint() (+8 more)
-
-### Community 414 - "Community 414"
-Cohesion: 0.15
-Nodes (13): allowedSpellListsForSlot(), applySpellChoicePicks(), bestAbility(), listAvailableForSlot(), pendingSpellChoicesForFeat(), savantSpellEntitlement(), SpellChoiceCtx, SpellChoicePicks (+5 more)
-
 ### Community 415 - "Community 415"
-Cohesion: 0.12
-Nodes (15): Architecture in one breath, Attribution and license, Contributing, d20 Folio, Deployment, Documentation, Features, Getting started (+7 more)
+Cohesion: 0.13
+Nodes (15): ABILITY_CHECKS, ATTACKS, CONDITION_GATES, ConditionGate, GatedSlot, hasConcentrationSaveAdvantage(), INCAPACITATED_SLOTS, netRollState() (+7 more)
 
 ### Community 416 - "Community 416"
 Cohesion: 0.12
-Nodes (15): dm, entities, expect, applied, rejections, state, initiative, monster-1 (+7 more)
+Nodes (15): Architecture in one breath, Attribution and license, Contributing, d20 Folio, Deployment, Documentation, Features, Getting started (+7 more)
 
 ### Community 417 - "Community 417"
 Cohesion: 0.12
-Nodes (15): 1. Character roster / "my characters", 2. Campaign / party pages, 3. Compendium / rules reader / stat blocks, 4. Character creation and level-up, Component reference observations (refs3): roster, campaign, compendium, builder, Crop index (one line each, `refs3/crops/<name>.png`), Dead ends (honest list), Verdict: builder / level-up component (+7 more)
+Nodes (15): dm, entities, expect, applied, rejections, state, initiative, monster-1 (+7 more)
 
 ### Community 418 - "Community 418"
-Cohesion: 0.20
-Nodes (14): closingParen(), expandImportMetaGlob(), globKey(), globToRegExp(), HERE, load(), maskComments(), matchGlob() (+6 more)
+Cohesion: 0.12
+Nodes (15): 1. Character roster / "my characters", 2. Campaign / party pages, 3. Compendium / rules reader / stat blocks, 4. Character creation and level-up, Component reference observations (refs3): roster, campaign, compendium, builder, Crop index (one line each, `refs3/crops/<name>.png`), Dead ends (honest list), Verdict: builder / level-up component (+7 more)
 
 ### Community 419 - "Community 419"
 Cohesion: 0.12
@@ -4703,36 +4728,36 @@ Cohesion: 0.12
 Nodes (15): MechanicsCommand, MechanicsCommandAnswer, MechanicsCommandRequester, MechanicsCommandResume, MechanicsCommandResumeMatch, MechanicsCommandSuspension, MechanicsDocumentFence, MechanicsExecutionFrame (+7 more)
 
 ### Community 424 - "Community 424"
-Cohesion: 0.17
-Nodes (14): advancePulse(), AUTHORED_SPELL_IDS, authorityReceipt(), castAuthored(), drive(), DriveScript, HERO, heroState() (+6 more)
+Cohesion: 0.16
+Nodes (11): BEASTS, BEAST_INDEX, BEASTS, beastsByMaxCR(), getBeast(), applyStartingForm(), POLYMORPH_SPELL_IDS, polymorphBuildPatch() (+3 more)
 
 ### Community 425 - "Community 425"
-Cohesion: 0.16
-Nodes (9): Locale, restoreTurnEconomy(), selectedAction(), snapshotTurnEconomy(), syncCombatFromSession(), TurnContextSync, turnEconomyKey(), turnIsBaseline() (+1 more)
+Cohesion: 0.22
+Nodes (13): arrowBundle(), book(), calligraphersSupplies(), holySymbol(), OPTION_B, parchment(), pouch(), PUBLIC_STARTING_EQUIPMENT_BY_BG (+5 more)
 
 ### Community 426 - "Community 426"
 Cohesion: 0.13
-Nodes (13): BACKGROUND_NAMES, backgroundNameById(), CLASS_NAMES, classNameById(), NamedEntry, PUBLIC_BACKGROUND_NAMES, PUBLIC_CLASS_NAMES, PUBLIC_RACE_NAMES (+5 more)
-
-### Community 427 - "Community 427"
-Cohesion: 0.13
 Nodes (14): 10. Licensing partition and the pack seam, 11. Gates and budgets, 12. ADR index, 13. Legacy still present, 1. Purpose and boundaries, 2. Layers and dependency direction, 3. The engine, 4. Shared play (+6 more)
 
+### Community 427 - "Community 427"
+Cohesion: 0.16
+Nodes (12): createOriginBuildRepository(), OriginBuildIssue, character, client(), edit(), operation(), RawBuild, RawOperation (+4 more)
+
 ### Community 428 - "Community 428"
+Cohesion: 0.17
+Nodes (9): i18nReady, IdentityApp(), IdentityBoundary, recoverFromChunkPreloadError(), installDomResilience(), NodeTreePrimitives, warned, warnOnce() (+1 more)
+
+### Community 429 - "Community 429"
 Cohesion: 0.15
 Nodes (10): subscribeEncounter(), { catalogue }, clientFor(), memberAction(), openingLog(), openRecorders, record(), Recorder (+2 more)
 
-### Community 429 - "Community 429"
+### Community 430 - "Community 430"
 Cohesion: 0.22
 Nodes (10): ABILITIES, combatOutcomeMatches(), finiteNonNegative(), isRecord(), nonEmpty(), parseCombatOutcomeReceipt(), parseTarget(), sameTarget() (+2 more)
 
-### Community 430 - "Community 430"
-Cohesion: 0.28
-Nodes (15): applyResourceOperation(), commandOfIntent(), countersConformToItem(), deepEqual(), isCanonicalItemResourceIdentity(), isValidItemResourceId(), isValidItemResourceState(), isValidResourceItemSpec() (+7 more)
-
 ### Community 431 - "Community 431"
-Cohesion: 0.31
-Nodes (15): conformCommandIntent(), decodeCausalHead(), decodeCounterMap(), decodeCounterState(), decodeIntentInputs(), decodeItemResourceDisposition(), decodeItemResourceState(), decodeLastTransition() (+7 more)
+Cohesion: 0.16
+Nodes (13): allowedSpellListsForSlot(), applySpellChoicePicks(), bestAbility(), isSpellChoicesComplete(), listAvailableForSlot(), pendingSpellChoicesForFeat(), savantSpellEntitlement(), SpellChoiceCtx (+5 more)
 
 ### Community 432 - "Community 432"
 Cohesion: 0.13
@@ -4787,152 +4812,152 @@ Cohesion: 0.28
 Nodes (13): debugBlock(), formatIssueBody(), formatIssueTitle(), formatLabels(), normalizeSeverity(), normalizeType(), parseRepo(), PUBLIC_DEBUG_KEYS (+5 more)
 
 ### Community 445 - "Community 445"
+Cohesion: 0.16
+Nodes (11): ApplyProbe(), currentDoc(), firstOption(), log(), mount(), S, sneakUsed(), spec (+3 more)
+
+### Community 446 - "Community 446"
 Cohesion: 0.14
 Nodes (13): ADR-0005: Firestore rules enforce identity, membership, ownership and shape; trust at the table, Alternative 1: Keep semantic validation in rules, Alternative 2: Trusted writer (Cloud Functions), Alternative 3: Server-side protection of PCs from co-members, Alternatives Considered, Amendment (2026-09-03, `v2` architecture reset), Amendment (2026-09-04, stage 4), Consequences (+5 more)
 
-### Community 446 - "Community 446"
-Cohesion: 0.15
-Nodes (8): AppRouter(), BeforeInstallPromptEvent, PWAInstallState, usePWAInstall(), initAuthListener(), devActAsUid(), ReportDialog(), PWABanner()
-
 ### Community 447 - "Community 447"
-Cohesion: 0.21
-Nodes (13): AreaShape, cellDistance(), distanceFt(), inShape(), isAdjacent(), length(), Positioned, rangeBand() (+5 more)
+Cohesion: 0.16
+Nodes (13): mergeStartingEquipment(), getBackgroundEquipmentOptions(), ALL_TOOL_CHOICE_KINDS, ARTISAN_TOOL_ID_SET, EMPTY_RESULT, expandToolChoiceItem(), getBackgroundStartingEquipment(), ResolvedStartingEquipment (+5 more)
 
 ### Community 448 - "Community 448"
 Cohesion: 0.14
 Nodes (13): activations, cards, diagram_type, messages, meta, column_fit, quality_profile, title (+5 more)
 
 ### Community 449 - "Community 449"
-Cohesion: 0.15
-Nodes (11): adjustmentPhase(), characterDamageReactionOptions(), composeDamageEntryProgram(), DamageEntryCommit, DamageReactionOption, DamageReactionRunResult, EnteredDamagePart, MAX_HP_ADDRESS (+3 more)
+Cohesion: 0.16
+Nodes (9): readSrc(), TERM_IDS, ALLOWED_DIRS, offenders(), WHITELIST, DATA_DIR, offenders(), WHITELIST (+1 more)
 
 ### Community 450 - "Community 450"
-Cohesion: 0.24
-Nodes (11): collectDebugContext(), DebugContext, g, parseIds(), readJson(), readLocale(), readTheme(), safeString() (+3 more)
+Cohesion: 0.32
+Nodes (14): advanceMechanicsPendingFrameSlot(), advanceMechanicsPendingFrameStep(), exactCausalState(), exactEqual(), exactExecutionFrame(), popMechanicsPendingFrame(), pushMechanicsSelectedEventPendingFrame(), pushPendingFrame() (+6 more)
 
 ### Community 451 - "Community 451"
-Cohesion: 0.14
-Nodes (13): 0. How to use this document, 10. Reserved to Astra — not decided here, 1. The owner's brief, restated as testable outcomes, 2. What the current flow does — facts, 3. Baldur's Gate 3 — the model for playing, 4. D&D Beyond — the model for owning a character, 5. Progressive disclosure and onboarding — the evidence base, 6. Patterns to copy, with evidence (+5 more)
+Cohesion: 0.19
+Nodes (7): characterCard(), classLabel(), esc(), injectOgTags(), og_i18n_1, renderOgTags(), summarizeClasses()
 
 ### Community 452 - "Community 452"
 Cohesion: 0.14
-Nodes (13): 1. Position models compared against D&D 2024's distance-dependent rules, 2. The dominant pattern for map-less companion apps, and why, 3.1 Facts, 3.2 Declarations — who says what, when, and for how long, 3.3 Reactions the facts can open automatically (spec §5 windows), 3. Recommended position model: engagement + bands + spots (the spec's D2 relations, sharpened), 4. UI proposal (elements and the product each copies), 5. What stays table-adjudicated (honest residuals) (+5 more)
+Nodes (13): 0. How to use this document, 10. Reserved to Astra — not decided here, 1. The owner's brief, restated as testable outcomes, 2. What the current flow does — facts, 3. Baldur's Gate 3 — the model for playing, 4. D&D Beyond — the model for owning a character, 5. Progressive disclosure and onboarding — the evidence base, 6. Patterns to copy, with evidence (+5 more)
 
 ### Community 453 - "Community 453"
 Cohesion: 0.14
-Nodes (13): feats, category, category_dark-gift, category_epic-boon, category_fighting-style, category_general, category_heritage, category_origin (+5 more)
+Nodes (13): 1. Position models compared against D&D 2024's distance-dependent rules, 2. The dominant pattern for map-less companion apps, and why, 3.1 Facts, 3.2 Declarations — who says what, when, and for how long, 3.3 Reactions the facts can open automatically (spec §5 windows), 3. Recommended position model: engagement + bands + spots (the spec's D2 relations, sharpened), 4. UI proposal (elements and the product each copies), 5. What stays table-adjudicated (honest residuals) (+5 more)
 
 ### Community 454 - "Community 454"
 Cohesion: 0.14
-Nodes (14): acid, bludgeoning, cold, fire, force, lightning, necrotic, piercing (+6 more)
+Nodes (13): feats, category, category_dark-gift, category_epic-boon, category_fighting-style, category_general, category_heritage, category_origin (+5 more)
 
 ### Community 455 - "Community 455"
 Cohesion: 0.14
-Nodes (14): body, title, body, title, body, title, standby, body (+6 more)
+Nodes (14): acid, bludgeoning, cold, fire, force, lightning, necrotic, piercing (+6 more)
 
 ### Community 456 - "Community 456"
 Cohesion: 0.14
-Nodes (14): tools, add, addTip, aria, fog-hide, fog-hideTip, fog-revealTip, pan (+6 more)
+Nodes (14): body, title, body, title, body, title, standby, body (+6 more)
 
 ### Community 457 - "Community 457"
 Cohesion: 0.14
-Nodes (13): feats, category, category_dark-gift, category_epic-boon, category_fighting-style, category_general, category_heritage, category_origin (+5 more)
+Nodes (14): tools, add, addTip, aria, fog-hide, fog-hideTip, fog-revealTip, pan (+6 more)
 
 ### Community 458 - "Community 458"
 Cohesion: 0.14
-Nodes (14): acid, bludgeoning, cold, fire, force, lightning, necrotic, piercing (+6 more)
+Nodes (13): feats, category, category_dark-gift, category_epic-boon, category_fighting-style, category_general, category_heritage, category_origin (+5 more)
 
 ### Community 459 - "Community 459"
 Cohesion: 0.14
-Nodes (14): body, title, body, title, body, title, standby, body (+6 more)
+Nodes (14): acid, bludgeoning, cold, fire, force, lightning, necrotic, piercing (+6 more)
 
 ### Community 460 - "Community 460"
 Cohesion: 0.14
-Nodes (14): tools, add, addTip, aria, fog-hide, fog-hideTip, fog-revealTip, pan (+6 more)
+Nodes (14): body, title, body, title, body, title, standby, body (+6 more)
 
 ### Community 461 - "Community 461"
 Cohesion: 0.14
-Nodes (13): MechanicsAmountSpec, MechanicsD20RequestSpec, MechanicsEntitySelector, MechanicsInput, MechanicsItemSelector, MechanicsLifetimeSpec, MechanicsPhaseTrigger, MechanicsPredicate (+5 more)
+Nodes (14): tools, add, addTip, aria, fog-hide, fog-hideTip, fog-revealTip, pan (+6 more)
 
 ### Community 462 - "Community 462"
+Cohesion: 0.14
+Nodes (13): MechanicsAmountSpec, MechanicsD20RequestSpec, MechanicsEntitySelector, MechanicsInput, MechanicsItemSelector, MechanicsLifetimeSpec, MechanicsPhaseTrigger, MechanicsPredicate (+5 more)
+
+### Community 463 - "Community 463"
+Cohesion: 0.20
+Nodes (10): actionDraft(), commit(), dataAt(), documentFor(), emptyJournal(), HIGH_WATER_PATHS, isJsonRecord(), journalOf() (+2 more)
+
+### Community 464 - "Community 464"
 Cohesion: 0.23
 Nodes (12): ACTOR, attack(), deathSave(), diceObservation(), enteredDiceObservation(), fixed(), MATERIAL, observationFor() (+4 more)
 
-### Community 463 - "Community 463"
+### Community 465 - "Community 465"
 Cohesion: 0.18
 Nodes (10): appendAction, { catalogue }, checkpointEncounter, encounterOf(), filler(), MARCO, OGRE, opening() (+2 more)
 
-### Community 464 - "Community 464"
+### Community 466 - "Community 466"
 Cohesion: 0.15
 Nodes (12): ADR-0002: The append-only action log is the only persisted mutation, Alternative 1: Server-authoritative shared commands (Wayfinder S1), Alternative 2: Transactions with a revision field on a materialized state document, Alternative 3: Actions as a subcollection (one doc per action), Alternatives Considered, Amendment (2026-09-03, `v2` architecture reset), Consequences, Context (+4 more)
 
-### Community 465 - "Community 465"
+### Community 467 - "Community 467"
 Cohesion: 0.19
 Nodes (11): attack(), { catalogue }, fireball(), fireballOpening(), goblin, opening(), ranger, rollAction() (+3 more)
 
-### Community 466 - "Community 466"
-Cohesion: 0.18
-Nodes (12): mergeStartingEquipment(), getBackgroundEquipmentOptions(), ALL_TOOL_CHOICE_KINDS, ARTISAN_TOOL_ID_SET, EMPTY_RESULT, expandToolChoiceItem(), getBackgroundStartingEquipment(), ResolvedStartingEquipment (+4 more)
+### Community 468 - "Community 468"
+Cohesion: 0.21
+Nodes (12): CreationWizard(), ChoicePicks, EMPTY_CHOICE_PICKS, FeatureChoiceSlots, hasAnyChoiceSlots(), partitionChoiceSlotsBySource(), pruneChoicePicks(), pruneToSlots() (+4 more)
 
-### Community 467 - "Community 467"
+### Community 469 - "Community 469"
 Cohesion: 0.17
 Nodes (8): AsiBoonPanel(), DoneInfo, HIT_DIE_AVG, HpStep(), MC_GAIN_UMBRELLA_KEYS, StepId, takenFeatIdSet(), MulticlassFilteredCause()
 
-### Community 468 - "Community 468"
-Cohesion: 0.18
-Nodes (9): ensureUserDocument(), FirestoreUserDoc, googleProvider, signIn(), app, auth, firebaseConfig, functions (+1 more)
-
-### Community 469 - "Community 469"
+### Community 470 - "Community 470"
 Cohesion: 0.26
 Nodes (12): afterRetire, beginRetire(), cancelRetireWatchdog(), ensureListening(), flushAfterRetire(), handlePop(), OverlayEntry, pushOverlayEntry() (+4 more)
 
-### Community 470 - "Community 470"
+### Community 471 - "Community 471"
 Cohesion: 0.17
 Nodes (8): GO_SEQUENCES, IDLE_SEQ, SHORTCUTS, SeqState, ShortcutGroup, ShortcutKeys, ShortcutRow, ShortcutSection
 
-### Community 471 - "Community 471"
+### Community 472 - "Community 472"
 Cohesion: 0.15
 Nodes (12): Accessibility & Inclusion, Anti-references, Brand Personality, Clarity and familiar interaction patterns, Design Principles, Homebrew automation and editable combat, Owner decisions (dated), Product (+4 more)
 
-### Community 472 - "Community 472"
+### Community 473 - "Community 473"
 Cohesion: 0.15
 Nodes (12): 10. Section titles / panels, 1. Identity: portrait + name + HP, 2. Ability scores, 3. Vitals: AC / initiative / speed / proficiency / hit dice, 4. Status / conditions, 5. Action economy (action / bonus / reaction / movement), 6. Action / attack list (hotbar, attacks table), 7. Spell list & slots (+4 more)
 
-### Community 473 - "Community 473"
+### Community 474 - "Community 474"
 Cohesion: 0.18
 Nodes (7): ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryState, ErrorFallback(), ErrorFallbackProps, RouteErrorBoundary(), toError()
 
-### Community 474 - "Community 474"
+### Community 475 - "Community 475"
 Cohesion: 0.15
 Nodes (12): 1.1 Triggers, 1.2 Costs (closed union; a costed program cannot commit unpaid), 1.3 Targets and inputs, 1.4 Steps (closed union; every kind has a reducer handler, enforced by `assertNever`), 1.5 Predicates and expressions (closed, pure, locale-free), 1. Shape, 2. Versioning and validation, 3. Worked example — Hunter's Mark (SRD) and Vow of Enmity (pack) (+4 more)
 
-### Community 475 - "Community 475"
-Cohesion: 0.15
-Nodes (12): acolyte, description, name, criminal, description, name, sage, description (+4 more)
-
 ### Community 476 - "Community 476"
 Cohesion: 0.15
-Nodes (12): combatPip, chooserOpen, chooserRowState, chooserTitle, destGroup, initiativeRubric, pipAria, rollPipAria (+4 more)
+Nodes (12): acolyte, description, name, criminal, description, name, sage, description (+4 more)
 
 ### Community 477 - "Community 477"
 Cohesion: 0.15
-Nodes (12): nav, addFeature, admin, campaigns, characters, compendium, features, primary (+4 more)
+Nodes (12): combatPip, chooserOpen, chooserRowState, chooserTitle, destGroup, initiativeRubric, pipAria, rollPipAria (+4 more)
 
 ### Community 478 - "Community 478"
 Cohesion: 0.15
-Nodes (12): acolyte, description, name, criminal, description, name, sage, description (+4 more)
+Nodes (12): nav, addFeature, admin, campaigns, characters, compendium, features, primary (+4 more)
 
 ### Community 479 - "Community 479"
 Cohesion: 0.15
-Nodes (12): combatPip, chooserOpen, chooserRowState, chooserTitle, destGroup, initiativeRubric, pipAria, rollPipAria (+4 more)
+Nodes (12): acolyte, description, name, criminal, description, name, sage, description (+4 more)
 
 ### Community 480 - "Community 480"
 Cohesion: 0.15
-Nodes (12): nav, addFeature, admin, campaigns, characters, compendium, features, primary (+4 more)
+Nodes (12): combatPip, chooserOpen, chooserRowState, chooserTitle, destGroup, initiativeRubric, pipAria, rollPipAria (+4 more)
 
 ### Community 481 - "Community 481"
-Cohesion: 0.18
-Nodes (7): JSDOM_TS_TESTS, PACK_JSDOM_TS_TESTS, DOM_IMPORT_PATTERNS, fastFiles, JSDOM_TS, PACK_TESTS_DIR, REPO_ROOT
+Cohesion: 0.15
+Nodes (12): nav, addFeature, admin, campaigns, characters, compendium, features, primary (+4 more)
 
 ### Community 482 - "Community 482"
 Cohesion: 0.15
@@ -4944,39 +4969,39 @@ Nodes (12): DICE_FORMULA_VALUE_SCHEMA, POSITIVE_DISTANCE_FT_SCHEMA, STABLE_ITEM_
 
 ### Community 484 - "Community 484"
 Cohesion: 0.22
-Nodes (8): barbarianDoc(), charWithEquipment(), concentratingOnShieldOfFaith(), landDruid(), mockCharacter(), recordedRollCharacter(), rogueDoc(), seed()
-
-### Community 485 - "Community 485"
-Cohesion: 0.22
 Nodes (10): authoredProgram(), authority(), character(), condition(), conditionOrigin(), NewConditionOccurrence, NewProgramOccurrence, program() (+2 more)
 
-### Community 486 - "Community 486"
+### Community 485 - "Community 485"
 Cohesion: 0.17
 Nodes (11): ADR-0001: One entity-generic combat reducer over an Encounter aggregate, Alternative 1: Complete the `mechanics-*` cutover as designed, Alternative 2: Keep the legacy provider and add monsters to it, Alternatives Considered, Amendment (2026-09-03, `v2` architecture reset), Consequences, Context, Decision (+3 more)
 
-### Community 487 - "Community 487"
+### Community 486 - "Community 486"
 Cohesion: 0.17
 Nodes (11): ADR-0003: The `mechanics-*` kernel is salvaged, not adopted, Alternative 1: Adopt and strip the authentication layers, open the role model, Alternative 2: Adopt as-is and finish the cutover, Alternatives Considered, Amendment (2026-09-03, `v2` architecture reset), Consequences, Context, Decision (+3 more)
 
-### Community 488 - "Community 488"
+### Community 487 - "Community 487"
 Cohesion: 0.17
 Nodes (11): ADR-0011: Three campaign automation levels, applied when an outcome is applied, Alternative 1: A per-mechanic or per-player automation flag, Alternative 2: Levels as different reducers or code paths, Alternatives Considered, Consequences, Context, Decision, Negative (+3 more)
+
+### Community 488 - "Community 488"
+Cohesion: 0.24
+Nodes (11): characterWorldValue(), clampedExhaustion(), omitKeys(), recoveredCharacterState(), recoveredTrackerUsed(), REST_SECONDS, restFinalizedSession(), RestWorldEntries (+3 more)
 
 ### Community 489 - "Community 489"
 Cohesion: 0.17
 Nodes (11): Architecture in one breath, Authority and document roles, Common commands, d20 Folio — agent briefing, Delivery workflow, Direction, Knowledge base and memory, Product and safety invariants (+3 more)
 
 ### Community 490 - "Community 490"
+Cohesion: 0.26
+Nodes (11): cellDistance(), distanceFt(), inShape(), isAdjacent(), length(), Positioned, sub(), toFeet() (+3 more)
+
+### Community 491 - "Community 491"
 Cohesion: 0.18
 Nodes (10): blast, blastOthers, cast(), { catalogue }, cone, cube, line, MECHANICS (+2 more)
 
-### Community 491 - "Community 491"
+### Community 492 - "Community 492"
 Cohesion: 0.23
 Nodes (10): onErrorReport(), setDiagnosticsContext(), AdminDiagnostic, installDiagnostics(), installDiagnosticsReporter(), listDiagnostics(), memoryStorageShim(), safeLocalStorage() (+2 more)
-
-### Community 492 - "Community 492"
-Cohesion: 0.17
-Nodes (11): cards, diagram_type, flows, meta, quality_profile, title, viewBox, views (+3 more)
 
 ### Community 493 - "Community 493"
 Cohesion: 0.17
@@ -4984,127 +5009,127 @@ Nodes (11): cards, diagram_type, flows, meta, quality_profile, title, viewBox, v
 
 ### Community 494 - "Community 494"
 Cohesion: 0.17
-Nodes (11): cards, diagram_type, lanes, meta, quality_profile, title, viewBox, views (+3 more)
+Nodes (11): cards, diagram_type, flows, meta, quality_profile, title, viewBox, views (+3 more)
 
 ### Community 495 - "Community 495"
 Cohesion: 0.17
-Nodes (11): Architecture and data, Authority and reconciliation, d20 Folio — repository invariants, Decision boundary, Domain invariants, Golden rules, Maintaining these invariants, Philosophy (+3 more)
+Nodes (11): cards, diagram_type, lanes, meta, quality_profile, title, viewBox, views (+3 more)
 
 ### Community 496 - "Community 496"
 Cohesion: 0.17
-Nodes (11): Conditions, Core glossary — the closed sets everything references, Damage types, Enforcement — the consistency guard, IT Name Registry — the canonical Italian lexicon, Provenance, Spell schools — ⚠️ the EN↔IT names are SWAPPED, The authority hierarchy (D2 cascade) (+3 more)
+Nodes (11): Architecture and data, Authority and reconciliation, d20 Folio — repository invariants, Decision boundary, Domain invariants, Golden rules, Maintaining these invariants, Philosophy (+3 more)
 
 ### Community 497 - "Community 497"
-Cohesion: 0.20
-Nodes (10): BLOCKING, scan(), THEMES, VIEWPORTS, BLOCKING_IMPACTS, THEMES, freezeMotion(), readyByName() (+2 more)
+Cohesion: 0.17
+Nodes (11): Conditions, Core glossary — the closed sets everything references, Damage types, Enforcement — the consistency guard, IT Name Registry — the canonical Italian lexicon, Provenance, Spell schools — ⚠️ the EN↔IT names are SWAPPED, The authority hierarchy (D2 cascade) (+3 more)
 
 ### Community 498 - "Community 498"
 Cohesion: 0.20
-Nodes (8): readSrc(), TERM_IDS, ALLOWED_DIRS, offenders(), WHITELIST, DATA_DIR, offenders(), WHITELIST
+Nodes (10): BLOCKING, scan(), THEMES, VIEWPORTS, BLOCKING_IMPACTS, THEMES, freezeMotion(), readyByName() (+2 more)
 
 ### Community 499 - "Community 499"
-Cohesion: 0.18
-Nodes (7): useCoarsePointer(), useMediaQuery(), isMac(), shortcutLabel(), ShortcutChips(), ShortcutsSheet(), Topbar()
-
-### Community 500 - "Community 500"
-Cohesion: 0.23
-Nodes (7): damageVerdictOutcome(), ActionRidersProps, riderDetail(), riderName(), riderQualifiers(), RiderToken(), TranslateFn
-
-### Community 501 - "Community 501"
-Cohesion: 0.23
-Nodes (10): canonicalFingerprint, canonicalJson(), conformCanonicalFingerprint(), frozenCanonicalFingerprints, frozenCanonicalJson, requiredWord(), rotateRight(), sha256() (+2 more)
-
-### Community 502 - "Community 502"
 Cohesion: 0.23
 Nodes (9): libraryRef(), subscribeLibrary(), writeLibrary(), emit(), emitInvalid(), ENTRY, setDocMock, snapshotHandlers (+1 more)
 
-### Community 503 - "Community 503"
+### Community 500 - "Community 500"
 Cohesion: 0.23
 Nodes (12): addOccurrence(), addTransitionedProgramOccurrence(), canonicalState(), conformId(), conformOccurrenceStateStructure, deepFreeze(), dependencyIds(), parsedOrThrow() (+4 more)
 
-### Community 504 - "Community 504"
+### Community 501 - "Community 501"
 Cohesion: 0.17
 Nodes (11): CLOCK_REF_SCHEMA, DAMAGE_RESOLUTION_SCHEMA, ENTITY_REF_SCHEMA, ID_SCHEMA, MECHANICS_TRIGGER_EVIDENCE_SCHEMA, MechanicsTriggerEvidenceSchemaShape, MechanicsTriggerSchemaCustomTypes, NULL_SCHEMA (+3 more)
 
-### Community 506 - "Community 506"
+### Community 502 - "Community 502"
+Cohesion: 0.24
+Nodes (10): AppliedQuickbuild, backgroundSkillIds(), canonical(), classSkillPool(), deal(), presetChoiceSlots(), quickbuildDraft, reseedForBackground() (+2 more)
+
+### Community 504 - "Community 504"
+Cohesion: 0.17
+Nodes (11): Evidence folder (outside the repository), Global constraints, PD rule 30 audit and game feel — plan, Streams (parallel), Task 1: Evidence streams, Task 2: `docs/superpowers/research/2026-09-09-rule-30-audit.md`, Task 3: `docs/superpowers/research/2026-09-09-game-feel.md`, Task 4: `docs/superpowers/specs/2026-09-09-pd-reference-dossiers.md` (+3 more)
+
+### Community 505 - "Community 505"
 Cohesion: 0.17
 Nodes (11): 2026-09-02 — architecture round, 2026-09-03 — steering, method, dice and CI, 2026-09-05 — visual base, brand and dark only, 2026-09-06 — V2 is a new application, 2026-09-07 — custom automation, editable combat, shell and Account, 2026-09-08 — standing delivery delegation, 2026-09-09 (afternoon) — division of labour: Astra owns the visual, Claude owns the rest, 2026-09-09 — engagement, progressive disclosure and raster art (+3 more)
 
-### Community 507 - "Community 507"
+### Community 506 - "Community 506"
 Cohesion: 0.17
 Nodes (8): Glyph, HpBadgeProps, HpBar(), HpBarProps, InitBadgeProps, StatBadge(), StatBadgeProps, StatDensity
 
-### Community 508 - "Community 508"
+### Community 507 - "Community 507"
 Cohesion: 0.17
 Nodes (12): setup, background, campaign-rule, class, equipment, feat, feature, monster (+4 more)
+
+### Community 508 - "Community 508"
+Cohesion: 0.17
+Nodes (11): metamagic, costLabel, eyebrow, notApplicable, notEnoughSp, onePrimaryRule, pickLabel, section (+3 more)
 
 ### Community 509 - "Community 509"
 Cohesion: 0.17
-Nodes (11): metamagic, costLabel, eyebrow, notApplicable, notEnoughSp, onePrimaryRule, pickLabel, section (+3 more)
+Nodes (12): window, attack-declared, attack-resolved, concentration-ended, damage-taken, effect-ended, entity-left-reach, hp-zero (+4 more)
 
 ### Community 510 - "Community 510"
 Cohesion: 0.17
-Nodes (12): window, attack-declared, attack-resolved, concentration-ended, damage-taken, effect-ended, entity-left-reach, hp-zero (+4 more)
+Nodes (11): share, copyLink, failed, linkCopied, shareText, shareTitle, unavailableBlurb, unavailableCta (+3 more)
 
 ### Community 511 - "Community 511"
 Cohesion: 0.17
-Nodes (11): share, copyLink, failed, linkCopied, shareText, shareTitle, unavailableBlurb, unavailableCta (+3 more)
+Nodes (12): setup, background, campaign-rule, class, equipment, feat, feature, monster (+4 more)
 
 ### Community 512 - "Community 512"
 Cohesion: 0.17
-Nodes (12): setup, background, campaign-rule, class, equipment, feat, feature, monster (+4 more)
+Nodes (11): metamagic, costLabel, eyebrow, notApplicable, notEnoughSp, onePrimaryRule, pickLabel, section (+3 more)
 
 ### Community 513 - "Community 513"
 Cohesion: 0.17
-Nodes (11): metamagic, costLabel, eyebrow, notApplicable, notEnoughSp, onePrimaryRule, pickLabel, section (+3 more)
+Nodes (12): window, attack-declared, attack-resolved, concentration-ended, damage-taken, effect-ended, entity-left-reach, hp-zero (+4 more)
 
 ### Community 514 - "Community 514"
 Cohesion: 0.17
-Nodes (12): window, attack-declared, attack-resolved, concentration-ended, damage-taken, effect-ended, entity-left-reach, hp-zero (+4 more)
+Nodes (11): share, copyLink, failed, linkCopied, shareText, shareTitle, unavailableBlurb, unavailableCta (+3 more)
 
 ### Community 515 - "Community 515"
 Cohesion: 0.17
-Nodes (11): share, copyLink, failed, linkCopied, shareText, shareTitle, unavailableBlurb, unavailableCta (+3 more)
-
-### Community 516 - "Community 516"
-Cohesion: 0.17
 Nodes (11): ID_SCHEMA, INTEGER_EXPRESSION_REF, INTEGER_EXPRESSION_SCHEMA, INTEGER_EXPRESSION_SCHEMA_DEFINITION, IntegerBindings, IntegerExpression, IntegerExpressionLeaf, IntegerExpressionSchemaCustomTypes (+3 more)
 
-### Community 517 - "Community 517"
+### Community 516 - "Community 516"
 Cohesion: 0.18
 Nodes (8): DATA_ROOT, docSurfaceFiles(), I18N_ROOT, PI_RES, PI_TERMS, REPO_ROOT, SRC_ROOT, walk()
 
-### Community 518 - "Community 518"
+### Community 517 - "Community 517"
 Cohesion: 0.26
 Nodes (9): activeWatch(), authenticate(), bootstrap(), current(), deliver(), emit(), harness, required() (+1 more)
 
-### Community 519 - "Community 519"
+### Community 518 - "Community 518"
 Cohesion: 0.17
 Nodes (9): collectReactionRows(), CORRECTED_SPELL_TRIGGERS, CORRECTED_TRIGGERS, ORACLE_PATTERNS, ReactionRow, ROWS, SPELL_ORACLE_PATTERNS, SPELL_ROWS (+1 more)
 
-### Community 520 - "Community 520"
+### Community 519 - "Community 519"
 Cohesion: 0.17
 Nodes (7): localize(), DEFENSE_REMOVED_KEY, localizeToastIntent(), ResolveConditionName, ResolveSpellName, TOAST_INTENT_KEY, TranslateFn
 
-### Community 521 - "Community 521"
+### Community 520 - "Community 520"
 Cohesion: 0.18
 Nodes (10): 1. Hotbar, action economy, tooltip anatomy, targeting, 2. Iconography and visual language, 3. Reactions and combat log, 4. Initiative, turn order, DM-equivalent gap, 5. Explain-on-demand teaching, 6. Known UX criticisms (avoid copying these flaws), BG3 Combat UI — Research Evidence, Do not copy (+2 more)
 
-### Community 522 - "Community 522"
+### Community 521 - "Community 521"
 Cohesion: 0.18
 Nodes (10): 1. Character builder (2024 rules), 2. The character sheet, 3. Imagery, 4. Explain-on-demand and progressive disclosure, 5. Campaign / DM side, 6. Known criticisms, D&D Beyond: Character Builder & Sheet — Evidence Brief, Do not copy (+2 more)
 
-### Community 523 - "Community 523"
+### Community 522 - "Community 522"
 Cohesion: 0.18
 Nodes (10): ADR-0006: One versioned mechanics authoring format for SRD, pack and homebrew, Alternative 1: Keep `MechanicsProgram` (mechanics-\*) as the format, Alternative 2: Free-form scripting (a DSL or JS), Alternatives Considered, Amendment (2026-09-03, `v2` architecture reset), Consequences, Context, Decision (+2 more)
 
-### Community 524 - "Community 524"
+### Community 523 - "Community 523"
 Cohesion: 0.18
 Nodes (10): ADR-0008: Diagnostics — the domain log plus in-house error reports; no third-party sink, Alternative 1: Sentry (free tier), Alternative 2: Cloud Logging via Functions, Alternatives Considered, Amendment (2026-09-03, `v2` architecture reset), Consequences, Context, Decision (+2 more)
 
-### Community 525 - "Community 525"
+### Community 524 - "Community 524"
 Cohesion: 0.24
 Nodes (7): amountsByTarget(), DamageEvent, DeclaredAction, groupBy(), hasCompetingAttacker(), reconcileChronicle(), ReconciledEvent
+
+### Community 525 - "Community 525"
+Cohesion: 0.20
+Nodes (7): confirmConcentrationSwap(), concentrationValue(), EngineCastFlowProps, mirrorConcentrationSwap(), buffed(), markedCaster(), warlockCaster()
 
 ### Community 527 - "Community 527"
 Cohesion: 0.22
@@ -5127,12 +5152,12 @@ Cohesion: 0.20
 Nodes (8): ActionSlot, actionSlots(), canAssignActionClaims(), economyActionCategory, EconomyActionClaim, EconomyActionRule, EconomyTurnAction, ExtraActionGrant
 
 ### Community 532 - "Community 532"
-Cohesion: 0.24
-Nodes (10): applyCommitOps(), assertNever(), CommitOp, CommitOptions, CommitStore, CostSpec, planCommit(), planResourceConversion() (+2 more)
+Cohesion: 0.29
+Nodes (10): creatureVitalsFor(), directConditionInstances(), documentFor(), projectEntityConditions(), projectResolvedEntityConditions(), resolvedEntityConditions(), concentrationsForTarget(), effectiveConditionImmunities() (+2 more)
 
 ### Community 533 - "Community 533"
-Cohesion: 0.29
-Nodes (10): runPartyCharacterAction(), AudienceEntry, DriveContext, FrameRecord, frameRef(), freezeDeep(), INPUT_KEYS, isExactInput() (+2 more)
+Cohesion: 0.24
+Nodes (10): applyCommitOps(), assertNever(), CommitOp, CommitOptions, CommitStore, CostSpec, planCommit(), planResourceConversion() (+2 more)
 
 ### Community 534 - "Community 534"
 Cohesion: 0.18
@@ -5220,31 +5245,31 @@ Nodes (10): CharacterMaterialRef, ClockRef, EntityRef, InventoryGenerationRef, M
 
 ### Community 555 - "Community 555"
 Cohesion: 0.24
-Nodes (5): pickerCard(), pickSpell(), pickSpellInFeat(), spellRow(), spellRowInFeat()
+Nodes (8): arrowsQty(), currentDoc(), equipQty(), mount(), S, SelectProbe(), spec, weaponAction()
 
 ### Community 556 - "Community 556"
+Cohesion: 0.24
+Nodes (5): pickerCard(), pickSpell(), pickSpellInFeat(), spellRow(), spellRowInFeat()
+
+### Community 557 - "Community 557"
 Cohesion: 0.31
 Nodes (7): clickContinue(), driveToCeremony(), gotoBoonFeatList(), learnFirstVisible(), renderWizard(), setChar(), walkToSpellsComplete()
 
-### Community 557 - "Community 557"
+### Community 558 - "Community 558"
 Cohesion: 0.20
 Nodes (8): authority(), FIXED_ONE, MANUAL_LIFETIME, MATERIAL, ROOT, state(), TARGET, TARGET_SELECTOR
 
-### Community 558 - "Community 558"
+### Community 559 - "Community 559"
 Cohesion: 0.22
 Nodes (10): ANCHORS, CAPABILITY, DEFINITION, ENTITY, INSTALLATION, MATERIAL, OTHER_ENTITY, program() (+2 more)
 
-### Community 559 - "Community 559"
+### Community 560 - "Community 560"
 Cohesion: 0.18
 Nodes (8): ALL_TSX, DIALOG_DIRS, EMBEDDED_DIALOG_BODIES, MODAL_HOSTS, PAGE_SIDE, ROOT, SANCTIONED, STAGE_HOSTS
 
-### Community 560 - "Community 560"
-Cohesion: 0.24
-Nodes (6): createCharacter, expectPointBuyComplete(), openChapter(), otherSpecies(), presets, selectValue()
-
 ### Community 561 - "Community 561"
 Cohesion: 0.24
-Nodes (6): build(), downWithSession(), pickOf(), scenario(), spec(), withLevel()
+Nodes (6): createCharacter, expectPointBuyComplete(), openChapter(), otherSpecies(), presets, selectValue()
 
 ### Community 562 - "Community 562"
 Cohesion: 0.20
@@ -5303,136 +5328,136 @@ Cohesion: 0.22
 Nodes (7): abilitiesKeys, damageTypesKeys, detailKeys, IdentitySheet(), record(), sheetKeys, skillsKeys
 
 ### Community 576 - "Community 576"
-Cohesion: 0.20
-Nodes (9): ACTION_FACT_SCHEMA, INTEGER_BINDINGS_SCHEMA, MECHANICS_ACTOR_SPEC_SCHEMA, MECHANICS_AUTHORITY_DEFINITION_SCHEMA, MECHANICS_AUTHORITY_SNAPSHOT_SCHEMA, MechanicsActorSpecSchemaShape, MechanicsAuthorityDefinitionSchemaShape, MechanicsAuthoritySchemaCustomTypes (+1 more)
+Cohesion: 0.36
+Nodes (8): debugBlock(), formatIssueBody(), formatIssueTitle(), formatLabels(), normalizeSeverity(), normalizeType(), PUBLIC_DEBUG_KEYS, publicDebugContext()
 
 ### Community 577 - "Community 577"
 Cohesion: 0.20
-Nodes (9): BLUEPRINT_RECORD_SCHEMA, CAPABILITY_GRANT_SCHEMA, GRANT_SCHEMA, ID_SCHEMA, MECHANICS_CAPABILITY_SNAPSHOT_SCHEMA, MECHANICS_PROGRAM_VALUE_SCHEMA, MechanicsCapabilitySchemaCustomTypes, MechanicsCapabilitySnapshotSchemaShape (+1 more)
+Nodes (9): ACTION_FACT_SCHEMA, INTEGER_BINDINGS_SCHEMA, MECHANICS_ACTOR_SPEC_SCHEMA, MECHANICS_AUTHORITY_DEFINITION_SCHEMA, MECHANICS_AUTHORITY_SNAPSHOT_SCHEMA, MechanicsActorSpecSchemaShape, MechanicsAuthorityDefinitionSchemaShape, MechanicsAuthoritySchemaCustomTypes (+1 more)
 
 ### Community 578 - "Community 578"
+Cohesion: 0.20
+Nodes (9): BLUEPRINT_RECORD_SCHEMA, CAPABILITY_GRANT_SCHEMA, GRANT_SCHEMA, ID_SCHEMA, MECHANICS_CAPABILITY_SNAPSHOT_SCHEMA, MECHANICS_PROGRAM_VALUE_SCHEMA, MechanicsCapabilitySchemaCustomTypes, MechanicsCapabilitySnapshotSchemaShape (+1 more)
+
+### Community 579 - "Community 579"
 Cohesion: 0.27
 Nodes (9): authenticEmissions, consumedSubscriberSelections, consumeMechanicsSubscriberSelection(), freezeDeep(), isAuthenticMechanicsEventEmission(), issueMechanicsEventEmission(), issueMechanicsSubscriberSelection(), mechanicsSubscriberSelectionFiber (+1 more)
 
-### Community 579 - "Community 579"
+### Community 580 - "Community 580"
+Cohesion: 0.27
+Nodes (10): bubble(), captionCenter(), drawCombatBox(), drawFooter(), drawHeader(), drawStatBar(), shield(), statCell() (+2 more)
+
+### Community 581 - "Community 581"
 Cohesion: 0.20
 Nodes (9): Correction verification — 7 September 2026, Current correction tasks — 7 September 2026, Global constraints, Historical verification record — 6 September candidate, P02 new application implementation plan, Task 1 — direction and boundary, Task 2 — identity repository, ACL, session and migration, Task 3 — mock-conforming P02 runtime (+1 more)
 
-### Community 580 - "Community 580"
+### Community 582 - "Community 582"
 Cohesion: 0.20
 Nodes (9): Exact authority contract after pre-code review, Global constraints, Independent import persistence slice of Task 3, P10 Creation and Onboarding Implementation Plan, Task 1 — Explicit content sources and extensible choice pools, Task 2 — Catalogue adaptation and pure creation composition, Task 3 — Atomic creation, recovery and rules, Task 4 — Wizard, import comparison and shell integration (+1 more)
 
-### Community 582 - "Community 582"
+### Community 584 - "Community 584"
 Cohesion: 0.27
 Nodes (9): assertSafeSandbox(), CharacterEnvelope, loadPlayers(), OWNER, PLAYER_SPECS, ROOT, run(), SandboxPlayer (+1 more)
 
-### Community 583 - "Community 583"
+### Community 585 - "Community 585"
 Cohesion: 0.20
 Nodes (9): Binding intent and scope, Character reuse and authority, Chosen architecture, E families named before implementation, Experience and portable documents, Owner clarification — automation and editable combat, P05 — Base homebrew authoring, Verification and gates (+1 more)
 
-### Community 584 - "Community 584"
-Cohesion: 0.20
-Nodes (9): compendium, emptyHint, emptyReset, emptyTitle, filters, frontisHint, hint, monsters (+1 more)
-
-### Community 585 - "Community 585"
-Cohesion: 0.20
-Nodes (9): items, kind, kind_pack, kind_tool, magic, magical, nonmagical, searchPlaceholder (+1 more)
-
 ### Community 586 - "Community 586"
 Cohesion: 0.20
-Nodes (10): swap, hint, incompleteWarning, levelFilter, noKnownSpells, removeLabel, replaceLabel, replaceThis (+2 more)
+Nodes (9): compendium, emptyHint, emptyReset, emptyTitle, filters, frontisHint, hint, monsters (+1 more)
 
 ### Community 587 - "Community 587"
 Cohesion: 0.20
-Nodes (10): coverAll, hide, off, offNote, onNote, opacity, opacityTip, reveal (+2 more)
+Nodes (9): items, kind, kind_pack, kind_tool, magic, magical, nonmagical, searchPlaceholder (+1 more)
 
 ### Community 588 - "Community 588"
 Cohesion: 0.20
-Nodes (10): view, aria, fit, fitTip, player, playerTip, zoomIn, zoomInTip (+2 more)
+Nodes (10): swap, hint, incompleteWarning, levelFilter, noKnownSpells, removeLabel, replaceLabel, replaceThis (+2 more)
 
 ### Community 589 - "Community 589"
 Cohesion: 0.20
-Nodes (9): spellPrep, alwaysPrepared, alwaysPreparedHint, notPrepared, notPreparedHint, prepared, preparedHint, signatureSpellBadge (+1 more)
+Nodes (10): coverAll, hide, off, offNote, onNote, opacity, opacityTip, reveal (+2 more)
 
 ### Community 590 - "Community 590"
 Cohesion: 0.20
-Nodes (9): compendium, emptyHint, emptyReset, emptyTitle, filters, frontisHint, hint, monsters (+1 more)
+Nodes (10): view, aria, fit, fitTip, player, playerTip, zoomIn, zoomInTip (+2 more)
 
 ### Community 591 - "Community 591"
 Cohesion: 0.20
-Nodes (9): items, kind, kind_pack, kind_tool, magic, magical, nonmagical, searchPlaceholder (+1 more)
+Nodes (9): spellPrep, alwaysPrepared, alwaysPreparedHint, notPrepared, notPreparedHint, prepared, preparedHint, signatureSpellBadge (+1 more)
 
 ### Community 592 - "Community 592"
 Cohesion: 0.20
-Nodes (10): swap, hint, incompleteWarning, levelFilter, noKnownSpells, removeLabel, replaceLabel, replaceThis (+2 more)
+Nodes (9): compendium, emptyHint, emptyReset, emptyTitle, filters, frontisHint, hint, monsters (+1 more)
 
 ### Community 593 - "Community 593"
 Cohesion: 0.20
-Nodes (10): coverAll, hide, off, offNote, onNote, opacity, opacityTip, reveal (+2 more)
+Nodes (9): items, kind, kind_pack, kind_tool, magic, magical, nonmagical, searchPlaceholder (+1 more)
 
 ### Community 594 - "Community 594"
 Cohesion: 0.20
-Nodes (10): view, aria, fit, fitTip, player, playerTip, zoomIn, zoomInTip (+2 more)
+Nodes (10): swap, hint, incompleteWarning, levelFilter, noKnownSpells, removeLabel, replaceLabel, replaceThis (+2 more)
 
 ### Community 595 - "Community 595"
 Cohesion: 0.20
-Nodes (9): spellPrep, alwaysPrepared, alwaysPreparedHint, notPrepared, notPreparedHint, prepared, preparedHint, signatureSpellBadge (+1 more)
+Nodes (10): coverAll, hide, off, offNote, onNote, opacity, opacityTip, reveal (+2 more)
 
 ### Community 596 - "Community 596"
 Cohesion: 0.20
-Nodes (5): allowed, ASSETS, DIST, EAGER_ALLOWLIST, here
+Nodes (10): view, aria, fit, fitTip, player, playerTip, zoomIn, zoomInTip (+2 more)
 
 ### Community 597 - "Community 597"
-Cohesion: 0.24
-Nodes (7): ApplyProbe(), currentDoc(), log(), mount(), S, sneakUsed(), spec
+Cohesion: 0.20
+Nodes (9): spellPrep, alwaysPrepared, alwaysPreparedHint, notPrepared, notPreparedHint, prepared, preparedHint, signatureSpellBadge (+1 more)
 
 ### Community 598 - "Community 598"
+Cohesion: 0.20
+Nodes (5): allowed, ASSETS, DIST, EAGER_ALLOWLIST, here
+
+### Community 599 - "Community 599"
 Cohesion: 0.27
 Nodes (9): BACKGROUND, { catalogue }, centreOf(), dragToken(), ground, mount(), run(), table() (+1 more)
 
-### Community 599 - "Community 599"
+### Community 600 - "Community 600"
 Cohesion: 0.20
 Nodes (6): cases, DAMAGE, KeyedEntry, SECTIONS, SKILL_IDS, VALID_CR
 
-### Community 600 - "Community 600"
+### Community 601 - "Community 601"
 Cohesion: 0.22
 Nodes (8): 1. Steps, in order, 2. User-visible strings, 3. How choices are explained today, 4. Imagery, 5. Validation and error model, 6. Expert speed, 7. Gap table, Current character-creation experience (v2, block P10) — factual inventory
 
-### Community 601 - "Community 601"
-Cohesion: 0.25
-Nodes (7): BEASTS, BEAST_INDEX, BEASTS, beastsByMaxCR(), getBeast(), resolvePolymorphForms(), resolveBeastFormAttacks()
-
 ### Community 602 - "Community 602"
+Cohesion: 0.22
+Nodes (4): CampaignInvite(), CreateCampaignModal(), inviteLinkFromCode(), appLink()
+
+### Community 603 - "Community 603"
 Cohesion: 0.25
 Nodes (6): buildMemberSnapshot(), snapshotClasses(), snapshotTotalLevel(), AttachedCampaignTracker, refreshAttachedSheets(), subclassIdByName()
 
-### Community 603 - "Community 603"
+### Community 604 - "Community 604"
 Cohesion: 0.28
 Nodes (8): { catalogue, errors }, goblin, intent(), opened(), ranger, run(), seq, visible
 
-### Community 604 - "Community 604"
+### Community 605 - "Community 605"
 Cohesion: 0.22
 Nodes (6): expectedItemArtKeys, ITEM_ART, ITEM_ART_COMPLETE, ItemArtKind, publicFiles, publicItemArt
 
-### Community 605 - "Community 605"
+### Community 606 - "Community 606"
 Cohesion: 0.22
 Nodes (8): Deploying — promote a verified SHA, Migrate before you deploy (ADR-0009), Release notes = the projected CHANGELOG section, Release process, Releasing — `just release`, Reproducibility, Versioning, What goes in `CHANGELOG.md`
 
-### Community 606 - "Community 606"
+### Community 607 - "Community 607"
 Cohesion: 0.31
 Nodes (6): crawl(), srcFileMap(), MINTERS, ALLOWLIST, findViolations(), srdMultiWordNames()
 
-### Community 607 - "Community 607"
+### Community 608 - "Community 608"
 Cohesion: 0.42
 Nodes (9): addCompiled(), applyRule(), childPath(), indexPath(), inlinePresenter(), isRecord(), leafPaths(), presenterField() (+1 more)
 
-### Community 608 - "Community 608"
-Cohesion: 0.28
-Nodes (7): conformMechanicsCapabilitySnapshot(), conformMechanicsCapabilitySnapshotStructure, MECHANICS_CAPABILITY_SCHEMA_CUSTOMS, MechanicsCapabilitySchemaRefTypes, mechanicsCapabilitySnapshotKey(), SCHEMA_CONTEXT, snapshotSemantics()
-
 ### Community 609 - "Community 609"
-Cohesion: 0.31
-Nodes (7): MapTool, RAIL, RailItem, ToolRail(), ToolRailProps, mapToolFor(), PlayTool
+Cohesion: 0.47
+Nodes (8): ActiveKeySession, EMPTY_KEYS, isRecord(), liveSelfStandings(), worldStandingActiveKeys(), worldStandingMaxHpDeltas(), worldStandingTargetMarks(), worldStandingZeroHpFloors()
 
 ### Community 610 - "Community 610"
 Cohesion: 0.22
@@ -5451,7001 +5476,7085 @@ Cohesion: 0.47
 Nodes (7): buildReleaseNotes(), CHANGELOG_URL, extractSection(), main(), normalizeVersion(), previousTag(), changelog
 
 ### Community 614 - "Community 614"
-Cohesion: 0.22
-Nodes (8): Architecture and owners, Authoring vocabulary, Binding scope, Experience, Named E families and acceptance before code, P06 — Monster and campaign-rule authoring, Proof and delivery, Reference evidence
+Cohesion: 0.19
+Nodes (4): BreakdownTip(), BreakdownTipProps, RUBRIC_KEY, FilterChip()
 
 ### Community 615 - "Community 615"
 Cohesion: 0.22
-Nodes (8): Architecture and authority, Authoring and build semantics, Binding mandate, Experience and evidence, Implemented review resolutions, Named E families before code, P07 — Origins and feats, Pre-code review resolutions: dependency bundles, budgets and projection
+Nodes (8): Architecture and owners, Authoring vocabulary, Binding scope, Experience, Named E families and acceptance before code, P06 — Monster and campaign-rule authoring, Proof and delivery, Reference evidence
 
 ### Community 616 - "Community 616"
 Cohesion: 0.22
-Nodes (8): Base score method detail, Budgets, errors and evidence, Concrete persistence and trust decisions, Domain owners and interfaces, Experience and alternatives, Import and recovery, Mandate and scope, P10 — Guided character creation and recoverable onboarding
+Nodes (8): Architecture and authority, Authoring and build semantics, Binding mandate, Experience and evidence, Implemented review resolutions, Named E families before code, P07 — Origins and feats, Pre-code review resolutions: dependency bundles, budgets and projection
 
 ### Community 617 - "Community 617"
+Cohesion: 0.22
+Nodes (8): Base score method detail, Budgets, errors and evidence, Concrete persistence and trust decisions, Domain owners and interfaces, Experience and alternatives, Import and recovery, Mandate and scope, P10 — Guided character creation and recoverable onboarding
+
+### Community 618 - "Community 618"
 Cohesion: 0.33
 Nodes (6): AclTarget, CampaignLike, CampaignPlan, coMemberAclTargets(), emailMatches(), planCampaignUpdate()
 
-### Community 618 - "Community 618"
-Cohesion: 0.22
-Nodes (8): abyssal, name, gnoll, name, gnomish, name, goblin, name
-
 ### Community 619 - "Community 619"
 Cohesion: 0.22
-Nodes (8): clubs, name, martial-weapons, martial-weapons-finesse-or-light, name, name, shortbows, name
+Nodes (8): common, name, gnoll, name, gnomish, name, goblin, name
 
 ### Community 620 - "Community 620"
 Cohesion: 0.22
-Nodes (9): abilities, classes, custom, origins, overrides, spells, state, unrecognized (+1 more)
+Nodes (8): clubs, name, martial-weapons, martial-weapons-finesse-or-light, name, name, shortbows, name
 
 ### Community 621 - "Community 621"
 Cohesion: 0.22
-Nodes (8): body, editions, heading, legal, app, link, subtitle, title
+Nodes (9): abilities, classes, custom, origins, overrides, spells, state, unrecognized (+1 more)
 
 ### Community 622 - "Community 622"
 Cohesion: 0.22
-Nodes (9): licenses, appDesc, appTerm, heading, iconsDesc, iconsPlay, intro, srdDesc (+1 more)
+Nodes (8): body, editions, heading, legal, app, link, subtitle, title
 
 ### Community 623 - "Community 623"
 Cohesion: 0.22
-Nodes (9): purpose, attack, check, concentration, damage, death-save, free, initiative (+1 more)
+Nodes (9): licenses, appDesc, appTerm, heading, iconsDesc, iconsPlay, intro, srdDesc (+1 more)
 
 ### Community 624 - "Community 624"
 Cohesion: 0.22
-Nodes (9): hideTip, initiativeShort, initiativeTip, leave, leaveTip, removeSeated, removeTip, show (+1 more)
+Nodes (9): purpose, attack, check, concentration, damage, death-save, free, initiative (+1 more)
 
 ### Community 625 - "Community 625"
 Cohesion: 0.22
-Nodes (8): stats, ac, dc, hitDie, hp, lvl, pb, spd
+Nodes (9): hideTip, initiativeShort, initiativeTip, leave, leaveTip, removeSeated, removeTip, show (+1 more)
 
 ### Community 626 - "Community 626"
 Cohesion: 0.22
-Nodes (8): abyssal, name, gnoll, name, gnomish, name, goblin, name
+Nodes (8): stats, ac, dc, hitDie, hp, lvl, pb, spd
 
 ### Community 627 - "Community 627"
 Cohesion: 0.22
-Nodes (8): clubs, name, martial-weapons, martial-weapons-finesse-or-light, name, name, shortbows, name
+Nodes (8): abyssal, name, gnoll, name, gnomish, name, goblin, name
 
 ### Community 628 - "Community 628"
 Cohesion: 0.22
-Nodes (9): abilities, classes, custom, origins, overrides, spells, state, unrecognized (+1 more)
+Nodes (8): clubs, name, martial-weapons, martial-weapons-finesse-or-light, name, name, shortbows, name
 
 ### Community 629 - "Community 629"
 Cohesion: 0.22
-Nodes (8): body, editions, heading, legal, app, link, subtitle, title
+Nodes (9): abilities, classes, custom, origins, overrides, spells, state, unrecognized (+1 more)
 
 ### Community 630 - "Community 630"
 Cohesion: 0.22
-Nodes (9): licenses, appDesc, appTerm, heading, iconsDesc, iconsPlay, intro, srdDesc (+1 more)
+Nodes (8): body, editions, heading, legal, app, link, subtitle, title
 
 ### Community 631 - "Community 631"
 Cohesion: 0.22
-Nodes (9): purpose, attack, check, concentration, damage, death-save, free, initiative (+1 more)
+Nodes (9): licenses, appDesc, appTerm, heading, iconsDesc, iconsPlay, intro, srdDesc (+1 more)
 
 ### Community 632 - "Community 632"
 Cohesion: 0.22
-Nodes (9): hideTip, initiativeShort, initiativeTip, leave, leaveTip, removeSeated, removeTip, show (+1 more)
+Nodes (9): purpose, attack, check, concentration, damage, death-save, free, initiative (+1 more)
 
 ### Community 633 - "Community 633"
 Cohesion: 0.22
-Nodes (8): stats, ac, dc, hitDie, hp, lvl, pb, spd
+Nodes (9): hideTip, initiativeShort, initiativeTip, leave, leaveTip, removeSeated, removeTip, show (+1 more)
 
 ### Community 634 - "Community 634"
 Cohesion: 0.22
-Nodes (8): ActiveCombatEffect, CombatantRef, CombatEffectAppliedState, CombatEffectBindings, CombatEffectDuration, CombatEffectOp, CombatEffectPayload, EncounterPosition
+Nodes (8): stats, ac, dc, hitDie, hp, lvl, pb, spd
 
 ### Community 635 - "Community 635"
 Cohesion: 0.22
-Nodes (8): CombatPersistence, CombatState, PendingConcentrationSave, PersistedAttackSwing, PersistedSession, PersistedTurnAction, PersistedTurnEconomy, RecentAttack
+Nodes (8): ActiveCombatEffect, CombatantRef, CombatEffectAppliedState, CombatEffectBindings, CombatEffectDuration, CombatEffectOp, CombatEffectPayload, EncounterPosition
 
 ### Community 636 - "Community 636"
 Cohesion: 0.22
+Nodes (8): CombatPersistence, CombatState, PendingConcentrationSave, PersistedAttackSwing, PersistedSession, PersistedTurnAction, PersistedTurnEconomy, RecentAttack
+
+### Community 637 - "Community 637"
+Cohesion: 0.22
 Nodes (8): CompileMechanicsFrameInput, MechanicsCompiledSegment, MechanicsCompiledStepTrace, MechanicsCompilerContinuation, MechanicsCompilerRequest, MechanicsCompilerResponse, MechanicsFrameCompileRejection, MechanicsFrameCompileResult
 
-### Community 638 - "Community 638"
+### Community 639 - "Community 639"
 Cohesion: 0.22
 Nodes (5): FakeServerTimestamp, FakeTimestamp, listDocs, { navigateSpy }, writes
 
-### Community 639 - "Community 639"
+### Community 640 - "Community 640"
 Cohesion: 0.28
 Nodes (6): charmer, effects(), instance(), material, otherSource, requirements()
 
-### Community 641 - "Community 641"
+### Community 642 - "Community 642"
+Cohesion: 0.31
+Nodes (7): CHARACTER, condition(), economy(), effectWorld(), encounter(), localEncounterWorld(), SHARED
+
+### Community 643 - "Community 643"
 Cohesion: 0.31
 Nodes (6): fullItemState(), instanceIdFor(), itemResourceSpec(), LABELS, sorcerer(), withItem()
 
-### Community 642 - "Community 642"
+### Community 644 - "Community 644"
+Cohesion: 0.22
+Nodes (5): ItemResourceLabelTranslationKey, itemResourceRecoveryTranslationKey, ItemResourceUnitTranslationKey, ItemResourceViewResult, ItemResourceVM
+
+### Community 645 - "Community 645"
 Cohesion: 0.25
 Nodes (7): Locale, open(), OUT, Role, seed(), Theme, VIEWPORTS
 
-### Community 643 - "Community 643"
-Cohesion: 0.29
-Nodes (7): conformCampaignMembers(), toCampaignDoc(), toChronicleDoc(), toSessionLogDoc(), toSharedNote(), isTimestampLike(), timestampsToDates()
-
-### Community 645 - "Community 645"
-Cohesion: 0.32
-Nodes (5): CompendiumFacets(), useEdgeFade(), useOverflowFade(), useOverflowFadeY(), ModalScroll()
-
-### Community 646 - "Community 646"
-Cohesion: 0.25
-Nodes (7): PackFixtureLoaders, PackGrantExtensions, PackLazySrdLoader, PackSrdLoader, PackSrdOverlay, PackUiOverlay, SrdCataloguePatch
-
 ### Community 647 - "Community 647"
 Cohesion: 0.25
-Nodes (4): useBackWithFallback(), LegalPage(), Harness(), navigateMock
+Nodes (7): PackFixtureLoaders, PackGrantExtensions, PackLazySrdLoader, PackSrdLoader, PackSrdOverlay, PackUiOverlay, SrdCataloguePatch
 
 ### Community 648 - "Community 648"
 Cohesion: 0.29
 Nodes (4): useClampOverflow(), FeaturePreviewCard(), Props, SectionHeader()
 
 ### Community 649 - "Community 649"
+Cohesion: 0.43
+Nodes (8): finiteNonNegative(), hasExactKeys(), nonEmptyString(), plainRecord(), validatePublicCharacterProjection(), validPublicCache(), validPublicClass(), validPublicCrop()
+
+### Community 650 - "Community 650"
 Cohesion: 0.32
 Nodes (7): ALIGNMENT_ID_TO_LABEL, ALIGNMENT_IDS, alignmentIdByLabel(), AlignmentKey, ALIGNMENTS, isStandardAlignment(), slugifyAlignment()
 
-### Community 650 - "Community 650"
-Cohesion: 0.25
-Nodes (7): Global constraints, P06 Monsters and Rules Implementation Plan, Task 1 — Advanced vocabulary and behavioral conformance, Task 2 — Campaign persistence and adversarial authorization, Task 3 — Editors, reader and real reuse surfaces, Task 4 — Actual runtime verification loop, Task 5 — Review, gates and owner delivery
-
 ### Community 651 - "Community 651"
-Cohesion: 0.25
-Nodes (7): Global constraints, Mandatory preflight refinements, P07 Origins and Feats Implementation Plan, Task 1 — Origin authoring and pure choice composition, Task 2 — Atomic persistent origin build, Task 3 — Guided editors, picker and build reader, Task 4 — Current optimized runtime and paper
+Cohesion: 0.36
+Nodes (6): resolveSpellAbility(), casterClassAbilities(), CasterClassAbility, resolveSpellOwningAbility(), resolveSpellOwningClassId(), uniqueOwningCaster()
 
 ### Community 652 - "Community 652"
 Cohesion: 0.25
-Nodes (7): Current block, Progress, Release state of `main`, The milestone, What v2 is not yet, Where the work happens, Where to look for what
+Nodes (7): Global constraints, P06 Monsters and Rules Implementation Plan, Task 1 — Advanced vocabulary and behavioral conformance, Task 2 — Campaign persistence and adversarial authorization, Task 3 — Editors, reader and real reuse surfaces, Task 4 — Actual runtime verification loop, Task 5 — Review, gates and owner delivery
 
 ### Community 653 - "Community 653"
 Cohesion: 0.25
-Nodes (7): RiderSummary(), RiderChipVM, RiderDieMode, RiderKind, RiderSummaryVM, RiderVM, summarizeRiders()
+Nodes (7): Global constraints, Mandatory preflight refinements, P07 Origins and Feats Implementation Plan, Task 1 — Origin authoring and pure choice composition, Task 2 — Atomic persistent origin build, Task 3 — Guided editors, picker and build reader, Task 4 — Current optimized runtime and paper
 
-### Community 655 - "Community 655"
+### Community 654 - "Community 654"
 Cohesion: 0.25
-Nodes (7): auth, blocked, blockedTitle, error, signIn, signingIn, tryAgain
+Nodes (7): Current block, Progress, Release state of `main`, The milestone, What v2 is not yet, Where the work happens, Where to look for what
 
 ### Community 656 - "Community 656"
 Cohesion: 0.25
-Nodes (8): health, bloodied, bloodiedHint, bloodiedRequired, hitDice, hitDiceTotal, hpAbbr, maxHp
+Nodes (7): auth, blocked, blockedTitle, error, signIn, signingIn, tryAgain
 
 ### Community 657 - "Community 657"
 Cohesion: 0.25
-Nodes (8): links, agpl, ccby, ccby3, gameIcons, lucide, srd, srd51
+Nodes (8): health, bloodied, bloodiedHint, bloodiedRequired, hitDice, hitDiceTotal, hpAbbr, maxHp
 
 ### Community 658 - "Community 658"
 Cohesion: 0.25
-Nodes (8): feat, featAbilityHint, modeLabel, plus1_1, plus2, prerequisite, searchFeat, asi
+Nodes (8): links, agpl, ccby, ccby3, gameIcons, lucide, srd, srd51
 
 ### Community 659 - "Community 659"
 Cohesion: 0.25
-Nodes (8): dash, disengage, dodge, help, hide, move, opportunity, core
+Nodes (8): feat, featAbilityHint, modeLabel, plus1_1, plus2, prerequisite, searchFeat, asi
 
 ### Community 660 - "Community 660"
 Cohesion: 0.25
-Nodes (8): appHint, formula, modeApp, modeManual, throw, tip, title, dice
+Nodes (8): dash, disengage, dodge, help, hide, move, opportunity, core
 
 ### Community 661 - "Community 661"
 Cohesion: 0.25
-Nodes (8): clearCondition, condition, hint, max, noCondition, reason, temp, hp
+Nodes (8): appHint, formula, modeApp, modeManual, throw, tip, title, dice
 
 ### Community 662 - "Community 662"
 Cohesion: 0.25
-Nodes (8): relation, adjacent, aura-member, cover, engaged, mark, range, visible
+Nodes (8): clearCondition, condition, hint, max, noCondition, reason, temp, hp
 
 ### Community 663 - "Community 663"
 Cohesion: 0.25
-Nodes (8): reaction, canReact, none, noneTip, openTip, pass, title, waiting
+Nodes (8): relation, adjacent, aura-member, cover, engaged, mark, range, visible
 
 ### Community 664 - "Community 664"
 Cohesion: 0.25
-Nodes (7): auth, blocked, blockedTitle, error, signIn, signingIn, tryAgain
+Nodes (8): reaction, canReact, none, noneTip, openTip, pass, title, waiting
 
 ### Community 665 - "Community 665"
 Cohesion: 0.25
-Nodes (8): health, bloodied, bloodiedHint, bloodiedRequired, hitDice, hitDiceTotal, hpAbbr, maxHp
+Nodes (7): auth, blocked, blockedTitle, error, signIn, signingIn, tryAgain
 
 ### Community 666 - "Community 666"
 Cohesion: 0.25
-Nodes (8): links, agpl, ccby, ccby3, gameIcons, lucide, srd, srd51
+Nodes (8): health, bloodied, bloodiedHint, bloodiedRequired, hitDice, hitDiceTotal, hpAbbr, maxHp
 
 ### Community 667 - "Community 667"
 Cohesion: 0.25
-Nodes (8): feat, featAbilityHint, modeLabel, plus1_1, plus2, prerequisite, searchFeat, asi
+Nodes (8): links, agpl, ccby, ccby3, gameIcons, lucide, srd, srd51
 
 ### Community 668 - "Community 668"
 Cohesion: 0.25
-Nodes (8): dash, disengage, dodge, help, hide, move, opportunity, core
+Nodes (8): feat, featAbilityHint, modeLabel, plus1_1, plus2, prerequisite, searchFeat, asi
 
 ### Community 669 - "Community 669"
 Cohesion: 0.25
-Nodes (8): appHint, formula, modeApp, modeManual, throw, tip, title, dice
+Nodes (8): dash, disengage, dodge, help, hide, move, opportunity, core
 
 ### Community 670 - "Community 670"
 Cohesion: 0.25
-Nodes (8): clearCondition, condition, hint, max, noCondition, reason, temp, hp
+Nodes (8): appHint, formula, modeApp, modeManual, throw, tip, title, dice
 
 ### Community 671 - "Community 671"
 Cohesion: 0.25
-Nodes (8): relation, adjacent, aura-member, cover, engaged, mark, range, visible
+Nodes (8): clearCondition, condition, hint, max, noCondition, reason, temp, hp
 
 ### Community 672 - "Community 672"
 Cohesion: 0.25
-Nodes (8): reaction, canReact, none, noneTip, openTip, pass, title, waiting
+Nodes (8): relation, adjacent, aura-member, cover, engaged, mark, range, visible
 
 ### Community 673 - "Community 673"
+Cohesion: 0.25
+Nodes (8): reaction, canReact, none, noneTip, openTip, pass, title, waiting
+
+### Community 674 - "Community 674"
 Cohesion: 0.36
 Nodes (6): esc(), formatSignupEmail(), MailConfig, MailMessage, NewUserLike, resolveMailConfig()
 
-### Community 674 - "Community 674"
+### Community 675 - "Community 675"
 Cohesion: 0.25
 Nodes (7): CombatAbilityCode, CombatAttackResult, CombatOutcomeFact, CombatOutcomePredicate, CombatOutcomeReceipt, CombatOutcomeTarget, ReviewedCombatTargetOutcome
 
+### Community 676 - "Community 676"
+Cohesion: 0.32
+Nodes (5): capturePrepared(), chooseSubtleFireBolt(), Probe(), sorcerer(), spellAction()
+
 ### Community 677 - "Community 677"
+Cohesion: 0.29
+Nodes (4): ALL_DOCS, canonical(), CROP, lift()
+
+### Community 680 - "Community 680"
 Cohesion: 0.25
 Nodes (5): { devBypass }, FakeConfig, FakeDoc, FakeSave, FakeState
 
-### Community 678 - "Community 678"
+### Community 681 - "Community 681"
 Cohesion: 0.25
 Nodes (3): character, item, version
 
-### Community 679 - "Community 679"
+### Community 682 - "Community 682"
 Cohesion: 0.29
 Nodes (6): FEATURE, HARNESS, referencedIds(), ROOT, sources(), SPRITE
 
-### Community 680 - "Community 680"
+### Community 683 - "Community 683"
 Cohesion: 0.29
 Nodes (5): concretise(), EXEMPT_ROUTES, here, isCovered(), ROUTER
 
-### Community 681 - "Community 681"
+### Community 684 - "Community 684"
 Cohesion: 0.29
 Nodes (7): 0.16.4, Campaign sync & shared data, Character creation & leveling, Character sheet & HP, Encounter & combat play, Inputs & navigation, Italian localization
 
-### Community 682 - "Community 682"
+### Community 685 - "Community 685"
 Cohesion: 0.29
 Nodes (6): Commits and changesets, Contributing, Gates, Lessons that became rules, Review lifecycle, Setup and the two build modes
 
-### Community 683 - "Community 683"
+### Community 686 - "Community 686"
 Cohesion: 0.29
 Nodes (6): Base homebrew authoring vocabulary, P06 editor and recovery surfaces, P06 monster and campaign-rule declarations, P08a Library publication boundary, P08b shared class composers, P08c shared subclass selection
 
-### Community 684 - "Community 684"
+### Community 687 - "Community 687"
 Cohesion: 0.29
 Nodes (4): en, enEntries, itEntries, itLocale
 
-### Community 685 - "Community 685"
+### Community 689 - "Community 689"
+Cohesion: 0.38
+Nodes (4): useEdgeFade(), useOverflowFade(), useOverflowFadeY(), ModalScroll()
+
+### Community 690 - "Community 690"
 Cohesion: 0.33
 Nodes (5): arcaneRecoveryCap(), validateArcaneRecoveryPlan(), ArcaneRecoveryModal(), ArcaneRecoveryModalProps, ArcaneRecoveryRequest
 
-### Community 686 - "Community 686"
+### Community 691 - "Community 691"
 Cohesion: 0.81
 Nodes (6): conformCombatEffectOp(), isActiveCombatEffect(), isCombatantRef(), isCombatEffectDuration(), isRecord(), isString()
 
-### Community 688 - "Community 688"
+### Community 693 - "Community 693"
 Cohesion: 0.33
 Nodes (7): arraySchema(), discriminatedUnionSchema(), literalSchema(), objectSchema(), recordSchema(), occurrenceSchema(), damageBinaryApplicationSchema()
 
-### Community 689 - "Community 689"
+### Community 694 - "Community 694"
 Cohesion: 0.52
 Nodes (6): assertUnique(), ChoiceBundle, FamiliarForms, mergeChoiceBundle(), mergeFamiliarForms(), withPackGrantExtensions()
 
-### Community 690 - "Community 690"
+### Community 695 - "Community 695"
 Cohesion: 0.29
 Nodes (6): Global constraints, P08a Class and Subclass Model Implementation Plan, Task 1 — Model and conformance (Astra/model lane), Task 2 — Version boundary and real persistence (Astra), Task 3 — Minimal consultation and optimized UI (Astra), Task 4 — Review and integration
 
-### Community 691 - "Community 691"
+### Community 696 - "Community 696"
 Cohesion: 0.29
 Nodes (6): Global constraints, P09 Shell and Orientation Implementation Plan, Task 1 — Navigation contract and browser state, Task 2 — Shell, Account and context consumers, Task 3 — Library and picker provenance, Task 4 — Real optimized verification and closure
 
-### Community 692 - "Community 692"
+### Community 697 - "Community 697"
 Cohesion: 0.29
 Nodes (6): Closed (SHA), Current block, Next session, Open, Opening prompt, Recent owner decisions (dates)
 
-### Community 694 - "Community 694"
+### Community 699 - "Community 699"
 Cohesion: 0.29
 Nodes (3): PortraitCropErrorBoundary, Props, State
 
-### Community 695 - "Community 695"
+### Community 700 - "Community 700"
 Cohesion: 0.29
 Nodes (5): SaveIndicator(), STATUS_CONFIG, SaveState, SaveStatus, useSaveStore
 
-### Community 696 - "Community 696"
-Cohesion: 0.33
-Nodes (5): Section(), SectionProps, SectionDisclosure, SectionHeader(), SectionHeaderProps
-
-### Community 697 - "Community 697"
+### Community 701 - "Community 701"
 Cohesion: 0.29
 Nodes (6): Authority and intent, Authorized shell/Account correction — 7 September 2026, Mock mapping and functional boundary, New boundary, P02 new application identity and privacy, Verification and exit
 
-### Community 698 - "Community 698"
+### Community 702 - "Community 702"
 Cohesion: 0.29
 Nodes (6): Acceptance, Addressed grant, Mandate and scope, P04 — Library and versions, Shared state, security and UI, Single library authority
 
-### Community 699 - "Community 699"
+### Community 703 - "Community 703"
 Cohesion: 0.29
 Nodes (6): Experience and facts, Future contract carried intact, Ownership and acceptance, P08b guided class editor design, Scope and authority, Verification and delivery
 
-### Community 700 - "Community 700"
+### Community 704 - "Community 704"
 Cohesion: 0.29
 Nodes (6): Experience and architecture, Future contract carried intact, Ownership and acceptance, P08c guided subclass editor design, Scope and authority, Verification and delivery
 
-### Community 701 - "Community 701"
+### Community 705 - "Community 705"
 Cohesion: 0.29
 Nodes (6): Acceptance and evidence, Approved direction and scope, Ownership and chosen approach, P09 — Shell and orientation, Routes, context and return behavior, Shell and accessibility
 
-### Community 702 - "Community 702"
+### Community 706 - "Community 706"
 Cohesion: 0.48
 Nodes (5): BudgetNotification, decideBudgetKill(), finiteNumber(), KillDecision, parseBudgetNotification()
 
-### Community 703 - "Community 703"
-Cohesion: 0.29
-Nodes (6): magic-initiate-cleric, description, name, skilled, description, name
-
-### Community 704 - "Community 704"
-Cohesion: 0.29
-Nodes (7): bane, description, duration, effectWord, higherLevels, name, range
-
-### Community 705 - "Community 705"
-Cohesion: 0.29
-Nodes (7): charm-person, description, duration, effectWord, higherLevels, name, range
-
-### Community 706 - "Community 706"
-Cohesion: 0.29
-Nodes (7): override, addArmorProf, addConditionImmunity, addImmunity, addResistance, addVulnerability, addWeaponProf
-
 ### Community 707 - "Community 707"
 Cohesion: 0.29
-Nodes (7): tabs, bio, combat, features, inventory, label, spells
+Nodes (6): magic-initiate-cleric, description, name, skilled, description, name
 
 ### Community 708 - "Community 708"
 Cohesion: 0.29
-Nodes (6): deathSaves, critThreshold, dead, failures, successes, title
+Nodes (7): bane, description, duration, effectWord, higherLevels, name, range
 
 ### Community 709 - "Community 709"
 Cohesion: 0.29
-Nodes (7): cha, con, dex, int, str, wis, abilities
+Nodes (7): charm-person, description, duration, effectWord, higherLevels, name, range
 
 ### Community 710 - "Community 710"
 Cohesion: 0.29
-Nodes (7): scaling, cantripScale, dieUpgrade, extraAttack_one, extraAttack_other, martialArts, sneakAttack
+Nodes (7): override, addArmorProf, addConditionImmunity, addImmunity, addResistance, addVulnerability, addWeaponProf
 
 ### Community 711 - "Community 711"
 Cohesion: 0.29
-Nodes (6): maneuvers, eyebrow, pickLabel, saveLabel, search, section
+Nodes (7): tabs, bio, combat, features, inventory, label, spells
 
 ### Community 712 - "Community 712"
 Cohesion: 0.29
-Nodes (7): rules, full-auto, full-autoTip, log-only, log-onlyTip, note, title
+Nodes (6): deathSaves, critThreshold, dead, failures, successes, title
 
 ### Community 713 - "Community 713"
 Cohesion: 0.29
-Nodes (7): browser, recentErrors, screen, themeLocale, version, viewport, attach
+Nodes (7): cha, con, dex, int, str, wis, abilities
 
 ### Community 714 - "Community 714"
 Cohesion: 0.29
-Nodes (7): types, bug, data, feature, other, performance, visual
+Nodes (7): scaling, cantripScale, dieUpgrade, extraAttack_one, extraAttack_other, martialArts, sneakAttack
 
 ### Community 715 - "Community 715"
 Cohesion: 0.29
-Nodes (6): save, error, offline, pending, saved, saving
+Nodes (6): maneuvers, eyebrow, pickLabel, saveLabel, search, section
 
 ### Community 716 - "Community 716"
 Cohesion: 0.29
-Nodes (6): magic-initiate-cleric, description, name, skilled, description, name
+Nodes (7): rules, full-auto, full-autoTip, log-only, log-onlyTip, note, title
 
 ### Community 717 - "Community 717"
 Cohesion: 0.29
-Nodes (7): bane, description, duration, effectWord, higherLevels, name, range
+Nodes (7): browser, recentErrors, screen, themeLocale, version, viewport, attach
 
 ### Community 718 - "Community 718"
 Cohesion: 0.29
-Nodes (7): charm-person, description, duration, effectWord, higherLevels, name, range
+Nodes (7): types, bug, data, feature, other, performance, visual
 
 ### Community 719 - "Community 719"
 Cohesion: 0.29
-Nodes (7): override, addArmorProf, addConditionImmunity, addImmunity, addResistance, addVulnerability, addWeaponProf
+Nodes (6): save, error, offline, pending, saved, saving
 
 ### Community 720 - "Community 720"
 Cohesion: 0.29
-Nodes (7): tabs, bio, combat, features, inventory, label, spells
+Nodes (6): magic-initiate-cleric, description, name, skilled, description, name
 
 ### Community 721 - "Community 721"
 Cohesion: 0.29
-Nodes (6): deathSaves, critThreshold, dead, failures, successes, title
+Nodes (7): bane, description, duration, effectWord, higherLevels, name, range
 
 ### Community 722 - "Community 722"
 Cohesion: 0.29
-Nodes (7): cha, con, dex, int, str, wis, abilities
+Nodes (7): charm-person, description, duration, effectWord, higherLevels, name, range
 
 ### Community 723 - "Community 723"
 Cohesion: 0.29
-Nodes (7): scaling, cantripScale, dieUpgrade, extraAttack_one, extraAttack_other, martialArts, sneakAttack
+Nodes (7): override, addArmorProf, addConditionImmunity, addImmunity, addResistance, addVulnerability, addWeaponProf
 
 ### Community 724 - "Community 724"
 Cohesion: 0.29
-Nodes (6): maneuvers, eyebrow, pickLabel, saveLabel, search, section
+Nodes (7): tabs, bio, combat, features, inventory, label, spells
 
 ### Community 725 - "Community 725"
 Cohesion: 0.29
-Nodes (7): rules, full-auto, full-autoTip, log-only, log-onlyTip, note, title
+Nodes (6): deathSaves, critThreshold, dead, failures, successes, title
 
 ### Community 726 - "Community 726"
 Cohesion: 0.29
-Nodes (7): browser, recentErrors, screen, themeLocale, version, viewport, attach
+Nodes (7): cha, con, dex, int, str, wis, abilities
 
 ### Community 727 - "Community 727"
 Cohesion: 0.29
-Nodes (7): types, bug, data, feature, other, performance, visual
+Nodes (7): scaling, cantripScale, dieUpgrade, extraAttack_one, extraAttack_other, martialArts, sneakAttack
 
 ### Community 728 - "Community 728"
 Cohesion: 0.29
-Nodes (6): save, error, offline, pending, saved, saving
+Nodes (6): maneuvers, eyebrow, pickLabel, saveLabel, search, section
 
 ### Community 729 - "Community 729"
 Cohesion: 0.29
-Nodes (6): AlignmentId, Branded, ConcentrationRef, ProficiencyToken, RaceId, StoredConcentration
+Nodes (7): rules, full-auto, full-autoTip, log-only, log-onlyTip, note, title
 
 ### Community 730 - "Community 730"
 Cohesion: 0.29
-Nodes (6): MechanicsCoordinationFrameAnswers, MechanicsCoordinationFrameRef, MechanicsCoordinationInput, MechanicsCoordinationRejection, MechanicsCoordinationResult, MechanicsCoordinationTraceEntry
+Nodes (7): browser, recentErrors, screen, themeLocale, version, viewport, attach
 
 ### Community 731 - "Community 731"
-Cohesion: 0.33
-Nodes (5): DATA_ROOT, grantDescriptions(), I18N_ROOTS, localeSplitGroups(), PACK_DATA_ROOT
+Cohesion: 0.29
+Nodes (7): types, bug, data, feature, other, performance, visual
+
+### Community 732 - "Community 732"
+Cohesion: 0.29
+Nodes (6): save, error, offline, pending, saved, saving
+
+### Community 733 - "Community 733"
+Cohesion: 0.29
+Nodes (6): AlignmentId, Branded, ConcentrationRef, ProficiencyToken, RaceId, StoredConcentration
 
 ### Community 734 - "Community 734"
-Cohesion: 0.43
-Nodes (5): equipmentEntry(), group(), magicEntry(), req(), t
+Cohesion: 0.29
+Nodes (6): MechanicsCoordinationFrameAnswers, MechanicsCoordinationFrameRef, MechanicsCoordinationInput, MechanicsCoordinationRejection, MechanicsCoordinationResult, MechanicsCoordinationTraceEntry
 
 ### Community 735 - "Community 735"
 Cohesion: 0.33
-Nodes (5): FROZEN_READERS, importsKernel(), resolveSpecifier(), ROOT, SRC
-
-### Community 736 - "Community 736"
-Cohesion: 0.29
-Nodes (5): baseCtx, eldritchSmite, lifedrinker, pactOfTheBlade, SCORES
+Nodes (5): DATA_ROOT, grantDescriptions(), I18N_ROOTS, localeSplitGroups(), PACK_DATA_ROOT
 
 ### Community 738 - "Community 738"
-Cohesion: 0.38
-Nodes (6): diceAt(), fighter(), LOCALES, scenario(), warlock(), auraVMs()
+Cohesion: 0.43
+Nodes (5): equipmentEntry(), group(), magicEntry(), req(), t
 
 ### Community 739 - "Community 739"
 Cohesion: 0.33
-Nodes (5): createCampaignSave(), createDevCampaignSave(), createDebouncedWriter(), DebouncedWriter, DocumentSubscriptionConfig
+Nodes (5): FROZEN_READERS, importsKernel(), resolveSpecifier(), ROOT, SRC
+
+### Community 740 - "Community 740"
+Cohesion: 0.29
+Nodes (3): AuthoredTurnClaim, CanonicalTurnClaim, conformStep()
 
 ### Community 741 - "Community 741"
-Cohesion: 0.40
-Nodes (3): draftKey(), readSessionDraft(), SummarySaveState
-
-### Community 742 - "Community 742"
-Cohesion: 0.33
-Nodes (3): DragState, LiftReorderRow, useLiftReorder
+Cohesion: 0.29
+Nodes (5): baseCtx, eldritchSmite, lifedrinker, pactOfTheBlade, SCORES
 
 ### Community 743 - "Community 743"
-Cohesion: 0.33
-Nodes (6): 0.16.5, Classes & species, Conditions, Feats, Magic items, Spells
+Cohesion: 0.38
+Nodes (6): diceAt(), fighter(), LOCALES, scenario(), warlock(), auraVMs()
 
 ### Community 744 - "Community 744"
-Cohesion: 0.33
-Nodes (6): 0.23.0, Bestiary, companions, and homebrew, Combat and encounters, Design, accessibility, and performance, Reliability, safety, and project baseline, Sharing and campaign tools
+Cohesion: 0.29
+Nodes (6): PASSIVES, SaveCheckPassiveRow, SaveCheckSaveRow, SaveCheckSkillRow, SavesAndChecks, SavesChecksSession
 
 ### Community 745 - "Community 745"
 Cohesion: 0.33
-Nodes (3): withPackSubclasses(), mergeCatalogue(), mergePack()
-
-### Community 746 - "Community 746"
-Cohesion: 0.40
-Nodes (5): MANEUVER_SLOTS, PUBLIC_MANEUVERS, SRD_MANEUVERS, SrdManeuver, AbilityCode
+Nodes (5): createCampaignSave(), createDevCampaignSave(), createDebouncedWriter(), DebouncedWriter, DocumentSubscriptionConfig
 
 ### Community 747 - "Community 747"
-Cohesion: 0.33
-Nodes (5): Class and subclass definitions, P08b guided class authoring, P08c guided subclass authoring, P10 initial class acquisition owner, Starting acquisition source vocabulary
+Cohesion: 0.40
+Nodes (3): draftKey(), readSessionDraft(), SummarySaveState
 
 ### Community 748 - "Community 748"
 Cohesion: 0.33
-Nodes (5): Closed blocks, Delete zone, Frontier, Open gates, Program Status
+Nodes (3): DragState, LiftReorderRow, useLiftReorder
 
 ### Community 749 - "Community 749"
 Cohesion: 0.33
-Nodes (5): Editing the private content pack, Production fixes on `main`, Retiring a worktree that is not clean, The v2 procedure, Worktrees
+Nodes (6): 0.16.5, Classes & species, Conditions, Feats, Magic items, Spells
 
 ### Community 750 - "Community 750"
-Cohesion: 0.40
-Nodes (3): ScrollMemory, ScrollMemoryStore, useScrollMemory()
+Cohesion: 0.33
+Nodes (6): 0.23.0, Bestiary, companions, and homebrew, Combat and encounters, Design, accessibility, and performance, Reliability, safety, and project baseline, Sharing and campaign tools
 
 ### Community 751 - "Community 751"
-Cohesion: 0.47
-Nodes (4): srdAllLocaleValues(), buildWeaponIdRemap(), normalizeSessionActionIds(), weaponActionId()
+Cohesion: 0.33
+Nodes (3): withPackSubclasses(), mergeCatalogue(), mergePack()
 
 ### Community 752 - "Community 752"
-Cohesion: 0.47
-Nodes (4): createMagicItemEquipmentRefs(), isStackable(), parseMagicItemAcBonus(), parseMagicItemCharges()
+Cohesion: 0.40
+Nodes (5): MANEUVER_SLOTS, PUBLIC_MANEUVERS, SRD_MANEUVERS, SrdManeuver, AbilityCode
 
 ### Community 753 - "Community 753"
 Cohesion: 0.33
-Nodes (5): 1. Operation boundary, 2. Actual runtime state and recovery, 3. Acceptance, Global constraints, P03 shared operations implementation plan
+Nodes (5): Class and subclass definitions, P08b guided class authoring, P08c guided subclass authoring, P10 initial class acquisition owner, Starting acquisition source vocabulary
 
 ### Community 754 - "Community 754"
 Cohesion: 0.33
-Nodes (5): 1. Model and real IO, 2. Runtime library, 3. Acceptance and closure, Global constraints, P04 Library and Versions Implementation Plan
+Nodes (5): Closed blocks, Delete zone, Frontier, Open gates, Program Status
 
 ### Community 755 - "Community 755"
 Cohesion: 0.33
-Nodes (5): A — Behaviour of the delivered surfaces, B — Reference and the owner's visual gate, C — Architecture, program and real review, D — Runtime proofs owed by each block, Delivery checklist
+Nodes (5): Editing the private content pack, Production fixes on `main`, Retiring a worktree that is not clean, The v2 procedure, Worktrees
 
 ### Community 756 - "Community 756"
-Cohesion: 0.33
-Nodes (5): The committed screenshots, The lab itself is not committed, The manifest, Visual reference, What is not a reference
+Cohesion: 0.40
+Nodes (3): ScrollMemory, ScrollMemoryStore, useScrollMemory()
 
 ### Community 757 - "Community 757"
-Cohesion: 0.53
-Nodes (4): isRecord(), Json, playerHandlePaths(), run()
+Cohesion: 0.47
+Nodes (4): srdAllLocaleValues(), buildWeaponIdRemap(), normalizeSessionActionIds(), weaponActionId()
 
 ### Community 758 - "Community 758"
-Cohesion: 0.40
-Nodes (4): CompanionHpStepper(), CompanionHpStepperProps, CompanionStatBlockCard(), CompanionStatBlockCardProps
+Cohesion: 0.47
+Nodes (4): createMagicItemEquipmentRefs(), isStackable(), parseMagicItemAcBonus(), parseMagicItemCharges()
 
 ### Community 759 - "Community 759"
 Cohesion: 0.33
-Nodes (4): ConfirmDialog(), ConfirmOptions, ConfirmState, useConfirmStore
+Nodes (5): 1. Operation boundary, 2. Actual runtime state and recovery, 3. Acceptance, Global constraints, P03 shared operations implementation plan
 
 ### Community 760 - "Community 760"
-Cohesion: 0.40
-Nodes (4): CunningStrikeOptionsProps, CunningStrikeToken(), optionDetail(), TranslateFn
+Cohesion: 0.33
+Nodes (5): 1. Model and real IO, 2. Runtime library, 3. Acceptance and closure, Global constraints, P04 Library and Versions Implementation Plan
 
 ### Community 761 - "Community 761"
 Cohesion: 0.33
-Nodes (5): Authorized outcome and reference, Operation and authority, P03 shared operations and offline, State and offline, Validation
+Nodes (5): A — Behaviour of the delivered surfaces, B — Reference and the owner's visual gate, C — Architecture, program and real review, D — Runtime proofs owed by each block, Delivery checklist
 
 ### Community 762 - "Community 762"
 Cohesion: 0.33
-Nodes (5): Authority and design choice, Bounds and acceptance, Mandate and boundaries, P08a — Class and subclass authoring model, Primary reference research
+Nodes (5): The committed screenshots, The lab itself is not committed, The manifest, Visual reference, What is not a reference
 
 ### Community 763 - "Community 763"
-Cohesion: 0.33
-Nodes (6): acid-splash, description, duration, higherLevels, name, range
+Cohesion: 0.53
+Nodes (4): isRecord(), Json, playerHandlePaths(), run()
 
 ### Community 764 - "Community 764"
-Cohesion: 0.33
-Nodes (6): aid, description, duration, higherLevels, name, range
+Cohesion: 0.40
+Nodes (4): CompanionHpStepper(), CompanionHpStepperProps, CompanionStatBlockCard(), CompanionStatBlockCardProps
 
 ### Community 765 - "Community 765"
 Cohesion: 0.33
-Nodes (6): animal-friendship, description, duration, higherLevels, name, range
+Nodes (4): ConfirmDialog(), ConfirmOptions, ConfirmState, useConfirmStore
 
 ### Community 766 - "Community 766"
-Cohesion: 0.33
-Nodes (6): animal-messenger, description, duration, higherLevels, name, range
+Cohesion: 0.40
+Nodes (4): CunningStrikeOptionsProps, CunningStrikeToken(), optionDetail(), TranslateFn
 
 ### Community 767 - "Community 767"
 Cohesion: 0.33
-Nodes (6): animate-dead, description, duration, higherLevels, name, range
+Nodes (5): Authorized outcome and reference, Operation and authority, P03 shared operations and offline, State and offline, Validation
 
 ### Community 768 - "Community 768"
 Cohesion: 0.33
-Nodes (6): animate-objects, description, duration, higherLevels, name, range
+Nodes (5): Authority and design choice, Bounds and acceptance, Mandate and boundaries, P08a — Class and subclass authoring model, Primary reference research
 
 ### Community 769 - "Community 769"
 Cohesion: 0.33
-Nodes (6): banishment, description, duration, higherLevels, name, range
+Nodes (6): acid-splash, description, duration, higherLevels, name, range
 
 ### Community 770 - "Community 770"
 Cohesion: 0.33
-Nodes (6): bestow-curse, description, duration, higherLevels, name, range
+Nodes (6): aid, description, duration, higherLevels, name, range
 
 ### Community 771 - "Community 771"
 Cohesion: 0.33
-Nodes (6): bigbys-hand, description, duration, higherLevels, name, range
+Nodes (6): animal-friendship, description, duration, higherLevels, name, range
 
 ### Community 772 - "Community 772"
 Cohesion: 0.33
-Nodes (6): bless, description, duration, higherLevels, name, range
+Nodes (6): animal-messenger, description, duration, higherLevels, name, range
 
 ### Community 773 - "Community 773"
 Cohesion: 0.33
-Nodes (6): blight, description, duration, higherLevels, name, range
+Nodes (6): animate-dead, description, duration, higherLevels, name, range
 
 ### Community 774 - "Community 774"
 Cohesion: 0.33
-Nodes (6): blindness-deafness, description, duration, higherLevels, name, range
+Nodes (6): animate-objects, description, duration, higherLevels, name, range
 
 ### Community 775 - "Community 775"
 Cohesion: 0.33
-Nodes (6): burning-hands, description, duration, higherLevels, name, range
+Nodes (6): banishment, description, duration, higherLevels, name, range
 
 ### Community 776 - "Community 776"
 Cohesion: 0.33
-Nodes (6): call-lightning, description, duration, higherLevels, name, range
+Nodes (6): bestow-curse, description, duration, higherLevels, name, range
 
 ### Community 777 - "Community 777"
 Cohesion: 0.33
-Nodes (6): chain-lightning, description, duration, higherLevels, name, range
+Nodes (6): bigbys-hand, description, duration, higherLevels, name, range
 
 ### Community 778 - "Community 778"
 Cohesion: 0.33
-Nodes (6): charm-monster, description, duration, higherLevels, name, range
+Nodes (6): bless, description, duration, higherLevels, name, range
 
 ### Community 779 - "Community 779"
 Cohesion: 0.33
-Nodes (6): chill-touch, description, duration, higherLevels, name, range
+Nodes (6): blight, description, duration, higherLevels, name, range
 
 ### Community 780 - "Community 780"
 Cohesion: 0.33
-Nodes (6): chromatic-orb, description, duration, higherLevels, name, range
+Nodes (6): blindness-deafness, description, duration, higherLevels, name, range
 
 ### Community 781 - "Community 781"
 Cohesion: 0.33
-Nodes (6): circle-of-death, description, duration, higherLevels, name, range
+Nodes (6): burning-hands, description, duration, higherLevels, name, range
 
 ### Community 782 - "Community 782"
 Cohesion: 0.33
-Nodes (6): cloudkill, description, duration, higherLevels, name, range
+Nodes (6): call-lightning, description, duration, higherLevels, name, range
 
 ### Community 783 - "Community 783"
 Cohesion: 0.33
-Nodes (6): command, description, duration, higherLevels, name, range
+Nodes (6): chain-lightning, description, duration, higherLevels, name, range
 
 ### Community 784 - "Community 784"
 Cohesion: 0.33
-Nodes (6): cone-of-cold, description, duration, higherLevels, name, range
+Nodes (6): charm-monster, description, duration, higherLevels, name, range
 
 ### Community 785 - "Community 785"
 Cohesion: 0.33
-Nodes (6): confusion, description, duration, higherLevels, name, range
+Nodes (6): chill-touch, description, duration, higherLevels, name, range
 
 ### Community 786 - "Community 786"
 Cohesion: 0.33
-Nodes (6): conjure-animals, description, duration, higherLevels, name, range
+Nodes (6): chromatic-orb, description, duration, higherLevels, name, range
 
 ### Community 787 - "Community 787"
 Cohesion: 0.33
-Nodes (6): conjure-celestial, description, duration, higherLevels, name, range
+Nodes (6): circle-of-death, description, duration, higherLevels, name, range
 
 ### Community 788 - "Community 788"
 Cohesion: 0.33
-Nodes (6): conjure-elemental, description, duration, higherLevels, name, range
+Nodes (6): cloudkill, description, duration, higherLevels, name, range
 
 ### Community 789 - "Community 789"
 Cohesion: 0.33
-Nodes (6): conjure-minor-elementals, description, duration, higherLevels, name, range
+Nodes (6): command, description, duration, higherLevels, name, range
 
 ### Community 790 - "Community 790"
 Cohesion: 0.33
-Nodes (6): conjure-woodland-beings, description, duration, higherLevels, name, range
+Nodes (6): cone-of-cold, description, duration, higherLevels, name, range
 
 ### Community 791 - "Community 791"
 Cohesion: 0.33
-Nodes (6): counterspell, description, duration, effectWord, name, range
+Nodes (6): confusion, description, duration, higherLevels, name, range
 
 ### Community 792 - "Community 792"
 Cohesion: 0.33
-Nodes (6): create-or-destroy-water, description, duration, higherLevels, name, range
+Nodes (6): conjure-animals, description, duration, higherLevels, name, range
 
 ### Community 793 - "Community 793"
 Cohesion: 0.33
-Nodes (6): create-undead, description, duration, higherLevels, name, range
+Nodes (6): conjure-celestial, description, duration, higherLevels, name, range
 
 ### Community 794 - "Community 794"
 Cohesion: 0.33
-Nodes (6): creation, description, duration, higherLevels, name, range
+Nodes (6): conjure-elemental, description, duration, higherLevels, name, range
 
 ### Community 795 - "Community 795"
 Cohesion: 0.33
-Nodes (6): cure-wounds, description, duration, higherLevels, name, range
+Nodes (6): conjure-minor-elementals, description, duration, higherLevels, name, range
 
 ### Community 796 - "Community 796"
 Cohesion: 0.33
-Nodes (6): delayed-blast-fireball, description, duration, higherLevels, name, range
+Nodes (6): conjure-woodland-beings, description, duration, higherLevels, name, range
 
 ### Community 797 - "Community 797"
 Cohesion: 0.33
-Nodes (5): actionLog, clear, clearTitle, empty, title
+Nodes (6): counterspell, description, duration, effectWord, name, range
 
 ### Community 798 - "Community 798"
 Cohesion: 0.33
-Nodes (5): app, eyebrow, microTag, name, tagline
+Nodes (6): create-or-destroy-water, description, duration, higherLevels, name, range
 
 ### Community 799 - "Community 799"
 Cohesion: 0.33
-Nodes (6): joinLink, backToCampaigns, invalidBlurb, invalidEyebrow, invalidTitle, joining
+Nodes (6): create-undead, description, duration, higherLevels, name, range
 
 ### Community 800 - "Community 800"
 Cohesion: 0.33
-Nodes (6): cp, ep, gp, pp, sp, currencyAbbr
+Nodes (6): creation, description, duration, higherLevels, name, range
 
 ### Community 801 - "Community 801"
 Cohesion: 0.33
-Nodes (5): notFound, back, blurb, eyebrow, title
+Nodes (6): cure-wounds, description, duration, higherLevels, name, range
 
 ### Community 802 - "Community 802"
 Cohesion: 0.33
-Nodes (5): rePick, change, choose, none, search
+Nodes (6): delayed-blast-fireball, description, duration, higherLevels, name, range
 
 ### Community 803 - "Community 803"
 Cohesion: 0.33
-Nodes (6): acid-splash, description, duration, higherLevels, name, range
+Nodes (5): actionLog, clear, clearTitle, empty, title
 
 ### Community 804 - "Community 804"
 Cohesion: 0.33
-Nodes (6): aid, description, duration, higherLevels, name, range
+Nodes (5): app, eyebrow, microTag, name, tagline
 
 ### Community 805 - "Community 805"
 Cohesion: 0.33
-Nodes (6): animal-friendship, description, duration, higherLevels, name, range
+Nodes (6): joinLink, backToCampaigns, invalidBlurb, invalidEyebrow, invalidTitle, joining
 
 ### Community 806 - "Community 806"
 Cohesion: 0.33
-Nodes (6): animal-messenger, description, duration, higherLevels, name, range
+Nodes (6): cp, ep, gp, pp, sp, currencyAbbr
 
 ### Community 807 - "Community 807"
 Cohesion: 0.33
-Nodes (6): animate-dead, description, duration, higherLevels, name, range
+Nodes (5): notFound, back, blurb, eyebrow, title
 
 ### Community 808 - "Community 808"
 Cohesion: 0.33
-Nodes (6): animate-objects, description, duration, higherLevels, name, range
+Nodes (5): rePick, change, choose, none, search
 
 ### Community 809 - "Community 809"
 Cohesion: 0.33
-Nodes (6): banishment, description, duration, higherLevels, name, range
+Nodes (6): acid-splash, description, duration, higherLevels, name, range
 
 ### Community 810 - "Community 810"
 Cohesion: 0.33
-Nodes (6): bestow-curse, description, duration, higherLevels, name, range
+Nodes (6): aid, description, duration, higherLevels, name, range
 
 ### Community 811 - "Community 811"
 Cohesion: 0.33
-Nodes (6): bigbys-hand, description, duration, higherLevels, name, range
+Nodes (6): animal-friendship, description, duration, higherLevels, name, range
 
 ### Community 812 - "Community 812"
 Cohesion: 0.33
-Nodes (6): bless, description, duration, higherLevels, name, range
+Nodes (6): animal-messenger, description, duration, higherLevels, name, range
 
 ### Community 813 - "Community 813"
 Cohesion: 0.33
-Nodes (6): blight, description, duration, higherLevels, name, range
+Nodes (6): animate-dead, description, duration, higherLevels, name, range
 
 ### Community 814 - "Community 814"
 Cohesion: 0.33
-Nodes (6): blindness-deafness, description, duration, higherLevels, name, range
+Nodes (6): animate-objects, description, duration, higherLevels, name, range
 
 ### Community 815 - "Community 815"
 Cohesion: 0.33
-Nodes (6): burning-hands, description, duration, higherLevels, name, range
+Nodes (6): banishment, description, duration, higherLevels, name, range
 
 ### Community 816 - "Community 816"
 Cohesion: 0.33
-Nodes (6): call-lightning, description, duration, higherLevels, name, range
+Nodes (6): bestow-curse, description, duration, higherLevels, name, range
 
 ### Community 817 - "Community 817"
 Cohesion: 0.33
-Nodes (6): chain-lightning, description, duration, higherLevels, name, range
+Nodes (6): bigbys-hand, description, duration, higherLevels, name, range
 
 ### Community 818 - "Community 818"
 Cohesion: 0.33
-Nodes (6): charm-monster, description, duration, higherLevels, name, range
+Nodes (6): bless, description, duration, higherLevels, name, range
 
 ### Community 819 - "Community 819"
 Cohesion: 0.33
-Nodes (6): chill-touch, description, duration, higherLevels, name, range
+Nodes (6): blight, description, duration, higherLevels, name, range
 
 ### Community 820 - "Community 820"
 Cohesion: 0.33
-Nodes (6): chromatic-orb, description, duration, higherLevels, name, range
+Nodes (6): blindness-deafness, description, duration, higherLevels, name, range
 
 ### Community 821 - "Community 821"
 Cohesion: 0.33
-Nodes (6): circle-of-death, description, duration, higherLevels, name, range
+Nodes (6): burning-hands, description, duration, higherLevels, name, range
 
 ### Community 822 - "Community 822"
 Cohesion: 0.33
-Nodes (6): cloudkill, description, duration, higherLevels, name, range
+Nodes (6): call-lightning, description, duration, higherLevels, name, range
 
 ### Community 823 - "Community 823"
 Cohesion: 0.33
-Nodes (6): command, description, duration, higherLevels, name, range
+Nodes (6): chain-lightning, description, duration, higherLevels, name, range
 
 ### Community 824 - "Community 824"
 Cohesion: 0.33
-Nodes (6): cone-of-cold, description, duration, higherLevels, name, range
+Nodes (6): charm-monster, description, duration, higherLevels, name, range
 
 ### Community 825 - "Community 825"
 Cohesion: 0.33
-Nodes (6): confusion, description, duration, higherLevels, name, range
+Nodes (6): chill-touch, description, duration, higherLevels, name, range
 
 ### Community 826 - "Community 826"
 Cohesion: 0.33
-Nodes (6): conjure-animals, description, duration, higherLevels, name, range
+Nodes (6): chromatic-orb, description, duration, higherLevels, name, range
 
 ### Community 827 - "Community 827"
 Cohesion: 0.33
-Nodes (6): conjure-celestial, description, duration, higherLevels, name, range
+Nodes (6): circle-of-death, description, duration, higherLevels, name, range
 
 ### Community 828 - "Community 828"
 Cohesion: 0.33
-Nodes (6): conjure-elemental, description, duration, higherLevels, name, range
+Nodes (6): cloudkill, description, duration, higherLevels, name, range
 
 ### Community 829 - "Community 829"
 Cohesion: 0.33
-Nodes (6): conjure-minor-elementals, description, duration, higherLevels, name, range
+Nodes (6): command, description, duration, higherLevels, name, range
 
 ### Community 830 - "Community 830"
 Cohesion: 0.33
-Nodes (6): conjure-woodland-beings, description, duration, higherLevels, name, range
+Nodes (6): cone-of-cold, description, duration, higherLevels, name, range
 
 ### Community 831 - "Community 831"
 Cohesion: 0.33
-Nodes (6): counterspell, description, duration, effectWord, name, range
+Nodes (6): confusion, description, duration, higherLevels, name, range
 
 ### Community 832 - "Community 832"
 Cohesion: 0.33
-Nodes (6): create-or-destroy-water, description, duration, higherLevels, name, range
+Nodes (6): conjure-animals, description, duration, higherLevels, name, range
 
 ### Community 833 - "Community 833"
 Cohesion: 0.33
-Nodes (6): create-undead, description, duration, higherLevels, name, range
+Nodes (6): conjure-celestial, description, duration, higherLevels, name, range
 
 ### Community 834 - "Community 834"
 Cohesion: 0.33
-Nodes (6): creation, description, duration, higherLevels, name, range
+Nodes (6): conjure-elemental, description, duration, higherLevels, name, range
 
 ### Community 835 - "Community 835"
 Cohesion: 0.33
-Nodes (6): cure-wounds, description, duration, higherLevels, name, range
+Nodes (6): conjure-minor-elementals, description, duration, higherLevels, name, range
 
 ### Community 836 - "Community 836"
 Cohesion: 0.33
-Nodes (6): delayed-blast-fireball, description, duration, higherLevels, name, range
+Nodes (6): conjure-woodland-beings, description, duration, higherLevels, name, range
 
 ### Community 837 - "Community 837"
 Cohesion: 0.33
-Nodes (5): actionLog, clear, clearTitle, empty, title
+Nodes (6): counterspell, description, duration, effectWord, name, range
 
 ### Community 838 - "Community 838"
 Cohesion: 0.33
-Nodes (5): app, eyebrow, microTag, name, tagline
+Nodes (6): create-or-destroy-water, description, duration, higherLevels, name, range
 
 ### Community 839 - "Community 839"
 Cohesion: 0.33
-Nodes (6): joinLink, backToCampaigns, invalidBlurb, invalidEyebrow, invalidTitle, joining
+Nodes (6): create-undead, description, duration, higherLevels, name, range
 
 ### Community 840 - "Community 840"
 Cohesion: 0.33
-Nodes (6): cp, ep, gp, pp, sp, currencyAbbr
+Nodes (6): creation, description, duration, higherLevels, name, range
 
 ### Community 841 - "Community 841"
 Cohesion: 0.33
-Nodes (5): notFound, back, blurb, eyebrow, title
+Nodes (6): cure-wounds, description, duration, higherLevels, name, range
 
 ### Community 842 - "Community 842"
 Cohesion: 0.33
-Nodes (5): rePick, change, choose, none, search
+Nodes (6): delayed-blast-fireball, description, duration, higherLevels, name, range
 
 ### Community 843 - "Community 843"
+Cohesion: 0.33
+Nodes (5): actionLog, clear, clearTitle, empty, title
+
+### Community 844 - "Community 844"
+Cohesion: 0.33
+Nodes (5): app, eyebrow, microTag, name, tagline
+
+### Community 845 - "Community 845"
+Cohesion: 0.33
+Nodes (6): joinLink, backToCampaigns, invalidBlurb, invalidEyebrow, invalidTitle, joining
+
+### Community 846 - "Community 846"
+Cohesion: 0.33
+Nodes (6): cp, ep, gp, pp, sp, currencyAbbr
+
+### Community 847 - "Community 847"
+Cohesion: 0.33
+Nodes (5): notFound, back, blurb, eyebrow, title
+
+### Community 848 - "Community 848"
+Cohesion: 0.33
+Nodes (5): rePick, change, choose, none, search
+
+### Community 849 - "Community 849"
 Cohesion: 0.47
 Nodes (5): CatalogueItem, character(), dawnBoundary(), itemState(), prepared()
 
-### Community 844 - "Community 844"
+### Community 850 - "Community 850"
 Cohesion: 0.47
-Nodes (4): encounter(), gc(), pending, view()
-
-### Community 849 - "Community 849"
-Cohesion: 0.33
-Nodes (3): CATALOGUE, EXPECTED, WaveItemId
+Nodes (4): docWithWorld(), liveConditionCount(), liveDoc(), liveWorld()
 
 ### Community 851 - "Community 851"
 Cohesion: 0.47
+Nodes (4): encounter(), gc(), pending, view()
+
+### Community 856 - "Community 856"
+Cohesion: 0.33
+Nodes (3): CATALOGUE, EXPECTED, WaveItemId
+
+### Community 858 - "Community 858"
+Cohesion: 0.47
 Nodes (5): baseBody(), bodiesTouching(), css, here, rules()
 
-### Community 854 - "Community 854"
+### Community 861 - "Community 861"
 Cohesion: 0.47
 Nodes (4): allArmorTokens(), allWeaponTokens(), collectGrantTokens(), GRANT_SOURCES
 
-### Community 855 - "Community 855"
+### Community 862 - "Community 862"
 Cohesion: 0.33
 Nodes (4): base, Dict, tEn, tIt
 
-### Community 858 - "Community 858"
+### Community 865 - "Community 865"
 Cohesion: 0.33
 Nodes (3): ClassEquipFacts, FACTS, ItemSet
 
-### Community 861 - "Community 861"
-Cohesion: 0.70
-Nodes (4): advanceGlobalCombat(), pendingApplies(), reconcileCombatPublish(), syncPipToStatus()
-
-### Community 862 - "Community 862"
-Cohesion: 0.40
-Nodes (5): 0.13.0 — 2026-06-23, Added, Changed, Fixed, Removed
-
-### Community 863 - "Community 863"
-Cohesion: 0.40
-Nodes (5): 0.18.0, Design & chrome, Docs & process, Features, Fixes
-
-### Community 865 - "Community 865"
-Cohesion: 0.40
-Nodes (3): castProgram, huntersMark, SHAPE_FAILURE
-
-### Community 866 - "Community 866"
-Cohesion: 0.40
-Nodes (3): CONDITIONS_BY_ID, SRD_CONDITIONS, SrdConditionData
-
-### Community 867 - "Community 867"
-Cohesion: 0.40
-Nodes (4): SRD_LANGUAGE_IDS, SRD_ORIGIN_LANGUAGES, STANDARD_LANGUAGE_IDS, OriginLanguagePolicy
-
 ### Community 868 - "Community 868"
-Cohesion: 0.40
-Nodes (4): License, Regenerating, Sheet PDF fonts, What ships here
+Cohesion: 0.47
+Nodes (5): excerptOf(), featPickVM, offeredFeatVMs(), originFeatVMs(), summaryOf()
 
 ### Community 869 - "Community 869"
 Cohesion: 0.40
-Nodes (3): acquisition, creationFlowKey(), flow
+Nodes (5): 0.13.0 — 2026-06-23, Added, Changed, Fixed, Removed
 
 ### Community 870 - "Community 870"
 Cohesion: 0.40
-Nodes (5): addCataloguePresenter(), compileAutomationCorpus(), compileAutomationCorpusEntity(), emptySchemaCounts(), manualBoundary()
+Nodes (5): 0.18.0, Design & chrome, Docs & process, Features, Fixes
 
 ### Community 872 - "Community 872"
-Cohesion: 0.50
-Nodes (4): isRecord(), LibraryEntriesParseResult, parseLibraryEntries(), parseLibraryEntry()
+Cohesion: 0.40
+Nodes (3): castProgram, huntersMark, SHAPE_FAILURE
 
 ### Community 873 - "Community 873"
-Cohesion: 0.70
-Nodes (4): clearLogFromIDB(), getDB(), loadLogFromIDB(), saveLogToIDB()
+Cohesion: 0.40
+Nodes (3): CONDITIONS_BY_ID, SRD_CONDITIONS, SrdConditionData
 
 ### Community 874 - "Community 874"
 Cohesion: 0.40
-Nodes (4): INTEGER_BINDINGS_SCHEMA, MECHANICS_PROGRAM_AUTHORITY_RECEIPT_SCHEMA, MechanicsProgramAuthorityReceiptSchemaCustomTypes, MechanicsProgramAuthorityReceiptSchemaShape
+Nodes (4): SRD_LANGUAGE_IDS, SRD_ORIGIN_LANGUAGES, STANDARD_LANGUAGE_IDS, OriginLanguagePolicy
 
 ### Community 875 - "Community 875"
-Cohesion: 0.50
-Nodes (4): freezeDeep(), issueMechanicsTransactionProjection(), mechanicsTransactionProjectionFiber, transactionProjections
+Cohesion: 0.40
+Nodes (4): License, Regenerating, Sheet PDF fonts, What ships here
+
+### Community 876 - "Community 876"
+Cohesion: 0.40
+Nodes (3): acquisition, creationFlowKey(), flow
+
+### Community 877 - "Community 877"
+Cohesion: 0.40
+Nodes (5): addCataloguePresenter(), compileAutomationCorpus(), compileAutomationCorpusEntity(), emptySchemaCounts(), manualBoundary()
 
 ### Community 878 - "Community 878"
 Cohesion: 0.40
-Nodes (4): GlossaryCatalogue, GlossaryTermId, GlossaryTip(), GlossaryTipProps
+Nodes (3): listAvailableForSkillSlot(), Props, SkillSlotPicker()
 
 ### Community 879 - "Community 879"
 Cohesion: 0.50
-Nodes (4): hasNativeShare(), SharePopover(), SharePopoverProps, ShareVisibility
+Nodes (4): isRecord(), LibraryEntriesParseResult, parseLibraryEntries(), parseLibraryEntry()
+
+### Community 880 - "Community 880"
+Cohesion: 0.70
+Nodes (4): clearLogFromIDB(), getDB(), loadLogFromIDB(), saveLogToIDB()
 
 ### Community 881 - "Community 881"
 Cohesion: 0.40
-Nodes (3): FeatAbilityPick, FeatAbilityPicker(), Props
+Nodes (5): createEmptySharedMaterialState(), freezeDeep(), shared(), sharedState(), shared()
 
 ### Community 882 - "Community 882"
 Cohesion: 0.40
-Nodes (3): DieEntry, MechanicsCastModal(), MechanicsCastModalProps
+Nodes (4): INTEGER_BINDINGS_SCHEMA, MECHANICS_PROGRAM_AUTHORITY_RECEIPT_SCHEMA, MechanicsProgramAuthorityReceiptSchemaCustomTypes, MechanicsProgramAuthorityReceiptSchemaShape
 
-### Community 884 - "Community 884"
-Cohesion: 0.40
-Nodes (4): classLevelSummary(), Props, ROW_STYLE, SnapshotItem
-
-### Community 885 - "Community 885"
-Cohesion: 0.40
-Nodes (3): CombatPip, HubLink, TopbarProps
+### Community 883 - "Community 883"
+Cohesion: 0.50
+Nodes (4): freezeDeep(), issueMechanicsTransactionProjection(), mechanicsTransactionProjectionFiber, transactionProjections
 
 ### Community 886 - "Community 886"
 Cohesion: 0.40
-Nodes (4): deafened, description, effects, name
+Nodes (4): GlossaryCatalogue, GlossaryTermId, GlossaryTip(), GlossaryTipProps
 
 ### Community 887 - "Community 887"
-Cohesion: 0.40
-Nodes (5): alarm, description, duration, name, range
-
-### Community 888 - "Community 888"
-Cohesion: 0.40
-Nodes (5): alter-self, description, duration, name, range
+Cohesion: 0.50
+Nodes (4): hasNativeShare(), SharePopover(), SharePopoverProps, ShareVisibility
 
 ### Community 889 - "Community 889"
 Cohesion: 0.40
-Nodes (5): animal-shapes, description, duration, name, range
+Nodes (4): classLevelSummary(), Props, ROW_STYLE, SnapshotItem
 
 ### Community 890 - "Community 890"
 Cohesion: 0.40
-Nodes (5): antilife-shell, description, duration, name, range
+Nodes (4): blinded, description, effects, name
 
 ### Community 891 - "Community 891"
 Cohesion: 0.40
-Nodes (5): antimagic-field, description, duration, name, range
+Nodes (5): alarm, description, duration, name, range
 
 ### Community 892 - "Community 892"
 Cohesion: 0.40
-Nodes (5): antipathy-sympathy, description, duration, name, range
+Nodes (5): alter-self, description, duration, name, range
 
 ### Community 893 - "Community 893"
 Cohesion: 0.40
-Nodes (5): arcane-eye, description, duration, name, range
+Nodes (5): animal-shapes, description, duration, name, range
 
 ### Community 894 - "Community 894"
 Cohesion: 0.40
-Nodes (5): arcane-lock, description, duration, name, range
+Nodes (5): antilife-shell, description, duration, name, range
 
 ### Community 895 - "Community 895"
 Cohesion: 0.40
-Nodes (5): astral-projection, description, duration, name, range
+Nodes (5): antimagic-field, description, duration, name, range
 
 ### Community 896 - "Community 896"
 Cohesion: 0.40
-Nodes (5): augury, description, duration, name, range
+Nodes (5): antipathy-sympathy, description, duration, name, range
 
 ### Community 897 - "Community 897"
 Cohesion: 0.40
-Nodes (5): aura-of-life, description, duration, name, range
+Nodes (5): arcane-eye, description, duration, name, range
 
 ### Community 898 - "Community 898"
 Cohesion: 0.40
-Nodes (5): awaken, description, duration, name, range
+Nodes (5): arcane-lock, description, duration, name, range
 
 ### Community 899 - "Community 899"
 Cohesion: 0.40
-Nodes (5): barkskin, description, duration, name, range
+Nodes (5): astral-projection, description, duration, name, range
 
 ### Community 900 - "Community 900"
 Cohesion: 0.40
-Nodes (5): beacon-of-hope, description, duration, name, range
+Nodes (5): augury, description, duration, name, range
 
 ### Community 901 - "Community 901"
 Cohesion: 0.40
-Nodes (5): befuddlement, description, duration, name, range
+Nodes (5): aura-of-life, description, duration, name, range
 
 ### Community 902 - "Community 902"
 Cohesion: 0.40
-Nodes (5): blade-barrier, description, duration, name, range
+Nodes (5): awaken, description, duration, name, range
 
 ### Community 903 - "Community 903"
 Cohesion: 0.40
-Nodes (5): blink, description, duration, name, range
+Nodes (5): barkskin, description, duration, name, range
 
 ### Community 904 - "Community 904"
 Cohesion: 0.40
-Nodes (5): blur, description, duration, name, range
+Nodes (5): beacon-of-hope, description, duration, name, range
 
 ### Community 905 - "Community 905"
 Cohesion: 0.40
-Nodes (5): calm-emotions, description, duration, name, range
+Nodes (5): befuddlement, description, duration, name, range
 
 ### Community 906 - "Community 906"
 Cohesion: 0.40
-Nodes (5): clairvoyance, description, duration, name, range
+Nodes (5): blade-barrier, description, duration, name, range
 
 ### Community 907 - "Community 907"
 Cohesion: 0.40
-Nodes (5): clone, description, duration, name, range
+Nodes (5): blink, description, duration, name, range
 
 ### Community 908 - "Community 908"
 Cohesion: 0.40
-Nodes (5): color-spray, description, duration, name, range
+Nodes (5): blur, description, duration, name, range
 
 ### Community 909 - "Community 909"
 Cohesion: 0.40
-Nodes (5): commune, description, duration, name, range
+Nodes (5): calm-emotions, description, duration, name, range
 
 ### Community 910 - "Community 910"
 Cohesion: 0.40
-Nodes (5): commune-with-nature, description, duration, name, range
+Nodes (5): clairvoyance, description, duration, name, range
 
 ### Community 911 - "Community 911"
 Cohesion: 0.40
-Nodes (5): comprehend-languages, description, duration, name, range
+Nodes (5): clone, description, duration, name, range
 
 ### Community 912 - "Community 912"
 Cohesion: 0.40
-Nodes (5): compulsion, description, duration, name, range
+Nodes (5): color-spray, description, duration, name, range
 
 ### Community 913 - "Community 913"
 Cohesion: 0.40
-Nodes (5): conjure-fey, description, duration, name, range
+Nodes (5): commune, description, duration, name, range
 
 ### Community 914 - "Community 914"
 Cohesion: 0.40
-Nodes (5): contact-other-plane, description, duration, name, range
+Nodes (5): commune-with-nature, description, duration, name, range
 
 ### Community 915 - "Community 915"
 Cohesion: 0.40
-Nodes (5): contagion, description, duration, name, range
+Nodes (5): comprehend-languages, description, duration, name, range
 
 ### Community 916 - "Community 916"
 Cohesion: 0.40
-Nodes (5): contingency, description, duration, name, range
+Nodes (5): compulsion, description, duration, name, range
 
 ### Community 917 - "Community 917"
 Cohesion: 0.40
-Nodes (5): continual-flame, description, duration, name, range
+Nodes (5): conjure-fey, description, duration, name, range
 
 ### Community 918 - "Community 918"
 Cohesion: 0.40
-Nodes (5): control-water, description, duration, name, range
+Nodes (5): contact-other-plane, description, duration, name, range
 
 ### Community 919 - "Community 919"
 Cohesion: 0.40
-Nodes (5): control-weather, description, duration, name, range
+Nodes (5): contagion, description, duration, name, range
 
 ### Community 920 - "Community 920"
 Cohesion: 0.40
-Nodes (5): create-food-and-water, description, duration, name, range
+Nodes (5): contingency, description, duration, name, range
 
 ### Community 921 - "Community 921"
 Cohesion: 0.40
-Nodes (5): dancing-lights, description, duration, name, range
+Nodes (5): continual-flame, description, duration, name, range
 
 ### Community 922 - "Community 922"
 Cohesion: 0.40
-Nodes (5): darkness, description, duration, name, range
+Nodes (5): control-water, description, duration, name, range
 
 ### Community 923 - "Community 923"
 Cohesion: 0.40
-Nodes (5): darkvision, description, duration, name, range
+Nodes (5): control-weather, description, duration, name, range
 
 ### Community 924 - "Community 924"
 Cohesion: 0.40
-Nodes (5): daylight, description, duration, name, range
+Nodes (5): create-food-and-water, description, duration, name, range
 
 ### Community 925 - "Community 925"
 Cohesion: 0.40
-Nodes (5): death-ward, description, duration, name, range
+Nodes (5): dancing-lights, description, duration, name, range
 
 ### Community 926 - "Community 926"
 Cohesion: 0.40
-Nodes (5): demiplane, description, duration, name, range
+Nodes (5): darkness, description, duration, name, range
 
 ### Community 927 - "Community 927"
 Cohesion: 0.40
-Nodes (4): campaign, create, dm, inviteCode
+Nodes (5): darkvision, description, duration, name, range
 
 ### Community 928 - "Community 928"
 Cohesion: 0.40
-Nodes (4): invocations, eyebrow, pickLabel, section
+Nodes (5): daylight, description, duration, name, range
 
 ### Community 929 - "Community 929"
 Cohesion: 0.40
-Nodes (5): heading, note, statement, statement51, attribution
+Nodes (5): death-ward, description, duration, name, range
 
 ### Community 930 - "Community 930"
 Cohesion: 0.40
-Nodes (5): trademarks, body, compatible, disclaimer, heading
+Nodes (5): demiplane, description, duration, name, range
 
 ### Community 931 - "Community 931"
 Cohesion: 0.40
-Nodes (4): notes, combatEmpty, combatPlaceholder, combatRubric
+Nodes (4): campaign, create, dm, inviteCode
 
 ### Community 932 - "Community 932"
 Cohesion: 0.40
-Nodes (5): hint, loading, none, search, add
+Nodes (4): invocations, eyebrow, pickLabel, section
 
 ### Community 933 - "Community 933"
 Cohesion: 0.40
-Nodes (5): addFailed, openFailed, sitFailed, standFailed, notice
+Nodes (5): heading, note, statement, statement51, attribution
 
 ### Community 934 - "Community 934"
 Cohesion: 0.40
-Nodes (5): table, notReadyHint, readyHint, sit, sitHint
+Nodes (5): trademarks, body, compatible, disclaimer, heading
 
 ### Community 935 - "Community 935"
 Cohesion: 0.40
-Nodes (4): srdTagPicker, addCustom, granted, remove
+Nodes (4): notes, combatEmpty, combatPlaceholder, combatRubric
 
 ### Community 936 - "Community 936"
 Cohesion: 0.40
-Nodes (4): grappled, description, effects, name
+Nodes (5): hint, loading, none, search, add
 
 ### Community 937 - "Community 937"
 Cohesion: 0.40
-Nodes (5): alarm, description, duration, name, range
+Nodes (5): addFailed, openFailed, sitFailed, standFailed, notice
 
 ### Community 938 - "Community 938"
 Cohesion: 0.40
-Nodes (5): alter-self, description, duration, name, range
+Nodes (5): table, notReadyHint, readyHint, sit, sitHint
 
 ### Community 939 - "Community 939"
 Cohesion: 0.40
-Nodes (5): animal-shapes, description, duration, name, range
+Nodes (4): srdTagPicker, addCustom, granted, remove
 
 ### Community 940 - "Community 940"
 Cohesion: 0.40
-Nodes (5): antilife-shell, description, duration, name, range
+Nodes (4): blinded, description, effects, name
 
 ### Community 941 - "Community 941"
 Cohesion: 0.40
-Nodes (5): antimagic-field, description, duration, name, range
+Nodes (5): alarm, description, duration, name, range
 
 ### Community 942 - "Community 942"
 Cohesion: 0.40
-Nodes (5): antipathy-sympathy, description, duration, name, range
+Nodes (5): alter-self, description, duration, name, range
 
 ### Community 943 - "Community 943"
 Cohesion: 0.40
-Nodes (5): arcane-eye, description, duration, name, range
+Nodes (5): animal-shapes, description, duration, name, range
 
 ### Community 944 - "Community 944"
 Cohesion: 0.40
-Nodes (5): arcane-lock, description, duration, name, range
+Nodes (5): antilife-shell, description, duration, name, range
 
 ### Community 945 - "Community 945"
 Cohesion: 0.40
-Nodes (5): astral-projection, description, duration, name, range
+Nodes (5): antimagic-field, description, duration, name, range
 
 ### Community 946 - "Community 946"
 Cohesion: 0.40
-Nodes (5): augury, description, duration, name, range
+Nodes (5): antipathy-sympathy, description, duration, name, range
 
 ### Community 947 - "Community 947"
 Cohesion: 0.40
-Nodes (5): aura-of-life, description, duration, name, range
+Nodes (5): arcane-eye, description, duration, name, range
 
 ### Community 948 - "Community 948"
 Cohesion: 0.40
-Nodes (5): awaken, description, duration, name, range
+Nodes (5): arcane-lock, description, duration, name, range
 
 ### Community 949 - "Community 949"
 Cohesion: 0.40
-Nodes (5): barkskin, description, duration, name, range
+Nodes (5): astral-projection, description, duration, name, range
 
 ### Community 950 - "Community 950"
 Cohesion: 0.40
-Nodes (5): beacon-of-hope, description, duration, name, range
+Nodes (5): augury, description, duration, name, range
 
 ### Community 951 - "Community 951"
 Cohesion: 0.40
-Nodes (5): befuddlement, description, duration, name, range
+Nodes (5): aura-of-life, description, duration, name, range
 
 ### Community 952 - "Community 952"
 Cohesion: 0.40
-Nodes (5): blade-barrier, description, duration, name, range
+Nodes (5): awaken, description, duration, name, range
 
 ### Community 953 - "Community 953"
 Cohesion: 0.40
-Nodes (5): blink, description, duration, name, range
+Nodes (5): barkskin, description, duration, name, range
 
 ### Community 954 - "Community 954"
 Cohesion: 0.40
-Nodes (5): blur, description, duration, name, range
+Nodes (5): beacon-of-hope, description, duration, name, range
 
 ### Community 955 - "Community 955"
 Cohesion: 0.40
-Nodes (5): calm-emotions, description, duration, name, range
+Nodes (5): befuddlement, description, duration, name, range
 
 ### Community 956 - "Community 956"
 Cohesion: 0.40
-Nodes (5): clairvoyance, description, duration, name, range
+Nodes (5): blade-barrier, description, duration, name, range
 
 ### Community 957 - "Community 957"
 Cohesion: 0.40
-Nodes (5): clone, description, duration, name, range
+Nodes (5): blink, description, duration, name, range
 
 ### Community 958 - "Community 958"
 Cohesion: 0.40
-Nodes (5): color-spray, description, duration, name, range
+Nodes (5): blur, description, duration, name, range
 
 ### Community 959 - "Community 959"
 Cohesion: 0.40
-Nodes (5): commune, description, duration, name, range
+Nodes (5): calm-emotions, description, duration, name, range
 
 ### Community 960 - "Community 960"
 Cohesion: 0.40
-Nodes (5): commune-with-nature, description, duration, name, range
+Nodes (5): clairvoyance, description, duration, name, range
 
 ### Community 961 - "Community 961"
 Cohesion: 0.40
-Nodes (5): comprehend-languages, description, duration, name, range
+Nodes (5): clone, description, duration, name, range
 
 ### Community 962 - "Community 962"
 Cohesion: 0.40
-Nodes (5): compulsion, description, duration, name, range
+Nodes (5): color-spray, description, duration, name, range
 
 ### Community 963 - "Community 963"
 Cohesion: 0.40
-Nodes (5): conjure-fey, description, duration, name, range
+Nodes (5): commune, description, duration, name, range
 
 ### Community 964 - "Community 964"
 Cohesion: 0.40
-Nodes (5): contact-other-plane, description, duration, name, range
+Nodes (5): commune-with-nature, description, duration, name, range
 
 ### Community 965 - "Community 965"
 Cohesion: 0.40
-Nodes (5): contagion, description, duration, name, range
+Nodes (5): comprehend-languages, description, duration, name, range
 
 ### Community 966 - "Community 966"
 Cohesion: 0.40
-Nodes (5): contingency, description, duration, name, range
+Nodes (5): compulsion, description, duration, name, range
 
 ### Community 967 - "Community 967"
 Cohesion: 0.40
-Nodes (5): continual-flame, description, duration, name, range
+Nodes (5): conjure-fey, description, duration, name, range
 
 ### Community 968 - "Community 968"
 Cohesion: 0.40
-Nodes (5): control-water, description, duration, name, range
+Nodes (5): contact-other-plane, description, duration, name, range
 
 ### Community 969 - "Community 969"
 Cohesion: 0.40
-Nodes (5): control-weather, description, duration, name, range
+Nodes (5): contagion, description, duration, name, range
 
 ### Community 970 - "Community 970"
 Cohesion: 0.40
-Nodes (5): create-food-and-water, description, duration, name, range
+Nodes (5): contingency, description, duration, name, range
 
 ### Community 971 - "Community 971"
 Cohesion: 0.40
-Nodes (5): dancing-lights, description, duration, name, range
+Nodes (5): continual-flame, description, duration, name, range
 
 ### Community 972 - "Community 972"
 Cohesion: 0.40
-Nodes (5): darkness, description, duration, name, range
+Nodes (5): control-water, description, duration, name, range
 
 ### Community 973 - "Community 973"
 Cohesion: 0.40
-Nodes (5): darkvision, description, duration, name, range
+Nodes (5): control-weather, description, duration, name, range
 
 ### Community 974 - "Community 974"
 Cohesion: 0.40
-Nodes (5): daylight, description, duration, name, range
+Nodes (5): create-food-and-water, description, duration, name, range
 
 ### Community 975 - "Community 975"
 Cohesion: 0.40
-Nodes (5): death-ward, description, duration, name, range
+Nodes (5): dancing-lights, description, duration, name, range
 
 ### Community 976 - "Community 976"
 Cohesion: 0.40
-Nodes (5): demiplane, description, duration, name, range
+Nodes (5): darkness, description, duration, name, range
 
 ### Community 977 - "Community 977"
 Cohesion: 0.40
-Nodes (4): campaign, create, dm, inviteCode
+Nodes (5): darkvision, description, duration, name, range
 
 ### Community 978 - "Community 978"
 Cohesion: 0.40
-Nodes (4): invocations, eyebrow, pickLabel, section
+Nodes (5): daylight, description, duration, name, range
 
 ### Community 979 - "Community 979"
 Cohesion: 0.40
-Nodes (5): heading, note, statement, statement51, attribution
+Nodes (5): death-ward, description, duration, name, range
 
 ### Community 980 - "Community 980"
 Cohesion: 0.40
-Nodes (5): trademarks, body, compatible, disclaimer, heading
+Nodes (5): demiplane, description, duration, name, range
 
 ### Community 981 - "Community 981"
 Cohesion: 0.40
-Nodes (4): notes, combatEmpty, combatPlaceholder, combatRubric
+Nodes (4): campaign, create, dm, inviteCode
 
 ### Community 982 - "Community 982"
 Cohesion: 0.40
-Nodes (5): hint, loading, none, search, add
+Nodes (4): invocations, eyebrow, pickLabel, section
 
 ### Community 983 - "Community 983"
 Cohesion: 0.40
-Nodes (5): addFailed, openFailed, sitFailed, standFailed, notice
+Nodes (5): heading, note, statement, statement51, attribution
 
 ### Community 984 - "Community 984"
 Cohesion: 0.40
-Nodes (5): table, notReadyHint, readyHint, sit, sitHint
+Nodes (5): trademarks, body, compatible, disclaimer, heading
 
 ### Community 985 - "Community 985"
 Cohesion: 0.40
-Nodes (4): srdTagPicker, addCustom, granted, remove
+Nodes (4): notes, combatEmpty, combatPlaceholder, combatRubric
+
+### Community 986 - "Community 986"
+Cohesion: 0.40
+Nodes (5): hint, loading, none, search, add
 
 ### Community 987 - "Community 987"
 Cohesion: 0.40
-Nodes (4): ChronicleEventBase, CombatChronicleEvent, CombatChronicleEventKind, EncounterOutcome
+Nodes (5): addFailed, openFailed, sitFailed, standFailed, notice
 
 ### Community 988 - "Community 988"
 Cohesion: 0.40
-Nodes (4): ActionEffect, CombatEvent, CombatEventKind, LogSlot
+Nodes (5): table, notReadyHint, readyHint, sit, sitHint
+
+### Community 989 - "Community 989"
+Cohesion: 0.40
+Nodes (4): srdTagPicker, addCustom, granted, remove
+
+### Community 991 - "Community 991"
+Cohesion: 0.40
+Nodes (4): ChronicleEventBase, CombatChronicleEvent, CombatChronicleEventKind, EncounterOutcome
 
 ### Community 992 - "Community 992"
 Cohesion: 0.40
-Nodes (4): bgPages, css, here, html
+Nodes (4): ActionEffect, CombatEvent, CombatEventKind, LogSlot
 
-### Community 994 - "Community 994"
+### Community 996 - "Community 996"
 Cohesion: 0.40
-Nodes (3): defaultDevCombatState, PLAY_STATE, { setDocMock, updateDocMock, getDocsMock }
-
-### Community 997 - "Community 997"
-Cohesion: 0.50
-Nodes (4): render(), spec(), t, vmFor()
+Nodes (4): bgPages, css, here, html
 
 ### Community 998 - "Community 998"
 Cohesion: 0.40
-Nodes (4): Child, local, Parent, server
+Nodes (3): defaultDevCombatState, PLAY_STATE, { setDocMock, updateDocMock, getDocsMock }
 
-### Community 999 - "Community 999"
-Cohesion: 0.50
-Nodes (3): binding(), item, operation()
+### Community 1001 - "Community 1001"
+Cohesion: 0.40
+Nodes (4): Child, local, Parent, server
 
 ### Community 1002 - "Community 1002"
 Cohesion: 0.50
+Nodes (3): binding(), item, operation()
+
+### Community 1005 - "Community 1005"
+Cohesion: 0.50
 Nodes (3): condition(), effect(), pc
-
-### Community 1006 - "Community 1006"
-Cohesion: 0.40
-Nodes (3): here, RESERVED, root
-
-### Community 1007 - "Community 1007"
-Cohesion: 0.40
-Nodes (3): noDefenses, packet, target
 
 ### Community 1009 - "Community 1009"
 Cohesion: 0.40
+Nodes (3): here, RESERVED, root
+
+### Community 1010 - "Community 1010"
+Cohesion: 0.40
+Nodes (3): noDefenses, packet, target
+
+### Community 1012 - "Community 1012"
+Cohesion: 0.40
 Nodes (3): ALLOWED, ROOT, SRC
-
-### Community 1013 - "Community 1013"
-Cohesion: 0.40
-Nodes (4): CAPABILITY, ENTITY, INSTALLATION, MATERIAL
-
-### Community 1014 - "Community 1014"
-Cohesion: 0.40
-Nodes (4): ALLOWLIST, RAW_PALETTE, root, SCAN_DIRS
-
-### Community 1015 - "Community 1015"
-Cohesion: 0.40
-Nodes (3): FORM, setDocMock, uploadBytesMock
 
 ### Community 1017 - "Community 1017"
 Cohesion: 0.40
+Nodes (4): CAPABILITY, ENTITY, INSTALLATION, MATERIAL
+
+### Community 1018 - "Community 1018"
+Cohesion: 0.40
+Nodes (4): ALLOWLIST, RAW_PALETTE, root, SCAN_DIRS
+
+### Community 1019 - "Community 1019"
+Cohesion: 0.40
+Nodes (3): FORM, setDocMock, uploadBytesMock
+
+### Community 1021 - "Community 1021"
+Cohesion: 0.40
 Nodes (3): doc(), { navigateMock, useCharactersMock, deleteCharactersMock }, RosterResult
 
-### Community 1020 - "Community 1020"
+### Community 1024 - "Community 1024"
 Cohesion: 0.40
 Nodes (4): adminRow, allRows, isAdminState, nonAdminRows
 
-### Community 1022 - "Community 1022"
+### Community 1026 - "Community 1026"
 Cohesion: 0.40
 Nodes (3): assertModeledAndLocalized(), EquipSource, SOURCES
 
-### Community 1023 - "Community 1023"
+### Community 1027 - "Community 1027"
 Cohesion: 0.70
 Nodes (4): initBonusFor(), load(), mount(), mountView()
 
-### Community 1027 - "Community 1027"
+### Community 1031 - "Community 1031"
 Cohesion: 0.40
 Nodes (3): i18nIndex, indexHtml, mainTsx
 
-### Community 1031 - "Community 1031"
+### Community 1035 - "Community 1035"
 Cohesion: 0.50
 Nodes (4): 0.10.0 — 2026-06-12, Added, Changed, Fixed
 
-### Community 1032 - "Community 1032"
+### Community 1036 - "Community 1036"
 Cohesion: 0.50
 Nodes (4): 0.11.0 — 2026-06-15, Added, Changed, Fixed
 
-### Community 1033 - "Community 1033"
+### Community 1037 - "Community 1037"
 Cohesion: 0.50
 Nodes (4): 0.14.0 — 2026-06-27, Added, Changed, Fixed
 
-### Community 1034 - "Community 1034"
+### Community 1038 - "Community 1038"
 Cohesion: 0.50
 Nodes (4): 0.15.0, Added, Changed, Fixed
 
-### Community 1035 - "Community 1035"
+### Community 1039 - "Community 1039"
 Cohesion: 0.50
 Nodes (4): 0.17.0, Combat, Magic items, Spells
 
-### Community 1036 - "Community 1036"
+### Community 1040 - "Community 1040"
 Cohesion: 0.50
 Nodes (4): 0.18.1, Added, Changed, Fixed
 
-### Community 1037 - "Community 1037"
+### Community 1041 - "Community 1041"
 Cohesion: 0.50
 Nodes (4): 0.19.0, Added, Changed, Fixed
 
-### Community 1038 - "Community 1038"
+### Community 1042 - "Community 1042"
 Cohesion: 0.50
 Nodes (4): 0.20.0, Added, Changed, Fixed
 
-### Community 1039 - "Community 1039"
+### Community 1043 - "Community 1043"
 Cohesion: 0.50
 Nodes (4): 0.21.0, Added, Changed, Fixed
 
-### Community 1040 - "Community 1040"
+### Community 1044 - "Community 1044"
 Cohesion: 0.50
 Nodes (4): 0.22.0, Added, Changed, Fixed
 
-### Community 1041 - "Community 1041"
+### Community 1045 - "Community 1045"
 Cohesion: 0.50
 Nodes (4): 0.24.0, Added, Changed, Fixed
 
-### Community 1042 - "Community 1042"
+### Community 1046 - "Community 1046"
 Cohesion: 0.50
 Nodes (4): 0.9.0 — 2026-06-07, Added, Changed, Release engineering
 
-### Community 1044 - "Community 1044"
+### Community 1048 - "Community 1048"
 Cohesion: 0.50
 Nodes (3): CombatVariantNote, MOUNTED_COMBAT_REFERENCE, UNDERWATER_COMBAT_REFERENCE
 
-### Community 1045 - "Community 1045"
+### Community 1049 - "Community 1049"
 Cohesion: 0.50
 Nodes (3): COVER_REFERENCE, CoverEffect, CoverLevel
 
-### Community 1046 - "Community 1046"
+### Community 1050 - "Community 1050"
 Cohesion: 0.50
 Nodes (3): PUBLIC_INVOCATIONS, SRD_INVOCATIONS, SrdEldritchInvocation
 
-### Community 1047 - "Community 1047"
+### Community 1051 - "Community 1051"
 Cohesion: 0.50
 Nodes (3): METAMAGIC_BY_ID, SRD_METAMAGIC, SrdMetamagicOption
 
-### Community 1048 - "Community 1048"
+### Community 1052 - "Community 1052"
 Cohesion: 0.50
 Nodes (3): TRAVEL_PACE_REFERENCE, TravelPace, TravelPaceId
 
-### Community 1049 - "Community 1049"
+### Community 1053 - "Community 1053"
 Cohesion: 0.50
 Nodes (3): Initial creation loadout, P05 character-owned homebrew instances, Sheet draft lifecycle
 
-### Community 1050 - "Community 1050"
+### Community 1054 - "Community 1054"
 Cohesion: 0.50
 Nodes (3): Character origin build persistence, Creation source and choice context, Shared class and origin acquisition
 
-### Community 1051 - "Community 1051"
+### Community 1055 - "Community 1055"
 Cohesion: 0.50
 Nodes (3): Catalogue source and acquisition extension, Origin authoring and current-build composition, Shared acquisition declarations
 
-### Community 1054 - "Community 1054"
-Cohesion: 0.50
-Nodes (4): createEmptySharedMaterialState(), shared(), sharedState(), shared()
-
 ### Community 1056 - "Community 1056"
 Cohesion: 0.50
-Nodes (3): ALL_FILES, root, SCAN_DIRS
-
-### Community 1059 - "Community 1059"
-Cohesion: 0.67
-Nodes (3): initialOf(), Portrait(), PortraitProps
+Nodes (3): createClassBuildReader(), mock, setup()
 
 ### Community 1061 - "Community 1061"
 Cohesion: 0.67
-Nodes (3): DivineInterventionModal(), DivineInterventionModalProps, poolCopy()
+Nodes (3): asSlot(), normalizeLogEntry(), sanitizeSession()
 
-### Community 1066 - "Community 1066"
+### Community 1064 - "Community 1064"
 Cohesion: 0.50
-Nodes (4): barbarian-rage.mechanics.actions.0, description, label, summary
+Nodes (3): ALL_FILES, root, SCAN_DIRS
 
 ### Community 1067 - "Community 1067"
-Cohesion: 0.50
-Nodes (4): barbarian-rage.mechanics.actions.1, description, name, summary
-
-### Community 1068 - "Community 1068"
-Cohesion: 0.50
-Nodes (4): barbarian-reckless-attack.mechanics.actions.0, description, label, summary
+Cohesion: 0.67
+Nodes (3): initialOf(), Portrait(), PortraitProps
 
 ### Community 1069 - "Community 1069"
-Cohesion: 0.50
-Nodes (4): cleric-life-preserve-life.mechanics.actions.0, description, label, summary
-
-### Community 1070 - "Community 1070"
-Cohesion: 0.50
-Nodes (4): druid-wild-companion.mechanics.actions.0, description, label, summary
-
-### Community 1071 - "Community 1071"
-Cohesion: 0.50
-Nodes (4): monk-deflect-attacks.mechanics.actions.1, description, name, summary
-
-### Community 1072 - "Community 1072"
-Cohesion: 0.50
-Nodes (4): monk-flurry-of-blows.mechanics.actions.0, description, label, summary
-
-### Community 1073 - "Community 1073"
-Cohesion: 0.50
-Nodes (4): monk-martial-arts.mechanics.actions.0, description, label, summary
+Cohesion: 0.67
+Nodes (3): DivineInterventionModal(), DivineInterventionModalProps, poolCopy()
 
 ### Community 1074 - "Community 1074"
 Cohesion: 0.50
-Nodes (4): monk-open-hand-fleet-step.mechanics.actions.0, description, label, summary
+Nodes (4): barbarian-rage.mechanics.actions.0, description, label, summary
 
 ### Community 1075 - "Community 1075"
 Cohesion: 0.50
-Nodes (4): monk-open-hand-wholeness-of-body.mechanics.actions.0, description, label, summary
+Nodes (4): barbarian-rage.mechanics.actions.1, description, name, summary
 
 ### Community 1076 - "Community 1076"
 Cohesion: 0.50
-Nodes (4): monk-patient-defense.mechanics.actions.0, description, label, summary
+Nodes (4): barbarian-reckless-attack.mechanics.actions.0, description, label, summary
 
 ### Community 1077 - "Community 1077"
 Cohesion: 0.50
-Nodes (4): blinded, description, effects, name
+Nodes (4): cleric-life-preserve-life.mechanics.actions.0, description, label, summary
 
 ### Community 1078 - "Community 1078"
 Cohesion: 0.50
-Nodes (4): charmed, description, effects, name
+Nodes (4): druid-wild-companion.mechanics.actions.0, description, label, summary
 
 ### Community 1079 - "Community 1079"
 Cohesion: 0.50
-Nodes (4): exhaustion, description, effects, name
+Nodes (4): monk-deflect-attacks.mechanics.actions.1, description, name, summary
 
 ### Community 1080 - "Community 1080"
 Cohesion: 0.50
-Nodes (4): frightened, description, effects, name
+Nodes (4): monk-flurry-of-blows.mechanics.actions.0, description, label, summary
 
 ### Community 1081 - "Community 1081"
 Cohesion: 0.50
-Nodes (4): grappled, description, effects, name
+Nodes (4): monk-martial-arts.mechanics.actions.0, description, label, summary
 
 ### Community 1082 - "Community 1082"
 Cohesion: 0.50
-Nodes (4): incapacitated, description, effects, name
+Nodes (4): monk-open-hand-fleet-step.mechanics.actions.0, description, label, summary
 
 ### Community 1083 - "Community 1083"
 Cohesion: 0.50
-Nodes (4): invisible, description, effects, name
+Nodes (4): monk-open-hand-wholeness-of-body.mechanics.actions.0, description, label, summary
 
 ### Community 1084 - "Community 1084"
 Cohesion: 0.50
-Nodes (4): paralyzed, description, effects, name
+Nodes (4): monk-patient-defense.mechanics.actions.0, description, label, summary
 
 ### Community 1085 - "Community 1085"
 Cohesion: 0.50
-Nodes (4): petrified, description, effects, name
+Nodes (4): charmed, description, effects, name
 
 ### Community 1086 - "Community 1086"
 Cohesion: 0.50
-Nodes (4): poisoned, description, effects, name
+Nodes (4): deafened, description, effects, name
 
 ### Community 1087 - "Community 1087"
 Cohesion: 0.50
-Nodes (4): prone, description, effects, name
+Nodes (4): exhaustion, description, effects, name
 
 ### Community 1088 - "Community 1088"
 Cohesion: 0.50
-Nodes (4): restrained, description, effects, name
+Nodes (4): frightened, description, effects, name
 
 ### Community 1089 - "Community 1089"
 Cohesion: 0.50
-Nodes (4): stunned, description, effects, name
+Nodes (4): grappled, description, effects, name
 
 ### Community 1090 - "Community 1090"
 Cohesion: 0.50
-Nodes (4): unconscious, description, effects, name
+Nodes (4): incapacitated, description, effects, name
 
 ### Community 1091 - "Community 1091"
 Cohesion: 0.50
-Nodes (4): ability-score-improvement, description, name, prerequisite
+Nodes (4): invisible, description, effects, name
 
 ### Community 1092 - "Community 1092"
 Cohesion: 0.50
-Nodes (4): archery, description, name, prerequisite
+Nodes (4): paralyzed, description, effects, name
 
 ### Community 1093 - "Community 1093"
 Cohesion: 0.50
-Nodes (4): boon-of-combat-prowess, description, name, prerequisite
+Nodes (4): petrified, description, effects, name
 
 ### Community 1094 - "Community 1094"
 Cohesion: 0.50
-Nodes (4): boon-of-dimensional-travel, description, name, prerequisite
+Nodes (4): poisoned, description, effects, name
 
 ### Community 1095 - "Community 1095"
 Cohesion: 0.50
-Nodes (4): boon-of-fate, description, name, prerequisite
+Nodes (4): prone, description, effects, name
 
 ### Community 1096 - "Community 1096"
 Cohesion: 0.50
-Nodes (4): boon-of-irresistible-offense, description, name, prerequisite
+Nodes (4): restrained, description, effects, name
 
 ### Community 1097 - "Community 1097"
 Cohesion: 0.50
-Nodes (4): boon-of-spell-recall, description, name, prerequisite
+Nodes (4): stunned, description, effects, name
 
 ### Community 1098 - "Community 1098"
 Cohesion: 0.50
-Nodes (4): boon-of-the-night-spirit, description, name, prerequisite
+Nodes (4): unconscious, description, effects, name
 
 ### Community 1099 - "Community 1099"
 Cohesion: 0.50
-Nodes (4): boon-of-truesight, description, name, prerequisite
+Nodes (4): ability-score-improvement, description, name, prerequisite
 
 ### Community 1100 - "Community 1100"
 Cohesion: 0.50
-Nodes (4): defense, description, name, prerequisite
+Nodes (4): archery, description, name, prerequisite
 
 ### Community 1101 - "Community 1101"
 Cohesion: 0.50
-Nodes (4): grappler, description, name, prerequisite
+Nodes (4): boon-of-combat-prowess, description, name, prerequisite
 
 ### Community 1102 - "Community 1102"
 Cohesion: 0.50
-Nodes (4): great-weapon-fighting, description, name, prerequisite
+Nodes (4): boon-of-dimensional-travel, description, name, prerequisite
 
 ### Community 1103 - "Community 1103"
 Cohesion: 0.50
-Nodes (4): two-weapon-fighting, description, name, prerequisite
+Nodes (4): boon-of-fate, description, name, prerequisite
 
 ### Community 1104 - "Community 1104"
 Cohesion: 0.50
-Nodes (4): agonizing-blast, description, name, prerequisite
+Nodes (4): boon-of-irresistible-offense, description, name, prerequisite
 
 ### Community 1105 - "Community 1105"
 Cohesion: 0.50
-Nodes (4): ascendant-step, description, name, prerequisite
+Nodes (4): boon-of-spell-recall, description, name, prerequisite
 
 ### Community 1106 - "Community 1106"
 Cohesion: 0.50
-Nodes (4): devils-sight, description, name, prerequisite
+Nodes (4): boon-of-the-night-spirit, description, name, prerequisite
 
 ### Community 1107 - "Community 1107"
 Cohesion: 0.50
-Nodes (4): devouring-blade, description, name, prerequisite
+Nodes (4): boon-of-truesight, description, name, prerequisite
 
 ### Community 1108 - "Community 1108"
 Cohesion: 0.50
-Nodes (4): eldritch-smite, description, name, prerequisite
+Nodes (4): defense, description, name, prerequisite
 
 ### Community 1109 - "Community 1109"
 Cohesion: 0.50
-Nodes (4): eldritch-spear, description, name, prerequisite
+Nodes (4): grappler, description, name, prerequisite
 
 ### Community 1110 - "Community 1110"
 Cohesion: 0.50
-Nodes (4): fiendish-vigor, description, name, prerequisite
+Nodes (4): great-weapon-fighting, description, name, prerequisite
 
 ### Community 1111 - "Community 1111"
 Cohesion: 0.50
-Nodes (4): gaze-of-two-minds, description, name, prerequisite
+Nodes (4): two-weapon-fighting, description, name, prerequisite
 
 ### Community 1112 - "Community 1112"
 Cohesion: 0.50
-Nodes (4): gift-of-the-depths, description, name, prerequisite
+Nodes (4): agonizing-blast, description, name, prerequisite
 
 ### Community 1113 - "Community 1113"
 Cohesion: 0.50
-Nodes (4): gift-of-the-protectors, description, name, prerequisite
+Nodes (4): ascendant-step, description, name, prerequisite
 
 ### Community 1114 - "Community 1114"
 Cohesion: 0.50
-Nodes (4): investment-of-the-chain-master, description, name, prerequisite
+Nodes (4): devils-sight, description, name, prerequisite
 
 ### Community 1115 - "Community 1115"
 Cohesion: 0.50
-Nodes (4): lessons-of-the-first-ones, description, name, prerequisite
+Nodes (4): devouring-blade, description, name, prerequisite
 
 ### Community 1116 - "Community 1116"
 Cohesion: 0.50
-Nodes (4): lifedrinker, description, name, prerequisite
+Nodes (4): eldritch-smite, description, name, prerequisite
 
 ### Community 1117 - "Community 1117"
 Cohesion: 0.50
-Nodes (4): mask-of-many-faces, description, name, prerequisite
+Nodes (4): eldritch-spear, description, name, prerequisite
 
 ### Community 1118 - "Community 1118"
 Cohesion: 0.50
-Nodes (4): master-of-myriad-forms, description, name, prerequisite
+Nodes (4): fiendish-vigor, description, name, prerequisite
 
 ### Community 1119 - "Community 1119"
 Cohesion: 0.50
-Nodes (4): misty-visions, description, name, prerequisite
+Nodes (4): gaze-of-two-minds, description, name, prerequisite
 
 ### Community 1120 - "Community 1120"
 Cohesion: 0.50
-Nodes (4): one-with-shadows, description, name, prerequisite
+Nodes (4): gift-of-the-depths, description, name, prerequisite
 
 ### Community 1121 - "Community 1121"
 Cohesion: 0.50
-Nodes (4): otherworldly-leap, description, name, prerequisite
+Nodes (4): gift-of-the-protectors, description, name, prerequisite
 
 ### Community 1122 - "Community 1122"
 Cohesion: 0.50
-Nodes (4): repelling-blast, description, name, prerequisite
+Nodes (4): investment-of-the-chain-master, description, name, prerequisite
 
 ### Community 1123 - "Community 1123"
 Cohesion: 0.50
-Nodes (4): thirsting-blade, description, name, prerequisite
+Nodes (4): lessons-of-the-first-ones, description, name, prerequisite
 
 ### Community 1124 - "Community 1124"
 Cohesion: 0.50
-Nodes (4): visions-of-distant-realms, description, name, prerequisite
+Nodes (4): lifedrinker, description, name, prerequisite
 
 ### Community 1125 - "Community 1125"
 Cohesion: 0.50
-Nodes (4): whispers-of-the-grave, description, name, prerequisite
+Nodes (4): mask-of-many-faces, description, name, prerequisite
 
 ### Community 1126 - "Community 1126"
 Cohesion: 0.50
-Nodes (4): witch-sight, description, name, prerequisite
+Nodes (4): master-of-myriad-forms, description, name, prerequisite
 
 ### Community 1127 - "Community 1127"
 Cohesion: 0.50
-Nodes (4): dwarven-thrower, attunementReq, description, name
+Nodes (4): misty-visions, description, name, prerequisite
 
 ### Community 1128 - "Community 1128"
 Cohesion: 0.50
-Nodes (4): elixir-of-health, description, name, summary
+Nodes (4): one-with-shadows, description, name, prerequisite
 
 ### Community 1129 - "Community 1129"
 Cohesion: 0.50
-Nodes (4): hat-of-many-spells, attunementReq, description, name
+Nodes (4): otherworldly-leap, description, name, prerequisite
 
 ### Community 1130 - "Community 1130"
 Cohesion: 0.50
-Nodes (4): holy-avenger, attunementReq, description, name
+Nodes (4): repelling-blast, description, name, prerequisite
 
 ### Community 1131 - "Community 1131"
 Cohesion: 0.50
-Nodes (4): necklace-of-prayer-beads, attunementReq, description, name
+Nodes (4): thirsting-blade, description, name, prerequisite
 
 ### Community 1132 - "Community 1132"
 Cohesion: 0.50
-Nodes (4): oil-of-etherealness, description, name, summary
+Nodes (4): visions-of-distant-realms, description, name, prerequisite
 
 ### Community 1133 - "Community 1133"
 Cohesion: 0.50
-Nodes (4): oil-of-sharpness, description, name, summary
+Nodes (4): whispers-of-the-grave, description, name, prerequisite
 
 ### Community 1134 - "Community 1134"
 Cohesion: 0.50
-Nodes (4): pearl-of-power, attunementReq, description, name
+Nodes (4): witch-sight, description, name, prerequisite
 
 ### Community 1135 - "Community 1135"
 Cohesion: 0.50
-Nodes (4): potion-of-animal-friendship, description, name, summary
+Nodes (4): dwarven-thrower, attunementReq, description, name
 
 ### Community 1136 - "Community 1136"
 Cohesion: 0.50
-Nodes (4): potion-of-clairvoyance, description, name, summary
+Nodes (4): elixir-of-health, description, name, summary
 
 ### Community 1137 - "Community 1137"
 Cohesion: 0.50
-Nodes (4): potion-of-climbing, description, name, summary
+Nodes (4): hat-of-many-spells, attunementReq, description, name
 
 ### Community 1138 - "Community 1138"
 Cohesion: 0.50
-Nodes (4): potion-of-diminution, description, name, summary
+Nodes (4): holy-avenger, attunementReq, description, name
 
 ### Community 1139 - "Community 1139"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn, description, name, trigger
+Nodes (4): necklace-of-prayer-beads, attunementReq, description, name
 
 ### Community 1140 - "Community 1140"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill, description, name, trigger
+Nodes (4): oil-of-etherealness, description, name, summary
 
 ### Community 1141 - "Community 1141"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble, description, name, trigger
+Nodes (4): oil-of-sharpness, description, name, summary
 
 ### Community 1142 - "Community 1142"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance, description, name, trigger
+Nodes (4): pearl-of-power, attunementReq, description, name
 
 ### Community 1143 - "Community 1143"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder, description, name, trigger
+Nodes (4): potion-of-animal-friendship, description, name, summary
 
 ### Community 1144 - "Community 1144"
 Cohesion: 0.50
-Nodes (4): rulesReference, cover, hint, title
+Nodes (4): potion-of-clairvoyance, description, name, summary
 
 ### Community 1145 - "Community 1145"
 Cohesion: 0.50
-Nodes (4): edition, conflicting, invalid, unsupported
+Nodes (4): potion-of-climbing, description, name, summary
 
 ### Community 1146 - "Community 1146"
 Cohesion: 0.50
-Nodes (4): spells, searchSpells, selectCount_one, selectCount_other
+Nodes (4): potion-of-diminution, description, name, summary
 
 ### Community 1147 - "Community 1147"
 Cohesion: 0.50
-Nodes (4): background, campaign-rule, subclass, families
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn, description, name, trigger
 
 ### Community 1148 - "Community 1148"
 Cohesion: 0.50
-Nodes (3): pwa, install, installPrompt
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill, description, name, trigger
 
 ### Community 1149 - "Community 1149"
 Cohesion: 0.50
-Nodes (4): severities, high, low, medium
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble, description, name, trigger
 
 ### Community 1150 - "Community 1150"
 Cohesion: 0.50
-Nodes (3): weaponMastery, eyebrow, search
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance, description, name, trigger
 
 ### Community 1151 - "Community 1151"
 Cohesion: 0.50
-Nodes (4): barbarian-rage.mechanics.actions.0, description, label, summary
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder, description, name, trigger
 
 ### Community 1152 - "Community 1152"
 Cohesion: 0.50
-Nodes (4): barbarian-rage.mechanics.actions.1, description, name, summary
+Nodes (4): rulesReference, cover, hint, title
 
 ### Community 1153 - "Community 1153"
 Cohesion: 0.50
-Nodes (4): barbarian-reckless-attack.mechanics.actions.0, description, label, summary
+Nodes (4): edition, conflicting, invalid, unsupported
 
 ### Community 1154 - "Community 1154"
 Cohesion: 0.50
-Nodes (4): cleric-life-preserve-life.mechanics.actions.0, description, label, summary
+Nodes (4): spells, searchSpells, selectCount_one, selectCount_other
 
 ### Community 1155 - "Community 1155"
 Cohesion: 0.50
-Nodes (4): druid-wild-companion.mechanics.actions.0, description, label, summary
+Nodes (4): background, campaign-rule, subclass, families
 
 ### Community 1156 - "Community 1156"
 Cohesion: 0.50
-Nodes (4): monk-deflect-attacks.mechanics.actions.1, description, name, summary
+Nodes (3): pwa, install, installPrompt
 
 ### Community 1157 - "Community 1157"
 Cohesion: 0.50
-Nodes (4): monk-flurry-of-blows.mechanics.actions.0, description, label, summary
+Nodes (4): severities, high, low, medium
 
 ### Community 1158 - "Community 1158"
 Cohesion: 0.50
-Nodes (4): monk-martial-arts.mechanics.actions.0, description, label, summary
+Nodes (3): weaponMastery, eyebrow, search
 
 ### Community 1159 - "Community 1159"
 Cohesion: 0.50
-Nodes (4): monk-open-hand-fleet-step.mechanics.actions.0, description, label, summary
+Nodes (4): barbarian-rage.mechanics.actions.0, description, label, summary
 
 ### Community 1160 - "Community 1160"
 Cohesion: 0.50
-Nodes (4): monk-open-hand-wholeness-of-body.mechanics.actions.0, description, label, summary
+Nodes (4): barbarian-rage.mechanics.actions.1, description, name, summary
 
 ### Community 1161 - "Community 1161"
 Cohesion: 0.50
-Nodes (4): monk-patient-defense.mechanics.actions.0, description, label, summary
+Nodes (4): barbarian-reckless-attack.mechanics.actions.0, description, label, summary
 
 ### Community 1162 - "Community 1162"
 Cohesion: 0.50
-Nodes (4): blinded, description, effects, name
+Nodes (4): cleric-life-preserve-life.mechanics.actions.0, description, label, summary
 
 ### Community 1163 - "Community 1163"
 Cohesion: 0.50
-Nodes (4): charmed, description, effects, name
+Nodes (4): druid-wild-companion.mechanics.actions.0, description, label, summary
 
 ### Community 1164 - "Community 1164"
 Cohesion: 0.50
-Nodes (4): deafened, description, effects, name
+Nodes (4): monk-deflect-attacks.mechanics.actions.1, description, name, summary
 
 ### Community 1165 - "Community 1165"
 Cohesion: 0.50
-Nodes (4): exhaustion, description, effects, name
+Nodes (4): monk-flurry-of-blows.mechanics.actions.0, description, label, summary
 
 ### Community 1166 - "Community 1166"
 Cohesion: 0.50
-Nodes (4): frightened, description, effects, name
+Nodes (4): monk-martial-arts.mechanics.actions.0, description, label, summary
 
 ### Community 1167 - "Community 1167"
 Cohesion: 0.50
-Nodes (4): incapacitated, description, effects, name
+Nodes (4): monk-open-hand-fleet-step.mechanics.actions.0, description, label, summary
 
 ### Community 1168 - "Community 1168"
 Cohesion: 0.50
-Nodes (4): invisible, description, effects, name
+Nodes (4): monk-open-hand-wholeness-of-body.mechanics.actions.0, description, label, summary
 
 ### Community 1169 - "Community 1169"
 Cohesion: 0.50
-Nodes (4): paralyzed, description, effects, name
+Nodes (4): monk-patient-defense.mechanics.actions.0, description, label, summary
 
 ### Community 1170 - "Community 1170"
 Cohesion: 0.50
-Nodes (4): petrified, description, effects, name
+Nodes (4): charmed, description, effects, name
 
 ### Community 1171 - "Community 1171"
 Cohesion: 0.50
-Nodes (4): poisoned, description, effects, name
+Nodes (4): deafened, description, effects, name
 
 ### Community 1172 - "Community 1172"
 Cohesion: 0.50
-Nodes (4): prone, description, effects, name
+Nodes (4): exhaustion, description, effects, name
 
 ### Community 1173 - "Community 1173"
 Cohesion: 0.50
-Nodes (4): restrained, description, effects, name
+Nodes (4): frightened, description, effects, name
 
 ### Community 1174 - "Community 1174"
 Cohesion: 0.50
-Nodes (4): stunned, description, effects, name
+Nodes (4): grappled, description, effects, name
 
 ### Community 1175 - "Community 1175"
 Cohesion: 0.50
-Nodes (4): unconscious, description, effects, name
+Nodes (4): incapacitated, description, effects, name
 
 ### Community 1176 - "Community 1176"
 Cohesion: 0.50
-Nodes (4): ability-score-improvement, description, name, prerequisite
+Nodes (4): invisible, description, effects, name
 
 ### Community 1177 - "Community 1177"
 Cohesion: 0.50
-Nodes (4): archery, description, name, prerequisite
+Nodes (4): paralyzed, description, effects, name
 
 ### Community 1178 - "Community 1178"
 Cohesion: 0.50
-Nodes (4): boon-of-combat-prowess, description, name, prerequisite
+Nodes (4): petrified, description, effects, name
 
 ### Community 1179 - "Community 1179"
 Cohesion: 0.50
-Nodes (4): boon-of-dimensional-travel, description, name, prerequisite
+Nodes (4): poisoned, description, effects, name
 
 ### Community 1180 - "Community 1180"
 Cohesion: 0.50
-Nodes (4): boon-of-fate, description, name, prerequisite
+Nodes (4): prone, description, effects, name
 
 ### Community 1181 - "Community 1181"
 Cohesion: 0.50
-Nodes (4): boon-of-irresistible-offense, description, name, prerequisite
+Nodes (4): restrained, description, effects, name
 
 ### Community 1182 - "Community 1182"
 Cohesion: 0.50
-Nodes (4): boon-of-spell-recall, description, name, prerequisite
+Nodes (4): stunned, description, effects, name
 
 ### Community 1183 - "Community 1183"
 Cohesion: 0.50
-Nodes (4): boon-of-the-night-spirit, description, name, prerequisite
+Nodes (4): unconscious, description, effects, name
 
 ### Community 1184 - "Community 1184"
 Cohesion: 0.50
-Nodes (4): boon-of-truesight, description, name, prerequisite
+Nodes (4): ability-score-improvement, description, name, prerequisite
 
 ### Community 1185 - "Community 1185"
 Cohesion: 0.50
-Nodes (4): defense, description, name, prerequisite
+Nodes (4): archery, description, name, prerequisite
 
 ### Community 1186 - "Community 1186"
 Cohesion: 0.50
-Nodes (4): grappler, description, name, prerequisite
+Nodes (4): boon-of-combat-prowess, description, name, prerequisite
 
 ### Community 1187 - "Community 1187"
 Cohesion: 0.50
-Nodes (4): great-weapon-fighting, description, name, prerequisite
+Nodes (4): boon-of-dimensional-travel, description, name, prerequisite
 
 ### Community 1188 - "Community 1188"
 Cohesion: 0.50
-Nodes (4): two-weapon-fighting, description, name, prerequisite
+Nodes (4): boon-of-fate, description, name, prerequisite
 
 ### Community 1189 - "Community 1189"
 Cohesion: 0.50
-Nodes (4): agonizing-blast, description, name, prerequisite
+Nodes (4): boon-of-irresistible-offense, description, name, prerequisite
 
 ### Community 1190 - "Community 1190"
 Cohesion: 0.50
-Nodes (4): ascendant-step, description, name, prerequisite
+Nodes (4): boon-of-spell-recall, description, name, prerequisite
 
 ### Community 1191 - "Community 1191"
 Cohesion: 0.50
-Nodes (4): devils-sight, description, name, prerequisite
+Nodes (4): boon-of-the-night-spirit, description, name, prerequisite
 
 ### Community 1192 - "Community 1192"
 Cohesion: 0.50
-Nodes (4): devouring-blade, description, name, prerequisite
+Nodes (4): boon-of-truesight, description, name, prerequisite
 
 ### Community 1193 - "Community 1193"
 Cohesion: 0.50
-Nodes (4): eldritch-smite, description, name, prerequisite
+Nodes (4): defense, description, name, prerequisite
 
 ### Community 1194 - "Community 1194"
 Cohesion: 0.50
-Nodes (4): eldritch-spear, description, name, prerequisite
+Nodes (4): grappler, description, name, prerequisite
 
 ### Community 1195 - "Community 1195"
 Cohesion: 0.50
-Nodes (4): fiendish-vigor, description, name, prerequisite
+Nodes (4): great-weapon-fighting, description, name, prerequisite
 
 ### Community 1196 - "Community 1196"
 Cohesion: 0.50
-Nodes (4): gaze-of-two-minds, description, name, prerequisite
+Nodes (4): two-weapon-fighting, description, name, prerequisite
 
 ### Community 1197 - "Community 1197"
 Cohesion: 0.50
-Nodes (4): gift-of-the-depths, description, name, prerequisite
+Nodes (4): agonizing-blast, description, name, prerequisite
 
 ### Community 1198 - "Community 1198"
 Cohesion: 0.50
-Nodes (4): gift-of-the-protectors, description, name, prerequisite
+Nodes (4): ascendant-step, description, name, prerequisite
 
 ### Community 1199 - "Community 1199"
 Cohesion: 0.50
-Nodes (4): investment-of-the-chain-master, description, name, prerequisite
+Nodes (4): devils-sight, description, name, prerequisite
 
 ### Community 1200 - "Community 1200"
 Cohesion: 0.50
-Nodes (4): lessons-of-the-first-ones, description, name, prerequisite
+Nodes (4): devouring-blade, description, name, prerequisite
 
 ### Community 1201 - "Community 1201"
 Cohesion: 0.50
-Nodes (4): lifedrinker, description, name, prerequisite
+Nodes (4): eldritch-smite, description, name, prerequisite
 
 ### Community 1202 - "Community 1202"
 Cohesion: 0.50
-Nodes (4): mask-of-many-faces, description, name, prerequisite
+Nodes (4): eldritch-spear, description, name, prerequisite
 
 ### Community 1203 - "Community 1203"
 Cohesion: 0.50
-Nodes (4): master-of-myriad-forms, description, name, prerequisite
+Nodes (4): fiendish-vigor, description, name, prerequisite
 
 ### Community 1204 - "Community 1204"
 Cohesion: 0.50
-Nodes (4): misty-visions, description, name, prerequisite
+Nodes (4): gaze-of-two-minds, description, name, prerequisite
 
 ### Community 1205 - "Community 1205"
 Cohesion: 0.50
-Nodes (4): one-with-shadows, description, name, prerequisite
+Nodes (4): gift-of-the-depths, description, name, prerequisite
 
 ### Community 1206 - "Community 1206"
 Cohesion: 0.50
-Nodes (4): otherworldly-leap, description, name, prerequisite
+Nodes (4): gift-of-the-protectors, description, name, prerequisite
 
 ### Community 1207 - "Community 1207"
 Cohesion: 0.50
-Nodes (4): repelling-blast, description, name, prerequisite
+Nodes (4): investment-of-the-chain-master, description, name, prerequisite
 
 ### Community 1208 - "Community 1208"
 Cohesion: 0.50
-Nodes (4): thirsting-blade, description, name, prerequisite
+Nodes (4): lessons-of-the-first-ones, description, name, prerequisite
 
 ### Community 1209 - "Community 1209"
 Cohesion: 0.50
-Nodes (4): visions-of-distant-realms, description, name, prerequisite
+Nodes (4): lifedrinker, description, name, prerequisite
 
 ### Community 1210 - "Community 1210"
 Cohesion: 0.50
-Nodes (4): whispers-of-the-grave, description, name, prerequisite
+Nodes (4): mask-of-many-faces, description, name, prerequisite
 
 ### Community 1211 - "Community 1211"
 Cohesion: 0.50
-Nodes (4): witch-sight, description, name, prerequisite
+Nodes (4): master-of-myriad-forms, description, name, prerequisite
 
 ### Community 1212 - "Community 1212"
 Cohesion: 0.50
-Nodes (4): dwarven-thrower, attunementReq, description, name
+Nodes (4): misty-visions, description, name, prerequisite
 
 ### Community 1213 - "Community 1213"
 Cohesion: 0.50
-Nodes (4): elixir-of-health, description, name, summary
+Nodes (4): one-with-shadows, description, name, prerequisite
 
 ### Community 1214 - "Community 1214"
 Cohesion: 0.50
-Nodes (4): hat-of-many-spells, attunementReq, description, name
+Nodes (4): otherworldly-leap, description, name, prerequisite
 
 ### Community 1215 - "Community 1215"
 Cohesion: 0.50
-Nodes (4): holy-avenger, attunementReq, description, name
+Nodes (4): repelling-blast, description, name, prerequisite
 
 ### Community 1216 - "Community 1216"
 Cohesion: 0.50
-Nodes (4): necklace-of-prayer-beads, attunementReq, description, name
+Nodes (4): thirsting-blade, description, name, prerequisite
 
 ### Community 1217 - "Community 1217"
 Cohesion: 0.50
-Nodes (4): oil-of-etherealness, description, name, summary
+Nodes (4): visions-of-distant-realms, description, name, prerequisite
 
 ### Community 1218 - "Community 1218"
 Cohesion: 0.50
-Nodes (4): oil-of-sharpness, description, name, summary
+Nodes (4): whispers-of-the-grave, description, name, prerequisite
 
 ### Community 1219 - "Community 1219"
 Cohesion: 0.50
-Nodes (4): pearl-of-power, attunementReq, description, name
+Nodes (4): witch-sight, description, name, prerequisite
 
 ### Community 1220 - "Community 1220"
 Cohesion: 0.50
-Nodes (4): potion-of-animal-friendship, description, name, summary
+Nodes (4): dwarven-thrower, attunementReq, description, name
 
 ### Community 1221 - "Community 1221"
 Cohesion: 0.50
-Nodes (4): potion-of-clairvoyance, description, name, summary
+Nodes (4): elixir-of-health, description, name, summary
 
 ### Community 1222 - "Community 1222"
 Cohesion: 0.50
-Nodes (4): potion-of-climbing, description, name, summary
+Nodes (4): hat-of-many-spells, attunementReq, description, name
 
 ### Community 1223 - "Community 1223"
 Cohesion: 0.50
-Nodes (4): potion-of-diminution, description, name, summary
+Nodes (4): holy-avenger, attunementReq, description, name
 
 ### Community 1224 - "Community 1224"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn, description, name, trigger
+Nodes (4): necklace-of-prayer-beads, attunementReq, description, name
 
 ### Community 1225 - "Community 1225"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill, description, name, trigger
+Nodes (4): oil-of-etherealness, description, name, summary
 
 ### Community 1226 - "Community 1226"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble, description, name, trigger
+Nodes (4): oil-of-sharpness, description, name, summary
 
 ### Community 1227 - "Community 1227"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance, description, name, trigger
+Nodes (4): pearl-of-power, attunementReq, description, name
 
 ### Community 1228 - "Community 1228"
 Cohesion: 0.50
-Nodes (4): goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder, description, name, trigger
+Nodes (4): potion-of-animal-friendship, description, name, summary
 
 ### Community 1229 - "Community 1229"
 Cohesion: 0.50
-Nodes (4): rulesReference, cover, hint, title
+Nodes (4): potion-of-clairvoyance, description, name, summary
 
 ### Community 1230 - "Community 1230"
 Cohesion: 0.50
-Nodes (4): edition, conflicting, invalid, unsupported
+Nodes (4): potion-of-climbing, description, name, summary
 
 ### Community 1231 - "Community 1231"
 Cohesion: 0.50
-Nodes (4): spells, searchSpells, selectCount_one, selectCount_other
+Nodes (4): potion-of-diminution, description, name, summary
 
 ### Community 1232 - "Community 1232"
 Cohesion: 0.50
-Nodes (4): background, campaign-rule, subclass, families
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn, description, name, trigger
 
 ### Community 1233 - "Community 1233"
 Cohesion: 0.50
-Nodes (3): pwa, install, installPrompt
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill, description, name, trigger
 
 ### Community 1234 - "Community 1234"
 Cohesion: 0.50
-Nodes (4): severities, high, low, medium
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble, description, name, trigger
 
 ### Community 1235 - "Community 1235"
 Cohesion: 0.50
-Nodes (3): weaponMastery, eyebrow, search
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance, description, name, trigger
 
 ### Community 1236 - "Community 1236"
 Cohesion: 0.50
-Nodes (4): D20AttackOutcome, D20DeathSaveOutcome, D20OrdinaryOutcome, D20OutcomeBase
+Nodes (4): goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder, description, name, trigger
 
 ### Community 1237 - "Community 1237"
 Cohesion: 0.50
-Nodes (3): MechanicsActorSpec, MechanicsAuthorityDefinition, MechanicsAuthoritySnapshot
+Nodes (4): rulesReference, cover, hint, title
 
 ### Community 1238 - "Community 1238"
-Cohesion: 0.67
-Nodes (3): Button(), ButtonProps, buttonVariants
+Cohesion: 0.50
+Nodes (4): edition, conflicting, invalid, unsupported
 
 ### Community 1239 - "Community 1239"
 Cohesion: 0.50
-Nodes (3): consumable, display, FOCUS_NAME
+Nodes (4): spells, searchSpells, selectCount_one, selectCount_other
 
 ### Community 1240 - "Community 1240"
 Cohesion: 0.50
-Nodes (3): CAMPAIGNS, CHAR_INDEX, USERS
+Nodes (4): background, campaign-rule, subclass, families
+
+### Community 1241 - "Community 1241"
+Cohesion: 0.50
+Nodes (3): pwa, install, installPrompt
+
+### Community 1242 - "Community 1242"
+Cohesion: 0.50
+Nodes (4): severities, high, low, medium
+
+### Community 1243 - "Community 1243"
+Cohesion: 0.50
+Nodes (3): weaponMastery, eyebrow, search
+
+### Community 1244 - "Community 1244"
+Cohesion: 0.50
+Nodes (4): D20AttackOutcome, D20DeathSaveOutcome, D20OrdinaryOutcome, D20OutcomeBase
+
+### Community 1245 - "Community 1245"
+Cohesion: 0.50
+Nodes (3): MechanicsActorSpec, MechanicsAuthorityDefinition, MechanicsAuthoritySnapshot
 
 ### Community 1246 - "Community 1246"
 Cohesion: 0.50
+Nodes (3): consumable, display, FOCUS_NAME
+
+### Community 1247 - "Community 1247"
+Cohesion: 0.50
+Nodes (3): CAMPAIGNS, CHAR_INDEX, USERS
+
+### Community 1253 - "Community 1253"
+Cohesion: 0.50
 Nodes (3): acquisition, build, definition
 
-### Community 1250 - "Community 1250"
+### Community 1254 - "Community 1254"
+Cohesion: 0.50
+Nodes (3): memory, original, review
+
+### Community 1259 - "Community 1259"
 Cohesion: 0.50
 Nodes (3): NO_CHOICE_SRC, SKILL_SRC, TOOL_SRC
 
-### Community 1255 - "Community 1255"
+### Community 1264 - "Community 1264"
 Cohesion: 0.50
 Nodes (3): folioCss, here, indexCss
 
-### Community 1256 - "Community 1256"
+### Community 1265 - "Community 1265"
 Cohesion: 0.50
 Nodes (3): ART_ROOTS, CORPORA, ROOT
 
-### Community 1257 - "Community 1257"
+### Community 1266 - "Community 1266"
 Cohesion: 0.50
 Nodes (3): identity, item, volatile
 
-### Community 1260 - "Community 1260"
+### Community 1269 - "Community 1269"
 Cohesion: 0.50
 Nodes (3): folioCss, here, indexCss
 
-### Community 1264 - "Community 1264"
+### Community 1273 - "Community 1273"
 Cohesion: 0.50
 Nodes (3): nonRitualL1, ritualCantrip, ritualL1
 
-### Community 1272 - "Community 1272"
+### Community 1281 - "Community 1281"
 Cohesion: 0.67
 Nodes (3): COMPONENT_VM, mock(), withMasteredLongsword()
 
-### Community 1279 - "Community 1279"
+### Community 1287 - "Community 1287"
 Cohesion: 0.67
 Nodes (3): 0.12.0 — 2026-06-22, Added, Changed
 
-### Community 1280 - "Community 1280"
+### Community 1288 - "Community 1288"
 Cohesion: 0.67
 Nodes (3): 0.16.1, Changed, Fixed
 
-### Community 1281 - "Community 1281"
+### Community 1289 - "Community 1289"
 Cohesion: 0.67
 Nodes (3): 0.16.2, Changed, Fixed
 
-### Community 1282 - "Community 1282"
+### Community 1290 - "Community 1290"
 Cohesion: 0.67
 Nodes (3): 0.18.2, Changed, Fixed
 
-### Community 1319 - "Community 1319"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-frenzy, description, name
-
-### Community 1320 - "Community 1320"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-intimidating-presence.mechanics.actions.0, description, summary
-
-### Community 1321 - "Community 1321"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-mindless-rage, description, name
-
-### Community 1322 - "Community 1322"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-retaliation, description, name
-
-### Community 1323 - "Community 1323"
-Cohesion: 0.67
-Nodes (3): barbarian-brutal-strike, description, name
-
 ### Community 1324 - "Community 1324"
 Cohesion: 0.67
-Nodes (3): barbarian-danger-sense, description, name
+Nodes (3): barbarian-berserker-frenzy, description, name
 
 ### Community 1325 - "Community 1325"
 Cohesion: 0.67
-Nodes (3): barbarian-epic-boon, description, name
+Nodes (3): barbarian-berserker-intimidating-presence.mechanics.actions.0, description, summary
 
 ### Community 1326 - "Community 1326"
 Cohesion: 0.67
-Nodes (3): barbarian-extra-attack, description, name
+Nodes (3): barbarian-berserker-mindless-rage, description, name
 
 ### Community 1327 - "Community 1327"
 Cohesion: 0.67
-Nodes (3): barbarian-fast-movement, description, name
+Nodes (3): barbarian-berserker-retaliation, description, name
 
 ### Community 1328 - "Community 1328"
 Cohesion: 0.67
-Nodes (3): barbarian-feral-instinct, description, name
+Nodes (3): barbarian-brutal-strike, description, name
 
 ### Community 1329 - "Community 1329"
 Cohesion: 0.67
-Nodes (3): barbarian-improved-brutal-strike, description, name
+Nodes (3): barbarian-danger-sense, description, name
 
 ### Community 1330 - "Community 1330"
 Cohesion: 0.67
-Nodes (3): barbarian-indomitable-might, description, name
+Nodes (3): barbarian-epic-boon, description, name
 
 ### Community 1331 - "Community 1331"
 Cohesion: 0.67
-Nodes (3): barbarian-instinctive-pounce, description, name
+Nodes (3): barbarian-extra-attack, description, name
 
 ### Community 1332 - "Community 1332"
 Cohesion: 0.67
-Nodes (3): barbarian-persistent-rage, description, name
+Nodes (3): barbarian-fast-movement, description, name
 
 ### Community 1333 - "Community 1333"
 Cohesion: 0.67
-Nodes (3): barbarian-primal-champion, description, name
+Nodes (3): barbarian-feral-instinct, description, name
 
 ### Community 1334 - "Community 1334"
 Cohesion: 0.67
-Nodes (3): barbarian-primal-knowledge, description, name
+Nodes (3): barbarian-improved-brutal-strike, description, name
 
 ### Community 1335 - "Community 1335"
 Cohesion: 0.67
-Nodes (3): barbarian-rage, description, name
+Nodes (3): barbarian-indomitable-might, description, name
 
 ### Community 1336 - "Community 1336"
 Cohesion: 0.67
-Nodes (3): barbarian-reckless-attack, description, name
+Nodes (3): barbarian-instinctive-pounce, description, name
 
 ### Community 1337 - "Community 1337"
 Cohesion: 0.67
-Nodes (3): barbarian-relentless-rage, description, name
+Nodes (3): barbarian-persistent-rage, description, name
 
 ### Community 1338 - "Community 1338"
 Cohesion: 0.67
-Nodes (3): barbarian-unarmored-defense, description, name
+Nodes (3): barbarian-primal-champion, description, name
 
 ### Community 1339 - "Community 1339"
 Cohesion: 0.67
-Nodes (3): barbarian-weapon-mastery, description, name
+Nodes (3): barbarian-primal-knowledge, description, name
 
 ### Community 1340 - "Community 1340"
 Cohesion: 0.67
-Nodes (3): bard-asi, description, name
+Nodes (3): barbarian-rage, description, name
 
 ### Community 1341 - "Community 1341"
 Cohesion: 0.67
-Nodes (3): bard-bardic-inspiration, description, name
+Nodes (3): barbarian-reckless-attack, description, name
 
 ### Community 1342 - "Community 1342"
 Cohesion: 0.67
-Nodes (3): bard-countercharm, description, name
+Nodes (3): barbarian-relentless-rage, description, name
 
 ### Community 1343 - "Community 1343"
 Cohesion: 0.67
-Nodes (3): bard-epic-boon, description, name
+Nodes (3): barbarian-unarmored-defense, description, name
 
 ### Community 1344 - "Community 1344"
 Cohesion: 0.67
-Nodes (3): bard-expertise, description, name
+Nodes (3): barbarian-weapon-mastery, description, name
 
 ### Community 1345 - "Community 1345"
 Cohesion: 0.67
-Nodes (3): bard-font-of-inspiration, description, name
+Nodes (3): bard-asi, description, name
 
 ### Community 1346 - "Community 1346"
 Cohesion: 0.67
-Nodes (3): bard-jack-of-all-trades, description, name
+Nodes (3): bard-bardic-inspiration, description, name
 
 ### Community 1347 - "Community 1347"
 Cohesion: 0.67
-Nodes (3): bard-lore-additional-magical-secrets, description, name
+Nodes (3): bard-countercharm, description, name
 
 ### Community 1348 - "Community 1348"
 Cohesion: 0.67
-Nodes (3): bard-lore-bonus-proficiencies, description, name
+Nodes (3): bard-epic-boon, description, name
 
 ### Community 1349 - "Community 1349"
 Cohesion: 0.67
-Nodes (3): bard-lore-cutting-words, description, name
+Nodes (3): bard-expertise, description, name
 
 ### Community 1350 - "Community 1350"
 Cohesion: 0.67
-Nodes (3): bard-lore-peerless-skill, description, name
+Nodes (3): bard-font-of-inspiration, description, name
 
 ### Community 1351 - "Community 1351"
 Cohesion: 0.67
-Nodes (3): bard-magical-secrets, description, name
+Nodes (3): bard-jack-of-all-trades, description, name
 
 ### Community 1352 - "Community 1352"
 Cohesion: 0.67
-Nodes (3): bard-spellcasting, description, name
+Nodes (3): bard-lore-additional-magical-secrets, description, name
 
 ### Community 1353 - "Community 1353"
 Cohesion: 0.67
-Nodes (3): bard-superior-inspiration, description, name
+Nodes (3): bard-lore-bonus-proficiencies, description, name
 
 ### Community 1354 - "Community 1354"
 Cohesion: 0.67
-Nodes (3): bard-words-of-creation, description, name
+Nodes (3): bard-lore-cutting-words, description, name
 
 ### Community 1355 - "Community 1355"
 Cohesion: 0.67
-Nodes (3): cleric-blessed-strikes, description, name
+Nodes (3): bard-lore-peerless-skill, description, name
 
 ### Community 1356 - "Community 1356"
 Cohesion: 0.67
-Nodes (3): cleric-channel-divinity, description, name
+Nodes (3): bard-magical-secrets, description, name
 
 ### Community 1357 - "Community 1357"
 Cohesion: 0.67
-Nodes (3): cleric-channel-divinity.mechanics.actions.0, description, label
+Nodes (3): bard-spellcasting, description, name
 
 ### Community 1358 - "Community 1358"
 Cohesion: 0.67
-Nodes (3): cleric-divine-intervention, description, name
+Nodes (3): bard-superior-inspiration, description, name
 
 ### Community 1359 - "Community 1359"
 Cohesion: 0.67
-Nodes (3): cleric-divine-intervention.mechanics.actions.0, description, summary
+Nodes (3): bard-words-of-creation, description, name
 
 ### Community 1360 - "Community 1360"
 Cohesion: 0.67
-Nodes (3): cleric-divine-order, description, name
+Nodes (3): cleric-blessed-strikes, description, name
 
 ### Community 1361 - "Community 1361"
 Cohesion: 0.67
-Nodes (3): cleric-divine-spark, description, name
+Nodes (3): cleric-channel-divinity, description, name
 
 ### Community 1362 - "Community 1362"
 Cohesion: 0.67
-Nodes (3): cleric-divine-spark.mechanics.actions.0, description, summary
+Nodes (3): cleric-channel-divinity.mechanics.actions.0, description, label
 
 ### Community 1363 - "Community 1363"
 Cohesion: 0.67
-Nodes (3): cleric-epic-boon, description, name
+Nodes (3): cleric-divine-intervention, description, name
 
 ### Community 1364 - "Community 1364"
 Cohesion: 0.67
-Nodes (3): cleric-improved-blessed-strikes, description, name
+Nodes (3): cleric-divine-intervention.mechanics.actions.0, description, summary
 
 ### Community 1365 - "Community 1365"
 Cohesion: 0.67
-Nodes (3): cleric-improved-divine-intervention, description, name
+Nodes (3): cleric-divine-order, description, name
 
 ### Community 1366 - "Community 1366"
 Cohesion: 0.67
-Nodes (3): cleric-life-blessed-healer, description, name
+Nodes (3): cleric-divine-spark, description, name
 
 ### Community 1367 - "Community 1367"
 Cohesion: 0.67
-Nodes (3): cleric-life-disciple-of-life, description, name
+Nodes (3): cleric-divine-spark.mechanics.actions.0, description, summary
 
 ### Community 1368 - "Community 1368"
 Cohesion: 0.67
-Nodes (3): cleric-life-preserve-life, description, name
+Nodes (3): cleric-epic-boon, description, name
 
 ### Community 1369 - "Community 1369"
 Cohesion: 0.67
-Nodes (3): cleric-life-supreme-healing, description, name
+Nodes (3): cleric-improved-blessed-strikes, description, name
 
 ### Community 1370 - "Community 1370"
 Cohesion: 0.67
-Nodes (3): cleric-sear-undead, description, name
+Nodes (3): cleric-improved-divine-intervention, description, name
 
 ### Community 1371 - "Community 1371"
 Cohesion: 0.67
-Nodes (3): cleric-sear-undead.mechanics.actions.0, description, summary
+Nodes (3): cleric-life-blessed-healer, description, name
 
 ### Community 1372 - "Community 1372"
 Cohesion: 0.67
-Nodes (3): cleric-spellcasting, description, name
+Nodes (3): cleric-life-disciple-of-life, description, name
 
 ### Community 1373 - "Community 1373"
 Cohesion: 0.67
-Nodes (3): cleric-turn-undead, description, name
+Nodes (3): cleric-life-preserve-life, description, name
 
 ### Community 1374 - "Community 1374"
 Cohesion: 0.67
-Nodes (3): cleric-turn-undead.mechanics.actions.0, description, summary
+Nodes (3): cleric-life-supreme-healing, description, name
 
 ### Community 1375 - "Community 1375"
 Cohesion: 0.67
-Nodes (3): druid-archdruid, description, name
+Nodes (3): cleric-sear-undead, description, name
 
 ### Community 1376 - "Community 1376"
 Cohesion: 0.67
-Nodes (3): druid-beast-spells, description, name
+Nodes (3): cleric-sear-undead.mechanics.actions.0, description, summary
 
 ### Community 1377 - "Community 1377"
 Cohesion: 0.67
-Nodes (3): druid-druidic, description, name
+Nodes (3): cleric-spellcasting, description, name
 
 ### Community 1378 - "Community 1378"
 Cohesion: 0.67
-Nodes (3): druid-elemental-fury, description, name
+Nodes (3): cleric-turn-undead, description, name
 
 ### Community 1379 - "Community 1379"
 Cohesion: 0.67
-Nodes (3): druid-epic-boon, description, name
+Nodes (3): cleric-turn-undead.mechanics.actions.0, description, summary
 
 ### Community 1380 - "Community 1380"
 Cohesion: 0.67
-Nodes (3): druid-improved-elemental-fury, description, name
+Nodes (3): druid-archdruid, description, name
 
 ### Community 1381 - "Community 1381"
 Cohesion: 0.67
-Nodes (3): druid-land-circle-spells, description, name
+Nodes (3): druid-beast-spells, description, name
 
 ### Community 1382 - "Community 1382"
 Cohesion: 0.67
-Nodes (3): druid-land-lands-aid, description, name
+Nodes (3): druid-druidic, description, name
 
 ### Community 1383 - "Community 1383"
 Cohesion: 0.67
-Nodes (3): druid-land-lands-aid.mechanics.actions.0, description, summary
+Nodes (3): druid-elemental-fury, description, name
 
 ### Community 1384 - "Community 1384"
 Cohesion: 0.67
-Nodes (3): druid-land-natural-recovery, description, name
+Nodes (3): druid-epic-boon, description, name
 
 ### Community 1385 - "Community 1385"
 Cohesion: 0.67
-Nodes (3): druid-land-natures-sanctuary, description, name
+Nodes (3): druid-improved-elemental-fury, description, name
 
 ### Community 1386 - "Community 1386"
 Cohesion: 0.67
-Nodes (3): druid-land-natures-sanctuary.mechanics.actions.0, description, summary
+Nodes (3): druid-land-circle-spells, description, name
 
 ### Community 1387 - "Community 1387"
 Cohesion: 0.67
-Nodes (3): druid-land-natures-ward, description, name
+Nodes (3): druid-land-lands-aid, description, name
 
 ### Community 1388 - "Community 1388"
 Cohesion: 0.67
-Nodes (3): druid-primal-order, description, name
+Nodes (3): druid-land-lands-aid.mechanics.actions.0, description, summary
 
 ### Community 1389 - "Community 1389"
 Cohesion: 0.67
-Nodes (3): druid-spellcasting, description, name
+Nodes (3): druid-land-natural-recovery, description, name
 
 ### Community 1390 - "Community 1390"
 Cohesion: 0.67
-Nodes (3): druid-wild-companion, description, name
+Nodes (3): druid-land-natures-sanctuary, description, name
 
 ### Community 1391 - "Community 1391"
 Cohesion: 0.67
-Nodes (3): druid-wild-resurgence, description, name
+Nodes (3): druid-land-natures-sanctuary.mechanics.actions.0, description, summary
 
 ### Community 1392 - "Community 1392"
 Cohesion: 0.67
-Nodes (3): druid-wild-shape, description, name
+Nodes (3): druid-land-natures-ward, description, name
 
 ### Community 1393 - "Community 1393"
 Cohesion: 0.67
-Nodes (3): fighter-action-surge, description, name
+Nodes (3): druid-primal-order, description, name
 
 ### Community 1394 - "Community 1394"
 Cohesion: 0.67
-Nodes (3): fighter-action-surge.mechanics.actions.0, description, label
+Nodes (3): druid-spellcasting, description, name
 
 ### Community 1395 - "Community 1395"
 Cohesion: 0.67
-Nodes (3): fighter-champion-additional-fighting-style, description, name
+Nodes (3): druid-wild-companion, description, name
 
 ### Community 1396 - "Community 1396"
 Cohesion: 0.67
-Nodes (3): fighter-champion-heroic-warrior, description, name
+Nodes (3): druid-wild-resurgence, description, name
 
 ### Community 1397 - "Community 1397"
 Cohesion: 0.67
-Nodes (3): fighter-champion-improved-critical, description, name
+Nodes (3): druid-wild-shape, description, name
 
 ### Community 1398 - "Community 1398"
 Cohesion: 0.67
-Nodes (3): fighter-champion-remarkable-athlete, description, name
+Nodes (3): fighter-action-surge, description, name
 
 ### Community 1399 - "Community 1399"
 Cohesion: 0.67
-Nodes (3): fighter-champion-superior-critical, description, name
+Nodes (3): fighter-action-surge.mechanics.actions.0, description, label
 
 ### Community 1400 - "Community 1400"
 Cohesion: 0.67
-Nodes (3): fighter-champion-survivor, description, name
+Nodes (3): fighter-champion-additional-fighting-style, description, name
 
 ### Community 1401 - "Community 1401"
 Cohesion: 0.67
-Nodes (3): fighter-epic-boon, description, name
+Nodes (3): fighter-champion-heroic-warrior, description, name
 
 ### Community 1402 - "Community 1402"
 Cohesion: 0.67
-Nodes (3): fighter-extra-attack, description, name
+Nodes (3): fighter-champion-improved-critical, description, name
 
 ### Community 1403 - "Community 1403"
 Cohesion: 0.67
-Nodes (3): fighter-extra-attack-2, description, name
+Nodes (3): fighter-champion-remarkable-athlete, description, name
 
 ### Community 1404 - "Community 1404"
 Cohesion: 0.67
-Nodes (3): fighter-extra-attack-3, description, name
+Nodes (3): fighter-champion-superior-critical, description, name
 
 ### Community 1405 - "Community 1405"
 Cohesion: 0.67
-Nodes (3): fighter-fighting-style, description, name
+Nodes (3): fighter-champion-survivor, description, name
 
 ### Community 1406 - "Community 1406"
 Cohesion: 0.67
-Nodes (3): fighter-indomitable, description, name
+Nodes (3): fighter-epic-boon, description, name
 
 ### Community 1407 - "Community 1407"
 Cohesion: 0.67
-Nodes (3): fighter-second-wind, description, name
+Nodes (3): fighter-extra-attack, description, name
 
 ### Community 1408 - "Community 1408"
 Cohesion: 0.67
-Nodes (3): fighter-second-wind.mechanics.actions.0, description, label
+Nodes (3): fighter-extra-attack-2, description, name
 
 ### Community 1409 - "Community 1409"
 Cohesion: 0.67
-Nodes (3): fighter-studied-attacks, description, name
+Nodes (3): fighter-extra-attack-3, description, name
 
 ### Community 1410 - "Community 1410"
 Cohesion: 0.67
-Nodes (3): fighter-tactical-master, description, name
+Nodes (3): fighter-fighting-style, description, name
 
 ### Community 1411 - "Community 1411"
 Cohesion: 0.67
-Nodes (3): fighter-tactical-mind, description, name
+Nodes (3): fighter-indomitable, description, name
 
 ### Community 1412 - "Community 1412"
 Cohesion: 0.67
-Nodes (3): fighter-tactical-mind.mechanics.actions.0, description, label
+Nodes (3): fighter-second-wind, description, name
 
 ### Community 1413 - "Community 1413"
 Cohesion: 0.67
-Nodes (3): fighter-tactical-shift, description, name
+Nodes (3): fighter-second-wind.mechanics.actions.0, description, label
 
 ### Community 1414 - "Community 1414"
 Cohesion: 0.67
-Nodes (3): fighter-weapon-mastery, description, name
+Nodes (3): fighter-studied-attacks, description, name
 
 ### Community 1415 - "Community 1415"
 Cohesion: 0.67
-Nodes (3): monk-acrobatic-movement, description, name
+Nodes (3): fighter-tactical-master, description, name
 
 ### Community 1416 - "Community 1416"
 Cohesion: 0.67
-Nodes (3): monk-body-and-mind, description, name
+Nodes (3): fighter-tactical-mind, description, name
 
 ### Community 1417 - "Community 1417"
 Cohesion: 0.67
-Nodes (3): monk-deflect-attacks, description, name
+Nodes (3): fighter-tactical-mind.mechanics.actions.0, description, label
 
 ### Community 1418 - "Community 1418"
 Cohesion: 0.67
-Nodes (3): monk-deflect-energy, description, name
+Nodes (3): fighter-tactical-shift, description, name
 
 ### Community 1419 - "Community 1419"
 Cohesion: 0.67
-Nodes (3): monk-disciplined-survivor, description, name
+Nodes (3): fighter-weapon-mastery, description, name
 
 ### Community 1420 - "Community 1420"
 Cohesion: 0.67
-Nodes (3): monk-empowered-strikes, description, name
+Nodes (3): monk-acrobatic-movement, description, name
 
 ### Community 1421 - "Community 1421"
 Cohesion: 0.67
-Nodes (3): monk-evasion, description, name
+Nodes (3): monk-body-and-mind, description, name
 
 ### Community 1422 - "Community 1422"
 Cohesion: 0.67
-Nodes (3): monk-extra-attack, description, name
+Nodes (3): monk-deflect-attacks, description, name
 
 ### Community 1423 - "Community 1423"
 Cohesion: 0.67
-Nodes (3): monk-flurry-of-blows, description, name
+Nodes (3): monk-deflect-energy, description, name
 
 ### Community 1424 - "Community 1424"
 Cohesion: 0.67
-Nodes (3): monk-focus, description, name
+Nodes (3): monk-disciplined-survivor, description, name
 
 ### Community 1425 - "Community 1425"
 Cohesion: 0.67
-Nodes (3): monk-heightened-focus, description, name
+Nodes (3): monk-empowered-strikes, description, name
 
 ### Community 1426 - "Community 1426"
 Cohesion: 0.67
-Nodes (3): monk-martial-arts, description, name
+Nodes (3): monk-evasion, description, name
 
 ### Community 1427 - "Community 1427"
 Cohesion: 0.67
-Nodes (3): monk-open-hand-fleet-step, description, name
+Nodes (3): monk-extra-attack, description, name
 
 ### Community 1428 - "Community 1428"
 Cohesion: 0.67
-Nodes (3): monk-open-hand-quivering-palm, description, name
+Nodes (3): monk-flurry-of-blows, description, name
 
 ### Community 1429 - "Community 1429"
 Cohesion: 0.67
-Nodes (3): monk-open-hand-quivering-palm.mechanics.actions.0, description, summary
+Nodes (3): monk-focus, description, name
 
 ### Community 1430 - "Community 1430"
 Cohesion: 0.67
-Nodes (3): monk-open-hand-technique, description, name
+Nodes (3): monk-heightened-focus, description, name
 
 ### Community 1431 - "Community 1431"
 Cohesion: 0.67
-Nodes (3): monk-open-hand-wholeness-of-body, description, name
+Nodes (3): monk-martial-arts, description, name
 
 ### Community 1432 - "Community 1432"
 Cohesion: 0.67
-Nodes (3): monk-patient-defense, description, name
+Nodes (3): monk-open-hand-fleet-step, description, name
 
 ### Community 1433 - "Community 1433"
 Cohesion: 0.67
-Nodes (3): acid, description, name
+Nodes (3): monk-open-hand-quivering-palm, description, name
 
 ### Community 1434 - "Community 1434"
 Cohesion: 0.67
-Nodes (3): alchemists-supplies, description, name
+Nodes (3): monk-open-hand-quivering-palm.mechanics.actions.0, description, summary
 
 ### Community 1435 - "Community 1435"
 Cohesion: 0.67
-Nodes (3): antitoxin, description, name
+Nodes (3): monk-open-hand-technique, description, name
 
 ### Community 1436 - "Community 1436"
 Cohesion: 0.67
-Nodes (3): arcane-focus, description, name
+Nodes (3): monk-open-hand-wholeness-of-body, description, name
 
 ### Community 1437 - "Community 1437"
 Cohesion: 0.67
-Nodes (3): arrows, description, name
+Nodes (3): monk-patient-defense, description, name
 
 ### Community 1438 - "Community 1438"
 Cohesion: 0.67
-Nodes (3): backpack, description, name
+Nodes (3): acid, description, name
 
 ### Community 1439 - "Community 1439"
 Cohesion: 0.67
-Nodes (3): bagpipes, description, name
+Nodes (3): alchemists-supplies, description, name
 
 ### Community 1440 - "Community 1440"
 Cohesion: 0.67
-Nodes (3): ball-bearings, description, name
+Nodes (3): antitoxin, description, name
 
 ### Community 1441 - "Community 1441"
 Cohesion: 0.67
-Nodes (3): basket, description, name
+Nodes (3): arcane-focus, description, name
 
 ### Community 1442 - "Community 1442"
 Cohesion: 0.67
-Nodes (3): battleaxe, description, name
+Nodes (3): arrows, description, name
 
 ### Community 1443 - "Community 1443"
 Cohesion: 0.67
-Nodes (3): bedroll, description, name
+Nodes (3): backpack, description, name
 
 ### Community 1444 - "Community 1444"
 Cohesion: 0.67
-Nodes (3): bell, description, name
+Nodes (3): bagpipes, description, name
 
 ### Community 1445 - "Community 1445"
 Cohesion: 0.67
-Nodes (3): blanket, description, name
+Nodes (3): ball-bearings, description, name
 
 ### Community 1446 - "Community 1446"
 Cohesion: 0.67
-Nodes (3): block-and-tackle, description, name
+Nodes (3): basket, description, name
 
 ### Community 1447 - "Community 1447"
 Cohesion: 0.67
-Nodes (3): blowgun, description, name
+Nodes (3): battleaxe, description, name
 
 ### Community 1448 - "Community 1448"
 Cohesion: 0.67
-Nodes (3): blowgun-needles, description, name
+Nodes (3): bedroll, description, name
 
 ### Community 1449 - "Community 1449"
 Cohesion: 0.67
-Nodes (3): book, description, name
+Nodes (3): bell, description, name
 
 ### Community 1450 - "Community 1450"
 Cohesion: 0.67
-Nodes (3): breastplate, description, name
+Nodes (3): blanket, description, name
 
 ### Community 1451 - "Community 1451"
 Cohesion: 0.67
-Nodes (3): brewers-supplies, description, name
+Nodes (3): block-and-tackle, description, name
 
 ### Community 1452 - "Community 1452"
 Cohesion: 0.67
-Nodes (3): bucket, description, name
+Nodes (3): blowgun, description, name
 
 ### Community 1453 - "Community 1453"
 Cohesion: 0.67
-Nodes (3): burglars-pack, description, name
+Nodes (3): blowgun-needles, description, name
 
 ### Community 1454 - "Community 1454"
 Cohesion: 0.67
-Nodes (3): caltrops, description, name
+Nodes (3): book, description, name
 
 ### Community 1455 - "Community 1455"
 Cohesion: 0.67
-Nodes (3): candle, description, name
+Nodes (3): breastplate, description, name
 
 ### Community 1456 - "Community 1456"
 Cohesion: 0.67
-Nodes (3): carpenters-tools, description, name
+Nodes (3): brewers-supplies, description, name
 
 ### Community 1457 - "Community 1457"
 Cohesion: 0.67
-Nodes (3): cartographers-tools, description, name
+Nodes (3): bucket, description, name
 
 ### Community 1458 - "Community 1458"
 Cohesion: 0.67
-Nodes (3): chain, description, name
+Nodes (3): burglars-pack, description, name
 
 ### Community 1459 - "Community 1459"
 Cohesion: 0.67
-Nodes (3): chain-mail, description, name
+Nodes (3): caltrops, description, name
 
 ### Community 1460 - "Community 1460"
 Cohesion: 0.67
-Nodes (3): chain-shirt, description, name
+Nodes (3): candle, description, name
 
 ### Community 1461 - "Community 1461"
 Cohesion: 0.67
-Nodes (3): climbers-kit, description, name
+Nodes (3): carpenters-tools, description, name
 
 ### Community 1462 - "Community 1462"
 Cohesion: 0.67
-Nodes (3): clothes-fine, description, name
+Nodes (3): cartographers-tools, description, name
 
 ### Community 1463 - "Community 1463"
 Cohesion: 0.67
-Nodes (3): clothes-travelers, description, name
+Nodes (3): chain, description, name
 
 ### Community 1464 - "Community 1464"
 Cohesion: 0.67
-Nodes (3): club, description, name
+Nodes (3): chain-mail, description, name
 
 ### Community 1465 - "Community 1465"
 Cohesion: 0.67
-Nodes (3): cobblers-tools, description, name
+Nodes (3): chain-shirt, description, name
 
 ### Community 1466 - "Community 1466"
 Cohesion: 0.67
-Nodes (3): component-pouch, description, name
+Nodes (3): climbers-kit, description, name
 
 ### Community 1467 - "Community 1467"
 Cohesion: 0.67
-Nodes (3): cooks-utensils, description, name
+Nodes (3): clothes-fine, description, name
 
 ### Community 1468 - "Community 1468"
 Cohesion: 0.67
-Nodes (3): costume, description, name
+Nodes (3): clothes-travelers, description, name
 
 ### Community 1469 - "Community 1469"
 Cohesion: 0.67
-Nodes (3): crossbow-bolts, description, name
+Nodes (3): club, description, name
 
 ### Community 1470 - "Community 1470"
 Cohesion: 0.67
-Nodes (3): crowbar, description, name
+Nodes (3): cobblers-tools, description, name
 
 ### Community 1471 - "Community 1471"
 Cohesion: 0.67
-Nodes (3): dagger, description, name
+Nodes (3): component-pouch, description, name
 
 ### Community 1472 - "Community 1472"
 Cohesion: 0.67
-Nodes (3): dart, description, name
+Nodes (3): cooks-utensils, description, name
 
 ### Community 1473 - "Community 1473"
 Cohesion: 0.67
-Nodes (3): diplomats-pack, description, name
+Nodes (3): costume, description, name
 
 ### Community 1474 - "Community 1474"
 Cohesion: 0.67
-Nodes (3): disguise-kit, description, name
+Nodes (3): crossbow-bolts, description, name
 
 ### Community 1475 - "Community 1475"
 Cohesion: 0.67
-Nodes (3): druidic-focus, description, name
+Nodes (3): crowbar, description, name
 
 ### Community 1476 - "Community 1476"
 Cohesion: 0.67
-Nodes (3): drum, description, name
+Nodes (3): dagger, description, name
 
 ### Community 1477 - "Community 1477"
 Cohesion: 0.67
-Nodes (3): dulcimer, description, name
+Nodes (3): dart, description, name
 
 ### Community 1478 - "Community 1478"
 Cohesion: 0.67
-Nodes (3): dungeoneers-pack, description, name
+Nodes (3): diplomats-pack, description, name
 
 ### Community 1479 - "Community 1479"
 Cohesion: 0.67
-Nodes (3): entertainers-pack, description, name
+Nodes (3): disguise-kit, description, name
 
 ### Community 1480 - "Community 1480"
 Cohesion: 0.67
-Nodes (3): explorers-pack, description, name
+Nodes (3): druidic-focus, description, name
 
 ### Community 1481 - "Community 1481"
 Cohesion: 0.67
-Nodes (3): firearm-bullets, description, name
+Nodes (3): drum, description, name
 
 ### Community 1482 - "Community 1482"
 Cohesion: 0.67
-Nodes (3): flail, description, name
+Nodes (3): dulcimer, description, name
 
 ### Community 1483 - "Community 1483"
 Cohesion: 0.67
-Nodes (3): flute, description, name
+Nodes (3): dungeoneers-pack, description, name
 
 ### Community 1484 - "Community 1484"
 Cohesion: 0.67
-Nodes (3): forgery-kit, description, name
+Nodes (3): entertainers-pack, description, name
 
 ### Community 1485 - "Community 1485"
 Cohesion: 0.67
-Nodes (3): glaive, description, name
+Nodes (3): explorers-pack, description, name
 
 ### Community 1486 - "Community 1486"
 Cohesion: 0.67
-Nodes (3): glass-bottle, description, name
+Nodes (3): firearm-bullets, description, name
 
 ### Community 1487 - "Community 1487"
 Cohesion: 0.67
-Nodes (3): glassblowers-tools, description, name
+Nodes (3): flail, description, name
 
 ### Community 1488 - "Community 1488"
 Cohesion: 0.67
-Nodes (3): grappling-hook, description, name
+Nodes (3): flute, description, name
 
 ### Community 1489 - "Community 1489"
 Cohesion: 0.67
-Nodes (3): greataxe, description, name
+Nodes (3): forgery-kit, description, name
 
 ### Community 1490 - "Community 1490"
 Cohesion: 0.67
-Nodes (3): greatclub, description, name
+Nodes (3): glaive, description, name
 
 ### Community 1491 - "Community 1491"
 Cohesion: 0.67
-Nodes (3): greatsword, description, name
+Nodes (3): glass-bottle, description, name
 
 ### Community 1492 - "Community 1492"
 Cohesion: 0.67
-Nodes (3): halberd, description, name
+Nodes (3): glassblowers-tools, description, name
 
 ### Community 1493 - "Community 1493"
 Cohesion: 0.67
-Nodes (3): half-plate-armor, description, name
+Nodes (3): grappling-hook, description, name
 
 ### Community 1494 - "Community 1494"
 Cohesion: 0.67
-Nodes (3): hand-crossbow, description, name
+Nodes (3): greataxe, description, name
 
 ### Community 1495 - "Community 1495"
 Cohesion: 0.67
-Nodes (3): handaxe, description, name
+Nodes (3): greatclub, description, name
 
 ### Community 1496 - "Community 1496"
 Cohesion: 0.67
-Nodes (3): healers-kit, description, name
+Nodes (3): greatsword, description, name
 
 ### Community 1497 - "Community 1497"
 Cohesion: 0.67
-Nodes (3): heavy-crossbow, description, name
+Nodes (3): halberd, description, name
 
 ### Community 1498 - "Community 1498"
 Cohesion: 0.67
-Nodes (3): herbalism-kit, description, name
+Nodes (3): half-plate-armor, description, name
 
 ### Community 1499 - "Community 1499"
 Cohesion: 0.67
-Nodes (3): hide-armor, description, name
+Nodes (3): hand-crossbow, description, name
 
 ### Community 1500 - "Community 1500"
 Cohesion: 0.67
-Nodes (3): holy-symbol, description, name
+Nodes (3): handaxe, description, name
 
 ### Community 1501 - "Community 1501"
 Cohesion: 0.67
-Nodes (3): holy-water, description, name
+Nodes (3): healers-kit, description, name
 
 ### Community 1502 - "Community 1502"
 Cohesion: 0.67
-Nodes (3): horn, description, name
+Nodes (3): heavy-crossbow, description, name
 
 ### Community 1503 - "Community 1503"
 Cohesion: 0.67
-Nodes (3): hunting-trap, description, name
+Nodes (3): herbalism-kit, description, name
 
 ### Community 1504 - "Community 1504"
 Cohesion: 0.67
-Nodes (3): ink, description, name
+Nodes (3): hide-armor, description, name
 
 ### Community 1505 - "Community 1505"
 Cohesion: 0.67
-Nodes (3): ink-pen, description, name
+Nodes (3): holy-symbol, description, name
 
 ### Community 1506 - "Community 1506"
 Cohesion: 0.67
-Nodes (3): iron-pot, description, name
+Nodes (3): holy-water, description, name
 
 ### Community 1507 - "Community 1507"
 Cohesion: 0.67
-Nodes (3): iron-spikes, description, name
+Nodes (3): horn, description, name
 
 ### Community 1508 - "Community 1508"
 Cohesion: 0.67
-Nodes (3): javelin, description, name
+Nodes (3): hunting-trap, description, name
 
 ### Community 1509 - "Community 1509"
 Cohesion: 0.67
-Nodes (3): jewelers-tools, description, name
+Nodes (3): ink, description, name
 
 ### Community 1510 - "Community 1510"
 Cohesion: 0.67
-Nodes (3): ladder, description, name
+Nodes (3): ink-pen, description, name
 
 ### Community 1511 - "Community 1511"
 Cohesion: 0.67
-Nodes (3): lamp, description, name
+Nodes (3): iron-pot, description, name
 
 ### Community 1512 - "Community 1512"
 Cohesion: 0.67
-Nodes (3): lance, description, name
+Nodes (3): iron-spikes, description, name
 
 ### Community 1513 - "Community 1513"
 Cohesion: 0.67
-Nodes (3): lantern-bullseye, description, name
+Nodes (3): javelin, description, name
 
 ### Community 1514 - "Community 1514"
 Cohesion: 0.67
-Nodes (3): lantern-hooded, description, name
+Nodes (3): jewelers-tools, description, name
 
 ### Community 1515 - "Community 1515"
 Cohesion: 0.67
-Nodes (3): leather-armor, description, name
+Nodes (3): ladder, description, name
 
 ### Community 1516 - "Community 1516"
 Cohesion: 0.67
-Nodes (3): leatherworkers-tools, description, name
+Nodes (3): lamp, description, name
 
 ### Community 1517 - "Community 1517"
 Cohesion: 0.67
-Nodes (3): light-crossbow, description, name
+Nodes (3): lance, description, name
 
 ### Community 1518 - "Community 1518"
 Cohesion: 0.67
-Nodes (3): light-hammer, description, name
+Nodes (3): lantern-bullseye, description, name
 
 ### Community 1519 - "Community 1519"
 Cohesion: 0.67
-Nodes (3): longbow, description, name
+Nodes (3): lantern-hooded, description, name
 
 ### Community 1520 - "Community 1520"
 Cohesion: 0.67
-Nodes (3): longsword, description, name
+Nodes (3): leather-armor, description, name
 
 ### Community 1521 - "Community 1521"
 Cohesion: 0.67
-Nodes (3): lute, description, name
+Nodes (3): leatherworkers-tools, description, name
 
 ### Community 1522 - "Community 1522"
 Cohesion: 0.67
-Nodes (3): lyre, description, name
+Nodes (3): light-crossbow, description, name
 
 ### Community 1523 - "Community 1523"
 Cohesion: 0.67
-Nodes (3): mace, description, name
+Nodes (3): light-hammer, description, name
 
 ### Community 1524 - "Community 1524"
 Cohesion: 0.67
-Nodes (3): manacles, description, name
+Nodes (3): longbow, description, name
 
 ### Community 1525 - "Community 1525"
 Cohesion: 0.67
-Nodes (3): map, description, name
+Nodes (3): longsword, description, name
 
 ### Community 1526 - "Community 1526"
 Cohesion: 0.67
-Nodes (3): map-or-scroll-case, description, name
+Nodes (3): lute, description, name
 
 ### Community 1527 - "Community 1527"
 Cohesion: 0.67
-Nodes (3): masons-tools, description, name
+Nodes (3): lyre, description, name
 
 ### Community 1528 - "Community 1528"
 Cohesion: 0.67
-Nodes (3): maul, description, name
+Nodes (3): mace, description, name
 
 ### Community 1529 - "Community 1529"
 Cohesion: 0.67
-Nodes (3): mirror, description, name
+Nodes (3): manacles, description, name
 
 ### Community 1530 - "Community 1530"
 Cohesion: 0.67
-Nodes (3): morningstar, description, name
+Nodes (3): map, description, name
 
 ### Community 1531 - "Community 1531"
 Cohesion: 0.67
-Nodes (3): musical-instrument, description, name
+Nodes (3): map-or-scroll-case, description, name
 
 ### Community 1532 - "Community 1532"
 Cohesion: 0.67
-Nodes (3): musket, description, name
+Nodes (3): masons-tools, description, name
 
 ### Community 1533 - "Community 1533"
 Cohesion: 0.67
-Nodes (3): navigators-tools, description, name
+Nodes (3): maul, description, name
 
 ### Community 1534 - "Community 1534"
 Cohesion: 0.67
-Nodes (3): net, description, name
+Nodes (3): mirror, description, name
 
 ### Community 1535 - "Community 1535"
 Cohesion: 0.67
-Nodes (3): oil, description, name
+Nodes (3): morningstar, description, name
 
 ### Community 1536 - "Community 1536"
 Cohesion: 0.67
-Nodes (3): padded-armor, description, name
+Nodes (3): musical-instrument, description, name
 
 ### Community 1537 - "Community 1537"
 Cohesion: 0.67
-Nodes (3): painters-supplies, description, name
+Nodes (3): musket, description, name
 
 ### Community 1538 - "Community 1538"
 Cohesion: 0.67
-Nodes (3): pan-flute, description, name
+Nodes (3): navigators-tools, description, name
 
 ### Community 1539 - "Community 1539"
 Cohesion: 0.67
-Nodes (3): paper, description, name
+Nodes (3): net, description, name
 
 ### Community 1540 - "Community 1540"
 Cohesion: 0.67
-Nodes (3): parchment, description, name
+Nodes (3): oil, description, name
 
 ### Community 1541 - "Community 1541"
 Cohesion: 0.67
-Nodes (3): perfume, description, name
+Nodes (3): padded-armor, description, name
 
 ### Community 1542 - "Community 1542"
 Cohesion: 0.67
-Nodes (3): pike, description, name
+Nodes (3): painters-supplies, description, name
 
 ### Community 1543 - "Community 1543"
 Cohesion: 0.67
-Nodes (3): pistol, description, name
+Nodes (3): pan-flute, description, name
 
 ### Community 1544 - "Community 1544"
 Cohesion: 0.67
-Nodes (3): plate-armor, description, name
+Nodes (3): paper, description, name
 
 ### Community 1545 - "Community 1545"
 Cohesion: 0.67
-Nodes (3): playing-card-set, description, name
+Nodes (3): parchment, description, name
 
 ### Community 1546 - "Community 1546"
 Cohesion: 0.67
-Nodes (3): poison-basic, description, name
+Nodes (3): perfume, description, name
 
 ### Community 1547 - "Community 1547"
 Cohesion: 0.67
-Nodes (3): poisoners-kit, description, name
+Nodes (3): pike, description, name
 
 ### Community 1548 - "Community 1548"
 Cohesion: 0.67
-Nodes (3): pole, description, name
+Nodes (3): pistol, description, name
 
 ### Community 1549 - "Community 1549"
 Cohesion: 0.67
-Nodes (3): potters-tools, description, name
+Nodes (3): plate-armor, description, name
 
 ### Community 1550 - "Community 1550"
 Cohesion: 0.67
-Nodes (3): pouch, description, name
+Nodes (3): playing-card-set, description, name
 
 ### Community 1551 - "Community 1551"
 Cohesion: 0.67
-Nodes (3): priests-pack, description, name
+Nodes (3): poison-basic, description, name
 
 ### Community 1552 - "Community 1552"
 Cohesion: 0.67
-Nodes (3): quarterstaff, description, name
+Nodes (3): poisoners-kit, description, name
 
 ### Community 1553 - "Community 1553"
 Cohesion: 0.67
-Nodes (3): quiver, description, name
+Nodes (3): pole, description, name
 
 ### Community 1554 - "Community 1554"
 Cohesion: 0.67
-Nodes (3): rapier, description, name
+Nodes (3): potters-tools, description, name
 
 ### Community 1555 - "Community 1555"
 Cohesion: 0.67
-Nodes (3): rations, description, name
+Nodes (3): pouch, description, name
 
 ### Community 1556 - "Community 1556"
 Cohesion: 0.67
-Nodes (3): ring-mail, description, name
+Nodes (3): priests-pack, description, name
 
 ### Community 1557 - "Community 1557"
 Cohesion: 0.67
-Nodes (3): robe, description, name
+Nodes (3): quarterstaff, description, name
 
 ### Community 1558 - "Community 1558"
 Cohesion: 0.67
-Nodes (3): scale-mail, description, name
+Nodes (3): quiver, description, name
 
 ### Community 1559 - "Community 1559"
 Cohesion: 0.67
-Nodes (3): scholars-pack, description, name
+Nodes (3): rapier, description, name
 
 ### Community 1560 - "Community 1560"
 Cohesion: 0.67
-Nodes (3): scimitar, description, name
+Nodes (3): rations, description, name
 
 ### Community 1561 - "Community 1561"
 Cohesion: 0.67
-Nodes (3): shawm, description, name
+Nodes (3): ring-mail, description, name
 
 ### Community 1562 - "Community 1562"
 Cohesion: 0.67
-Nodes (3): shield, description, name
+Nodes (3): robe, description, name
 
 ### Community 1563 - "Community 1563"
 Cohesion: 0.67
-Nodes (3): shortbow, description, name
+Nodes (3): scale-mail, description, name
 
 ### Community 1564 - "Community 1564"
 Cohesion: 0.67
-Nodes (3): shortsword, description, name
+Nodes (3): scholars-pack, description, name
 
 ### Community 1565 - "Community 1565"
 Cohesion: 0.67
-Nodes (3): shovel, description, name
+Nodes (3): scimitar, description, name
 
 ### Community 1566 - "Community 1566"
 Cohesion: 0.67
-Nodes (3): sickle, description, name
+Nodes (3): shawm, description, name
 
 ### Community 1567 - "Community 1567"
 Cohesion: 0.67
-Nodes (3): signal-whistle, description, name
+Nodes (3): shield, description, name
 
 ### Community 1568 - "Community 1568"
 Cohesion: 0.67
-Nodes (3): sling, description, name
+Nodes (3): shortbow, description, name
 
 ### Community 1569 - "Community 1569"
 Cohesion: 0.67
-Nodes (3): sling-bullets, description, name
+Nodes (3): shortsword, description, name
 
 ### Community 1570 - "Community 1570"
 Cohesion: 0.67
-Nodes (3): smiths-tools, description, name
+Nodes (3): shovel, description, name
 
 ### Community 1571 - "Community 1571"
 Cohesion: 0.67
-Nodes (3): spear, description, name
+Nodes (3): sickle, description, name
 
 ### Community 1572 - "Community 1572"
 Cohesion: 0.67
-Nodes (3): spellbook, description, name
+Nodes (3): signal-whistle, description, name
 
 ### Community 1573 - "Community 1573"
 Cohesion: 0.67
-Nodes (3): splint-armor, description, name
+Nodes (3): sling, description, name
 
 ### Community 1574 - "Community 1574"
 Cohesion: 0.67
-Nodes (3): string, description, name
+Nodes (3): sling-bullets, description, name
 
 ### Community 1575 - "Community 1575"
 Cohesion: 0.67
-Nodes (3): studded-leather-armor, description, name
+Nodes (3): smiths-tools, description, name
 
 ### Community 1576 - "Community 1576"
 Cohesion: 0.67
-Nodes (3): tent, description, name
+Nodes (3): spear, description, name
 
 ### Community 1577 - "Community 1577"
 Cohesion: 0.67
-Nodes (3): thieves-tools, description, name
+Nodes (3): spellbook, description, name
 
 ### Community 1578 - "Community 1578"
 Cohesion: 0.67
-Nodes (3): tinderbox, description, name
+Nodes (3): splint-armor, description, name
 
 ### Community 1579 - "Community 1579"
 Cohesion: 0.67
-Nodes (3): tinkers-tools, description, name
+Nodes (3): string, description, name
 
 ### Community 1580 - "Community 1580"
 Cohesion: 0.67
-Nodes (3): torch, description, name
+Nodes (3): studded-leather-armor, description, name
 
 ### Community 1581 - "Community 1581"
 Cohesion: 0.67
-Nodes (3): trident, description, name
+Nodes (3): tent, description, name
 
 ### Community 1582 - "Community 1582"
 Cohesion: 0.67
-Nodes (3): vial, description, name
+Nodes (3): thieves-tools, description, name
 
 ### Community 1583 - "Community 1583"
 Cohesion: 0.67
-Nodes (3): viol, description, name
+Nodes (3): tinderbox, description, name
 
 ### Community 1584 - "Community 1584"
 Cohesion: 0.67
-Nodes (3): war-pick, description, name
+Nodes (3): tinkers-tools, description, name
 
 ### Community 1585 - "Community 1585"
 Cohesion: 0.67
-Nodes (3): warhammer, description, name
+Nodes (3): torch, description, name
 
 ### Community 1586 - "Community 1586"
 Cohesion: 0.67
-Nodes (3): waterskin, description, name
+Nodes (3): trident, description, name
 
 ### Community 1587 - "Community 1587"
 Cohesion: 0.67
-Nodes (3): weavers-tools, description, name
+Nodes (3): vial, description, name
 
 ### Community 1588 - "Community 1588"
 Cohesion: 0.67
-Nodes (3): whip, description, name
+Nodes (3): viol, description, name
 
 ### Community 1589 - "Community 1589"
 Cohesion: 0.67
-Nodes (3): woodcarvers-tools, description, name
+Nodes (3): war-pick, description, name
 
 ### Community 1590 - "Community 1590"
 Cohesion: 0.67
-Nodes (3): alert, description, name
+Nodes (3): warhammer, description, name
 
 ### Community 1591 - "Community 1591"
 Cohesion: 0.67
-Nodes (3): boon-of-fate.mechanics.actions.0, description, summary
+Nodes (3): waterskin, description, name
 
 ### Community 1592 - "Community 1592"
 Cohesion: 0.67
-Nodes (3): magic-initiate-druid, description, name
+Nodes (3): weavers-tools, description, name
 
 ### Community 1593 - "Community 1593"
 Cohesion: 0.67
-Nodes (3): magic-initiate-wizard, description, name
+Nodes (3): whip, description, name
 
 ### Community 1594 - "Community 1594"
 Cohesion: 0.67
-Nodes (3): savage-attacker, description, name
+Nodes (3): woodcarvers-tools, description, name
 
 ### Community 1595 - "Community 1595"
 Cohesion: 0.67
-Nodes (3): armor-of-shadows, description, name
+Nodes (3): alert, description, name
 
 ### Community 1596 - "Community 1596"
 Cohesion: 0.67
-Nodes (3): eldritch-mind, description, name
+Nodes (3): boon-of-fate.mechanics.actions.0, description, summary
 
 ### Community 1597 - "Community 1597"
 Cohesion: 0.67
-Nodes (3): pact-of-the-tome, description, name
+Nodes (3): magic-initiate-druid, description, name
 
 ### Community 1598 - "Community 1598"
 Cohesion: 0.67
-Nodes (3): adamantine-armor, description, name
+Nodes (3): magic-initiate-wizard, description, name
 
 ### Community 1599 - "Community 1599"
 Cohesion: 0.67
-Nodes (3): ammunition-1-2-or-3, description, name
+Nodes (3): savage-attacker, description, name
 
 ### Community 1600 - "Community 1600"
 Cohesion: 0.67
-Nodes (3): amulet-of-health, description, name
+Nodes (3): armor-of-shadows, description, name
 
 ### Community 1601 - "Community 1601"
 Cohesion: 0.67
-Nodes (3): amulet-of-proof-against-detection-and-location, description, name
+Nodes (3): eldritch-mind, description, name
 
 ### Community 1602 - "Community 1602"
 Cohesion: 0.67
-Nodes (3): amulet-of-the-planes, description, name
+Nodes (3): pact-of-the-tome, description, name
 
 ### Community 1603 - "Community 1603"
 Cohesion: 0.67
-Nodes (3): animated-shield, description, name
+Nodes (3): adamantine-armor, description, name
 
 ### Community 1604 - "Community 1604"
 Cohesion: 0.67
-Nodes (3): armor-of-invulnerability, description, name
+Nodes (3): ammunition-1-2-or-3, description, name
 
 ### Community 1605 - "Community 1605"
 Cohesion: 0.67
-Nodes (3): armor-of-resistance, description, name
+Nodes (3): amulet-of-health, description, name
 
 ### Community 1606 - "Community 1606"
 Cohesion: 0.67
-Nodes (3): armor-of-vulnerability, description, name
+Nodes (3): amulet-of-proof-against-detection-and-location, description, name
 
 ### Community 1607 - "Community 1607"
 Cohesion: 0.67
-Nodes (3): armor-plus-1, description, name
+Nodes (3): amulet-of-the-planes, description, name
 
 ### Community 1608 - "Community 1608"
 Cohesion: 0.67
-Nodes (3): armor-plus-3, description, name
+Nodes (3): animated-shield, description, name
 
 ### Community 1609 - "Community 1609"
 Cohesion: 0.67
-Nodes (3): arrow-catching-shield, description, name
+Nodes (3): armor-of-invulnerability, description, name
 
 ### Community 1610 - "Community 1610"
 Cohesion: 0.67
-Nodes (3): bag-of-beans, description, name
+Nodes (3): armor-of-resistance, description, name
 
 ### Community 1611 - "Community 1611"
 Cohesion: 0.67
-Nodes (3): bag-of-devouring, description, name
+Nodes (3): armor-of-vulnerability, description, name
 
 ### Community 1612 - "Community 1612"
 Cohesion: 0.67
-Nodes (3): bag-of-holding, description, name
+Nodes (3): armor-plus-1, description, name
 
 ### Community 1613 - "Community 1613"
 Cohesion: 0.67
-Nodes (3): bag-of-tricks, description, name
+Nodes (3): armor-plus-3, description, name
 
 ### Community 1614 - "Community 1614"
 Cohesion: 0.67
-Nodes (3): bead-of-force, description, name
+Nodes (3): arrow-catching-shield, description, name
 
 ### Community 1615 - "Community 1615"
 Cohesion: 0.67
-Nodes (3): bead-of-nourishment, description, name
+Nodes (3): bag-of-beans, description, name
 
 ### Community 1616 - "Community 1616"
 Cohesion: 0.67
-Nodes (3): belt-of-dwarvenkind, description, name
+Nodes (3): bag-of-devouring, description, name
 
 ### Community 1617 - "Community 1617"
 Cohesion: 0.67
-Nodes (3): belt-of-giant-strength, description, name
+Nodes (3): bag-of-holding, description, name
 
 ### Community 1618 - "Community 1618"
 Cohesion: 0.67
-Nodes (3): berserker-axe, description, name
+Nodes (3): bag-of-tricks, description, name
 
 ### Community 1619 - "Community 1619"
 Cohesion: 0.67
-Nodes (3): boots-of-elvenkind, description, name
+Nodes (3): bead-of-force, description, name
 
 ### Community 1620 - "Community 1620"
 Cohesion: 0.67
-Nodes (3): boots-of-levitation, description, name
+Nodes (3): bead-of-nourishment, description, name
 
 ### Community 1621 - "Community 1621"
 Cohesion: 0.67
-Nodes (3): boots-of-speed, description, name
+Nodes (3): belt-of-dwarvenkind, description, name
 
 ### Community 1622 - "Community 1622"
 Cohesion: 0.67
-Nodes (3): boots-of-striding-and-springing, description, name
+Nodes (3): belt-of-giant-strength, description, name
 
 ### Community 1623 - "Community 1623"
 Cohesion: 0.67
-Nodes (3): boots-of-the-winterlands, description, name
+Nodes (3): berserker-axe, description, name
 
 ### Community 1624 - "Community 1624"
 Cohesion: 0.67
-Nodes (3): bowl-of-commanding-water-elementals, description, name
+Nodes (3): boots-of-elvenkind, description, name
 
 ### Community 1625 - "Community 1625"
 Cohesion: 0.67
-Nodes (3): bracers-of-archery, description, name
+Nodes (3): boots-of-levitation, description, name
 
 ### Community 1626 - "Community 1626"
 Cohesion: 0.67
-Nodes (3): bracers-of-defense, description, name
+Nodes (3): boots-of-speed, description, name
 
 ### Community 1627 - "Community 1627"
 Cohesion: 0.67
-Nodes (3): brazier-of-commanding-fire-elementals, description, name
+Nodes (3): boots-of-striding-and-springing, description, name
 
 ### Community 1628 - "Community 1628"
 Cohesion: 0.67
-Nodes (3): brooch-of-shielding, description, name
+Nodes (3): boots-of-the-winterlands, description, name
 
 ### Community 1629 - "Community 1629"
 Cohesion: 0.67
-Nodes (3): broom-of-flying, description, name
+Nodes (3): bowl-of-commanding-water-elementals, description, name
 
 ### Community 1630 - "Community 1630"
 Cohesion: 0.67
-Nodes (3): cape-of-the-mountebank, description, name
+Nodes (3): bracers-of-archery, description, name
 
 ### Community 1631 - "Community 1631"
 Cohesion: 0.67
-Nodes (3): carpet-of-flying, description, name
+Nodes (3): bracers-of-defense, description, name
 
 ### Community 1632 - "Community 1632"
 Cohesion: 0.67
-Nodes (3): censer-of-controlling-air-elementals, description, name
+Nodes (3): brazier-of-commanding-fire-elementals, description, name
 
 ### Community 1633 - "Community 1633"
 Cohesion: 0.67
-Nodes (3): chime-of-opening, description, name
+Nodes (3): brooch-of-shielding, description, name
 
 ### Community 1634 - "Community 1634"
 Cohesion: 0.67
-Nodes (3): circlet-of-blasting, description, name
+Nodes (3): broom-of-flying, description, name
 
 ### Community 1635 - "Community 1635"
 Cohesion: 0.67
-Nodes (3): cloak-of-arachnida, description, name
+Nodes (3): cape-of-the-mountebank, description, name
 
 ### Community 1636 - "Community 1636"
 Cohesion: 0.67
-Nodes (3): cloak-of-displacement, description, name
+Nodes (3): carpet-of-flying, description, name
 
 ### Community 1637 - "Community 1637"
 Cohesion: 0.67
-Nodes (3): cloak-of-elvenkind, description, name
+Nodes (3): censer-of-controlling-air-elementals, description, name
 
 ### Community 1638 - "Community 1638"
 Cohesion: 0.67
-Nodes (3): cloak-of-invisibility, description, name
+Nodes (3): chime-of-opening, description, name
 
 ### Community 1639 - "Community 1639"
 Cohesion: 0.67
-Nodes (3): cloak-of-protection, description, name
+Nodes (3): circlet-of-blasting, description, name
 
 ### Community 1640 - "Community 1640"
 Cohesion: 0.67
-Nodes (3): cloak-of-the-manta-ray, description, name
+Nodes (3): cloak-of-arachnida, description, name
 
 ### Community 1641 - "Community 1641"
 Cohesion: 0.67
-Nodes (3): crystal-ball, description, name
+Nodes (3): cloak-of-displacement, description, name
 
 ### Community 1642 - "Community 1642"
 Cohesion: 0.67
-Nodes (3): crystal-ball-of-mind-reading, description, name
+Nodes (3): cloak-of-elvenkind, description, name
 
 ### Community 1643 - "Community 1643"
 Cohesion: 0.67
-Nodes (3): crystal-ball-of-telepathy, description, name
+Nodes (3): cloak-of-invisibility, description, name
 
 ### Community 1644 - "Community 1644"
 Cohesion: 0.67
-Nodes (3): crystal-ball-of-true-seeing, description, name
+Nodes (3): cloak-of-protection, description, name
 
 ### Community 1645 - "Community 1645"
 Cohesion: 0.67
-Nodes (3): cubic-gate, description, name
+Nodes (3): cloak-of-the-manta-ray, description, name
 
 ### Community 1646 - "Community 1646"
 Cohesion: 0.67
-Nodes (3): dagger-of-venom, description, name
+Nodes (3): crystal-ball, description, name
 
 ### Community 1647 - "Community 1647"
 Cohesion: 0.67
-Nodes (3): dancing-sword, description, name
+Nodes (3): crystal-ball-of-mind-reading, description, name
 
 ### Community 1648 - "Community 1648"
 Cohesion: 0.67
-Nodes (3): decanter-of-endless-water, description, name
+Nodes (3): crystal-ball-of-telepathy, description, name
 
 ### Community 1649 - "Community 1649"
 Cohesion: 0.67
-Nodes (3): deck-of-illusions, description, name
+Nodes (3): crystal-ball-of-true-seeing, description, name
 
 ### Community 1650 - "Community 1650"
 Cohesion: 0.67
-Nodes (3): deck-of-many-things, description, name
+Nodes (3): cubic-gate, description, name
 
 ### Community 1651 - "Community 1651"
 Cohesion: 0.67
-Nodes (3): defender, description, name
+Nodes (3): dagger-of-venom, description, name
 
 ### Community 1652 - "Community 1652"
 Cohesion: 0.67
-Nodes (3): demon-armor, description, name
+Nodes (3): dancing-sword, description, name
 
 ### Community 1653 - "Community 1653"
 Cohesion: 0.67
-Nodes (3): dimensional-shackles, description, name
+Nodes (3): decanter-of-endless-water, description, name
 
 ### Community 1654 - "Community 1654"
 Cohesion: 0.67
-Nodes (3): dragon-scale-mail, description, name
+Nodes (3): deck-of-illusions, description, name
 
 ### Community 1655 - "Community 1655"
 Cohesion: 0.67
-Nodes (3): dragon-slayer, description, name
+Nodes (3): deck-of-many-things, description, name
 
 ### Community 1656 - "Community 1656"
 Cohesion: 0.67
-Nodes (3): dust-of-disappearance, description, name
+Nodes (3): defender, description, name
 
 ### Community 1657 - "Community 1657"
 Cohesion: 0.67
-Nodes (3): dust-of-dryness, description, name
+Nodes (3): demon-armor, description, name
 
 ### Community 1658 - "Community 1658"
 Cohesion: 0.67
-Nodes (3): dwarven-plate, description, name
+Nodes (3): dimensional-shackles, description, name
 
 ### Community 1659 - "Community 1659"
 Cohesion: 0.67
-Nodes (3): efreeti-bottle, description, name
+Nodes (3): dragon-scale-mail, description, name
 
 ### Community 1660 - "Community 1660"
 Cohesion: 0.67
-Nodes (3): elemental-gem, description, name
+Nodes (3): dragon-slayer, description, name
 
 ### Community 1661 - "Community 1661"
 Cohesion: 0.67
-Nodes (3): elven-chain, description, name
+Nodes (3): dust-of-disappearance, description, name
 
 ### Community 1662 - "Community 1662"
 Cohesion: 0.67
-Nodes (3): energy-bow, description, name
+Nodes (3): dust-of-dryness, description, name
 
 ### Community 1663 - "Community 1663"
 Cohesion: 0.67
-Nodes (3): eversmoking-bottle, description, name
+Nodes (3): dwarven-plate, description, name
 
 ### Community 1664 - "Community 1664"
 Cohesion: 0.67
-Nodes (3): eyes-of-charming, description, name
+Nodes (3): efreeti-bottle, description, name
 
 ### Community 1665 - "Community 1665"
 Cohesion: 0.67
-Nodes (3): eyes-of-minute-seeing, description, name
+Nodes (3): elemental-gem, description, name
 
 ### Community 1666 - "Community 1666"
 Cohesion: 0.67
-Nodes (3): eyes-of-the-eagle, description, name
+Nodes (3): elven-chain, description, name
 
 ### Community 1667 - "Community 1667"
 Cohesion: 0.67
-Nodes (3): figurine-of-wondrous-power, description, name
+Nodes (3): energy-bow, description, name
 
 ### Community 1668 - "Community 1668"
 Cohesion: 0.67
-Nodes (3): flame-tongue, description, name
+Nodes (3): eversmoking-bottle, description, name
 
 ### Community 1669 - "Community 1669"
 Cohesion: 0.67
-Nodes (3): folding-boat, description, name
+Nodes (3): eyes-of-charming, description, name
 
 ### Community 1670 - "Community 1670"
 Cohesion: 0.67
-Nodes (3): frost-brand, description, name
+Nodes (3): eyes-of-minute-seeing, description, name
 
 ### Community 1671 - "Community 1671"
 Cohesion: 0.67
-Nodes (3): gauntlets-of-ogre-power, description, name
+Nodes (3): eyes-of-the-eagle, description, name
 
 ### Community 1672 - "Community 1672"
 Cohesion: 0.67
-Nodes (3): gem-of-brightness, description, name
+Nodes (3): figurine-of-wondrous-power, description, name
 
 ### Community 1673 - "Community 1673"
 Cohesion: 0.67
-Nodes (3): gem-of-seeing, description, name
+Nodes (3): flame-tongue, description, name
 
 ### Community 1674 - "Community 1674"
 Cohesion: 0.67
-Nodes (3): giant-slayer, description, name
+Nodes (3): folding-boat, description, name
 
 ### Community 1675 - "Community 1675"
 Cohesion: 0.67
-Nodes (3): gloves-of-missile-snaring, description, name
+Nodes (3): frost-brand, description, name
 
 ### Community 1676 - "Community 1676"
 Cohesion: 0.67
-Nodes (3): gloves-of-swimming-and-climbing, description, name
+Nodes (3): gauntlets-of-ogre-power, description, name
 
 ### Community 1677 - "Community 1677"
 Cohesion: 0.67
-Nodes (3): gloves-of-thievery, description, name
+Nodes (3): gem-of-brightness, description, name
 
 ### Community 1678 - "Community 1678"
 Cohesion: 0.67
-Nodes (3): goggles-of-night, description, name
+Nodes (3): gem-of-seeing, description, name
 
 ### Community 1679 - "Community 1679"
 Cohesion: 0.67
-Nodes (3): hammer-of-thunderbolts, description, name
+Nodes (3): giant-slayer, description, name
 
 ### Community 1680 - "Community 1680"
 Cohesion: 0.67
-Nodes (3): hat-of-disguise, description, name
+Nodes (3): gloves-of-missile-snaring, description, name
 
 ### Community 1681 - "Community 1681"
 Cohesion: 0.67
-Nodes (3): headband-of-intellect, description, name
+Nodes (3): gloves-of-swimming-and-climbing, description, name
 
 ### Community 1682 - "Community 1682"
 Cohesion: 0.67
-Nodes (3): helm-of-brilliance, description, name
+Nodes (3): gloves-of-thievery, description, name
 
 ### Community 1683 - "Community 1683"
 Cohesion: 0.67
-Nodes (3): helm-of-comprehending-languages, description, name
+Nodes (3): goggles-of-night, description, name
 
 ### Community 1684 - "Community 1684"
 Cohesion: 0.67
-Nodes (3): helm-of-telepathy, description, name
+Nodes (3): hammer-of-thunderbolts, description, name
 
 ### Community 1685 - "Community 1685"
 Cohesion: 0.67
-Nodes (3): helm-of-teleportation, description, name
+Nodes (3): hat-of-disguise, description, name
 
 ### Community 1686 - "Community 1686"
 Cohesion: 0.67
-Nodes (3): horn-of-blasting, description, name
+Nodes (3): headband-of-intellect, description, name
 
 ### Community 1687 - "Community 1687"
 Cohesion: 0.67
-Nodes (3): horn-of-valhalla, description, name
+Nodes (3): helm-of-brilliance, description, name
 
 ### Community 1688 - "Community 1688"
 Cohesion: 0.67
-Nodes (3): horseshoes-of-a-zephyr, description, name
+Nodes (3): helm-of-comprehending-languages, description, name
 
 ### Community 1689 - "Community 1689"
 Cohesion: 0.67
-Nodes (3): horseshoes-of-speed, description, name
+Nodes (3): helm-of-telepathy, description, name
 
 ### Community 1690 - "Community 1690"
 Cohesion: 0.67
-Nodes (3): immovable-rod, description, name
+Nodes (3): helm-of-teleportation, description, name
 
 ### Community 1691 - "Community 1691"
 Cohesion: 0.67
-Nodes (3): javelin-of-lightning, description, name
+Nodes (3): horn-of-blasting, description, name
 
 ### Community 1692 - "Community 1692"
 Cohesion: 0.67
-Nodes (3): lantern-of-revealing, description, name
+Nodes (3): horn-of-valhalla, description, name
 
 ### Community 1693 - "Community 1693"
 Cohesion: 0.67
-Nodes (3): luck-blade, description, name
+Nodes (3): horseshoes-of-a-zephyr, description, name
 
 ### Community 1694 - "Community 1694"
 Cohesion: 0.67
-Nodes (3): mace-of-disruption, description, name
+Nodes (3): horseshoes-of-speed, description, name
 
 ### Community 1695 - "Community 1695"
 Cohesion: 0.67
-Nodes (3): mace-of-smiting, description, name
+Nodes (3): immovable-rod, description, name
 
 ### Community 1696 - "Community 1696"
 Cohesion: 0.67
-Nodes (3): mace-of-terror, description, name
+Nodes (3): javelin-of-lightning, description, name
 
 ### Community 1697 - "Community 1697"
 Cohesion: 0.67
-Nodes (3): mantle-of-spell-resistance, description, name
+Nodes (3): lantern-of-revealing, description, name
 
 ### Community 1698 - "Community 1698"
 Cohesion: 0.67
-Nodes (3): manual-of-bodily-health, description, name
+Nodes (3): luck-blade, description, name
 
 ### Community 1699 - "Community 1699"
 Cohesion: 0.67
-Nodes (3): manual-of-gainful-exercise, description, name
+Nodes (3): mace-of-disruption, description, name
 
 ### Community 1700 - "Community 1700"
 Cohesion: 0.67
-Nodes (3): manual-of-golems, description, name
+Nodes (3): mace-of-smiting, description, name
 
 ### Community 1701 - "Community 1701"
 Cohesion: 0.67
-Nodes (3): manual-of-quickness-of-action, description, name
+Nodes (3): mace-of-terror, description, name
 
 ### Community 1702 - "Community 1702"
 Cohesion: 0.67
-Nodes (3): medallion-of-thoughts, description, name
+Nodes (3): mantle-of-spell-resistance, description, name
 
 ### Community 1703 - "Community 1703"
 Cohesion: 0.67
-Nodes (3): mirror-of-life-trapping, description, name
+Nodes (3): manual-of-bodily-health, description, name
 
 ### Community 1704 - "Community 1704"
 Cohesion: 0.67
-Nodes (3): mithral-armor, description, name
+Nodes (3): manual-of-gainful-exercise, description, name
 
 ### Community 1705 - "Community 1705"
 Cohesion: 0.67
-Nodes (3): necklace-of-adaptation, description, name
+Nodes (3): manual-of-golems, description, name
 
 ### Community 1706 - "Community 1706"
 Cohesion: 0.67
-Nodes (3): necklace-of-fireballs, description, name
+Nodes (3): manual-of-quickness-of-action, description, name
 
 ### Community 1707 - "Community 1707"
 Cohesion: 0.67
-Nodes (3): nine-lives-stealer, description, name
+Nodes (3): medallion-of-thoughts, description, name
 
 ### Community 1708 - "Community 1708"
 Cohesion: 0.67
-Nodes (3): oathbow, description, name
+Nodes (3): mirror-of-life-trapping, description, name
 
 ### Community 1709 - "Community 1709"
 Cohesion: 0.67
-Nodes (3): periapt-of-health, description, name
+Nodes (3): mithral-armor, description, name
 
 ### Community 1710 - "Community 1710"
 Cohesion: 0.67
-Nodes (3): periapt-of-proof-against-poison, description, name
+Nodes (3): necklace-of-adaptation, description, name
 
 ### Community 1711 - "Community 1711"
 Cohesion: 0.67
-Nodes (3): periapt-of-wound-closure, description, name
+Nodes (3): necklace-of-fireballs, description, name
 
 ### Community 1712 - "Community 1712"
 Cohesion: 0.67
-Nodes (3): pipes-of-haunting, description, name
+Nodes (3): nine-lives-stealer, description, name
 
 ### Community 1713 - "Community 1713"
 Cohesion: 0.67
-Nodes (3): pipes-of-the-sewers, description, name
+Nodes (3): oathbow, description, name
 
 ### Community 1714 - "Community 1714"
 Cohesion: 0.67
-Nodes (3): plate-armor-of-etherealness, description, name
+Nodes (3): periapt-of-health, description, name
 
 ### Community 1715 - "Community 1715"
 Cohesion: 0.67
-Nodes (3): portable-hole, description, name
+Nodes (3): periapt-of-proof-against-poison, description, name
 
 ### Community 1716 - "Community 1716"
 Cohesion: 0.67
-Nodes (3): potion-of-flying, description, name
+Nodes (3): periapt-of-wound-closure, description, name
 
 ### Community 1717 - "Community 1717"
 Cohesion: 0.67
-Nodes (3): aboleth.actions.consume-memories, name, text
+Nodes (3): pipes-of-haunting, description, name
 
 ### Community 1718 - "Community 1718"
 Cohesion: 0.67
-Nodes (3): aboleth.actions.dominate-mind, name, text
+Nodes (3): pipes-of-the-sewers, description, name
 
 ### Community 1719 - "Community 1719"
 Cohesion: 0.67
-Nodes (3): aboleth.actions.multiattack, name, text
+Nodes (3): plate-armor-of-etherealness, description, name
 
 ### Community 1720 - "Community 1720"
 Cohesion: 0.67
-Nodes (3): aboleth.actions.tentacle, name, text
+Nodes (3): portable-hole, description, name
 
 ### Community 1721 - "Community 1721"
 Cohesion: 0.67
-Nodes (3): aboleth.legendaryActions.lash, name, text
+Nodes (3): potion-of-flying, description, name
 
 ### Community 1722 - "Community 1722"
 Cohesion: 0.67
-Nodes (3): aboleth.legendaryActions.psychic-drain, name, text
+Nodes (3): aboleth.actions.consume-memories, name, text
 
 ### Community 1723 - "Community 1723"
 Cohesion: 0.67
-Nodes (3): aboleth.traits.amphibious, name, text
+Nodes (3): aboleth.actions.dominate-mind, name, text
 
 ### Community 1724 - "Community 1724"
 Cohesion: 0.67
-Nodes (3): aboleth.traits.eldritch-restoration, name, text
+Nodes (3): aboleth.actions.multiattack, name, text
 
 ### Community 1725 - "Community 1725"
 Cohesion: 0.67
-Nodes (3): aboleth.traits.legendary-resistance, name, text
+Nodes (3): aboleth.actions.tentacle, name, text
 
 ### Community 1726 - "Community 1726"
 Cohesion: 0.67
-Nodes (3): aboleth.traits.mucus-cloud, name, text
+Nodes (3): aboleth.legendaryActions.lash, name, text
 
 ### Community 1727 - "Community 1727"
 Cohesion: 0.67
-Nodes (3): aboleth.traits.probing-telepathy, name, text
+Nodes (3): aboleth.legendaryActions.psychic-drain, name, text
 
 ### Community 1728 - "Community 1728"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.acid-breath, name, text
+Nodes (3): aboleth.traits.amphibious, name, text
 
 ### Community 1729 - "Community 1729"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.multiattack, name, text
+Nodes (3): aboleth.traits.eldritch-restoration, name, text
 
 ### Community 1730 - "Community 1730"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.rend, name, text
+Nodes (3): aboleth.traits.legendary-resistance, name, text
 
 ### Community 1731 - "Community 1731"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.spellcasting, name, text
+Nodes (3): aboleth.traits.mucus-cloud, name, text
 
 ### Community 1732 - "Community 1732"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.legendaryActions.cloud-of-insects, name, text
+Nodes (3): aboleth.traits.probing-telepathy, name, text
 
 ### Community 1733 - "Community 1733"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.legendaryActions.frightful-presence, name, text
+Nodes (3): adult-black-dragon.actions.acid-breath, name, text
 
 ### Community 1734 - "Community 1734"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-black-dragon.actions.multiattack, name, text
 
 ### Community 1735 - "Community 1735"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.traits.amphibious, name, text
+Nodes (3): adult-black-dragon.actions.rend, name, text
 
 ### Community 1736 - "Community 1736"
 Cohesion: 0.67
-Nodes (3): adult-black-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-black-dragon.actions.spellcasting, name, text
 
 ### Community 1737 - "Community 1737"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.lightning-breath, name, text
+Nodes (3): adult-black-dragon.legendaryActions.cloud-of-insects, name, text
 
 ### Community 1738 - "Community 1738"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.multiattack, name, text
+Nodes (3): adult-black-dragon.legendaryActions.frightful-presence, name, text
 
 ### Community 1739 - "Community 1739"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.rend, name, text
+Nodes (3): adult-black-dragon.legendaryActions.pounce, name, text
 
 ### Community 1740 - "Community 1740"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.spellcasting, name, text
+Nodes (3): adult-black-dragon.traits.amphibious, name, text
 
 ### Community 1741 - "Community 1741"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.legendaryActions.cloaked-flight, name, text
+Nodes (3): adult-black-dragon.traits.legendary-resistance, name, text
 
 ### Community 1742 - "Community 1742"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.legendaryActions.sonic-boom, name, text
+Nodes (3): adult-blue-dragon.actions.lightning-breath, name, text
 
 ### Community 1743 - "Community 1743"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.legendaryActions.tail-swipe, name, text
+Nodes (3): adult-blue-dragon.actions.multiattack, name, text
 
 ### Community 1744 - "Community 1744"
 Cohesion: 0.67
-Nodes (3): adult-blue-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-blue-dragon.actions.rend, name, text
 
 ### Community 1745 - "Community 1745"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.fire-breath, name, text
+Nodes (3): adult-blue-dragon.actions.spellcasting, name, text
 
 ### Community 1746 - "Community 1746"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.multiattack, name, text
+Nodes (3): adult-blue-dragon.legendaryActions.cloaked-flight, name, text
 
 ### Community 1747 - "Community 1747"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.rend, name, text
+Nodes (3): adult-blue-dragon.legendaryActions.sonic-boom, name, text
 
 ### Community 1748 - "Community 1748"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.sleep-breath, name, text
+Nodes (3): adult-blue-dragon.legendaryActions.tail-swipe, name, text
 
 ### Community 1749 - "Community 1749"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.spellcasting, name, text
+Nodes (3): adult-blue-dragon.traits.legendary-resistance, name, text
 
 ### Community 1750 - "Community 1750"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.legendaryActions.blazing-light, name, text
+Nodes (3): adult-brass-dragon.actions.fire-breath, name, text
 
 ### Community 1751 - "Community 1751"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-brass-dragon.actions.multiattack, name, text
 
 ### Community 1752 - "Community 1752"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.legendaryActions.scorching-sands, name, text
+Nodes (3): adult-brass-dragon.actions.rend, name, text
 
 ### Community 1753 - "Community 1753"
 Cohesion: 0.67
-Nodes (3): adult-brass-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-brass-dragon.actions.sleep-breath, name, text
 
 ### Community 1754 - "Community 1754"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.lightning-breath, name, text
+Nodes (3): adult-brass-dragon.actions.spellcasting, name, text
 
 ### Community 1755 - "Community 1755"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.multiattack, name, text
+Nodes (3): adult-brass-dragon.legendaryActions.blazing-light, name, text
 
 ### Community 1756 - "Community 1756"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.rend, name, text
+Nodes (3): adult-brass-dragon.legendaryActions.pounce, name, text
 
 ### Community 1757 - "Community 1757"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.repulsion-breath, name, text
+Nodes (3): adult-brass-dragon.legendaryActions.scorching-sands, name, text
 
 ### Community 1758 - "Community 1758"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.legendaryActions.guiding-light, name, text
+Nodes (3): adult-brass-dragon.traits.legendary-resistance, name, text
 
 ### Community 1759 - "Community 1759"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-bronze-dragon.actions.lightning-breath, name, text
 
 ### Community 1760 - "Community 1760"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.legendaryActions.thunderclap, name, text
+Nodes (3): adult-bronze-dragon.actions.multiattack, name, text
 
 ### Community 1761 - "Community 1761"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.traits.amphibious, name, text
+Nodes (3): adult-bronze-dragon.actions.rend, name, text
 
 ### Community 1762 - "Community 1762"
 Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-bronze-dragon.actions.repulsion-breath, name, text
 
 ### Community 1763 - "Community 1763"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.acid-breath, name, text
+Nodes (3): adult-bronze-dragon.legendaryActions.guiding-light, name, text
 
 ### Community 1764 - "Community 1764"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.multiattack, name, text
+Nodes (3): adult-bronze-dragon.legendaryActions.pounce, name, text
 
 ### Community 1765 - "Community 1765"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.rend, name, text
+Nodes (3): adult-bronze-dragon.legendaryActions.thunderclap, name, text
 
 ### Community 1766 - "Community 1766"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.slowing-breath, name, text
+Nodes (3): adult-bronze-dragon.traits.amphibious, name, text
 
 ### Community 1767 - "Community 1767"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.spellcasting, name, text
+Nodes (3): adult-bronze-dragon.traits.legendary-resistance, name, text
 
 ### Community 1768 - "Community 1768"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.legendaryActions.giggling-magic, name, text
+Nodes (3): adult-copper-dragon.actions.acid-breath, name, text
 
 ### Community 1769 - "Community 1769"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.legendaryActions.mind-jolt, name, text
+Nodes (3): adult-copper-dragon.actions.multiattack, name, text
 
 ### Community 1770 - "Community 1770"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-copper-dragon.actions.rend, name, text
 
 ### Community 1771 - "Community 1771"
 Cohesion: 0.67
-Nodes (3): adult-copper-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-copper-dragon.actions.slowing-breath, name, text
 
 ### Community 1772 - "Community 1772"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.fire-breath, name, text
+Nodes (3): adult-copper-dragon.actions.spellcasting, name, text
 
 ### Community 1773 - "Community 1773"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.multiattack, name, text
+Nodes (3): adult-copper-dragon.legendaryActions.giggling-magic, name, text
 
 ### Community 1774 - "Community 1774"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.rend, name, text
+Nodes (3): adult-copper-dragon.legendaryActions.mind-jolt, name, text
 
 ### Community 1775 - "Community 1775"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.spellcasting, name, text
+Nodes (3): adult-copper-dragon.legendaryActions.pounce, name, text
 
 ### Community 1776 - "Community 1776"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.weakening-breath, name, text
+Nodes (3): adult-copper-dragon.traits.legendary-resistance, name, text
 
 ### Community 1777 - "Community 1777"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.legendaryActions.banish, name, text
+Nodes (3): adult-gold-dragon.actions.fire-breath, name, text
 
 ### Community 1778 - "Community 1778"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.legendaryActions.guiding-light, name, text
+Nodes (3): adult-gold-dragon.actions.multiattack, name, text
 
 ### Community 1779 - "Community 1779"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-gold-dragon.actions.rend, name, text
 
 ### Community 1780 - "Community 1780"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.traits.amphibious, name, text
+Nodes (3): adult-gold-dragon.actions.spellcasting, name, text
 
 ### Community 1781 - "Community 1781"
 Cohesion: 0.67
-Nodes (3): adult-gold-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-gold-dragon.actions.weakening-breath, name, text
 
 ### Community 1782 - "Community 1782"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.multiattack, name, text
+Nodes (3): adult-gold-dragon.legendaryActions.banish, name, text
 
 ### Community 1783 - "Community 1783"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.poison-breath, name, text
+Nodes (3): adult-gold-dragon.legendaryActions.guiding-light, name, text
 
 ### Community 1784 - "Community 1784"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.rend, name, text
+Nodes (3): adult-gold-dragon.legendaryActions.pounce, name, text
 
 ### Community 1785 - "Community 1785"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.spellcasting, name, text
+Nodes (3): adult-gold-dragon.traits.amphibious, name, text
 
 ### Community 1786 - "Community 1786"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.legendaryActions.mind-invasion, name, text
+Nodes (3): adult-gold-dragon.traits.legendary-resistance, name, text
 
 ### Community 1787 - "Community 1787"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.legendaryActions.noxious-miasma, name, text
+Nodes (3): adult-green-dragon.actions.multiattack, name, text
 
 ### Community 1788 - "Community 1788"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-green-dragon.actions.poison-breath, name, text
 
 ### Community 1789 - "Community 1789"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.traits.amphibious, name, text
+Nodes (3): adult-green-dragon.actions.rend, name, text
 
 ### Community 1790 - "Community 1790"
 Cohesion: 0.67
-Nodes (3): adult-green-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-green-dragon.actions.spellcasting, name, text
 
 ### Community 1791 - "Community 1791"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.fire-breath, name, text
+Nodes (3): adult-green-dragon.legendaryActions.mind-invasion, name, text
 
 ### Community 1792 - "Community 1792"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.multiattack, name, text
+Nodes (3): adult-green-dragon.legendaryActions.noxious-miasma, name, text
 
 ### Community 1793 - "Community 1793"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.rend, name, text
+Nodes (3): adult-green-dragon.legendaryActions.pounce, name, text
 
 ### Community 1794 - "Community 1794"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.spellcasting, name, text
+Nodes (3): adult-green-dragon.traits.amphibious, name, text
 
 ### Community 1795 - "Community 1795"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.legendaryActions.commanding-presence, name, text
+Nodes (3): adult-green-dragon.traits.legendary-resistance, name, text
 
 ### Community 1796 - "Community 1796"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.legendaryActions.fiery-rays, name, text
+Nodes (3): adult-red-dragon.actions.fire-breath, name, text
 
 ### Community 1797 - "Community 1797"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-red-dragon.actions.multiattack, name, text
 
 ### Community 1798 - "Community 1798"
 Cohesion: 0.67
-Nodes (3): adult-red-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-red-dragon.actions.rend, name, text
 
 ### Community 1799 - "Community 1799"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.cold-breath, name, text
+Nodes (3): adult-red-dragon.actions.spellcasting, name, text
 
 ### Community 1800 - "Community 1800"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.multiattack, name, text
+Nodes (3): adult-red-dragon.legendaryActions.commanding-presence, name, text
 
 ### Community 1801 - "Community 1801"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.paralyzing-breath, name, text
+Nodes (3): adult-red-dragon.legendaryActions.fiery-rays, name, text
 
 ### Community 1802 - "Community 1802"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.rend, name, text
+Nodes (3): adult-red-dragon.legendaryActions.pounce, name, text
 
 ### Community 1803 - "Community 1803"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.spellcasting, name, text
+Nodes (3): adult-red-dragon.traits.legendary-resistance, name, text
 
 ### Community 1804 - "Community 1804"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.legendaryActions.chill, name, text
+Nodes (3): adult-silver-dragon.actions.cold-breath, name, text
 
 ### Community 1805 - "Community 1805"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-silver-dragon.actions.multiattack, name, text
 
 ### Community 1806 - "Community 1806"
 Cohesion: 0.67
-Nodes (3): adult-silver-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-silver-dragon.actions.paralyzing-breath, name, text
 
 ### Community 1807 - "Community 1807"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.actions.cold-breath, name, text
+Nodes (3): adult-silver-dragon.actions.rend, name, text
 
 ### Community 1808 - "Community 1808"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.actions.multiattack, name, text
+Nodes (3): adult-silver-dragon.actions.spellcasting, name, text
 
 ### Community 1809 - "Community 1809"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.actions.rend, name, text
+Nodes (3): adult-silver-dragon.legendaryActions.chill, name, text
 
 ### Community 1810 - "Community 1810"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.legendaryActions.freezing-burst, name, text
+Nodes (3): adult-silver-dragon.legendaryActions.pounce, name, text
 
 ### Community 1811 - "Community 1811"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.legendaryActions.frightful-presence, name, text
+Nodes (3): adult-silver-dragon.traits.legendary-resistance, name, text
 
 ### Community 1812 - "Community 1812"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.legendaryActions.pounce, name, text
+Nodes (3): adult-white-dragon.actions.cold-breath, name, text
 
 ### Community 1813 - "Community 1813"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.traits.ice-walk, name, text
+Nodes (3): adult-white-dragon.actions.multiattack, name, text
 
 ### Community 1814 - "Community 1814"
 Cohesion: 0.67
-Nodes (3): adult-white-dragon.traits.legendary-resistance, name, text
+Nodes (3): adult-white-dragon.actions.rend, name, text
 
 ### Community 1815 - "Community 1815"
 Cohesion: 0.67
-Nodes (3): air-elemental.actions.multiattack, name, text
+Nodes (3): adult-white-dragon.legendaryActions.freezing-burst, name, text
 
 ### Community 1816 - "Community 1816"
 Cohesion: 0.67
-Nodes (3): air-elemental.actions.thunderous-slam, name, text
+Nodes (3): adult-white-dragon.legendaryActions.frightful-presence, name, text
 
 ### Community 1817 - "Community 1817"
 Cohesion: 0.67
-Nodes (3): air-elemental.actions.whirlwind, name, text
+Nodes (3): adult-white-dragon.legendaryActions.pounce, name, text
 
 ### Community 1818 - "Community 1818"
 Cohesion: 0.67
-Nodes (3): air-elemental.traits.air-form, name, text
+Nodes (3): adult-white-dragon.traits.ice-walk, name, text
 
 ### Community 1819 - "Community 1819"
 Cohesion: 0.67
-Nodes (3): allosaurus.actions.claws, name, text
+Nodes (3): adult-white-dragon.traits.legendary-resistance, name, text
 
 ### Community 1820 - "Community 1820"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.acid-breath, name, text
+Nodes (3): air-elemental.actions.multiattack, name, text
 
 ### Community 1821 - "Community 1821"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.multiattack, name, text
+Nodes (3): air-elemental.actions.thunderous-slam, name, text
 
 ### Community 1822 - "Community 1822"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.rend, name, text
+Nodes (3): air-elemental.actions.whirlwind, name, text
 
 ### Community 1823 - "Community 1823"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.spellcasting, name, text
+Nodes (3): air-elemental.traits.air-form, name, text
 
 ### Community 1824 - "Community 1824"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.legendaryActions.cloud-of-insects, name, text
+Nodes (3): allosaurus.actions.claws, name, text
 
 ### Community 1825 - "Community 1825"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.legendaryActions.frightful-presence, name, text
+Nodes (3): ancient-black-dragon.actions.acid-breath, name, text
 
 ### Community 1826 - "Community 1826"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.legendaryActions.pounce, name, text
+Nodes (3): ancient-black-dragon.actions.multiattack, name, text
 
 ### Community 1827 - "Community 1827"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.traits.amphibious, name, text
+Nodes (3): ancient-black-dragon.actions.rend, name, text
 
 ### Community 1828 - "Community 1828"
 Cohesion: 0.67
-Nodes (3): ancient-black-dragon.traits.legendary-resistance, name, text
+Nodes (3): ancient-black-dragon.actions.spellcasting, name, text
 
 ### Community 1829 - "Community 1829"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.lightning-breath, name, text
+Nodes (3): ancient-black-dragon.legendaryActions.cloud-of-insects, name, text
 
 ### Community 1830 - "Community 1830"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.multiattack, name, text
+Nodes (3): ancient-black-dragon.legendaryActions.frightful-presence, name, text
 
 ### Community 1831 - "Community 1831"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.rend, name, text
+Nodes (3): ancient-black-dragon.legendaryActions.pounce, name, text
 
 ### Community 1832 - "Community 1832"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.spellcasting, name, text
+Nodes (3): ancient-black-dragon.traits.amphibious, name, text
 
 ### Community 1833 - "Community 1833"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.legendaryActions.cloaked-flight, name, text
+Nodes (3): ancient-black-dragon.traits.legendary-resistance, name, text
 
 ### Community 1834 - "Community 1834"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.legendaryActions.sonic-boom, name, text
+Nodes (3): ancient-blue-dragon.actions.lightning-breath, name, text
 
 ### Community 1835 - "Community 1835"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.legendaryActions.tail-swipe, name, text
+Nodes (3): ancient-blue-dragon.actions.multiattack, name, text
 
 ### Community 1836 - "Community 1836"
 Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.traits.legendary-resistance, name, text
+Nodes (3): ancient-blue-dragon.actions.rend, name, text
 
 ### Community 1837 - "Community 1837"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.fire-breath, name, text
+Nodes (3): ancient-blue-dragon.actions.spellcasting, name, text
 
 ### Community 1838 - "Community 1838"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.multiattack, name, text
+Nodes (3): ancient-blue-dragon.legendaryActions.cloaked-flight, name, text
 
 ### Community 1839 - "Community 1839"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.rend, name, text
+Nodes (3): ancient-blue-dragon.legendaryActions.sonic-boom, name, text
 
 ### Community 1840 - "Community 1840"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.sleep-breath, name, text
+Nodes (3): ancient-blue-dragon.legendaryActions.tail-swipe, name, text
 
 ### Community 1841 - "Community 1841"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.spellcasting, name, text
+Nodes (3): ancient-blue-dragon.traits.legendary-resistance, name, text
 
 ### Community 1842 - "Community 1842"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.legendaryActions.blazing-light, name, text
+Nodes (3): ancient-brass-dragon.actions.fire-breath, name, text
 
 ### Community 1843 - "Community 1843"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.legendaryActions.pounce, name, text
+Nodes (3): ancient-brass-dragon.actions.multiattack, name, text
 
 ### Community 1844 - "Community 1844"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.legendaryActions.scorching-sands, name, text
+Nodes (3): ancient-brass-dragon.actions.rend, name, text
 
 ### Community 1845 - "Community 1845"
 Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.traits.legendary-resistance, name, text
+Nodes (3): ancient-brass-dragon.actions.sleep-breath, name, text
 
 ### Community 1846 - "Community 1846"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.lightning-breath, name, text
+Nodes (3): ancient-brass-dragon.actions.spellcasting, name, text
 
 ### Community 1847 - "Community 1847"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.multiattack, name, text
+Nodes (3): ancient-brass-dragon.legendaryActions.blazing-light, name, text
 
 ### Community 1848 - "Community 1848"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.rend, name, text
+Nodes (3): ancient-brass-dragon.legendaryActions.pounce, name, text
 
 ### Community 1849 - "Community 1849"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.repulsion-breath, name, text
+Nodes (3): ancient-brass-dragon.legendaryActions.scorching-sands, name, text
 
 ### Community 1850 - "Community 1850"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.spellcasting, name, text
+Nodes (3): ancient-brass-dragon.traits.legendary-resistance, name, text
 
 ### Community 1851 - "Community 1851"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.legendaryActions.pounce, name, text
+Nodes (3): ancient-bronze-dragon.actions.lightning-breath, name, text
 
 ### Community 1852 - "Community 1852"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.legendaryActions.thunderclap, name, text
+Nodes (3): ancient-bronze-dragon.actions.multiattack, name, text
 
 ### Community 1853 - "Community 1853"
 Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.traits.legendary-resistance, name, text
+Nodes (3): ancient-bronze-dragon.actions.rend, name, text
 
 ### Community 1854 - "Community 1854"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.acid-breath, name, text
+Nodes (3): ancient-bronze-dragon.actions.repulsion-breath, name, text
 
 ### Community 1855 - "Community 1855"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.multiattack, name, text
+Nodes (3): ancient-bronze-dragon.actions.spellcasting, name, text
 
 ### Community 1856 - "Community 1856"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.rend, name, text
+Nodes (3): ancient-bronze-dragon.legendaryActions.pounce, name, text
 
 ### Community 1857 - "Community 1857"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.slowing-breath, name, text
+Nodes (3): ancient-bronze-dragon.legendaryActions.thunderclap, name, text
 
 ### Community 1858 - "Community 1858"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.spellcasting, name, text
+Nodes (3): ancient-bronze-dragon.traits.legendary-resistance, name, text
 
 ### Community 1859 - "Community 1859"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.legendaryActions.giggling-magic, name, text
+Nodes (3): ancient-copper-dragon.actions.acid-breath, name, text
 
 ### Community 1860 - "Community 1860"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.legendaryActions.mind-jolt, name, text
+Nodes (3): ancient-copper-dragon.actions.multiattack, name, text
 
 ### Community 1861 - "Community 1861"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.legendaryActions.pounce, name, text
+Nodes (3): ancient-copper-dragon.actions.rend, name, text
 
 ### Community 1862 - "Community 1862"
 Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.traits.legendary-resistance, name, text
+Nodes (3): ancient-copper-dragon.actions.slowing-breath, name, text
 
 ### Community 1863 - "Community 1863"
 Cohesion: 0.67
-Nodes (3): ancient-gold-dragon.actions.multiattack, name, text
+Nodes (3): ancient-copper-dragon.actions.spellcasting, name, text
 
 ### Community 1864 - "Community 1864"
 Cohesion: 0.67
-Nodes (3): ancient-gold-dragon.traits.amphibious, name, text
+Nodes (3): ancient-copper-dragon.legendaryActions.giggling-magic, name, text
 
 ### Community 1865 - "Community 1865"
 Cohesion: 0.67
-Nodes (3): ancient-gold-dragon.traits.legendary-resistance, name, text
+Nodes (3): ancient-copper-dragon.legendaryActions.mind-jolt, name, text
 
 ### Community 1866 - "Community 1866"
 Cohesion: 0.67
-Nodes (3): dragonborn.traits.breath-weapon, description, name
+Nodes (3): ancient-copper-dragon.legendaryActions.pounce, name, text
 
 ### Community 1867 - "Community 1867"
 Cohesion: 0.67
-Nodes (3): dragonborn.traits.damage-resistance, description, name
+Nodes (3): ancient-copper-dragon.traits.legendary-resistance, name, text
 
 ### Community 1868 - "Community 1868"
 Cohesion: 0.67
-Nodes (3): dragonborn.traits.darkvision, description, name
+Nodes (3): ancient-gold-dragon.actions.multiattack, name, text
 
 ### Community 1869 - "Community 1869"
 Cohesion: 0.67
-Nodes (3): dragonborn.traits.draconic-ancestry, description, name
+Nodes (3): ancient-gold-dragon.traits.amphibious, name, text
 
 ### Community 1870 - "Community 1870"
 Cohesion: 0.67
-Nodes (3): dragonborn.traits.draconic-flight, description, name
+Nodes (3): ancient-gold-dragon.traits.legendary-resistance, name, text
 
 ### Community 1871 - "Community 1871"
 Cohesion: 0.67
-Nodes (3): dragonborn.traits.draconic-flight.mechanics.actions.0, description, summary
+Nodes (3): dragonborn, description, name
 
 ### Community 1872 - "Community 1872"
 Cohesion: 0.67
-Nodes (3): dwarf.traits.darkvision, description, name
+Nodes (3): dragonborn.traits.breath-weapon, description, name
 
 ### Community 1873 - "Community 1873"
 Cohesion: 0.67
-Nodes (3): dwarf.traits.dwarven-resilience, description, name
+Nodes (3): dragonborn.traits.damage-resistance, description, name
 
 ### Community 1874 - "Community 1874"
 Cohesion: 0.67
-Nodes (3): dwarf.traits.dwarven-toughness, description, name
+Nodes (3): dragonborn.traits.darkvision, description, name
 
 ### Community 1875 - "Community 1875"
 Cohesion: 0.67
-Nodes (3): dwarf.traits.stonecunning, description, name
+Nodes (3): dragonborn.traits.draconic-ancestry, description, name
 
 ### Community 1876 - "Community 1876"
 Cohesion: 0.67
-Nodes (3): elf.traits.darkvision, description, name
+Nodes (3): dragonborn.traits.draconic-flight, description, name
 
 ### Community 1877 - "Community 1877"
 Cohesion: 0.67
-Nodes (3): elf.traits.elven-lineage, description, name
+Nodes (3): dragonborn.traits.draconic-flight.mechanics.actions.0, description, summary
 
 ### Community 1878 - "Community 1878"
 Cohesion: 0.67
-Nodes (3): elf.traits.fey-ancestry, description, name
+Nodes (3): dwarf.traits.darkvision, description, name
 
 ### Community 1879 - "Community 1879"
 Cohesion: 0.67
-Nodes (3): elf.traits.keen-senses, description, name
+Nodes (3): dwarf.traits.dwarven-resilience, description, name
 
 ### Community 1880 - "Community 1880"
 Cohesion: 0.67
-Nodes (3): elf.traits.trance, description, name
+Nodes (3): dwarf.traits.dwarven-toughness, description, name
 
 ### Community 1881 - "Community 1881"
 Cohesion: 0.67
-Nodes (3): gnome.traits.darkvision, description, name
+Nodes (3): dwarf.traits.stonecunning, description, name
 
 ### Community 1882 - "Community 1882"
 Cohesion: 0.67
-Nodes (3): gnome.traits.gnome-cunning, description, name
+Nodes (3): elf, description, name
 
 ### Community 1883 - "Community 1883"
 Cohesion: 0.67
-Nodes (3): gnome.traits.gnomish-lineage, description, name
+Nodes (3): elf.traits.darkvision, description, name
 
 ### Community 1884 - "Community 1884"
 Cohesion: 0.67
-Nodes (3): goliath.traits.giant-ancestry, description, name
+Nodes (3): elf.traits.elven-lineage, description, name
 
 ### Community 1885 - "Community 1885"
 Cohesion: 0.67
-Nodes (3): goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt, description, name
+Nodes (3): elf.traits.fey-ancestry, description, name
 
 ### Community 1886 - "Community 1886"
 Cohesion: 0.67
-Nodes (3): goliath.traits.large-form, description, name
+Nodes (3): elf.traits.keen-senses, description, name
 
 ### Community 1887 - "Community 1887"
 Cohesion: 0.67
-Nodes (3): goliath.traits.large-form.mechanics.actions.0, description, summary
+Nodes (3): elf.traits.trance, description, name
 
 ### Community 1888 - "Community 1888"
 Cohesion: 0.67
-Nodes (3): goliath.traits.powerful-build, description, name
+Nodes (3): gnome, description, name
 
 ### Community 1889 - "Community 1889"
 Cohesion: 0.67
-Nodes (3): halfling.traits.brave, description, name
+Nodes (3): gnome.traits.darkvision, description, name
 
 ### Community 1890 - "Community 1890"
 Cohesion: 0.67
-Nodes (3): halfling.traits.halfling-nimbleness, description, name
+Nodes (3): gnome.traits.gnome-cunning, description, name
 
 ### Community 1891 - "Community 1891"
 Cohesion: 0.67
-Nodes (3): halfling.traits.luck, description, name
+Nodes (3): gnome.traits.gnomish-lineage, description, name
 
 ### Community 1892 - "Community 1892"
 Cohesion: 0.67
-Nodes (3): halfling.traits.naturally-stealthy, description, name
+Nodes (3): goliath, description, name
 
 ### Community 1893 - "Community 1893"
 Cohesion: 0.67
-Nodes (3): human.traits.resourceful, description, name
+Nodes (3): goliath.traits.giant-ancestry, description, name
 
 ### Community 1894 - "Community 1894"
 Cohesion: 0.67
-Nodes (3): human.traits.skillful, description, name
+Nodes (3): goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt, description, name
 
 ### Community 1895 - "Community 1895"
 Cohesion: 0.67
-Nodes (3): human.traits.versatile, description, name
+Nodes (3): goliath.traits.large-form, description, name
 
 ### Community 1896 - "Community 1896"
 Cohesion: 0.67
-Nodes (3): orc.traits.adrenaline-rush, description, name
+Nodes (3): goliath.traits.large-form.mechanics.actions.0, description, summary
 
 ### Community 1897 - "Community 1897"
 Cohesion: 0.67
-Nodes (3): orc.traits.darkvision, description, name
+Nodes (3): goliath.traits.powerful-build, description, name
 
 ### Community 1898 - "Community 1898"
 Cohesion: 0.67
-Nodes (3): orc.traits.relentless-endurance, description, name
+Nodes (3): halfling, description, name
 
 ### Community 1899 - "Community 1899"
 Cohesion: 0.67
-Nodes (3): tiefling.traits.darkvision, description, name
+Nodes (3): halfling.traits.brave, description, name
 
 ### Community 1900 - "Community 1900"
 Cohesion: 0.67
-Nodes (3): tiefling.traits.fiendish-legacy, description, name
+Nodes (3): halfling.traits.halfling-nimbleness, description, name
 
 ### Community 1901 - "Community 1901"
 Cohesion: 0.67
-Nodes (3): tiefling.traits.otherworldly-presence, description, name
+Nodes (3): halfling.traits.luck, description, name
 
 ### Community 1902 - "Community 1902"
 Cohesion: 0.67
-Nodes (3): exhaustionBanner, detail, title
+Nodes (3): halfling.traits.naturally-stealthy, description, name
 
 ### Community 1903 - "Community 1903"
 Cohesion: 0.67
-Nodes (3): hpBand, healthy, nearDeath
+Nodes (3): human, description, name
 
 ### Community 1904 - "Community 1904"
 Cohesion: 0.67
-Nodes (3): placeholder, noDefenses, noResources
-
-### Community 1906 - "Community 1906"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-frenzy, description, name
-
-### Community 1907 - "Community 1907"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-intimidating-presence.mechanics.actions.0, description, summary
-
-### Community 1908 - "Community 1908"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-mindless-rage, description, name
-
-### Community 1909 - "Community 1909"
-Cohesion: 0.67
-Nodes (3): barbarian-berserker-retaliation, description, name
-
-### Community 1910 - "Community 1910"
-Cohesion: 0.67
-Nodes (3): barbarian-brutal-strike, description, name
-
-### Community 1911 - "Community 1911"
-Cohesion: 0.67
-Nodes (3): barbarian-danger-sense, description, name
-
-### Community 1912 - "Community 1912"
-Cohesion: 0.67
-Nodes (3): barbarian-epic-boon, description, name
-
-### Community 1913 - "Community 1913"
-Cohesion: 0.67
-Nodes (3): barbarian-extra-attack, description, name
-
-### Community 1914 - "Community 1914"
-Cohesion: 0.67
-Nodes (3): barbarian-fast-movement, description, name
-
-### Community 1915 - "Community 1915"
-Cohesion: 0.67
-Nodes (3): barbarian-feral-instinct, description, name
-
-### Community 1916 - "Community 1916"
-Cohesion: 0.67
-Nodes (3): barbarian-improved-brutal-strike, description, name
-
-### Community 1917 - "Community 1917"
-Cohesion: 0.67
-Nodes (3): barbarian-indomitable-might, description, name
-
-### Community 1918 - "Community 1918"
-Cohesion: 0.67
-Nodes (3): barbarian-instinctive-pounce, description, name
-
-### Community 1919 - "Community 1919"
-Cohesion: 0.67
-Nodes (3): barbarian-persistent-rage, description, name
-
-### Community 1920 - "Community 1920"
-Cohesion: 0.67
-Nodes (3): barbarian-primal-champion, description, name
-
-### Community 1921 - "Community 1921"
-Cohesion: 0.67
-Nodes (3): barbarian-primal-knowledge, description, name
-
-### Community 1922 - "Community 1922"
-Cohesion: 0.67
-Nodes (3): barbarian-rage, description, name
-
-### Community 1923 - "Community 1923"
-Cohesion: 0.67
-Nodes (3): barbarian-reckless-attack, description, name
-
-### Community 1924 - "Community 1924"
-Cohesion: 0.67
-Nodes (3): barbarian-relentless-rage, description, name
-
-### Community 1925 - "Community 1925"
-Cohesion: 0.67
-Nodes (3): barbarian-unarmored-defense, description, name
-
-### Community 1926 - "Community 1926"
-Cohesion: 0.67
-Nodes (3): barbarian-weapon-mastery, description, name
-
-### Community 1927 - "Community 1927"
-Cohesion: 0.67
-Nodes (3): bard-asi, description, name
-
-### Community 1928 - "Community 1928"
-Cohesion: 0.67
-Nodes (3): bard-bardic-inspiration, description, name
-
-### Community 1929 - "Community 1929"
-Cohesion: 0.67
-Nodes (3): bard-countercharm, description, name
-
-### Community 1930 - "Community 1930"
-Cohesion: 0.67
-Nodes (3): bard-epic-boon, description, name
-
-### Community 1931 - "Community 1931"
-Cohesion: 0.67
-Nodes (3): bard-expertise, description, name
-
-### Community 1932 - "Community 1932"
-Cohesion: 0.67
-Nodes (3): bard-font-of-inspiration, description, name
-
-### Community 1933 - "Community 1933"
-Cohesion: 0.67
-Nodes (3): bard-jack-of-all-trades, description, name
-
-### Community 1934 - "Community 1934"
-Cohesion: 0.67
-Nodes (3): bard-lore-additional-magical-secrets, description, name
-
-### Community 1935 - "Community 1935"
-Cohesion: 0.67
-Nodes (3): bard-lore-bonus-proficiencies, description, name
-
-### Community 1936 - "Community 1936"
-Cohesion: 0.67
-Nodes (3): bard-lore-cutting-words, description, name
-
-### Community 1937 - "Community 1937"
-Cohesion: 0.67
-Nodes (3): bard-lore-peerless-skill, description, name
-
-### Community 1938 - "Community 1938"
-Cohesion: 0.67
-Nodes (3): bard-magical-secrets, description, name
-
-### Community 1939 - "Community 1939"
-Cohesion: 0.67
-Nodes (3): bard-spellcasting, description, name
-
-### Community 1940 - "Community 1940"
-Cohesion: 0.67
-Nodes (3): bard-superior-inspiration, description, name
-
-### Community 1941 - "Community 1941"
-Cohesion: 0.67
-Nodes (3): bard-words-of-creation, description, name
-
-### Community 1942 - "Community 1942"
-Cohesion: 0.67
-Nodes (3): cleric-blessed-strikes, description, name
-
-### Community 1943 - "Community 1943"
-Cohesion: 0.67
-Nodes (3): cleric-channel-divinity, description, name
-
-### Community 1944 - "Community 1944"
-Cohesion: 0.67
-Nodes (3): cleric-channel-divinity.mechanics.actions.0, description, label
-
-### Community 1945 - "Community 1945"
-Cohesion: 0.67
-Nodes (3): cleric-divine-intervention, description, name
-
-### Community 1946 - "Community 1946"
-Cohesion: 0.67
-Nodes (3): cleric-divine-intervention.mechanics.actions.0, description, summary
-
-### Community 1947 - "Community 1947"
-Cohesion: 0.67
-Nodes (3): cleric-divine-order, description, name
-
-### Community 1948 - "Community 1948"
-Cohesion: 0.67
-Nodes (3): cleric-divine-spark, description, name
-
-### Community 1949 - "Community 1949"
-Cohesion: 0.67
-Nodes (3): cleric-divine-spark.mechanics.actions.0, description, summary
-
-### Community 1950 - "Community 1950"
-Cohesion: 0.67
-Nodes (3): cleric-epic-boon, description, name
-
-### Community 1951 - "Community 1951"
-Cohesion: 0.67
-Nodes (3): cleric-improved-blessed-strikes, description, name
-
-### Community 1952 - "Community 1952"
-Cohesion: 0.67
-Nodes (3): cleric-improved-divine-intervention, description, name
-
-### Community 1953 - "Community 1953"
-Cohesion: 0.67
-Nodes (3): cleric-life-blessed-healer, description, name
-
-### Community 1954 - "Community 1954"
-Cohesion: 0.67
-Nodes (3): cleric-life-disciple-of-life, description, name
-
-### Community 1955 - "Community 1955"
-Cohesion: 0.67
-Nodes (3): cleric-life-preserve-life, description, name
-
-### Community 1956 - "Community 1956"
-Cohesion: 0.67
-Nodes (3): cleric-life-supreme-healing, description, name
-
-### Community 1957 - "Community 1957"
-Cohesion: 0.67
-Nodes (3): cleric-sear-undead, description, name
-
-### Community 1958 - "Community 1958"
-Cohesion: 0.67
-Nodes (3): cleric-sear-undead.mechanics.actions.0, description, summary
-
-### Community 1959 - "Community 1959"
-Cohesion: 0.67
-Nodes (3): cleric-spellcasting, description, name
-
-### Community 1960 - "Community 1960"
-Cohesion: 0.67
-Nodes (3): cleric-turn-undead, description, name
-
-### Community 1961 - "Community 1961"
-Cohesion: 0.67
-Nodes (3): cleric-turn-undead.mechanics.actions.0, description, summary
-
-### Community 1962 - "Community 1962"
-Cohesion: 0.67
-Nodes (3): druid-archdruid, description, name
-
-### Community 1963 - "Community 1963"
-Cohesion: 0.67
-Nodes (3): druid-beast-spells, description, name
-
-### Community 1964 - "Community 1964"
-Cohesion: 0.67
-Nodes (3): druid-druidic, description, name
-
-### Community 1965 - "Community 1965"
-Cohesion: 0.67
-Nodes (3): druid-elemental-fury, description, name
-
-### Community 1966 - "Community 1966"
-Cohesion: 0.67
-Nodes (3): druid-epic-boon, description, name
-
-### Community 1967 - "Community 1967"
-Cohesion: 0.67
-Nodes (3): druid-improved-elemental-fury, description, name
-
-### Community 1968 - "Community 1968"
-Cohesion: 0.67
-Nodes (3): druid-land-circle-spells, description, name
-
-### Community 1969 - "Community 1969"
-Cohesion: 0.67
-Nodes (3): druid-land-lands-aid, description, name
-
-### Community 1970 - "Community 1970"
-Cohesion: 0.67
-Nodes (3): druid-land-lands-aid.mechanics.actions.0, description, summary
-
-### Community 1971 - "Community 1971"
-Cohesion: 0.67
-Nodes (3): druid-land-natural-recovery, description, name
-
-### Community 1972 - "Community 1972"
-Cohesion: 0.67
-Nodes (3): druid-land-natures-sanctuary, description, name
-
-### Community 1973 - "Community 1973"
-Cohesion: 0.67
-Nodes (3): druid-land-natures-sanctuary.mechanics.actions.0, description, summary
-
-### Community 1974 - "Community 1974"
-Cohesion: 0.67
-Nodes (3): druid-land-natures-ward, description, name
-
-### Community 1975 - "Community 1975"
-Cohesion: 0.67
-Nodes (3): druid-primal-order, description, name
-
-### Community 1976 - "Community 1976"
-Cohesion: 0.67
-Nodes (3): druid-spellcasting, description, name
-
-### Community 1977 - "Community 1977"
-Cohesion: 0.67
-Nodes (3): druid-wild-companion, description, name
-
-### Community 1978 - "Community 1978"
-Cohesion: 0.67
-Nodes (3): druid-wild-resurgence, description, name
-
-### Community 1979 - "Community 1979"
-Cohesion: 0.67
-Nodes (3): druid-wild-shape, description, name
-
-### Community 1980 - "Community 1980"
-Cohesion: 0.67
-Nodes (3): fighter-action-surge, description, name
-
-### Community 1981 - "Community 1981"
-Cohesion: 0.67
-Nodes (3): fighter-action-surge.mechanics.actions.0, description, label
-
-### Community 1982 - "Community 1982"
-Cohesion: 0.67
-Nodes (3): fighter-champion-additional-fighting-style, description, name
-
-### Community 1983 - "Community 1983"
-Cohesion: 0.67
-Nodes (3): fighter-champion-heroic-warrior, description, name
-
-### Community 1984 - "Community 1984"
-Cohesion: 0.67
-Nodes (3): fighter-champion-improved-critical, description, name
-
-### Community 1985 - "Community 1985"
-Cohesion: 0.67
-Nodes (3): fighter-champion-remarkable-athlete, description, name
-
-### Community 1986 - "Community 1986"
-Cohesion: 0.67
-Nodes (3): fighter-champion-superior-critical, description, name
-
-### Community 1987 - "Community 1987"
-Cohesion: 0.67
-Nodes (3): fighter-champion-survivor, description, name
-
-### Community 1988 - "Community 1988"
-Cohesion: 0.67
-Nodes (3): fighter-epic-boon, description, name
-
-### Community 1989 - "Community 1989"
-Cohesion: 0.67
-Nodes (3): fighter-extra-attack, description, name
-
-### Community 1990 - "Community 1990"
-Cohesion: 0.67
-Nodes (3): fighter-extra-attack-2, description, name
-
-### Community 1991 - "Community 1991"
-Cohesion: 0.67
-Nodes (3): fighter-extra-attack-3, description, name
-
-### Community 1992 - "Community 1992"
-Cohesion: 0.67
-Nodes (3): fighter-fighting-style, description, name
-
-### Community 1993 - "Community 1993"
-Cohesion: 0.67
-Nodes (3): fighter-indomitable, description, name
-
-### Community 1994 - "Community 1994"
-Cohesion: 0.67
-Nodes (3): fighter-second-wind, description, name
-
-### Community 1995 - "Community 1995"
-Cohesion: 0.67
-Nodes (3): fighter-second-wind.mechanics.actions.0, description, label
-
-### Community 1996 - "Community 1996"
-Cohesion: 0.67
-Nodes (3): fighter-studied-attacks, description, name
-
-### Community 1997 - "Community 1997"
-Cohesion: 0.67
-Nodes (3): fighter-tactical-master, description, name
-
-### Community 1998 - "Community 1998"
-Cohesion: 0.67
-Nodes (3): fighter-tactical-mind, description, name
-
-### Community 1999 - "Community 1999"
-Cohesion: 0.67
-Nodes (3): fighter-tactical-mind.mechanics.actions.0, description, label
-
-### Community 2000 - "Community 2000"
-Cohesion: 0.67
-Nodes (3): fighter-tactical-shift, description, name
-
-### Community 2001 - "Community 2001"
-Cohesion: 0.67
-Nodes (3): fighter-weapon-mastery, description, name
-
-### Community 2002 - "Community 2002"
-Cohesion: 0.67
-Nodes (3): monk-acrobatic-movement, description, name
-
-### Community 2003 - "Community 2003"
-Cohesion: 0.67
-Nodes (3): monk-body-and-mind, description, name
-
-### Community 2004 - "Community 2004"
-Cohesion: 0.67
-Nodes (3): monk-deflect-attacks, description, name
-
-### Community 2005 - "Community 2005"
-Cohesion: 0.67
-Nodes (3): monk-deflect-energy, description, name
-
-### Community 2006 - "Community 2006"
-Cohesion: 0.67
-Nodes (3): monk-disciplined-survivor, description, name
-
-### Community 2007 - "Community 2007"
-Cohesion: 0.67
-Nodes (3): monk-empowered-strikes, description, name
-
-### Community 2008 - "Community 2008"
-Cohesion: 0.67
-Nodes (3): monk-evasion, description, name
-
-### Community 2009 - "Community 2009"
-Cohesion: 0.67
-Nodes (3): monk-extra-attack, description, name
-
-### Community 2010 - "Community 2010"
-Cohesion: 0.67
-Nodes (3): monk-flurry-of-blows, description, name
-
-### Community 2011 - "Community 2011"
-Cohesion: 0.67
-Nodes (3): monk-focus, description, name
-
-### Community 2012 - "Community 2012"
-Cohesion: 0.67
-Nodes (3): monk-heightened-focus, description, name
-
-### Community 2013 - "Community 2013"
-Cohesion: 0.67
-Nodes (3): monk-martial-arts, description, name
-
-### Community 2014 - "Community 2014"
-Cohesion: 0.67
-Nodes (3): monk-open-hand-fleet-step, description, name
-
-### Community 2015 - "Community 2015"
-Cohesion: 0.67
-Nodes (3): monk-open-hand-quivering-palm, description, name
-
-### Community 2016 - "Community 2016"
-Cohesion: 0.67
-Nodes (3): monk-open-hand-quivering-palm.mechanics.actions.0, description, summary
-
-### Community 2017 - "Community 2017"
-Cohesion: 0.67
-Nodes (3): monk-open-hand-technique, description, name
-
-### Community 2018 - "Community 2018"
-Cohesion: 0.67
-Nodes (3): monk-open-hand-wholeness-of-body, description, name
-
-### Community 2019 - "Community 2019"
-Cohesion: 0.67
-Nodes (3): monk-patient-defense, description, name
-
-### Community 2020 - "Community 2020"
-Cohesion: 0.67
-Nodes (3): acid, description, name
-
-### Community 2021 - "Community 2021"
-Cohesion: 0.67
-Nodes (3): alchemists-supplies, description, name
-
-### Community 2022 - "Community 2022"
-Cohesion: 0.67
-Nodes (3): antitoxin, description, name
-
-### Community 2023 - "Community 2023"
-Cohesion: 0.67
-Nodes (3): arcane-focus, description, name
-
-### Community 2024 - "Community 2024"
-Cohesion: 0.67
-Nodes (3): arrows, description, name
-
-### Community 2025 - "Community 2025"
-Cohesion: 0.67
-Nodes (3): backpack, description, name
-
-### Community 2026 - "Community 2026"
-Cohesion: 0.67
-Nodes (3): bagpipes, description, name
-
-### Community 2027 - "Community 2027"
-Cohesion: 0.67
-Nodes (3): ball-bearings, description, name
-
-### Community 2028 - "Community 2028"
-Cohesion: 0.67
-Nodes (3): basket, description, name
-
-### Community 2029 - "Community 2029"
-Cohesion: 0.67
-Nodes (3): battleaxe, description, name
-
-### Community 2030 - "Community 2030"
-Cohesion: 0.67
-Nodes (3): bedroll, description, name
-
-### Community 2031 - "Community 2031"
-Cohesion: 0.67
-Nodes (3): bell, description, name
-
-### Community 2032 - "Community 2032"
-Cohesion: 0.67
-Nodes (3): blanket, description, name
-
-### Community 2033 - "Community 2033"
-Cohesion: 0.67
-Nodes (3): block-and-tackle, description, name
-
-### Community 2034 - "Community 2034"
-Cohesion: 0.67
-Nodes (3): blowgun, description, name
-
-### Community 2035 - "Community 2035"
-Cohesion: 0.67
-Nodes (3): blowgun-needles, description, name
-
-### Community 2036 - "Community 2036"
-Cohesion: 0.67
-Nodes (3): book, description, name
-
-### Community 2037 - "Community 2037"
-Cohesion: 0.67
-Nodes (3): breastplate, description, name
-
-### Community 2038 - "Community 2038"
-Cohesion: 0.67
-Nodes (3): brewers-supplies, description, name
-
-### Community 2039 - "Community 2039"
-Cohesion: 0.67
-Nodes (3): bucket, description, name
-
-### Community 2040 - "Community 2040"
-Cohesion: 0.67
-Nodes (3): burglars-pack, description, name
-
-### Community 2041 - "Community 2041"
-Cohesion: 0.67
-Nodes (3): caltrops, description, name
-
-### Community 2042 - "Community 2042"
-Cohesion: 0.67
-Nodes (3): candle, description, name
-
-### Community 2043 - "Community 2043"
-Cohesion: 0.67
-Nodes (3): carpenters-tools, description, name
-
-### Community 2044 - "Community 2044"
-Cohesion: 0.67
-Nodes (3): cartographers-tools, description, name
-
-### Community 2045 - "Community 2045"
-Cohesion: 0.67
-Nodes (3): chain, description, name
-
-### Community 2046 - "Community 2046"
-Cohesion: 0.67
-Nodes (3): chain-mail, description, name
-
-### Community 2047 - "Community 2047"
-Cohesion: 0.67
-Nodes (3): chain-shirt, description, name
-
-### Community 2048 - "Community 2048"
-Cohesion: 0.67
-Nodes (3): climbers-kit, description, name
-
-### Community 2049 - "Community 2049"
-Cohesion: 0.67
-Nodes (3): clothes-fine, description, name
-
-### Community 2050 - "Community 2050"
-Cohesion: 0.67
-Nodes (3): clothes-travelers, description, name
-
-### Community 2051 - "Community 2051"
-Cohesion: 0.67
-Nodes (3): club, description, name
-
-### Community 2052 - "Community 2052"
-Cohesion: 0.67
-Nodes (3): cobblers-tools, description, name
-
-### Community 2053 - "Community 2053"
-Cohesion: 0.67
-Nodes (3): component-pouch, description, name
-
-### Community 2054 - "Community 2054"
-Cohesion: 0.67
-Nodes (3): cooks-utensils, description, name
-
-### Community 2055 - "Community 2055"
-Cohesion: 0.67
-Nodes (3): costume, description, name
-
-### Community 2056 - "Community 2056"
-Cohesion: 0.67
-Nodes (3): crossbow-bolts, description, name
-
-### Community 2057 - "Community 2057"
-Cohesion: 0.67
-Nodes (3): crowbar, description, name
-
-### Community 2058 - "Community 2058"
-Cohesion: 0.67
-Nodes (3): dagger, description, name
-
-### Community 2059 - "Community 2059"
-Cohesion: 0.67
-Nodes (3): dart, description, name
-
-### Community 2060 - "Community 2060"
-Cohesion: 0.67
-Nodes (3): diplomats-pack, description, name
-
-### Community 2061 - "Community 2061"
-Cohesion: 0.67
-Nodes (3): disguise-kit, description, name
-
-### Community 2062 - "Community 2062"
-Cohesion: 0.67
-Nodes (3): druidic-focus, description, name
-
-### Community 2063 - "Community 2063"
-Cohesion: 0.67
-Nodes (3): drum, description, name
-
-### Community 2064 - "Community 2064"
-Cohesion: 0.67
-Nodes (3): dulcimer, description, name
-
-### Community 2065 - "Community 2065"
-Cohesion: 0.67
-Nodes (3): dungeoneers-pack, description, name
-
-### Community 2066 - "Community 2066"
-Cohesion: 0.67
-Nodes (3): entertainers-pack, description, name
-
-### Community 2067 - "Community 2067"
-Cohesion: 0.67
-Nodes (3): explorers-pack, description, name
-
-### Community 2068 - "Community 2068"
-Cohesion: 0.67
-Nodes (3): firearm-bullets, description, name
-
-### Community 2069 - "Community 2069"
-Cohesion: 0.67
-Nodes (3): flail, description, name
-
-### Community 2070 - "Community 2070"
-Cohesion: 0.67
-Nodes (3): flute, description, name
-
-### Community 2071 - "Community 2071"
-Cohesion: 0.67
-Nodes (3): forgery-kit, description, name
-
-### Community 2072 - "Community 2072"
-Cohesion: 0.67
-Nodes (3): glaive, description, name
-
-### Community 2073 - "Community 2073"
-Cohesion: 0.67
-Nodes (3): glass-bottle, description, name
-
-### Community 2074 - "Community 2074"
-Cohesion: 0.67
-Nodes (3): glassblowers-tools, description, name
-
-### Community 2075 - "Community 2075"
-Cohesion: 0.67
-Nodes (3): grappling-hook, description, name
-
-### Community 2076 - "Community 2076"
-Cohesion: 0.67
-Nodes (3): greataxe, description, name
-
-### Community 2077 - "Community 2077"
-Cohesion: 0.67
-Nodes (3): greatclub, description, name
-
-### Community 2078 - "Community 2078"
-Cohesion: 0.67
-Nodes (3): greatsword, description, name
-
-### Community 2079 - "Community 2079"
-Cohesion: 0.67
-Nodes (3): halberd, description, name
-
-### Community 2080 - "Community 2080"
-Cohesion: 0.67
-Nodes (3): half-plate-armor, description, name
-
-### Community 2081 - "Community 2081"
-Cohesion: 0.67
-Nodes (3): hand-crossbow, description, name
-
-### Community 2082 - "Community 2082"
-Cohesion: 0.67
-Nodes (3): handaxe, description, name
-
-### Community 2083 - "Community 2083"
-Cohesion: 0.67
-Nodes (3): healers-kit, description, name
-
-### Community 2084 - "Community 2084"
-Cohesion: 0.67
-Nodes (3): heavy-crossbow, description, name
-
-### Community 2085 - "Community 2085"
-Cohesion: 0.67
-Nodes (3): herbalism-kit, description, name
-
-### Community 2086 - "Community 2086"
-Cohesion: 0.67
-Nodes (3): hide-armor, description, name
-
-### Community 2087 - "Community 2087"
-Cohesion: 0.67
-Nodes (3): holy-symbol, description, name
-
-### Community 2088 - "Community 2088"
-Cohesion: 0.67
-Nodes (3): holy-water, description, name
-
-### Community 2089 - "Community 2089"
-Cohesion: 0.67
-Nodes (3): horn, description, name
-
-### Community 2090 - "Community 2090"
-Cohesion: 0.67
-Nodes (3): hunting-trap, description, name
-
-### Community 2091 - "Community 2091"
-Cohesion: 0.67
-Nodes (3): ink, description, name
-
-### Community 2092 - "Community 2092"
-Cohesion: 0.67
-Nodes (3): ink-pen, description, name
-
-### Community 2093 - "Community 2093"
-Cohesion: 0.67
-Nodes (3): iron-pot, description, name
-
-### Community 2094 - "Community 2094"
-Cohesion: 0.67
-Nodes (3): iron-spikes, description, name
-
-### Community 2095 - "Community 2095"
-Cohesion: 0.67
-Nodes (3): javelin, description, name
-
-### Community 2096 - "Community 2096"
-Cohesion: 0.67
-Nodes (3): jewelers-tools, description, name
-
-### Community 2097 - "Community 2097"
-Cohesion: 0.67
-Nodes (3): ladder, description, name
-
-### Community 2098 - "Community 2098"
-Cohesion: 0.67
-Nodes (3): lamp, description, name
-
-### Community 2099 - "Community 2099"
-Cohesion: 0.67
-Nodes (3): lance, description, name
-
-### Community 2100 - "Community 2100"
-Cohesion: 0.67
-Nodes (3): lantern-bullseye, description, name
-
-### Community 2101 - "Community 2101"
-Cohesion: 0.67
-Nodes (3): lantern-hooded, description, name
-
-### Community 2102 - "Community 2102"
-Cohesion: 0.67
-Nodes (3): leather-armor, description, name
-
-### Community 2103 - "Community 2103"
-Cohesion: 0.67
-Nodes (3): leatherworkers-tools, description, name
-
-### Community 2104 - "Community 2104"
-Cohesion: 0.67
-Nodes (3): light-crossbow, description, name
-
-### Community 2105 - "Community 2105"
-Cohesion: 0.67
-Nodes (3): light-hammer, description, name
-
-### Community 2106 - "Community 2106"
-Cohesion: 0.67
-Nodes (3): longbow, description, name
-
-### Community 2107 - "Community 2107"
-Cohesion: 0.67
-Nodes (3): longsword, description, name
-
-### Community 2108 - "Community 2108"
-Cohesion: 0.67
-Nodes (3): lute, description, name
-
-### Community 2109 - "Community 2109"
-Cohesion: 0.67
-Nodes (3): lyre, description, name
-
-### Community 2110 - "Community 2110"
-Cohesion: 0.67
-Nodes (3): mace, description, name
-
-### Community 2111 - "Community 2111"
-Cohesion: 0.67
-Nodes (3): manacles, description, name
-
-### Community 2112 - "Community 2112"
-Cohesion: 0.67
-Nodes (3): map, description, name
-
-### Community 2113 - "Community 2113"
-Cohesion: 0.67
-Nodes (3): map-or-scroll-case, description, name
-
-### Community 2114 - "Community 2114"
-Cohesion: 0.67
-Nodes (3): masons-tools, description, name
-
-### Community 2115 - "Community 2115"
-Cohesion: 0.67
-Nodes (3): maul, description, name
-
-### Community 2116 - "Community 2116"
-Cohesion: 0.67
-Nodes (3): mirror, description, name
-
-### Community 2117 - "Community 2117"
-Cohesion: 0.67
-Nodes (3): morningstar, description, name
-
-### Community 2118 - "Community 2118"
-Cohesion: 0.67
-Nodes (3): musical-instrument, description, name
-
-### Community 2119 - "Community 2119"
-Cohesion: 0.67
-Nodes (3): musket, description, name
-
-### Community 2120 - "Community 2120"
-Cohesion: 0.67
-Nodes (3): navigators-tools, description, name
-
-### Community 2121 - "Community 2121"
-Cohesion: 0.67
-Nodes (3): net, description, name
-
-### Community 2122 - "Community 2122"
-Cohesion: 0.67
-Nodes (3): oil, description, name
-
-### Community 2123 - "Community 2123"
-Cohesion: 0.67
-Nodes (3): padded-armor, description, name
-
-### Community 2124 - "Community 2124"
-Cohesion: 0.67
-Nodes (3): painters-supplies, description, name
-
-### Community 2125 - "Community 2125"
-Cohesion: 0.67
-Nodes (3): pan-flute, description, name
-
-### Community 2126 - "Community 2126"
-Cohesion: 0.67
-Nodes (3): paper, description, name
-
-### Community 2127 - "Community 2127"
-Cohesion: 0.67
-Nodes (3): parchment, description, name
-
-### Community 2128 - "Community 2128"
-Cohesion: 0.67
-Nodes (3): perfume, description, name
-
-### Community 2129 - "Community 2129"
-Cohesion: 0.67
-Nodes (3): pike, description, name
-
-### Community 2130 - "Community 2130"
-Cohesion: 0.67
-Nodes (3): pistol, description, name
-
-### Community 2131 - "Community 2131"
-Cohesion: 0.67
-Nodes (3): plate-armor, description, name
-
-### Community 2132 - "Community 2132"
-Cohesion: 0.67
-Nodes (3): playing-card-set, description, name
-
-### Community 2133 - "Community 2133"
-Cohesion: 0.67
-Nodes (3): poison-basic, description, name
-
-### Community 2134 - "Community 2134"
-Cohesion: 0.67
-Nodes (3): poisoners-kit, description, name
-
-### Community 2135 - "Community 2135"
-Cohesion: 0.67
-Nodes (3): pole, description, name
-
-### Community 2136 - "Community 2136"
-Cohesion: 0.67
-Nodes (3): potters-tools, description, name
-
-### Community 2137 - "Community 2137"
-Cohesion: 0.67
-Nodes (3): pouch, description, name
-
-### Community 2138 - "Community 2138"
-Cohesion: 0.67
-Nodes (3): priests-pack, description, name
-
-### Community 2139 - "Community 2139"
-Cohesion: 0.67
-Nodes (3): quarterstaff, description, name
-
-### Community 2140 - "Community 2140"
-Cohesion: 0.67
-Nodes (3): quiver, description, name
-
-### Community 2141 - "Community 2141"
-Cohesion: 0.67
-Nodes (3): rapier, description, name
-
-### Community 2142 - "Community 2142"
-Cohesion: 0.67
-Nodes (3): rations, description, name
-
-### Community 2143 - "Community 2143"
-Cohesion: 0.67
-Nodes (3): ring-mail, description, name
-
-### Community 2144 - "Community 2144"
-Cohesion: 0.67
-Nodes (3): robe, description, name
-
-### Community 2145 - "Community 2145"
-Cohesion: 0.67
-Nodes (3): scale-mail, description, name
-
-### Community 2146 - "Community 2146"
-Cohesion: 0.67
-Nodes (3): scholars-pack, description, name
-
-### Community 2147 - "Community 2147"
-Cohesion: 0.67
-Nodes (3): scimitar, description, name
-
-### Community 2148 - "Community 2148"
-Cohesion: 0.67
-Nodes (3): shawm, description, name
-
-### Community 2149 - "Community 2149"
-Cohesion: 0.67
-Nodes (3): shield, description, name
-
-### Community 2150 - "Community 2150"
-Cohesion: 0.67
-Nodes (3): shortbow, description, name
-
-### Community 2151 - "Community 2151"
-Cohesion: 0.67
-Nodes (3): shortsword, description, name
-
-### Community 2152 - "Community 2152"
-Cohesion: 0.67
-Nodes (3): shovel, description, name
-
-### Community 2153 - "Community 2153"
-Cohesion: 0.67
-Nodes (3): sickle, description, name
-
-### Community 2154 - "Community 2154"
-Cohesion: 0.67
-Nodes (3): signal-whistle, description, name
-
-### Community 2155 - "Community 2155"
-Cohesion: 0.67
-Nodes (3): sling, description, name
-
-### Community 2156 - "Community 2156"
-Cohesion: 0.67
-Nodes (3): sling-bullets, description, name
-
-### Community 2157 - "Community 2157"
-Cohesion: 0.67
-Nodes (3): smiths-tools, description, name
-
-### Community 2158 - "Community 2158"
-Cohesion: 0.67
-Nodes (3): spear, description, name
-
-### Community 2159 - "Community 2159"
-Cohesion: 0.67
-Nodes (3): spellbook, description, name
-
-### Community 2160 - "Community 2160"
-Cohesion: 0.67
-Nodes (3): splint-armor, description, name
-
-### Community 2161 - "Community 2161"
-Cohesion: 0.67
-Nodes (3): string, description, name
-
-### Community 2162 - "Community 2162"
-Cohesion: 0.67
-Nodes (3): studded-leather-armor, description, name
-
-### Community 2163 - "Community 2163"
-Cohesion: 0.67
-Nodes (3): tent, description, name
-
-### Community 2164 - "Community 2164"
-Cohesion: 0.67
-Nodes (3): thieves-tools, description, name
-
-### Community 2165 - "Community 2165"
-Cohesion: 0.67
-Nodes (3): tinderbox, description, name
-
-### Community 2166 - "Community 2166"
-Cohesion: 0.67
-Nodes (3): tinkers-tools, description, name
-
-### Community 2167 - "Community 2167"
-Cohesion: 0.67
-Nodes (3): torch, description, name
-
-### Community 2168 - "Community 2168"
-Cohesion: 0.67
-Nodes (3): trident, description, name
-
-### Community 2169 - "Community 2169"
-Cohesion: 0.67
-Nodes (3): vial, description, name
-
-### Community 2170 - "Community 2170"
-Cohesion: 0.67
-Nodes (3): viol, description, name
-
-### Community 2171 - "Community 2171"
-Cohesion: 0.67
-Nodes (3): war-pick, description, name
-
-### Community 2172 - "Community 2172"
-Cohesion: 0.67
-Nodes (3): warhammer, description, name
-
-### Community 2173 - "Community 2173"
-Cohesion: 0.67
-Nodes (3): waterskin, description, name
-
-### Community 2174 - "Community 2174"
-Cohesion: 0.67
-Nodes (3): weavers-tools, description, name
-
-### Community 2175 - "Community 2175"
-Cohesion: 0.67
-Nodes (3): whip, description, name
-
-### Community 2176 - "Community 2176"
-Cohesion: 0.67
-Nodes (3): woodcarvers-tools, description, name
-
-### Community 2177 - "Community 2177"
-Cohesion: 0.67
-Nodes (3): alert, description, name
-
-### Community 2178 - "Community 2178"
-Cohesion: 0.67
-Nodes (3): boon-of-fate.mechanics.actions.0, description, summary
-
-### Community 2179 - "Community 2179"
-Cohesion: 0.67
-Nodes (3): magic-initiate-druid, description, name
-
-### Community 2180 - "Community 2180"
-Cohesion: 0.67
-Nodes (3): magic-initiate-wizard, description, name
-
-### Community 2181 - "Community 2181"
-Cohesion: 0.67
-Nodes (3): savage-attacker, description, name
-
-### Community 2182 - "Community 2182"
-Cohesion: 0.67
-Nodes (3): armor-of-shadows, description, name
-
-### Community 2183 - "Community 2183"
-Cohesion: 0.67
-Nodes (3): eldritch-mind, description, name
-
-### Community 2184 - "Community 2184"
-Cohesion: 0.67
-Nodes (3): pact-of-the-tome, description, name
-
-### Community 2185 - "Community 2185"
-Cohesion: 0.67
-Nodes (3): adamantine-armor, description, name
-
-### Community 2186 - "Community 2186"
-Cohesion: 0.67
-Nodes (3): ammunition-1-2-or-3, description, name
-
-### Community 2187 - "Community 2187"
-Cohesion: 0.67
-Nodes (3): amulet-of-health, description, name
-
-### Community 2188 - "Community 2188"
-Cohesion: 0.67
-Nodes (3): amulet-of-proof-against-detection-and-location, description, name
-
-### Community 2189 - "Community 2189"
-Cohesion: 0.67
-Nodes (3): amulet-of-the-planes, description, name
-
-### Community 2190 - "Community 2190"
-Cohesion: 0.67
-Nodes (3): animated-shield, description, name
-
-### Community 2191 - "Community 2191"
-Cohesion: 0.67
-Nodes (3): armor-of-invulnerability, description, name
-
-### Community 2192 - "Community 2192"
-Cohesion: 0.67
-Nodes (3): armor-of-resistance, description, name
-
-### Community 2193 - "Community 2193"
-Cohesion: 0.67
-Nodes (3): armor-of-vulnerability, description, name
-
-### Community 2194 - "Community 2194"
-Cohesion: 0.67
-Nodes (3): armor-plus-1, description, name
-
-### Community 2195 - "Community 2195"
-Cohesion: 0.67
-Nodes (3): armor-plus-3, description, name
-
-### Community 2196 - "Community 2196"
-Cohesion: 0.67
-Nodes (3): arrow-catching-shield, description, name
-
-### Community 2197 - "Community 2197"
-Cohesion: 0.67
-Nodes (3): bag-of-beans, description, name
-
-### Community 2198 - "Community 2198"
-Cohesion: 0.67
-Nodes (3): bag-of-devouring, description, name
-
-### Community 2199 - "Community 2199"
-Cohesion: 0.67
-Nodes (3): bag-of-holding, description, name
-
-### Community 2200 - "Community 2200"
-Cohesion: 0.67
-Nodes (3): bag-of-tricks, description, name
-
-### Community 2201 - "Community 2201"
-Cohesion: 0.67
-Nodes (3): bead-of-force, description, name
-
-### Community 2202 - "Community 2202"
-Cohesion: 0.67
-Nodes (3): bead-of-nourishment, description, name
-
-### Community 2203 - "Community 2203"
-Cohesion: 0.67
-Nodes (3): belt-of-dwarvenkind, description, name
-
-### Community 2204 - "Community 2204"
-Cohesion: 0.67
-Nodes (3): belt-of-giant-strength, description, name
-
-### Community 2205 - "Community 2205"
-Cohesion: 0.67
-Nodes (3): berserker-axe, description, name
-
-### Community 2206 - "Community 2206"
-Cohesion: 0.67
-Nodes (3): boots-of-elvenkind, description, name
-
-### Community 2207 - "Community 2207"
-Cohesion: 0.67
-Nodes (3): boots-of-levitation, description, name
-
-### Community 2208 - "Community 2208"
-Cohesion: 0.67
-Nodes (3): boots-of-speed, description, name
-
-### Community 2209 - "Community 2209"
-Cohesion: 0.67
-Nodes (3): boots-of-striding-and-springing, description, name
-
-### Community 2210 - "Community 2210"
-Cohesion: 0.67
-Nodes (3): boots-of-the-winterlands, description, name
-
-### Community 2211 - "Community 2211"
-Cohesion: 0.67
-Nodes (3): bowl-of-commanding-water-elementals, description, name
-
-### Community 2212 - "Community 2212"
-Cohesion: 0.67
-Nodes (3): bracers-of-archery, description, name
-
-### Community 2213 - "Community 2213"
-Cohesion: 0.67
-Nodes (3): bracers-of-defense, description, name
-
-### Community 2214 - "Community 2214"
-Cohesion: 0.67
-Nodes (3): brazier-of-commanding-fire-elementals, description, name
-
-### Community 2215 - "Community 2215"
-Cohesion: 0.67
-Nodes (3): brooch-of-shielding, description, name
-
-### Community 2216 - "Community 2216"
-Cohesion: 0.67
-Nodes (3): broom-of-flying, description, name
-
-### Community 2217 - "Community 2217"
-Cohesion: 0.67
-Nodes (3): cape-of-the-mountebank, description, name
-
-### Community 2218 - "Community 2218"
-Cohesion: 0.67
-Nodes (3): carpet-of-flying, description, name
-
-### Community 2219 - "Community 2219"
-Cohesion: 0.67
-Nodes (3): censer-of-controlling-air-elementals, description, name
-
-### Community 2220 - "Community 2220"
-Cohesion: 0.67
-Nodes (3): chime-of-opening, description, name
-
-### Community 2221 - "Community 2221"
-Cohesion: 0.67
-Nodes (3): circlet-of-blasting, description, name
-
-### Community 2222 - "Community 2222"
-Cohesion: 0.67
-Nodes (3): cloak-of-arachnida, description, name
-
-### Community 2223 - "Community 2223"
-Cohesion: 0.67
-Nodes (3): cloak-of-displacement, description, name
-
-### Community 2224 - "Community 2224"
-Cohesion: 0.67
-Nodes (3): cloak-of-elvenkind, description, name
-
-### Community 2225 - "Community 2225"
-Cohesion: 0.67
-Nodes (3): cloak-of-invisibility, description, name
-
-### Community 2226 - "Community 2226"
-Cohesion: 0.67
-Nodes (3): cloak-of-protection, description, name
-
-### Community 2227 - "Community 2227"
-Cohesion: 0.67
-Nodes (3): cloak-of-the-manta-ray, description, name
-
-### Community 2228 - "Community 2228"
-Cohesion: 0.67
-Nodes (3): crystal-ball, description, name
-
-### Community 2229 - "Community 2229"
-Cohesion: 0.67
-Nodes (3): crystal-ball-of-mind-reading, description, name
-
-### Community 2230 - "Community 2230"
-Cohesion: 0.67
-Nodes (3): crystal-ball-of-telepathy, description, name
-
-### Community 2231 - "Community 2231"
-Cohesion: 0.67
-Nodes (3): crystal-ball-of-true-seeing, description, name
-
-### Community 2232 - "Community 2232"
-Cohesion: 0.67
-Nodes (3): cubic-gate, description, name
-
-### Community 2233 - "Community 2233"
-Cohesion: 0.67
-Nodes (3): dagger-of-venom, description, name
-
-### Community 2234 - "Community 2234"
-Cohesion: 0.67
-Nodes (3): dancing-sword, description, name
-
-### Community 2235 - "Community 2235"
-Cohesion: 0.67
-Nodes (3): decanter-of-endless-water, description, name
-
-### Community 2236 - "Community 2236"
-Cohesion: 0.67
-Nodes (3): deck-of-illusions, description, name
-
-### Community 2237 - "Community 2237"
-Cohesion: 0.67
-Nodes (3): deck-of-many-things, description, name
-
-### Community 2238 - "Community 2238"
-Cohesion: 0.67
-Nodes (3): defender, description, name
-
-### Community 2239 - "Community 2239"
-Cohesion: 0.67
-Nodes (3): demon-armor, description, name
-
-### Community 2240 - "Community 2240"
-Cohesion: 0.67
-Nodes (3): dimensional-shackles, description, name
-
-### Community 2241 - "Community 2241"
-Cohesion: 0.67
-Nodes (3): dragon-scale-mail, description, name
-
-### Community 2242 - "Community 2242"
-Cohesion: 0.67
-Nodes (3): dragon-slayer, description, name
-
-### Community 2243 - "Community 2243"
-Cohesion: 0.67
-Nodes (3): dust-of-disappearance, description, name
-
-### Community 2244 - "Community 2244"
-Cohesion: 0.67
-Nodes (3): dust-of-dryness, description, name
-
-### Community 2245 - "Community 2245"
-Cohesion: 0.67
-Nodes (3): dwarven-plate, description, name
-
-### Community 2246 - "Community 2246"
-Cohesion: 0.67
-Nodes (3): efreeti-bottle, description, name
-
-### Community 2247 - "Community 2247"
-Cohesion: 0.67
-Nodes (3): elemental-gem, description, name
-
-### Community 2248 - "Community 2248"
-Cohesion: 0.67
-Nodes (3): elven-chain, description, name
-
-### Community 2249 - "Community 2249"
-Cohesion: 0.67
-Nodes (3): energy-bow, description, name
-
-### Community 2250 - "Community 2250"
-Cohesion: 0.67
-Nodes (3): eversmoking-bottle, description, name
-
-### Community 2251 - "Community 2251"
-Cohesion: 0.67
-Nodes (3): eyes-of-charming, description, name
-
-### Community 2252 - "Community 2252"
-Cohesion: 0.67
-Nodes (3): eyes-of-minute-seeing, description, name
-
-### Community 2253 - "Community 2253"
-Cohesion: 0.67
-Nodes (3): eyes-of-the-eagle, description, name
-
-### Community 2254 - "Community 2254"
-Cohesion: 0.67
-Nodes (3): figurine-of-wondrous-power, description, name
-
-### Community 2255 - "Community 2255"
-Cohesion: 0.67
-Nodes (3): flame-tongue, description, name
-
-### Community 2256 - "Community 2256"
-Cohesion: 0.67
-Nodes (3): folding-boat, description, name
-
-### Community 2257 - "Community 2257"
-Cohesion: 0.67
-Nodes (3): frost-brand, description, name
-
-### Community 2258 - "Community 2258"
-Cohesion: 0.67
-Nodes (3): gauntlets-of-ogre-power, description, name
-
-### Community 2259 - "Community 2259"
-Cohesion: 0.67
-Nodes (3): gem-of-brightness, description, name
-
-### Community 2260 - "Community 2260"
-Cohesion: 0.67
-Nodes (3): gem-of-seeing, description, name
-
-### Community 2261 - "Community 2261"
-Cohesion: 0.67
-Nodes (3): giant-slayer, description, name
-
-### Community 2262 - "Community 2262"
-Cohesion: 0.67
-Nodes (3): gloves-of-missile-snaring, description, name
-
-### Community 2263 - "Community 2263"
-Cohesion: 0.67
-Nodes (3): gloves-of-swimming-and-climbing, description, name
-
-### Community 2264 - "Community 2264"
-Cohesion: 0.67
-Nodes (3): gloves-of-thievery, description, name
-
-### Community 2265 - "Community 2265"
-Cohesion: 0.67
-Nodes (3): goggles-of-night, description, name
-
-### Community 2266 - "Community 2266"
-Cohesion: 0.67
-Nodes (3): hammer-of-thunderbolts, description, name
-
-### Community 2267 - "Community 2267"
-Cohesion: 0.67
-Nodes (3): hat-of-disguise, description, name
-
-### Community 2268 - "Community 2268"
-Cohesion: 0.67
-Nodes (3): headband-of-intellect, description, name
-
-### Community 2269 - "Community 2269"
-Cohesion: 0.67
-Nodes (3): helm-of-brilliance, description, name
-
-### Community 2270 - "Community 2270"
-Cohesion: 0.67
-Nodes (3): helm-of-comprehending-languages, description, name
-
-### Community 2271 - "Community 2271"
-Cohesion: 0.67
-Nodes (3): helm-of-telepathy, description, name
-
-### Community 2272 - "Community 2272"
-Cohesion: 0.67
-Nodes (3): helm-of-teleportation, description, name
-
-### Community 2273 - "Community 2273"
-Cohesion: 0.67
-Nodes (3): horn-of-blasting, description, name
-
-### Community 2274 - "Community 2274"
-Cohesion: 0.67
-Nodes (3): horn-of-valhalla, description, name
-
-### Community 2275 - "Community 2275"
-Cohesion: 0.67
-Nodes (3): horseshoes-of-a-zephyr, description, name
-
-### Community 2276 - "Community 2276"
-Cohesion: 0.67
-Nodes (3): horseshoes-of-speed, description, name
-
-### Community 2277 - "Community 2277"
-Cohesion: 0.67
-Nodes (3): immovable-rod, description, name
-
-### Community 2278 - "Community 2278"
-Cohesion: 0.67
-Nodes (3): javelin-of-lightning, description, name
-
-### Community 2279 - "Community 2279"
-Cohesion: 0.67
-Nodes (3): lantern-of-revealing, description, name
-
-### Community 2280 - "Community 2280"
-Cohesion: 0.67
-Nodes (3): luck-blade, description, name
-
-### Community 2281 - "Community 2281"
-Cohesion: 0.67
-Nodes (3): mace-of-disruption, description, name
-
-### Community 2282 - "Community 2282"
-Cohesion: 0.67
-Nodes (3): mace-of-smiting, description, name
-
-### Community 2283 - "Community 2283"
-Cohesion: 0.67
-Nodes (3): mace-of-terror, description, name
-
-### Community 2284 - "Community 2284"
-Cohesion: 0.67
-Nodes (3): mantle-of-spell-resistance, description, name
-
-### Community 2285 - "Community 2285"
-Cohesion: 0.67
-Nodes (3): manual-of-bodily-health, description, name
-
-### Community 2286 - "Community 2286"
-Cohesion: 0.67
-Nodes (3): manual-of-gainful-exercise, description, name
-
-### Community 2287 - "Community 2287"
-Cohesion: 0.67
-Nodes (3): manual-of-golems, description, name
-
-### Community 2288 - "Community 2288"
-Cohesion: 0.67
-Nodes (3): manual-of-quickness-of-action, description, name
-
-### Community 2289 - "Community 2289"
-Cohesion: 0.67
-Nodes (3): medallion-of-thoughts, description, name
-
-### Community 2290 - "Community 2290"
-Cohesion: 0.67
-Nodes (3): mirror-of-life-trapping, description, name
-
-### Community 2291 - "Community 2291"
-Cohesion: 0.67
-Nodes (3): mithral-armor, description, name
-
-### Community 2292 - "Community 2292"
-Cohesion: 0.67
-Nodes (3): necklace-of-adaptation, description, name
-
-### Community 2293 - "Community 2293"
-Cohesion: 0.67
-Nodes (3): necklace-of-fireballs, description, name
-
-### Community 2294 - "Community 2294"
-Cohesion: 0.67
-Nodes (3): nine-lives-stealer, description, name
-
-### Community 2295 - "Community 2295"
-Cohesion: 0.67
-Nodes (3): oathbow, description, name
-
-### Community 2296 - "Community 2296"
-Cohesion: 0.67
-Nodes (3): periapt-of-health, description, name
-
-### Community 2297 - "Community 2297"
-Cohesion: 0.67
-Nodes (3): periapt-of-proof-against-poison, description, name
-
-### Community 2298 - "Community 2298"
-Cohesion: 0.67
-Nodes (3): periapt-of-wound-closure, description, name
-
-### Community 2299 - "Community 2299"
-Cohesion: 0.67
-Nodes (3): pipes-of-haunting, description, name
-
-### Community 2300 - "Community 2300"
-Cohesion: 0.67
-Nodes (3): pipes-of-the-sewers, description, name
-
-### Community 2301 - "Community 2301"
-Cohesion: 0.67
-Nodes (3): plate-armor-of-etherealness, description, name
-
-### Community 2302 - "Community 2302"
-Cohesion: 0.67
-Nodes (3): portable-hole, description, name
-
-### Community 2303 - "Community 2303"
-Cohesion: 0.67
-Nodes (3): potion-of-flying, description, name
-
-### Community 2304 - "Community 2304"
-Cohesion: 0.67
-Nodes (3): aboleth.actions.consume-memories, name, text
-
-### Community 2305 - "Community 2305"
-Cohesion: 0.67
-Nodes (3): aboleth.actions.dominate-mind, name, text
-
-### Community 2306 - "Community 2306"
-Cohesion: 0.67
-Nodes (3): aboleth.actions.multiattack, name, text
-
-### Community 2307 - "Community 2307"
-Cohesion: 0.67
-Nodes (3): aboleth.actions.tentacle, name, text
-
-### Community 2308 - "Community 2308"
-Cohesion: 0.67
-Nodes (3): aboleth.legendaryActions.lash, name, text
-
-### Community 2309 - "Community 2309"
-Cohesion: 0.67
-Nodes (3): aboleth.legendaryActions.psychic-drain, name, text
-
-### Community 2310 - "Community 2310"
-Cohesion: 0.67
-Nodes (3): aboleth.traits.amphibious, name, text
-
-### Community 2311 - "Community 2311"
-Cohesion: 0.67
-Nodes (3): aboleth.traits.eldritch-restoration, name, text
-
-### Community 2312 - "Community 2312"
-Cohesion: 0.67
-Nodes (3): aboleth.traits.legendary-resistance, name, text
-
-### Community 2313 - "Community 2313"
-Cohesion: 0.67
-Nodes (3): aboleth.traits.mucus-cloud, name, text
-
-### Community 2314 - "Community 2314"
-Cohesion: 0.67
-Nodes (3): aboleth.traits.probing-telepathy, name, text
-
-### Community 2315 - "Community 2315"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.acid-breath, name, text
-
-### Community 2316 - "Community 2316"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.multiattack, name, text
-
-### Community 2317 - "Community 2317"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.rend, name, text
-
-### Community 2318 - "Community 2318"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.actions.spellcasting, name, text
-
-### Community 2319 - "Community 2319"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.legendaryActions.cloud-of-insects, name, text
-
-### Community 2320 - "Community 2320"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.legendaryActions.frightful-presence, name, text
-
-### Community 2321 - "Community 2321"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.legendaryActions.pounce, name, text
-
-### Community 2322 - "Community 2322"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.traits.amphibious, name, text
-
-### Community 2323 - "Community 2323"
-Cohesion: 0.67
-Nodes (3): adult-black-dragon.traits.legendary-resistance, name, text
-
-### Community 2324 - "Community 2324"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.lightning-breath, name, text
-
-### Community 2325 - "Community 2325"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.multiattack, name, text
-
-### Community 2326 - "Community 2326"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.rend, name, text
-
-### Community 2327 - "Community 2327"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.actions.spellcasting, name, text
-
-### Community 2328 - "Community 2328"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.legendaryActions.cloaked-flight, name, text
-
-### Community 2329 - "Community 2329"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.legendaryActions.sonic-boom, name, text
-
-### Community 2330 - "Community 2330"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.legendaryActions.tail-swipe, name, text
-
-### Community 2331 - "Community 2331"
-Cohesion: 0.67
-Nodes (3): adult-blue-dragon.traits.legendary-resistance, name, text
-
-### Community 2332 - "Community 2332"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.fire-breath, name, text
-
-### Community 2333 - "Community 2333"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.multiattack, name, text
-
-### Community 2334 - "Community 2334"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.rend, name, text
-
-### Community 2335 - "Community 2335"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.sleep-breath, name, text
-
-### Community 2336 - "Community 2336"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.actions.spellcasting, name, text
-
-### Community 2337 - "Community 2337"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.legendaryActions.blazing-light, name, text
-
-### Community 2338 - "Community 2338"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.legendaryActions.pounce, name, text
-
-### Community 2339 - "Community 2339"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.legendaryActions.scorching-sands, name, text
-
-### Community 2340 - "Community 2340"
-Cohesion: 0.67
-Nodes (3): adult-brass-dragon.traits.legendary-resistance, name, text
-
-### Community 2341 - "Community 2341"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.lightning-breath, name, text
-
-### Community 2342 - "Community 2342"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.multiattack, name, text
-
-### Community 2343 - "Community 2343"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.rend, name, text
-
-### Community 2344 - "Community 2344"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.actions.repulsion-breath, name, text
-
-### Community 2345 - "Community 2345"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.legendaryActions.guiding-light, name, text
-
-### Community 2346 - "Community 2346"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.legendaryActions.pounce, name, text
-
-### Community 2347 - "Community 2347"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.legendaryActions.thunderclap, name, text
-
-### Community 2348 - "Community 2348"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.traits.amphibious, name, text
-
-### Community 2349 - "Community 2349"
-Cohesion: 0.67
-Nodes (3): adult-bronze-dragon.traits.legendary-resistance, name, text
-
-### Community 2350 - "Community 2350"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.acid-breath, name, text
-
-### Community 2351 - "Community 2351"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.multiattack, name, text
-
-### Community 2352 - "Community 2352"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.rend, name, text
-
-### Community 2353 - "Community 2353"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.slowing-breath, name, text
-
-### Community 2354 - "Community 2354"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.actions.spellcasting, name, text
-
-### Community 2355 - "Community 2355"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.legendaryActions.giggling-magic, name, text
-
-### Community 2356 - "Community 2356"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.legendaryActions.mind-jolt, name, text
-
-### Community 2357 - "Community 2357"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.legendaryActions.pounce, name, text
-
-### Community 2358 - "Community 2358"
-Cohesion: 0.67
-Nodes (3): adult-copper-dragon.traits.legendary-resistance, name, text
-
-### Community 2359 - "Community 2359"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.fire-breath, name, text
-
-### Community 2360 - "Community 2360"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.multiattack, name, text
-
-### Community 2361 - "Community 2361"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.rend, name, text
-
-### Community 2362 - "Community 2362"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.spellcasting, name, text
-
-### Community 2363 - "Community 2363"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.actions.weakening-breath, name, text
-
-### Community 2364 - "Community 2364"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.legendaryActions.banish, name, text
-
-### Community 2365 - "Community 2365"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.legendaryActions.guiding-light, name, text
-
-### Community 2366 - "Community 2366"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.legendaryActions.pounce, name, text
-
-### Community 2367 - "Community 2367"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.traits.amphibious, name, text
-
-### Community 2368 - "Community 2368"
-Cohesion: 0.67
-Nodes (3): adult-gold-dragon.traits.legendary-resistance, name, text
-
-### Community 2369 - "Community 2369"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.multiattack, name, text
-
-### Community 2370 - "Community 2370"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.poison-breath, name, text
-
-### Community 2371 - "Community 2371"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.rend, name, text
-
-### Community 2372 - "Community 2372"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.actions.spellcasting, name, text
-
-### Community 2373 - "Community 2373"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.legendaryActions.mind-invasion, name, text
-
-### Community 2374 - "Community 2374"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.legendaryActions.noxious-miasma, name, text
-
-### Community 2375 - "Community 2375"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.legendaryActions.pounce, name, text
-
-### Community 2376 - "Community 2376"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.traits.amphibious, name, text
-
-### Community 2377 - "Community 2377"
-Cohesion: 0.67
-Nodes (3): adult-green-dragon.traits.legendary-resistance, name, text
-
-### Community 2378 - "Community 2378"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.fire-breath, name, text
-
-### Community 2379 - "Community 2379"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.multiattack, name, text
-
-### Community 2380 - "Community 2380"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.rend, name, text
-
-### Community 2381 - "Community 2381"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.actions.spellcasting, name, text
-
-### Community 2382 - "Community 2382"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.legendaryActions.commanding-presence, name, text
-
-### Community 2383 - "Community 2383"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.legendaryActions.fiery-rays, name, text
-
-### Community 2384 - "Community 2384"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.legendaryActions.pounce, name, text
-
-### Community 2385 - "Community 2385"
-Cohesion: 0.67
-Nodes (3): adult-red-dragon.traits.legendary-resistance, name, text
-
-### Community 2386 - "Community 2386"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.cold-breath, name, text
-
-### Community 2387 - "Community 2387"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.multiattack, name, text
-
-### Community 2388 - "Community 2388"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.paralyzing-breath, name, text
-
-### Community 2389 - "Community 2389"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.rend, name, text
-
-### Community 2390 - "Community 2390"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.actions.spellcasting, name, text
-
-### Community 2391 - "Community 2391"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.legendaryActions.chill, name, text
-
-### Community 2392 - "Community 2392"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.legendaryActions.pounce, name, text
-
-### Community 2393 - "Community 2393"
-Cohesion: 0.67
-Nodes (3): adult-silver-dragon.traits.legendary-resistance, name, text
-
-### Community 2394 - "Community 2394"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.actions.cold-breath, name, text
-
-### Community 2395 - "Community 2395"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.actions.multiattack, name, text
-
-### Community 2396 - "Community 2396"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.actions.rend, name, text
-
-### Community 2397 - "Community 2397"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.legendaryActions.freezing-burst, name, text
-
-### Community 2398 - "Community 2398"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.legendaryActions.frightful-presence, name, text
-
-### Community 2399 - "Community 2399"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.legendaryActions.pounce, name, text
-
-### Community 2400 - "Community 2400"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.traits.ice-walk, name, text
-
-### Community 2401 - "Community 2401"
-Cohesion: 0.67
-Nodes (3): adult-white-dragon.traits.legendary-resistance, name, text
-
-### Community 2402 - "Community 2402"
-Cohesion: 0.67
-Nodes (3): air-elemental.actions.multiattack, name, text
-
-### Community 2403 - "Community 2403"
-Cohesion: 0.67
-Nodes (3): air-elemental.actions.thunderous-slam, name, text
-
-### Community 2404 - "Community 2404"
-Cohesion: 0.67
-Nodes (3): air-elemental.actions.whirlwind, name, text
-
-### Community 2405 - "Community 2405"
-Cohesion: 0.67
-Nodes (3): air-elemental.traits.air-form, name, text
-
-### Community 2406 - "Community 2406"
-Cohesion: 0.67
-Nodes (3): allosaurus.actions.claws, name, text
-
-### Community 2407 - "Community 2407"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.acid-breath, name, text
-
-### Community 2408 - "Community 2408"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.multiattack, name, text
-
-### Community 2409 - "Community 2409"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.rend, name, text
-
-### Community 2410 - "Community 2410"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.actions.spellcasting, name, text
-
-### Community 2411 - "Community 2411"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.legendaryActions.cloud-of-insects, name, text
-
-### Community 2412 - "Community 2412"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.legendaryActions.frightful-presence, name, text
-
-### Community 2413 - "Community 2413"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.legendaryActions.pounce, name, text
-
-### Community 2414 - "Community 2414"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.traits.amphibious, name, text
-
-### Community 2415 - "Community 2415"
-Cohesion: 0.67
-Nodes (3): ancient-black-dragon.traits.legendary-resistance, name, text
-
-### Community 2416 - "Community 2416"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.lightning-breath, name, text
-
-### Community 2417 - "Community 2417"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.multiattack, name, text
-
-### Community 2418 - "Community 2418"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.rend, name, text
-
-### Community 2419 - "Community 2419"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.actions.spellcasting, name, text
-
-### Community 2420 - "Community 2420"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.legendaryActions.cloaked-flight, name, text
-
-### Community 2421 - "Community 2421"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.legendaryActions.sonic-boom, name, text
-
-### Community 2422 - "Community 2422"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.legendaryActions.tail-swipe, name, text
-
-### Community 2423 - "Community 2423"
-Cohesion: 0.67
-Nodes (3): ancient-blue-dragon.traits.legendary-resistance, name, text
-
-### Community 2424 - "Community 2424"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.fire-breath, name, text
-
-### Community 2425 - "Community 2425"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.multiattack, name, text
-
-### Community 2426 - "Community 2426"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.rend, name, text
-
-### Community 2427 - "Community 2427"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.sleep-breath, name, text
-
-### Community 2428 - "Community 2428"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.actions.spellcasting, name, text
-
-### Community 2429 - "Community 2429"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.legendaryActions.blazing-light, name, text
-
-### Community 2430 - "Community 2430"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.legendaryActions.pounce, name, text
-
-### Community 2431 - "Community 2431"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.legendaryActions.scorching-sands, name, text
-
-### Community 2432 - "Community 2432"
-Cohesion: 0.67
-Nodes (3): ancient-brass-dragon.traits.legendary-resistance, name, text
-
-### Community 2433 - "Community 2433"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.lightning-breath, name, text
-
-### Community 2434 - "Community 2434"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.multiattack, name, text
-
-### Community 2435 - "Community 2435"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.rend, name, text
-
-### Community 2436 - "Community 2436"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.repulsion-breath, name, text
-
-### Community 2437 - "Community 2437"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.actions.spellcasting, name, text
-
-### Community 2438 - "Community 2438"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.legendaryActions.pounce, name, text
-
-### Community 2439 - "Community 2439"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.legendaryActions.thunderclap, name, text
-
-### Community 2440 - "Community 2440"
-Cohesion: 0.67
-Nodes (3): ancient-bronze-dragon.traits.legendary-resistance, name, text
-
-### Community 2441 - "Community 2441"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.acid-breath, name, text
-
-### Community 2442 - "Community 2442"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.multiattack, name, text
-
-### Community 2443 - "Community 2443"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.rend, name, text
-
-### Community 2444 - "Community 2444"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.slowing-breath, name, text
-
-### Community 2445 - "Community 2445"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.actions.spellcasting, name, text
-
-### Community 2446 - "Community 2446"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.legendaryActions.giggling-magic, name, text
-
-### Community 2447 - "Community 2447"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.legendaryActions.mind-jolt, name, text
-
-### Community 2448 - "Community 2448"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.legendaryActions.pounce, name, text
-
-### Community 2449 - "Community 2449"
-Cohesion: 0.67
-Nodes (3): ancient-copper-dragon.traits.legendary-resistance, name, text
-
-### Community 2450 - "Community 2450"
-Cohesion: 0.67
-Nodes (3): ancient-gold-dragon.actions.multiattack, name, text
-
-### Community 2451 - "Community 2451"
-Cohesion: 0.67
-Nodes (3): ancient-gold-dragon.traits.amphibious, name, text
-
-### Community 2452 - "Community 2452"
-Cohesion: 0.67
-Nodes (3): ancient-gold-dragon.traits.legendary-resistance, name, text
-
-### Community 2453 - "Community 2453"
-Cohesion: 0.67
-Nodes (3): dragonborn.traits.breath-weapon, description, name
-
-### Community 2454 - "Community 2454"
-Cohesion: 0.67
-Nodes (3): dragonborn.traits.damage-resistance, description, name
-
-### Community 2455 - "Community 2455"
-Cohesion: 0.67
-Nodes (3): dragonborn.traits.darkvision, description, name
-
-### Community 2456 - "Community 2456"
-Cohesion: 0.67
-Nodes (3): dragonborn.traits.draconic-ancestry, description, name
-
-### Community 2457 - "Community 2457"
-Cohesion: 0.67
-Nodes (3): dragonborn.traits.draconic-flight, description, name
-
-### Community 2458 - "Community 2458"
-Cohesion: 0.67
-Nodes (3): dragonborn.traits.draconic-flight.mechanics.actions.0, description, summary
-
-### Community 2459 - "Community 2459"
-Cohesion: 0.67
-Nodes (3): dwarf.traits.darkvision, description, name
-
-### Community 2460 - "Community 2460"
-Cohesion: 0.67
-Nodes (3): dwarf.traits.dwarven-resilience, description, name
-
-### Community 2461 - "Community 2461"
-Cohesion: 0.67
-Nodes (3): dwarf.traits.dwarven-toughness, description, name
-
-### Community 2462 - "Community 2462"
-Cohesion: 0.67
-Nodes (3): dwarf.traits.stonecunning, description, name
-
-### Community 2463 - "Community 2463"
-Cohesion: 0.67
-Nodes (3): elf.traits.darkvision, description, name
-
-### Community 2464 - "Community 2464"
-Cohesion: 0.67
-Nodes (3): elf.traits.elven-lineage, description, name
-
-### Community 2465 - "Community 2465"
-Cohesion: 0.67
-Nodes (3): elf.traits.fey-ancestry, description, name
-
-### Community 2466 - "Community 2466"
-Cohesion: 0.67
-Nodes (3): elf.traits.keen-senses, description, name
-
-### Community 2467 - "Community 2467"
-Cohesion: 0.67
-Nodes (3): elf.traits.trance, description, name
-
-### Community 2468 - "Community 2468"
-Cohesion: 0.67
-Nodes (3): gnome.traits.darkvision, description, name
-
-### Community 2469 - "Community 2469"
-Cohesion: 0.67
-Nodes (3): gnome.traits.gnome-cunning, description, name
-
-### Community 2470 - "Community 2470"
-Cohesion: 0.67
-Nodes (3): gnome.traits.gnomish-lineage, description, name
-
-### Community 2471 - "Community 2471"
-Cohesion: 0.67
-Nodes (3): goliath.traits.giant-ancestry, description, name
-
-### Community 2472 - "Community 2472"
-Cohesion: 0.67
-Nodes (3): goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt, description, name
-
-### Community 2473 - "Community 2473"
-Cohesion: 0.67
-Nodes (3): goliath.traits.large-form, description, name
-
-### Community 2474 - "Community 2474"
-Cohesion: 0.67
-Nodes (3): goliath.traits.large-form.mechanics.actions.0, description, summary
-
-### Community 2475 - "Community 2475"
-Cohesion: 0.67
-Nodes (3): goliath.traits.powerful-build, description, name
-
-### Community 2476 - "Community 2476"
-Cohesion: 0.67
-Nodes (3): halfling.traits.brave, description, name
-
-### Community 2477 - "Community 2477"
-Cohesion: 0.67
-Nodes (3): halfling.traits.halfling-nimbleness, description, name
-
-### Community 2478 - "Community 2478"
-Cohesion: 0.67
-Nodes (3): halfling.traits.luck, description, name
-
-### Community 2479 - "Community 2479"
-Cohesion: 0.67
-Nodes (3): halfling.traits.naturally-stealthy, description, name
-
-### Community 2480 - "Community 2480"
-Cohesion: 0.67
 Nodes (3): human.traits.resourceful, description, name
 
-### Community 2481 - "Community 2481"
+### Community 1905 - "Community 1905"
 Cohesion: 0.67
 Nodes (3): human.traits.skillful, description, name
 
-### Community 2482 - "Community 2482"
+### Community 1906 - "Community 1906"
 Cohesion: 0.67
 Nodes (3): human.traits.versatile, description, name
 
-### Community 2483 - "Community 2483"
+### Community 1907 - "Community 1907"
+Cohesion: 0.67
+Nodes (3): orc, description, name
+
+### Community 1908 - "Community 1908"
 Cohesion: 0.67
 Nodes (3): orc.traits.adrenaline-rush, description, name
 
-### Community 2484 - "Community 2484"
+### Community 1909 - "Community 1909"
 Cohesion: 0.67
 Nodes (3): orc.traits.darkvision, description, name
 
-### Community 2485 - "Community 2485"
+### Community 1910 - "Community 1910"
 Cohesion: 0.67
 Nodes (3): orc.traits.relentless-endurance, description, name
 
-### Community 2486 - "Community 2486"
+### Community 1911 - "Community 1911"
+Cohesion: 0.67
+Nodes (3): tiefling, description, name
+
+### Community 1912 - "Community 1912"
 Cohesion: 0.67
 Nodes (3): tiefling.traits.darkvision, description, name
 
-### Community 2487 - "Community 2487"
+### Community 1913 - "Community 1913"
 Cohesion: 0.67
 Nodes (3): tiefling.traits.fiendish-legacy, description, name
 
-### Community 2488 - "Community 2488"
+### Community 1914 - "Community 1914"
 Cohesion: 0.67
 Nodes (3): tiefling.traits.otherworldly-presence, description, name
 
-### Community 2489 - "Community 2489"
+### Community 1915 - "Community 1915"
 Cohesion: 0.67
 Nodes (3): exhaustionBanner, detail, title
 
-### Community 2490 - "Community 2490"
+### Community 1916 - "Community 1916"
 Cohesion: 0.67
 Nodes (3): hpBand, healthy, nearDeath
 
+### Community 1917 - "Community 1917"
+Cohesion: 0.67
+Nodes (3): placeholder, noDefenses, noResources
+
+### Community 1919 - "Community 1919"
+Cohesion: 0.67
+Nodes (3): barbarian-berserker-frenzy, description, name
+
+### Community 1920 - "Community 1920"
+Cohesion: 0.67
+Nodes (3): barbarian-berserker-intimidating-presence.mechanics.actions.0, description, summary
+
+### Community 1921 - "Community 1921"
+Cohesion: 0.67
+Nodes (3): barbarian-berserker-mindless-rage, description, name
+
+### Community 1922 - "Community 1922"
+Cohesion: 0.67
+Nodes (3): barbarian-berserker-retaliation, description, name
+
+### Community 1923 - "Community 1923"
+Cohesion: 0.67
+Nodes (3): barbarian-brutal-strike, description, name
+
+### Community 1924 - "Community 1924"
+Cohesion: 0.67
+Nodes (3): barbarian-danger-sense, description, name
+
+### Community 1925 - "Community 1925"
+Cohesion: 0.67
+Nodes (3): barbarian-epic-boon, description, name
+
+### Community 1926 - "Community 1926"
+Cohesion: 0.67
+Nodes (3): barbarian-extra-attack, description, name
+
+### Community 1927 - "Community 1927"
+Cohesion: 0.67
+Nodes (3): barbarian-fast-movement, description, name
+
+### Community 1928 - "Community 1928"
+Cohesion: 0.67
+Nodes (3): barbarian-feral-instinct, description, name
+
+### Community 1929 - "Community 1929"
+Cohesion: 0.67
+Nodes (3): barbarian-improved-brutal-strike, description, name
+
+### Community 1930 - "Community 1930"
+Cohesion: 0.67
+Nodes (3): barbarian-indomitable-might, description, name
+
+### Community 1931 - "Community 1931"
+Cohesion: 0.67
+Nodes (3): barbarian-instinctive-pounce, description, name
+
+### Community 1932 - "Community 1932"
+Cohesion: 0.67
+Nodes (3): barbarian-persistent-rage, description, name
+
+### Community 1933 - "Community 1933"
+Cohesion: 0.67
+Nodes (3): barbarian-primal-champion, description, name
+
+### Community 1934 - "Community 1934"
+Cohesion: 0.67
+Nodes (3): barbarian-primal-knowledge, description, name
+
+### Community 1935 - "Community 1935"
+Cohesion: 0.67
+Nodes (3): barbarian-rage, description, name
+
+### Community 1936 - "Community 1936"
+Cohesion: 0.67
+Nodes (3): barbarian-reckless-attack, description, name
+
+### Community 1937 - "Community 1937"
+Cohesion: 0.67
+Nodes (3): barbarian-relentless-rage, description, name
+
+### Community 1938 - "Community 1938"
+Cohesion: 0.67
+Nodes (3): barbarian-unarmored-defense, description, name
+
+### Community 1939 - "Community 1939"
+Cohesion: 0.67
+Nodes (3): barbarian-weapon-mastery, description, name
+
+### Community 1940 - "Community 1940"
+Cohesion: 0.67
+Nodes (3): bard-asi, description, name
+
+### Community 1941 - "Community 1941"
+Cohesion: 0.67
+Nodes (3): bard-bardic-inspiration, description, name
+
+### Community 1942 - "Community 1942"
+Cohesion: 0.67
+Nodes (3): bard-countercharm, description, name
+
+### Community 1943 - "Community 1943"
+Cohesion: 0.67
+Nodes (3): bard-epic-boon, description, name
+
+### Community 1944 - "Community 1944"
+Cohesion: 0.67
+Nodes (3): bard-expertise, description, name
+
+### Community 1945 - "Community 1945"
+Cohesion: 0.67
+Nodes (3): bard-font-of-inspiration, description, name
+
+### Community 1946 - "Community 1946"
+Cohesion: 0.67
+Nodes (3): bard-jack-of-all-trades, description, name
+
+### Community 1947 - "Community 1947"
+Cohesion: 0.67
+Nodes (3): bard-lore-additional-magical-secrets, description, name
+
+### Community 1948 - "Community 1948"
+Cohesion: 0.67
+Nodes (3): bard-lore-bonus-proficiencies, description, name
+
+### Community 1949 - "Community 1949"
+Cohesion: 0.67
+Nodes (3): bard-lore-cutting-words, description, name
+
+### Community 1950 - "Community 1950"
+Cohesion: 0.67
+Nodes (3): bard-lore-peerless-skill, description, name
+
+### Community 1951 - "Community 1951"
+Cohesion: 0.67
+Nodes (3): bard-magical-secrets, description, name
+
+### Community 1952 - "Community 1952"
+Cohesion: 0.67
+Nodes (3): bard-spellcasting, description, name
+
+### Community 1953 - "Community 1953"
+Cohesion: 0.67
+Nodes (3): bard-superior-inspiration, description, name
+
+### Community 1954 - "Community 1954"
+Cohesion: 0.67
+Nodes (3): bard-words-of-creation, description, name
+
+### Community 1955 - "Community 1955"
+Cohesion: 0.67
+Nodes (3): cleric-blessed-strikes, description, name
+
+### Community 1956 - "Community 1956"
+Cohesion: 0.67
+Nodes (3): cleric-channel-divinity, description, name
+
+### Community 1957 - "Community 1957"
+Cohesion: 0.67
+Nodes (3): cleric-channel-divinity.mechanics.actions.0, description, label
+
+### Community 1958 - "Community 1958"
+Cohesion: 0.67
+Nodes (3): cleric-divine-intervention, description, name
+
+### Community 1959 - "Community 1959"
+Cohesion: 0.67
+Nodes (3): cleric-divine-intervention.mechanics.actions.0, description, summary
+
+### Community 1960 - "Community 1960"
+Cohesion: 0.67
+Nodes (3): cleric-divine-order, description, name
+
+### Community 1961 - "Community 1961"
+Cohesion: 0.67
+Nodes (3): cleric-divine-spark, description, name
+
+### Community 1962 - "Community 1962"
+Cohesion: 0.67
+Nodes (3): cleric-divine-spark.mechanics.actions.0, description, summary
+
+### Community 1963 - "Community 1963"
+Cohesion: 0.67
+Nodes (3): cleric-epic-boon, description, name
+
+### Community 1964 - "Community 1964"
+Cohesion: 0.67
+Nodes (3): cleric-improved-blessed-strikes, description, name
+
+### Community 1965 - "Community 1965"
+Cohesion: 0.67
+Nodes (3): cleric-improved-divine-intervention, description, name
+
+### Community 1966 - "Community 1966"
+Cohesion: 0.67
+Nodes (3): cleric-life-blessed-healer, description, name
+
+### Community 1967 - "Community 1967"
+Cohesion: 0.67
+Nodes (3): cleric-life-disciple-of-life, description, name
+
+### Community 1968 - "Community 1968"
+Cohesion: 0.67
+Nodes (3): cleric-life-preserve-life, description, name
+
+### Community 1969 - "Community 1969"
+Cohesion: 0.67
+Nodes (3): cleric-life-supreme-healing, description, name
+
+### Community 1970 - "Community 1970"
+Cohesion: 0.67
+Nodes (3): cleric-sear-undead, description, name
+
+### Community 1971 - "Community 1971"
+Cohesion: 0.67
+Nodes (3): cleric-sear-undead.mechanics.actions.0, description, summary
+
+### Community 1972 - "Community 1972"
+Cohesion: 0.67
+Nodes (3): cleric-spellcasting, description, name
+
+### Community 1973 - "Community 1973"
+Cohesion: 0.67
+Nodes (3): cleric-turn-undead, description, name
+
+### Community 1974 - "Community 1974"
+Cohesion: 0.67
+Nodes (3): cleric-turn-undead.mechanics.actions.0, description, summary
+
+### Community 1975 - "Community 1975"
+Cohesion: 0.67
+Nodes (3): druid-archdruid, description, name
+
+### Community 1976 - "Community 1976"
+Cohesion: 0.67
+Nodes (3): druid-beast-spells, description, name
+
+### Community 1977 - "Community 1977"
+Cohesion: 0.67
+Nodes (3): druid-druidic, description, name
+
+### Community 1978 - "Community 1978"
+Cohesion: 0.67
+Nodes (3): druid-elemental-fury, description, name
+
+### Community 1979 - "Community 1979"
+Cohesion: 0.67
+Nodes (3): druid-epic-boon, description, name
+
+### Community 1980 - "Community 1980"
+Cohesion: 0.67
+Nodes (3): druid-improved-elemental-fury, description, name
+
+### Community 1981 - "Community 1981"
+Cohesion: 0.67
+Nodes (3): druid-land-circle-spells, description, name
+
+### Community 1982 - "Community 1982"
+Cohesion: 0.67
+Nodes (3): druid-land-lands-aid, description, name
+
+### Community 1983 - "Community 1983"
+Cohesion: 0.67
+Nodes (3): druid-land-lands-aid.mechanics.actions.0, description, summary
+
+### Community 1984 - "Community 1984"
+Cohesion: 0.67
+Nodes (3): druid-land-natural-recovery, description, name
+
+### Community 1985 - "Community 1985"
+Cohesion: 0.67
+Nodes (3): druid-land-natures-sanctuary, description, name
+
+### Community 1986 - "Community 1986"
+Cohesion: 0.67
+Nodes (3): druid-land-natures-sanctuary.mechanics.actions.0, description, summary
+
+### Community 1987 - "Community 1987"
+Cohesion: 0.67
+Nodes (3): druid-land-natures-ward, description, name
+
+### Community 1988 - "Community 1988"
+Cohesion: 0.67
+Nodes (3): druid-primal-order, description, name
+
+### Community 1989 - "Community 1989"
+Cohesion: 0.67
+Nodes (3): druid-spellcasting, description, name
+
+### Community 1990 - "Community 1990"
+Cohesion: 0.67
+Nodes (3): druid-wild-companion, description, name
+
+### Community 1991 - "Community 1991"
+Cohesion: 0.67
+Nodes (3): druid-wild-resurgence, description, name
+
+### Community 1992 - "Community 1992"
+Cohesion: 0.67
+Nodes (3): druid-wild-shape, description, name
+
+### Community 1993 - "Community 1993"
+Cohesion: 0.67
+Nodes (3): fighter-action-surge, description, name
+
+### Community 1994 - "Community 1994"
+Cohesion: 0.67
+Nodes (3): fighter-action-surge.mechanics.actions.0, description, label
+
+### Community 1995 - "Community 1995"
+Cohesion: 0.67
+Nodes (3): fighter-champion-additional-fighting-style, description, name
+
+### Community 1996 - "Community 1996"
+Cohesion: 0.67
+Nodes (3): fighter-champion-heroic-warrior, description, name
+
+### Community 1997 - "Community 1997"
+Cohesion: 0.67
+Nodes (3): fighter-champion-improved-critical, description, name
+
+### Community 1998 - "Community 1998"
+Cohesion: 0.67
+Nodes (3): fighter-champion-remarkable-athlete, description, name
+
+### Community 1999 - "Community 1999"
+Cohesion: 0.67
+Nodes (3): fighter-champion-superior-critical, description, name
+
+### Community 2000 - "Community 2000"
+Cohesion: 0.67
+Nodes (3): fighter-champion-survivor, description, name
+
+### Community 2001 - "Community 2001"
+Cohesion: 0.67
+Nodes (3): fighter-epic-boon, description, name
+
+### Community 2002 - "Community 2002"
+Cohesion: 0.67
+Nodes (3): fighter-extra-attack, description, name
+
+### Community 2003 - "Community 2003"
+Cohesion: 0.67
+Nodes (3): fighter-extra-attack-2, description, name
+
+### Community 2004 - "Community 2004"
+Cohesion: 0.67
+Nodes (3): fighter-extra-attack-3, description, name
+
+### Community 2005 - "Community 2005"
+Cohesion: 0.67
+Nodes (3): fighter-fighting-style, description, name
+
+### Community 2006 - "Community 2006"
+Cohesion: 0.67
+Nodes (3): fighter-indomitable, description, name
+
+### Community 2007 - "Community 2007"
+Cohesion: 0.67
+Nodes (3): fighter-second-wind, description, name
+
+### Community 2008 - "Community 2008"
+Cohesion: 0.67
+Nodes (3): fighter-second-wind.mechanics.actions.0, description, label
+
+### Community 2009 - "Community 2009"
+Cohesion: 0.67
+Nodes (3): fighter-studied-attacks, description, name
+
+### Community 2010 - "Community 2010"
+Cohesion: 0.67
+Nodes (3): fighter-tactical-master, description, name
+
+### Community 2011 - "Community 2011"
+Cohesion: 0.67
+Nodes (3): fighter-tactical-mind, description, name
+
+### Community 2012 - "Community 2012"
+Cohesion: 0.67
+Nodes (3): fighter-tactical-mind.mechanics.actions.0, description, label
+
+### Community 2013 - "Community 2013"
+Cohesion: 0.67
+Nodes (3): fighter-tactical-shift, description, name
+
+### Community 2014 - "Community 2014"
+Cohesion: 0.67
+Nodes (3): fighter-weapon-mastery, description, name
+
+### Community 2015 - "Community 2015"
+Cohesion: 0.67
+Nodes (3): monk-acrobatic-movement, description, name
+
+### Community 2016 - "Community 2016"
+Cohesion: 0.67
+Nodes (3): monk-body-and-mind, description, name
+
+### Community 2017 - "Community 2017"
+Cohesion: 0.67
+Nodes (3): monk-deflect-attacks, description, name
+
+### Community 2018 - "Community 2018"
+Cohesion: 0.67
+Nodes (3): monk-deflect-energy, description, name
+
+### Community 2019 - "Community 2019"
+Cohesion: 0.67
+Nodes (3): monk-disciplined-survivor, description, name
+
+### Community 2020 - "Community 2020"
+Cohesion: 0.67
+Nodes (3): monk-empowered-strikes, description, name
+
+### Community 2021 - "Community 2021"
+Cohesion: 0.67
+Nodes (3): monk-evasion, description, name
+
+### Community 2022 - "Community 2022"
+Cohesion: 0.67
+Nodes (3): monk-extra-attack, description, name
+
+### Community 2023 - "Community 2023"
+Cohesion: 0.67
+Nodes (3): monk-flurry-of-blows, description, name
+
+### Community 2024 - "Community 2024"
+Cohesion: 0.67
+Nodes (3): monk-focus, description, name
+
+### Community 2025 - "Community 2025"
+Cohesion: 0.67
+Nodes (3): monk-heightened-focus, description, name
+
+### Community 2026 - "Community 2026"
+Cohesion: 0.67
+Nodes (3): monk-martial-arts, description, name
+
+### Community 2027 - "Community 2027"
+Cohesion: 0.67
+Nodes (3): monk-open-hand-fleet-step, description, name
+
+### Community 2028 - "Community 2028"
+Cohesion: 0.67
+Nodes (3): monk-open-hand-quivering-palm, description, name
+
+### Community 2029 - "Community 2029"
+Cohesion: 0.67
+Nodes (3): monk-open-hand-quivering-palm.mechanics.actions.0, description, summary
+
+### Community 2030 - "Community 2030"
+Cohesion: 0.67
+Nodes (3): monk-open-hand-technique, description, name
+
+### Community 2031 - "Community 2031"
+Cohesion: 0.67
+Nodes (3): monk-open-hand-wholeness-of-body, description, name
+
+### Community 2032 - "Community 2032"
+Cohesion: 0.67
+Nodes (3): monk-patient-defense, description, name
+
+### Community 2033 - "Community 2033"
+Cohesion: 0.67
+Nodes (3): acid, description, name
+
+### Community 2034 - "Community 2034"
+Cohesion: 0.67
+Nodes (3): alchemists-supplies, description, name
+
+### Community 2035 - "Community 2035"
+Cohesion: 0.67
+Nodes (3): antitoxin, description, name
+
+### Community 2036 - "Community 2036"
+Cohesion: 0.67
+Nodes (3): arcane-focus, description, name
+
+### Community 2037 - "Community 2037"
+Cohesion: 0.67
+Nodes (3): arrows, description, name
+
+### Community 2038 - "Community 2038"
+Cohesion: 0.67
+Nodes (3): backpack, description, name
+
+### Community 2039 - "Community 2039"
+Cohesion: 0.67
+Nodes (3): bagpipes, description, name
+
+### Community 2040 - "Community 2040"
+Cohesion: 0.67
+Nodes (3): ball-bearings, description, name
+
+### Community 2041 - "Community 2041"
+Cohesion: 0.67
+Nodes (3): basket, description, name
+
+### Community 2042 - "Community 2042"
+Cohesion: 0.67
+Nodes (3): battleaxe, description, name
+
+### Community 2043 - "Community 2043"
+Cohesion: 0.67
+Nodes (3): bedroll, description, name
+
+### Community 2044 - "Community 2044"
+Cohesion: 0.67
+Nodes (3): bell, description, name
+
+### Community 2045 - "Community 2045"
+Cohesion: 0.67
+Nodes (3): blanket, description, name
+
+### Community 2046 - "Community 2046"
+Cohesion: 0.67
+Nodes (3): block-and-tackle, description, name
+
+### Community 2047 - "Community 2047"
+Cohesion: 0.67
+Nodes (3): blowgun, description, name
+
+### Community 2048 - "Community 2048"
+Cohesion: 0.67
+Nodes (3): blowgun-needles, description, name
+
+### Community 2049 - "Community 2049"
+Cohesion: 0.67
+Nodes (3): book, description, name
+
+### Community 2050 - "Community 2050"
+Cohesion: 0.67
+Nodes (3): breastplate, description, name
+
+### Community 2051 - "Community 2051"
+Cohesion: 0.67
+Nodes (3): brewers-supplies, description, name
+
+### Community 2052 - "Community 2052"
+Cohesion: 0.67
+Nodes (3): bucket, description, name
+
+### Community 2053 - "Community 2053"
+Cohesion: 0.67
+Nodes (3): burglars-pack, description, name
+
+### Community 2054 - "Community 2054"
+Cohesion: 0.67
+Nodes (3): caltrops, description, name
+
+### Community 2055 - "Community 2055"
+Cohesion: 0.67
+Nodes (3): candle, description, name
+
+### Community 2056 - "Community 2056"
+Cohesion: 0.67
+Nodes (3): carpenters-tools, description, name
+
+### Community 2057 - "Community 2057"
+Cohesion: 0.67
+Nodes (3): cartographers-tools, description, name
+
+### Community 2058 - "Community 2058"
+Cohesion: 0.67
+Nodes (3): chain, description, name
+
+### Community 2059 - "Community 2059"
+Cohesion: 0.67
+Nodes (3): chain-mail, description, name
+
+### Community 2060 - "Community 2060"
+Cohesion: 0.67
+Nodes (3): chain-shirt, description, name
+
+### Community 2061 - "Community 2061"
+Cohesion: 0.67
+Nodes (3): climbers-kit, description, name
+
+### Community 2062 - "Community 2062"
+Cohesion: 0.67
+Nodes (3): clothes-fine, description, name
+
+### Community 2063 - "Community 2063"
+Cohesion: 0.67
+Nodes (3): clothes-travelers, description, name
+
+### Community 2064 - "Community 2064"
+Cohesion: 0.67
+Nodes (3): club, description, name
+
+### Community 2065 - "Community 2065"
+Cohesion: 0.67
+Nodes (3): cobblers-tools, description, name
+
+### Community 2066 - "Community 2066"
+Cohesion: 0.67
+Nodes (3): component-pouch, description, name
+
+### Community 2067 - "Community 2067"
+Cohesion: 0.67
+Nodes (3): cooks-utensils, description, name
+
+### Community 2068 - "Community 2068"
+Cohesion: 0.67
+Nodes (3): costume, description, name
+
+### Community 2069 - "Community 2069"
+Cohesion: 0.67
+Nodes (3): crossbow-bolts, description, name
+
+### Community 2070 - "Community 2070"
+Cohesion: 0.67
+Nodes (3): crowbar, description, name
+
+### Community 2071 - "Community 2071"
+Cohesion: 0.67
+Nodes (3): dagger, description, name
+
+### Community 2072 - "Community 2072"
+Cohesion: 0.67
+Nodes (3): dart, description, name
+
+### Community 2073 - "Community 2073"
+Cohesion: 0.67
+Nodes (3): diplomats-pack, description, name
+
+### Community 2074 - "Community 2074"
+Cohesion: 0.67
+Nodes (3): disguise-kit, description, name
+
+### Community 2075 - "Community 2075"
+Cohesion: 0.67
+Nodes (3): druidic-focus, description, name
+
+### Community 2076 - "Community 2076"
+Cohesion: 0.67
+Nodes (3): drum, description, name
+
+### Community 2077 - "Community 2077"
+Cohesion: 0.67
+Nodes (3): dulcimer, description, name
+
+### Community 2078 - "Community 2078"
+Cohesion: 0.67
+Nodes (3): dungeoneers-pack, description, name
+
+### Community 2079 - "Community 2079"
+Cohesion: 0.67
+Nodes (3): entertainers-pack, description, name
+
+### Community 2080 - "Community 2080"
+Cohesion: 0.67
+Nodes (3): explorers-pack, description, name
+
+### Community 2081 - "Community 2081"
+Cohesion: 0.67
+Nodes (3): firearm-bullets, description, name
+
+### Community 2082 - "Community 2082"
+Cohesion: 0.67
+Nodes (3): flail, description, name
+
+### Community 2083 - "Community 2083"
+Cohesion: 0.67
+Nodes (3): flute, description, name
+
+### Community 2084 - "Community 2084"
+Cohesion: 0.67
+Nodes (3): forgery-kit, description, name
+
+### Community 2085 - "Community 2085"
+Cohesion: 0.67
+Nodes (3): glaive, description, name
+
+### Community 2086 - "Community 2086"
+Cohesion: 0.67
+Nodes (3): glass-bottle, description, name
+
+### Community 2087 - "Community 2087"
+Cohesion: 0.67
+Nodes (3): glassblowers-tools, description, name
+
+### Community 2088 - "Community 2088"
+Cohesion: 0.67
+Nodes (3): grappling-hook, description, name
+
+### Community 2089 - "Community 2089"
+Cohesion: 0.67
+Nodes (3): greataxe, description, name
+
+### Community 2090 - "Community 2090"
+Cohesion: 0.67
+Nodes (3): greatclub, description, name
+
+### Community 2091 - "Community 2091"
+Cohesion: 0.67
+Nodes (3): greatsword, description, name
+
+### Community 2092 - "Community 2092"
+Cohesion: 0.67
+Nodes (3): halberd, description, name
+
+### Community 2093 - "Community 2093"
+Cohesion: 0.67
+Nodes (3): half-plate-armor, description, name
+
+### Community 2094 - "Community 2094"
+Cohesion: 0.67
+Nodes (3): hand-crossbow, description, name
+
+### Community 2095 - "Community 2095"
+Cohesion: 0.67
+Nodes (3): handaxe, description, name
+
+### Community 2096 - "Community 2096"
+Cohesion: 0.67
+Nodes (3): healers-kit, description, name
+
+### Community 2097 - "Community 2097"
+Cohesion: 0.67
+Nodes (3): heavy-crossbow, description, name
+
+### Community 2098 - "Community 2098"
+Cohesion: 0.67
+Nodes (3): herbalism-kit, description, name
+
+### Community 2099 - "Community 2099"
+Cohesion: 0.67
+Nodes (3): hide-armor, description, name
+
+### Community 2100 - "Community 2100"
+Cohesion: 0.67
+Nodes (3): holy-symbol, description, name
+
+### Community 2101 - "Community 2101"
+Cohesion: 0.67
+Nodes (3): holy-water, description, name
+
+### Community 2102 - "Community 2102"
+Cohesion: 0.67
+Nodes (3): horn, description, name
+
+### Community 2103 - "Community 2103"
+Cohesion: 0.67
+Nodes (3): hunting-trap, description, name
+
+### Community 2104 - "Community 2104"
+Cohesion: 0.67
+Nodes (3): ink, description, name
+
+### Community 2105 - "Community 2105"
+Cohesion: 0.67
+Nodes (3): ink-pen, description, name
+
+### Community 2106 - "Community 2106"
+Cohesion: 0.67
+Nodes (3): iron-pot, description, name
+
+### Community 2107 - "Community 2107"
+Cohesion: 0.67
+Nodes (3): iron-spikes, description, name
+
+### Community 2108 - "Community 2108"
+Cohesion: 0.67
+Nodes (3): javelin, description, name
+
+### Community 2109 - "Community 2109"
+Cohesion: 0.67
+Nodes (3): jewelers-tools, description, name
+
+### Community 2110 - "Community 2110"
+Cohesion: 0.67
+Nodes (3): ladder, description, name
+
+### Community 2111 - "Community 2111"
+Cohesion: 0.67
+Nodes (3): lamp, description, name
+
+### Community 2112 - "Community 2112"
+Cohesion: 0.67
+Nodes (3): lance, description, name
+
+### Community 2113 - "Community 2113"
+Cohesion: 0.67
+Nodes (3): lantern-bullseye, description, name
+
+### Community 2114 - "Community 2114"
+Cohesion: 0.67
+Nodes (3): lantern-hooded, description, name
+
+### Community 2115 - "Community 2115"
+Cohesion: 0.67
+Nodes (3): leather-armor, description, name
+
+### Community 2116 - "Community 2116"
+Cohesion: 0.67
+Nodes (3): leatherworkers-tools, description, name
+
+### Community 2117 - "Community 2117"
+Cohesion: 0.67
+Nodes (3): light-crossbow, description, name
+
+### Community 2118 - "Community 2118"
+Cohesion: 0.67
+Nodes (3): light-hammer, description, name
+
+### Community 2119 - "Community 2119"
+Cohesion: 0.67
+Nodes (3): longbow, description, name
+
+### Community 2120 - "Community 2120"
+Cohesion: 0.67
+Nodes (3): longsword, description, name
+
+### Community 2121 - "Community 2121"
+Cohesion: 0.67
+Nodes (3): lute, description, name
+
+### Community 2122 - "Community 2122"
+Cohesion: 0.67
+Nodes (3): lyre, description, name
+
+### Community 2123 - "Community 2123"
+Cohesion: 0.67
+Nodes (3): mace, description, name
+
+### Community 2124 - "Community 2124"
+Cohesion: 0.67
+Nodes (3): manacles, description, name
+
+### Community 2125 - "Community 2125"
+Cohesion: 0.67
+Nodes (3): map, description, name
+
+### Community 2126 - "Community 2126"
+Cohesion: 0.67
+Nodes (3): map-or-scroll-case, description, name
+
+### Community 2127 - "Community 2127"
+Cohesion: 0.67
+Nodes (3): masons-tools, description, name
+
+### Community 2128 - "Community 2128"
+Cohesion: 0.67
+Nodes (3): maul, description, name
+
+### Community 2129 - "Community 2129"
+Cohesion: 0.67
+Nodes (3): mirror, description, name
+
+### Community 2130 - "Community 2130"
+Cohesion: 0.67
+Nodes (3): morningstar, description, name
+
+### Community 2131 - "Community 2131"
+Cohesion: 0.67
+Nodes (3): musical-instrument, description, name
+
+### Community 2132 - "Community 2132"
+Cohesion: 0.67
+Nodes (3): musket, description, name
+
+### Community 2133 - "Community 2133"
+Cohesion: 0.67
+Nodes (3): navigators-tools, description, name
+
+### Community 2134 - "Community 2134"
+Cohesion: 0.67
+Nodes (3): net, description, name
+
+### Community 2135 - "Community 2135"
+Cohesion: 0.67
+Nodes (3): oil, description, name
+
+### Community 2136 - "Community 2136"
+Cohesion: 0.67
+Nodes (3): padded-armor, description, name
+
+### Community 2137 - "Community 2137"
+Cohesion: 0.67
+Nodes (3): painters-supplies, description, name
+
+### Community 2138 - "Community 2138"
+Cohesion: 0.67
+Nodes (3): pan-flute, description, name
+
+### Community 2139 - "Community 2139"
+Cohesion: 0.67
+Nodes (3): paper, description, name
+
+### Community 2140 - "Community 2140"
+Cohesion: 0.67
+Nodes (3): parchment, description, name
+
+### Community 2141 - "Community 2141"
+Cohesion: 0.67
+Nodes (3): perfume, description, name
+
+### Community 2142 - "Community 2142"
+Cohesion: 0.67
+Nodes (3): pike, description, name
+
+### Community 2143 - "Community 2143"
+Cohesion: 0.67
+Nodes (3): pistol, description, name
+
+### Community 2144 - "Community 2144"
+Cohesion: 0.67
+Nodes (3): plate-armor, description, name
+
+### Community 2145 - "Community 2145"
+Cohesion: 0.67
+Nodes (3): playing-card-set, description, name
+
+### Community 2146 - "Community 2146"
+Cohesion: 0.67
+Nodes (3): poison-basic, description, name
+
+### Community 2147 - "Community 2147"
+Cohesion: 0.67
+Nodes (3): poisoners-kit, description, name
+
+### Community 2148 - "Community 2148"
+Cohesion: 0.67
+Nodes (3): pole, description, name
+
+### Community 2149 - "Community 2149"
+Cohesion: 0.67
+Nodes (3): potters-tools, description, name
+
+### Community 2150 - "Community 2150"
+Cohesion: 0.67
+Nodes (3): pouch, description, name
+
+### Community 2151 - "Community 2151"
+Cohesion: 0.67
+Nodes (3): priests-pack, description, name
+
+### Community 2152 - "Community 2152"
+Cohesion: 0.67
+Nodes (3): quarterstaff, description, name
+
+### Community 2153 - "Community 2153"
+Cohesion: 0.67
+Nodes (3): quiver, description, name
+
+### Community 2154 - "Community 2154"
+Cohesion: 0.67
+Nodes (3): rapier, description, name
+
+### Community 2155 - "Community 2155"
+Cohesion: 0.67
+Nodes (3): rations, description, name
+
+### Community 2156 - "Community 2156"
+Cohesion: 0.67
+Nodes (3): ring-mail, description, name
+
+### Community 2157 - "Community 2157"
+Cohesion: 0.67
+Nodes (3): robe, description, name
+
+### Community 2158 - "Community 2158"
+Cohesion: 0.67
+Nodes (3): scale-mail, description, name
+
+### Community 2159 - "Community 2159"
+Cohesion: 0.67
+Nodes (3): scholars-pack, description, name
+
+### Community 2160 - "Community 2160"
+Cohesion: 0.67
+Nodes (3): scimitar, description, name
+
+### Community 2161 - "Community 2161"
+Cohesion: 0.67
+Nodes (3): shawm, description, name
+
+### Community 2162 - "Community 2162"
+Cohesion: 0.67
+Nodes (3): shield, description, name
+
+### Community 2163 - "Community 2163"
+Cohesion: 0.67
+Nodes (3): shortbow, description, name
+
+### Community 2164 - "Community 2164"
+Cohesion: 0.67
+Nodes (3): shortsword, description, name
+
+### Community 2165 - "Community 2165"
+Cohesion: 0.67
+Nodes (3): shovel, description, name
+
+### Community 2166 - "Community 2166"
+Cohesion: 0.67
+Nodes (3): sickle, description, name
+
+### Community 2167 - "Community 2167"
+Cohesion: 0.67
+Nodes (3): signal-whistle, description, name
+
+### Community 2168 - "Community 2168"
+Cohesion: 0.67
+Nodes (3): sling, description, name
+
+### Community 2169 - "Community 2169"
+Cohesion: 0.67
+Nodes (3): sling-bullets, description, name
+
+### Community 2170 - "Community 2170"
+Cohesion: 0.67
+Nodes (3): smiths-tools, description, name
+
+### Community 2171 - "Community 2171"
+Cohesion: 0.67
+Nodes (3): spear, description, name
+
+### Community 2172 - "Community 2172"
+Cohesion: 0.67
+Nodes (3): spellbook, description, name
+
+### Community 2173 - "Community 2173"
+Cohesion: 0.67
+Nodes (3): splint-armor, description, name
+
+### Community 2174 - "Community 2174"
+Cohesion: 0.67
+Nodes (3): string, description, name
+
+### Community 2175 - "Community 2175"
+Cohesion: 0.67
+Nodes (3): studded-leather-armor, description, name
+
+### Community 2176 - "Community 2176"
+Cohesion: 0.67
+Nodes (3): tent, description, name
+
+### Community 2177 - "Community 2177"
+Cohesion: 0.67
+Nodes (3): thieves-tools, description, name
+
+### Community 2178 - "Community 2178"
+Cohesion: 0.67
+Nodes (3): tinderbox, description, name
+
+### Community 2179 - "Community 2179"
+Cohesion: 0.67
+Nodes (3): tinkers-tools, description, name
+
+### Community 2180 - "Community 2180"
+Cohesion: 0.67
+Nodes (3): torch, description, name
+
+### Community 2181 - "Community 2181"
+Cohesion: 0.67
+Nodes (3): trident, description, name
+
+### Community 2182 - "Community 2182"
+Cohesion: 0.67
+Nodes (3): vial, description, name
+
+### Community 2183 - "Community 2183"
+Cohesion: 0.67
+Nodes (3): viol, description, name
+
+### Community 2184 - "Community 2184"
+Cohesion: 0.67
+Nodes (3): war-pick, description, name
+
+### Community 2185 - "Community 2185"
+Cohesion: 0.67
+Nodes (3): warhammer, description, name
+
+### Community 2186 - "Community 2186"
+Cohesion: 0.67
+Nodes (3): waterskin, description, name
+
+### Community 2187 - "Community 2187"
+Cohesion: 0.67
+Nodes (3): weavers-tools, description, name
+
+### Community 2188 - "Community 2188"
+Cohesion: 0.67
+Nodes (3): whip, description, name
+
+### Community 2189 - "Community 2189"
+Cohesion: 0.67
+Nodes (3): woodcarvers-tools, description, name
+
+### Community 2190 - "Community 2190"
+Cohesion: 0.67
+Nodes (3): alert, description, name
+
+### Community 2191 - "Community 2191"
+Cohesion: 0.67
+Nodes (3): boon-of-fate.mechanics.actions.0, description, summary
+
+### Community 2192 - "Community 2192"
+Cohesion: 0.67
+Nodes (3): magic-initiate-druid, description, name
+
+### Community 2193 - "Community 2193"
+Cohesion: 0.67
+Nodes (3): magic-initiate-wizard, description, name
+
+### Community 2194 - "Community 2194"
+Cohesion: 0.67
+Nodes (3): savage-attacker, description, name
+
+### Community 2195 - "Community 2195"
+Cohesion: 0.67
+Nodes (3): armor-of-shadows, description, name
+
+### Community 2196 - "Community 2196"
+Cohesion: 0.67
+Nodes (3): eldritch-mind, description, name
+
+### Community 2197 - "Community 2197"
+Cohesion: 0.67
+Nodes (3): pact-of-the-tome, description, name
+
+### Community 2198 - "Community 2198"
+Cohesion: 0.67
+Nodes (3): adamantine-armor, description, name
+
+### Community 2199 - "Community 2199"
+Cohesion: 0.67
+Nodes (3): ammunition-1-2-or-3, description, name
+
+### Community 2200 - "Community 2200"
+Cohesion: 0.67
+Nodes (3): amulet-of-health, description, name
+
+### Community 2201 - "Community 2201"
+Cohesion: 0.67
+Nodes (3): amulet-of-proof-against-detection-and-location, description, name
+
+### Community 2202 - "Community 2202"
+Cohesion: 0.67
+Nodes (3): amulet-of-the-planes, description, name
+
+### Community 2203 - "Community 2203"
+Cohesion: 0.67
+Nodes (3): animated-shield, description, name
+
+### Community 2204 - "Community 2204"
+Cohesion: 0.67
+Nodes (3): armor-of-invulnerability, description, name
+
+### Community 2205 - "Community 2205"
+Cohesion: 0.67
+Nodes (3): armor-of-resistance, description, name
+
+### Community 2206 - "Community 2206"
+Cohesion: 0.67
+Nodes (3): armor-of-vulnerability, description, name
+
+### Community 2207 - "Community 2207"
+Cohesion: 0.67
+Nodes (3): armor-plus-1, description, name
+
+### Community 2208 - "Community 2208"
+Cohesion: 0.67
+Nodes (3): armor-plus-3, description, name
+
+### Community 2209 - "Community 2209"
+Cohesion: 0.67
+Nodes (3): arrow-catching-shield, description, name
+
+### Community 2210 - "Community 2210"
+Cohesion: 0.67
+Nodes (3): bag-of-beans, description, name
+
+### Community 2211 - "Community 2211"
+Cohesion: 0.67
+Nodes (3): bag-of-devouring, description, name
+
+### Community 2212 - "Community 2212"
+Cohesion: 0.67
+Nodes (3): bag-of-holding, description, name
+
+### Community 2213 - "Community 2213"
+Cohesion: 0.67
+Nodes (3): bag-of-tricks, description, name
+
+### Community 2214 - "Community 2214"
+Cohesion: 0.67
+Nodes (3): bead-of-force, description, name
+
+### Community 2215 - "Community 2215"
+Cohesion: 0.67
+Nodes (3): bead-of-nourishment, description, name
+
+### Community 2216 - "Community 2216"
+Cohesion: 0.67
+Nodes (3): belt-of-dwarvenkind, description, name
+
+### Community 2217 - "Community 2217"
+Cohesion: 0.67
+Nodes (3): belt-of-giant-strength, description, name
+
+### Community 2218 - "Community 2218"
+Cohesion: 0.67
+Nodes (3): berserker-axe, description, name
+
+### Community 2219 - "Community 2219"
+Cohesion: 0.67
+Nodes (3): boots-of-elvenkind, description, name
+
+### Community 2220 - "Community 2220"
+Cohesion: 0.67
+Nodes (3): boots-of-levitation, description, name
+
+### Community 2221 - "Community 2221"
+Cohesion: 0.67
+Nodes (3): boots-of-speed, description, name
+
+### Community 2222 - "Community 2222"
+Cohesion: 0.67
+Nodes (3): boots-of-striding-and-springing, description, name
+
+### Community 2223 - "Community 2223"
+Cohesion: 0.67
+Nodes (3): boots-of-the-winterlands, description, name
+
+### Community 2224 - "Community 2224"
+Cohesion: 0.67
+Nodes (3): bowl-of-commanding-water-elementals, description, name
+
+### Community 2225 - "Community 2225"
+Cohesion: 0.67
+Nodes (3): bracers-of-archery, description, name
+
+### Community 2226 - "Community 2226"
+Cohesion: 0.67
+Nodes (3): bracers-of-defense, description, name
+
+### Community 2227 - "Community 2227"
+Cohesion: 0.67
+Nodes (3): brazier-of-commanding-fire-elementals, description, name
+
+### Community 2228 - "Community 2228"
+Cohesion: 0.67
+Nodes (3): brooch-of-shielding, description, name
+
+### Community 2229 - "Community 2229"
+Cohesion: 0.67
+Nodes (3): broom-of-flying, description, name
+
+### Community 2230 - "Community 2230"
+Cohesion: 0.67
+Nodes (3): cape-of-the-mountebank, description, name
+
+### Community 2231 - "Community 2231"
+Cohesion: 0.67
+Nodes (3): carpet-of-flying, description, name
+
+### Community 2232 - "Community 2232"
+Cohesion: 0.67
+Nodes (3): censer-of-controlling-air-elementals, description, name
+
+### Community 2233 - "Community 2233"
+Cohesion: 0.67
+Nodes (3): chime-of-opening, description, name
+
+### Community 2234 - "Community 2234"
+Cohesion: 0.67
+Nodes (3): circlet-of-blasting, description, name
+
+### Community 2235 - "Community 2235"
+Cohesion: 0.67
+Nodes (3): cloak-of-arachnida, description, name
+
+### Community 2236 - "Community 2236"
+Cohesion: 0.67
+Nodes (3): cloak-of-displacement, description, name
+
+### Community 2237 - "Community 2237"
+Cohesion: 0.67
+Nodes (3): cloak-of-elvenkind, description, name
+
+### Community 2238 - "Community 2238"
+Cohesion: 0.67
+Nodes (3): cloak-of-invisibility, description, name
+
+### Community 2239 - "Community 2239"
+Cohesion: 0.67
+Nodes (3): cloak-of-protection, description, name
+
+### Community 2240 - "Community 2240"
+Cohesion: 0.67
+Nodes (3): cloak-of-the-manta-ray, description, name
+
+### Community 2241 - "Community 2241"
+Cohesion: 0.67
+Nodes (3): crystal-ball, description, name
+
+### Community 2242 - "Community 2242"
+Cohesion: 0.67
+Nodes (3): crystal-ball-of-mind-reading, description, name
+
+### Community 2243 - "Community 2243"
+Cohesion: 0.67
+Nodes (3): crystal-ball-of-telepathy, description, name
+
+### Community 2244 - "Community 2244"
+Cohesion: 0.67
+Nodes (3): crystal-ball-of-true-seeing, description, name
+
+### Community 2245 - "Community 2245"
+Cohesion: 0.67
+Nodes (3): cubic-gate, description, name
+
+### Community 2246 - "Community 2246"
+Cohesion: 0.67
+Nodes (3): dagger-of-venom, description, name
+
+### Community 2247 - "Community 2247"
+Cohesion: 0.67
+Nodes (3): dancing-sword, description, name
+
+### Community 2248 - "Community 2248"
+Cohesion: 0.67
+Nodes (3): decanter-of-endless-water, description, name
+
+### Community 2249 - "Community 2249"
+Cohesion: 0.67
+Nodes (3): deck-of-illusions, description, name
+
+### Community 2250 - "Community 2250"
+Cohesion: 0.67
+Nodes (3): deck-of-many-things, description, name
+
+### Community 2251 - "Community 2251"
+Cohesion: 0.67
+Nodes (3): defender, description, name
+
+### Community 2252 - "Community 2252"
+Cohesion: 0.67
+Nodes (3): demon-armor, description, name
+
+### Community 2253 - "Community 2253"
+Cohesion: 0.67
+Nodes (3): dimensional-shackles, description, name
+
+### Community 2254 - "Community 2254"
+Cohesion: 0.67
+Nodes (3): dragon-scale-mail, description, name
+
+### Community 2255 - "Community 2255"
+Cohesion: 0.67
+Nodes (3): dragon-slayer, description, name
+
+### Community 2256 - "Community 2256"
+Cohesion: 0.67
+Nodes (3): dust-of-disappearance, description, name
+
+### Community 2257 - "Community 2257"
+Cohesion: 0.67
+Nodes (3): dust-of-dryness, description, name
+
+### Community 2258 - "Community 2258"
+Cohesion: 0.67
+Nodes (3): dwarven-plate, description, name
+
+### Community 2259 - "Community 2259"
+Cohesion: 0.67
+Nodes (3): efreeti-bottle, description, name
+
+### Community 2260 - "Community 2260"
+Cohesion: 0.67
+Nodes (3): elemental-gem, description, name
+
+### Community 2261 - "Community 2261"
+Cohesion: 0.67
+Nodes (3): elven-chain, description, name
+
+### Community 2262 - "Community 2262"
+Cohesion: 0.67
+Nodes (3): energy-bow, description, name
+
+### Community 2263 - "Community 2263"
+Cohesion: 0.67
+Nodes (3): eversmoking-bottle, description, name
+
+### Community 2264 - "Community 2264"
+Cohesion: 0.67
+Nodes (3): eyes-of-charming, description, name
+
+### Community 2265 - "Community 2265"
+Cohesion: 0.67
+Nodes (3): eyes-of-minute-seeing, description, name
+
+### Community 2266 - "Community 2266"
+Cohesion: 0.67
+Nodes (3): eyes-of-the-eagle, description, name
+
+### Community 2267 - "Community 2267"
+Cohesion: 0.67
+Nodes (3): figurine-of-wondrous-power, description, name
+
+### Community 2268 - "Community 2268"
+Cohesion: 0.67
+Nodes (3): flame-tongue, description, name
+
+### Community 2269 - "Community 2269"
+Cohesion: 0.67
+Nodes (3): folding-boat, description, name
+
+### Community 2270 - "Community 2270"
+Cohesion: 0.67
+Nodes (3): frost-brand, description, name
+
+### Community 2271 - "Community 2271"
+Cohesion: 0.67
+Nodes (3): gauntlets-of-ogre-power, description, name
+
+### Community 2272 - "Community 2272"
+Cohesion: 0.67
+Nodes (3): gem-of-brightness, description, name
+
+### Community 2273 - "Community 2273"
+Cohesion: 0.67
+Nodes (3): gem-of-seeing, description, name
+
+### Community 2274 - "Community 2274"
+Cohesion: 0.67
+Nodes (3): giant-slayer, description, name
+
+### Community 2275 - "Community 2275"
+Cohesion: 0.67
+Nodes (3): gloves-of-missile-snaring, description, name
+
+### Community 2276 - "Community 2276"
+Cohesion: 0.67
+Nodes (3): gloves-of-swimming-and-climbing, description, name
+
+### Community 2277 - "Community 2277"
+Cohesion: 0.67
+Nodes (3): gloves-of-thievery, description, name
+
+### Community 2278 - "Community 2278"
+Cohesion: 0.67
+Nodes (3): goggles-of-night, description, name
+
+### Community 2279 - "Community 2279"
+Cohesion: 0.67
+Nodes (3): hammer-of-thunderbolts, description, name
+
+### Community 2280 - "Community 2280"
+Cohesion: 0.67
+Nodes (3): hat-of-disguise, description, name
+
+### Community 2281 - "Community 2281"
+Cohesion: 0.67
+Nodes (3): headband-of-intellect, description, name
+
+### Community 2282 - "Community 2282"
+Cohesion: 0.67
+Nodes (3): helm-of-brilliance, description, name
+
+### Community 2283 - "Community 2283"
+Cohesion: 0.67
+Nodes (3): helm-of-comprehending-languages, description, name
+
+### Community 2284 - "Community 2284"
+Cohesion: 0.67
+Nodes (3): helm-of-telepathy, description, name
+
+### Community 2285 - "Community 2285"
+Cohesion: 0.67
+Nodes (3): helm-of-teleportation, description, name
+
+### Community 2286 - "Community 2286"
+Cohesion: 0.67
+Nodes (3): horn-of-blasting, description, name
+
+### Community 2287 - "Community 2287"
+Cohesion: 0.67
+Nodes (3): horn-of-valhalla, description, name
+
+### Community 2288 - "Community 2288"
+Cohesion: 0.67
+Nodes (3): horseshoes-of-a-zephyr, description, name
+
+### Community 2289 - "Community 2289"
+Cohesion: 0.67
+Nodes (3): horseshoes-of-speed, description, name
+
+### Community 2290 - "Community 2290"
+Cohesion: 0.67
+Nodes (3): immovable-rod, description, name
+
+### Community 2291 - "Community 2291"
+Cohesion: 0.67
+Nodes (3): javelin-of-lightning, description, name
+
+### Community 2292 - "Community 2292"
+Cohesion: 0.67
+Nodes (3): lantern-of-revealing, description, name
+
+### Community 2293 - "Community 2293"
+Cohesion: 0.67
+Nodes (3): luck-blade, description, name
+
+### Community 2294 - "Community 2294"
+Cohesion: 0.67
+Nodes (3): mace-of-disruption, description, name
+
+### Community 2295 - "Community 2295"
+Cohesion: 0.67
+Nodes (3): mace-of-smiting, description, name
+
+### Community 2296 - "Community 2296"
+Cohesion: 0.67
+Nodes (3): mace-of-terror, description, name
+
+### Community 2297 - "Community 2297"
+Cohesion: 0.67
+Nodes (3): mantle-of-spell-resistance, description, name
+
+### Community 2298 - "Community 2298"
+Cohesion: 0.67
+Nodes (3): manual-of-bodily-health, description, name
+
+### Community 2299 - "Community 2299"
+Cohesion: 0.67
+Nodes (3): manual-of-gainful-exercise, description, name
+
+### Community 2300 - "Community 2300"
+Cohesion: 0.67
+Nodes (3): manual-of-golems, description, name
+
+### Community 2301 - "Community 2301"
+Cohesion: 0.67
+Nodes (3): manual-of-quickness-of-action, description, name
+
+### Community 2302 - "Community 2302"
+Cohesion: 0.67
+Nodes (3): medallion-of-thoughts, description, name
+
+### Community 2303 - "Community 2303"
+Cohesion: 0.67
+Nodes (3): mirror-of-life-trapping, description, name
+
+### Community 2304 - "Community 2304"
+Cohesion: 0.67
+Nodes (3): mithral-armor, description, name
+
+### Community 2305 - "Community 2305"
+Cohesion: 0.67
+Nodes (3): necklace-of-adaptation, description, name
+
+### Community 2306 - "Community 2306"
+Cohesion: 0.67
+Nodes (3): necklace-of-fireballs, description, name
+
+### Community 2307 - "Community 2307"
+Cohesion: 0.67
+Nodes (3): nine-lives-stealer, description, name
+
+### Community 2308 - "Community 2308"
+Cohesion: 0.67
+Nodes (3): oathbow, description, name
+
+### Community 2309 - "Community 2309"
+Cohesion: 0.67
+Nodes (3): periapt-of-health, description, name
+
+### Community 2310 - "Community 2310"
+Cohesion: 0.67
+Nodes (3): periapt-of-proof-against-poison, description, name
+
+### Community 2311 - "Community 2311"
+Cohesion: 0.67
+Nodes (3): periapt-of-wound-closure, description, name
+
+### Community 2312 - "Community 2312"
+Cohesion: 0.67
+Nodes (3): pipes-of-haunting, description, name
+
+### Community 2313 - "Community 2313"
+Cohesion: 0.67
+Nodes (3): pipes-of-the-sewers, description, name
+
+### Community 2314 - "Community 2314"
+Cohesion: 0.67
+Nodes (3): plate-armor-of-etherealness, description, name
+
+### Community 2315 - "Community 2315"
+Cohesion: 0.67
+Nodes (3): portable-hole, description, name
+
+### Community 2316 - "Community 2316"
+Cohesion: 0.67
+Nodes (3): potion-of-flying, description, name
+
+### Community 2317 - "Community 2317"
+Cohesion: 0.67
+Nodes (3): aboleth.actions.consume-memories, name, text
+
+### Community 2318 - "Community 2318"
+Cohesion: 0.67
+Nodes (3): aboleth.actions.dominate-mind, name, text
+
+### Community 2319 - "Community 2319"
+Cohesion: 0.67
+Nodes (3): aboleth.actions.multiattack, name, text
+
+### Community 2320 - "Community 2320"
+Cohesion: 0.67
+Nodes (3): aboleth.actions.tentacle, name, text
+
+### Community 2321 - "Community 2321"
+Cohesion: 0.67
+Nodes (3): aboleth.legendaryActions.lash, name, text
+
+### Community 2322 - "Community 2322"
+Cohesion: 0.67
+Nodes (3): aboleth.legendaryActions.psychic-drain, name, text
+
+### Community 2323 - "Community 2323"
+Cohesion: 0.67
+Nodes (3): aboleth.traits.amphibious, name, text
+
+### Community 2324 - "Community 2324"
+Cohesion: 0.67
+Nodes (3): aboleth.traits.eldritch-restoration, name, text
+
+### Community 2325 - "Community 2325"
+Cohesion: 0.67
+Nodes (3): aboleth.traits.legendary-resistance, name, text
+
+### Community 2326 - "Community 2326"
+Cohesion: 0.67
+Nodes (3): aboleth.traits.mucus-cloud, name, text
+
+### Community 2327 - "Community 2327"
+Cohesion: 0.67
+Nodes (3): aboleth.traits.probing-telepathy, name, text
+
+### Community 2328 - "Community 2328"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.actions.acid-breath, name, text
+
+### Community 2329 - "Community 2329"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.actions.multiattack, name, text
+
+### Community 2330 - "Community 2330"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.actions.rend, name, text
+
+### Community 2331 - "Community 2331"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.actions.spellcasting, name, text
+
+### Community 2332 - "Community 2332"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.legendaryActions.cloud-of-insects, name, text
+
+### Community 2333 - "Community 2333"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.legendaryActions.frightful-presence, name, text
+
+### Community 2334 - "Community 2334"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.legendaryActions.pounce, name, text
+
+### Community 2335 - "Community 2335"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.traits.amphibious, name, text
+
+### Community 2336 - "Community 2336"
+Cohesion: 0.67
+Nodes (3): adult-black-dragon.traits.legendary-resistance, name, text
+
+### Community 2337 - "Community 2337"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.actions.lightning-breath, name, text
+
+### Community 2338 - "Community 2338"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.actions.multiattack, name, text
+
+### Community 2339 - "Community 2339"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.actions.rend, name, text
+
+### Community 2340 - "Community 2340"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.actions.spellcasting, name, text
+
+### Community 2341 - "Community 2341"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.legendaryActions.cloaked-flight, name, text
+
+### Community 2342 - "Community 2342"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.legendaryActions.sonic-boom, name, text
+
+### Community 2343 - "Community 2343"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.legendaryActions.tail-swipe, name, text
+
+### Community 2344 - "Community 2344"
+Cohesion: 0.67
+Nodes (3): adult-blue-dragon.traits.legendary-resistance, name, text
+
+### Community 2345 - "Community 2345"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.actions.fire-breath, name, text
+
+### Community 2346 - "Community 2346"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.actions.multiattack, name, text
+
+### Community 2347 - "Community 2347"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.actions.rend, name, text
+
+### Community 2348 - "Community 2348"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.actions.sleep-breath, name, text
+
+### Community 2349 - "Community 2349"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.actions.spellcasting, name, text
+
+### Community 2350 - "Community 2350"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.legendaryActions.blazing-light, name, text
+
+### Community 2351 - "Community 2351"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.legendaryActions.pounce, name, text
+
+### Community 2352 - "Community 2352"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.legendaryActions.scorching-sands, name, text
+
+### Community 2353 - "Community 2353"
+Cohesion: 0.67
+Nodes (3): adult-brass-dragon.traits.legendary-resistance, name, text
+
+### Community 2354 - "Community 2354"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.actions.lightning-breath, name, text
+
+### Community 2355 - "Community 2355"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.actions.multiattack, name, text
+
+### Community 2356 - "Community 2356"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.actions.rend, name, text
+
+### Community 2357 - "Community 2357"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.actions.repulsion-breath, name, text
+
+### Community 2358 - "Community 2358"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.legendaryActions.guiding-light, name, text
+
+### Community 2359 - "Community 2359"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.legendaryActions.pounce, name, text
+
+### Community 2360 - "Community 2360"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.legendaryActions.thunderclap, name, text
+
+### Community 2361 - "Community 2361"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.traits.amphibious, name, text
+
+### Community 2362 - "Community 2362"
+Cohesion: 0.67
+Nodes (3): adult-bronze-dragon.traits.legendary-resistance, name, text
+
+### Community 2363 - "Community 2363"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.actions.acid-breath, name, text
+
+### Community 2364 - "Community 2364"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.actions.multiattack, name, text
+
+### Community 2365 - "Community 2365"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.actions.rend, name, text
+
+### Community 2366 - "Community 2366"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.actions.slowing-breath, name, text
+
+### Community 2367 - "Community 2367"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.actions.spellcasting, name, text
+
+### Community 2368 - "Community 2368"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.legendaryActions.giggling-magic, name, text
+
+### Community 2369 - "Community 2369"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.legendaryActions.mind-jolt, name, text
+
+### Community 2370 - "Community 2370"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.legendaryActions.pounce, name, text
+
+### Community 2371 - "Community 2371"
+Cohesion: 0.67
+Nodes (3): adult-copper-dragon.traits.legendary-resistance, name, text
+
+### Community 2372 - "Community 2372"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.actions.fire-breath, name, text
+
+### Community 2373 - "Community 2373"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.actions.multiattack, name, text
+
+### Community 2374 - "Community 2374"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.actions.rend, name, text
+
+### Community 2375 - "Community 2375"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.actions.spellcasting, name, text
+
+### Community 2376 - "Community 2376"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.actions.weakening-breath, name, text
+
+### Community 2377 - "Community 2377"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.legendaryActions.banish, name, text
+
+### Community 2378 - "Community 2378"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.legendaryActions.guiding-light, name, text
+
+### Community 2379 - "Community 2379"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.legendaryActions.pounce, name, text
+
+### Community 2380 - "Community 2380"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.traits.amphibious, name, text
+
+### Community 2381 - "Community 2381"
+Cohesion: 0.67
+Nodes (3): adult-gold-dragon.traits.legendary-resistance, name, text
+
+### Community 2382 - "Community 2382"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.actions.multiattack, name, text
+
+### Community 2383 - "Community 2383"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.actions.poison-breath, name, text
+
+### Community 2384 - "Community 2384"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.actions.rend, name, text
+
+### Community 2385 - "Community 2385"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.actions.spellcasting, name, text
+
+### Community 2386 - "Community 2386"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.legendaryActions.mind-invasion, name, text
+
+### Community 2387 - "Community 2387"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.legendaryActions.noxious-miasma, name, text
+
+### Community 2388 - "Community 2388"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.legendaryActions.pounce, name, text
+
+### Community 2389 - "Community 2389"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.traits.amphibious, name, text
+
+### Community 2390 - "Community 2390"
+Cohesion: 0.67
+Nodes (3): adult-green-dragon.traits.legendary-resistance, name, text
+
+### Community 2391 - "Community 2391"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.actions.fire-breath, name, text
+
+### Community 2392 - "Community 2392"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.actions.multiattack, name, text
+
+### Community 2393 - "Community 2393"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.actions.rend, name, text
+
+### Community 2394 - "Community 2394"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.actions.spellcasting, name, text
+
+### Community 2395 - "Community 2395"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.legendaryActions.commanding-presence, name, text
+
+### Community 2396 - "Community 2396"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.legendaryActions.fiery-rays, name, text
+
+### Community 2397 - "Community 2397"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.legendaryActions.pounce, name, text
+
+### Community 2398 - "Community 2398"
+Cohesion: 0.67
+Nodes (3): adult-red-dragon.traits.legendary-resistance, name, text
+
+### Community 2399 - "Community 2399"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.actions.cold-breath, name, text
+
+### Community 2400 - "Community 2400"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.actions.multiattack, name, text
+
+### Community 2401 - "Community 2401"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.actions.paralyzing-breath, name, text
+
+### Community 2402 - "Community 2402"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.actions.rend, name, text
+
+### Community 2403 - "Community 2403"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.actions.spellcasting, name, text
+
+### Community 2404 - "Community 2404"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.legendaryActions.chill, name, text
+
+### Community 2405 - "Community 2405"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.legendaryActions.pounce, name, text
+
+### Community 2406 - "Community 2406"
+Cohesion: 0.67
+Nodes (3): adult-silver-dragon.traits.legendary-resistance, name, text
+
+### Community 2407 - "Community 2407"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.actions.cold-breath, name, text
+
+### Community 2408 - "Community 2408"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.actions.multiattack, name, text
+
+### Community 2409 - "Community 2409"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.actions.rend, name, text
+
+### Community 2410 - "Community 2410"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.legendaryActions.freezing-burst, name, text
+
+### Community 2411 - "Community 2411"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.legendaryActions.frightful-presence, name, text
+
+### Community 2412 - "Community 2412"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.legendaryActions.pounce, name, text
+
+### Community 2413 - "Community 2413"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.traits.ice-walk, name, text
+
+### Community 2414 - "Community 2414"
+Cohesion: 0.67
+Nodes (3): adult-white-dragon.traits.legendary-resistance, name, text
+
+### Community 2415 - "Community 2415"
+Cohesion: 0.67
+Nodes (3): air-elemental.actions.multiattack, name, text
+
+### Community 2416 - "Community 2416"
+Cohesion: 0.67
+Nodes (3): air-elemental.actions.thunderous-slam, name, text
+
+### Community 2417 - "Community 2417"
+Cohesion: 0.67
+Nodes (3): air-elemental.actions.whirlwind, name, text
+
+### Community 2418 - "Community 2418"
+Cohesion: 0.67
+Nodes (3): air-elemental.traits.air-form, name, text
+
+### Community 2419 - "Community 2419"
+Cohesion: 0.67
+Nodes (3): allosaurus.actions.claws, name, text
+
+### Community 2420 - "Community 2420"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.actions.acid-breath, name, text
+
+### Community 2421 - "Community 2421"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.actions.multiattack, name, text
+
+### Community 2422 - "Community 2422"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.actions.rend, name, text
+
+### Community 2423 - "Community 2423"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.actions.spellcasting, name, text
+
+### Community 2424 - "Community 2424"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.legendaryActions.cloud-of-insects, name, text
+
+### Community 2425 - "Community 2425"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.legendaryActions.frightful-presence, name, text
+
+### Community 2426 - "Community 2426"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.legendaryActions.pounce, name, text
+
+### Community 2427 - "Community 2427"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.traits.amphibious, name, text
+
+### Community 2428 - "Community 2428"
+Cohesion: 0.67
+Nodes (3): ancient-black-dragon.traits.legendary-resistance, name, text
+
+### Community 2429 - "Community 2429"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.actions.lightning-breath, name, text
+
+### Community 2430 - "Community 2430"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.actions.multiattack, name, text
+
+### Community 2431 - "Community 2431"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.actions.rend, name, text
+
+### Community 2432 - "Community 2432"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.actions.spellcasting, name, text
+
+### Community 2433 - "Community 2433"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.legendaryActions.cloaked-flight, name, text
+
+### Community 2434 - "Community 2434"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.legendaryActions.sonic-boom, name, text
+
+### Community 2435 - "Community 2435"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.legendaryActions.tail-swipe, name, text
+
+### Community 2436 - "Community 2436"
+Cohesion: 0.67
+Nodes (3): ancient-blue-dragon.traits.legendary-resistance, name, text
+
+### Community 2437 - "Community 2437"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.actions.fire-breath, name, text
+
+### Community 2438 - "Community 2438"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.actions.multiattack, name, text
+
+### Community 2439 - "Community 2439"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.actions.rend, name, text
+
+### Community 2440 - "Community 2440"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.actions.sleep-breath, name, text
+
+### Community 2441 - "Community 2441"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.actions.spellcasting, name, text
+
+### Community 2442 - "Community 2442"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.legendaryActions.blazing-light, name, text
+
+### Community 2443 - "Community 2443"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.legendaryActions.pounce, name, text
+
+### Community 2444 - "Community 2444"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.legendaryActions.scorching-sands, name, text
+
+### Community 2445 - "Community 2445"
+Cohesion: 0.67
+Nodes (3): ancient-brass-dragon.traits.legendary-resistance, name, text
+
+### Community 2446 - "Community 2446"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.actions.lightning-breath, name, text
+
+### Community 2447 - "Community 2447"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.actions.multiattack, name, text
+
+### Community 2448 - "Community 2448"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.actions.rend, name, text
+
+### Community 2449 - "Community 2449"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.actions.repulsion-breath, name, text
+
+### Community 2450 - "Community 2450"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.actions.spellcasting, name, text
+
+### Community 2451 - "Community 2451"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.legendaryActions.pounce, name, text
+
+### Community 2452 - "Community 2452"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.legendaryActions.thunderclap, name, text
+
+### Community 2453 - "Community 2453"
+Cohesion: 0.67
+Nodes (3): ancient-bronze-dragon.traits.legendary-resistance, name, text
+
+### Community 2454 - "Community 2454"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.actions.acid-breath, name, text
+
+### Community 2455 - "Community 2455"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.actions.multiattack, name, text
+
+### Community 2456 - "Community 2456"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.actions.rend, name, text
+
+### Community 2457 - "Community 2457"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.actions.slowing-breath, name, text
+
+### Community 2458 - "Community 2458"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.actions.spellcasting, name, text
+
+### Community 2459 - "Community 2459"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.legendaryActions.giggling-magic, name, text
+
+### Community 2460 - "Community 2460"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.legendaryActions.mind-jolt, name, text
+
+### Community 2461 - "Community 2461"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.legendaryActions.pounce, name, text
+
+### Community 2462 - "Community 2462"
+Cohesion: 0.67
+Nodes (3): ancient-copper-dragon.traits.legendary-resistance, name, text
+
+### Community 2463 - "Community 2463"
+Cohesion: 0.67
+Nodes (3): ancient-gold-dragon.actions.multiattack, name, text
+
+### Community 2464 - "Community 2464"
+Cohesion: 0.67
+Nodes (3): ancient-gold-dragon.traits.amphibious, name, text
+
+### Community 2465 - "Community 2465"
+Cohesion: 0.67
+Nodes (3): ancient-gold-dragon.traits.legendary-resistance, name, text
+
+### Community 2466 - "Community 2466"
+Cohesion: 0.67
+Nodes (3): dragonborn, description, name
+
+### Community 2467 - "Community 2467"
+Cohesion: 0.67
+Nodes (3): dragonborn.traits.breath-weapon, description, name
+
+### Community 2468 - "Community 2468"
+Cohesion: 0.67
+Nodes (3): dragonborn.traits.damage-resistance, description, name
+
+### Community 2469 - "Community 2469"
+Cohesion: 0.67
+Nodes (3): dragonborn.traits.darkvision, description, name
+
+### Community 2470 - "Community 2470"
+Cohesion: 0.67
+Nodes (3): dragonborn.traits.draconic-ancestry, description, name
+
+### Community 2471 - "Community 2471"
+Cohesion: 0.67
+Nodes (3): dragonborn.traits.draconic-flight, description, name
+
+### Community 2472 - "Community 2472"
+Cohesion: 0.67
+Nodes (3): dragonborn.traits.draconic-flight.mechanics.actions.0, description, summary
+
+### Community 2473 - "Community 2473"
+Cohesion: 0.67
+Nodes (3): dwarf.traits.darkvision, description, name
+
+### Community 2474 - "Community 2474"
+Cohesion: 0.67
+Nodes (3): dwarf.traits.dwarven-resilience, description, name
+
+### Community 2475 - "Community 2475"
+Cohesion: 0.67
+Nodes (3): dwarf.traits.dwarven-toughness, description, name
+
+### Community 2476 - "Community 2476"
+Cohesion: 0.67
+Nodes (3): dwarf.traits.stonecunning, description, name
+
+### Community 2477 - "Community 2477"
+Cohesion: 0.67
+Nodes (3): elf, description, name
+
+### Community 2478 - "Community 2478"
+Cohesion: 0.67
+Nodes (3): elf.traits.darkvision, description, name
+
+### Community 2479 - "Community 2479"
+Cohesion: 0.67
+Nodes (3): elf.traits.elven-lineage, description, name
+
+### Community 2480 - "Community 2480"
+Cohesion: 0.67
+Nodes (3): elf.traits.fey-ancestry, description, name
+
+### Community 2481 - "Community 2481"
+Cohesion: 0.67
+Nodes (3): elf.traits.keen-senses, description, name
+
+### Community 2482 - "Community 2482"
+Cohesion: 0.67
+Nodes (3): elf.traits.trance, description, name
+
+### Community 2483 - "Community 2483"
+Cohesion: 0.67
+Nodes (3): gnome, description, name
+
+### Community 2484 - "Community 2484"
+Cohesion: 0.67
+Nodes (3): gnome.traits.darkvision, description, name
+
+### Community 2485 - "Community 2485"
+Cohesion: 0.67
+Nodes (3): gnome.traits.gnome-cunning, description, name
+
+### Community 2486 - "Community 2486"
+Cohesion: 0.67
+Nodes (3): gnome.traits.gnomish-lineage, description, name
+
+### Community 2487 - "Community 2487"
+Cohesion: 0.67
+Nodes (3): goliath, description, name
+
+### Community 2488 - "Community 2488"
+Cohesion: 0.67
+Nodes (3): goliath.traits.giant-ancestry, description, name
+
+### Community 2489 - "Community 2489"
+Cohesion: 0.67
+Nodes (3): goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt, description, name
+
+### Community 2490 - "Community 2490"
+Cohesion: 0.67
+Nodes (3): goliath.traits.large-form, description, name
+
 ### Community 2491 - "Community 2491"
+Cohesion: 0.67
+Nodes (3): goliath.traits.large-form.mechanics.actions.0, description, summary
+
+### Community 2492 - "Community 2492"
+Cohesion: 0.67
+Nodes (3): goliath.traits.powerful-build, description, name
+
+### Community 2493 - "Community 2493"
+Cohesion: 0.67
+Nodes (3): halfling, description, name
+
+### Community 2494 - "Community 2494"
+Cohesion: 0.67
+Nodes (3): halfling.traits.brave, description, name
+
+### Community 2495 - "Community 2495"
+Cohesion: 0.67
+Nodes (3): halfling.traits.halfling-nimbleness, description, name
+
+### Community 2496 - "Community 2496"
+Cohesion: 0.67
+Nodes (3): halfling.traits.luck, description, name
+
+### Community 2497 - "Community 2497"
+Cohesion: 0.67
+Nodes (3): halfling.traits.naturally-stealthy, description, name
+
+### Community 2498 - "Community 2498"
+Cohesion: 0.67
+Nodes (3): human, description, name
+
+### Community 2499 - "Community 2499"
+Cohesion: 0.67
+Nodes (3): human.traits.resourceful, description, name
+
+### Community 2500 - "Community 2500"
+Cohesion: 0.67
+Nodes (3): human.traits.skillful, description, name
+
+### Community 2501 - "Community 2501"
+Cohesion: 0.67
+Nodes (3): human.traits.versatile, description, name
+
+### Community 2502 - "Community 2502"
+Cohesion: 0.67
+Nodes (3): orc, description, name
+
+### Community 2503 - "Community 2503"
+Cohesion: 0.67
+Nodes (3): orc.traits.adrenaline-rush, description, name
+
+### Community 2504 - "Community 2504"
+Cohesion: 0.67
+Nodes (3): orc.traits.darkvision, description, name
+
+### Community 2505 - "Community 2505"
+Cohesion: 0.67
+Nodes (3): orc.traits.relentless-endurance, description, name
+
+### Community 2506 - "Community 2506"
+Cohesion: 0.67
+Nodes (3): tiefling, description, name
+
+### Community 2507 - "Community 2507"
+Cohesion: 0.67
+Nodes (3): tiefling.traits.darkvision, description, name
+
+### Community 2508 - "Community 2508"
+Cohesion: 0.67
+Nodes (3): tiefling.traits.fiendish-legacy, description, name
+
+### Community 2509 - "Community 2509"
+Cohesion: 0.67
+Nodes (3): tiefling.traits.otherworldly-presence, description, name
+
+### Community 2510 - "Community 2510"
+Cohesion: 0.67
+Nodes (3): exhaustionBanner, detail, title
+
+### Community 2511 - "Community 2511"
+Cohesion: 0.67
+Nodes (3): hpBand, healthy, nearDeath
+
+### Community 2512 - "Community 2512"
 Cohesion: 0.67
 Nodes (3): placeholder, noDefenses, noResources
 
 ## Knowledge Gaps
-- **18728 isolated node(s):** `npx`, `schema_version`, `diagram_type`, `title`, `quality_profile` (+18723 more)
+- **18826 isolated node(s):** `npx`, `schema_version`, `diagram_type`, `title`, `quality_profile` (+18821 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **601 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **585 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `localizeSrd()` connect `Community 124` to `Community 11`, `Community 12`, `Community 527`, `Community 144`, `Community 284`, `Community 157`, `Community 158`, `Community 159`, `Community 35`, `Community 1061`, `Community 43`, `Community 299`, `Community 47`, `Community 51`, `Community 53`, `Community 187`, `Community 193`, `Community 92`, `Community 238`, `Community 371`, `Community 116`, `Community 247`, `Community 1022`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `srdCatalogues()` connect `Community 11` to `Community 162`, `Community 124`, `Community 575`, `Community 327`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
-- **Why does `cn()` connect `Community 113` to `Community 645`, `Community 263`, `Community 648`, `Community 395`, `Community 12`, `Community 140`, `Community 270`, `Community 536`, `Community 158`, `Community 159`, `Community 1057`, `Community 1059`, `Community 43`, `Community 48`, `Community 176`, `Community 695`, `Community 696`, `Community 187`, `Community 574`, `Community 63`, `Community 70`, `Community 204`, `Community 80`, `Community 467`, `Community 85`, `Community 1238`, `Community 473`, `Community 218`, `Community 356`, `Community 229`, `Community 878`, `Community 883`, `Community 507`, `Community 1278`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+- **Why does `localizeSrd()` connect `Community 120` to `Community 129`, `Community 1026`, `Community 262`, `Community 393`, `Community 13`, `Community 142`, `Community 527`, `Community 21`, `Community 25`, `Community 161`, `Community 39`, `Community 1069`, `Community 312`, `Community 58`, `Community 192`, `Community 65`, `Community 197`, `Community 205`, `Community 81`, `Community 212`, `Community 213`, `Community 224`, `Community 868`, `Community 2543`, `Community 113`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `srdCatalogues()` connect `Community 13` to `Community 120`, `Community 325`, `Community 142`, `Community 575`?**
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
+- **Why does `mergedUi()` connect `Community 86` to `Community 600`, `Community 687`, `Community 124`, `Community 311`?**
+  _High betweenness centrality (0.012) - this node is a cross-community bridge._
 - **What connects `npx`, `schema_version`, `diagram_type` to the rest of the system?**
-  _18728 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _18826 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.004310344827586207 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**

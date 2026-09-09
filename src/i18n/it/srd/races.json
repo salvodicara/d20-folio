@@ -1,5 +1,6 @@
 {
   "dragonborn": {
+    "description": "Nelle tue vene scorre sangue di drago. Soffi energia elementale e resisti al tipo di danno della tua stirpe.",
     "name": "Dragonide"
   },
   "dragonborn.traits.breath-weapon": {
@@ -66,6 +67,7 @@
     "summary": "Ali spettrali: Velocità di Volo = Velocità per 10 min"
   },
   "dwarf": {
+    "description": "Robusto e testardo, vedi al buio, resisti al veleno e guadagni punti ferita extra a ogni livello.",
     "name": "Nano"
   },
   "dwarf.traits.darkvision": {
@@ -94,6 +96,7 @@
     "description": "Ottieni Percezione delle Vibrazioni 18 m per 10 min"
   },
   "elf": {
+    "description": "Sensi acuti e un tocco di magia. Vedi al buio, resisti a charme e sonno, e la tua stirpe ti concede un incantesimo.",
     "name": "Elfo"
   },
   "elf.traits.darkvision": {
@@ -132,6 +135,7 @@
     "name": "Trance"
   },
   "gnome": {
+    "description": "Piccolo, astuto e curioso. Vedi al buio, resisti alla magia della mente, e la tua stirpe ti concede qualche trucco.",
     "name": "Gnomo"
   },
   "gnome.traits.darkvision": {
@@ -165,6 +169,7 @@
     "label": "Gnomo della Roccia"
   },
   "goliath": {
+    "description": "Il sangue dei giganti ti rende alto e possente. Porti più peso e la tua stirpe ti dà un dono da gigante in battaglia.",
     "name": "Goliath"
   },
   "goliath.traits.giant-ancestry": {
@@ -243,6 +248,7 @@
     "description": "Prove di caratteristica per terminare la condizione Afferrato"
   },
   "halfling": {
+    "description": "Piccolo e fortunato. Ritiri gli 1 naturali, ti nascondi dietro chi è più grande e la paura raramente ti afferra.",
     "name": "Halfling"
   },
   "halfling.traits.brave": {
@@ -265,6 +271,7 @@
     "name": "Furtività Naturale"
   },
   "human": {
+    "description": "Adattabile e rapido a imparare. Parti con un'abilità in più e un talento di origine in più.",
     "name": "Umano"
   },
   "human.traits.resourceful": {
@@ -280,6 +287,7 @@
     "name": "Versatile"
   },
   "orc": {
+    "description": "Forte e implacabile. Vedi al buio, superi la stanchezza con la Scarica di Adrenalina e ti rifiuti di cadere.",
     "name": "Orco"
   },
   "orc.traits.adrenaline-rush": {
@@ -298,6 +306,7 @@
     "name": "Resistenza Implacabile"
   },
   "tiefling": {
+    "description": "Un'ascendenza infernale ti segna. Vedi al buio, resisti al tipo di danno della tua stirpe e ne lanci gli incantesimi.",
     "name": "Tiefling"
   },
   "tiefling.traits.darkvision": {
