@@ -13,8 +13,9 @@ coherence/legibility criteria, and prove both speed for the expert and discovery
 The owner's verdict closes PD. **P11a does not start before that verdict.**
 
 Split (owner, 2026-09-09 afternoon): Astra owns the visual/taste half, Claude owns the rest.
-Claude's first deliverable is the research document
-`docs/superpowers/research/2026-09-09-pd-bg3-dndbeyond-research.md` — in progress.
+Claude's research half is delivered:
+`docs/superpowers/research/2026-09-09-pd-bg3-dndbeyond-research.md` (evidence in
+`docs/superpowers/research/2026-09-09-pd/`).
 
 ## Closed (SHA)
 
@@ -46,7 +47,9 @@ skills unified — integrated on `v2` through `1cc5d32e` (the commit after it is
 
 ## Open
 
-- **PD** — the current block, not started.
+- **PD** — the current block; the research half is delivered.
+- PD visual half (Astra): redesigned creation screens + raster art direction, from the research;
+  owner verdict closes PD.
 - **P11a → P30** — not started; the order and dependencies are in [`PROGRAM.md`](PROGRAM.md).
 - The per-family definitions E01–E22 and the nine player-freedom scenarios still live only in the
   lab (`~/Workspace/Codex/d20-design-dialogue/full-lab/docs/RULES-EXCEPTION-CATALOG.md`,

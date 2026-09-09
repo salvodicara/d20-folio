@@ -20,8 +20,8 @@ the owner's 2026-09-09 feedback. Its exit acceptance
 - Both sides of progressive disclosure proven: expert speed with no mandatory explanation, and
   beginner discovery that teaches while playing.
 
-The owner's verdict closes PD. **P11a does not start before that verdict.** PD has not started;
-P11a is next, not started.
+PD research half delivered (Claude, 2026-09-09); visual half open (Astra).
+The owner's verdict closes PD. **P11a does not start before that verdict.**
 
 Knowledge-base reset (2026-09-09): integrated on `v2` through `1cc5d32e` (this record is the commit after it; see `docs/program/NEXT.md` → Closed).
 
