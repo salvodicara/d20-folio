@@ -139,22 +139,22 @@ A step kind the reducer does not handle is a **compile** error, not a runtime on
 Steps, with the file that implements each. Handlers live in `runSteps`
 (`src/lib/combat/intent.ts`) unless noted.
 
-| Step           | Status                     | Implemented in                                                                    |
-| -------------- | -------------------------- | --------------------------------------------------------------------------------- |
-| `attack`       | executed                   | `intent.ts` (d20 answer → outcome, then the damage parts)                         |
-| `save`         | executed                   | `intent.ts` (`onSuccess: "half" \| "negate"`)                                     |
-| `damage`       | executed                   | `intent.ts` → `src/lib/combat/damage.ts`                                          |
-| `heal`         | executed                   | `intent.ts` (`amount` is an `Expr` — a flat heal only, see §9)                    |
-| `effect-start` | executed                   | `intent.ts` → `src/lib/combat/effects.ts` (standing facts and marks)              |
-| `condition`    | executed                   | `intent.ts`, lifetime settled by `effects.ts`                                     |
-| `move-mark`    | executed                   | `intent.ts`                                                                       |
-| `turn-claim`   | executed                   | `intent.ts` (`TurnLedger.claims`, once-per-turn keys)                             |
-| `move`         | executed                   | `intent.ts` → `src/lib/combat/position.ts`, `reposition.ts`, `map.ts`             |
-| `dash`         | executed                   | `intent.ts` (`TurnLedger.movementExtra`)                                          |
-| `manual-table` | **no-op by design**        | `intent.ts` — spends the economy, writes a log line, table adjudicates            |
-| `negate`       | **declared, not executed** | `intent.ts` accepts it and does nothing (`case "negate": return { stop: false }`) |
+| Step           | Status                     | Implemented in                                                                                                                         |
+| -------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `attack`       | executed                   | `intent.ts` (d20 answer → outcome, then the damage parts)                                                                              |
+| `save`         | executed                   | `intent.ts` (`onSuccess: "half" \| "negate"`)                                                                                          |
+| `damage`       | executed                   | `intent.ts` → `src/lib/combat/damage.ts`                                                                                               |
+| `heal`         | executed                   | `intent.ts` (`amount` is an `Expr` — a flat heal only, see §9)                                                                         |
+| `effect-start` | executed                   | `intent.ts` → `src/lib/combat/effects.ts` (standing facts and marks)                                                                   |
+| `condition`    | executed                   | `intent.ts`, lifetime settled by `effects.ts`                                                                                          |
+| `move-mark`    | executed                   | `intent.ts`                                                                                                                            |
+| `turn-claim`   | executed                   | `intent.ts` (`TurnLedger.claims`, once-per-turn keys)                                                                                  |
+| `move`         | executed                   | `intent.ts` → `src/lib/combat/position.ts`, `reposition.ts`, `map.ts`                                                                  |
+| `dash`         | executed                   | `intent.ts` (`TurnLedger.movementExtra`)                                                                                               |
+| `manual-table` | **no-op by design**        | `intent.ts` — spends the economy, writes a log line, table adjudicates                                                                 |
+| `negate`       | **declared, not executed** | `intent.ts` shares its `switch` arm with `manual-table` — both fall through to `return { stop: false }` with no negate-specific effect |
 
-Costs (`payFor`, `intent.ts`): `turn` claims (`action`, `bonus`, `reaction`, `attack`, `free`
+Costs (`payCosts`, `intent.ts`): `turn` claims (`action`, `bonus`, `reaction`, `attack`, `free`
 against `TurnLedger`), `slot` (standard and pact pools, upcast), `resource` (named pools with a
 `recharge` of `short`/`long`/`dawn`/`dusk`/`turn`/`round`/`never`), `concentration`. An
 unaffordable cost rejects with `unaffordable` before any step runs.
@@ -236,8 +236,8 @@ The type system says the same: `Automation` has three members, but
 code does**, and it is deliberate — ADR-0011 assigns the third level to a later stage.
 
 The level never changes the verdict, only whether the receipt is applied. The map policy follows
-the same rule: on a `log-only` table `dropPlan` (`src/lib/combat/map.ts`) withholds `move` and
-offers `place` instead.
+the same rule: on a `log-only` table `planDrop` (`src/lib/combat/map.ts`), which returns a
+`DropPlan`, withholds `move` and offers `place` instead.
 
 **The DM's last word is the same mechanism at every level.** `override`
 (`src/lib/combat/override.ts`) corrects a persisted fact — HP, temporary HP, life state,

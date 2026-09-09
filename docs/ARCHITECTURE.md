@@ -180,7 +180,8 @@ owner's client folds the encounter, writes back and clears the lease. Each verb 
 `CombatState`**, not an `Encounter`. `src/lib/combat-state-writeback.ts` projects the folded
 entity's HP, temp HP, conditions and death saves over that document and preserves every other
 field verbatim. Its header names its own fate: the module is deleted, not migrated, when the
-personal aggregate becomes an `Encounter` (P11b in [`program/PROGRAM.md`](program/PROGRAM.md)).
+personal aggregate becomes an `Encounter` — item 8 of the stage plan, which the program now
+carries as P11b ([`program/PROGRAM.md`](program/PROGRAM.md)).
 
 ## 5. Identity, roster, membership
 
@@ -269,6 +270,13 @@ runs a single transaction (`maxAttempts: 1`) that, in order:
 5. writes the character parent (`characterPath`), `…/origins/build`, `…/classes/build`,
    `initialLoadoutPath(...)` and the receipt.
 
+**The revision contract guards step 3.** A freshly created character parent starts at
+`revision: 0` and each of the three acquisition aggregates (origins, classes, loadout) starts at
+`revision: 1` (`src/lib/character-creation/repository.ts:125,140,170`); the receipt itself records
+`revision: 0` for the operation (`:49`). The transaction validates every stored value against
+these expected revisions and throws `invalid-creation` the moment one differs, refusing to write
+over anything the guided flow did not itself just produce.
+
 A `fence()` runs before and after every await, so a session revocation mid-transaction aborts
 instead of writing. `assertJsonBudget` (`src/lib/shared/json-budget.ts`) caps the operation at
 600,000 bytes / 16,384 nodes.
@@ -291,10 +299,10 @@ navigation owned by `src/features/identity/navigation.ts` and bound through
 `IdentityNavigation.tsx`.
 
 **Four permanent scopes**, declared in order in `primaryDestinations` (`navigation.ts`):
-`campaign`, `table`, `characters`, `library`. `table` carries `unavailable: true` — the live play
-surface is not yet reachable from this shell; `IdentityWorkspace.tsx` renders a
-`tableUnavailable` panel for it. Account sections (`accountSections`) are a separate group, and
-`featureDestinations` feeds the function search.
+`campaign`, `table`, `characters`, `library`. The `featureDestinations` derivation over that list
+adds `unavailable: true` to the `table` entry — the live play surface is not yet reachable from
+this shell; `IdentityWorkspace.tsx` renders a `tableUnavailable` panel for it. Account sections
+(`accountSections`) are a separate group, and `featureDestinations` feeds the function search.
 
 **Routing is native history over a hash.** `parseRoute` / `routeHash` (`navigation.ts`) parse and
 re-serialise `#<page>?<params>` through a whitelist, so an unknown page resolves to `unavailable`
