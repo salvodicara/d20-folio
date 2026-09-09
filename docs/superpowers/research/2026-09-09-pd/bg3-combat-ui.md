@@ -133,7 +133,7 @@ keyed to Sources at the end.
 4. ProGameTalk, Hotbar guide: https://progametalk.com/baldurs-gate-3/hotbar-guide/
 5. Gamer Guides, Duration/Concentration: https://www.gamerguides.com/baldurs-gate-3/guide/gameplay/getting-started/spell-duration-range-casting-time-and-concentration-explained
 6. Fextralife, Spellcasting Ability: https://baldursgate3.wiki.fextralife.com/Spellcasting+Ability
-7. PC Gamer, tooltip DC bug: https://www.pcgamer.com/games/baldurs-gate/baldur-s-gate-3-s-spell-tooltips-have-been-lying-to-you-for-potentially-months-though-if-you-ve-been-running-off-the-chance-to-hit-you-re-just-fine/
+7. PC Gamer, tooltip DC bug: https://www.pcgamer.com/games/baldurs-gate/baldur-s-gate-3-s-spell-tooltips-have-been-lying-to-you-for-potentially-months-though-if-you-ve-been-running-off-the-chance-to-hit-you-re-just-fine/ (Baldur's Gate 3)
 8. Fextralife, Spellcasting Guide: https://fextralife.com/baldurs-gate-3-guide-to-spellcasting/
 9. Gamer Rant, Spell Hit Chance: https://gamerant.com/baldurs-gate-3-increase-spell-hit-chance-bg3/
 10. Larian docs, Making a Basic Spell: https://docs.baldursgate3.game/Making_a_Basic_Spell

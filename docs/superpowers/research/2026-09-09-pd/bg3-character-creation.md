@@ -146,7 +146,7 @@ assert a click count to Astra.
 9. [Escapist — Can You Change Your Race?](https://www.escapistmagazine.com/can-you-change-your-race-in-baldurs-gate-3-bg3/)
 10. [GameSkinny — Can You Change Your Race?](https://www.gameskinny.com/tips/baldurs-gate-3-can-you-change-your-race/)
 11. [TheGamer — 88 years in chargen](https://www.thegamer.com/baldurs-gate-3-player-time-spent-in-character-creator-88-years-stats/)
-12. [Game Developer — Inclusive character creator (Alena Dubrovina)](https://www.gamedeveloper.com/art/building-an-inclusive-character-creator-for-the-fantasy-world-of-baldur-s-gate-3)
+12. [Game Developer — Inclusive character creator (Alena Dubrovina)](https://www.gamedeveloper.com/art/building-an-inclusive-character-creator-for-the-fantasy-world-of-baldur-s-gate-3) (Baldur's Gate 3)
 13. [TheGamer — 17 narrator types](https://www.thegamer.com/baldurs-gate-3-17-different-narrator-types-lines-change-amelia-tyler/)
 14. [MemoryPC — Beginner's Guide](https://www.memorypc.eu/blog/gaming-tips/baldurs-gate-3-beginners-guide-character-creation/)
 15. [RPGBot — Wizard Spells](https://rpgbot.net/video-games/baldurs-gate-3/classes/wizard/spells/)
