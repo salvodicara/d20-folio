@@ -1,0 +1,202 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "d20 Folio v2 — encounter lifecycle",
+    "quality_profile": "showcase",
+    "viewBox": [980, 700],
+    "views": [
+      {
+        "id": "phases",
+        "label": "Clock phases",
+        "focus": ["idle", "gathering", "turns", "ended"],
+        "note": "The four values Clock.phase can hold, and the table op that enters each one."
+      },
+      {
+        "id": "held",
+        "label": "Held inside turns",
+        "focus": ["turns", "window"],
+        "note": "A declared attack waits in a reaction window until it is resolved."
+      },
+      {
+        "id": "corrections",
+        "label": "Corrections and compaction",
+        "focus": ["turns", "corrected", "checkpoint"],
+        "note": "Nothing is erased: the log is corrected, then compacted under a grace window."
+      }
+    ]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Clock.phase"
+    },
+    {
+      "id": "held",
+      "label": "Held and corrected"
+    },
+    {
+      "id": "terminal",
+      "label": "Document"
+    }
+  ],
+  "states": [
+    {
+      "id": "idle",
+      "type": "start",
+      "label": "Idle",
+      "sublabel": "initialState()",
+      "tag": "no table",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "gathering",
+      "type": "active",
+      "label": "Gathering",
+      "sublabel": "table:start",
+      "tag": "seats, initiative",
+      "lane": "main",
+      "col": 1,
+      "step": "02"
+    },
+    {
+      "id": "turns",
+      "type": "active",
+      "label": "Turns",
+      "sublabel": "table:begin-turns",
+      "tag": "end-turn advances",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "ended",
+      "type": "success",
+      "label": "Ended",
+      "sublabel": "table:end",
+      "tag": "windows cleared",
+      "lane": "main",
+      "col": 3,
+      "step": "04"
+    },
+    {
+      "id": "window",
+      "type": "waiting",
+      "label": "Reaction window",
+      "sublabel": "the attack is held",
+      "tag": "windows[]",
+      "lane": "held",
+      "col": 0
+    },
+    {
+      "id": "corrected",
+      "type": "failure",
+      "label": "Corrected",
+      "sublabel": "undo or override",
+      "tag": "DM last word",
+      "lane": "held",
+      "col": 1
+    },
+    {
+      "id": "checkpoint",
+      "type": "neutral",
+      "label": "Compacted",
+      "sublabel": "head becomes a checkpoint",
+      "tag": "5 minute grace",
+      "lane": "terminal",
+      "col": 2
+    }
+  ],
+  "transitions": [
+    {
+      "id": "declare-window",
+      "from": "turns",
+      "to": "window",
+      "label": "may be reacted to",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDx": -80,
+      "labelDy": 30
+    },
+    {
+      "id": "resolve-window",
+      "from": "window",
+      "to": "turns",
+      "label": "window resolved",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": -80
+    },
+    {
+      "id": "append-correction",
+      "from": "turns",
+      "to": "corrected",
+      "label": "undo or override",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "channelY": 232
+    },
+    {
+      "id": "refold",
+      "from": "corrected",
+      "to": "turns",
+      "label": "next fold applies it",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "channelY": 259
+    },
+    {
+      "id": "compact",
+      "from": "turns",
+      "to": "checkpoint",
+      "label": "past 200 actions",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "channelY": 205,
+      "labelDy": 9
+    },
+    {
+      "id": "restart",
+      "from": "ended",
+      "to": "gathering",
+      "label": "new epoch",
+      "variant": "emphasis",
+      "route": "top-channel"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "The phases the code defines",
+      "items": [
+        "Clock.phase is idle, gathering, turns or ended — there is no paused or draft state",
+        "table:start is refused unless the phase is idle or ended; table:begin-turns unless it is gathering",
+        "table:end has no phase guard and clears every open window"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "What a turn holds",
+      "items": [
+        "A declared attack waits in a reaction window while an eligible creature still has its reaction",
+        "A pending concentration check waits in checks[] until a check action settles it",
+        "Ending a turn resets the ledger, advances the round when the order wraps, and skips the dead"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Correction and compaction",
+      "items": [
+        "Every correction is an appended action, so every client reaches the same state",
+        "Compaction folds the head into a checkpoint and drops those actions from the document",
+        "Redo across a checkpoint is impossible: the target is no longer in the log"
+      ]
+    }
+  ]
+}

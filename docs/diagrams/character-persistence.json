@@ -1,0 +1,272 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "d20 Folio v2 — character creation and persistence",
+    "quality_profile": "showcase",
+    "viewBox": [1068, 760],
+    "views": [
+      {
+        "id": "guided",
+        "label": "Guided creation",
+        "focus": ["draft", "compose", "operation", "parent"],
+        "note": "The wizard composes a candidate, and one operation writes it."
+      },
+      {
+        "id": "atomic-write",
+        "label": "One transaction",
+        "focus": ["operation", "parent", "origins", "classes", "loadout", "receipt"],
+        "note": "Five documents land together or not at all, under a receipt that makes a retry safe."
+      },
+      {
+        "id": "import",
+        "label": "Import and reconcile",
+        "focus": ["importsrc", "review", "operation", "read"],
+        "note": "A pasted export is reviewed field by field before it can become a character."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Input"
+    },
+    {
+      "label": "Compose and review"
+    },
+    {
+      "label": "Operation"
+    },
+    {
+      "label": "Stored documents"
+    },
+    {
+      "label": "Read seams"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "importsrc",
+      "type": "frontend",
+      "label": "v3 export",
+      "sublabel": "character-codec.ts",
+      "tag": "pasted file",
+      "stage": 0,
+      "row": 0
+    },
+    {
+      "id": "draft",
+      "type": "frontend",
+      "label": "Creation draft",
+      "sublabel": "creation/draft.ts",
+      "tag": "steps, choices",
+      "stage": 0,
+      "row": 2
+    },
+    {
+      "id": "review",
+      "type": "security",
+      "label": "Import review",
+      "sublabel": "import-review.ts",
+      "tag": "2014 to 2024",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "compose",
+      "type": "backend",
+      "label": "Compose",
+      "sublabel": "creation/compose.ts",
+      "tag": "catalogue checked",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "operation",
+      "type": "backend",
+      "label": "Operation",
+      "sublabel": "creation/repository.ts",
+      "tag": "one transaction",
+      "stage": 2,
+      "row": 2
+    },
+    {
+      "id": "versions",
+      "type": "database",
+      "label": "Library versions",
+      "sublabel": "library/{id}/versions",
+      "tag": "source snapshots",
+      "stage": 2,
+      "row": 4
+    },
+    {
+      "id": "parent",
+      "type": "database",
+      "label": "Character parent",
+      "sublabel": "characters/{id}",
+      "tag": "sheet, level",
+      "stage": 3,
+      "row": 0
+    },
+    {
+      "id": "origins",
+      "type": "database",
+      "label": "Origins build",
+      "sublabel": "origins/build",
+      "tag": "species, background",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "classes",
+      "type": "database",
+      "label": "Classes build",
+      "sublabel": "classes/build",
+      "tag": "acquisitions",
+      "stage": 3,
+      "row": 2
+    },
+    {
+      "id": "loadout",
+      "type": "database",
+      "label": "Initial loadout",
+      "sublabel": "loadout/initial",
+      "tag": "item instances",
+      "stage": 3,
+      "row": 3
+    },
+    {
+      "id": "receipt",
+      "type": "database",
+      "label": "Receipt",
+      "sublabel": "operations/{opId}",
+      "tag": "replay guard",
+      "stage": 3,
+      "row": 4
+    },
+    {
+      "id": "read",
+      "type": "backend",
+      "label": "Read seams",
+      "sublabel": "identity/repository.ts",
+      "tag": "unknown keys kept",
+      "stage": 4,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "paste",
+      "from": "importsrc",
+      "to": "review",
+      "label": "pasted export"
+    },
+    {
+      "id": "choices",
+      "from": "draft",
+      "to": "compose",
+      "label": "selections",
+      "variant": "emphasis"
+    },
+    {
+      "id": "reconciled",
+      "from": "review",
+      "to": "operation",
+      "label": "reconciled build"
+    },
+    {
+      "id": "candidate",
+      "from": "compose",
+      "to": "operation",
+      "label": "candidate",
+      "variant": "emphasis",
+      "route": "straight",
+      "labelDy": 28
+    },
+    {
+      "id": "sources",
+      "from": "versions",
+      "to": "operation",
+      "label": "sources verified",
+      "variant": "dashed"
+    },
+    {
+      "id": "write-parent",
+      "from": "operation",
+      "to": "parent",
+      "label": "rev 0",
+      "variant": "emphasis",
+      "labelSegment": 2
+    },
+    {
+      "id": "write-origins",
+      "from": "operation",
+      "to": "origins",
+      "label": "rev 1",
+      "labelSegment": 2
+    },
+    {
+      "id": "write-classes",
+      "from": "operation",
+      "to": "classes",
+      "label": "rev 1",
+      "variant": "emphasis",
+      "labelDx": 26
+    },
+    {
+      "id": "write-loadout",
+      "from": "operation",
+      "to": "loadout",
+      "label": "rev 1",
+      "labelSegment": 2
+    },
+    {
+      "id": "write-receipt",
+      "from": "operation",
+      "to": "receipt",
+      "label": "rev 0",
+      "labelSegment": 2
+    },
+    {
+      "id": "read-parent",
+      "from": "parent",
+      "to": "read",
+      "label": "codec parse",
+      "variant": "emphasis"
+    },
+    {
+      "id": "read-loadout",
+      "from": "loadout",
+      "to": "read",
+      "label": "instances"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "One atomic creation",
+      "items": [
+        "createCreationRepository writes five documents in a single Firestore transaction",
+        "The character parent starts at revision 0, each acquisition aggregate at revision 1",
+        "A recovered operation can only inspect its exact receipt, so a retry never duplicates a character"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Sources are pinned",
+      "items": [
+        "Every selection carries the definition snapshot it was made from",
+        "The transaction re-reads each library version and refuses when the stored bytes differ",
+        "A snapshot owned by another account is refused outright"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Import is a review, not a copy",
+      "items": [
+        "The analysis classifies the declared edition and every mechanical path it recognises",
+        "A field is reconciled by a person before it can enter an authorized sheet",
+        "Codecs preserve unknown keys verbatim so a future document round-trips byte for byte"
+      ]
+    }
+  ]
+}

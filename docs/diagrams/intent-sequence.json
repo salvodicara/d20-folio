@@ -1,0 +1,245 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "d20 Folio v2 — one attack with a reaction",
+    "quality_profile": "showcase",
+    "viewBox": [1080, 600],
+    "column_fit": "spread",
+    "views": [
+      {
+        "id": "declare",
+        "label": "Declaration",
+        "focus": ["player", "client", "doc"],
+        "note": "The tile is refused before a die is spent, then the rolls and the intent are appended."
+      },
+      {
+        "id": "reaction",
+        "label": "Reaction window",
+        "focus": ["doc", "reactor", "dm"],
+        "note": "Every client opens the same window from the same log; the reactor answers it."
+      },
+      {
+        "id": "correction",
+        "label": "Correction",
+        "focus": ["dm", "doc", "player"],
+        "note": "Undo is appended like any other action and the next fold skips its target."
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "player",
+      "type": "external",
+      "label": "Player",
+      "sublabel": "acting PC"
+    },
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Table store",
+      "sublabel": "table-store.ts"
+    },
+    {
+      "id": "doc",
+      "type": "database",
+      "label": "encounters/live",
+      "sublabel": "Firestore"
+    },
+    {
+      "id": "reactor",
+      "type": "frontend",
+      "label": "Reactor",
+      "sublabel": "eligible PC"
+    },
+    {
+      "id": "dm",
+      "type": "frontend",
+      "label": "DM client",
+      "sublabel": "campaign DM"
+    }
+  ],
+  "segments": [
+    {
+      "from": 160,
+      "to": 248,
+      "label": "Declare"
+    },
+    {
+      "from": 253,
+      "to": 368,
+      "label": "Reaction window"
+    },
+    {
+      "from": 373,
+      "to": 458,
+      "label": "Resolve"
+    },
+    {
+      "from": 465,
+      "to": 525,
+      "label": "Correction"
+    }
+  ],
+  "messages": [
+    {
+      "id": "tap-tile",
+      "from": "player",
+      "to": "client",
+      "y": 175,
+      "label": "tap the attack tile",
+      "variant": "default",
+      "note": "preflightIntent refuses first"
+    },
+    {
+      "id": "append-rolls",
+      "from": "client",
+      "to": "doc",
+      "y": 205,
+      "label": "append roll actions",
+      "variant": "dashed"
+    },
+    {
+      "id": "append-intent",
+      "from": "client",
+      "to": "doc",
+      "y": 235,
+      "label": "append intent, attack declared",
+      "variant": "emphasis"
+    },
+    {
+      "id": "window-open",
+      "from": "doc",
+      "to": "reactor",
+      "y": 265,
+      "label": "fold opens the reaction window",
+      "variant": "return"
+    },
+    {
+      "id": "dm-sees",
+      "from": "doc",
+      "to": "dm",
+      "y": 295,
+      "label": "fold holds the attack",
+      "variant": "return"
+    },
+    {
+      "id": "append-reaction",
+      "from": "reactor",
+      "to": "doc",
+      "y": 325,
+      "label": "append reaction intent",
+      "variant": "emphasis"
+    },
+    {
+      "id": "reaction-applied",
+      "from": "doc",
+      "to": "player",
+      "y": 355,
+      "label": "fold applies the reaction",
+      "variant": "return"
+    },
+    {
+      "id": "append-resolve",
+      "from": "player",
+      "to": "doc",
+      "y": 385,
+      "label": "append resolve of the window",
+      "variant": "emphasis",
+      "note": "full-auto applies the outcome; log-only records the receipt only (ADR-0011)"
+    },
+    {
+      "id": "dm-outcome",
+      "from": "doc",
+      "to": "dm",
+      "y": 415,
+      "label": "fold settles the verdict",
+      "variant": "return"
+    },
+    {
+      "id": "log-line",
+      "from": "doc",
+      "to": "player",
+      "y": 445,
+      "label": "receipt read back in EN or IT",
+      "variant": "return"
+    },
+    {
+      "id": "append-undo",
+      "from": "dm",
+      "to": "doc",
+      "y": 480,
+      "label": "append undo of that action",
+      "variant": "security"
+    },
+    {
+      "id": "undo-folded",
+      "from": "doc",
+      "to": "player",
+      "y": 510,
+      "label": "fold skips it and its dependents",
+      "variant": "return"
+    }
+  ],
+  "activations": [
+    {
+      "participant": "client",
+      "from": 170,
+      "to": 241,
+      "type": "frontend"
+    },
+    {
+      "participant": "doc",
+      "from": 200,
+      "to": 516,
+      "type": "database"
+    },
+    {
+      "participant": "reactor",
+      "from": 260,
+      "to": 331,
+      "type": "frontend"
+    },
+    {
+      "participant": "dm",
+      "from": 290,
+      "to": 486,
+      "type": "frontend"
+    },
+    {
+      "participant": "player",
+      "from": 170,
+      "to": 516,
+      "type": "external"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "One shared document",
+      "items": [
+        "Every client appends to the same log with arrayUnion; nobody writes a peer's document",
+        "The hybrid logical clock, not arrival order, decides how the log folds",
+        "The reaction window is computed by the reducer from data, never sent as a message"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Automation levels",
+      "items": [
+        "The DM picks full-auto, propose-and-confirm or log-only per campaign (ADR-0011)",
+        "The reducer computes the same receipt at every level; the level decides whether it is applied",
+        "propose-and-confirm is declared in the types and still rejected by the reducer today"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "The DM keeps the last word",
+      "items": [
+        "override sets a value with a reason; undo removes an action from the fold",
+        "Both are ordinary log actions, visible to every seat",
+        "A checkpoint bounds how far back undo can reach"
+      ]
+    }
+  ]
+}

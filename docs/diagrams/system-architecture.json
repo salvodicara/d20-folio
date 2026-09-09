@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "d20 Folio v2 — system architecture",
+    "quality_profile": "showcase",
+    "viewBox": [1340, 860],
+    "repository": {
+      "url": "https://github.com/salvodicara/d20-folio.git",
+      "provider": "github",
+      "link_mode": "local-only",
+      "revision": "aed342c0860369e778ad729f55337ebe73ca2325"
+    },
+    "views": [
+      {
+        "id": "play-path",
+        "label": "Shared play path",
+        "focus": ["shell", "features", "stores", "encounter"],
+        "note": "Follow a tap on the play surface to the append-only encounter document."
+      },
+      {
+        "id": "engine-and-content",
+        "label": "Engine and content",
+        "focus": ["stores", "engine", "presenters", "catalogue", "pack"],
+        "note": "The pure reducer, its catalogue, and the private pack that extends it."
+      },
+      {
+        "id": "backend",
+        "label": "Firebase surface",
+        "focus": ["storage", "encounter", "firestore", "rules", "functions"],
+        "note": "Documents, objects, functions, and the rules that authorize them."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [60, 90],
+    "cols": 5,
+    "cellW": 172,
+    "cellH": 76,
+    "gapX": 92,
+    "gapY": 84
+  },
+  "components": [
+    {
+      "id": "shell",
+      "type": "frontend",
+      "label": "App shell",
+      "sublabel": "router, guards, topbar",
+      "tag": "src/app",
+      "row": 0,
+      "col": 0,
+      "sources": [
+        {
+          "path": "src/app/router.tsx",
+          "label": "routes"
+        },
+        {
+          "path": "src/app/AppShell.tsx",
+          "label": "shell"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "features",
+      "type": "frontend",
+      "label": "Feature surfaces",
+      "sublabel": "play, sheet, campaigns, library",
+      "tag": "src/features",
+      "row": 0,
+      "col": 1,
+      "sources": [
+        {
+          "path": "src/features/play/PlayScreen.tsx",
+          "label": "play surface"
+        },
+        {
+          "path": "src/features/library/LibraryWorkspace.tsx",
+          "label": "library"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "presenters",
+      "type": "backend",
+      "label": "Localized presenters",
+      "sublabel": "ids in, EN/IT sentences out",
+      "tag": "src/lib/views",
+      "row": 1,
+      "col": 0,
+      "sources": [
+        {
+          "path": "src/lib/views/encounter-log-view.ts",
+          "label": "encounter log"
+        },
+        {
+          "path": "src/lib/views/sheet-view.ts",
+          "label": "sheet"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "stores",
+      "type": "backend",
+      "label": "Client stores",
+      "sublabel": "Zustand; one store per table",
+      "tag": "src/stores",
+      "row": 1,
+      "col": 2,
+      "sources": [
+        {
+          "path": "src/features/play/table/table-store.ts",
+          "label": "table store"
+        },
+        {
+          "path": "src/stores/characterStore.ts",
+          "label": "character store"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "Combat engine",
+      "sublabel": "pure reducer over the log",
+      "tag": "src/lib/combat",
+      "row": 2,
+      "col": 2,
+      "sources": [
+        {
+          "path": "src/lib/combat/resolve.ts",
+          "label": "reducer"
+        },
+        {
+          "path": "src/lib/combat/fold.ts",
+          "label": "fold"
+        },
+        {
+          "path": "src/lib/combat/types.ts",
+          "label": "aggregate"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "catalogue",
+      "type": "database",
+      "label": "SRD data and types",
+      "sublabel": "SRD 5.2.1 only, core mechanics",
+      "tag": "src/data, src/types",
+      "row": 3,
+      "col": 1,
+      "sources": [
+        {
+          "path": "src/data/combat/core-catalogue.ts",
+          "label": "core mechanics"
+        },
+        {
+          "path": "src/data/pack-types.ts",
+          "label": "pack seam"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "pack",
+      "type": "external",
+      "label": "Private content pack",
+      "sublabel": "non-SRD definitions, gitignored",
+      "tag": "content-pack/",
+      "row": 4,
+      "col": 1,
+      "sources": [
+        {
+          "path": "src/data/pack-empty.ts",
+          "label": "SRD-only stub"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "storage",
+      "type": "cloud",
+      "label": "Cloud Storage",
+      "sublabel": "portraits, maps, banners",
+      "tag": "storage.rules",
+      "row": 0,
+      "col": 4,
+      "sources": [
+        {
+          "path": "src/lib/storage.ts",
+          "label": "portraits"
+        },
+        {
+          "path": "src/lib/map-io.ts",
+          "label": "maps"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "encounter",
+      "type": "database",
+      "label": "Live encounter document",
+      "sublabel": "campaigns/{id}/encounters/live",
+      "tag": "append-only log",
+      "row": 1,
+      "col": 4,
+      "sources": [
+        {
+          "path": "src/lib/combat-io.ts",
+          "label": "append, subscribe"
+        },
+        {
+          "path": "src/lib/combat-lease.ts",
+          "label": "join, leave"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "firestore",
+      "type": "database",
+      "label": "Cloud Firestore",
+      "sublabel": "folioAccounts, users, campaigns",
+      "tag": "documents",
+      "row": 2,
+      "col": 4,
+      "sources": [
+        {
+          "path": "src/lib/identity/model.ts",
+          "label": "document paths"
+        },
+        {
+          "path": "src/lib/identity/repository.ts",
+          "label": "repositories"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "rules",
+      "type": "security",
+      "label": "Access rules",
+      "sublabel": "authorize access, not gameplay",
+      "tag": "ADR-0005",
+      "row": 3,
+      "col": 3,
+      "sources": [
+        {
+          "path": "firestore.rules",
+          "label": "documents"
+        },
+        {
+          "path": "storage.rules",
+          "label": "objects"
+        }
+      ],
+      "size": [172, 76]
+    },
+    {
+      "id": "functions",
+      "type": "backend",
+      "label": "Cloud Functions",
+      "sublabel": "share previews, budget kill",
+      "tag": "europe-west1",
+      "row": 3,
+      "col": 4,
+      "sources": [
+        {
+          "path": "functions/src/index.ts",
+          "label": "entry points"
+        },
+        {
+          "path": "functions/src/og-image.ts",
+          "label": "OG images"
+        }
+      ],
+      "size": [172, 76]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Installed PWA client — Workbox precache, offline-first",
+      "wraps": ["shell", "features", "presenters", "stores", "engine", "catalogue"],
+      "pad": 24
+    },
+    {
+      "kind": "region",
+      "label": "Firebase — d20-folio (production) and d20-folio-staging",
+      "wraps": ["storage", "encounter", "firestore", "rules", "functions"],
+      "pad": 24
+    },
+    {
+      "kind": "security-group",
+      "label": "Private repository, never published",
+      "wraps": ["pack"],
+      "pad": 20
+    }
+  ],
+  "connections": [
+    {
+      "id": "shell-routes",
+      "from": "shell",
+      "to": "features",
+      "label": "route guards"
+    },
+    {
+      "id": "surface-commands",
+      "from": "features",
+      "to": "stores",
+      "label": "commands",
+      "variant": "emphasis"
+    },
+    {
+      "id": "surface-uploads",
+      "from": "features",
+      "to": "storage",
+      "label": "portraits, maps, banners",
+      "variant": "dashed"
+    },
+    {
+      "id": "localized-rows",
+      "from": "presenters",
+      "to": "features",
+      "label": "EN/IT sentences"
+    },
+    {
+      "id": "receipts-out",
+      "from": "engine",
+      "to": "presenters",
+      "label": "receipts and ids"
+    },
+    {
+      "id": "fold-log",
+      "from": "stores",
+      "to": "engine",
+      "label": "fold(log)",
+      "labelDy": 24
+    },
+    {
+      "id": "core-mechanics",
+      "from": "catalogue",
+      "to": "engine",
+      "label": "core mechanics"
+    },
+    {
+      "id": "pack-seam",
+      "from": "pack",
+      "to": "catalogue",
+      "label": "private definitions at build time",
+      "variant": "dashed",
+      "labelDy": -22
+    },
+    {
+      "id": "append-actions",
+      "from": "stores",
+      "to": "encounter",
+      "label": "append and subscribe",
+      "variant": "emphasis"
+    },
+    {
+      "id": "documents",
+      "from": "stores",
+      "to": "firestore",
+      "label": "characters, campaigns, library"
+    },
+    {
+      "id": "rules-gate",
+      "from": "rules",
+      "to": "firestore",
+      "label": "read and write policy",
+      "variant": "security"
+    },
+    {
+      "id": "og-read",
+      "from": "functions",
+      "to": "firestore",
+      "label": "shared sheets",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Dependency direction",
+      "items": [
+        "data, types, stores and lib point into views, then into features and UI, never backwards",
+        "src/lib/views is the only engine-side layer allowed to localize, and its translator is a parameter",
+        "src/lib/combat holds no clock, no randomness and no Firebase handle"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Shared play",
+      "items": [
+        "One live table per campaign at campaigns/{id}/encounters/live",
+        "Actions are appended with arrayUnion and ordered by a hybrid logical clock",
+        "Every client folds the same log to the same state"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Licensing partition",
+      "items": [
+        "src/data and src/i18n/*/srd carry SRD 5.2.1 content only",
+        "The private pack mounts through the same seam and is swapped for an empty module in the SRD-only build",
+        "Rules authorize access; they never decide gameplay"
+      ]
+    }
+  ]
+}

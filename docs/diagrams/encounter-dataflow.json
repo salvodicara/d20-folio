@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "d20 Folio v2 — encounter data flow",
+    "quality_profile": "showcase",
+    "viewBox": [1068, 540],
+    "views": [
+      {
+        "id": "main-path",
+        "label": "Intent to surface",
+        "focus": ["tile", "preflight", "log", "fold", "proselog"],
+        "note": "Follow one tap from the hotbar to the sentence it produces in the log."
+      },
+      {
+        "id": "dice-seam",
+        "label": "Dice seam",
+        "focus": ["preflight", "dice", "log"],
+        "note": "Every roll is a log action; the app never invents a result behind the reducer."
+      },
+      {
+        "id": "corrections",
+        "label": "Correction and compaction",
+        "focus": ["undo", "log", "checkpoint", "fold"],
+        "note": "Undo is a log-level fact and a checkpoint bounds how far back it reaches."
+      }
+    ]
+  },
+  "stages": [
+    {
+      "label": "Surface"
+    },
+    {
+      "label": "Preflight"
+    },
+    {
+      "label": "Append-only log"
+    },
+    {
+      "label": "Fold"
+    },
+    {
+      "label": "Read models"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "tile",
+      "type": "frontend",
+      "label": "Hotbar tile",
+      "sublabel": "PlayScreen.tsx",
+      "tag": "target, aim",
+      "stage": 0,
+      "row": 1
+    },
+    {
+      "id": "dice",
+      "type": "security",
+      "label": "Dice seam",
+      "sublabel": "src/lib/dice.ts",
+      "tag": "ADR-0010",
+      "stage": 1,
+      "row": 0
+    },
+    {
+      "id": "preflight",
+      "type": "backend",
+      "label": "planIntent",
+      "sublabel": "table/dispatch.ts",
+      "tag": "reducer preflight",
+      "stage": 1,
+      "row": 1
+    },
+    {
+      "id": "undo",
+      "type": "backend",
+      "label": "Undo and override",
+      "sublabel": "combat/override.ts",
+      "tag": "DM last word",
+      "stage": 1,
+      "row": 2
+    },
+    {
+      "id": "checkpoint",
+      "type": "database",
+      "label": "Checkpoint",
+      "sublabel": "combat/checkpoint.ts",
+      "tag": "compaction",
+      "stage": 2,
+      "row": 0
+    },
+    {
+      "id": "log",
+      "type": "messagebus",
+      "label": "Encounter log",
+      "sublabel": "encounters/live",
+      "tag": "arrayUnion",
+      "stage": 2,
+      "row": 1
+    },
+    {
+      "id": "fold",
+      "type": "backend",
+      "label": "fold and resolve",
+      "sublabel": "combat/fold.ts",
+      "tag": "pure, total",
+      "stage": 3,
+      "row": 1
+    },
+    {
+      "id": "hud",
+      "type": "frontend",
+      "label": "HUD and initiative",
+      "sublabel": "InitiativeStrip.tsx",
+      "tag": "FoldedState",
+      "stage": 4,
+      "row": 0
+    },
+    {
+      "id": "proselog",
+      "type": "frontend",
+      "label": "Prose log",
+      "sublabel": "encounter-log-view.ts",
+      "tag": "EN/IT",
+      "stage": 4,
+      "row": 1
+    },
+    {
+      "id": "mapview",
+      "type": "frontend",
+      "label": "Map view",
+      "sublabel": "combat/map.ts",
+      "tag": "fog, reach",
+      "stage": 4,
+      "row": 2
+    }
+  ],
+  "flows": [
+    {
+      "id": "tile-plan",
+      "from": "tile",
+      "to": "preflight",
+      "label": "targets, answers",
+      "variant": "emphasis"
+    },
+    {
+      "id": "inputs-owed",
+      "from": "preflight",
+      "to": "dice",
+      "label": "inputs owed",
+      "variant": "dashed"
+    },
+    {
+      "id": "roll-actions",
+      "from": "dice",
+      "to": "log",
+      "label": "roll actions"
+    },
+    {
+      "id": "intent-action",
+      "from": "preflight",
+      "to": "log",
+      "label": "intent action",
+      "variant": "emphasis",
+      "labelDy": 13
+    },
+    {
+      "id": "correction-actions",
+      "from": "undo",
+      "to": "log",
+      "label": "undo, override"
+    },
+    {
+      "id": "compaction",
+      "from": "log",
+      "to": "checkpoint",
+      "label": "past 200 actions",
+      "variant": "dashed"
+    },
+    {
+      "id": "checkpoint-start",
+      "from": "checkpoint",
+      "to": "fold",
+      "label": "folded head",
+      "variant": "dashed"
+    },
+    {
+      "id": "ordered-log",
+      "from": "log",
+      "to": "fold",
+      "label": "ordered by seq",
+      "variant": "emphasis",
+      "labelDy": 30,
+      "route": "straight"
+    },
+    {
+      "id": "state-out",
+      "from": "fold",
+      "to": "hud",
+      "label": "FoldedState"
+    },
+    {
+      "id": "receipts-out",
+      "from": "fold",
+      "to": "proselog",
+      "label": "receipts",
+      "variant": "emphasis",
+      "labelDy": 13
+    },
+    {
+      "id": "map-out",
+      "from": "fold",
+      "to": "mapview",
+      "label": "tokens and fog"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "One writable fact",
+      "items": [
+        "The only persisted mutation is an Action appended to the log",
+        "resolve(state, action, catalogue) is pure: no clock, no randomness, no locale",
+        "Receipts are recomputed on every fold, never stored"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Dice never bypass the log",
+      "items": [
+        "src/lib/dice.ts is the only module that draws randomness for a roll",
+        "An app roll stores its seed so any client can verify the faces; a manual roll stores the read faces",
+        "A roll is consumed by at most one action, and by the entity it was rolled for"
+      ]
+    },
+    {
+      "dot": "orange",
+      "title": "Correction and compaction",
+      "items": [
+        "Undo is a fold-level fact: the undone action and its dependents are skipped",
+        "Compaction folds the head into a checkpoint and drops it from the log",
+        "An action swallowed by a checkpoint can no longer be undone"
+      ]
+    }
+  ]
+}

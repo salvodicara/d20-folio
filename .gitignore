@@ -116,3 +116,6 @@ artifacts/visual-review/
 # repo content (v2 knowledge-base reset, 2026-09-09).
 .superpowers/
 .tmp/
+
+# Delivered archify viewers — build products of docs/diagrams/*.json, regenerable
+docs/diagrams/*.html
