@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-# Pre-commit hook (LEAN): changeset doc-guard + lint-staged only. Tests are run
-# focally while a milestone is engineered; no branch checkpoint runs a suite.
-# The FULL gate (typecheck + lint --max-warnings 0 + test:coverage over BOTH
-# lanes + build + budget) runs exactly once when finished work targets main
-# (see .githooks/pre-push; ci.yml mirrors main remotely).
-# Owner decision 2026-08-12 (golden rule 14).
+# Pre-commit hook (LEAN): changeset doc-guard + graph refresh + lint-staged.
+# Tests are run focally while a milestone is engineered; no branch checkpoint
+# runs a suite. The FULL gate (typecheck + lint --max-warnings 0 +
+# test:coverage over BOTH lanes + build + budget) runs exactly once when
+# finished work targets main (see .githooks/pre-push; ci.yml mirrors main
+# remotely).
+# Owner decision 2026-08-12 (golden rule 14). Graph-refresh step added
+# 2026-09-09: keeps the committed graphify graph (graphify-out/graph.json +
+# GRAPH_REPORT.md) current with staged code changes; never blocks a commit.
 # Install: git config core.hooksPath .githooks   ·   NEVER use --no-verify.
 
 set -euo pipefail
 
-echo "==> Pre-commit: doc-guard + lint-staged..."
+echo "==> Pre-commit: doc-guard + graph refresh + lint-staged..."
 
 # ── Doc guard (AI agent workflow) ─────────────────────────────────────────────
 # Every commit must stage a changeset (.changeset/<slug>.md) describing the
@@ -20,6 +23,24 @@ if [ -z "$STAGED_CHANGESETS" ]; then
   echo "Add a changeset describing this change before committing."
   echo "Run: pnpm changeset   (or create .changeset/<slug>.md by hand), then git add it."
   exit 1
+fi
+
+# ── Graph refresh (committed graphify graph) ──────────────────────────────────
+# If this commit touches source code, re-extract the graph and stage the
+# refreshed graph.json + GRAPH_REPORT.md so the committed graph never drifts
+# from the code it describes. Missing binary or any failure is non-fatal —
+# the graph is convenience, not a gate.
+if git diff --cached --name-only | grep -qE '^(src|tests|functions|scripts)/.*\.(ts|tsx|js|mjs)$'; then
+  if command -v graphify >/dev/null 2>&1; then
+    if GRAPHIFY_FORCE=1 graphify update . --no-cluster >/dev/null 2>&1 \
+      && graphify cluster-only . --no-viz --no-label >/dev/null 2>&1; then
+      git add graphify-out/graph.json graphify-out/GRAPH_REPORT.md
+    else
+      echo "==> graphify refresh failed; committing without a graph update."
+    fi
+  else
+    echo "==> graphify not on PATH; skipping graph refresh."
+  fi
 fi
 
 # ── Lint + format staged files only (fast) ────────────────────────────────────

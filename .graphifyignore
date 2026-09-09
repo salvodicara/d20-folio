@@ -1,0 +1,16 @@
+# graphify extraction scope — the committed graph covers the public v2 code only.
+# Private pack (licensing partition) must never enter the public graph.
+content-pack/
+# vendored/third-party agent skills and harness scratch
+.claude/
+.agents/
+.superpowers/
+.tmp/
+# generated / history
+.changeset/
+docs/archive/
+graphify-out/
+dist/
+coverage/
+playwright-report/
+test-results/

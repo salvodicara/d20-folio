@@ -1,6 +1,9 @@
 data-scrape/
 previews/history/
 
+# Committed graphify graph output — generated, not hand-authored; never reformat.
+graphify-out/
+
 # Codec-generated canonical artifacts — their byte format is OWNED by the codec
 # (`serializeCharacter` → `JSON.stringify(.., 2)`) and LOCKED by the round-trip test
 # (`team-fixtures-new-export.test.ts`: serialize(parse(file)) === file). Prettier's
