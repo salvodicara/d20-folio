@@ -33,7 +33,7 @@
       "masteryTopple": "Weapon mastery: when you hit, you can force the target to make a Constitution saving throw (DC 8 + your attack modifier + Proficiency Bonus) or fall Prone.",
       "masteryVex": "Weapon mastery: when you hit and deal damage, you gain Advantage on your next attack roll against that target before the end of your next turn.",
       "multiclass": "Taking your next level in a different class instead of your current one. You keep everything you already have; the levels of all your classes add up to your total.",
-      "originFeat": "The feat your background grants at level 1, such as Alert or Savage Attacker. It is yours from the start and never counts against later feat choices.",
+      "originFeat": "The feat your background grants at level 1. It is yours from the start and never counts against later feat choices.",
       "passiveScore": "What you notice without rolling: 10 plus the skill's bonus. The DM checks it quietly, for example to see whether you spot a hidden creature.",
       "pointBuy": "A fair way to assign scores: every ability starts at 8 and you spend 27 points to raise them, up to 15 before bonuses. Higher scores cost more points.",
       "preparedSpells": "The spells you currently have ready to cast. After a Long Rest you can swap which spells you prepare, choosing from your class list.",

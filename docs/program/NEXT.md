@@ -18,11 +18,11 @@ Claude's half is delivered in two passes:
   `docs/superpowers/research/2026-09-09-rule-30-audit.md`, the game-feel rules and copy set
   `docs/superpowers/research/2026-09-09-game-feel.md`, the reference evidence
   `docs/superpowers/research/2026-09-09-rule-30/`, and the dossier drafts Astra's specs carry
-  verbatim `docs/superpowers/specs/2026-09-09-pd-reference-dossiers.md`. Engine and data seams
-  delivered with tests: SRD class and species descriptions (EN/IT), the ten creation glossary
-  terms, `applyRecommendedBuild` (`src/lib/character-creation/recommended.ts`),
+  verbatim `docs/superpowers/specs/2026-09-09-pd-reference-dossiers.md`. Seams delivered with
+  tests: SRD class and species descriptions (EN/IT), ten creation glossary terms, `applyRecommendedBuild` (`src/lib/character-creation/recommended.ts`),
   `forecastCreation`/`speculate` (`src/lib/views/creation-forecast.ts`), and
-  `creationIssueMessage` with `creationV2.fix.*` (`src/lib/views/creation-issues.ts`).
+  `creationIssueMessage` with `creationV2.fix.*` (`src/lib/views/creation-issues.ts`), and
+  the rubric → glossary seam (`src/lib/views/creation-glossary.ts`).
 
 **Astra takes over from here:** open the audit §1 and §2.3–§2.4 rows marked `M`, then the dossiers
 D1–D9 (creation), then D10–D12 (landing, hub, roster). Every redesigned surface's spec starts with
@@ -49,9 +49,8 @@ where the dossier names one.
 | P09 Shell and orientation (verified source)      | `c0213b67` |
 | P10 Creation and onboarding                      | `59b20e75` |
 
-P01 is a documentary candidate with no separate integration receipt. For P08b, P08c and P09 the SHA
-above is the verified integrated source; their final remote receipts were kept in external evidence
-folders — see `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md` for the full historical record.
+P01 has no separate integration receipt; P08b, P08c and P09 SHAs are the verified integrated
+source (remote receipts in the archived ledger `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md`).
 
 Knowledge-base reset (2026-09-09): integrated on `v2` through `1cc5d32e`.
 
