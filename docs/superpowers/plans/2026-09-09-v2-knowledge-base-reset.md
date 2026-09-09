@@ -7,7 +7,7 @@
 **Goal:** one program, one ledger, one design reference and one shared knowledge base for
 d20 Folio `v2`, readable identically by Claude Code and Codex, with the v1 documentation
 archived, every map document rewritten short from the v2 code, a committed graphify graph kept
-current by a post-commit hook, archify diagrams in the map documents, and the global skill layer
+current by a pre-commit hook, archify diagrams in the map documents, and the global skill layer
 reduced to the skills the repository routes.
 
 **Architecture:** the repository is the only knowledge base. Everything an agent must obey (the
@@ -171,41 +171,32 @@ For a differing pair, `diff` the two `SKILL.md` files, keep the one with the hig
 
 ### Task B0: graph, hook, plan
 
+Implemented as ruled on 2026-09-09: pre-commit, not post-commit (ledger ruling).
+
 **Files:**
 
 - Modify: `.gitignore:72-73` (drop `graphify-out/`, add `graphify-out/graph.html`,
   `graphify-out/*.svg`, `graphify-out/cache/`, `graphify-out/wiki/` — commit only `graph.json` and
   `GRAPH_REPORT.md`)
-- Create: `.githooks/post-commit`
+- Modify: `.githooks/pre-commit` (add a graph-refresh step)
 - Create: `graphify-out/graph.json`, `graphify-out/GRAPH_REPORT.md` (generated)
 - Create: `.changeset/v2-knowledge-graph.md`
 
 - [ ] **Step 1:** `graphify . --no-viz` in the worktree (already launched); confirm
       `graphify-out/graph.json` exists and note its size in the changeset.
-- [ ] **Step 2:** write `.githooks/post-commit`:
-
-```bash
-#!/usr/bin/env bash
-# Keep the committed graphify graph current: re-extract only the code files this commit changed.
-# The graph is a committed, generated artifact (graphify-out/graph.json + GRAPH_REPORT.md);
-# the follow-up amend is intentional — the graph rides with the commit that changed the code.
-set -euo pipefail
-command -v graphify >/dev/null 2>&1 || exit 0
-[ -n "${GRAPHIFY_HOOK_RUNNING:-}" ] && exit 0
-if git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -qE '^(src|tests|functions|scripts)/.*\.(ts|tsx|js|mjs)$'; then
-  GRAPHIFY_HOOK_RUNNING=1 graphify . --update --no-viz >/dev/null 2>&1 || exit 0
-  if ! git diff --quiet -- graphify-out/graph.json graphify-out/GRAPH_REPORT.md; then
-    git add graphify-out/graph.json graphify-out/GRAPH_REPORT.md
-    GRAPHIFY_HOOK_RUNNING=1 git commit --amend --no-edit --quiet
-  fi
-fi
-```
-
-`chmod +x .githooks/post-commit`. Test: make a throwaway commit touching a `.ts` file and confirm
-the amended commit contains `graphify-out/graph.json`; then `git reset --hard HEAD~1`.
+- [ ] **Step 2:** the graph refresh is implemented as a step inside the existing
+      `.githooks/pre-commit` hook (after the changeset doc-guard, before `pnpm lint-staged`), not
+      as a separate hook file: when staged files match
+      `^(src|tests|functions|scripts)/.*\.(ts|tsx|js|mjs)$`, it runs `graphify update` (with
+      `GRAPHIFY_FORCE=1`, `--no-cluster`) then `graphify cluster-only` (with `--no-viz`,
+      `--no-label`), and on success stages the refreshed `graphify-out/graph.json` and
+      `GRAPH_REPORT.md` into the same commit. A missing `graphify` binary or a failing command is
+      non-fatal and never blocks the commit. Test: stage a throwaway change to a `.ts` file, run
+      the hook, and confirm `graphify-out/graph.json` and `GRAPH_REPORT.md` get staged; then
+      discard the throwaway change.
 
 - [ ] **Step 3:** commit this plan, the ignore change, the hook and the graph:
-      `git add docs/superpowers/plans/2026-09-09-v2-knowledge-base-reset.md .gitignore .githooks/post-commit graphify-out/graph.json graphify-out/GRAPH_REPORT.md .changeset/v2-knowledge-graph.md && git commit -m "chore(kb): commit the graphify graph, keep it current from a post-commit hook, add the reset plan"`.
+      `git add docs/superpowers/plans/2026-09-09-v2-knowledge-base-reset.md .gitignore .githooks/pre-commit graphify-out/graph.json graphify-out/GRAPH_REPORT.md .changeset/v2-knowledge-graph.md && git commit -m "chore(kb): commit the graphify graph, keep it current from the pre-commit hook, add the reset plan"`.
 
 ### Task B1: `docs/program/` — the program, in the repo
 
@@ -388,7 +379,7 @@ describe("documentation budget (no dead weight, owner 2026-09-03; caps ratified 
   repository** (every contract an agent must obey is under `docs/program/`; harness-private
   folders hold evidence only), 37 **One ledger, one numbering** (PROGRAM_STATUS is one page; a
   closed frontier collapses to one row with a SHA), 38 **The graph is always current**
-  (`graphify-out/graph.json` is committed, the post-commit hook keeps it current, graph queries
+  (`graphify-out/graph.json` is committed, the pre-commit hook keeps it current, graph queries
   come before file reads), 39 **Diagrams are archify sources** (every map diagram has its JSON
   source and SVG under `docs/diagrams/`). Remove the stale rule text that still says "no dice".
 - Modify: `docs/PRODUCT_CONSTITUTION.md` (≤ 40 KB): reconcile with the same four facts; drop the
