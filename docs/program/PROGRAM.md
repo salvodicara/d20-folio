@@ -176,6 +176,11 @@ counterpart on the same facts, costs, receipt and undo.
 | E18, E19: derived values and homebrew     | Source and version, choices and conflicts, and the unsupported path                       | Executes compositions of already proven primitives; never interprets prose                   | Version, copy or revision with no phantom bonus or claim                            |
 | E20: cross-cutting verification           | One receipt per root and no side effect inside a preview                                  | Three modes over the same outcome, decisions, apply-once                                     | Closing suite attack → reaction → reset, undo, replay, and checkpoints              |
 
+The per-family definitions E01–E22 and the nine player-freedom scenarios still live only in the lab
+(`~/Workspace/Codex/d20-design-dialogue/full-lab/docs/RULES-EXCEPTION-CATALOG.md`,
+`PLAYER-FREEDOM-CONTRACT.md`); rule 36 requires them in the repository before P14a starts — that
+import is a P14a entry condition.
+
 ## Cross-cutting contracts
 
 <!-- source: full-lab/docs/AGENT-PROGRAM.md, "Audit di consegna e catena obbligatoria" -->

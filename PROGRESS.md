@@ -50,12 +50,12 @@ tabulated in [`docs/PROGRAM_STATUS.md`](docs/PROGRAM_STATUS.md); P10 closed at `
 None of the following has happened, and none is authorised by any plan in this repository — each
 is an explicit owner gate (golden rule 33):
 
-| Not yet                      | Owner                                                  |
-| ---------------------------- | ------------------------------------------------------ |
-| Any deploy, staging included | owner gate, per change                                 |
-| Real-data migration          | **P29**, under the ADR-0009 protocol                   |
-| Cutover from production      | **P30**; production keeps running untouched until then |
-| A release cut for `v2`       | after the milestone, never as part of an integration   |
+| Not yet                      | Owner                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Any deploy, staging included | owner gate, per change                                                                                               |
+| Real-data migration          | **P30** (data import and verified cutover), with **P11b** for the personal-data cutover, under the ADR-0009 protocol |
+| Cutover from production      | **P30**; production keeps running untouched until then                                                               |
+| A release cut for `v2`       | after the milestone, never as part of an integration                                                                 |
 
 Two further gates are open in [`docs/PROGRAM_STATUS.md`](docs/PROGRAM_STATUS.md): the staging
 Google sign-in provider (an owner console action, pending since 2026-09-03) and PD's own verdict.

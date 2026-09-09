@@ -82,7 +82,7 @@ focused tests/unit/homebrew-origin-ui.test.tsx; DESIGN/Architecture/schema owner
 ## Task 4 — Current optimized runtime and paper
 
 Owner Astra; independent read-only reviewers inspect actual source and artifacts.
-External /Users/salvatoredicara/Workspace/Codex/d20-folio-p07-evidence owns scripts/logs/manifests.
+External ~/Workspace/Codex/d20-folio-p07-evidence owns scripts/logs/manifests.
 
 - [x] Configure explicit synthetic demo Auth19099/Firestore18080/Storage19199, preview5180;
       verify ownership first and preserve preexisting Firestore8080.

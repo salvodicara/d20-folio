@@ -38,13 +38,17 @@ folders — see `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md` for the full hist
 
 Knowledge-base reset (2026-09-09): one program in `docs/program/`, one-page ledger, v1 docs
 archived, map documents rewritten with archify diagrams, graph committed and hook-refreshed,
-skills unified — integrated on `v2` through `8f06f950` (the commits after it are this record and
-the integration).
+skills unified — in flight on the task branch; the integration SHA is recorded here by the
+integration commit.
 
 ## Open
 
 - **PD** — the current block, not started.
 - **P11a → P30** — not started; the order and dependencies are in [`PROGRAM.md`](PROGRAM.md).
+- The per-family definitions E01–E22 and the nine player-freedom scenarios still live only in the
+  lab (`~/Workspace/Codex/d20-design-dialogue/full-lab/docs/RULES-EXCEPTION-CATALOG.md`,
+  `PLAYER-FREEDOM-CONTRACT.md`); rule 36 requires them in the repository before P14a starts — that
+  import is a P14a entry condition.
 - **Out-of-combat mechanical freedom** (owner, 2026-09-03) still needs its own design pass: players
   resolve spells and other mechanics outside a formal encounter, and whether the personal
   `Encounter` aggregate is usable independently of a campaign lease is unverified.

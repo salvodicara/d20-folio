@@ -15,7 +15,9 @@ Compare a runtime against these, never against a general resemblance.
   SHA-256 of the canonical JSON of that file map.
 - `verificationCommand` — `python3 freeze-candidate.py --verify`, run inside the lab folder.
 
-A tag or a hash identifies a candidate; it never closes a gate on its own.
+A tag or a hash identifies a candidate; it never closes a gate on its own. The manifest's `status`
+and `ownerApproval` fields are the lab's own state at freeze time and are superseded by the owner's
+approval of 2026-09-06 recorded in [`DECISIONS.md`](../DECISIONS.md).
 
 ## The lab itself is not committed
 

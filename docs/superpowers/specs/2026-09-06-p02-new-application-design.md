@@ -3,9 +3,9 @@
 ## Authority and intent
 
 The current owner mandate is the complete request at
-`/Users/salvatoredicara/Workspace/Codex/d20-folio-p02-new-evidence/OWNER-MANDATE.md`.
+`~/Workspace/Codex/d20-folio-p02-new-evidence/OWNER-MANDATE.md`.
 Astra's approved full-lab 0.9.3 is the experience reference:
-[owner receipt, passage 29](/Users/salvatoredicara/Workspace/Codex/d20-design-dialogue/full-lab/docs/REVIEW.md).
+owner receipt, passage 29, in `~/Workspace/Codex/d20-design-dialogue/full-lab/docs/REVIEW.md`.
 The original freeze manifest remains historical; initial verification evidence and subsequent
 documentary deltas are recorded in PROGRAM_STATUS and the external direction-reset manifest.
 The preceding P02 candidate is diagnostic material. Its visual request is withdrawn.

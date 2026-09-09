@@ -88,7 +88,7 @@ Full composed `just ci` exited 0: 871 app files / 19,326 tests; seven Functions 
 219 tests, no skips, including all six private fixture copies and exact-original recovery.
 The public/private seam is unchanged; `ci-srd-only` was not rerun.
 
-Evidence lives externally in `/Users/salvatoredicara/Workspace/Codex/d20-folio-p05-evidence`:
+Evidence lives externally in `~/Workspace/Codex/d20-folio-p05-evidence`:
 HANDOFF.md, REPLAY.md, FIDELITY.md, final-source-review.md, final-print-review.md, gate logs,
 actual browser scripts, backend audits, source/image/build manifests and preserved failed outputs.
 The final print review closed the last-page artwork defect. Final bounded optimized runtime

@@ -23,7 +23,8 @@ the owner's 2026-09-09 feedback. Its exit acceptance
 The owner's verdict closes PD. **P11a does not start before that verdict.** PD has not started;
 P11a is next, not started.
 
-The 2026-09-09 knowledge-base reset is integrated on `v2` (see `docs/program/NEXT.md` → Closed).
+Knowledge-base reset (2026-09-09): in flight on the task branch; the integration SHA is recorded
+here by the integration commit (see `docs/program/NEXT.md` → Closed).
 
 **P10 — Creation and onboarding** delivered, `59b20e75`, verified on `v2`:
 

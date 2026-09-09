@@ -54,7 +54,10 @@ stay fast (target under 15 minutes). Salvage the automation knowledge (typed dat
 **Method.** Giants' shoulders (golden rule 30): every screen, component, model and workflow is
 copied from the state of the art with real evidence and then improved — never invented. UI/UX
 comes first: the owner judges only visuals, and no product code is written for a surface until
-its screens are agreed at 100 % from images (golden rule 25).
+its screens are agreed at 100 % from images (golden rule 25). (Applied on `v2` as follows since
+8 September 2026: the approved mock 0.9.3 — and PD's output for redesigned surfaces — is the
+agreed image set, and reviewed gate-green work integrates under the standing delegation in
+§V2 delivery and owner review; production `main` keeps the blocking per-change gate.)
 
 **Acceptance stories.** (1) Marco, a beginner, plays his first turn: moves, casts Fireball on three
 goblins, everything is resolved and logged. (2) Sara the DM runs an ogre ambush: tokens, fog,
