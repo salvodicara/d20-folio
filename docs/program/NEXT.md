@@ -38,8 +38,7 @@ folders — see `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md` for the full hist
 
 Knowledge-base reset (2026-09-09): one program in `docs/program/`, one-page ledger, v1 docs
 archived, map documents rewritten with archify diagrams, graph committed and hook-refreshed,
-skills unified — in flight on the task branch; the integration SHA is recorded here by the
-integration commit.
+skills unified — integrated on `v2` through `1cc5d32e` (the commit after it is this record).
 
 ## Open
 
