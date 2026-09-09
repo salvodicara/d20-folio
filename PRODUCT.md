@@ -1,63 +1,5 @@
 # Product
 
-## Owner delivery priority — 7 September 2026
-
-Implement the whole approved mock and every required application capability through the
-ordered plan. The owner expects further changes once the complete application can be judged;
-defer fine visual and interaction polishing to that final review rather than repeatedly
-seeking decisions on minor details. Astra resolves implementation details and preserves the
-approved direction. This prioritization does not reduce functional depth, correctness,
-privacy, data recovery or the verified delivery contract. Execution permissions and receipts
-belong only in docs/PROGRAM_STATUS.md. Propagate this priority in subsequent plans and prompts.
-
-## Owner runtime verification requirement — 7 September 2026
-
-Every implementation block must iterate on the actual current application: exercise its user
-journeys, inspect UI and persisted effects, reproduce failures, fix them, and rerun affected
-scenarios until verified. Include independent authenticated clients and failure/recovery paths
-where shared state is involved. Exercise the optimized build against explicit Firebase demo
-emulators as well as focused tests; simulated success and screenshots alone are insufficient.
-Keep this loop repeatable and carry it into subsequent prompts. The operational procedure belongs
-to docs/CONTRIBUTING.md; execution evidence belongs to docs/PROGRAM_STATUS.md and its handoff.
-
-Aim for production fidelity without claiming exact equivalence. Document emulator and environment
-gaps and verify them in the separately authorized staging/release gates before switching users.
-Local emulator acceptance never authorizes deployment, production writes or new cost.
-
-## Owner rectification — new V2 application, 6 September 2026
-
-V2 is a completely new application. The binding experience reference is Astra's approved
-full-lab mock `d20-folio-html-0.9.3-2026-09-06`, with the owner receipt in the external
-REVIEW journal, passage 29. The existing application, earlier Claude implementations and
-their screenshots are diagnostic history, never the design baseline or a result to approve.
-The previous P02 request to approve its 28 legacy screenshots is withdrawn. Those tests
-and that bounded review prove only their examined candidate, not new V2 conformity or P02 closure.
-
-Astra has technical and architectural discretion: build, replace or reuse only to satisfy
-the new domain and approved experience. One authority per fact, explicit responsibilities
-and dependencies, verifiable transitions, no duplicated state or alternative old paths.
-No legacy combat bridge. Production continues independently; legacy data is solely input
-for recoverable migration: snapshot → dry-run → idempotent apply → verify/recover.
-No production change, real migration, deployment, new cost or external send is authorized.
-
-Reproduce all transferable BG3 behavior, especially combat, interactions, organization and
-feedback, in Folio's approved experience. Adopt useful capabilities from D&D Beyond, Roll20
-and relevant tools. D&D 2024 governs rules; no automatic BG3 rule variants. The mock guides
-composition and behavior without limiting functional depth. Preserve all downstream depth
-obligations. Every plan, delegation, review and full successor prompt propagates this decision.
-
-Visual acceptance compares the identified approved Astra mock with actual new V2 runtime:
-dark IT/EN, 1440×900 and 1280×800, 390×844 where pertinent, full Italian names, keyboard/focus,
-crop and fallback. Do not reconstruct the old product baseline to satisfy a withdrawn gate.
-P02 remains open until its conforming implementation, fresh behavioral proofs, actual review
-and pertinent owner visual/interaction verdict exist. P03 is not authorized by this rectification.
-The sole execution owner is docs/PROGRAM_STATUS.md in the current candidate; historical reports
-remain unchanged and their earlier approval/completion claims must be read in their original scope.
-
-## Register
-
-product
-
 ## Steering (owner, 2026-09-03 — the top of the authority stack)
 
 **Purpose, in one sentence.** A digital table where the app does the math and the rules the way
@@ -152,169 +94,180 @@ text chat, music, map authoring, art generation, AI recaps).
 **Identity.** The owner confirmed the name d20 Folio and the D20 mark on 2026-09-05.
 A specific new SVG or illustration corpus still needs its own visual/provenance evidence.
 
-## Reconciled owner direction — 2026-09-06
+## Owner decisions (dated)
 
-Combat and every transferable interaction must reproduce Baldur's Gate 3's behavior in full,
-with Folio's visual identity. This is a behavioral requirement, not color, atmosphere or loose
-similarity: HUD/hotbar, actions/Bonus Actions/reactions, targeting, range/areas, movement,
-resources, dice, consequences, and transferable character/inventory/growth paths. Before each
-surface, observe the corresponding BG3 sequence, organization and feedback; demonstrate the
-Folio counterpart through actual gestures and visual comparisons. D&D 2024, player freedom and
-the physical-dice alternative remain binding. A concrete incompatibility is resolved with the
-owner using that example; never silently cut the product or ask for another general reference
-interview. No new 3D world, backend, cost or privacy policy follows by implication.
+Full text in [`docs/program/DECISIONS.md`](docs/program/DECISIONS.md); the newest dated statement
+always wins. What each date settled for this document:
 
-The approved HTML lab supplies composition and interaction references, not a ceiling on depth.
-The binding implementation obligations and their scenarios are in [DESIGN.md](DESIGN.md),
-“Implementation depth”; execution order and evidence are owned by
-[Program Status](docs/PROGRAM_STATUS.md). Only dark, in IT and EN, is the new-app theme target;
-light paper for printing is not a second application theme.
+- **2026-09-09** — the experience is too cold and administrative; spells and combat actions need
+  curated raster art, not generic icons or ad-hoc SVG; BG3 and D&D Beyond are studied for real
+  (open as block PD).
+- **2026-09-08** — the standing V2 delivery delegation and the clarity obligation, both below.
+- **2026-09-07** — custom content drives the same engine and combat stays editable (below); every
+  block iterates on the actual running application, with independent authenticated clients and the
+  optimized build on Firebase demo emulators, and emulator acceptance never authorises deployment,
+  production writes or new cost.
+- **2026-09-06** — V2 is a completely new application: the approved mock
+  `d20-folio-html-0.9.3-2026-09-06` is the binding experience reference and never a ceiling on
+  depth; existing code, engines and screenshots carry no reuse or compatibility claim; no legacy
+  combat bridge; production continues independently and its data is only the input to a recoverable
+  migration. Visual acceptance compares that mock with the actual V2 runtime, over the matrix in
+  [`docs/program/PROGRAM.md`](docs/program/PROGRAM.md).
+- **2026-09-05** — dark theme only, in EN and IT: light paper is for printing, not a second
+  application theme. The name d20 Folio and the D20 mark are confirmed.
+- **2026-09-03** — the steering above, giants' shoulders, the dice reversal, and a CI gate under
+  fifteen minutes.
 
-Four permanent domains organize the product: Campaign, Character, Library and At the table.
-Account is a global utility. Back/Forward and return from a detail/picker preserve valid scoped
-filters, scroll, selection and drafts. Campaign membership, character assignment, inspected
-character and active command actor are separate. An account can own many characters and join
-many campaigns, including multiple characters in one campaign; one character has at most one
-current campaign. DM inspection exposes the complete authorized sheet without changing the
-active actor, lease, control or balances, and without exposing private notes.
+## V2 delivery and owner review
 
-Automatic resolution and contextual “Resolve at the table” share facts, costs, consequences,
-receipts and correction. Unsupported mechanics remain preserved and usable through explicit
-manual consequences, not notes pretending to apply changes. Exceptions are available in creation,
-growth and play without an extra automatic DM-approval queue. The three campaign automation
-levels remain separate application policies, and the DM retains final arbitration. Rule freedom
-never bypasses account/content permissions.
+For implementation of the approved Astra mock and the agreed product contracts, the owner gives
+standing authorization to complete reviewed, gate-green work and integrate it into `v2` without a
+fresh exhaustive screenshot approval at every block. Always verify the real runtime against the mock
+and deliver curated actual screenshots in chat, followed by the successor handoff once the block and
+its integration are finished. Do not expect the owner to inspect every control, repeat this consent,
+or perform the agent's verification: the detailed hands-on usability review happens when the
+application is complete and usable. This is delegated implementation acceptance, not evidence that
+the owner audited every pixel.
 
-Custom IS the library: custom content autosaves for reuse across eleven families — weapons,
-equipment/items, spells, features, monsters, subclasses, campaign rules, species, feats,
-backgrounds and classes. A granted copy retains provenance/version; revocation stops future
-access and updates, not an already granted copy. Browsing is not a grant. Architecture owns the
-recipient-materialization protocol and its access boundaries.
-
-**Homebrew automation and editable combat, reaffirmed by the owner on 7 September2026.**
-Custom content is a first-class input to the same combat automation as official content, not a
-parallel descriptive catalogue. A supported custom composition must drive actions, targets, costs,
-resources, effects, reactions and consequences through the shared mechanics and receipt model.
-The finite authoring vocabulary is a foundation to extend as required by the product, not a ceiling
-on its ambition. A manual path never excuses a missing deterministic default for modeled mechanics.
-
-During play, the table must be able to change relevant combat values, resources, conditions, active
-effects and results, and to make contextual rulings. Changes operate on authoritative facts with
-visible consequences, provenance and correction/undo; they do not leave a decorative override over
-unchanged underlying data. Permissions and the DM's final arbitration still apply. Changing an
-in-use copy or an encounter effect must not silently rewrite its library template or other copies;
-a template/version change is a separate explicit choice with a visible scope.
-
-When a mechanic cannot yet be modeled, preserve it and identify the unsupported part. The play
-surface must provide explicit manual consequences on the same facts, costs and receipts, without
-pretending to have executed that mechanic or introducing a second runtime. P05–08 author and
-validate these inputs; the later combat blocks must prove their execution and editability. Their
-acceptance must include an actual custom creation used in combat, automated costs/effects,
-mid-combat modification and causal correction/undo, with ordinary, boundary and composition cases.
-Saving, serializing or previewing a custom creation is not that acceptance proof.
-
-## V2 delivery and owner review — 8 September 2026
-
-For implementation of the approved Astra mock and agreed product contracts, the owner gives
-standing authorization to complete reviewed, gate-green work and integrate it into `v2` without
-requesting a fresh exhaustive screenshot approval at every block. Always verify the real runtime
-against the mock and deliver curated actual screenshots in chat, followed by the complete successor
-prompt once the current block and integration are finished. Do not expect the owner to inspect every
-control, repeat this consent, or perform the agent's verification. Detailed hands-on usability review
-will happen when the application is complete and usable. This is delegated implementation acceptance,
-not evidence that the owner audited every pixel or control.
-
-This instruction supersedes earlier per-block V2 screenshot approval waits, including the P07 prompt.
 It preserves independent review, real-runtime evidence, safety and quality gates, full functional
-depth and mock fidelity. Resolve routine design/technical details autonomously. Ask only for a new
-material product decision that is not covered by the agreed direction or for separately gated
-production/deployment, real-data migration, cost or other external authority. Integration into `v2`
-does not authorize deployment or production switching. Carry this policy in every successor prompt.
+depth and mock fidelity. Resolve routine design and technical details autonomously; ask only for a
+material product decision the agreed direction does not cover, or for separately gated production,
+deployment, real-data migration, cost or other external authority. Integration into `v2` authorizes
+no deployment or production switch.
 
-**Clarity and familiar interaction patterns, reaffirmed by the owner on 8 September 2026.**
+**Production continuity.** The group keeps playing with the current production app while V2 develops
+separately against the dedicated staging project; production is not changed by V2 work. Switch and
+retirement of the old experience happen only when V2 is complete, the players' data have been
+migrated and verified under the recovery protocol, and the owner explicitly authorizes the switch.
+P11b's internal state transition does not retire production; P30 does not itself authorize a
+deploy.
+
+## Clarity and familiar interaction patterns
+
 The same depth and contextual control must be understandable throughout the application, including
 homebrew entry forms, character creation/growth, campaign management and play/combat. Users must
 be able to tell where they are, what a term or control means, what they can do, and what a choice
 will change. Use familiar, established interaction patterns and consistent domain language;
 implementation terminology and internal data structures must not become prerequisites for use.
 
-Provide clear labels, coherent grouping, relevant examples/help and visible state/consequences.
-Reveal advanced detail progressively while keeping the full capability available. Preserve context
-and drafts across navigation, explain validation and recovery, and make the next action and return
-path understandable. Clarity must preserve depth, automation, contextual freedom and authoritative
-correction/undo. Do not reduce the product to make a confusing interface appear simpler.
-
+Provide clear labels, coherent grouping, relevant examples and help, and visible state and
+consequences. Reveal advanced detail progressively while keeping the full capability available.
+Preserve context and drafts across navigation, explain validation and recovery, and make the next
+action and return path understandable. Clarity preserves depth, automation, contextual freedom and
+authoritative correction/undo: never reduce the product to make a confusing interface look simpler.
 Generalize the owner's observations into durable principles across related surfaces rather than
-applying them only to the screenshot or form that prompted the comment. DESIGN owns their concrete
-interaction application; every downstream plan, review and complete successor prompt carries this
-clarity obligation alongside the custom automation/editable-combat contract. Broad interim owner
-acceptance does not claim a detailed usability audit; later whole-app review still applies.
+applying them only to the screenshot that prompted them; DESIGN owns their concrete application.
 
-**Production continuity, reaffirmed by the owner in P01.** The group must keep playing with the
-current production app while V2 develops separately against the dedicated staging project.
-Production is not changed by V2 work. Switch and retirement of the old experience happen only
-when V2 is fully complete, the players' data have been migrated and verified under the recovery
-protocol, and the owner explicitly authorizes the switch. P11b's V2 internal state transition
-does not retire production. P30 does not itself authorize deployment.
+**The four permanent domains** organize the product: Campaign, Character, Library and At the table;
+Account is a global utility. Back/Forward and return from a detail or picker preserve valid scoped
+filters, scroll, selection and drafts. Campaign membership, character assignment, inspected character
+and active command actor are separate facts: an account owns many characters and joins many
+campaigns, including several characters in one campaign, while a character has at most one current
+campaign. DM inspection exposes the complete authorized sheet without changing the active actor,
+lease, control or balances, and without exposing private notes.
+
+## Homebrew automation and editable combat
+
+Custom content is a first-class input to the same combat automation as official content, not a
+parallel descriptive catalogue. A supported custom composition drives actions, targets, costs,
+resources, effects, reactions and consequences through the shared mechanics and receipt model. The
+finite authoring vocabulary is a foundation to extend as the product requires, not a ceiling on its
+ambition, and a manual path never excuses a missing deterministic default for a modeled mechanic.
+
+During play the table can change relevant combat values, resources, conditions, active effects and
+results, and make contextual rulings. Changes operate on authoritative facts with visible
+consequences, provenance and correction/undo, never as a decorative override over unchanged data;
+permissions and the DM's final arbitration still apply. Changing an in-use copy or an encounter
+effect must not silently rewrite its library template or other copies — a template or version change
+is a separate explicit choice with a visible scope.
+
+Automatic resolution and a contextual "Resolve at the table" share facts, costs, consequences,
+receipts and correction. When a mechanic cannot yet be modeled, preserve it and identify the
+unsupported part: the play surface provides explicit manual consequences on the same facts, costs
+and receipts, without pretending to have executed that mechanic or introducing a second runtime.
+Exceptions are available in creation, growth and play with no extra DM-approval queue; the three
+campaign automation levels stay separate application policies under the DM's final arbitration, and
+rule freedom never bypasses account or content permissions. Acceptance for the combat blocks
+includes an actual custom creation used in combat, automated costs and effects, mid-combat
+modification and causal correction/undo, across ordinary, boundary and composition cases — saving,
+serializing or previewing one is not that proof.
+
+**Custom IS the library.** Custom content autosaves for reuse across eleven families — weapons,
+equipment/items, spells, features, monsters, subclasses, campaign rules, species, feats, backgrounds
+and classes. A granted copy retains provenance and version; revocation stops future access and
+updates, not an already granted copy; browsing is not a grant. Architecture owns the
+recipient-materialization protocol and its access boundaries.
 
 ## Users
 
-D&D 2024 players, from first-timers to veterans, creating, managing, and playing characters
-digitally — bilingual (EN + IT), offline-first PWA. The owner's group plays online, each on their
-own computer with voice chat; the physical table is the extension. Desktop/laptop exposes the complete product (map, hotbar, dice, encounters, preparation,
-authoring and character management). Phone serves quick/offline consultation, sheet, compendium,
-sessions, notes and relevant updates. Touch combat and full desktop HUD/map parity are not
-requirements; the shared/TV view remains a desktop capability. Beginner-friendly (no manual required) yet expert-capable (hints
-ignorable). Friends of the owner are live users with real characters — this is not a hypothetical
-audience.
+D&D 2024 players, from first-timers to veterans, creating, managing and playing characters digitally
+— bilingual (EN + IT), offline-first PWA, dark theme only (light paper is for printing, never a
+second application theme). The owner's group plays online, each on their own computer with voice
+chat; the physical table is the extension. Desktop/laptop exposes the complete product (map, hotbar,
+dice, encounters, preparation, authoring, character management); the phone serves quick and offline
+consultation, sheet, compendium, sessions, notes and relevant updates. Touch combat and full desktop
+HUD/map parity are not requirements, and the shared/TV view stays a desktop capability.
+Beginner-friendly (no manual required) yet expert-capable (hints ignorable). Friends of the owner are
+live users with real characters — not a hypothetical audience.
 
 ## Product Purpose
 
 The steering above is the purpose. In product terms: a digital table that auto-computes every
 D&D 2024 rule while always allowing a manual override, where a player runs an entire character
-lifecycle (create, level up, play, manage a campaign) without leaving the app, and a DM runs a
-whole session inside it. It is both a live table (action economy, HP, resources, initiative, map,
-dice, automatic consequences) and a D&D knowledge tool (search, character understanding,
-progression paths). Concretely, "Baldur's Gate 3, but for playing D&D": a full-screen map at Owlbear Rodeo's level
-(image, tokens, grid, ruler, simple fog) with a BG3-style hotbar, in-app 3D dice everyone sees
+lifecycle (create, level up, play, manage a campaign) without leaving the app, and a DM runs a whole
+session inside it. It is both a live table (action economy, HP, resources, initiative, map, dice,
+automatic consequences) and a D&D knowledge tool (search, character understanding, progression
+paths). Concretely, "Baldur's Gate 3, but for playing D&D": a full-screen map at Owlbear Rodeo's
+level (image, tokens, grid, ruler, simple fog) with a BG3-style hotbar, in-app 3D dice everyone sees
 (physical dice always allowed as manual input), and every consequence applied automatically with a
 who/why log and undo. DM tools are an optional force-multiplier, never a requirement, and the DM
 plays on the same screen: selecting a creature makes the hotbar that creature's. The app replaces
-the group's external VTT rather than complementing it; without a loaded map it still works fully
-from declared facts.
+the group's external VTT; without a loaded map it still works fully from declared facts.
+
+**BG3 behavioral fidelity is a requirement, not an atmosphere.** Combat and every transferable
+interaction reproduce Baldur's Gate 3's behavior in full, with Folio's identity: HUD and hotbar,
+actions, Bonus Actions and reactions, targeting, range and areas, movement, resources, dice,
+consequences, and the transferable character, inventory and growth paths. Before each surface,
+observe the corresponding BG3 sequence, organization and feedback, then demonstrate the Folio
+counterpart through actual gestures and visual comparisons. Adopt useful capabilities from D&D
+Beyond, Roll20 and Owlbear too. D&D 2024 governs the rules — BG3 rule variants are never imported —
+and player freedom and the physical-dice alternative remain binding. A concrete incompatibility is
+resolved with the owner using that example; never silently cut the product.
 
 ## Brand Personality
 
 **Tactical Codex:** magical, premium, confident, alive. The product feels like a first-class fantasy
-game companion built for online play and the real table: distinctive at a glance, calm under pressure, rich
-where identity or consequence matters, and quiet where the user is reading or deciding. Dark
-graphite, warm ivory, restrained antique gold, semantic pigments, original portraits and precise
+game companion built for online play and the real table: distinctive at a glance, calm under
+pressure, rich where identity or consequence matters, quiet where the user is reading or deciding.
+Dark graphite, warm ivory, restrained antique gold, semantic pigments, original portraits and precise
 tactical iconography form the current working direction. The name describes a product quality and
-interaction grammar, not a theme that every surface must decorate literally.
+interaction grammar, not a theme every surface must decorate literally.
 
 Voice is clear and confident, plain-language for beginners, never jargon-gatekeeping, with no
 marketing filler in task copy. Publicly observable interaction patterns from **D&D Beyond**
 (character-sheet information architecture and density), **Roll20** (physical-table input and inline
-editing), and **Baldur's Gate 3** (interaction confidence, action presentation and craft ceiling) are
-benchmarks, not assets or proprietary internals to copy. D20 Folio's imagery, components and domain
-architecture remain original. Visual fantasy must never reduce usability during a real session.
+editing) and **Baldur's Gate 3** (interaction confidence, action presentation, craft ceiling) are
+benchmarks, not assets or internals to copy. D20 Folio's imagery, components and domain architecture
+remain original, and visual fantasy never reduces usability during a real session.
 
 ## Anti-references
 
 Generic flat SaaS dashboards, Material-flat surfaces, neon/cyber, corporate fintech navy-and-gold,
 the warm-neutral "AI cream default", ornamental parchment everywhere, and fantasy decoration pasted
 over generic forms. D20 Folio is **not** a dashboard, **not** an enterprise application, and **not**
-a fantasy skin. Illuminated Folio, Gilded Reliquary and any other historical visual treatment are
-evidence, not permanent constraints. Keep a treatment only when it remains the best expression of
-the current product; remove it when hierarchy, coherence, accessibility or interaction quality
-improves without it.
+a fantasy skin. Historical treatments such as Illuminated Folio and Gilded Reliquary are evidence,
+not permanent constraints: keep one only while it remains the best expression of the current
+product, and remove it when hierarchy, coherence, accessibility or interaction quality improves
+without it.
 
 ## Design Principles
 
 1. **Progressive disclosure is mandatory.** Common information is visible, summarized, easy to scan,
    available at a glance; detailed information is available on demand, never hidden behind
    unnecessary navigation. This is one of the most important principles in the product and applies
-   everywhere (collapsed vs. expanded cards, pickers, DM surfaces, all of it).
+   everywhere (collapsed vs. expanded cards, pickers, DM surfaces, all of it). It serves both sides:
+   the expert acts fast with no mandatory explanation in the way, and the curious beginner can
+   investigate what a choice means and learn while playing.
 2. **Only and all the necessary.** Every element on a surface must earn its place — no useless info,
    no decoration masquerading as information. When in doubt, leave it out; premium visual registers
    (hero altar, carved cartouche, lit-socket, gold-thread, gilt frame) are earned by information a
@@ -334,10 +287,9 @@ improves without it.
 
 ## Accessibility & Inclusion
 
-WCAG AA is the floor, enforced by a self-enforcing gate (`tests/e2e/a11y.spec.ts`) across every
-surface in the supported dark theme, in EN and IT — the app is axe-clean, re-checked after any token change.
-Every interactive component ships default/hover/focus/active/disabled (+ loading/error where
-relevant) states with a visible keyboard focus ring. All animation respects `prefers-reduced-motion`
-via a single OS-driven kill-switch (no in-app animations toggle). Bilingual EN + IT for every
-user-visible string — no English-only strings ship. Touch targets are ≥44px on mobile. No user-facing
-text below a 10px legibility floor.
+WCAG AA is the floor, enforced by a self-enforcing accessibility gate across every surface in the
+supported dark theme, in EN and IT — the app is axe-clean, re-checked after any token change. Every
+interactive component ships default/hover/focus/active/disabled (+ loading/error where relevant)
+states with a visible keyboard focus ring. All animation respects `prefers-reduced-motion` via a
+single OS-driven kill-switch (no in-app animations toggle). Bilingual EN + IT for every user-visible
+string. Touch targets are ≥44px on mobile; no user-facing text sits below a 10px legibility floor.

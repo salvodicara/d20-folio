@@ -1,0 +1,5 @@
+---
+"d20-folio": patch
+---
+
+Reconcile the steering set on one direction: `CLAUDE.md` is rewritten as a router with one Direction block, a five-role authority table (Constitution, Program, Map, History, Operations), the v2 architecture and the graph-first knowledge-base rules, and `PRODUCT.md` puts §Steering first with the dated 6–9 September owner statements collapsed into one section pointing at `docs/program/DECISIONS.md`. `docs/GOLDEN_RULES.md` rewrites rules 11, 16 and 25 for the `origin/v2` worktree procedure, the five document roles and the standing screenshot delegation, and adds rules 36–39 (contracts live in the repository, one ledger and one numbering, the graph is always current, diagrams are archify sources); `docs/PRODUCT_CONSTITUTION.md` reaches v2.4 with the dated prologues, the light-theme and two-theme obligations and the old no-roll/no-VTT/no-map remnants removed. `docs/WORKTREES.md` becomes the harness-neutral five-step v2 procedure with a ten-line production-fix adapter, and a new `docs/CONTRIBUTING.md` owns the gate split, the commit and changeset rules, the review lifecycle and thirty lessons mined from the retired `*-extras` skills.

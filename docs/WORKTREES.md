@@ -1,208 +1,107 @@
-# V2 topic worktrees — current destination adapter
+# Worktrees
 
-Owner8 September delegation (PRODUCT) authorizes integration of reviewed, gate-green approved-mock
-V2 work without repeated per-block screenshot approval. Always deliver actual images and the final
-complete successor prompt. This supersedes historical visual-wait wording below for V2 only;
-deployment, production and real-data migration remain separately gated.
+Every change gets its own worktree (golden rule 11). There is no PR flow: a task converges, is
+reviewed, passes its gates, and is pushed to its destination branch from the worktree itself.
 
-PRODUCT owns the branch decision: `main` is the continuing production app and production fixes;
-V2 grows separately from fresh `origin/v2`. A V2 task never uses the legacy `wt-new`/`wt-rm`
-recipes below: they hardcode `origin/main`. Keep those recipes scoped to production-fix tasks.
-Every V2 task gets a separate `codex/` branch/worktree under `~/Workspace/Codex`; a clean
-long-lived V2 checkout may be a read-only invoker, never the task's edit destination.
+The destination decides the procedure. `v2` is the new application and takes the five steps below;
+`main` is the production app and takes the ten-line adapter at the end. Never send v2 work to
+`main`, and never edit in another task's checkout or in a long-lived checkout.
 
-1. Read current instructions and Program Status; inventory tasks, worktrees/status and ownership.
-   Fetch `origin main v2`; prove invoker is clean and HEAD equals fresh `origin/v2`. Record the
-   fresh physical path, refs, timestamp and destination before creating work.
-2. From that verified V2 invoker, run `git worktree add -b codex/<task> <absolute-destination>
-origin/v2` (one shell line). Refuse an existing branch/path; never restore or reuse another
-   task's checkout. Run `scripts/worktree/bootstrap-worktree.sh` in the new destination under
-   the pinned toolchain. Set TMPDIR to a task-owned path under Workspace/Codex.
-3. Link only the verified V2 private twin read-only for composed validation. Do not copy production
-   credentials to a preview. Use synthetic DEV profiles or a separately authorized staging fixture
-   environment. Verify the physical pack target and preserve all private edits.
-4. Reconcile owned documents and behavior, review, run relevant gates and deliver visual evidence.
-   The historical P01 mandate permitted documents and synthetic baseline only, with no integration.
-   Read PROGRAM_STATUS for the current block and PRODUCT for standing delivery authority.
-5. For V2 work covered by PRODUCT’s standing owner delegation, fetch and rebase on fresh `origin/v2`,
-   revalidate changes, run `just ci` (the current hook only special-cases main), and the applicable
-   SRD/rules/visual gates. Push explicit `HEAD:v2`, never a bare push or `HEAD:main`. Verify remote
-   ancestry/SHA before removing only the task's clean worktree. Never remove the long-lived V2 or
-   production checkout. Integration never authorizes staging or production deployment.
+## The v2 procedure
 
-The complete V2, verified player-data migration, P29/P30 acceptance/recovery and explicit owner
-switch approval precede production retirement. P11b only changes V2's personal-state seam.
+Identical for Claude Code and Codex; nothing in it depends on a harness.
 
-## Historical production-fix adapter
+1. **Establish the base.** Read `CLAUDE.md`, `docs/program/NEXT.md` and the block's row in
+   `docs/program/PROGRAM.md`. Run `git fetch origin main v2`, then prove the invoking checkout is
+   clean and its HEAD equals fresh `origin/v2`. Record the physical path, the refs and the
+   destination before creating anything. `git worktree list` shows what already exists; refuse a
+   slug whose branch or path is taken.
 
-# Parallel work — worktrees, branches off `main`, agent merges
+2. **Create the worktree.** From that verified invoker, one line:
 
-> **The repo standard for every change** (golden rule 11, `docs/GOLDEN_RULES.md`). Each task gets
-> its own **git worktree** + **branch off the freshest `origin/main`**; when it converges, the
-> agent **merges it to `main` autonomously** and tears the worktree down. There are **no pull
-> requests** — one owner + agents, nobody reviews PRs. The opening review route is a mandatory
-> independent specification-compliance and correctness review. Ponytail is optional only when a
-> diff carries meaningful complexity risk, never the primary review or a substitute for it (golden
-> rule 12). Nonvisual reviewed and gate-green work integrates autonomously. Curated exact-SHA
-> screenshots require owner approval before every visual integration. Deployment is a separate
-> explicit per-change owner gate; screenshot approval never authorizes deployment (golden rule 22).
+   ```sh
+   git worktree add -b task/<slug> ~/Workspace/Codex/d20-folio-<slug> origin/v2
+   ```
 
-## Why
+   The branch prefix is `task/` — harness-neutral, one branch per task. Then run
+   `scripts/worktree/bootstrap-worktree.sh` inside the new directory: it verifies the pinned
+   toolchain (Node 24.16.0, pnpm 11.2.2), installs the root and standalone `functions/`
+   dependencies, and sets `core.hooksPath=.githooks`. Point `TMPDIR` at a task-owned path under
+   `~/Workspace/Codex`. Copy `.env.local` from the invoker if the task needs `pnpm dev`.
 
-- **Isolation.** Each worktree is a real working directory on its own branch with its own
-  `node_modules`/`dist`/dev server — a `pnpm dev` or long build in one task never disturbs
-  another, and no half-staged files bleed between tasks. The shared main checkout stays on `main`,
-  untouched, for every concurrent agent (never edit/commit/switch branches there — golden
-  rule 11).
-- **Parallelism.** Independent tasks advance simultaneously; conflicts are reconciled once, at
-  merge time, by rebasing onto the latest `origin/main`.
+3. **Compose and place the evidence.** Link the v2 private pack twin read-only so the gate runs
+   composed:
 
-## The flow
+   ```sh
+   ln -s ~/Workspace/d20-folio-content-v2/content-pack ~/Workspace/Codex/d20-folio-<slug>/content-pack
+   ```
+
+   The link is for verification, never authority to edit private files, and no production
+   credential is ever copied into a preview — use synthetic DEV profiles or an authorized staging
+   fixture environment. Task evidence (screenshots, logs, receipts) lives outside the repository in
+   `~/Workspace/Codex/d20-folio-<slug>-evidence` until integration, then moves to the archive under
+   `~/Workspace/Codex/archive-<date>/`. Only the manifest and curated screenshots enter the
+   repository, under `docs/program/reference/`.
+
+4. **Do the work.** TDD, small Conventional Commits with one staged `.changeset/*.md` each, and the
+   document that owns every changed fact reconciled in the same commit. Reconcile
+   `docs/PROGRAM_STATUS.md` when the frontier, a gate or an integration SHA moves. Then review
+   (Superpowers requesting/receiving code review, plus ponytail-review on a risky diff) and verify
+   against the real running application, not against jsdom.
+
+5. **Integrate.** Fetch and rebase on fresh `origin/v2`, re-run the affected gates — `just ci`, plus
+   `just ci-srd-only` when the licensing seam moved and `pnpm test:rules` for rules changes — and
+   deliver curated runtime screenshots as chat images. Then:
+
+   ```sh
+   git push origin HEAD:v2          # explicit refspec, never a bare push
+   git ls-remote origin v2          # poll until it shows your SHA
+   git worktree remove ~/Workspace/Codex/d20-folio-<slug>
+   git branch -d task/<slug>
+   ```
+
+   Remove only the task's own clean worktree, and only after the remote SHA is proven — removing
+   early orphans an in-flight push. Never remove the long-lived `v2` or production checkout.
+   Integration authorizes no deployment, staging deploy, real-data migration or new cost.
+
+## Production fixes on `main`
 
 ```sh
-# 1. Spawn a worktree + branch off the latest main. Installs deps + hooks, copies .env.local.
-just wt-new <slug> [kind]          # kind defaults to "feat" → branch <kind>/<slug>
-#   e.g.  just wt-new ui-polish            → ~/Workspace/Codex/d20-folio-ui-polish on feat/ui-polish
-#         just wt-new wave2-data chore     → ~/Workspace/Codex/d20-folio-wave2-data on chore/wave2-data
-
-# 2. Work in the new directory; commit per coherent step (hooks gate every commit/push).
+just wt-new <slug> [kind]      # kind ∈ feat|fix|chore|docs|refactor; branches off fresh origin/main
 cd ~/Workspace/Codex/d20-folio-<slug>
-git add -A && git commit -m "feat(scope): …"        # never --no-verify; owner = sole author,
-                                                    # NO co-author/trailer lines
-
-# 3. Review: complete an independent specification-compliance and correctness review; add
-#    ponytail-review only when the diff carries meaningful complexity risk. Address or reason
-#    about actionable findings, then verify the final tree (golden rule 12).
-
-# 4. Integration gate: reviewed, gate-green nonvisual work proceeds autonomously. Every visual
-#    change first needs owner approval of curated exact-SHA screenshots. Deployment remains a
-#    separate explicit per-change owner gate; neither integration nor screenshot approval deploys.
-
-# 5. Merge to main FROM the worktree (never touch the shared checkout):
-git fetch origin main
-git rebase origin/main                              # re-run the gate if the rebase changed anything
-git push origin HEAD:main                           # the ff-merge; non-ff rejection ⇒ re-rebase, retry
-
-# 6. Confirm the SHA landed, THEN tear down (removing early orphans an in-flight push):
-git ls-remote origin main                           # poll until it shows your SHA
-# Leave the task worktree. Do not invoke the stale shared checkout's recipe.
-cd <another clean worktree at fresh origin/main>     # never the shared checkout
-just wt-rm <slug>
-git branch -d <kind>/<slug>
-
-# At any time: see everything in flight.
-just wt-list
+# work; commit per coherent step with its changeset; never --no-verify
+git fetch origin main && git rebase origin/main
+git push origin HEAD:main      # the main pre-push hook runs the authoritative gate
+git ls-remote origin main      # poll until it shows your SHA
+just wt-rm <slug> && git branch -d <kind>/<slug>   # from a clean worktree at fresh origin/main
 ```
 
-## Conventions
-
-- **Directory:** `~/Workspace/Codex/<project>-<slug>` (for this repository,
-  `~/Workspace/Codex/d20-folio-<slug>`). The main worktree (`~/Workspace/d20-folio`)
-  **always stays on `main`**. The logical task root must resolve to its stable physical path and
-  must never be inside Documents, iCloud, Dropbox, OneDrive, or another synchronized directory.
-- **Branch:** `<kind>/<slug>` — `kind` ∈ `feat` (default) · `fix` · `chore` · `docs` · `refactor`.
-  Branch **off `origin/main`**, never off another task branch. A topic branch may be pushed as an
-  occasional recoverable milestone (`git push -u origin HEAD:<branch>`); its pre-push is instant.
-  Never run a bare mid-task `git push`: a new worktree initially tracks `origin/main`, so a bare
-  push can target `main`. The final integration remains `git push origin HEAD:main`, which runs the
-  authoritative full gate.
-- **Agent fan-out:** each delegated track gets its OWN worktree (`isolation: "worktree"` for
-  `Agent`/`agent()`), never the shared tree. When two tasks run together, split ownership along
-  the data↔UI seam (below) so merges stay cheap.
-- **Pinned bootstrap:** `wt-new` runs `scripts/worktree/bootstrap-worktree.sh` in the
-  new worktree. It resolves and verifies Node `24.16.0` plus pnpm `11.2.2`, then installs both the
-  root and standalone `functions/` dependency trees and sets `core.hooksPath=.githooks`. The
-  `--run` mode executes resolver and verification commands under that same pinned runtime.
-- **`.env.local`** is copied into each worktree by `wt-new` so `pnpm dev` works; it is git-ignored
-  and never committed.
-- **The `content-pack` symlink is created automatically — composed-by-default and read-only.** When the
-  maintainer's private pack is available, `wt-new` resolves its absolute physical target before
-  linking it into the new worktree, so its final `main` pre-push gate runs in **COMPOSED (pack-present) mode** and pack-side breakage — a
-  public API change that breaks a pack test — is caught before merge. When no pack sibling exists
-  (external contributors), the link is skipped silently and the worktree gates in **SRD-only mode**,
-  which is the correct and complete build for a public tree (`docs/CONTRIBUTING.md` → "The two build
-  modes"). `wt-new` echoes which mode it set up. The shared private `main` checkout is read-only;
-  the automatic link is safe for verification, never authority to edit private files. The
-  belt-and-suspenders check in `.githooks/pre-push` warns loudly if a worktree gates SRD-only while
-  the pack actually exists. Private edits follow the paired-worktree protocol below.
-- **Committed tooling comes with every worktree.** Tracked files include the committed skills
-  (`.claude/skills/` — e.g. the official
-  [pbakaus/impeccable](https://github.com/pbakaus/impeccable) design skill, which reads root
-  `PRODUCT.md` + `DESIGN.md`; `DESIGN.md` §15 is the project checklist), so every worktree and
-  agent session has them with no install step.
-- **Hooks are shared.** `core.hooksPath=.githooks` lives in the common git config, so every
-  worktree runs the same ref-aware pre-commit/pre-push hooks. **Never `--no-verify`.**
-- **Adapter boundary:** `just wt-new` and `just wt-rm` run from a worktree whose HEAD has just
-  been proved equal to fresh `origin/main`. They reject the shared checkout before running the
-  local bootstrap or resolver, fetch `origin/main` in preflight, and reject a dirty or stale
-  invoker. Pushing a change does not update the shared checkout: its stale worktree recipe must
-  never be invoked.
+`wt-new` and `wt-rm` hardcode `origin/main`, so they are production-fix tools only. They refuse a
+dirty or stale invoker; run them from a clean worktree whose HEAD has just been proven equal to
+fresh `origin/main`, never from the shared checkout. Every visual change on `main` still needs the
+owner's screenshot approval before integration (golden rule 25).
 
 ## Editing the private content pack
 
-Every private edit uses a dedicated private worktree and a paired public verifier. Never edit the
-shared private `main` checkout through a public worktree's `content-pack` link.
+The public repository and the private pack are one product (golden rule 28). A pack edit uses its
+own private worktree created from freshly fetched private `origin/main`, plus a paired public
+verifier whose `content-pack` link points at that exact private directory; the shared private
+checkout stays read-only. Before either push, write a short two-repository charter recording both
+bases, both branches, the absolute worktrees, the exact link target, which old/new pairs must stay
+compatible, the push order and why each intermediate pair is valid, both candidate SHAs, and a
+rollback order that restores a compatible pair without force-pushing. Run the owned focused tests in
+both repositories, `just ci` against that exact pair, and `just ci-srd-only` with the pack absent.
+Prefer a compatibility bridge that makes either order safe; if no intermediate pair is valid, stop —
+two remotes cannot push atomically. Verify each remote SHA before the next push. Private material
+never enters public history or public recovery.
 
-Before either edit, write one two-repository charter that records:
+## Retiring a worktree that is not clean
 
-- the public and private repositories, fresh public base and private base, branches, absolute
-  worktrees, owned paths, expected heads, and the verifier's exact absolute `content-pack` target;
-- the compatibility contract across both bases, including which old/new public and private pairs
-  must remain valid;
-- the explicit push order and why every intermediate public/private pairing remains compatible;
-- both pre-push SHAs and a rollback order that restores a compatible pair without force-pushing;
-- separate recovery locations and a prohibition on placing private source, diffs, bundles, archives,
-  paths, or receipts containing private material in public recovery or public Git history.
-
-Create the dedicated private worktree from freshly fetched private `origin/main`; keep the shared
-private checkout read-only. Create the paired public verifier from fresh public `origin/main`, then
-link its `content-pack` to the dedicated private worktree's exact physical pack directory. Run the
-owned focused tests in both repositories, the composed `just ci` gate against that exact pair, and
-the public `just ci-srd-only` gate with the pack absent. Record both candidate SHAs and gate receipts.
-
-Prefer a compatibility bridge that makes either push order safe. Otherwise, the charter chooses
-private-first only when the new private candidate works with old public main, or public-first only
-when the new public candidate works with old private main. If neither intermediate pair is valid,
-stop; two Git remotes cannot provide an atomic cross-repository push. After each push, verify the
-remote SHA and the composed pair before the next push. Roll back in the chartered compatibility
-order with reviewed revert commits; never rewrite either `main`.
-
-## Splitting parallel tasks to minimize conflicts
-
-When two tasks must run together, give them **disjoint ownership** of the tree. The architecture's
-single data↔UI seam (`evaluateGrants` → the aggregated read model — see `docs/ARCHITECTURE.md`)
-makes a clean split natural:
-
-| Layer                  | Owns                                                                            |
-| ---------------------- | ------------------------------------------------------------------------------- |
-| **Engine + data** task | `src/data/**`, `src/lib/**`, `tests/unit/**` — adds mechanics via Grants        |
-| **Presentation** task  | `src/components/**`, `src/app/**`, `src/stores/**`, CSS/tokens, i18n UI strings |
-
-The engine task surfaces new mechanics **through the aggregated view**; the UI task **reads that
-view** read-only. New mechanics then render automatically, and the only overlap to reconcile is
-thin consumer-wiring, handled at the rebase.
-
-## Cleaning up stale worktrees
-
-List the registered worktrees first. A clean completed task is removed through `just wt-rm <slug>`
-only after its exact reviewed SHA is remotely proven. Never advertise or use force removal as
-cleanup. Never remove a worktree while a `main` push from it is still gating; poll the remote SHA
-first.
-
-A dirty or locked worktree stays in place until one of these conditions is proved:
-
-1. **Integrated/empty equivalence:** its HEAD is remotely integrated (or its exact changes are
-   already represented by a proved integrated commit), and tracked, staged, and untracked state is
-   empty or byte-equivalent to that integrated evidence.
-2. **Verified recovery capsule:** a separate safe destination contains a manifest of canonical
-   worktree/common-dir, branch, base, HEAD, status, refs, and ownership; a complete bundle covering
-   every required reachable ref; binary-safe tracked and staged patches; an untracked archive with
-   an explicit file inventory; and checksums for every artifact. Restore into a separate probe and
-   perform source-match verification against the original status, tracked/staged diffs, untracked
-   inventory, and checksums before authorizing removal.
-
-Private and public recovery capsules remain physically separate; no private material enters public
-recovery. An app-managed worktree additionally requires a Codex handoff and detach, followed by
-proof that no running task or process still owns it. A repository-managed locked worktree likewise
-requires proof that its owner is idle. If equivalence, capsule verification, or ownership cannot be
-proved, record the blocker and retain the worktree.
+List the registered worktrees first. A dirty or locked worktree stays in place until either its HEAD
+is remotely integrated and its tracked, staged and untracked state is empty or byte-equivalent to
+that integrated evidence, or a verified recovery capsule exists outside synchronized storage: a
+complete Git bundle for the exact ref, `git diff --binary --output` for tracked changes, an archive
+of exactly `git ls-files --others --exclude-standard`, a manifest with source SHA and disposition,
+and SHA-256 checksums — restored into a separate probe and compared against the original status,
+diffs, inventory and checksums before removal. Force removal is never advertised as cleanup. If
+equivalence or capsule verification cannot be proved, record the blocker and keep the worktree.

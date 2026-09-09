@@ -1,16 +1,5 @@
 # d20 Folio — repository invariants
 
-## Owner rectification — 6 September 2026
-
-[../PRODUCT.md](../PRODUCT.md) owns the binding new-application decision: Astra's approved full-lab
-0.9.3 is the experience reference; existing code, engines and screenshots impose no reuse
-or compatibility requirement. No legacy combat bridge. Choose architecture for one authority
-per fact, explicit responsibilities and verifiable transitions. Preserve separate production
-and recoverable input migration, D&D 2024 and all transferable BG3 behavior/depth.
-Visual comparison is approved Astra mock → actual new V2 runtime. The withdrawn old visual
-request and current implementation/review/gates are recorded only in [PROGRAM_STATUS.md](PROGRAM_STATUS.md).
-Every downstream plan, review and complete successor prompt carries the full Product decision.
-
 This document owns durable cross-cutting product, engineering, safety, and delivery constraints.
 It is not a second development methodology: Superpowers owns the generic lifecycle, while this file
 adapts that lifecycle to d20 Folio.
@@ -21,10 +10,11 @@ Use evidence, not labels:
 
 1. The user's latest informed instruction governs the current task unless a higher-level safety or
    legal constraint forbids it.
-2. This file and `docs/PRODUCT_CONSTITUTION.md` own durable repository/product constraints.
+2. This file and `docs/PRODUCT_CONSTITUTION.md` own durable repository/product constraints, under
+   `PRODUCT.md` §Steering.
 3. Code, configuration, runtime behavior, tests, git, and deployment records establish operational
    evidence. Tests can be incomplete or wrong; code can implement the wrong intent.
-4. Each map/status/history document owns only the role assigned in `CLAUDE.md`.
+4. Each program/map/history document owns only the role assigned in `CLAUDE.md`.
 5. Agent memory and branch notes are leads, never silent overrides.
 
 When sources disagree, identify the owner of the fact, inspect current operational evidence and the
@@ -89,36 +79,41 @@ the new durable decision or kept explicitly one-off.
 
 ### Process and delivery
 
-11. **One worktree per task; no PR flow.** Create an isolated topic worktree from fresh
-    `origin/v2` for V2 work or fresh `origin/main` for an authorized production fix, following
-    the destination-specific adapter in WORKTREES. Never use the shared or long-lived checkout
-    as the task's edit destination. When integration is authorized, rebase on the fresh destination,
-    complete review and gates, push explicit `HEAD:v2` or `HEAD:main` as applicable, confirm the
-    remote SHA, then clean up. P01 excludes integration and retains its candidate. The owner is
-    the sole commit author; no co-author/footer/trailer.
+11. **One worktree per task; no PR flow.** A v2 task creates an isolated worktree from fresh
+    `origin/v2` on a harness-neutral `task/<slug>` branch under `~/Workspace/Codex`; an authorized
+    production fix uses `just wt-new` from fresh `origin/main`. Never edit in another task's checkout,
+    and never use a shared or long-lived checkout as the task's edit destination. When integration is
+    authorized, rebase on the fresh destination, complete review and gates, push explicit `HEAD:v2`
+    or `HEAD:main` as applicable, confirm the remote SHA, then remove only the task's worktree. The
+    owner is the sole commit author; no co-author/footer/trailer.
 12. **Review before integration.** Use Superpowers' requesting/receiving-code-review workflow for
     correctness and requirement coverage, plus ponytail-review when the diff risks unnecessary
     complexity. Address or reason about every actionable finding, then re-verify the final diff.
 13. **TDD for behavior changes.** Use Superpowers test-driven-development: observe the test fail for
     the intended reason, implement the smallest sound change, and keep the cheapest test that pins the
     fact. Guard inputs derive from the artifact and state their blind spots; prove guards by mutation.
-14. **Every check has one lane.** Keep pre-commit fast, the `main` pre-push gate authoritative, heavy
-    E2E sharded remotely, and deploy as promotion of a verified SHA. Never use `--no-verify` or add
-    duplicate slow checks “for safety.”
+14. **Every check has one lane.** Keep pre-commit fast, the integration pre-push gate authoritative,
+    and deploy a promotion of a verified SHA. The v2 gate stays under fifteen minutes and never
+    duplicates a check another lane already runs. Never use `--no-verify` or add a slow check to a
+    hook "for safety."
 15. **Verify behavior in the environment that can observe it.** Use Superpowers verification before
     completion. For UI, layout, motion, service workers, and accessibility, use a real browser and the
     relevant locale/theme/viewport matrix; jsdom is not visual proof.
-16. **Living documentation has four roles.** Constitution states durable rules; Map explains the
-    system; Status tracks now/next; History records change. One document owns each fact. Reconcile the
-    owner in the same commit, keep links valid, and verify status claims before acting. Memory stores
-    pointers/context only, never secrets or normative rules.
+16. **Living documentation has five roles.** Constitution states durable rules; Program owns the one
+    plan, its controls, the dated owner decisions, the handoff and the execution frontier; Map explains
+    the system; History records change; Operations holds the runbooks. One document owns each fact.
+    Reconcile the owner in the same commit, keep links valid, and verify status claims before acting.
+    Memory stores pointers and context only, never secrets or normative rules.
 17. **Releases move in lockstep.** `just release` consumes changesets, produces a curated changelog,
     version commit, tag, and GitHub release. Issue-fixing commits use closing keywords. Release and
     deploy remain separate owner-triggered actions.
-18. **Use proven tools by role, not prestige or accumulation.** Superpowers owns the lifecycle; ECC
-    provides selected specialist skills; Find Skills discovers candidates; claude-mem retrieves
-    context; Task Observer records process improvements. Vet instructions and security before install,
-    prefer official/proven sources, replace weaker overlaps, and keep expensive capabilities lazy.
+18. **Use proven tools by role, not prestige or accumulation.** Superpowers owns the lifecycle;
+    impeccable owns UI/UX craft; ponytail and ponytail-review own simplicity; graphify owns the code
+    graph and archify the diagrams; grill-me owns ambiguous owner intent; playwright-cli drives a real
+    browser; find-skills discovers candidates; claude-mem retrieves context; task-observer records
+    process improvements. `CLAUDE.md` § Tool routing is the current roster. Vet instructions and
+    security before install, prefer official/proven sources, replace weaker overlaps, and install
+    nothing without find-skills evidence.
 
 ### UX and design
 
@@ -132,19 +127,19 @@ the new durable decision or kept explicitly one-off.
 
 <!-- Rules 25–26 keep their durable identifiers outside the thematic sequence. -->
 
-25. **Every visual change is owner-approved before integration.** Send curated before/after Chromium
-    screenshots cropped to the affected region, covering the locale/theme/viewport combinations that
-    materially differ. Deliver the actual images through the shared chat so they are viewable on the
-    owner's phone; a local path or written report is not delivery. Wait for approval before integration;
-    deployment remains a separate gate.
-    **V2 exception, owner 8 September 2026:** PRODUCT’s standing delivery delegation supersedes
-    the per-block wait for implementation of the approved mock. Agents verify and send the images,
-    integrate reviewed green V2 work, then deliver the complete successor prompt. Detailed owner
-    hands-on review happens on the completed app; do not demand repeated exhaustive approval.
+25. **Every visual change ships with owner-visible screenshot evidence.** Curate actual runtime
+    screenshots cropped to the affected region, covering the theme, locale and viewport combinations
+    that materially differ, and deliver them as images through the shared chat so they are viewable on
+    the owner's phone; a local path or a written report is not delivery. On `v2` that evidence
+    accompanies integration under the owner's standing delivery delegation of 8 September 2026 — send
+    the images, integrate reviewed gate-green work, and never demand a per-block visual verdict; the
+    owner's hands-on review of the whole application comes at P28–P30. On production `main`, owner
+    approval of the screenshots remains a blocking per-change gate before integration. Deployment is a
+    separate gate in both cases.
 26. **Discover ambiguous product intent before implementation.** Use Superpowers brainstorming and,
     when a real interview is needed, grill-me. For contested UI choices, Impeccable decides from the
     product/design system; if a meaningful tie remains, show concrete visual alternatives to the owner.
-    Rapid previews de-risk a direction but do not replace rule 25's real-build gate.
+    Rapid previews de-risk a direction but do not replace rule 25's real-build evidence.
 
 ### Safety and quality
 
@@ -153,26 +148,46 @@ the new durable decision or kept explicitly one-off.
     common, proven patterns already do it, copy the dominant pattern with real evidence (captures,
     docs, source), and improve on it; never start from a blank page or from the agent's own idea.
     Taking the initiative without this research is a defect (owner, 2026-09-03: "every time you
-    do things your own way, you make a mess"). The design spec's dossier method is the standard:
-    real reference beside our rendition, then rules.
+    do things your own way, you make a mess"). The dossier method is the standard: the real
+    reference beside our rendition, then the rules.
 31. **Steering wins.** `PRODUCT.md` §Steering is the top of the authority stack. A document, plan,
     test or memory that contradicts it is fixed or deleted in the same change that notices it, never
-    left to pull the next agent back to an old direction. The approved Astra mock and current Product/AGENT-PROGRAM contracts determine V2 scope;
-    historical acceptance stories are examples, never a capability ceiling.
-32. **Every roll is logged and reviewable.** Dice roll in-app by default (shared 3D animation;
-    owner-ratified 2026-09-03, reversing the original "no dice" rule) or are entered from physical
-    dice; the DM may roll hidden. Every roll carries its formula, result, roller and source in the
-    encounter log; deterministic and rolled effects apply automatically with undo and correction.
-33. **Deploys and real migrations are owner-gated.** Never deploy without explicit
-    per-change permission. For the current V2 program only migration on recoverable copies is authorized; real-data
-    migration requires explicit authorization recorded for that change. Destructive non-migration operations require explicit approval. Rules
-    changes ship emulator tests; live-user fixtures remain green.
+    left to pull the next agent back to an old direction. The approved mock and the current
+    `PRODUCT.md` and `docs/program/` contracts determine v2 scope; historical acceptance stories are
+    examples, never a capability ceiling.
+32. **Every roll is logged and reviewable.** Dice roll in-app by default (shared animation;
+    owner-ratified 2026-09-03, reversing the earlier rule, which is now history) or are entered from
+    physical dice; the DM may roll hidden. Every roll carries its formula, result, roller and source
+    in the encounter log; deterministic and rolled effects apply automatically with undo and
+    correction. Randomness for dice exists only in the seam `src/lib/dice.ts` (ADR-0010).
+33. **Deploys and real migrations are owner-gated.** Never deploy without explicit per-change
+    permission. For the current v2 program only migration on recoverable copies is authorized;
+    real-data migration requires explicit authorization recorded for that change. Destructive
+    non-migration operations require explicit approval. Rules changes ship emulator tests; live-user
+    fixtures remain green.
 34. **Dependencies are vetted; secrets stay out.** Prefer existing/platform capabilities. Before a new
     runtime dependency, verify necessity, maintenance, size, license, and security. Keep secrets only in
     approved local/CI/Secret Manager stores and never in logs, docs, prompts, or memory.
 35. **Accessibility, performance, and cost are release bars.** Axe serious/critical findings are zero;
     bundle/precache budgets hold; listener and write behavior respects Firebase limits; offline behavior
     remains functional.
+36. **Contracts live in the repository.** Every contract an agent must obey is under `docs/program/`
+    (with the constitution and map documents it points at). Harness-private folders — `.superpowers/`,
+    agent scratch directories, external journals — hold evidence and working notes only. A contract
+    that exists only outside the repository does not bind, and a prompt never carries a copied
+    contract in place of the document that owns it.
+37. **One ledger, one numbering.** `docs/PROGRAM_STATUS.md` is one page: the frontier, the closed
+    blocks, the open owner gates. A closed frontier collapses to one row with its integration SHA, and
+    its detail moves to evidence or the archive. Block identifiers are never renumbered or reused, and
+    the only handoff is `docs/program/NEXT.md` — five lines to open a session.
+38. **The graph is always current.** `graphify-out/graph.json` and `GRAPH_REPORT.md` are committed and
+    refreshed by the pre-commit hook whenever staged code changes; `.graphifyignore` keeps the private
+    pack out of the public graph. `graphify query` comes before file reads for any question about the
+    code, and the graph is an index into the code, never authority over it.
+39. **Diagrams are archify sources.** Every diagram in a map document has its JSON source and rendered
+    SVG under `docs/diagrams/`, validated at showcase quality
+    (`archify validate <type> <json> --quality showcase`). No hand-drawn, pasted or screenshot
+    diagrams, and a diagram is regenerated in the same change as the fact it draws.
 
 ## Domain invariants
 
@@ -200,5 +215,5 @@ the new durable decision or kept explicitly one-off.
 
 Amend the existing numbered rule when a decision refines the same concern. Add a new rule only for a
 genuinely distinct, durable constraint, keeping identifiers unique and updating every reference.
-Operational procedures belong in their runbook; current state belongs in Status; superseded rationale
+Operational procedures belong in their runbook; current state belongs in Program; superseded rationale
 belongs in History rather than accumulating here.
