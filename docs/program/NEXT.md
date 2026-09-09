@@ -12,6 +12,10 @@ produce a raster art direction for spells and combat actions with concrete examp
 coherence/legibility criteria, and prove both speed for the expert and discovery for the beginner.
 The owner's verdict closes PD. **P11a does not start before that verdict.**
 
+Split (owner, 2026-09-09 afternoon): Astra owns the visual/taste half, Claude owns the rest.
+Claude's first deliverable is the research document
+`docs/superpowers/research/2026-09-09-pd-bg3-dndbeyond-research.md` — in progress.
+
 ## Closed (SHA)
 
 <!-- source: docs/PROGRAM_STATUS.md -->
@@ -57,6 +61,8 @@ skills unified — integrated on `v2` through `1cc5d32e` (the commit after it is
 
 Full text in [`DECISIONS.md`](DECISIONS.md); the newest dated statement always wins.
 
+- **2026-09-09 (afternoon)** — Astra owns visual/taste decisions; Claude owns architecture, graph,
+  research, cleanup, engine.
 - **2026-09-09** — knowledge-base reset: one program in the repository, v1 documents archived, the
   repository is the only memory, the graph committed and hook-refreshed, one short handoff.
 - **2026-09-09** — the nine reset decisions (`DECISIONS.md`).

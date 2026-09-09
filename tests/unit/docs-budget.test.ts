@@ -18,7 +18,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const caps: Record<string, number> = {
-  "CLAUDE.md": 12_000,
+  "CLAUDE.md": 14_000,
   "PRODUCT.md": 26_000,
   "docs/PROGRAM_STATUS.md": 12_000,
   "docs/program/NEXT.md": 6_000,

@@ -130,6 +130,12 @@ PD does not reopen P10's technical gates, and the owner has not approved replaci
 proposing the width of the revision is part of PD's own delivery. The owner's verdict closes PD.
 **P11a does not start before that verdict.**
 
+**Who does what in PD (owner, 2026-09-09).** Claude delivers the research half: the recorded study
+of Baldur's Gate 3 and D&D Beyond and the analysis of the current creation experience, as a
+repository document under `docs/superpowers/research/` that Astra consumes. Astra delivers the
+visual half: the redesigned character-creation screens, the raster art direction with concrete
+examples, and every taste decision; the owner's verdict closes PD.
+
 ## Deterministic selection of the single next block
 
 <!-- source: full-lab/docs/AGENT-PROGRAM.md, "Selezione deterministica" -->

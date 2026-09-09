@@ -22,6 +22,13 @@ tools). First milestone: one whole session of the group without Owlbear, D&D Bey
 Product intent is owned by [`PRODUCT.md`](PRODUCT.md) §Steering; start every session from
 [`docs/program/NEXT.md`](docs/program/NEXT.md).
 
+## Who decides what
+
+Astra (Codex/GPT) owns every visual and taste decision — screens, layout, palette, typography,
+raster art, screenshot matrices. Claude owns everything else — architecture and archify diagrams,
+the graphify graph, document/code cleanup, BG3/D&D Beyond research, engine/data/rules, gates. Split
+by decision type, not by file (owner, 2026-09-09).
+
 ## Authority and document roles
 
 No source is infallible because it is called canonical: a fact has one document owner, while code,

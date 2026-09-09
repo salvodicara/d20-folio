@@ -34,7 +34,9 @@ Claude must share the same knowledge base and skills".
   documentation-only pointer commit (Task B8), nothing else.
 - Worktree: `~/Workspace/Codex/d20-folio-v2-knowledge-reset`, branch
   `task/v2-knowledge-base-reset-20260909`, based on `origin/v2` at `08f8af0b`.
-- Size caps (bytes, enforced by `tests/unit/docs-budget.test.ts`): `CLAUDE.md` ≤ 12,000;
+- Size caps (bytes, enforced by `tests/unit/docs-budget.test.ts`): `CLAUDE.md` ≤ 14,000 (raised
+  from 12,000 by controller ruling 2026-09-09: 8 bytes of headroom is not a working margin — same
+  reasoning already applied to PRODUCT);
   `PRODUCT.md` ≤ 26,000 (raised from 24,000 by controller ruling 2026-09-09: the verbatim
   Steering leaves no working margin); `docs/PROGRAM_STATUS.md` ≤ 12,000; `docs/program/NEXT.md`
   ≤ 6,000; `docs/program/PROGRAM.md` ≤ 32,000; `docs/program/CHECKLIST.md` ≤ 9,000;

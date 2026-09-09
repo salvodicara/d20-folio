@@ -4,6 +4,19 @@ Dated owner decisions for d20 Folio v2, newest first — the newest wins, an old
 Records what was decided and when, not execution state (in
 [`docs/PROGRAM_STATUS.md`](../PROGRAM_STATUS.md)). Italian is quoted verbatim as evidence of intent.
 
+## 2026-09-09 (afternoon) — division of labour: Astra owns the visual, Claude owns the rest
+
+<!-- source: chat 2026-09-09 (owner), rendered in ~/Workspace/Codex/d20-folio-pd-research-evidence/owner-decision-2026-09-09-roles.md -->
+
+"Io onestamente vorrei che tutto ciò che è grafico venisse fatto da GPT, sei Astra... Tutto il resto
+che non sia decisioni visive, lo puoi fare tu."
+
+- Astra owns every visual and taste decision: screens, layout, palette, typography, iconography,
+  raster art direction and screenshot matrices.
+- Claude owns everything else: architecture and archify diagrams, the graphify graph, document and
+  code cleanup, BG3/D&D Beyond research delivered as repository documents, engine/data/rules, gates.
+- Split by decision type, not by file; neither reopens the other's settled decisions.
+
 ## 2026-09-09 — knowledge-base reset
 
 <!-- source: .superpowers/sdd/2026-09-09-v2-knowledge-base-reset/decisions-2026-09-09.md -->
