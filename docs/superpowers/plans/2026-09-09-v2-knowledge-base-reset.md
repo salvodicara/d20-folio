@@ -37,7 +37,9 @@ Claude must share the same knowledge base and skills".
 - Size caps (bytes, enforced by `tests/unit/docs-budget.test.ts`): `CLAUDE.md` ≤ 12,000;
   `PRODUCT.md` ≤ 26,000 (raised from 24,000 by controller ruling 2026-09-09: the verbatim
   Steering leaves no working margin); `docs/PROGRAM_STATUS.md` ≤ 12,000; `docs/program/NEXT.md`
-  ≤ 6,000;
+  ≤ 6,000; `docs/program/PROGRAM.md` ≤ 32,000; `docs/program/CHECKLIST.md` ≤ 9,000;
+  `docs/program/DECISIONS.md` ≤ 14,000; `docs/diagrams/README.md` ≤ 2,200 (raised 2026-09-09 by
+  controller ruling after the final review: no working margin);
   every other file in the Map role ≤ 40,000; `docs/GOLDEN_RULES.md` ≤ 18,000.
 - Nothing is deleted from history: v1 documents move to `docs/archive/v1/` with `git mv`;
   external evidence moves to `~/Workspace/Codex/archive-2026-09-09/`; uncommitted work from

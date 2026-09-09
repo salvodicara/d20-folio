@@ -22,9 +22,9 @@ const caps: Record<string, number> = {
   "PRODUCT.md": 26_000,
   "docs/PROGRAM_STATUS.md": 12_000,
   "docs/program/NEXT.md": 6_000,
-  "docs/program/PROGRAM.md": 30_000,
-  "docs/program/CHECKLIST.md": 8_000,
-  "docs/program/DECISIONS.md": 12_000,
+  "docs/program/PROGRAM.md": 32_000,
+  "docs/program/CHECKLIST.md": 9_000,
+  "docs/program/DECISIONS.md": 14_000,
   "docs/GOLDEN_RULES.md": 18_000,
   "docs/PRODUCT_CONSTITUTION.md": 40_000,
   "docs/ARCHITECTURE.md": 40_000,
@@ -35,7 +35,7 @@ const caps: Record<string, number> = {
   "docs/CONTRIBUTING.md": 24_000,
   "docs/WORKTREES.md": 8_000,
   "docs/TEST_PORTFOLIO.md": 16_000,
-  "docs/diagrams/README.md": 2_000,
+  "docs/diagrams/README.md": 2_200,
 };
 
 describe("documentation budget (no dead weight, owner 2026-09-03; caps ratified 2026-09-09)", () => {

@@ -1,6 +1,7 @@
 /**
- * Defensive-buff spell consumers (display-only; the app models no enemy and never
- * rolls — golden rule 21). 2024 RAW, verified against the published 2024 rules text:
+ * Defensive-buff spell consumers (display-only; the app models no enemy. v1 kernel
+ * behaviour: this surface never rolled — retired rule 21; on v2 rolls go through
+ * the dice seam, rule 32). 2024 RAW, verified against the published 2024 rules text:
  *
  *  - **Blur** (spell:blur): "any creature has Disadvantage on attack rolls against
  *    you." Modeled as a `while-active` `incoming-attack-disadvantage` clause — a

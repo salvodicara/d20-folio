@@ -993,10 +993,11 @@ describe("resolveActions — potions", () => {
 /**
  * S8 surfaces a self-heal ACTION (Second Wind: "1d10 + Fighter level") with a
  * STRUCTURED `summary.healApply` ({ dice, bonus }) so the card can offer a
- * roll-entry-then-apply affordance. Golden rule 21: the app NEVER rolls — `dice`
- * is the portion the PLAYER supplies, `bonus` is the deterministic part the engine
- * resolved (multiclass-correct, the owning class's level). The card applies
- * `enteredRoll + bonus`; no fabricated die total is ever auto-applied.
+ * roll-entry-then-apply affordance. v1 kernel behaviour: this surface never
+ * rolled (retired rule 21; on v2 rolls go through the dice seam, rule 32) —
+ * `dice` is the portion the PLAYER supplies, `bonus` is the deterministic part
+ * the engine resolved (multiclass-correct, the owning class's level). The card
+ * applies `enteredRoll + bonus`; no fabricated die total was ever auto-applied.
  *
  * Pure: asserted against the producing presenter (`localizeActions`), not a DOM
  * mount (golden rule 13).

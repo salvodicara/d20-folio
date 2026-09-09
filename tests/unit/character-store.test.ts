@@ -1030,8 +1030,9 @@ describe("characterStore — death saves & session state", () => {
   // banner heals 5+CON through `applyHealing`, and a dice self-heal (Second Wind)
   // applies the player's ENTERED roll + the deterministic bonus through
   // `applyHealing`. Every apply is undoable via the log-free raw setter
-  // (`setTempHP`/`setHP`). Golden rule 21: a die total is NEVER fabricated — the
-  // apply takes only a number the engine resolved (temp HP, regen) or the player
+  // (`setTempHP`/`setHP`). v1 kernel behaviour: this surface never rolled
+  // (retired rule 21; on v2 rolls go through the dice seam, rule 32) — the apply
+  // takes only a number the engine resolved (temp HP, regen) or the player
   // supplied (the entered die). These pin the apply SEMANTICS the UI relies on.
   describe("S8 one-tap apply seams", () => {
     it("temp-HP apply is MAX-WINS (never lowers an existing pool) + undoable", () => {

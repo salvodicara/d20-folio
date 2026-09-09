@@ -9,8 +9,9 @@
  * the authored presets clear (a roll IS a preset — one bar, one implementation).
  *
  * The seeded PRNG lives here, in the test, so a roll is reproducible; production
- * injects `cryptoRng`. Neither is dice (golden rule 21) — no roll of the game is
- * generated anywhere in this path.
+ * injects `cryptoRng`. v1 kernel behaviour: this surface never rolled (retired
+ * rule 21; on v2 rolls go through the dice seam, rule 32) — no roll of the game
+ * is generated anywhere in this path.
  *
  * BLIND SPOTS — what this cannot see:
  *   - the UI wiring (a tap actually rerolling the page): `quickbuild-path.test.tsx`.

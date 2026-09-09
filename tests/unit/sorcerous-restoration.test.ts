@@ -12,7 +12,9 @@
  *   Long Rest."
  *
  * Modeling: a 1/long-rest tracker on the feature itself (the player manually
- * spends the use; we never auto-modify pools without input — golden rule 21).
+ * spends the use; we never auto-modify pools without input. v1 kernel behaviour:
+ * this surface never rolled — retired rule 21; on v2 rolls go through the dice
+ * seam, rule 32).
  */
 
 import { describe, it, expect } from "vitest";

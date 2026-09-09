@@ -191,6 +191,9 @@ the new durable decision or kept explicitly one-off.
     (`archify validate <type> <json> --quality showcase`). No hand-drawn, pasted or screenshot
     diagrams, and a diagram is regenerated in the same change as the fact it draws.
 
+Retired identifiers: rules 21–24 and 29 no longer exist; a citation of them in v1 kernel code or
+archived documents is history. Rule 21 ("the app never rolls") is reversed by rule 32.
+
 ## Domain invariants
 
 - **D1 — Persistence hygiene:** cascade-delete owned sub-resources, strip `undefined` before writes,
