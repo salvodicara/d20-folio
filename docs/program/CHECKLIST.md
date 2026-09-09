@@ -15,7 +15,7 @@ and the screenshot of the current revision. A route or a count of controls is ne
 | Only what is needed, all of it | Main task, essential data, primary action, secondary detail; openings replayed with no external guide and canonical navigation                             |
 | Orientation and continuity     | Four domains, search, detail → return with filters, scroll, selection and draft; context change and Back/Forward with no contamination                     |
 | Account, campaigns, characters | Create, open, copy, archive, restore; several characters of one account in one campaign; independent selectors; invite, claim, leave                       |
-| Builder and sheet              | Choices and cascades, 18 skills and saves, progression, resources, conditions and vital state, images and fallback, import/export/print                    |
+| Builder and sheet              | Choices and cascades, 18 skills and saves, progression, resources, conditions and vital state, images and fallback, companions, import/export/print        |
 | Spells and inventory           | Preparation, casting, costs, ritual, components and chosen level; coins, charges, equipment, containers and transfers; reading never consumes              |
 | Eleven homebrew families       | Per family: create, edit, autosave, versions, reuse, import/export, print, sharing and revocation; the copy materialised in the right recipient            |
 | Player table and freedom       | Composed action, targets, three automation levels, digital or physical dice, explicit costs, receipt and undo; every E family supported or honestly manual |
@@ -39,10 +39,10 @@ fixture and a simulation of concurrency or ACLs — the last is not real backend
       states are captured on top of page captures.
 - [ ] Real screenshots are sent in chat, viewable on a phone, covering flows, navigation and the DM
       workspace, not only style.
-- [ ] The owner's standing delegation of 8 September 2026 applies: reviewed, gate-green work
-      integrates into `v2` without a fresh per-block visual verdict. It does not remove the
-      screenshots, and it does not cover a new material product decision, block PD's verdict, or
-      any separately gated production, deployment, real-data migration or cost decision.
+- [ ] The owner's 8 September standing delegation applies: reviewed, gate-green work integrates into
+      `v2` without a fresh per-block visual verdict. It keeps the screenshots mandatory and excludes
+      a new material product decision, block PD's verdict, the P28–P30 owner visual review, and any
+      separately gated production, deployment, real-data migration or cost decision.
 - [ ] Files changed after an owner verdict carry evidence and a judgement on the delta; they never
       inherit the previous verdict automatically.
 
@@ -74,6 +74,6 @@ fixture and a simulation of concurrency or ACLs — the last is not real backend
 | P05–P13 | Eleven families and the SRD/pack partition, schema and derived values, six fixtures and snapshot → dry-run → idempotent apply → verify; P11b with zero dual write across join → play → rejoin |
 | P14–P19 | P14a's first red/green regressions; the eight E outcomes with ordinary, boundary, composition and manual cases, one receipt and causal undo; VTT two clients before extending gestures        |
 | P20–P27 | Real persistence and campaign, account and public permissions; transfers with no duplicates; calendar DST and recurrences; integrations only with consent and authorisation; recovery and PWA |
-| P28–P30 | The pertinent CI, rules and licensing gates, six fixtures, runtime anti-drift, a real session with DM and players, and a recoverable cutover; deployment stays owner-triggered                |
+| P28–P30 | The CI, rules and licensing gates, six fixtures, runtime anti-drift, the owner's whole-app visual gate, a real DM/player session, and a recoverable cutover; deployment stays owner-triggered |
 
 A block never declares D done for another block, and the mock never satisfies a runtime proof.

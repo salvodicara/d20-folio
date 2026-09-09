@@ -1,9 +1,8 @@
 # Owner decisions
 
-Dated owner decisions for d20 Folio v2, newest first; the newest dated statement wins and an older
-one is kept only as history. This file records what was decided and when, never execution state,
-which belongs to [`docs/PROGRAM_STATUS.md`](../PROGRAM_STATUS.md). Italian is quoted where the
-source quotes the owner: his words are the evidence of intent.
+Dated owner decisions for d20 Folio v2, newest first — the newest wins, an older one is history.
+Records what was decided and when, not execution state (in
+[`docs/PROGRAM_STATUS.md`](../PROGRAM_STATUS.md)). Italian is quoted verbatim as evidence of intent.
 
 ## 2026-09-09 — knowledge-base reset
 
@@ -67,7 +66,8 @@ devono essere in grado avere la stessa knowledge base/skills di claude. Questo �
 
 ## 2026-09-08 — standing delivery delegation
 
-<!-- source: PRODUCT.md, "V2 delivery and owner review — 8 September 2026" -->
+<!-- source: PRODUCT.md "V2 delivery and owner review"; P06:
+     docs/archive/v1/PROGRAM_STATUS-2026-09-09.md:331 -->
 
 - **Delegated implementation acceptance.** Reviewed, gate-green work implementing the approved mock
   and the agreed contracts integrates into `v2` without a fresh exhaustive screenshot approval at
@@ -83,7 +83,8 @@ devono essere in grado avere la stessa knowledge base/skills di claude. Questo �
 
 ## 2026-09-07 — custom automation, editable combat, shell and Account
 
-<!-- source: PRODUCT.md "Reconciled owner direction"; shell-review-20260907/DECISIONS.md -->
+<!-- source: PRODUCT.md "Reconciled owner direction"; shell-review-20260907/DECISIONS.md; delivery
+     preference: same ledger, line 674 -->
 
 - **Custom is a first-class input to the same engine.** Custom content drives actions, targets,
   costs, resources, effects, reactions and consequences through the shared mechanics and receipt
@@ -160,7 +161,7 @@ The purpose, the ambition, the four acceptance stories and the nineteen jobs are
 
 ## 2026-09-02 — architecture round
 
-<!-- source: docs/adr/0001, 0002, 0005, 0006, 0010, 0011 -->
+<!-- source: docs/adr/0001–0003, 0005, 0006, 0010, 0011 -->
 
 One entity-generic reducer over an append-only Encounter log; one mechanics authoring format;
 Firestore rules enforce access, never gameplay; rolls are log actions behind a dice seam; the three
