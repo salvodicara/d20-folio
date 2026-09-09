@@ -37,6 +37,8 @@ describe("glossary covers every creation term in EN and IT", () => {
       const it = term(itGlossary, id);
       expect(en, `EN glossary.term.${id}`).toBeTypeOf("string");
       expect(it, `IT glossary.term.${id}`).toBeTypeOf("string");
+      if (en === undefined || it === undefined)
+        throw new Error(`glossary.term.${id} missing`);
       expect(en.trim().length).toBeGreaterThanOrEqual(40);
       expect(it.trim().length).toBeGreaterThanOrEqual(40);
       expect(it).not.toBe(en);
