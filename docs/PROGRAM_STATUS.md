@@ -23,6 +23,8 @@ the owner's 2026-09-09 feedback. Its exit acceptance
 The owner's verdict closes PD. **P11a does not start before that verdict.** PD has not started;
 P11a is next, not started.
 
+The 2026-09-09 knowledge-base reset is integrated on `v2` (see `docs/program/NEXT.md` → Closed).
+
 **P10 — Creation and onboarding** delivered, `59b20e75`, verified on `v2`:
 
 - Guided six-step creation over typed catalogue and custom sources, with shared acquisition

@@ -35,7 +35,9 @@ Claude must share the same knowledge base and skills".
 - Worktree: `~/Workspace/Codex/d20-folio-v2-knowledge-reset`, branch
   `task/v2-knowledge-base-reset-20260909`, based on `origin/v2` at `08f8af0b`.
 - Size caps (bytes, enforced by `tests/unit/docs-budget.test.ts`): `CLAUDE.md` ≤ 12,000;
-  `PRODUCT.md` ≤ 24,000; `docs/PROGRAM_STATUS.md` ≤ 12,000; `docs/program/NEXT.md` ≤ 6,000;
+  `PRODUCT.md` ≤ 26,000 (raised from 24,000 by controller ruling 2026-09-09: the verbatim
+  Steering leaves no working margin); `docs/PROGRAM_STATUS.md` ≤ 12,000; `docs/program/NEXT.md`
+  ≤ 6,000;
   every other file in the Map role ≤ 40,000; `docs/GOLDEN_RULES.md` ≤ 18,000.
 - Nothing is deleted from history: v1 documents move to `docs/archive/v1/` with `git mv`;
   external evidence moves to `~/Workspace/Codex/archive-2026-09-09/`; uncommitted work from
@@ -305,7 +307,7 @@ import { describe, expect, it } from "vitest";
 
 const caps: Record<string, number> = {
   "CLAUDE.md": 12_000,
-  "PRODUCT.md": 24_000,
+  "PRODUCT.md": 26_000,
   "docs/PROGRAM_STATUS.md": 12_000,
   "docs/program/NEXT.md": 6_000,
   "docs/GOLDEN_RULES.md": 18_000,
@@ -463,6 +465,9 @@ screenshot lane), measured durations at `08f8af0b`, the 15-minute target, what w
 - [ ] **Step 3:** `pnpm test --run tests/unit/docs-budget.test.ts` → PASS.
 - [ ] **Step 4:** commit with `.changeset/v2-map-docs-rewritten.md`:
       `docs(map): rewrite the map documents from the v2 code with archify diagrams; add the docs budget test`.
+
+Ledger ruling: B6 ran as three dispatches (B6a diagrams, B6b ARCHITECTURE + MECHANICS, B6c the
+rest plus the test), not one commit.
 
 ### Task B7: repository skill directories
 

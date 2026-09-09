@@ -84,13 +84,13 @@ devono essere in grado avere la stessa knowledge base/skills di claude. Questo �
 ## 2026-09-07 — custom automation, editable combat, shell and Account
 
 <!-- source: PRODUCT.md "Reconciled owner direction"; shell-review-20260907/DECISIONS.md; delivery
-     preference: same ledger, line 674 -->
+     preference: docs/archive/v1/PROGRAM_STATUS-2026-09-09.md:674 -->
 
 - **Custom is a first-class input to the same engine.** Custom content drives actions, targets,
   costs, resources, effects, reactions and consequences through the shared mechanics and receipt
   model, never a parallel descriptive catalogue. During play the table changes relevant values,
   resources, conditions, effects and results on the authoritative facts, with provenance and causal
-  correction — never a decorative override, never a silent rewrite of an in-use copy's template.
+  correction — never a decorative override or a silent rewrite of an in-use copy's template.
 - **Shell and Account, r2.** Account under the player's name; global search on desktop, a lens on
   the phone; a `?` for help and shortcuts. No switch to disable shortcuts or animations — they are
   part of the experience and are not to be proposed again. Direct IT ↔ EN switching, the button
@@ -99,7 +99,7 @@ devono essere in grado avere la stessa knowledge base/skills di claude. Questo �
   and assets stay untouched outside the agreed delta.
 - **Delivery preference:** "mandami il prompt per la prossima sessione solo quando hai davvero
   finito."
-- **Verification loop.** Every block iterates on the actual running application — journeys, UI,
+- **Verification loop.** Every block iterates on the running application — journeys, UI,
   persisted effects, failures reproduced and fixed — with independent authenticated clients and the
   optimized build on Firebase demo emulators. Emulator acceptance never authorises deployment.
 

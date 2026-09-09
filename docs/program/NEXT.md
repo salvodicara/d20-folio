@@ -36,6 +36,11 @@ P01 is a documentary candidate with no separate integration receipt. For P08b, P
 above is the verified integrated source; their final remote receipts were kept in external evidence
 folders — see `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md` for the full historical record.
 
+Knowledge-base reset (2026-09-09): one program in `docs/program/`, one-page ledger, v1 docs
+archived, map documents rewritten with archify diagrams, graph committed and hook-refreshed,
+skills unified — integrated on `v2` through `8f06f950` (the commits after it are this record and
+the integration).
+
 ## Open
 
 - **PD** — the current block, not started.
@@ -51,6 +56,7 @@ Full text in [`DECISIONS.md`](DECISIONS.md); the newest dated statement always w
 
 - **2026-09-09** — knowledge-base reset: one program in the repository, v1 documents archived, the
   repository is the only memory, the graph committed and hook-refreshed, one short handoff.
+- **2026-09-09** — the nine reset decisions (`DECISIONS.md`).
 - **2026-09-09** — the experience is too cold and administrative; progressive disclosure for expert
   and beginner; raster art for spells and combat actions; BG3 and D&D Beyond studied for real.
 - **2026-09-08** — standing delivery delegation: reviewed, gate-green work integrates into `v2`
