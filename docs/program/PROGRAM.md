@@ -37,8 +37,9 @@ it produced the approved mock `d20-folio-html-0.9.3-2026-09-06` and its manifest
 A block starts from the owner message, the identified approved mock (tag, manifest and hash verified
 now, never a pre-filled baseline), pertinent screenshots and review, and the current execution state
 and runbooks. The owner owns only its assigned modules and the documents owning the facts it
-changes; it integrates other boundaries without reverting them. Before code: a small plan and useful
-behavioural tests. After code: the block's proofs, repository gates, review, and curated before/after
+changes; it integrates other boundaries without reverting them. Before design or code, the block's
+spec carries its `## Reference dossier` (rule 30, enforced by the docs-budget test); a session that
+skips it has not started the block. Before code: a small plan and useful behavioural tests. After code: the block's proofs, repository gates, review, and curated before/after
 screenshots in chat — 1440×900 and 1280×800, EN/IT dark where it applies, phone where consultation
 and updates matter, with no invented mobile HUD parity. Verify Italian names in full, crop and
 fallback, keyboard and focus, and undo, error, offline and permission paths where they matter.

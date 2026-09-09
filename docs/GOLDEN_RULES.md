@@ -152,6 +152,13 @@ the new durable decision or kept explicitly one-off.
     Taking the initiative without this research is a defect (owner, 2026-09-03: "every time you
     do things your own way, you make a mess"). The dossier method is the standard: the real
     reference beside our rendition, then the rules.
+    **Enforcement (2026-09-09).** Every block specification under `docs/superpowers/specs/` and every
+    design proposal carries a `## Reference dossier` section before its design: for each surface or
+    mechanism, the product that already does it (Baldur's Gate 3, D&D Beyond, Owlbear Rodeo, Foundry
+    VTT, Roll20, Kanka…), the evidence (URL, capture path, or research file), what is copied, what is
+    adapted and why. A spec without it fails `tests/unit/docs-budget.test.ts`; a review that finds an
+    invented pattern where a proven one exists is a spec ❌. Assets are never copied — only patterns
+    and taxonomies; raster art is generated in an inspired, non-identical style (owner, 2026-09-09).
 31. **Steering wins.** `PRODUCT.md` §Steering is the top of the authority stack. A document, plan,
     test or memory that contradicts it is fixed or deleted in the same change that notices it, never
     left to pull the next agent back to an old direction. The approved mock and the current

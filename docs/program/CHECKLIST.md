@@ -10,21 +10,22 @@ and the screenshot of the current revision. A route or a count of controls is ne
 
 ## A — Behaviour of the delivered surfaces
 
-| Area                           | Closing proof                                                                                                                                              |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Only what is needed, all of it | Main task, essential data, primary action, secondary detail; openings replayed with no external guide and canonical navigation                             |
-| Orientation and continuity     | Four domains, search, detail → return with filters, scroll, selection and draft; context change and Back/Forward with no contamination                     |
-| Account, campaigns, characters | Create, open, copy, archive, restore; several characters of one account in one campaign; independent selectors; invite, claim, leave                       |
-| Builder and sheet              | Choices and cascades, 18 skills and saves, progression, resources, conditions and vital state, images and fallback, companions, import/export/print        |
-| Spells and inventory           | Preparation, casting, costs, ritual, components and chosen level; coins, charges, equipment, containers and transfers; reading never consumes              |
-| Eleven homebrew families       | Per family: create, edit, autosave, versions, reuse, import/export, print, sharing and revocation; the copy materialised in the right recipient            |
-| Player table and freedom       | Composed action, targets, three automation levels, digital or physical dice, explicit costs, receipt and undo; every E family supported or honestly manual |
-| The DM as a distinct user      | Preparation → activation and reinforcements; overview → complete authorised sheet A/B → return, with no change of active character or balance              |
-| Map and DM session             | Assets, scene, grid, tokens, camera, gestures and shortcuts, allowed and extra movement, areas, fog, reveal and player preview, and resume                 |
-| Campaign and world             | Chronicle, lore and notes with explicit public and private, treasure and rewards on the recipient, dates, travel, downtime and rests                       |
-| Calendar                       | Availability, invitation and RSVP, proposal and confirmation, recurrences, occurrences and time zones, links and reminders with preview                    |
-| Account and secondary surfaces | Preferences, public exposure and revocation, recovery, session zero, support, legal, admin, PWA update defer and apply                                     |
-| Devices and robustness         | IT and EN, dark only, desktop 1440×900 and 1280×800 and pertinent phone; long names, keyboard and focus, crop and fallback, error, cancel and reload       |
+| Area                           | Closing proof                                                                                                                                                                          |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reference dossier              | Every surface/mechanism of the block names the product that already does it, the evidence, what is copied and what is adapted (rule 30); no invented pattern where a proven one exists |
+| Only what is needed, all of it | Main task, essential data, primary action, secondary detail; openings replayed with no external guide and canonical navigation                                                         |
+| Orientation and continuity     | Four domains, search, detail → return with filters, scroll, selection and draft; context change and Back/Forward with no contamination                                                 |
+| Account, campaigns, characters | Create, open, copy, archive, restore; several characters of one account in one campaign; independent selectors; invite, claim, leave                                                   |
+| Builder and sheet              | Choices and cascades, 18 skills and saves, progression, resources, conditions and vital state, images and fallback, companions, import/export/print                                    |
+| Spells and inventory           | Preparation, casting, costs, ritual, components and chosen level; coins, charges, equipment, containers and transfers; reading never consumes                                          |
+| Eleven homebrew families       | Per family: create, edit, autosave, versions, reuse, import/export, print, sharing and revocation; the copy materialised in the right recipient                                        |
+| Player table and freedom       | Composed action, targets, three automation levels, digital or physical dice, explicit costs, receipt and undo; every E family supported or honestly manual                             |
+| The DM as a distinct user      | Preparation → activation and reinforcements; overview → complete authorised sheet A/B → return, with no change of active character or balance                                          |
+| Map and DM session             | Assets, scene, grid, tokens, camera, gestures and shortcuts, allowed and extra movement, areas, fog, reveal and player preview, and resume                                             |
+| Campaign and world             | Chronicle, lore and notes with explicit public and private, treasure and rewards on the recipient, dates, travel, downtime and rests                                                   |
+| Calendar                       | Availability, invitation and RSVP, proposal and confirmation, recurrences, occurrences and time zones, links and reminders with preview                                                |
+| Account and secondary surfaces | Preferences, public exposure and revocation, recovery, session zero, support, legal, admin, PWA update defer and apply                                                                 |
+| Devices and robustness         | IT and EN, dark only, desktop 1440×900 and 1280×800 and pertinent phone; long names, keyboard and focus, crop and fallback, error, cancel and reload                                   |
 
 An unautomated primitive never blocks the intent of play: the contextual manual path counts. Never
 promise the enumeration of every possible homebrew, and always separate a local result, a content

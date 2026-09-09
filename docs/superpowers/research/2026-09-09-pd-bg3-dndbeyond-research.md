@@ -130,21 +130,21 @@ Concrete gaps, each with the file that would own it and what already exists. Non
 
 ## 9. Open questions only the owner can answer
 
-1. **Does a ≤3-input quick path belong in a product where the character's birth must engage?** Both references qualify it — 7% uptake in BG3, "doesn't see much use" at D&D Beyond (E1 §3; E3 §1). Building it is cheap (§8.1); whether it is offered at the door is a product call.
-2. **Are class and species descriptions authored in-house or taken from SRD 5.2.1, and does the private pack own the non-SRD text?** A licensing-partition decision (§8.2).
-3. **Does creation gain a portrait or identity-image step?** Portraits are set later on the sheet today (E5 §4) and D&D Beyond keeps them a sheet header element (E3 §3); this changes the schema and the art corpus.
-4. **How complete must the raster corpus be before it ships?** The repository's own rule is that art is a corpus and a partial collection is a defect (`src/data/item-art.ts`).
-5. **Is a global "explain everything" verbosity toggle acceptable?** The evidence supports one (E3 §1), but the owner's 2026-09-07 decision rejected switches that disable parts of the experience.
+1. **Does a ≤3-input quick path belong where the character's birth must engage?** Both references qualify it — 7% uptake in BG3, "doesn't see much use" at D&D Beyond (E1 §3; E3 §1). Building it is cheap (§8.1); offering it at the door is a product call.
+2. **Are class and species descriptions authored in-house or taken from SRD 5.2.1, and does the private pack own the non-SRD text?** A licensing-partition call (§8.2).
+3. **Does creation gain a portrait or identity-image step?** Portraits are set on the sheet today (E5 §4) and D&D Beyond keeps them a sheet header element (E3 §3); this changes the schema and the art corpus.
+4. **Where does the raster corpus come from, and how complete must it be?** Answered 2026-09-09: generated with GPT, BG3-inspired, never identical — see DECISIONS.md. Completeness is open: art is a corpus, a partial collection a defect (`src/data/item-art.ts`).
+5. **Is a global "explain everything" verbosity toggle acceptable?** The evidence supports one (E3 §1), but the 2026-09-07 owner decision rejected switches that disable parts of the experience.
 
-## 10. Reserved to Astra — deliberately not decided here
+## 10. Reserved to Astra — not decided here
 
-Nothing in §1–§8 should be read as pre-empting these.
+Nothing in §1–§8 pre-empts these.
 
-- **The art style of the raster set** — medium, treatment, palette, level of finish, and how "curated, contemporary, rich without being gaudy" is realised; §8.6 supplies only the addressing mechanism and the completeness rule. **Whether spells carry art at all**, against §4's contrary evidence, belongs here too.
-- **The layout of every step**, the composition of the panels, and how §8.4's forecast is presented.
-- **Identity-first versus identity-last ordering** — E4 §5 found no controlled study, BG3 asks for the name last and the Foundry builders start with identity; §8.7 makes it cheap either way.
-- **Colour, typography, iconography and the shape of the register**, including the contradiction in `DESIGN.md` §7 between the mock's green-circle / orange-triangle / purple-star register and the shipped `--at-*` tokens.
-- **Portrait treatment and the entry surface**, and **the screenshot matrix** for the owner's verdict.
+- **The art style of the raster set**, within the owner's boundary: BG3-inspired, never identical — medium, treatment, palette, finish, and how "curated, contemporary, rich without being gaudy" is realised; §8.6 supplies the addressing mechanism and completeness rule. **Whether spells carry art at all**, against §4's evidence, belongs here too.
+- **The layout of every step**, the panels' composition, and how §8.4's forecast is shown.
+- **Identity-first versus identity-last ordering** — E4 §5 found no controlled study, BG3 asks for the name last, Foundry builders start with identity; §8.7 makes it cheap either way.
+- **Colour, typography, iconography and the shape of the register**, and the contradiction in `DESIGN.md` §7 between the mock's green-circle / orange-triangle / purple-star register and the shipped `--at-*` tokens.
+- **Portrait treatment and the entry surface**, and **the screenshot matrix** for the verdict.
 
 ## Sources
 

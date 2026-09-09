@@ -14,7 +14,7 @@
  * The caps are measured on the file as prettier formats it, so `just ci`'s
  * format gate and this guard cannot disagree.
  */
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const caps: Record<string, number> = {
@@ -62,5 +62,50 @@ describe("documentation budget (no dead weight, owner 2026-09-03; caps ratified 
   it("the committed graph exists and is not empty", () => {
     expect(existsSync("graphify-out/graph.json")).toBe(true);
     expect(statSync("graphify-out/graph.json").size).toBeGreaterThan(10_000);
+  });
+});
+
+/**
+ * Guard: golden rule 30 is a gate, not a paragraph.
+ *
+ * The owner has repeated "l'app non deve mai reinventare la ruota" a thousand
+ * times and the rule was still skipped, so louder text is not the fix. From
+ * 2026-09-10 a block specification carries its reference dossier — the product
+ * that already does it, the evidence, what is copied, what is adapted and why —
+ * before any design. Earlier specifications are grandfathered as history:
+ * 2026-09-02 mechanics-authoring and total-combat-automation; 2026-09-06 P02;
+ * 2026-09-07 P03, P04, P05, P06; 2026-09-08 P07, P08a, P08b, P08c, P09, P10.
+ */
+const SPEC_DIR = "docs/superpowers/specs";
+const DOSSIER_HEADING = "## Reference dossier";
+const DOSSIER_GATE_DATE = "2026-09-10";
+
+describe("golden rule 30 is a gate (owner, 2026-09-09)", () => {
+  it("every v2 block specification carries a Reference dossier section", () => {
+    const gated = readdirSync(SPEC_DIR).filter((name) => {
+      const date = /^(\d{4}-\d{2}-\d{2})-.+\.md$/.exec(name)?.[1];
+      return date !== undefined && date >= DOSSIER_GATE_DATE;
+    });
+    const missing = gated.filter(
+      (name) => !readFileSync(`${SPEC_DIR}/${name}`, "utf8").includes(DOSSIER_HEADING)
+    );
+    expect(missing, `specifications with no "${DOSSIER_HEADING}" section`).toEqual([]);
+  });
+
+  it("the specs README documents the required Reference dossier section", () => {
+    const readme = `${SPEC_DIR}/README.md`;
+    expect(existsSync(readme), `${readme} is missing`).toBe(true);
+    const text = readFileSync(readme, "utf8");
+    for (const marker of [
+      DOSSIER_HEADING,
+      "Product",
+      "Evidence",
+      "Copied",
+      "Adapted",
+      "Why",
+    ]) {
+      expect(text).toContain(marker);
+    }
+    expect(statSync(readme).size).toBeLessThanOrEqual(1_500);
   });
 });

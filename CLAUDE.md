@@ -155,7 +155,8 @@ The repository is the only memory. Everything an agent must obey lives here, in 
 
 **Giants' shoulders (golden rule 30):** research the state of the art and copy the dominant, proven
 pattern with real evidence before designing or building anything; the dossier method — the real
-reference beside our rendition, then the rules — is the standard for every surface.
+reference beside our rendition, then the rules — is the standard for every surface — enforced: every
+spec carries a `## Reference dossier` (see rule 30).
 
 **Language:** the repository is English — code, comments, documents, commits, changesets, issues;
 the conversation with the owner is Italian.
