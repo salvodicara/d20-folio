@@ -1,13 +1,18 @@
 ---
 # Runtime design tokens of d20 Folio.
 #
-# Pruning rule (2026-09-09): this block carries ONLY tokens that `src/index.css`
-# actually references through `var(--token)` — measured with
+# Pruning rule (2026-09-09): this block carries ONLY tokens that are defined in
+# `src/index.css` and consumed somewhere in `src/` — measured with
 #   grep -o 'var(--[a-z0-9-]*)' src/index.css | sort -u
-# Everything the v1 document listed and the CSS no longer consumes was dropped,
-# together with the whole light-theme half (dark only, owner 2026-09-05).
-# `src/index.css` remains the authoritative source of the values; this block is a
-# summary for design tools, never a second definition to keep in sync by hand.
+# then confirmed against actual `var(--token)` use across `src/` (a token such as
+# `--touch-min` is defined in `src/index.css` but consumed in `src/styles/folio.css`,
+# not in `src/index.css` itself). Everything the v1 document listed and the CSS no
+# longer consumes was dropped, together with the whole light-theme half (dark only,
+# owner 2026-09-05). `src/index.css` remains the authoritative source of the values;
+# this block is a summary for design tools, never a second definition to keep in
+# sync by hand. The non-colour keys below are group-relative design-token names,
+# not literal CSS custom-property names: `spacing: 2` names `--sp-2`,
+# `motion: fast` names `--m-fast`, `rounded: md` names `--radius-md`.
 name: d20 Folio
 description: A premium, dark-only companion for D&D 2024 — one coherent system across every surface, state and breakpoint, in EN and IT.
 colors:
@@ -164,16 +169,17 @@ touching a v2 surface:
    surfaces.
 2. **`src/features/identity/identity.css`** — the shell that is actually mounted on `v2`
    ([`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §8) does **not** consume the system above. It
-   declares its own five locally scoped tokens on `.identity-app` / `.identity-dialog` and
+   declares its own six locally scoped tokens on `.identity-app` / `.identity-dialog` and
    `color-scheme: dark`:
 
-   | Token               | Value     | Role                           |
-   | ------------------- | --------- | ------------------------------ |
-   | `--identity-bg`     | `#0b1419` | page field (blue-black canvas) |
-   | `--identity-panel`  | `#132128` | panel                          |
-   | `--identity-text`   | `#eee9dd` | primary ink                    |
-   | `--identity-muted`  | `#c0c6c2` | secondary ink                  |
-   | `--identity-accent` | `#a6e4ee` | cyan action and focus          |
+   | Token               | Value       | Role                           |
+   | ------------------- | ----------- | ------------------------------ |
+   | `--identity-bg`     | `#0b1419`   | page field (blue-black canvas) |
+   | `--identity-panel`  | `#132128`   | panel                          |
+   | `--identity-text`   | `#eee9dd`   | primary ink                    |
+   | `--identity-muted`  | `#c0c6c2`   | secondary ink                  |
+   | `--identity-line`   | `#d9bc8333` | hairline / divider             |
+   | `--identity-accent` | `#a6e4ee`   | cyan action and focus          |
 
    These are the laboratory's own reference values, so the shell is faithful to the mock — but it
    is a second palette, not the frontmatter's. Any block that unifies the two is a design decision
@@ -196,10 +202,11 @@ The owner has rejected filling gaps with more generic icons or ad-hoc SVG pictog
 ## 4. The four scopes
 
 Campaign · Character · Library · At the table are the four permanent scopes; Account is a global
-utility ([`PRODUCT.md`](PRODUCT.md) § Clarity). The mounted shell declares them in that order in
-`primaryDestinations` (`src/features/identity/navigation.ts`); `table` currently carries
-`unavailable: true` and renders an explaining panel rather than a fake surface — an unavailable
-destination must always explain the route back instead of fabricating content.
+utility ([`PRODUCT.md`](PRODUCT.md) § Clarity). The mounted shell's `primaryDestinations`
+(`src/features/identity/navigation.ts`) declares them in a different order — campaign, table,
+characters, library; `table` currently carries `unavailable: true` and renders an explaining panel
+rather than a fake surface — an unavailable destination must always explain the route back instead
+of fabricating content.
 
 Navigation is the browser's own: native history over a hash, with per-frame restoration of query,
 scroll and focus, and a deterministic `parentRoute` return from every leaf
