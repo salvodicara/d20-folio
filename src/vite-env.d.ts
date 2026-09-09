@@ -13,7 +13,7 @@ interface ImportMetaEnv {
   /**
    * reCAPTCHA Enterprise (score) site key for Firebase App Check (`src/lib/firebase.ts`). Unset in
    * dev/CI/e2e/forks — App Check only initializes when this is a non-empty string.
-   * See docs/BUG_REPORTING.md → "App Check rollout runbook".
+   * See docs/archive/v1/BUG_REPORTING.md → "App Check rollout runbook".
    */
   readonly VITE_APPCHECK_SITE_KEY?: string;
   /** Set to "true" to arm the App Check debug-token escape hatch (dev/CI/e2e only). */

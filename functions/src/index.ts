@@ -19,7 +19,7 @@
  *    billing to stop usage" kill-switch), forcing spend to zero. Idempotent, loud,
  *    and never acts on forecasts. The zero-budget hard guarantee.
  *
- * All secrets use `defineSecret` (Secret Manager). See `docs/BUG_REPORTING.md`
+ * All secrets use `defineSecret` (Secret Manager). See `docs/archive/v1/BUG_REPORTING.md`
  * for the exact owner setup runbook.
  */
 
@@ -396,7 +396,7 @@ export const deleteUser = onCall(async (request) => {
  * (`updateProjectBillingInfo` with an empty `billingAccountName`), which forces all
  * billable usage to stop — spend can never run past ~£1.
  *
- * Guard rails (see `budget-kill.ts` for the pure decision + `docs/BUG_REPORTING.md`
+ * Guard rails (see `budget-kill.ts` for the pure decision + `docs/archive/v1/BUG_REPORTING.md`
  * for the setup + emergency-restore runbook):
  *   - ACTS ONLY ON ACTUAL OVERRUN — `costAmount > budgetAmount`; a forecast alert
  *     still carries the real `costAmount`, so a forecast trip never detaches billing.

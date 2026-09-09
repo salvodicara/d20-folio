@@ -140,7 +140,7 @@ devono essere in grado avere la stessa knowledge base/skills di claude. Questo �
 
 ## 2026-09-03 — steering, method, dice and CI
 
-<!-- source: PRODUCT.md §Steering; docs/superpowers/plans/2026-09-03-new-app-stage-1.md -->
+<!-- source: PRODUCT.md §Steering; docs/archive/v1/superpowers/plans/2026-09-03-new-app-stage-1.md -->
 
 The purpose, the ambition, the four acceptance stories and the nineteen jobs are owned by
 [PRODUCT.md](../../PRODUCT.md) §Steering; the decisions below are the ones this program enforces.

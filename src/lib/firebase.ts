@@ -22,7 +22,7 @@ const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
 
 export const app = initializeApp(firebaseConfig);
 
-// App Check (pre-GA hardening — docs/BUG_REPORTING.md → "App Check rollout runbook").
+// App Check (pre-GA hardening — docs/archive/v1/BUG_REPORTING.md → "App Check rollout runbook").
 // Strictly gated on VITE_APPCHECK_SITE_KEY being set: no key (dev/CI/e2e/forks) =
 // zero new network calls. The key is a reCAPTCHA ENTERPRISE score key (the one
 // kind provisionable headlessly via gcloud; token TTL 24h keeps the Enterprise

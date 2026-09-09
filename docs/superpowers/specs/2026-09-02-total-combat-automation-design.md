@@ -28,15 +28,15 @@ The E01–E22 family contracts and eight ordered outcomes are retained in Progra
 **Date:** 2026-09-02 · **Status:** reconciled to `PRODUCT.md` §Steering on 2026-09-03 (owner
 approved the core direction in chat on 2026-09-02; the steering of 2026-09-03 bounds it) ·
 **Owner of this fact:** this document owns the engine target for stages 1–4 of the
-[stage-1 program plan](../plans/2026-09-03-new-app-stage-1.md) until its sections are folded
+[stage-1 program plan](../../archive/v1/superpowers/plans/2026-09-03-new-app-stage-1.md) until its sections are folded
 into `docs/ARCHITECTURE.md` and `docs/MECHANICS.md` in stage 7. The
-[migration program](../plans/2026-09-02-total-combat-automation-migration.md) is history: its
+[migration program](../../archive/v1/superpowers/plans/2026-09-02-total-combat-automation-migration.md) is history: its
 phases P2–P5 are superseded by the stages.
 
-Evidence: [audit](../status/2026-09-02-combat-automation-audit.md) ·
-[rules surface](../status/2026-09-02-combat-rules-surface.md) ·
-[classification](../status/2026-09-02-combat-rules-classification.md) ·
-[authoring cost](../status/2026-09-02-mechanic-authoring-cost.md) · ADRs in
+Evidence: [audit](../../archive/v1/superpowers/status/2026-09-02-combat-automation-audit.md) ·
+[rules surface](../../archive/v1/superpowers/status/2026-09-02-combat-rules-surface.md) ·
+[classification](../../archive/v1/superpowers/status/2026-09-02-combat-rules-classification.md) ·
+[authoring cost](../../archive/v1/superpowers/status/2026-09-02-mechanic-authoring-cost.md) · ADRs in
 [`docs/adr/`](../../adr/README.md). Authoring contract:
 [mechanics authoring spec](2026-09-02-mechanics-authoring-spec.md).
 

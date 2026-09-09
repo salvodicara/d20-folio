@@ -478,7 +478,7 @@ export function FeaturesTab() {
     // desynced array) without depending on `features[]` being complete. (The full
     // option-1 refactor — `features[]` for custom only, engine reads the derivation
     // (a planned `derive-character-features.ts`) — is the separate, higher-blast-radius
-    // Phase 2; see docs/AUTOMATION_BACKLOG.md.)
+    // Phase 2; see docs/archive/v1/AUTOMATION_BACKLOG.md.)
     const derivedRefs: SrdFeatureRef[] = [];
     const derivedSeen = new Set<string>();
     // The FULL set of ids any build choice COMPUTES (class/subclass/species

@@ -4,7 +4,7 @@
  * Reachable from "Search the Folio" (⌘K → "bug" / "report" / "feature" / "segnala"),
  * the account menu ("Report a bug"), and the crash screens ("Report this
  * problem", pre-filled via `crash-report.ts`) — the entry-point list lives in
- * docs/BUG_REPORTING.md. It puts the user ON RAILS: pick a Type and Severity from carved
+ * docs/archive/v1/BUG_REPORTING.md. It puts the user ON RAILS: pick a Type and Severity from carved
  * segmented controls, confirm the auto-detected Screen (overridable), write a
  * short Title + Description, optionally keep the auto-captured screenshot, and
  * send. The report writes to Firestore `/bug_reports/{id}`; a Cloud Function then

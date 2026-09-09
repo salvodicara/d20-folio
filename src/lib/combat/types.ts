@@ -69,7 +69,7 @@ export interface Position {
   readonly y: number;
 }
 
-// ── The map (stage 5 — docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md) ──
+// ── The map (stage 5 — docs/archive/v1/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md) ──
 
 /** An axis-aligned rectangle of grid cells: `x,y` is the top-left cell, `w,h ≥ 1`. Cells, not
  *  pixels, so the same numbers feed the reducer's geometry and the fog membership test. */

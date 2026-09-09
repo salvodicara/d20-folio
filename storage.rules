@@ -54,7 +54,7 @@ service firebase.storage {
       allow delete: if request.auth != null;
     }
 
-    // Map backgrounds (stage 5, docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md
+    // Map backgrounds (stage 5, docs/archive/v1/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md
     // §7): `campaigns/{campaignId}/maps/{mapId}.jpeg`. Membership and the DM are read from
     // the campaign document through the same cross-service lookup `isAdmin()` uses. The DM
     // (or the admin) uploads and deletes; every member may read — which also covers `list`,

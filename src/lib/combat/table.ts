@@ -237,7 +237,7 @@ export function applyTable(state: FoldedState, op: TableOp): TableResult {
       return { kind: "applied", state: removeEntity(state, op.entity, events), events };
     }
     case "join": {
-      // Appended by the joining PC's own owner client (`docs/superpowers/plans/2026-09-04-v2-
+      // Appended by the joining PC's own owner client (`docs/archive/v1/superpowers/plans/2026-09-04-v2-
       // stage-4-shared-encounter`): `add-entity` semantics — duplicate id rejected, appended to
       // the turn order while turns are running.
       if (state.entities[op.entity.id])

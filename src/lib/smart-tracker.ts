@@ -1532,7 +1532,7 @@ export function resolveChargesFormula(
   // MULTICLASS magic-item charge formula ever references CLASS level, it must resolve
   // on the OWNING-class level instead — thread `featureScalingLevel(...)` as the
   // 3rd arg here, exactly as `resolveTrackerTotal` already does for class trackers.
-  // No shipped item triggers this today; see docs/AUTOMATION_BACKLOG.md (W11).
+  // No shipped item triggers this today; see docs/archive/v1/AUTOMATION_BACKLOG.md (W11).
   return resolveTrackerTotal(resolvedFormula, character);
 }
 

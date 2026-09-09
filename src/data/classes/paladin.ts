@@ -224,7 +224,7 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     // seam (a Paladin wears armor, so it applies). NOTE (follow-ups): the "while
     // wearing armor" gate is not yet a primitive (an unarmored Paladin would get
     // it), and the fighting style should be a player CHOICE rather than Defense
-    // being auto-assigned — both tracked in docs/AUTOMATION_BACKLOG.md.
+    // being auto-assigned — both tracked in docs/archive/v1/AUTOMATION_BACKLOG.md.
     grants: [{ type: "ac-bonus", amount: 1 }],
     source: "SRD",
   },

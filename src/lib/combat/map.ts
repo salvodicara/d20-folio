@@ -2,7 +2,7 @@
  * The map's pure facts: rectangle geometry over grid cells, the fog fold, and the validators the
  * `map`/`fog` table ops apply before touching state.
  *
- * Design: docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md §3–§4. Everything
+ * Design: docs/archive/v1/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md §3–§4. Everything
  * here is cells, never pixels — the image-pixel mapping is the surface's concern — and nothing
  * here reads a clock, a random source or a document. Fog has ONE representation: when `covered`,
  * every cell is hidden except those inside a `revealed` rectangle; `hide` subtracts from the

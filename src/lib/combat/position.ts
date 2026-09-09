@@ -1,7 +1,7 @@
 /**
  * Positions and areas: pure geometry over grid cells. No state, no reducer dependency — the
  * `move` step (intent.ts) and stage 3's area mechanics both call these functions directly.
- * Design: docs/superpowers/specs/2026-09-03-v2-stage-2-positions-areas-design.md.
+ * Design: docs/archive/v1/superpowers/specs/2026-09-03-v2-stage-2-positions-areas-design.md.
  */
 import { assertNever, type EntityId } from "./ids";
 import type { Position, RangeBand } from "./types";

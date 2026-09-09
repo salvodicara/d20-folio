@@ -1,6 +1,6 @@
 /**
  * The Storage seam of the map background — design addendum §7
- * (docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md).
+ * (docs/archive/v1/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md).
  *
  * One object per background, `campaigns/{campaignId}/maps/{mapId}.jpeg`, `mapId` a fresh UUID —
  * never the encounter id, so a later "scenes" stage can reuse an image across encounters

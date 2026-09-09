@@ -5,7 +5,7 @@
  * is the only place the surface converts to and from the background image's pixel space, and it
  * is parameterised by `MapBackground` alone. No React, no DOM: tested in the fast lane.
  *
- * Design: docs/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md §3, §8. Ruler tones
+ * Design: docs/archive/v1/superpowers/specs/2026-09-04-v2-stage-5-minimum-map-design.md §3, §8. Ruler tones
  * follow Foundry v13's token drag ruler: within the remaining movement, reachable with a Dash
  * (one more speed), or beyond.
  */

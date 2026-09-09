@@ -62,7 +62,7 @@ const I18N_ROOT = join(SRC, "i18n");
 // ("SRD facts as data", not localization — adding an app language never touches
 // it), so the engine reading it never reads the active locale. The exemption is
 // NARROW (exactly this file) and TRACKED+SHRINKING (every srdEn call site is
-// enumerated in docs/AUTOMATION_BACKLOG.md → "srdEn shrink-list", each a candidate
+// enumerated in docs/archive/v1/AUTOMATION_BACKLOG.md → "srdEn shrink-list", each a candidate
 // to replace the parsed-from-English fact with a structured data field). The
 // resolver (localizeSrd) is NOT exempt — it stays UI/views-only.
 const SRD_EN_MODULE = join(SRC, "i18n", "srd-en.ts");

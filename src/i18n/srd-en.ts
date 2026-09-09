@@ -51,7 +51,7 @@
  * import. The `architecture-direction.guard` whitelists exactly this path (and
  * `srd-key.ts`) under `@/i18n`: the resolver (`localizeSrd`) stays UI/views-only.
  * The exemption is **tracked and shrinking** — every `srdEn` call site is
- * enumerated in `docs/AUTOMATION_BACKLOG.md → "srdEn shrink-list"`.
+ * enumerated in `docs/archive/v1/AUTOMATION_BACKLOG.md → "srdEn shrink-list"`.
  *
  * ## Contract
  *  - PURE: no React, no Zustand, no Firebase, no i18next, no locale. English in.
