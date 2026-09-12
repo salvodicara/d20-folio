@@ -138,6 +138,29 @@ report §11: objects before events before features before screens before criteri
 | 9  | Acceptance criteria      | How we will know each behaviour works                                      | `requirements.md` per feature: job story + numbered EARS criteria + Gherkin flows + usability pillars | Kiro; EARS; Gherkin; Hodent                  |
 | 10 | Synthesis and gate       | Is anything still silently assumed                                         | Spec per block; pre-mortem and red-team pass; ADRs for hard-to-reverse trade-offs                 | Pocock to-spec; BMAD elicitation; MADR         |
 
+**What exists of a screen before anyone draws it.** The lesson of mock 0.9.3 is that drawing
+came first. In this plan a screen is drawn only when its screen document is approved by the owner.
+The document is words and tables, in the Shape Up breadboard form: places (where you can be),
+affordances (what you can do there), connections (where each action takes you), plus the state
+inventory and the acceptance criteria. A fragment, for the combat hotbar:
+
+```
+Screen: combat-hotbar (player, during an encounter)
+Objects shown: Character (mine), Action slots, Resources (spell slots, uses), Conditions (mine)
+Affordances: use a slot · drag a slot · swap two slots · open the full action list ·
+  end turn · hold a reaction · undo my last action (until the DM confirms)
+Connections: use a slot → target picker → resolution log line; open full list → action sheet
+States: my turn · not my turn · reaction available · no resource left · offline · DM confirming
+Roles: player (all), DM (sees any character's hotbar read-only), spectator (none)
+Freedom: DM can override any slot cost at the table (yes); homebrew actions appear as slots (yes)
+Criteria: WHEN I use a slot with no resource left, THE SYSTEM SHALL keep the slot visible,
+  disabled, with the reason · WHEN a reaction becomes available on someone else's turn,
+  THE SYSTEM SHALL prompt me within the same round without pausing the DM's screen …
+```
+
+Only when the owner has approved that, Codex opens the dossier (what BG3 and Solasta do for the
+same screen) and draws the wireframe, then the mock.
+
 Output layout: `spec/PRFAQ.md`, `spec/jobs.md`, `spec/objects/` (guide, matrices), `spec/events/`,
 `spec/features/<id>/requirements.md`, `spec/screens/<id>.md`, `spec/flows/<id>.md`, `spec/glossary.md`,
 `spec/open-questions.md`; each with its dated `## Clarifications`. Step 2 can run in parallel with
@@ -418,8 +441,10 @@ REPORT.md scritto e incollato in chat, program/NEXT.md riscritto.
 
 1. The spec is the source of intent; code and tests are the source of truth about behaviour. A
    disagreement is a bug in one of the two and is fixed in the same change.
-2. Nothing is built without a spec, nothing is designed without a dossier, nothing ships without a
-   verifiable check the agent ran and showed.
+2. Nothing is drawn without an approved screen document, nothing is built without a spec, nothing
+   is designed without a dossier, nothing ships without a verifiable check the agent ran and
+   showed. A screen document names every region, element, control, state and consequence in words
+   and tables before any wireframe or mock exists.
 3. One question at a time, one task per session, one artifact per session, one worktree per task.
 4. Every session ends by rewriting `program/NEXT.md`; the repository is the only memory.
 5. Every owner decision is a dated line in the ledger; the newest dated decision wins.
