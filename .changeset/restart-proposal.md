@@ -1,4 +1,4 @@
 ---
 ---
 
-Propose the d20 Studio restart: a fresh spec-first repository, roles for Codex and Claude, phases, ten golden rules, house skills and prompt templates.
+Rebuild the d20 Studio restart proposal on five dated research reports: discovery methods, teardown landscape, curated skills, two-agent operating model and model routing.

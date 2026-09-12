@@ -1,0 +1,374 @@
+# Agent-driven development frameworks and repository conventions — September 2026
+
+Research dossier for a solo, non-technical owner who wants a new repository run jointly by Claude Code and OpenAI Codex, with a long discovery interview, a Codex-owned design phase, an agent-built product, mandatory cross-review between the two agents, and no pull-request reading by the owner.
+
+All star counts, push dates and licences were read from the GitHub API on 2026-09-12. Quotes are verbatim from the cited page unless marked "paraphrase".
+
+---
+
+## 1. Spec-driven and agentic frameworks compared
+
+### 1.1 Summary table
+
+| Framework | Repo / URL | Stars | Last push | Licence | Runs in Claude Code | Runs in Codex | Discovery mechanism | Artifacts produced |
+|---|---|---|---|---|---|---|---|---|
+| GitHub Spec Kit | https://github.com/github/spec-kit | 135,883 | 2026-09-12 | MIT | yes (`/speckit.*`) | yes (skills mode, `$speckit-*`, installed under `.agents/skills`; older releases wrote `.codex/prompts`) | `/speckit.clarify`: max 5 questions per session, one at a time, multiple-choice tables with a recommended option, answers written to `## Clarifications / ### Session YYYY-MM-DD` | `memory/constitution.md`; per feature `specs/NNN-slug/{spec.md, plan.md, research.md, data-model.md, contracts/, quickstart.md, tasks.md, checklists/*.md}` |
+| BMAD Method (v6 line, latest tag ~v6.8, May 2026) | https://github.com/bmad-code-org/BMAD-METHOD | 52,932 | 2026-09-12 | GitHub shows "Other"; README: "MIT License", BMad is a trademark of BMad Code, LLC | yes (Claude Code plugin marketplace) | yes (Codex plugin) plus `npx skills add bmad-code-org/BMAD-METHOD` | Persona agents (Mary the analyst, PM, Architect, UX, SM, Dev) with `bmad-brainstorming`, `bmad-forge-idea` ("Pressure-tests a half-formed idea in a questioning conversation"), `bmad-advanced-elicitation`, `bmad-party-mode` | product brief, PRD, `DESIGN.md` + `EXPERIENCE.md` (UX), architecture decisions, epics and stories, sprint status, code review reports |
+| OpenSpec | https://github.com/Fission-AI/OpenSpec | 68,043 | 2026-09-11 | MIT | yes (`/opsx:*`) | yes (`$openspec-*`) | `/opsx:explore` ("Discovery" mode) then `/opsx:propose` | `openspec/specs/` ("Your specifications (source of truth)"), `openspec/changes/<name>/{proposal.md, specs/ (ADDED/MODIFIED/REMOVED deltas), design.md, tasks.md}`, archived to `changes/archive/YYYY-MM-DD-<name>/` |
+| Kiro (AWS) | https://kiro.dev/docs/specs/ ; issue tracker https://github.com/kirodotdev/Kiro | 4,289 (tracker only; product is closed) | 2026-08-27 | none (proprietary IDE and CLI) | no (own IDE/CLI; reads `AGENTS.md`) | no | "Kiro poses clarifying questions to help refine the initial intent"; two approval gates (requirements, then design) or "Quick Spec" without gates | `.kiro/specs/<name>/{requirements.md (EARS), design.md, tasks.md}`, `.kiro/steering/*.md`, hooks |
+| Tessl Framework | https://github.com/tesslio/cli ; https://tessl.io | not queryable (search API blocked) | — | CLI on GitHub; framework closed beta | via CLI/MCP | via CLI/MCP | "The agent will ask clarifying questions, write specs first, wait for approval" (paraphrase, tessl.io) | 1:1 spec-to-file; generated code marked `// GENERATED FROM SPEC - DO NOT EDIT` |
+| AWS agentic guidance | Kiro + https://github.com/aws-samples/sample-kiro-cli-prompts-for-product-teams | — | — | MIT-0 (samples) | n/a | n/a | `.kiro/steering/prd-guide.md` PRD prompts for product teams | PRD, steering files, event hooks |
+| obra/superpowers | https://github.com/obra/superpowers | 285,532 | 2026-09-12 | MIT | yes (official plugin marketplace) | yes (README lists Codex App and Codex CLI, plus Cursor, OpenCode, Gemini CLI, Copilot CLI, others) | `brainstorming` skill: "Only one question per message", "Prefer multiple choice questions when possible", "Propose 2-3 different approaches with trade-offs", design presented in sections with "Ask after each section whether it looks right so far" | `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`, `docs/superpowers/plans/YYYY-MM-DD-<feature>.md`, then TDD, subagent-driven execution with "two-stage review (spec compliance, then code quality)" |
+
+### 1.2 Spec Kit in detail
+
+Workflow (README): constitution -> specify -> clarify -> plan -> tasks -> analyze -> implement -> converge. The reference page "Agentic SDD" states: "The clarify, checklist, and analyze commands are quality gates you add for anything with meaningful ambiguity." Only `/speckit.specify` is mandatory before planning.
+
+`clarify` template (templates/commands/clarify.md), the most rigorous interview mechanic found in any framework:
+
+- Nine ambiguity categories: Functional Scope & Behavior; Domain & Data Model; Interaction & UX Flow; Non-Functional Quality Attributes; Integration & External Dependencies; Edge Cases & Failure Handling; Constraints & Tradeoffs; Terminology & Consistency; Completion Signals. Each is marked Clear / Partial / Missing.
+- "hard maximum of 5 total questions" per session; each answerable by "Multiple choice (2-5 mutually exclusive options presented in a Markdown table)" or "Short answer (capped at <=5 words)"; "NEVER use a topic label, section heading, or requirement id as the question itself."
+- Each accepted answer is recorded as `- Q: [question text] -> A: [final answer]` under `## Clarifications` / `### Session YYYY-MM-DD`, then folded into the relevant spec section; "The spec file is saved after each integration to prevent context loss."
+
+`checklist` template: "Checklists are UNIT TESTS FOR REQUIREMENTS WRITING - they validate the quality, clarity, and completeness of requirements in a given domain." Items look like `- [ ] CHK### <requirement question> [Dimension, Spec §X.Y or Gap marker]`.
+
+`converge` (added 2026): "assesses the codebase against the feature's spec, plan, and tasks to confirm nothing was missed. It is append-only: it never edits or deletes code, and its only possible write is adding tasks to tasks.md."
+
+Spec template sections: User Scenarios & Testing (prioritised stories P1..Pn, Given/When/Then), Requirements (FR-###, Key Entities, `NEEDS CLARIFICATION` markers), Success Criteria (SC-###), Assumptions. Plan template: Constitution Check "Must pass before Phase 0 research. Re-check after Phase 1 design.", Complexity Tracking table. Tasks template: `[ID] [P?] [Story] Description`, checkpoints per story.
+
+Criticisms:
+- Birgitta Böckeler (martinfowler.com, "Understanding Spec-Driven-Development: Kiro, spec-kit, and Tessl"): spec-kit created "a LOT of markdown files" that were "verbose and tedious to review"; she'd "rather review code than all these markdown files"; the agent "ultimately not follow all the instructions"; warns of "the downsides of both MDD and LLMs: Inflexibility and non-determinism".
+- Instil, "Spec-driven development is dead. Long live plan mode": "Once implementation started, the lower-level docs (tasks, acceptance criteria) drifted from the higher-level ones (spec, plan), and both drifted from the code." Result: "a roughly similar quality of output, in more files, with more drift, for more money".
+- Codex-specific: spec-kit issue #1147 (open, stale): under Codex CLI the clarify prompt "displays recommended actions and options without first stating the clarifying question". Treat Codex support as functional but less polished than Claude Code.
+
+### 1.3 BMAD Method in detail
+
+Docs (docs.bmad-method.org): "BMad adds a set of named commands, called skills, to AI coding tools such as Claude Code and Cursor." Delivery loop: "Clarify, Plan, Build and verify, Learn and adjust." Skills by phase (reference/skills-and-agents):
+
+- Core: `bmad-brainstorming` ("Facilitates a brainstorming session using proven creative techniques"), `bmad-forge-idea`, `bmad-advanced-elicitation`, `bmad-deep-recon`, `bmad-review` ("Reviews a diff, document, or other artifact through one or more lenses"), `bmad-party-mode`.
+- Analysis: `bmad-agent-analyst` (Mary): market, domain, technical, competitive and user research.
+- Planning: `bmad-product-brief`, `bmad-prfaq`, `bmad-prd` ("Create, update, or validate a PRD"), `bmad-spec`.
+- Solutioning: `bmad-ux` ("Capture the UX vision as DESIGN.md and EXPERIENCE.md"), `bmad-architecture`, `bmad-create-epics-and-stories`, `bmad-sprint-planning`.
+- Implementation: `bmad-build`, `bmad-code-review` ("Review code changes with several independent reviewers"), `bmad-qa-generate-e2e-tests`.
+
+Party mode (customize/run-multi-agent-discussions): "Run `/bmad-party-mode` and the agents your installed modules provide join the same conversation: the PM, Architect, Dev, UX Designer, and the rest." Modes: `--mode session` (one model voices all), `--mode subagent` ("spawns a separate agent for each persona every substantive round" because "one model voicing five personas tends to make them agree"), `--mode agent-team`. Best for: "Decisions with real tradeoffs, Brainstorming and 'what are we missing?', Post-mortems and retrospectives, Pressure-testing a plan before you commit."
+
+Criticisms: "highly prescriptive workflow that requires comprehensive Product Requirement Documents and architecture specifications be generated before any code is written" (Medium review, Jan 2026); issue #1332 (closed, bug, priority:high): the code-review workflow said "Find 3-10 specific issues in every review minimum - no lazy 'looks good' reviews", causing "endless review cycles and developer fatigue". Heavy install surface (modules, personas, TOML customisation).
+
+### 1.4 OpenSpec in detail
+
+README: each change gets `proposal.md`, `specs/`, `design.md`, `tasks.md`; specs use "**WHEN** ... / **THEN** ..." scenarios and ADDED/MODIFIED/REMOVED requirement blocks; "fluid not rigid", "iterative not waterfall"; on Spec Kit: "Thorough but heavyweight. Rigid phase gates, lots of Markdown, Python setup. OpenSpec is lighter and lets you iterate freely." Commands: `/opsx:explore`, `/opsx:propose`, `/opsx:apply`, `/opsx:verify`, `/opsx:archive`, `/opsx:sync`, `/opsx:update`. The README recommends high-reasoning models ("Codex 5.5 and Opus 4.7" at time of writing). Discovery is the weakest part: `explore` is free-form, with no interview taxonomy.
+
+### 1.5 Kiro (AWS) in detail
+
+Feature specs: "WHEN [condition/event] THE SYSTEM SHALL [expected behavior]" (EARS); example: "WHEN a user submits a form with invalid data THE SYSTEM SHALL display validation errors next to the relevant fields". Three phases "with approval gates between them", each requiring "explicit approval before proceeding"; "Quick Spec" skips gates. Steering: "Kiro supports providing steering directives via the AGENTS.md standard. AGENTS.md files ... do not support inclusion modes and are always included." Hooks fire on file save, PR open and repo events.
+
+Böckeler's Kiro test: fixing a small bug produced "4 user stories with a total of 16 acceptance criteria" — the tools lack "flexibility for a few different core workflows, for different sizes and types of changes". Kiro is not usable from Claude Code or Codex; what is portable is EARS wording and the three-file shape (community re-implementations: https://github.com/wirelessr/kiro-workflow-prompts).
+
+### 1.6 Tessl
+
+Framework "still does not appear to have reached general availability" as of mid-2026; company repositioned on 2026-01-29 around "Skills on Tessl: the package manager for agent skills". Criticism (codemyspec review): "The 1:1 spec-to-file mapping may prove too rigid. Test linkage is a reference mechanism rather than executable verification." Not a candidate.
+
+### 1.7 obra/superpowers as the lifecycle
+
+README: lifecycle brainstorming -> using-git-worktrees -> writing-plans -> subagent-driven-development -> test-driven-development -> requesting-code-review -> finishing-a-development-branch. Brainstorming "asks you what you're really trying to do", "teases a spec out of the conversation", "shows it to you in chunks short enough to actually read and digest". `writing-plans` produces "bite-sized tasks (2-5 minutes each)" with "exact file paths, complete code, and verification steps", saved to `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`. Subagent-driven development "dispatches fresh subagent per task with two-stage review (spec compliance, then code quality)".
+
+Criticism (Hacker News thread "A Rave Review of Superpowers"): top objection is "bloated" — "nobody seriously disputing the workflow, but rather disputing paying tokens for harness on models that plan competently unprompted". Reviews recommend full install for teams and newer users; experienced solo developers "cherry-pick modules starting with brainstorm and plan".
+
+### 1.8 Native vendor guidance that competes with all of the above
+
+- Anthropic best practices (code.claude.com/docs/en/best-practices): "For larger features, have Claude interview you first. Start with a minimal prompt and ask Claude to interview you using the `AskUserQuestion` tool." Prompt text: "I want to build [brief description]. Interview me in detail using the AskUserQuestion tool. Ask about technical implementation, UI/UX, edge cases, concerns, and tradeoffs. Don't ask obvious questions, dig into the hard parts I might not have considered. Keep interviewing until we've covered everything, then write a complete spec to SPEC.md." Then: "Once the spec is complete, start a fresh session to execute it."
+- OpenAI Codex manual: "If you have a rough idea of what you want but aren't sure how to describe it well, ask Codex to question you first. Tell it to challenge your assumptions and turn the fuzzy idea into something concrete before writing code." Plan mode "lets Codex gather context, ask clarifying questions, and build a stronger plan before implementation."
+- OpenAI "Run long horizon tasks with Codex": four files — `Prompt.md` (immutable goals, "done when"), `Plans.md` ("Milestones small enough to complete in one loop", "Acceptance criteria + validation commands per milestone"), `Implement.md` ("Plans markdown file is source of truth (milestone-by-milestone)", "Run validation after each milestone (fix failures immediately)"), `Documentation.md` ("Current milestone status", "Decisions made", "Known issues").
+- Thoughtworks / Hidde de Smet: use three lanes — "full specs for high-risk work, light specs (one-page template) for medium-risk features, and no-spec (just ticket + PR + tests) for reversible changes"; "If 'time to first commit' keeps rising, and escaped defects are flat, you are likely over-paying process cost."
+
+### 1.9 Verdict on discovery
+
+The best interview mechanics are, in order: Spec Kit `clarify` (taxonomy, bounded question count, recorded and dated answers), superpowers `brainstorming` (one question per message, multiple choice, alternatives with trade-offs, section-by-section validation), Anthropic's native "interview me" loop (unbounded, AskUserQuestion), BMAD elicitation/party mode (best for surfacing disagreements, most expensive). Kiro and OpenSpec are weaker at interviewing. None of them is designed for a multi-week product-level discovery that inventories every screen and interaction; that has to be composed (see section 7).
+
+---
+
+## 2. Exemplary agent-managed public repositories (2025-2026)
+
+Cross-repository findings from GitHub's analysis of 2,500+ `agents.md` files (github.blog): "Put relevant executable commands in an early section"; "One real code snippet showing your style beats three paragraphs describing it"; "Tell AI what it should never touch"; six core areas: commands, testing, project structure, code style, git workflow, boundaries; a three-tier boundary system (Always do / Ask first / Never do). Secondary analyses report diminishing returns beyond ~150 lines and 20-23% higher inference cost with no gain (promptessor/ssojet summaries; treat as indicative). Anthropic's own rule for CLAUDE.md: "For each line, ask: 'Would removing this cause Claude to make mistakes?' If not, cut it. Bloated CLAUDE.md files cause Claude to ignore your actual instructions!"
+
+| # | Repository | Instruction file | Size | What to copy |
+|---|---|---|---|---|
+| 1 | https://github.com/openai/codex (`AGENTS.md`) | AGENTS.md | very long (~1,800 lines; an acknowledged outlier) | Lint rules stated as agent instructions; "Do not add tests for values that are statically defined"; diff-size cap "Unless the change is mechanical the total number of changed lines should not exceed 800"; module/file size caps (~500/~800 LoC); `just fmt` after every change. Copy the *shape* of rules, not the length. |
+| 2 | https://github.com/getsentry/sentry (`AGENTS.md`) | AGENTS.md | ~400 lines | Opening sentence: "AGENTS.md files are the source of truth for AI agent instructions. Always update the relevant AGENTS.md file when adding or modifying agent guidance." A directory-to-AGENTS.md map ("Context-Aware Loading"); "Never include customer information in pull requests"; frontend and backend changes in separate PRs. |
+| 3 | https://github.com/openclaw/openclaw (`AGENTS.md`, Peter Steinberger) | AGENTS.md with sibling CLAUDE.md symlink | ~450 lines | "Edit canonical `AGENTS.md` files; new ones need a sibling `CLAUDE.md` symlink." Evidence rule: "Read complete affected modules, owners, callers, siblings, tests, history, and dependency contracts until the intended user outcome and violated invariant are supported by evidence." Review rule: "Before committing or landing nontrivial code, obtain fresh review through the permitted workflow and resolve actionable findings unless the user opts out." "Review/triage is read-only; mutations require task authority." "One owner per responsibility." A closing "Read when relevant" index of deeper docs. |
+| 4 | https://github.com/coder/coder (`AGENTS.md`) | AGENTS.md + linked GO.md, TESTING.md, DATABASE.md, ARCHITECTURE.md, PR_STYLE_GUIDE.md | ~400 lines | "Rule #1: If you want exception to ANY rule, YOU MUST STOP and get explicit permission first." "Prioritize correctness over agreement. State uncertainty instead of guessing, and push back on technically unsound requests with evidence." Bans sycophancy ("You're absolutely right!"). "Never bypass Git hooks with `--no-verify`." Task-specific guidance table pointing to deeper docs. |
+| 5 | https://github.com/ghostty-org/ghostty (`AGENTS.md`, Mitchell Hashimoto) | AGENTS.md | ~200 words | Commands only ("Build: `zig build`", "Prefer to run targeted tests with `-Dtest-filter`"), one invariant, a directory map. Proof that a tiny file works for a mature codebase. |
+| 6 | https://github.com/sst/opencode (`AGENTS.md`) | AGENTS.md | ~400 lines | Style rules as one-liners ("Avoid `else` statements. Prefer early returns.", "Never alias imports"), branch naming ("at most three words, separated by hyphens"), "Avoid mocks as much as possible". |
+| 7 | https://github.com/karpathy/autoresearch (`program.md`) | program.md | short | The human-owned instruction file ("research org code written in English"); ownership by file: `prepare.py` "is read-only", only `train.py` may change; a results ledger `results.tsv` (commit, metric, status keep/discard/crash, description); a pragmatism rule ("A 0.001 val_bpb improvement that adds 20 lines of hacky code? Probably not worth it."); "NEVER STOP: ... do NOT pause to ask the human" once the loop starts. |
+| 8 | https://github.com/simonw/research (`AGENTS.md`, Simon Willison) | AGENTS.md | short | Folder per project, `notes.md` documenting the exploration, final `README.md` report, "Git diffs (not full repositories) if modifying existing code", no `_summary.md` files. Also his `simonw/present` and `simonwillisonblog` as agent-written examples. |
+| 9 | https://github.com/cloudflare/workers-sdk and https://github.com/temporalio/temporal (`AGENTS.md`) | AGENTS.md | 40-80 lines / moderate | "Use pnpm - never use npm or yarn" first line (blast-radius-first ordering); Temporal: persona framing plus "NEVER assume a library/framework is available". |
+
+Decision logs, handoffs, skills, hooks and CI gates seen in these repos and in vendor guidance:
+
+- Decision logs: none of the nine keeps a formal ADR folder that agents fill; OpenAI's long-horizon pattern keeps "Decisions made" in `Documentation.md`; the ADR pattern for agents comes from practitioner write-ups (section 4).
+- Handoff files: Anthropic's harness uses "context resets alongside structured handoff artifacts, enabling the next agent in the workflow to continue from a defined state" and "Agents communicate through files—one writes, another reads and responds" (anthropic.com/engineering/harness-design-long-running-apps); OpenAI uses `Documentation.md`; Willison uses `notes.md`.
+- Skills: `.claude/skills/<name>/SKILL.md` (Claude) and `.agents/skills` (Codex, Spec Kit, `npx skills add`). Superpowers and BMAD both ship as skills, so both tools read them.
+- Hooks: Claude Code hooks in `.claude/settings.json` (Stop, SubagentStop, TaskCompleted, PreToolUse, WorktreeCreate). Codex: "eleven lifecycle events ... from SessionStart to Stop", configured in `hooks.json` or `config.toml` (`[features].hooks`).
+- CI gates: openclaw/coder/sentry all require the repo's lint/test commands and forbid `--no-verify`; codex-action and claude-code-action run agents in CI (section 3).
+
+---
+
+## 3. The two-agent operating model: Claude Code + Codex on one repository
+
+### 3.1 Official building blocks
+
+| Piece | Source | Key facts (verbatim where quoted) |
+|---|---|---|
+| Codex plugin for Claude Code | https://github.com/openai/codex-plugin-cc (33,054 stars, Apache-2.0, pushed 2026-07-08) | Install: `/plugin marketplace add openai/codex-plugin-cc`, `/plugin install codex@openai-codex`, `/codex:setup`. Commands: `/codex:review`, `/codex:adversarial-review`, `/codex:rescue`, `/codex:status`, `/codex:result`, `/codex:transfer`, `/codex:cancel`. "Both review commands are read-only and will not perform any changes." `--base <ref>` and `--background`. Config in `.codex/config.toml`: `model`, `model_reasoning_effort`. `/codex:setup [--enable-review-gate|--disable-review-gate]` toggles "the stop-time review gate" so Claude runs a Codex review before finishing. Requires "ChatGPT subscription (incl. Free) or OpenAI API key". |
+| Adversarial review prompt | plugins/codex/prompts/adversarial-review.md | "Assume the change can fail in subtle, high-cost, or user-visible ways until the evidence says otherwise." Output is JSON with severity `needs-attention` or `approve`, per-finding file, line range, confidence 0-1, recommendation; must not "Invent code paths, files, or runtime behavior unsupported by context". |
+| `codex review` CLI | Codex manual; community docs | Modes: "Review against a base branch for PR-style review, Review uncommitted changes, Review a commit, Use custom review instructions" (`--base main`, `--uncommitted`, `--commit <sha>`). Since CLI 0.130.0 a custom `[PROMPT]` and `--base/--uncommitted` are mutually exclusive (gstack issue #1428). |
+| `codex exec` in CI | https://github.com/openai/codex-action (1,233 stars, Apache-2.0, pushed 2026-09-11) | Inputs `prompt`/`prompt-file`, `safety-strategy` (default `drop-sudo`), `model`, `effort`, `output-file`, `output-schema-file`, `codex-args`; output `final-message` ("Final message returned by `codex exec`"). Read-only sandbox: "Codex can view files but cannot mutate the filesystem or access the network directly." Example workflow: job 1 reviews the PR, job 2 posts the comment with `actions/github-script`. Auth via `OPENAI_API_KEY` secret and a "secure proxy to the Responses API". |
+| Codex sandbox and profiles | Codex config sample | Sandbox modes `read-only`, `workspace-write`, `danger-full-access`; approval policies (`untrusted`, `on-request`, `never`). Profiles are "separate files under CODEX_HOME" selected with `codex --profile ci`; sample CI profile: `model = "gpt-5.6-terra"`, `approval_policy = "on-request"`, `sandbox_mode = "read-only"`, `model_reasoning_effort = "medium"`, `plan_mode_reasoning_effort = "high"`. |
+| Codex subagents / agent roles | learn.chatgpt.com/docs/agent-configuration/subagents | Project agents in `.codex/agents/*.toml` with `model`, `model_reasoning_effort`, `sandbox_mode`, `mcp_servers`, `developer_instructions`; built-ins `default`, `worker`, `explorer`; `[agents] max_concurrent_threads_per_session`, `default_subagent_model`. Documented example: `name = "pr_reviewer"`, `sandbox_mode = "read-only"`, "Review code like an owner. Prioritize correctness, security, and missing test coverage with concrete findings." |
+| Codex `/goal` | cookbook "Using Goals in Codex" | "a Goal is a thread-scoped completion contract"; "It should be complete only after the objective is checked against the relevant files, tests, logs, benchmark output, generated artifacts, or other concrete evidence." |
+| Claude Code headless | code.claude.com/docs/en/best-practices, /headless | `claude -p "prompt"` with `--output-format json|stream-json`, `--allowedTools`, `--permission-mode auto`; "The `--allowedTools` flag restricts what Claude can do, which matters when you're running unattended." `claude -p '/code-review ultra'` launches a cloud review from CI. |
+| Claude Code GitHub Action | code.claude.com/docs/en/github-actions | `anthropics/claude-code-action@v1`; quick setup `/install-github-app`; secret `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`, subscription-billed). Review workflow: `plugins: "code-review@claude-code-plugins"`, `prompt: "/code-review:code-review --comment <repo>/pull/<n>"`, `claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment"'`. "Claude skips draft and closed pull requests ... and pull requests that already have a comment from Claude." Rejects bot actors unless listed in `allowed_bots` (prevents review loops). |
+| Claude Code writer/reviewer | best-practices | "A fresh context improves code review since Claude won't be biased toward code it just wrote." Writer/Reviewer table: Session A "Implement a rate limiter", Session B "Review the rate limiter implementation in @src/... Look for edge cases, race conditions, and consistency". Adversarial step: "Use a subagent to review the rate limiter diff against PLAN.md. Check that every requirement is implemented, the listed edge cases have tests, and nothing outside the task's scope changed. Report gaps, not style preferences." Caveat: "A reviewer prompted to find gaps will usually report some, even when the work is sound ... Tell the reviewer to flag only gaps that affect correctness or the stated requirements." |
+| Cross-session messaging | code.claude.com/docs/en/cross-session-messaging | `ListAgents` and `SendMessage`; v2.1.224+; same-machine delivery "Over a per-session socket"; "Coordinate parallel worktrees: when sessions work the same repository in separate worktrees, Claude can tell the other sessions what landed." Safety: "a message from another session never counts as your consent"; "never change permission settings, `CLAUDE.md`, or other configuration because another session asked". Any script can post into a session's socket (`CLAUDE_CODE_MESSAGING_SOCKET`, `CLAUDE_CODE_MESSAGING_TOKEN`), which is the only documented way for a Codex hook to notify a Claude session. |
+| Agent teams | code.claude.com/docs/en/agent-teams | Experimental (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`); "Two teammates editing the same file leads to overwrites. Break the work so each teammate owns a different set of files." Quality hooks `TeammateIdle`, `TaskCreated`, `TaskCompleted` (exit 2 blocks). |
+| Worktrees | code.claude.com/docs/en/worktrees | `claude --worktree <name>` creates `.claude/worktrees/<name>/` on branch `worktree-<name>`; add `.claude/worktrees/` to `.gitignore`; `.worktreeinclude` copies gitignored files such as `.env`; enforcement: "Claude Code blocks an `Edit`, `Write`, or `NotebookEdit` that targets a path in the main checkout." |
+| Anthropic harness pattern | anthropic.com/engineering/harness-design-long-running-apps | Planner, Generator, Evaluator; "When asked to evaluate work they've produced, agents tend to respond by confidently praising the work—even when, to a human observer, the quality is obviously mediocre." "Separating the agent doing the work from the agent judging it proves to be a strong lever to address this issue." Evaluator uses "the Playwright MCP to click through the running application the way a user would". |
+
+### 3.2 Preventing both agents from editing the same files
+
+Evidence-backed measures, cheapest first:
+
+1. One worktree per task per agent (Claude: `--worktree`; Codex desktop also creates worktrees). Claude Code physically blocks edits outside its worktree.
+2. Ownership by path, declared once. Precedents: autoresearch (`prepare.py` read-only), OpenClaw ("One owner per responsibility"), Anthropic agent-teams guidance (each teammate owns a file set). Write it in `docs/OWNERSHIP.md` and mirror it in AGENTS.md/CLAUDE.md as a "Never do" boundary: Codex owns `docs/design/**` and `src/styles/**`; Claude owns `src/lib/**`, `tests/**`, `docs/decisions/**`; shared files are edited only through a named task.
+3. Enforce, don't advise: a Claude `PreToolUse` hook that rejects `Edit/Write` on Codex-owned paths, and a Codex `PreToolUse` hook (hooks.json) for the inverse. Anthropic: "Unlike CLAUDE.md instructions which are advisory, hooks are deterministic and guarantee the action happens."
+4. Reviewer is read-only by construction: Codex review runs with `sandbox_mode = "read-only"` (`.codex/agents/reviewer.toml`, or `codex exec --sandbox read-only` in CI); Claude review runs as `/code-review` in a fresh subagent with `tools: Read, Grep, Glob, Bash`.
+5. Serial integration: one integration branch, task branches rebased, no simultaneous writers on the same change folder.
+
+### 3.3 Recording the review outcome in the repository
+
+- Codex adversarial review already emits structured JSON (severity `needs-attention|approve`, findings with file, line range, confidence, recommendation). `codex-action` writes it via `output-file` + `output-schema-file`.
+- Claude Code Review writes a machine-readable line into its check run: `bughunter-severity: {"normal": 2, "nit": 1, "pre_existing": 0}` ("a non-zero value means Claude found at least one bug worth fixing before merge"); the docs show the `gh api ... --jq` incantation to read it and say "If you want to gate merges on Code Review findings, read the severity breakdown from the check run output in your own CI."
+- Neither vendor treats its review as approval: OpenAI: "@codex review is not an approval, and Automatic reviews are not automatic approval"; Anthropic: "Findings are tagged by severity and don't approve or block your PR".
+
+Recommended record: `changes/<NNN-slug>/review.md` (human-readable) plus `review.json` (the raw tool output), containing reviewer (codex|claude), model and effort, reviewed commit SHA, verdict (`approve` | `needs-attention`), findings and their resolution, and the date. A CI job (`review-gate`) fails unless `review.json.verdict == approve` and `review.json.sha == HEAD` and the reviewer differs from the author recorded in the commit trailer. This turns "mandatory cross-review" into a required status check the owner never has to read.
+
+### 3.4 Roles that the evidence supports
+
+- Claude Code: discovery interviewer and spec writer (AskUserQuestion, `/goal`, Stop hooks, skills), engine/data/tests implementer, reviewer of Codex's UI work via `/code-review` and a plan-compliance subagent.
+- Codex: designer (image generation, taste), UI implementer, adversarial reviewer of Claude's work (read-only), CI reviewer via `codex-action`, `/goal` for long tasks.
+- Cross-review both ways is mandatory; the reviewer is always the other agent, in a fresh context, read-only, with the verdict written to the repo.
+- Owner: answers questions, reads the report template (section 6.4), gives dated decisions.
+
+---
+
+## 4. Decision logging and "memory in the repo"
+
+### 4.1 Formats
+
+- Michael Nygard (2011, cognitect.com): sections Title, Context ("the forces at play, including technological, political, social, and project local"), Decision ("stated in full sentences, with active voice"), Status ("proposed" or "accepted"), Consequences. "ADRs will be numbered sequentially and monotonically. Numbers will not be reused." Superseded ADRs are kept: "we will keep the old one around, but mark it as superseded". One or two pages, "a conversation with a future developer".
+- MADR 4.0.0 (2024-09-17, https://adr.github.io/madr/): front matter `status`, `date`, `decision-makers`, `consulted`, `informed`; sections Context and Problem Statement, Decision Drivers, Considered Options, Decision Outcome, Consequences, Confirmation ("how compliance will be verified"), Pros and Cons of the Options, More Information. Has "bare" and "minimal" variants.
+- Agent Decision Records (me2resh.com): adds `agent` (claude-code, cursor, copilot), `model`, `trigger` (user-prompt, hook, automation), `status`, and a Y-statement: "In the context of [situation], facing [concern], I decided [decision] to achieve [goal], accepting [tradeoff]."
+
+### 4.2 Tooling
+
+| Tool | URL | Stars | Last push | Licence | Verdict |
+|---|---|---|---|---|---|
+| adr-tools | https://github.com/npryce/adr-tools | 5,686 | 2024-04-25 | Other (no SPDX) | dormant; shell scripts; agents do not need it |
+| log4brains | https://github.com/thomvaill/log4brains | 1,585 | 2024-12-17 | Apache-2.0 | dormant; static site generator; optional for publishing |
+
+Both are unmaintained since 2024. Agents write Markdown directly; a 20-line validation script (numbering, required front matter, no edits to accepted records) replaces both.
+
+### 4.3 Practices for agent-run repositories
+
+- braingrid.ai: keep ADRs "in your repo under a folder like `docs/decisions/`"; "Tell it, in your CLAUDE.md, to read `docs/decisions/` before making architectural changes and to write a new record when it makes a consequential one." "an ADR is immutable. You never edit an accepted record. When a decision changes, you write a new ADR that supersedes the old one." "The agent that keeps a decision log is the one that stops relitigating your settled questions."
+- websiteinit.com: put the rule in the top-level instruction file: state "that the decision log exists, where it is, and what the rule is for touching it. The rule matters as much as the pointer."
+- Spec Kit records every owner answer with a date: `## Clarifications` / `### Session YYYY-MM-DD` / `- Q: ... -> A: ...`. This is the simplest dated, attributable ledger found and is directly reusable for discovery answers.
+- OpenAI long-horizon `Documentation.md` ("Decisions made", "Known issues", "Current milestone status") and Anthropic's file-based handoffs are the vendor precedents for a handoff file.
+
+### 4.4 Keeping the human's decisions authoritative and dated
+
+Combine three things:
+
+1. `docs/decisions/DECISIONS.md`: an append-only ledger, one line per decision: `D-0042 | 2026-09-12 | owner (chat) | "Rolls are always logged" | supersedes D-0017 | ADR-0010`. Agents append, never rewrite; a pre-commit check rejects edits to existing lines.
+2. `docs/decisions/ADR-NNNN-slug.md` in MADR-minimal form with `decision-makers: owner` (or `claude` / `codex` for technical decisions the owner delegated), `date`, `status`, `confirmation` (the test or check that proves the decision is being honoured).
+3. A precedence rule in AGENTS.md: the owner's latest dated decision wins over any document, plan, test or memory; agents must cite the D-number when acting on it and must open a question in `docs/program/QUESTIONS.md` rather than guess when two decisions conflict. (This mirrors the "owner's latest dated informed decision wins" rule already in the d20-folio CLAUDE.md and is consistent with Coder's "Rule #1".)
+
+Handoff: one file, `docs/program/NEXT.md`, rewritten at the end of every session (state, frontier, open questions, five-line opening prompt); it is the only handoff and never copies contracts.
+
+---
+
+## 5. Prompting practice for an owner who only manages agents
+
+### 5.1 Codex
+
+Best practices (learn.chatgpt.com/guides/best-practices): "Goal: What are you trying to change or build? Context: Which files, folders, docs, examples, or errors matter for this task? Constraints: What standards, architecture, safety requirements, or conventions should Codex follow? Done when: What should be true before the task is complete". AGENTS.md: "Think of `AGENTS.md` as an open-format README for agents. It loads into context automatically and is the best place to encode how you and your team want Codex to work in a repository." Plan mode: "lets Codex gather context, ask clarifying questions, and build a stronger plan before implementation." Verification: "Don't stop at asking Codex to make a change. Ask it to create tests when needed, run the relevant checks, confirm the result, and review the work before you accept it." Delegation: "Use Codex's subagent workflows to offload bounded work from the main thread." Interview: "ask Codex to question you first. Tell it to challenge your assumptions and turn the fuzzy idea into something concrete before writing code." Prompting page: "A useful Codex prompt names the behavior you want, points to the relevant code or reproduction steps, preserves important constraints, and says how to verify the change." `/plan` then "use `/goal` after the plan to set a persistent goal."
+
+Models and effort (learn.chatgpt.com/docs/models, September 2026): tiers Astra ("Our most capable model for complex work across code, apps, and research"), Sol (most capable GPT-5.6), Terra ("Balanced GPT-5.6 model for everyday work"), Luna ("Fast and affordable GPT-5.6 model"). Default effort Medium. Levels: none/low, medium, high, xhigh ("Extra High"), max ("more time to reason about a single task"), ultra (parallel subagents). Guidance: "Low for faster, well-scoped tasks, Medium or High for more complex changes or debugging, Extra High for long, agentic, reasoning-heavy tasks"; "Most tasks do not need Max or Ultra." Selection: Astra for "sustained reasoning and judgment" across steps (planning), Terra for everyday implementation, Luna for "specific, high-volume tasks when you know what a good result looks like", Sol when work needs "extra analysis, judgment, or polish" (review). Independent view (Sebastian Raschka, "GPT 5.6 Has 72 Possible Configurations"): "Luna with Extra High effort may be better and cheaper than Sol with Medium effort" — effort is inference-time compute; tier is training compute; measure before assuming the bigger tier.
+
+### 5.2 Claude Code
+
+Best practices (code.claude.com/docs/en/best-practices):
+- "Give Claude a check it can run: tests, a build, a screenshot to compare. It's the difference between a session you watch and one you walk away from."
+- "Have Claude show evidence rather than asserting success: the test output, the command it ran and what it returned, or a screenshot of the result."
+- Four gating options after the check exists: in one prompt; "set the check as a `/goal` condition. A separate evaluator re-checks it after every turn"; "a Stop hook runs your check as a script and blocks the turn from ending until it passes. Claude Code overrides the hook and ends the turn after 8 consecutive blocks"; "a verification subagent ... has a fresh model try to refute the result, so the agent doing the work isn't the one grading it."
+- Plan mode: "Planning is most useful when you're uncertain about the approach, when the change modifies multiple files, or when you're unfamiliar with the code being modified. If you could describe the diff in one sentence, skip the plan."
+- Interview prompt: quoted in 1.8; "The most useful specs are self-contained: they name the files and interfaces involved, state what is out of scope, and end with an end-to-end verification step that proves the feature works."
+- `/goal` (docs/en/goal): "After each turn, a small fast model checks whether the condition holds." A good condition has "One measurable end state", "A stated check", "Constraints that matter"; up to 4,000 characters; add "or stop after 20 turns" to bound it; works headless: `claude -p "/goal CHANGELOG.md has an entry for every PR merged this week"`.
+- CLAUDE.md: "keep it short and human-readable"; include "Bash commands Claude can't guess", "Code style rules that differ from defaults", "Repository etiquette", "Architectural decisions specific to your project"; exclude "Anything Claude can figure out by reading code", "Information that changes frequently"; "If Claude keeps skipping one instruction, add emphasis such as 'IMPORTANT' to that line alone."
+
+Effort (platform.claude.com effort page and Claude Code model-config): levels `low`, `medium`, `high` (default), `xhigh`, `max`; `/effort` and `effortLevel` / `modelSettings` in settings. Claude Fable 5.1: "Start with `high`, the default. Step up to `xhigh` or `max` for the most capability-sensitive agentic and coding work, and step down to `medium` or `low` for routine or latency-sensitive work once your evals show quality holds." Prompting guide: "At `medium`, results roughly match Claude Fable 5 at lower cost"; "At `low`, Claude Fable 5.1 is often competitive with Claude Opus and Claude Sonnet models on cost per task while scoring higher". Opus 5: "Start with `high`, the default ... step up to `xhigh` for demanding coding and agentic work, or to `max` when a task justifies unconstrained token spending". `max` "may show diminishing returns and is prone to overthinking. Test before adopting broadly." `/code-review` effort semantics: "At `low` and `medium`, the review reports only the findings it's most confident in ... `high` through `max` broaden coverage and may include findings the review is less sure about." Fable 5.1 progress line for owner-facing sessions: "Before you start, say in a line what you're about to do; brief updates while you work help the user follow along. Close with a short recap that stands on its own — what you found, what you did, and what's next — so a reader who only sees the last message has the full picture."
+
+### 5.3 A practical mapping for this owner
+
+| Activity | Agent | Model / effort | Prompt shape |
+|---|---|---|---|
+| Discovery interview (weeks) | Claude Code | Fable 5.1 or Opus 5 at `high`; `xhigh` for synthesis sessions | Anthropic interview prompt + Spec Kit taxonomy; "one question per message, multiple choice with a recommended option"; write answers dated into the screen/flow docs |
+| Design brief and mocks | Codex | Astra or Sol at `high`/`xhigh` (judgment, images) | Goal / Context (PRODUCT.md, screen doc, dossier) / Constraints (DESIGN.md tokens, accessibility) / Done when (PNG per screen and state, dossier updated) |
+| Implementation task | either, per ownership | Claude `high` (Fable 5.1 `medium` for routine), Codex Terra `medium`-`high` | Goal / Context / Constraints / Done when + `/goal` condition + Stop hook |
+| Cross-review | the other agent | Codex Sol `high` read-only; Claude `/code-review high` in fresh subagent | "Report gaps that affect correctness or the stated requirements; treat the rest as optional" (Anthropic caveat) |
+| Owner report | the implementing agent | `low`/`medium` | fixed template (section 6.4) |
+
+---
+
+## 6. Quality gates that do not require the owner to read PRs
+
+### 6.1 Vendor review services
+
+| Service | Facts | Cost | Fit |
+|---|---|---|---|
+| Claude Code Review (managed GitHub app) | "research preview, available for Team and Enterprise subscriptions"; multi-agent review with a verification pass; severities Important / Nit / Pre-existing; "The check run always completes with a neutral conclusion so it never blocks merging"; tune with `REVIEW.md` (severity definitions, nit caps, skip rules, "Verification bar", "Re-review convergence", "Summary shape"); `@claude review`, `@claude review always` | "Each review averages $15-25", billed on usage credits; spend cap in admin settings | Team/Enterprise only; for a solo owner the self-hosted action below is the realistic path |
+| Claude Code GitHub Action + `code-review` plugin | Runs `/code-review:code-review --comment` on PR events; skips drafts and PRs it already commented on; can use a subscription OAuth token | GitHub minutes + subscription | Yes: reviewer of Codex-authored PRs |
+| No product named "Claude Approvals" was found | Searches return only Claude Code's "auto mode" permission classifier and managed-settings approval dialogs | — | Do not plan around it |
+| Codex cloud code review | "Turn on Code review for your repository"; "Automatic reviews" post "a review whenever someone opens a new PR"; "Codex flags only P0 and P1 issues so review comments stay focused"; rules in AGENTS.md under `## Code Review Rules` ("consequential, repository-specific" rules that include "the safe path or exception"); Security Review (research preview); "@codex review is not an approval" | ChatGPT plan | Yes: reviewer of Claude-authored PRs |
+| `openai/codex-action` in CI | read-only sandbox, `output-schema-file` for structured verdicts, `final-message` output | API key | Yes: deterministic, self-hosted review record |
+| Codex Automations (scheduled tasks) | "returning at the scheduled time to do the work and surface the result for you to review"; a Triage inbox; skill example "babysitting a pull request ... checks the PR status with the GitHub plugin and fixes new review feedback" | ChatGPT plan | Useful for a nightly "what changed, what is blocked" digest |
+| CodeRabbit | Free / Pro $24 / Pro Plus $48 per developer per month; "a plain-English walkthrough summary, sequence diagrams showing code flow, line-by-line comments"; ranked first in the 2026 Martian benchmark (49.2% precision) | $0-48/mo | Optional third reviewer; its walkthroughs are the most readable artifact for a non-technical owner |
+
+### 6.2 Screenshot and visual review
+
+| Tool | Facts | Cost |
+|---|---|---|
+| Argos | "Visual changes block the merge until a human approves them, exactly like a code review"; AI agents "first summarizing what changed visually ... when the screenshots match the pull request intent, the agent can suggest approving the build"; PR build summary in GitHub; "Argos is open source ... MIT-licensed argos-ci/argos repository" | free up to 5,000 screenshots/month, then $100/month flat (Argos comparison post) |
+| Chromatic | Storybook-centric | from $179/month |
+| Percy (BrowserStack) | cloud re-rendering, "Visual Review Agent" | from $599/month |
+| Playwright `toHaveScreenshot` | local, free, no review UI; screenshots committed as evidence | free |
+| Anthropic evaluator pattern | evaluator "navigates live pages, interacts with the interface using Playwright MCP, and provides detailed critiques" against a rubric (design quality, originality, craft, functionality) | tokens |
+
+### 6.3 Definition of Done enforced by machines
+
+- Local, per turn: Claude Stop hook (`exit 2` blocks; 8-block cap) running `just ci` or the change's validation command; Codex Stop hook equivalent; `/goal` conditions with a stated check.
+- Per subagent: `SubagentStop` / `TaskCompleted` hooks that refuse completion without a written report or a passing test diff.
+- Per change: `changes/<slug>/tasks.md` checkboxes plus `review.md`/`review.json` from the other agent (3.3).
+- In CI (required status checks under branch protection): lint, typecheck, unit, e2e, bundle budget, screenshot diff (Argos or committed Playwright snapshots), `review-gate` (verdict approve, SHA match, reviewer != author), `docs-gate` (every change touches its ADR/DECISIONS/NEXT when the commit message declares a decision), `ownership-gate` (no file outside the author's ownership set unless the task file names it).
+- Merge policy: auto-merge when all required checks pass; the owner is notified with the report, not the diff.
+
+### 6.4 Presenting results to a non-technical owner
+
+Evidence-backed principles: Anthropic ("Have Claude show evidence rather than asserting success"), Fable 5.1 recap instruction (5.2), Argos and CodeRabbit summaries, and the d20-folio practice of "curated runtime screenshots as actual chat images across the affected theme/locale/viewport matrix". Recommended fixed template, written by the implementing agent at the end of every change into `changes/<slug>/REPORT.md` and pasted in chat:
+
+1. What changed, in one paragraph of plain language (no file names).
+2. What you can now do: 3-5 bullets phrased as user actions.
+3. Evidence: checks run and their results (green/red list), screenshots (before/after, phone and desktop, EN and IT), the other agent's review verdict and how each finding was resolved.
+4. Decisions taken on your behalf (with D-numbers) and decisions that need you (as multiple-choice questions with a recommended option).
+5. What is next and what is blocked.
+
+---
+
+## 7. Recommendation
+
+### 7.1 Which framework to adopt
+
+Do not adopt Spec Kit, BMAD or Kiro wholesale. The strongest evidence (Böckeler, Instil, Hidde de Smet, the spec-kit and BMAD issue trackers) is that full per-feature artifact hierarchies drift, cost tokens and produce documents the owner will not read. The owner's needs are different from those tools' sweet spot: one long product-level discovery, then many small, well-gated changes.
+
+Backbone: obra/superpowers as the lifecycle (already the owner's default, runs in Claude Code and Codex, MIT, most adopted), with three targeted borrowings:
+
+1. Discovery: the Anthropic interview loop, structured by Spec Kit's nine-category `clarify` taxonomy and its dated `## Clarifications / ### Session YYYY-MM-DD` answer ledger, using superpowers' question discipline ("one question per message", multiple choice with a recommended option). Kiro's EARS phrasing (`WHEN ... THE SYSTEM SHALL ...`) for every acceptance criterion so the owner can read them and the agents can test them. BMAD `party-mode --mode subagent` only as an optional "what are we missing?" pass at the end of each discovery area.
+2. Artifacts: OpenSpec's shape (product specs as the source of truth; a small change folder per unit of work; archive on completion) without installing OpenSpec, and Spec Kit's `checklist` idea as a one-file "requirements quality" gate per screen. Three lanes (full / light / no-spec) so bug fixes do not generate documents.
+3. Review and gates: Codex plugin for Claude Code with the review gate enabled; Codex read-only reviewer role in `.codex/agents/`; claude-code-action code-review on PRs; codex-action read-only in CI; verdicts recorded in the change folder and enforced by a required check.
+
+Decision memory: MADR-minimal ADRs plus an append-only `DECISIONS.md` ledger with `decision-makers` and `date`, and a single `NEXT.md` handoff, exactly as in 4.4.
+
+### 7.2 Repository skeleton to copy
+
+```
+AGENTS.md                      # canonical, <150 lines: commands, boundaries (Always/Ask/Never), ownership, gates, "Read when relevant" index
+CLAUDE.md -> AGENTS.md         # symlink (OpenClaw pattern); Codex reads AGENTS.md natively
+README.md
+PRODUCT.md                     # vision, users, principles, non-goals; §Steering owned by the owner
+DESIGN.md                      # Codex-owned: tokens, typography, palette, motion, accessibility rules, dossier method
+REVIEW.md                      # review-only instructions for both reviewers (severity definitions, nit cap, skip rules, verification bar)
+docs/
+  product/
+    screens/<screen>.md        # one file per screen: purpose, elements, interactions, states, EARS acceptance criteria, ## Clarifications (dated)
+    flows/<flow>.md            # end-to-end journeys, Given/When/Then
+    glossary.md                # canonical terms (Spec Kit "Terminology & Consistency")
+    checklists/<screen>.md     # CHK### requirement-quality items (Spec Kit checklist)
+    open-questions.md          # unanswered items, each with owner and date asked
+  design/
+    dossier/<screen>/          # reference beside our rendition (rule 30)
+    mocks/<screen>-<state>.png # Codex-generated images, versioned
+  decisions/
+    DECISIONS.md               # append-only ledger: D-NNNN | date | who | decision | supersedes | ADR
+    ADR-NNNN-<slug>.md         # MADR-minimal: status, date, decision-makers, context, options, outcome, consequences, confirmation
+  program/
+    PROGRAM.md                 # milestones and blocks
+    NEXT.md                    # the only handoff; rewritten every session; five-line opening prompt
+    QUESTIONS.md               # questions for the owner, multiple choice with recommended option
+  OWNERSHIP.md                 # path -> owner (claude | codex | shared-by-task); mirrored as hooks
+  ARCHITECTURE.md
+changes/
+  NNN-<slug>/
+    proposal.md                # Goal / Context / Constraints / Done when (Codex structure), lane (full|light|none)
+    tasks.md                   # bite-sized tasks with verification steps (superpowers writing-plans)
+    review.md + review.json    # the other agent's verdict, SHA, model, effort, findings and resolutions
+    REPORT.md                  # owner-facing report (section 6.4)
+  archive/YYYY-MM-DD-<slug>/   # moved on completion (OpenSpec)
+.claude/
+  settings.json                # hooks: PreToolUse ownership guard, Stop -> just ci, SubagentStop report guard; permissions allowlist
+  skills/
+    discovery-interview/SKILL.md   # taxonomy, one-question rule, dated answer recording
+    owner-report/SKILL.md          # the REPORT.md template
+    cross-review/SKILL.md          # how to request and record the other agent's review
+  agents/
+    plan-reviewer.md           # tools: Read, Grep, Glob, Bash; checks diff against tasks.md
+  hooks/*.sh
+.codex/
+  config.toml                  # model, model_reasoning_effort, [agents]
+  agents/reviewer.toml         # sandbox_mode = "read-only", model_reasoning_effort = "high"
+  hooks.json                   # PreToolUse ownership guard, Stop -> validation
+.agents/skills/                # shared skills readable by Codex (superpowers, discovery-interview)
+.github/workflows/
+  ci.yml                       # lint, typecheck, unit, e2e, budgets, screenshots
+  claude-review.yml            # claude-code-action + code-review plugin on PRs authored by codex
+  codex-review.yml             # codex-action read-only review on PRs authored by claude; writes review.json
+  gates.yml                    # review-gate, docs-gate, ownership-gate (required checks)
+.worktreeinclude               # .env, .env.local
+.gitignore                     # .claude/worktrees/
+justfile                       # ci, ci-fast, screenshots, report
+```
+
+### 7.3 Order of setup for the owner
+
+1. Create the repo with the skeleton, the two symlinked instruction files, `OWNERSHIP.md`, `DECISIONS.md` (first entry: this operating model, dated), `NEXT.md`.
+2. Install superpowers in both harnesses; install the Codex plugin in Claude Code and enable the review gate; add `.codex/agents/reviewer.toml`.
+3. Run discovery as a `/goal`-driven Claude session per product area: "all screens in docs/product/screens have EARS criteria, a dated Clarifications section, and zero NEEDS CLARIFICATION markers, or stop after 30 questions"; the owner answers multiple-choice questions only.
+4. Hand each screen to Codex for the design brief and mocks; Claude reviews the design against the screen doc; record the verdict.
+5. Build in change folders with worktrees, TDD, cross-review, and the CI gates; the owner reads `REPORT.md` and answers `QUESTIONS.md`.
+
+---
+
+## Sources
+
+- Spec Kit: https://github.com/github/spec-kit ; templates https://github.com/github/spec-kit/tree/main/templates ; agentic SDD https://github.github.com/spec-kit/reference/agentic-sdd.html ; issue https://github.com/github/spec-kit/issues/1147
+- BMAD: https://github.com/bmad-code-org/BMAD-METHOD ; https://docs.bmad-method.org/reference/skills-and-agents/ ; https://docs.bmad-method.org/customize/run-multi-agent-discussions/ ; issue https://github.com/bmad-code-org/BMAD-METHOD/issues/1332 ; https://adsantos.medium.com/you-should-bmad-part-2-a007d28a084b
+- OpenSpec: https://github.com/Fission-AI/OpenSpec ; https://github.com/Fission-AI/OpenSpec/blob/main/docs/cli.md
+- Kiro: https://kiro.dev/docs/specs/feature-specs/ ; https://kiro.dev/docs/steering/ ; https://github.com/aws-samples/sample-kiro-cli-prompts-for-product-teams
+- Tessl: https://tessl.io/blog/tessl-launches-spec-driven-framework-and-registry ; https://codemyspec.com/blog/tessl-review
+- Superpowers: https://github.com/obra/superpowers ; skills/brainstorming/SKILL.md ; skills/writing-plans/SKILL.md ; https://news.ycombinator.com/item?id=47623101
+- Criticism: https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html ; https://instil.co/blog/spec-driven-development-is-dead-long-live-plan-mode ; https://hiddedesmet.com/the-hidden-costs-of-spec-driven-development ; https://thoughtworks.medium.com/spec-driven-development-d85995a81387
+- Exemplary repos: https://github.blog/ai-and-ml/github-copilot/how-to-write-a-great-agents-md-lessons-from-over-2500-repositories/ ; https://securityboulevard.com/2026/06/6-agents-md-examples-from-real-production-repos/ ; https://github.com/openai/codex/blob/main/AGENTS.md ; https://github.com/getsentry/sentry/blob/master/AGENTS.md ; https://github.com/openclaw/openclaw/blob/main/AGENTS.md ; https://github.com/coder/coder/blob/main/AGENTS.md ; https://github.com/ghostty-org/ghostty/blob/main/AGENTS.md ; https://github.com/sst/opencode/blob/dev/AGENTS.md ; https://github.com/karpathy/autoresearch ; https://github.com/simonw/research ; https://simonw.substack.com/p/agentic-engineering-patterns
+- Two-agent: https://github.com/openai/codex-plugin-cc ; https://github.com/openai/codex-action ; https://learn.chatgpt.com/docs/agent-configuration/subagents ; https://learn.chatgpt.com/docs/config-file/config-sample ; https://learn.chatgpt.com/docs/third-party/github ; https://code.claude.com/docs/en/best-practices ; https://code.claude.com/docs/en/cross-session-messaging ; https://code.claude.com/docs/en/agent-teams ; https://code.claude.com/docs/en/worktrees ; https://code.claude.com/docs/en/hooks ; https://code.claude.com/docs/en/github-actions ; https://www.anthropic.com/engineering/harness-design-long-running-apps ; https://www.infoq.com/news/2026/04/anthropic-three-agent-harness-ai/
+- Decisions: https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions ; https://adr.github.io/madr/ ; https://github.com/npryce/adr-tools ; https://github.com/thomvaill/log4brains ; https://www.braingrid.ai/blog/architecture-decision-records-for-ai-coding-agents ; https://www.me2resh.com/blog/agent-decision-records ; https://websiteinit.com/blog/architecture-decision-records-for-ai-agent-codebases/ ; https://developers.openai.com/blog/run-long-horizon-tasks-with-codex
+- Prompting and effort: https://learn.chatgpt.com/guides/best-practices ; https://learn.chatgpt.com/docs/prompting.md ; https://learn.chatgpt.com/docs/models ; https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex ; https://sebastianraschka.com/blog/2026/gpt-5-6-configurations.html ; https://code.claude.com/docs/en/goal ; https://code.claude.com/docs/en/model-config ; https://platform.claude.com/docs/en/build-with-claude/effort ; https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1
+- Gates: https://code.claude.com/docs/en/code-review ; https://learn.chatgpt.com/docs/third-party/github ; https://developers.openai.com/codex/app/automations ; https://argos-ci.com/docs/review-builds-with-ai-agents ; https://argos-ci.com/blog/percy-vs-chromatic-vs-argos ; https://weavai.app/blog/en/2026/05/12/coderabbit-2026-ai-code-review-pricing-alternatives/
