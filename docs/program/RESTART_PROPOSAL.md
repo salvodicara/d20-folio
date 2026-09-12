@@ -296,23 +296,30 @@ Every prompt carries Goal, Context, Constraints, Done-when. The owner writes in 
 repository is English. Every template names its model and effort; the rule behind the choices is
 in the benchmarks report: spend on judgment, not on execution of an already-written plan.
 
-| Session type                                   | Model                          | Effort  | Why                                                                                   |
-| ---------------------------------------------- | ------------------------------ | ------- | ------------------------------------------------------------------------------------- |
-| Interview (any step)                           | Claude Fable 5.1               | xhigh   | The questions are the product; long sessions need instruction retention                |
-| Teardown / dossier (evidence gathering)        | Codex GPT-6 Astra              | high    | Browsing and computer use lead; recording evidence does not need xhigh                 |
-| Synthesis of evidence into spec documents      | Claude Fable 5.1               | xhigh   | Long-document synthesis and prose quality                                              |
-| Design: first wireframe and first mock         | Codex GPT-6 Astra              | xhigh   | Taste and layout judgment; the first mock sets the pattern                             |
-| Design: iterations on an approved mock         | Codex GPT-6 Astra              | high    | Bounded corrections                                                                    |
-| Review of a spec, plan or proposal             | The other agent                | xhigh   | Cross-file, cross-section reasoning; one shot, so do not save here                     |
-| Review of a code diff, routine                 | Codex GPT-6 Astra              | medium  | Finds the most cross-file bugs already at low/medium; ponytail-review filters          |
-| Review of a code diff, audit or security       | Codex GPT-6 Astra              | max     | The one place max pays                                                                 |
-| Architecture, ADRs, plans                      | Claude Fable 5.1               | xhigh   | Planning is a reasoning exercise                                                       |
-| Build: engine, rules, data, tests              | Claude Fable 5.1               | high    | Strong coding, TDD as the brake; max over-edits                                        |
-| Build: routine slice with a detailed plan      | Claude Opus 5                  | high    | The plan already carries the judgment                                                  |
-| Build: UI from an approved mock                | Codex GPT-6 Astra              | high    | Pixel and CSS lead                                                                     |
-| Debug: logic, state, replay log                | Claude Fable 5.1               | xhigh   | Intent retention inside one seam                                                       |
-| Debug: terminal, build, CI, infra, migration   | Codex GPT-6 Astra              | high    | Terminal-Bench lead, cheaper per task                                                  |
-| Foundations, cleanup, handoff                  | Claude Fable 5.1               | high    | Judgment plus mechanics                                                                |
+| Session type                              | First choice                 | Fallback (other team)                          | Verdict                                                                                       |
+| ----------------------------------------- | ---------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Interview (any step)                      | Claude Fable 5.1 · xhigh     | Codex Astra · xhigh, with the `grilling` skill | Either; Claude preferred. With Astra add "never replace my stated goal with your own"          |
+| Synthesis of evidence into spec documents | Claude Fable 5.1 · xhigh     | Codex Astra · xhigh                            | Either; both write well. Astra charges double above 272K tokens of context                    |
+| Teardown, evidence gathering              | Codex Astra · high           | Claude Fable 5.1 · high with playwright-cli    | Either; Astra preferred (browsing and computer use lead)                                      |
+| Design: first wireframe and first mock    | Codex Astra · xhigh          | none                                           | **Codex only**: image generation and taste; owner decision of 2026-09-09                      |
+| Design: iterations on an approved mock    | Codex Astra · high           | none for images; Claude for HTML prototypes    | **Codex** for anything that is an image                                                        |
+| Raster and concept art                    | Codex (gpt-image-2)          | none                                           | **Codex only**: Claude has no image model                                                     |
+| Review of a spec, plan or proposal        | The other team · xhigh       | A fresh session of the same team · xhigh       | The other team is the rule; a fresh context of the same team is the acceptable fallback        |
+| Review of a code diff, routine            | Codex Astra · medium         | Claude `/code-review` · high                   | Either; Astra preferred (finds more cross-file bugs)                                          |
+| Review of a code diff, audit or security  | Codex Astra · max            | Claude Fable 5.1 · xhigh                       | Either; Astra preferred                                                                        |
+| Architecture, ADRs, plans                 | Claude Fable 5.1 · xhigh     | Codex Astra · xhigh                            | Either; Claude preferred; Astra is a good second opinion on hard designs                       |
+| Build: engine, rules, data, tests         | Claude Fable 5.1 · high      | Codex Astra · high with a `/goal` condition    | Either; Claude preferred. With Astra state "do not report partial progress as done"            |
+| Build: routine slice with a detailed plan | Claude Opus 5 · high         | Codex Astra or Sol · medium–high               | Either, freely; the plan carries the judgment                                                  |
+| Build: UI from an approved mock           | Codex Astra · high           | Claude Fable 5.1 · high                        | Either; Astra preferred for the pixel pass, Claude fine for the tokenised component code        |
+| Debug: logic, state, replay log           | Claude Fable 5.1 · xhigh     | Codex Astra · high                             | Either; Claude preferred                                                                        |
+| Debug: terminal, build, CI, migrations    | Codex Astra · high           | Claude Fable 5.1 · high                        | Either; Astra preferred                                                                        |
+| Foundations, cleanup, handoff             | Claude Fable 5.1 · high      | Codex Astra · high                             | Either, freely                                                                                 |
+| Step −1, review of this proposal          | Codex Astra · xhigh          | none                                           | **Codex only**: Claude wrote it                                                                |
+
+Running out of quota mid-session: commit what is done, rewrite `program/NEXT.md`, then open the
+fallback team on the same branch with "read program/NEXT.md and the last commit, continue". Never
+switch teams without a commit and a handoff. To stretch Claude's window: Opus 5 for routine
+slices, subagents only for research, `/clear` between tasks.
 
 Set the level at the start and hold it for the whole session (Claude Code: `/model fable` and
 `/effort xhigh`; Codex: pick GPT-6 Astra and its reasoning level in the model picker).
