@@ -1,8 +1,8 @@
 # Owner decisions
 
-Dated owner decisions for d20 Folio v2, newest first — the newest wins, an older one is history.
-Records what was decided and when, not execution state (in
-[`docs/PROGRAM_STATUS.md`](../PROGRAM_STATUS.md)). Italian is quoted verbatim as evidence of intent.
+Historical decisions for d20 Folio v2. From 2026-09-12, restart decisions live in
+[the new d20-studio ledger](https://github.com/salvodicara/d20-studio/blob/main/docs/DECISIONS.md).
+Earlier decisions below retain their applicable scope; production remains separate.
 
 ## 2026-09-09 (evening) — raster art generated with GPT, inspired by BG3, never identical; rule 30 becomes a gate
 

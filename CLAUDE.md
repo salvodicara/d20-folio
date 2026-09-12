@@ -3,6 +3,15 @@
 The short, cross-harness router. `AGENTS.md` is a symlink to this file, so every instruction here
 must work in Claude Code and Codex. Read only the documents the task needs.
 
+## Restart handoff — 2026-09-12
+
+On `claude/d20-folio-redesign-planning-3weqk7`, the restart now continues in
+[the new public d20-studio repository](https://github.com/salvodicara/d20-studio).
+Read its AGENTS and docs/NEXT for new work. The owner requires a project that can run with GPT
+alone, with autonomous research and naming/branding after design clarity. This scoped handoff
+supersedes the old PD opening task and vendor allocation for the restart. The sections below
+remain historical context on this planning branch; existing production is not migrated or deployed.
+
 ## Direction
 
 d20 Folio v2 is a new application, rebuilt from zero on the long-lived branch `v2`. Astra's approved

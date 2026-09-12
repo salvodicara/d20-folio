@@ -1,100 +1,46 @@
 # Next session
 
-The only handoff. Rewrite this file at the end of every session; never copy contracts into a prompt.
+This planning branch now hands the restart to the new repository. Existing production stays here.
 
 ## Current block
 
-**PD — Engagement and progressive-disclosure design**, inserted between P10 and P11a by the owner's
-feedback of 9 September 2026. Entry conditions and exit are in
-[`PROGRAM.md`](PROGRAM.md#pd--engagement-and-progressive-disclosure). The owner's verdict closes
-PD. **P11a does not start before that verdict.**
-
-Split (owner, 2026-09-09 afternoon): Astra owns the visual/taste half, Claude owns the rest.
-Claude's half is delivered in two passes:
-
-- Research (2026-09-09 afternoon):
-  `docs/superpowers/research/2026-09-09-pd-bg3-dndbeyond-research.md` + `2026-09-09-pd/`.
-- Rule 30 audit and game feel (2026-09-09 evening): the audit table
-  `docs/superpowers/research/2026-09-09-rule-30-audit.md`, the game-feel rules and copy set
-  `docs/superpowers/research/2026-09-09-game-feel.md`, the reference evidence
-  `docs/superpowers/research/2026-09-09-rule-30/`, and the dossier drafts Astra's specs carry
-  verbatim `docs/superpowers/specs/2026-09-09-pd-reference-dossiers.md`. Seams delivered with
-  tests: SRD class and species descriptions (EN/IT), ten creation glossary terms, `applyRecommendedBuild` (`src/lib/character-creation/recommended.ts`),
-  `forecastCreation`/`speculate` (`src/lib/views/creation-forecast.ts`), and
-  `creationIssueMessage` with `creationV2.fix.*` (`src/lib/views/creation-issues.ts`), and
-  the rubric → glossary seam (`src/lib/views/creation-glossary.ts`).
-
-**Astra takes over from here:** open the audit §1 and §2.3–§2.4 rows marked `M`, then the dossiers
-D1–D9 (creation), then D10–D12 (landing, hub, roster). Every redesigned surface's spec starts with
-its dossier entry (rule 30 gate). Screens wire the three seams above; no new pattern is invented
-where the dossier names one.
+**Restart foundation and research handoff:** continue in
+[the public d20-studio repository](https://github.com/salvodicara/d20-studio), whose
+[AGENTS](https://github.com/salvodicara/d20-studio/blob/main/AGENTS.md) and
+[current handoff](https://github.com/salvodicara/d20-studio/blob/main/docs/NEXT.md) govern new work.
+The owner authorized this move on 2026-09-12. Do not resume PD or the old P11a sequence from this
+restart-planning branch. They remain historical inputs; no production switch has occurred.
 
 ## Closed (SHA)
 
-<!-- source: docs/PROGRAM_STATUS.md -->
-
-| Work                                             | SHA        |
-| ------------------------------------------------ | ---------- |
-| Stages 0–6 — the v2 engine base, closed history  | `24d9fbf6` |
-| P01 Reconciliation and baseline (documents only) | `908dfbd1` |
-| P02 Identity and privacy                         | `b5edf2a7` |
-| P03 Shared state and offline                     | `abc58d48` |
-| P04 Library and versions                         | `078ad638` |
-| P05 Base homebrew editors                        | `175203d9` |
-| P06 Monster and rule editors                     | `999b3fad` |
-| P07 Origin and feat editors                      | `3ba6061c` |
-| P08a Class model                                 | `ca8a61bf` |
-| P08b Class editor (verified source)              | `f1c08cd7` |
-| P08c Subclass editor (verified source)           | `7e7701b3` |
-| P09 Shell and orientation (verified source)      | `c0213b67` |
-| P10 Creation and onboarding                      | `59b20e75` |
-
-P01 has no separate integration receipt; P08b, P08c and P09 SHAs are the verified integrated
-source (remote receipts in the archived ledger `docs/archive/v1/PROGRAM_STATUS-2026-09-09.md`).
-
-Knowledge-base reset (2026-09-09): integrated on `v2` through `1cc5d32e`.
+- Original Codex review: `d67c6baa66804537fc14e1cef6c0e76446af8509`.
+- Claude v3 proposal/response: `0addfd6d59d3b874809d146a25817459ef12788e`.
+- Codex v3 re-review: `f3c947a4bffac47825e37376779a556fc7286a0f`.
+- Earlier v2 work and its receipts remain in this file's history and docs/PROGRAM_STATUS.md.
 
 ## Open
 
-- **PD** — Claude's research and audit halves are delivered; Astra's visual half is open (creation
-  screens + raster art direction); owner verdict closes PD.
-- Owner questions from the audit that only the owner answers: a ≤ 3-input quick path at the door
-  (research §9.1); a remembered "help text" preference versus the 2026-09-07 no-switch decision
-  (§9.5); art in creation and a portrait step (§9.3).
-- Screen-owned follow-ups the audit lists for the blocks (audit §5): draft storage
-  `sessionStorage` → `localStorage`, locale-aware distance units, invite token replacing the raw
-  campaign id, default route to the last campaign hub, the copy rewrite of the four creation and
-  library shards against the game-feel rules.
-- Preset drift the engine tests pin (pack-side, `content-pack/data/quickbuild.ts`): the artificer
-  preset names a tool the class already grants; a human's size falls to the first pool option unless
-  the preset carries a `lineage` value.
-- **P11a → P30** — not started; order and dependencies in [`PROGRAM.md`](PROGRAM.md).
-- E01–E22 and the nine player-freedom scenarios still live only in the lab; rule 36 requires them in
-  the repository before P14a starts.
-- **Out-of-combat mechanical freedom** (owner, 2026-09-03) still needs its own design pass.
-- Restart proposal v3 awaits the owner's six decisions (`RESTART_PROPOSAL.md` §14).
-- No deployment, production write, real-data migration, release or new cost is authorised.
+- Complete and verify the new repository foundation, then execute its research-01 brief.
+- The new repository explicitly dispositions the seven residual review findings; the old proposal
+  and reports remain evidence, not active prompts.
+- Production continues separately. Migration, deployment and new spending require their own
+  explicit per-change authorization.
 
 ## Recent owner decisions (dates)
 
-Full text in [`DECISIONS.md`](DECISIONS.md); the newest dated statement always wins.
-
-- **2026-09-09 (evening)** — raster art generated with GPT, BG3-inspired, never identical; rule 30
-  is a gate: every spec carries a reference dossier.
-- **2026-09-09 (afternoon)** — Astra owns visual/taste decisions; Claude owns architecture, graph,
-  research, cleanup, engine.
-- **2026-09-09** — knowledge-base reset; the nine reset decisions; the experience is too cold and
-  administrative; progressive disclosure for expert and beginner; BG3 and D&D Beyond studied for real.
-- **2026-09-08** — standing delivery delegation; clarity and familiar patterns.
-- **2026-09-07** — custom content drives the same engine; shell and Account r2 corrections.
-- **2026-09-06** — V2 is a completely new application; mock 0.9.3 is the binding reference.
-- **2026-09-05** — immersive-v2 accepted; d20 Folio and the D20 mark; dark theme only, IT and EN.
-- **2026-09-03** — giants' shoulders; the app rolls dice; CI under 15 minutes; no dead weight.
+- **2026-09-12:** new repository; public/private delegated (public selected); GPT-only viability;
+  broad autonomous market/community research; no recurring DM availability requirement; existing
+  staging for early experiments; branding/naming after design clarity; plain Italian guidance.
+- Complete scoped record: [DECISIONS.md](DECISIONS.md). Earlier unrelated decisions retain their scope.
 
 ## Opening prompt
 
-1. Read `CLAUDE.md`.
-2. Read `docs/program/NEXT.md`.
-3. Start the block named under "Current block".
-4. Follow `docs/program/PROGRAM.md` for the next selection.
-5. End the session by rewriting `docs/program/NEXT.md`.
+Recommended model: GPT-6 Astra. Reasoning effort: high. Alternative: GPT-5.6 Terra at high for a
+bounded research subset; return unresolved broad synthesis to Astra. Basis: provisional model
+and task guidance dated 2026-09-12 in the new repository; Claude is optional, never required.
+
+1. Open the d20-studio repository, physically under `~/Workspace/Codex/d20-studio` on this machine.
+2. Read its AGENTS.md and docs/NEXT.md, using its current main rather than this old checkout.
+3. Follow its filled research-01 prompt and existing task state; avoid duplicate sessions/worktrees.
+4. Keep technical coordination with the agents and bring only concrete material choices to the owner.
+5. Update the new repository's handoff at the appropriate task boundary.
