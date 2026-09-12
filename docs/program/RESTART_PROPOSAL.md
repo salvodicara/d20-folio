@@ -251,9 +251,32 @@ to request, record and gate a review), `owner-report` (the template of §7), `se
 ## 11. Prompt templates (owner → agent)
 
 Every prompt carries Goal, Context, Constraints, Done-when. The owner writes in Italian; the
-repository is English.
+repository is English. Every template names its model and effort; the rule behind the choices is
+in the benchmarks report: spend on judgment, not on execution of an already-written plan.
+
+| Session type                                   | Model                          | Effort  | Why                                                                                   |
+| ---------------------------------------------- | ------------------------------ | ------- | ------------------------------------------------------------------------------------- |
+| Interview (any step)                           | Claude Fable 5.1               | xhigh   | The questions are the product; long sessions need instruction retention                |
+| Teardown / dossier (evidence gathering)        | Codex GPT-6 Astra              | high    | Browsing and computer use lead; recording evidence does not need xhigh                 |
+| Synthesis of evidence into spec documents      | Claude Fable 5.1               | xhigh   | Long-document synthesis and prose quality                                              |
+| Design: first wireframe and first mock         | Codex GPT-6 Astra              | xhigh   | Taste and layout judgment; the first mock sets the pattern                             |
+| Design: iterations on an approved mock         | Codex GPT-6 Astra              | high    | Bounded corrections                                                                    |
+| Review of a spec, plan or proposal             | The other agent                | xhigh   | Cross-file, cross-section reasoning; one shot, so do not save here                     |
+| Review of a code diff, routine                 | Codex GPT-6 Astra              | medium  | Finds the most cross-file bugs already at low/medium; ponytail-review filters          |
+| Review of a code diff, audit or security       | Codex GPT-6 Astra              | max     | The one place max pays                                                                 |
+| Architecture, ADRs, plans                      | Claude Fable 5.1               | xhigh   | Planning is a reasoning exercise                                                       |
+| Build: engine, rules, data, tests              | Claude Fable 5.1               | high    | Strong coding, TDD as the brake; max over-edits                                        |
+| Build: routine slice with a detailed plan      | Claude Opus 5                  | high    | The plan already carries the judgment                                                  |
+| Build: UI from an approved mock                | Codex GPT-6 Astra              | high    | Pixel and CSS lead                                                                     |
+| Debug: logic, state, replay log                | Claude Fable 5.1               | xhigh   | Intent retention inside one seam                                                       |
+| Debug: terminal, build, CI, infra, migration   | Codex GPT-6 Astra              | high    | Terminal-Bench lead, cheaper per task                                                  |
+| Foundations, cleanup, handoff                  | Claude Fable 5.1               | high    | Judgment plus mechanics                                                                |
+
+Set the level at the start and hold it for the whole session (Claude Code: `/model fable` and
+`/effort xhigh`; Codex: pick GPT-6 Astra and its reasoning level in the model picker).
 
 **Open any session**
+_Model and effort: those of the session type in the table above._
 ```
 Leggi AGENTS.md e program/NEXT.md. Obiettivo: <one line>. Contesto: <files or spec ids>.
 Vincoli: rispetta CONSTITUTION.md; una sola attività; nessuna decisione di prodotto senza chiedermi.
@@ -261,6 +284,7 @@ Fatto quando: <artifact> esiste, la revisione incrociata è stata richiesta, pro
 ```
 
 **Interview session (Phase 1, any step)**
+_Claude Fable 5.1 · xhigh_
 ```
 Usa la skill interviewing, passo <0..10>, area <...>. Prima leggi evidence/ e spec/; non chiedermi
 nulla che sia già scritto lì. Una domanda alla volta, sempre con la tua risposta consigliata presa
@@ -269,6 +293,7 @@ Alla fine scrivi gli artefatti del passo con le Clarifications datate, le decisi
 ```
 
 **Teardown session (Phase 1 step 2, Codex)**
+_Codex GPT-6 Astra · high_
 ```
 Usa reference-dossier su <product>, schermate <...>. Scrivi il template di valutazione prima di
 giocare; registra; produci inventario interazioni e stati per schermata, conteggio passi per i
@@ -276,6 +301,7 @@ compiti chiave, matrice funzionalità. Solo evidenza, nessuna proposta.
 ```
 
 **Cross-review session (any phase)**
+_The agent that did not write · xhigh for documents and mocks; Astra medium for routine diffs, max for audits_
 ```
 Usa la skill cross-review, in sola lettura, su <spec | mocks | changes/<slug>>. Criteri:
 completezza rispetto a spec/<id>, criteri verificabili, contraddizioni, casi limite, accessibilità,
@@ -283,6 +309,7 @@ offline, i18n. Solo blocking/major/minor con file e riga; scrivi review.json; ne
 ```
 
 **Design session (Phase 3, Codex)**
+_Codex GPT-6 Astra · xhigh for the first mock of a screen, high for iterations_
 ```
 Usa reference-dossier poi impeccable su spec/screens/<id>. Wireframe, poi mock dark EN+IT su tre
 viewport, uno per ogni stato dell'inventario. Consegna le immagini in chat e chiedi la cross-review
@@ -290,6 +317,7 @@ a Claude prima di chiedermi il verdetto.
 ```
 
 **Build session (Phase 5)**
+_Claude Fable 5.1 high for engine slices, Opus 5 high for routine slices with a detailed plan, Codex Astra high for UI slices_
 ```
 Slice <id> nel worktree task/<slug>: brainstorming gate, writing-plans, TDD, verifica nel runtime
 con screenshot, poi cross-review. Integra solo a review.json approvato. Fatto quando: gate verde,
@@ -301,7 +329,8 @@ REPORT.md scritto e incollato in chat, program/NEXT.md riscritto.
 - **Step −1 — Codex reviews this proposal.** Read-only on the sources, against the seven reports,
   with the cross-review criteria; findings as blocking / major / minor; Claude resolves;
   disagreements go to the owner as multiple choice with both recommendations. Nothing starts before
-  this. The exact prompt for Codex (repository `salvodicara/d20-folio`, branch
+  this. Model and effort: GPT-6 Astra at `xhigh` (a one-shot review of the whole plan; `max` adds
+  little here). The exact prompt for Codex (repository `salvodicara/d20-folio`, branch
   `claude/d20-folio-redesign-planning-3weqk7`):
 
   ```
@@ -329,7 +358,7 @@ REPORT.md scritto e incollato in chat, program/NEXT.md riscritto.
   Scrivi il file in inglese; rispondimi in chat in italiano con un riassunto di dieci righe.
   ```
 
-- **Step 0 — Foundations (Claude, one session).** Skeleton only: `AGENTS.md` (≤ 150 lines) with
+- **Step 0 — Foundations (Claude Fable 5.1 at `high`, one session).** Skeleton only: `AGENTS.md` (≤ 150 lines) with
   `CLAUDE.md` symlinked, `CONSTITUTION.md` (ten rules, one page), `OWNERSHIP.md`, `decisions/` with
   D-0001 (this operating model), `program/NEXT.md` and `QUESTIONS.md`, `spec/` templates, `evidence/`
   imported with dates and sources, `.agents/skills/` with the curated set installed in both
