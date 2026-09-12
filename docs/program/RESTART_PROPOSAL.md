@@ -60,9 +60,26 @@ repository becomes read-only evidence.
 | Codex (Astra)    | Reference dossiers, wireframes, mocks, raster art, design system, UI implementation from an approved spec; reviews Claude's specs, plans, architecture and engine code           | Changes a spec without an owner decision                |
 | Subagents        | Bounded research, read-only adversarial review, screenshot sweeps                                                                                                                | Integrate anything                                      |
 
-Routing by task type is evidence-based and dated; the table lives in
-[`restart-research/2026-09-12-benchmarks.md`](restart-research/2026-09-12-benchmarks.md) and is
-re-run at every model release (§10). Roles **alternate** on purpose: whoever wrote never reviews.
+Routing by task type is evidence-based and dated (benchmarks report §4, 13 rows with sources and
+confidence). Summary as of 2026-09-12, GPT-6 Astra versus Claude Fable 5.1:
+
+| Task type                                   | Route                                                             | Confidence |
+| ------------------------------------------- | ----------------------------------------------------------------- | ---------- |
+| Interviewing, requirements, specs           | Claude (respects stated intent; strongest long-document synthesis) | medium     |
+| Architecture, ADRs, diagrams                | Claude; Astra as second opinion on hard designs                   | medium-high |
+| UI/UX design and mocks                      | Codex Astra (WebDev Arena lead, practitioner taste)               | medium     |
+| Raster art, icons, image-based mocks        | Codex (gpt-image-2; Claude has no image model)                    | high       |
+| CSS pixel pass vs tokenised system code     | Astra for the pixel pass; Claude for the token system             | medium-low |
+| Engine, rules, data logic, tests            | Claude (LiveCodeBench #1, SWE-bench Pro 81.2, instruction fidelity) | high     |
+| Debugging                                   | Logic and state bugs → Claude; terminal, build, CI, infra → Astra  | medium     |
+| Code review of the other's work             | Astra primary (finds more cross-file bugs); Claude tie-breaker on intent | high  |
+| Documentation and cleanup                   | Claude                                                            | medium     |
+| Research and teardowns                      | Live web and app exploration → Astra; synthesis into docs → Claude | medium    |
+| Screenshot verification                     | Whoever did not implement; the visual verdict stays with Codex    | low-medium |
+
+Two facts behind the table: the two flagships are tied on the independent composite indices, and
+each leads on different rows, so the split is by task, not by prestige. Roles **alternate** on
+purpose: whoever wrote never reviews. The table is re-run at every model release (§10).
 
 ## 4. Discovery — the interview, copied from product design (Phase 1)
 
@@ -203,9 +220,11 @@ to request, record and gate a review), `owner-report` (the template of §7), `se
 
 ## 10. Effort and the model routing protocol
 
-- Effort: Codex `high` by default and `xhigh` for long agentic and design work; Claude `high` by
-  default and `xhigh` for interviews, synthesis, architecture and reviews; `max` only when a task
-  justifies unconstrained spend. Hold the level for a whole session; vary across sessions.
+- Effort (both models expose low / medium / high / xhigh / max). Claude: `high` by default,
+  `xhigh` for interviews, synthesis, architecture and reviews; `max` avoided because Fable 5.1
+  over-edits at the top level. Codex Astra: `low` or `medium` for routine reviews and lookups (its
+  ChatGPT Pro allowance is a five-hour and a seven-day window), `high` for design, `xhigh` or `max`
+  only for audits and hard debugging. Hold the level for a whole session; vary across sessions.
 - Two corrections on the same point: stop, clear, re-prompt with what was learned.
 - **Routing re-evaluation** at every frontier release (Anthropic or OpenAI): check the same five
   leaderboards, run the same three bake-off tasks in two worktrees with the same prompt, compare the
