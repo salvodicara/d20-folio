@@ -8,7 +8,10 @@ limit: the group keeps playing on production `main` meanwhile. The product name 
 (working name **d20 Studio**) and may change once the direction is clear.
 
 This is v2 of the proposal, rebuilt on five research reports written today and kept beside it in
-[`restart-research/`](restart-research/): methods, landscape, skills, frameworks, benchmarks. It is
+[`restart-research/`](restart-research/): methods, landscape, skills, frameworks, benchmarks, plus
+two domain reports written on the owner's request of the same day: a D&D primer (the game from its
+origins to the 2024 rules) and a market and behaviour study (what DMs and players do, customise,
+use and want, and which features are dead ends). It is
 a proposal until Codex has reviewed it (step −1 below) and the owner has decided.
 
 ## 0. Diagnosis of the current repository
@@ -101,6 +104,20 @@ eight people, show you three kitchens that solved it, and recommend one.
 - Spec Kit's nine ambiguity categories are the completeness checklist of every area: functional
   scope, domain and data, interaction and UX flow, quality attributes, integrations, edge cases and
   failure handling, constraints and trade-offs, terminology, completion signals.
+
+**The owner has played little D&D.** This changes the interview in three ways, all copied from
+how architects work with first-time clients:
+
+- The interviewer teaches before asking: every question opens with one paragraph that explains the
+  concept in plain words with a table example ("a reaction is a move you make on someone else's
+  turn, like an attack of opportunity when an enemy walks away"), then asks.
+- The recommended answer comes from evidence, not from the owner's memory: the market report says
+  what most tables do and how often, the primer says what the rules require, the dossier says how
+  the best products handle it. The owner decides between named options; he never has to invent.
+- "Maximum freedom" is a stated principle, so every object and rule gets two explicit questions:
+  "can the DM change this at the table?" and "can a group replace this with homebrew?" — with the
+  market evidence on how often people actually do, so freedom is designed where it is used and
+  dead-end features are skipped with a reason on record.
 
 **The eleven steps, each its own session series, in this order** (the rationale is in the methods
 report §11: objects before events before features before screens before criteria):
@@ -281,9 +298,37 @@ REPORT.md scritto e incollato in chat, program/NEXT.md riscritto.
 
 ## 12. Steps before Phase 0
 
-- **Step −1 — Codex reviews this proposal.** Read-only, against the five reports, with the
-  cross-review criteria; findings as blocking / major / minor; Claude resolves; disagreements go to
-  the owner as multiple choice with both recommendations. Nothing starts before this.
+- **Step −1 — Codex reviews this proposal.** Read-only on the sources, against the seven reports,
+  with the cross-review criteria; findings as blocking / major / minor; Claude resolves;
+  disagreements go to the owner as multiple choice with both recommendations. Nothing starts before
+  this. The exact prompt for Codex (repository `salvodicara/d20-folio`, branch
+  `claude/d20-folio-redesign-planning-3weqk7`):
+
+  ```
+  Repository: github.com/salvodicara/d20-folio. Fai checkout del branch
+  claude/d20-folio-redesign-planning-3weqk7 (esiste già sul remoto; non crearne altri).
+  Leggi, in quest'ordine: docs/program/RESTART_PROPOSAL.md, poi tutti i report in
+  docs/program/restart-research/ (methods, landscape, skills, frameworks, benchmarks, dnd-primer,
+  dnd-market). Per contesto puoi leggere CLAUDE.md, PRODUCT.md e docs/program/DECISIONS.md del
+  repo attuale, che la proposta vuole sostituire.
+
+  Ruolo: revisore avversario, in sola lettura sui file esistenti. Assumi che il piano possa
+  fallire in modi costosi finché le prove non dicono il contrario. Cerca: lacune, contraddizioni
+  fra sezioni, passi non verificabili, metodi o prodotti mancanti, scelte che i report non
+  sostengono, rischi per un proprietario che gestisce solo prompt, punti in cui il tuo giudizio
+  di design e di gusto differisce. Sfida in particolare: l'ordine delle undici tappe, la divisione
+  dei compiti fra Claude e te, il modello di revisione incrociata, le dieci golden rules, la lista
+  delle skill, e la lista dei dodici prodotti da sezionare.
+
+  Output: un solo file nuovo, docs/program/restart-research/2026-09-13-codex-review.md, con:
+  (1) verdetto complessivo (approve / needs-attention); (2) trovate numerate, ognuna con severità
+  blocking / major / minor, sezione e riga della proposta, prova citata dai report o dal web, e la
+  tua alternativa raccomandata; (3) le domande che solo il proprietario può decidere, come scelta
+  multipla con la tua raccomandazione; (4) cosa manca del tutto. Nessun altro file modificato.
+  Commit "docs(program): codex review of the restart proposal", push sullo stesso branch.
+  Scrivi il file in inglese; rispondimi in chat in italiano con un riassunto di dieci righe.
+  ```
+
 - **Step 0 — Foundations (Claude, one session).** Skeleton only: `AGENTS.md` (≤ 150 lines) with
   `CLAUDE.md` symlinked, `CONSTITUTION.md` (ten rules, one page), `OWNERSHIP.md`, `decisions/` with
   D-0001 (this operating model), `program/NEXT.md` and `QUESTIONS.md`, `spec/` templates, `evidence/`
