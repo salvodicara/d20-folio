@@ -16,6 +16,15 @@ series of _sessions_ in which the same characters accumulate experience, treasur
 Since 2014 the game runs on its _fifth edition_ ("5e"), revised in 2024; the free, openly licensed
 core of those rules is the _System Reference Document_ (SRD) 5.2.1 [10][11].
 
+**Corrections (2026-09-13, after the Codex review, findings 05 and 20).** This primer is commentary,
+never a rules source: a rule becomes an engine contract only with its SRD 5.2.1 citation and
+executable examples (restart proposal v3 §5b). Four corrections were made in place, each marked in
+the text: the reaction is regained at the start of your next turn, not "one per round" (§2, §6);
+Heroic Inspiration on a natural 1 is a house rule, not the 2024 Human trait, whose Resourceful trait
+grants it after a Long Rest (§5); the official Italian source is the CC-BY-4.0 Italian SRD 5.2.1 of
+8 December 2025, not the Italian PHB (§1, §6). Verified against the 2024 Rules Glossary, the 2024
+Character Origins page and the SRD page on 2026-09-12.
+
 ---
 
 ## 1. History in brief
@@ -88,7 +97,9 @@ core of those rules is the _System Reference Document_ (SRD) 5.2.1 [10][11].
 
 - **SRD 5.2 / 5.2.1.** The 2024 rules' SRD was released under CC-BY-4.0 on 22 April 2025;
   **SRD 5.2.1 (1 May 2025)** added 15 accidentally omitted magic items and corrections. SRD 5.1
-  (2014 rules) and 5.2.1 (2024 rules) coexist and creators may mix them. Future errata will bump
+  (2014 rules) and 5.2.1 (2024 rules) coexist and creators may mix them. Official translations of
+  SRD 5.2.1 — German, Spanish, French and **Italian** — were published on 8 December 2025 under the
+  same licence (`IT_SRD_CC_v5.2.1.pdf` on the SRD page) [11]. Future errata will bump
   the version number, always under CC-BY-4.0 [10][11]. This is the legal basis for the app's
   public `src/data`: SRD content only, attribution required, everything else in the private pack.
 - **Sigil.** WotC's 3D virtual tabletop (VTT — software that draws the map and tokens for online
@@ -194,9 +205,12 @@ acts once [33].
 2. **A turn** = **movement** (up to Speed, usually 30 ft, splittable), one **action** (Attack,
    Cast a Spell, Dash, Disengage, Dodge, Help, Hide, Ready, Search, Utilize, etc.), at most one
    **bonus action** (only if some feature grants one, e.g. an off-hand attack or a healing potion
-   in 2024) and _free_ interactions (draw a weapon, open a door). Between turns each creature
-   has one **reaction** per round, spent on a trigger: the **opportunity attack** when an enemy
-   leaves your reach, or spells like _shield_ [33].
+   in 2024) and _free_ interactions (draw a weapon, open a door). Each creature also has one
+   **reaction**, spent on a trigger on any creature's turn — its own included — and regained at the
+   start of its next turn, so a creature that reacts before and after its own turn has reacted
+   twice in one round: the **opportunity attack** when an enemy
+   leaves your reach, or spells like _shield_ [33]. _Corrected 2026-09-13: v1 said "between turns …
+   one reaction per round"._
 3. **Attack roll.** d20 + ability modifier + proficiency bonus vs the target's **Armor Class
    (AC)**; equal or higher hits. A natural 20 is a **critical hit** (roll the damage dice twice);
    a natural 1 always misses. Damage subtracts **Hit Points (HP)**; at 0 HP monsters die and PCs
@@ -454,24 +468,24 @@ is one the books themselves offer. Adoption data is thin: the best sources are S
 self-selected social-media polls (thousands of respondents, DM-heavy audience) and community
 lists (DM David's "9 most popular", EN World's threads, Dungeon Dudes' videos) [30][53][54].
 
-| Rule                                          | What it does                                                                                    | Status / how common                                                                                                                 |
-| --------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Milestone levelling                           | DM levels the party at story beats instead of tracking XP                                       | 66% milestone vs 21% XP (2020, n=6,009); "DM decides" 69%, XP 15%, DMG milestones 14% (2022, n=6,008). Effectively the default [30] |
-| Potions as a bonus action                     | Drink a healing potion for a bonus action                                                       | Universal favourite; became the 2024 rule [36][53]                                                                                  |
-| Flanking                                      | Advantage (2014 DMG) or +2 (older editions) when enemies are on opposite sides                  | 45% use it (2020, n=1,194); removed from the 2024 DMG [30][43]                                                                      |
-| Critical hits: max + roll                     | Maximise the first damage dice, roll the second set                                             | Very common; DM David's #4 [53][54]                                                                                                 |
-| Critical hit / fumble tables                  | Extra effects on natural 20/1 (injuries, broken weapons)                                        | Popular but divisive; injuries dropped from the 2024 DMG [43][54]                                                                   |
-| Free feat at level 1                          | Every character starts with a feat                                                              | Common; became the 2024 Origin feat [36][53]                                                                                        |
-| Inspiration variants                          | Spend for a reroll; award for good play; "heroic inspiration" on a natural 1 (2024 Human trait) | DM David's #1; 2024 renamed it _Heroic Inspiration_ and made it a reroll [33][53]                                                   |
-| Secret death saves                            | Player or DM rolls death saves hidden                                                           | DM David's #2 and #3 [53]                                                                                                           |
-| Delay turn                                    | Allow moving down the initiative order                                                          | DM David's #8 [53]                                                                                                                  |
-| Exhaustion on failed death save / on 0 HP     | Discourages "yo-yo" healing                                                                     | DM David's #9; "healing threshold" variants [53][54]                                                                                |
-| Gritty realism                                | Short rest = 8 h, long rest = 7 days                                                            | 2014 DMG variant, dropped in 2024; used by low-magic tables [43]                                                                    |
-| Variant encumbrance                           | Speed penalties by weight thresholds                                                            | 2014 DMG variant, dropped in 2024 [43]                                                                                              |
-| Rolled vs average HP; roll twice              | Alternative HP on level-up                                                                      | Common [54]                                                                                                                         |
-| Changing monster HP mid-fight                 | DM fudges HP for pacing                                                                         | 92% yes (2021, n=1,321) [30]                                                                                                        |
-| Attunement limit = proficiency bonus          | Raises the 3-item cap                                                                           | Seen on EN World lists [54]                                                                                                         |
-| Spell points, lingering injuries, hero points | 2014 DMG variants                                                                               | Niche; not in the 2024 DMG [43]                                                                                                     |
+| Rule                                          | What it does                                                                                                                                                                                                | Status / how common                                                                                                                 |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Milestone levelling                           | DM levels the party at story beats instead of tracking XP                                                                                                                                                   | 66% milestone vs 21% XP (2020, n=6,009); "DM decides" 69%, XP 15%, DMG milestones 14% (2022, n=6,008). Effectively the default [30] |
+| Potions as a bonus action                     | Drink a healing potion for a bonus action                                                                                                                                                                   | Universal favourite; became the 2024 rule [36][53]                                                                                  |
+| Flanking                                      | Advantage (2014 DMG) or +2 (older editions) when enemies are on opposite sides                                                                                                                              | 45% use it (2020, n=1,194); removed from the 2024 DMG [30][43]                                                                      |
+| Critical hits: max + roll                     | Maximise the first damage dice, roll the second set                                                                                                                                                         | Very common; DM David's #4 [53][54]                                                                                                 |
+| Critical hit / fumble tables                  | Extra effects on natural 20/1 (injuries, broken weapons)                                                                                                                                                    | Popular but divisive; injuries dropped from the 2024 DMG [43][54]                                                                   |
+| Free feat at level 1                          | Every character starts with a feat                                                                                                                                                                          | Common; became the 2024 Origin feat [36][53]                                                                                        |
+| Inspiration variants                          | Spend for a reroll; award for good play; "inspiration on a natural 1" (a house rule, not a 2024 rule: the 2024 Human's Resourceful trait grants Heroic Inspiration after a Long Rest; corrected 2026-09-13) | DM David's #1; 2024 renamed it _Heroic Inspiration_ and made it a reroll [33][53]                                                   |
+| Secret death saves                            | Player or DM rolls death saves hidden                                                                                                                                                                       | DM David's #2 and #3 [53]                                                                                                           |
+| Delay turn                                    | Allow moving down the initiative order                                                                                                                                                                      | DM David's #8 [53]                                                                                                                  |
+| Exhaustion on failed death save / on 0 HP     | Discourages "yo-yo" healing                                                                                                                                                                                 | DM David's #9; "healing threshold" variants [53][54]                                                                                |
+| Gritty realism                                | Short rest = 8 h, long rest = 7 days                                                                                                                                                                        | 2014 DMG variant, dropped in 2024; used by low-magic tables [43]                                                                    |
+| Variant encumbrance                           | Speed penalties by weight thresholds                                                                                                                                                                        | 2014 DMG variant, dropped in 2024 [43]                                                                                              |
+| Rolled vs average HP; roll twice              | Alternative HP on level-up                                                                                                                                                                                  | Common [54]                                                                                                                         |
+| Changing monster HP mid-fight                 | DM fudges HP for pacing                                                                                                                                                                                     | 92% yes (2021, n=1,321) [30]                                                                                                        |
+| Attunement limit = proficiency bonus          | Raises the 3-item cap                                                                                                                                                                                       | Seen on EN World lists [54]                                                                                                         |
+| Spell points, lingering injuries, hero points | 2014 DMG variants                                                                                                                                                                                           | Niche; not in the 2024 DMG [43]                                                                                                     |
 
 **What this means for the app**
 
@@ -491,7 +505,8 @@ lists (DM David's "9 most popular", EN World's threads, Dungeon Dudes' videos) [
 - **Ability score / modifier** — six stats 1–20 (Str, Dex, Con, Int, Wis, Cha); modifier =
   floor((score − 10)/2), the number actually added to rolls.
 - **Action / Bonus action / Reaction** — the three budgets of a turn: one action, at most one
-  bonus action (only if granted), one reaction per round on a trigger.
+  bonus action (only if granted), one reaction on a trigger, usable on any creature's turn and
+  regained at the start of your next turn.
 - **Advantage / Disadvantage** — roll 2d20, keep higher/lower; never stacks; cancels.
 - **Adventurers League (AL)** — WotC's official organised play with portable characters.
 - **Adventuring day** — the encounters between two long rests that the balance assumes.
@@ -558,7 +573,10 @@ lists (DM David's "9 most popular", EN World's threads, Dungeon Dudes' videos) [
 **What this means for the app**
 
 - The glossary is also the i18n contract: each term has an official EN name in the SRD and an
-  official IT name in the Italian PHB; the app never invents a third.
+  official IT name in the Italian SRD 5.2.1 (CC-BY-4.0, published 8 December 2025, `IT_SRD_CC_v5.2.1.pdf`
+  on the SRD page [11]); the app never invents a third and never takes a term from the commercial
+  Italian PHB, whose 2024 translation was corrected by errata. _Corrected 2026-09-13: v1 pointed at
+  the Italian PHB._
 - Terms that changed between 2014 and 2024 (race/species, Inspiration/Heroic Inspiration,
   surprise, exhaustion) should be spelled in the 2024 form with the 2014 alias searchable.
 - The interviewer will use these words casually; the owner should be able to define AC, DC,

@@ -4,6 +4,8 @@ Research dossier for a solo, non-technical owner who wants a new repository run 
 
 All star counts, push dates and licences were read from the GitHub API on 2026-09-12. Quotes are verbatim from the cited page unless marked "paraphrase".
 
+**Corrections (2026-09-13, after the Codex review, findings 10, 14, 17).** The review record and gate of §3.3 and §6.3 (a `review.json` inside the reviewed tree with `sha == HEAD` and reviewer ≠ commit author) were a construction defect and are replaced by a verdict attached to the candidate SHA outside its tree; the stop-time review gate of the Codex plugin is not enabled (§7.1, §7.3); ownership by path (§3.2) is replaced by per-task reservation. Each correction is marked in the text.
+
 ---
 
 ## 1. Spec-driven and agentic frameworks compared
@@ -141,7 +143,7 @@ Decision logs, handoffs, skills, hooks and CI gates seen in these repos and in v
 Evidence-backed measures, cheapest first:
 
 1. One worktree per task per agent (Claude: `--worktree`; Codex desktop also creates worktrees). Claude Code physically blocks edits outside its worktree.
-2. Ownership by path, declared once. Precedents: autoresearch (`prepare.py` read-only), OpenClaw ("One owner per responsibility"), Anthropic agent-teams guidance (each teammate owns a file set). Write it in `docs/OWNERSHIP.md` and mirror it in AGENTS.md/CLAUDE.md as a "Never do" boundary: Codex owns `docs/design/**` and `src/styles/**`; Claude owns `src/lib/**`, `tests/**`, `docs/decisions/**`; shared files are edited only through a named task.
+2. Ownership by path, declared once. Precedents: autoresearch (`prepare.py` read-only), OpenClaw ("One owner per responsibility"), Anthropic agent-teams guidance (each teammate owns a file set). Write it in `docs/OWNERSHIP.md` and mirror it in AGENTS.md/CLAUDE.md as a "Never do" boundary: Codex owns `docs/design/**` and `src/styles/**`; Claude owns `src/lib/**`, `tests/**`, `docs/decisions/**`; shared files are edited only through a named task. _Corrected 2026-09-13: the owner's decision of 2026-09-09 splits authority by decision type, not by file; proposal v3 §7 replaces the vendor path map with a per-task reservation recorded in `changes/<slug>/task.md` and enforced by the same hooks (Codex review finding 10)._
 3. Enforce, don't advise: a Claude `PreToolUse` hook that rejects `Edit/Write` on Codex-owned paths, and a Codex `PreToolUse` hook (hooks.json) for the inverse. Anthropic: "Unlike CLAUDE.md instructions which are advisory, hooks are deterministic and guarantee the action happens."
 4. Reviewer is read-only by construction: Codex review runs with `sandbox_mode = "read-only"` (`.codex/agents/reviewer.toml`, or `codex exec --sandbox read-only` in CI); Claude review runs as `/code-review` in a fresh subagent with `tools: Read, Grep, Glob, Bash`.
 5. Serial integration: one integration branch, task branches rebased, no simultaneous writers on the same change folder.
@@ -152,7 +154,7 @@ Evidence-backed measures, cheapest first:
 - Claude Code Review writes a machine-readable line into its check run: `bughunter-severity: {"normal": 2, "nit": 1, "pre_existing": 0}` ("a non-zero value means Claude found at least one bug worth fixing before merge"); the docs show the `gh api ... --jq` incantation to read it and say "If you want to gate merges on Code Review findings, read the severity breakdown from the check run output in your own CI."
 - Neither vendor treats its review as approval: OpenAI: "@codex review is not an approval, and Automatic reviews are not automatic approval"; Anthropic: "Findings are tagged by severity and don't approve or block your PR".
 
-Recommended record: `changes/<NNN-slug>/review.md` (human-readable) plus `review.json` (the raw tool output), containing reviewer (codex|claude), model and effort, reviewed commit SHA, verdict (`approve` | `needs-attention`), findings and their resolution, and the date. A CI job (`review-gate`) fails unless `review.json.verdict == approve` and `review.json.sha == HEAD` and the reviewer differs from the author recorded in the commit trailer. This turns "mandatory cross-review" into a required status check the owner never has to read.
+Recommended record (corrected 2026-09-13, Codex review finding 14 — the original design was a construction defect: a file committed inside the reviewed tree cannot carry the SHA of the commit that contains it, and this repository's commits carry the owner as sole author with no trailer, so "reviewer ≠ commit author" cannot be tested either): the verdict is attached to the candidate SHA **outside its tree** — a git note under `refs/notes/review` written by the review runner script (reviewer provider, model, effort, candidate SHA, date, verdict `approve` \| `needs-attention`, findings and dispositions), or a CI check run on that SHA with the JSON as its artifact once CI-run reviews are authorised. A CI job (`review-gate`) fails unless HEAD carries an `approve` note whose reviewer provider differs from the implementer named in `changes/<slug>/task.md`. A new commit has no note; a merge or rebase moves the SHA and invalidates the approval by construction. A human-readable `changes/<slug>/review.md` may cite the reviewed SHA but never attests to its own commit. This turns "mandatory cross-review" into a required status check the owner never has to read.
 
 ### 3.4 Roles that the evidence supports
 
@@ -262,7 +264,7 @@ Effort (platform.claude.com effort page and Claude Code model-config): levels `l
 - Local, per turn: Claude Stop hook (`exit 2` blocks; 8-block cap) running `just ci` or the change's validation command; Codex Stop hook equivalent; `/goal` conditions with a stated check.
 - Per subagent: `SubagentStop` / `TaskCompleted` hooks that refuse completion without a written report or a passing test diff.
 - Per change: `changes/<slug>/tasks.md` checkboxes plus `review.md`/`review.json` from the other agent (3.3).
-- In CI (required status checks under branch protection): lint, typecheck, unit, e2e, bundle budget, screenshot diff (Argos or committed Playwright snapshots), `review-gate` (verdict approve, SHA match, reviewer != author), `docs-gate` (every change touches its ADR/DECISIONS/NEXT when the commit message declares a decision), `ownership-gate` (no file outside the author's ownership set unless the task file names it).
+- In CI (required status checks under branch protection): lint, typecheck, unit, e2e, bundle budget, screenshot diff (Argos or committed Playwright snapshots), `review-gate` (an `approve` note on HEAD under `refs/notes/review`, reviewer provider ≠ the implementer named in the task record; corrected 2026-09-13), `docs-gate` (every change touches its ADR/DECISIONS/NEXT when the commit message declares a decision), `ownership-gate` (no file outside the task record's reservation; corrected 2026-09-13).
 - Merge policy: auto-merge when all required checks pass; the owner is notified with the report, not the diff.
 
 ### 6.4 Presenting results to a non-technical owner
@@ -287,7 +289,7 @@ Backbone: obra/superpowers as the lifecycle (already the owner's default, runs i
 
 1. Discovery: the Anthropic interview loop, structured by Spec Kit's nine-category `clarify` taxonomy and its dated `## Clarifications / ### Session YYYY-MM-DD` answer ledger, using superpowers' question discipline ("one question per message", multiple choice with a recommended option). Kiro's EARS phrasing (`WHEN ... THE SYSTEM SHALL ...`) for every acceptance criterion so the owner can read them and the agents can test them. BMAD `party-mode --mode subagent` only as an optional "what are we missing?" pass at the end of each discovery area.
 2. Artifacts: OpenSpec's shape (product specs as the source of truth; a small change folder per unit of work; archive on completion) without installing OpenSpec, and Spec Kit's `checklist` idea as a one-file "requirements quality" gate per screen. Three lanes (full / light / no-spec) so bug fixes do not generate documents.
-3. Review and gates: Codex plugin for Claude Code with the review gate enabled; Codex read-only reviewer role in `.codex/agents/`; claude-code-action code-review on PRs; codex-action read-only in CI; verdicts recorded in the change folder and enforced by a required check.
+3. Review and gates: Codex plugin for Claude Code for `/codex:adversarial-review` on risky diffs, **without** its stop-time review gate (its README warns it "can trigger lengthy loops and consume usage limits rapidly"; corrected 2026-09-13 — the skills report §6 already said so); Codex read-only reviewer role in `.codex/agents/`; claude-code-action code-review on PRs; codex-action read-only in CI once its API cost is authorised; verdicts attached to the candidate SHA (3.3) and enforced by a required check.
 
 Decision memory: MADR-minimal ADRs plus an append-only `DECISIONS.md` ledger with `decision-makers` and `date`, and a single `NEXT.md` handoff, exactly as in 4.4.
 
@@ -353,7 +355,7 @@ justfile                       # ci, ci-fast, screenshots, report
 ### 7.3 Order of setup for the owner
 
 1. Create the repo with the skeleton, the two symlinked instruction files, `OWNERSHIP.md`, `DECISIONS.md` (first entry: this operating model, dated), `NEXT.md`.
-2. Install superpowers in both harnesses; install the Codex plugin in Claude Code and enable the review gate; add `.codex/agents/reviewer.toml`.
+2. Install superpowers in both harnesses; install the Codex plugin in Claude Code without enabling its review gate (corrected 2026-09-13); add `.codex/agents/reviewer.toml`.
 3. Run discovery as a `/goal`-driven Claude session per product area: "all screens in docs/product/screens have EARS criteria, a dated Clarifications section, and zero NEEDS CLARIFICATION markers, or stop after 30 questions"; the owner answers multiple-choice questions only.
 4. Hand each screen to Codex for the design brief and mocks; Claude reviews the design against the screen doc; record the verdict.
 5. Build in change folders with worktrees, TDD, cross-review, and the CI gates; the owner reads `REPORT.md` and answers `QUESTIONS.md`.

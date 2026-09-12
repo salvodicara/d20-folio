@@ -72,6 +72,7 @@ Knowledge-base reset (2026-09-09): integrated on `v2` through `1cc5d32e`.
 - E01–E22 and the nine player-freedom scenarios still live only in the lab; rule 36 requires them in
   the repository before P14a starts.
 - **Out-of-combat mechanical freedom** (owner, 2026-09-03) still needs its own design pass.
+- Restart proposal v3 awaits the owner's six decisions (`RESTART_PROPOSAL.md` §14).
 - No deployment, production write, real-data migration, release or new cost is authorised.
 
 ## Recent owner decisions (dates)
