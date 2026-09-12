@@ -42,6 +42,8 @@ a proposal until Codex has reviewed it (step −1 below) and the owner has decid
 | One skills home: `.agents/skills/` read by Codex, `.claude/skills` a committed symlink to it                                                                              | skills     |
 | Twelve products and games to tear down first, BG3 and Solasta at the top; Sigil is dead, D&D Beyond is rebuilding, "sheet + map + dice on one screen" is the shared demand | landscape  |
 | GPT-6 Astra and Fable 5.1 are close on agentic coding; each leads on different benchmarks, so routing is per task and re-evaluated at every model release                   | benchmarks |
+| The game's unit of work is the session; rules are typed data (sources grant features, resources reset on rests); 2014 and 2024 content coexist at one table; the Italian 2025 translation lost trust | dnd-primer |
+| DMs override everything at run time, most tables run homebrew worlds and near-universal house rules; magic items, monsters and spells are what people create; 3D, chat, marketplaces and hidden dice tricks are dead ends | dnd-market |
 
 ## 2. The proposal in one paragraph
 
@@ -161,6 +163,46 @@ per-screen interaction and state inventory (landscape report for the reasons and
 
 Cross-cutting demands the market keeps repeating: sheet, map and dice on one screen; reliable 2024
 automation; true offline and in-person mode; party inventory and loot transfer; printable sheets.
+
+## 5b. Domain evidence the interview starts from
+
+The owner has played little; the market report (696 lines, every figure graded A–D by source
+quality) is what the interviewer's recommended answers lean on. The findings that shape the product:
+
+**What tables customise, ranked by evidence.** Monsters at run time (HP edits mid-fight, rolled
+damage, hidden rolls, tolerated fudging) come first and have been stable for a decade. Then the
+content library, in the order people actually create it: magic items by far, then monsters, spells,
+feats, subclasses, backgrounds; whole classes and conditions are the oldest unmet requests because
+D&D Beyond cannot do them. Then per-table rule toggles (bonus-action potions, a feat at level 1,
+critical-hit variants, flanking, milestone versus XP, per-seat 2014/2024 mixing). Then the campaign
+world itself: most DMs run their own, and most alter published modules. Then allow/ban lists at item
+granularity, editing official content in place instead of copy-then-edit, the automation level, the
+sheet's presentation, party loot with a DM stash, and grid versus theatre of the mind.
+
+**Freedom features that must be first-class.** DM override of any number at any time with
+correction and undo, everything logged, nothing blocked. Per-person dice mode, physical or in-app,
+both logged, digital dice faster than picking up a die. Automation as a campaign policy with
+per-step granularity, never a hidden fairness layer. A homebrew editor for every category including
+classes and conditions, with in-place edits of official entries carrying provenance. House rules
+and edition choices as data. Allow/ban lists per campaign. A printable, glanceable, offline sheet.
+Party inventory, DM stash, transfers. An encounter builder that takes seconds and treats the XP
+budget as a hint. Italian as a real locale of the rules text.
+
+**Dead ends to skip or defer, with the evidence.** 3D scenes and VR (Sigil cancelled inside eight
+months, TaleSpire at a few hundred concurrent users). Built-in voice, video or chat (Discord is the
+layer). Dynamic lighting at launch (a prep time sink used by about a quarter of Foundry tables).
+3D dice as the default. Karmic or streak-smoothing dice (switched off by every experienced table
+and contrary to "every roll is logged"). A marketplace (median purchases on Foundry: zero). Heavy
+encounter-maths screens (D&D Beyond's stayed in beta six years). Dense full automation in the
+Fantasy Grounds style (deepest automation, lowest satisfaction). Portrait, voice and music
+generators (no usage evidence; link out later). Undo-less honour modes.
+
+**The ten jobs by evidence**, which replace the old jobs table as the seed of interview step 5:
+run combat faster with fewer arithmetic errors; keep the DM in control of the fiction; let the
+group play the way it already does (hybrid, physical dice, grid or not); hold the whole homebrew
+world; mix editions and house rules per table; a sheet readable at a glance, printable, trusted
+offline; loot between characters and a party stash; an encounter built in seconds; less DM prep
+and organisation load; beginners and veterans served from the same screens.
 
 ## 6. Phases after discovery
 
