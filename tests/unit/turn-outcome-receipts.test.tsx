@@ -135,10 +135,7 @@ describe("turn outcome receipt ownership", () => {
     useUndoStore.setState({ characterId: MOCK_CHARACTER.id, past: [], future: [] });
   });
 
-  it.each([
-    ["ordinary action", testAction("feature-use", "action"), "feature-use-1"],
-    ["cast", testAction("custom-cantrip", "action", "spell"), "cast-1"],
-  ])(
+  it.each([["ordinary action", testAction("feature-use", "action"), "feature-use-1"]])(
     "commits, undoes, and redoes the exact %s occurrence",
     async (_label, action, id) => {
       mount(action, artifact(action, id));

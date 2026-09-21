@@ -1,5 +1,18 @@
 # Mechanics taxonomy
 
+## Production interaction policy — 2026-09-21
+
+The owner has retired mandatory mechanics resolution from normal sheet use.
+Spells and Play dispatch through `TurnEconomyProvider.executeAction`: spells keep
+source/level selection, payment, concentration, log and undo, without target/dice
+prompts, automatic effects or turn-economy gates. Weapon and feature cards retain
+their resource bookkeeping without opening the combat resolver. Engine protocol
+code remains a compatibility dependency of saved worlds and other explicit tools;
+its presence does not authorize automatic resolution in the sheet.
+
+Existing resource mutators continue to update a saved world and its session mirror
+together. No character codec, storage schema or live data migration changes here.
+
 > **The conceptual model for every mechanic the d20-folio engine models.** Audience: any agent
 > (human or AI) extending the schema or the SRD data. **The per-kind detail is co-located TSDoc in
 > `src/lib/grants.ts`** (each arm of the `Grant` union documents its payload + evaluator merge rule) —

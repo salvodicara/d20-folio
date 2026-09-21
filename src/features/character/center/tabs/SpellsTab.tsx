@@ -12,8 +12,8 @@
  *
  * (folio §5.7 — the canonical card-page reference.)
  *
- * Play and Spells share one provider-owned cast flow: configuration, targets,
- * payment, economy, concentration, effects, logging, and undo cannot drift.
+ * Play and Spells share one resource-only cast flow: configuration, payment,
+ * concentration, logging and undo. Outcomes are resolved at the table.
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
@@ -44,13 +44,6 @@ import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots"
 import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
 import { localizeSrd } from "@/i18n/resolver";
 import { buildSpellsViewModel, type SpellCardVM } from "@/lib/views/spells-view";
-import { useSheetCombat } from "../turn-state";
-import { useAuthStore } from "@/stores/authStore";
-import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
-import {
-  engineSpellCastRequest,
-  type EngineSpellCastRequest,
-} from "./spells/engine-spell-gate";
 import type { SrdSpellData } from "@/data/types";
 import type { SpellcastingConfig } from "@/types/character";
 import {
@@ -65,20 +58,6 @@ import { useTurnEconomy } from "../useTurnEconomy";
 // The Find Familiar form picker joins the monster corpus, so it rides a LAZY leaf
 // mounted only when the affordance is tapped — the Spells tab gains zero corpus
 // bytes until then (the encounter-bestiary recipe; the eager-partition sweep pins it).
-// The engine cast flow joins the deterministic runtime, so it rides a lazy
-// leaf mounted only when an engine-executable spell is cast.
-const EngineCastFlow = lazy(() =>
-  import("./spells/EngineCastFlow").then((m) => ({ default: m.EngineCastFlow }))
-);
-const EnginePulseStrip = lazy(() =>
-  import("./spells/EnginePulseStrip").then((m) => ({ default: m.EnginePulseStrip }))
-);
-const EngineConsumablesStrip = lazy(() =>
-  import("./spells/EngineConsumablesStrip").then((m) => ({
-    default: m.EngineConsumablesStrip,
-  }))
-);
-
 const FamiliarFormPicker = lazy(() =>
   Promise.all([
     import("../../companions/familiar-picker"),
@@ -105,9 +84,6 @@ export function SpellsTab() {
   const [transformSpellId, setTransformSpellId] = useState<string | null>(null);
   /** When true, the Find Familiar form picker is open. */
   const [familiarPickerOpen, setFamiliarPickerOpen] = useState(false);
-  /** Engine dual-dispatch (rollout): the open engine-driven cast, if any. */
-  const [engineCast, setEngineCast] = useState<EngineSpellCastRequest | null>(null);
-  const sheetCombat = useSheetCombat();
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
 
@@ -145,18 +121,6 @@ export function SpellsTab() {
     () =>
       allSpellbookActions.filter(
         (action) => action.source === "spell" && !action.summary.recurringUse
-      ),
-    [allSpellbookActions]
-  );
-  /** Spells whose casts can ride an item/feature pool — always legacy-routed. */
-  const pooledSpellIds = useMemo(
-    () =>
-      new Set(
-        allSpellbookActions.flatMap((action) =>
-          action.castPoolSourceId !== undefined && action.spellId !== undefined
-            ? [action.spellId]
-            : []
-        )
       ),
     [allSpellbookActions]
   );
@@ -337,60 +301,10 @@ export function SpellsTab() {
 
   const handleCast = useCallback(
     (vm: SpellCardVM) => {
-      // Engine dual-dispatch (rollout bridge): outside a SHARED encounter —
-      // solo combat included, whose turn boundaries now live in the
-      // character's own engine world — an engine-executable SRD spell
-      // resolves through the deterministic runtime; everything else still
-      // rides the legacy transaction until its cutover wave deletes it. The
-      // layered gates live in the ONE shared `engineSpellCastRequest` (golden
-      // rule 6 — the Play board's spell cards run the same gate). A spell any
-      // OTHER row can cast through an item/feature pool keeps the legacy
-      // option flow (the picker owns those sources).
       const action = actionForSpell(vm);
-      const request =
-        character !== null &&
-        vm.kind === "srd" &&
-        vm.data !== null &&
-        action !== undefined &&
-        !pooledSpellIds.has(vm.data.id)
-          ? engineSpellCastRequest({
-              action,
-              badges: {
-                mastery: t("spellPrep.spellMasteryBadge"),
-                signature: t("spellPrep.signatureSpellBadge"),
-              },
-              character,
-              locale,
-              sheetCombat: sheetCombat !== null,
-              spell: vm.data,
-              spellName: vm.name,
-              uid: useAuthStore.getState().user?.uid ?? null,
-            })
-          : null;
-      if (request !== null) {
-        // Replacing a held concentration always ASKS first through the ONE
-        // shared gate; a declined swap cancels the cast entirely (never a
-        // silent fallback to the legacy transaction). On yes, NOTHING ends
-        // yet: the engine flow replays against the world still holding the
-        // old spell, and the kernel's concentration-replacement coordination
-        // commits the whole swap as ONE causal action at Apply (backing out
-        // of the modal keeps the old spell held).
-        if (request.concentrationSwap !== null) {
-          void confirmConcentrationSwap(
-            { concentration: true, name: request.spellName, spellId: request.spellId },
-            t,
-            locale
-          ).then((confirmed) => {
-            if (confirmed) setEngineCast(request);
-          });
-          return;
-        }
-        setEngineCast(request);
-        return;
-      }
       if (action) executeAction(action);
     },
-    [actionForSpell, character, executeAction, locale, pooledSpellIds, sheetCombat, t]
+    [actionForSpell, executeAction]
   );
 
   /** Cast a spell as a ritual (no slot expended). */
@@ -597,26 +511,6 @@ export function SpellsTab() {
       </div>
 
       <SpellAddModal open={spellModalOpen} onClose={() => setSpellModalOpen(false)} />
-
-      <Suspense fallback={null}>
-        <EnginePulseStrip maxHp={character.character.hp.max} />
-        <EngineConsumablesStrip maxHp={character.character.hp.max} />
-      </Suspense>
-
-      {engineCast !== null && (
-        <Suspense fallback={null}>
-          <EngineCastFlow
-            concentrationSwap={engineCast.concentrationSwap}
-            economy={engineCast.economy}
-            hasAttack={engineCast.hasAttack}
-            onClose={() => setEngineCast(null)}
-            slots={view.slots}
-            spellId={engineCast.spellId}
-            spellName={engineCast.spellName}
-            summary={view.castSummary}
-          />
-        </Suspense>
-      )}
 
       <BeastFormPicker
         open={transformSpellId !== null}

@@ -6,7 +6,6 @@ import { MemoryRouter } from "react-router";
 vi.mock("@/lib/firebase", () => ({}));
 
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
-import { turnEconomyKey } from "@/features/character/center/combat-hydration";
 import {
   useTurnEconomy,
   type PreparedCommit,
@@ -141,70 +140,36 @@ beforeEach(() => {
 });
 
 describe("cast transaction correctness", () => {
-  it("opens a fresh slot allowance for a reaction on the next creature's global turn", async () => {
+  it("spends reaction and action slots without a turn allowance", async () => {
     const doc = makeCharacterDoc({
       classId: "wizard",
       level: 5,
       spellSlots: [{ level: 1, total: 3 }],
     });
     useCharacterStore.setState({ character: doc });
-    const ownTurn = statusFor("pc-user", true);
-    useCombatStatusStore.getState().set(ownTurn, null);
+    useCombatStatusStore.getState().set(statusFor("pc-user", true), null);
     renderProvider();
-
-    act(() => economy?.handleSelect(spellAction("own-turn-cast", "action")));
+    act(() => economy?.executeAction(spellAction("own-turn-cast", "action")));
     await waitFor(() =>
       expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(
         1
       )
     );
-    const ownKey = turnEconomyKey(ownTurn, doc.id, 1);
-    expect(useCombatStore.getState()).toMatchObject({
-      spellSlotCastsThisTurn: 1,
-      spellSlotCastTurnKey: ownKey,
-    });
-
-    const enemyTurn = statusFor("monster-1", false);
-    act(() => useCombatStatusStore.getState().set(enemyTurn, null));
-    act(() => economy?.handleUseReaction(spellAction("reaction-cast", "reaction")));
+    act(() => economy?.executeAction(spellAction("reaction-cast", "reaction")));
     await waitFor(() =>
       expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(
         2
       )
     );
-    const enemyKey = turnEconomyKey(enemyTurn, doc.id, 1);
-    expect(useCombatStore.getState()).toMatchObject({
-      reactionUsed: true,
-      reactionUsedId: "reaction-cast",
-      spellSlotCastsThisTurn: 1,
-      spellSlotCastTurnKey: enemyKey,
+    expect(useCombatStore.getState().reactionUsed).toBe(false);
+    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(0);
+    act(() => {
+      expect(useUndoStore.getState().undo()).toBe(true);
     });
-
-    act(() => expect(useUndoStore.getState().undo()).toBe(true));
     expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
-    expect(useCombatStore.getState()).toMatchObject({
-      reactionUsed: false,
-      spellSlotCastsThisTurn: 1,
-      spellSlotCastTurnKey: ownKey,
+    act(() => {
+      expect(useUndoStore.getState().redo()).toBe(true);
     });
-
-    act(() => expect(useUndoStore.getState().redo()).toBe(true));
-    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(2);
-    expect(useCombatStore.getState()).toMatchObject({
-      reactionUsed: true,
-      spellSlotCastsThisTurn: 1,
-      spellSlotCastTurnKey: enemyKey,
-    });
-
-    act(() => useCombatStore.getState().resetReaction());
-    act(() =>
-      economy?.handleUseReaction(spellAction("second-reaction-cast", "reaction"))
-    );
-    await waitFor(() =>
-      expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
-        /one spell slot per turn/i
-      )
-    );
     expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(2);
   });
 
@@ -335,9 +300,7 @@ describe("cast transaction correctness", () => {
           ?.used
       ).toBe(1)
     );
-    expect(useCombatStore.getState().selected.action).toContainEqual(
-      expect.objectContaining({ id: "subtle-fire-bolt" })
-    );
+    expect(useCombatStore.getState().selected.action).toEqual([]);
 
     act(() => expect(useUndoStore.getState().undo()).toBe(true));
     expect(useCombatStore.getState().selected.action).toEqual([]);

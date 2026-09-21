@@ -274,6 +274,46 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
     expect(after.session.concentration).toBe("haste");
   });
 
+  it("restoring a swapped form preserves an item refund already applied", () => {
+    const { bearHp } = assumeBear();
+    let restore: (() => void) | undefined;
+    const state = useCharacterStore.getState();
+    state.updateSession({
+      itemResources: {
+        wand: {
+          itemId: "wand-of-binding",
+          instanceId: "wand",
+          revision: 1,
+          resources: { charges: { capacity: 7, current: 5, disabled: false } },
+          disposition: "magical",
+          causalHead: null,
+        },
+      },
+    });
+    state.setConcentration(concentrationValue("haste"), {
+      captureUndo: (undo) => {
+        restore = undo;
+      },
+    });
+    const resources = useCharacterStore.getState().character?.session.itemResources;
+    if (!resources?.wand) throw new Error("missing wand");
+    useCharacterStore.getState().updateSession({
+      itemResources: {
+        wand: {
+          ...resources.wand,
+          revision: 2,
+          resources: { charges: { capacity: 7, current: 7, disabled: false } },
+        },
+      },
+    });
+    restore?.();
+    const after = useCharacterStore.getState().character;
+    expect(after?.session.polymorphForm?.beastId).toBe("brown-bear");
+    expect(after?.session.hp.temp).toBe(bearHp);
+    expect(after?.session.itemResources?.wand?.resources.charges?.current).toBe(7);
+    expect(after?.session.itemResources?.wand?.revision).toBe(2);
+  });
+
   it("manually CLEARING concentration ends the form + restores the body (undoable)", () => {
     const { bodyScores, bodyAc, bodyTemp, bearHp } = assumeBear();
     useCharacterStore.getState().setConcentration("");

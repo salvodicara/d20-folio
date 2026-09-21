@@ -18,10 +18,9 @@ vi.mock("@/lib/firebase", () => ({
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { act, render, screen, fireEvent, within, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, within, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { SpellsTab } from "@/features/character/center/tabs/SpellsTab";
-import { advanceSoloWorldTurn } from "@/features/character/center/solo-world-turn";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -34,14 +33,13 @@ import { useAuthStore } from "@/stores/authStore";
 import type { User } from "firebase/auth";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { asRaceId } from "@/data/srd-names";
-import { effectiveAC } from "@/lib/aggregate-character";
 import type { CharacterDoc } from "@/types/character";
 import { customInstanceId } from "./__helpers__/custom-items";
 import { makeCharacterDoc } from "./_helpers";
 
 function load(doc: CharacterDoc = structuredClone(MOCK_CHARACTER)): void {
   useCharacterStore.setState({ character: doc, loading: false, error: null });
-  // The engine dual-dispatch derives the character's world from (doc, uid).
+  // Authenticated character, matching the live sheet context.
   useAuthStore.setState({ user: { uid: "test-uid" } as User });
 }
 
@@ -167,178 +165,6 @@ describe("SpellsTab", () => {
     expect(document.querySelector(".fchip")).toBeNull();
   });
 
-  it("routes an engine-executable leveled cast into the deterministic modal", async () => {
-    // Hold Monster transcribes to an executable program, so outside combat the
-    // dual dispatch opens the engine resolution modal instead of the legacy
-    // immediate transaction (whose economy contract Misty Step still covers).
-    const doc = structuredClone(MOCK_CHARACTER);
-    doc.session.concentration = "";
-    load(doc);
-    renderPage();
-    const spell = screen.getByText(/Hold Monster/i);
-    const card = spell.closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    const before =
-      useCharacterStore.getState().character?.session.spellSlots["5"]?.used ?? 0;
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 5/i }));
-    // The engine modal opens on the slot-payment requirement; nothing legacy
-    // was spent and no legacy economy claim was made.
-    await screen.findByText(/Resolve cast/);
-    expect(
-      useCharacterStore.getState().character?.session.spellSlots["5"]?.used ?? 0
-    ).toBe(before);
-    expect(useCombatStore.getState().selected.action).toEqual([]);
-    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(0);
-  });
-
-  it("claims the bonus-action economy for a bonus-action spell", async () => {
-    const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
-    doc.character.spells = [{ srdId: "misty-step", prepared: true }];
-    doc.character.spellSlots = [{ level: 2, total: 1 }];
-    doc.session.spellSlots = {};
-    load(doc);
-    renderPage();
-
-    const card = screen.getByText("Misty Step").closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 2/i }));
-
-    await waitFor(() =>
-      expect(useCombatStore.getState().selected.bonus).toContainEqual(
-        expect.objectContaining({ id: "spell-misty-step" })
-      )
-    );
-    expect(useCombatStore.getState().selected.action).toEqual([]);
-    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1);
-  });
-
-  it("cancels target review as a strict no-op", async () => {
-    const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
-    doc.character.spells = [{ srdId: "healing-word", prepared: true }];
-    doc.character.spellSlots = [{ level: 1, total: 1 }];
-    doc.session.spellSlots = {};
-    doc.session.hp = { current: 5, temp: 0 };
-    load(doc);
-    renderPage();
-
-    const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
-
-    // Healing Word routes to the engine modal; cancelling it is a strict no-op.
-    await screen.findByText(/Resolve cast/);
-    expect(useCharacterStore.getState().character?.session.spellSlots).toEqual({});
-    expect(useCombatStore.getState().selected.bonus).toEqual([]);
-    expect(useUndoStore.getState().past).toEqual([]);
-
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-    expect(useCharacterStore.getState().character?.session).toMatchObject({
-      hp: { current: 5, temp: 0 },
-      spellSlots: {},
-    });
-    expect(useCombatStore.getState()).toMatchObject({
-      selected: { action: [], bonus: [], free: [] },
-      spellSlotCastsThisTurn: 0,
-    });
-    expect(useUndoStore.getState().past).toEqual([]);
-  });
-
-  // The SOLO COMBAT cutover: being mid-combat keeps the ENGINE dispatch, and a
-  // committed engine cast mirrors the exact legacy turn economy — the claimed
-  // slot, the one-slot-per-turn marker on the SOLO turn key, and the world-side
-  // slot debit — while the RA-08 layered gate then routes a second leveled cast
-  // of the same turn back to the legacy path, which refuses it.
-  it("commits an engine cast during solo combat with the economy mirrored", async () => {
-    const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
-    doc.character.spells = [{ srdId: "healing-word", prepared: true }];
-    doc.character.spellSlots = [{ level: 1, total: 2 }];
-    doc.session.spellSlots = {};
-    doc.session.hp = { current: 5, temp: 0 };
-    load(doc);
-    renderPage();
-    // Mid-combat: the tracker sits on round 3 (set after mount so the combat
-    // hydration pass cannot reset the display round back to its default).
-    useCombatStore.getState().setRound(3);
-
-    const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
-
-    // The engine modal resolves the cast: slot, target, the entered heal die.
-    await screen.findByText(/Resolve cast/);
-    const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
-    fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
-    // 2024 Healing Word rolls 2d4 + modifier: enter both entered die faces.
-    const dice = await modal().findAllByRole("spinbutton");
-    for (const die of dice) fireEvent.change(die, { target: { value: "4" } });
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await modal().findByText(/Everything resolved/);
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-
-    // The world debited the slot once and the legacy economy mirrors exactly:
-    // bonus slot occupied, the solo turn key holds the one-slot-per-turn claim.
-    const state = useCombatStore.getState();
-    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
-    expect(state.selected.bonus).toContainEqual(
-      expect.objectContaining({ id: "spell-healing-word", slot: "bonus" })
-    );
-    expect(state.spellSlotCastsThisTurn).toBe(1);
-    expect(state.spellSlotCastTurnKey).toBe("solo:test-char:3");
-
-    // A second leveled cast this turn: the layered gate keeps it LEGACY, and
-    // the legacy limiter refuses it — no engine modal, nothing spent twice.
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
-    expect(screen.queryByText(/Resolve cast/)).toBeNull();
-    expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1);
-    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1);
-  });
-
-  // Reaction buff spells (Shield) dispatch ENGINE now: the standing occurrence
-  // projects its +5 AC onto the sheet through the world-standing read, and the
-  // reaction marker rides the economy mirror — the exact CAS the legacy
-  // reaction commit performed. The legacy activation chip stays untouched.
-  it("routes a reaction buff spell through the engine with the reaction mirrored", async () => {
-    const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
-    doc.character.spells = [{ srdId: "shield", prepared: true }];
-    doc.character.spellSlots = [{ level: 1, total: 2 }];
-    doc.session.spellSlots = {};
-    load(doc);
-    renderPage();
-    const acBefore = effectiveAC(doc.character, doc.session);
-
-    const card = screen.getByText("Shield").closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
-
-    // The engine modal resolves the cast: pay the level-1 slot, choose the
-    // warded target (yourself), then commit.
-    await screen.findByText(/Resolve cast/);
-    const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
-    fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
-    await modal().findByText(/Everything resolved/);
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-
-    // The reaction marker mirrored exactly as the legacy commit marked it,
-    // and the world's slot debit mirrored onto the legacy counter.
-    const combat = useCombatStore.getState();
-    expect(combat.reactionUsed).toBe(true);
-    expect(combat.reactionUsedId).toBe("spell-shield");
-    const session = useCharacterStore.getState().character?.session;
-    expect(session?.spellSlots["1"]?.used).toBe(1);
-    // No legacy activation row: the buff lives as a WORLD standing the sheet
-    // reads through the projection — effective AC gains Shield's +5.
-    expect(session?.activeFeatures ?? []).not.toContain("spell-shield");
-    const after = useCharacterStore.getState().character;
-    expect(after).not.toBeNull();
-    if (!after) return;
-    expect(effectiveAC(after.character, after.session)).toBe(acBefore + 5);
-  });
-
   it("casts an extended-time spell without claiming turn economy", async () => {
     const doc = structuredClone(MOCK_CHARACTER);
     doc.character.spells = [
@@ -374,15 +200,12 @@ describe("SpellsTab", () => {
     expect(useCombatStore.getState()).toMatchObject({
       selected: { action: [], bonus: [], free: [] },
       reactionUsed: false,
-      spellSlotCastsThisTurn: 1,
+      spellSlotCastsThisTurn: 0,
     });
     expect(useUndoStore.getState().past.at(-1)?.turnScoped).toBe(false);
   });
 
-  it("blocks a second slot expenditure while leaving the other economy slot free", async () => {
-    // Knock (still legacy — purely narrative program) spends the turn's one
-    // slot from the ACTION economy; Misty Step's bonus-slot attempt then hits
-    // the shared per-turn slot limiter while the bonus slot itself stays free.
+  it("allows successive casts without a combat turn gate", async () => {
     const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
     doc.character.spells = [
       { srdId: "knock", prepared: true },
@@ -408,21 +231,15 @@ describe("SpellsTab", () => {
     fireEvent.click(within(mistyStep).getByRole("button", { name: /Cast · Lv 2/i }));
 
     await waitFor(() =>
-      expect(useToastStore.getState().toasts.at(-1)?.message).toMatch(
-        /one spell slot per turn/i
+      expect(useCharacterStore.getState().character?.session.spellSlots["2"]?.used).toBe(
+        2
       )
     );
-    expect(
-      useCharacterStore.getState().character?.session.spellSlots["2"]?.used ?? 0
-    ).toBe(1);
     expect(useCombatStore.getState()).toMatchObject({
-      selected: {
-        action: [expect.objectContaining({ id: "spell-knock" })],
-        bonus: [],
-      },
-      spellSlotCastsThisTurn: 1,
+      selected: { action: [], bonus: [] },
+      spellSlotCastsThisTurn: 0,
     });
-    expect(useUndoStore.getState().past).toHaveLength(undoDepth);
+    expect(useUndoStore.getState().past).toHaveLength(undoDepth + 1);
   });
 
   it("casts an item list-pool spell from its exact physical resource", async () => {
@@ -468,7 +285,7 @@ describe("SpellsTab", () => {
     );
     expect(useCharacterStore.getState().character?.session.spellSlots).toEqual({});
     expect(useCombatStore.getState()).toMatchObject({
-      reactionUsed: true,
+      reactionUsed: false,
       spellSlotCastsThisTurn: 0,
     });
   });
@@ -509,7 +326,11 @@ describe("SpellsTab", () => {
     const knock = screen.getByText("Knock").closest(".uc") as HTMLElement;
     fireEvent.click(knock.querySelector(".uc-chevron") as HTMLElement);
     fireEvent.click(within(knock).getByRole("button", { name: /Cast · Lv 2/i }));
-    await waitFor(() => expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1));
+    await waitFor(() =>
+      expect(useCharacterStore.getState().character?.session.spellSlots["2"]?.used).toBe(
+        1
+      )
+    );
 
     const shield = screen.getByText("Shield").closest(".uc") as HTMLElement;
     fireEvent.click(shield.querySelector(".uc-chevron") as HTMLElement);
@@ -522,8 +343,8 @@ describe("SpellsTab", () => {
       ).toBe(9)
     );
     expect(useCombatStore.getState()).toMatchObject({
-      reactionUsed: true,
-      spellSlotCastsThisTurn: 1,
+      reactionUsed: false,
+      spellSlotCastsThisTurn: 0,
     });
   });
 
@@ -565,256 +386,6 @@ describe("SpellsTab", () => {
       "hold-monster"
     );
   });
-
-  // ─── The engine-commit reversal affordance ────────────────────────────────
-  // Every successful engine commit registers the SAME "X used + Undo" toast
-  // grammar the legacy loop owns, whose undo drives the exact journal reverse
-  // AND rolls back the legacy economy mirrors in one motion.
-
-  /** The committed (odd-generation) journal actions in the persisted world. */
-  function committedWorldActions(): number {
-    const world = useCharacterStore.getState().character?.session.world as
-      | { actions?: readonly { generation: number }[] }
-      | undefined;
-    return (world?.actions ?? []).filter((action) => action.generation % 2 === 1).length;
-  }
-
-  it("an engine cast raises the undo toast; undo reverses journal + mirrors; redo replays", async () => {
-    const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
-    doc.character.spells = [{ srdId: "healing-word", prepared: true }];
-    doc.character.spellSlots = [{ level: 1, total: 2 }];
-    doc.session.spellSlots = {};
-    doc.session.hp = { current: 5, temp: 0 };
-    load(doc);
-    renderPage();
-    useCombatStore.getState().setRound(3);
-
-    const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
-    await screen.findByText(/Resolve cast/);
-    const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
-    fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
-    const dice = await modal().findAllByRole("spinbutton");
-    for (const die of dice) fireEvent.change(die, { target: { value: "4" } });
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await modal().findByText(/Everything resolved/);
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-
-    // ONE turn-scoped stack entry in the legacy toast grammar, its live toast
-    // wired back to the same entry (the contextual Undo button).
-    const entry = useUndoStore.getState().past.at(-1);
-    expect(useUndoStore.getState().past).toHaveLength(1);
-    expect(entry).toMatchObject({
-      label: { message: "Healing Word used" },
-      turnScoped: true,
-    });
-    const toast = useToastStore
-      .getState()
-      .toasts.find((candidate) => candidate.id === entry?.toastId);
-    expect(toast?.message).toBe("Healing Word used");
-    expect(typeof toast?.onUndo).toBe("function");
-    const healedHp = useCharacterStore.getState().character?.session.hp.current ?? 0;
-    expect(healedHp).toBeGreaterThan(5);
-    const committedBefore = committedWorldActions();
-
-    // UNDO — the exact journal reverse: HP and the slot debit restore, and the
-    // legacy economy mirrors (occupied bonus slot, one-slot-per-turn claim)
-    // roll back in the same motion.
-    act(() => {
-      expect(useUndoStore.getState().undo()).toBe(true);
-    });
-    const undone = useCharacterStore.getState().character?.session;
-    expect(undone?.hp.current).toBe(5);
-    expect(undone?.spellSlots["1"]?.used ?? 0).toBe(0);
-    expect(committedWorldActions()).toBe(committedBefore - 1);
-    expect(useCombatStore.getState()).toMatchObject({
-      selected: { action: [], bonus: [], free: [] },
-      spellSlotCastsThisTurn: 0,
-    });
-    expect(useUndoStore.getState().past).toEqual([]);
-    expect(useUndoStore.getState().future).toHaveLength(1);
-
-    // REDO — the reducer's native redo transition replays the SAME action and
-    // re-applies the mirrors; the fresh entry is itself undoable again.
-    act(() => {
-      expect(useUndoStore.getState().redo()).toBe(true);
-    });
-    const redone = useCharacterStore.getState().character?.session;
-    expect(redone?.hp.current).toBe(healedHp);
-    expect(redone?.spellSlots["1"]?.used).toBe(1);
-    expect(committedWorldActions()).toBe(committedBefore);
-    expect(useCombatStore.getState().selected.bonus).toContainEqual(
-      expect.objectContaining({ id: "spell-healing-word" })
-    );
-    expect(useCombatStore.getState().spellSlotCastsThisTurn).toBe(1);
-    expect(useUndoStore.getState().past).toHaveLength(1);
-  });
-
-  it("a crossed solo boundary dismisses the toast and makes a stale undo a safe no-op", async () => {
-    const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
-    doc.character.spells = [{ srdId: "healing-word", prepared: true }];
-    doc.character.spellSlots = [{ level: 1, total: 2 }];
-    doc.session.spellSlots = {};
-    doc.session.hp = { current: 5, temp: 0 };
-    load(doc);
-    renderPage();
-    useCombatStore.getState().setRound(3);
-
-    const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
-    fireEvent.click(card.querySelector(".uc-chevron") as HTMLElement);
-    fireEvent.click(within(card).getByRole("button", { name: /Cast · Lv 1/i }));
-    await screen.findByText(/Resolve cast/);
-    const modal = () => within(screen.getByRole("dialog"));
-    fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
-    fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
-    const dice = await modal().findAllByRole("spinbutton");
-    for (const die of dice) fireEvent.change(die, { target: { value: "4" } });
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await modal().findByText(/Everything resolved/);
-    fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-    await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-
-    const entry = useUndoStore.getState().past.at(-1);
-    expect(entry?.turnScoped).toBe(true);
-    const session = useCharacterStore.getState().character?.session;
-    const healedHp = session?.hp.current ?? 0;
-
-    // End Turn's two motions: the stack fence (toast dismissed, entry
-    // compacted away) and the ONE-WAY engine world boundary.
-    act(() => {
-      useUndoStore.getState().purgeTurnScoped();
-      advanceSoloWorldTurn(3);
-    });
-    expect(useUndoStore.getState().past).toEqual([]);
-    // The toast is dismissed (leaving through the exit animation) — the
-    // chosen boundary behavior: the affordance disappears with the turn.
-    const staleToast = useToastStore
-      .getState()
-      .toasts.find((toast) => toast.id === entry?.toastId);
-    expect(staleToast === undefined || staleToast.leaving === true).toBe(true);
-
-    // A compacted entry re-instated by Undo-End-Turn whose boundary has been
-    // crossed: the journal branch moved, so the reverse fails CLOSED — the
-    // undo reports false and nothing (HP, slot, world) moves.
-    act(() => {
-      if (entry) useUndoStore.setState((s) => ({ past: [...s.past, entry] }));
-    });
-    let undone = true;
-    act(() => {
-      undone = useUndoStore.getState().undo();
-    });
-    expect(undone).toBe(false);
-    const after = useCharacterStore.getState().character?.session;
-    expect(after?.hp.current).toBe(healedHp);
-    expect(after?.spellSlots["1"]?.used).toBe(1);
-  });
-
-  // The ONE-ACTION concentration swap: replacing an ENGINE-held spell asks
-  // first (the shared gate), then commits old-end + new-cast as ONE bounded
-  // causal action whose undo restores the OLD spell exactly.
-  // 30 s budget: the replacement replay re-runs the coordinator's bounded
-  // convergence on every answer (the same reason the kernel proof carries one).
-  it(
-    "commits a confirmed engine swap as ONE journal action; undo restores bless",
-    {
-      timeout: 30_000,
-    },
-    async () => {
-      const doc = makeCharacterDoc({ classId: "cleric", level: 3 });
-      doc.character.spells = [
-        { srdId: "bless", prepared: true },
-        { srdId: "shield-of-faith", prepared: true },
-      ];
-      doc.character.spellSlots = [{ level: 1, total: 3 }];
-      doc.session.spellSlots = {};
-      doc.session.concentration = "";
-      load(doc);
-      renderPage();
-
-      // Cast Bless through the engine — concentration held, world-owned.
-      const modal = () => within(screen.getByRole("dialog"));
-      /** Answer every remaining target prompt (Bless asks per chosen creature). */
-      const answerTargetsUntilResolved = async (): Promise<void> => {
-        for (
-          let i = 0;
-          i < 5 && screen.queryByText(/Everything resolved/) === null;
-          i++
-        ) {
-          fireEvent.click(await modal().findByRole("button", { name: "Yourself" }));
-        }
-        await modal().findByText(/Everything resolved/);
-      };
-      const bless = screen.getByText("Bless").closest(".uc") as HTMLElement;
-      fireEvent.click(bless.querySelector(".uc-chevron") as HTMLElement);
-      fireEvent.click(within(bless).getByRole("button", { name: /Cast · Lv 1/i }));
-      await screen.findByText(/Resolve cast/);
-      fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
-      await answerTargetsUntilResolved();
-      fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-      await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-      expect(useCharacterStore.getState().character?.session.concentration).toBe("bless");
-
-      // Open the next legacy turn so the one-slot-per-turn gate admits the swap.
-      act(() => {
-        useCombatStore.getState().endTurn();
-        useUndoStore.getState().purgeTurnScoped();
-      });
-      const committedBefore = committedWorldActions();
-
-      // Cast Shield of Faith: the shared confirm asks; NOTHING ends on yes —
-      // the engine flow replays over the world still holding Bless.
-      const sof = screen.getByText("Shield of Faith").closest(".uc") as HTMLElement;
-      fireEvent.click(sof.querySelector(".uc-chevron") as HTMLElement);
-      fireEvent.click(within(sof).getByRole("button", { name: /Cast · Lv 1/i }));
-      await waitFor(() => expect(useConfirmStore.getState().open).toBe(true));
-      expect(useCharacterStore.getState().character?.session.concentration).toBe("bless");
-      act(() => {
-        useConfirmStore.getState().respond(true);
-      });
-      await screen.findByText(/Resolve cast/);
-      // Still nothing committed — backing out here would keep Bless held.
-      expect(useCharacterStore.getState().character?.session.concentration).toBe("bless");
-      expect(committedWorldActions()).toBe(committedBefore);
-      fireEvent.click(modal().getByRole("button", { name: /Level 1 slot \(base\)/ }));
-      await answerTargetsUntilResolved();
-      fireEvent.click(modal().getByRole("button", { name: "Apply" }));
-      await waitFor(() => expect(screen.queryByText(/Resolve cast/)).toBeNull());
-
-      // ONE causal action committed the whole swap: Bless ended, Shield of
-      // Faith held, both slots spent, and the story beats logged.
-      expect(committedWorldActions()).toBe(committedBefore + 1);
-      const swapped = useCharacterStore.getState().character?.session;
-      expect(swapped?.concentration).toBe("shield-of-faith");
-      expect(swapped?.spellSlots["1"]?.used).toBe(2);
-      // The undo toast IS the replacement announcement (one semantic unit).
-      const entry = useUndoStore.getState().past.at(-1);
-      expect(entry?.label).toMatchObject({
-        intent: {
-          kind: "concentration-replaced",
-          next: "shield-of-faith",
-          previous: "bless",
-        },
-      });
-
-      // UNDO — the exact reverse of the single action restores the OLD spell:
-      // Bless held again (world + session), the new slot refunded, the economy
-      // mirror rolled back.
-      act(() => {
-        expect(useUndoStore.getState().undo()).toBe(true);
-      });
-      const restored = useCharacterStore.getState().character?.session;
-      expect(restored?.concentration).toBe("bless");
-      expect(restored?.spellSlots["1"]?.used).toBe(1);
-      expect(committedWorldActions()).toBe(committedBefore);
-      expect(useCombatStore.getState()).toMatchObject({
-        selected: { action: [], bonus: [], free: [] },
-        spellSlotCastsThisTurn: 0,
-      });
-    }
-  );
 
   // B3 (Sorlock) — casting a CUSTOM (homebrew) spell on the Pact slot must spend
   // the PACT pool (`pact-1`), not silently drain the normal pool (`"1"`). Pins the

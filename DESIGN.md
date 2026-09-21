@@ -144,6 +144,15 @@ components:
 
 # Design System: d20 Folio
 
+**Production recovery, owner-approved direction (2026-09-21):** the Cast action
+records the chosen resource immediately, with the existing undo affordance. Keep
+the source/level picker only when there is a choice and the concentration-swap
+confirmation when another spell is held. Normal sheet actions no longer open a
+target, dice or outcome-resolution dialog. No automatic healing/damage or spell
+effect application follows Cast. The spellbook and Play shortcuts use the same
+flow; casting does not require starting or advancing combat. Existing sheet art,
+typography, content, manual health controls and inventory remain the reference.
+
 > **This is the single, comprehensive design + UX system of record.** It folds in and supersedes
 > all the redesign-era working docs (the old design-system, craft-doctrine, audit, asset-spec, and
 > `UI_UX_*` briefs — now pruned; redesign journey in git history). The token

@@ -1,5 +1,15 @@
 # Product
 
+## Production recovery — owner decision, 2026-09-21
+
+Folio's production sheet returns to resource tracking while d20 Studio carries the
+new product work. Casting spends the selected slot or free-cast resource; targets,
+dice, healing, damage and other consequences are resolved at the table. Spellbook
+and Play shortcuts share this behavior. Concentration, source/level choices, manual
+health controls and undo remain. Initiative and turn tools support play without
+blocking spell resource tracking. Preserve current stored characters; no full
+rollback, schema downgrade or automatic deployment is authorized.
+
 ## Register
 
 product
