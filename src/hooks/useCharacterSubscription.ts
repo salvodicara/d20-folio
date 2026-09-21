@@ -254,7 +254,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           CombatState
         >();
         const persistDevChild = (state: CombatState): void => {
-          devReconciler.markChildPending(state);
           void writeCombatState(uid, id, state).then(
             () => devReconciler.acknowledgeChildWrite(state),
             () => {
@@ -265,6 +264,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         };
         const writeComplete = (state: CombatState): void => {
           if (!persistenceEnabled) return;
+          // Protect the local edit before a synchronous parent echo can publish.
+          devReconciler.markChildPending(state);
           pendingState = state;
           if (playWriteQueued) return;
           playWriteQueued = true;
@@ -342,6 +343,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           id,
           (combat, meta) => {
             if (quarantined) return;
+            if (combat === null) {
+              quarantine("Invalid character document: missing-combat-state");
+              return;
+            }
             devReconciler.receiveChild(combat, meta);
             publish();
           },
@@ -452,7 +457,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // (REPLAY I3 — the reverting Focus). Resolution acknowledges it; a failure drops it
     // and republishes whatever the server actually holds.
     const persistChild = (state: CombatState): void => {
-      reconciler.markChildPending(state);
       void writeCombatState(uid, characterId, state).then(
         () => reconciler.acknowledgeChildWrite(state),
         (err: unknown) => {
@@ -464,6 +468,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     };
     const writeCompletePlayState = (state: CombatState): void => {
       if (!persistenceEnabled) return;
+      // The edit is pending now, including the window before its queued send.
+      reconciler.markChildPending(state);
       pendingPlayWrite = state;
       if (playWriteQueued) return;
       playWriteQueued = true;
@@ -618,6 +624,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       characterId,
       (combat, meta) => {
         if (quarantined) return;
+        if (combat === null) {
+          quarantine("Invalid character document: missing-combat-state");
+          return;
+        }
         // REMOTE-CHANGE FENCE (§5.4): a SERVER-originated combat update (another
         // device / god-mode) that materially differs from the live trio drops the
         // own-sheet undo stack — a snapshot-leg reverse-applier would otherwise clobber

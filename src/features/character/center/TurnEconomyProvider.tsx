@@ -26,6 +26,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { validateArcaneRecoveryPlan } from "@/lib/arcane-recovery";
 import { useCharacterStore } from "@/stores/characterStore";
 import {
   useCombatStore,
@@ -411,8 +412,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  function canUseCharacter(characterId: string | undefined): boolean {
+    const live = useCharacterStore.getState();
+    return live.character !== null && live.character.id === characterId && !live.readonly;
+  }
+
   function guardActionState(action: ResolvedAction): boolean {
-    if (useCharacterStore.getState().readonly) return false;
+    if (!canUseCharacter(character?.id)) return false;
     if (action.source === "spell" || action.castPoolSourceId)
       return useCharacterStore.getState().character !== null;
     const message = actionStateBlockMessage(action);
@@ -495,9 +501,16 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // the shared target resolver before any resource is spent.
   const [poolSpendRequest, setPoolSpendRequest] = useState<PoolSpendRequest | null>(null);
   const [pendingPoolSpend, setPendingPoolSpend] = useState<
-    | { kind: "commit"; action: ResolvedAction; slot: EconomySlot }
+    | {
+        kind: "commit";
+        characterId: string | undefined;
+        action: ResolvedAction;
+        slot: EconomySlot;
+        execution: ActionExecution;
+      }
     | {
         kind: "prepare";
+        characterId: string | undefined;
         action: ResolvedAction;
         onPrepared: (action: ResolvedAction, commit: PreparedCommit) => void;
       }
@@ -558,14 +571,17 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // S4 — Arcane Recovery: tapping the 1/LR action opens a guided cap-enforcing
   // picker (instead of committing a bare tracker spend), then restores the chosen
   // slots + debits the use in one undoable flow.
-  const [arcaneRecoveryRequest, setArcaneRecoveryRequest] =
-    useState<ArcaneRecoveryRequest | null>(null);
+  const [arcaneRecoveryRequest, setArcaneRecoveryRequest] = useState<
+    (ArcaneRecoveryRequest & { characterId: string }) | null
+  >(null);
 
   // S6 — alternate-payment: an action with MORE THAN ONE legal way to pay (a
   // declared `alternateCost`) opens this picker (the same `.cl-opts` recipe), then
   // commits the chosen payment immediately with undo. The engine
   // (`getActionCostOptions`) enumerates every payment; the player picks.
   const [paymentRequest, setPaymentRequest] = useState<{
+    characterId: string | undefined;
+    execution: ActionExecution;
     action: ResolvedAction;
     slot: EconomySlot;
     options: ActionCostOption[];
@@ -823,7 +839,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     attackOf?: { n: number; total: number }
   ): () => void {
     const cs = useCharacterStore.getState();
-    const prevEquipment = cs.character?.character.equipment ?? [];
+    const characterId = cs.character?.id;
+    let restoreEquipment: (() => boolean) | null = null;
     // USE-APPLIES — snapshot temp HP BEFORE applying this action's deterministic
     // effects, so undo restores the exact prior pool (temp HP don't stack — we
     // apply the higher of current/granted, then the reverse-applier sets it back).
@@ -840,7 +857,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     } else if (action.costTracker) {
       cs.useTracker(action.costTracker, trackerAmount ?? action.trackerCost);
     } else if (action.costEquipment) {
-      cs.useEquipmentItem(action.costEquipment);
+      restoreEquipment = cs.useEquipmentItem(action.costEquipment);
     }
     // S9 — a CONSUMED buff potion (Speed / Giant Strength / …) arms its
     // self-sustaining round countdown when drunk, so its duration ticks at each
@@ -928,18 +945,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     });
     return () => {
       const c2 = useCharacterStore.getState();
+      if (c2.readonly || c2.character?.id !== characterId) return;
       if (action.costsSlot && action.slotLevel != null) {
         c2.restoreSpellSlot(action.slotLevel, slotIsPact);
       } else if (action.costTracker) {
         c2.restoreTracker(action.costTracker, trackerAmount ?? action.trackerCost);
       } else if (action.costEquipment) {
-        const cur = c2.character;
-        if (cur) {
-          c2.setCharacter({
-            ...cur,
-            character: { ...cur.character, equipment: prevEquipment },
-          });
-        }
+        restoreEquipment?.();
       }
       // S9 — revert the armed potion countdown (restores the exact prior timers).
       restorePotionTimer?.();
@@ -1510,6 +1522,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (!action.resourcePayment && action.costTracker) {
       return liveTrackerAffordable(action.costTracker, action.trackerCost ?? 1);
     }
+    if (action.costEquipment) {
+      return doc.character.equipment.some(
+        (ref) =>
+          ("custom" in ref ? `custom-${ref.instanceId}` : ref.srdId) ===
+            action.costEquipment && (ref.quantity ?? 1) > 0
+      );
+    }
     return true;
   }
 
@@ -1762,7 +1781,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           level: s.level,
           expended: character.session.spellSlots[slotUsageKey(s)]?.used ?? 0,
         }));
-      setArcaneRecoveryRequest({ wizardLevel, expended });
+      setArcaneRecoveryRequest({ characterId: character.id, wizardLevel, expended });
       return;
     }
 
@@ -1785,7 +1804,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     if (action.costTracker && action.costTrackerIsPool && !action.trackerCost) {
       const tracker = trackerMap.get(action.costTracker);
       if (tracker) {
-        setPendingPoolSpend({ kind: "commit", action, slot });
+        setPendingPoolSpend({
+          kind: "commit",
+          characterId: character?.id,
+          action,
+          slot,
+          execution,
+        });
         setPoolSpendRequest({
           featureName: action.name,
           unit: action.costTrackerUnit ?? "uses",
@@ -1801,7 +1826,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // a Psi Warrior maneuver: its tracker OR a Psionic Energy Die). One option →
     // skip the picker and commit it directly.
     if (costOptions.length > 1) {
-      setPaymentRequest({ action, slot, options: costOptions });
+      setPaymentRequest({
+        characterId: character?.id,
+        action,
+        slot,
+        options: costOptions,
+        execution,
+      });
       return;
     }
 
@@ -1815,9 +1846,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   function commitPayment(
     action: ResolvedAction,
     slot: EconomySlot,
-    cost: ActionCostOption["cost"]
+    cost: ActionCostOption["cost"],
+    execution: ActionExecution
   ) {
-    void commitIntoSlot(actionWithCost(action, cost), slot);
+    void commitIntoSlot(actionWithCost(action, cost), slot, undefined, execution);
   }
 
   // Handle reaction use (immediate commit, not part of turn queue). Async — the
@@ -2380,9 +2412,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const pending = pendingPoolSpend;
     setPendingPoolSpend(null);
     setPoolSpendRequest(null);
-    if (!pending) return;
+    if (!pending || !canUseCharacter(pending.characterId)) return;
     if (pending.kind === "commit") {
-      void commitIntoSlot(pending.action, pending.slot, amount);
+      void commitIntoSlot(pending.action, pending.slot, amount, pending.execution);
       return;
     }
     const die = pending.action.summary.die;
@@ -2407,8 +2439,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // S4 — Arcane Recovery confirm: restore the chosen slots + debit the use in one
   // undoable flow (the picker already enforced the ⌈level/2⌉ cap).
   function handleArcaneRecoveryConfirm(slotLevels: number[]) {
+    const characterId = arcaneRecoveryRequest?.characterId;
     setArcaneRecoveryRequest(null);
-    if (slotLevels.length === 0) return;
+    if (!canUseCharacter(characterId) || slotLevels.length === 0) return;
     const count = slotLevels.length;
     const totalLevels = slotLevels.reduce((a, b) => a + b, 0);
     const message = t("combat.arcaneRecoveryToast", { count, levels: totalLevels });
@@ -2418,7 +2451,29 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       registerUndoableToast(
         { message },
         () => {
-          if (!guardLifeState()) return null;
+          if (!canUseCharacter(characterId) || !guardLifeState()) return null;
+          const live = useCharacterStore.getState().character;
+          if (!live || !liveTrackerAffordable(ARCANE_RECOVERY_FEATURE_ID, 1)) return null;
+          if (
+            !validateArcaneRecoveryPlan(
+              classEntryLevel(live.character, "wizard"),
+              slotLevels
+            ).ok
+          )
+            return null;
+          const remaining = new Map(
+            live.character.spellSlots
+              .filter((row) => !row.pactMagic)
+              .map((row) => [
+                row.level,
+                live.session.spellSlots[slotUsageKey(row)]?.used ?? 0,
+              ])
+          );
+          for (const level of slotLevels) {
+            const used = remaining.get(level) ?? 0;
+            if (used < 1) return null;
+            remaining.set(level, used - 1);
+          }
           return useCharacterStore
             .getState()
             .applyArcaneRecovery(slotLevels, ARCANE_RECOVERY_FEATURE_ID);
@@ -2595,7 +2650,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     ) {
       const tracker = trackerMap.get(action.costTracker);
       if (tracker) {
-        setPendingPoolSpend({ kind: "prepare", action, onPrepared });
+        setPendingPoolSpend({
+          kind: "prepare",
+          characterId: character?.id,
+          action,
+          onPrepared,
+        });
         setPoolSpendRequest({
           featureName: action.name,
           unit: action.costTrackerUnit,
@@ -2747,8 +2807,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         }
         onConfirm={(index) => {
           const opt = paymentRequest?.options[index];
-          if (paymentRequest && opt) {
-            commitPayment(paymentRequest.action, paymentRequest.slot, opt.cost);
+          if (paymentRequest && opt && canUseCharacter(paymentRequest.characterId)) {
+            commitPayment(
+              paymentRequest.action,
+              paymentRequest.slot,
+              opt.cost,
+              paymentRequest.execution
+            );
           }
           setPaymentRequest(null);
         }}

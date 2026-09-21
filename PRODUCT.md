@@ -7,7 +7,9 @@ new product work. Casting spends the selected slot or free-cast resource; target
 dice, healing, damage and other consequences are resolved at the table. Spellbook
 and Play shortcuts share this behavior. Concentration, source/level choices, manual
 health controls and undo remain. Initiative and turn tools support play without
-blocking spell resource tracking. Preserve current stored characters; no full
+blocking spell resource tracking. Manual damage applies immediately without a
+reaction prompt. Consumables spend one item, and undo restores only that unit.
+Pending resource choices belong to the character that opened them. Preserve current stored characters; no full
 rollback, schema downgrade or automatic deployment is authorized.
 
 ## Register

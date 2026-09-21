@@ -10,8 +10,18 @@ their resource bookkeeping without opening the combat resolver. Engine protocol
 code remains a compatibility dependency of saved worlds and other explicit tools;
 its presence does not authorize automatic resolution in the sheet.
 
+Manual HP entry commits immediately rather than queueing an automatic reaction.
+The entered damage preview, temporary HP, death saves and concentration controls
+remain. Consumables debit one stocked equipment row; their inverse restores one
+unit by instance identity and preserves other inventory edits. Legacy stacks gain
+an existing-format instance ID only when consumed. Pool, alternate-payment and
+recovery choices, including delayed commits, remain bound to their original
+character and recheck readonly and available resources before payment.
+
 Existing resource mutators continue to update a saved world and its session mirror
-together. No character codec, storage schema or live data migration changes here.
+together. A queued play-state write is marked pending immediately, so a parent
+snapshot cannot overwrite a local HP/resource edit before the queued write leaves.
+No character codec, storage schema or live data migration changes here.
 
 > **The conceptual model for every mechanic the d20-folio engine models.** Audience: any agent
 > (human or AI) extending the schema or the SRD data. **The per-kind detail is co-located TSDoc in

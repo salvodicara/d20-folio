@@ -136,6 +136,7 @@ import {
   type CharacterEnteredD20Result,
 } from "@/lib/character-d20-tests";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+import { createItemInstanceId } from "@/lib/item-resources";
 
 export type MechanicsPlanCommitResult =
   | { status: "applied"; receipt: MechanicsReceipt }
@@ -452,8 +453,8 @@ interface CharacterState {
   ) => ItemResourceOperationBatchResult;
   /** Remove one physical equipment ref and its whole resource state atomically. */
   removeItemResourceInstance: (instanceId: string) => boolean;
-  /** Decrement a tracked equipment item by 1; removes the entry entirely when quantity hits 0. */
-  useEquipmentItem: (equipmentKey: string) => void;
+  /** Consume one stocked row; return its quantity-only, single-use inverse. */
+  useEquipmentItem: (equipmentKey: string) => (() => boolean) | null;
   /**
    * RA-14 — adjust an SRD equipment row's quantity by `delta`, clamped at 0 and
    * KEEPING the row at 0 (ammunition semantics: an empty quiver stays visible —
@@ -2283,27 +2284,43 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   useEquipmentItem: (equipmentKey) => {
-    if (get().readonly) return;
+    if (get().readonly) return null;
     const { character } = get();
-    if (!character) return;
-    const newEquipment = character.character.equipment
-      .map((ref) => {
-        const key = "custom" in ref ? `custom-${ref.instanceId}` : ref.srdId;
-        if (key !== equipmentKey) return ref;
-        return { ...ref, quantity: Math.max(0, (ref.quantity ?? 1) - 1) };
-      })
-      .filter((ref) => {
-        // Remove tracked items that have reached 0
-        const key = "custom" in ref ? `custom-${ref.instanceId}` : ref.srdId;
-        if (key !== equipmentKey) return true;
-        return (ref.quantity ?? 1) > 0;
-      });
+    if (!character) return null;
+    const equipment = [...character.character.equipment];
+    const index = equipment.findIndex(
+      (ref) =>
+        ("custom" in ref ? `custom-${ref.instanceId}` : ref.srdId) === equipmentKey &&
+        (ref.quantity ?? 1) > 0
+    );
+    const original = equipment[index];
+    if (!original) return null;
+    // Legacy stacks may have no identity. Give only the consumed stack one so
+    // an undo still finds it after reordering, editing or a persisted reload.
+    const ref = {
+      ...original,
+      instanceId: original.instanceId ?? createItemInstanceId(),
+    };
+    const remaining = (ref.quantity ?? 1) - 1;
+    if (remaining === 0) equipment.splice(index, 1);
+    else equipment[index] = { ...ref, quantity: remaining };
     set({
-      character: {
-        ...character,
-        character: { ...character.character, equipment: newEquipment },
-      },
+      character: { ...character, character: { ...character.character, equipment } },
     });
+    let restored = false;
+    return () => {
+      const live = get().character;
+      if (restored || get().readonly || live?.id !== character.id) return false;
+      const next = [...live.character.equipment];
+      const currentIndex = next.findIndex((entry) => entry.instanceId === ref.instanceId);
+      const current = next[currentIndex];
+      if (current)
+        next[currentIndex] = { ...current, quantity: (current.quantity ?? 1) + 1 };
+      else next.splice(Math.min(index, next.length), 0, { ...ref, quantity: 1 });
+      set({ character: { ...live, character: { ...live.character, equipment: next } } });
+      restored = true;
+      return true;
+    };
   },
 
   adjustEquipmentQuantity: (srdId, delta) => {

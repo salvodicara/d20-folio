@@ -310,7 +310,6 @@ test.describe("Combat live-play loop (cockpit)", () => {
     let dialog = await openHpPopover(page);
     await dialog.getByRole("spinbutton", { name: /amount/i }).fill("10");
     await dialog.getByRole("button", { name: /^Damage$/i }).click();
-    await page.getByRole("button", { name: /^Take 10 damage$/i }).click();
     // Applying closes the popover; the header readout updates to 33 (temp spent).
     await expect(page.getByRole("button", { name: /hit points: open/i })).toContainText(
       "33"
@@ -338,7 +337,6 @@ test.describe("Combat live-play loop (cockpit)", () => {
     const dialog = await openHpPopover(page);
     await dialog.getByRole("spinbutton", { name: /amount/i }).fill("60");
     await dialog.getByRole("button", { name: /^Damage$/i }).click();
-    await page.getByRole("button", { name: /^Take 60 damage$/i }).click();
 
     const dying = page.getByRole("status").filter({ hasText: /death saves/i });
     await expect(dying).toBeVisible();

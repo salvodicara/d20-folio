@@ -66,7 +66,6 @@ function DamageReactionPrompt({
   function skip(): void {
     useCharacterStore.getState().clearDamageReactionPrompt();
     handleApplyDamage(prompt.parts, {
-      bypassReactionPrompt: true,
       crit: prompt.crit,
     });
   }

@@ -1039,3 +1039,22 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     expect(sendLastSave().revision).toBe(10);
   });
 });
+
+it("a parent snapshot inside the queued play-write window preserves a local HP edit", async () => {
+  renderHook(() => useCharacterSubscription("char1"));
+  const initial = doc();
+  await act(async () => {
+    snapshotCb()(initial);
+    combatCb()(sessionToCombatState(initial.session));
+    await Promise.resolve();
+  });
+  await act(async () => {
+    useCharacterStore.getState().setHP(30);
+    // Parent metadata may arrive before the microtask sends the changed HP.
+    snapshotCb()({ ...initial, revision: 5 });
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(30);
+    await Promise.resolve();
+  });
+  expect(useCharacterStore.getState().character?.session.hp.current).toBe(30);
+  expect(writeCombatStateMock.mock.calls.at(-1)?.[2].hp.current).toBe(30);
+});
