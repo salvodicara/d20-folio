@@ -99,43 +99,44 @@ test.describe("Combat live-play loop (cockpit)", () => {
 
   // ── Live-play loop (the Phase-4 economy) ────────────────────────────────────
 
-  test("commit an action: the whole action group disables to 'Used'; the snackbar's Undo reverses", async ({
+  test("commit a non-spell action: its action group disables to 'Used'; the snackbar's Undo reverses", async ({
     page,
   }) => {
     const actionToken = page.locator('.econ-tok[data-kind="action"]');
     await expect(actionToken).toHaveAttribute("data-state", "open");
 
-    // Mage Hand is a cantrip (no slot, no concentration) → commits directly.
-    await page.getByRole("button", { name: "Cast: Mage Hand" }).click();
+    // Dash records the action immediately, without a resolver.
+    await page.getByRole("button", { name: "Use: Dash" }).click();
 
     // The Action economy slot fills (data-state → spent). The committed action's
     // name is ON-DEMAND detail (B6 declutter): it lives in the disc's `title`
     // tooltip + the sr-only slot status, not as a visible text node.
     await expect(actionToken).toHaveAttribute("data-state", "spent");
-    await expect(actionToken.locator(".econ-disc")).toHaveAttribute("title", "Mage Hand");
+    await expect(actionToken.locator(".econ-disc")).toHaveAttribute("title", "Dash");
 
     // THE CTA GRAMMAR (owner-ratified 2026-07-11): the committed card's CTA
     // DISABLES to "Used" (no inline Undo toggle exists)…
-    const used = page.getByRole("button", { name: "Used: Mage Hand", exact: true });
+    const used = page.getByRole("button", { name: "Used: Dash", exact: true });
     await expect(used).toBeDisabled();
-    // …and EVERY action-slot card reads the same spent contract (the reaction
-    // contract generalized) — e.g. the base Dash card…
+    // Other non-spell actions share the spent token, while spells remain usable.
     await expect(
-      page.getByRole("button", { name: "Used: Dash", exact: true })
+      page.getByRole("button", { name: "Used: Dodge", exact: true })
     ).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Cast: Mage Hand" })).toBeEnabled();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     // …while the bonus board stays live (its own token is unspent).
     await expect(
       page.getByRole("button", { name: "Use: Bardic Inspiration", exact: true })
     ).toBeEnabled();
 
     // REVERSAL lives on the undo system alone: the act's snackbar carries the
-    // one visible Undo (`exact` — the masthead command reads "Undo: Mage Hand
+    // one visible Undo (`exact` — the masthead command reads "Undo: Dash
     // used", so the bare "Undo" is the toast button).
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(actionToken).toHaveAttribute("data-state", "open");
-    await expect(page.getByRole("button", { name: "Cast: Mage Hand" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Use: Dash" })).toBeEnabled();
     await expect(
-      page.getByRole("button", { name: "Use: Dash", exact: true })
+      page.getByRole("button", { name: "Use: Dodge", exact: true })
     ).toBeEnabled();
   });
 
@@ -147,21 +148,13 @@ test.describe("Combat live-play loop (cockpit)", () => {
 
     // BONUS — Bardic Inspiration (a fixed-cost bonus-action feature).
     await page.getByRole("button", { name: "Use: Bardic Inspiration" }).click();
-    const inspiration = page.getByRole("dialog", {
-      name: /Resolve action · Bardic Inspiration/i,
-    });
-    await inspiration.getByRole("button", { name: "Spend 1" }).click();
-    await inspiration
-      .getByRole("button", { name: /No sheet target \(resolve at the table\)/i })
-      .click();
-    await expect(inspiration.getByText(/Everything resolved/i)).toBeVisible();
-    await inspiration.getByRole("button", { name: /^Apply$/i }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(bonusToken).toHaveAttribute("data-state", "spent");
     await expect(
       page.getByRole("button", { name: "Used: Bardic Inspiration", exact: true })
     ).toBeDisabled();
     // The action board is untouched by a bonus spend.
-    await expect(page.getByRole("button", { name: "Cast: Mage Hand" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Use: Dash" })).toBeEnabled();
     // Undo via the snackbar → the bonus token re-arms and the card returns live.
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(bonusToken).toHaveAttribute("data-state", "open");
@@ -187,7 +180,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
   test("End Turn advances the round and clears the economy (pure bookkeeping)", async ({
     page,
   }) => {
-    await page.getByRole("button", { name: "Cast: Mage Hand" }).click();
+    await page.getByRole("button", { name: "Use: Dash" }).click();
     const actionToken = page.locator('.econ-tok[data-kind="action"]');
     await expect(actionToken).toHaveAttribute("data-state", "spent");
 
@@ -198,7 +191,9 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await expect(actionToken).toHaveAttribute("data-state", "open");
   });
 
-  test("a blocking condition gates the economy", async ({ page }) => {
+  test("a blocking condition gates non-spell actions; spell bookkeeping stays available", async ({
+    page,
+  }) => {
     // Add Incapacitated via the Resources rail condition picker (the in-app
     // picker uses canonical lowercase ids, so the gate resolves).
     await page
@@ -207,13 +202,21 @@ test.describe("Combat live-play loop (cockpit)", () => {
       .click();
     await page.getByRole("option", { name: /^Incapacitated$/i }).click();
 
-    // An Action can no longer be committed — the gate blocks it (slot stays open).
-    await page.getByRole("button", { name: "Cast: Mage Hand" }).click();
+    // Non-spell actions retain their condition gate; spells remain resource tracking.
+    await page.getByRole("button", { name: "Use: Dash" }).click();
     await expect(page.getByText(/a condition prevents this/i)).toBeVisible();
     await expect(page.locator('.econ-tok[data-kind="action"]')).toHaveAttribute(
       "data-state",
       "open"
     );
+    await expect(page.getByRole("log", { name: "Action Log" })).not.toContainText(
+      "Mage Hand"
+    );
+    await page.getByRole("button", { name: "Cast: Mage Hand" }).click();
+    await expect(page.getByRole("log", { name: "Action Log" })).toContainText(
+      "Mage Hand"
+    );
+    await expect(page.getByRole("button", { name: "Cast: Mage Hand" })).toBeEnabled();
   });
 
   test("casting a 2nd concentration spell prompts to break, and undo restores it", async ({
@@ -231,11 +234,12 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await expect(page.getByText(/break concentration/i)).toBeVisible();
     await page.getByRole("button", { name: /cast anyway/i }).click();
 
-    // Concentration swapped to Bane; the committed card disables to "Used".
+    // Concentration swaps to Bane; casting stays available while resources remain.
     await expect(badge).toContainText(/Bane/i);
     await expect(
-      page.getByRole("button", { name: "Used: Bane", exact: true })
-    ).toBeDisabled();
+      page.getByRole("button", { name: "Cast: Bane", exact: true })
+    ).toBeEnabled();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     // Undo via the cast's snackbar (the one visible Undo — the CTA grammar):
     // concentration is restored.
@@ -244,7 +248,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
   });
 
   // ── Extra Attack (the double-attack answer) — scn-barbarian-extra-attack ─────
-  test("Extra Attack: swings stay LIVE gold; full spend disables ALL attack CTAs; the one evolving snackbar undoes the last swing", async ({
+  test("Extra Attack records each swing immediately; full spend disables attacks; undo restores the last swing", async ({
     page,
   }) => {
     await page.goto("/characters/scn-barbarian-extra-attack?tab=play");
@@ -256,14 +260,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
 
     // Swing 1 — the Action coin spends fully (plain action semantics)…
     await greataxe.click();
-    let attack = page.getByRole("dialog", { name: /Resolve attack · Greataxe/i });
-    await attack.getByRole("spinbutton", { name: /^AC$/i }).fill("10");
-    await attack.getByRole("button", { name: /^Apply$/i }).click();
-    await attack
-      .getByRole("button", { name: /No sheet target \(resolve at the table\)/i })
-      .click();
-    await expect(attack.getByText(/Everything resolved/i)).toBeVisible();
-    await attack.getByRole("button", { name: /^Apply$/i }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(actionToken).toHaveAttribute("data-state", "spent");
     // …but EVERY attack-capable CTA stays LIVE + struck gold (BG3 grammar), the
     // count discoverable on the CTA's hover title only.
@@ -275,14 +272,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     // Swing 2 (the last) — the Attack action is fully swung: the gold drops and
     // every attack CTA disables to "Used" like any spent action (ONE rule).
     await greataxe.click();
-    attack = page.getByRole("dialog", { name: /Resolve attack · Greataxe/i });
-    await attack.getByRole("spinbutton", { name: /^AC$/i }).fill("10");
-    await attack.getByRole("button", { name: /^Apply$/i }).click();
-    await attack
-      .getByRole("button", { name: /No sheet target \(resolve at the table\)/i })
-      .click();
-    await expect(attack.getByText(/Everything resolved/i)).toBeVisible();
-    await attack.getByRole("button", { name: /^Apply$/i }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(greataxe).toBeDisabled();
     await expect(handaxe).toBeDisabled();
     await expect(page.locator(".uc-cta.is-emphasis")).toHaveCount(0);
