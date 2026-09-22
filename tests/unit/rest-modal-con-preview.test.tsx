@@ -1,18 +1,4 @@
-/**
- * RestModal — short-rest heal preview reads EFFECTIVE CON (B8 surface wiring).
- *
- * The short-rest confirm screen previews the per-die heal as `1d{die} {conMod}`
- * with an average, where `conMod` is the CURRENT (effective) Constitution mod —
- * the SAME score the real heal engine (smart-tracker `combatAbilityScores`) uses,
- * so an Amulet of Health (CON → 19) lifts the preview to match what the rest
- * actually heals (RAW 2024, rule 6). The producing helper (`previewShortRestHeal`)
- * is pinned at the function level in `ability-score-set.test`; THIS pins the
- * surface — that `RestModal` feeds it the EFFECTIVE CON it resolves, not raw.
- *
- * Fail-before: reverting RestModal's `conMod` from `effectiveAbilityScores(...).CON`
- * to `charData.abilityScores.CON` makes the rendered preview read `1d8 -1 HP
- * (avg 4)` (raw CON 8) instead of `1d8 +4 HP (avg 9)` — and this FAILS.
- */
+/** The physical-roll preview uses effective CON, including equipped items. */
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { RestModal } from "@/features/character/RestModal";
@@ -44,8 +30,14 @@ describe("RestModal — short-rest CON preview reads EFFECTIVE scores (B8)", () 
     // Idle → confirm-short: open the spend/confirm flow.
     fireEvent.click(screen.getByText("Short Rest"));
 
-    // Effective CON 19 → mod +4: "1d8 +4 HP (avg 9)". Raw CON 8 would read
-    // "1d8 -1 HP (avg 4)" (the fail-before). Assert BOTH the mod sign and the avg.
-    expect(screen.getByText(/1d8 \+4 HP \(avg 9\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Use one more Hit Die" }));
+    expect(screen.getByText("+4")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Dice total" }), {
+      target: { value: "6" },
+    });
+    // The preview adds the effective +4 to the physical 6, never the raw -1.
+    expect(screen.getByRole("status")).toHaveTextContent(
+      `${doc.session.hp.current} → ${doc.session.hp.current + 10}`
+    );
   });
 });

@@ -57,29 +57,24 @@ test.describe("Rest Flow", () => {
     const dialog = restDialog(page);
     await dialog.getByRole("button", { name: /short rest/i }).click();
 
-    // Confirm — try multiple button labels
-    const confirmButton = dialog
-      .getByRole("button", { name: /confirm|yes|start|take/i })
-      .first();
-    if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await confirmButton.click();
-    }
+    await dialog.getByRole("button", { name: "Complete rest" }).click();
+    await expect(dialog.getByText("Short Rest Complete")).toBeVisible();
   });
 
-  test("RA-02 — spending a Hit Die shows the roll-entry, then heals + rests", async ({
+  test("spending a Hit Die requires a physical roll before completing the rest", async ({
     page,
   }) => {
     const dialog = restDialog(page);
     await dialog.getByRole("button", { name: /short rest/i }).click();
-
-    // Spend one Hit Die (the dice stepper "+") → the roll-entry appears (the app
-    // never rolls; the player enters the result — golden rule 21).
-    await dialog.getByRole("button", { name: "+" }).click();
-    await expect(dialog.getByText(/Roll .*, then apply/i)).toBeVisible();
-
-    // Apply the entered roll → the flow advances to the summary.
-    await dialog.getByRole("button", { name: /Heal & rest/i }).click();
-    await expect(dialog.getByRole("button", { name: /done/i })).toBeVisible();
+    await dialog.getByRole("button", { name: "Use one more Hit Die" }).click();
+    const confirm = dialog.getByRole("button", { name: "Complete rest" });
+    await expect(confirm).toBeDisabled();
+    await dialog.getByRole("spinbutton", { name: "Dice total" }).fill("6");
+    await expect(dialog.getByRole("status", { name: "HP after rest" })).toHaveText(
+      "38 → 46 / 62"
+    );
+    await confirm.click();
+    await expect(dialog.getByText("Short Rest Complete")).toBeVisible();
   });
 
   test("long rest shows confirmation with preview", async ({ page }) => {

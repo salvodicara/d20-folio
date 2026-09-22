@@ -1,18 +1,4 @@
-/**
- * RA-02 — the Short Rest heals by a ROLL-ENTRY, not a fabricated average.
- *
- * 2024 RAW (SRD 5.2.1 "Short Rest"): for each Hit Die spent, "roll the die and
- * add your Constitution modifier". Before RA-02 the modal applied
- * `previewShortRestHeal(...).avg` — a fabricated die total, violating golden rule
- * 21. Now the confirm-short phase shows the shared Second Wind `HealRollEntry`:
- * the player rolls Nd{hitDie} externally, enters the result, and taps to heal
- * enteredRoll + N×CON (min 1/die). This pins the WIRING: the entered roll (NOT an
- * average) is what heals.
- *
- * Fail-before: the old `handleShortRestConfirm` applied the d8 AVERAGE (≈5) + CON,
- * so a 1-die spend healed ≈7 regardless of the entry — this test enters 6 and
- * asserts exactly 6 + CON, which the average path could never produce.
- */
+/** Short-rest input must distinguish dice spent, physical rolls and final HP. */
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RestModal } from "@/features/character/RestModal";
@@ -21,94 +7,140 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
 const store = () => useCharacterStore.getState();
+const addDie = () =>
+  fireEvent.click(screen.getByRole("button", { name: "Use one more Hit Die" }));
+const rollField = () => screen.getByRole("spinbutton", { name: "Dice total" });
+const confirm = () => screen.getByRole("button", { name: "Complete rest" });
+const enterRoll = (value: string) => fireEvent.change(rollField(), { target: { value } });
 
-function renderRestModal() {
+function openRest() {
   render(
     <ItemResourceCommandProvider>
-      <RestModal open={true} onClose={() => {}} />
+      <RestModal open onClose={() => {}} />
     </ItemResourceCommandProvider>
   );
+  fireEvent.click(screen.getByText("Short Rest"));
 }
 
-describe("RestModal — RA-02 short-rest roll-entry", () => {
-  beforeEach(() => {
-    useCharacterStore.setState({ character: null, loading: false, error: null });
-  });
+function seed(con = 14) {
+  const doc = structuredClone(MOCK_CHARACTER);
+  doc.character.abilityScores.CON = con;
+  doc.character.hitDieType = 8;
+  doc.character.hp.max = 30;
+  doc.session.hp = { current: 10, temp: 0 };
+  doc.session.hitDice = { used: 2 };
+  useCharacterStore.setState({ character: doc, loading: false, error: null });
+  return doc;
+}
 
-  function seed() {
-    const doc = structuredClone(MOCK_CHARACTER);
-    doc.character.abilityScores = { ...doc.character.abilityScores, CON: 14 }; // mod +2
-    doc.character.hitDieType = 8;
-    doc.session.hp = { current: 10, temp: 0 };
-    doc.session.hitDice = { used: 2 };
-    useCharacterStore.setState({ character: doc, loading: false, error: null });
-    return doc;
-  }
+describe("RestModal — clear short-rest input", () => {
+  beforeEach(() =>
+    useCharacterStore.setState({
+      character: null,
+      loading: false,
+      error: null,
+      readonly: false,
+    })
+  );
 
-  it("heals the ENTERED roll + CON per die (never the average) and spends the dice", async () => {
+  it("requires a real roll and previews the entered total plus CON, not an average", async () => {
     seed();
-    renderRestModal();
-    fireEvent.click(screen.getByText("Short Rest")); // idle → confirm-short
-
-    // Spend one Hit Die → the roll-entry appears.
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
-    expect(screen.getByText(/Roll 1d8, then apply/)).toBeInTheDocument();
-
-    // Enter a roll of 6 (raise from the min of 1 five times), then apply.
-    const raise = screen.getByRole("button", { name: /Raise roll/i });
-    for (let i = 0; i < 5; i++) fireEvent.click(raise);
-    fireEvent.click(screen.getByRole("button", { name: /Heal & rest/i }));
-
-    // Healed EXACTLY 6 (entered) + 2 (CON) = 8 → 10 → 18. The old average path
-    // would have healed ≈5 + 2 = 7 → 17 no matter what was entered.
-    await waitFor(() => expect(store().character?.session.hp.current).toBe(18));
-    // The die was spent (used 2 → 3).
+    openRest();
+    addDie();
+    expect(rollField()).toHaveValue(null);
+    expect(rollField()).toHaveAccessibleDescription("Roll 1d8 · without Constitution");
+    expect(confirm()).toBeDisabled();
+    expect(store().character?.session.hitDice.used).toBe(2);
+    enterRoll("6");
+    expect(screen.getByText("Constitution (added)")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("10 → 18 / 30");
+    fireEvent.click(confirm());
+    await screen.findByText("Short Rest Complete");
+    expect(store().character?.session.hp.current).toBe(18);
     expect(store().character?.session.hitDice.used).toBe(3);
   });
 
-  it("floors the batch at 1 HP per die (min-1 fold) with a very negative CON", async () => {
-    const doc = structuredClone(MOCK_CHARACTER);
-    doc.character.abilityScores = { ...doc.character.abilityScores, CON: 4 }; // mod -3
-    doc.character.hitDieType = 8;
-    doc.session.hp = { current: 10, temp: 0 };
-    doc.session.hitDice = { used: 2 };
-    useCharacterStore.setState({ character: doc, loading: false, error: null });
-
-    renderRestModal();
-    fireEvent.click(screen.getByText("Short Rest"));
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
-    // Apply at the default roll of 1: 1 + (-3) = -2, floored to 1 (min per die).
-    fireEvent.click(screen.getByRole("button", { name: /Heal & rest/i }));
-    await waitFor(() => expect(store().character?.session.hp.current).toBe(11)); // 10 + 1
+  it("clears the old roll when the dice count changes and adds CON once per die", async () => {
+    seed();
+    openRest();
+    addDie();
+    enterRoll("6");
+    addDie();
+    expect(rollField()).toHaveValue(null);
+    expect(rollField()).toHaveAccessibleDescription("Roll 2d8 · without Constitution");
+    expect(confirm()).toBeDisabled();
+    enterRoll("12");
+    fireEvent.click(confirm());
+    await waitFor(() => expect(store().character?.session.hp.current).toBe(26));
+    expect(store().character?.session.hitDice.used).toBe(4);
   });
 
-  it("keeps the roll-entry Cancel a quiet ghost, in line with the sibling steps (no tall boxy stretch)", () => {
-    // Regression: the roll-entry Cancel used to stretch to the tall HealRollEntry
-    // block. It stays the shared quiet `ghost` treatment, sitting after a flex-1
-    // roll-entry so the action row mirrors the long-rest step's primary+cancel
-    // grammar (the `align-items` fix lives in .rest-action-row).
-    seed();
-    renderRestModal();
-    fireEvent.click(screen.getByText("Short Rest"));
-    fireEvent.click(screen.getByRole("button", { name: "+" }));
+  it.each(["0", "9", "1.5"])(
+    "rejects an impossible d8 roll (%s) without changing resources",
+    (value) => {
+      seed();
+      openRest();
+      addDie();
+      enterRoll(value);
+      expect(rollField()).toHaveAttribute("aria-invalid", "true");
+      expect(rollField()).toHaveAccessibleDescription(/Enter a whole number from 1 to 8/);
+      expect(confirm()).toBeDisabled();
+      expect(store().character?.session.hp.current).toBe(10);
+      expect(store().character?.session.hitDice.used).toBe(2);
+    }
+  );
 
-    const cancel = screen.getByRole("button", { name: /^Cancel$/i });
-    expect(cancel.className).toMatch(/\bghost\b/);
-    const row = cancel.closest(".rest-action-row");
-    expect(row).not.toBeNull();
-    // The roll-entry is the flex-1 "primary" slot; Cancel is its sibling.
-    expect(row?.querySelector(".flex-1 .heal-roll-entry")).not.toBeNull();
+  it("previews and applies the same minimum heal with negative CON", async () => {
+    seed(4);
+    openRest();
+    addDie();
+    enterRoll("1");
+    expect(screen.getByRole("status")).toHaveTextContent("10 → 11 / 30");
+    fireEvent.click(confirm());
+    await waitFor(() => expect(store().character?.session.hp.current).toBe(11));
   });
 
-  it("a rest with NO dice spent resets trackers without healing (no roll-entry)", async () => {
+  it("caps the preview and committed healing at maximum HP", async () => {
+    const doc = seed();
+    doc.session.hp.current = 28;
+    openRest();
+    addDie();
+    enterRoll("8");
+    expect(screen.getByRole("status")).toHaveTextContent("28 → 30 / 30");
+    fireEvent.click(confirm());
+    await waitFor(() => expect(store().character?.session.hp.current).toBe(30));
+  });
+
+  it("cancels without spending dice or healing, and reopens with no pending input", () => {
     seed();
-    renderRestModal();
+    openRest();
+    addDie();
+    enterRoll("6");
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(store().character?.session.hp.current).toBe(10);
+    expect(store().character?.session.hitDice.used).toBe(2);
     fireEvent.click(screen.getByText("Short Rest"));
-    // No roll-entry with 0 dice selected — the plain Take Short Rest button shows.
-    expect(screen.queryByText(/Roll .*, then apply/)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /Take Short Rest/i }));
+    expect(screen.queryByRole("spinbutton", { name: "Dice total" })).toBeNull();
+    addDie();
+    expect(rollField()).toHaveValue(null);
+  });
+
+  it("allows a rest without healing when all Hit Dice are spent", async () => {
+    const doc = seed();
+    doc.character.hitDiceTotalOverride = 2;
+    openRest();
+    expect(screen.getByRole("button", { name: "Use one more Hit Die" })).toBeDisabled();
+    expect(screen.queryByRole("spinbutton", { name: "Dice total" })).toBeNull();
+    expect(
+      screen.getByText("No healing · recover short-rest resources")
+    ).toBeInTheDocument();
+    expect(store().character?.session.trackers["bard-bardic-inspiration"]?.used).toBe(2);
+    fireEvent.click(confirm());
     await screen.findByText("Short Rest Complete");
-    expect(store().character?.session.hp.current).toBe(10); // unchanged
-    expect(store().character?.session.hitDice.used).toBe(2); // no dice spent
+    expect(store().character?.session.hp.current).toBe(10);
+    expect(store().character?.session.hitDice.used).toBe(2);
+    expect(
+      store().character?.session.trackers["bard-bardic-inspiration"]?.used ?? 0
+    ).toBe(0);
   });
 });

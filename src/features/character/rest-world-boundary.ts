@@ -106,7 +106,7 @@ export type RestWorldOutcome = "engine" | "legacy";
 export interface RestWorldEntries {
   /**
    * The short rest's hit-dice heal: the player's entered roll plus the CON
-   * bonus per die, exactly as the modal's `HealRollEntry` resolved it. The
+   * bonus per die, exactly as the modal's validated input resolved it. The
    * recorded observation for the one rolled rest recovery the engine models;
    * the app never fabricates a die total (golden rule 21).
    */

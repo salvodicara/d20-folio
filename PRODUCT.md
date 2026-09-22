@@ -12,6 +12,11 @@ reaction prompt. Consumables spend one item, and undo restores only that unit.
 Pending resource choices belong to the character that opened them. Preserve current stored characters; no full
 rollback, schema downgrade or automatic deployment is authorized.
 
+On 2026-09-22 the owner also requested a clearer short rest: distinguish Hit Dice
+to spend from the physical dice total, show Constitution separately, preview the
+resulting HP and allow a rest without healing. Prefer concise controls to more
+instructions; retain current resource recovery and saved data.
+
 ## Register
 
 product

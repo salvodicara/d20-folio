@@ -70,6 +70,41 @@ beforeEach(() => {
 });
 
 describe("RestModal typed item-resource boundary", () => {
+  it("freezes the entered Short Rest while recovery input is pending and commits once", async () => {
+    let resolveBoundary: ((value: PreparedItemResourceBoundary) => void) | undefined;
+    const prepareBoundary = vi.fn(
+      () =>
+        new Promise<PreparedItemResourceBoundary>((resolve) => {
+          resolveBoundary = resolve;
+        })
+    );
+    const commitBoundary = vi.fn((value: PreparedItemResourceBoundary) => ({
+      prepared: value,
+    }));
+    mount(commands({ prepareBoundary, commitBoundary }));
+    fireEvent.click(screen.getByText("Short Rest"));
+    const add = screen.getByRole("button", { name: "Use one more Hit Die" });
+    fireEvent.click(add);
+    const roll = screen.getByRole("spinbutton", { name: "Dice total" });
+    fireEvent.change(roll, { target: { value: "6" } });
+    const complete = screen.getByRole("button", { name: "Complete rest" });
+    fireEvent.click(complete);
+    expect(add).toBeDisabled();
+    expect(roll).toBeDisabled();
+    expect(complete).toBeDisabled();
+    fireEvent.click(complete);
+    expect(prepareBoundary).toHaveBeenCalledTimes(1);
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(5);
+    await act(() => {
+      resolveBoundary?.(prepared("short-rest"));
+      return Promise.resolve();
+    });
+    await screen.findByText("Short Rest Complete");
+    expect(commitBoundary).toHaveBeenCalledTimes(1);
+    expect(useCharacterStore.getState().character?.session.hp.current).toBe(13);
+    expect(useCharacterStore.getState().character?.session.hitDice.used).toBe(3);
+  });
+
   it("offers no rest boundary to a dead character", () => {
     const character = useCharacterStore.getState().character;
     if (!character) throw new Error("character missing");

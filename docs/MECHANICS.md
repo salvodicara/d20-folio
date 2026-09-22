@@ -23,6 +23,11 @@ together. A queued play-state write is marked pending immediately, so a parent
 snapshot cannot overwrite a local HP/resource edit before the queued write leaves.
 No character codec, storage schema or live data migration changes here.
 
+Short-rest input (2026-09-22) collects an explicit physical dice total, validates
+it against the selected dice count and size, adds effective CON once per die and
+previews the capped HP result. No result is prefilled; changing the count clears
+the entry. Zero dice still completes the existing rest boundary without healing.
+
 > **The conceptual model for every mechanic the d20-folio engine models.** Audience: any agent
 > (human or AI) extending the schema or the SRD data. **The per-kind detail is co-located TSDoc in
 > `src/lib/grants.ts`** (each arm of the `Grant` union documents its payload + evaluator merge rule) —

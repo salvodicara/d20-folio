@@ -153,6 +153,13 @@ effect application follows Cast. The spellbook and Play shortcuts use the same
 flow; casting does not require starting or advancing combat. Existing sheet art,
 typography, content, manual health controls and inventory remain the reference.
 
+**Short-rest clarity (2026-09-22):** show current HP, available Hit Dice, dice count
+and an empty physical-roll field. Label that field as the dice total **without
+Constitution**; show the added modifier and capped HP outcome beneath it. Changing
+the dice count clears the old roll. Use one completion action, also available with
+zero dice, and a quiet Cancel. Keep labels concise, touch targets at least 44px,
+and stack the two fields on phones. No fabricated/default roll or average preview.
+
 > **This is the single, comprehensive design + UX system of record.** It folds in and supersedes
 > all the redesign-era working docs (the old design-system, craft-doctrine, audit, asset-spec, and
 > `UI_UX_*` briefs — now pruned; redesign journey in git history). The token

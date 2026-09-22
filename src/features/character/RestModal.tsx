@@ -16,7 +16,7 @@
  * to that legacy flow alone.
  */
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useId } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Moon, Sun, Heart, Dice5 } from "lucide-react";
@@ -27,18 +27,13 @@ import { useToastStore } from "@/stores/toastStore";
 import { useItemResourceCommands } from "./center/useItemResourceCommands";
 import { restThroughWorld } from "./rest-world-boundary";
 import { canCharacterRest } from "@/lib/character-status";
-import {
-  abilityModifier,
-  effectiveAbilityScores,
-  previewShortRestHeal,
-} from "@/lib/compute";
+import { abilityModifier, effectiveAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
 import {
   getShortRestExhaustionRecovery,
   gainsHeroicInspirationOnLongRest,
 } from "@/lib/smart-tracker";
 import { cn } from "@/lib/utils";
-import { HealRollEntry } from "@/components/shared/HealRollEntry";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalBody } from "@/components/ui/modal-head";
@@ -98,6 +93,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<RestPhase>("idle");
   const [summary, setSummary] = useState<RestSummary | null>(null);
   const [hitDiceToSpend, setHitDiceToSpend] = useState(0);
+  const [diceTotal, setDiceTotal] = useState("");
+  const inputId = useId();
   const [committing, setCommitting] = useState(false);
   const committingRef = useRef(false);
 
@@ -125,7 +122,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const hitDie = charData.hitDieType;
   const hitDiceMax = charData.hitDiceTotalOverride ?? level;
   const hitDiceUsed = session.hitDice.used;
-  const hitDiceAvailable = hitDiceMax - hitDiceUsed;
+  const hitDiceAvailable = Math.max(0, hitDiceMax - hitDiceUsed);
   const hpCurrent = session.hp.current;
   // D1 — rest restores up to the EFFECTIVE max (stored base + hp-flat boons + Aid),
   // matching the store's `longRest`/`applyHealing` clamp, so the summary readout +
@@ -144,11 +141,26 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       agg.itemAbilityScoreCap
     ).CON
   );
-  const shortRestHeal = previewShortRestHeal({
-    diceSpent: hitDiceToSpend,
-    hitDie,
-    conMod,
-  });
+  const roll = Number(diceTotal);
+  const rollValid =
+    diceTotal.trim() !== "" &&
+    Number.isInteger(roll) &&
+    roll >= hitDiceToSpend &&
+    roll <= hitDiceToSpend * hitDie;
+  const diceCountValid = hitDiceToSpend <= hitDiceAvailable;
+  const shortRestHeal =
+    hitDiceToSpend === 0
+      ? 0
+      : rollValid
+        ? Math.max(hitDiceToSpend, roll + hitDiceToSpend * conMod)
+        : null;
+  const hpAfterRest =
+    shortRestHeal === null ? null : Math.min(hpCurrent + shortRestHeal, hpMax);
+
+  function changeDiceCount(next: number) {
+    setHitDiceToSpend(Math.max(0, Math.min(hitDiceAvailable, next)));
+    setDiceTotal("");
+  }
 
   /** Preflight and atomically commit one typed item-resource rest boundary.
    * The reviewed character snapshot stays frozen across any physical-roll input. */
@@ -179,10 +191,11 @@ function RestFlow({ onClose }: { onClose: () => void }) {
    * RA-02 — finish the Short Rest, healing by `healedHp` (0 when no dice were
    * spent). The heal is the player's ENTERED roll + CON mod per die (golden rule
    * 21: the app NEVER fabricates a die total — the average is gone), resolved
-   * deterministically in {@link handleShortRestHealApply}. Clamped to the
+   * from the validated dice total and effective CON. Clamped to the
    * effective max; the dice are debited; the summary reports the ACTUAL HP gained.
    */
   async function finishShortRest(healedHp: number) {
+    if (!diceCountValid) return;
     const prepared = await commitRestBoundary("short-rest");
     if (!prepared) return;
     const hpBefore = hpCurrent;
@@ -227,15 +240,6 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     });
     setPhase("summary");
     setHitDiceToSpend(0);
-  }
-
-  /**
-   * RA-02 — the roll-entry apply seam: `total` = the player's entered Nd{die}
-   * roll + N×CON mod (the {@link HealRollEntry} folds the CON bonus onto the
-   * entered roll). Floor the batch at N (1 HP per die, RAW), never below.
-   */
-  function handleShortRestHealApply(total: number) {
-    void finishShortRest(Math.max(hitDiceToSpend, total));
   }
 
   async function handleLongRestConfirm() {
@@ -285,6 +289,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     setPhase("idle");
     setSummary(null);
     setHitDiceToSpend(0);
+    setDiceTotal("");
   }
 
   // Summary view
@@ -409,93 +414,130 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     return (
       <div>
         <SectionHeader as="h2" tight title={t("rest.shortRest")} />
-        <div className="rest-confirm-panel">
-          <p className="mb-4 text-sm text-text-secondary">
-            {t("rest.shortRestExplainCon", {
-              die: hitDie,
-              perDieAvg: previewShortRestHeal({
-                diceSpent: 1,
-                hitDie,
-                conMod,
-              }).avg,
-              conMod: conMod >= 0 ? `+${conMod}` : `${conMod}`,
-            })}
-          </p>
+        <form
+          className="rest-confirm-panel"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (shortRestHeal !== null && diceCountValid && !committing) {
+              void finishShortRest(shortRestHeal);
+            }
+          }}
+        >
+          <div className="rest-short-status">
+            <span>
+              {t("character.hitPoints")}{" "}
+              <strong>
+                {hpCurrent} / {hpMax}
+              </strong>
+            </span>
+            <span>{t("rest.shortRestDuration")}</span>
+          </div>
 
-          <div className="rest-dice-stepper">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-text-primary">
+          <div className="rest-short-fields">
+            <div role="group" aria-labelledby={`${inputId}-count-label`}>
+              <div id={`${inputId}-count-label`} className="rest-input-label">
                 {t("rest.hitDiceToSpend")}
-              </span>
-              <span className="text-xs text-text-secondary">
+              </div>
+              <div className="rest-dice-row">
+                <button
+                  type="button"
+                  aria-label={t("rest.fewerDice")}
+                  onClick={() => changeDiceCount(hitDiceToSpend - 1)}
+                  disabled={committing || hitDiceToSpend <= 0}
+                  className="rest-dice-btn"
+                >
+                  −
+                </button>
+                <span className="rest-dice-count" aria-live="polite">
+                  {hitDiceToSpend}
+                </span>
+                <button
+                  type="button"
+                  aria-label={t("rest.moreDice")}
+                  onClick={() => changeDiceCount(hitDiceToSpend + 1)}
+                  disabled={committing || hitDiceToSpend >= hitDiceAvailable}
+                  className="rest-dice-btn"
+                >
+                  +
+                </button>
+                <span className="text-sm text-text-secondary">d{hitDie}</span>
+              </div>
+              <p className="rest-input-hint">
                 {t("rest.hitDiceAvailable", {
                   available: hitDiceAvailable,
                   total: hitDiceMax,
                 })}
-              </span>
+              </p>
             </div>
-            <div className="rest-dice-row">
-              <button
-                type="button"
-                onClick={() => setHitDiceToSpend(Math.max(0, hitDiceToSpend - 1))}
-                disabled={hitDiceToSpend <= 0}
-                className="rest-dice-btn"
-              >
-                −
-              </button>
-              <span className="rest-dice-count">{hitDiceToSpend}</span>
-              <button
-                type="button"
-                onClick={() =>
-                  setHitDiceToSpend(Math.min(hitDiceAvailable, hitDiceToSpend + 1))
-                }
-                disabled={hitDiceToSpend >= hitDiceAvailable}
-                className="rest-dice-btn"
-              >
-                +
-              </button>
-              <span className="ml-2 text-sm text-text-secondary">
-                {hitDiceToSpend > 0
-                  ? t("rest.hpHealedRange", {
-                      min: shortRestHeal.min,
-                      avg: shortRestHeal.avg,
-                      max: shortRestHeal.max,
-                    })
-                  : t("rest.hpHealed", { amount: 0 })}
-              </span>
-            </div>
+
+            {hitDiceToSpend > 0 && (
+              <div>
+                <label htmlFor={inputId} className="rest-input-label">
+                  {t("rest.diceTotal")}
+                </label>
+                <Input
+                  id={inputId}
+                  type="number"
+                  inputMode="numeric"
+                  min={hitDiceToSpend}
+                  max={hitDiceToSpend * hitDie}
+                  step={1}
+                  value={diceTotal}
+                  onChange={(event) => setDiceTotal(event.target.value)}
+                  disabled={committing}
+                  error={diceTotal !== "" && !rollValid}
+                  aria-describedby={`${inputId}-hint${diceTotal !== "" && !rollValid ? ` ${inputId}-error` : ""}`}
+                  placeholder="—"
+                  className="rest-roll-input"
+                />
+                <p id={`${inputId}-hint`} className="rest-input-hint">
+                  {t("rest.diceTotalHint", { count: hitDiceToSpend, die: hitDie })}
+                </p>
+                {diceTotal !== "" && !rollValid && (
+                  <p id={`${inputId}-error`} className="rest-input-hint text-error">
+                    {t("rest.diceTotalError", {
+                      min: hitDiceToSpend,
+                      max: hitDiceToSpend * hitDie,
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* RA-02 — roll-entry-then-apply per die batch (golden rule 21: the
-              app never fabricates a die total). The player rolls Nd{hitDie}
-              externally, enters the result, and taps to heal enteredRoll + N×CON
-              (min 1/die) and finish the rest. With no dice selected the rest just
-              resets short-rest trackers. Reuses the shared Second Wind recipe. */}
-          <div className="rest-action-row">
-            {hitDiceToSpend > 0 ? (
-              <div className="flex-1">
-                <HealRollEntry
-                  dice={`${hitDiceToSpend}d${hitDie}`}
-                  bonus={hitDiceToSpend * conMod}
-                  onApply={handleShortRestHealApply}
-                  applyLabel={t("rest.healAndRest")}
-                  disabled={committing}
-                />
+          {hitDiceToSpend > 0 ? (
+            <div className="rest-heal-preview">
+              <div className="rest-short-status">
+                <span>{t("rest.conAdded")}</span>
+                <span>
+                  {conMod >= 0 ? "+" : ""}
+                  {hitDiceToSpend * conMod}
+                </span>
               </div>
-            ) : (
-              <Button
-                onClick={() => void finishShortRest(0)}
-                className="flex-1"
-                disabled={committing}
-              >
-                {t("rest.takeShortRest")}
-              </Button>
-            )}
+              <div className="rest-short-status">
+                <span>{t("rest.hpAfterRest")}</span>
+                <output aria-label={t("rest.hpAfterRest")}>
+                  {hpCurrent} → {hpAfterRest ?? "—"} / {hpMax}
+                </output>
+              </div>
+            </div>
+          ) : (
+            <p className="rest-input-hint">{t("rest.withoutHealing")}</p>
+          )}
+
+          <div className="rest-action-row">
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={committing || shortRestHeal === null || !diceCountValid}
+            >
+              {t("rest.completeShortRest")}
+            </Button>
             <Button onClick={handleDismiss} variant="ghost" disabled={committing}>
               {t("common.cancel")}
             </Button>
           </div>
-        </div>
+        </form>
       </div>
     );
   }
@@ -679,7 +721,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             <li>
               <Heart className="h-3.5 w-3.5" />
               {t("rest.shortRestHealPerDie", {
-                avg: previewShortRestHeal({ diceSpent: 1, hitDie, conMod }).avg,
+                conMod: conMod >= 0 ? `+${conMod}` : `${conMod}`,
                 die: hitDie,
               })}
             </li>
