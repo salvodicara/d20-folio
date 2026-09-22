@@ -26,6 +26,26 @@ main workflow continues to enforce both checks before deploying.
 4. Re-run both checks, then dispatch the unchanged main deployment workflow for
    the already-released SHA. Verify the Action and the live app version.
 
-Production data and backup receipts stay outside public git history. This first
-operational revision is read-only. Application code and the migration code remain
-exactly those of the verified release.
+Production data and backup receipts stay outside public git history. Application
+code and the migration code remain exactly those of the verified release.
+
+## Reviewed recovery operation
+
+The read-only run confirmed that all parent-check failures correspond to parents
+whose custom entries are missing identity fields. No parent cutover writes were
+planned. Re-apply only `migrate-custom-identity.ts`, as `docs/RELEASE.md` requires;
+there is no parent apply path and no deployment path in this operational workflow.
+
+The workflow defaults to `check`. A deliberate `reapply_identity` dispatch first
+exports the complete Firestore database to the existing private backup bucket and
+verifies the export exists. Only then does it run the released identity dry-run and
+guarded apply, with a fresh private per-document backup directory. The script's
+complete preflight refuses malformed data, verifies its projected corpus, and uses
+one atomic batch with update-time guards; all before-images exist before the write.
+An `always()` step preserves those before-images in the same private bucket, even
+if apply or its post-write verification fails. The durable full export already
+exists if the runner is interrupted before the per-document upload completes.
+
+Both compatibility checks must pass afterwards. Any remaining parent issue stops
+this operation for investigation; it never triggers another migration or deploy.
+The unchanged main workflow is dispatched separately after successful verification.
