@@ -1,241 +1,66 @@
 name: Deploy
+run-name: Release 0.24.1 saved-character compatibility check
 
-# Owner-fired, dispatch-ONLY — never on push (golden rule 22: deploys are always
-# explicitly owner-triggered):  gh workflow run deploy.yml --ref main
-#
-# PROMOTE, don't re-verify: every merge to main already runs the SRD-only gate
-# (ci.yml) and the composed unit suite + full sharded e2e matrix (verify.yml).
-# This workflow WAITS for both verdicts on the target SHA (they may still be in
-# flight when the owner fires it), requires them green, then composes the
-# private content pack, builds, checks the bundle budget, and deploys — a few
-# minutes instead of re-running a ~48-minute unsharded matrix. The promotion
-# owns the whole Firebase release: a blocking Firestore export, Functions on
-# Node 24, then Hosting + Firestore/Storage rules, all from this exact SHA. It refuses
-# to promote a composition Verify never saw: a PACK-ONLY merge changes what
-# deploys without moving this repo's SHA, so the pack head must not postdate
-# the green Verify run. In either case (superseded run, stale composition),
-# re-verify the SHA first:
-#   gh workflow run verify.yml --ref main
-#
-# `just deploy` is only a convenience dispatcher for this workflow; there is no
-# second local production path. Secrets: CONTENT_PACK_TOKEN (read
-# access to salvodicara/d20-folio-content), FIREBASE_SERVICE_ACCOUNT, and the
-# VITE_FIREBASE_* build secrets below.
-
+# Operational topic branch only: inspect the released code against production.
+# This branch never deploys and must not replace the main deployment workflow.
 on:
   workflow_dispatch:
+    inputs:
+      pack_ref:
+        description: Content pack commit used by the verified release
+        required: true
+        type: string
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: deploy
   cancel-in-progress: false
 
 jobs:
-  verify:
-    name: require green CI + Verify
+  check:
+    name: Inspect both saved-character checks (read-only)
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 15
     steps:
-      - name: Wait for this SHA's CI + Verify verdicts
+      - name: Validate pinned content pack commit
         env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          # ONE 40 × 60 s wait budget shared by both workflows (fits the job
-          # timeout). A freshly-pushed SHA's runs can take a minute to register,
-          # so "no run yet" only fails after a 3-attempt grace window.
-          declare -A ok=()
-          for attempt in $(seq 1 40); do
-            waiting=""
-            for wf in ci.yml verify.yml; do
-              [ "${ok[$wf]:-}" = 1 ] && continue
-              runs="$(gh run list --repo "$REPO" --workflow "$wf" --commit "$SHA" \
-                        --json status,conclusion)"
-              if jq -e 'any(.[]; .conclusion == "success")' <<<"$runs" >/dev/null; then
-                ok[$wf]=1
-                echo "✓ $wf green"
-                continue
-              fi
-              if [ "$(jq 'length' <<<"$runs")" -eq 0 ]; then
-                if [ "$attempt" -ge 3 ]; then
-                  echo "✗ no $wf run exists for $SHA — dispatch one first:"
-                  echo "    gh workflow run $wf --ref main"
-                  exit 1
-                fi
-              elif ! jq -e 'any(.[]; .status != "completed")' <<<"$runs" >/dev/null; then
-                echo "✗ every completed $wf run for $SHA is non-green (failed or"
-                echo "  superseded/cancelled). Fix the failure, or re-verify:"
-                echo "    gh workflow run $wf --ref main"
-                exit 1
-              fi
-              waiting="$waiting $wf"
-            done
-            [ -z "$waiting" ] && break
-            echo "… waiting for:$waiting (attempt $attempt/40) — sleeping 60 s"
-            sleep 60
-          done
-          for wf in ci.yml verify.yml; do
-            [ "${ok[$wf]:-}" = 1 ] || {
-              echo "✗ $wf did not turn green within the wait budget."; exit 1; }
-          done
-
-      # The composed build = this SHA + the pack's CURRENT head. Verify composed
-      # the pack at ITS run time; a pack-only merge after that leaves a composition
-      # no workflow ever tested — refuse to promote it until Verify reruns
-      # (dispatching verify.yml composes the pack's new head against this SHA).
-      - name: Require the verified composition to still be current
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PACK_TOKEN: ${{ secrets.CONTENT_PACK_TOKEN }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          # createdAt (run START), not updatedAt: a pack commit landing MID-run
-          # postdates the checked-out composition yet predates the run's end.
-          verified_at="$(gh run list --repo "$REPO" --workflow verify.yml --commit "$SHA" \
-            --json conclusion,createdAt \
-            --jq '[.[] | select(.conclusion == "success")][0].createdAt')"
-          pack_at="$(GH_TOKEN="$PACK_TOKEN" gh api \
-            repos/salvodicara/d20-folio-content/branches/main \
-            --jq .commit.commit.committer.date)"
-          echo "Verify green at: $verified_at · pack head committed at: $pack_at"
-          # Both are UTC ISO-8601, so lexical comparison orders them.
-          if [[ "$pack_at" > "$verified_at" ]]; then
-            echo "✗ the content pack moved AFTER this SHA's Verify run — the"
-            echo "  composition that would deploy was never tested. Re-verify:"
-            echo "    gh workflow run verify.yml --ref main"
-            exit 1
-          fi
-
-  deploy:
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-      VITE_FIREBASE_AUTH_DOMAIN: "d20-folio.firebaseapp.com"
-      VITE_FIREBASE_PROJECT_ID: "d20-folio"
-      VITE_FIREBASE_STORAGE_BUCKET: "d20-folio.firebasestorage.app"
-      VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-      VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-      VITE_APPCHECK_SITE_KEY: ${{ secrets.VITE_APPCHECK_SITE_KEY }}
-    steps:
+          PACK_REF: ${{ inputs.pack_ref }}
+        run: '[[ "$PACK_REF" =~ ^[0-9a-f]{40}$ ]]'
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
+        with:
+          ref: 1083e7986043f4a99cb052c779176cc5be5093cc
       - name: Checkout the private content pack
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: salvodicara/d20-folio-content
+          ref: ${{ inputs.pack_ref }}
           token: ${{ secrets.CONTENT_PACK_TOKEN }}
           path: .pack
-
-      # Land the pack at ./content-pack — existsSync(content-pack/index.ts) is
-      # what flips the `@pack` alias to pack mode (scripts/content-pack-mode.ts).
       - name: Compose the content pack
         run: |
           mv .pack/content-pack ./content-pack
           rm -rf .pack
           test -f content-pack/index.ts
-
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: ".tool-versions"
-          cache: "pnpm"
+          node-version-file: .tool-versions
+          cache: pnpm
       - run: pnpm install --frozen-lockfile
-
-      # Build the deploy artifact (the i18n leak-lock runs inside the build);
-      # the bundle-budget guard reads the dist/ that actually ships.
-      - name: Require production client configuration
-        run: |
-          set -euo pipefail
-          for name in VITE_FIREBASE_API_KEY VITE_FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_APP_ID VITE_APPCHECK_SITE_KEY; do
-            test -n "${!name:-}" || { echo "::error::Missing required repository secret: $name"; exit 1; }
-          done
-      - name: Build
-        run: pnpm build
-      - name: Bundle budget
-        run: pnpm test:budget
-
-      # Authenticate only after building, so the short-lived credentials file can
-      # never enter dist/. The existing secret is a service-account JSON key;
-      # google-github-actions/auth exports standard ADC and removes the file in its
-      # post step. WIF is the eventual keyless replacement, but the current
-      # long-running Functions deploy needs the already-proven credential path.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
-
-      # P1 was migrated before its client shipped. Old clients may have since
-      # reintroduced legacy entries, so prove the current corpus immediately
-      # before promotion. Both checks are read-only and fail on any pending work.
-      - name: Verify saved-character compatibility
+      - name: Inspect identity and parent compatibility without writing
         run: |
+          set +e
           node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
+          identity_status=$?
           node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
-
-      - name: Require live Blaze billing
-        run: |
-          set -euo pipefail
-          account="$(gcloud billing projects describe d20-folio --format='value(billingAccountName)')"
-          enabled="$(gcloud billing projects describe d20-folio --format='value(billingEnabled)' | tr '[:upper:]' '[:lower:]')"
-          account="${account#billingAccounts/}"
-          open="$(gcloud billing accounts describe "$account" --format='value(open)' | tr '[:upper:]' '[:lower:]')"
-          test "$enabled" = true && test "$open" = true || {
-            echo "::error::Blaze billing is not attached to an open account; refusing every deploy target."
+          parents_status=$?
+          echo "Compatibility status: identity=$identity_status parents=$parents_status"
+          if [ "$identity_status" -ne 0 ] || [ "$parents_status" -ne 0 ]; then
             exit 1
-          }
-
-      - name: Back up Firestore before promotion
-        run: |
-          set -euo pipefail
-          version="$(node -p "require('./package.json').version")"
-          backup="gs://d20-folio-backups/pre-v${version}-${GITHUB_SHA::12}-$(date -u +%Y%m%dT%H%M%SZ)"
-          gcloud firestore export "$backup" --project=d20-folio
-          gcloud storage ls "$backup/" >/dev/null
-          echo "✓ Firestore backup: $backup"
-
-      # Pin the CLI instead of inheriting a Docker action's stale Node 20 runtime:
-      # firebase.json deliberately requires Node 24 for the Functions predeploy.
-      - name: Install Firebase CLI
-        run: npm install --global firebase-tools@15.28.1
-
-      # Functions go first. They are backwards-compatible with the currently live
-      # client, so a later Hosting failure leaves the old UI on a compatible backend.
-      - name: Deploy Cloud Functions
-        run: firebase deploy --only functions --project d20-folio --non-interactive
-
-      - name: Require every Function healthy on Node 24
-        run: |
-          set -euo pipefail
-          expected='deleteUser ogImage ogShell onBudgetAlert onBugReportCreated onUserCreated'
-          for attempt in $(seq 1 12); do
-            active="$(firebase functions:list --project d20-folio --json \
-              | jq -r '.result[] | select(.region == "europe-west1" and .runtime == "nodejs24" and .state == "ACTIVE") | .id' \
-              | sort | xargs)"
-            if [ "$active" = "$expected" ]; then
-              echo "✓ all Functions ACTIVE on Node 24"
-              break
-            fi
-            [ "$attempt" -lt 12 ] || {
-              echo "::error::Functions health mismatch. Expected: $expected · Active: $active"
-              exit 1
-            }
-            sleep 10
-          done
-
-      - name: Deploy Hosting and security rules
-        run: firebase deploy --only hosting,firestore:rules,storage --project d20-folio --non-interactive
-
-      - name: Require SAFE-01 armed after promotion
-        run: scripts/safe-01.sh status
+          fi
