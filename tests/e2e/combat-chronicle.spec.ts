@@ -8,14 +8,9 @@
  *
  * Two legs:
  *
- *  A. The SHEET's universal in-encounter resolver — the evoker
- *     (`scn-evoker-wizard`) is scoped into a live own-turn encounter (the dev seam
- *     `d20-dev-combat-chronicle`), and a committed action opens the REAL banner where the
- *     player chooses concrete creatures, records each outcome, and TYPES only the dice
- *     fact the app cannot know:
- *     a weapon swing → one target + one damage field; Magic Missile → the multi-select
- *     with a PER-TARGET damage field (3 darts); Fireball → the area burst + one rolled
- *     damage. These are the PC's real `declareAttack` writes + the auto-apply to monster HP.
+ *  A. The sheet records resources in a shared encounter without opening the retired
+ *     resolver. Weapon use, spell slots, upcasting and mobile confirmation remain
+ *     real UI journeys. Outcomes stay with the table; saved HP must not change.
  *
  *  B. The DM hub's reconciled LIVE FEED + editable end entry + saved Chronicle chapter —
  *     the dev campaign (`mock-1`) runs a begun encounter with the bypass user as DM. The
@@ -92,11 +87,9 @@ async function shotEncounterSummary(
 const THEMES: Theme[] = ["dark", "light"];
 
 // ════════════════════════════════════════════════════════════════════════════
-// A. The SHEET's in-encounter CombatResolver banner
+// A. Simple resource tracking in a shared encounter
 // ════════════════════════════════════════════════════════════════════════════
 
-/** Boot the evoker sheet scoped into the dev combat-chronicle encounter, on the Play
- *  tab, in `theme`. Returns once the Play surface (an action CTA) has painted. */
 async function bootEvokerSheet(page: Page, theme: Theme): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 1000 });
   await seedUI(page, theme, "play");
@@ -106,148 +99,103 @@ async function bootEvokerSheet(page: Page, theme: Theme): Promise<void> {
   );
   await page.goto("/characters/scn-evoker-wizard?tab=play");
   await expect(page.getByText(/pyra/i).first()).toBeVisible({ timeout: 20_000 });
-  // The engine-vs-resolver dispatch reads the SHARED encounter (useSheetCombat),
-  // published by the lazily-mounted GlobalCombatMount. Wait for the seeded
-  // encounter's own-turn chrome before acting, so a fast CTA click can never
-  // race that mount and open the solo engine cast flow instead of the banner.
   await expect(page.locator('.turn[data-phase="my-turn"]')).toBeVisible({
     timeout: 20_000,
   });
 }
 
-const banner = (page: Page) => page.getByTestId("combat-resolver");
-const resolverTarget = (page: Page, name: string) =>
-  banner(page)
-    .locator(".combat-target-card")
-    .filter({ has: page.getByText(name, { exact: true }) });
+async function savedEvokerState(page: Page) {
+  return page.evaluate(() => {
+    const raw = localStorage.getItem(
+      "d20-folio.dev-doc.v1:combat-state:mock-uid%2Fscn-evoker-wizard"
+    );
+    if (!raw) throw new Error("Missing evoker combat document");
+    const { value } = JSON.parse(raw) as {
+      value: {
+        hp: { current: number; temp: number };
+        playState: { state: { usedSlots?: Record<string, number> } };
+      };
+    };
+    return { hp: value.hp, slots: value.playState.state.usedSlots ?? {} };
+  });
+}
 
-/** Type damage into one of the resolver's damage steppers (found by its accessible label).
- *  EXACT match — "Damage to Goblin" must not also match "Damage to Goblin Chief". */
-async function enterBannerDamage(
+async function openSpell(page: Page, spell: string) {
+  const before = await savedEvokerState(page);
+  await page
+    .getByRole("button", { name: new RegExp(`^Cast: ${spell}`) })
+    .first()
+    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  expect(await savedEvokerState(page)).toEqual(before);
+  return before;
+}
+
+async function spendSlot(
   page: Page,
-  label: string,
-  amount: string
-): Promise<void> {
-  await banner(page).getByRole("spinbutton", { name: label, exact: true }).fill(amount);
+  level: number,
+  before: Awaited<ReturnType<typeof savedEvokerState>>
+) {
+  await page.getByRole("button", { name: new RegExp(`^Level ${level} slot`) }).click();
+  const after = {
+    ...before,
+    slots: { ...before.slots, [level]: (before.slots[level] ?? 0) + 1 },
+  };
+  await expect.poll(async () => savedEvokerState(page)).toEqual(after);
+  await expect(page.getByTestId("combat-resolver")).toHaveCount(0);
+  return after;
 }
 
-/** Click an action-card CTA, finish any cast configuration, then wait for targets. */
-async function commitAction(page: Page, ctaName: RegExp): Promise<void> {
-  await page.getByRole("button", { name: ctaName }).first().click();
-  const castOpt = page.locator(".cl-opt").first();
-  if (await castOpt.isVisible({ timeout: 1500 }).catch(() => false))
-    await castOpt.click();
-  await expect(banner(page)).toBeVisible();
-}
-
-/** Apply the reviewed action. The exact preselected cast configuration commits now. */
-async function applyResolvedAction(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Apply action", exact: true }).click();
-  await expect(banner(page)).toHaveCount(0);
-}
-
-test.describe("Combat Chronicle — the sheet CombatResolver banner", () => {
-  test.skip(
-    ({ browserName }) => browserName !== "chromium",
-    "Desktop-first live play (mirrors combat.spec)."
-  );
-
+test.describe("Combat Chronicle — simple sheet actions in shared encounters", () => {
   for (const theme of THEMES) {
-    test(`weapon swing → single-target damage entry (${theme})`, async ({ page }) => {
+    test(`weapon use records the action without resolving damage (${theme})`, async ({
+      page,
+    }) => {
       await bootEvokerSheet(page, theme);
-      await commitAction(page, /^(Attack|Used): Quarterstaff/);
-      // Single-select: one concrete creature, the recorded physical d20 (the
-      // attack gate adjudicates it against the Chief's AC 17 — 18 + 3 hits,
-      // no crit), then the rolled-damage field, one review.
-      await resolverTarget(page, "Goblin Chief").click();
-      await banner(page)
-        .getByRole("spinbutton", {
-          name: "Physical d20 for attack 1 against Goblin Chief",
-          exact: true,
-        })
-        .fill("18");
-      await enterBannerDamage(page, "Damage to Goblin Chief", "8");
-      await shot(page, `A1-banner-weapon-${theme}`);
-      // Confirm for real: the PC's declaration write + the auto-apply to the monster HP.
-      await applyResolvedAction(page);
+      const before = await savedEvokerState(page);
+      await page
+        .getByRole("button", { name: /^Attack: Quarterstaff/ })
+        .first()
+        .click();
+      await expect(page.getByRole("log", { name: "Action Log" })).toContainText(
+        "Used Quarterstaff"
+      );
+      await expect(page.getByTestId("combat-resolver")).toHaveCount(0);
+      expect(await savedEvokerState(page)).toEqual(before);
     });
 
-    test(`Magic Missile → per-target damage entry (${theme})`, async ({ page }) => {
-      await bootEvokerSheet(page, theme);
-      await commitAction(page, /^(Cast|Used): Magic Missile/);
-      // Multi-select up to the instance count (3 darts): pick distinct targets, and keep
-      // every dart independently editable when more than one hits the same creature.
-      await resolverTarget(page, "Goblin").click();
-      await resolverTarget(page, "Goblin Chief").click();
-      const chiefBonus = banner(page).getByRole("button", {
-        name: "Apply +4 to one damage roll against Goblin Chief",
+    for (const [spell, level] of [
+      ["Magic Missile", 1],
+      ["Fireball", 3],
+    ] as const) {
+      test(`${spell} spends its slot without resolving damage (${theme})`, async ({
+        page,
+      }) => {
+        await bootEvokerSheet(page, theme);
+        const before = await openSpell(page, spell);
+        const after = await spendSlot(page, level, before);
+        await page.reload();
+        await expect(page.getByText(/pyra/i).first()).toBeVisible();
+        expect(await savedEvokerState(page)).toEqual(after);
       });
-      await chiefBonus.click();
-      await expect(chiefBonus).toHaveAttribute("aria-pressed", "true");
-      await banner(page)
-        .getByRole("spinbutton", { name: "Instances assigned to Goblin", exact: true })
-        .fill("2");
-      await enterBannerDamage(page, "Damage roll 1 for Goblin", "3");
-      await enterBannerDamage(page, "Damage roll 2 for Goblin", "3");
-      await enterBannerDamage(page, "Damage to Goblin Chief", "4");
-      await shot(page, `A2-banner-magic-missile-${theme}`);
-      await applyResolvedAction(page);
-    });
-
-    test(`Fireball → area rolled-damage entry (${theme})`, async ({ page }) => {
-      await bootEvokerSheet(page, theme);
-      await commitAction(page, /^(Cast|Used): Fireball/);
-      // Area save: unbounded multi-select + ONE rolled-damage number (applied in full to
-      // all; the DM trims the savers).
-      await resolverTarget(page, "Goblin").click();
-      await resolverTarget(page, "Goblin Chief").click();
-      await resolverTarget(page, "Ogre").click();
-      await enterBannerDamage(page, "Damage you rolled", "24");
-      await shot(page, `A3-banner-fireball-${theme}`);
-      await applyResolvedAction(page);
-    });
+    }
   }
 
-  test("upcast is chosen before targets and changes the resolver instance cap", async ({
-    page,
-  }) => {
+  test("upcasting consumes only the chosen higher-level slot", async ({ page }) => {
     await bootEvokerSheet(page, "dark");
-    await page
-      .getByRole("button", { name: /^(Cast|Used): Magic Missile/ })
-      .first()
-      .click();
-    const rows = page.locator(".cl-opt");
-    await expect(rows.nth(1)).toBeVisible();
-    await rows.nth(1).click(); // level 2: four darts
-    await expect(banner(page)).toBeVisible();
-    await expect(banner(page)).toContainText("0 of 4 assigned");
-    await page.getByRole("button", { name: "Cancel", exact: true }).click();
-    await expect(banner(page)).toHaveCount(0);
+    const before = await openSpell(page, "Magic Missile");
+    await spendSlot(page, 2, before);
   });
 
-  test("the resolver keeps its hierarchy and actions reachable on a phone", async ({
+  test("slot choice stays reachable on a phone in a shared encounter", async ({
     page,
   }) => {
     await bootEvokerSheet(page, "light");
-    await commitAction(page, /^(Cast|Used): Fireball/);
-    await resolverTarget(page, "Goblin").click();
-    await resolverTarget(page, "Goblin Chief").click();
-    await enterBannerDamage(page, "Damage you rolled", "24");
     await page.setViewportSize({ width: 390, height: 844 });
-    await expect(banner(page)).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Apply action", exact: true })
-    ).toBeInViewport();
-    const dialog = page.getByRole("dialog", { name: "Fireball" });
-    const box = await dialog.boundingBox();
-    expect(box?.width ?? Infinity).toBeLessThanOrEqual(390);
-    if (SHOT_DIR) {
-      await freezeMotion(page);
-      await settleForShot(page);
-      await dialog.screenshot({
-        path: path.join(SHOT_DIR, "A4-resolver-mobile-light.png"),
-      });
-    }
+    const before = await openSpell(page, "Fireball");
+    await expect(page.getByRole("button", { name: /^Level 3 slot/ })).toBeInViewport();
+    await shot(page, "A4-slot-choice-mobile-light");
+    await spendSlot(page, 3, before);
   });
 });
 
