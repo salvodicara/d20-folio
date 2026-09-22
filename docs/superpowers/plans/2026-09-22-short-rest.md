@@ -57,3 +57,12 @@ an unrelated existing manual roll input.
   15-second allowance for filesystem-heavy fixtures; no assertions were skipped.
 - No schema, backend or content-source changes. No integration/deployment.
 - Delivery is a local topic-branch commit; visual approval precedes integration.
+
+## Release authorization — 2026-09-22
+
+The owner approved the curated result and explicitly authorized push, release and
+GitHub Actions deployment. Publish version 0.24.1 from the production candidate,
+using the authoritative main pre-push gate, then the existing CI/Verify/deploy
+workflows. Add the existing runbook's read-only saved-character checks to the
+deploy workflow; no automatic migration apply. Record release and deployment
+outcomes outside the worktree and retain the candidate until promotion succeeds.

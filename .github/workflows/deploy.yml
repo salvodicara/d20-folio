@@ -176,6 +176,14 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
 
+      # P1 was migrated before its client shipped. Old clients may have since
+      # reintroduced legacy entries, so prove the current corpus immediately
+      # before promotion. Both checks are read-only and fail on any pending work.
+      - name: Verify saved-character compatibility
+        run: |
+          node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
+          node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
+
       - name: Require live Blaze billing
         run: |
           set -euo pipefail

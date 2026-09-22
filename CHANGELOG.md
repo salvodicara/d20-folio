@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.24.1
+
+Simpler play and more dependable character saves. Casting returns to resource
+tracking, short rests explain each input, and manual changes remain under the
+player's control.
+
+### Changed
+
+- Casting from Spells or Play spends the chosen slot, free use or item charge
+  without requiring targets, dice or outcome resolution. Keep the source/slot-level
+  picker, concentration and undo; resolve spell effects at the table.
+- Short rests separate Hit Dice to spend from the physical dice total, show the
+  Constitution adjustment and preview the resulting HP. Resting without healing
+  remains available, and changing dice clears the old roll.
+- Manual damage applies immediately without a mandatory reaction prompt.
+
+### Fixed
+
+- Consumables spend one unit, and undo restores that unit while preserving other
+  inventory edits. Delayed resource choices recheck the original character and
+  available uses, including Arcane Recovery.
+- Local HP undo and queued resource edits survive incoming save notifications;
+  concurrent character saves reconcile their own fields and recover from rejected
+  writes without silently overwriting newer play state.
+- Custom sheet and library entries retain stable identities. Invalid stored data
+  produces a clear diagnostic instead of a partial or misleading character sheet.
+- The release pipeline checks saved-character compatibility before deployment and
+  stops if the existing data migrations need attention. Deployment still requires
+  green public and composed checks and a Firestore backup.
+
+### Updating
+
+Reload open app tabs after this release to load the updated save format. Existing
+characters are preserved; this release does not roll back stored data.
+
 ## 0.24.0
 
 d20 Folio’s largest play release yet: the deterministic mechanics engine becomes a table-ready runtime that asks players only for real-world inputs, commits the consequences atomically, and keeps solo and shared play coherent without introducing virtual dice or an AI rules layer.

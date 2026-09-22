@@ -127,6 +127,11 @@ the corpus is loadable by the client about to ship — for `migrate-character-pa
 every ALREADY-marked parent (empty `state`, a `build` the codec hydrates), not only the ones it cut
 over.
 
+`deploy.yml` runs these two read-only checks, in order, after composing the pack and
+authenticating with its existing service-account credential. Pending changes or
+invalid stored data stop promotion before any Firebase deployment; the workflow
+does not apply migrations automatically.
+
 `scripts/alias-loader.mjs` composes the private content pack exactly as the app does, so a migration
 resolves the same ids and catalogues the client would. `migrate-character-parents.ts` hydrates
 through the SRD-aware codec and therefore PROVES the pack composed before it plans anything, in every
