@@ -43,10 +43,10 @@ async function applyDamage(page: Page, amount: string): Promise<void> {
   const dialog = page.getByRole("dialog", { name: /hit points/i });
   await dialog.getByRole("spinbutton", { name: /amount/i }).fill(amount);
   await dialog.getByRole("button", { name: /^damage$/i }).click();
-  const accept = page.getByRole("button", {
-    name: new RegExp(`^Take ${amount} damage$`, "i"),
-  });
-  if (await accept.isVisible()) await accept.click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: new RegExp(`^Take ${amount} damage$`, "i") })
+  ).toHaveCount(0);
 }
 
 test.describe("RA-05 — defense-aware damage entry (raging Barbarian)", () => {

@@ -668,9 +668,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       // crossing the massive-damage instant-death threshold.
       await healthyEditor.getByRole("spinbutton").fill("43");
       await healthyEditor.getByRole("button", { name: /^(damage|danno)$/i }).click();
-      await page
-        .getByRole("button", { name: /^(take 43 damage|subisci 43 danni)$/i })
-        .click();
+      await expect(healthyEditor).toBeHidden();
 
       await page.locator('button.vital-hp[data-state="dying"]').click();
       const dyingEditor = page.getByRole("dialog").first();
