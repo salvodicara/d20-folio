@@ -49,3 +49,25 @@ exists if the runner is interrupted before the per-document upload completes.
 Both compatibility checks must pass afterwards. Any remaining parent issue stops
 this operation for investigation; it never triggers another migration or deploy.
 The unchanged main workflow is dispatched separately after successful verification.
+
+## Single remaining legacy empty-text field
+
+After the identity re-apply passed its hash, global and idempotency checks, one
+parent still failed the released codec. Offline reproduction from its private
+backup identified an absent `properties` field on one custom weapon. Adding only
+the empty string makes the whole build loadable. The released creation form
+already defaults and persists this field as an empty string.
+
+The separate `repair_weapon_properties` dispatch accepts reviewed path/before/after
+hashes as inputs, never document identifiers or payloads in public git. It checks
+out only the reviewed repair wrapper from the operational commit; the codec, SDK
+and migration kit still come from the pinned released root. Its plan refuses a
+changed document, an existing properties value, a shared parent or public sheet,
+an unexpected after hash, or any remaining codec failure. Only one missing field
+on the fourth weapon can become an empty string; all other values remain exact.
+
+The same full-export, fresh before-image, atomic update-time-guarded write, private
+upload and dual compatibility checks apply. Ten synthetic tests cover preservation,
+loadability, idempotency, concurrent edits, wrong target/hash, existing values and
+remaining defects. The real private backup is also verified offline. No application
+or release-tag changes are needed for this stored-data correction.

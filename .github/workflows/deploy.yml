@@ -14,9 +14,19 @@ on:
         options:
           - check
           - reapply_identity
+          - repair_weapon_properties
       pack_ref:
         description: Content pack commit used by the verified release
         required: true
+        type: string
+      target_hash:
+        description: Reviewed document path hash for the single-field repair
+        type: string
+      before_hash:
+        description: Reviewed current document hash for the single-field repair
+        type: string
+      after_hash:
+        description: Reviewed repaired document hash for the single-field repair
         type: string
 
 permissions:
@@ -57,6 +67,15 @@ jobs:
           node-version-file: .tool-versions
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Checkout the reviewed operational repair only
+        if: inputs.operation == 'repair_weapon_properties'
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.sha }}
+          path: .ops
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: scripts/repair-weapon-properties.mjs
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
@@ -74,16 +93,16 @@ jobs:
             exit 1
           fi
       - name: Set up gcloud for the private backup
-        if: inputs.operation == 'reapply_identity'
+        if: inputs.operation != 'check'
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # v3
-      - name: Back up Firestore before the identity re-apply
-        if: inputs.operation == 'reapply_identity'
+      - name: Back up Firestore before the compatibility repair
+        if: inputs.operation != 'check'
         id: backup
         run: |
           set -euo pipefail
           umask 077
-          backup_root="gs://d20-folio-backups/identity-v0.24.1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          backup_local="$RUNNER_TEMP/identity-v0.24.1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          backup_root="gs://d20-folio-backups/compatibility-v0.24.1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          backup_local="$RUNNER_TEMP/compatibility-v0.24.1-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           mkdir -m 700 "$backup_local"
           gcloud firestore export "$backup_root/firestore" --project=d20-folio
           gcloud storage ls "$backup_root/firestore/" >/dev/null
@@ -96,18 +115,29 @@ jobs:
           set -euo pipefail
           node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --dry-run
           node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts \
-            --apply --backup "$BACKUP_LOCAL/identity"
-      - name: Preserve document before-images in the private backup bucket
-        if: always() && inputs.operation == 'reapply_identity' && steps.backup.outcome == 'success'
+            --apply --backup "$BACKUP_LOCAL/change"
+      - name: Repair the reviewed missing empty-text field
+        if: inputs.operation == 'repair_weapon_properties'
+        env:
+          REPAIR_TARGET_HASH: ${{ inputs.target_hash }}
+          REPAIR_BEFORE_HASH: ${{ inputs.before_hash }}
+          REPAIR_AFTER_HASH: ${{ inputs.after_hash }}
         run: |
           set -euo pipefail
-          if [ -d "$BACKUP_LOCAL/identity" ]; then
-            gcloud storage cp --recursive "$BACKUP_LOCAL/identity" "$BACKUP_ROOT/documents/"
-            gcloud storage ls "$BACKUP_ROOT/documents/identity/manifest.json" >/dev/null
+          node --import ./scripts/alias-loader.mjs .ops/scripts/repair-weapon-properties.mjs --dry-run
+          node --import ./scripts/alias-loader.mjs .ops/scripts/repair-weapon-properties.mjs \
+            --apply --backup "$BACKUP_LOCAL/change"
+      - name: Preserve document before-images in the private backup bucket
+        if: always() && inputs.operation != 'check' && steps.backup.outcome == 'success'
+        run: |
+          set -euo pipefail
+          if [ -d "$BACKUP_LOCAL/change" ]; then
+            gcloud storage cp --recursive "$BACKUP_LOCAL/change" "$BACKUP_ROOT/documents/"
+            gcloud storage ls "$BACKUP_ROOT/documents/change/manifest.json" >/dev/null
             echo "Document before-images preserved privately"
           fi
       - name: Require both compatibility checks green after re-apply
-        if: success() && inputs.operation == 'reapply_identity'
+        if: success() && inputs.operation != 'check'
         run: |
           node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
           node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
