@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Fase 2: vita di uno stato (Ira, Scudo, Marchio del Cacciatore)",
+    "quality_profile": "showcase",
+    "viewBox": [1030, 566]
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "Percorso normale"
+    },
+    {
+      "id": "exits",
+      "label": "Fine anticipata"
+    }
+  ],
+  "states": [
+    {
+      "id": "tap",
+      "type": "start",
+      "label": "Un tocco",
+      "sublabel": "lancio o azione",
+      "lane": "main",
+      "col": 0,
+      "step": "01"
+    },
+    {
+      "id": "active",
+      "type": "active",
+      "label": "Attivo",
+      "sublabel": "bonus e contatore",
+      "lane": "main",
+      "col": 1,
+      "step": "02"
+    },
+    {
+      "id": "boundary",
+      "type": "decision",
+      "label": "Inizio turno",
+      "sublabel": "o riposo",
+      "lane": "main",
+      "col": 2,
+      "step": "03"
+    },
+    {
+      "id": "expired",
+      "type": "success",
+      "label": "Scaduto",
+      "sublabel": "da solo",
+      "lane": "main",
+      "col": 3,
+      "step": "04"
+    },
+    {
+      "id": "broken",
+      "type": "failure",
+      "label": "Interrotto",
+      "sublabel": "concentrazione persa, KO",
+      "lane": "exits",
+      "col": 0
+    }
+  ],
+  "transitions": [
+    {
+      "id": "more-rounds",
+      "from": "boundary",
+      "to": "active",
+      "label": "round rimasti",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [402, 84],
+        [248, 84]
+      ]
+    },
+    {
+      "id": "break",
+      "from": "active",
+      "to": "broken",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [[248, 307]]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Oggi (dopo la PR 35)",
+      "items": [
+        "Il lancio accende lo stato su di sé",
+        "Il contatore scende col tuo Fine turno",
+        "Si spegne anche a mano, o con annulla"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Fase 2",
+      "items": [
+        "Scende anche quando il DM avanza il turno",
+        "Un solo modello di durata, non otto",
+        "Ogni stato finisce nel resoconto"
+      ]
+    }
+  ]
+}
