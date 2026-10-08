@@ -890,41 +890,54 @@ service cloud.firestore {
     // rules, so without this exclusion the broad member grant here would defeat the
     // hidden-note gate (a player could read a staged-hidden note through it).
     match /campaigns/{campId}/{subcol}/{docId} {
-      allow read, write: if subcol != 'dmNotes' && subcol != 'encounters' && isNotBlocked()
+      allow read, write: if subcol != 'dmNotes' && subcol != 'sessionLogs' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
     }
 
-    // The encounter document (combat re-architecture, P2 prototype — ADR-0002/0005).
-    // The ONLY shared writable gameplay surface of the target architecture. Members
-    // APPEND actions to `log` (the array only grows; nothing else changes); the DM and
-    // the admin may create, checkpoint (rewrite) and delete. Rules enforce membership
-    // and shape; game legality is the reducer's job (`src/lib/combat`). This block is
-    // deliberately excluded from the member wildcard above so the append-only grant
-    // cannot be defeated by the broad subcollection rule.
-    match /campaigns/{campId}/encounters/{eid} {
+    // The session log (src/lib/session-log): one append-only document per play session.
+    // Members append exactly one item at a time, stamped with their own uid; the history
+    // already written never changes, so a correction is itself an appended item. Who may
+    // correct which line is decided by the deterministic fold, not here (ADR-0005: rules
+    // enforce access, not gameplay). Excluded from the member wildcard above so the
+    // append-only grant cannot be defeated by the broad subcollection rule.
+    match /campaigns/{campId}/sessionLogs/{sessionId} {
       function campaign() {
         return get(/databases/$(database)/documents/campaigns/$(campId)).data;
       }
-      function encounterMember() {
+      function logMember() {
         return isNotBlocked() && request.auth.uid in campaign().members;
       }
-      function encounterDm() {
+      function logDm() {
         return isNotBlocked() && request.auth.uid == campaign().dmUid;
       }
-      function validEncounterShape() {
+      function ownItem(item) {
+        return item.by == request.auth.uid
+          && item.type in ['event', 'correct', 'retract']
+          && item.id is string;
+      }
+      function validLog() {
         return request.resource.data.schema == 1
           && request.resource.data.log is list
-          && request.resource.data.log.size() <= 2000;
+          && request.resource.data.log.size() <= 2000
+          && request.resource.data.lastAt is int;
       }
-      function logOnlyGrew() {
-        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log'])
-          && request.resource.data.log.size() > resource.data.log.size();
+      function newLog() {
+        return request.resource.data.keys().hasOnly(['schema', 'log', 'lastAt'])
+          && request.resource.data.log.size() == 1
+          && ownItem(request.resource.data.log[0]);
       }
-      allow read: if isAdmin() || encounterMember();
-      allow create: if (isAdmin() || encounterDm()) && validEncounterShape();
-      allow update: if validEncounterShape()
-        && ((isAdmin() || encounterDm()) || (encounterMember() && logOnlyGrew()));
-      allow delete: if isAdmin() || encounterDm();
+      function appendedOne() {
+        let before = resource.data.log;
+        let after = request.resource.data.log;
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log', 'lastAt'])
+          && after.size() == before.size() + 1
+          && after[0:before.size()] == before
+          && ownItem(after[before.size()]);
+      }
+      allow read: if isAdmin() || logMember();
+      allow create: if logMember() && validLog() && newLog();
+      allow update: if logMember() && validLog() && appendedOne();
+      allow delete: if isAdmin() || logDm();
     }
 
     // Bug / feature reports (OWN-37). A signed-in, non-blocked user CREATES a
