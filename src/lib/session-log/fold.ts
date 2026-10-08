@@ -9,6 +9,8 @@ export interface SessionEntry {
   event: PlayEvent;
   /** True when a later correction replaced the originally recorded event. */
   corrected: boolean;
+  /** How many corrections have been applied to this line. */
+  corrections: number;
   encounterId?: string;
   round?: number;
 }
@@ -31,7 +33,7 @@ export function foldSession(
   const seen = new Set<string>();
   const lines = new Map<
     string,
-    { by: string; at: number; event: PlayEvent; corrected: boolean }
+    { by: string; at: number; event: PlayEvent; corrected: boolean; corrections: number }
   >();
   for (const item of items) {
     if (seen.has(item.id)) continue;
@@ -42,6 +44,7 @@ export function foldSession(
         at: item.at,
         event: item.event,
         corrected: false,
+        corrections: 0,
       });
       continue;
     }
@@ -49,7 +52,13 @@ export function foldSession(
     if (line === undefined || (item.by !== line.by && item.by !== authority.dmUid))
       continue;
     if (item.type === "retract") lines.delete(item.target);
-    else lines.set(item.target, { ...line, event: item.event, corrected: true });
+    else
+      lines.set(item.target, {
+        ...line,
+        event: item.event,
+        corrected: true,
+        corrections: line.corrections + 1,
+      });
   }
 
   let encounterId: string | undefined;

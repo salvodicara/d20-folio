@@ -58,14 +58,19 @@ export type PlayEvent =
       actor?: CombatantId;
     }
   | { kind: "down"; target: CombatantId }
+  | { kind: "stabilized"; target: CombatantId; actor?: CombatantId; source?: LocText }
+  | {
+      kind: "resource-grant";
+      resource: "bardic-inspiration-die" | "heroic-inspiration";
+      value?: string;
+      target: CombatantId;
+      actor?: CombatantId;
+      source?: LocText;
+    }
   | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
   | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }
   | { kind: "encounter-start"; encounterId: string }
-  | {
-      kind: "encounter-end";
-      encounterId: string;
-      outcome?: "victory" | "retreat" | "defeat";
-    }
+  | { kind: "encounter-end"; encounterId: string; outcome?: "victory" | "ended" }
   | { kind: "round-start"; round: number }
   | { kind: "note"; text: string; actor?: CombatantId };
 

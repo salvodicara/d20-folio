@@ -215,8 +215,12 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    (`SESSION_GAP_MS`), so every device computes the same id with no coordination. Caveat:
    `lastAt` is the recording device's clock. The rules reach production only with the next
    owner-approved deploy.
-3. **Wire the DM side.** `appendEvent` and encounter start, round advance and end also record into
-   the session log. Dual-write; the chronicle UI is unchanged.
+3. **Done.** `mirrorEncounter` + `createEncounterMirror` (`src/lib/session-log/`), mounted by
+   `useSessionLogMirror` in the campaign hub on the DM's device. It derives encounter start,
+   each round and every Combat Chronicle beat from the live encounter and appends only what the
+   session lacks: new beats as events, a later attacker tap as a correction, an undone beat as a
+   retraction. Ids come from the encounter epoch and beat id, so reloads never duplicate. Any
+   failure is logged to diagnostics and never touches the fight.
 4. **Wire the player side.**
    - `logEvent` records into the session log when the character is attached to a campaign, with
      actor = `pc-<uid>`.
