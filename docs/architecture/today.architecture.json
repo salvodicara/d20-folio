@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "d20 Folio oggi: chi scrive cosa durante il gioco",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "sheet",
+      "type": "frontend",
+      "label": "Scheda giocatore",
+      "sublabel": "PlayTab + CombatResolver",
+      "pos": [40, 120],
+      "size": [170, 64]
+    },
+    {
+      "id": "dm",
+      "type": "frontend",
+      "label": "Pannello DM",
+      "sublabel": "party-encounter",
+      "pos": [40, 540],
+      "size": [170, 64]
+    },
+    {
+      "id": "store",
+      "type": "backend",
+      "label": "characterStore",
+      "sublabel": "80 azioni, 4.600 righe",
+      "pos": [330, 120],
+      "size": [180, 64],
+      "tag": "troppo largo"
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "Motore mechanics-*",
+      "sublabel": "30.000 righe, mezzo spento",
+      "pos": [330, 260],
+      "size": [180, 64],
+      "tag": "copia sui campi vecchi"
+    },
+    {
+      "id": "pclog",
+      "type": "database",
+      "label": "Registro del PG",
+      "sublabel": "max 200, senza bersagli",
+      "pos": [640, 120],
+      "size": [180, 64]
+    },
+    {
+      "id": "encounter",
+      "type": "database",
+      "label": "Eventi dello scontro",
+      "sublabel": "solo DM, cancellati alla fine",
+      "pos": [640, 540],
+      "size": [180, 64]
+    },
+    {
+      "id": "merge",
+      "type": "backend",
+      "label": "Unione a schermo",
+      "sublabel": "chronicle-reconcile",
+      "pos": [940, 260],
+      "size": [170, 64]
+    },
+    {
+      "id": "chronicle",
+      "type": "database",
+      "label": "Cronaca",
+      "sublabel": "solo testo, non rigenerabile",
+      "pos": [940, 400],
+      "size": [170, 64]
+    },
+    {
+      "id": "catalogue",
+      "type": "database",
+      "label": "Catalogo + Grant",
+      "sublabel": "regole come dati",
+      "pos": [330, 400],
+      "size": [180, 64],
+      "tag": "sano, si tiene"
+    }
+  ],
+  "connections": [
+    {
+      "id": "sheet-store",
+      "from": "sheet",
+      "to": "store",
+      "label": "muta lo stato",
+      "variant": "emphasis"
+    },
+    { "id": "store-pclog", "from": "store", "to": "pclog", "label": "logEvent" },
+    {
+      "id": "store-engine",
+      "from": "store",
+      "to": "engine",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "dm-encounter",
+      "from": "dm",
+      "to": "encounter",
+      "label": "appendEvent",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "pclog-merge",
+      "from": "pclog",
+      "to": "merge",
+      "label": "dichiarazioni",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "encounter-merge",
+      "from": "encounter",
+      "to": "merge",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "merge-chronicle",
+      "from": "merge",
+      "to": "chronicle",
+      "label": "fine scontro",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "catalogue-engine",
+      "from": "catalogue",
+      "to": "engine",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Il problema",
+      "items": [
+        "6 registri paralleli, nessuno completo",
+        "Il -14 PF del giocatore non arriva alla cronaca",
+        "Il round vive in 4 posti"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Da togliere",
+      "items": [
+        "Vecchio flusso incantesimi (morto)",
+        "Kernel K1 (morto)",
+        "Bug: id duplicati dopo un annulla"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Da tenere",
+      "items": [
+        "Catalogo e Grant",
+        "Salvataggio della scheda",
+        "Presentatori in lib/views"
+      ]
+    }
+  ]
+}
