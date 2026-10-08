@@ -760,7 +760,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           round: scoped.round,
           phase: "turn-start",
         });
-        for (const effect of boundaryExpiry.expired) {
+        // Round countdowns (Rage, 1-minute spells) count the turn that just ended even
+        // when the DM advanced past it: catch the previous round up, once — a round
+        // already counted by the owner's End Turn is left alone.
+        const timerExpiry =
+          scoped.round > 1
+            ? useCharacterStore.getState().advanceEffectTimers(scoped.round - 1).expired
+            : [];
+        for (const effect of [...boundaryExpiry.expired, ...timerExpiry]) {
           showToast({
             message: t("combatLog.effectExpired", {
               name: grantSourceLabel(effect.sourceId, locale),
@@ -2214,7 +2221,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     //     undo. Run BEFORE the maintenance prompt is committed so an EXPIRED state
     //     never also surfaces a keep/end prompt (a hard drop supersedes the soft one).
     const restorePerTurn = charStore.recoverPerTurnTrackers();
-    const { expired, restore: restoreTimers } = charStore.advanceEffectTimers();
+    const { expired, restore: restoreTimers } = charStore.advanceEffectTimers(
+      encounterStatus?.round ?? c.round
+    );
     const expiredKeys = new Set(expired.map((e) => e.activeKey));
     const doc = useCharacterStore.getState().character;
     const unmaintained = doc

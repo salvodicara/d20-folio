@@ -1053,7 +1053,15 @@ export interface SessionState {
    * round timer (a `maintained` state with no `maxRounds`, a `timed` state with
    * no cap) — it lives until the player ends it. Optional for back-compat.
    */
-  effectTimers?: Record<string, { roundsLeft: number }>;
+  effectTimers?: Record<
+    string,
+    {
+      roundsLeft: number;
+      /** The last combat round already counted, so a round is counted once whoever
+       *  advances the turn (the owner's End Turn or the DM's pointer). */
+      tickedRound?: number;
+    }
+  >;
   /** Exact owner-turn expiry for short active states (Shield). Stored separately
    * from round countdowns so turn-start and turn-end cannot drift. */
   effectBoundaries?: Record<string, { round: number; phase: "turn-start" | "turn-end" }>;
