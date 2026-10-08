@@ -18,6 +18,7 @@ function capture(): string[] {
   setPlayLogSink({
     added: (characterId, entry) => calls.push(`+${characterId}:${entry.event.kind}`),
     removed: (characterId, entryId) => calls.push(`-${characterId}:${entryId}`),
+    corrected: (characterId, entry) => calls.push(`~${characterId}:${entry.event.kind}`),
   });
   return calls;
 }
@@ -53,9 +54,43 @@ describe("play-log sink", () => {
       removed: () => {
         throw new Error("offline");
       },
+      corrected: () => {
+        throw new Error("offline");
+      },
     });
     const id = useCharacterStore.getState().logEvent({ kind: "rest", restKind: "short" });
     expect(id).not.toBeNull();
     expect(useCharacterStore.getState().character?.session.logEntries).toHaveLength(1);
+  });
+
+  it("forwards an amended line as a correction, and its inverse as another", () => {
+    load(false);
+    const calls = capture();
+    const { logEvent, amendLogEntry } = useCharacterStore.getState();
+    const id = logEvent({
+      kind: "action-use",
+      action: { custom: "Bless" },
+      effect: "spell-cast",
+      slot: "action",
+    });
+    if (!id) throw new Error("missing log id");
+    const restore = amendLogEntry(id, {
+      kind: "action-use",
+      action: { custom: "Bless" },
+      effect: "spell-cast",
+      slot: "action",
+      targets: ["pc-bo"],
+    });
+    const line = () =>
+      useCharacterStore.getState().character?.session.logEntries.find((e) => e.id === id);
+    expect(line()?.event).toMatchObject({ targets: ["pc-bo"] });
+    restore?.();
+    expect(line()?.event).not.toHaveProperty("targets");
+    const charId = MOCK_CHARACTER.id;
+    expect(calls).toEqual([
+      `+${charId}:action-use`,
+      `~${charId}:action-use`,
+      `~${charId}:action-use`,
+    ]);
   });
 });

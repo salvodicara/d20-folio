@@ -38,6 +38,7 @@
 import { create } from "zustand";
 import { useToastStore } from "@/stores/toastStore";
 import type { ToastIntent } from "@/types/toast";
+import type { ToastChoices } from "@/stores/toastStore";
 
 /**
  * The stack depth cap. A full frantic combat turn (Action Surge + Extra Attack +
@@ -252,10 +253,11 @@ export function registerUndoable(
 export function wireUndoToast(
   entryId: string,
   label: UndoLabel,
-  opts: { duration?: number } = {}
+  opts: { duration?: number; choices?: ToastChoices } = {}
 ): void {
   const toastId = useToastStore.getState().showToast({
     ...label,
+    ...(opts.choices ? { choices: opts.choices } : {}),
     duration: opts.duration ?? 5000,
     onUndo: () => useUndoStore.getState().undo(entryId),
   });
@@ -272,12 +274,13 @@ export function wireUndoToast(
 export function registerUndoableToast(
   label: UndoLabel,
   execute: () => UndoApplier | null,
-  opts: { turnScoped: boolean; duration?: number }
+  opts: { turnScoped: boolean; duration?: number; choices?: ToastChoices }
 ): string | null {
   const entryId = registerUndoable(label, execute, { turnScoped: opts.turnScoped });
   if (entryId === null) return null;
   wireUndoToast(entryId, label, {
     ...(opts.duration ? { duration: opts.duration } : {}),
+    ...(opts.choices ? { choices: opts.choices } : {}),
   });
   return entryId;
 }

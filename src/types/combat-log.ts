@@ -61,6 +61,9 @@ export type CombatEvent =
        * (`total > 1`); absent for every ordinary single-attack commit.
        */
       attackOf?: { n: number; total: number };
+      /** Who the action was aimed at, when the player says (`pc-<uid>` / `monster-<n>`).
+       *  Optional by design: often completed after the tap, or never. */
+      targets?: string[];
     }
   /** A reaction was used (always the reaction slot → red). */
   | {

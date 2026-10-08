@@ -748,6 +748,9 @@ interface CharacterState {
   logEvent: (event: CombatEvent) => string | null;
   /** Remove EXACTLY one log entry by its stable id (the inverse of one `logEvent`). */
   removeLogEntry: (id: string | null) => void;
+  /** Complete or fix an own log line after the fact (e.g. the cast's target). Returns
+   *  an inverse that restores the previous event. */
+  amendLogEntry: (id: string, event: CombatEvent) => (() => void) | null;
   /** Clear all log entries (the manual trash button + log persistence reset). */
   clearLog: () => void;
 }
@@ -1147,6 +1150,7 @@ function cellWith<T extends { readonly current: number }>(cell: T, current: numb
 export interface PlayLogSink {
   added(characterId: string, entry: LogEntry): void;
   removed(characterId: string, entryId: string): void;
+  corrected(characterId: string, entry: LogEntry): void;
 }
 
 let playLogSink: PlayLogSink | null = null;
@@ -4509,6 +4513,26 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     });
     void saveLogToIDB(character.id, next);
     if (!get().readonly) notifyPlayLog((sink) => sink.removed(character.id, id));
+  },
+
+  amendLogEntry: (id, event) => {
+    const { character, readonly } = get();
+    if (!character || readonly) return null;
+    const previous = character.session.logEntries.find((e) => e.id === id);
+    if (!previous) return null;
+    const write = (next: CombatEvent): void => {
+      const cur = get().character;
+      if (!cur) return;
+      const entries = cur.session.logEntries.map((e) =>
+        e.id === id ? { ...e, event: next } : e
+      );
+      set({ character: { ...cur, session: { ...cur.session, logEntries: entries } } });
+      void saveLogToIDB(cur.id, entries);
+      const entry = entries.find((e) => e.id === id);
+      if (entry) notifyPlayLog((sink) => sink.corrected(cur.id, entry));
+    };
+    write(event);
+    return () => write(previous.event);
   },
 
   clearLog: () => {

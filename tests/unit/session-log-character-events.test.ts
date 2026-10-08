@@ -81,4 +81,26 @@ describe("createCharacterLogMirror", () => {
       ["retract", "pc:c1:h:x"],
     ]);
   });
+
+  it("records a completed detail as a correction of the recorded line", async () => {
+    const store = createMemorySessionLogStore();
+    const now = () => new Date(2026, 9, 8, 20, 0);
+    const recorder = createSessionRecorder({ store, uid: "ana", now });
+    const mirror = createCharacterLogMirror({ recorder, characterId: "c1", actor: ME });
+    const cast = entry("b", 5, {
+      kind: "action-use",
+      action: { custom: "Bless" },
+      effect: "spell-cast",
+      slot: "action",
+    });
+    await mirror.added(cast);
+    await mirror.corrected({
+      ...cast,
+      event: { ...cast.event, targets: ["pc-bo"] } as CombatEvent,
+    });
+    await mirror.corrected(entry("never", 6, { kind: "rest", restKind: "short" }));
+    const items = store.items("2026-10-08");
+    expect(items.map((i) => i.type)).toEqual(["event", "correct"]);
+    expect(items[1]).toMatchObject({ target: "pc:c1:b", event: { targets: ["pc-bo"] } });
+  });
 });

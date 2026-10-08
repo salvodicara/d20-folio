@@ -46,6 +46,9 @@ export function useSessionLogPlayerRecorder(characterId: string | undefined): vo
       removed: (id, entryId) => {
         if (id === characterId) forward((m) => m.removed(entryId));
       },
+      corrected: (id, entry) => {
+        if (id === characterId) forward((m) => m.corrected(entry));
+      },
     });
     return () => setPlayLogSink(null);
   }, [uid, characterId]);
