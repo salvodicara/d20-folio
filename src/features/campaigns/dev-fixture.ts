@@ -1100,8 +1100,8 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
 // ─── Dev-bypass COMBAT-CHRONICLE demo seams (drive the REAL surfaces end-to-end) ────
 //
 // Two independent dev-only seams that let the combat-chronicle e2e (and a local dev
-// walk-through) exercise the ACTUAL in-app surfaces — the sheet's CombatResolver
-// banner and the DM hub's reconciled feed — with NO Firestore. Both are read only under
+// walk-through) exercise the ACTUAL in-app surfaces — the sheet's shared-encounter
+// actions and the DM hub's reconciled feed — with NO Firestore. Both are read only under
 // `DEV_BYPASS_AUTH`, so this whole module (and these) are tree-shaken from production.
 
 /**
@@ -1109,11 +1109,9 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
  * publishes THIS {@link GlobalCombat} as the viewer's own-PC fight (see
  * {@link "@/features/campaigns/global-combat".GlobalCombatMount}) — scoping the OPEN
  * `scn-evoker-wizard` sheet ({@link "@/features/character/center/turn-state".useSheetCombat}
- * matches `characterId`) into a LIVE own-turn encounter with THREE named monster rows. That
- * is exactly the state the in-encounter {@link
- * "@/features/character/center/CombatResolver".CombatResolver} banner needs to render
- * for real: a weapon swing opens the single-target hit/miss picker, Magic Missile the
- * multi-select (3 targets), Fireball the area-save "Resolve". `null` when the flag is unset.
+ * matches `characterId`) into a LIVE own-turn encounter with THREE named monster rows, so
+ * a weapon swing, Magic Missile and Fireball are committed exactly as in a real shared
+ * encounter (recorded, slot spent, no mandatory resolution). `null` when the flag is unset.
  *
  * The evoker (`scn-evoker-wizard`) carries a Quarterstaff + Magic Missile + Fireball
  * (see `dev-scenarios.ts`), so all three action shapes are commit-able on that one sheet.

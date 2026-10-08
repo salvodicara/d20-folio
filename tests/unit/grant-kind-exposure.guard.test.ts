@@ -257,12 +257,10 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "heal-bonus": { via: "resolveHealBonus", consumer: "src/lib/smart-tracker.ts" },
   "self-heal-on-other": {
-    via: "selfHealingOnOther",
-    consumer: "src/features/character/center/CombatResolver.tsx",
+    open: "consumer removed with the mandatory resolution flow (2026-09-21)",
   },
   "maximize-spell-healing": {
-    via: 'healingMode === "maximum"',
-    consumer: "src/features/character/center/CombatResolver.tsx",
+    open: "consumer removed with the mandatory resolution flow (2026-09-21)",
   },
   "spell-damage-type-override": {
     via: "resolveSpellDamageTypeOverrides",
@@ -420,8 +418,7 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
   "roll-die-adjustment": {
-    via: "activeRollDieAdjustments",
-    consumer: "src/features/character/center/CombatResolver.tsx",
+    open: "consumer removed with the mandatory resolution flow (2026-09-21)",
   },
   "healing-blocked": {
     via: "healingBlocked",

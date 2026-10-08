@@ -4922,7 +4922,7 @@ function resolveUnarmedAttackSummary(
 }
 
 /** Apply every target-facing capability authored on a feature/homebrew action.
- * All source kinds use this one projection before entering CombatResolver. */
+ * All source kinds use this one projection. */
 function applyActionEffectSummary(
   summary: RawActionSummary,
   action: SrdActionDef,
@@ -6331,7 +6331,7 @@ function resolveSpellActions(
     // An active recurring concentration spell exposes a SECOND row that reuses the
     // established effect without spending another slot or restarting concentration.
     // The stored cast level preserves upcast math across later turns. Geometry and
-    // timing remain table declarations; every consequence still uses CombatResolver.
+    // timing remain table declarations.
     const sourceCast = spellGrantAggregate.freeCastFromList.find(
       (entry) =>
         entry.castOverrides?.maxRounds !== undefined &&

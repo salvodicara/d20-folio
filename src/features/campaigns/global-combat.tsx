@@ -123,8 +123,8 @@ export function GlobalCombatMount(): null {
   );
   // DEV ONLY — the combat-chronicle e2e/dev seam. When `d20-dev-combat-chronicle=1` is
   // set before boot, publish a ready-made own-PC encounter status (the evoker + three
-  // monsters) so the OPEN `scn-evoker-wizard` sheet's CombatResolver banner renders for
-  // real (`useSheetCombat` scopes on `characterId`). Takes precedence over the live
+  // monsters) so the OPEN `scn-evoker-wizard` sheet commits its actions as in a real
+  // encounter (`useSheetCombat` scopes on `characterId`). Takes precedence over the live
   // resolution + the pip seed below.
   const devCombat = useMemo(
     () => (DEV_BYPASS_AUTH ? makeDevChronicleCombat() : null),
