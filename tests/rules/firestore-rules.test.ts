@@ -2505,106 +2505,106 @@ describe("firestore.rules — the account-level homebrew library (users/{uid}/li
   });
 });
 
-// ── The encounter document (combat re-architecture, P2 prototype) ────────────
-// `campaigns/{campId}/encounters/{eid}` is the ONLY shared writable gameplay surface of
-// the target architecture: members APPEND actions to `log`; the DM (and admin) may
-// rewrite it (checkpoints, settings, deletion). Rules enforce membership and shape;
-// game legality lives in the reducer (ADR-0005). Nobody writes another user's subtree.
-describe("firestore.rules — campaign encounter documents (append-only log)", () => {
-  const encounterPath = ["campaigns", "camp1", "encounters", "enc1"] as const;
-  const seedEncounter = {
-    schema: 1,
-    id: "enc1",
-    host: { kind: "campaign", campaignId: "camp1" },
-    log: [
-      {
-        kind: "table",
-        id: "t-1",
-        seq: { ms: 1, counter: 0, by: "dm" },
-        by: "dm",
-        table: { op: "start", epoch: 1 },
-      },
-    ],
-    checkpoint: null,
-  };
-  const memberAction = {
-    kind: "declare",
-    id: "d-1",
-    seq: { ms: 2, counter: 0, by: "member" },
-    by: "member",
-    relation: { kind: "visible", a: "a", b: "b", value: true },
-    remove: false,
-    mover: null,
-  };
-
-  beforeEach(async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), ...encounterPath), seedEncounter);
-    });
+// ── The session log (src/lib/session-log) ────────────────────────────────────
+// One append-only document per play session: members append exactly one item stamped
+// with their own uid; written history never changes; who may correct which line is the
+// fold's job (ADR-0005).
+describe("firestore.rules — campaign session logs (append-only)", () => {
+  const logPath = ["campaigns", "camp1", "sessionLogs", "2026-10-08"] as const;
+  const item = (id: string, by: string, type = "event") => ({
+    type,
+    id,
+    by,
+    at: 1,
+    ...(type === "event" ? { event: { kind: "damage", amount: 3 } } : { target: "x" }),
   });
-
-  it("a member may append to the log and read the encounter", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
-    await assertSucceeds(
-      updateDoc(doc(db, ...encounterPath), { log: arrayUnion(memberAction) })
-    );
-    await assertSucceeds(getDoc(doc(db, ...encounterPath)));
-  });
-
-  it("a member may NOT rewrite the encounter (shrink the log, change the schema or checkpoint)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
-    await assertFails(setDoc(doc(db, ...encounterPath), { ...seedEncounter, log: [] }));
-    await assertFails(updateDoc(doc(db, ...encounterPath), { schema: 2 }));
-    await assertFails(
-      updateDoc(doc(db, ...encounterPath), {
-        checkpoint: { through: { ms: 1, counter: 0, by: "member" }, state: {} },
-      })
-    );
-  });
-
-  it("a non-member (leaked link, removed member) may neither read nor append", async () => {
-    const db = testEnv.authenticatedContext("outsider").firestore();
-    await assertFails(getDoc(doc(db, ...encounterPath)));
-    await assertFails(
-      updateDoc(doc(db, ...encounterPath), { log: arrayUnion(memberAction) })
-    );
-  });
-
-  it("the DM may append an override on a player-owned entity and may checkpoint (rewrite) the document", async () => {
-    const db = testEnv.authenticatedContext("dm").firestore();
-    const override = {
-      kind: "override",
-      id: "o-1",
-      seq: { ms: 3, counter: 0, by: "dm" },
-      by: "dm",
-      entity: "member-character",
-      path: "vitals.hp",
-      value: 12,
-      reason: "dm:ruling",
-    };
-    await assertSucceeds(
-      updateDoc(doc(db, ...encounterPath), { log: arrayUnion(override) })
-    );
-    await assertSucceeds(
-      setDoc(doc(db, ...encounterPath), {
-        ...seedEncounter,
-        log: [],
-        checkpoint: { through: { ms: 3, counter: 0, by: "dm" }, state: { revision: 3 } },
-      })
-    );
-  });
-
-  it("no encounter writer gains any access to another user's character subtree", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), "users", "member", "characters", "char-m"), {
-        name: "a member's PC",
-        build: {},
-        state: {},
+  const seed = () =>
+    testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), ...logPath), {
+        schema: 1,
+        log: [item("i1", "dm")],
+        lastAt: 1,
       });
     });
-    const dm = testEnv.authenticatedContext("dm").firestore();
-    await assertFails(
-      updateDoc(doc(dm, "users", "member", "characters", "char-m"), { name: "Renamed" })
+
+  it("a member opens a session with their own first item", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      setDoc(doc(db, ...logPath), { schema: 1, log: [item("i1", "member")], lastAt: 1 })
     );
+  });
+
+  it("a member may not open a session with someone else's item or extra fields", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertFails(
+      setDoc(doc(db, ...logPath), { schema: 1, log: [item("i1", "dm")], lastAt: 1 })
+    );
+    await assertFails(
+      setDoc(doc(db, ...logPath), {
+        schema: 1,
+        log: [item("i1", "member")],
+        lastAt: 1,
+        state: {},
+      })
+    );
+  });
+
+  it("two members append in turn and both read the same log", async () => {
+    await seed();
+    const member = testEnv.authenticatedContext("member").firestore();
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(
+      updateDoc(doc(member, ...logPath), {
+        log: arrayUnion(item("m1", "member")),
+        lastAt: 2,
+      })
+    );
+    await assertSucceeds(
+      updateDoc(doc(dm, ...logPath), {
+        log: arrayUnion(item("c1", "dm", "correct")),
+        lastAt: 3,
+      })
+    );
+    const snap = await getDoc(doc(member, ...logPath));
+    expect((snap.data()?.log as { id: string }[]).map((i) => i.id)).toEqual([
+      "i1",
+      "m1",
+      "c1",
+    ]);
+  });
+
+  it("nobody rewrites history: no shrink, no edit, no item in someone else's name", async () => {
+    await seed();
+    const member = testEnv.authenticatedContext("member").firestore();
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertFails(updateDoc(doc(member, ...logPath), { log: [], lastAt: 2 }));
+    await assertFails(
+      updateDoc(doc(dm, ...logPath), { log: [item("i1", "dm", "retract")], lastAt: 2 })
+    );
+    await assertFails(
+      updateDoc(doc(member, ...logPath), { log: arrayUnion(item("m1", "dm")), lastAt: 2 })
+    );
+    await assertFails(
+      updateDoc(doc(member, ...logPath), {
+        log: arrayUnion(item("m1", "member"), item("m2", "member")),
+        lastAt: 2,
+      })
+    );
+  });
+
+  it("an outsider may neither read nor append; only the DM may delete", async () => {
+    await seed();
+    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(getDoc(doc(outsider, ...logPath)));
+    await assertFails(
+      updateDoc(doc(outsider, ...logPath), {
+        log: arrayUnion(item("o1", "outsider")),
+        lastAt: 2,
+      })
+    );
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertFails(deleteDoc(doc(member, ...logPath)));
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(deleteDoc(doc(dm, ...logPath)));
   });
 });
