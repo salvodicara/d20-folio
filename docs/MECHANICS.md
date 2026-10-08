@@ -2,6 +2,10 @@
 
 ## Production interaction policy — 2026-09-21
 
+> **Owner, 2026-10-08:** casting a spell whose state applies to its caster lights that state
+> (`activateActionState`) in `commitCastOption`, exactly as the reaction path does. Selected-
+> recipient states (Mage Armor, Bless, Shield of Faith) still wait for a target.
+
 The owner has retired mandatory mechanics resolution from normal sheet use.
 Spells and Play dispatch through `TurnEconomyProvider.executeAction`: spells keep
 source/level selection, payment, concentration, log and undo, without target/dice

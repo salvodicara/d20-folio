@@ -1343,6 +1343,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         if (selectedMetamagicCost > 0)
           cs.useTracker("sorcerer-font-of-magic", selectedMetamagicCost);
         const restoreConcentration = applyActionConcentration(action, opt.level);
+        // A self buff establishes its standing state on cast (owner 2026-10-08: states
+        // activate with one tap and expire by themselves). Only flips when OFF, so undo
+        // never clears a hand-set state; arms the round countdown.
+        const activation = activateActionState(action, opt.level);
         const loggedId = cs.logEvent({
           kind: "action-use",
           action: action.nameLoc,
@@ -1357,7 +1361,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             !itemResourceCommands.revert(resourceCommit)
           )
             return false;
-          restoreConcentration(false);
+          activation.restore();
+          restoreConcentration(activation.activated);
           const live = useCharacterStore.getState();
           if (opt.kind === "slot") live.restoreSpellSlot(opt.level, opt.pactMagic);
           else if (opt.kind === "free-cast" && opt.payment?.kind !== "item-resource")

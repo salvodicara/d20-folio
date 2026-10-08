@@ -144,6 +144,10 @@ components:
 
 # Design System: d20 Folio
 
+**Owner, 2026-10-08 (supersedes "no spell effect application" below for self states):** Cast
+lights a self-targeted spell's state (Shield's +5 AC, Hunter's Mark) with its countdown; undo
+clears it.
+
 **Production recovery, owner-approved direction (2026-09-21):** the Cast action
 records the chosen resource immediately, with the existing undo affordance. Keep
 the source/level picker only when there is a choice and the concentration-swap
