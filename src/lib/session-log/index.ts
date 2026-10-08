@@ -22,3 +22,4 @@ export {
   type MirrorDraft,
 } from "./encounter-mirror";
 export { createEncounterMirror } from "./encounter-mirror-controller";
+export { combatEventToPlayEvent, createCharacterLogMirror } from "./character-events";

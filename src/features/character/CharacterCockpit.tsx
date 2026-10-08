@@ -53,6 +53,7 @@ import { TurnEconomyProvider } from "./center/TurnEconomyProvider";
 import { ItemResourceCommandProvider } from "./center/ItemResourceCommandProvider";
 import { LeftHud } from "./hud/LeftHud";
 import { RightHud } from "./hud/RightHud";
+import { useSessionLogPlayerRecorder } from "./useSessionLogPlayerRecorder";
 
 export function CharacterCockpit() {
   const { characterId } = useParams<{ characterId: string }>();
@@ -60,6 +61,7 @@ export function CharacterCockpit() {
   // CockpitView, reused as-is by the read-only DM viewer (T4) with a different
   // subscription — never a fork.
   useCharacterSubscription(characterId);
+  useSessionLogPlayerRecorder(characterId);
   return <CockpitView />;
 }
 

@@ -39,11 +39,16 @@ export function nextSessionId(head: SessionHead | null, now: Date): string {
   return `${day}-${n + 1}`;
 }
 
+/** `id` lets a caller derive a deterministic item id (idempotent re-recording). */
+interface ItemOptions {
+  id?: string;
+}
+
 export interface SessionRecorder {
   /** Record a gesture; returns its id so it can be corrected or retracted later. */
-  record(event: PlayEvent): Promise<string>;
-  correct(target: string, event: PlayEvent): Promise<string>;
-  retract(target: string): Promise<string>;
+  record(event: PlayEvent, options?: ItemOptions): Promise<string>;
+  correct(target: string, event: PlayEvent, options?: ItemOptions): Promise<string>;
+  retract(target: string, options?: ItemOptions): Promise<string>;
 }
 
 type Draft =
@@ -59,17 +64,19 @@ export function createSessionRecorder(deps: {
 }): SessionRecorder {
   const now = deps.now ?? (() => new Date());
   const newId = deps.newId ?? (() => crypto.randomUUID());
-  const append = async (draft: Draft): Promise<string> => {
+  const append = async (draft: Draft, options?: ItemOptions): Promise<string> => {
     const at = now();
     const sessionId = nextSessionId(await deps.store.latest(), at);
-    const item: LogItem = { ...draft, id: newId(), by: deps.uid, at: at.getTime() };
+    const id = options?.id ?? newId();
+    const item: LogItem = { ...draft, id, by: deps.uid, at: at.getTime() };
     await deps.store.append(sessionId, item);
     return item.id;
   };
   return {
-    record: (event) => append({ type: "event", event }),
-    correct: (target, event) => append({ type: "correct", target, event }),
-    retract: (target) => append({ type: "retract", target }),
+    record: (event, options) => append({ type: "event", event }, options),
+    correct: (target, event, options) =>
+      append({ type: "correct", target, event }, options),
+    retract: (target, options) => append({ type: "retract", target }, options),
   };
 }
 

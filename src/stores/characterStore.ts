@@ -1163,6 +1163,31 @@ function cellWith<T extends { readonly current: number }>(cell: T, current: numb
   return { ...cell, current };
 }
 
+/**
+ * Where the sheet's play-log appends and undos are forwarded beyond the character (the
+ * campaign session log). Set by the owner's cockpit; never by a read-only view. A sink
+ * failure is swallowed: the sheet never depends on it.
+ */
+export interface PlayLogSink {
+  added(characterId: string, entry: LogEntry): void;
+  removed(characterId: string, entryId: string): void;
+}
+
+let playLogSink: PlayLogSink | null = null;
+
+export function setPlayLogSink(sink: PlayLogSink | null): void {
+  playLogSink = sink;
+}
+
+function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
+  if (!playLogSink) return;
+  try {
+    send(playLogSink);
+  } catch {
+    // The session log is a record beside the sheet; it never blocks play.
+  }
+}
+
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
   character: null,
   loading: false,
@@ -4580,6 +4605,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character: { ...character, session: { ...character.session, logEntries: next } },
     });
     void saveLogToIDB(character.id, next);
+    if (!get().readonly) notifyPlayLog((sink) => sink.added(character.id, entry));
     return id;
   },
 
@@ -4594,6 +4620,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character: { ...character, session: { ...character.session, logEntries: next } },
     });
     void saveLogToIDB(character.id, next);
+    if (!get().readonly) notifyPlayLog((sink) => sink.removed(character.id, id));
   },
 
   clearLog: () => {
