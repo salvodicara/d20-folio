@@ -18,7 +18,12 @@ crea da sola e diventa un resoconto deterministico, da dare a un'AI per il riass
 
 Ogni evento è valido con il minimo («-14 PF», «Ira»). Chi, su chi, da cosa e quanto sono
 facoltativi: se ci sono il motore li usa, se mancano tutto funziona lo stesso e il resoconto dice
-solo ciò che sa. Il dettaglio si può aggiungere anche dopo. Nessun flusso obbligatorio a più
+solo ciò che sa. Il dettaglio si può aggiungere anche dopo. Ogni azione ha tre velocità, tutte sempre disponibili.
+Esempio, _Cura Ferite_: **precisa** (scegli chi curi e l'app aggiunge i PF), **salta** (un tocco:
+scala lo slot e basta), **diretta** (scali lo slot dalla scheda, come oggi). Chi è preciso ottiene
+più automazione; chi è pigro non viene mai bloccato. Il combattimento è concitato e deve scorrere.
+Si parte da ciò che c'è oggi e funziona: si migliorano database, automazione e aspetto, copiando
+gli schemi migliori (BG3, Foundry, D&D Beyond). Nessun flusso obbligatorio a più
 schermate («200 schermate per un attacco» è il difetto da eliminare).
 
 ## Modello a strati
@@ -63,3 +68,23 @@ recupera solo ciò che serve, un pezzo alla volta.
 
 **Rischio principale:** ripetere `v2`, cioè modellare tutto prima di consegnare. Ogni fase deve
 arrivare al tavolo prima di aprire la successiva.
+
+## Decisioni di interazione (8/10/2026)
+
+- **Azioni: il tocco registra subito, i dettagli sono una riga in linea facoltativa.** Esempio:
+  tocco «Spada lunga» → registrato, Azione scalata; sotto compare una riga (bersaglio,
+  colpito/mancato, danno) che si può ignorare o completare anche dopo dal registro. Mai finestre
+  bloccanti. Stesso schema per cure, incantesimi ad area, pozioni.
+- **Danni ai PG:** li può inserire sia il giocatore sulla propria scheda sia il DM dal suo
+  pannello; l'altro vede l'aggiornamento.
+- **Iniziativa:** in Folio ma facoltativa. Se il DM apre lo scontro, Folio gestisce turni e timer;
+  altrimenti «nuovo round» a mano.
+- **Resoconto:** cronaca per round.
+- **PF dei mostri:** il DM sceglie per scontro se i giocatori vedono numeri, solo uno stato
+  (illeso/ferito/sanguinante/quasi morto) o niente.
+- **Correzioni:** ognuno corregge le proprie righe, il DM tutte; ogni correzione ricalcola stati e
+  resoconto.
+- **Sessione:** si apre da sola alla prima azione e si chiude dopo un periodo di inattività; il DM
+  può anche aprirla, chiuderla, rinominarla o dividerla a mano.
+- **Mostri:** scontri preparati prima dal catalogo, mostri aggiunti al volo (anche solo nome e PF)
+  e mostri homebrew, tutti supportati.

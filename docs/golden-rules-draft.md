@@ -36,7 +36,7 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
 5. **Si può sempre correggere.** Annulla e correggi devono restare disponibili anche dopo altre
    azioni. Undo non ritira mai i dadi. _Perché:_ «gli umani sbagliano». — I-028, I-229,
    GR#21 @main
-6. **Semplice anche per chi è pigro.** Per giocare non si compila niente di obbligatorio. Meglio un
+6. **Massima flessibilità, massima semplicità d'uso.** Chi vuole essere preciso può fare tutto e ottiene più automazione; chi è pigro non viene mai bloccato. Per giocare non si compila niente di obbligatorio. Meglio un
    comando chiaro che un'istruzione in più. Gli strumenti del DM aiutano ma non sono mai
    obbligatori. — I-058, PROD 2026-09-22, COST §2.9, I-236
 7. **Durante il gioco si modifica sul posto.** Al tavolo non si passa da una «modalità modifica»,
