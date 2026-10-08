@@ -47,6 +47,8 @@ import {
   MAX_UNDO_DEPTH,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { useAuthStore } from "@/stores/authStore";
+import type { ToastChoices } from "@/stores/toastStore";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
@@ -1329,6 +1331,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const message = execution.ritual
       ? t("combat.castRitualToast", { name: action.name })
       : t("combat.actionUsedToast", { name: action.name });
+    let castLogId: string | null = null;
     registerUndoableToast(
       { message },
       () => {
@@ -1360,6 +1363,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           effect: logTypeForAction(action),
           slot: action.type,
         });
+        castLogId = loggedId;
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1383,9 +1387,86 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           return true;
         };
       },
-      { turnScoped: false }
+      {
+        turnScoped: false,
+        choices: castTargetChoices(action, opt.level, () => castLogId),
+      }
     );
     clearPendingResolution(action);
+  }
+
+  /**
+   * The cast's optional "on whom?" row (owner, VISION 2026-10-08: the tap records at
+   * once; the detail is an ignorable inline row). Offered for a spell whose standing
+   * state goes to a chosen creature (Mage Armor, Bless, Shield of Faith). "Me" lights
+   * the state on this sheet; any pick completes the log line's target, which reaches
+   * the session report. Lighting an ally's sheet is a later step.
+   */
+  function castTargetChoices(
+    action: ResolvedAction,
+    castLevel: number,
+    logId: () => string | null
+  ): ToastChoices | undefined {
+    const standing = action.standingEffect;
+    if (!standing || standing.markScope) return undefined;
+    const status = useCombatStatusStore.getState().status;
+    const uid = useAuthStore.getState().user?.uid;
+    const myId = status?.myId ?? (uid ? `pc-${uid}` : "self");
+    const targets: Array<{ id: string; label: string; self: boolean }> = [];
+    if (!standing.excludeSelf)
+      targets.push({ id: myId, label: t("combat.castTargetMe"), self: true });
+    for (const row of status?.view.rows ?? []) {
+      const ally = row.kind === "pc";
+      if (row.id === myId || ally !== (standing.targetAffinity !== "enemy")) continue;
+      targets.push({ id: row.id, label: row.name, self: false });
+    }
+    if (targets.length === 0) return undefined;
+    const pick = (target: { id: string; label: string; self: boolean }): void => {
+      registerUndoableToast(
+        {
+          message: t("combat.castTargetApplied", {
+            name: action.name,
+            target: target.label,
+          }),
+        },
+        () => {
+          const store = useCharacterStore.getState();
+          if (!store.character || store.readonly) return null;
+          const activation = target.self
+            ? activateActionState(
+                {
+                  ...action,
+                  activatesKey: standing.activeKey,
+                  activeDurationRounds: standing.maxRounds,
+                  activeTurnBoundary: standing.turnBoundary,
+                },
+                castLevel
+              )
+            : null;
+          const id = logId();
+          const line = id
+            ? store.character.session.logEntries.find((entry) => entry.id === id)
+            : undefined;
+          const restoreLine =
+            id && line?.event.kind === "action-use"
+              ? store.amendLogEntry(id, { ...line.event, targets: [target.id] })
+              : null;
+          return () => {
+            activation?.restore();
+            restoreLine?.();
+          };
+        },
+        { turnScoped: false }
+      );
+    };
+    return {
+      prompt: t("combat.castTargetPrompt"),
+      options: targets.map((target) => ({
+        id: target.id,
+        label: target.label,
+        onPick: () => pick(target),
+      })),
+    };
   }
 
   // S6 — project a chosen alternate payment onto the action's cost fields so the

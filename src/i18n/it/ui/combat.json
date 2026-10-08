@@ -511,6 +511,9 @@
     "rollMode": {
       "advantage": "Vantaggio",
       "disadvantage": "Svantaggio"
-    }
+    },
+    "castTargetPrompt": "Su chi?",
+    "castTargetMe": "Io",
+    "castTargetApplied": "{{name}} su {{target}}"
   }
 }

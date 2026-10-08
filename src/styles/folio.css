@@ -2651,6 +2651,27 @@ button.pr-dot.lg::before {
   margin-left: auto;
   flex-shrink: 0;
 }
+/* Optional one-tap follow-up row (the cast's "on whom?"): wraps under the message,
+   compact gilt-outlined chips; ignoring it is always fine. */
+.toast:has(.t-choices) {
+  flex-wrap: wrap;
+}
+.toast .t-choices {
+  order: 10;
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  padding-left: 32px;
+}
+.toast .t-choices-prompt {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.toast .t-choice {
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, var(--border-accent));
+}
 /* Dismiss (check) button inside toast — compact, no chrome at rest. */
 .toast .t-dismiss {
   width: 24px;

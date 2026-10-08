@@ -17,6 +17,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { characterWorldState } from "@/lib/mechanics-world-store";
@@ -190,6 +191,45 @@ it("lights a concentration self buff with its countdown and undo restores both",
   const undone = liveCharacter();
   expect(undone.session.concentration).toBe("");
   expect(undone.session.activeFeatures ?? []).not.toContain("spell-hunters-mark");
+});
+
+it("offers an optional 'on whom?' row; picking Me lights the state and tags the line", async () => {
+  const doc = liveCharacter();
+  doc.character.classes = [{ classId: "wizard", level: 3 }];
+  doc.character.spells = [{ srdId: "mage-armor", prepared: true }];
+  const ac = effectiveAC(doc.character, doc.session);
+  render(
+    <MemoryRouter>
+      <TurnEconomyProvider>
+        <SpellsTab />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+  const card = screen.getByText("Mage Armor").closest(".uc") as HTMLElement;
+  fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
+  fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+  await waitFor(() => expect(liveCharacter().session.spellSlots["1"]?.used).toBe(1));
+  // Ignoring the row is fine: nothing is lit until a pick.
+  expect(liveCharacter().session.activeFeatures ?? []).not.toContain("spell-mage-armor");
+  const toast = useToastStore.getState().toasts.find((entry) => entry.choices);
+  expect(toast?.choices?.options.map((option) => option.label)).toEqual(["Me"]);
+  act(() => toast?.choices?.options[0]?.onPick());
+
+  const after = liveCharacter();
+  expect(after.session.activeFeatures ?? []).toContain("spell-mage-armor");
+  expect(effectiveAC(after.character, after.session)).not.toBe(ac);
+  expect(after.session.logEntries.at(-1)?.event).toMatchObject({
+    kind: "action-use",
+    targets: ["pc-test-uid"],
+  });
+
+  act(() => {
+    expect(useUndoStore.getState().undo()).toBe(true);
+  });
+  const undone = liveCharacter();
+  expect(undone.session.activeFeatures ?? []).not.toContain("spell-mage-armor");
+  expect(undone.session.logEntries.at(-1)?.event).not.toHaveProperty("targets");
+  expect(undone.session.spellSlots["1"]?.used).toBe(1);
 });
 
 it("records an attack without requiring a target or damage roll", async () => {

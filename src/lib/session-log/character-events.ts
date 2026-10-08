@@ -19,7 +19,13 @@ export function combatEventToPlayEvent(
 ): PlayEvent | null {
   switch (event.kind) {
     case "action-use":
-      return { kind: "action", actor: me, source: event.action, slot: event.slot };
+      return {
+        kind: "action",
+        actor: me,
+        source: event.action,
+        slot: event.slot,
+        ...(event.targets?.length ? { targets: event.targets } : {}),
+      };
     case "reaction-use":
       return { kind: "action", actor: me, source: event.action, slot: "reaction" };
     case "rider-use":
@@ -66,7 +72,11 @@ export function createCharacterLogMirror(deps: {
   recorder: SessionRecorder;
   characterId: string;
   actor: CombatantId;
-}): { added(entry: LogEntry): Promise<void>; removed(entryId: string): Promise<void> } {
+}): {
+  added(entry: LogEntry): Promise<void>;
+  removed(entryId: string): Promise<void>;
+  corrected(entry: LogEntry): Promise<void>;
+} {
   const recorded = new Set<string>();
   const idOf = (entryId: string): string => `pc:${deps.characterId}:${entryId}`;
   return {
@@ -76,6 +86,12 @@ export function createCharacterLogMirror(deps: {
       const id = idOf(entry.id);
       recorded.add(id);
       await deps.recorder.record(event, { id });
+    },
+    async corrected(entry) {
+      const id = idOf(entry.id);
+      const event = combatEventToPlayEvent(entry.event, deps.actor);
+      if (!event || !recorded.has(id)) return;
+      await deps.recorder.correct(id, event);
     },
     async removed(entryId) {
       const id = idOf(entryId);
