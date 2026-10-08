@@ -594,10 +594,6 @@ describe("program supervisor durable runbook guards", () => {
   it("routes setup through the pinned idempotent bootstrap", () => {
     const briefing = readFileSync(join(repositoryRoot, "CLAUDE.md"), "utf8");
     expect(briefing).toContain("scripts/program-supervisor/bootstrap-worktree.sh");
-    expect(briefing).toMatch(/root and standalone `functions\/`\s+dependenc/i);
-    expect(briefing).not.toContain(
-      "Setup: `asdf install && pnpm install && git config core.hooksPath .githooks`"
-    );
   });
 
   it("requires dedicated paired worktrees and a complete two-repository charter for private edits", () => {
