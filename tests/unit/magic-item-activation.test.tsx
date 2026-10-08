@@ -75,7 +75,9 @@ describe("magic-item activation wiring", () => {
         session?.itemResources?.[BOOTS_INSTANCE_ID]?.resources.charges?.current
       ).toBe(3);
       expect(session?.activeFeatures).toContain(BOOTS_ACTIVE_KEY);
-      expect(session?.effectTimers?.[BOOTS_ACTIVE_KEY]).toEqual({ roundsLeft: 600 });
+      expect(session?.effectTimers?.[BOOTS_ACTIVE_KEY]).toMatchObject({
+        roundsLeft: 600,
+      });
     });
 
     const toast = useToastStore.getState().toasts.at(-1);

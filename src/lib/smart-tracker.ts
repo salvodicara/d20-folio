@@ -8024,15 +8024,31 @@ export interface ExpiredTimedEffect {
  * is being maintained every round STILL ends at 100 rounds (RAW: "you can maintain
  * a Rage for up to 10 minutes" = 100 rounds). Override-first holds: the player can re-activate.
  */
-export function advanceEffectTimers(character: CharacterDoc): {
-  timers: Record<string, { roundsLeft: number }>;
+export function advanceEffectTimers(
+  character: CharacterDoc,
+  /** The round being counted; a timer already counted for it is left as is. */
+  forRound?: number
+): {
+  timers: Record<string, { roundsLeft: number; tickedRound?: number }>;
   expired: ExpiredTimedEffect[];
 } {
   const prev = character.session.effectTimers ?? {};
+  // A round is counted once; a catch-up for a round at or before the last counted
+  // one (or before the state was lit) changes nothing.
+  const counted = (key: string): boolean => {
+    const ticked = prev[key]?.tickedRound;
+    return forRound !== undefined && ticked !== undefined && ticked >= forRound;
+  };
+  const stamp = forRound === undefined ? {} : { tickedRound: forRound };
   const activeTimed = resolveActiveTimedEffects(character);
-  const next: Record<string, { roundsLeft: number }> = {};
+  const next: Record<string, { roundsLeft: number; tickedRound?: number }> = {};
   const expired: ExpiredTimedEffect[] = [];
   for (const eff of activeTimed) {
+    const already = prev[eff.activeKey];
+    if (already && counted(eff.activeKey)) {
+      next[eff.activeKey] = already;
+      continue;
+    }
     // Arm a fresh state to its cap; otherwise decrement its existing countdown.
     const current = prev[eff.activeKey]?.roundsLeft ?? eff.maxRounds;
     const roundsLeft = current - 1;
@@ -8041,7 +8057,7 @@ export function advanceEffectTimers(character: CharacterDoc): {
       // consumer). No timer entry survives.
       expired.push({ activeKey: eff.activeKey, sourceId: eff.sourceId });
     } else {
-      next[eff.activeKey] = { roundsLeft };
+      next[eff.activeKey] = { roundsLeft, ...stamp };
     }
   }
   // Self-sustaining timers have no `while-active` grant from which to recover
@@ -8056,11 +8072,15 @@ export function advanceEffectTimers(character: CharacterDoc): {
         ? castSourceIdFromActiveKey(key)
         : null;
     if (!sourceId) continue;
+    if (counted(key)) {
+      next[key] = timer;
+      continue;
+    }
     const roundsLeft = timer.roundsLeft - 1;
     if (roundsLeft <= 0) {
       expired.push({ activeKey: key, sourceId });
     } else {
-      next[key] = { roundsLeft };
+      next[key] = { roundsLeft, ...stamp };
     }
   }
   // Stale timers for states no longer active are simply not copied into `next`.

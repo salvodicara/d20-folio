@@ -617,7 +617,7 @@ interface CharacterState {
    * Returns the dropped states + an undo applier restoring the prior timers,
    * toggles, and log lines, so Undo-End-Turn reverts the whole step atomically.
    */
-  advanceEffectTimers: () => {
+  advanceEffectTimers: (forRound?: number) => {
     expired: ReadonlyArray<{ activeKey: string; sourceId: string }>;
     restore: () => void;
   };
@@ -1162,6 +1162,12 @@ function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
   } catch {
     // The session log is a record beside the sheet; it never blocks play.
   }
+}
+
+/** The round before the current combat round: a timer lit now must not have the
+ *  current round counted against it again by a turn-boundary catch-up. */
+function litRound(): number {
+  return useCombatStore.getState().round - 1;
 }
 
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
@@ -3464,7 +3470,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             ...updated.session,
             effectTimers: {
               ...(updated.session.effectTimers ?? {}),
-              [key]: { roundsLeft: timed.maxRounds },
+              // Lit during the current round: that round is already this state's.
+              [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound() },
             },
           },
         };
@@ -3544,7 +3551,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...character.session,
           effectTimers: {
             ...(character.session.effectTimers ?? {}),
-            [key]: { roundsLeft: rounds },
+            [key]: { roundsLeft: rounds, tickedRound: litRound() },
           },
         },
       },
@@ -3745,12 +3752,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     return get().armEffectTimer(potionTimerKey(itemId), rounds);
   },
 
-  advanceEffectTimers: () => {
+  advanceEffectTimers: (forRound) => {
     const noop = { expired: [] as ReadonlyArray<never>, restore: () => {} };
     if (get().readonly) return noop;
     const character = get().character;
     if (!character) return noop;
-    const { timers, expired } = advanceEffectTimersEngine(character);
+    const { timers, expired } = advanceEffectTimersEngine(character, forRound);
     // Snapshot for undo BEFORE mutating: prior timers + active toggles/cast levels
     // + the log entries the expiry appends, so Undo-End-Turn reverts the whole step.
     const priorTimers = character.session.effectTimers;

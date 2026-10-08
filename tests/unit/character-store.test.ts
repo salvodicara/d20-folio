@@ -3,6 +3,7 @@ import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore, type UndoLabel } from "@/stores/undoStore";
 import { localizeToastIntent } from "@/lib/views/toast-intent";
@@ -2111,12 +2112,12 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
       useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
-      ).toEqual({ roundsLeft: 100 });
+      ).toMatchObject({ roundsLeft: 100 });
 
       useCharacterStore.getState().advanceEffectTimers();
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
-      ).toEqual({ roundsLeft: 99 });
+      ).toMatchObject({ roundsLeft: 99 });
 
       useCharacterStore.getState().setActiveFeature("barbarian-rage", false);
       expect(
@@ -2126,7 +2127,7 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
       useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
-      ).toEqual({ roundsLeft: 100 });
+      ).toMatchObject({ roundsLeft: 100 });
     });
   });
 
@@ -2207,6 +2208,38 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
       expect(
         useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
       ).toEqual({ roundsLeft: 5 });
+    });
+
+    it("counts each round once: a repeated tick for the same round is a no-op", () => {
+      useCharacterStore.getState().setCharacter(
+        barbarianDoc({
+          activeFeatures: ["barbarian-rage"],
+          effectTimers: { "barbarian-rage": { roundsLeft: 5 } },
+        })
+      );
+      const timer = () =>
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"];
+      useCharacterStore.getState().advanceEffectTimers(3);
+      expect(timer()).toEqual({ roundsLeft: 4, tickedRound: 3 });
+      const again = useCharacterStore.getState().advanceEffectTimers(3);
+      expect(again.expired).toEqual([]);
+      expect(timer()).toEqual({ roundsLeft: 4, tickedRound: 3 });
+      useCharacterStore.getState().advanceEffectTimers(4);
+      expect(timer()).toEqual({ roundsLeft: 3, tickedRound: 4 });
+    });
+
+    it("never counts the round a state was lit in a second time", () => {
+      useCombatStore.setState({ round: 6 });
+      useCharacterStore.getState().setCharacter(barbarianDoc({}));
+      useCharacterStore.getState().setActiveFeature("barbarian-rage", true);
+      const armed =
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"];
+      expect(armed?.tickedRound).toBe(5);
+      // A catch-up for the round before activation changes nothing.
+      useCharacterStore.getState().advanceEffectTimers(5);
+      expect(
+        useCharacterStore.getState().character?.session.effectTimers?.["barbarian-rage"]
+      ).toEqual(armed);
     });
 
     it("auto-drops an expiring state (Rage at 1) + logs it, and undo restores toggle+timer+log", () => {
@@ -2322,7 +2355,7 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
 
       restore?.();
       expect(useCharacterStore.getState().character?.session.effectTimers).toEqual({
-        later: { roundsLeft: 3 },
+        later: { roundsLeft: 3, tickedRound: useCombatStore.getState().round - 1 },
       });
     });
   });
@@ -2336,7 +2369,7 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
         useCharacterStore.getState().character?.session.effectTimers?.[
           "potion:potion-of-speed"
         ]
-      ).toEqual({ roundsLeft: 10 });
+      ).toMatchObject({ roundsLeft: 10 });
       // Undo drops the armed timer (the map returns to its prior empty state).
       restore?.();
       expect(

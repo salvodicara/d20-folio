@@ -556,7 +556,12 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
         typeof value.roundsLeft === "number" &&
         Number.isFinite(value.roundsLeft)
       ) {
-        timers[key] = { roundsLeft: value.roundsLeft };
+        timers[key] = {
+          roundsLeft: value.roundsLeft,
+          ...(typeof value.tickedRound === "number" && Number.isFinite(value.tickedRound)
+            ? { tickedRound: Math.round(value.tickedRound) }
+            : {}),
+        };
       }
     }
     if (Object.keys(timers).length > 0) session.effectTimers = timers;
