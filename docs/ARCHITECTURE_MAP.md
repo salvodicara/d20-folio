@@ -246,9 +246,35 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    - The character's log panel reads the session log when attached.
    - Delete the IndexedDB mirror and `src/lib/combat/*`.
 
-Phase 2 then derives timers (Rage, concentration, durations) from the log. That is the first step
-where state stops being mutated directly, and the moment to start thinning `characterStore` and the
-`mechanics-*` world.
+## Phase 2: states and timers (one session each, each shippable)
+
+Today (mapped 2026-10-08): about 8 parallel "effect active for a while" mechanisms; only five are
+live — `session.activeFeatures` + `effectTimers` (round countdown, ticked only by the owner's End
+Turn), `effectBoundaries` (turn edges: Shield, Reckless Attack), the `concentration` string (no
+duration of its own) and potion timers (display only). The canonical live path is the
+`while-active` grant → `sessionActiveKeys` → `evaluateGrants` gate, with lifecycle code in
+`smart-tracker.ts` (≈7760–8070) and `activateActionState` in `TurnEconomyProvider`. Dead residue:
+`CombatState.activeEffects`, encounter `effectOps` (no writer), `standingEffect` /
+`combat-resolution` resolution, world buff standings. Durations are declared in 8 dialects.
+
+Target: one `Status = { key, source, castLevel?, recipient, concentration, lifetime, endsOn[] }`
+(`lifetime`: turn edge, rounds counted on the owner's turn start, rest, maintained, manual) and one
+pure `expire(statuses, boundary)`; Grants keep gating on status keys; later statuses are a fold of
+`status-start` / `status-end` log events (the rules-model "Stati" box).
+
+0. **Done (#35).** Cast lights a self buff again (owner 2026-10-08).
+1. `Status` type + a read-only derived view over today's fields; rail, `StatusLedge` and
+   aggregation read it; concentration shows its remaining rounds.
+2. Round timers count on the owner's turn start from the shared pointer, so they tick when the DM
+   advances (today they only tick on the owner's own End Turn).
+3. `session.statuses[]` written beside the old fields; idempotent migration (dry-run first).
+4. Fold `effectTimers`, `effectBoundaries`, `activeSpellCastLevels` and the maintenance prompt into
+   `expire`; delete the old fields after the migration is applied (owner yes).
+5. Concentration becomes a flag on a status: dropping it ends its dependents in one place.
+6. Delete the dead residue (`effectOps`, `CombatState.activeEffects`, standing resolution, world
+   standings).
+7. Selected-recipient statuses (Mage Armor, Bless on an ally) via the optional target detail.
+8. Emit `status-start` / `status-end` into the session log, then derive statuses from the fold.
 
 ## From the archived `v2` (tag `archive/2026-10-08-v2`)
 
