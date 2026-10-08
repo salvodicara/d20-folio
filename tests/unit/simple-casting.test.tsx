@@ -135,7 +135,7 @@ describe.each(["spellbook", "play"] as const)("simple casting from %s", (surface
   );
 });
 
-it("records a reaction spell without applying its armor bonus", async () => {
+it("lights a self buff on cast from the spellbook and undo clears it (owner 2026-10-08)", async () => {
   const doc = liveCharacter();
   doc.character.spells = [{ srdId: "shield", prepared: true }];
   const ac = effectiveAC(doc.character, doc.session);
@@ -153,8 +153,43 @@ it("records a reaction spell without applying its armor bonus", async () => {
     expect(useCharacterStore.getState().character?.session.spellSlots["1"]?.used).toBe(1)
   );
   const after = liveCharacter();
-  expect(effectiveAC(after.character, after.session)).toBe(ac);
+  expect(after.session.activeFeatures ?? []).toContain("spell-shield");
+  expect(effectiveAC(after.character, after.session)).toBe(ac + 5);
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  act(() => {
+    expect(useUndoStore.getState().undo()).toBe(true);
+  });
+  const undone = liveCharacter();
+  expect(undone.session.activeFeatures ?? []).not.toContain("spell-shield");
+  expect(effectiveAC(undone.character, undone.session)).toBe(ac);
+});
+
+it("lights a concentration self buff with its countdown and undo restores both", async () => {
+  const doc = liveCharacter();
+  doc.character.classes = [{ classId: "ranger", level: 3 }];
+  doc.character.spells = [{ srdId: "hunters-mark", prepared: true }];
+  render(
+    <MemoryRouter>
+      <TurnEconomyProvider>
+        <SpellsTab />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+  const card = screen.getByText("Hunter's Mark").closest(".uc") as HTMLElement;
+  fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
+  fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+  await waitFor(() => expect(liveCharacter().session.concentration).toBe("hunters-mark"));
+  const after = liveCharacter();
+  expect(after.session.activeFeatures ?? []).toContain("spell-hunters-mark");
+  expect(after.session.effectTimers?.["spell-hunters-mark"]?.roundsLeft).toBeGreaterThan(
+    0
+  );
+  act(() => {
+    expect(useUndoStore.getState().undo()).toBe(true);
+  });
+  const undone = liveCharacter();
+  expect(undone.session.concentration).toBe("");
+  expect(undone.session.activeFeatures ?? []).not.toContain("spell-hunters-mark");
 });
 
 it("records an attack without requiring a target or damage roll", async () => {

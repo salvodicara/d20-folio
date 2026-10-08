@@ -2,6 +2,11 @@
 
 ## Production recovery — owner decision, 2026-09-21
 
+> **Owner, 2026-10-08:** a spell that establishes a state on its caster (Shield, Hunter's Mark,
+> Divine Favor) lights that state on Cast, with its countdown, and undo clears it — from the
+> spellbook and the reaction button alike. Spells that may target someone else (Mage Armor,
+> Bless) wait for the optional target detail. Damage and healing still resolve at the table.
+
 Folio's production sheet returns to resource tracking while d20 Studio carries the
 new product work. Casting spends the selected slot or free-cast resource; targets,
 dice, healing, damage and other consequences are resolved at the table. Spellbook

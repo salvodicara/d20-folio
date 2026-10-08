@@ -92,5 +92,9 @@ arrivare al tavolo prima di aprire la successiva.
   resoconto.
 - **Sessione:** si apre da sola alla prima azione e si chiude dopo un periodo di inattività; il DM
   può anche aprirla, chiuderla, rinominarla o dividerla a mano.
+- **Incantesimi che agiscono su chi li lancia (8/10):** il lancio attiva subito l'effetto con il
+  suo contatore (Scudo +5 CA, Marchio del Cacciatore), dal libro come dal tasto reazione; annulla
+  lo spegne. Quelli che possono andare su un alleato (Armatura Magica, Benedizione) aspettano la
+  riga facoltativa del bersaglio.
 - **Mostri:** scontri preparati prima dal catalogo, mostri aggiunti al volo (anche solo nome e PF)
   e mostri homebrew, tutti supportati.
