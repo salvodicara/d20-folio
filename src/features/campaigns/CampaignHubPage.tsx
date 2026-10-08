@@ -43,6 +43,7 @@ import {
 } from "@/features/campaigns/campaignStore";
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
 import { useSessionLogMirror } from "@/features/campaigns/useSessionLogMirror";
+import { SessionReports } from "@/features/campaigns/SessionReports";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { CampaignArtControl } from "@/features/campaigns/CampaignArtControl";
@@ -316,6 +317,9 @@ function CampaignWorkspace({
         >
           <IsolatedSection>
             <Chronicle campaignId={campaignId} campaignName={campaignName} />
+          </IsolatedSection>
+          <IsolatedSection>
+            <SessionReports campaignId={campaignId} visible={activeView === "journal"} />
           </IsolatedSection>
           <IsolatedSection>
             <SharedNotes />

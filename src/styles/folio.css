@@ -22045,3 +22045,36 @@ body:has(.fob) .toast-region {
 /* §16.5 — the cockpit's primary tabs are BOOK TABS: the same bound-page
    linguette construction the Compendium wears (the cockpit selectors twin the
    .cmp-tab rules) biting the ribbon rule below. */
+
+/* Session reports — the automatic round-by-round chronicle inside a `sess-item`. */
+.sess-report {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 0.75rem);
+}
+.sess-report-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 0.5rem);
+}
+.sess-report-section {
+  font-family: var(--font-title);
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-primary);
+  margin-top: var(--space-2, 0.5rem);
+}
+.sess-report-round {
+  font-size: var(--text-xs, 0.75rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.sess-report-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-left: 1rem;
+  list-style: disc;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--text-secondary);
+}

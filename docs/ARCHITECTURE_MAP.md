@@ -228,9 +228,13 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    lines produce a Chronicle beat, so nothing duplicates the DM mirror. Found on the way:
    `applyDeclaredCombatEffects`, `applyResolvedCombatEffects` and `applySoloCombatEffects` have
    no production caller (dead since the resolver went) — delete in a clean-up pass.
-5. **Report in the app (visible: owner approval with screenshots).**
-   - The Sessions page shows the per-round report, regenerated from the log, with "copy for AI".
-   - End-encounter's chapter is built from the log, not from the reconciled DM feed.
+5. **Done.** `SessionReports` (campaign Journal tab): one row per session from
+   `SessionLogStore.recent`, opening to the round-by-round report rendered by
+   `renderSessionReport` (`src/lib/views/session-report-view.ts`, EN/IT) with "Copy for AI".
+   The encounter start line now carries the monsters' names so the report can name them after
+   the fight. `session-log-source.ts` picks the store: Firestore, or memory under dev bypass, so
+   the whole flow (DM mirror → log → report) runs locally with no backend. Manual session notes
+   (`Sessions.tsx`) are untouched; merging the two is a later step.
 6. **Corrections as events (visible).** Each player corrects their own lines and the DM corrects all
    of them. Corrections are appended `correct`/`retract` events, and the report recomputes.
    Chronicle undo stops deleting history.

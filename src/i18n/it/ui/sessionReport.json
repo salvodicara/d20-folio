@@ -1,0 +1,53 @@
+{
+  "sessionReport": {
+    "title": "Sessione {{date}}",
+    "outside": "Fuori dal combattimento",
+    "encounter": "Scontro {{n}}",
+    "beforeRounds": "Prima del primo round",
+    "somethingUsed": "qualcosa",
+    "withSource": "{{line}} ({{source}})",
+    "action": "{{actor}} usa {{source}}",
+    "actionOn": "{{actor}} usa {{source}} su {{targets}}",
+    "outcome": {
+      "hit": "colpito",
+      "miss": "mancato",
+      "saved": "tiro salvezza riuscito",
+      "failed": "tiro salvezza fallito"
+    },
+    "damage": "{{target}} subisce {{amount}} danni",
+    "damageBy": "{{actor}} infligge {{amount}} danni a {{target}}",
+    "heal": "{{target}} recupera {{amount}} PF",
+    "healBy": "{{actor}} fa recuperare {{amount}} PF a {{target}}",
+    "tempHp": "{{target}} ottiene {{amount}} PF temporanei",
+    "conditionGain": "{{target}} ottiene la condizione {{condition}}",
+    "conditionLoss": "{{target}} perde la condizione {{condition}}",
+    "concentrationStart": "{{actor}} si concentra su {{spell}}",
+    "concentrationEnd": "{{actor}} smette di concentrarsi su {{spell}}",
+    "down": "{{target}} scende a 0 PF",
+    "stabilized": "{{target}} viene stabilizzato",
+    "resourceGrant": "{{actor}} dà a {{target}} {{resource}}",
+    "resource": {
+      "heroic-inspiration": "Ispirazione eroica",
+      "bardic-inspiration-die": "un dado di Ispirazione bardica ({{value}})"
+    },
+    "deathSave": {
+      "success": "{{actor}} supera un tiro salvezza contro la morte",
+      "failure": "{{actor}} fallisce un tiro salvezza contro la morte"
+    },
+    "rest": {
+      "short": "{{actor}} fa un riposo breve",
+      "long": "{{actor}} fa un riposo lungo"
+    },
+    "result": {
+      "victory": "vittoria",
+      "ended": "concluso"
+    },
+    "panelTitle": "Resoconti di sessione",
+    "empty": "Ancora niente di registrato. Giocate una sessione e il resoconto si scrive da solo.",
+    "toggle": "Mostra o nascondi questo resoconto",
+    "entries_one": "{{count}} voce",
+    "entries_other": "{{count}} voci",
+    "copy": "Copia per l'AI",
+    "copied": "Resoconto copiato"
+  }
+}

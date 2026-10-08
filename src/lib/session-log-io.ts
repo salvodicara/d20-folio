@@ -43,6 +43,17 @@ export function createFirestoreSessionLogStore(
       const head = snap.docs[0];
       return head ? { id: head.id, lastAt: Number(head.data().lastAt) } : null;
     },
+    async recent(count) {
+      const snap = await getDocs(query(logs, orderBy("lastAt", "desc"), limit(count)));
+      return snap.docs.map((d) => {
+        const log: unknown = d.data().log;
+        return {
+          id: d.id,
+          lastAt: Number(d.data().lastAt),
+          items: Array.isArray(log) ? log.filter(isLogItem) : [],
+        };
+      });
+    },
     async append(sessionId, item) {
       await setDoc(
         doc(logs, sessionId),

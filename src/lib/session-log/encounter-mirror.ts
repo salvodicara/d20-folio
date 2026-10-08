@@ -96,6 +96,17 @@ export function mirrorEncounter(
   const add = (id: string, event: PlayEvent): void => {
     if (!byId.has(id)) drafts.push({ type: "event", id, event });
   };
+  /** Record `event` under `id`, or correct the recorded line when it changed. */
+  const upsert = (id: string, event: PlayEvent): void => {
+    const known = byId.get(id);
+    if (!known) drafts.push({ type: "event", id, event });
+    else if (stable(known.event) !== stable(event)) {
+      // Numbered by the line's own correction count: stable while a write is in flight,
+      // and unique if a line flips back to an earlier content.
+      const correction = `${id}:c:${known.corrections + 1}`;
+      drafts.push({ type: "correct", id: correction, target: id, event });
+    }
+  };
 
   const live = encounter ? String(encounter.epoch) : null;
   for (const entry of logged) {
@@ -107,7 +118,16 @@ export function mirrorEncounter(
   if (!encounter || live === null) return drafts;
 
   const prefix = `enc:${live}`;
-  add(`${prefix}:start`, { kind: "encounter-start", encounterId: live });
+  const names: Record<string, string> = {};
+  for (const combatant of encounter.combatants) {
+    if (combatant.kind === "monster") names[combatant.id] = combatant.name;
+  }
+  const start: PlayEvent = {
+    kind: "encounter-start",
+    encounterId: live,
+    ...(Object.keys(names).length > 0 ? { names } : {}),
+  };
+  upsert(`${prefix}:start`, start);
   if (encounter.round >= 1)
     add(`${prefix}:round:${encounter.round}`, {
       kind: "round-start",
@@ -120,14 +140,7 @@ export function mirrorEncounter(
     if (!event) continue;
     const id = `${prefix}:ev:${beat.id}`;
     present.add(id);
-    const known = byId.get(id);
-    if (!known) drafts.push({ type: "event", id, event });
-    else if (stable(known.event) !== stable(event)) {
-      // Numbered by the line's own correction count: stable while a write is in flight,
-      // and unique if a beat flips back to an earlier content.
-      const correction = `${id}:c:${known.corrections + 1}`;
-      drafts.push({ type: "correct", id: correction, target: id, event });
-    }
+    upsert(id, event);
   }
   for (const entry of logged) {
     if (entry.id.startsWith(`${prefix}:ev:`) && !present.has(entry.id)) {
