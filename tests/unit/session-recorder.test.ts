@@ -75,4 +75,16 @@ describe("createSessionRecorder", () => {
     expect(store.items("2026-10-08").map((i) => i.by)).toEqual(["ana", "dm"]);
     expect(store.items("2026-10-09").map((i) => i.by)).toEqual(["ana"]);
   });
+
+  it("lists the newest sessions first with their items", async () => {
+    const { store, recorder, tick } = setup();
+    await recorder("ana").record({ kind: "heal", amount: 5 });
+    tick(SESSION_GAP_MS + 1);
+    await recorder("ana").record({ kind: "rest", rest: "long" });
+    const recent = await store.recent(5);
+    expect(recent.map((s) => [s.id, s.items.length])).toEqual([
+      ["2026-10-09", 1],
+      ["2026-10-08", 1],
+    ]);
+  });
 });

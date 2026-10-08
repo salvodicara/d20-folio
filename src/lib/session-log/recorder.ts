@@ -12,6 +12,8 @@ export interface SessionHead {
  */
 export interface SessionLogStore {
   latest(): Promise<SessionHead | null>;
+  /** The newest sessions first, with their items (a one-shot read). */
+  recent(limit: number): Promise<Array<SessionHead & { items: LogItem[] }>>;
   append(sessionId: string, item: LogItem): Promise<void>;
   subscribe(
     sessionId: string,
@@ -93,6 +95,15 @@ export function createMemorySessionLogStore(): SessionLogStore & {
         if (!head || log.lastAt >= head.lastAt) head = { id, lastAt: log.lastAt };
       }
       return Promise.resolve(head);
+    },
+    recent(limit) {
+      const heads = [...logs].map(([id, log]) => ({
+        id,
+        lastAt: log.lastAt,
+        items: [...log.items],
+      }));
+      heads.sort((a, b) => b.lastAt - a.lastAt);
+      return Promise.resolve(heads.slice(0, limit));
     },
     append(sessionId, item) {
       const log = logs.get(sessionId) ?? { items: [], lastAt: 0 };

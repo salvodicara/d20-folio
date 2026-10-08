@@ -89,6 +89,30 @@ describe("mirrorEncounter", () => {
     expect(sync(ended, null)).toEqual(ended);
   });
 
+  it("names the fight's monsters on its start line and follows a monster added later", () => {
+    const goblin = {
+      kind: "monster" as const,
+      id: "monster-1",
+      name: "Goblin",
+      ac: 15,
+      initiative: 12,
+      conditions: [],
+      hp: { current: 7, temp: 0, max: 7 },
+    };
+    const withGoblin = { ...fight(1, []), combatants: [goblin] };
+    let log = sync([], withGoblin);
+    expect(foldSession(log, { dmUid: DM })[0]?.event).toEqual({
+      kind: "encounter-start",
+      encounterId: "77",
+      names: { "monster-1": "Goblin" },
+    });
+    const wolf = { ...goblin, id: "monster-2", name: "Wolf" };
+    log = sync(log, { ...withGoblin, combatants: [goblin, wolf] });
+    expect(foldSession(log, { dmUid: DM })[0]?.event).toMatchObject({
+      names: { "monster-1": "Goblin", "monster-2": "Wolf" },
+    });
+  });
+
   it("records each new round as the DM advances", () => {
     const log = sync(sync([], fight(1, [])), fight(2, []));
     expect(log.map((i) => i.id)).toEqual([

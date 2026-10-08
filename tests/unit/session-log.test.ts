@@ -147,6 +147,7 @@ describe("buildReport", () => {
     expect(section).toEqual({
       kind: "encounter",
       encounterId: "ambush",
+      names: {},
       rounds: [{ round: null, entries: [expect.objectContaining({ id: "a1" })] }],
     });
   });

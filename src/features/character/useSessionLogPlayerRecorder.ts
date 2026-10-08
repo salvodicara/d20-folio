@@ -1,18 +1,16 @@
 /**
  * Record the owner's own sheet gestures into the session log of the campaign the
  * character is attached to. The campaign is resolved on the first gesture (no read for a
- * sheet that is only looked at); a character attached nowhere records nothing. Off under
- * dev bypass. Every failure goes to diagnostics and never touches the sheet.
+ * sheet that is only looked at); a character attached nowhere records nothing. Every
+ * failure goes to diagnostics and never touches the sheet.
  */
 
 import { useEffect } from "react";
 
 import { createAttachedCampaignTracker } from "@/features/campaigns/refresh-attached-sheets";
-import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { diagnosticsLog } from "@/lib/diagnostics";
-import { db } from "@/lib/firebase";
 import { createCharacterLogMirror, createSessionRecorder } from "@/lib/session-log";
-import { createFirestoreSessionLogStore } from "@/lib/session-log-io";
+import { sessionLogStoreFor } from "@/features/campaigns/session-log-source";
 import { useAuthStore } from "@/stores/authStore";
 import { setPlayLogSink } from "@/stores/characterStore";
 
@@ -22,7 +20,7 @@ export function useSessionLogPlayerRecorder(characterId: string | undefined): vo
   const uid = useAuthStore((s) => s.user?.uid);
 
   useEffect(() => {
-    if (DEV_BYPASS_AUTH || !uid || !characterId) return;
+    if (!uid || !characterId) return;
     const onError = (error: unknown): void =>
       diagnosticsLog("warn", "session-log.player-failed", { message: String(error) });
     const tracker = createAttachedCampaignTracker(uid, characterId);
@@ -30,8 +28,10 @@ export function useSessionLogPlayerRecorder(characterId: string | undefined): vo
     const resolve = (): Promise<Mirror | null> =>
       (mirror ??= tracker.ensure().then(([campaignId]) => {
         if (campaignId === undefined) return null;
-        const store = createFirestoreSessionLogStore(db, campaignId);
-        const recorder = createSessionRecorder({ store, uid });
+        const recorder = createSessionRecorder({
+          store: sessionLogStoreFor(campaignId),
+          uid,
+        });
         return createCharacterLogMirror({ recorder, characterId, actor: `pc-${uid}` });
       }));
     const forward = (send: (m: Mirror) => Promise<void>): void => {

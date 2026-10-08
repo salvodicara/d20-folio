@@ -1,0 +1,53 @@
+{
+  "sessionReport": {
+    "title": "Session {{date}}",
+    "outside": "Outside combat",
+    "encounter": "Encounter {{n}}",
+    "beforeRounds": "Before the first round",
+    "somethingUsed": "something",
+    "withSource": "{{line}} ({{source}})",
+    "action": "{{actor}} uses {{source}}",
+    "actionOn": "{{actor}} uses {{source}} on {{targets}}",
+    "outcome": {
+      "hit": "hit",
+      "miss": "miss",
+      "saved": "saved",
+      "failed": "failed the save"
+    },
+    "damage": "{{target}} takes {{amount}} damage",
+    "damageBy": "{{actor}} deals {{amount}} damage to {{target}}",
+    "heal": "{{target}} regains {{amount}} HP",
+    "healBy": "{{actor}} heals {{target}} for {{amount}} HP",
+    "tempHp": "{{target}} gains {{amount}} temporary HP",
+    "conditionGain": "{{target}} gains {{condition}}",
+    "conditionLoss": "{{target}} is no longer {{condition}}",
+    "concentrationStart": "{{actor}} concentrates on {{spell}}",
+    "concentrationEnd": "{{actor}} stops concentrating on {{spell}}",
+    "down": "{{target}} drops to 0 HP",
+    "stabilized": "{{target}} is stabilized",
+    "resourceGrant": "{{actor}} gives {{target}} {{resource}}",
+    "resource": {
+      "heroic-inspiration": "Heroic Inspiration",
+      "bardic-inspiration-die": "a Bardic Inspiration die ({{value}})"
+    },
+    "deathSave": {
+      "success": "{{actor}} succeeds on a death saving throw",
+      "failure": "{{actor}} fails a death saving throw"
+    },
+    "rest": {
+      "short": "{{actor}} takes a short rest",
+      "long": "{{actor}} takes a long rest"
+    },
+    "result": {
+      "victory": "victory",
+      "ended": "ended"
+    },
+    "panelTitle": "Session reports",
+    "empty": "Nothing recorded yet. Play a session and its report writes itself.",
+    "toggle": "Show or hide this report",
+    "entries_one": "{{count}} entry",
+    "entries_other": "{{count}} entries",
+    "copy": "Copy for AI",
+    "copied": "Report copied"
+  }
+}

@@ -13,6 +13,8 @@ export type ReportSection =
   | {
       kind: "encounter";
       encounterId: string;
+      /** Names of the fight's non-PC creatures, from its start line. */
+      names: Record<string, string>;
       outcome?: "victory" | "ended";
       rounds: ReportRound[];
     };
@@ -24,7 +26,12 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
   for (const entry of entries) {
     const { event } = entry;
     if (event.kind === "encounter-start") {
-      sections.push({ kind: "encounter", encounterId: event.encounterId, rounds: [] });
+      sections.push({
+        kind: "encounter",
+        encounterId: event.encounterId,
+        names: event.names ?? {},
+        rounds: [],
+      });
       continue;
     }
     if (event.kind === "round-start") continue;

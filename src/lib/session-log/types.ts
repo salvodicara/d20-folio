@@ -69,7 +69,13 @@ export type PlayEvent =
     }
   | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
   | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }
-  | { kind: "encounter-start"; encounterId: string }
+  | {
+      kind: "encounter-start";
+      encounterId: string;
+      /** Display names of the fight's non-PC creatures (typed by the DM), so the report
+       *  can still name them after the encounter is gone. PCs resolve from the party. */
+      names?: Record<CombatantId, string>;
+    }
   | { kind: "encounter-end"; encounterId: string; outcome?: "victory" | "ended" }
   | { kind: "round-start"; round: number }
   | { kind: "note"; text: string; actor?: CombatantId };
