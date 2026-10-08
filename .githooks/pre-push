@@ -3,7 +3,7 @@
 # RULE): "keep it SAFE, but don't have CI checks run forever — both to save
 # money on GH Actions and to speed up local development."
 #
-# THE GATE SPLIT (docs/GOLDEN_RULES.md rule 14; detail in docs/CONTRIBUTING.md
+# THE GATE SPLIT (docs/CONTRIBUTING.md; detail in docs/CONTRIBUTING.md
 # → "The gate split"):
 #   pre-commit  → doc-guard + lint-staged + fast unit lane            (~5 s)
 #   pre-push    → topic branch: no gate (remote checkpoint)
