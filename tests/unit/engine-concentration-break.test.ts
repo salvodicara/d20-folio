@@ -277,6 +277,27 @@ describe("legacy authoritative drops of an engine-held spell", () => {
     expect([...worldStandingActiveKeys(restored.session.world)]).toContain("spell-blur");
   });
 
+  it("lets a cast undo restore the exact engine concentration it replaced", () => {
+    const doc = docWithEngineBlur();
+    loadStore(doc);
+    let restore: (() => void) | undefined;
+    useCharacterStore.getState().setConcentration(concentrationValue("bless"), {
+      captureUndo: (undo) => {
+        restore = undo;
+      },
+    });
+    expect(
+      engineConcentrationHandle(liveWorld(useCharacterStore.getState().character ?? doc))
+    ).toBeNull();
+    expect(restore).toBeTypeOf("function");
+    restore?.();
+    const restored = useCharacterStore.getState().character;
+    if (!restored) throw new Error("missing restored character");
+    expect(restored.session.concentration).toBe("blur");
+    expect(engineConcentrationHandle(liveWorld(restored))?.spellId).toBe("blur");
+    expect([...worldStandingActiveKeys(restored.session.world)]).toContain("spell-blur");
+  });
+
   it("a legacy swap to another spell ends the engine occurrence and keeps the new spell", () => {
     const doc = docWithEngineBlur();
     loadStore(doc);

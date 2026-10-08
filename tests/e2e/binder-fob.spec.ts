@@ -55,11 +55,6 @@ async function castHealingWord(page: Page): Promise<void> {
   await detail.getByRole("button", { name: /cast/i }).first().click();
   const modal = page.getByRole("dialog");
   await modal.getByRole("button", { name: /Level 1 slot \(base\)/i }).click();
-  await modal.getByRole("button", { name: /^Yourself$/i }).click();
-  for (const die of await modal.getByRole("spinbutton").all()) await die.fill("4");
-  await modal.getByRole("button", { name: /^Apply$/i }).click();
-  await expect(modal.getByText(/Everything resolved/i)).toBeVisible();
-  await modal.getByRole("button", { name: /^Apply$/i }).click();
   await expect(modal).toBeHidden();
 }
 

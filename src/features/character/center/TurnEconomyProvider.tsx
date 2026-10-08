@@ -24,15 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
-import {
-  lazy,
-  Suspense,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useCharacterStore } from "@/stores/characterStore";
 import {
@@ -82,20 +74,12 @@ import {
   economyActionCategory,
   economyClaimsForTurn,
 } from "@/lib/combat-economy";
-import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
 import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
-import {
-  resolveOnCastTrackerRefills,
-  applyOnCastTrackerRefills,
-  resolveOnCastSlotRegain,
-  applyOnCastSlotRegain,
-  resolveOnCastSurgeReminder,
-} from "@/lib/on-cast-effects";
 import {
   activeKeysForConcentration,
   aggregateCharacterGrants,
@@ -124,10 +108,6 @@ import { METAMAGIC_BY_ID } from "@/data/metamagic";
 import { getSpellById } from "@/data/spells";
 import { buildCastOptions, slotUsageKey, bareSlotIsPact } from "@/lib/cast-options";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
-import {
-  shouldResolveCombatAction,
-  shouldResolveSoloAction,
-} from "@/lib/combat-resolution";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";
 import { PaymentPickerModal } from "@/components/sheet/PaymentPickerModal";
@@ -149,20 +129,13 @@ import {
   createItemResourcePaymentCycle,
   useOptionalItemResourceCommands,
 } from "./useItemResourceCommands";
-import { advanceSharedTurn, useSheetCombat } from "./turn-state";
+import { advanceSharedTurn } from "./turn-state";
 import { advanceSoloWorldTurn } from "./solo-world-turn";
-import type { StoredConcentration } from "@/types/ids";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import {
   advanceGlobalCombat,
   syncPipToStatus,
 } from "@/features/campaigns/combat-reconcile";
-
-const CombatResolver = lazy(() =>
-  import("./CombatResolver").then(({ CombatResolver: resolver }) => ({
-    default: resolver,
-  }))
-);
 
 type CastCommitOption = CastLevelOption | { kind: "ritual"; level: number };
 
@@ -218,43 +191,6 @@ function durableTurnChanged(
 /** The Rogue Sneak Attack feature's stable srdId — its once-per-turn use tracker
  *  is the resource a Cunning Strike option debits (golden rule 7 — a stable id). */
 const SNEAK_ATTACK_TRACKER_ID = "rogue-sneak-attack";
-
-/**
- * S1 — SURGICAL undo restore of a buff-cast's concentration chips.
- *
- * Undoing a concentration-buff cast restores `prevConc` via `setConcentration`,
- * whose LEG-2 clear strips the keys of the spell that WAS being concentrated on
- * (the cast spell). A blanket "re-add the whole pre-commit snapshot" restore would
- * RESURRECT a chip the player MANUALLY toggled OFF during the 5s undo window. So
- * re-add ONLY the keys that LEG-2 clear actually stripped — the chips the undo's
- * `setConcentration` retracted — and nothing else.
- *
- * The single exception is the cast's OWN `activatesKey` WHEN this commit auto-lit
- * it (`activated`): the OFF-guard already cleared it and its standing state ended
- * with the spell, so it must NOT come back. When the player had that chip lit BY
- * HAND before casting (`!activated`), it is NOT skipped — it returns like any other
- * hand-lit chip. Called AFTER the OFF-guard + BEFORE `setConcentration(prevConc)`,
- * reading the still-live cast concentration.
- */
-function concentrationKeysToRestoreOnUndo(
-  action: ResolvedAction,
-  activated: boolean
-): string[] {
-  // Only a CONCENTRATION cast restores concentration in its undo, so only then is
-  // there a LEG-2 strip to make surgical. A non-concentration cast (Shield) never
-  // touches `setConcentration`, so it has nothing to re-add (the OFF-guard alone
-  // reverts its chip) — return [] so an UNRELATED standing concentration buff can't
-  // be re-lit here.
-  if (!action.concentration) return [];
-  const cur = useCharacterStore.getState().character;
-  if (!cur) return [];
-  const stripped = activeKeysForConcentration(
-    cur.character,
-    cur.session,
-    cur.session.concentration
-  );
-  return activated ? stripped.filter((k) => k !== action.activatesKey) : stripped;
-}
 
 /** Apply the one shared active-state/cast-level/timer transaction and return its
  * surgical inverse. Feature and spell commit paths differ only in payment. */
@@ -367,27 +303,25 @@ function applyActionConcentration(
   castLevel: number | undefined
 ): (activated: boolean) => void {
   const store = useCharacterStore.getState();
-  const previousSpell: StoredConcentration = store.character?.session.concentration ?? "";
-  const previousCastLevel = store.character?.session.concentrationCastLevel;
+  let restoreStoredConcentration: (() => void) | undefined;
   const loggedIds = action.concentration
     ? store.setConcentration(
         action.spellId
           ? concentrationValue(action.spellId)
           : customConcentrationValue(action.name),
-        { castLevel }
+        {
+          castLevel,
+          captureUndo: (undo) => {
+            restoreStoredConcentration = undo;
+          },
+        }
       )
     : [];
-  return (activated) => {
-    const restoreKeys = concentrationKeysToRestoreOnUndo(action, activated);
+  return () => {
     const current = useCharacterStore.getState();
     if (action.concentration) {
-      current.setConcentration(previousSpell, {
-        castLevel: previousCastLevel,
-        undoable: false,
-        silent: true,
-      });
+      restoreStoredConcentration?.();
     }
-    for (const key of restoreKeys) current.setActiveFeature(key, true);
     for (const id of loggedIds) current.removeLogEntry(id);
   };
 }
@@ -396,7 +330,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const itemResourceCommands = useOptionalItemResourceCommands();
-  const sheetCombat = useSheetCombat();
   const character = useCharacterStore((s) => s.character);
   const appendSelectedAction = useCombatStore((s) => s.selectAction);
   const deselectAction = useCombatStore((s) => s.deselectAction);
@@ -406,11 +339,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const resetReaction = useCombatStore((s) => s.resetReaction);
   const endTurn = useCombatStore((s) => s.endTurn);
   const showToast = useToastStore((s) => s.showToast);
-
-  const [declaring, setDeclaring] = useState<{
-    action: ResolvedAction;
-    commit: PreparedCommit;
-  } | null>(null);
 
   /** A delayed picker/target review is only a proposal. Re-read the canonical
    * lifecycle immediately before every mutation so dying between review and
@@ -441,15 +369,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       !committed.some((entry) => entry.id === action.requiresActionThisTurn)
     ) {
       return t("combat.blockedReasonPrerequisiteAction");
-    }
-    if (
-      action.requiresOutcomeThisTurn &&
-      !combatOutcomePrerequisiteMet(
-        action.requiresOutcomeThisTurn,
-        useCombatStore.getState().outcomeReceipts
-      )
-    ) {
-      return t("combat.blockedReasonSuccessfulPrerequisiteAction");
     }
     if (
       action.requiresActionCategoryThisTurn &&
@@ -493,6 +412,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   }
 
   function guardActionState(action: ResolvedAction): boolean {
+    if (useCharacterStore.getState().readonly) return false;
+    if (action.source === "spell" || action.castPoolSourceId)
+      return useCharacterStore.getState().character !== null;
     const message = actionStateBlockMessage(action);
     if (!message) return true;
     showToast({ message, duration: 2500 });
@@ -540,7 +462,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       if (action.source !== "spell" || !spell?.ritual || spell.level === 0) return null;
       return { consumesTurnEconomy: false, turnScoped: false, ritual: true };
     }
-    if (action.castTiming === "extended") {
+    if (
+      action.source === "spell" ||
+      action.castPoolSourceId ||
+      action.castTiming === "extended"
+    ) {
       return { consumesTurnEconomy: false, turnScoped: false, ritual: false };
     }
     return TURN_EXECUTION;
@@ -587,6 +513,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // opens this picker (the same CastLevelModal the Spells page uses), then
   // commits the chosen option immediately.
   const [castRequest, setCastRequest] = useState<{
+    characterId: string;
     action: ResolvedAction;
     slot: EconomySlot;
     baseLevel: number;
@@ -648,6 +575,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // over the Cleric spell list ≤ 5th (the engine-resolved pool); choosing a spell
   // casts it without a slot and debits the 1/LR tracker (immediate-commit-with-undo).
   const [freeCastFromListRequest, setFreeCastFromListRequest] = useState<{
+    characterId: string;
     pool: FreeCastFromListPool;
     opener: ResolvedAction;
     onPrepared: (action: ResolvedAction, commit: PreparedCommit) => void;
@@ -1345,34 +1273,22 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     clearPendingResolution(action);
   }
 
-  // Commit a spell at a CHOSEN cast option (upcast slot level / free cast /
-  // at-will mastery), deducting the right resource immediately with undo. Async
-  // — awaits the promise-based concentration-break gate before any deduction.
-  // ATTACK-PIPS — `ridesPip` (War Magic) makes the confirmed cast REPLACE one
-  // attack of the in-progress Attack action: it consumes an attack pip via
-  // `commitAttackSwing` instead of appending into a fresh Action slot; every
-  // resource/Metamagic/concentration leg above is IDENTICAL (rule 6 — one cast
-  // commit path, the pip only swaps the economy claim at the end).
+  // ponytail: casting records the payment and concentration; the table resolves effects.
   async function commitCastOption(
     action: ResolvedAction,
-    slot: EconomySlot,
+    _slot: EconomySlot,
     opt: CastCommitOption,
     metamagicIds: ReadonlyArray<string> = [],
-    ridesPip = false,
+    _ridesPip?: boolean,
     execution: ActionExecution = TURN_EXECUTION
   ) {
-    if (!guardActionState(action)) return;
-    const expendsSpellSlot = castOptionExpendsSpellSlot(opt);
-    const selectedMetamagicCost = metamagicCost(metamagicIds);
-    if (expendsSpellSlot && !spellSlotExpenditureAvailable()) {
-      showSpellSlotExpenditureLimit();
+    const characterId = character?.id;
+    const canCommit = () => {
+      const live = useCharacterStore.getState();
+      return !!characterId && live.character?.id === characterId && !live.readonly;
+    };
+    if (!canCommit() || !(await confirmConcentrationBreak(action)) || !canCommit())
       return;
-    }
-    if (!(await confirmConcentrationBreak(action))) return;
-    if (expendsSpellSlot && !spellSlotExpenditureAvailable()) {
-      showSpellSlotExpenditureLimit();
-      return;
-    }
     const itemPayment =
       opt.kind === "free-cast" && opt.payment?.kind === "item-resource"
         ? opt.payment
@@ -1384,225 +1300,68 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             opt.sourceName
           )
         : undefined;
-    if (itemPayment && (!itemResourceCommands || !preparedResource)) return;
+    if (!canCommit() || (itemPayment && (!itemResourceCommands || !preparedResource)))
+      return;
     const resourceCycle =
       itemResourceCommands && preparedResource
         ? createItemResourcePaymentCycle(itemResourceCommands, preparedResource)
         : null;
-    const applyResolution = pendingResolutionFor(action);
-    const outcomeOccurrenceId = applyResolution?.occurrenceId;
-    // ATTACK-PIPS — a pip-riding cast is a counted swing: read the swing position
-    // BEFORE the commit runs so the log line + toast carry "attack n of total".
-    const pipStore = ridesPip ? useCombatStore.getState() : null;
-    const attackOf = pipStore
-      ? {
-          n: (pipStore.attacksUsed % pipStore.attackBudget) + 1,
-          total: pipStore.attackBudget,
-        }
-      : undefined;
+    const selectedMetamagicCost = metamagicCost(metamagicIds);
     const message = execution.ritual
       ? t("combat.castRitualToast", { name: action.name })
-      : attackOf
-        ? t("combat.attackSwingToast", {
-            name: action.name,
-            n: attackOf.n,
-            total: attackOf.total,
-          })
-        : t("combat.actionUsedToast", { name: action.name });
-    // Register on the undo stack: `execute` deducts the resource, applies every
-    // cast leg (ward refill / slot regain / Metamagic / concentration / while-active
-    // buff / log), and claims the economy (a pip swing OR a fresh slot), returning
-    // the combined reverse; it bails (null, refunding) when no swing/slot fits. Redo
-    // re-runs the SAME resolved cast (same slot level, same Metamagic) — never
-    // re-opening a picker (golden rule 21).
-    if (
-      registerUndoableToast(
-        { message },
-        () => {
-          if (!guardActionState(action)) return null;
-          if (!castOptionAffordable(opt) || !metamagicAffordable(metamagicIds)) {
-            return null;
-          }
-          const resourceCommit = resourceCycle?.apply() ?? null;
-          if (resourceCycle && !resourceCommit) return null;
-          const restoreSlotCast = expendsSpellSlot ? commitSpellSlotExpenditure() : null;
-          if (expendsSpellSlot && !restoreSlotCast) {
-            if (resourceCommit && itemResourceCommands) {
-              itemResourceCommands.revert(resourceCommit);
-            }
-            return null;
-          }
-          const revertPaymentBoundary =
-            restoreSlotCast || (resourceCommit && itemResourceCommands)
-              ? () => {
-                  if (restoreSlotCast && !restoreSlotCast()) return false;
-                  return resourceCommit && itemResourceCommands
-                    ? itemResourceCommands.revert(resourceCommit)
-                    : true;
-                }
-              : undefined;
-          const cs = useCharacterStore.getState();
-          if (opt.kind === "slot") cs.useSpellSlot(opt.level, opt.pactMagic);
+      : t("combat.actionUsedToast", { name: action.name });
+    registerUndoableToast(
+      { message },
+      () => {
+        if (
+          !canCommit() ||
+          !castOptionAffordable(opt) ||
+          !metamagicAffordable(metamagicIds)
+        )
+          return null;
+        const resourceCommit = resourceCycle?.apply() ?? null;
+        if (resourceCycle && !resourceCommit) return null;
+        const cs = useCharacterStore.getState();
+        if (opt.kind === "slot") cs.useSpellSlot(opt.level, opt.pactMagic);
+        else if (opt.kind === "free-cast" && opt.payment?.kind !== "item-resource")
+          cs.useTracker(
+            opt.payment?.kind === "tracker" ? opt.payment.trackerId : opt.sourceId,
+            opt.cost
+          );
+        if (selectedMetamagicCost > 0)
+          cs.useTracker("sorcerer-font-of-magic", selectedMetamagicCost);
+        const restoreConcentration = applyActionConcentration(action, opt.level);
+        const loggedId = cs.logEvent({
+          kind: "action-use",
+          action: action.nameLoc,
+          effect: logTypeForAction(action),
+          slot: action.type,
+        });
+        return () => {
+          if (!canCommit()) return false;
+          if (
+            resourceCommit &&
+            itemResourceCommands &&
+            !itemResourceCommands.revert(resourceCommit)
+          )
+            return false;
+          restoreConcentration(false);
+          const live = useCharacterStore.getState();
+          if (opt.kind === "slot") live.restoreSpellSlot(opt.level, opt.pactMagic);
           else if (opt.kind === "free-cast" && opt.payment?.kind !== "item-resource")
-            cs.useTracker(
+            live.restoreTracker(
               opt.payment?.kind === "tracker" ? opt.payment.trackerId : opt.sourceId,
               opt.cost
             );
-          // RA-08 — a SLOT-paid cast counts toward the 2024 one-spell-slot-per-turn
-          // hard gate (cantrips + genuinely free casts spend no slot, so they don't
-          // count). Undo below reopens the gate by reversing this exact payment.
-          // "mastery" → at-will, no resource.
-          // On-cast trigger (S4 follow-on) — a SLOT-paid cast can refill a feature's
-          // tracker (Wizard Abjurer Arcane Ward: an Abjuration spell of slot level N
-          // regains 2×N ward HP). The resolver branches on the cast spell's stable
-          // school token + the feature srdId (rule 7). `restoreTracker` reduces
-          // `used`, clamped at 0 — override-first (the ward stays editable). Each
-          // refill's inverse (re-spend) is folded into the reverse below.
-          const wardRefills =
-            expendsSpellSlot && cs.character
-              ? resolveOnCastTrackerRefills(cs.character, action.spellId, opt.level)
-              : [];
-          const undoWardRefills = applyOnCastTrackerRefills(cs, wardRefills);
-          // On-cast slot regain (S4) — a slot-paid Divination cast can un-expend ONE
-          // lower spell slot (Wizard Diviner Expert Divination). Its inverse folds in.
-          const slotRegain =
-            expendsSpellSlot && cs.character
-              ? resolveOnCastSlotRegain(cs.character, action.spellId, opt.level)
-              : null;
-          const undoSlotRegain = applyOnCastSlotRegain(cs, slotRegain);
-          // Per-cast Metamagic (Sorcerer) — debit one Sorcery-Point cost per selected
-          // option from the `sorcerer-font-of-magic` pool (stable id only, rule 7).
           if (selectedMetamagicCost > 0)
-            cs.useTracker("sorcerer-font-of-magic", selectedMetamagicCost);
-          // Store the spell's STABLE id (golden rule 7); a custom spell stamps its
-          // name behind the `custom:` marker — never a bare SRD name.
-          const restoreConcentration = applyActionConcentration(action, opt.level);
-          // S1 — casting a while-active BUFF spell ESTABLISHES its standing state, so
-          // light its chip + every while-active grant now. Only flips when OFF so undo
-          // never clears a hand-set state; arms the round countdown. Read state FRESH.
-          const activation = activateActionState(action, opt.level);
-          // Log a STRUCTURED action-use event (semantic effect → glyph, economy slot →
-          // colour). Capture the id so the reverse removes only THIS line.
-          const loggedId = cs.logEvent({
-            kind: "action-use",
-            action: action.nameLoc,
-            effect: logTypeForAction(action),
-            slot: action.type,
-            ...(attackOf ? { attackOf } : {}),
-          });
-          const undoLegs = () => {
-            const c2 = useCharacterStore.getState();
-            if (opt.kind === "slot") c2.restoreSpellSlot(opt.level, opt.pactMagic);
-            else if (opt.kind === "free-cast" && opt.payment?.kind !== "item-resource")
-              c2.restoreTracker(
-                opt.payment?.kind === "tracker" ? opt.payment.trackerId : opt.sourceId,
-                opt.cost
-              );
-            if (selectedMetamagicCost > 0)
-              c2.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
-            undoWardRefills();
-            undoSlotRegain();
-            // SURGICAL concentration restore: clear the chip THIS commit auto-lit,
-            // compute the hand-lit chips the concentration restore will strip, restore
-            // concentration (strips them), re-add ONLY those (the cast's own key
-            // excluded) — never resurrecting a chip the player toggled OFF (S1).
-            activation.restore();
-            restoreConcentration(activation.activated);
-            c2.removeLogEntry(loggedId);
-          };
-          if (!execution.consumesTurnEconomy) {
-            return withResolutionUndo(undoLegs, applyResolution, revertPaymentBoundary);
-          }
-          // ATTACK-PIPS (War Magic) — the cast consumes an attack pip instead of a
-          // fresh Action slot: claim/ride the Attack action. Bail (refunding) if none.
-          if (ridesPip && attackOf) {
-            const groupEntry: SelectedAction = {
-              id: "attack-group",
-              name: t("combat.attackAction"),
-              nameLoc: { ui: "combat.attackAction" },
-              slot: "action",
-              isAttackGroup: true,
-              economyCategory: "attack",
-              triggerEvents: ["attack"],
-            };
-            if (
-              useCombatStore
-                .getState()
-                .commitAttackSwing(
-                  groupEntry,
-                  action.id,
-                  outcomeOccurrenceId,
-                  applyResolution?.outcomes
-                ) === null
-            ) {
-              if (revertPaymentBoundary && !revertPaymentBoundary()) return null;
-              undoLegs();
-              return null;
-            }
-            return withResolutionUndo(
-              () => {
-                useCombatStore.getState().undoAttackSwing();
-                undoLegs();
-              },
-              applyResolution,
-              () => {
-                if (useCombatStore.getState().attackSwings.at(-1)?.actionId !== action.id)
-                  return false;
-                return revertPaymentBoundary?.() ?? true;
-              }
-            );
-          }
-          // Append into the slot; bail (refunding) if the budget is already full.
-          if (
-            !appendWithinActionRules(
-              toSelectedAction(action, slot, opt, outcomeOccurrenceId),
-              applyResolution?.outcomes
-            )
-          ) {
-            if (revertPaymentBoundary && !revertPaymentBoundary()) return null;
-            undoLegs();
-            return null;
-          }
-          return withResolutionUndo(
-            () => {
-              // Occupant-checked (idempotent): a no-op if this action already left its
-              // slot, so a stray reverse can never double-refund (§5.2).
-              if (
-                !useCombatStore.getState().selected[slot].some((a) => a.id === action.id)
-              )
-                return;
-              undoLegs();
-              deselectAction(action.id);
-            },
-            applyResolution,
-            () => {
-              const stillSelected = useCombatStore
-                .getState()
-                .selected[slot].some((entry) => entry.id === action.id);
-              if (!stillSelected) return false;
-              return revertPaymentBoundary?.() ?? true;
-            }
-          );
-        },
-        // The one-snackbar rule folds a pip cast into the same evolving
-        // Attack-action announcement (no stacking).
-        { turnScoped: execution.turnScoped }
-      ) === null
-    ) {
-      // A pip swing that found no room says so; a full ordinary slot bails silently
-      // (the card guard should have prevented it — never trust the view).
-      if (ridesPip) showToast({ message: t("combat.noAttackSlots"), duration: 2500 });
-      return;
-    }
+            live.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
+          live.removeLogEntry(loggedId);
+          return true;
+        };
+      },
+      { turnScoped: false }
+    );
     clearPendingResolution(action);
-    // Wild Magic Surge (Sorcerer Wild Magic) — a DISPLAY-ONLY post-cast reminder,
-    // independent of the cast's undo. No mutation, no dice (golden rule 21).
-    if (expendsSpellSlot) {
-      const doc = useCharacterStore.getState().character;
-      if (doc && resolveOnCastSurgeReminder(doc, action.spellId, opt.level)) {
-        showToast({ message: t("combat.wildMagicSurgeReminder"), duration: 6000 });
-      }
-    }
   }
 
   // S6 — project a chosen alternate payment onto the action's cost fields so the
@@ -1761,9 +1520,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const doc = useCharacterStore.getState().character;
     if (!doc) return false;
     if (opt.kind === "ritual") return true;
-    if (castOptionExpendsSpellSlot(opt) && !spellSlotExpenditureAvailable()) {
-      return false;
-    }
     if (!opt.kind || opt.kind === "slot") {
       const row = doc.character.spellSlots.find(
         (entry) =>
@@ -1848,15 +1604,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       else void commitCastOption(finalAction, slot, option, [], false, execution);
       return true;
     }
-    const blockedSlotOptions =
-      !spellSlotExpenditureAvailable() &&
-      availableOptions.some(castOptionExpendsSpellSlot);
-    const options = blockedSlotOptions
-      ? availableOptions.filter((option) => !castOptionExpendsSpellSlot(option))
-      : availableOptions;
+    const options = availableOptions;
     if (!isCantrip && options.length === 0) {
-      if (blockedSlotOptions) showSpellSlotExpenditureLimit();
-      else showToast({ message: t("combat.noSlotsRemaining"), duration: 2000 });
+      showToast({ message: t("combat.noSlotsRemaining"), duration: 2000 });
       return true;
     }
 
@@ -1900,6 +1650,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     }
 
     setCastRequest({
+      characterId: character.id,
       action,
       slot,
       baseLevel,
@@ -2686,6 +2437,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // and returns one undo for the whole act.
   function handleDivineInterventionCast(spellId: string) {
     const request = freeCastFromListRequest;
+    if (
+      request?.characterId !== useCharacterStore.getState().character?.id ||
+      useCharacterStore.getState().readonly
+    ) {
+      setFreeCastFromListRequest(null);
+      return;
+    }
     setFreeCastFromListRequest(null);
     if (!request || !character) return;
     const { pool: requestedPool, opener, onPrepared } = request;
@@ -2818,7 +2576,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         (entry) => entry.sourceId === action.castPoolSourceId
       );
       if (pool) {
-        setFreeCastFromListRequest({ pool, opener: action, onPrepared });
+        setFreeCastFromListRequest({
+          characterId: character.id,
+          pool,
+          opener: action,
+          onPrepared,
+        });
         return;
       }
     }
@@ -2857,21 +2620,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
                 : {}),
               outcomes: artifact?.outcomes ?? [],
             };
-            if (committedAction.type === "reaction") {
-              void handleUseReaction(committedAction, afterCommit, {
-                option,
-                metamagicIds,
-              });
-            } else {
-              void commitCastOption(
-                committedAction,
-                slot,
-                option,
-                metamagicIds,
-                ridesPip,
-                execution
-              );
-            }
+            void commitCastOption(
+              committedAction,
+              slot,
+              option,
+              metamagicIds,
+              ridesPip,
+              execution
+            );
           }),
         execution
       )
@@ -2888,33 +2644,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     prepareResolution(
       executable,
       (prepared, commit) => {
-        // Outside an encounter, a selected-recipient buff can only belong to the
-        // open hero. Avoid a one-row target prompt while retaining the same state
-        // transaction. Encounters keep the authored target selection intact.
-        const targetReady =
-          !sheetCombat && prepared.standingEffect && !prepared.standingEffect.excludeSelf
-            ? {
-                ...prepared,
-                activatesKey: prepared.standingEffect.activeKey,
-                activeDurationRounds: prepared.standingEffect.maxRounds,
-                standingEffect: undefined,
-              }
-            : prepared;
-        if (
-          (sheetCombat && shouldResolveCombatAction(targetReady)) ||
-          (!sheetCombat && shouldResolveSoloAction(targetReady))
-        ) {
-          setDeclaring({
-            action: targetReady,
-            commit: (afterCommit, artifact) =>
-              commit(afterCommit, {
-                ...artifact,
-                action: artifact?.action ?? targetReady,
-              }),
-          });
-          return;
-        }
-        commit(() => undefined, { action: targetReady });
+        commit(() => undefined, { action: prepared });
       },
       execution
     );
@@ -2939,17 +2669,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   return (
     <TurnEconomyContext.Provider value={api}>
       {children}
-
-      {declaring !== null && (
-        <Suspense fallback={null}>
-          <CombatResolver
-            action={declaring.action}
-            sheetCombat={sheetCombat}
-            onCommit={declaring.commit}
-            onDone={() => setDeclaring(null)}
-          />
-        </Suspense>
-      )}
 
       {/* Pool spend modal (Lay on Hands, etc.) — mounts fresh on each new request */}
       {poolSpendRequest && (
@@ -2976,7 +2695,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             : null
         }
         onConfirm={(level, opt, metamagicIds) => {
-          if (castRequest) {
+          if (
+            castRequest &&
+            castRequest.characterId === useCharacterStore.getState().character?.id &&
+            !useCharacterStore.getState().readonly
+          ) {
             const finalAction = actionForCastOption(castRequest.action, opt, level);
             if (castRequest.onConfigured)
               castRequest.onConfigured(finalAction, opt, metamagicIds);

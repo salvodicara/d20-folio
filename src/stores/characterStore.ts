@@ -471,6 +471,8 @@ interface CharacterState {
       silent?: boolean;
       /** Internal damage path: a depleted form restores this resolved Temp HP. */
       retractedFormTempHp?: number;
+      /** Compose the concentration inverse into the caller's resource undo. */
+      captureUndo?: (undo: () => void) => void;
     }
   ) => string[];
   addCondition: (
@@ -2339,14 +2341,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       castLevel?: number;
       silent?: boolean;
       retractedFormTempHp?: number;
+      /** Compose the concentration inverse into the caller's resource undo. */
+      captureUndo?: (undo: () => void) => void;
     }
   ) => {
     if (get().readonly) return [];
     const { character } = get();
     if (!character) return [];
     const prev = character.session.concentration;
-    // Snapshot the WHOLE prior doc — the clear-case undo target when this
-    // concentration change also retracts a Polymorph form (below).
+    // Retain the transformed body fields for a surgical concentration inverse.
     const before = character;
     // S7 — a Polymorph SELF-form is sustained by its spell's Concentration, so
     // ENDING or SWAPPING that concentration ends the form: restore the caster's own
@@ -2498,6 +2501,81 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       }
       return loggedIds;
     };
+    function restoreDroppedKeys<T>(
+      live: Record<string, T> | undefined,
+      previous: Record<string, T> | undefined
+    ): Record<string, T> | undefined {
+      const restored = {
+        ...live,
+        ...Object.fromEntries(
+          Object.entries(previous ?? {}).filter(([key]) => droppedActiveKeySet.has(key))
+        ),
+      };
+      return Object.keys(restored).length > 0 ? restored : undefined;
+    }
+    const restore = () => {
+      // Reverse the ENGINE end first (the exact journal reverse restores
+      // the world occurrence and re-mirrors the spell), so the legacy
+      // field restores below compose onto the already-restored world.
+      if (engineEndActionId !== null) {
+        undoWorldAction(get, engineEndActionId);
+      }
+      const cur = get().character;
+      if (!cur) return;
+      set({
+        combatActiveEffects: effectiveCombatEffects(priorLocalEffects),
+        combatLegacyActiveEffects: priorLocalEffects,
+        combatPendingConcentrationSaves: priorPendingConcentrationSaves,
+        character: {
+          ...cur,
+          ...(revertBuild
+            ? {
+                character: {
+                  ...cur.character,
+                  ...Object.fromEntries(
+                    Object.keys(revertBuild).map((key) => [
+                      key,
+                      before.character[key as keyof typeof before.character],
+                    ])
+                  ),
+                },
+              }
+            : {}),
+          session: {
+            ...cur.session,
+            ...(retractForm
+              ? {
+                  polymorphForm: form,
+                  hp: { ...cur.session.hp, temp: before.session.hp.temp },
+                }
+              : {}),
+            concentration: prev,
+            concentrationCastLevel: character.session.concentrationCastLevel,
+            // Restore the EXACT prior active toggles alongside concentration,
+            // so the chip re-lights atomically with the spell (mirrors the
+            // cast-undo + `advanceEffectTimers` revert).
+            activeFeatures: [
+              ...new Set([
+                ...(cur.session.activeFeatures ?? []),
+                ...droppedActiveKeys.filter((key) => priorActive.includes(key)),
+              ]),
+            ],
+            activeSpellCastLevels: restoreDroppedKeys(
+              cur.session.activeSpellCastLevels,
+              priorActiveSpellCastLevels
+            ),
+            effectTimers: restoreDroppedKeys(cur.session.effectTimers, priorEffectTimers),
+            effectBoundaries: restoreDroppedKeys(
+              cur.session.effectBoundaries,
+              priorEffectBoundaries
+            ),
+            concentrationConditions: priorConcentrationConditions,
+          },
+        },
+      });
+      persistCombat(get);
+      flushParentPersistence(get);
+    };
     // CLEARING concentration (empty spell) is destructive — a mis-tap silently ends an
     // in-combat spell. Route it onto the session undo stack (mirrors the tracker/HP/cast
     // pattern) so every caller — rail, combat, mobile drawer — inherits recovery + redo
@@ -2508,59 +2586,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         { intent: { kind: "stopped-concentrating", spell: prev } },
         () => {
           loggedIds = applyChange();
-          return () => {
-            // Reverse the ENGINE end first (the exact journal reverse restores
-            // the world occurrence and re-mirrors the spell), so the legacy
-            // field restores below compose onto the already-restored world.
-            if (engineEndActionId !== null) {
-              undoWorldAction(get, engineEndActionId);
-            }
-            const cur = get().character;
-            if (!cur) return;
-            // When clearing also retracted a Polymorph form, the whole prior doc
-            // (Beast build + Temp HP + form) is the atomic undo target — a partial
-            // concentration-only restore would leave the reverted body behind.
-            if (retractForm) {
-              set({
-                character: before,
-                combatActiveEffects: effectiveCombatEffects(priorLocalEffects),
-                combatLegacyActiveEffects: priorLocalEffects,
-                combatPendingConcentrationSaves: priorPendingConcentrationSaves,
-              });
-              persistCombat(get);
-              flushParentPersistence(get);
-              return;
-            }
-            set({
-              combatActiveEffects: effectiveCombatEffects(priorLocalEffects),
-              combatLegacyActiveEffects: priorLocalEffects,
-              combatPendingConcentrationSaves: priorPendingConcentrationSaves,
-              character: {
-                ...cur,
-                session: {
-                  ...cur.session,
-                  concentration: prev,
-                  concentrationCastLevel: character.session.concentrationCastLevel,
-                  // Restore the EXACT prior active toggles alongside concentration,
-                  // so the chip re-lights atomically with the spell (mirrors the
-                  // cast-undo + `advanceEffectTimers` revert).
-                  activeFeatures: priorActive,
-                  activeSpellCastLevels: priorActiveSpellCastLevels,
-                  effectTimers: priorEffectTimers,
-                  effectBoundaries: priorEffectBoundaries,
-                  concentrationConditions: priorConcentrationConditions,
-                },
-              },
-            });
-            persistCombat(get);
-            flushParentPersistence(get);
-          };
+          return restore;
         },
         { turnScoped: false }
       );
       return loggedIds;
     } else {
-      return applyChange();
+      const loggedIds = applyChange();
+      opts?.captureUndo?.(restore);
+      return loggedIds;
     }
   },
 

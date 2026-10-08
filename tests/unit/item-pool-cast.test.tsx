@@ -8,7 +8,7 @@
  * and the picker render/disable by `divine-intervention-modal.test.tsx`.
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 const encounterMode = vi.hoisted(() => ({ active: false }));
 // PlayTab mounts the shared InitVital → combat-state-io → Firebase; mock it so the
 // unit stays CI-pure (the env keys are unset in CI).
@@ -21,30 +21,7 @@ vi.mock("@/features/character/center/turn-state", async (importOriginal) => {
     useSheetCombat: () => (encounterMode.active ? ({} as never) : null),
   };
 });
-vi.mock("@/features/character/center/CombatResolver", () => ({
-  CombatResolver: ({
-    action,
-    onCommit,
-    onDone,
-  }: {
-    action: { name: string; concentration: boolean; summary: { saveDC?: number } };
-    onCommit: (apply: () => undefined) => void;
-    onDone: () => void;
-  }) => (
-    <div role="dialog" aria-label={`Resolve ${action.name}`}>
-      <span>{`DC ${action.summary.saveDC ?? "—"}`}</span>
-      <span>{action.concentration ? "Concentration" : "No concentration"}</span>
-      <button
-        onClick={() => {
-          onCommit(() => undefined);
-          onDone();
-        }}
-      >
-        Apply {action.name}
-      </button>
-    </div>
-  ),
-}));
+
 import { MemoryRouter } from "react-router";
 import { PlayTab } from "@/features/character/center/tabs/PlayTab";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
@@ -178,9 +155,7 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     // Choosing Hold Person (cost 2) debits exactly 2 charges.
     fireEvent.click(within(dialog).getByText("Hold Person"));
     await waitFor(() => expect(currentCharges("wand-binding-copy")).toBe(5));
-    expect(useCombatStore.getState().selected.action).toContainEqual(
-      expect.objectContaining({ id: "spell-hold-person" })
-    );
+    expect(useCombatStore.getState().selected.action).toEqual([]);
     expect(
       useCharacterStore.getState().character?.session.logEntries.at(-1)?.event
     ).toMatchObject({
@@ -203,7 +178,7 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     expect(useCombatStore.getState().selected.action).toEqual([]);
   });
 
-  it("rejects a stale item-cast undo after its exact action owner is gone", async () => {
+  it("rejects a stale item-cast undo after its charge state changes", async () => {
     loadWielder(
       [
         {
@@ -222,13 +197,43 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     fireEvent.click(within(await screen.findByRole("dialog")).getByText("Hold Person"));
     await waitFor(() => expect(currentCharges("stale-binding-copy")).toBe(5));
 
-    // Another mutation removed the action that owns this undo. The old undo must
-    // fail its ownership check instead of reversing target effects while leaving
-    // the item's compare-and-swap spend in place.
-    useCombatStore.getState().deselectAction("spell-hold-person");
+    // A newer item revision owns the charges; a stale inverse must not overwrite it.
+    replaceCharges("wand-of-binding", "stale-binding-copy", 7, 4);
     expect(useUndoStore.getState().undo()).toBe(false);
-    expect(currentCharges("stale-binding-copy")).toBe(5);
+    expect(currentCharges("stale-binding-copy")).toBe(4);
     expect(useUndoStore.getState().past).toHaveLength(1);
+  });
+
+  it("keeps an item spell opener available after the action was used", async () => {
+    loadWielder(
+      [
+        {
+          srdId: "wand-of-binding",
+          instanceId: "occupied-action-wand",
+          equipped: true,
+          attuned: true,
+          quantity: 1,
+        },
+      ],
+      7
+    );
+    renderPage();
+    act(() =>
+      useCombatStore.setState({
+        selected: {
+          action: [{ id: "dash", name: "Dash", slot: "action" }],
+          bonus: [],
+          free: [],
+        },
+      })
+    );
+    const cast = await screen.findByLabelText("Cast a spell from Wand of Binding");
+    expect(cast).toBeEnabled();
+    fireEvent.click(cast);
+    fireEvent.click(within(await screen.findByRole("dialog")).getByText("Hold Person"));
+    await waitFor(() => expect(currentCharges("occupied-action-wand")).toBe(5));
+    expect(useCombatStore.getState().selected.action).toHaveLength(1);
+    expect(useCombatStore.getState().selected.action[0]?.id).toBe("dash");
   });
 
   it("Staff of Charming: a uniform-cost pick debits EXACTLY 1 charge", async () => {
@@ -256,7 +261,7 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     expect(currentCharges("charming-staff-copy")).toBe(10);
   });
 
-  it("resolves the chosen spell and targets before spending in an encounter", async () => {
+  it("spends charges without target resolution in an encounter", async () => {
     encounterMode.active = true;
     loadWielder(
       [
@@ -275,16 +280,11 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     fireEvent.click(await screen.findByLabelText("Cast a spell from Wand of Binding"));
     fireEvent.click(within(await screen.findByRole("dialog")).getByText("Hold Person"));
 
-    const resolver = await screen.findByRole("dialog", { name: "Resolve Hold Person" });
-    expect(within(resolver).getByText("DC 17")).toBeInTheDocument();
-    expect(within(resolver).getByText("Concentration")).toBeInTheDocument();
-    expect(currentCharges("encounter-binding-copy")).toBe(7);
-    expect(useCombatStore.getState().selected.action).toEqual([]);
-
-    fireEvent.click(within(resolver).getByRole("button", { name: "Apply Hold Person" }));
     await waitFor(() => expect(currentCharges("encounter-binding-copy")).toBe(5));
-    expect(useCombatStore.getState().selected.action).toContainEqual(
-      expect.objectContaining({ id: "spell-hold-person" })
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(useCharacterStore.getState().character?.session.concentration).toBe(
+      "hold-person"
     );
   });
 });

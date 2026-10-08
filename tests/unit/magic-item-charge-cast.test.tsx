@@ -25,17 +25,7 @@ vi.mock("@/features/character/center/turn-state", async (importOriginal) => {
     useSheetCombat: () => (encounterMode.active ? ({} as never) : null),
   };
 });
-vi.mock("@/features/character/center/CombatResolver", () => ({
-  CombatResolver: ({
-    action,
-  }: {
-    action: { name: string; summary: { attackBonus?: number } };
-  }) => (
-    <div role="dialog" aria-label={`Resolve ${action.name}`}>
-      {`Attack +${action.summary.attackBonus ?? 0}`}
-    </div>
-  ),
-}));
+
 import { MemoryRouter } from "react-router";
 import { PlayTab } from "@/features/character/center/tabs/PlayTab";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
@@ -157,34 +147,27 @@ describe("S9 — magic-item charge-cast (Wand of Magic Missiles)", () => {
     if (!levelThree) throw new Error("level-3 item cast row is missing");
     fireEvent.click(levelThree);
     await waitFor(() => expect(charges()).toBe(4));
-    expect(
-      useCombatStore
-        .getState()
-        .selected.action.find((action) => action.id === "spell-magic-missile")?.cost
-    ).toMatchObject({
-      type: "tracker",
-      key: `magic-item:${WAND_INSTANCE_ID}`,
-      trackerAmount: 3,
-    });
-
-    // The committed card disables to "Used" (the CTA grammar); undo via the
-    // act's live snackbar → the charge is restored.
-    expect(screen.getByLabelText("Used: Magic Missile")).toBeDisabled();
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(screen.getByLabelText("Cast: Magic Missile")).toBeEnabled();
     const toast = useToastStore.getState().toasts.find((t) => t.onUndo);
     expect(toast).toBeTruthy();
     act(() => toast?.onUndo?.());
     await waitFor(() => expect(charges()).toBe(7));
   });
 
-  it("builds a fixed item cast with the source-defined attack bonus", async () => {
+  it("spends a fixed item use without requiring attack resolution", async () => {
     encounterMode.active = true;
     loadCircletWielder();
     renderPage();
 
     fireEvent.click(await screen.findByLabelText("Cast: Scorching Ray"));
-    const resolver = await screen.findByRole("dialog", {
-      name: "Resolve Scorching Ray",
-    });
-    expect(resolver).toHaveTextContent("Attack +5");
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.itemResources?.[
+          "circlet-of-blasting-copy"
+        ]?.resources.uses?.current
+      ).toBe(0)
+    );
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

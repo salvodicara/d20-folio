@@ -66,10 +66,14 @@ test.describe("Spells Page", () => {
     // The Cast CTA lives in the disclosed card region (named for the spell).
     const detail = page.getByRole("region", { name: /Healing Word/i });
     const castButton = detail.getByRole("button", { name: /cast/i }).first();
-    if (await castButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await castButton.click();
-      // Should deduct a spell slot or show a level picker
-    }
+    await expect(castButton).toBeVisible();
+    await castButton.click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: /Level 1 slot \(base\)/i }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.locator(".fob").getByRole("button", { name: /^Undo:/i })
+    ).toBeVisible();
   });
 
   test("shows concentration badge on concentration spells", async ({ page }) => {
