@@ -201,15 +201,13 @@ attacker, targets and outcome.
 
 Each step is merged on its own with the app working. Steps 1–4 change nothing the players see.
 
-0. **Clean-up and a real bug.**
-   - Delete the dead cast UI and K1 from `src/`.
-   - Fix the chronicle id collision with a failing test first: `appendEvent` uses
-     `String(events.length)`, and undo deletes lines. With ids 0, 1, 2, undoing "1" and then
-     appending gives a second "2". Undo/attacker-tap by id can then hit the wrong line.
-1. **`SessionEvent` + `buildReport`, pure.**
-   - Types, the fold (corrections and retractions applied), and the per-round report.
-   - Tested with golden logs, following the v2 replay-fixture format.
-   - No I/O, no UI.
+0. **Done (#28).** Dead cast UI, K1, the `lib/combat` prototype and the unmounted
+   `CombatResolver` deleted; chronicle id reuse fixed. Left unwired since 2026-09-21, recorded as
+   open gaps: `self-heal-on-other`, `maximize-spell-healing`, `roll-die-adjustment` and the on-cast
+   triggers in `src/lib/on-cast-effects.ts` (Arcane Ward, Expert Divination).
+1. **Done (#29).** `src/lib/session-log/`: `PlayEvent`, `LogItem`, `foldSession`, `buildReport`.
+   Order is the log's array order (`arrayUnion`); round and encounter come from markers, so no
+   clock and no stamping on the recording device.
 2. **`SessionLogStore` + rules + session lifecycle.**
    - Firestore and memory adapters.
    - The `sessionLogs` rules block with emulator tests: two clients appending, a member blocked from
