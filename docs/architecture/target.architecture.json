@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "d20 Folio obiettivo: un registro, tutto il resto si ricava",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "sheet",
+      "type": "frontend",
+      "label": "Scheda giocatore",
+      "sublabel": "un tocco = un evento",
+      "pos": [40, 120],
+      "size": [170, 64]
+    },
+    {
+      "id": "dm",
+      "type": "frontend",
+      "label": "Pannello DM",
+      "sublabel": "eventi per tutti",
+      "pos": [40, 300],
+      "size": [170, 64]
+    },
+    {
+      "id": "log",
+      "type": "messagebus",
+      "label": "Registro di sessione",
+      "sublabel": "uno, condiviso, solo aggiunte",
+      "pos": [330, 210],
+      "size": [190, 64],
+      "tag": "Fase 1"
+    },
+    {
+      "id": "catalogue",
+      "type": "database",
+      "label": "Catalogo + Grant",
+      "sublabel": "regole come dati",
+      "pos": [330, 400],
+      "size": [190, 64],
+      "tag": "si tiene"
+    },
+    {
+      "id": "report",
+      "type": "backend",
+      "label": "Resoconto per round",
+      "sublabel": "deterministico, rigenerabile",
+      "pos": [640, 120],
+      "size": [190, 64],
+      "tag": "Fase 1"
+    },
+    {
+      "id": "state",
+      "type": "backend",
+      "label": "Stato derivato",
+      "sublabel": "PF, risorse, timer",
+      "pos": [640, 300],
+      "size": [190, 64],
+      "tag": "Fasi 2-4"
+    },
+    {
+      "id": "ai",
+      "type": "external",
+      "label": "AI esterna",
+      "sublabel": "riassunto di sessione",
+      "pos": [950, 120],
+      "size": [170, 64]
+    },
+    {
+      "id": "views",
+      "type": "frontend",
+      "label": "Viste",
+      "sublabel": "scheda, scontro, campagna",
+      "pos": [950, 300],
+      "size": [170, 64]
+    }
+  ],
+  "connections": [
+    {
+      "id": "sheet-log",
+      "from": "sheet",
+      "to": "log",
+      "label": "evento minimo",
+      "variant": "emphasis"
+    },
+    {
+      "id": "dm-log",
+      "from": "dm",
+      "to": "log",
+      "label": "evento o correzione",
+      "variant": "emphasis"
+    },
+    { "id": "log-report", "from": "log", "to": "report" },
+    { "id": "log-state", "from": "log", "to": "state", "label": "ricalcolo" },
+    {
+      "id": "catalogue-state",
+      "from": "catalogue",
+      "to": "state",
+      "label": "regole",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    { "id": "report-ai", "from": "report", "to": "ai", "label": "copia" },
+    { "id": "state-views", "from": "state", "to": "views" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Fase 1",
+      "items": [
+        "Ogni gesto finisce in un solo registro",
+        "Anche il -14 PF scritto dal giocatore",
+        "Resoconto per round, pronto per l'AI"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Dopo",
+      "items": [
+        "Timer e stati si ricavano dal registro",
+        "Poi PF e risorse",
+        "Correggere una riga ricalcola tutto"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Regola",
+      "items": [
+        "Un passo alla volta",
+        "L'app resta sempre funzionante",
+        "Nessun dato dei giocatori perso"
+      ]
+    }
+  ]
+}

@@ -5,6 +5,9 @@ depth, seam, adapter, leverage, locality). Target: [VISION.md](VISION.md) (five 
 one shared session log and a deterministic per-round report). Governing rule: GOLDEN_RULES "Modo #9"
 (optimal architecture, simplest way to reach it, one area at a time, the live app always working).
 
+Diagrams (archify, open in a browser): [today](architecture/today.html) ·
+[target](architecture/target.html). Sources: `docs/architecture/*.architecture.json`.
+
 ## Verdict
 
 - **Catalogue and Grants are sound. Keep them.** This is where the project is strongest. The
