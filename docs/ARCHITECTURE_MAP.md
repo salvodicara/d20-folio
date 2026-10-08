@@ -226,8 +226,8 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    (cockpit) resolves the attached campaign on the first gesture and forwards each line through
    `createCharacterLogMirror` (`pc:<character>:<line>` ids; undo → retraction). None of these
    lines produce a Chronicle beat, so nothing duplicates the DM mirror. Found on the way:
-   `applyDeclaredCombatEffects`, `applyResolvedCombatEffects` and `applySoloCombatEffects` have
-   no production caller (dead since the resolver went) — delete in a clean-up pass.
+   `applyDeclaredCombatEffects`, `applyResolvedCombatEffects` and `applySoloCombatEffects` had
+   no production caller (dead since the resolver went) — deleted with their reducers.
 5. **Done.** `SessionReports` (campaign Journal tab): one row per session from
    `SessionLogStore.recent`, opening to the round-by-round report rendered by
    `renderSessionReport` (`src/lib/views/session-report-view.ts`, EN/IT) with "Copy for AI".

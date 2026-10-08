@@ -279,10 +279,6 @@ interface CharacterState {
     characterId: string | null,
     effects?: ReadonlyArray<ActiveCombatEffect>
   ) => void;
-  /** Apply source-owned SOLO effects and return their exact inverse. */
-  applySoloCombatEffects: (
-    effects: ReadonlyArray<ActiveCombatEffect>
-  ) => (() => void) | null;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
   /** Persist the current complete play owner through the injected seam. */
@@ -397,26 +393,6 @@ interface CharacterState {
    * seam, so `setTempHP` (rest/undo/USE-APPLIES) stays log-free. No-op for a
    * non-positive amount. */
   gainTempHp: (amount: number) => void;
-  /** Apply the current hero's reviewed combat consequences as one reversible unit.
-   * The caller composes the returned inverse with the action/resource inverse. */
-  applyResolvedCombatEffects: (effects: {
-    damage?: number;
-    /** Ordered hit/ray/missile packets. Each packet crosses the 0-HP and
-     * concentration seams independently. */
-    damagePackets?: ReadonlyArray<{
-      amount: number;
-      crit?: boolean;
-      hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
-    }>;
-    healing?: number;
-    tempHp?: number;
-    addConditions?: string[];
-    addConcentrationConditions?: string[];
-    removeConditions?: string[];
-    bardicInspirationDie?: string;
-    heroicInspiration?: boolean;
-    stabilize?: boolean;
-  }) => (() => void) | null;
   /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
    * pool (which can co-exist with a normal pool at the same level — Sorlock); it
@@ -1225,32 +1201,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       ...(character ? { character: { ...character } } : {}),
     });
   },
-  applySoloCombatEffects: (effects) => {
-    if (get().readonly || effects.length === 0) return null;
-    const character = get().character;
-    if (!character) return null;
-    const additions = effects;
-    if (additions.length === 0) return null;
-    const previous = get().combatLegacyActiveEffects;
-    const nextLegacy = mergeActiveCombatEffects(previous, additions);
-    const next = effectiveCombatEffects(nextLegacy);
-    set({
-      combatActiveEffects: next,
-      combatLegacyActiveEffects: nextLegacy,
-      character: { ...character },
-    });
-    persistCombat(get);
-    return () => {
-      const current = get().character;
-      if (!current) return;
-      set({
-        combatActiveEffects: effectiveCombatEffects(previous),
-        combatLegacyActiveEffects: previous,
-        character: { ...current },
-      });
-      persistCombat(get);
-    };
-  },
   loadReadonly: (doc) =>
     set({
       character: doc,
@@ -1744,75 +1694,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (newTemp === prevTemp) return;
     get().setTempHP(newTemp);
     get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
-  },
-
-  applyResolvedCombatEffects: (effects) => {
-    if (get().readonly) return null;
-    const before = get().character;
-    if (!before) return null;
-    const legacyActiveEffectsBefore = get().combatLegacyActiveEffects;
-    const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
-    const healingBlocked = aggregateCharacterGrants(
-      before.character,
-      before.session
-    ).healingBlocked;
-    const damageTakenBefore = useCombatStore.getState().damageTakenThisRound;
-    if (effects.damagePackets) {
-      for (const packet of effects.damagePackets) {
-        get().applyDamage(packet.amount, {
-          ...(packet.crit ? { crit: true } : {}),
-          ...(packet.hit ? { hit: packet.hit } : {}),
-        });
-      }
-    } else if (effects.damage) {
-      get().applyDamage(effects.damage);
-    }
-    if (effects.healing && !healingBlocked) get().applyHealing(effects.healing);
-    if (effects.tempHp) get().gainTempHp(effects.tempHp);
-    if (effects.bardicInspirationDie !== undefined)
-      get().setBardicInspirationDie(effects.bardicInspirationDie);
-    if (effects.heroicInspiration !== undefined)
-      get().setHeroicInspiration(effects.heroicInspiration);
-    if (effects.stabilize) {
-      const current = get().character;
-      if (
-        current?.session.hp.current === 0 &&
-        isCharacterAlive(current.status, current.session)
-      ) {
-        get().setDeathSaves(3, 0);
-      }
-    }
-    if (effects.addConcentrationConditions?.length) {
-      const current = get().character;
-      if (current)
-        set({
-          character: {
-            ...current,
-            session: {
-              ...current.session,
-              concentrationConditions: effects.addConcentrationConditions,
-            },
-          },
-        });
-    }
-    for (const condition of effects.addConditions ?? [])
-      get().addCondition(condition, { registerConcentrationUndo: false });
-    for (const condition of effects.removeConditions ?? []) {
-      get().removeConditionSilent(condition);
-    }
-    if (effects.addConcentrationConditions?.length || effects.removeConditions?.length)
-      flushParentPersistence(get);
-    return () => {
-      set({
-        character: before,
-        combatActiveEffects: effectiveCombatEffects(legacyActiveEffectsBefore),
-        combatLegacyActiveEffects: legacyActiveEffectsBefore,
-        combatPendingConcentrationSaves: pendingConcentrationSavesBefore,
-      });
-      useCombatStore.setState({ damageTakenThisRound: damageTakenBefore });
-      persistCombat(get);
-      flushParentPersistence(get);
-    };
   },
 
   useSpellSlot: (level, pactMagic = false) => {

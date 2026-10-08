@@ -4,7 +4,6 @@ import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import type { CharacterDoc } from "@/types/character";
-import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 function concentratingCharacter() {
   return makeCharacterDoc(
@@ -26,36 +25,6 @@ function concentratingCharacter() {
       concentrationConditions: ["restrained"],
     }
   );
-}
-
-function concentrationEffect(): ActiveCombatEffect {
-  return {
-    id: "effect-shield-of-faith",
-    actor: {
-      kind: "pc",
-      combatantId: "self",
-      memberUid: "self",
-      characterId: "test-char",
-    },
-    target: {
-      kind: "pc",
-      combatantId: "self",
-      memberUid: "self",
-      characterId: "test-char",
-    },
-    source: {
-      kind: "spell",
-      id: "shield-of-faith",
-      actionId: "spell-shield-of-faith",
-      castLevel: 3,
-    },
-    payload: { kind: "grant-group", activeKey: "spell-shield-of-faith" },
-    duration: {
-      kind: "concentration",
-      actorId: "self",
-      sourceId: "shield-of-faith",
-    },
-  };
 }
 
 beforeEach(() => {
@@ -189,40 +158,6 @@ describe("characterStore — entered D20 lifecycle", () => {
     expect(commit?.result.deterministicModifier).toBe(0);
     expect(commit?.result.selectedNaturalFace).toBe(20);
     expect(commit?.result.reviewedOutcome.status).toBe("success");
-  });
-
-  it("failure tears down every concentration-owned fact and its CAS undo restores exactly", () => {
-    const character = concentratingCharacter();
-    useCharacterStore.getState().setCharacter(character);
-    const effect = concentrationEffect();
-    useCharacterStore.getState().applySoloCombatEffects([effect]);
-    useCharacterStore.getState().applyDamage(10);
-    const pending = useCharacterStore.getState().combatPendingConcentrationSaves[0];
-    if (!pending) throw new Error("missing pending save");
-    const before = structuredClone(useCharacterStore.getState().character);
-
-    const commit = useCharacterStore
-      .getState()
-      .commitPendingConcentrationSave(pending, [1]);
-    expect(commit).not.toBeNull();
-    const failed = useCharacterStore.getState();
-    expect(failed.character?.session).toMatchObject({
-      concentration: "",
-      activeFeatures: [],
-    });
-    expect(failed.character?.session.concentrationCastLevel).toBeUndefined();
-    expect(failed.character?.session.activeSpellCastLevels).toBeUndefined();
-    expect(failed.character?.session.effectTimers).toBeUndefined();
-    expect(failed.character?.session.effectBoundaries).toBeUndefined();
-    expect(failed.character?.session.concentrationConditions).toBeUndefined();
-    expect(failed.combatActiveEffects).toEqual([]);
-
-    expect(commit?.undo()).toBe(true);
-    expect(useCharacterStore.getState().character).toEqual(before);
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
-    expect(useCharacterStore.getState().combatPendingConcentrationSaves).toEqual([
-      pending,
-    ]);
   });
 
   it("fails closed for stale prompts and stale undo, and auto-breaks at 0 without queuing", () => {

@@ -16,7 +16,6 @@ import { sessionToCombatState } from "@/lib/combat-state";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import { serializeCharacter } from "@/lib/character-codec";
 import { castSourceActiveKey } from "@/lib/smart-tracker";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /**
  * Creates a minimal mock character for testing store operations.
@@ -198,30 +197,6 @@ describe("characterStore — campaign effect projection", () => {
     if (!character) throw new Error("expected projected character");
     expect(Object.keys(character.session)).not.toContain("encounterEffects");
     expect(serializeCharacter(character)).not.toContain("encounterEffects");
-  });
-
-  it("persists and undo-restores character-owned effects through combat state", () => {
-    const write = vi.fn();
-    useCharacterStore.getState().setCharacter(mockCharacter());
-    useCharacterStore.getState().setCombatPersistence({ write });
-    const effect = projectedEffect();
-    const undo = useCharacterStore.getState().applySoloCombatEffects([effect]);
-
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
-    expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
-      effect,
-    ]);
-    expect(write).toHaveBeenLastCalledWith(
-      expect.objectContaining({ activeEffects: [effect] })
-    );
-
-    undo?.();
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
-    expect(
-      useCharacterStore.getState().character?.session.encounterEffects
-    ).toBeUndefined();
-    const lastWrite = (write.mock.calls as Array<[CombatState]>).at(-1)?.[0];
-    expect(lastWrite?.activeEffects).toBeUndefined();
   });
 
   it("hydrates local and campaign occurrences into one runtime projection", () => {
@@ -467,104 +442,6 @@ describe("characterStore — death saves & session state", () => {
       expect(sess()?.deathSucc).toBe(1);
       expect(sess()?.deathFail).toBe(0);
       expect(sess()?.conditions).toEqual(["prone"]);
-    });
-
-    it("applies and reverses a reviewed combat result as one exact unit", () => {
-      seed({ current: 20, temp: 3, conditions: ["frightened"] });
-      const undo = store().applyResolvedCombatEffects({
-        damage: 8,
-        addConditions: ["prone"],
-        removeConditions: ["frightened"],
-      });
-      expect(sess()?.hp).toEqual({ current: 15, temp: 0 });
-      expect(sess()?.conditions).toEqual(["prone"]);
-      expect(undo).toBeTypeOf("function");
-      undo?.();
-      expect(sess()?.hp).toEqual({ current: 20, temp: 3 });
-      expect(sess()?.conditions).toEqual(["frightened"]);
-    });
-
-    it("applies reviewed hit packets sequentially at 0 HP", () => {
-      seed({ current: 0, fail: 0, conditions: ["unconscious"] });
-      const undo = store().applyResolvedCombatEffects({
-        damagePackets: [{ amount: 2 }, { amount: 3 }],
-      });
-
-      expect(sess()?.deathFail).toBe(2);
-      expect(sess()?.conditions).toEqual(["unconscious"]);
-      expect(
-        sess()?.logEntries.filter((entry) => entry.event.kind === "hp-damage")
-      ).toHaveLength(2);
-
-      undo?.();
-      expect(sess()?.deathFail).toBe(0);
-      expect(sess()?.conditions).toEqual(["unconscious"]);
-    });
-
-    it("stabilizes at 0 HP without healing and reverses the death track exactly", () => {
-      seed({ current: 0, fail: 2, conditions: ["unconscious"] });
-      const undo = store().applyResolvedCombatEffects({ stabilize: true });
-      expect(sess()?.hp.current).toBe(0);
-      expect(sess()?.deathSucc).toBe(3);
-      expect(sess()?.deathFail).toBe(0);
-      expect(sess()?.conditions).toEqual(["unconscious"]);
-      undo?.();
-      expect(sess()?.deathSucc).toBe(0);
-      expect(sess()?.deathFail).toBe(2);
-      expect(sess()?.conditions).toEqual(["unconscious"]);
-    });
-
-    it("does not stabilize a character who already has three failed saves", () => {
-      seed({ current: 0, fail: 3, conditions: ["unconscious"] });
-      const undo = store().applyResolvedCombatEffects({ stabilize: true });
-      expect(sess()?.deathSucc).toBe(0);
-      expect(sess()?.deathFail).toBe(3);
-      expect(undo).toBeTypeOf("function");
-    });
-
-    it("keeps a solo concentration condition source-owned and makes it inert on drop", () => {
-      seed({ current: 20, conditions: ["prone"] });
-      store().setConcentration(conc("invisibility"), { silent: true });
-      const undo = store().applyResolvedCombatEffects({
-        addConcentrationConditions: ["invisible"],
-      });
-
-      expect(sess()?.conditions).toEqual(["prone"]);
-      expect(
-        effectiveSessionConditions(store().character?.session ?? mockCharacter().session)
-      ).toEqual(["prone", "invisible"]);
-      store().setConcentration("", { silent: true });
-      expect(
-        effectiveSessionConditions(store().character?.session ?? mockCharacter().session)
-      ).toEqual(["prone"]);
-      undo?.();
-      expect(sess()?.concentrationConditions).toBeUndefined();
-    });
-
-    it("blocks solo healing while a projected Chill Touch effect is active", () => {
-      const char = mockCharacter();
-      char.session.hp.current = 20;
-      const effect: ActiveCombatEffect = {
-        id: "chill-touch-1",
-        actor: { kind: "monster", combatantId: "enemy" },
-        target: {
-          kind: "pc",
-          combatantId: "pc-test",
-          memberUid: "u-test",
-          characterId: char.id,
-        },
-        source: {
-          kind: "spell",
-          id: "chill-touch",
-          actionId: "spell-chill-touch",
-        },
-        payload: { kind: "grant-group", activeKey: "spell-chill-touch" },
-        duration: { kind: "encounter" },
-      };
-      useCharacterStore.getState().setCharacter(char);
-      useCharacterStore.getState().setEncounterEffects(char.id, [effect]);
-      useCharacterStore.getState().applyResolvedCombatEffects({ healing: 12 });
-      expect(useCharacterStore.getState().character?.session.hp.current).toBe(20);
     });
   });
 
@@ -2311,50 +2188,6 @@ describe("characterStore — FRONTIER-S3 cadence appliers", () => {
         later: { round: 3, phase: "turn-end" },
       });
     });
-
-    it("expires and undo-restores a source-owned solo condition occurrence", () => {
-      useCharacterStore.getState().setEncounterEffects(null);
-      useCharacterStore.getState().setCharacter(mockCharacter());
-      const effect = {
-        ...projectedEffect(),
-        payload: { kind: "condition" as const, conditionId: "charmed" },
-        duration: {
-          kind: "turn-boundary" as const,
-          combatantId: "self",
-          round: 2,
-          phase: "turn-start" as const,
-        },
-      };
-      useCharacterStore.getState().applySoloCombatEffects([effect]);
-
-      expect(useCharacterStore.getState().character?.session.encounterEffects).toEqual([
-        effect,
-      ]);
-      const { expired, restore } = useCharacterStore
-        .getState()
-        .expireEffectBoundaries({ round: 2, phase: "turn-start" });
-      expect(expired).toEqual([
-        { activeKey: "condition:charmed", sourceId: effect.source.id },
-      ]);
-      expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
-
-      restore();
-      expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
-    });
-
-    it("manual condition removal revokes only local source occurrences and is undoable", () => {
-      useCharacterStore.getState().setCharacter(mockCharacter());
-      const effect = {
-        ...projectedEffect(),
-        payload: { kind: "condition" as const, conditionId: "charmed" },
-      };
-      useCharacterStore.getState().applySoloCombatEffects([effect]);
-
-      const restore = useCharacterStore.getState().removeConditionSilent("charmed");
-      expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
-      restore?.();
-      expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
-    });
   });
 
   describe("advanceEffectTimers", () => {
@@ -2635,45 +2468,6 @@ describe("characterStore — S1 concentration drop/swap clears the buff chip", (
     expect(useCharacterStore.getState().character?.session.effectBoundaries).toEqual({
       "spell-shield-of-faith": { round: 9, phase: "turn-end" },
     });
-  });
-
-  it("ends and undo-restores the dropped spell's local occurrences", async () => {
-    const { useToastStore } = await import("@/stores/toastStore");
-    const character = concentratingOnShieldOfFaith();
-    useCharacterStore.getState().setCharacter(character);
-    const effect: ActiveCombatEffect = {
-      id: "solo-shield-of-faith",
-      actor: {
-        kind: "pc",
-        combatantId: "self",
-        memberUid: "self",
-        characterId: character.id,
-      },
-      target: {
-        kind: "pc",
-        combatantId: "self",
-        memberUid: "self",
-        characterId: character.id,
-      },
-      source: {
-        kind: "spell",
-        id: "shield-of-faith",
-        actionId: "spell-shield-of-faith",
-      },
-      payload: { kind: "grant-group", activeKey: "spell-shield-of-faith" },
-      duration: {
-        kind: "concentration",
-        actorId: "self",
-        sourceId: "shield-of-faith",
-      },
-    };
-    useCharacterStore.getState().applySoloCombatEffects([effect]);
-
-    useCharacterStore.getState().setConcentration("");
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([]);
-
-    useToastStore.getState().toasts.at(-1)?.onUndo?.();
-    expect(useCharacterStore.getState().combatActiveEffects).toEqual([effect]);
   });
 
   it("on swap, strips ONLY the OLD spell's chip — the new spell's chip stays the player's manual act", () => {
