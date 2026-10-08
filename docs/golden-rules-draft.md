@@ -23,12 +23,16 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
 3. **Le informazioni si aprono per gradi.** Le cose comuni si vedono a colpo d'occhio, i dettagli
    si aprono a richiesta, senza pagine in più. L'esperto va veloce e il principiante può imparare.
    — COST §2.3, PROD principio 1, DEC 2026-09-09
-4. **Automatizza la contabilità, non il giudizio.** Tutto ciò che è conto meccanico (modificatori,
-   CA, bonus, HP, slot, cariche, risorse, durate e concentrazione, riposi) lo fa l'app, con
-   override manuale sempre disponibile. Le regole situazionali che dipendono dal tavolo restano una
-   scelta del giocatore o del DM: l'app propone, non impone. L'homebrew (contatori, stati, risorse
-   personalizzate) si comporta come il contenuto ufficiale. _Perché:_ giocare senza pensare ai
-   calcoli, senza togliere la libertà del tavolo. — GR#8 @main, I-086, I-160, owner 2026-10-08
+4. **Il motore calcola e ricorda; il giocatore dichiara con un tocco.** Le regole 2024 vivono
+   catalogate come dati (SRD pubblico, il resto nel `content-pack/` privato) e ogni effetto è un
+   Grant tipizzato: incantesimi, privilegi, oggetti e homebrew cambiano le statistiche da soli e
+   mostrano indicatori (Ira attiva, concentrazione, round rimasti, bonus temporanei). Tre livelli:
+   (a) statistiche derivate, sempre automatiche; (b) stati e timer, un tocco per attivarli e poi
+   si aggiornano da soli; (c) risoluzione delle azioni, mai obbligatoria: la via di default è
+   «fatto, danno X» o «-X PF» in un tocco, il dettaglio è a richiesta. Override manuale ovunque;
+   l'homebrew usa gli stessi Grant del contenuto ufficiale. _Perché:_ il catalogo con i Grant è
+   la forza del progetto; il difetto erano i flussi obbligatori («200 schermate per un
+   attacco»). — GR#5, GR#8 @main, I-086, I-160, owner 2026-10-08
 5. **Si può sempre correggere.** Annulla e correggi devono restare disponibili anche dopo altre
    azioni. Undo non ritira mai i dadi. _Perché:_ «gli umani sbagliano». — I-028, I-229,
    GR#21 @main
@@ -138,7 +142,6 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
 | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
 | Gerarchia delle fonti e riconciliazione fra documenti (GR @main «Authority»)                   | burocrazia                                                |
 | Le «quattro biforcazioni» per cui fermarsi (GR @pre)                                           | assorbita in Modo #2                                      |
-| Grant seam come confine rigido; D4–D6 regole 2024 (GR#5, D4–D6)                                | legata alla piena automazione                             |
 | Un worktree per ogni attività, push diretto `HEAD:main` (GR#11)                                | superata dalla direzione del 2026-10-08                   |
 | Revisione «avversaria» in più passaggi prima del merge (GR#12, @pre)                           | burocrazia; sostituita da Pocock                          |
 | Corsie dei controlli: pre-commit, pre-push, CI, promozione di uno SHA (GR#14)                  | dettaglio da runbook (si tiene solo «mai `--no-verify`»)  |
