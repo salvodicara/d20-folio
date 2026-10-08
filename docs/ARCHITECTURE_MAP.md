@@ -248,6 +248,8 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
 
 ## Phase 2: states and timers (one session each, each shippable)
 
+Diagram: [status lifecycle](architecture/status-lifecycle.html).
+
 Today (mapped 2026-10-08): about 8 parallel "effect active for a while" mechanisms; only five are
 live — `session.activeFeatures` + `effectTimers` (round countdown, ticked only by the owner's End
 Turn), `effectBoundaries` (turn edges: Shield, Reckless Attack), the `concentration` string (no
