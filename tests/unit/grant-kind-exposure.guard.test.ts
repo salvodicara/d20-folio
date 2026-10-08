@@ -75,15 +75,15 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "all-damage-resistance": {
     via: "resolvePersistentDamage",
-    consumer: "src/features/campaigns/campaign-io.ts",
+    consumer: "src/lib/combat-transition.ts",
   },
   "damage-transfer": {
     via: "resolvePersistentDamage",
-    consumer: "src/features/campaigns/campaign-io.ts",
+    consumer: "src/lib/combat-transition.ts",
   },
   "damage-retaliation": {
     via: "resolvePersistentHit",
-    consumer: "src/features/campaigns/campaign-io.ts",
+    consumer: "src/lib/combat-transition.ts",
   },
   "damage-immunity": {
     via: "damageImmunities",
@@ -391,7 +391,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "zero-hp-floor": {
     via: "resolvePersistentDamage",
-    consumer: "src/features/campaigns/campaign-io.ts",
+    consumer: "src/lib/combat-transition.ts",
   },
   resource: {
     plumbing:
