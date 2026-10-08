@@ -6,10 +6,10 @@ d20 Folio is a digital character sheet and session companion for the owner's two
 who play at the table or on Owlbear. **`main` is the product and is live**: friends play on it
 with real characters. Read before product work:
 
-- [docs/vision-draft.md](docs/vision-draft.md) — what Folio is becoming: the session log, minimal
+- [docs/VISION.md](docs/VISION.md) — what Folio is becoming: the session log, minimal
   declaration, the phased scope and the interaction decisions.
-- [docs/golden-rules-draft.md](docs/golden-rules-draft.md) — the owner's taste and the way of
-  working. Both drafts are being finalised with the owner; their newest dated line wins.
+- [docs/GOLDEN_RULES.md](docs/GOLDEN_RULES.md) — the owner's taste and the way of
+  working, approved 2026-10-08. The newest dated owner line wins.
 
 The `v2` rewrite is archived (tag `archive/2026-10-08-v2`): a quarry for specific parts, recovered
 one at a time onto `main`, never a base to resume. Its docs describe that branch, not this one.
@@ -40,5 +40,5 @@ one at a time onto `main`, never a base to resume. Its docs describe that branch
 - Secrets never enter the repo, logs, docs or agent memory.
 
 The production-code docs (`docs/ARCHITECTURE.md`, `docs/MECHANICS.md`, `DESIGN.md`, `PRODUCT.md`)
-describe today's code but predate the 2026-10-08 direction; when they disagree with the drafts
-above, the drafts win and the old doc gets fixed in the same change.
+describe today's code but predate the 2026-10-08 direction; when they disagree with the two
+documents above, those win and the old doc gets fixed in the same change.

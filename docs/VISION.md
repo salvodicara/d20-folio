@@ -1,8 +1,7 @@
-# d20 Folio — visione e scoping (bozza dell'8/10/2026)
+# d20 Folio — visione e scoping (8/10/2026)
 
-Bozza concordata con il proprietario in chat. Base per la prossima sessione: si rifinisce con
-`grill-with-docs`, poi si trasforma in spec e ticket. Regole di gusto e di lavoro:
-[golden-rules-draft.md](golden-rules-draft.md).
+Concordata con il proprietario. Ogni fase si dettaglia con `grill-with-docs`, poi spec e ticket. Regole di gusto e di lavoro:
+[GOLDEN_RULES.md](GOLDEN_RULES.md).
 
 ## Cos'è Folio
 
@@ -65,6 +64,10 @@ per primi: `src/lib/smart-tracker.ts`, `src/lib/mechanics-*.ts`, `src/lib/grants
 `src/stores/characterStore.ts`, `src/features/character/center/CombatResolver.tsx`,
 `src/types/combat-log.ts`. Il ramo `v2` (tag `archive/2026-10-08-v2`) è una cava di pezzi: si
 recupera solo ciò che serve, un pezzo alla volta.
+
+**Al traguardo:** mappe dell'architettura navigabili, fatte con `archify`, più al massimo uno o
+due strumenti di visualizzazione del codice scelti dopo una ricerca (solo i migliori), per capire e
+navigare il sistema.
 
 **Rischio principale:** ripetere `v2`, cioè modellare tutto prima di consegnare. Ogni fase deve
 arrivare al tavolo prima di aprire la successiva.
