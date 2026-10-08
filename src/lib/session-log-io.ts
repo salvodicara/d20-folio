@@ -50,11 +50,15 @@ export function createFirestoreSessionLogStore(
         { merge: true }
       );
     },
-    subscribe(sessionId, onItems) {
-      return onSnapshot(doc(logs, sessionId), (snap) => {
-        const log: unknown = snap.data()?.log;
-        onItems(Array.isArray(log) ? log.filter(isLogItem) : []);
-      });
+    subscribe(sessionId, onItems, onError) {
+      return onSnapshot(
+        doc(logs, sessionId),
+        (snap) => {
+          const log: unknown = snap.data()?.log;
+          onItems(Array.isArray(log) ? log.filter(isLogItem) : []);
+        },
+        (error) => onError?.(error)
+      );
     },
   };
 }

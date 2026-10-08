@@ -13,7 +13,7 @@ export type ReportSection =
   | {
       kind: "encounter";
       encounterId: string;
-      outcome?: "victory" | "retreat" | "defeat";
+      outcome?: "victory" | "ended";
       rounds: ReportRound[];
     };
 

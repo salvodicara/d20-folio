@@ -13,7 +13,11 @@ export interface SessionHead {
 export interface SessionLogStore {
   latest(): Promise<SessionHead | null>;
   append(sessionId: string, item: LogItem): Promise<void>;
-  subscribe(sessionId: string, onItems: (items: LogItem[]) => void): () => void;
+  subscribe(
+    sessionId: string,
+    onItems: (items: LogItem[]) => void,
+    onError?: (error: unknown) => void
+  ): () => void;
 }
 
 /** A session closes by itself after this much silence; the next gesture opens a new one. */

@@ -42,6 +42,7 @@ import {
   campaignMemberCount,
 } from "@/features/campaigns/campaignStore";
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
+import { useSessionLogMirror } from "@/features/campaigns/useSessionLogMirror";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { CampaignArtControl } from "@/features/campaigns/CampaignArtControl";
@@ -370,6 +371,7 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
   const setName = useCampaignStore((s) => s.setName);
   const uid = useAuthStore((s) => s.user?.uid);
   const isAdmin = useIsAdmin();
+  useSessionLogMirror(campaignId, uid, campaign?.dmUid);
   // Paint the campaign art (custom banner, else the bundled backdrop) under the
   // app's own scrim for as long as the hub is mounted — atmosphere under content.
   useCampaignBackdrop(campaign?.bannerUrl ?? null, campaign?.bannerCrop ?? null);

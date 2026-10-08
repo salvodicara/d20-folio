@@ -16,3 +16,9 @@ export {
   type SessionLogStore,
   type SessionRecorder,
 } from "./recorder";
+export {
+  chronicleToPlayEvent,
+  mirrorEncounter,
+  type MirrorDraft,
+} from "./encounter-mirror";
+export { createEncounterMirror } from "./encounter-mirror-controller";
