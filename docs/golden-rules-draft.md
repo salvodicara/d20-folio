@@ -1,4 +1,4 @@
-# d20 Folio — regole d'oro (bozza da rifinire nell'intervista)
+# d20 Folio — regole d'oro (bozza rifinita con il proprietario l'8/10/2026)
 
 Bozza dell'8/10/2026. Riassume mesi di regole sparse in poche righe, da usare con Claude Code e con
 Codex. Direzione di partenza: `main` è il prodotto, cioè una scheda digitale flessibile più il
@@ -23,10 +23,12 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
 3. **Le informazioni si aprono per gradi.** Le cose comuni si vedono a colpo d'occhio, i dettagli
    si aprono a richiesta, senza pagine in più. L'esperto va veloce e il principiante può imparare.
    — COST §2.3, PROD principio 1, DEC 2026-09-09
-4. **Flessibilità manuale prima di tutto.** Quello che l'app calcola si può sempre sovrascrivere a
-   mano. Il tavolo deve poter rappresentare qualsiasi cosa: contatori, stati, risorse
-   personalizzate. ❓ GR#8 dice che una correzione manuale «non scusa un calcolo mancante»: vale
-   ancora, o basta calcolare l'aritmetica ovvia? — GR#8 @main, I-086, I-160, direzione 2026-10-08
+4. **Automatizza la contabilità, non il giudizio.** Tutto ciò che è conto meccanico (modificatori,
+   CA, bonus, HP, slot, cariche, risorse, durate e concentrazione, riposi) lo fa l'app, con
+   override manuale sempre disponibile. Le regole situazionali che dipendono dal tavolo restano una
+   scelta del giocatore o del DM: l'app propone, non impone. L'homebrew (contatori, stati, risorse
+   personalizzate) si comporta come il contenuto ufficiale. _Perché:_ giocare senza pensare ai
+   calcoli, senza togliere la libertà del tavolo. — GR#8 @main, I-086, I-160, owner 2026-10-08
 5. **Si può sempre correggere.** Annulla e correggi devono restare disponibili anche dopo altre
    azioni. Undo non ritira mai i dadi. _Perché:_ «gli umani sbagliano». — I-028, I-229,
    GR#21 @main
@@ -41,24 +43,31 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
 9. **Scegliere è un momento importante.** Prima leggi, poi scegli: sfogliare non decide niente. Le
    opzioni non idonee vengono nascoste, non mostrate in grigio, e le scelte che ne derivano si
    aprono sotto la scelta che le ha causate. — COST §2.7
-10. **Premium e un po' magico, stile BG3.** Mai l'aspetto di una dashboard, di un SaaS, di una
-    pratica alle poste o di una pergamena ovunque. Lo sfarzo visivo va a ciò che il giocatore sta
-    decidendo, non alla decorazione. ❓ Lo stile BG3 approvato in d20-studio vale anche per Folio
-    (oggi «Tactical Codex»)? Tema solo scuro (DEC 2026-09-05) o scuro più chiaro (PROD, I-248)?
-    — I-253, I-255, PROD Anti-references, COST §4.16, DEC 2026-09-09
+10. **Premium e un po' magico.** Mai l'aspetto di una dashboard, di un SaaS, di una pratica alle
+    poste o di una pergamena ovunque. Lo sfarzo visivo va a ciò che il giocatore sta decidendo, non
+    alla decorazione. La direzione (BG3 come in d20-studio o «Tactical Codex» rifinito) il
+    proprietario la sceglie vedendo esempi su schermate vere di Folio. — I-253, I-255, PROD
+    Anti-references, COST §4.16, DEC 2026-09-09, owner 2026-10-08
 11. **Il diavolo sta nei dettagli.** Un solo sistema coerente: margini, spaziature, posizione e
     misura dei comandi. Il testo che identifica qualcosa non si tronca mai a metà. _Perché:_ sono
     i difetti che fanno sembrare l'app «AI slop» o poco professionale. — I-250, I-255, COST §4.17,
     GR#27 @pre (2026-07-31)
-12. **Laptop prima, telefono comodo.** ❓ PROD/COST chiedono tutte le funzioni anche sul telefono,
-    ma il gruppo gioca dal laptop (I-101, I-129). Il telefono serve a tutto o al gioco rapido?
-    — PROD principio 5, COST §3, I-129
-13. **Dadi veri; l'app registra e fa le somme.** ❓ Su main l'app non tira mai i dadi (GR#21),
-    mentre v2 e d20-studio li tirano in app per chi lo sceglie (DEC 2026-09-03, I-032). La nuova
-    direzione indica i dadi veri: confermare? — GR#21 @main, COST §2.2
-14. **Immagini curate al posto di icone generiche.** ❓ Il proprietario voleva illustrazioni ispirate
-    a BG3, generate e mai copiate, per incantesimi e azioni. Vale anche per Folio adesso? —
-    DEC 2026-09-09, I-253
+12. **Laptop prima, telefono per giocare.** Sul laptop c'è tutto. Sul telefono devono essere
+    comodi scheda, combattimento, HP e risorse; creazione e campagna possono essere meno comode.
+    — I-101, I-129, owner 2026-10-08
+13. **Solo dadi veri.** Si tira al tavolo, si inserisce il risultato, l'app somma e registra.
+    L'app non tira dadi. — GR#21 @main, COST §2.2, owner 2026-10-08
+14. **Immagini curate al posto di icone generiche.** Ritratti caricati per PG e PNG; un set curato
+    di illustrazioni originali (mai copiate) per incantesimi e azioni di combattimento. —
+    DEC 2026-09-09, I-253, owner 2026-10-08
+15. **Folio affianca il tavolo e il VTT, non li sostituisce.** I gruppi giocano dal vivo o su
+    Owlbear e simili: mappe, token e video restano a quegli strumenti. Folio è scheda, combattimento,
+    campagna e memoria della sessione. — PROD main, owner 2026-10-08
+
+16. **Ogni gesto lascia traccia da solo.** Ogni azione fatta nell'app durante il gioco finisce in un
+    registro, senza che nessuno prenda appunti. Da quel registro l'app genera un resoconto
+    deterministico (niente AI) di scontri e sessione, da copiare e dare a un'AI per il riassunto.
+    _Perché:_ il DM oggi passa gli scontri a prendere note invece di divertirsi. — owner 2026-10-08
 
 ## Modo di lavorare
 
@@ -66,19 +75,19 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
    solo quando lavorano davvero più sessioni in parallelo. Commit piccoli in stile Conventional
    Commits, con il proprietario come unico autore (niente righe co-author). — direzione
    2026-10-08 (sostituisce GR#11), GR#11 @main
-2. **Decidi tu i dettagli tecnici e quelli di interfaccia ovvi.** Chiedi solo per gusto o direzione
-   del prodotto, costi, privacy o azioni irreversibili. ❓ I-180/I-202 dicono «non chiedere le
-   cose ordinarie», mentre I-253 dice «nel dubbio fermati e chiedi»: dove sta il confine?
-   — GR @main «Decision boundary», I-180, I-190, I-202, I-253
+2. **Decidi tu la tecnica, chiedi per gusto e prodotto.** Codice e dettagli ovvi li decide
+   l'agente. Si ferma e chiede quando cambia ciò che il giocatore vede o come funziona per lui, e
+   per costi, privacy o azioni irreversibili. — GR @main «Decision boundary», I-180, I-253,
+   owner 2026-10-08
 3. **Quando chiedi, fai una domanda sola, chiara, con esempi e senza gergo.** _Perché:_ «il mio
    cervello ragiona per esempi». — I-248, I-253, I-202
 4. **Se una richiesta di UX è ambigua, chiarisci prima di scrivere codice** (con grill-with-docs).
    _Perché:_ «se non capisci cosa intendo, fammi domande prima di toccare codice». —
    GR#26 @5102810d
 5. **Ogni modifica visiva va mostrata con screenshot veri.** Ritagliati sulla zona cambiata, prima
-   e dopo, mandati come immagini in chat (un percorso di file non basta). ❓ Il proprietario deve
-   approvarli prima del merge su main? Oggi è un blocco (dopo un'ondata di grafica non approvata
-   finita su main e tolta a mano); serve ancora per un progetto solo hobby? —
+   e dopo, mandati come immagini in chat (un percorso di file non basta). Un cambio visibile entra
+   su main solo dopo l'approvazione del proprietario; bug e logica no. _Perché:_ un'ondata di
+   grafica non approvata è finita su main ed è stata tolta a mano. — owner 2026-10-08,
    GR#25 @d27eebca, GR#15 @378572e8, I-230, I-248
 6. **Prima la stabilità, poi le funzioni nuove.** Si finisce il lavoro in corso, si sistemano i
    bug noti e solo dopo si apre altro. — GR#27 @main
@@ -105,15 +114,16 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
 
 1. **Giocatori veri, dati veri.** I personaggi salvati non si perdono mai: niente downgrade dello
    schema e niente rollback totale. Una migrazione segue prova a secco → copia di sicurezza →
-   applicazione ripetibile → verifica. ❓ Le migrazioni sono autonome dentro questo protocollo
-   (GR#22 @main) o serve il via libera ogni volta (GR#33 @v2)? — PROD 2026-09-21, GR#10 @main
+   applicazione ripetibile → verifica. Copia e prova a secco le fa l'agente; l'applicazione ai
+   dati veri richiede ogni volta il sì del proprietario. — PROD 2026-09-21, GR#10 @main, GR#33 @v2,
+   owner 2026-10-08
 2. **Deploy e release solo con la parola esplicita del proprietario, per quella modifica.** Un OK
    non vale per sempre. Lo stesso per le operazioni distruttive e per qualsiasi spesa. —
    GR#22 @main, GR#33 @v2, I-180
 3. **Licenze: il codice SRD è pubblico, il `content-pack/` è privato.** Nel repository pubblico non
    entrano mai contenuti non SRD; quando si tocca quel confine si esegue `just ci-srd-only`. Dai
-   prodotti di riferimento si copiano schemi, mai asset. ❓ Va mantenuto anche l'obbligo di
-   aggiornare il pack nello stesso lavoro (GR#28)? — GR#28 @main, CLAUDE main, DEC 2026-09-09
+   prodotti di riferimento si copiano schemi, mai asset. Se cambia un punto che il pack usa, il
+   pack si aggiorna nello stesso lavoro. — GR#28 @main, CLAUDE main, DEC 2026-09-09
 4. **I segreti non stanno mai** nel repository, nei log, nei documenti, nei prompt o nella memoria
    degli agenti. — GR#23 @main
 5. **Bilingue EN + IT per ogni testo visibile.** Si salvano gli ID, non le etichette tradotte.
