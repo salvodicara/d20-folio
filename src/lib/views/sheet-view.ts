@@ -14,6 +14,7 @@
  * the bilingual `BiText` descriptions that already live on the grants.
  */
 
+import { SENSE_KINDS } from "@/lib/rules";
 import type {
   AggregatedGrants,
   AdvantageClause,
@@ -588,19 +589,8 @@ export function deriveDamageDefenses(
 
 // ─── L6 — non-walking speeds + non-darkvision senses ────────────────────────
 
-/**
- * Canonical runtime list of the sense kinds — the source of truth the i18n
- * coverage guard imports to assert a `character.sense_<kind>` key exists in every
- * locale. The `SenseEntry.kind` union is DERIVED from this tuple, so the two can
- * never drift (add a kind here and the type widens with it; golden rule 6).
- */
-export const SENSE_KINDS = [
-  "darkvision",
-  "blindsight",
-  "tremorsense",
-  "truesight",
-  "see-invisible",
-] as const;
+/** The sense kinds (single home: `lib/rules`); re-exported for the i18n guard. */
+export { SENSE_KINDS };
 
 export interface SenseEntry {
   /** Sense kind — used for the i18n key + glyph. */
