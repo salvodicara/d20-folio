@@ -6,6 +6,13 @@
 > `docs/AUTOMATION_BACKLOG.md` (do not duplicate it here), and the canonical definition of
 > "automated" lives in `docs/MECHANICS.md` (the declarative-grant taxonomy).
 
+> **Open exposure gaps (2026-10-08).** `self-heal-on-other`, `maximize-spell-healing` and
+> `roll-die-adjustment` lost their only consumer when the mandatory combat resolver was removed
+> (2026-09-21). They are modeled but have no effect in play until the Activity model gives them a
+> consumer again (see `docs/architecture/rules-model.html`). The on-cast triggers in
+> `src/lib/on-cast-effects.ts` (Arcane Ward refill, Expert Divination slot regain) are likewise
+> unwired since the same change.
+
 ## Status legend
 
 | Status        | Meaning                                                        |
