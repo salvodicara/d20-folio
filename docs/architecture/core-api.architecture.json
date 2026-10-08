@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Folio Core: il nucleo che diventa API",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "srd",
+      "type": "database",
+      "label": "SRD 5.2.1",
+      "sublabel": "pubblico",
+      "pos": [40, 110],
+      "size": [160, 64]
+    },
+    {
+      "id": "pack",
+      "type": "security",
+      "label": "Content pack",
+      "sublabel": "privato, mai esposto",
+      "pos": [40, 250],
+      "size": [160, 64]
+    },
+    {
+      "id": "homebrew",
+      "type": "frontend",
+      "label": "Homebrew",
+      "sublabel": "del gruppo",
+      "pos": [40, 390],
+      "size": [160, 64]
+    },
+    {
+      "id": "catalogue",
+      "type": "backend",
+      "label": "Catalogo",
+      "sublabel": "Grant + Azioni, un formato",
+      "pos": [270, 250],
+      "size": [190, 64],
+      "tag": "ogni elemento D&D"
+    },
+    {
+      "id": "engine",
+      "type": "backend",
+      "label": "Motore regole",
+      "sublabel": "ricava statistiche e stato",
+      "pos": [540, 150],
+      "size": [190, 64]
+    },
+    {
+      "id": "log",
+      "type": "messagebus",
+      "label": "Registro di sessione",
+      "sublabel": "eventi, correzioni",
+      "pos": [540, 350],
+      "size": [190, 64]
+    },
+    {
+      "id": "app",
+      "type": "frontend",
+      "label": "App Folio",
+      "sublabel": "scheda, scontro, campagna",
+      "pos": [820, 60],
+      "size": [190, 64]
+    },
+    {
+      "id": "api",
+      "type": "cloud",
+      "label": "API pubblica",
+      "sublabel": "JSON statico + pacchetto npm",
+      "pos": [820, 220],
+      "size": [190, 64],
+      "tag": "solo SRD, gratis"
+    },
+    {
+      "id": "firestore",
+      "type": "database",
+      "label": "Firestore",
+      "sublabel": "un documento per sessione",
+      "pos": [820, 440],
+      "size": [190, 64]
+    },
+    {
+      "id": "others",
+      "type": "external",
+      "label": "App di altri",
+      "sublabel": "bot, VTT, strumenti",
+      "pos": [1090, 220],
+      "size": [160, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Folio Core (TypeScript puro, testato)",
+      "wraps": ["catalogue", "engine", "log"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "srd-cat",
+      "from": "srd",
+      "to": "catalogue",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    { "id": "pack-cat", "from": "pack", "to": "catalogue" },
+    {
+      "id": "home-cat",
+      "from": "homebrew",
+      "to": "catalogue",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "cat-engine",
+      "from": "catalogue",
+      "to": "engine",
+      "label": "regole",
+      "variant": "emphasis"
+    },
+    {
+      "id": "log-engine",
+      "from": "log",
+      "to": "engine",
+      "label": "ricalcolo",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    { "id": "engine-app", "from": "engine", "to": "app", "variant": "emphasis" },
+    { "id": "engine-api", "from": "engine", "to": "api" },
+    { "id": "api-others", "from": "api", "to": "others" },
+    { "id": "log-fs", "from": "log", "to": "firestore", "label": "salva" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Un solo formato",
+      "items": [
+        "Incantesimi, razze, oggetti, mostri, azioni",
+        "Grant = cosa modifica",
+        "Azione = costo, bersagli, effetti, durata"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "API, in ordine",
+      "items": [
+        "1. Nucleo interno pulito (lo usa l'app)",
+        "2. Pacchetto npm del motore",
+        "3. Catalogo SRD come JSON statico"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Paletti",
+      "items": [
+        "Fuori solo materiale SRD",
+        "Piano gratuito Firebase",
+        "Ogni passo arriva al tavolo"
+      ]
+    }
+  ]
+}
