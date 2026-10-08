@@ -221,12 +221,13 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    session lacks: new beats as events, a later attacker tap as a correction, an undone beat as a
    retraction. Ids come from the encounter epoch and beat id, so reloads never duplicate. Any
    failure is logged to diagnostics and never touches the fight.
-4. **Wire the player side.**
-   - `logEvent` records into the session log when the character is attached to a campaign, with
-     actor = `pc-<uid>`.
-   - The shared-effects transaction records one declaration event: actor, targets, hit/miss and
-     amounts.
-   - A player's manual −14 HP, rests and slots now reach the shared record.
+4. **Done.** `characterStore` exposes one seam, `setPlayLogSink`: the owner's own appends
+   and undos (never a clear, the cap, hydration or a read-only view). `useSessionLogPlayerRecorder`
+   (cockpit) resolves the attached campaign on the first gesture and forwards each line through
+   `createCharacterLogMirror` (`pc:<character>:<line>` ids; undo → retraction). None of these
+   lines produce a Chronicle beat, so nothing duplicates the DM mirror. Found on the way:
+   `applyDeclaredCombatEffects`, `applyResolvedCombatEffects` and `applySoloCombatEffects` have
+   no production caller (dead since the resolver went) — delete in a clean-up pass.
 5. **Report in the app (visible: owner approval with screenshots).**
    - The Sessions page shows the per-round report, regenerated from the log, with "copy for AI".
    - End-encounter's chapter is built from the log, not from the reconciled DM feed.
