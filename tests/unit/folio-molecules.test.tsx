@@ -19,9 +19,9 @@ import {
   UniversalCardDesc,
   UniversalCardTags,
   UniversalCardFoot,
-  StatCard,
-  Tracker,
-} from "@/components/shared/molecules";
+} from "@/components/shared/UniversalCard";
+import { StatCard } from "@/components/shared/StatCard";
+import { Tracker } from "@/components/shared/Tracker";
 
 // ─── UniversalCard ────────────────────────────────────────────────────────────
 

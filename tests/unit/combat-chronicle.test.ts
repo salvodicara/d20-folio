@@ -64,6 +64,24 @@ describe("scalar monster combat chronicle", () => {
     expect(restored.events).toEqual([]);
   });
 
+  it("never reuses an event id after an earlier line was undone", () => {
+    let state = fight();
+    for (const amount of [1, 1, 1])
+      state = recordMonsterDamage(state, "monster-1", amount);
+    state = undoHpEvent(state, "1");
+    state = recordMonsterDamage(state, "monster-1", 2);
+
+    const ids = state.events?.map(({ id }) => id) ?? [];
+    expect(new Set(ids).size).toBe(ids.length);
+
+    // Undoing the newest line must restore exactly its own 2 HP, not the older 1 HP.
+    const latest = state.events?.at(-1);
+    if (!latest) throw new Error("Missing latest event");
+    const undone = undoHpEvent(state, latest.id);
+    expect(monster(undone).hp.current).toBe(monster(state).hp.current + 2);
+    expect(undone.events?.map((e) => ("amount" in e ? e.amount : null))).toEqual([1, 1]);
+  });
+
   it("records healing against the same scalar HP home without duplicating no-ops", () => {
     const damaged = recordMonsterDamage(fight(), "monster-1", 4);
     const healed = recordMonsterHp(damaged, "monster-1", 6);

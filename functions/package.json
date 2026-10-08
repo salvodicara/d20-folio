@@ -9,9 +9,9 @@
     "node": "24"
   },
   "scripts": {
-    "build": "tsc && node ../scripts/build-functions.ts",
+    "build": "tsc",
     "build:watch": "tsc --watch",
-    "gcp-build": "node -e \"const fs=require('node:fs');for(const file of ['lib/index.js','lib/command-kernel.cjs']){const stat=fs.statSync(file,{throwIfNoEntry:false});if(!stat?.isFile()||stat.size===0)throw new Error('Missing Functions runtime artifact: '+file)}\"",
+    "gcp-build": "node -e \"const fs=require('node:fs');for(const file of ['lib/index.js']){const stat=fs.statSync(file,{throwIfNoEntry:false});if(!stat?.isFile()||stat.size===0)throw new Error('Missing Functions runtime artifact: '+file)}\"",
     "lint": "eslint .",
     "test": "vitest run",
     "serve": "npm run build && firebase emulators:start --only functions",

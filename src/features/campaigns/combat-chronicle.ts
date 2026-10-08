@@ -34,8 +34,9 @@ type DistributiveOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : n
 type NewChronicleEvent = DistributiveOmit<CombatChronicleEvent, "id" | "round">;
 
 /**
- * Append one event, stamping its stable id (the append INDEX — deterministic, no RNG)
- * and the current `round`. The single writer of the feed; every recorder routes here.
+ * Append one event, stamping its stable id (one past the highest id ever used —
+ * deterministic, no RNG, and never reused after an undo removed a line) and the
+ * current `round`. The single writer of the feed; every recorder routes here.
  */
 export function appendEvent(
   state: EncounterState,
@@ -46,7 +47,7 @@ export function appendEvent(
   // the omitted shape); TS narrows it to CombatChronicleEvent — no cast needed.
   const full: CombatChronicleEvent = {
     ...event,
-    id: String(events.length),
+    id: String(events.reduce((max, e) => Math.max(max, Number(e.id) + 1 || 0), 0)),
     round: state.round,
   };
   return { ...state, events: [...events, full] };

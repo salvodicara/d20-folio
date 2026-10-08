@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Modello delle regole: ogni elemento D&D ha la stessa forma",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "srd",
+      "type": "database",
+      "label": "SRD",
+      "sublabel": "pubblico",
+      "pos": [40, 90],
+      "size": [150, 60]
+    },
+    {
+      "id": "pack",
+      "type": "security",
+      "label": "Content pack",
+      "sublabel": "privato",
+      "pos": [40, 230],
+      "size": [150, 60]
+    },
+    {
+      "id": "homebrew",
+      "type": "frontend",
+      "label": "Homebrew",
+      "sublabel": "stessa forma",
+      "pos": [40, 370],
+      "size": [150, 60]
+    },
+    {
+      "id": "entry",
+      "type": "backend",
+      "label": "Voce del catalogo",
+      "sublabel": "incantesimo, razza, oggetto, mostro…",
+      "pos": [260, 220],
+      "size": [220, 80],
+      "tag": "Entry"
+    },
+    {
+      "id": "rules",
+      "type": "backend",
+      "label": "Regole passive",
+      "sublabel": "aggiungi, imposta, scegli",
+      "pos": [580, 60],
+      "size": [200, 64],
+      "tag": "stile Pathfinder 2e"
+    },
+    {
+      "id": "activities",
+      "type": "backend",
+      "label": "Attività",
+      "sublabel": "costo, bersagli, effetti",
+      "pos": [580, 228],
+      "size": [200, 64],
+      "tag": "stile Foundry"
+    },
+    {
+      "id": "status",
+      "type": "backend",
+      "label": "Stati",
+      "sublabel": "Ira, Avvelenato, durata",
+      "pos": [580, 396],
+      "size": [200, 64],
+      "tag": "stile BG3"
+    },
+    {
+      "id": "engine",
+      "type": "messagebus",
+      "label": "Motore",
+      "sublabel": "fatti + condizioni",
+      "pos": [880, 228],
+      "size": [190, 64]
+    },
+    {
+      "id": "sheet",
+      "type": "frontend",
+      "label": "Scheda e registro",
+      "sublabel": "numeri trasparenti",
+      "pos": [1130, 228],
+      "size": [170, 64]
+    }
+  ],
+  "connections": [
+    {
+      "id": "srd-entry",
+      "from": "srd",
+      "to": "entry",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    { "id": "pack-entry", "from": "pack", "to": "entry" },
+    {
+      "id": "home-entry",
+      "from": "homebrew",
+      "to": "entry",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "entry-rules",
+      "from": "entry",
+      "to": "rules",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "entry-activities",
+      "from": "entry",
+      "to": "activities",
+      "variant": "emphasis"
+    },
+    {
+      "id": "entry-status",
+      "from": "entry",
+      "to": "status",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "activities-status",
+      "from": "activities",
+      "to": "status",
+      "label": "applica",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "rules-engine",
+      "from": "rules",
+      "to": "engine",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    { "id": "activities-engine", "from": "activities", "to": "engine" },
+    {
+      "id": "status-engine",
+      "from": "status",
+      "to": "engine",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    { "id": "engine-sheet", "from": "engine", "to": "sheet", "variant": "emphasis" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Cosa teniamo",
+      "items": [
+        "Schema rigoroso, solo id",
+        "Costi tipizzati, override ovunque",
+        "Niente dadi: più semplice di BG3"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Cosa cambia",
+      "items": [
+        "127 tipi di Grant → ~6 regole generiche",
+        "8 formati di azione → 1 Attività",
+        "Durate in un solo posto"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Come",
+      "items": [
+        "Un traduttore dai Grant vecchi",
+        "Test: stesso risultato, voce per voce",
+        "Una famiglia alla volta, app sempre ok"
+      ]
+    }
+  ]
+}
