@@ -208,11 +208,13 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
 1. **Done (#29).** `src/lib/session-log/`: `PlayEvent`, `LogItem`, `foldSession`, `buildReport`.
    Order is the log's array order (`arrayUnion`); round and encounter come from markers, so no
    clock and no stamping on the recording device.
-2. **`SessionLogStore` + rules + session lifecycle.**
-   - Firestore and memory adapters.
-   - The `sessionLogs` rules block with emulator tests: two clients appending, a member blocked from
-     editing others' lines.
-   - Auto-open/close of a session, linked to the existing `sessions/{id}` entry.
+2. **Done.** `SessionLogStore` (memory + `src/lib/session-log-io.ts` Firestore adapter),
+   `createSessionRecorder`, and the `campaigns/{c}/sessionLogs/{id}` rules (one own item per
+   write, history immutable; the unused `encounters/{eid}` prototype block is gone). A session
+   is named after the local day (`2026-10-08`, then `-2`) and closes after 6 h of silence
+   (`SESSION_GAP_MS`), so every device computes the same id with no coordination. Caveat:
+   `lastAt` is the recording device's clock. The rules reach production only with the next
+   owner-approved deploy.
 3. **Wire the DM side.** `appendEvent` and encounter start, round advance and end also record into
    the session log. Dual-write; the chronicle UI is unchanged.
 4. **Wire the player side.**
