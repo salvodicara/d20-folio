@@ -65,6 +65,9 @@ per primi: `src/lib/smart-tracker.ts`, `src/lib/mechanics-*.ts`, `src/lib/grants
 `src/types/combat-log.ts`. Il ramo `v2` (tag `archive/2026-10-08-v2`) è una cava di pezzi: si
 recupera solo ciò che serve, un pezzo alla volta.
 
+**Da rivedere più avanti:** CI/CD (hook git, gate di pre-push, workflow GitHub, deploy) e i 40
+avvisi Dependabot, in proporzione al progetto: veloci, affidabili, senza passaggi rituali.
+
 **Al traguardo:** mappe dell'architettura navigabili, fatte con `archify`, più al massimo uno o
 due strumenti di visualizzazione del codice scelti dopo una ricerca (solo i migliori), per capire e
 navigare il sistema.

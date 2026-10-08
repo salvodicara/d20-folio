@@ -8,3 +8,4 @@ Vision and scoping draft.
 Interaction decisions.
 Agent briefing rewritten for main.
 Golden rules and vision approved.
+CI/CD review noted.
