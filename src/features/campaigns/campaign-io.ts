@@ -575,6 +575,22 @@ export async function setJoinsLocked(campaignId: string, locked: boolean): Promi
 }
 
 /**
+ * Set (or clear) when the table meets next — epoch ms, or null to clear. Written by the
+ * DM (the unconstrained `isDm()` update branch). No-op under dev bypass (the caller
+ * updates the store optimistically).
+ */
+export async function setNextSession(
+  campaignId: string,
+  at: number | null
+): Promise<void> {
+  if (devBypassEnabled()) return;
+  await updateDoc(campaignDoc(campaignId), {
+    nextSessionAt: at,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+/**
  * N4 — set (or clear) a campaign's custom banner: writes `bannerUrl` +
  * `bannerCrop` immediately (any member may; the rules allow shared-artifact
  * writes). Pass `null` for both to clear back to the default art. No-op under dev

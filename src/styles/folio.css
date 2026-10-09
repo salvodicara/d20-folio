@@ -22133,6 +22133,36 @@ body:has(.fob) .toast-region {
   flex-direction: column;
   gap: var(--sp-3);
 }
+.last-time-next {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid color-mix(in oklab, var(--accent-primary) 30%, var(--border-soft));
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--accent-glow) 8%, transparent);
+  color: var(--accent-text);
+}
+.last-time-next-label {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.last-time-next-when {
+  color: var(--text-primary);
+  font-family: var(--font-title);
+  font-size: var(--text-md);
+}
+.last-time-next-edit {
+  margin-left: auto;
+}
+.last-time-next.is-editing input {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
 .last-time-meta {
   display: flex;
   align-items: baseline;

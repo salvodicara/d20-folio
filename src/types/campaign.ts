@@ -460,6 +460,9 @@ export interface CampaignDoc {
    * writes it (the unconstrained `isDm()` update branch).
    */
   joinsLocked?: boolean;
+  /** When the table meets next (epoch ms), set by the DM on the Live tab; absent/null
+   *  means not fixed yet. Additive and optional: older docs simply have none. */
+  nextSessionAt?: number | null;
 }
 
 export interface CampaignTreasury {
