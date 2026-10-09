@@ -12421,8 +12421,13 @@ button.uc-chevron::before {
 }
 .campaign-dm-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--sp-6);
+}
+/* A wide child (the party table) scrolls inside its own panel, never the page. */
+.campaign-dm-grid > * {
+  min-width: 0;
 }
 
 @media (max-width: 720px) {
