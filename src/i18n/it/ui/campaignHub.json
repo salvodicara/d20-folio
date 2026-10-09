@@ -90,6 +90,7 @@
     "deleteSessionMessage": "Rimuove il registro della sessione per tutti nella campagna. Non può essere annullato.",
     "sessionLabel": "Nome della sessione",
     "sessionNotes": "Riassunto della sessione",
+    "editSessionNotes": "Modifica il riassunto della sessione",
     "sessionNotesPlaceholder": "Cosa è successo in questa sessione? Cosa ha trovato il gruppo e dove si è interrotto?",
     "sessionToggle": "Mostra i dettagli della sessione",
     "sessionNoSummary": "Nessun riassunto ancora.",
@@ -217,6 +218,9 @@
     "combatWriteFailed": "Impossibile salvare la modifica: è stata rifiutata. Ricarica l'app e riprova; se succede ancora, invia una segnalazione dal menu.",
     "turnAdvanceFailed": "Impossibile avanzare il turno. Riprova tra un istante.",
     "changeCharacter": "Il tuo personaggio",
-    "detachCharacter": "Scollega il personaggio"
+    "detachCharacter": "Scollega il personaggio",
+    "lastTime": "L'ultima volta…",
+    "lastTimeNoNotes": "Nessuna nota per l'ultima sessione.",
+    "lastTimeOpen": "Apri il diario"
   }
 }

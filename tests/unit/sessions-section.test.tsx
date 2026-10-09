@@ -16,6 +16,12 @@ const { listMock, createMock, updateMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+const { logStore } = vi.hoisted(() => ({
+  logStore: { recent: vi.fn(() => Promise.resolve([] as unknown[])) },
+}));
+vi.mock("@/features/campaigns/session-log-source", () => ({
+  sessionLogStoreFor: () => logStore,
+}));
 vi.mock("@/features/campaigns/campaign-io", () => ({
   listSessions: listMock,
   createSession: createMock,
@@ -45,6 +51,7 @@ beforeEach(() => {
   listMock.mockReset().mockResolvedValue([]);
   createMock.mockReset().mockResolvedValue("new-session-id");
   updateMock.mockClear();
+  logStore.recent.mockReset().mockResolvedValue([]);
 });
 
 describe("Sessions", () => {
@@ -73,14 +80,27 @@ describe("Sessions", () => {
     expect(await screen.findByText("Session 1")).toBeInTheDocument();
   });
 
-  it("opens the live desk on the latest session as a directly editable document", async () => {
-    listMock.mockResolvedValue([session("s1", "Session 1")]);
-    render(<Sessions campaignId="c1" liveDesk />);
-    const notes = await screen.findByLabelText(/session summary/i);
-    expect(notes).toHaveValue("");
+  it("opens the latest session rendered, and edits it in place with one click", async () => {
+    listMock.mockResolvedValue([
+      {
+        ...session("s1", "Session 1"),
+        notes: "### The bridge\n\nMet a **goblin scout**.",
+      },
+    ]);
+    render(<Sessions campaignId="c1" openLatest />);
+    // Read view: the markdown is rendered, never shown as source.
+    expect(
+      await screen.findByRole("heading", { name: "The bridge" })
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/###/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^session summary$/i)).not.toBeInTheDocument();
+    // One click into the living document; autosave, no Save ceremony.
+    fireEvent.click(screen.getByRole("button", { name: /edit session summary/i }));
+    const notes = await screen.findByLabelText(/^session summary$/i);
+    expect(notes).toHaveValue("### The bridge\n\nMet a **goblin scout**.");
+    expect(notes).toHaveFocus();
     fireEvent.change(notes, { target: { value: "Slew the goblin boss." } });
     expect(localStorage.getItem("d20.sessionDraft.c1.s1")).toBe("Slew the goblin boss.");
-    // The draft is durable immediately; blur is the explicit flush boundary.
     expect(updateMock).not.toHaveBeenCalled();
     fireEvent.blur(notes);
     await waitFor(() =>
@@ -88,7 +108,15 @@ describe("Sessions", () => {
         notes: "Slew the goblin boss.",
       })
     );
-    expect(localStorage.getItem("d20.sessionDraft.c1.s1")).toBe("Slew the goblin boss.");
+    // Back to the rendered page.
+    expect(await screen.findByText("Slew the goblin boss.")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^session summary$/i)).not.toBeInTheDocument();
+  });
+
+  it("opens an empty session straight into the editor (nothing to read yet)", async () => {
+    listMock.mockResolvedValue([session("s1", "Session 1")]);
+    render(<Sessions campaignId="c1" openLatest />);
+    expect(await screen.findByLabelText(/^session summary$/i)).toHaveValue("");
   });
 
   it("restores a crash-safe local draft over the last confirmed remote summary", async () => {
@@ -99,23 +127,49 @@ describe("Sessions", () => {
       "d20.sessionDraft.c1.s1",
       "The party crossed the bridge and met a scout."
     );
-    render(<Sessions campaignId="c1" liveDesk />);
-    const notes = await screen.findByLabelText<HTMLTextAreaElement>(/session summary/i);
-    expect(notes.value).toBe("The party crossed the bridge and met a scout.");
+    render(<Sessions campaignId="c1" openLatest />);
+    expect(
+      await screen.findByText("The party crossed the bridge and met a scout.")
+    ).toBeInTheDocument();
   });
 
-  it("uses the same direct editor when an archived session is selected", async () => {
+  it("opens an archived session to its page, with delete as a document action", async () => {
     listMock.mockResolvedValue([
       { ...session("s1", "Session 1"), notes: "Original recap." },
     ]);
     render(<Sessions campaignId="c1" />);
     await screen.findByText("Session 1");
     fireEvent.click(screen.getByRole("button", { name: /show session details/i }));
-    expect(await screen.findByLabelText(/session summary/i)).toHaveValue(
+    expect(await screen.findByText("Original recap.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /edit session summary/i }));
+    expect(await screen.findByLabelText(/^session summary$/i)).toHaveValue(
       "Original recap."
     );
-    // Destruction is a document action, not a competing control on every list row.
     expect(screen.getByRole("button", { name: /delete session/i })).toBeInTheDocument();
+  });
+
+  it("joins the same evening's automatic report to its session", async () => {
+    listMock.mockResolvedValue([
+      { ...session("s1", "Session 1"), date: new Date(2026, 9, 8, 21), notes: "Notes." },
+    ]);
+    logStore.recent.mockResolvedValue([
+      {
+        id: "2026-10-08",
+        lastAt: 1,
+        items: [
+          {
+            id: "a",
+            by: "u",
+            at: 1,
+            type: "event",
+            event: { kind: "rest", rest: "short" },
+          },
+        ],
+      },
+    ]);
+    render(<Sessions campaignId="c1" openLatest />);
+    fireEvent.click(await screen.findByRole("button", { name: /automatic report/i }));
+    expect(await screen.findByRole("button", { name: /^copy$/i })).toBeInTheDocument();
   });
 
   it("CAMPAIGN-NOTES-UX — bounds the list to the latest 5 sessions behind View all", async () => {
@@ -132,15 +186,5 @@ describe("Sessions", () => {
     expect(screen.getByText("Session 1")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /show less/i }));
     expect(screen.queryByText("Session 1")).not.toBeInTheDocument();
-  });
-
-  it("preserves markdown source directly in the living document", async () => {
-    listMock.mockResolvedValue([
-      { ...session("s1", "Session 1"), notes: "### The bridge\n\n- found a door" },
-    ]);
-    render(<Sessions campaignId="c1" liveDesk />);
-    expect(await screen.findByLabelText(/session summary/i)).toHaveValue(
-      "### The bridge\n\n- found a door"
-    );
   });
 });

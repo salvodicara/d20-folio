@@ -90,6 +90,7 @@
     "deleteSessionMessage": "This removes the session log for everyone in the campaign. It can’t be undone.",
     "sessionLabel": "Session name",
     "sessionNotes": "Session summary",
+    "editSessionNotes": "Edit session summary",
     "sessionNotesPlaceholder": "What happened this session? What did the party find, and where did they leave off?",
     "sessionToggle": "Show session details",
     "sessionNoSummary": "No summary yet.",
@@ -217,6 +218,9 @@
     "combatWriteFailed": "This change couldn't be saved (it was rejected). Reload the app and try again; if it keeps happening, send a report from the menu.",
     "turnAdvanceFailed": "Couldn't advance the turn. Try again in a moment.",
     "changeCharacter": "Your character",
-    "detachCharacter": "Detach character"
+    "detachCharacter": "Detach character",
+    "lastTime": "Last time…",
+    "lastTimeNoNotes": "No notes for the last session yet.",
+    "lastTimeOpen": "Open the journal"
   }
 }
