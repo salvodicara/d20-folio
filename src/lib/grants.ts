@@ -38,6 +38,7 @@ import {
   ruleFlag,
   ruleFlagIds,
   ruleNumber,
+  ruleNumberIds,
   ruleTerms,
   ruleValue,
   type MoveMode,
@@ -2197,6 +2198,33 @@ function perAbility(
   return out;
 }
 
+/** Class-scoped casting bonuses, one summed entry per scope in first-grant order. */
+function castingModifiers(
+  values: RuleValues,
+  prefix: "spell:save-dc:" | "spell:attack:"
+): CastingModifierEntry[] {
+  return ruleNumberIds(values, prefix).map((scope) => ({
+    amount: ruleNumber(values, `${prefix}${scope}`),
+    scope: scope as CastingModifierEntry["scope"],
+  }));
+}
+
+/** Save bonuses scoped to one ability's saves: per save, its ability terms
+ *  (`amount` 0) and then its summed flat part. */
+function scopedSaveBonuses(values: RuleValues): AggregatedGrants["saveBonusByAbility"] {
+  return ABILITY_CODES.flatMap((appliesToSave) => [
+    ...abilityTerms(values, `save:${appliesToSave}`).map(({ ability, min }) => ({
+      appliesToSave,
+      ability,
+      min,
+      amount: 0,
+    })),
+    ...(ruleValue(values, `save:${appliesToSave}`) === null
+      ? []
+      : [{ appliesToSave, min: 0, amount: ruleNumber(values, `save:${appliesToSave}`) }]),
+  ]);
+}
+
 /** The ability-modifier terms of a target, each with its floor (0 when none). */
 function abilityTerms(
   values: RuleValues,
@@ -2330,18 +2358,7 @@ export function evaluateGrants(
   let turnEconomyBlocked = false;
   let heroicInspirationAtTurnStart = false;
   let heroicInspirationOnLongRest = false;
-  const spellSaveDcBonus: CastingModifierEntry[] = [];
-  const spellAttackBonus: CastingModifierEntry[] = [];
-  const saveBonusAbilities: { ability: AbilityCode; min: number }[] = [];
-  let saveBonusFlat = 0;
-  const saveBonusByAbility: {
-    appliesToSave: AbilityCode;
-    ability?: AbilityCode;
-    min: number;
-    amount: number;
-  }[] = [];
-  const concentrationSaveBonusAbilities: { ability: AbilityCode; min: number }[] = [];
-  let concentrationSaveBonusFlat = 0;
+  // Save, concentration, initiative and spell DC/attack bonuses fold through `lib/rules`.
   const abilityCheckBonuses: {
     appliesTo: string;
     ability?: AbilityCode;
@@ -2349,8 +2366,6 @@ export function evaluateGrants(
     min: number;
   }[] = [];
   const skillAbilityOptions: AggregatedGrants["skillAbilityOptions"][number][] = [];
-  const initiativeBonusAbilities: AbilityCode[] = [];
-  let initiativeBonusFlat = 0;
   const damageRiders: AggregatedGrants["damageRiders"][number][] = [];
   const weaponDamageBonuses: AggregatedGrants["weaponDamageBonuses"][number][] = [];
   const spellDamageBonuses: SpellDamageBonusEntry[] = [];
@@ -2696,46 +2711,22 @@ export function evaluateGrants(
       case "heroic-inspiration-on-rest":
         heroicInspirationOnLongRest = true;
         break;
-      case "spell-save-dc-bonus":
-        spellSaveDcBonus.push({ amount: g.amount, scope: g.scope });
-        break;
-      case "spell-attack-bonus":
-        spellAttackBonus.push({ amount: g.amount, scope: g.scope });
-        break;
+      // Migrated to the generic rules grammar: flat parts sum, ability-modifier
+      // parts stay terms the reader resolves against the effective scores.
       case "save-bonus":
+        // A bonus some conditions switch off is gated here, where they are known.
         if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
-        if (g.appliesToSave) {
-          // SCOPED — rides only the named ability's saves. An ability entry
-          // resolves `max(mod, min)` at render (amount 0); a flat entry carries
-          // its `amount` (no `ability` key so the consumer takes the flat path).
-          if (g.ability) {
-            saveBonusByAbility.push({
-              appliesToSave: g.appliesToSave,
-              ability: g.ability,
-              min: g.min ?? 0,
-              amount: 0,
-            });
-          } else {
-            saveBonusByAbility.push({
-              appliesToSave: g.appliesToSave,
-              min: g.min ?? 0,
-              amount: g.amount ?? 0,
-            });
-          }
-        } else if (g.ability) {
-          saveBonusAbilities.push({ ability: g.ability, min: g.min ?? 0 });
-        } else {
-          saveBonusFlat += g.amount ?? 0;
-        }
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "concentration-save-bonus":
-        if (g.ability) {
-          concentrationSaveBonusAbilities.push({ ability: g.ability, min: g.min ?? 0 });
-        } else {
-          concentrationSaveBonusFlat += g.amount ?? 0;
-        }
+      case "initiative-bonus":
+      case "spell-save-dc-bonus":
+      case "spell-attack-bonus":
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "ability-check-bonus":
+        // Stays bespoke: each flat entry carries its own floor (`max(value, min)`),
+        // which does not add up across entries.
         abilityCheckBonuses.push({
           appliesTo: g.appliesTo,
           ...(g.ability ? { ability: g.ability } : {}),
@@ -2745,13 +2736,6 @@ export function evaluateGrants(
         break;
       case "skill-ability-option":
         skillAbilityOptions.push({ skills: g.skills, ability: g.ability });
-        break;
-      case "initiative-bonus":
-        if (g.ability) {
-          initiativeBonusAbilities.push(g.ability);
-        } else {
-          initiativeBonusFlat += g.amount ?? 0;
-        }
         break;
       case "damage-rider": {
         const damageTypeChoices = g.damageTypeChoices;
@@ -3830,17 +3814,19 @@ export function evaluateGrants(
     // The tightest resulting-SCORE ceiling per ability, applied against the actual
     // base by `effectiveAbilityScores`; absent ⇒ no cap.
     itemAbilityScoreCap: perAbility(values, "item-cap"),
-    spellSaveDcBonus,
-    spellAttackBonus,
-    saveBonusAbilities,
-    saveBonusFlat,
-    saveBonusByAbility,
-    concentrationSaveBonusAbilities,
-    concentrationSaveBonusFlat,
+    // Projections of the folded rules. Same-scope entries arrive summed, one per
+    // scope or save; every reader sums them anyway.
+    spellSaveDcBonus: castingModifiers(values, "spell:save-dc:"),
+    spellAttackBonus: castingModifiers(values, "spell:attack:"),
+    saveBonusAbilities: abilityTerms(values, "save:all"),
+    saveBonusFlat: ruleNumber(values, "save:all"),
+    saveBonusByAbility: scopedSaveBonuses(values),
+    concentrationSaveBonusAbilities: abilityTerms(values, "save:concentration"),
+    concentrationSaveBonusFlat: ruleNumber(values, "save:concentration"),
     abilityCheckBonuses,
     skillAbilityOptions,
-    initiativeBonusAbilities,
-    initiativeBonusFlat,
+    initiativeBonusAbilities: ruleTerms(values, "initiative:bonus").map((t) => t.ability),
+    initiativeBonusFlat: ruleNumber(values, "initiative:bonus"),
     damageRiders,
     weaponDamageBonuses,
     spellDamageBonuses,
