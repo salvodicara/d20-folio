@@ -306,6 +306,7 @@ function CampaignWorkspace({
               <LastTime
                 campaignId={campaignId}
                 visible={activeView === "live"}
+                canManage={canManage}
                 onOpenJournal={() => selectView("journal")}
               />
             </div>

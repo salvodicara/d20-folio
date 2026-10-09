@@ -221,6 +221,11 @@
     "detachCharacter": "Scollega il personaggio",
     "lastTime": "L'ultima volta…",
     "lastTimeNoNotes": "Nessuna nota per l'ultima sessione.",
-    "lastTimeOpen": "Apri il diario"
+    "lastTimeOpen": "Apri il diario",
+    "nextSession": "Prossima sessione",
+    "nextSessionSet": "Fissa la prossima sessione",
+    "nextSessionChange": "Cambia",
+    "nextSessionInput": "Data e ora della prossima sessione",
+    "nextSessionClear": "Togli"
   }
 }

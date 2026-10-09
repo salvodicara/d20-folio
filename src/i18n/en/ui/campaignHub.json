@@ -221,6 +221,11 @@
     "detachCharacter": "Detach character",
     "lastTime": "Last time…",
     "lastTimeNoNotes": "No notes for the last session yet.",
-    "lastTimeOpen": "Open the journal"
+    "lastTimeOpen": "Open the journal",
+    "nextSession": "Next session",
+    "nextSessionSet": "Set the next session",
+    "nextSessionChange": "Change",
+    "nextSessionInput": "Date and time of the next session",
+    "nextSessionClear": "Clear"
   }
 }
