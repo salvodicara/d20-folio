@@ -16453,6 +16453,14 @@ button.econ-tok-filter:active .econ-disc {
 .status-badge.sb-toggle {
   padding: 3px 11px;
 }
+/* An OFF toggle is an outline only, in both themes: a tonal fill would read as
+   "on" (on vellum the muted fill becomes a grey slab). */
+.status-badge.sb-toggle:not([data-kind]),
+[data-theme="light"] .status-badge.sb-toggle:not([data-kind]) {
+  color: var(--text-secondary);
+  background: transparent;
+  border-color: var(--border-medium);
+}
 .status-badge[data-kind="active"] {
   --co: var(--accent-primary);
   --co-ink: var(--accent-text);
