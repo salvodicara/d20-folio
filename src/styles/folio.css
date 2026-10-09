@@ -11891,6 +11891,32 @@ button.uc-chevron::before {
   .uc.with-prep .uc-head .uc-gloss-band {
     grid-column: 3 / 5;
   }
+  /* A LIST card (no CTA: spellbook, features, inventory) has room for its chip on
+     the name line, so it keeps two rows — name + chip, then the gloss across —
+     like the chip-less rows beside it. Only a combat row (chip + CTA + pips)
+     needs the chip moved down to free the name. */
+  .uc-head:not(:has(.uc-cta)) .uc-name-cell {
+    grid-column: 2;
+  }
+  .uc-head:not(:has(.uc-cta)) .uc-verdict-cluster {
+    grid-row: 1;
+    grid-column: 3;
+    align-self: center;
+    margin-left: 0;
+  }
+  .uc-head:not(:has(.uc-cta)) .uc-gloss-band {
+    grid-row: 2;
+    grid-column: 2 / 4;
+  }
+  .uc.with-prep .uc-head:not(:has(.uc-cta)) .uc-name-cell {
+    grid-column: 3;
+  }
+  .uc.with-prep .uc-head:not(:has(.uc-cta)) .uc-verdict-cluster {
+    grid-column: 4;
+  }
+  .uc.with-prep .uc-head:not(:has(.uc-cta)) .uc-gloss-band {
+    grid-column: 3 / 5;
+  }
   /* The trailing CONTROL CLUSTER (equip / attune / charge-Use, the edit
      delete) gets its OWN full-width row (4) under the gloss — a max-content
      button pair ("Equipaggiato" + "Sintonizzato") in the head columns starved
