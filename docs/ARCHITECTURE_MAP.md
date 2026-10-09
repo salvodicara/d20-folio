@@ -148,7 +148,9 @@ There are six parallel records. The same hit can land in four of them.
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
   `src/lib/activities` holds the `Activity` shape and pure translators from spells,
   feature actions, monster entries, beast and companion attacks and item
-  activations; readers move to it one consumer family at a time.
+  activations; readers move to it one consumer family at a time. Done: the spell
+  card, the Compendium and the spell cast rows of `resolveActions` (the combat cards and
+  the spellbook Cast row) read a spell's facts from its Activity.
 - `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**

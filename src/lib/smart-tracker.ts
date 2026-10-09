@@ -15,6 +15,14 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import {
+  activityFromSpell,
+  addsSpellMod,
+  damageTypeFacet,
+  effectsOfKind,
+  primaryDamage,
+  secondaryDamage,
+} from "@/lib/activities";
 import { ruleConditional, ruleNumber, type RuleFact } from "@/lib/rules";
 import type {
   ActionData,
@@ -133,7 +141,6 @@ import {
   scaleUpcastDice,
   pickByLevel,
   pickDiceByLevel,
-  spellInstanceCount,
 } from "@/lib/utils";
 import {
   abilityModifier,
@@ -4589,51 +4596,6 @@ export function resolvePactWeaponAttacks(
 }
 
 /**
- * The damage-type facet a spell exposes to the combat action summary.
- *
- *  - `single` — exactly one fixed `DamageType` (Fireball → Fire). Surfaced via
- *    the legacy `summary.damageType` string.
- *  - `multi` — several SIMULTANEOUS types (`spell.damageTypes`: Prismatic Spray,
- *    Prismatic Wall, Storm of Vengeance). All apply at once.
- *  - `choice` — a player-CHOSEN set (`spell.damageChoice`: Chromatic Orb,
- *    Dragon's Breath, Glyph of Warding Explosive Rune). The caster picks ONE.
- *  - `null` — the spell deals no typed damage.
- *
- * `damageTypes` carries the list verbatim for the `multi`/`choice` cases. Pure
- * (no character context, no I/O): the action-summary consumer and any picker UI
- * share it. Precedence: `single` wins over `multi`/`choice` if a spell sets both
- * (it shouldn't — the fields are mutually exclusive by data convention), and
- * `multi` wins over `choice` (a fixed multi-element spell is not a choice).
- */
-export type SpellDamageTypeFacet =
-  | { kind: "single"; damageType: DamageType }
-  | { kind: "multi"; damageTypes: ReadonlyArray<DamageType> }
-  | { kind: "choice"; damageTypes: ReadonlyArray<DamageType> }
-  | null;
-
-/**
- * Resolve a spell's damage-type facet from its three (mutually exclusive) data
- * fields — `damageType` (single), `damageTypes` (simultaneous multi-element),
- * `damageChoice` (player picks one). Empty arrays are treated as absent (so a
- * stray `damageTypes: []` never reports a degenerate facet). Pure helper shared
- * by the consumer + tests.
- */
-export function resolveSpellDamageTypes(spell: {
-  damageType?: DamageType;
-  damageTypes?: ReadonlyArray<DamageType>;
-  damageChoice?: ReadonlyArray<DamageType>;
-}): SpellDamageTypeFacet {
-  if (spell.damageType) return { kind: "single", damageType: spell.damageType };
-  if (spell.damageTypes && spell.damageTypes.length > 0) {
-    return { kind: "multi", damageTypes: spell.damageTypes };
-  }
-  if (spell.damageChoice && spell.damageChoice.length > 0) {
-    return { kind: "choice", damageTypes: spell.damageChoice };
-  }
-  return null;
-}
-
-/**
  * Shared, once-derived context for the combat-action resolvers. `resolveActions`
  * computes this once from the character + session and threads the SAME instance
  * into each section resolver so the per-section derivations (level, PB, exhaustion
@@ -5830,7 +5792,14 @@ function resolveSpellActions(
       continue;
     }
 
-    const castTiming = classifySpellCastingTime(spell.castingTime);
+    // The spell's facts (cost, targets, check, effects, duration) are read off
+    // its Activity; the character's numbers and riders are layered on here.
+    const activity = activityFromSpell(spell);
+    const { cost, target, save } = activity;
+    const castTiming: SpellCastTiming =
+      cost.economy === "reaction" || cost.economy === "bonus" || cost.economy === "action"
+        ? cost.economy
+        : "extended";
     if (ctx.scope === "combat" && castTiming === "extended") continue;
 
     // Per-spell casting ability (MULTICLASS RAW + feat/species pins). A
@@ -5948,20 +5917,22 @@ function resolveSpellActions(
     }
 
     // Attack bonus (for attack spells)
-    if (spell.attackType && spellAtkBonus != null) {
+    if (activity.attack && spellAtkBonus != null) {
       summary.attackBonus = spellAtkBonus;
-      summary.attackMode = spell.attackType;
+      // A spell attack is melee or ranged; "either" is a stat-block weapon's.
+      const mode = activity.attack.mode;
+      if (mode !== "melee-or-ranged") summary.attackMode = mode;
     }
 
-    // Damage + damage type. A spell exposes ONE of three facets (see
-    // `resolveSpellDamageTypes`): a single fixed type, several simultaneous
-    // types (Prismatic Spray/Wall, Storm of Vengeance), or a player-chosen set
-    // (Chromatic Orb, Dragon's Breath, Glyph of Warding's Explosive Rune). The
-    // multi/choice spells previously stored null and showed no damage type.
+    // Damage + damage type. A spell's primary damage exposes ONE of three facets
+    // (`damageTypeFacet`): a single fixed type, several simultaneous types
+    // (Prismatic Spray/Wall, Storm of Vengeance), or a player-chosen set
+    // (Chromatic Orb, Dragon's Breath, Glyph of Warding's Explosive Rune).
     // Skipped for weapon-attack cantrips (handled above — their damage IS the
     // wielded weapon's, not a spell facet).
-    const damageFacet = watCantrip ? null : resolveSpellDamageTypes(spell);
-    if (damageFacet) {
+    const primary = primaryDamage(activity);
+    const damageFacet = watCantrip ? undefined : damageTypeFacet(primary);
+    if (primary && damageFacet) {
       if (damageFacet.kind === "single") {
         summary.damageType = damageFacet.damageType;
       } else {
@@ -5995,20 +5966,17 @@ function resolveSpellActions(
         summary.multiDamageTypeFlavor = "choice";
         summary.damageType = merged[0] ?? summary.damageType;
       }
-      // Damage dice come from the STRUCTURED `spell.damageDice` FACT (S12) — the
-      // SAME field the spell cards read, so both surfaces show identical dice by
-      // construction (no more English-prose regex). A cantrip's stored die is its
-      // single-die base; scale it by character level (5/11/17 → ×1/×2/×3/×4). A
-      // leveled spell's stored value is its base-level dice verbatim (slot-upcast
-      // is layered elsewhere).
-      // A cantrip whose progression adds BEAMS (Eldritch Blast: `cantripInstances`)
-      // keeps its single die and multiplies the instance count instead.
-      const dmgDice =
-        spell.level === 0 && !spell.cantripInstances
-          ? scaleCantripDice(spell.damageDice, level)
-          : spell.damageDice;
+      // Damage dice are the spell's base-level dice — the SAME fact the spell
+      // cards read, so both surfaces show identical dice by construction (slot
+      // upcast is layered elsewhere). A cantrip die steps up by character level
+      // (5/11/17 → ×1/×2/×3/×4); a cantrip whose progression adds BEAMS
+      // (Eldritch Blast) keeps its single die and multiplies the instance count.
+      const baseDice = primary.dice?.dice;
+      const dmgDice = primary.dice?.cantrip
+        ? scaleCantripDice(baseDice, level)
+        : baseDice;
       if (dmgDice) {
-        summary.damage = spell.damageAddsCastMod
+        summary.damage = addsSpellMod(primary.dice)
           ? appendAbilityModToDice(dmgDice, abilityModifier(spellCastScore))
           : dmgDice;
       }
@@ -6018,25 +5986,24 @@ function resolveSpellActions(
       // at the spell's BASE level (the per-slot upcast bump is layered at the cast
       // modal); kept separate from `summary.damage` so a per-instance flat rider
       // folds onto the bare die first, then the UI multiplies.
-      const baseInstances = spellInstanceCount(spell);
-      const instances =
-        spell.level === 0 && spell.cantripInstances && baseInstances
-          ? baseInstances * (level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1)
-          : baseInstances;
+      const repeats = activity.repeats;
+      const instances = repeats?.cantrip
+        ? repeats.count * (level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1)
+        : repeats?.count;
       if (instances && instances > 1) summary.instances = instances;
 
       // Damage-only outcome facts stay inside the damage facet. The generic AREA
       // shape is projected below because control spells such as Hypnotic Pattern
       // and Faerie Fire have no damage facet but still need free multi-selection.
-      if (spell.damageOnSave) summary.damageOnSave = spell.damageOnSave;
-      if (spell.damageOnMiss) summary.damageOnMiss = spell.damageOnMiss;
+      if (primary.onSave) summary.damageOnSave = primary.onSave;
+      if (primary.onMiss) summary.damageOnMiss = primary.onMiss;
       for (const outcome of spellGrantAggregate.spellDamageOutcomes) {
         if (outcome.scope !== "all" && outcome.scope !== spellOwningClassId) continue;
         if (outcome.cantripOnly && spell.level !== 0) continue;
         if (outcome.damageOnSave) summary.damageOnSave = outcome.damageOnSave;
         if (outcome.damageOnMiss) summary.damageOnMiss = outcome.damageOnMiss;
       }
-      if (spell.damageResolution) summary.damageResolution = spell.damageResolution;
+      if (primary.gate) summary.damageResolution = primary.gate;
 
       // Dual-damage-instance spells (Ice Storm 2d10 Bldg + 4d6 Cold, Ice Knife
       // 1d10 Prc + 2d6 Cold, Meteor Swarm 20d6 Fire + 20d6 Bldg) carry a SECOND
@@ -6044,20 +6011,17 @@ function resolveSpellActions(
       // can't represent. Surface its BASE-level dice + type so the combat chip
       // shows the FULL damage (the per-slot upcast is previewed in the cast
       // modal via the shared scaleUpcastDice helper). Both instances always apply.
-      if (spell.secondaryDamage) {
+      const secondary = secondaryDamage(activity);
+      const secondaryDice = secondary?.dice?.dice;
+      const secondaryType = secondary?.types?.[0];
+      if (secondary && secondaryDice && secondaryType) {
         summary.secondaryDamage = {
-          dice: spell.secondaryDamage.dice,
-          damageType: spell.secondaryDamage.damageType,
-          ...(spell.secondaryDamage.resolution
-            ? { resolution: spell.secondaryDamage.resolution }
-            : {}),
-          ...(spell.secondaryDamage.area ? { area: true } : {}),
-          ...(spell.secondaryDamage.damageOnSave
-            ? { damageOnSave: spell.secondaryDamage.damageOnSave }
-            : {}),
-          ...(spell.secondaryDamage.damageOnMiss
-            ? { damageOnMiss: spell.secondaryDamage.damageOnMiss }
-            : {}),
+          dice: secondaryDice,
+          damageType: secondaryType,
+          ...(secondary.gate ? { resolution: secondary.gate } : {}),
+          ...(secondary.area ? { area: true } : {}),
+          ...(secondary.onSave ? { damageOnSave: secondary.onSave } : {}),
+          ...(secondary.onMiss ? { damageOnMiss: secondary.onMiss } : {}),
         };
       }
 
@@ -6100,14 +6064,18 @@ function resolveSpellActions(
       }
     }
 
-    if (spell.bonusDamageAgainst) {
+    // Extra damage against creature types (Dawn's bonus vs Undead).
+    for (const against of effectsOfKind(activity, "damage")) {
+      const againstDice = against.dice?.dice;
+      const againstType = against.types?.[0];
+      if (!against.vsCreatureTypes || !againstDice || !againstType) continue;
       summary.extraDamage = [
         ...(summary.extraDamage ?? []),
         {
-          dice: spell.bonusDamageAgainst.dice,
-          damageType: spell.bonusDamageAgainst.damageType,
+          dice: againstDice,
+          damageType: againstType,
           oncePerTurn: false,
-          targetCreatureTypes: spell.bonusDamageAgainst.creatureTypes,
+          targetCreatureTypes: against.vsCreatureTypes,
           source: srdText("spell", spell.id, "name"),
         },
       ];
@@ -6117,8 +6085,8 @@ function resolveSpellActions(
     // spell — including condition-only/control spells — so a physical-table user
     // freely declares every creature caught without the app pretending to know
     // positions. A true single-target ranged spell remains capped at one.
-    if (spell.area) summary.area = true;
-    if (spell.primaryTargetOnly) summary.primaryTargetOnly = true;
+    if (target?.area) summary.area = true;
+    if (target?.primaryOnly) summary.primaryTargetOnly = true;
 
     // Marked-target rider on a SPELL ATTACK row (Eldritch Blast + Hex, a spell
     // attack + Hunter's Mark). RAW: Hex / Hunter's Mark deal their extra die "each
@@ -6127,7 +6095,7 @@ function resolveSpellActions(
     // `vsMarkedTarget` flag, on any attack-roll spell. DISPLAY-ONLY chip, never
     // auto-summed (the app models no enemy — the player applies the die on the hit
     // that lands on the marked creature).
-    if (spell.attackType) {
+    if (activity.attack) {
       const markedRiders = resolveSpellAttackMarkedRiders(
         spellGrantAggregate.damageRiders,
         character
@@ -6142,8 +6110,8 @@ function resolveSpellActions(
     // Lightning re-fire) carries its `recurrence` token so the combat card shows a
     // "when it recurs" note. A stable id (golden rule 7) — the presenter
     // localizes it. Informational; the engine tracks no geometry (golden rule 21).
-    if (spell.recurrence) summary.recurrence = spell.recurrence;
-    if (spell.resolveOnCast === false) summary.resolveOnCast = false;
+    if (activity.recurrence) summary.recurrence = activity.recurrence;
+    if (activity.resolveOnCast === false) summary.resolveOnCast = false;
 
     // Forced-movement rider (`cantrip-effect-rider` — Repelling Blast: push a
     // Large-or-smaller creature 10 ft on a hit with the chosen cantrip). AX
@@ -6155,24 +6123,24 @@ function resolveSpellActions(
     if (forcedMovement) summary.forcedMovement = forcedMovement;
 
     // Save DC + ability
-    if (spell.saveAbility && spellDc != null) {
+    if (save && spellDc != null) {
       summary.saveDC = spellDc;
-      summary.saveAbility = spell.saveAbility;
+      summary.saveAbility = save.ability;
     }
 
     // Duration (skip "Instantaneous" — not useful info). The "is it instantaneous"
     // test is the STRUCTURED `instantaneous` FACT (golden rule 7 — never branch on
     // prose); the displayed duration is carried as bilingual DATA and localized in
     // the view (R6 §3.3).
-    if (!spell.instantaneous) {
+    if (!activity.instantaneous) {
       summary.duration = srdText("spell", spell.id, "duration");
     }
 
     // Components (important for Silence, restrained, etc.)
     summary.components = {
-      v: spell.components.v,
-      s: spell.components.s,
-      m: spell.components.m,
+      v: cost.components?.v === true,
+      s: cost.components?.s === true,
+      m: cost.components?.m === true,
     };
     // Component waiver (Great Old One Psychic Spells: cast Enchantment/Illusion
     // Warlock spells without V/S) — mark which of the spell's OWN components the
@@ -6182,7 +6150,7 @@ function resolveSpellActions(
       componentWaivers,
       spell.school,
       castClassId
-    ).filter((c) => spell.components[c]);
+    ).filter((c) => summary.components?.[c]);
     if (waived.length > 0) summary.componentsWaived = waived;
 
     // Trigger for reactions (e.g. Counterspell) — the STRUCTURED
@@ -6190,19 +6158,22 @@ function resolveSpellActions(
     // via `combat.reactionTrigger_<token>` (the SAME key family the FEATURE-action
     // path uses). No casting-time prose is parsed: the engine emits a stable id; a
     // reaction spell without a token simply shows no trigger line.
-    if (actionType === "reaction" && spell.reactionTrigger) {
-      summary.trigger = uiText(`combat.reactionTrigger_${spell.reactionTrigger}`);
+    if (actionType === "reaction" && cost.trigger) {
+      summary.trigger = uiText(`combat.reactionTrigger_${cost.trigger}`);
     }
 
     // Healing is an independent capability, not the inverse of damage. Most spells
     // expose one or the other, but Conjure Celestial deliberately lets each target
     // receive damage OR healing in the same resolution. The structured facts remain
     // the sole gate; no spell-name branch or prose parser is involved.
-    if (spell.healDice && spell.healingMode !== "consumable") {
-      const baseMod = spell.healAddsCastMod ? abilityModifier(spellCastScore) : 0;
+    const heals = effectsOfKind(activity, "heal");
+    const heal = heals.find((effect) => effect.fromDamage === undefined);
+    const healDice = heal?.dice?.dice;
+    if (heal && healDice && !heal.consumable) {
+      const baseMod = addsSpellMod(heal.dice) ? abilityModifier(spellCastScore) : 0;
       const healBonus = resolveHealBonus(healBonuses, spellOwningClassId, spell.level);
       const flat = baseMod + healBonus;
-      summary.healing = appendAbilityModToDice(spell.healDice, flat);
+      summary.healing = appendAbilityModToDice(healDice, flat);
       const selfHealEntries = spellGrantAggregate.selfHealOnOther.filter(
         (entry) =>
           (entry.scope === "all" || entry.scope === spellOwningClassId) &&
@@ -6228,15 +6199,35 @@ function resolveSpellActions(
       );
       if (maximized) summary.healingMode = "maximum";
     }
-    if (spell.conditionRemoval) summary.conditionRemoval = spell.conditionRemoval;
-    if (spell.conditionApplication)
-      summary.conditionApplication = spell.conditionApplication;
-    if (spell.targeting) summary.targeting = spell.targeting;
-    if (spell.healingMode) summary.healingMode = spell.healingMode;
-    if (spell.healingPool !== undefined) summary.healingPool = spell.healingPool;
-    if (spell.tempHpPool !== undefined) summary.tempHpPool = spell.tempHpPool;
-    if (spell.selfHealingFromDamage)
-      summary.selfHealingFromDamage = spell.selfHealingFromDamage;
+    const [removal] = effectsOfKind(activity, "end-condition");
+    if (removal) {
+      summary.conditionRemoval = {
+        options: [...removal.options],
+        ...(removal.max !== undefined ? { max: removal.max } : {}),
+      };
+    }
+    const [condition] = effectsOfKind(activity, "condition");
+    if (condition) summary.conditionApplication = condition.apply;
+    if (target?.affinity) {
+      summary.targeting = {
+        affinity: target.affinity,
+        ...(target.excludeSelf ? { excludeSelf: true } : {}),
+        ...(target.creatureTypes ? { creatureTypes: target.creatureTypes } : {}),
+        ...(typeof target.count === "number" ? { maxTargets: target.count } : {}),
+        ...(target.countPerUpcast !== undefined
+          ? { maxTargetsPerUpcast: target.countPerUpcast }
+          : {}),
+        ...(target.sharedAmount ? { sharedAmount: true } : {}),
+      };
+    }
+    if (heal?.full) summary.healingMode = "full";
+    if (heal?.consumable) summary.healingMode = "consumable";
+    if (heal?.pool !== undefined) summary.healingPool = heal.pool;
+    const tempHps = effectsOfKind(activity, "temp-hp");
+    const tempHpPool = tempHps.find((effect) => effect.pool !== undefined)?.pool;
+    if (tempHpPool !== undefined) summary.tempHpPool = tempHpPool;
+    const selfHealFraction = heals.find((effect) => effect.fromDamage)?.fromDamage;
+    if (selfHealFraction) summary.selfHealingFromDamage = { fraction: selfHealFraction };
 
     // Per-spell Temporary-HP roll-entry (False Life: 2d4 + 4). The dice are
     // ROLL-ENTRY (golden rule 21 — the app never rolls); the +4 is the
@@ -6247,26 +6238,29 @@ function resolveSpellActions(
     // the deterministic-number one-tap the S8 doctrine allows. The signal comes
     // from the SAME evaluated grant the Spells-page at-will row reads
     // (`atWillCasts[].autoMaxTempHp`), so the two surfaces can't disagree.
-    if (spell.tempHpRoll) {
+    const tempHpRoll = tempHps.find((effect) => effect.dice !== undefined)?.dice;
+    if (tempHpRoll) {
       const maximized = spellGrantAggregate.atWillCasts.find(
         (e) => e.spellId === spell.id && e.autoMaxTempHp !== undefined
       )?.autoMaxTempHp;
+      const flat = tempHpRoll.plus?.find((term) => term.kind === "flat");
       summary.tempHpApply =
         maximized !== undefined
           ? { bonus: maximized }
-          : { dice: spell.tempHpRoll.dice, bonus: spell.tempHpRoll.bonus };
+          : {
+              dice: tempHpRoll.dice,
+              bonus: flat?.kind === "flat" ? flat.value : 0,
+            };
     }
 
     // S1 — a while-active BUFF spell (Shield of Faith's +2 AC, Divine Favor's
-    // +1d4 radiant, Mage Armor, Haste, Fly…) carries its standing effect as a
-    // `while-active` grant on `spell.grants` (a stable `activeKey`). Casting it
-    // IS entering that state — so stamp `activatesKey` on the action exactly like
-    // a FEATURE action (Rage/Bladesong) does, and the source-agnostic combat
-    // commit/undo seam (TurnEconomyProvider) auto-lights/clears its rail chip in
-    // one tap. A normal attack/utility cast carries no such grant ⇒ no key ⇒
-    // lights nothing. Read the grant's stable `activeKey`, NEVER the spell name
-    // (golden rule 7). Mirrors the feature derivation at :3033-3041; a
-    // spell's `grants` is a plain optional array (no `in` narrowing needed).
+    // +1d4 radiant, Mage Armor, Haste, Fly…) lights a status when cast (a stable
+    // key from its `while-active` grant). Casting it IS entering that state — so
+    // stamp `activatesKey` on the action exactly like a FEATURE action
+    // (Rage/Bladesong) does, and the source-agnostic combat commit/undo seam
+    // (TurnEconomyProvider) auto-lights/clears its rail chip in one tap. A normal
+    // attack/utility cast lights nothing. Read the stable key, NEVER the spell
+    // name (golden rule 7).
     // A selected-recipient buff (Warding Bond — the CASTER never benefits) declares
     // that ownership on the grant itself. Targeting metadata describes legal targets;
     // it never silently re-homes an otherwise caster-owned standing grant.
@@ -6274,41 +6268,37 @@ function resolveSpellActions(
     let spellActiveDurationRounds: number | undefined;
     let spellActiveTurnBoundary: ResolvedAction["activeTurnBoundary"];
     let standingEffect: ResolvedAction["standingEffect"];
-    for (const g of spell.grants ?? []) {
-      if (g.type !== "while-active") continue;
-      const targetsSelectedCreature = g.recipient === "selected";
-      const bindsSelectedTarget = targetsSelectedCreature || g.targetScope !== undefined;
-      const duration = whileActiveDurationAtCastLevel(g.duration, spell.level);
-      if (bindsSelectedTarget) {
+    for (const status of effectsOfKind(activity, "status")) {
+      const { lifetime } = status;
+      const maxRounds = lifetime.kind === "rounds" ? lifetime.roundsLeft : undefined;
+      const turnBoundary =
+        lifetime.kind === "turn-edge"
+          ? { phase: lifetime.phase, turns: lifetime.round }
+          : undefined;
+      if (status.recipient === "selected" || status.markScope) {
+        // A retaliation buff (Armor of Agathys-style) only holds while the
+        // recipient keeps the temporary HP; the rules grammar owns that inner grant.
+        const retaliates = (spell.grants ?? []).some(
+          (g) =>
+            g.type === "while-active" &&
+            g.activeKey === status.key &&
+            g.grants.some((inner) => inner.type === "damage-retaliation")
+        );
         standingEffect = {
           sourceId: spell.id,
-          activeKey: g.activeKey,
-          ...(g.targetScope ? { markScope: g.targetScope } : {}),
-          targetAffinity: spell.targeting?.affinity ?? "ally",
-          ...(spell.targeting?.excludeSelf ? { excludeSelf: true } : {}),
-          ...(duration?.maxRounds !== undefined ? { maxRounds: duration.maxRounds } : {}),
-          ...(duration?.kind === "turn-boundary"
-            ? {
-                turnBoundary: {
-                  phase: duration.phase,
-                  turns: duration.turns,
-                },
-              }
-            : {}),
-          ...(g.grants.some((inner) => inner.type === "damage-retaliation")
-            ? { requiresAppliedTempHp: true }
-            : {}),
+          activeKey: status.key,
+          ...(status.markScope ? { markScope: status.markScope } : {}),
+          targetAffinity: target?.affinity ?? "ally",
+          ...(target?.excludeSelf ? { excludeSelf: true } : {}),
+          ...(maxRounds !== undefined ? { maxRounds } : {}),
+          ...(turnBoundary ? { turnBoundary } : {}),
+          ...(retaliates ? { requiresAppliedTempHp: true } : {}),
         };
       }
-      if (!targetsSelectedCreature) {
-        spellActivatesKey = g.activeKey;
-        spellActiveDurationRounds = duration?.maxRounds;
-        if (duration?.kind === "turn-boundary") {
-          spellActiveTurnBoundary = {
-            phase: duration.phase,
-            turns: duration.turns,
-          };
-        }
+      if (status.recipient === "self") {
+        spellActivatesKey = status.key;
+        spellActiveDurationRounds = maxRounds;
+        if (turnBoundary) spellActiveTurnBoundary = turnBoundary;
       }
     }
 

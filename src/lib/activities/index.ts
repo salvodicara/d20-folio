@@ -13,9 +13,13 @@ export {
 } from "./from-creature";
 export { activityFromItemActivation } from "./from-item";
 export {
+  addsSpellMod,
   castingTimeKey,
+  damageTypeFacet,
+  effectsOfKind,
   fixedDamageType,
   healDice,
   primaryDamage,
   secondaryDamage,
+  type DamageTypeFacet,
 } from "./read";
