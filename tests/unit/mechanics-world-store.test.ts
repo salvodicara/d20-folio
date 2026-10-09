@@ -24,10 +24,7 @@ import {
 
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { concentrationValue } from "@/lib/concentration";
-import {
-  worldStandingActiveKeys,
-  worldStandingTargetMarks,
-} from "@/lib/world-standing-grants";
+import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
 import { mechanicsAuthorityDefinitionFingerprint } from "@/lib/mechanics-authority";
 import {
   mechanicsDefinitionFactAddress,
@@ -2442,10 +2439,8 @@ describe("warlock pact-slot e2e", () => {
     expect(committed.world.resources.pactSpellSlot?.current).toBe(0);
     // Legacy side: the SAME debit lands on the `pact-2` usage counter.
     expect(committed.session.spellSlots["pact-2"]?.used).toBe(2);
-    // The while-active buff stands as the world's `active-key` occurrence and
-    // the mark stands beside it with the same source-end lifetime.
+    // The while-active buff stands as the world's `active-key` occurrence.
     expect([...worldStandingActiveKeys(committed.session.world)]).toContain("spell-hex");
-    expect([...worldStandingTargetMarks(committed.session.world)]).toContain("cursed");
     // Concentration mirrors onto the legacy session field.
     expect(committed.session.concentration).toBe(concentrationValue("hex"));
 

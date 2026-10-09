@@ -43,7 +43,6 @@ import {
   sessionActiveKeys,
   worldStandingActiveKeys,
   worldStandingMaxHpDeltas,
-  worldStandingTargetMarks,
   worldStandingZeroHpFloors,
 } from "@/lib/world-standing-grants";
 import { resolveActions } from "@/lib/smart-tracker";
@@ -344,42 +343,6 @@ describe("hex rider parity (legacy chip vs engine standing)", () => {
         vsMarkedTarget: "cursed",
       });
     }
-  });
-
-  it("projects the live mark and drops it when the standing ends", () => {
-    const live = {
-      occurrences: {
-        key: standing("spell-hex"),
-        mark: standing("spell-hex-mark", {
-          fact: {
-            kind: "target-mark",
-            markId: "cursed",
-            marked: {
-              entityId: "self",
-              material: { characterId: "test-char", kind: "character-play", uid: UID },
-            },
-          },
-        }),
-      },
-    };
-    expect([...worldStandingTargetMarks(live)]).toEqual(["cursed"]);
-    const ended = {
-      occurrences: {
-        mark: standing("spell-hex-mark", {
-          ending: { causes: [{ kind: "requested" }] },
-          fact: {
-            kind: "target-mark",
-            markId: "cursed",
-            marked: {
-              entityId: "self",
-              material: { characterId: "test-char", kind: "character-play", uid: UID },
-            },
-          },
-        }),
-      },
-    };
-    expect(worldStandingTargetMarks(ended).size).toBe(0);
-    expect(worldStandingTargetMarks(undefined).size).toBe(0);
   });
 
   it("projects exact max-hp deltas and zero-hp floors for SELF-owned standings", () => {
