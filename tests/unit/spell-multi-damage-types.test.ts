@@ -10,8 +10,8 @@
  * This primitive adds two fields:
  *   - `damageTypes`  — several types that all apply at once (multi-element);
  *   - `damageChoice` — the set the caster picks ONE of.
- * The pure helper `resolveSpellDamageTypes` normalises the three fields into a
- * `SpellDamageTypeFacet`, and the `resolveActions` consumer populates
+ * The spell's Activity carries them on its primary damage effect,
+ * `damageTypeFacet` reads that as one facet, and the `resolveActions` consumer populates
  * `summary.damageTypes` + `summary.multiDamageTypeFlavor` so the combat card
  * surfaces every type. Override-first: the engine never picks a `choice` type.
  */
@@ -19,49 +19,66 @@ import { describe, expect, it } from "vitest";
 import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
-import { resolveActions, resolveSpellDamageTypes } from "@/lib/smart-tracker";
+import { activityFromSpell, damageTypeFacet, primaryDamage } from "@/lib/activities";
+import { resolveActions } from "@/lib/smart-tracker";
 import { spellIndex } from "@/data/spells";
+import type { SrdSpellData } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 
-// ─── Pure helper: resolveSpellDamageTypes ────────────────────────────────────
+// ─── Pure reader: damageTypeFacet ────────────────────────────────────────────
 
-describe("resolveSpellDamageTypes — facet normalisation", () => {
+/** The facet of Fireball with its three damage-type fields replaced. */
+function facetOf(
+  fields: Pick<SrdSpellData, "damageType" | "damageTypes" | "damageChoice">
+) {
+  const fireball = spellIndex.get("fireball");
+  if (!fireball) throw new Error("fireball missing");
+  const spell: SrdSpellData = {
+    ...fireball,
+    damageType: undefined,
+    damageDice: undefined,
+    ...fields,
+  };
+  return damageTypeFacet(primaryDamage(activityFromSpell(spell))) ?? null;
+}
+
+describe("damageTypeFacet — a spell's damage-type facet", () => {
   it("returns a single facet for a one-type spell (legacy field)", () => {
-    expect(resolveSpellDamageTypes({ damageType: "fire" })).toEqual({
+    expect(facetOf({ damageType: "fire" })).toEqual({
       kind: "single",
       damageType: "fire",
     });
   });
 
   it("returns a multi facet for several simultaneous types", () => {
-    expect(resolveSpellDamageTypes({ damageTypes: ["fire", "acid", "cold"] })).toEqual({
+    expect(facetOf({ damageTypes: ["fire", "acid", "cold"] })).toEqual({
       kind: "multi",
       damageTypes: ["fire", "acid", "cold"],
     });
   });
 
   it("returns a choice facet for a player-chosen set", () => {
-    expect(resolveSpellDamageTypes({ damageChoice: ["acid", "cold", "fire"] })).toEqual({
+    expect(facetOf({ damageChoice: ["acid", "cold", "fire"] })).toEqual({
       kind: "choice",
       damageTypes: ["acid", "cold", "fire"],
     });
   });
 
   it("returns null when the spell deals no typed damage", () => {
-    expect(resolveSpellDamageTypes({})).toBeNull();
+    expect(facetOf({})).toBeNull();
   });
 
   it("treats an empty array as absent (no degenerate facet)", () => {
-    expect(resolveSpellDamageTypes({ damageTypes: [] })).toBeNull();
-    expect(resolveSpellDamageTypes({ damageChoice: [] })).toBeNull();
+    expect(facetOf({ damageTypes: [] })).toBeNull();
+    expect(facetOf({ damageChoice: [] })).toBeNull();
   });
 
   it("single (damageType) wins over multi/choice when both are set", () => {
     // Mutually exclusive by data convention, but precedence is pinned so a
     // mis-authored row never silently drops the fixed single type.
     expect(
-      resolveSpellDamageTypes({
+      facetOf({
         damageType: "force",
         damageTypes: ["fire", "cold"],
       })
@@ -70,7 +87,7 @@ describe("resolveSpellDamageTypes — facet normalisation", () => {
 
   it("multi wins over choice when both arrays are set", () => {
     expect(
-      resolveSpellDamageTypes({
+      facetOf({
         damageTypes: ["fire", "cold"],
         damageChoice: ["acid"],
       })

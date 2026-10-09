@@ -1,6 +1,6 @@
 /** Small, pure reads of an Activity that presenters share. */
 import type { DamageType } from "@/types/damage";
-import type { Activity, ActivityCost, ActivityEffect } from "./types";
+import type { Activity, ActivityCost, ActivityDice, ActivityEffect } from "./types";
 
 type DamageEffect = Extract<ActivityEffect, { kind: "damage" }>;
 
@@ -63,4 +63,36 @@ export function healDice(activity: Activity): string | undefined {
     }
   }
   return undefined;
+}
+
+/** How a damage component's types read: one fixed type, several at once, or the user's pick. */
+export type DamageTypeFacet =
+  | { kind: "single"; damageType: DamageType }
+  | { kind: "multi" | "choice"; damageTypes: ReadonlyArray<DamageType> };
+
+/** The damage-type facet of a damage component, when it declares a type. */
+export function damageTypeFacet(
+  effect: DamageEffect | undefined
+): DamageTypeFacet | undefined {
+  const types = effect?.types;
+  const [first] = types ?? [];
+  if (!types || !first) return undefined;
+  if (effect.choose) return { kind: "choice", damageTypes: types };
+  if (types.length === 1) return { kind: "single", damageType: first };
+  return { kind: "multi", damageTypes: types };
+}
+
+/** Whether a formula adds the user's spellcasting ability modifier. */
+export function addsSpellMod(formula: ActivityDice | undefined): boolean {
+  return formula?.plus?.some((term) => term.kind === "spell-mod") === true;
+}
+
+/** The effects of one kind, in declaration order. */
+export function effectsOfKind<K extends ActivityEffect["kind"]>(
+  activity: Activity,
+  kind: K
+): Array<Extract<ActivityEffect, { kind: K }>> {
+  return activity.effects.filter(
+    (effect): effect is Extract<ActivityEffect, { kind: K }> => effect.kind === kind
+  );
 }
