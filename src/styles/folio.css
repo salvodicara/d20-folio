@@ -22185,10 +22185,13 @@ body:has(.fob) .toast-region {
   flex-direction: column;
   min-width: 9rem;
 }
+/* The hero's name in the party cards' voice (body serif, semibold), not the
+   display caps, so a long name stays two calm lines on a phone. */
 .party-summary-name {
   color: var(--text-primary);
-  font-family: var(--font-title);
-  font-size: var(--text-base);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
   white-space: normal;
 }
 .party-summary-level {
