@@ -56,8 +56,9 @@ export function combatEventToPlayEvent(
       return { kind: "death-save", outcome: event.outcome, actor: me };
     case "rest":
       return { kind: "rest", rest: event.restKind, actor: me };
-    case "turn-end":
     case "effect-expired":
+      return { kind: "status", sourceId: event.sourceId, started: false, actor: me };
+    case "turn-end":
     case "legacy":
       return null;
   }

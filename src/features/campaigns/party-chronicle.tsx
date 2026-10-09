@@ -34,7 +34,7 @@ import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { localizeText } from "@/lib/views/srd-i18n";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import {
   buildEncounterChapter,
   localizeFeedEvent,
@@ -99,6 +99,7 @@ function useFeedNames(
           : id,
       action: (action) => localizeText(action, language),
       spell: (ref) => concentrationLabel(ref, language),
+      source: (id) => grantSourceLabel(id, language),
     }),
     [name, language]
   );

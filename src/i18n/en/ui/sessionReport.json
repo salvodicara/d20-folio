@@ -23,6 +23,8 @@
     "conditionLoss": "{{target}} is no longer {{condition}}",
     "concentrationStart": "{{actor}} concentrates on {{spell}}",
     "concentrationEnd": "{{actor}} stops concentrating on {{spell}}",
+    "statusStart": "{{actor}}'s {{source}} begins",
+    "statusEnd": "{{actor}}'s {{source}} ends",
     "down": "{{target}} drops to 0 HP",
     "stabilized": "{{target}} is stabilized",
     "resourceGrant": "{{actor}} gives {{target}} {{resource}}",

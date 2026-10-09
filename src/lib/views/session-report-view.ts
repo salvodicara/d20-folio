@@ -17,6 +17,8 @@ export interface SessionReportNames {
   condition(id: string): string;
   action(text: LocText): string;
   spell(ref: ConcentrationRef): string;
+  /** A feature/spell/item id's display name (a status's source); the id when unknown. */
+  source?(sourceId: string): string;
 }
 
 export function localizePlayEvent(
@@ -71,6 +73,11 @@ export function localizePlayEvent(
           : "sessionReport.concentrationEnd",
         { actor: who(event.actor), spell: names.spell(event.spell) }
       );
+    case "status":
+      return t(event.started ? "sessionReport.statusStart" : "sessionReport.statusEnd", {
+        actor: who(event.actor),
+        source: names.source?.(event.sourceId) ?? event.sourceId,
+      });
     case "down":
       return t("sessionReport.down", { target: who(event.target) });
     case "stabilized":
