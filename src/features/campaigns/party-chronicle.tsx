@@ -399,7 +399,7 @@ export function EndEncounterDialog({
   /** Dismiss the dialog and keep the encounter running. */
   onCancel: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const names = useFeedNames(rows, memberDetails, fallbackNames);
   const texts = useMemo(
     () =>
@@ -412,9 +412,10 @@ export function EndEncounterDialog({
   );
   const [saving, setSaving] = useState(false);
 
+  // The app's language, not the browser's: an Italian table titles "9 ott 2026".
   const defaultDate = useMemo(
-    () => new Date().toLocaleDateString(undefined, { dateStyle: "medium" }),
-    []
+    () => new Date().toLocaleDateString(i18n.language, { dateStyle: "medium" }),
+    [i18n.language]
   );
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
