@@ -35,6 +35,7 @@
  * gear, across every card-bearing page.
  */
 
+import { useTranslation } from "react-i18next";
 import {
   useId,
   useState,
@@ -608,12 +609,13 @@ function SlotPips({
   total: number;
   used: number;
 }) {
+  const { t } = useTranslation();
   const available = Math.max(0, total - used);
   return (
     <span
       className="uc-slotpips"
       role="img"
-      aria-label={`${available} / ${total} level-${level} slots available`}
+      aria-label={t("character.slotsAvailableAria", { available, total, level })}
     >
       {Array.from({ length: total }).map((_, i) => (
         <span
