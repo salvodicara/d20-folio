@@ -5,8 +5,12 @@
  * compiles to rules, and `foldRules` is the single place their stacking is decided.
  *
  * Stacking: rules on one target are grouped into buckets (`stack`, defaulting to the op);
- * each bucket folds by its op (`max` → highest, `add` → sum) and the buckets add up. So
- * darkvision is `max(base ranges) + sum(bonuses)`, exactly the D&D reading.
+ * each bucket folds by its op (`max` → highest, `min` → lowest, `add` → sum) and the
+ * buckets add up. So darkvision is `max(base ranges) + sum(bonuses)`, the D&D reading.
+ *
+ * Conditions: a rule may hold only `when` a fact is true ("no-heavy-armor", "round-1").
+ * The fold keeps conditional contributions apart; the reader passes the facts it knows
+ * (`ruleNumber(values, target, facts)`), because only the reader has that context.
  */
 
 import type { Grant } from "@/lib/grant-schema";
@@ -21,26 +25,73 @@ export const SENSE_KINDS = [
 ] as const;
 export type SenseKind = (typeof SENSE_KINDS)[number];
 
+export type MoveMode = "fly" | "swim" | "climb";
+
 /** What a rule modifies. Grows one family at a time. */
-export type RuleTarget = `sense:${SenseKind}` | "trait:air-and-water-breathing";
+export type RuleTarget =
+  | `sense:${SenseKind}`
+  | "trait:air-and-water-breathing"
+  | "speed:walk"
+  | `speed:${MoveMode}`
+  /** A speed equal to (1) or twice (2) the walking speed; outranks a fixed number. */
+  | `speed:${MoveMode}:walking`
+  | "speed:multiplier"
+  | "speed:floor"
+  | "speed:cap";
+
+/** A fact a conditional rule depends on; the reader decides whether it holds. */
+export type RuleFact = "no-heavy-armor" | "round-1";
 
 export type Rule =
-  | { op: "add" | "max"; target: RuleTarget; value: number; stack?: string }
+  | {
+      op: "add" | "max" | "min";
+      target: RuleTarget;
+      value: number;
+      stack?: string;
+      when?: RuleFact;
+    }
   | { op: "flag"; target: RuleTarget };
 
-/** Folded rule results as plain data (deep-comparable, serializable). */
+/** Folded rule results as plain data (deep-comparable, serializable). Keys are the
+ *  target, or `target?fact` for a contribution that holds only when the fact does. */
 export interface RuleValues {
-  readonly numbers: Readonly<Partial<Record<RuleTarget, number>>>;
+  readonly numbers: Readonly<Record<string, number>>;
   readonly flags: readonly RuleTarget[];
 }
 
-export function ruleNumber(values: RuleValues, target: RuleTarget): number {
-  return values.numbers[target] ?? 0;
+const keyOf = (target: RuleTarget, when?: RuleFact): string =>
+  when ? `${target}?${when}` : target;
+
+/** The target's value: its unconditional rules plus those whose fact holds. */
+export function ruleNumber(
+  values: RuleValues,
+  target: RuleTarget,
+  facts: readonly RuleFact[] = []
+): number {
+  let total = values.numbers[target] ?? 0;
+  for (const fact of facts) total += values.numbers[keyOf(target, fact)] ?? 0;
+  return total;
+}
+
+/** The target's value, or `null` when no rule touches it unconditionally. */
+export function ruleValue(values: RuleValues, target: RuleTarget): number | null {
+  return values.numbers[target] ?? null;
+}
+
+/** The contribution that holds only when `fact` does (0 when none). */
+export function ruleConditional(
+  values: RuleValues,
+  target: RuleTarget,
+  fact: RuleFact
+): number {
+  return values.numbers[keyOf(target, fact)] ?? 0;
 }
 
 export function ruleFlag(values: RuleValues, target: RuleTarget): boolean {
   return values.flags.includes(target);
 }
+
+const WALKING_MULTIPLE = { "equal-to-walking": 1, "twice-walking": 2 } as const;
 
 /** Compile one leaf Grant to rules; `null` for a kind not migrated yet. */
 export function compileGrant(grant: Grant): Rule[] | null {
@@ -60,37 +111,71 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "max", target: `sense:${grant.type}`, value: grant.range }];
     case "air-and-water-breathing":
       return [{ op: "flag", target: "trait:air-and-water-breathing" }];
+    case "speed": {
+      const when: RuleFact | undefined = grant.round1 ? "round-1" : grant.condition;
+      return [
+        {
+          op: "add",
+          target: "speed:walk",
+          value: grant.amount,
+          ...(when ? { when } : {}),
+        },
+      ];
+    }
+    case "fly-speed":
+    case "swim-speed":
+    case "climb-speed": {
+      const mode = grant.type.slice(0, -"-speed".length) as MoveMode;
+      return typeof grant.amount === "number"
+        ? [{ op: "max", target: `speed:${mode}`, value: grant.amount }]
+        : [
+            {
+              op: "max",
+              target: `speed:${mode}:walking`,
+              value: WALKING_MULTIPLE[grant.amount],
+            },
+          ];
+    }
+    case "speed-multiplier":
+      return [{ op: "max", target: "speed:multiplier", value: grant.factor }];
+    case "speed-floor":
+      return [{ op: "max", target: "speed:floor", value: grant.minFt }];
+    case "speed-cap":
+      return [{ op: "min", target: "speed:cap", value: grant.maxFt }];
     default:
       return null;
   }
 }
 
 export function foldRules(rules: readonly Rule[]): RuleValues {
-  const buckets = new Map<RuleTarget, Map<string, number>>();
+  const buckets = new Map<string, Map<string, number>>();
   const flags = new Set<RuleTarget>();
   for (const rule of rules) {
     if (rule.op === "flag") {
       flags.add(rule.target);
       continue;
     }
-    const byStack = buckets.get(rule.target) ?? new Map<string, number>();
-    const key = rule.stack ?? rule.op;
-    const prior = byStack.get(key);
+    const key = keyOf(rule.target, rule.when);
+    const byStack = buckets.get(key) ?? new Map<string, number>();
+    const stack = rule.stack ?? rule.op;
+    const prior = byStack.get(stack);
     byStack.set(
-      key,
+      stack,
       prior === undefined
         ? rule.value
         : rule.op === "max"
           ? Math.max(prior, rule.value)
-          : prior + rule.value
+          : rule.op === "min"
+            ? Math.min(prior, rule.value)
+            : prior + rule.value
     );
-    buckets.set(rule.target, byStack);
+    buckets.set(key, byStack);
   }
-  const numbers: Partial<Record<RuleTarget, number>> = {};
-  for (const [target, byStack] of buckets) {
+  const numbers: Record<string, number> = {};
+  for (const [key, byStack] of buckets) {
     let total = 0;
     for (const value of byStack.values()) total += value;
-    numbers[target] = total;
+    numbers[key] = total;
   }
   return { numbers, flags: [...flags].sort() };
 }

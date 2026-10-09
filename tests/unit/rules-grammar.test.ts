@@ -48,6 +48,45 @@ describe("generic rules grammar — senses", () => {
   });
 
   it("leaves kinds that have not migrated yet to the bespoke evaluator", () => {
-    expect(compileGrant({ type: "speed", amount: 10 })).toBeNull();
+    expect(compileGrant({ type: "ac-bonus", amount: 1 })).toBeNull();
+  });
+});
+
+describe("generic rules grammar — movement", () => {
+  it("lets a speed tied to walking outrank any fixed number", () => {
+    const out = evaluateGrants([
+      source("wings", [{ type: "fly-speed", amount: 60 }]),
+      source("boots", [{ type: "fly-speed", amount: "equal-to-walking" }]),
+      source("swim-a", [{ type: "swim-speed", amount: 30 }]),
+      source("swim-b", [{ type: "swim-speed", amount: 40 }]),
+    ]);
+    expect(out.flySpeed).toBe("equal-to-walking");
+    expect(out.swimSpeed).toBe(40);
+    expect(out.climbSpeed).toBeNull();
+  });
+
+  it("caps at the lowest cap and floors at the highest floor, never below 1×", () => {
+    const out = evaluateGrants([
+      source("cap-a", [{ type: "speed-cap", maxFt: 20 }]),
+      source("cap-b", [{ type: "speed-cap", maxFt: 10 }]),
+      source("floor", [{ type: "speed-floor", minFt: 30 }]),
+      source("slow", [{ type: "speed-multiplier", factor: 0.5 }]),
+    ]);
+    expect(out.speedCapFt).toBe(10);
+    expect(out.speedFloorFt).toBe(30);
+    expect(out.speedMultiplier).toBe(1);
+  });
+
+  it("adds a conditional bonus only when its fact holds", () => {
+    const { values } = evaluateGrants([
+      source("fast-movement", [
+        { type: "speed", amount: 10, condition: "no-heavy-armor" },
+      ]),
+      source("mobile", [{ type: "speed", amount: 10 }]),
+      source("ambusher", [{ type: "speed", amount: 10, round1: true }]),
+    ]);
+    expect(ruleNumber(values, "speed:walk")).toBe(10);
+    expect(ruleNumber(values, "speed:walk", ["no-heavy-armor"])).toBe(20);
+    expect(ruleNumber(values, "speed:walk", ["no-heavy-armor", "round-1"])).toBe(30);
   });
 });

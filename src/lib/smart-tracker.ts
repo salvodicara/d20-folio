@@ -15,6 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { ruleConditional, ruleNumber, type RuleFact } from "@/lib/rules";
 import type {
   ActionData,
   CharacterData,
@@ -8215,21 +8216,19 @@ export function effectiveWalkingSpeedFt(
   // Whole-character aggregate (sees EQUIPPED items) so item-sourced speed bonuses
   // AND the Boots-of-Speed `speed-multiplier` are honoured, not just feature ones.
   const agg = aggregateCharacterGrants(charData, character.session);
-  let bonus = agg.speedBonusFt;
-
-  // Conditional `no-heavy-armor` bonus: apply unless we can confirm Heavy armor
-  // is equipped (override-first — no resolver ⇒ apply the more generous Speed).
-  const noHeavyBonus = agg.conditionalSpeedBonusFt["no-heavy-armor"] ?? 0;
-  if (noHeavyBonus > 0) {
-    const heavyEquipped = resolveSrd
-      ? isHeavyArmorEquipped(charData.equipment, resolveSrd)
-      : false;
-    if (!heavyEquipped) bonus += noHeavyBonus;
+  // The walking-speed rules hold under the facts this character meets right now:
+  //   • `no-heavy-armor` unless we can confirm Heavy armor is equipped (override-
+  //     first — no resolver ⇒ the more generous Speed);
+  //   • `round-1` on the first combat turn (Ambusher's Leap, +10 ft).
+  const facts: RuleFact[] = [];
+  if (
+    ruleConditional(agg.values, "speed:walk", "no-heavy-armor") > 0 &&
+    !(resolveSrd && isHeavyArmorEquipped(charData.equipment, resolveSrd))
+  ) {
+    facts.push("no-heavy-armor");
   }
-
-  // Round-1-only bonus (Ambusher's Leap, +10 ft) — applies ONLY on the first
-  // combat turn; an additive walking-speed bonus like the others (pre-multiplier).
-  if (round === 1) bonus += agg.round1SpeedBonusFt;
+  if (round === 1) facts.push("round-1");
+  const bonus = ruleNumber(agg.values, "speed:walk", facts);
 
   const multiplied = Math.round((baseFt + bonus) * agg.speedMultiplier);
 
