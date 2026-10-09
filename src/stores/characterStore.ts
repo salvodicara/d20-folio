@@ -57,11 +57,11 @@ import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
-  activeKeysForConcentration,
   effectiveAC,
   effectiveMaxHp,
 } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
+import { concentrationStatusKeys, endStatuses, endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { evaluateGrants } from "@/lib/grants";
@@ -2294,40 +2294,24 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const form = character.session.polymorphForm;
     const retractForm = form !== undefined && prev === form.spellId && prev !== spell;
     const revertBuild = retractForm ? revertBuildFromPrior(form.prior) : undefined;
-    // S1 — when concentration ENDS or SWAPS, the dropped (old) spell's while-active
-    // chips (Fly, Haste, Mage Armor…) must clear from `activeFeatures`. Resolved
-    // from the dropped spell's STABLE ref (golden rule 7), snapshotting the
-    // FULL prior array for an atomic undo (mirrors `advanceEffectTimers`). On a
-    // swap we strip ONLY the OLD spell's keys — the NEW spell's chip stays the
-    // player's own manual act, mirroring the cast path. [] for a non-buff /
-    // homebrew / no-change ref ⇒ activeFeatures untouched.
+    // Concentration is a flag on the statuses it holds: when it ENDS or SWAPS,
+    // every status the dropped (old) spell holds ends with it (Fly, Haste, Bless
+    // lit on yourself, a condition spell's hidden countdown), through the ONE
+    // pure `endStatuses` patch. On a swap only the OLD spell's statuses end —
+    // the new spell's state stays the cast's own act. The prior fields are
+    // snapshotted for an atomic undo.
     const priorActive = character.session.activeFeatures ?? [];
-    const droppedActiveKeys =
-      prev && prev !== spell
-        ? activeKeysForConcentration(character.character, character.session, prev)
-        : [];
-    const nextActive =
-      droppedActiveKeys.length > 0
-        ? priorActive.filter((k) => !droppedActiveKeys.includes(k))
-        : priorActive;
-    const priorActiveSpellCastLevels = character.session.activeSpellCastLevels;
+    const droppedActiveKeys = prev && prev !== spell ? concentrationStatusKeys(prev) : [];
     const droppedActiveKeySet = new Set(droppedActiveKeys);
-    const nextActiveSpellCastLevels = droppedActiveKeys.reduce<
-      Record<string, number> | undefined
-    >((levels, key) => {
-      if (!levels || !(key in levels)) return levels;
-      const next = Object.fromEntries(
-        Object.entries(levels).filter(([entryKey]) => entryKey !== key)
-      );
-      return Object.keys(next).length > 0 ? next : undefined;
-    }, priorActiveSpellCastLevels);
+    const priorActiveSpellCastLevels = character.session.activeSpellCastLevels;
     const priorEffectTimers = character.session.effectTimers;
-    const nextEffectTimers = omitStateKeys(priorEffectTimers, droppedActiveKeySet);
     const priorEffectBoundaries = character.session.effectBoundaries;
-    const nextEffectBoundaries = omitStateKeys(
-      priorEffectBoundaries,
-      droppedActiveKeySet
-    );
+    const {
+      activeFeatures: nextActive,
+      activeSpellCastLevels: nextActiveSpellCastLevels,
+      effectTimers: nextEffectTimers,
+      effectBoundaries: nextEffectBoundaries,
+    } = endStatuses(character.session, droppedActiveKeys);
     const priorConcentrationConditions = character.session.concentrationConditions;
     const nextConcentrationConditions =
       prev && prev !== spell ? undefined : priorConcentrationConditions;
@@ -3294,14 +3278,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const initiallyEndedKeys = new Set(
       resolveActiveStatesEndingOnRest(beforeRest, "short")
     );
-    const concentrationKeys = beforeRest.session.concentration
-      ? activeKeysForConcentration(
-          beforeRest.character,
-          beforeRest.session,
-          beforeRest.session.concentration
-        )
-      : [];
-    if (concentrationKeys.some((key) => initiallyEndedKeys.has(key))) {
+    if (endsConcentration(beforeRest.session.concentration, initiallyEndedKeys)) {
       get().setConcentration("", { undoable: false, silent: true });
     }
     const { character } = get();
@@ -3671,16 +3648,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentration = character.session.concentration;
     const priorConcentrationCastLevel = character.session.concentrationCastLevel;
     const priorConcentrationConditions = character.session.concentrationConditions;
-    const concentrationActiveKeys = new Set(
-      activeKeysForConcentration(
-        character.character,
-        character.session,
-        priorConcentration
-      )
-    );
-    const concentrationExpired =
-      priorConcentration !== "" &&
-      expired.some((effect) => concentrationActiveKeys.has(effect.activeKey));
+    const concentrationExpired = endsConcentration(priorConcentration, expiredKeys);
     const boundaries = Object.fromEntries(
       Object.entries(priorBoundaries ?? {}).filter(([key]) => !expiredKeys.has(key))
     );
@@ -3770,9 +3738,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentration = character.session.concentration;
     const priorConcentrationCastLevel = character.session.concentrationCastLevel;
     const priorConcentrationConditions = character.session.concentrationConditions;
-    const concentrationExpired =
-      priorConcentration !== "" &&
-      expired.some((effect) => effect.sourceId === priorConcentration);
+    const concentrationExpired = endsConcentration(
+      priorConcentration,
+      expired.map((effect) => effect.activeKey)
+    );
     // Drop each expired state's toggle (every while-active grant retracts) and
     // emit its expiry log line.
     const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
@@ -3920,10 +3889,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     const before = character; // undo = re-assume the exact same form
     const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
+    const legacyEffectsBefore = get().combatLegacyActiveEffects;
     const revert = revertBuildFromPrior(form.prior);
-    // Restore the body, retract the Beast Temp HP, drop the form. Clear the form's
-    // concentration inline (only if it is still the form's spell — a prior swap
-    // would already have retracted the form) so the drop is one atomic step.
+    // Restore the body, retract the Beast Temp HP, drop the form. The form's
+    // concentration (only if it is still the form's spell — a prior swap would
+    // already have retracted the form) then ends through the ONE concentration
+    // teardown, so its held statuses, engine occurrence and log line end with it.
     const clearConc = character.session.concentration === form.spellId;
     // WORLD-FIRST for the retracted temp pool (the S7 wild-shape temp-HP
     // flow); the whole-doc undo below restores the prior world value.
@@ -3940,23 +3911,29 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       : character.session;
     void _dropped;
     set({
-      ...(clearConc ? { combatPendingConcentrationSaves: [] } : {}),
       character: {
         ...character,
         character: { ...character.character, ...revert },
         session: {
           ...restSession,
           hp: { ...character.session.hp, temp: form.prior.tempHp },
-          ...(clearConc ? { concentration: "" } : {}),
         },
       },
     });
+    const concentrationLogIds = clearConc
+      ? get().setConcentration("", { undoable: false })
+      : [];
 
-    return () =>
+    return () => {
+      concentrationLogIds.forEach((id) => get().removeLogEntry(id));
       set({
         character: before,
         combatPendingConcentrationSaves: pendingConcentrationSavesBefore,
+        combatLegacyActiveEffects: legacyEffectsBefore,
+        combatActiveEffects: effectiveCombatEffects(legacyEffectsBefore),
       });
+      persistCombat(get);
+    };
   },
 
   setCompanionHp: (featureId, current) => {

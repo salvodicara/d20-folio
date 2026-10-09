@@ -83,10 +83,8 @@ import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
 import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
-import {
-  activeKeysForConcentration,
-  aggregateCharacterGrants,
-} from "@/lib/aggregate-character";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { concentrationStatusKeys } from "@/lib/status";
 import { turnBoundaryAfter } from "@/lib/combat-effects";
 import { isCharacterAlive } from "@/lib/character-status";
 import { observedOwnerBoundary } from "./turn-state";
@@ -207,13 +205,7 @@ function activateActionState(
   const previousLevel = store.character?.session.activeSpellCastLevels?.[key];
   const previousConcentration = store.character?.session.concentration ?? "";
   const previousConcentrationCastLevel = store.character?.session.concentrationCastLevel;
-  const previousConcentrationKeys = store.character
-    ? activeKeysForConcentration(
-        store.character.character,
-        store.character.session,
-        previousConcentration
-      )
-    : [];
+  const previousConcentrationKeys = concentrationStatusKeys(previousConcentration);
   const previousConcentrationKeyLevels = Object.fromEntries(
     previousConcentrationKeys.flatMap((activeKey) => {
       const level = store.character?.session.activeSpellCastLevels?.[activeKey];
