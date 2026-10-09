@@ -41,7 +41,9 @@ export interface SessionReports {
   reload: () => void;
 }
 
-export function useSessionReports(campaignId: string): SessionReports {
+/** Reads on mount and again each time `active` turns true (a hidden tab shown again),
+ *  so a fight played while the Journal was hidden shows its report on return. */
+export function useSessionReports(campaignId: string, active = true): SessionReports {
   const [logs, setLogs] = useState<SessionLog[]>([]);
   const reload = useCallback((): void => {
     sessionLogStoreFor(campaignId)
@@ -53,7 +55,9 @@ export function useSessionReports(campaignId: string): SessionReports {
         })
       );
   }, [campaignId]);
-  useEffect(() => reload(), [reload]);
+  useEffect(() => {
+    if (active) reload();
+  }, [reload, active]);
   const logsOn = useCallback(
     (date: Date): SessionLog[] => {
       const day = dayKey(date);

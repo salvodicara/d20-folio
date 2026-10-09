@@ -187,4 +187,31 @@ describe("Sessions", () => {
     fireEvent.click(screen.getByRole("button", { name: /show less/i }));
     expect(screen.queryByText("Session 1")).not.toBeInTheDocument();
   });
+
+  it("re-reads the evening reports each time the Journal is shown", async () => {
+    listMock.mockResolvedValue([]);
+    const { rerender } = render(<Sessions campaignId="c1" visible={false} />);
+    await screen.findByText(/no sessions logged yet/i);
+    // A fight is played while the Journal tab is hidden…
+    logStore.recent.mockResolvedValue([
+      {
+        id: "2026-10-09",
+        lastAt: 1,
+        items: [
+          {
+            id: "a",
+            by: "u",
+            at: 1,
+            type: "event",
+            event: { kind: "rest", rest: "short" },
+          },
+        ],
+      },
+    ]);
+    // …then the DM opens the Journal: the evening and its report are there.
+    rerender(<Sessions campaignId="c1" visible />);
+    expect(
+      await screen.findByRole("button", { name: /automatic report/i })
+    ).toBeInTheDocument();
+  });
 });
