@@ -55,6 +55,17 @@ describe("combatEventToPlayEvent", () => {
     });
   });
 
+  it("records an effect running out as the end of a status", () => {
+    expect(
+      combatEventToPlayEvent({ kind: "effect-expired", sourceId: "rage" }, ME)
+    ).toEqual({
+      kind: "status",
+      sourceId: "rage",
+      started: false,
+      actor: ME,
+    });
+  });
+
   it("skips what the session already knows or cannot express", () => {
     expect(combatEventToPlayEvent({ kind: "turn-end", round: 2 }, ME)).toBeNull();
     expect(combatEventToPlayEvent({ kind: "legacy", text: "old line" }, ME)).toBeNull();

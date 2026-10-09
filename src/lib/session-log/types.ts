@@ -59,6 +59,13 @@ export type PlayEvent =
       started: boolean;
       actor?: CombatantId;
     }
+  | {
+      kind: "status";
+      /** The feature, spell or item whose lasting effect started or ran out. */
+      sourceId: string;
+      started: boolean;
+      actor?: CombatantId;
+    }
   | { kind: "down"; target: CombatantId }
   | { kind: "stabilized"; target: CombatantId; actor?: CombatantId; source?: LocText }
   | {

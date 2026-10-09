@@ -8,6 +8,7 @@ import it_ from "@/i18n/it/ui/sessionReport.json";
 import { buildReport, foldSession } from "@/lib/session-log";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 import {
+  localizePlayEvent,
   renderSessionReport,
   type SessionReportNames,
 } from "@/lib/views/session-report-view";
@@ -55,6 +56,7 @@ const names: SessionReportNames = {
   condition: (id) => id,
   action: (text) => ("custom" in text ? text.custom : "?"),
   spell: (ref) => (ref === "bless" ? "Bless" : ref),
+  source: (id) => (id === "rage" ? "Rage" : id),
 };
 
 async function render(lng: "en" | "it"): Promise<string> {
@@ -105,5 +107,30 @@ describe("renderSessionReport", () => {
     expect(text).toContain("## Scontro 1 — vittoria");
     expect(text).toContain("- Ana infligge 9 danni a Goblin");
     expect(text).toContain("- Qualcuno subisce 14 danni");
+  });
+
+  it("names a status that ran out, in both languages", async () => {
+    const line = (t: (k: string, a?: Record<string, unknown>) => string) =>
+      localizePlayEvent(
+        { kind: "status", sourceId: "rage", started: false, actor: "pc-ana" },
+        t,
+        (id) => (id === "pc-ana" ? "Ana" : "?"),
+        names
+      );
+    for (const [lng, expected] of [
+      ["en", "Ana's Rage ends"],
+      ["it", "Termina Rage di Ana"],
+    ] as const) {
+      const i18n = i18next.createInstance();
+      await i18n.init({
+        lng,
+        resources: {
+          en: { translation: { ...en, ...enChronicle } },
+          it: { translation: { ...it_, ...itChronicle } },
+        },
+        interpolation: { escapeValue: false },
+      });
+      expect(line((k, a) => i18n.t(k, a))).toBe(expected);
+    }
   });
 });

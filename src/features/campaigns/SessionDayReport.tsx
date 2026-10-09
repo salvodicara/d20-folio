@@ -18,7 +18,7 @@ import {
   renderSessionReport,
   type SessionReportNames,
 } from "@/lib/views/session-report-view";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
 
@@ -52,6 +52,7 @@ export function SessionDayReport({
           : id,
       action: (text) => localizeText(text, language),
       spell: (ref) => concentrationLabel(ref, language),
+      source: (id) => grantSourceLabel(id, language),
     }),
     [campaign?.memberDetails, language]
   );
