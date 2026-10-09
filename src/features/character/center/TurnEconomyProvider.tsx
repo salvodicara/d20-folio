@@ -48,7 +48,12 @@ import {
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
-import type { ToastChoices } from "@/stores/toastStore";
+import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
+import {
+  targetStepFor,
+  withSelfRecipient,
+  type TargetStep,
+} from "@/features/character/center/target-step";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
@@ -519,6 +524,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // Rich in-combat casting: a spell with >1 cast option (upcast / free-cast)
   // opens this picker (the same CastLevelModal the Spells page uses), then
   // commits the chosen option immediately.
+  const [targetRequest, setTargetRequest] = useState<{
+    characterId: string | undefined;
+    action: ResolvedAction;
+    step: TargetStep;
+    commit: PreparedCommit;
+  } | null>(null);
   const [castRequest, setCastRequest] = useState<{
     characterId: string;
     action: ResolvedAction;
@@ -625,6 +636,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     apply: ResolutionApply;
     occurrenceId?: string;
     outcomes: ReadonlyArray<CombatOutcomeReceipt>;
+    targets?: ReadonlyArray<string>;
   };
   const pendingResolutionRef = useRef<PendingResolution | null>(null);
   const pendingResolutionFor = (action: ResolvedAction): PendingResolution | null => {
@@ -837,8 +849,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   function commitAction(
     action: ResolvedAction,
     trackerAmount?: number,
-    attackOf?: { n: number; total: number }
+    attackOf?: { n: number; total: number },
+    targets: ReadonlyArray<string> = []
   ): () => void {
+    action = withSelfRecipient(action, targets, selfCombatantId());
     const cs = useCharacterStore.getState();
     const characterId = cs.character?.id;
     let restoreEquipment: (() => boolean) | null = null;
@@ -943,6 +957,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       effect: logTypeForAction(action),
       slot: action.type,
       ...(attackOf ? { attackOf } : {}),
+      ...(targets.length > 0 ? { targets: [...targets] } : {}),
     });
     return () => {
       const c2 = useCharacterStore.getState();
@@ -1124,7 +1139,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (!guardActionState(action)) return null;
           // The swing's own effects (log line stamped with the count;
           // concentration/buff for a War-Magic cantrip; weapons carry none).
-          const undoEffects = commitAction(action, undefined, { n, total });
+          const undoEffects = commitAction(
+            action,
+            undefined,
+            { n, total },
+            applyResolution?.targets
+          );
           const groupEntry: SelectedAction = {
             id: "attack-group",
             name: t("combat.attackAction"),
@@ -1235,7 +1255,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             }
             return null;
           }
-          const undoCost = commitAction(action, trackerAmount);
+          const undoCost = commitAction(
+            action,
+            trackerAmount,
+            undefined,
+            applyResolution?.targets
+          );
           const revertPaymentBoundary =
             restoreSlotCast || (resourceCommit && itemResourceCommands)
               ? () => {
@@ -1320,10 +1345,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         ? createItemResourcePaymentCycle(itemResourceCommands, preparedResource)
         : null;
     const selectedMetamagicCost = metamagicCost(metamagicIds);
+    const targets = pendingResolutionFor(action)?.targets ?? [];
+    const castAction = withSelfRecipient(action, targets, selfCombatantId());
     const message = execution.ritual
       ? t("combat.castRitualToast", { name: action.name })
       : t("combat.actionUsedToast", { name: action.name });
-    let castLogId: string | null = null;
     registerUndoableToast(
       { message },
       () => {
@@ -1348,14 +1374,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
         // activate with one tap and expire by themselves). Only flips when OFF, so undo
         // never clears a hand-set state; arms the round countdown.
-        const activation = activateActionState(action, opt.level);
+        const activation = activateActionState(castAction, opt.level);
         const loggedId = cs.logEvent({
           kind: "action-use",
           action: action.nameLoc,
           effect: logTypeForAction(action),
           slot: action.type,
+          ...(targets.length > 0 ? { targets: [...targets] } : {}),
         });
-        castLogId = loggedId;
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1379,93 +1405,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           return true;
         };
       },
-      {
-        turnScoped: false,
-        choices: castTargetChoices(action, opt.level, () => castLogId),
-      }
+      { turnScoped: false }
     );
     clearPendingResolution(action);
   }
 
-  /**
-   * The cast's optional "on whom?" row (owner, VISION 2026-10-08: the tap records at
-   * once; the detail is an ignorable inline row). Offered for a spell whose standing
-   * state goes to a chosen creature (Mage Armor, Bless, Shield of Faith). "Me" lights
-   * the state on this sheet; any pick completes the log line's target, which reaches
-   * the session report. Lighting an ally's sheet is a later step.
-   */
-  function castTargetChoices(
-    action: ResolvedAction,
-    castLevel: number,
-    logId: () => string | null
-  ): ToastChoices | undefined {
-    const standing = action.standingEffect;
-    if (!standing || standing.markScope) return undefined;
-    const status = useCombatStatusStore.getState().status;
-    const uid = useAuthStore.getState().user?.uid;
-    const myId = status?.myId ?? (uid ? `pc-${uid}` : "self");
-    const targets: Array<{ id: string; label: string; self: boolean }> = [];
-    if (!standing.excludeSelf)
-      targets.push({ id: myId, label: t("combat.castTargetMe"), self: true });
-    for (const row of status?.view.rows ?? []) {
-      const ally = row.kind === "pc";
-      if (row.id === myId || ally !== (standing.targetAffinity !== "enemy")) continue;
-      targets.push({ id: row.id, label: row.name, self: false });
-    }
-    if (targets.length === 0) return undefined;
-    const pick = (target: { id: string; label: string; self: boolean }): void => {
-      registerUndoableToast(
-        {
-          message: t("combat.castTargetApplied", {
-            name: action.name,
-            target: target.label,
-          }),
-        },
-        () => {
-          const store = useCharacterStore.getState();
-          if (!store.character || store.readonly) return null;
-          const activation = target.self
-            ? activateActionState(
-                {
-                  ...action,
-                  activatesKey: standing.activeKey,
-                  activeDurationRounds: standing.maxRounds,
-                  activeTurnBoundary: standing.turnBoundary,
-                },
-                castLevel
-              )
-            : null;
-          const id = logId();
-          const line = id
-            ? store.character.session.logEntries.find((entry) => entry.id === id)
-            : undefined;
-          const restoreLine =
-            id && line?.event.kind === "action-use"
-              ? store.amendLogEntry(id, { ...line.event, targets: [target.id] })
-              : null;
-          return () => {
-            activation?.restore();
-            restoreLine?.();
-          };
-        },
-        { turnScoped: false }
-      );
-    };
-    return {
-      prompt: t("combat.castTargetPrompt"),
-      options: targets.map((target) => ({
-        id: target.id,
-        label: target.label,
-        onPick: () => pick(target),
-      })),
-    };
-  }
-
-  // S6 — project a chosen alternate payment onto the action's cost fields so the
-  // ONE `commitIntoSlot` machinery (deduct + undo + toast + concentration) commits
-  // it. The two payment kinds in play are a spell slot or a tracker spend (the
-  // only `alternateCost` kinds in the data); each maps cleanly onto the cost
-  // fields `commitAction` reads — no parallel commit path.
   function actionWithCost(action: ResolvedAction, cost: ActionCostOption["cost"]) {
     const withoutPrimaryCost: ResolvedAction = {
       ...action,
@@ -1799,6 +1743,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ...(stagedResolution?.actionId === action.id && stagedResolution.occurrenceId
             ? { occurrenceId: stagedResolution.occurrenceId }
             : {}),
+          ...(stagedResolution?.actionId === action.id && stagedResolution.targets
+            ? { targets: stagedResolution.targets }
+            : {}),
         }
       : null;
     const slot = getEconomySlot(action);
@@ -1965,6 +1912,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ...(stagedResolution?.actionId === action.id && stagedResolution.occurrenceId
             ? { occurrenceId: stagedResolution.occurrenceId }
             : {}),
+          ...(stagedResolution?.actionId === action.id && stagedResolution.targets
+            ? { targets: stagedResolution.targets }
+            : {}),
         }
       : null;
     // A spent reaction DISABLES every reaction CTA ("Used" — the CTA grammar),
@@ -2079,13 +2029,18 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
           // its standing state on use. Only flips when OFF so undo never clears a
           // hand-set state; arms the round countdown. Read state FRESH.
-          const activation = activateActionState(action, castLevel);
+          const targets = applyResolution?.targets ?? [];
+          const activation = activateActionState(
+            withSelfRecipient(action, targets, selfCombatantId()),
+            castLevel
+          );
           // Log a STRUCTURED reaction-use event (always the reaction slot → red row).
           // Capture the id so the reverse removes only this line.
           const loggedId = characterStore.logEvent({
             kind: "reaction-use",
             action: action.nameLoc,
             effect: logTypeForAction(action),
+            ...(targets.length > 0 ? { targets: [...targets] } : {}),
           });
           return withResolutionUndo(
             () => {
@@ -2488,6 +2443,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ? { occurrenceId: artifact.outcomeOccurrenceId }
           : {}),
         outcomes: artifact?.outcomes ?? [],
+        ...(artifact?.targets ? { targets: artifact.targets } : {}),
       };
       return action.type === "reaction"
         ? void handleUseReaction(action, afterCommit)
@@ -2670,6 +2626,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ? { occurrenceId: artifact.outcomeOccurrenceId }
           : {}),
         outcomes: artifact?.outcomes ?? [],
+        ...(artifact?.targets ? { targets: artifact.targets } : {}),
       };
       void commitCastOption(committedAction, getEconomySlot(opener), option);
     });
@@ -2766,6 +2723,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
                 ? { occurrenceId: artifact.outcomeOccurrenceId }
                 : {}),
               outcomes: artifact?.outcomes ?? [],
+              ...(artifact?.targets ? { targets: artifact.targets } : {}),
             };
             void commitCastOption(
               committedAction,
@@ -2791,10 +2749,31 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     prepareResolution(
       executable,
       (prepared, commit) => {
-        commit(() => undefined, { action: prepared });
+        const step = targetStepFor(prepared, targetRoster());
+        if (!step) {
+          commit(() => undefined, { action: prepared });
+          return;
+        }
+        setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
       },
       execution
     );
+  }
+
+  /** This player's combatant id: the live encounter's, else the uid-derived one. */
+  function selfCombatantId(): string {
+    const status = useCombatStatusStore.getState().status;
+    const uid = useAuthStore.getState().user?.uid;
+    return status?.myId ?? (uid ? `pc-${uid}` : "self");
+  }
+
+  function targetRoster() {
+    const status = useCombatStatusStore.getState().status;
+    return {
+      selfId: selfCombatantId(),
+      selfName: useCharacterStore.getState().character?.character.name ?? "",
+      rows: status?.view.rows ?? [],
+    };
   }
 
   // The async reaction handler is exposed as a fire-and-forget `() => void` on
@@ -2863,6 +2842,26 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           setCastRequest(null);
         }}
         onCancel={() => setCastRequest(null)}
+      />
+
+      {/* The optional "On whom?" step: a pick (or Skip) commits; closing spends nothing. */}
+      <TargetPickerModal
+        request={
+          targetRequest
+            ? {
+                actionName: targetRequest.action.name,
+                isSpell: targetRequest.action.source === "spell",
+                step: targetRequest.step,
+              }
+            : null
+        }
+        onConfirm={(targets) => {
+          const request = targetRequest;
+          setTargetRequest(null);
+          if (request && canUseCharacter(request.characterId))
+            request.commit(() => undefined, { action: request.action, targets });
+        }}
+        onCancel={() => setTargetRequest(null)}
       />
 
       {/* S4 — Arcane Recovery guided picker (enforces the ⌈level/2⌉ cap).

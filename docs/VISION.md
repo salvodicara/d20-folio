@@ -81,6 +81,11 @@ arrivare al tavolo prima di aprire la successiva.
   tocco «Spada lunga» → registrato, Azione scalata; sotto compare una riga (bersaglio,
   colpito/mancato, danno) che si può ignorare o completare anche dopo dal registro. Mai finestre
   bloccanti. Stesso schema per cure, incantesimi ad area, pozioni.
+  **Bersaglio (9/10, sostituisce la riga per il bersaglio):** fra la scelta dell'azione (e dello
+  slot) e la registrazione c'è uno schermo «Su chi?» saltabile, come quando si sceglie il nemico
+  da attaccare; quanti bersagli si possono scegliere dipende da ogni incantesimo o azione. Appare
+  solo se la scelta cambia qualcosa (uno scontro con creature, o uno stato che si accende su di te).
+  Mai scelte dentro il toast di Annulla.
 - **Danni ai PG:** li può inserire sia il giocatore sulla propria scheda sia il DM dal suo
   pannello; l'altro vede l'aggiornamento.
 - **Iniziativa:** in Folio ma facoltativa. Se il DM apre lo scontro, Folio gestisce turni e timer;

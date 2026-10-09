@@ -41,7 +41,6 @@
     "endLinesLabel": "Il resoconto",
     "endDeleteLine": "Rimuovi questa riga",
     "endSave": "Salva nella Cronaca",
-    "endSkip": "Salta",
     "endEmpty": "Nessun evento registrato. Scrivi il tuo racconto qui sotto, oppure salta.",
     "savedToast": "Scontro salvato nella Cronaca",
     "saveFailedToast": "Impossibile salvare nella Cronaca. Controlla la connessione e riprova.",

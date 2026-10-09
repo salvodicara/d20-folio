@@ -18,12 +18,6 @@
 import { create } from "zustand";
 import type { ToastIntent } from "@/types/toast";
 
-export interface ToastChoices {
-  /** Pre-localized prompt, e.g. "On whom?". */
-  prompt: string;
-  options: ReadonlyArray<{ id: string; label: string; onPick: () => void }>;
-}
-
 export interface UndoToast {
   id: string;
   /**
@@ -43,12 +37,6 @@ export interface UndoToast {
    * An undo-bearing toast occupies THE single snackbar slot (one-snackbar rule).
    */
   onUndo?: () => void;
-  /**
-   * Optional one-tap follow-up shown under the message — the cast's "on whom?" row.
-   * Picking a choice runs it and closes the toast; ignoring it is always fine (the
-   * detail can be completed later), so this never blocks play.
-   */
-  choices?: ToastChoices;
   /** Timestamp when toast was created */
   createdAt: number;
   /** Duration in ms (default 5000) */

@@ -2658,27 +2658,6 @@ button.pr-dot.lg::before {
   margin-left: auto;
   flex-shrink: 0;
 }
-/* Optional one-tap follow-up row (the cast's "on whom?"): wraps under the message,
-   compact gilt-outlined chips; ignoring it is always fine. */
-.toast:has(.t-choices) {
-  flex-wrap: wrap;
-}
-.toast .t-choices {
-  order: 10;
-  flex-basis: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2);
-  padding-left: 32px;
-}
-.toast .t-choices-prompt {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.toast .t-choice {
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 35%, var(--border-accent));
-}
 /* Dismiss (check) button inside toast — compact, no chrome at rest. */
 .toast .t-dismiss {
   width: 24px;
@@ -9232,6 +9211,39 @@ button.create-need:focus-visible .create-need-chev {
 }
 .cl-opt .cl-rest {
   color: var(--text-muted);
+}
+/* The "On whom?" step (TargetPickerModal): the slot rows' recipe, the seal tinted by
+   side (allies info-blue, enemies danger-red), grouped under a quiet small-caps label;
+   a several-target pick ticks a check box before the confirm. */
+.cl-group + .cl-group {
+  margin-top: var(--sp-4);
+}
+.cl-group-label {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-numeric);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cl-target[data-side="ally"] {
+  --sl: var(--semantic-info);
+}
+.cl-target[data-side="enemy"] {
+  --sl: var(--semantic-danger);
+}
+.cl-opt .cl-check {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+}
+.cl-opt.is-active .cl-check {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary);
+  box-shadow: inset 0 0 0 3px var(--bg-surface-1);
 }
 /* Chromatic slot seal — diamond pip in the per-level --sl colour. */
 .cl-slot .cl-seal {

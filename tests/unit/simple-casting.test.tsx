@@ -17,7 +17,10 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useUndoStore } from "@/stores/undoStore";
-import { useToastStore } from "@/stores/toastStore";
+import {
+  useCombatStatusStore,
+  type GlobalCombat,
+} from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { characterWorldState } from "@/lib/mechanics-world-store";
@@ -32,6 +35,12 @@ function liveCharacter(): CharacterDoc {
   const doc = useCharacterStore.getState().character;
   if (!doc) throw new Error("Test character missing");
   return doc;
+}
+
+/** Recipient spells ask "On whom?" first; these tests are about what follows. */
+async function skipTargetStep(): Promise<void> {
+  const dialog = await screen.findByRole("dialog", { name: /on whom/i });
+  fireEvent.click(within(dialog).getByRole("button", { name: /^skip/i }));
 }
 
 beforeEach(() => {
@@ -193,7 +202,7 @@ it("lights a concentration self buff with its countdown and undo restores both",
   expect(undone.session.activeFeatures ?? []).not.toContain("spell-hunters-mark");
 });
 
-it("offers an optional 'on whom?' row; picking Me lights the state and tags the line", async () => {
+it("asks 'on whom?' after the slot; Me lights the state, tags the line, one undo reverts all", async () => {
   const doc = liveCharacter();
   doc.character.classes = [{ classId: "wizard", level: 3 }];
   doc.character.spells = [{ srdId: "mage-armor", prepared: true }];
@@ -208,12 +217,11 @@ it("offers an optional 'on whom?' row; picking Me lights the state and tags the 
   const card = screen.getByText("Mage Armor").closest(".uc") as HTMLElement;
   fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
   fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+  const dialog = await screen.findByRole("dialog", { name: /on whom/i });
+  // Nothing is spent while the step is open.
+  expect(liveCharacter().session.spellSlots["1"]?.used ?? 0).toBe(0);
+  fireEvent.click(within(dialog).getByRole("button", { name: /^me/i }));
   await waitFor(() => expect(liveCharacter().session.spellSlots["1"]?.used).toBe(1));
-  // Ignoring the row is fine: nothing is lit until a pick.
-  expect(liveCharacter().session.activeFeatures ?? []).not.toContain("spell-mage-armor");
-  const toast = useToastStore.getState().toasts.find((entry) => entry.choices);
-  expect(toast?.choices?.options.map((option) => option.label)).toEqual(["Me"]);
-  act(() => toast?.choices?.options[0]?.onPick());
 
   const after = liveCharacter();
   expect(after.session.activeFeatures ?? []).toContain("spell-mage-armor");
@@ -228,8 +236,98 @@ it("offers an optional 'on whom?' row; picking Me lights the state and tags the 
   });
   const undone = liveCharacter();
   expect(undone.session.activeFeatures ?? []).not.toContain("spell-mage-armor");
-  expect(undone.session.logEntries.at(-1)?.event).not.toHaveProperty("targets");
-  expect(undone.session.spellSlots["1"]?.used).toBe(1);
+  expect(undone.session.spellSlots["1"]?.used ?? 0).toBe(0);
+  expect(undone.session.logEntries).toHaveLength(0);
+});
+
+it("Skip casts without a target; closing the step spends nothing", async () => {
+  const doc = liveCharacter();
+  doc.character.classes = [{ classId: "wizard", level: 3 }];
+  doc.character.spells = [{ srdId: "mage-armor", prepared: true }];
+  render(
+    <MemoryRouter>
+      <TurnEconomyProvider>
+        <SpellsTab />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+  const card = screen.getByText("Mage Armor").closest(".uc") as HTMLElement;
+  fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
+  const cast = () =>
+    fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+
+  cast();
+  let dialog = await screen.findByRole("dialog", { name: /on whom/i });
+  fireEvent.click(within(dialog).getByRole("button", { name: /^cancel/i }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(liveCharacter().session.spellSlots["1"]?.used ?? 0).toBe(0);
+
+  cast();
+  dialog = await screen.findByRole("dialog", { name: /on whom/i });
+  fireEvent.click(within(dialog).getByRole("button", { name: /^skip/i }));
+  await waitFor(() => expect(liveCharacter().session.spellSlots["1"]?.used).toBe(1));
+  expect(liveCharacter().session.activeFeatures ?? []).not.toContain("spell-mage-armor");
+  expect(liveCharacter().session.logEntries.at(-1)?.event).not.toHaveProperty("targets");
+});
+
+it("in an encounter, an attack asks which enemy and records it", async () => {
+  const rows = [
+    { id: "pc-test-uid", kind: "pc", side: "ally", name: "Me" },
+    { id: "monster-1", kind: "monster", side: "enemy", name: "Goblin" },
+    { id: "monster-2", kind: "monster", side: "enemy", name: "Bugbear" },
+  ] as GlobalCombat["view"]["rows"];
+  useCombatStatusStore.setState({
+    status: {
+      campaignId: "camp-1",
+      encounter: {
+        nextMonsterOrdinal: 3,
+        round: 1,
+        currentCombatantId: "pc-test-uid",
+        epoch: 1,
+        status: "active",
+        combatants: [],
+      },
+      view: {
+        rows,
+        turnOrderIds: rows.map((row) => row.id),
+        currentId: "pc-test-uid",
+      },
+      myId: "pc-test-uid",
+      characterId: liveCharacter().id,
+      gathering: false,
+      isMyTurn: true,
+      initiativeBonus: 0,
+      initiativeRoll: 10,
+      round: 1,
+    },
+  });
+  try {
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider>
+          <PlayTab />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^all/i }));
+    const card = screen.getByText("Unarmed Strike").closest(".uc") as HTMLElement;
+    fireEvent.click(within(card).getByRole("button", { name: /^attack/i }));
+    const dialog = await screen.findByRole("dialog", { name: /on whom/i });
+    expect(
+      within(dialog)
+        .getAllByRole("button")
+        .map((button) => button.textContent)
+    ).toEqual(expect.arrayContaining(["GGoblin", "BBugbear"]));
+    fireEvent.click(within(dialog).getByRole("button", { name: /bugbear/i }));
+    await waitFor(() =>
+      expect(liveCharacter().session.logEntries.at(-1)?.event).toMatchObject({
+        kind: "action-use",
+        targets: ["monster-2"],
+      })
+    );
+  } finally {
+    useCombatStatusStore.setState({ status: null });
+  }
 });
 
 it("records an attack without requiring a target or damage roll", async () => {
@@ -266,6 +364,7 @@ it("replaces concentration after confirmation and restores it with undo", async 
   const card = screen.getByText("Shield of Faith").closest(".uc") as HTMLElement;
   fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
   fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+  await skipTargetStep();
   await waitFor(() => expect(useConfirmStore.getState().open).toBe(true));
   expect(useCharacterStore.getState().character?.session.spellSlots).toEqual({});
   act(() => useConfirmStore.getState().respond(true));
@@ -300,6 +399,7 @@ it.each(["character", "readonly"] as const)(
     const card = screen.getByText("Shield of Faith").closest(".uc") as HTMLElement;
     fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
     fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+    await skipTargetStep();
     await waitFor(() => expect(useConfirmStore.getState().open).toBe(true));
     act(() =>
       useCharacterStore.setState(
@@ -359,6 +459,7 @@ it("undoing a concentration swap preserves an unlit previous buff", async () => 
   const card = screen.getByText("Bless").closest(".uc") as HTMLElement;
   fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
   fireEvent.click(within(card).getByRole("button", { name: /^cast/i }));
+  await skipTargetStep();
   await waitFor(() => expect(useConfirmStore.getState().open).toBe(true));
   await act(async () => {
     useConfirmStore.getState().respond(true);

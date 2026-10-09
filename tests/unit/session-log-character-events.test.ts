@@ -44,6 +44,23 @@ describe("combatEventToPlayEvent", () => {
     });
     expect(
       combatEventToPlayEvent(
+        {
+          kind: "reaction-use",
+          action: { custom: "Hellish Rebuke" },
+          effect: "damage",
+          targets: ["monster-1"],
+        },
+        ME
+      )
+    ).toEqual({
+      kind: "action",
+      actor: ME,
+      source: { custom: "Hellish Rebuke" },
+      slot: "reaction",
+      targets: ["monster-1"],
+    });
+    expect(
+      combatEventToPlayEvent(
         { kind: "concentration-start", spell: "bless" as ConcentrationRef },
         ME
       )

@@ -41,7 +41,6 @@
     "endLinesLabel": "The record",
     "endDeleteLine": "Remove this line",
     "endSave": "Save to Chronicle",
-    "endSkip": "Skip",
     "endEmpty": "No beats were logged. Write your account below, or skip.",
     "savedToast": "Fight saved to the Chronicle",
     "saveFailedToast": "Could not save to the Chronicle. Check your connection and try again.",

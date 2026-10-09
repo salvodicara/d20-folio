@@ -14,7 +14,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useToastStore, type ToastChoices } from "@/stores/toastStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useToasts } from "@/hooks/useToasts";
 import { X } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -39,7 +39,6 @@ export function UndoToasts() {
           createdAt={toast.createdAt}
           duration={toast.duration}
           hasUndo={typeof toast.onUndo === "function"}
-          choices={toast.choices}
           leaving={toast.leaving ?? false}
           onDismiss={dismissToast}
           onUndo={undoToast}
@@ -55,7 +54,6 @@ interface ToastItemProps {
   createdAt: number;
   duration: number;
   hasUndo: boolean;
-  choices?: ToastChoices;
   /** Mirrors store's `leaving` flag — triggers the CSS exit keyframe. */
   leaving: boolean;
   onDismiss: (id: string) => void;
@@ -71,7 +69,6 @@ function ToastItem({
   createdAt,
   duration,
   hasUndo,
-  choices,
   leaving,
   onDismiss,
   onUndo,
@@ -110,25 +107,6 @@ function ToastItem({
         <Icon as={X} size="sm" decorative />
       </IconButton>
       <span className="t-txt">{message}</span>
-      {choices && (
-        <div className="t-choices" role="group" aria-label={choices.prompt}>
-          <span className="t-choices-prompt">{choices.prompt}</span>
-          {choices.options.map((option) => (
-            <Button
-              key={option.id}
-              variant="ghost"
-              size="sm"
-              className="t-choice"
-              onClick={() => {
-                option.onPick();
-                onDismiss(id);
-              }}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      )}
       {hasUndo && (
         <Button variant="ghost" size="sm" className="t-undo" onClick={() => onUndo(id)}>
           {t("common.undo")}
