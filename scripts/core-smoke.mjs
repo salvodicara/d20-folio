@@ -3,7 +3,8 @@
  * fixture export it runs `parseCharacter` → `deriveCharacter` from
  * `packages/folio-core/dist/index.js` and compares the sheet with the committed
  * expected numbers (which `tests/unit/folio-core-fixtures.test.ts` keeps equal to the
- * app's own derivation). Run by `pnpm core:build`.
+ * app's own derivation), then checks the bundled SRD activities. Run by
+ * `pnpm core:build`.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -45,4 +46,23 @@ for (const file of readdirSync(dir).filter(
   checked += 1;
 }
 if (checked === 0) throw new Error("core-smoke: no fixtures");
-console.log(`core-smoke: the built package derives ${checked} fixture sheets exactly`);
+
+// The activities: the whole SRD's, one shape, from the same bundle.
+const activities = await core.catalogueActivities();
+const fireball = activities.find(({ activity }) => activity.id === "spell:fireball");
+deepStrictEqual(
+  fireball?.activity.effects[0],
+  {
+    kind: "damage",
+    dice: { dice: "8d6", perUpcast: "1d6" },
+    types: ["fire"],
+    onSave: "half",
+  },
+  "spell:fireball"
+);
+if (!activities.some(({ activity }) => activity.source.kind === "monster")) {
+  throw new Error("core-smoke: no monster activities");
+}
+console.log(
+  `core-smoke: the built package derives ${checked} fixture sheets exactly and lists ${activities.length} activities`
+);

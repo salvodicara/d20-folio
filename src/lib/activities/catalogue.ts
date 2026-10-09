@@ -1,8 +1,13 @@
 /**
  * Every catalogue entry that declares an active mechanic, in each of today's
- * dialects, with the owner context its translator needs. The activity tests take
- * their cases from here, so a new spell, feature action, monster entry or beast
- * attack (public or from the content pack) is covered without editing a list.
+ * dialects, with the owner context its translator needs, and all of them as
+ * Activities (`catalogueActivities`). The activity tests take their cases from
+ * here, so a new spell, feature action, monster entry or beast attack (public or
+ * from the content pack) is covered without editing a list; the public SRD
+ * catalogue and `@d20-folio/core` publish the same list.
+ *
+ * Not re-exported from the `@/lib/activities` barrel: it loads the whole
+ * catalogue, which the translators themselves never need.
  */
 import { BEASTS } from "@/data/beasts";
 import { classFeatures } from "@/data/classes";
@@ -20,9 +25,17 @@ import type {
   MonsterEntry,
   SrdActionDef,
 } from "@/data/types";
-import type { ActionOwner, MonsterSection } from "@/lib/activities";
 import type { Grant } from "@/lib/grant-schema";
 import { raceTraitSessionId } from "@/lib/resolve-grant-sources";
+import { translateAction, type ActionOwner } from "./from-action";
+import {
+  activityFromBeastAttack,
+  activityFromCompanionAttack,
+  translateMonsterEntry,
+} from "./from-creature";
+import { activityFromItemActivation } from "./from-item";
+import { translateSpell } from "./from-spell";
+import type { ActivityTranslation, MonsterSection } from "./types";
 
 export interface CatalogueAction {
   action: SrdActionDef;
@@ -177,4 +190,33 @@ export function catalogueItemActivations(): Array<{
         : []
     )
   );
+}
+
+/**
+ * Every active mechanic in the catalogue as one Activity with the source fields it
+ * cannot express yet: spells, feature/feat/species/equipment/invocation actions,
+ * monster stat-block entries, beast-form and companion attacks, and magic-item
+ * activations, in that order.
+ */
+export async function catalogueActivities(): Promise<ActivityTranslation[]> {
+  const monsterEntries = await catalogueMonsterEntries();
+  return [
+    ...spells.map((spell) => translateSpell(spell)),
+    ...catalogueActions().map(({ action, owner }) => translateAction(action, owner)),
+    ...monsterEntries.map(({ monsterId, section, entry }) =>
+      translateMonsterEntry(monsterId, section, entry)
+    ),
+    ...catalogueBeastAttacks().map(({ beast, attack }) => ({
+      activity: activityFromBeastAttack(beast, attack),
+      gaps: [],
+    })),
+    ...catalogueCompanionAttacks().map(({ ownerId, attack }) => ({
+      activity: activityFromCompanionAttack(ownerId, attack),
+      gaps: [],
+    })),
+    ...catalogueItemActivations().flatMap(({ itemId, grant }) => {
+      const activity = activityFromItemActivation(itemId, grant);
+      return activity ? [{ activity, gaps: [] }] : [];
+    }),
+  ];
 }

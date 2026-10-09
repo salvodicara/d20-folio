@@ -310,14 +310,15 @@ SRD catalogue as static JSON. Only SRD material goes out.
   sheet reads; the DM's party view and the PDF are projections of it. Next: the cockpit rail.
 - **(2) Built, not published.** `packages/folio-core` (`@d20-folio/core`, `private: true`,
   AGPL like the repo): `parseCharacter` → `deriveCharacter`, the rules grammar and the session
-  log, bundled SRD-only by Vite library mode (every `@pack` alias → the empty stub), declarations
+  log and the activities (`catalogueActivities()` plus the translators), bundled SRD-only by Vite library mode (every `@pack` alias → the empty stub), declarations
   emitted by `tsc` with `@/` rewritten relative (`scripts/core-dts-paths.mjs`). `pnpm core:build`
   also type-checks a consumer against the declarations alone and runs the built bundle in plain
   Node on committed fixture exports (`scripts/core-smoke.mjs`); CI runs it on every PR. Publishing
   and its licence are the owner's call.
 - **(3) Done.** `pnpm srd:catalogue` (`scripts/export-srd-catalogue.ts` →
   `src/lib/srd-catalogue.ts`) writes `dist/srd/v1/{index,spells,monsters,…}.json`: mechanics plus
-  the English text, sorted and byte-stable, CC-BY-4.0 attribution in `index.json`. It runs
+  the English text, sorted and byte-stable, and `activities.json` (every active mechanic as one
+  `Activity`, with the source fields it cannot express yet), CC-BY-4.0 attribution in `index.json`. It runs
   SRD-only (refuses unless `VITE_CONTENT_PACK=0`) and rejects any non-SRD `source`. `pnpm build`
   runs it, so the next deploy serves it at `/srd/v1/`; CI runs it on every PR. The service worker
   never precaches it. Italian text is not exported yet (confirm its provenance first).

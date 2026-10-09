@@ -43,7 +43,7 @@ import {
   catalogueCompanionAttacks,
   catalogueItemActivations,
   catalogueMonsterEntries,
-} from "./__helpers__/activity-catalogue";
+} from "@/lib/activities/catalogue";
 
 /** The only source fields an Activity may leave out, and why. */
 const KNOWN_GAPS: Readonly<Record<string, string>> = {

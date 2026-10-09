@@ -2,7 +2,8 @@
  * export-srd-catalogue — writes the public SRD catalogue (Folio Core API step 3) as
  * static JSON: one file per collection plus `index.json` (version, licence, SRD 5.2.1
  * attribution, counts). The shape is `src/lib/srd-catalogue.ts`; this script only
- * wires the real collections and their English text.
+ * wires the real collections and their English text, plus every active mechanic as
+ * an Activity (`activities.json`).
  *
  * SRD-only by construction: it refuses to run unless `VITE_CONTENT_PACK=0`, so the
  * `@pack` alias resolves to the empty stub and no private content (or overlay) is
@@ -17,6 +18,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
 import { buildSrdCatalogue, type CatalogueCollection } from "@/lib/srd-catalogue";
+import { catalogueActivities } from "@/lib/activities/catalogue";
 import { spells } from "@/data/spells";
 import { MONSTERS } from "@/data/monsters";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
@@ -65,6 +67,15 @@ const collections: Record<string, CatalogueCollection> = {
   conditions: { entries: SRD_CONDITIONS, text: text("conditions") },
   invocations: { entries: SRD_INVOCATIONS, text: text("invocations") },
   metamagic: { entries: SRD_METAMAGIC, text: text("metamagic") },
+  // Every active mechanic above in the one Activity shape (`src/lib/activities`),
+  // with the source fields it cannot express yet.
+  activities: {
+    entries: (await catalogueActivities()).map(({ activity, gaps }) => ({
+      id: activity.id,
+      activity,
+      ...(gaps.length > 0 ? { gaps } : {}),
+    })),
+  },
 };
 
 const { index, files } = buildSrdCatalogue({
