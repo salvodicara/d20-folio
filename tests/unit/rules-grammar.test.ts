@@ -112,3 +112,27 @@ describe("generic rules grammar — proficiencies", () => {
     expect(ruleFlagIds(out.values, "prof:skill:")).toEqual(["stealth", "athletics"]);
   });
 });
+
+describe("generic rules grammar — defenses", () => {
+  it("unions damage defenses and keeps source-bound condition immunities apart", () => {
+    const out = evaluateGrants([
+      source("tiefling", [{ type: "damage-resistance", damageType: "fire" }]),
+      source("ring", [
+        { type: "damage-resistance", damageType: "fire" },
+        { type: "damage-immunity", damageType: "poison" },
+        { type: "damage-vulnerability", damageType: "cold" },
+      ]),
+      source("fey-ancestry", [
+        { type: "condition-immunity", condition: "unconscious", sourceId: "sleep" },
+      ]),
+      source("undead-nature", [{ type: "condition-immunity", condition: "poisoned" }]),
+    ]);
+    expect([...out.damageResistances]).toEqual(["fire"]);
+    expect([...out.damageImmunities]).toEqual(["poison"]);
+    expect([...out.damageVulnerabilities]).toEqual(["cold"]);
+    expect([...out.conditionImmunities]).toEqual(["poisoned"]);
+    expect(out.sourceConditionImmunities).toEqual([
+      { condition: "unconscious", sourceId: "sleep" },
+    ]);
+  });
+});

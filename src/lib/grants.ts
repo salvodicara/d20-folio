@@ -2271,16 +2271,9 @@ export function evaluateGrants(
   const rules: Rule[] = [];
 
   // Defensive
-  const damageResistances = new Set<DamageType>();
-  let allDamageResistance = false;
-  const damageImmunities = new Set<DamageType>();
-  const damageVulnerabilities = new Set<DamageType>();
-  const conditionImmunities = new Set<ConditionId>();
-  const sourceConditionImmunities = new Map<string, SourceConditionImmunity>();
   let spellcastingBlocked = false;
   let concentrationBlocked = false;
   let healingBlocked = false;
-  const damageSourceResistances = new Set<DamageSource>();
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
@@ -2493,10 +2486,12 @@ export function evaluateGrants(
 
       // ── Defensive ───────────────────────────────────────────────────
       case "damage-resistance":
-        damageResistances.add(g.damageType);
-        break;
       case "all-damage-resistance":
-        allDamageResistance = true;
+      case "damage-immunity":
+      case "damage-vulnerability":
+      case "damage-resistance-source":
+      case "condition-immunity":
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "damage-transfer":
         // The persistent-damage reducer owns this because it needs the exact
@@ -2506,27 +2501,7 @@ export function evaluateGrants(
         // The persistent-hit reducer owns this because it needs the exact incoming
         // attacker and this effect occurrence's snapshotted cast level.
         break;
-      case "damage-immunity":
-        damageImmunities.add(g.damageType);
-        break;
-      case "damage-vulnerability":
-        damageVulnerabilities.add(g.damageType);
-        break;
-      case "condition-immunity":
-        if (g.sourceId) {
-          sourceConditionImmunities.set(`${g.condition}\u0000${g.sourceId}`, {
-            condition: g.condition,
-            sourceId: g.sourceId,
-          });
-        } else {
-          conditionImmunities.add(g.condition);
-        }
-        break;
-      case "damage-resistance-source":
-        // Resistance keyed to a damage SOURCE (Abjurer Spell Resistance →
-        // "spell"). Set-union per source, orthogonal to the per-DamageType set.
-        damageSourceResistances.add(g.source);
-        break;
+
       case "flat-damage-reduction":
         // FLAT incoming-damage reduction (Heavy Armor Master's −PB on B/P/S
         // while in Heavy armor). Recorded verbatim; the consumer resolves the
@@ -3508,7 +3483,8 @@ export function evaluateGrants(
         // Each validated pick gains Resistance — set-union into the SAME field
         // the fixed `damage-resistance` grant feeds, so the defenses consumer
         // needs no extra code.
-        for (const dt of picks) damageResistances.add(dt);
+        for (const dt of picks)
+          rules.push({ op: "flag", target: `defense:resist:${dt}` });
         // Surface the slot so a picker UI can show the constrained list + picks.
         choiceResistances.push({
           choiceKey: g.choiceKey,
@@ -3804,16 +3780,27 @@ export function evaluateGrants(
     seeInvisibleFt: ruleNumber(values, "sense:see-invisible"),
     airAndWaterBreathing: ruleFlag(values, "trait:air-and-water-breathing"),
     values,
-    damageResistances,
-    allDamageResistance,
-    damageImmunities,
-    damageVulnerabilities,
-    conditionImmunities,
-    sourceConditionImmunities: [...sourceConditionImmunities.values()],
+    damageResistances: new Set(ruleFlagIds(values, "defense:resist:") as DamageType[]),
+    allDamageResistance: ruleFlag(values, "defense:resist-all"),
+    damageImmunities: new Set(ruleFlagIds(values, "defense:immune:") as DamageType[]),
+    damageVulnerabilities: new Set(
+      ruleFlagIds(values, "defense:vulnerable:") as DamageType[]
+    ),
+    conditionImmunities: new Set(
+      ruleFlagIds(values, "defense:condition-immune:") as ConditionId[]
+    ),
+    sourceConditionImmunities: ruleFlagIds(values, "defense:condition-immune-from:").map(
+      (id): SourceConditionImmunity => {
+        const at = id.indexOf("@");
+        return { condition: id.slice(0, at) as ConditionId, sourceId: id.slice(at + 1) };
+      }
+    ),
     spellcastingBlocked,
     concentrationBlocked,
     healingBlocked,
-    damageSourceResistances,
+    damageSourceResistances: new Set(
+      ruleFlagIds(values, "defense:resist-source:") as DamageSource[]
+    ),
     flatDamageReductions,
     saveDamageRules,
     // Projections of the folded rules, kept until their readers move to `values`.
