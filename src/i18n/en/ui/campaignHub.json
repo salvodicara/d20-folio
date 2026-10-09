@@ -229,7 +229,6 @@
     "nextSessionClear": "Clear",
     "partySummary": "Party at a glance",
     "partySummaryHero": "Hero",
-    "partySummaryLevel": "Lv {{level}}",
     "partySummaryBest": "Best in the party",
     "partySummaryEmpty": "No hero attached yet. Players link their character on the Live tab.",
     "partySummaryLoading_one": "{{count}} hero still loading…",

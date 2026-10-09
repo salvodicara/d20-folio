@@ -229,7 +229,6 @@
     "nextSessionClear": "Togli",
     "partySummary": "Il gruppo a colpo d'occhio",
     "partySummaryHero": "Personaggio",
-    "partySummaryLevel": "Liv {{level}}",
     "partySummaryBest": "Il migliore del gruppo",
     "partySummaryEmpty": "Nessun personaggio collegato. I giocatori collegano il loro personaggio dalla scheda Live.",
     "partySummaryLoading_one": "{{count}} personaggio ancora in caricamento…",

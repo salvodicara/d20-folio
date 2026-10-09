@@ -127,7 +127,7 @@ export function PartySummary() {
                   <th scope="row" className="party-summary-hero">
                     <span className="party-summary-name">{name}</span>
                     <span className="party-summary-level">
-                      {t("campaignHub.partySummaryLevel", { level: stats.level })}
+                      {t("spells.levelShort", { level: stats.level })}
                     </span>
                   </th>
                   {cell(uid, "ac", stats.ac)}
