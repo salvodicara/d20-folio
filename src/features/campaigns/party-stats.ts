@@ -2,59 +2,26 @@
  * party-stats — derive a DM-dashboard statblock for ONE party member, LIVE from
  * their real character document.
  *
- * Single source of truth (golden rule 6): every number here is recomputed from
- * the member's `CharacterDoc` through the SAME engine helpers the cockpit rail
- * ({@link "@/features/character/hud/LeftHud"}) assembles — `aggregateCharacterGrants`
- * + `compute.ts` scalars + the `lib/views/sheet-view` presenters. NOTHING is read
- * from a denormalized campaign-doc copy (those drift). This is the pure assembly
- * the cockpit does inline, lifted into a reusable, testable function so the DM's
- * party overview and the hero's own sheet can never disagree.
+ * Single source of truth (golden rule 6): every number is a projection of
+ * {@link deriveCharacter} over the member's `CharacterDoc` — the same derivation the
+ * hero's own sheet agrees with. NOTHING is read from a denormalized campaign-doc copy
+ * (those drift), so the DM's party overview and the hero's sheet can never disagree.
  *
  * i18n-free + React-free (golden rule 7): it returns stable ids (sense/speed
  * kinds, ability codes, condition ids) + numbers; the localized labels are
  * resolved at the React render edge by the card. Pure — no store, no Firebase.
  */
 
-import { totalLevel } from "@/lib/classes";
-import {
-  abilityModifier,
-  ALL_ABILITIES,
-  characterHasFeat,
-  computeInitiative,
-  effectiveAbilityScores,
-  effectiveProficiencyBonus,
-  flatSaveBonus,
-  passiveScore,
-  passiveAdvantageStep,
-  resolveAbilityCheckBonus,
-  savingThrowBonus,
-  isHeavyArmorEquipped,
-} from "@/lib/compute";
-import {
-  aggregateCharacterGrants,
-  effectiveAC,
-  effectiveMaxHp,
-} from "@/lib/aggregate-character";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { applyCombatToSession } from "@/lib/combat-state";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CombatState } from "@/types/combat-state";
 import type { PcLive } from "@/features/campaigns/encounter-view";
-import {
-  deriveSensesAndSpeeds,
-  deriveDamageDefenses,
-  deriveDefenseKind,
-  mergeSaveProficiencies,
-  mergeSkillProficiencies,
-  type SenseEntry,
-  type SpeedEntry,
-} from "@/lib/views/sheet-view";
-import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
-import { getEquipment } from "@/data/equipment";
+import type { SenseEntry, SpeedEntry } from "@/lib/views/sheet-view";
 import type { CharacterDoc } from "@/types/character";
-import type { AbilityCode } from "@/data/types";
-import type { ConditionId } from "@/data/types";
+import type { AbilityCode, ConditionId } from "@/data/types";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import type { SourceConditionImmunity } from "@/lib/grants";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /** One saving throw, ready for the dashboard's expanded detail. */
 export interface PartyMemberSave {
@@ -104,141 +71,35 @@ export interface PartyMemberStats {
 }
 
 /**
- * Derive the live statblock for `doc`. Mirrors the cockpit rail's exact engine
- * calls; uses the FULL aggregate throughout (the read-only dashboard needs no
- * feature-scoped split — equivalent for display).
+ * Derive the live statblock for `doc` — a projection of {@link deriveCharacter}, the
+ * one derivation the player's own sheet agrees with (saves, skills and passives
+ * override-first, proficiencies from features as the rail reads them), so the DM's
+ * party view can never show a different number than the hero's sheet.
  */
 export function derivePartyMemberStats(doc: CharacterDoc): PartyMemberStats {
-  const charData = doc.character;
-  const session = doc.session;
-  const aggSession = {
-    activeFeatures: session.activeFeatures,
-    grantBundleChoices: session.grantBundleChoices,
-    itemResources: session.itemResources,
-  };
-  const aggregate = aggregateCharacterGrants(charData, aggSession);
-
-  const level = totalLevel(charData);
-  const exhaustion = session.exhaustion;
-  const pbOverride = charData.proficiencyBonusOverride;
-  const effectiveScores = effectiveAbilityScores(
-    charData.abilityScores,
-    aggregate.abilityScoreFloors,
-    aggregate.itemAbilityScoreBonus,
-    aggregate.itemAbilityScoreCap
-  );
-
-  const displayedSaves = mergeSaveProficiencies(
-    charData.savingThrows,
-    aggregate.saveProficiencies
-  );
-  const saveBonusFlat = flatSaveBonus(aggregate, effectiveScores);
-  const saves: PartyMemberSave[] = ALL_ABILITIES.map(({ code }) => {
-    const proficient = displayedSaves.includes(code);
-    const override = charData.savingThrowBonusOverrides?.[code] ?? null;
-    const auto = savingThrowBonus(
-      effectiveScores[code],
-      level,
-      proficient,
-      null,
-      exhaustion,
-      pbOverride,
-      saveBonusFlat
-    );
-    return { code, proficient, bonus: override ?? auto };
-  });
-
-  const displayedSkills = mergeSkillProficiencies(
-    charData.skills,
-    aggregate.skillProficiencies,
-    aggregate.expertiseSkills,
-    aggregate.halfProficiencyAllSkills
-  );
-  const checkBonusFor = (skillId: string, ability: AbilityCode): number =>
-    resolveAbilityCheckBonus(
-      aggregate.abilityCheckBonuses,
-      skillId,
-      ability,
-      effectiveScores
-    );
-  const passive = (
-    ability: AbilityCode,
-    skill: "perception" | "insight" | "investigation"
-  ): number =>
-    passiveScore(
-      effectiveScores[ability],
-      level,
-      displayedSkills[skill] ?? null,
-      exhaustion,
-      pbOverride,
-      checkBonusFor(skill, ability),
-      passiveAdvantageStep(aggregate, skill)
-    );
-
-  const walkingSpeedFt =
-    charData.speedOverride ?? effectiveWalkingSpeedFt(doc, getEquipment);
-  const { senses, speeds } = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
-
-  // Initiative BONUS — override-first, else the engine's `computeInitiative` over the
-  // ALREADY-built `aggregate` + `effectiveScores` (no second aggregate pass). The same
-  // composition the cockpit's CombatHeader/ThisTurnTracker assemble (golden rule 6):
-  // DEX mod + Alert's PB + flat/ability grant bonuses, exhaustion folded in.
-  const initiativeBonus =
-    charData.initiativeBonusOverride ??
-    computeInitiative(
-      effectiveScores.DEX,
-      effectiveProficiencyBonus(level, pbOverride),
-      characterHasFeat("alert", {
-        humanOriginFeat: charData.humanOriginFeat,
-        bgFeat: charData.bgFeat,
-        features: charData.features,
-      }),
-      exhaustion,
-      aggregate.initiativeBonusFlat +
-        aggregate.initiativeBonusAbilities.reduce(
-          (sum, a) => sum + abilityModifier(effectiveScores[a]),
-          0
-        )
-    );
-
-  const pb = effectiveProficiencyBonus(level, pbOverride);
-  const defenses = deriveDamageDefenses(
-    aggregate,
-    {
-      resistance: charData.damageResistanceOverrides,
-      immunity: charData.damageImmunityOverrides,
-      vulnerability: charData.damageVulnerabilityOverrides,
-    },
-    session.sessionDefenses,
-    pb,
-    isHeavyArmorEquipped(charData.equipment, getEquipment)
-  );
-  const conditionImmunities = new Set(
-    deriveDefenseKind(
-      aggregate.conditionImmunities,
-      charData.conditionImmunityOverrides,
-      session.sessionDefenses?.conditionImmunity
-    ).effective as ConditionId[]
-  );
-
+  const sheet = deriveCharacter(doc);
   return {
-    level,
-    ac: effectiveAC(charData, aggSession),
-    currentHp: session.hp.current,
-    maxHp: effectiveMaxHp(charData, aggSession),
-    tempHp: session.hp.temp,
-    passivePerception: passive("WIS", "perception"),
-    passiveInsight: passive("WIS", "insight"),
-    passiveInvestigation: passive("INT", "investigation"),
-    saves,
-    senses,
-    speeds,
-    walkingSpeedFt,
-    initiativeBonus,
-    conditions: effectiveSessionConditions(session),
-    defenses,
-    conditionImmunities,
-    sourceConditionImmunities: aggregate.sourceConditionImmunities,
+    level: sheet.level,
+    ac: sheet.ac,
+    currentHp: sheet.hp.current,
+    maxHp: sheet.hp.max,
+    tempHp: sheet.hp.temp,
+    passivePerception: sheet.passives.perception,
+    passiveInsight: sheet.passives.insight,
+    passiveInvestigation: sheet.passives.investigation,
+    saves: sheet.saves.map((s) => ({
+      code: s.ability,
+      bonus: s.bonus,
+      proficient: s.proficient,
+    })),
+    senses: sheet.senses,
+    speeds: sheet.speeds,
+    walkingSpeedFt: sheet.walkingSpeedFt,
+    initiativeBonus: sheet.initiativeBonus,
+    conditions: sheet.conditions,
+    defenses: sheet.defenses,
+    conditionImmunities: sheet.conditionImmunities,
+    sourceConditionImmunities: sheet.sourceConditionImmunities,
   };
 }
 
