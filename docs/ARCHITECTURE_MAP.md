@@ -279,6 +279,21 @@ pure `expire(statuses, boundary)`; Grants keep gating on status keys; later stat
 7. Selected-recipient statuses (Mage Armor, Bless on an ally) via the optional target detail.
 8. Emit `status-start` / `status-end` into the session log, then derive statuses from the fold.
 
+## Folio Core API (diagram: [core API](architecture/core-api.html))
+
+Order: (1) a clean internal core the app uses, (2) an npm package of the engine, (3) the
+SRD catalogue as static JSON. Only SRD material goes out.
+
+- **(1) In progress.** The rules grammar (`src/lib/rules`) now covers senses, speeds,
+  proficiencies, defenses, derived numbers, roll bonuses and blockers (#39–#49); the session log
+  is the play record.
+- **(3) Done.** `pnpm srd:catalogue` (`scripts/export-srd-catalogue.ts` →
+  `src/lib/srd-catalogue.ts`) writes `dist/srd/v1/{index,spells,monsters,…}.json`: mechanics plus
+  the English text, sorted and byte-stable, CC-BY-4.0 attribution in `index.json`. It runs
+  SRD-only (refuses unless `VITE_CONTENT_PACK=0`) and rejects any non-SRD `source`. `pnpm build`
+  runs it, so the next deploy serves it at `/srd/v1/`; CI runs it on every PR. The service worker
+  never precaches it. Italian text is not exported yet (confirm its provenance first).
+
 ## From the archived `v2` (tag `archive/2026-10-08-v2`)
 
 Recover ideas and tests, rarely files.

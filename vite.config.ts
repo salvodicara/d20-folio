@@ -180,6 +180,10 @@ export default defineConfig({
           "**/assets/items/**/*.webp",
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB — bundle is ~2.1 MiB
+        // The public SRD catalogue (`/srd/v1/*.json`, `pnpm srd:catalogue`) is data
+        // for other tools: never precached, and a direct visit gets the JSON, not
+        // the app shell.
+        navigateFallbackDenylist: [/^\/srd\//],
         runtimeCaching: [
           {
             urlPattern: /\/assets\/monsters\/.*\.webp$/,

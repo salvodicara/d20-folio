@@ -107,6 +107,10 @@ jobs:
       # string fails here.
       - name: Build
         run: pnpm exec vite build
+      # The public SRD catalogue (API step 3) must keep exporting cleanly: it runs
+      # SRD-only and refuses any non-SRD entry, so a data drift fails here.
+      - name: SRD catalogue
+        run: pnpm srd:catalogue
       # The eager-bundle/precache ceilings guard (golden rule 24) reads dist/,
       # so it runs after the build, in this same job.
       - name: Bundle budget
