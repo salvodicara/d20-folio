@@ -34,8 +34,11 @@ import type {
 import {
   compileGrant,
   foldRules,
+  ruleConditional,
   ruleFlag,
   ruleNumber,
+  ruleValue,
+  type MoveMode,
   type Rule,
   type RuleValues,
 } from "@/lib/rules";
@@ -2166,27 +2169,14 @@ export function emptyAggregate(): AggregatedGrants {
 }
 
 /**
- * Merge two non-walking speed values, taking the larger. The walking-relative
- * sentinels rank above any plausible numeric value because they resolve to a
- * multiple of the walking speed at render time (which is always ≥ 25 ft RAW):
- * `"twice-walking"` (2×) > `"equal-to-walking"` (1×) > numeric feet.
- *
- * Pure — no character context. The render-time resolver in `derive-sheet-views`
- * actually substitutes the walking speed.
+ * A non-walking speed from the folded rules: a speed tied to the walking speed outranks
+ * any fixed number (it resolves to a multiple of a walking speed that is always ≥ 25 ft):
+ * `"twice-walking"` > `"equal-to-walking"` > feet; `null` when nothing grants one.
  */
-function maxNonWalking(
-  current: NonWalkingSpeed | null,
-  incoming: NonWalkingSpeed
-): NonWalkingSpeed {
-  if (current === null) return incoming;
-  // `"twice-walking"` dominates everything (largest render value).
-  if (current === "twice-walking" || incoming === "twice-walking") {
-    return "twice-walking";
-  }
-  if (current === "equal-to-walking" || incoming === "equal-to-walking") {
-    return "equal-to-walking";
-  }
-  return current >= incoming ? current : incoming;
+function nonWalkingSpeed(values: RuleValues, mode: MoveMode): NonWalkingSpeed | null {
+  const multiple = ruleValue(values, `speed:${mode}:walking`);
+  if (multiple !== null) return multiple >= 2 ? "twice-walking" : "equal-to-walking";
+  return ruleValue(values, `speed:${mode}`);
 }
 
 /**
@@ -2293,17 +2283,8 @@ export function evaluateGrants(
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
-  // Movement
-  let speedBonusFt = 0;
-  const conditionalSpeedBonusFt: Partial<Record<"no-heavy-armor", number>> = {};
-  let round1SpeedBonusFt = 0;
+  // Movement (speeds fold through `lib/rules`)
   const round1DamageDoubles: AggregatedGrants["round1DamageDoubles"][number][] = [];
-  let flySpeed: NonWalkingSpeed | null = null;
-  let swimSpeed: NonWalkingSpeed | null = null;
-  let climbSpeed: NonWalkingSpeed | null = null;
-  let speedMultiplier = 1;
-  let speedFloorFt = 0;
-  let speedCapFt: number | null = null;
 
   // Derived stats
   let acBonus = 0;
@@ -2579,38 +2560,13 @@ export function evaluateGrants(
 
       // ── Movement ────────────────────────────────────────────────────
       case "speed":
-        if (g.round1) {
-          // Round-1-only (Ambusher's Leap) — sum into its own bucket; the
-          // consumer adds it only when in combat round 1.
-          round1SpeedBonusFt += g.amount;
-        } else if (g.condition) {
-          // Gated on a wearing-state — sum into its conditional bucket; the
-          // consumer applies it only when the gate holds.
-          conditionalSpeedBonusFt[g.condition] =
-            (conditionalSpeedBonusFt[g.condition] ?? 0) + g.amount;
-        } else {
-          speedBonusFt += g.amount;
-        }
-        break;
       case "fly-speed":
-        flySpeed = maxNonWalking(flySpeed, g.amount);
-        break;
       case "swim-speed":
-        swimSpeed = maxNonWalking(swimSpeed, g.amount);
-        break;
       case "climb-speed":
-        climbSpeed = maxNonWalking(climbSpeed, g.amount);
-        break;
       case "speed-multiplier":
-        // MAX factor wins — multipliers never stack (two doublings ≠ ×4).
-        if (g.factor > speedMultiplier) speedMultiplier = g.factor;
-        break;
       case "speed-floor":
-        // MAX floor wins — floors never stack ("Speed becomes N unless higher").
-        if (g.minFt > speedFloorFt) speedFloorFt = g.minFt;
-        break;
       case "speed-cap":
-        if (speedCapFt === null || g.maxFt < speedCapFt) speedCapFt = g.maxFt;
+        rules.push(...(compileGrant(g) ?? []));
         break;
 
       // ── Derived stats ───────────────────────────────────────────────
@@ -3881,16 +3837,20 @@ export function evaluateGrants(
     damageSourceResistances,
     flatDamageReductions,
     saveDamageRules,
-    speedBonusFt,
-    conditionalSpeedBonusFt,
-    round1SpeedBonusFt,
+    // Projections of the folded rules, kept until their readers move to `values`.
+    speedBonusFt: ruleNumber(values, "speed:walk"),
+    conditionalSpeedBonusFt:
+      values.numbers["speed:walk?no-heavy-armor"] === undefined
+        ? {}
+        : { "no-heavy-armor": ruleConditional(values, "speed:walk", "no-heavy-armor") },
+    round1SpeedBonusFt: ruleConditional(values, "speed:walk", "round-1"),
     round1DamageDoubles,
-    flySpeed,
-    swimSpeed,
-    climbSpeed,
-    speedMultiplier,
-    speedFloorFt,
-    speedCapFt,
+    flySpeed: nonWalkingSpeed(values, "fly"),
+    swimSpeed: nonWalkingSpeed(values, "swim"),
+    climbSpeed: nonWalkingSpeed(values, "climb"),
+    speedMultiplier: Math.max(1, ruleValue(values, "speed:multiplier") ?? 1),
+    speedFloorFt: Math.max(0, ruleValue(values, "speed:floor") ?? 0),
+    speedCapFt: ruleValue(values, "speed:cap"),
     acBonus,
     acBonusAbilities,
     acFormulas,
