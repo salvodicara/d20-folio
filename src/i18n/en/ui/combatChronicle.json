@@ -40,6 +40,7 @@
     "feedEmpty": "The chronicle writes itself as you run the fight.",
     "feedToggle": "Combat chronicle",
     "attributeLabel": "Who struck?",
+    "attributeMore": "More ({{count}})…",
     "attributeSkip": "No one",
     "endTitle": "Save this fight to the Chronicle",
     "endTitleLabel": "Chapter title",

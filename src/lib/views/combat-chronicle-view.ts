@@ -45,6 +45,35 @@ export function chronicleNeedsAttribution(event: CombatChronicleEvent): boolean 
   );
 }
 
+/** The minimum a combatant row needs to be ranked as a candidate attacker. */
+interface AttackerCandidate {
+  id: string;
+  kind: "pc" | "monster";
+  side?: "ally" | "enemy";
+}
+
+const sideOf = (c: AttackerCandidate): "ally" | "enemy" =>
+  c.kind === "pc" ? "ally" : (c.side ?? "enemy");
+
+/**
+ * Order the "Who struck?" candidates for a hit on `targetId`: the likely attacker
+ * (`preselect`) first, then the target's opponents in roster order (`primary`); the
+ * target's own side goes behind "More…" (`more`). The target is never offered. An
+ * unknown target puts everyone in front.
+ */
+export function rankAttackers<T extends AttackerCandidate>(
+  rows: ReadonlyArray<T>,
+  targetId: string | null,
+  preselect: string | null
+): { primary: T[]; more: T[] } {
+  const target = rows.find((r) => r.id === targetId);
+  const lead = rows.find((r) => r.id === preselect && r !== target);
+  const rest = rows.filter((r) => r !== target && r !== lead);
+  const front = target ? rest.filter((r) => sideOf(r) !== sideOf(target)) : rest;
+  const more = target ? rest.filter((r) => sideOf(r) === sideOf(target)) : [];
+  return { primary: lead ? [lead, ...front] : front, more };
+}
+
 /**
  * Join a list of already-localized segments into a natural-language enumeration using
  * the locale's conjunction: `["A"]` → "A", `["A","B"]` → "A and B" / "A e B",

@@ -1727,12 +1727,32 @@ export function MonsterCard({
         value={monster.ac}
         valueText={monster.ac}
       />
-      <MonsterHpStat
-        current={monster.hp.current}
-        max={monster.hp.max}
-        temp={monster.hp.temp}
-        showExact={showExactHp}
-      />
+      {apply ? (
+        <MonsterHpControl
+          monster={monster}
+          // The engine command boundary: damage AND healing route derive →
+          // coordinator → journal commit → legacy mirror, on the SAME apply seam.
+          onDamage={(amount) =>
+            apply((e) => applyAdversaryDamage(e, campaignId, monster.id, amount))
+          }
+          onHeal={(amount) =>
+            apply((e) => applyAdversaryHeal(e, campaignId, monster.id, amount))
+          }
+          onTemp={(amount) =>
+            apply((e) =>
+              setMonsterTempHp(e, monster.id, Math.max(monster.hp.temp, amount))
+            )
+          }
+          onClearTemp={() => apply((e) => setMonsterTempHp(e, monster.id, 0))}
+        />
+      ) : (
+        <MonsterHpStat
+          current={monster.hp.current}
+          max={monster.hp.max}
+          temp={monster.hp.temp}
+          showExact={showExactHp}
+        />
+      )}
     </div>
   );
 
@@ -1759,30 +1779,19 @@ export function MonsterCard({
       {/* Rename in place (§C.4) — the monster name is the one free user string
           (golden rule 7); a picker add pre-fills it, the DM edits it here. An empty
           commit is a reducer no-op, so the non-empty invariant is unbreakable. */}
-      <InlineEditable
-        type="text"
-        editable
-        value={monster.name}
-        onChange={(v) => apply((e) => setMonsterName(e, monster.id, v))}
-        ariaLabel={t("campaignHub.encounterMonsterName")}
-        maxLength={60}
-      />
-
-      <MonsterHpControl
-        monster={monster}
-        // The engine command boundary: damage AND healing route derive →
-        // coordinator → journal commit → legacy mirror, on the SAME apply seam.
-        onDamage={(amount) =>
-          apply((e) => applyAdversaryDamage(e, campaignId, monster.id, amount))
-        }
-        onHeal={(amount) =>
-          apply((e) => applyAdversaryHeal(e, campaignId, monster.id, amount))
-        }
-        onTemp={(amount) =>
-          apply((e) => setMonsterTempHp(e, monster.id, Math.max(monster.hp.temp, amount)))
-        }
-        onClearTemp={() => apply((e) => setMonsterTempHp(e, monster.id, 0))}
-      />
+      <div className="flex items-baseline gap-2">
+        <span className="text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-faint">
+          {t("campaignHub.encounterMonsterName")}
+        </span>
+        <InlineEditable
+          type="text"
+          editable
+          value={monster.name}
+          onChange={(v) => apply((e) => setMonsterName(e, monster.id, v))}
+          ariaLabel={t("campaignHub.encounterMonsterName")}
+          maxLength={60}
+        />
+      </div>
 
       <ConditionEditor
         conditions={monster.conditions}
@@ -2192,49 +2201,41 @@ function MonsterHpControl({
   const { current, max, temp } = monster.hp;
   const state = hpState(current, max);
   const pct = max > 0 ? Math.round((current / max) * 100) : 0;
-  const aria = monsterInstanceName(monster);
+  const aria = t("campaignHub.encounterHpFor", { name: monsterInstanceName(monster) });
   return (
-    <div className="party-vitals">
-      <div className={cn("flex items-center gap-1.5", current === 0 && "opacity-60")}>
-        <HpEditPopover
-          current={current}
-          max={max}
-          temp={temp}
-          onDamage={(parts) =>
-            onDamage(parts.reduce((sum, part) => sum + part.amount, 0))
-          }
-          onHeal={onHeal}
-          onTemp={onTemp}
-          onClearTemp={onClearTemp}
-          ariaLabel={aria}
-          align="start"
-          rubric={
-            <GlossaryTip
-              term="hitPoints"
-              rubric={t("character.hitPoints")}
-              side="bottom"
-            />
-          }
+    <div className={cn("flex items-center gap-1.5", current === 0 && "opacity-60")}>
+      <HpEditPopover
+        current={current}
+        max={max}
+        temp={temp}
+        onDamage={(parts) => onDamage(parts.reduce((sum, part) => sum + part.amount, 0))}
+        onHeal={onHeal}
+        onTemp={onTemp}
+        onClearTemp={onClearTemp}
+        ariaLabel={aria}
+        align="start"
+        rubric={
+          <GlossaryTip term="hitPoints" rubric={t("character.hitPoints")} side="bottom" />
+        }
+      >
+        <button
+          type="button"
+          data-state={state}
+          data-density="chip"
+          aria-label={aria}
+          className="vital vital-hp"
         >
-          <button
-            type="button"
-            data-state={state}
-            data-density="chip"
-            aria-label={aria}
-            className="vital vital-hp"
-          >
-            <HpBadge
-              density="chip"
-              current={current}
-              max={max}
-              temp={temp}
-              state={state}
-              pct={pct}
-              hpLabel={hpLabel}
-            />
-          </button>
-        </HpEditPopover>
-      </div>
+          <HpBadge
+            density="chip"
+            current={current}
+            max={max}
+            temp={temp}
+            state={state}
+            pct={pct}
+            hpLabel={hpLabel}
+          />
+        </button>
+      </HpEditPopover>
     </div>
   );
 }

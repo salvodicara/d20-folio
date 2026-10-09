@@ -531,12 +531,7 @@ describe("MonsterCard — damage dispatches through the engine command boundary"
         apply={apply}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: "Ogre Brute", expanded: false }));
-    fireEvent.click(
-      screen
-        .getAllByLabelText("Ogre Brute")
-        .find((el) => el.classList.contains("vital-hp")) as HTMLElement
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Hit points for Ogre Brute" }));
     fireEvent.change(screen.getByLabelText(/amount of damage/i), {
       target: { value: "7" },
     });
@@ -581,12 +576,7 @@ describe("MonsterCard — damage dispatches through the engine command boundary"
         apply={apply}
       />
     );
-    fireEvent.click(screen.getByRole("button", { name: "Ogre Brute", expanded: false }));
-    fireEvent.click(
-      screen
-        .getAllByLabelText("Ogre Brute")
-        .find((el) => el.classList.contains("vital-hp")) as HTMLElement
-    );
+    fireEvent.click(screen.getByRole("button", { name: "Hit points for Ogre Brute" }));
     fireEvent.change(screen.getByLabelText(/amount of damage/i), {
       target: { value: "5" },
     });

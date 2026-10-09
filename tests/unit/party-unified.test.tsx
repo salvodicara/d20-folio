@@ -581,13 +581,8 @@ describe("Party combat — DM (editable layer)", () => {
   it("a monster reuses the shared HP popover with TEMP and clamps HP to [0, maxHp]", async () => {
     renderParty();
     await screen.findAllByLabelText(/^Armor Class:/);
-    // Expand the Goblin Chief row (21/21 HP). A monster reuses the PC card's
-    // `.vital-hp` chip + shared HpEditPopover and labels with the monster NAME
-    // (B9a) — the chip is the one carrying `.vital-hp` (the other "Goblin Chief"
-    // control is the row's disclosure toggle).
-    fireEvent.click(
-      screen.getByRole("button", { name: /goblin chief/i, expanded: false })
-    );
+    // The Goblin Chief row (21/21 HP): a monster reuses the PC card's `.vital-hp`
+    // chip + shared HpEditPopover, right on the card head (no expand needed).
     const boss = () => currentEncounter().combatants.find((c) => c.id === "monster-2");
     const bossHp = (): number => {
       const b = boss();
@@ -595,9 +590,7 @@ describe("Party combat — DM (editable layer)", () => {
     };
     const openHp = (): void => {
       fireEvent.click(
-        screen
-          .getAllByLabelText("Goblin Chief")
-          .find((el) => el.classList.contains("vital-hp")) as HTMLElement
+        screen.getByRole("button", { name: "Hit points for Goblin Chief" })
       );
     };
 
@@ -660,10 +653,12 @@ describe("Party combat — DM (editable layer)", () => {
       .find((c): c is HTMLElement => c instanceof HTMLElement);
     if (!boss) throw new Error("no boss card");
     const scope = within(boss);
-    expect(scope.getByTitle(/21.*21|21/)).toBeInTheDocument();
+    expect(
+      scope.getByRole("button", { name: "Hit points for Goblin Chief" })
+    ).toHaveTextContent(/21\s*\/\s*21/);
     // Expand → flip the per-monster reveal flag through the encounter writer.
     fireEvent.click(
-      scope.getByRole("button", { expanded: false, name: /goblin chief/i })
+      scope.getByRole("button", { expanded: false, name: /^goblin chief/i })
     );
     fireEvent.click(scope.getByRole("button", { name: /reveal hp/i }));
     const m2 = currentEncounter().combatants.find((c) => c.id === "monster-2");
