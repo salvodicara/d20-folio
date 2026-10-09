@@ -85,7 +85,14 @@ export type RuleTarget =
   | "initiative:bonus"
   /** A spell save DC / spell attack bonus for one class's spells, or `all`. */
   | `spell:save-dc:${string}`
-  | `spell:attack:${string}`;
+  | `spell:attack:${string}`
+  /** Something the character cannot do while the flag holds. */
+  | "block:spellcasting"
+  | "block:concentration"
+  | "block:healing"
+  | "block:turn-economy"
+  | "trait:heroic-inspiration-at-turn-start"
+  | "trait:heroic-inspiration-on-long-rest";
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1";
@@ -310,6 +317,19 @@ export function compileGrant(grant: Grant): Rule[] | null {
         });
       return rules;
     }
+    case "spellcasting-blocked":
+      return [{ op: "flag", target: "block:spellcasting" }];
+    case "concentration-blocked":
+      return [{ op: "flag", target: "block:concentration" }];
+    case "healing-blocked":
+      return [{ op: "flag", target: "block:healing" }];
+    case "turn-economy-block":
+      return [{ op: "flag", target: "block:turn-economy" }];
+    case "heroic-inspiration-at-turn-start":
+      return [{ op: "flag", target: "trait:heroic-inspiration-at-turn-start" }];
+    case "heroic-inspiration-on-rest":
+      // The grant's only rest is the Long Rest (the field it feeds says so).
+      return [{ op: "flag", target: "trait:heroic-inspiration-on-long-rest" }];
     case "save-bonus":
       // `suppressedByConditions` is gating: the evaluator drops the grant first.
       return [
