@@ -17,7 +17,8 @@ import { FolioMonsterIcon } from "@/components/shared/folio-icons";
 import { MONSTERS } from "@/data/monsters";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
-import { cn, formatCr } from "@/lib/utils";
+import { cn, fmtXp, formatCr } from "@/lib/utils";
+import { monsterXp } from "@/lib/monster";
 import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
 import { MonsterArtHeader } from "@/components/shared/MonsterArtHeader";
 import { monsterIdentity, monsterRowMeta } from "@/components/shared/monster-identity";
@@ -98,10 +99,10 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
   id: "monster",
   label: (t) => t("compendium.monsters"),
   icon: FolioMonsterIcon,
-  // The codex verdict — the CR, in the folio gilt (D-8): CR is a power classifier,
-  // not a domain vocabulary, so it wears the one quiet accent chip, never a hue set.
-  verdict: (m, { t }) => ({
-    label: t("polymorph.crShort", { cr: formatCr(m.cr) }),
+  // The codex verdict — the XP a DM budgets with, in the one quiet accent chip. The
+  // CR already reads on the row's seal, so the chip never repeats it (owner 2026-10-09).
+  verdict: (m, { t, locale }) => ({
+    label: t("campaignHub.encounterBudgetXp", { xp: fmtXp(monsterXp(m), locale) }),
     tone: "var(--accent-primary)",
   }),
   data: MONSTERS,
@@ -213,7 +214,7 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
         </span>
       ),
       name: monName(m, locale),
-      // The CR reads as the right-aligned verdict chip; the gloss carries size · type.
+      // The seal carries the CR, the verdict chip the XP, the gloss size · type.
       meta: monsterRowMeta(m, t),
     };
   },
