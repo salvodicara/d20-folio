@@ -436,7 +436,27 @@ export async function attachMemberCharacter(
   nextCharacterId: string | null,
   snapshot: MemberCharacterSnapshot | null
 ): Promise<AttachOutcome> {
-  if (devBypassEnabled()) return "attached";
+  if (devBypassEnabled()) {
+    // Dev-bypass mirror of the transaction below, so a local session behaves like the
+    // real app (the attached sheet records into the campaign's session log).
+    updateDevDocument(
+      DEV_CAMPAIGN_COLLECTION,
+      campaignId,
+      resolveDevCampaign(campaignId),
+      (current) => {
+        const member = current.memberDetails[uid];
+        if (!member) return current;
+        return {
+          ...current,
+          memberDetails: {
+            ...current.memberDetails,
+            [uid]: { ...member, characterId: nextCharacterId, character: snapshot },
+          },
+        };
+      }
+    );
+    return "attached";
+  }
   const campaignRef = campaignDoc(campaignId);
   return runTransaction(db, async (txn) => {
     // Gate the character being attached against a claim by a DIFFERENT campaign. The
