@@ -243,3 +243,61 @@ describe("generic rules grammar — derived numbers", () => {
     expect(out.itemAbilityScoreCap).toEqual({ CON: 20 });
   });
 });
+
+describe("generic rules grammar — roll bonuses", () => {
+  it("splits all-saves, one-save and concentration bonuses into sums and terms", () => {
+    const out = evaluateGrants([
+      source("aura-of-protection", [{ type: "save-bonus", ability: "CHA", min: 1 }]),
+      source("cloak", [{ type: "save-bonus", amount: 1 }]),
+      source("ring", [{ type: "save-bonus", amount: 1 }]),
+      source("increased-toughness", [
+        { type: "save-bonus", appliesToSave: "CON", ability: "WIS" },
+        { type: "save-bonus", appliesToSave: "CON", amount: 2 },
+      ]),
+      source("bladesong", [{ type: "concentration-save-bonus", ability: "INT" }]),
+      source("war-caster", [{ type: "concentration-save-bonus", amount: 1 }]),
+    ]);
+    expect(out.saveBonusFlat).toBe(2);
+    expect(out.saveBonusAbilities).toEqual([{ ability: "CHA", min: 1 }]);
+    expect(out.saveBonusByAbility).toEqual([
+      { appliesToSave: "CON", ability: "WIS", min: 0, amount: 0 },
+      { appliesToSave: "CON", min: 0, amount: 2 },
+    ]);
+    expect(out.concentrationSaveBonusFlat).toBe(1);
+    expect(out.concentrationSaveBonusAbilities).toEqual([{ ability: "INT", min: 0 }]);
+  });
+
+  it("drops a save bonus while a suppressing condition holds", () => {
+    const sources = [
+      source("aura", [
+        { type: "save-bonus", amount: 3, suppressedByConditions: ["incapacitated"] },
+      ]),
+    ];
+    expect(evaluateGrants(sources).saveBonusFlat).toBe(3);
+    expect(
+      evaluateGrants(sources, new Set(), new Map(), {
+        conditions: new Set(["incapacitated"]),
+      }).saveBonusFlat
+    ).toBe(0);
+  });
+
+  it("adds initiative and casting bonuses, one summed entry per class scope", () => {
+    const out = evaluateGrants([
+      source("alert", [{ type: "initiative-bonus", amount: 2 }]),
+      source("gift", [{ type: "initiative-bonus", ability: "WIS" }]),
+      source("rod-a", [
+        { type: "spell-save-dc-bonus", amount: 1, scope: "warlock" },
+        { type: "spell-attack-bonus", amount: 1, scope: "warlock" },
+      ]),
+      source("staff", [{ type: "spell-save-dc-bonus", amount: 2, scope: "all" }]),
+      source("rod-b", [{ type: "spell-save-dc-bonus", amount: 1, scope: "warlock" }]),
+    ]);
+    expect(out.initiativeBonusFlat).toBe(2);
+    expect(out.initiativeBonusAbilities).toEqual(["WIS"]);
+    expect(out.spellSaveDcBonus).toEqual([
+      { amount: 2, scope: "warlock" },
+      { amount: 2, scope: "all" },
+    ]);
+    expect(out.spellAttackBonus).toEqual([{ amount: 1, scope: "warlock" }]);
+  });
+});

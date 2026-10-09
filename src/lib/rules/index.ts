@@ -77,7 +77,15 @@ export type RuleTarget =
   | `ability:floor:${AbilityCode}`
   /** A magic item's additive bonus, and the resulting-score ceiling it allows. */
   | `ability:item-bonus:${AbilityCode}`
-  | `ability:item-cap:${AbilityCode}`;
+  | `ability:item-cap:${AbilityCode}`
+  /** A bonus to every saving throw, to one ability's saves, or to concentration saves. */
+  | "save:all"
+  | `save:${AbilityCode}`
+  | "save:concentration"
+  | "initiative:bonus"
+  /** A spell save DC / spell attack bonus for one class's spells, or `all`. */
+  | `spell:save-dc:${string}`
+  | `spell:attack:${string}`;
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1";
@@ -157,6 +165,14 @@ export function ruleFlag(values: RuleValues, target: RuleTarget): boolean {
 export function ruleFlagIds(values: RuleValues, prefix: `${string}:`): string[] {
   return values.flags.flatMap((flag) =>
     flag.startsWith(prefix) ? [flag.slice(prefix.length)] : []
+  );
+}
+
+/** The ids holding a number under a family prefix, in first-rule order:
+ *  `spell:attack:` → class scopes. Conditional (`?fact`) keys are left out. */
+export function ruleNumberIds(values: RuleValues, prefix: `${string}:`): string[] {
+  return Object.keys(values.numbers).flatMap((key) =>
+    key.startsWith(prefix) && !key.includes("?") ? [key.slice(prefix.length)] : []
   );
 }
 
@@ -294,6 +310,40 @@ export function compileGrant(grant: Grant): Rule[] | null {
         });
       return rules;
     }
+    case "save-bonus":
+      // `suppressedByConditions` is gating: the evaluator drops the grant first.
+      return [
+        {
+          op: "add",
+          target: grant.appliesToSave ? `save:${grant.appliesToSave}` : "save:all",
+          value: grant.ability
+            ? { ability: grant.ability, min: grant.min ?? 0 }
+            : (grant.amount ?? 0),
+        },
+      ];
+    case "concentration-save-bonus":
+      return [
+        {
+          op: "add",
+          target: "save:concentration",
+          value: grant.ability
+            ? { ability: grant.ability, min: grant.min ?? 0 }
+            : (grant.amount ?? 0),
+        },
+      ];
+    case "initiative-bonus":
+      // The bare modifier, with no floor.
+      return [
+        {
+          op: "add",
+          target: "initiative:bonus",
+          value: grant.ability ? { ability: grant.ability } : (grant.amount ?? 0),
+        },
+      ];
+    case "spell-save-dc-bonus":
+      return [{ op: "add", target: `spell:save-dc:${grant.scope}`, value: grant.amount }];
+    case "spell-attack-bonus":
+      return [{ op: "add", target: `spell:attack:${grant.scope}`, value: grant.amount }];
     default:
       return null;
   }
