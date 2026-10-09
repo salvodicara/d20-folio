@@ -1,4 +1,5 @@
 /** Small, pure reads of an Activity that presenters share. */
+import type { ActionType } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import type { Activity, ActivityCost, ActivityDice, ActivityEffect } from "./types";
 
@@ -95,4 +96,16 @@ export function effectsOfKind<K extends ActivityEffect["kind"]>(
   return activity.effects.filter(
     (effect): effect is Extract<ActivityEffect, { kind: K }> => effect.kind === kind
   );
+}
+
+/** The turn-economy slot an activity takes, when it is one (not a cast longer than
+ *  an action, a legendary action or a monster trait). */
+export function actionTypeOf(cost: ActivityCost): ActionType | undefined {
+  const { economy } = cost;
+  return economy === "action" ||
+    economy === "bonus" ||
+    economy === "reaction" ||
+    economy === "free"
+    ? economy
+    : undefined;
 }
