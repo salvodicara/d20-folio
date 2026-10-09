@@ -6001,8 +6001,12 @@ function resolveSpellActions(
       // single-die base; scale it by character level (5/11/17 → ×1/×2/×3/×4). A
       // leveled spell's stored value is its base-level dice verbatim (slot-upcast
       // is layered elsewhere).
+      // A cantrip whose progression adds BEAMS (Eldritch Blast: `cantripInstances`)
+      // keeps its single die and multiplies the instance count instead.
       const dmgDice =
-        spell.level === 0 ? scaleCantripDice(spell.damageDice, level) : spell.damageDice;
+        spell.level === 0 && !spell.cantripInstances
+          ? scaleCantripDice(spell.damageDice, level)
+          : spell.damageDice;
       if (dmgDice) {
         summary.damage = spell.damageAddsCastMod
           ? appendAbilityModToDice(dmgDice, abilityModifier(spellCastScore))
@@ -6014,7 +6018,11 @@ function resolveSpellActions(
       // at the spell's BASE level (the per-slot upcast bump is layered at the cast
       // modal); kept separate from `summary.damage` so a per-instance flat rider
       // folds onto the bare die first, then the UI multiplies.
-      const instances = spellInstanceCount(spell);
+      const baseInstances = spellInstanceCount(spell);
+      const instances =
+        spell.level === 0 && spell.cantripInstances && baseInstances
+          ? baseInstances * (level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1)
+          : baseInstances;
       if (instances && instances > 1) summary.instances = instances;
 
       // Damage-only outcome facts stay inside the damage facet. The generic AREA

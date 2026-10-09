@@ -52,8 +52,6 @@ import { catalogueActions } from "./__helpers__/activity-catalogue";
 
 /** Entries where the Activity states the catalogue's truth and the app differs. */
 const KNOWN_DIVERGENCES: Readonly<Record<string, string>> = {
-  "spell:eldritch-blast":
-    "its BEAMS follow the cantrip progression; the app scales the beam's die instead (2d10 at level 5)",
   "spell:true-strike": "weaponAttackCantrip is an Activity gap (wielded-weapon damage)",
 };
 
@@ -129,6 +127,9 @@ function damageTypeFacts(
 // ─── Spells ──────────────────────────────────────────────────────────────────
 
 const SPELL_LEVEL = 5;
+/** The cantrip step at a character level (1 below 5, then 2/3/4 at 5/11/17). */
+const cantripTier = (level: number): number =>
+  level >= 17 ? 4 : level >= 11 ? 3 : level >= 5 ? 2 : 1;
 
 /** What the spellbook Cast row of `spell-<id>` shows, as the Activity states it. */
 function spellRowFromActivity(activity: Activity) {
@@ -155,7 +156,11 @@ function spellRowFromActivity(activity: Activity) {
   const numbers = { character: SPELL_LEVEL, owner: SPELL_LEVEL, pb: 3 };
   // The app reads damage facts only for a spell with a damage type.
   const typed = primary?.types?.length ? primary : undefined;
-  const instances = activity.repeats?.count;
+  // A cantrip that adds beams (Eldritch Blast) multiplies its count by the tier.
+  const instances =
+    activity.repeats && activity.repeats.cantrip
+      ? activity.repeats.count * cantripTier(SPELL_LEVEL)
+      : activity.repeats?.count;
   const slot = cost.pay?.find((resource) => resource.kind === "spell-slot");
   return clean({
     type: cost.economy === "time" ? "free" : cost.economy,
