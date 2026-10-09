@@ -228,7 +228,7 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    lines produce a Chronicle beat, so nothing duplicates the DM mirror. Found on the way:
    `applyDeclaredCombatEffects`, `applyResolvedCombatEffects` and `applySoloCombatEffects` had
    no production caller (dead since the resolver went) — deleted with their reducers.
-5. **Done.** `session-reports.tsx`: each session page in the Journal joins the same local
+5. **Done.** `useSessionReports` + `SessionDayReport`: each session page in the Journal joins the same local
    day's `SessionLogStore` logs as an "Automatic report" disclosure (an evening with a log but
    no page still lists, with "Write notes"), rendered by `renderSessionReport`
    (`src/lib/views/session-report-view.ts`, EN/IT) with "Copy".
