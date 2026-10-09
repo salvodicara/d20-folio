@@ -127,12 +127,21 @@ async function openSpell(page: Page, spell: string) {
   return before;
 }
 
+/** The optional "On whom?" step (#75): these tests record the action with no target. */
+async function skipTargetStep(page: Page) {
+  await page
+    .getByRole("dialog", { name: /on whom\?/i })
+    .getByRole("button", { name: /^Skip/ })
+    .click();
+}
+
 async function spendSlot(
   page: Page,
   level: number,
   before: Awaited<ReturnType<typeof savedEvokerState>>
 ) {
   await page.getByRole("button", { name: new RegExp(`^Level ${level} slot`) }).click();
+  await skipTargetStep(page);
   const after = {
     ...before,
     slots: { ...before.slots, [level]: (before.slots[level] ?? 0) + 1 },
@@ -153,6 +162,7 @@ test.describe("Combat Chronicle — simple sheet actions in shared encounters", 
         .getByRole("button", { name: /^Attack: Quarterstaff/ })
         .first()
         .click();
+      await skipTargetStep(page);
       await expect(page.getByRole("log", { name: "Action Log" })).toContainText(
         "Used Quarterstaff"
       );
