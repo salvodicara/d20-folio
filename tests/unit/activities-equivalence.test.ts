@@ -48,7 +48,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
-import { catalogueActions } from "./__helpers__/activity-catalogue";
+import { catalogueActions } from "@/lib/activities/catalogue";
 
 /** Entries where the Activity states the catalogue's truth and the app differs. */
 const KNOWN_DIVERGENCES: Readonly<Record<string, string>> = {

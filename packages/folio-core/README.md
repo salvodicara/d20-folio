@@ -20,8 +20,10 @@ if (parsed.success) {
 }
 ```
 
-Also exported: the rules grammar (`compileGrant`, `foldRules`, `ruleNumber`, `ruleFlag`) and
-the session log (`foldSession`, `buildReport`). The SRD catalogue ships separately as static
+Also exported: the rules grammar (`compileGrant`, `foldRules`, `ruleNumber`, `ruleFlag`),
+activities (`catalogueActivities()` — every SRD spell, feature action, monster entry and
+form attack in one `Activity` shape — and the translators `translateSpell`, `translateAction`,
+`translateMonsterEntry`, …) and the session log (`foldSession`, `buildReport`). The SRD catalogue ships separately as static
 JSON (`/srd/v1/index.json`).
 
 Build: `pnpm core:build` (from the repository root). Not published yet.

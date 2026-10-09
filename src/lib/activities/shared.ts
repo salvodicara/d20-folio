@@ -1,6 +1,6 @@
 /** Small helpers the activity translators share. */
 import type { Grant } from "@/lib/grant-schema";
-import { startingStatusLifetime, statusEndsOn } from "@/lib/status";
+import { startingStatusLifetime, statusEndsOn } from "@/lib/status-lifetime";
 import type { WhileActiveDuration } from "@/lib/grants";
 import type { ActivityDice, ActivityEffect, DiceTerm } from "./types";
 

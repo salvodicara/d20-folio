@@ -32,7 +32,7 @@ import type {
   SpellRecurrence,
 } from "@/data/types";
 import type { CostSpec } from "@/lib/cost-engine";
-import type { StatusEnd, StatusLifetime } from "@/lib/status";
+import type { StatusEnd, StatusLifetime } from "@/lib/status-lifetime";
 import type { CombatOutcomePredicate } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
 

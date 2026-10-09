@@ -9,6 +9,9 @@
  *     `serializeCharacter(doc)` writes it back.
  *   - **Rules grammar** — `compileGrant` turns a catalogue Grant into generic rules,
  *     `foldRules` folds them into plain values read with `ruleNumber` / `ruleFlag`.
+ *   - **Activities** — everything a creature can do (cast a spell, use a feature,
+ *     make a monster's attack) in one shape: `catalogueActivities()` lists the whole
+ *     SRD's, and the translators read one catalogue entry each.
  *   - **Session log** — `foldSession` applies corrections and retractions to a play
  *     log, `buildReport` turns it into a round-by-round report.
  *
@@ -39,6 +42,23 @@ export {
   type RuleValues,
 } from "@/lib/rules";
 export type { Grant } from "@/lib/grant-schema";
+
+export {
+  activityFromBeastAttack,
+  activityFromCompanionAttack,
+  activityFromItemActivation,
+  translateAction,
+  translateMonsterEntry,
+  translateSpell,
+  type Activity,
+  type ActivityCost,
+  type ActivityEffect,
+  type ActivityGap,
+  type ActivitySource,
+  type ActivityTarget,
+  type ActivityTranslation,
+} from "@/lib/activities";
+export { catalogueActivities } from "@/lib/activities/catalogue";
 
 export {
   foldSession,
