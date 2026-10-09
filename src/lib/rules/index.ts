@@ -45,7 +45,15 @@ export type RuleTarget =
   | `prof:tool:${string}`
   | `prof:weapon:${string}`
   | `prof:armor:${string}`
-  | "trait:half-proficiency-all-skills";
+  | "trait:half-proficiency-all-skills"
+  | `defense:resist:${string}`
+  | "defense:resist-all"
+  | `defense:immune:${string}`
+  | `defense:vulnerable:${string}`
+  | `defense:resist-source:${string}`
+  | `defense:condition-immune:${string}`
+  /** Immune to a condition only when that source causes it (`<condition>@<source>`). */
+  | `defense:condition-immune-from:${string}`;
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1";
@@ -173,6 +181,25 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "flag", target: `prof:armor:${grant.proficiency}` }];
     case "half-proficiency-all-skills":
       return [{ op: "flag", target: "trait:half-proficiency-all-skills" }];
+    case "damage-resistance":
+      return [{ op: "flag", target: `defense:resist:${grant.damageType}` }];
+    case "all-damage-resistance":
+      return [{ op: "flag", target: "defense:resist-all" }];
+    case "damage-immunity":
+      return [{ op: "flag", target: `defense:immune:${grant.damageType}` }];
+    case "damage-vulnerability":
+      return [{ op: "flag", target: `defense:vulnerable:${grant.damageType}` }];
+    case "damage-resistance-source":
+      return [{ op: "flag", target: `defense:resist-source:${grant.source}` }];
+    case "condition-immunity":
+      return [
+        grant.sourceId
+          ? {
+              op: "flag",
+              target: `defense:condition-immune-from:${grant.condition}@${grant.sourceId}`,
+            }
+          : { op: "flag", target: `defense:condition-immune:${grant.condition}` },
+      ];
     default:
       return null;
   }
