@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.app.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "outDir": "dist/types",
+    "rootDir": "../..",
+    "tsBuildInfoFile": "../../node_modules/.tmp/folio-core.tsbuildinfo",
+    "paths": {
+      "@/*": ["../../src/*"],
+      "@pack": ["../../src/data/pack-empty.ts"],
+      "@pack/*": ["../../src/data/pack-empty.ts"]
+    }
+  },
+  "include": ["index.ts"]
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@d20-folio/core",
+  "version": "0.24.1",
+  "description": "The d20 Folio rules engine as a library: read a character export, derive its sheet, fold a session log. SRD 5.2.1 content only.",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/types/packages/folio-core/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/packages/folio-core/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "NOTICE"
+  ],
+  "sideEffects": false
+}

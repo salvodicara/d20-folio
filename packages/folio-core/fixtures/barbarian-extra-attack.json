@@ -1,0 +1,62 @@
+{
+  "schema": 3,
+  "build": {
+    "name": "Vokka, Berserker",
+    "player": "Salvatore",
+    "race": "orc",
+    "classes": [
+      {
+        "classId": "barbarian",
+        "subclassId": "berserker",
+        "level": 5,
+        "weaponMasteries": ["greataxe", "handaxe"]
+      }
+    ],
+    "background": "soldier",
+    "alignment": "chaotic-good",
+    "abilities": {
+      "STR": 18,
+      "DEX": 14,
+      "CON": 16,
+      "INT": 8,
+      "WIS": 12,
+      "CHA": 10
+    },
+    "languageIds": ["common"],
+    "weapons": [
+      {
+        "srdId": "greataxe",
+        "quantity": 1
+      },
+      {
+        "srdId": "handaxe",
+        "quantity": 2
+      }
+    ],
+    "lore": {
+      "traits": "I treat every conversation like an improvised performance, adapting to the audience in real time. I compulsively hum when I'm thinking.",
+      "ideals": "Knowledge is power only when shared. Hoarding secrets stifles the world as surely as hoarding gold.",
+      "bonds": "My twin brother Cael disappeared into the Underdark three years ago. Every coin I earn goes toward finding him.",
+      "flaws": "I lie reflexively, even when the truth would serve me better. Old habit from a childhood spent in travelling troupes.",
+      "backstory": "Lyra grew up in an elven enclave on the outskirts of a trade city on the Vesper Coast. She discovered her gift for Bardic magic at fifteen, when she accidentally charmed an entire tavern into a peaceful stupor during a bar brawl. The College of Lore accepted her at seventeen; she graduated early, already fluent in four languages and three combat styles. When her brother vanished, she left the College with a lute, a rapier, and a list of names.",
+      "age": "26",
+      "height": "5'7\"",
+      "weight": "140 lbs",
+      "eyes": "Amber (shift to gold when casting)",
+      "hair": "Dark auburn, usually half-pinned",
+      "skin": "Warm olive"
+    }
+  },
+  "state": {
+    "hp": {
+      "current": 55
+    },
+    "currency": {
+      "gp": 340,
+      "ep": 5,
+      "sp": 22,
+      "cp": 8
+    },
+    "notes": "Session 11: Hold the Thornwall Bridge. The garrison captain (CR 7) has Frightful Presence: need WIS save ≥ 14 or Frightened for 1 min. Hypnotic Pattern holding 5 guards on east flank. Cael's contact said the letter was posted from here. Don't let the captain reach the bell tower."
+  }
+}
