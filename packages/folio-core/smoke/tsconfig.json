@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "types": ["vite/client"],
+    "paths": { "@d20-folio/core": ["../dist/types/packages/folio-core/index.d.ts"] }
+  },
+  "files": ["consumer.ts"]
+}

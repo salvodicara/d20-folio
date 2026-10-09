@@ -300,8 +300,14 @@ SRD catalogue as static JSON. Only SRD material goes out.
   is the play record. `deriveCharacter(doc)` (`src/lib/views/derive-character.ts`) is the one
   stored-character → computed-sheet derivation (abilities, saves, skills, passives, AC, HP,
   initiative, speeds, senses, spell DC/attack, defenses), composed from the seams the player's
-  sheet reads; the DM's party view is a projection of it. Next: the PDF and the cockpit rail read
-  it too, then it becomes the npm package's main entry.
+  sheet reads; the DM's party view and the PDF are projections of it. Next: the cockpit rail.
+- **(2) Built, not published.** `packages/folio-core` (`@d20-folio/core`, `private: true`,
+  AGPL like the repo): `parseCharacter` → `deriveCharacter`, the rules grammar and the session
+  log, bundled SRD-only by Vite library mode (every `@pack` alias → the empty stub), declarations
+  emitted by `tsc` with `@/` rewritten relative (`scripts/core-dts-paths.mjs`). `pnpm core:build`
+  also type-checks a consumer against the declarations alone and runs the built bundle in plain
+  Node on committed fixture exports (`scripts/core-smoke.mjs`); CI runs it on every PR. Publishing
+  and its licence are the owner's call.
 - **(3) Done.** `pnpm srd:catalogue` (`scripts/export-srd-catalogue.ts` →
   `src/lib/srd-catalogue.ts`) writes `dist/srd/v1/{index,spells,monsters,…}.json`: mechanics plus
   the English text, sorted and byte-stable, CC-BY-4.0 attribution in `index.json`. It runs

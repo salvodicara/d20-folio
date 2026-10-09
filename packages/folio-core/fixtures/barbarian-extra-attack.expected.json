@@ -1,0 +1,13 @@
+{
+  "level": 5,
+  "ac": 15,
+  "hpMax": 55,
+  "initiativeBonus": 2,
+  "passives": {
+    "perception": 11,
+    "insight": 11,
+    "investigation": 9
+  },
+  "saves": [7, 2, 6, -1, 1, 0],
+  "spellSaveDc": null
+}
