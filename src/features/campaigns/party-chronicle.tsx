@@ -39,6 +39,7 @@ import {
   localizeChronicleEvent,
   chronicleNeedsAttribution,
   buildChronicleChapter,
+  rankAttackers,
   type ResolveCombatantName,
   type ResolveConditionName,
   type ResolveActionName,
@@ -119,7 +120,7 @@ function CombatantChip({
       type="button"
       onClick={onClick}
       data-selected={selected ? "" : undefined}
-      className="rounded-sm border border-border-medium bg-bg-tertiary px-2 py-0.5 text-2xs text-text-secondary transition-colors hover:border-accent hover:text-text-primary data-[selected]:border-accent data-[selected]:bg-accent/15 data-[selected]:text-text-primary"
+      className="encounter-feed-chip"
     >
       {label}
     </button>
@@ -271,12 +272,15 @@ function FeedLine({
   );
   // Show the picker for a still-pending stored hit OR an ambiguous auto-attribution.
   const showPicker = chronicleNeedsAttribution(event) || uncertain === true;
-  // Candidate attackers = every combatant EXCEPT the one that took the hit.
+  // Candidate attackers: the likely one first, then the target's opponents; the
+  // target's own side waits behind "More…".
   const targetId = event.kind === "hp-damage" ? event.targetId : null;
-  const candidates = rows.filter((r) => r.id !== targetId);
   // Pre-select the derived attacker on an uncertain line, else the current combatant.
   const preselect =
     event.kind === "hp-damage" && event.attackerId ? event.attackerId : currentId;
+  const { primary, more } = rankAttackers(rows, targetId, preselect);
+  const [showMore, setShowMore] = useState(false);
+  const candidates = showMore ? [...primary, ...more] : primary;
 
   // UNDO affordance (remediability) — a stored MONSTER line can be reversed in one tap:
   // {@link undoAdversaryChronicleEvent} reverses an engine-mirrored beat through its
@@ -325,8 +329,12 @@ function FeedLine({
         )}
       </span>
       {showPicker && event.kind === "hp-damage" && (
-        <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-faint">
+        <div
+          className="encounter-feed-pick"
+          role="group"
+          aria-label={t("combatChronicle.attributeLabel")}
+        >
+          <span className="encounter-feed-pick-label">
             {t("combatChronicle.attributeLabel")}
           </span>
           {candidates.map((c) => (
@@ -337,10 +345,22 @@ function FeedLine({
               onClick={() => apply((e) => setEventAttacker(e, event.id, c.id))}
             />
           ))}
-          <CombatantChip
-            label={t("combatChronicle.attributeSkip")}
+          {more.length > 0 && !showMore && (
+            <button
+              type="button"
+              className="encounter-feed-pick-quiet"
+              onClick={() => setShowMore(true)}
+            >
+              {t("combatChronicle.attributeMore", { count: more.length })}
+            </button>
+          )}
+          <button
+            type="button"
+            className="encounter-feed-pick-quiet"
             onClick={() => apply((e) => skipEventAttacker(e, event.id))}
-          />
+          >
+            {t("combatChronicle.attributeSkip")}
+          </button>
         </div>
       )}
     </div>

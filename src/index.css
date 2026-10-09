@@ -1270,6 +1270,15 @@
   --font-title: var(--font-title);
   --font-mono: var(--font-numeric);
 
+  /* Type scale. Tailwind's defaults already emit text-{xs,sm,base,lg,xl,2xl,3xl}
+     (their values resolve to the :root scale above), but the folio-only steps
+     need a bridge or `text-micro`/`text-2xs`/`text-md`/`text-hero` are silent
+     no-ops that inherit the parent size — the "giant chip" bug. */
+  --text-micro: var(--text-micro);
+  --text-2xs: var(--text-2xs);
+  --text-md: var(--text-md);
+  --text-hero: var(--text-hero);
+
   /* Radius — lapidary facets */
   --radius-sm: 0px;
   --radius-md: 2px;

@@ -12291,7 +12291,7 @@ button.uc-chevron::before {
    tree. The selected tab is a filled gilt plate, not a colour-only underline. ── */
 .campaign-table-nav {
   position: sticky;
-  top: calc(var(--topbar-h) + var(--sp-2));
+  top: var(--topbar-h);
   z-index: var(--z-sticky);
   margin: var(--sp-4) 0 var(--sp-6);
   padding: 3px;
@@ -12406,7 +12406,6 @@ button.uc-chevron::before {
 
 @media (max-width: 720px) {
   .campaign-table-nav {
-    top: calc(var(--topbar-h) + var(--sp-2));
     margin-top: var(--sp-3);
     margin-bottom: var(--sp-5);
     overflow-x: auto;
@@ -12418,32 +12417,29 @@ button.uc-chevron::before {
   }
   .campaign-table-nav-track {
     min-width: 100%;
-    padding-right: var(--sp-2);
   }
-  .campaign-table-nav::after {
-    content: "";
-    position: sticky;
-    right: 0;
-    display: block;
-    width: 18px;
-    height: 46px;
-    margin: -46px 0 0 auto;
-    pointer-events: none;
-    background: linear-gradient(to right, transparent, var(--bg-surface-2));
-  }
+  /* Phone: four equal cells, the seal stacked over a label that may wrap to two
+     lines — a long label ("Strumenti del DM") never spills into its neighbour. */
   .campaign-table-nav-item {
     min-width: 0;
-    min-height: 46px;
+    min-height: 56px;
     flex: 1 1 0;
-    padding-inline: var(--sp-2);
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px var(--sp-1);
   }
   .campaign-table-nav-item > span:last-child {
-    display: inline;
+    display: block;
+    max-width: 100%;
     font-size: var(--text-2xs);
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .campaign-table-nav-seal {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
   }
 }
 

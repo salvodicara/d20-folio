@@ -40,6 +40,7 @@
     "feedEmpty": "La cronaca si scrive da sé mentre gestisci lo scontro.",
     "feedToggle": "Cronaca di combattimento",
     "attributeLabel": "Chi ha colpito?",
+    "attributeMore": "Altri ({{count}})…",
     "attributeSkip": "Nessuno",
     "endTitle": "Salva questo scontro nella Cronaca",
     "endTitleLabel": "Titolo del capitolo",
