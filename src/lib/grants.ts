@@ -31,6 +31,14 @@ import type {
   WeaponMastery,
   WeaponType,
 } from "@/data/types";
+import {
+  compileGrant,
+  foldRules,
+  ruleFlag,
+  ruleNumber,
+  type Rule,
+  type RuleValues,
+} from "@/lib/rules";
 import type { DamageType } from "@/types/damage";
 import {
   arraySchema,
@@ -1229,6 +1237,8 @@ export interface AggregatedGrants {
   seeInvisibleFt: number;
   /** True when any source lets the character breathe both air and water. */
   airAndWaterBreathing: boolean;
+  /** Folded generic rules (`lib/rules`): the one read path for migrated families. */
+  values: RuleValues;
 
   // Defensive
   /** Set of canonical 2024 damage types the character resists permanently. */
@@ -2031,6 +2041,7 @@ export function emptyAggregate(): AggregatedGrants {
     truesightFt: 0,
     seeInvisibleFt: 0,
     airAndWaterBreathing: false,
+    values: foldRules([]),
     damageResistances: new Set(),
     allDamageResistance: false,
     damageImmunities: new Set(),
@@ -2265,17 +2276,8 @@ export function evaluateGrants(
     worldZeroHpFloors?: ReadonlyArray<{ key: string; hitPoints: number }>;
   } = {}
 ): AggregatedGrants {
-  // Senses
-  let darkvisionFt = 0;
-  // D6 — additive darkvision (Gloom Stalker Umbral Sight): summed separately, then
-  // folded onto the max base range at finalize so a species' darkvision + Umbral
-  // Sight stacks (60 + 60 = 120) instead of merging to 60.
-  let darkvisionBonusFt = 0;
-  let blindsightFt = 0;
-  let tremorsenseFt = 0;
-  let truesightFt = 0;
-  let seeInvisibleFt = 0;
-  let airAndWaterBreathing = false;
+  // Passive effects already migrated to the generic rules grammar (senses so far).
+  const rules: Rule[] = [];
 
   // Defensive
   const damageResistances = new Set<DamageType>();
@@ -2503,27 +2505,16 @@ export function evaluateGrants(
   ): void {
     switch (g.type) {
       // ── Senses ──────────────────────────────────────────────────────
+      // Migrated to the generic rules grammar (`lib/rules`): stacking is decided once
+      // in `foldRules` (darkvision = highest base range + every bonus).
       case "darkvision":
-        if (g.range > darkvisionFt) darkvisionFt = g.range;
-        break;
       case "darkvision-bonus":
-        // D6 — additive: SUMS atop the max base range (Umbral Sight +60).
-        darkvisionBonusFt += g.amount;
-        break;
       case "blindsight":
-        if (g.range > blindsightFt) blindsightFt = g.range;
-        break;
       case "tremorsense":
-        if (g.range > tremorsenseFt) tremorsenseFt = g.range;
-        break;
       case "truesight":
-        if (g.range > truesightFt) truesightFt = g.range;
-        break;
       case "see-invisible":
-        if (g.range > seeInvisibleFt) seeInvisibleFt = g.range;
-        break;
       case "air-and-water-breathing":
-        airAndWaterBreathing = true;
+        rules.push(...(compileGrant(g) ?? []));
         break;
 
       // ── Defensive ───────────────────────────────────────────────────
@@ -3864,17 +3855,20 @@ export function evaluateGrants(
     });
   }
 
+  const values = foldRules(rules);
   return {
     // D6 — final darkvision = max BASE range (merge) + summed additive bonus
     // (Umbral Sight). With no base, the bonus still grants its own range (RAW:
     // "Darkvision 60 ft; if you already have Darkvision, its range increases by
     // 60 ft") — `0 + bonus` covers that case naturally.
-    darkvisionFt: darkvisionFt + darkvisionBonusFt,
-    blindsightFt,
-    tremorsenseFt,
-    truesightFt,
-    seeInvisibleFt,
-    airAndWaterBreathing,
+    // Projections of the folded rules, kept until their readers move to `values`.
+    darkvisionFt: ruleNumber(values, "sense:darkvision"),
+    blindsightFt: ruleNumber(values, "sense:blindsight"),
+    tremorsenseFt: ruleNumber(values, "sense:tremorsense"),
+    truesightFt: ruleNumber(values, "sense:truesight"),
+    seeInvisibleFt: ruleNumber(values, "sense:see-invisible"),
+    airAndWaterBreathing: ruleFlag(values, "trait:air-and-water-breathing"),
+    values,
     damageResistances,
     allDamageResistance,
     damageImmunities,
