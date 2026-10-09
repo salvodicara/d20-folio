@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { evaluateGrants, type GrantSource } from "@/lib/grants";
-import { compileGrant, foldRules, ruleFlag, ruleNumber } from "@/lib/rules";
+import { compileGrant, foldRules, ruleFlag, ruleFlagIds, ruleNumber } from "@/lib/rules";
 
 const source = (id: string, grants: GrantSource["grants"]): GrantSource => ({
   id,
@@ -88,5 +88,27 @@ describe("generic rules grammar — movement", () => {
     expect(ruleNumber(values, "speed:walk")).toBe(10);
     expect(ruleNumber(values, "speed:walk", ["no-heavy-armor"])).toBe(20);
     expect(ruleNumber(values, "speed:walk", ["no-heavy-armor", "round-1"])).toBe(30);
+  });
+});
+
+describe("generic rules grammar — proficiencies", () => {
+  it("unions proficiencies as flags, in grant order, deduplicated", () => {
+    const out = evaluateGrants([
+      source("background", [
+        { type: "skill-proficiency", skill: "stealth" },
+        { type: "language", language: "elvish" },
+      ]),
+      source("class", [
+        { type: "save-proficiency", ability: "DEX" },
+        { type: "skill-proficiency", skill: "athletics" },
+        { type: "skill-proficiency", skill: "stealth" },
+        { type: "expertise", skill: "stealth" },
+      ]),
+    ]);
+    expect([...out.skillProficiencies]).toEqual(["stealth", "athletics"]);
+    expect([...out.saveProficiencies]).toEqual(["DEX"]);
+    expect([...out.expertiseSkills]).toEqual(["stealth"]);
+    expect([...out.languages]).toEqual(["elvish"]);
+    expect(ruleFlagIds(out.values, "prof:skill:")).toEqual(["stealth", "athletics"]);
   });
 });
