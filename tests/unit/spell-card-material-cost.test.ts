@@ -12,6 +12,7 @@ import { describe, it, expect } from "vitest";
 import { buildMaterialCostTag } from "@/features/character/center/tabs/spells/spell-card-helpers";
 import type { SpellCardVM } from "@/lib/views/spells-view";
 import { getSpellById } from "@/data/spells";
+import { activityFromSpell } from "@/lib/activities";
 import type { TFunction } from "i18next";
 
 /** A minimal SRD card VM around a real spell's data (only the components path is read). */
@@ -23,6 +24,7 @@ function vmFor(id: string): SpellCardVM {
     idx: 0,
     kind: "srd",
     data,
+    activity: activityFromSpell(data),
     ref: { srdId: id },
     name: id,
     searchEn: id,
@@ -71,9 +73,12 @@ describe("buildMaterialCostTag (RA-23)", () => {
     expect(buildMaterialCostTag(vmFor("fireball"), t)).toBeNull();
   });
 
-  it("returns null for a custom spell (vm.data === null)", () => {
+  it("returns null for a custom spell (no data, no activity)", () => {
     expect(
-      buildMaterialCostTag({ ...vmFor("revivify"), kind: "custom", data: null }, t)
+      buildMaterialCostTag(
+        { ...vmFor("revivify"), kind: "custom", data: null, activity: null },
+        t
+      )
     ).toBeNull();
   });
 });
