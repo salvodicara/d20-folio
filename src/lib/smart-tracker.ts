@@ -16,7 +16,10 @@
  */
 
 import {
+  actionTypeOf,
   activityFromAction,
+  activityFromBeastAttack,
+  activityFromItemActivation,
   activityFromSpell,
   addsSpellMod,
   type Activity,
@@ -3044,7 +3047,15 @@ function resolveMagicItemActivationActions(character: CharacterDoc): RawResolved
         : tracker
           ? Math.max(0, total - (session.trackers[itemId]?.used ?? 0))
           : 0;
-      const duration = grant.duration;
+      // Economy and the status it lights come from the activation's Activity; the
+      // charge it spends is this equipped copy's (resolved above).
+      const activity = activityFromItemActivation(itemId, grant);
+      const type = activity ? actionTypeOf(activity.cost) : undefined;
+      const [status] = activity ? effectsOfKind(activity, "status") : [];
+      if (!type || !status) continue;
+      const endsEarlyOn = status.endsOn.flatMap((end) =>
+        end.kind === "trigger" ? [end.trigger] : []
+      );
       const id = `item-activate-${source.id}-${grant.activeKey}`;
       const grantRef = topGrantRef(source, grant, grantIndex);
       out.push({
@@ -3053,7 +3064,7 @@ function resolveMagicItemActivationActions(character: CharacterDoc): RawResolved
           ? grantField(grantRef, "label", grant.label)
           : srdText("magic-item", itemId, "name"),
         description: srdText("magic-item", itemId, "description"),
-        type: grant.activation.action,
+        type,
         source: "feature",
         spellLevel: null,
         concentration: false,
@@ -3068,17 +3079,13 @@ function resolveMagicItemActivationActions(character: CharacterDoc): RawResolved
         ...(resourcePayment ? { resourcePayment, resourceCost: 1 } : {}),
         pinned: pinnedSet.has(id),
         defaultPinned: false,
-        activatesKey: resolveGrantActiveKey(source, grant.activeKey),
-        ...(duration?.kind === "maintained" || duration?.kind === "timed"
-          ? duration.endsEarlyOn?.length
-            ? { activationEndsEarlyOn: duration.endsEarlyOn }
-            : {}
-          : {}),
-        ...(duration?.kind === "turn-boundary"
+        activatesKey: resolveGrantActiveKey(source, status.key),
+        ...(endsEarlyOn.length > 0 ? { activationEndsEarlyOn: endsEarlyOn } : {}),
+        ...(status.lifetime.kind === "turn-edge"
           ? {
               activeTurnBoundary: {
-                phase: duration.phase,
-                turns: duration.turns,
+                phase: status.lifetime.phase,
+                turns: status.lifetime.round,
               },
             }
           : {}),
@@ -4410,9 +4417,13 @@ export function resolveBeastFormAttacks(
 
   return beast.attacks.map((atk, i): RawResolvedAction => {
     const rowId = `beast-attack-${beast.id}-${i}`;
-    const weaponRange: WeaponRangeSpec = atk.range
-      ? { kind: "ranged", nearFt: atk.range.nearFt, farFt: atk.range.farFt }
-      : { kind: "melee", reachFt: atk.reachFt ?? 5 };
+    const activity = activityFromBeastAttack(beast, atk);
+    const { target, attack } = activity;
+    const damage = primaryDamage(activity);
+    const range = target?.rangeFt;
+    const weaponRange: WeaponRangeSpec = range
+      ? { kind: "ranged", nearFt: range.near, farFt: range.far ?? range.near }
+      : { kind: "melee", reachFt: target?.reachFt ?? 5 };
     return {
       id: rowId,
       name: srdText("beasts", atk.nameKey, "name"),
@@ -4422,9 +4433,9 @@ export function resolveBeastFormAttacks(
       concentration: false,
       formAttack: true,
       summary: {
-        attackBonus: atk.toHit,
-        damage: atk.damageDice,
-        damageType: atk.damageType,
+        ...(attack?.bonus.kind === "printed" ? { attackBonus: attack.bonus.value } : {}),
+        ...(damage?.dice?.dice ? { damage: damage.dice.dice } : {}),
+        ...(damage?.types?.[0] ? { damageType: damage.types[0] } : {}),
         weaponRange,
       },
       costsSlot: false,

@@ -13,6 +13,7 @@ export {
 } from "./from-creature";
 export { activityFromItemActivation } from "./from-item";
 export {
+  actionTypeOf,
   addsSpellMod,
   castingTimeKey,
   damageTypeFacet,
