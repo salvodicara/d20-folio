@@ -53,7 +53,8 @@
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { canCharacterRest } from "@/lib/character-status";
-import { activeKeysForConcentration, effectiveMaxHp } from "@/lib/aggregate-character";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { endsConcentration } from "@/lib/status";
 import { evaluateGrants } from "@/lib/grants";
 import { planMechanicsWorldAction } from "@/lib/mechanics-action";
 import { selectActiveMechanicsEffects } from "@/lib/mechanics-program-effects";
@@ -528,14 +529,7 @@ export function restThroughWorld(
     }
   } else {
     const initiallyEnded = new Set(resolveActiveStatesEndingOnRest(before, "short"));
-    const concentrationKeys = before.session.concentration
-      ? activeKeysForConcentration(
-          before.character,
-          before.session,
-          before.session.concentration
-        )
-      : [];
-    if (concentrationKeys.some((key) => initiallyEnded.has(key))) {
+    if (endsConcentration(before.session.concentration, initiallyEnded)) {
       store.setConcentration("", { silent: true, undoable: false });
     }
   }

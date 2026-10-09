@@ -42,10 +42,7 @@ import {
 } from "@/lib/value-breakdown";
 import { srdText } from "@/lib/loc-text";
 import { getEquipment } from "@/data/equipment";
-import { getSpellById } from "@/data/spells";
-import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
-import type { StoredConcentration } from "@/types/ids";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   sessionActiveKeys,
@@ -137,32 +134,6 @@ export function aggregateCharacterGrants(
       worldMaxHpDeltas: worldStandingMaxHpDeltas(session.world),
       worldZeroHpFloors: worldStandingZeroHpFloors(session.world),
     }
-  );
-}
-
-/**
- * S1 — the while-active chip keys a CONCENTRATION spell lights (Fly, Haste, Mage
- * Armor, Shield of Faith…). When concentration drops/swaps/breaks, the dropped
- * spell's `session.activeFeatures` chip must clear; this resolves WHICH keys to
- * clear from the dropped spell's STABLE ref — NEVER its English name (golden
- * rule 7).
- *
- * A {@link StoredConcentration} ref is the spell's bare srdId. Resolve its own
- * wrappers directly so hidden lifecycle timers (condition-only spells) clear
- * alongside visible mechanical states. This also clears legacy/manual active
- * keys for selected-recipient buffs; their occurrence records remain independent.
- * A "" or custom concentration yields [] by construction.
- */
-export function activeKeysForConcentration(
-  _character: CharacterDoc["character"],
-  _session: AggregationSession,
-  ref: StoredConcentration
-): string[] {
-  if (ref === "" || ref.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return [];
-  return (
-    getSpellById(ref)?.grants?.flatMap((grant) =>
-      grant.type === "while-active" ? [grant.activeKey] : []
-    ) ?? []
   );
 }
 

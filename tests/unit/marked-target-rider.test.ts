@@ -22,7 +22,7 @@
 import { describe, it, expect } from "vitest";
 import { evaluateGrants, type GrantSource, type Grant } from "@/lib/grants";
 import { resolveActions } from "@/lib/smart-tracker";
-import { activeKeysForConcentration } from "@/lib/aggregate-character";
+import { concentrationStatusKeys } from "@/lib/status";
 import { concentrationValue } from "@/lib/concentration";
 import { getSpellById } from "@/data/spells";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -274,12 +274,9 @@ describe("concentration drop clears the marked-target toggle", () => {
     { id: "hunters-mark", key: "spell-hunters-mark" },
     { id: "hex", key: "spell-hex" },
   ])(
-    "$id → activeKeysForConcentration resolves $key (S1 clears it on drop)",
+    "$id → concentrationStatusKeys resolves $key (S1 clears it on drop)",
     ({ id, key }) => {
-      const doc = markedCaster(id, [key]);
-      expect(
-        activeKeysForConcentration(doc.character, doc.session, concentrationValue(id))
-      ).toEqual([key]);
+      expect(concentrationStatusKeys(concentrationValue(id))).toEqual([key]);
     }
   );
 });

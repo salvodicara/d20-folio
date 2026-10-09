@@ -16,13 +16,15 @@
  * toggles, the potion timers, the concentration badge) reads this view, so
  * when storage later moves to `session.statuses[]` only this module changes.
  */
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, SessionState } from "@/types/character";
+import type { StoredConcentration } from "@/types/ids";
+import { getSpellById } from "@/data/spells";
+import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import {
   resolveGrantActiveKey,
   whileActiveDurationAtCastLevel,
   type WhileActiveDuration,
 } from "@/lib/grants";
-import { activeKeysForConcentration } from "@/lib/aggregate-character";
 import {
   POTION_TIMER_PREFIX,
   castSourceIdFromActiveKey,
@@ -101,9 +103,7 @@ export function deriveStatuses(character: CharacterDoc): Status[] {
   const timers = session.effectTimers ?? {};
   const boundaries = session.effectBoundaries ?? {};
   const castLevels = session.activeSpellCastLevels ?? {};
-  const concentrationKeys = new Set(
-    activeKeysForConcentration(character.character, session, session.concentration)
-  );
+  const concentrationKeys = new Set(concentrationStatusKeys(session.concentration));
 
   // The first declaration of each key wins, as in every lifecycle resolver.
   const declared = new Map<
@@ -226,4 +226,70 @@ export function concentrationRoundsLeft(
     }
   }
   return soonest;
+}
+
+// ─── Concentration: a flag on the statuses it holds ─────────────────────────
+
+/**
+ * The status keys a Concentration spell holds — every `while-active` wrapper
+ * the spell declares (Fly, Haste, Hunter's Mark, Bless lit on yourself, and the
+ * hidden duration-only wrappers of condition spells). A status whose key is in
+ * this set carries `concentration: true`. Resolved from the spell's stable ref,
+ * never its name; "" and a custom spell hold nothing.
+ */
+export function concentrationStatusKeys(ref: StoredConcentration): string[] {
+  if (ref === "" || ref.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return [];
+  return (
+    getSpellById(ref)?.grants?.flatMap((grant) =>
+      grant.type === "while-active" ? [grant.activeKey] : []
+    ) ?? []
+  );
+}
+
+/** Whether ending these statuses ends the held Concentration: one of them is a
+ *  status Concentration holds (Bless's countdown ran out, Shield's turn edge). */
+export function endsConcentration(
+  concentration: StoredConcentration,
+  endedKeys: Iterable<string>
+): boolean {
+  if (concentration === "") return false;
+  const held = new Set(concentrationStatusKeys(concentration));
+  for (const key of endedKeys) if (held.has(key)) return true;
+  return false;
+}
+
+/** The status fields with these statuses removed. */
+export type StatusFields = Pick<
+  SessionState,
+  "activeFeatures" | "activeSpellCastLevels" | "effectTimers" | "effectBoundaries"
+>;
+
+function omitKeys<T>(
+  record: Readonly<Record<string, T>> | undefined,
+  keys: ReadonlySet<string>
+): Record<string, T> | undefined {
+  if (!record || keys.size === 0) return record;
+  const kept = Object.entries(record).filter(([key]) => !keys.has(key));
+  return kept.length > 0 ? Object.fromEntries(kept) : undefined;
+}
+
+/**
+ * End these statuses: the ONE pure patch over today's status fields (toggle,
+ * cast level, round countdown, turn edge). A key that is not active is simply
+ * absent from the result.
+ */
+export function endStatuses(
+  session: Pick<SessionState, keyof StatusFields>,
+  keys: Iterable<string>
+): StatusFields {
+  const ended = new Set(keys);
+  return {
+    activeFeatures:
+      ended.size === 0
+        ? (session.activeFeatures ?? [])
+        : (session.activeFeatures ?? []).filter((key) => !ended.has(key)),
+    activeSpellCastLevels: omitKeys(session.activeSpellCastLevels, ended),
+    effectTimers: omitKeys(session.effectTimers, ended),
+    effectBoundaries: omitKeys(session.effectBoundaries, ended),
+  };
 }
