@@ -17,11 +17,11 @@
 import { test, expect, type Page, type Locator } from "@playwright/test";
 
 /** The CONCENTRATION status badge on the turn altar's status ledge (the BG3-style
- *  badge row): the gold badge wearing the concentrated-on spell's name. The
- *  limiter badges are siblings with their own `data-kind`s, so this stays a
- *  single, stable element. */
+ *  badge row): the gold badge wearing the concentrated-on spell's name, a button
+ *  that opens its explain popover. The rail's Active row wears the same badge
+ *  recipe as a plain label (#77), so the button is the one stable element. */
 function concentrationBadge(page: Page): Locator {
-  return page.locator('.status-badge[data-kind="concentration"]');
+  return page.locator('button.status-badge[data-kind="concentration"]');
 }
 
 test.describe("Combat live-play loop (cockpit)", () => {
