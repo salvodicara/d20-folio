@@ -2323,13 +2323,9 @@ export function evaluateGrants(
     worldZeroHpFloors?: ReadonlyArray<{ key: string; hitPoints: number }>;
   } = {}
 ): AggregatedGrants {
-  // Passive effects already migrated to the generic rules grammar (senses so far).
+  // Passive effects already migrated to the generic rules grammar (`lib/rules`).
   const rules: Rule[] = [];
 
-  // Defensive
-  let spellcastingBlocked = false;
-  let concentrationBlocked = false;
-  let healingBlocked = false;
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
@@ -2355,9 +2351,6 @@ export function evaluateGrants(
   const resources: AggregatedGrants["resources"][number][] = [];
   const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
   const extraActions: AggregatedGrants["extraActions"][number][] = [];
-  let turnEconomyBlocked = false;
-  let heroicInspirationAtTurnStart = false;
-  let heroicInspirationOnLongRest = false;
   // Save, concentration, initiative and spell DC/attack bonuses fold through `lib/rules`.
   const abilityCheckBonuses: {
     appliesTo: string;
@@ -2507,12 +2500,19 @@ export function evaluateGrants(
         break;
 
       // ── Defensive ───────────────────────────────────────────────────
+      // Defenses, blockers and always-on traits are plain flags.
       case "damage-resistance":
       case "all-damage-resistance":
       case "damage-immunity":
       case "damage-vulnerability":
       case "damage-resistance-source":
       case "condition-immunity":
+      case "spellcasting-blocked":
+      case "concentration-blocked":
+      case "healing-blocked":
+      case "turn-economy-block":
+      case "heroic-inspiration-at-turn-start":
+      case "heroic-inspiration-on-rest":
         rules.push(...(compileGrant(g) ?? []));
         break;
       case "damage-transfer":
@@ -2704,12 +2704,6 @@ export function evaluateGrants(
         if (activeKey) {
           zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
         }
-        break;
-      case "heroic-inspiration-at-turn-start":
-        heroicInspirationAtTurnStart = true;
-        break;
-      case "heroic-inspiration-on-rest":
-        heroicInspirationOnLongRest = true;
         break;
       // Migrated to the generic rules grammar: flat parts sum, ability-modifier
       // parts stay terms the reader resolves against the effective scores.
@@ -3672,18 +3666,6 @@ export function evaluateGrants(
           ...(g.maxAttacks !== undefined ? { maxAttacks: g.maxAttacks } : {}),
         });
         break;
-      case "turn-economy-block":
-        turnEconomyBlocked = true;
-        break;
-      case "spellcasting-blocked":
-        spellcastingBlocked = true;
-        break;
-      case "concentration-blocked":
-        concentrationBlocked = true;
-        break;
-      case "healing-blocked":
-        healingBlocked = true;
-        break;
 
       // ── Exhaustiveness guard — a future un-cased Grant kind is a compile
       //    error (g narrows to `never` here only if all members are handled). ─
@@ -3749,9 +3731,9 @@ export function evaluateGrants(
         return { condition: id.slice(0, at) as ConditionId, sourceId: id.slice(at + 1) };
       }
     ),
-    spellcastingBlocked,
-    concentrationBlocked,
-    healingBlocked,
+    spellcastingBlocked: ruleFlag(values, "block:spellcasting"),
+    concentrationBlocked: ruleFlag(values, "block:concentration"),
+    healingBlocked: ruleFlag(values, "block:healing"),
     damageSourceResistances: new Set(
       ruleFlagIds(values, "defense:resist-source:") as DamageSource[]
     ),
@@ -3794,9 +3776,15 @@ export function evaluateGrants(
     zeroHpFloors,
     extraAttacks: Math.max(0, ruleValue(values, "attack:extra") ?? 0),
     extraActions,
-    turnEconomyBlocked,
-    heroicInspirationAtTurnStart,
-    heroicInspirationOnLongRest,
+    turnEconomyBlocked: ruleFlag(values, "block:turn-economy"),
+    heroicInspirationAtTurnStart: ruleFlag(
+      values,
+      "trait:heroic-inspiration-at-turn-start"
+    ),
+    heroicInspirationOnLongRest: ruleFlag(
+      values,
+      "trait:heroic-inspiration-on-long-rest"
+    ),
     attunementSlots: Math.max(3, ruleValue(values, "attunement:slots") ?? 3),
     exhaustionRecoveryBonus: ruleNumber(values, "exhaustion:recovery:long-rest"),
     exhaustionRecoveryShortRest: ruleNumber(values, "exhaustion:recovery:short-rest"),

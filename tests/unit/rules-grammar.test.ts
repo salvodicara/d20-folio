@@ -301,3 +301,45 @@ describe("generic rules grammar — roll bonuses", () => {
     expect(out.spellAttackBonus).toEqual([{ amount: 1, scope: "warlock" }]);
   });
 });
+
+describe("generic rules grammar — blockers and flags", () => {
+  it("raises each blocker and trait only when a source grants it", () => {
+    const none = evaluateGrants([]);
+    expect(none.spellcastingBlocked).toBe(false);
+    expect(none.turnEconomyBlocked).toBe(false);
+    expect(none.heroicInspirationOnLongRest).toBe(false);
+
+    const out = evaluateGrants([
+      source("antimagic", [
+        { type: "spellcasting-blocked" },
+        { type: "concentration-blocked" },
+      ]),
+      source("chill-touch", [{ type: "healing-blocked" }]),
+      source("slow", [{ type: "turn-economy-block" }]),
+      source("musician", [{ type: "heroic-inspiration-on-rest" }]),
+    ]);
+    expect(out.spellcastingBlocked).toBe(true);
+    expect(out.concentrationBlocked).toBe(true);
+    expect(out.healingBlocked).toBe(true);
+    expect(out.turnEconomyBlocked).toBe(true);
+    expect(out.heroicInspirationOnLongRest).toBe(true);
+    expect(out.heroicInspirationAtTurnStart).toBe(false);
+    expect(ruleFlag(out.values, "block:healing")).toBe(true);
+  });
+
+  it("blocks only while the state that causes it is active", () => {
+    const sources = [
+      source("rage", [
+        {
+          type: "while-active",
+          activeKey: "rage",
+          grants: [{ type: "spellcasting-blocked" }, { type: "concentration-blocked" }],
+        },
+      ]),
+    ];
+    expect(evaluateGrants(sources).spellcastingBlocked).toBe(false);
+    const raging = evaluateGrants(sources, new Set(["rage"]));
+    expect(raging.spellcastingBlocked).toBe(true);
+    expect(raging.concentrationBlocked).toBe(true);
+  });
+});
