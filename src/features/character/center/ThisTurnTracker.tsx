@@ -59,6 +59,7 @@ import {
 } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
 import { StatusLedge } from "./StatusLedge";
+import { concentrationRoundsLeft, deriveStatuses } from "@/lib/status";
 import { useTurnEconomy } from "./useTurnEconomy";
 import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
@@ -573,6 +574,9 @@ export function ThisTurnTracker({
   });
   // Concentration reads through the same vitals projection seam.
   const concentration = vitalConcentration(character.session);
+  const concentrationRounds = concentration
+    ? concentrationRoundsLeft(deriveStatuses(character))
+    : undefined;
   const hasStatuses = !!concentration || limiters.length > 0;
 
   // SR-only economy-token status: "Action: available" / "Action: spent on X".
@@ -766,6 +770,7 @@ export function ThisTurnTracker({
           <StatusLedge
             limiters={limiters}
             concentration={concentration || null}
+            concentrationRounds={concentrationRounds}
             concBlockedConditionId={concBlockedReason}
             readonly={readonly}
           />

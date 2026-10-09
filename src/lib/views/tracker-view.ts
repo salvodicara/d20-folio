@@ -51,6 +51,7 @@ import { getRace, rawRaceTraitCatKey } from "@/data/races";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { condColor, condInkColor } from "@/lib/condition-color";
 import { combatHigherLevels } from "@/lib/views/combat-action-view";
+import { statusRoundsLeft, type Status } from "@/lib/status";
 export {
   conversionOptionVMs,
   type ConversionCtx,
@@ -591,28 +592,29 @@ export interface PotionTimerVM {
 }
 
 /**
- * S9 — every active CONSUMED buff-potion countdown, resolved from
- * `session.effectTimers` keys prefixed `potion:` (the self-sustaining timers the
- * store armed when the potion was drunk). The item NAME localizes here at the
- * presenter edge (SoC — the engine map is locale-free); the rail renders each as
- * a small duration banner reusing the SAME `combat.effectTimerShort` chrome the
- * while-active timers use. Empty when no potion is active.
+ * S9 — every active CONSUMED buff-potion countdown, read from the status view
+ * (`deriveStatuses`: a drunk potion is a `potion:<item>` status with a round
+ * lifetime). The item NAME localizes here at the presenter edge (SoC — the
+ * engine view is locale-free); the rail renders each as a small duration banner
+ * reusing the SAME `combat.effectTimerShort` chrome the while-active timers use.
+ * Empty when no potion is active.
  */
 export function potionTimerVMs(
-  effectTimers: Record<string, { roundsLeft: number }> | undefined,
+  statuses: ReadonlyArray<Status>,
   locale: Locale
 ): PotionTimerVM[] {
-  if (!effectTimers) return [];
   const out: PotionTimerVM[] = [];
-  for (const [key, timer] of Object.entries(effectTimers)) {
-    if (!key.startsWith("potion:")) continue;
-    const itemId = key.slice("potion:".length);
+  for (const status of statuses) {
+    if (!status.key.startsWith("potion:")) continue;
+    const roundsLeft = statusRoundsLeft(status);
+    if (roundsLeft === undefined) continue;
+    const itemId = status.source;
     out.push({
       itemId,
       name: hasSrd("magic-item", itemId, "name", locale)
         ? localizeSrd("magic-item", itemId, "name", locale)
         : itemId,
-      roundsLeft: timer.roundsLeft,
+      roundsLeft,
     });
   }
   return out;
@@ -659,7 +661,7 @@ export interface ActivatableToggleVM {
   label: string;
   /**
    * FRONTIER-S3 — the rounds left on this state's combat-round countdown (Rage =
-   * 10 → 9 → … → expires). Derived from `session.effectTimers[key]`; absent when
+   * 10 → 9 → … → expires). Read from the status view's round lifetime; absent when
    * the state has no round timer (most toggles) so the chip shows no counter.
    */
   roundsLeft?: number;
@@ -687,7 +689,8 @@ export interface ActivatableToggleVM {
 export function activatableToggles(
   groups: ReadonlyArray<ActivatableGroup>,
   locale: Locale,
-  effectTimers?: Record<string, { roundsLeft: number }>,
+  /** Rounds left per status key (`statusRoundCounts(deriveStatuses(doc))`). */
+  roundCounts?: Readonly<Record<string, { roundsLeft: number }>>,
   bloodied = false
 ): ActivatableToggleVM[] {
   const seen = new Set<string>();
@@ -695,10 +698,10 @@ export function activatableToggles(
   for (const g of groups) {
     if (seen.has(g.key)) continue;
     seen.add(g.key);
-    // FRONTIER-S3 — fold in the round countdown from the session timer (single
-    // source of truth: derived here, never re-stated per surface). Only an ACTIVE
-    // state carries a live timer.
-    const roundsLeft = effectTimers?.[g.key]?.roundsLeft;
+    // FRONTIER-S3 — fold in the round countdown from the status view (single
+    // source of truth: derived there, never re-stated per surface). Only an
+    // ACTIVE state carries a live countdown.
+    const roundsLeft = roundCounts?.[g.key]?.roundsLeft;
     // S5 — a Bloodied-gated boon (id suffix) hints when the gate is unmet.
     const bloodiedGateUnmet = g.key.endsWith(BLOODIED_GATE_SUFFIX) && !bloodied;
     out.push({
