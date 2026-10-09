@@ -406,7 +406,9 @@ function CampaignCard({
         {potGp > 0 ? (
           <span className="ch-stat shrink-0">
             <span className="cst-lbl">{t("campaigns.cardPot")}</span>
-            <span className="cst-val">{potGp} gp</span>
+            <span className="cst-val">
+              {potGp} {t("equipment.currencyAbbr.gp")}
+            </span>
           </span>
         ) : null}
         {active ? (
