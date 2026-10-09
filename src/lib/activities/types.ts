@@ -54,6 +54,8 @@ export type ActivitySource =
   /** Activating a magic item's property (its `while-active` activation). */
   | { kind: "item-activation"; itemId: string; activeKey: string }
   | { kind: "beast"; beastId: string; attack: string }
+  /** An attack with a catalogue weapon. */
+  | { kind: "weapon"; weaponId: string }
   | { kind: "companion"; ownerId: string; attack: string };
 
 export type FeatureOwnerKind =
@@ -162,8 +164,9 @@ export type AttackBasis =
   | { kind: "printed"; value: number }
   /** Proficiency Bonus plus this ability's modifier (the bonus alone without one). */
   | { kind: "ability"; ability?: AbilityCode }
-  /** A weapon profile the reader resolves (an Unarmed Strike). */
-  | { kind: "weapon"; weapon: "unarmed-strike" };
+  /** A weapon profile the reader resolves: Proficiency Bonus (when proficient)
+   *  plus the weapon's attack ability (an Unarmed Strike, a catalogue weapon id). */
+  | { kind: "weapon"; weapon: string };
 
 /** Where a save DC comes from. */
 export type DcBasis =
@@ -201,6 +204,9 @@ export type DiceTerm =
   | HealTerm
   /** The user's spellcasting ability modifier. */
   | { kind: "spell-mod" }
+  /** The modifier of the ability the attack used (a weapon's Strength, or
+   *  Dexterity when it is ranged or Finesse allows it). */
+  | { kind: "attack-mod" }
   /** The level of the class that owns the activity. */
   | { kind: "owner-level" }
   /** A flat amount added per spell slot level above the base. */

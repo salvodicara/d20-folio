@@ -19,6 +19,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { BEASTS } from "@/data/beasts";
+import { SRD_WEAPONS } from "@/data/weapons";
 import { classFeatures } from "@/data/classes";
 import { SRD_FEATS } from "@/data/feats";
 import { asRaceId } from "@/data/srd-names";
@@ -28,6 +29,7 @@ import {
   activityFromBeastAttack,
   activityFromSpell,
   translateAction,
+  translateWeapon,
   type Activity,
   type ActivityCount,
   type ActivityDice,
@@ -673,6 +675,61 @@ describe("activities ≡ the app — feature actions", () => {
       compared += 1;
     }
     expect(compared).toBeGreaterThan(40);
+  });
+});
+
+// ─── Weapons ─────────────────────────────────────────────────────────────────
+
+describe("activities ≡ the app — weapons", () => {
+  // A fighter is proficient with every simple and martial weapon, and equal
+  // Strength and Dexterity make the attack ability's modifier the same either way.
+  const LEVEL = 5;
+  const PB_AT_LEVEL = 3;
+  const doc = makeCharacterDoc({
+    classes: [{ classId: "fighter", level: LEVEL }],
+    abilityScores: SCORES,
+    weapons: SRD_WEAPONS.map((weapon) => ({ srdId: weapon.id, quantity: 1 })),
+  });
+  const rows = new Map(resolveActions(doc, "combat").map((row) => [row.id, row]));
+
+  /** What a weapon's attack card shows, as its Activity states it. */
+  function weaponRowFromActivity(activity: Activity) {
+    const [damage] = effectsOf(activity, "damage");
+    const addsMod = damage?.dice?.plus?.some((term) => term.kind === "attack-mod");
+    const { target, attack } = activity;
+    return clean({
+      attackBonus: attack?.bonus.kind === "weapon" ? MOD + PB_AT_LEVEL : undefined,
+      damage: damage?.dice?.dice
+        ? appendAbilityModToDice(damage.dice.dice, addsMod ? MOD : 0)
+        : undefined,
+      damageType: damage?.types?.[0],
+      weaponRange:
+        attack?.mode === "ranged"
+          ? { kind: "ranged", nearFt: target?.rangeFt?.near, farFt: target?.rangeFt?.far }
+          : {
+              kind: "melee",
+              reachFt: target?.reachFt,
+              thrown: target?.rangeFt
+                ? { nearFt: target.rangeFt.near, farFt: target.rangeFt.far }
+                : undefined,
+            },
+    });
+  }
+
+  it("shows every weapon's to-hit, damage, type, reach and range as its Activity states it", () => {
+    expect(SRD_WEAPONS.length).toBeGreaterThan(30);
+    for (const weapon of SRD_WEAPONS) {
+      const translation = must(translateWeapon(weapon), weapon.id);
+      const row = must(rows.get(`weapon-${weapon.id}`), `weapon-${weapon.id}`);
+      expect(weaponRowFromActivity(translation.activity), weapon.id).toEqual(
+        clean({
+          attackBonus: row.summary.attackBonus,
+          damage: row.summary.damage,
+          damageType: row.summary.damageType,
+          weaponRange: row.summary.weaponRange,
+        })
+      );
+    }
   });
 });
 

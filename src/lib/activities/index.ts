@@ -12,6 +12,7 @@ export {
   translateMonsterEntry,
 } from "./from-creature";
 export { activityFromItemActivation } from "./from-item";
+export { translateWeapon } from "./from-weapon";
 export {
   actionTypeOf,
   addsSpellMod,

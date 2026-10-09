@@ -50,6 +50,7 @@ export {
   translateAction,
   translateMonsterEntry,
   translateSpell,
+  translateWeapon,
   type Activity,
   type ActivityCost,
   type ActivityEffect,
