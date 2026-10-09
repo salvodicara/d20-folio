@@ -53,19 +53,6 @@ export function appendEvent(
   return { ...state, events: [...events, full] };
 }
 
-/** Map the event with `id`, returning a NEW state (or the same when no match). */
-function mapEvent(
-  state: EncounterState,
-  id: string,
-  fn: (e: CombatChronicleEvent) => CombatChronicleEvent
-): EncounterState {
-  const events = state.events;
-  if (!events) return state;
-  const index = events.findIndex((e) => e.id === id);
-  if (index < 0) return state;
-  return { ...state, events: events.map((e, i) => (i === index ? fn(e) : e)) };
-}
-
 /**
  * Record a MONSTER HP SET (the absolute-value edit the DM books) plus any
  * down-crossing. Applies {@link setHp}, derives the delta, and appends a
@@ -300,36 +287,6 @@ export function undoConditionEvent(
     ...restored,
     events: restored.events?.filter((candidate) => candidate.id !== eventId),
   };
-}
-
-/** Attribute a pending `hp-damage` event to `attackerId` (the one-tap pick). A no-op
- *  on any other event kind. Clears any prior skip so a re-tap re-attributes. */
-export function setEventAttacker(
-  state: EncounterState,
-  eventId: string,
-  attackerId: string
-): EncounterState {
-  return mapEvent(state, eventId, (e) => {
-    if (e.kind !== "hp-damage") return e;
-    const next = { ...e, attackerId };
-    delete next.attackerSkipped;
-    return next;
-  });
-}
-
-/** Resolve a pending `hp-damage` event as deliberately UNATTRIBUTED (the "—" chip):
- *  hide the picker without ever guessing a "who". A no-op on any other event kind.
- *  Drops any prior attribution (the DM changed their mind to "no one"). */
-export function skipEventAttacker(
-  state: EncounterState,
-  eventId: string
-): EncounterState {
-  return mapEvent(state, eventId, (e) => {
-    if (e.kind !== "hp-damage") return e;
-    const next = { ...e, attackerSkipped: true };
-    delete next.attackerId;
-    return next;
-  });
 }
 
 /**

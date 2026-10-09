@@ -42,12 +42,13 @@ import type { PersistedPlayStateV1 } from "@/lib/session-state-codec";
 
 /**
  * A player-DECLARED attack in a live campaign encounter — the target(s) the player
- * chose on their sheet plus the HIT/MISS they tapped after rolling at the table. This
- * is the cross-user channel the DM's correlation layer (`combat-reconcile.ts`) fuses
- * with the observed HP deltas into CONFIRMED chronicle lines: a declared HIT + a
- * matching monster HP drop ⇒ an auto-attributed hit line, a declared MISS ⇒ a certain
- * miss line. The app NEVER fabricates one — it is written only by the player's explicit
- * HIT/MISS tap.
+ * chose on their sheet plus the HIT/MISS they tapped after rolling at the table.
+ *
+ * RETIRED READER (2026-10-09): nothing reads this ring any more. Auto-attribution is
+ * now a view of the session log (`src/lib/session-log/encounter-feed.ts`, over the
+ * players' `action` events), and nothing has written the ring since the resolver went
+ * (`characterStore.declareAttack` has no caller). It stays in the stored shape until
+ * its own removal step (codec + stored subdocs); see docs/ARCHITECTURE_MAP.md.
  *
  * IDS + NUMBERS ONLY (golden rule 7): the target(s) are ENCOUNTER combatant ids
  * (`monster-<n>`), never a display name; the attacker is the owning PC (`pc-<uid>`),
@@ -83,7 +84,7 @@ export interface RecentAttack {
    * SAVE, not an attack-roll hit/miss (which is why `outcome` is always `"hit"` here,
    * meaning "cast/resolved"). Present ONLY for an area save declaration; absent for a
    * weapon swing or a multi-instance attack (Magic Missile). See the feature-layer
-   * `chronicle-reconcile` correlation.
+   * (retired) chronicle correlation.
    */
   save?: boolean;
   /**
@@ -187,11 +188,7 @@ export interface CombatState {
   round: number;
   /**
    * The capped ring of the player's recently-DECLARED in-encounter attacks
-   * ({@link RecentAttack}) — the budget-safe cross-user channel the DM's correlation
-   * layer reads to auto-attribute hits + emit miss lines. Rides the EXISTING debounced
-   * `writeCombatState` (NO new doc, NO new subscription — the DM already subscribes to
-   * this subdoc), so an attack declaration costs ~one turn-frequency write. Absent /
-   * `[]` outside an encounter (SOLO never declares).
+   * ({@link RecentAttack}). Retired: no writer and no reader (see {@link RecentAttack}).
    */
   recentActions: RecentAttack[];
   /** Source-owned effects applied to this character outside a campaign encounter.

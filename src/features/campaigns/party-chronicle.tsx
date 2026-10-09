@@ -1,31 +1,30 @@
 /**
- * party-chronicle — the DM-facing UI over the Combat Chronicle feed
- * ({@link import("@/types/combat-chronicle").CombatChronicleEvent}).
+ * party-chronicle — the Combat Chronicle UI, a view of the session log.
  *
- * Both surfaces render the RECONCILED feed ({@link ReconciledEvent}) — the stored beats
- * fused with the players' declared attacks by `chronicle-reconcile.ts` (auto-attributed
- * hits + synthesized certain miss lines + uncertain markers). Both DM-only (the feed
- * rides the encounter doc, which only the DM writes; showing exact monster HP to a player
- * would leak the concealed-band):
- *   • {@link ChronicleFeed} — the collapsible live feed the DM watches build. A hit that
- *     is still PENDING (undeclared / paper play) OR an UNCERTAIN auto-attribution shows
- *     the one-tap attacker override (pre-picked to the current combatant or the derived
- *     attacker, always skippable, NEVER auto-guessed); a certain auto-attributed hit reads
- *     as a plain confirmed line; a declared miss reads as a certain miss line.
+ *   • {@link ChronicleFeed} — the collapsible live feed every member of the campaign
+ *     watches build: the current encounter's lines of the session log
+ *     (`encounterFeed`, auto-attribution applied at read time). "Who struck?" appends a
+ *     correction; the DM may answer it on any line, a player on a hit their own
+ *     character took. A line is struck from the record (a retraction) by its author or
+ *     the DM; the DM's undo on a monster's HP or condition line also restores the
+ *     monster through the engine, and the DM mirror then retracts the line. History is
+ *     never deleted. The "(4/12 HP)" readout comes from the live encounter and follows
+ *     the monster card's rule: the DM always, players only for allies, revealed
+ *     monsters and PCs.
  *   • {@link EndEncounterDialog} — the editable entry at "End encounter": a title, a
- *     free-text narrative note, an editable outcome, and the localized record lines
- *     (each removable) — the DM's full override of the reconciled record. "Save to
- *     Chronicle" renders ONE markdown chapter and appends it (the single persisted
- *     Chronicle write per fight); "Skip" saves nothing. Either way the encounter clears.
+ *     narrative note, an editable outcome and the record lines (each removable from the
+ *     chapter). "Save to Chronicle" hands the chapter, note and outcome to the caller,
+ *     which appends them to the session log and the Chronicle book; "Skip" saves
+ *     nothing. Either way the encounter clears.
  *
- * Localization is at the render edge only (the presenter `combat-chronicle-view.ts`
- * takes injected resolvers): combatant ids → names off the live view rows, condition
- * ids → the SRD catalogue. IDs + numbers are the only stored facts (golden rule 7).
+ * Localization is at the render edge only (`combat-chronicle-view.ts` takes injected
+ * resolvers): combatant ids → names off the live view rows, condition ids → the SRD
+ * catalogue. IDs + numbers are the only stored facts.
  */
 
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ScrollText, ChevronDown, Trash2, HelpCircle, Undo2 } from "lucide-react";
+import { ScrollText, ChevronDown, Trash2, HelpCircle, Undo2, X } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
@@ -35,39 +34,38 @@ import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { localizeText } from "@/lib/views/srd-i18n";
+import { concentrationLabel } from "@/lib/views/tracker-view";
 import {
-  localizeChronicleEvent,
-  chronicleNeedsAttribution,
-  buildChronicleChapter,
+  buildEncounterChapter,
+  localizeFeedEvent,
   rankAttackers,
-  type ResolveCombatantName,
-  type ResolveConditionName,
-  type ResolveActionName,
+  type FeedNames,
 } from "@/lib/views/combat-chronicle-view";
 import {
-  setEventAttacker,
-  skipEventAttacker,
-  inferOutcome,
-} from "@/features/campaigns/combat-chronicle";
-import { undoAdversaryChronicleEvent } from "@/features/campaigns/encounter-world-command";
-import type { ReconciledEvent } from "@/features/campaigns/chronicle-reconcile";
-import type { ApplyFn } from "@/features/campaigns/party-encounter";
+  mayAttribute,
+  mayRetract,
+  needsAttribution,
+  type CombatantId,
+  type FeedLine,
+  type FeedViewer,
+} from "@/lib/session-log";
+import { inferOutcome } from "@/features/campaigns/combat-chronicle";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import type { EncounterOutcome } from "@/types/combat-chronicle";
 
 type MemberDetails = CampaignDoc["memberDetails"];
 
+/** The target's HP after a line, when the viewer may see it (`null` otherwise). */
+export type HpFor = (line: FeedLine) => { current: number; max: number } | null;
+
 // ─── Shared resolvers (combatant id → name, condition id → name) ─────────────
 
-function useChronicleResolvers(
+function useFeedNames(
   rows: ReadonlyArray<EncounterCombatantView>,
-  memberDetails: MemberDetails
-): {
-  resolveName: ResolveCombatantName;
-  resolveCondition: ResolveConditionName;
-  resolveAction: ResolveActionName;
-} {
+  memberDetails: MemberDetails,
+  fallbackNames: Readonly<Record<string, string>> = {}
+): FeedNames {
   const { t } = useTranslation();
   const { language } = useLocale();
   const nameById = useMemo(
@@ -75,9 +73,7 @@ function useChronicleResolvers(
       new Map(
         rows.map((r) => {
           // Prefer the denormalized member snapshot name for a PC — it is ALWAYS present
-          // (the live doc hydrates late) AND it is the SAME name the party cards +
-          // `resolveActorName` show, so the chronicle never disagrees with the table. Fall
-          // back to the live row name (a monster, or a PC with no snapshot yet).
+          // (the live doc hydrates late) AND it is the SAME name the party cards show.
           const snapshot = r.memberUid
             ? memberDetails[r.memberUid]?.character?.name
             : undefined;
@@ -86,25 +82,29 @@ function useChronicleResolvers(
       ),
     [rows, memberDetails]
   );
-  const resolveName = useCallback<ResolveCombatantName>(
-    (id) => nameById.get(id)?.trim() || t("combatChronicle.someone"),
-    [nameById, t]
+  const name = useCallback(
+    (id: string) =>
+      nameById.get(id)?.trim() ||
+      fallbackNames[id]?.trim() ||
+      memberDetails[id.replace(/^pc-/, "")]?.character?.name.trim() ||
+      t("combatChronicle.someone"),
+    [nameById, fallbackNames, memberDetails, t]
   );
-  const resolveCondition = useCallback<ResolveConditionName>(
-    (id) =>
-      hasSrd("condition", id, "name", language)
-        ? localizeSrd("condition", id, "name", language)
-        : id,
-    [language]
+  return useMemo(
+    () => ({
+      name,
+      condition: (id) =>
+        hasSrd("condition", id, "name", language)
+          ? localizeSrd("condition", id, "name", language)
+          : id,
+      action: (action) => localizeText(action, language),
+      spell: (ref) => concentrationLabel(ref, language),
+    }),
+    [name, language]
   );
-  const resolveAction = useCallback<ResolveActionName>(
-    (action) => localizeText(action, language),
-    [language]
-  );
-  return { resolveName, resolveCondition, resolveAction };
 }
 
-// ─── A combatant chip (attribution pick / miss target) ───────────────────────
+// ─── A combatant chip (attribution pick) ─────────────────────────────────────
 
 function CombatantChip({
   label,
@@ -130,41 +130,45 @@ function CombatantChip({
 // ─── The live feed ───────────────────────────────────────────────────────────
 
 /**
- * The collapsible Combat Chronicle feed — DM-only. Renders the accumulated events in
- * round-grouped order (the deterministic record of what LANDED); each un-attributed
- * damage hit shows the one-tap attacker picker (current combatant pre-selected). All
- * edits route through `apply` (the DM encounter reducer), so they ride the SAME
- * debounced encounter writer (no per-action write).
+ * The collapsible Combat Chronicle feed — every member sees it. Renders the encounter's
+ * lines in log order, grouped by round; an open "Who struck?" shows the one-tap picker
+ * to whoever may answer it.
  */
 export function ChronicleFeed({
-  campaignId,
-  events,
+  lines,
   rows,
   memberDetails,
+  names: fallbackNames,
   currentId,
-  apply,
+  viewer,
+  hpFor,
+  undoFor,
+  onAttribute,
+  onRetract,
   embedded = false,
 }: {
-  /** The campaign id — the undo tap derives the engine world under this root. */
-  campaignId: string;
-  /** The RECONCILED feed — stored beats fused with the players' declared attacks
-   *  (auto-attributed hits + synthesized miss lines + uncertain markers). */
-  events: ReadonlyArray<ReconciledEvent>;
+  lines: ReadonlyArray<FeedLine>;
   rows: ReadonlyArray<EncounterCombatantView>;
   /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
   memberDetails: MemberDetails;
-  /** The current combatant id — the attacker the attribution picker pre-selects. */
+  /** Names recorded on the encounter's start line, for a creature no longer at the table. */
+  names?: Readonly<Record<string, string>>;
+  /** The current combatant id — the attacker the picker pre-selects. */
   currentId: string | null;
-  apply: ApplyFn;
+  viewer: FeedViewer;
+  hpFor: HpFor;
+  /** The DM's engine undo for a monster HP/condition line, or `null`. */
+  undoFor: (line: FeedLine) => (() => void) | null;
+  /** Answer "Who struck?" (`null` = no one). */
+  onAttribute: (line: FeedLine, actor: CombatantId | null) => void;
+  /** Strike a line from the record. */
+  onRetract: (line: FeedLine) => void;
   /** Join the feed to the encounter status rail inside one framed folio surface. */
   embedded?: boolean;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(true);
-  const { resolveName, resolveCondition, resolveAction } = useChronicleResolvers(
-    rows,
-    memberDetails
-  );
+  const names = useFeedNames(rows, memberDetails, fallbackNames);
 
   return (
     <section
@@ -182,8 +186,8 @@ export function ChronicleFeed({
         <span className="encounter-chronicle-title">
           {t("combatChronicle.feedTitle")}
         </span>
-        {events.length > 0 && (
-          <span className="encounter-chronicle-count">{events.length}</span>
+        {lines.length > 0 && (
+          <span className="encounter-chronicle-count">{lines.length}</span>
         )}
         <Icon
           as={ChevronDown}
@@ -197,32 +201,34 @@ export function ChronicleFeed({
 
       {open && (
         <div className="encounter-chronicle-body">
-          {events.length === 0 ? (
+          {lines.length === 0 ? (
             <p className="encounter-chronicle-empty">{t("combatChronicle.feedEmpty")}</p>
           ) : (
             <ol className="encounter-timeline">
-              {events.map((re, i) => {
-                const prev = events[i - 1];
-                const showRound = !prev || prev.event.round !== re.event.round;
+              {lines.map((line, i) => {
+                const prev = lines[i - 1];
+                const showRound =
+                  line.round !== undefined && (!prev || prev.round !== line.round);
                 return (
                   <li
-                    key={re.event.id}
+                    key={line.id}
                     className={showRound ? "encounter-beat has-round" : "encounter-beat"}
                   >
                     {showRound && (
                       <p className="encounter-timeline-round">
-                        {t("combatChronicle.round", { n: re.event.round })}
+                        {t("combatChronicle.round", { n: line.round ?? 0 })}
                       </p>
                     )}
-                    <FeedLine
-                      campaignId={campaignId}
-                      reconciled={re}
+                    <FeedRow
+                      line={line}
                       rows={rows}
+                      names={names}
                       currentId={currentId}
-                      resolveName={resolveName}
-                      resolveCondition={resolveCondition}
-                      resolveAction={resolveAction}
-                      apply={apply}
+                      viewer={viewer}
+                      hp={hpFor(line)}
+                      undo={undoFor(line)}
+                      onAttribute={onAttribute}
+                      onRetract={onRetract}
                     />
                   </li>
                 );
@@ -236,72 +242,47 @@ export function ChronicleFeed({
 }
 
 /**
- * One feed line + the DM override affordance. The attacker picker shows when the stored
- * hit is still PENDING (paper-play, the Phase-0 fallback) OR when the auto-attribution is
- * UNCERTAIN (>1 player could have landed it) — so the DM confirms/corrects the guess. A
- * CERTAIN auto-attributed hit reads as a plain confirmed line (removable at End). The
- * uncertain marker is the subtle "which of these?" hint (never interrupts the fight).
+ * One feed line + its affordances: the uncertain marker on an ambiguous derived
+ * attacker, the undo (DM, monster line) or the retraction (author or DM), and the
+ * "Who struck?" picker while the question is open for this viewer.
  */
-function FeedLine({
-  reconciled,
+function FeedRow({
+  line,
   rows,
+  names,
   currentId,
-  resolveName,
-  resolveCondition,
-  resolveAction,
-  apply,
-  campaignId,
+  viewer,
+  hp,
+  undo,
+  onAttribute,
+  onRetract,
 }: {
-  reconciled: ReconciledEvent;
+  line: FeedLine;
   rows: ReadonlyArray<EncounterCombatantView>;
+  names: FeedNames;
   currentId: string | null;
-  resolveName: ResolveCombatantName;
-  resolveCondition: ResolveConditionName;
-  resolveAction: ResolveActionName;
-  apply: ApplyFn;
-  campaignId: string;
+  viewer: FeedViewer;
+  hp: { current: number; max: number } | null;
+  undo: (() => void) | null;
+  onAttribute: (line: FeedLine, actor: CombatantId | null) => void;
+  onRetract: (line: FeedLine) => void;
 }) {
   const { t } = useTranslation();
-  const { event, uncertain } = reconciled;
-  const text = localizeChronicleEvent(
-    event,
-    t,
-    resolveName,
-    resolveCondition,
-    resolveAction
-  );
-  // Show the picker for a still-pending stored hit OR an ambiguous auto-attribution.
-  const showPicker = chronicleNeedsAttribution(event) || uncertain === true;
-  // Candidate attackers: the likely one first, then the target's opponents; the
-  // target's own side waits behind "More…".
-  const targetId = event.kind === "hp-damage" ? event.targetId : null;
-  // Pre-select the derived attacker on an uncertain line, else the current combatant.
-  const preselect =
-    event.kind === "hp-damage" && event.attackerId ? event.attackerId : currentId;
-  const { primary, more } = rankAttackers(rows, targetId, preselect);
   const [showMore, setShowMore] = useState(false);
+  const { event } = line;
+  const text = localizeFeedEvent(event, t, names, hp);
+  const showPicker = needsAttribution(line) && mayAttribute(line, viewer);
+  const targetId = event.kind === "damage" ? (event.target ?? null) : null;
+  // Pre-select the derived attacker on an uncertain line, else the current combatant.
+  const preselect = event.kind === "damage" && event.actor ? event.actor : currentId;
+  const { primary, more } = rankAttackers(rows, targetId, preselect);
   const candidates = showMore ? [...primary, ...more] : primary;
-
-  // UNDO affordance (remediability) — a stored MONSTER line can be reversed in one tap:
-  // {@link undoAdversaryChronicleEvent} reverses an engine-mirrored beat through its
-  // exact journal action (hp trio + booked lifetimes restore precisely; legacy beats
-  // degrade to the blind arithmetic inside the boundary) and removes the line. Only for
-  // a real stored event on a monster target (a PC event / synthesized line has none).
-  const hpTargetRow =
-    event.kind === "hp-damage" || event.kind === "hp-heal"
-      ? rows.find((r) => r.id === event.targetId)
-      : undefined;
-  const conditionTargetRow =
-    event.kind === "condition-gain" || event.kind === "condition-loss"
-      ? rows.find((r) => r.id === event.targetId)
-      : undefined;
-  const canUndoHp = hpTargetRow?.kind === "monster";
-  const canUndoCondition = conditionTargetRow?.kind === "monster";
+  const retract = !undo && mayRetract(line, viewer);
 
   return (
     <div className="encounter-feed-line">
       <span className="encounter-feed-copy">
-        {uncertain && (
+        {line.uncertain && (
           <span
             className="inline-flex shrink-0 text-warning"
             title={t("combatChronicle.uncertain")}
@@ -312,14 +293,10 @@ function FeedLine({
           </span>
         )}
         <span className="flex-1">{text}</span>
-        {(canUndoHp || canUndoCondition) && (
+        {undo && (
           <button
             type="button"
-            onClick={() =>
-              apply((encounter) =>
-                undoAdversaryChronicleEvent(encounter, campaignId, event.id)
-              )
-            }
+            onClick={undo}
             aria-label={t("combatChronicle.undoLine")}
             title={t("combatChronicle.undoLineHint")}
             className="shrink-0 rounded p-0.5 text-text-faint transition-colors hover:text-accent"
@@ -327,8 +304,19 @@ function FeedLine({
             <Icon as={Undo2} size="xs" decorative />
           </button>
         )}
+        {retract && (
+          <button
+            type="button"
+            onClick={() => onRetract(line)}
+            aria-label={t("combatChronicle.retractLine")}
+            title={t("combatChronicle.retractLineHint")}
+            className="shrink-0 rounded p-0.5 text-text-faint transition-colors hover:text-error"
+          >
+            <Icon as={X} size="xs" decorative />
+          </button>
+        )}
       </span>
-      {showPicker && event.kind === "hp-damage" && (
+      {showPicker && (
         <div
           className="encounter-feed-pick"
           role="group"
@@ -340,9 +328,9 @@ function FeedLine({
           {candidates.map((c) => (
             <CombatantChip
               key={c.id}
-              label={resolveName(c.id)}
+              label={names.name(c.id)}
               selected={c.id === preselect}
-              onClick={() => apply((e) => setEventAttacker(e, event.id, c.id))}
+              onClick={() => onAttribute(line, c.id)}
             />
           ))}
           {more.length > 0 && !showMore && (
@@ -357,7 +345,7 @@ function FeedLine({
           <button
             type="button"
             className="encounter-feed-pick-quiet"
-            onClick={() => apply((e) => skipEventAttacker(e, event.id))}
+            onClick={() => onAttribute(line, null)}
           >
             {t("combatChronicle.attributeSkip")}
           </button>
@@ -369,45 +357,59 @@ function FeedLine({
 
 // ─── The End-encounter editable entry ────────────────────────────────────────
 
+/** What "Save to Chronicle" hands back: the chapter for the book, and the note and
+ *  outcome the session log records. */
+export interface EncounterClose {
+  chapter: string;
+  note: string;
+  outcome: EncounterOutcome;
+}
+
 /**
  * The editable entry shown at "End encounter". The DM edits the title, writes a
  * free-text narrative note, picks the (state-inferred) outcome, and removes any record
- * line. "Save to Chronicle" builds ONE markdown chapter from the KEPT lines + note +
- * outcome and hands it to `onSave` (the single Chronicle append); "Skip" calls
- * `onSkip`. Either resolves the encounter (the caller clears it).
+ * line from the chapter. "Save to Chronicle" builds ONE markdown chapter from the kept
+ * lines + note + outcome and hands it to `onSave`; "Skip" calls `onSkip`. Either
+ * resolves the encounter (the caller clears it).
  */
 export function EndEncounterDialog({
   encounter,
-  reconciled,
+  lines,
   rows,
   memberDetails,
+  names: fallbackNames,
+  hpFor,
   onSave,
   onSkip,
   onCancel,
 }: {
   encounter: EncounterState;
-  /** The RECONCILED lines (auto-attributed hits + miss lines) — the record the DM edits
-   *  and saves; the outcome default still derives from the live `encounter`. */
-  reconciled: ReadonlyArray<ReconciledEvent>;
+  /** The encounter's feed lines — the record the DM edits and saves. */
+  lines: ReadonlyArray<FeedLine>;
   rows: ReadonlyArray<EncounterCombatantView>;
-  /** The campaign roster — the source of a PC's snapshot name while its live doc loads. */
   memberDetails: MemberDetails;
-  /** Persist the built markdown chapter (the single write). Resolves on success (the
-   *  caller then clears the encounter); REJECTS on failure (offline) so the dialog stays
-   *  open + the fight running for a retry. */
-  onSave: (chapter: string) => Promise<void>;
+  names?: Readonly<Record<string, string>>;
+  /** The HP readout as the book's readers may see it (the book is shared). */
+  hpFor: HpFor;
+  /** Persist the close. Resolves on success (the caller then clears the encounter);
+   *  REJECTS on failure so the dialog stays open + the fight running for a retry. */
+  onSave: (close: EncounterClose) => Promise<void>;
   /** Clear the encounter without saving anything. */
   onSkip: () => void;
   /** Dismiss the dialog and keep the encounter running. */
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  const { resolveName, resolveCondition, resolveAction } = useChronicleResolvers(
-    rows,
-    memberDetails
+  const names = useFeedNames(rows, memberDetails, fallbackNames);
+  const texts = useMemo(
+    () =>
+      lines.map((line) => ({
+        id: line.id,
+        ...(line.round === undefined ? {} : { round: line.round }),
+        text: localizeFeedEvent(line.event, t, names, hpFor(line)),
+      })),
+    [lines, t, names, hpFor]
   );
-  // The record = the reconciled lines (stored beats + auto-attributions + miss lines).
-  const events = useMemo(() => reconciled.map((r) => r.event), [reconciled]);
   const [saving, setSaving] = useState(false);
 
   const defaultDate = useMemo(
@@ -417,26 +419,27 @@ export function EndEncounterDialog({
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [outcome, setOutcome] = useState<EncounterOutcome>(() => inferOutcome(encounter));
-  // Which record lines the DM keeps (all, until they remove some).
+  // Which record lines the DM keeps in the chapter (all, until they remove some).
   const [removed, setRemoved] = useState<ReadonlySet<string>>(() => new Set());
 
   const effectiveTitle =
     title.trim() || t("combatChronicle.endTitlePlaceholder", { date: defaultDate });
-  const kept = events.filter((e) => !removed.has(e.id));
 
   const save = (): void => {
     if (saving) return;
-    const chapter = buildChronicleChapter(
-      { title: effectiveTitle, note, events: kept, outcome },
-      t,
-      resolveName,
-      resolveCondition,
-      resolveAction
+    const chapter = buildEncounterChapter(
+      {
+        title: effectiveTitle,
+        note,
+        lines: texts.filter((line) => !removed.has(line.id)),
+        outcome,
+      },
+      t
     );
     setSaving(true);
     // On success the caller clears the encounter (this dialog unmounts); on failure it
     // re-enables so the DM can retry (the fight is untouched).
-    void onSave(chapter).catch(() => setSaving(false));
+    void onSave({ chapter, note: note.trim(), outcome }).catch(() => setSaving(false));
   };
 
   return (
@@ -496,16 +499,16 @@ export function EndEncounterDialog({
           <span className="text-2xs uppercase tracking-[0.12em] text-text-muted">
             {t("combatChronicle.endLinesLabel")}
           </span>
-          {events.length === 0 ? (
+          {texts.length === 0 ? (
             <p className="text-2xs italic text-text-faint">
               {t("combatChronicle.endEmpty")}
             </p>
           ) : (
             <ul className="flex flex-col gap-0.5 rounded-md border border-border-subtle bg-bg-tertiary/40 p-2">
-              {events.map((event) => {
-                const gone = removed.has(event.id);
+              {texts.map((line) => {
+                const gone = removed.has(line.id);
                 return (
-                  <li key={event.id} className="flex items-center gap-2">
+                  <li key={line.id} className="flex items-center gap-2">
                     <span
                       className={
                         gone
@@ -513,21 +516,15 @@ export function EndEncounterDialog({
                           : "flex-1 text-2xs text-text-secondary"
                       }
                     >
-                      {localizeChronicleEvent(
-                        event,
-                        t,
-                        resolveName,
-                        resolveCondition,
-                        resolveAction
-                      )}
+                      {line.text}
                     </span>
                     <button
                       type="button"
                       onClick={() =>
                         setRemoved((prev) => {
                           const next = new Set(prev);
-                          if (next.has(event.id)) next.delete(event.id);
-                          else next.add(event.id);
+                          if (next.has(line.id)) next.delete(line.id);
+                          else next.add(line.id);
                           return next;
                         })
                       }

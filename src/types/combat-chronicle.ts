@@ -3,26 +3,17 @@
  * table-wide counterpart to the solo cockpit's {@link import("./combat-log").CombatEvent}).
  *
  * As the DM runs an encounter in the tracker, the PURE reducers append one
- * structured event per landed beat (an HP change, a condition, a fall) — the
- * deterministic record of WHAT LANDED (missed swings and drama belong in the DM's
- * narrative note at the end entry, not here). Each event carries ONLY ids + numbers — combatant ids
- * (`pc-<uid>` / `monster-<n>`), condition ids, amounts — never a localized display
- * string (golden rule 7). The presenter `lib/views/combat-chronicle-view.ts`
- * resolves every one to its prose line at render, so the SAME stored log renders
- * fully in EN or IT and a language switch re-localizes the whole feed.
+ * structured event per landed beat (an HP change, a condition, a fall). Each event
+ * carries ONLY ids + numbers — combatant ids (`pc-<uid>` / `monster-<n>`), condition
+ * ids, amounts — never a localized display string.
  *
- * BUDGET-SAFE by construction: the events live on {@link
- * import("./campaign").EncounterState}.events, so they ride the EXISTING debounced
- * encounter writer — accumulating them adds NO new write cadence, and never a
- * per-action write. The array is EPHEMERAL: it survives a reload (it is on the
- * campaign doc) but is dropped the moment the encounter clears at "End encounter".
- * At end the DM renders the kept events to ONE markdown chapter and appends it to
- * the Chronicle — the single persisted Chronicle write per fight.
- *
- * The encounter-START and encounter-END/outcome are NOT stored events: the fight
- * always starts at round 1 (a derived feed/chapter header) and the outcome is
- * inferred from live state at close (`inferOutcome`, in the feature-layer recorders),
- * so storing them would be redundant state (rule 1 — declare the least).
+ * These beats are no longer what anyone reads. The DM mirror copies each one into the
+ * session log (`src/lib/session-log/encounter-mirror.ts`), and the Combat Chronicle
+ * feed, the end-of-fight chapter and the session report are views of that log. The
+ * array stays on {@link import("./campaign").EncounterState}.events for two jobs only:
+ * the DM's one-tap undo, which reverses a beat's engine action, and the HP readout
+ * (`current`/`max`), which the log deliberately does not carry. It is dropped when the
+ * encounter clears.
  */
 
 import type { LocText } from "@/lib/loc-text";
@@ -55,10 +46,9 @@ interface ChronicleEventBase {
  */
 export type CombatChronicleEvent =
   /**
-   * A combatant took damage. `attackerId` is set ONLY by an explicit attribution tap
-   * (the app NEVER guesses the attacker); ABSENT + `attackerSkipped` unset means the
-   * attribution is still pending, ABSENT + `attackerSkipped` means the DM chose "no
-   * attacker" ("{target} takes {amount}").
+   * A combatant took damage. `attackerId` is known only when the action that caused it
+   * said so; "Who struck?" answered later is a correction in the session log, never a
+   * change to this beat.
    */
   | ({
       kind: "hp-damage";
@@ -73,14 +63,10 @@ export type CombatChronicleEvent =
       /** The target's HP AFTER the hit (the "{current}/{max}" readout). */
       current: number;
       max: number;
-      /** The attributed attacker's combatant id — set by the one-tap picker; absent =
-       *  unattributed. */
+      /** The attacker's combatant id, when the action that caused the damage said so. */
       attackerId?: string;
-      /** Exact declared action when auto-attributed; absent on legacy/manual beats. */
+      /** Exact resolved action; absent on manual beats. */
       action?: LocText;
-      /** The DM tapped "skip": attribution resolved as deliberately unattributed (the
-       *  picker hides without ever guessing a "who"). */
-      attackerSkipped?: boolean;
     } & ChronicleEventBase)
   /** A combatant regained HP. */
   | ({
@@ -104,72 +90,7 @@ export type CombatChronicleEvent =
     } & ChronicleEventBase)
   /** A combatant dropped (crossed to 0 HP — a PC downed, a monster group defeated). */
   | ({ kind: "down"; targetId: string } & ChronicleEventBase)
-  /**
-   * A player's DECLARED attack that MISSED — the certain miss line. Unlike every other
-   * kind this is NEVER stored on the encounter doc: it is SYNTHESIZED at read time by the
-   * reconciliation layer (`combat-reconcile.ts`) from a player's `recentActions` miss
-   * declaration, so a missed swing needs no HP delta to record (the app records only what
-   * the player explicitly tapped — golden rule 21, never inferred). `attackerId` is the
-   * declaring PC, `targetId` the enemy they named.
-   */
-  | ({
-      kind: "attack-miss";
-      attackerId: string;
-      targetId: string;
-      action?: LocText;
-    } & ChronicleEventBase)
-  /**
-   * A player's DECLARED MULTI-TARGET action FUSED with the several HP drops the DM
-   * applied across the struck foes (auto-narrated combat, Phase 2 — Magic Missile's
-   * darts, Scorching Ray's rays, an AoE's per-target damage). Like {@link attack-miss}
-   * this is SYNTHESIZED at read time by the reconciliation layer (`chronicle-reconcile.
-   * ts`), never stored: it REPLACES the individual per-target `hp-damage` lines with ONE
-   * summary line. `amounts` carries the REAL DM delta for each struck target (NEVER an
-   * invented number — a declared target with no in-window drop is simply ABSENT here);
-   * a non-empty `amounts` renders the HIT line ("{attacker} hits A (x), B (y) and C
-   * (z)"), an EMPTY `amounts` the MISS line over the full declared `targetIds`
-   * ("{attacker} misses A, B and C"). `attackerId` is the declaring PC.
-   */
-  | ({
-      kind: "attack-multi";
-      attackerId: string;
-      /** The full declared target set (ids), declared order — drives the MISS prose. */
-      targetIds: string[];
-      /** Per-struck-target REAL DM damage, declared order; ONLY targets that took a
-       *  bound drop. Empty ⇒ the MISS line (or a hit awaiting HP, which emits no line). */
-      amounts: ReadonlyArray<{ targetId: string; amount: number }>;
-      action?: LocText;
-    } & ChronicleEventBase)
-  /**
-   * A player's DECLARED AREA SAVE-for-half spell (Fireball class — auto-narrated combat,
-   * Phase 3) FUSED with the DM's per-target HP drops. Like {@link attack-multi} this is
-   * SYNTHESIZED at read time by the reconciliation layer, never stored: it REPLACES the
-   * individual per-target `hp-damage` lines with ONE summary line whose per-target
-   * outcome is a SAVE. `amounts` carries the REAL DM delta for each DAMAGED target
-   * (whether they failed → full or saved → half; the DM's number is the truth, never
-   * invented); `resisted` names the declared targets the DM left un-dropped (a full save
-   * / no damage — positively logged as resisted, the Phase-3 distinction from a
-   * multi-attack's silently-omitted target). Emitted only once at least one declared
-   * target took a drop (the spell resolved); `attackerId` is the declaring caster.
-   */
-  | ({
-      kind: "attack-save";
-      attackerId: string;
-      /** The full declared target set (ids), declared order. */
-      targetIds: string[];
-      /** Per-DAMAGED-target REAL DM damage, declared order (failed save → full, or
-       *  saved → half; the DM's number either way). */
-      amounts: ReadonlyArray<{ targetId: string; amount: number }>;
-      /** Declared targets the DM left un-dropped — full save / no damage, declared order. */
-      resisted: string[];
-      action?: LocText;
-    } & ChronicleEventBase)
-  /**
-   * A condition was gained. `attackerId` is set ONLY by the reconciliation layer when a
-   * declaring PC's action RIDER (a Topple mastery, a spell rider) applied it — the
-   * confident provenance ("{target} is {condition} — {attacker}'s strike"); it is NEVER
-   * stored (a DM-booked condition has no attacker) and NEVER guessed from co-occurrence.
-   */
+  /** A condition was gained; `attackerId` when the action that applied it said so. */
   | ({
       kind: "condition-gain";
       targetId: string;
