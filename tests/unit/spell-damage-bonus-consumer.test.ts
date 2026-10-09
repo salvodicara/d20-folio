@@ -343,6 +343,13 @@ describe("resolveActions — cantrip riders reach the action summary", () => {
     expect(eb?.summary.damage).toMatch(/\+5$/);
   });
 
+  it("Eldritch Blast adds BEAMS at level 5, it does not grow the beam's die", () => {
+    const eb = resolveActions(blastlock()).find((a) => a.spellId === "eldritch-blast");
+    // Warlock 6: two beams, each its own attack for 1d10 (+CHA from Agonizing Blast).
+    expect(eb?.summary.instances).toBe(2);
+    expect(eb?.summary.damage).toBe("1d10+5");
+  });
+
   it("Agonizing Blast does NOT ride a different cantrip", () => {
     const sf = resolveActions(blastlock()).find((a) => a.spellId === "sacred-flame");
     expect(sf?.summary.damage ?? "").not.toMatch(/\+5$/);
