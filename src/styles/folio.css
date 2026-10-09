@@ -9720,7 +9720,7 @@ button.create-need:focus-visible .create-need-chev {
      zone, so a just-revealed active tab lands fully solid, never half-melted
      in the fade. */
   scroll-padding-inline: 44px;
-  gap: 5px;
+  gap: 4px;
   /* 2px of bottom padding: the row is a SCROLLER (overflow-x clips Y too),
      and the active tab's 2px drop over the panel border must stay inside
      the padding box or the scroller cuts it. */
@@ -9836,11 +9836,14 @@ button.create-need:focus-visible .create-need-chev {
      pixel rows — the un-killable hairline under the active tab (owner,
      2026-07-31). An integer edge snaps identically at every DPR. */
   height: 36px;
-  padding: 0 13px;
+  /* 9px + 0.05em: the five cockpit tabs fit the 656px centre column in Italian
+     (the longest locale) with no scroll on every desktop width; phones still
+     scroll with the dissolve. */
+  padding: 0 9px;
   font-family: var(--font-numeric);
   font-size: var(--text-2xs);
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-secondary);
   border: 1px solid var(--border-medium);
