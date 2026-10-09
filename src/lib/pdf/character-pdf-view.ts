@@ -23,31 +23,10 @@
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode, Recovery, ResourceRecoveryTrigger } from "@/data/types";
 import { totalLevel, primaryClassId, getClasses } from "@/lib/classes";
+import { effectiveProficiencyBonus } from "@/lib/compute";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import {
-  ALL_ABILITIES,
-  ALL_SKILLS,
-  abilityModifier,
-  effectiveProficiencyBonus,
-  savingThrowBonus,
-  skillBonus,
-  passiveScore,
-  passiveAdvantageStep,
-  effectiveAbilityScores,
-  effectiveSkillAbility,
-  resolveAbilityCheckBonus,
-  computeInitiative,
-  characterHasFeat,
-  flatSaveBonus,
-} from "@/lib/compute";
-import { evaluateGrants } from "@/lib/grants";
-import { aggregateCharacterGrants, effectiveAC } from "@/lib/aggregate-character";
-import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
-import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
-import { getEquipment } from "@/data/equipment";
-import {
-  mergeSkillProficiencies,
-  mergeSaveProficiencies,
-  deriveSensesAndSpeeds,
   deriveImmunities,
   displayLanguages,
   displayToolProficiencies,
@@ -402,153 +381,68 @@ export function buildCharacterPdfViewModel(
   const session = doc.session;
   const level = totalLevel(charData);
   const pb = effectiveProficiencyBonus(level, charData.proficiencyBonusOverride);
-  const exhaustion = session.exhaustion;
   const activeFeatures = session.activeFeatures;
   const grantBundleChoices = session.grantBundleChoices;
 
-  // Feature-scoped aggregate (granted skill/save proficiencies) + full aggregate
-  // (ability-score floors, senses, immunities) — the SAME two LeftHud derives.
-  const aggregate = evaluateGrants(
-    resolveGrantSourcesForFeatures(charData.features),
-    new Set(activeFeatures ?? [])
-  );
+  // Every number the hero's own sheet shows comes from the ONE derivation
+  // (`deriveCharacter`): abilities, saves, skills, passives, senses/speeds, AC,
+  // initiative, max HP — so the PDF can never print a different number. The full
+  // aggregate below only feeds the PDF's text lines (languages, tools, defenses).
+  const sheet = deriveCharacter(doc);
   const fullAggregate = aggregateCharacterGrants(charData, {
     activeFeatures,
     grantBundleChoices,
     itemResources: session.itemResources,
   });
 
-  const effectiveScores = effectiveAbilityScores(
-    charData.abilityScores,
-    fullAggregate.abilityScoreFloors,
-    fullAggregate.itemAbilityScoreBonus,
-    fullAggregate.itemAbilityScoreCap
-  );
-
-  const displayedSaves = mergeSaveProficiencies(
-    charData.savingThrows,
-    aggregate.saveProficiencies
-  );
-  // B8 — the all-saves ability-keyed bonus (Aura of Protection +CHA) scales with
-  // the CURRENT (effective) score, so a CHA-boosting item raises it (RAW 2024).
-  // The shared `flatSaveBonus` folds it against the SAME `effectiveScores` the
-  // base save mod uses (rule 6 — the ONE home the LeftHud shares, never raw).
-  const saveBonusFlat = flatSaveBonus(aggregate, effectiveScores);
-  const displayedSkills = mergeSkillProficiencies(
-    charData.skills,
-    aggregate.skillProficiencies,
-    fullAggregate.expertiseSkills,
-    // Jack-of-all-Trades (Bard L2) — DERIVED half-proficiency (#57).
-    fullAggregate.halfProficiencyAllSkills
-  );
-  const checkBonusFor = (skillId: string, ability: AbilityCode): number =>
-    resolveAbilityCheckBonus(
-      fullAggregate.abilityCheckBonuses,
-      skillId,
-      ability,
-      effectiveScores
-    );
-
   // ── abilities (score + modifier + save, override-aware) ──
-  const abilities: PdfAbilityVM[] = ALL_ABILITIES.map(({ code }) => {
-    const score = effectiveScores[code];
-    const isProficient = displayedSaves.includes(code);
-    const saveOverride = charData.savingThrowBonusOverrides?.[code] ?? null;
-    const stb = savingThrowBonus(
-      score,
-      level,
-      isProficient,
-      saveOverride,
-      exhaustion,
-      pb,
-      saveBonusFlat
-    );
+  const abilities: PdfAbilityVM[] = sheet.saves.map((save) => {
+    const { score, modifier } = sheet.abilities[save.ability];
     return {
-      code,
-      label: t(`abilities.${code}_short`),
-      fullName: t(`abilities.${code}`),
+      code: save.ability,
+      label: t(`abilities.${save.ability}_short`),
+      fullName: t(`abilities.${save.ability}`),
       score,
-      modifier: fmtMod(abilityModifier(score)),
-      save: fmtMod(stb),
-      saveProficient: isProficient,
+      modifier: fmtMod(modifier),
+      save: fmtMod(save.bonus),
+      saveProficient: save.proficient,
     };
   });
 
-  // ── skills (override-first; auto unless a manual override) ──
-  const skills: PdfSkillVM[] = ALL_SKILLS.map((skill): PdfSkillVM => {
-    const ability = effectiveSkillAbility(
-      skill.id,
-      skill.ability,
-      fullAggregate.skillAbilityOptions,
-      effectiveScores
-    );
-    const proficiency: SkillProficiency | null = displayedSkills[skill.id] ?? null;
-    const override = charData.skillBonusOverrides?.[skill.id] ?? null;
-    const auto = skillBonus(
-      effectiveScores[ability],
-      level,
-      proficiency,
-      null,
-      exhaustion,
-      pb,
-      checkBonusFor(skill.id, ability)
-    );
-    return {
-      id: skill.id,
-      name: t(`skills.${skill.id}`),
-      ability,
-      abilityShort: t(`abilities.${ability}_short`),
-      bonus: fmtMod(override ?? auto),
-      state: proficiency ? DOT_STATE[proficiency] : "none",
-    };
-  }).sort((a, b) => a.name.localeCompare(b.name, locale));
+  // ── skills (override-first) ──
+  const skills: PdfSkillVM[] = sheet.skills
+    .map(
+      (skill): PdfSkillVM => ({
+        id: skill.id,
+        name: t(`skills.${skill.id}`),
+        ability: skill.ability,
+        abilityShort: t(`abilities.${skill.ability}_short`),
+        bonus: fmtMod(skill.bonus),
+        state: skill.proficiency ? DOT_STATE[skill.proficiency] : "none",
+      })
+    )
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
 
-  // ── passives (override-first, RAW: 10 + the same check modifier) ──
-  const passiveOf = (
-    skillId: "perception" | "insight" | "investigation",
-    ability: AbilityCode,
-    override: number | null | undefined
-  ): number =>
-    override ??
-    passiveScore(
-      effectiveScores[ability],
-      level,
-      displayedSkills[skillId] ?? null,
-      exhaustion,
-      charData.proficiencyBonusOverride,
-      checkBonusFor(skillId, ability),
-      passiveAdvantageStep(fullAggregate, skillId)
-    );
+  // ── passives (override-first) ──
   const passives: PdfPassiveVM[] = [
-    {
-      label: t("abilities.passivePerceptionLabel"),
-      value: passiveOf("perception", "WIS", charData.passivePerceptionOverride),
-    },
-    {
-      label: t("abilities.passiveInsightLabel"),
-      value: passiveOf("insight", "WIS", charData.passiveInsightOverride),
-    },
+    { label: t("abilities.passivePerceptionLabel"), value: sheet.passives.perception },
+    { label: t("abilities.passiveInsightLabel"), value: sheet.passives.insight },
     {
       label: t("abilities.passiveInvestigationLabel"),
-      value: passiveOf("investigation", "INT", charData.passiveInvestigationOverride),
+      value: sheet.passives.investigation,
     },
   ];
 
-  // ── senses + non-walking speeds (override-aware, unit-formatted) ──
-  // S13 — the non-walking sentinels resolve against the EFFECTIVE walking Speed
-  // (override + grants + Boots × exhaustion − armor penalty), so a doubled /
-  // penalized walking Speed flows through to the derived swim/fly/climb ranges.
-  const walkingSpeedFt =
-    charData.speedOverride ?? effectiveWalkingSpeedFt(doc, getEquipment);
-  const { senses, speeds } = deriveSensesAndSpeeds(fullAggregate, walkingSpeedFt);
+  // ── senses + non-walking speeds (hand-set ranges already applied) ──
+  const walkingSpeedFt = sheet.walkingSpeedFt;
   const sensesSpeeds: PdfLineVM[] = [
-    ...senses.map((s) => ({
+    ...sheet.senses.map((s) => ({
       label: t(`character.sense_${s.kind}`),
-      value: localeDistance(charData.senseRangeOverrides?.[s.kind] ?? s.rangeFt, locale),
+      value: localeDistance(s.rangeFt, locale),
     })),
-    ...speeds.map((s) => ({
+    ...sheet.speeds.map((s) => ({
       label: t(`character.speed_${s.kind}`),
-      value: localeDistance(charData.speedOverrides?.[s.kind] ?? s.rangeFt, locale),
+      value: localeDistance(s.rangeFt, locale),
     })),
   ];
 
@@ -592,27 +486,9 @@ export function buildCharacterPdfViewModel(
       value: conditionImmunities.map((c) => conditionLabel(c, locale)).join(", "),
     });
 
-  // ── combat header numbers (override-aware) — mirrors CombatHeader exactly ──
-  const ac = effectiveAC(charData, { activeFeatures, grantBundleChoices });
-  const hasAlertFeat = characterHasFeat("alert", {
-    humanOriginFeat: charData.humanOriginFeat,
-    bgFeat: charData.bgFeat,
-    features: charData.features,
-  });
-  const initiativeGrantBonus =
-    fullAggregate.initiativeBonusFlat +
-    fullAggregate.initiativeBonusAbilities.reduce(
-      (sum, a) => sum + abilityModifier(effectiveScores[a]),
-      0
-    );
-  const computedInitiative = computeInitiative(
-    effectiveScores.DEX,
-    pb,
-    hasAlertFeat,
-    exhaustion,
-    initiativeGrantBonus
-  );
-  const init = charData.initiativeBonusOverride ?? computedInitiative;
+  // ── combat header numbers (override-aware) ──
+  const ac = sheet.ac;
+  const init = sheet.initiativeBonus;
 
   // ── actions / weapons / trackers (localized presenters) ──
   const actions: PdfActionVM[] = localizeActions(doc, locale).map((a) => ({
@@ -761,7 +637,7 @@ export function buildCharacterPdfViewModel(
     // armor penalty), the SAME value the combat header shows, not the raw base.
     speed: formatSpeed(walkingSpeedFt, locale),
     hpCurrent: session.hp.current,
-    hpMax: charData.hp.max,
+    hpMax: sheet.hp.max,
     hitDice: `${level}d${charData.hitDieType}`,
     pb: fmtMod(pb),
   };
