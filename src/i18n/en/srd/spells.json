@@ -161,7 +161,7 @@
     "material": "A drop of blood"
   },
   "bane.grants.0": {
-    "label": "Bane active"
+    "label": "Bane"
   },
   "banishment": {
     "description": "You attempt to send one creature that you can see within range to another plane of existence. The target must succeed on a Charisma saving throw or be banished. If the target is native to the plane you're on, it is banished to a harmless demiplane and is Incapacitated there. If the target is native to a different plane, it is banished to its home plane. If the spell ends before 1 minute has passed, the target reappears in the space it left.",
@@ -872,7 +872,7 @@
     "range": "60 feet"
   },
   "faerie-fire.grants.0": {
-    "label": "Faerie Fire active"
+    "label": "Faerie Fire"
   },
   "faerie-fire.grants.0.grants.0": {
     "description": "Attacks against the affected creature have Advantage"
@@ -1284,7 +1284,7 @@
     "range": "Touch"
   },
   "heroism.grants.0": {
-    "label": "Heroism active"
+    "label": "Heroism"
   },
   "hex": {
     "description": "You place a curse on a creature that you can see within range. Until the spell ends, you deal an extra 1d6 necrotic damage to the target whenever you hit it with an attack. Also, choose one ability when you cast the spell. The target has disadvantage on ability checks made with the chosen ability.",
@@ -1297,7 +1297,7 @@
     "material": "The petrified eye of a newt"
   },
   "hex.grants.0": {
-    "label": "Hex active"
+    "label": "Hex"
   },
   "hold-monster": {
     "description": "Choose a creature that you can see within range. The target must succeed on a Wisdom saving throw or be Paralyzed for the duration. At the end of each of its turns, the target can make another Wisdom saving throw. On a success, the spell ends on the target.",
@@ -1336,7 +1336,7 @@
     "range": "90 feet"
   },
   "hunters-mark.grants.0": {
-    "label": "Hunter's Mark active"
+    "label": "Hunter's Mark"
   },
   "hypnotic-pattern": {
     "description": "You create a twisting pattern of colors that weaves through the air inside a 30-foot Cube within range. Each creature in the area that sees the pattern must make a Wisdom saving throw. On a failed save, the creature becomes Charmed and Incapacitated for the duration. The effect ends for a creature if it takes any damage or if someone uses an action to shake the creature out of its stupor.",
@@ -2751,91 +2751,91 @@
     "range": "60 feet"
   },
   "mage-armor.grants.0": {
-    "label": "Mage Armor active"
+    "label": "Mage Armor"
   },
   "shield.grants.0": {
     "label": "Shield (until your next turn)"
   },
   "bless.grants.0": {
-    "label": "Bless active"
+    "label": "Bless"
   },
   "searing-smite.grants.0": {
-    "label": "Searing Smite active"
+    "label": "Searing Smite"
   },
   "searing-smite.grants.1": {
     "label": "Burning from Searing Smite"
   },
   "shield-of-faith.grants.0": {
-    "label": "Shield of Faith active"
+    "label": "Shield of Faith"
   },
   "blur.grants.0": {
-    "label": "Blur active"
+    "label": "Blur"
   },
   "blur.grants.0.grants.0": {
     "description": "Attacks against you have Disadvantage"
   },
   "warding-bond.grants.0": {
-    "label": "Warding Bond active"
+    "label": "Warding Bond"
   },
   "warding-bond.grants.0.grants.2": {
     "description": "The warded creature has Resistance to all damage; the caster takes the same damage it takes"
   },
   "death-ward.grants.0": {
-    "label": "Death Ward active"
+    "label": "Death Ward"
   },
   "death-ward.grants.0.grants.0": {
     "description": "The first time you would drop to 0 HP, you drop to 1 HP instead and the ward ends"
   },
   "mirror-image.grants.0": {
-    "label": "Mirror Image active"
+    "label": "Mirror Image"
   },
   "mirror-image.grants.0.grants.0": {
     "description": "Three duplicates: when hit, roll a d6 per remaining duplicate; on a 3+ a duplicate is destroyed instead of you"
   },
   "longstrider.grants.0": {
-    "label": "Longstrider active"
+    "label": "Longstrider"
   },
   "divine-favor.grants.0": {
-    "label": "Divine Favor active"
+    "label": "Divine Favor"
   },
   "barkskin.grants.0": {
-    "label": "Barkskin active"
+    "label": "Barkskin"
   },
   "spider-climb.grants.0": {
-    "label": "Spider Climb active"
+    "label": "Spider Climb"
   },
   "darkvision.grants.0": {
-    "label": "Darkvision (spell) active"
+    "label": "Darkvision"
   },
   "aid.grants.0": {
-    "label": "Aid active"
+    "label": "Aid"
   },
   "fly.grants.0": {
-    "label": "Fly active"
+    "label": "Fly"
   },
   "haste.grants.0": {
-    "label": "Haste active"
+    "label": "Haste"
   },
   "protection-from-energy.grants.0": {
-    "label": "Protection from Energy active"
+    "label": "Protection from Energy"
   },
   "stoneskin.grants.0": {
-    "label": "Stoneskin active"
+    "label": "Stoneskin"
   },
   "fire-shield.grants.0": {
-    "label": "Fire Shield active"
+    "label": "Fire Shield"
   },
   "freedom-of-movement.grants.0": {
-    "label": "Freedom of Movement active"
+    "label": "Freedom of Movement"
   },
   "true-seeing.grants.0": {
-    "label": "True Seeing active"
+    "label": "True Seeing"
   },
   "mind-blank.grants.0": {
-    "label": "Mind Blank active"
+    "label": "Mind Blank"
   },
   "foresight.grants.0": {
-    "label": "Foresight active"
+    "label": "Foresight"
   },
   "haste.grants.0.grants.2": {
     "description": "Dexterity saving throws (Haste)"
