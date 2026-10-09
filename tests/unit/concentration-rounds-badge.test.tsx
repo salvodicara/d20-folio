@@ -77,15 +77,15 @@ describe("concentration rounds", () => {
     expect(badge().querySelector(".sb-count")).toBeNull();
   });
 
-  it("the rail's concentration pill shows the same rounds", () => {
+  it("the rail's concentration chip shows the same rounds", () => {
     concentrateOnBless(true);
     render(
       <MemoryRouter>
         <ResourceRail />
       </MemoryRouter>
     );
-    expect(document.querySelector(".conc-pill .conc-rounds")?.textContent).toBe(
-      `${blessRounds()} rounds left`
-    );
+    expect(
+      document.querySelector('[data-testid="activatable-bar"] .sb-count')?.textContent
+    ).toBe(String(blessRounds()));
   });
 });

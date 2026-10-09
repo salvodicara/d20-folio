@@ -4985,57 +4985,6 @@ button.sc-pip:disabled {
     0 0 4px color-mix(in oklab, var(--sl) 40%, transparent);
 }
 
-/* ── Concentration pill (rail + drawer) ── */
-.conc-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 9px;
-  border-radius: var(--radius-md);
-  font-family: var(--font-numeric);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--accent-text);
-  background: color-mix(in oklab, var(--accent-glow) 12%, var(--bg-surface-2));
-  border: 1px solid var(--border-accent);
-}
-/* Light parity (T8 sweep): the 12% gold mix reads ΔL* ≈ 3.8 on vellum vs ~9.8 in
-   dark — the concentration pill barely separates from the bar. Deepen to 18%
-   (ΔL* ≈ 7.1) so the active-concentration state reads at a glance on light too. */
-[data-theme="light"] .conc-pill {
-  background: color-mix(in oklab, var(--accent-primary) 18%, var(--bg-surface-2));
-}
-.conc-pill .focus-mark,
-.conc-pill .icon {
-  width: 13px;
-  height: 13px;
-  flex-shrink: 0;
-  color: var(--accent-text);
-}
-.conc-pill .conc-rounds {
-  opacity: 0.8;
-}
-.conc-pill .conc-x {
-  all: unset;
-  cursor: pointer;
-  opacity: 0.65;
-  display: inline-flex;
-  position: relative;
-  border-radius: 50%;
-  /* keep the glyph small but the hit area ≥24px desktop / 44px touch */
-  transition: opacity var(--m-fast) var(--ease-standard);
-}
-.conc-pill .conc-x::before {
-  content: "";
-  position: absolute;
-  inset: calc((var(--touch-min) - 16px) / -2);
-}
-.conc-pill .conc-x:hover,
-.conc-pill .conc-x:focus-visible {
-  opacity: 1;
-}
-
 /* ── Rail tracker rows — a SINGLE flex line (locked Tracker-A spec / mock):
    `name [die] [rec] …pips` with the pips/pool pushed right via margin-left:auto.
    The pips ARE the spend/restore affordance (tap filled = spend, empty =
@@ -6820,11 +6769,6 @@ button.trk-pip:active {
 /* Chevron: slightly lighter than the old --text-muted so the "expand me"
    affordance is obvious at a glance without fighting with the HP content.
    The brass-spring rotation matches the UniversalCard accordion. */
-
-/* Concentration pill in the collapsed drawer bar: scale down slightly so it
-   fits the compact handle without dominating the row. The base .conc-pill
-   style (border/color) is inherited — only padding + icon size are overridden.
-   Uses the existing margin-left:auto rule for right-alignment. */
 
 /* ── Critical / down: pulse the 2px accent top border to reinforce urgency ──
    Uses an opacity pulse (not a transform) so the drawer doesn't shift during
@@ -16503,6 +16447,35 @@ button.econ-tok-filter:active .econ-disc {
 .status-badge[data-kind="advisory"] {
   --co: var(--warning, var(--accent-primary));
 }
+/* The rail's "Active" chips (ActivatableFeaturesBar) speak the same badge: a toggle
+   reads quiet when off and lit gold when on; the held Concentration chip carries its
+   end ×. No icon disc on a toggle, so it keeps symmetric padding. */
+.status-badge.sb-toggle {
+  padding: 3px 11px;
+}
+.status-badge[data-kind="active"] {
+  --co: var(--accent-primary);
+  --co-ink: var(--accent-text);
+}
+.status-badge[data-gate="unmet"] {
+  --co: var(--semantic-danger);
+  opacity: 0.75;
+}
+.status-badge .sb-end {
+  all: unset;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.65;
+}
+.status-badge .sb-end:hover,
+.status-badge .sb-end:focus-visible {
+  opacity: 1;
+}
+.status-badge .sb-end:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
 /* Light parity: on vellum the tonal fill needs the same deepening as the chips
    (co-chip's 22%) + the hue-matched halo so the border reads lit, not flat. */
 [data-theme="light"] .status-badge {
@@ -21456,7 +21429,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 [data-sheet-readonly] .end-combat, /* …and its solo End Combat companion */
 [data-sheet-readonly] .conc-banner-drop, /* stop-concentrating / regen-apply / end prompts */
 [data-sheet-readonly] .conc-banner-keep, /* …and the keep side of the maintained prompt */
-[data-sheet-readonly] .conc-x, /* the rail's concentration clear */
+[data-sheet-readonly] .sb-end, /* the rail's concentration end */
 [data-sheet-readonly] .co-add-wrap, /* add-condition trigger (+ its popover anchor) */
 [data-sheet-readonly] .co-add, /* add-condition / add-exhaustion / add-defense triggers */
 [data-sheet-readonly] .co-x, /* condition-chip removes */

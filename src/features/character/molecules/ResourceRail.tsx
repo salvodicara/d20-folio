@@ -89,7 +89,6 @@ import { getClassTable } from "@/data/classes";
 import { condColor, condInkColor } from "@/lib/condition-color";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
-import { FocusMark } from "@/components/ui/folio-marks";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { stripInline } from "@/components/shared/parseInline";
 import { cn } from "@/lib/utils";
@@ -118,7 +117,12 @@ import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
 import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
-import { concentrationRoundsLeft, deriveStatuses, statusRoundCounts } from "@/lib/status";
+import {
+  concentrationRoundsLeft,
+  concentrationStatusKeys,
+  deriveStatuses,
+  statusRoundCounts,
+} from "@/lib/status";
 
 /** The six set-valued override maps on CharacterData (#68). */
 type SetOverrideField =
@@ -621,11 +625,15 @@ export function ResourceRail() {
           Built (`ActivatableFeaturesBar` + `toggleActiveFeature`) but never
           mounted; surfaced here so its `while-active` grants can be flipped on/off
           (the section hides for characters with none, e.g. the Bard mock). ── */}
-      {(aggregate.activatableGroups.length > 0 || restBundles.length > 0) && (
+      {(aggregate.activatableGroups.length > 0 ||
+        restBundles.length > 0 ||
+        concentration) && (
         <RailSection rubric={t("character.activeFeatures")}>
           <div className="flex flex-col gap-2">
-            {aggregate.activatableGroups.length > 0 && (
+            {(aggregate.activatableGroups.length > 0 || concentration) && (
               <ActivatableFeaturesBar
+                // A held spell shows ONCE (owner 2026-10-09): its concentration chip
+                // stands for the state it lights on me, so that toggle is not repeated.
                 toggles={activatableToggles(
                   aggregate.activatableGroups,
                   locale,
@@ -634,8 +642,19 @@ export function ResourceRail() {
                   // Furious Storm) on the SAME `isBloodied` predicate every surface
                   // reads; an unmet gate hints (override-first, never hard-locks).
                   isBloodied(character)
+                ).filter(
+                  (toggle) => !concentrationStatusKeys(concentration).includes(toggle.key)
                 )}
                 onToggle={(key) => useCharacterStore.getState().toggleActiveFeature(key)}
+                held={
+                  concentration
+                    ? {
+                        label: concentrationLabel(concentration, locale),
+                        roundsLeft: concentrationRounds,
+                        onEnd: () => useCharacterStore.getState().setConcentration(""),
+                      }
+                    : undefined
+                }
               />
             )}
             {/* AX exposure audit — REST-frequency variant choosers (Starry Form
@@ -932,29 +951,10 @@ export function ResourceRail() {
         </div>
       </RailSection>
 
-      {/* ── Status — concentration + conditions + exhaustion ─────────────── */}
+      {/* ── Status — conditions + exhaustion (held states live under Active) ── */}
       <RailSection rubric={t("character.hud.status")}>
         {aggregate.healingBlocked && (
           <p className="mb-2 text-sm text-danger">{t("combat.resolveHealingBlocked")}</p>
-        )}
-        {concentration && (
-          <div className="conc-pill" style={{ marginBottom: "var(--sp-2)" }}>
-            <FocusMark label={t("combat.concentration")} />
-            <span>{concentrationLabel(concentration, locale)}</span>
-            {concentrationRounds !== undefined && (
-              <span className="conc-rounds">
-                {t("combat.effectTimerShort", { count: concentrationRounds })}
-              </span>
-            )}
-            <button
-              type="button"
-              className="conc-x"
-              aria-label={t("combat.clearConcentration")}
-              onClick={() => useCharacterStore.getState().setConcentration("")}
-            >
-              <Icon as={X} size="sm" decorative />
-            </button>
-          </div>
         )}
         <ConditionStrip
           conditions={conditions}

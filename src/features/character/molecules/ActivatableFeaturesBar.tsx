@@ -8,11 +8,12 @@
  * appear/disappear in the sheet header automatically.
  *
  * Override-first: the player is always in control — nothing forces a toggle.
- * Functional (unstyled) — the design agent restyles from its branch.
  */
 import { useTranslation } from "react-i18next";
 import type { ActivatableToggleVM } from "@/lib/views/tracker-view";
-import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
+import { FocusMark } from "@/components/ui/folio-marks";
 
 interface ActivatableFeaturesBarProps {
   /**
@@ -21,21 +22,50 @@ interface ActivatableFeaturesBarProps {
    */
   toggles: ReadonlyArray<ActivatableToggleVM>;
   onToggle: (key: string) => void;
+  /** The spell held in Concentration, shown first as the gold chip with its end ×. */
+  held?: { label: string; roundsLeft?: number; onEnd: () => void };
 }
 
+/**
+ * The chips speak the status-badge recipe of the turn ledge (one family for every
+ * held or active state): lit in gold when on, quiet when off.
+ */
 export function ActivatableFeaturesBar({
   toggles,
   onToggle,
+  held,
 }: ActivatableFeaturesBarProps) {
   const { t } = useTranslation();
-  if (toggles.length === 0) return null;
+  if (toggles.length === 0 && !held) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5" data-testid="activatable-bar">
+      {held && (
+        <span className="status-badge" data-kind="concentration">
+          <span className="sb-disc" aria-hidden>
+            <FocusMark />
+          </span>
+          <span className="sb-label">{held.label}</span>
+          {held.roundsLeft !== undefined && (
+            <span className="sb-count">{held.roundsLeft}</span>
+          )}
+          <button
+            type="button"
+            className="sb-end"
+            aria-label={t("combat.clearConcentration")}
+            onClick={held.onEnd}
+          >
+            <Icon as={X} size="xs" decorative />
+          </button>
+        </span>
+      )}
       {toggles.map((g) => (
         <button
           key={g.key}
           type="button"
+          className="status-badge sb-toggle"
+          data-kind={g.active ? "active" : undefined}
+          data-gate={g.bloodiedGateUnmet ? "unmet" : undefined}
           aria-pressed={g.active}
           onClick={() => onToggle(g.key)}
           // S5 — a Bloodied-gated boon whose gate is UNMET surfaces its precondition
@@ -45,25 +75,11 @@ export function ActivatableFeaturesBar({
               ? t("character.health.bloodiedRequired")
               : t("character.activeFeaturesHint")
           }
-          className={cn(
-            "rounded-md border px-2.5 py-1 font-mono text-xs font-semibold uppercase tracking-wide transition-colors",
-            g.active
-              ? "border-accent bg-accent/15 text-accent-text shadow-[var(--elev-resting)]"
-              : g.bloodiedGateUnmet
-                ? "border-error/40 bg-bg-tertiary text-text-secondary opacity-70 hover:border-error/60 hover:text-text-primary"
-                : "border-border-medium bg-bg-tertiary text-text-secondary hover:border-border-accent hover:text-text-primary"
-          )}
         >
-          {g.label}
-          {g.roundsLeft !== undefined && (
-            <span className="ml-1.5 font-normal normal-case opacity-80">
-              {t("combat.effectTimerShort", { count: g.roundsLeft })}
-            </span>
-          )}
+          <span className="sb-label">{g.label}</span>
+          {g.roundsLeft !== undefined && <span className="sb-count">{g.roundsLeft}</span>}
           {g.bloodiedGateUnmet && (
-            <span className="ml-1.5 font-normal normal-case opacity-80">
-              · {t("character.health.bloodied")}
-            </span>
+            <span className="sb-count">· {t("character.health.bloodied")}</span>
           )}
         </button>
       ))}
