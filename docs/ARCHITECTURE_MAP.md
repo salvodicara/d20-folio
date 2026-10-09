@@ -150,9 +150,10 @@ There are six parallel records. The same hit can land in four of them.
   feature actions, monster entries, beast and companion attacks and item
   activations; readers move to it one consumer family at a time. Done: the spell
   card, the Compendium and the spell cast rows of `resolveActions` (the combat cards and
-  the spellbook Cast row) read a spell's facts from its Activity; every feature action
-  (class features, feats, species traits, equipment, invocations, homebrew) reads its
-  target, check and effect facts from its Activity.
+  the spellbook Cast row, including the recurring "use again" row) read a spell's facts
+  from its Activity; every feature action (class features, feats, species traits,
+  equipment, invocations, homebrew), beast-form attack and magic-item activation reads
+  its facts from its Activity. Weapons are the dialect left.
 - `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**
@@ -165,7 +166,13 @@ There are six parallel records. The same hit can land in four of them.
 - `src/lib/combat/*`, `combat-io.ts` and `prototype-catalogue.ts` (about 4.5k lines) _after_ the
   session log lifts its id/fold ideas.
 - Later:
-  - `mechanics-transcription` and the `mechanicsProgram` fields.
+  - `mechanics-transcription` and the `mechanicsProgram` fields. Mapped 2026-10-09: no
+    `mechanicsProgram` affects what a user sees or stores (the damage-reaction prompt that
+    ran Uncanny Dodge's was deleted, #86); the transcriber and the world-store
+    capabilities (`characterSpellCapability`, `characterFeatureActionCapability`, …) are
+    reached only by tests, where they generate the programs the LIVE coordinator tests
+    run. They go together with the mechanics world (vitals, conditions, concentration,
+    rest, DM adversary actions), not before.
   - The IndexedDB log mirror.
   - `SessionLogDoc.logs`.
 

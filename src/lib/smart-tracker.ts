@@ -6453,7 +6453,8 @@ function resolveSpellActions(
     );
     const persistentSpellActive =
       session.concentration === spell.id || recurringActiveKey !== undefined;
-    if ((spell.recurrence || spell.followUp) && persistentSpellActive) {
+    const follow = activity.followUp;
+    if ((activity.recurrence || follow) && persistentSpellActive) {
       const castLevel = Math.max(
         spell.level,
         session.concentration === spell.id
@@ -6462,68 +6463,91 @@ function resolveSpellActions(
             ? (session.activeSpellCastLevels?.[recurringActiveKey] ?? spell.level)
             : spell.level
       );
-      const type: ActionType = spell.followUp
-        ? spell.followUp.type
-        : spell.recurrence === "action-retrigger"
+      const type: ActionType = follow
+        ? (actionTypeOf(follow.cost) ?? "free")
+        : activity.recurrence === "action-retrigger"
           ? "action"
-          : spell.recurrence === "bonus-action-move" ||
-              spell.recurrence === "bonus-action-retrigger"
+          : activity.recurrence === "bonus-action-move" ||
+              activity.recurrence === "bonus-action-retrigger"
             ? "bonus"
             : "free";
-      const follow = spell.followUp;
-      const followBaseDamage = follow?.attack
-        ? (follow.attack.dice ?? pickDiceByLevel(follow.attack.diceByLevel, castLevel))
-        : undefined;
-      const followDamage =
-        followBaseDamage && follow?.attack?.dicePerUpcast
-          ? scaleUpcastDice(
-              {
-                level: spell.level,
-                damageDice: followBaseDamage,
-                damageDicePerUpcast: follow.attack.dicePerUpcast,
-              },
-              castLevel
-            )
-          : followBaseDamage;
-      const recurringSummary: RawActionSummary = follow
-        ? {
-            ...(follow.attackType && spellAtkBonus != null
-              ? { attackBonus: spellAtkBonus }
-              : {}),
-            ...(followDamage ? { damage: followDamage } : {}),
-            ...(follow.attack?.damageType
-              ? { damageType: follow.attack.damageType }
-              : {}),
-            ...(follow.attack?.damageOnSave
-              ? { damageOnSave: follow.attack.damageOnSave }
-              : {}),
-            ...(follow.attack?.resolution
-              ? { damageResolution: follow.attack.resolution }
-              : {}),
-            ...(follow.saveAbility && spellDc != null
-              ? {
-                  saveAbility: follow.saveAbility,
-                  saveDC: sourceCast?.castOverrides?.saveDC ?? spellDc,
-                }
-              : {}),
-            ...(follow.conditionApplication
-              ? { conditionApplication: follow.conditionApplication }
-              : {}),
-            ...(follow.targeting
-              ? { targeting: resolveActionTargeting(follow.targeting, ctx) }
-              : {}),
-            ...(follow.area ? { area: true } : {}),
-            ...(follow.trigger
-              ? { trigger: uiText(`combat.reactionTrigger_${follow.trigger}`) }
-              : {}),
-            recurringUse: true,
-            ...(spell.endsOnSuccessfulSave ? { endsOnSuccessfulSave: true } : {}),
-          }
-        : {
-            ...scaleCombatSummaryAtCastLevel(summary, spell, castLevel),
-            recurringUse: true,
-            ...(spell.endsOnSuccessfulSave ? { endsOnSuccessfulSave: true } : {}),
-          };
+      const endsOnSave = activity.endsOnSave
+        ? { endsOnSuccessfulSave: true as const }
+        : {};
+      let recurringSummary: RawActionSummary;
+      if (follow) {
+        // The action the active spell grants (Searing Smite's burn): its damage
+        // at the stored cast level, the caster's own spell numbers.
+        const [followDamage] = effectsOfKind(follow, "damage");
+        const followBaseDamage = followDamage
+          ? (followDamage.dice?.dice ??
+            pickDiceByLevel(followDamage.dice?.byLevel, castLevel))
+          : undefined;
+        const followPerUpcast = followDamage?.dice?.perUpcast;
+        const followDice =
+          followBaseDamage && followPerUpcast
+            ? scaleUpcastDice(
+                {
+                  level: spell.level,
+                  damageDice: followBaseDamage,
+                  damageDicePerUpcast: followPerUpcast,
+                },
+                castLevel
+              )
+            : followBaseDamage;
+        const followType = !followDamage?.choose ? followDamage?.types?.[0] : undefined;
+        const [followCondition] = effectsOfKind(follow, "condition");
+        const followTarget = follow.target;
+        recurringSummary = {
+          ...(follow.attack && spellAtkBonus != null
+            ? { attackBonus: spellAtkBonus }
+            : {}),
+          ...(followDice ? { damage: followDice } : {}),
+          ...(followType ? { damageType: followType } : {}),
+          ...(followDamage?.onSave ? { damageOnSave: followDamage.onSave } : {}),
+          ...(followDamage?.gate ? { damageResolution: followDamage.gate } : {}),
+          ...(follow.save && spellDc != null
+            ? {
+                saveAbility: follow.save.ability,
+                saveDC: sourceCast?.castOverrides?.saveDC ?? spellDc,
+              }
+            : {}),
+          ...(followCondition ? { conditionApplication: followCondition.apply } : {}),
+          ...(followTarget?.affinity
+            ? {
+                targeting: resolveActionTargeting(
+                  {
+                    affinity: followTarget.affinity,
+                    ...(followTarget.excludeSelf ? { excludeSelf: true } : {}),
+                    ...(followTarget.creatureTypes
+                      ? { creatureTypes: followTarget.creatureTypes }
+                      : {}),
+                    ...(followTarget.count !== undefined
+                      ? { maxTargets: followTarget.count }
+                      : {}),
+                    ...(followTarget.countPerUpcast !== undefined
+                      ? { maxTargetsPerUpcast: followTarget.countPerUpcast }
+                      : {}),
+                    ...(followTarget.sharedAmount ? { sharedAmount: true } : {}),
+                  },
+                  ctx
+                ),
+              }
+            : {}),
+          ...(followTarget?.area ? { area: true } : {}),
+          ...(follow.cost.trigger
+            ? { trigger: uiText(`combat.reactionTrigger_${follow.cost.trigger}`) }
+            : {}),
+          recurringUse: true,
+          ...endsOnSave,
+        };
+      } else {
+        recurringSummary = {
+          ...scaleCombatSummaryAtCastLevel(summary, spell, castLevel),
+          recurringUse: true,
+          ...endsOnSave,
+        };
+      }
       actions.push({
         ...castAction,
         id: `spell-${spell.id}-recurring`,
@@ -6539,7 +6563,7 @@ function resolveSpellActions(
         activeTurnBoundary: undefined,
         standingEffect: undefined,
         ...(standingEffect ? { persistentTargetSourceId: spell.id } : {}),
-        ...(spell.endsOnSuccessfulSave && recurringActiveKey
+        ...(activity.endsOnSave && recurringActiveKey
           ? { endsActiveKeyOnSuccessfulSave: recurringActiveKey }
           : {}),
       });
