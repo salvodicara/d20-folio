@@ -1,8 +1,6 @@
 /**
- * Uncanny Dodge (the public non-spell effect-program ex-carrier) keeps its canonical
- * automation: its authored program transcribes (damage-taken adjustment phase + the
- * kernel Reaction claim) and fires through the damage-entry reaction runtime
- * (`lib/damage-reaction.ts`, proven end-to-end by `damage-reaction-runtime.test.ts`).
+ * Uncanny Dodge (the public non-spell effect-program ex-carrier): its authored
+ * program transcribes (damage-taken adjustment phase + the kernel Reaction claim).
  */
 
 import { describe, expect, it, vi } from "vitest";
@@ -16,8 +14,6 @@ vi.mock("@/lib/firebase", () => ({
 }));
 
 import { classFeatureIndex } from "@/data/classes";
-import { characterDamageReactionOptions } from "@/lib/damage-reaction";
-import { MOCK_CHARACTER } from "@/lib/mock";
 import { transcribeFeatureAction } from "@/lib/mechanics-transcription";
 
 describe("uncanny dodge keeps dispatching engine", () => {
@@ -54,12 +50,5 @@ describe("uncanny dodge keeps dispatching engine", () => {
         reaction: { kind: "program", requirementId: "reaction.rogue-uncanny-dodge.0" },
       },
     });
-    // And the runtime actually offers it off the real mock doc — the full
-    // hit + reduction + claim + undo path is proven end-to-end by
-    // `damage-reaction-runtime.test.ts`.
-    const offered = characterDamageReactionOptions(MOCK_CHARACTER).some(
-      (option) => option.featureId === "rogue-uncanny-dodge"
-    );
-    expect(offered).toBe(true);
   });
 });

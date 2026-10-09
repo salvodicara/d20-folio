@@ -74,7 +74,6 @@ beforeEach(() => {
   useCharacterStore.setState({
     character: makeCharacterDoc(),
     readonly: false,
-    combatPendingDamageReaction: null,
   });
 });
 
@@ -86,7 +85,6 @@ it("manual damage applies immediately, without a reaction decision, and undoes",
   const { result } = renderHook(() => useHpControls());
   act(() => result.current.handleApplyDamage([{ amount: 10 }]));
   expect(live().session.hp.current).toBe(28);
-  expect(useCharacterStore.getState().combatPendingDamageReaction).toBeNull();
   expect(useCombatStore.getState().reactionUsed).toBe(false);
   act(() => {
     expect(useUndoStore.getState().undo()).toBe(true);
