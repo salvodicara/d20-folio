@@ -47,7 +47,6 @@
     "toggle": "Mostra o nascondi questo resoconto",
     "entries_one": "{{count}} voce",
     "entries_other": "{{count}} voci",
-    "copy": "Copia per l'AI",
     "copied": "Resoconto copiato"
   }
 }
