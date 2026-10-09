@@ -100,10 +100,7 @@ test.describe("Campaigns flow", () => {
       .poll(async () => (await noteBody.boundingBox())?.height ?? 0)
       .toBeLessThanOrEqual(200);
 
-    // Sessions live in the table's Live workspace; return there after proving
-    // the Journal note behavior.
-    await page.getByRole("tab", { name: /^live$/i }).click();
-
+    // Sessions live in the Journal too (beside the notes board).
     // The session list shows the latest 5 of the fixture's 7; the archive sits
     // behind "View all (7)".
     const rows = page.locator(".sess-item");
@@ -114,11 +111,13 @@ test.describe("Campaigns flow", () => {
     await page.getByRole("button", { name: /view all \(7\)/i }).click();
     await expect(rows).toHaveCount(7);
 
-    // Expanding the long recap (Session 5) opens the directly editable living
-    // document. It grows with content up to min(420px, 55vh), then scrolls inside
-    // its native textarea instead of stretching the whole hub.
+    // Expanding the long recap (Session 5) opens its rendered page; one click on
+    // Edit turns it into the living document. The editor grows with content up to
+    // min(420px, 55vh), then scrolls inside its native textarea instead of
+    // stretching the whole hub.
     const longRow = page.locator(".sess-item", { hasText: "Session 5" });
     await longRow.locator(".sess-toggle").click();
+    await longRow.getByRole("button", { name: /edit session summary/i }).click();
     const sessionEditor = longRow.getByRole("textbox", { name: /session summary/i });
     await expect(sessionEditor).toBeVisible();
     await expect
