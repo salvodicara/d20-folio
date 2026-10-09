@@ -88,6 +88,59 @@ function restEnd(duration: WhileActiveDuration | undefined): "short" | "long" | 
 }
 
 /**
+ * The lifetime a declared duration implies when no countdown is stored: kept up
+ * by its owner, outlasted by a rest, or ended by the player.
+ */
+function undatedLifetime(duration: WhileActiveDuration | undefined): StatusLifetime {
+  if (duration?.kind === "maintained") return { kind: "maintained" };
+  const rest = restEnd(duration);
+  return rest ? { kind: "rest", rest } : { kind: "manual" };
+}
+
+/**
+ * The lifetime a status starts with when it is lit from its declared duration:
+ * an owner-turn edge counted from the lighting round (Shield: `round: 1`, the
+ * start of your next turn), else the declared round cap the store arms as a
+ * countdown (Bless: 10), else the undated lifetime. Activities declare their
+ * durations with it, so a lit status and its declaration share one vocabulary.
+ */
+export function startingStatusLifetime(
+  duration: WhileActiveDuration | undefined
+): StatusLifetime {
+  if (duration?.kind === "turn-boundary") {
+    return { kind: "turn-edge", round: duration.turns, phase: duration.phase };
+  }
+  if (duration?.maxRounds !== undefined) {
+    return { kind: "rounds", roundsLeft: duration.maxRounds };
+  }
+  return undatedLifetime(duration);
+}
+
+/**
+ * Everything besides the countdown that ends a status with this declared
+ * duration, in a stable order: Concentration, maintenance, the data-declared
+ * triggers, then the rest that outlasts it.
+ */
+export function statusEndsOn(
+  duration: WhileActiveDuration | undefined,
+  concentration: boolean
+): StatusEnd[] {
+  const endsOn: StatusEnd[] = [];
+  if (concentration) endsOn.push({ kind: "concentration" });
+  if (duration?.kind === "maintained") {
+    endsOn.push({ kind: "maintenance", by: duration.maintainedBy });
+  }
+  if (duration && "endsEarlyOn" in duration) {
+    for (const trigger of duration.endsEarlyOn ?? []) {
+      endsOn.push({ kind: "trigger", trigger });
+    }
+  }
+  const rest = restEnd(duration);
+  if (rest) endsOn.push({ kind: "rest", rest });
+  return endsOn;
+}
+
+/**
  * Every active status on the character, in a stable order: the lit toggles in
  * `session.activeFeatures` order, then the self-sustaining potion timers.
  *
@@ -133,7 +186,6 @@ export function deriveStatuses(character: CharacterDoc): Status[] {
     const concentration = concentrationKeys.has(key);
     const boundary = boundaries[key];
     const timer = timers[key];
-    const rest = restEnd(duration);
     const lifetime: StatusLifetime = boundary
       ? { kind: "turn-edge", round: boundary.round, phase: boundary.phase }
       : timer
@@ -144,22 +196,8 @@ export function deriveStatuses(character: CharacterDoc): Status[] {
               ? { tickedRound: timer.tickedRound }
               : {}),
           }
-        : duration?.kind === "maintained"
-          ? { kind: "maintained" }
-          : rest
-            ? { kind: "rest", rest }
-            : { kind: "manual" };
-    const endsOn: StatusEnd[] = [];
-    if (concentration) endsOn.push({ kind: "concentration" });
-    if (duration?.kind === "maintained") {
-      endsOn.push({ kind: "maintenance", by: duration.maintainedBy });
-    }
-    if (duration && "endsEarlyOn" in duration) {
-      for (const trigger of duration.endsEarlyOn ?? []) {
-        endsOn.push({ kind: "trigger", trigger });
-      }
-    }
-    if (rest) endsOn.push({ kind: "rest", rest });
+        : undatedLifetime(duration);
+    const endsOn = statusEndsOn(duration, concentration);
     statuses.push({
       key,
       source: declaration?.source ?? castSourceIdFromActiveKey(key) ?? key,
