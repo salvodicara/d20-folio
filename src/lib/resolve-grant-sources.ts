@@ -34,28 +34,16 @@ import { findBackground } from "@/data/backgrounds";
 import { getClassTable } from "@/data/classes";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
-import type { SrdRaceTrait, SrdSpellData } from "@/data/types";
+import type { SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { isValidItemInstanceId } from "@/lib/resources";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
 const MANEUVER_BY_ID = new Map(SRD_MANEUVERS.map((m) => [m.id, m]));
 
-/**
- * The persisted runtime/session id for a race trait — `race:<raceId>:<trait.id>`
- * (live session data; pinned/spent tracker + action state key off it). `trait.id`
- * is the trait's STABLE catalogue-key slug (e.g. `relentless-endurance`) — a
- * locale-free handle, so the id NEVER embeds an English display name (golden rules
- * 12 + 22: the code speaks only ids). The single source of truth for this id
- * shape — every engine site that resolves a race trait's session id routes here.
- *
- * A doc written before this change stored the legacy `race:<raceId>:<EN name>`
- * form; it is conformed to this id form on read at the codec boundary (golden rule
- * 17 — see `conformRaceTraitSessionIds`), so no live user loses tracker state.
- */
-export function raceTraitSessionId(raceId: string, trait: SrdRaceTrait): string {
-  return `race:${raceId}:${trait.id}`;
-}
+import { raceTraitSessionId } from "@/lib/race-trait-id";
+
+export { raceTraitSessionId };
 
 /**
  * The Combat Superiority feature whose Superiority Dice tracker every learned

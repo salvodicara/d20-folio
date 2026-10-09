@@ -26,7 +26,7 @@ import type {
   SrdActionDef,
 } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
-import { raceTraitSessionId } from "@/lib/resolve-grant-sources";
+import { raceTraitSessionId } from "@/lib/race-trait-id";
 import { translateAction, type ActionOwner } from "./from-action";
 import {
   activityFromBeastAttack,
