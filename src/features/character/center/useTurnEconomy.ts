@@ -25,6 +25,8 @@ export interface PreparedCommitArtifact {
   outcomeOccurrenceId?: string;
   /** Reviewed table facts, kept separate from the reusable action definition. */
   outcomes?: ReadonlyArray<CombatOutcomeReceipt>;
+  /** Combatant ids picked in the optional "On whom?" step; tags the log line. */
+  targets?: ReadonlyArray<string>;
 }
 export type PreparedCommit = (
   afterCommit: CommitEffect,

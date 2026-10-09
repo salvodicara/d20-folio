@@ -545,7 +545,7 @@ export function EndEncounterDialog({
       </ModalBody>
       <ModalFoot>
         <Button variant="ghost" onClick={onSkip} disabled={saving}>
-          {t("combatChronicle.endSkip")}
+          {t("common.skip")}
         </Button>
         <Button variant="primary" onClick={save} disabled={saving}>
           <Icon as={ScrollText} size="sm" decorative />

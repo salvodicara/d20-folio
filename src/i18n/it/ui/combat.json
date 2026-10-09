@@ -395,8 +395,14 @@
       "advantage": "Vantaggio",
       "disadvantage": "Svantaggio"
     },
-    "castTargetPrompt": "Su chi?",
-    "castTargetMe": "Io",
-    "castTargetApplied": "{{name}} su {{target}}"
+    "targetStepTitle": "{{name}}: su chi?",
+    "targetStepHintOne": "Facoltativo · tocca il bersaglio",
+    "targetStepHintMany": "Facoltativo · fino a {{count}}",
+    "targetAllies": "Alleati",
+    "targetEnemies": "Nemici",
+    "targetMe": "Io ({{name}})",
+    "targetSkipNone": "Salta · nessun bersaglio",
+    "targetConfirmCast": "Lancia su {{count}}",
+    "targetConfirmUse": "Usa su {{count}}"
   }
 }

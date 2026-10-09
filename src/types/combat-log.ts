@@ -70,6 +70,8 @@ export type CombatEvent =
       kind: "reaction-use";
       action: LocText;
       effect: ActionEffect;
+      /** Who the reaction was aimed at, when the player says (see `action-use`). */
+      targets?: string[];
     }
   /**
    * An on-hit RIDER was spent on an attack (Psi Warrior Psionic Strike → a

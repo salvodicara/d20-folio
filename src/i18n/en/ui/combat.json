@@ -395,8 +395,14 @@
       "advantage": "Advantage",
       "disadvantage": "Disadvantage"
     },
-    "castTargetPrompt": "On whom?",
-    "castTargetMe": "Me",
-    "castTargetApplied": "{{name}} on {{target}}"
+    "targetStepTitle": "{{name}}: on whom?",
+    "targetStepHintOne": "Optional · tap the target",
+    "targetStepHintMany": "Optional · up to {{count}}",
+    "targetAllies": "Allies",
+    "targetEnemies": "Enemies",
+    "targetMe": "Me ({{name}})",
+    "targetSkipNone": "Skip · no target",
+    "targetConfirmCast": "Cast on {{count}}",
+    "targetConfirmUse": "Use on {{count}}"
   }
 }

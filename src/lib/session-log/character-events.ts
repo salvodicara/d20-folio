@@ -27,7 +27,13 @@ export function combatEventToPlayEvent(
         ...(event.targets?.length ? { targets: event.targets } : {}),
       };
     case "reaction-use":
-      return { kind: "action", actor: me, source: event.action, slot: "reaction" };
+      return {
+        kind: "action",
+        actor: me,
+        source: event.action,
+        slot: "reaction",
+        ...(event.targets?.length ? { targets: event.targets } : {}),
+      };
     case "rider-use":
       return { kind: "action", actor: me, source: event.rider };
     case "hp-damage":

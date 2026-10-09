@@ -80,6 +80,7 @@
     "searchMissHint": "Try a different search term.",
     "deleteTitle": "Delete {{name}}?",
     "editNamed": "Edit {{name}}",
-    "share": "Share"
+    "share": "Share",
+    "skip": "Skip"
   }
 }
