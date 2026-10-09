@@ -25,7 +25,7 @@ import type { AbilityCode, Recovery, ResourceRecoveryTrigger } from "@/data/type
 import { totalLevel, primaryClassId, getClasses } from "@/lib/classes";
 import { effectiveProficiencyBonus } from "@/lib/compute";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { deriveCharacter } from "@/lib/derive-character";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import {
   deriveImmunities,
   displayLanguages,

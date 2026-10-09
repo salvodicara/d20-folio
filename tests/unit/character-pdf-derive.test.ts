@@ -7,7 +7,7 @@ import { describe, it, expect } from "vitest";
 import i18n from "@/i18n";
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
 import { buildCharacterPdfViewModel } from "@/lib/pdf/character-pdf-view";
-import { deriveCharacter } from "@/lib/derive-character";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CharacterDoc } from "@/types/character";
 
 const t = i18n.getFixedT("en");
