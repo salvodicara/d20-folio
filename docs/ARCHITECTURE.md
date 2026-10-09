@@ -1768,9 +1768,8 @@ The legacy chip LIFECYCLE machinery (timers, rest/trigger expiry sweeps, mainten
 deliberately keeps reading the bare `session.activeFeatures` ledger it mutates: engine standings
 own their lifetimes in the kernel, and a legacy expiry sweep must never try to end one. A
 target-scoped buff (Hex) lands as TWO standings with one shared lifetime — the active key plus a
-`target-mark` fact recording whom the caster marked; `worldStandingTargetMarks` projects the live
-mark identities for the surfaces that will one day model per-target identity (the party board),
-while solo attack/damage flows read the KEY, exactly like legacy (the marked creature is
+`target-mark` fact recording whom the caster marked (no sheet reader: nothing models per-target
+identity yet), while solo attack/damage flows read the KEY, exactly like legacy (the marked creature is
 table-abstract by product design — the player applies the die on the right hit). This is a READ
 migration, not a mirror: the world stays the sole owner of the standing's lifetime, and no
 session field is written for it.

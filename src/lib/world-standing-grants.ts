@@ -18,16 +18,14 @@
  * `target-mark` fact recording whom the caster marked. In solo play the marked
  * creature is table-abstract (the app models no enemy), so the attack/damage
  * flows read the KEY — the same read legacy makes — and the "+1d6 vs cursed
- * target" chip stays player-applied on the right hit; the mark projection
- * ({@link worldStandingTargetMarks}) exposes the mark identities for the
- * surfaces that will one day model per-target identity (the party board, whose
- * turns stay legacy-owned today).
+ * target" chip stays player-applied on the right hit. The mark standing is
+ * recorded but has no sheet reader: nothing models per-target identity yet.
  *
  * Fail-closed narrow read: `session.world` is persisted as `unknown`, and this
  * is a hot path (every sheet-wide aggregation), so the projection walks the
  * raw value with structural guards instead of running the full material-state
  * parse — anything malformed contributes nothing. Projected fact kinds:
- * `active-key` / `target-mark` (the original pair), plus the recipient-standing
+ * `active-key`, plus the recipient-standing
  * vocabulary this module reads for SELF-owned standings — `max-hp-delta` (the
  * exact resolved Aid amount, preferred over the key-only base default) and
  * `zero-hp-floor` (Death Ward's single-use floor, merged into the same
@@ -88,31 +86,6 @@ export function worldStandingActiveKeys(world: unknown): ReadonlySet<string> {
     }
   }
   return keys.size > 0 ? keys : EMPTY_KEYS;
-}
-
-/**
- * The `target-mark` identities of every LIVE standing the persisted world
- * holds on the character itself — the marks the character currently owns
- * (Hex's "cursed", Hunter's Mark's "marked"). The mark standing shares its
- * lifetime with the buff's `active-key` twin (both end with the source), so
- * this is the read seam for any attack/damage surface that needs the mark's
- * IDENTITY rather than the buff's riders; solo surfaces read the key union
- * ({@link sessionActiveKeys}) because the marked creature is table-abstract.
- */
-export function worldStandingTargetMarks(world: unknown): ReadonlySet<string> {
-  const marks = new Set<string>();
-  for (const occurrence of liveSelfStandings(world)) {
-    const fact = occurrence.fact;
-    if (
-      isRecord(fact) &&
-      fact.kind === "target-mark" &&
-      typeof fact.markId === "string" &&
-      fact.markId.length > 0
-    ) {
-      marks.add(fact.markId);
-    }
-  }
-  return marks.size > 0 ? marks : EMPTY_KEYS;
 }
 
 /**
