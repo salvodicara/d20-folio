@@ -75,9 +75,9 @@ export interface CharacterSheet {
   hp: { current: number; max: number; temp: number };
   initiativeBonus: number;
   walkingSpeedFt: number;
-  /** Non-walking speeds with a positive range. */
+  /** Non-walking speeds with a positive range (hand-set ranges win). */
   speeds: SpeedEntry[];
-  /** Darkvision and kin with a positive range. */
+  /** Darkvision and kin with a positive range (hand-set ranges win). */
   senses: SenseEntry[];
   /** The primary caster's DC and attack (override-first), or null for a non-caster. */
   spellcasting: { ability: AbilityCode; saveDc: number; attackBonus: number } | null;
@@ -121,7 +121,16 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
 
   const walkingSpeedFt =
     character.speedOverride ?? effectiveWalkingSpeedFt(doc, getEquipment);
-  const { senses, speeds } = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
+  const derived = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
+  // A hand-set range wins (override-first), exactly as the sheet's rail shows it.
+  const senses = derived.senses.map((sense) => ({
+    ...sense,
+    rangeFt: character.senseRangeOverrides?.[sense.kind] ?? sense.rangeFt,
+  }));
+  const speeds = derived.speeds.map((speed) => ({
+    ...speed,
+    rangeFt: character.speedOverrides?.[speed.kind] ?? speed.rangeFt,
+  }));
 
   const initiativeBonus =
     character.initiativeBonusOverride ??

@@ -76,4 +76,19 @@ describe("deriveCharacter", () => {
     expect(deriveCharacter(doc).passives.perception).toBe(25);
     expect(derivePartyMemberStats(doc).passivePerception).toBe(25);
   });
+
+  it("hand-set sense and speed ranges reach the DM's party view, like the sheet's rail", () => {
+    const found = docs.find(([, d]) => deriveCharacter(d).senses.length > 0)?.[1];
+    if (!found) throw new Error("no scenario with a sense");
+    const kind = deriveCharacter(found).senses[0]?.kind;
+    if (!kind) throw new Error("no sense");
+    const doc: CharacterDoc = {
+      ...found,
+      character: { ...found.character, senseRangeOverrides: { [kind]: 120 } },
+    };
+    expect(deriveCharacter(doc).senses.find((s) => s.kind === kind)?.rangeFt).toBe(120);
+    expect(derivePartyMemberStats(doc).senses.find((s) => s.kind === kind)?.rangeFt).toBe(
+      120
+    );
+  });
 });
