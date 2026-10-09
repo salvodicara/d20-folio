@@ -348,3 +348,19 @@ Recover ideas and tests, rarely files.
 
 - `docs/ARCHITECTURE.md` (3.6k lines) describes `mechanics-*` as the "canonical runtime cutover
   (active)". That is no longer true; fix it when the dead code is deleted (step 0).
+
+## Owner decisions pending (2026-10-09)
+
+Each needs the owner's explicit yes; agents prepare, never decide.
+
+- **Deploy** of everything merged since the last release — judged from the demo videos.
+- **`@d20-folio/core`**: publish to npm or not, and its licence (the repo is AGPL-3.0; a permissive
+  core would let other apps use it freely).
+- **Statuses migration** (Phase 2 steps 3–4, #61): ship the dual-write, then backfill, `--check`,
+  switch readers, delete the old fields — one yes per step.
+- **Read-only surveys of live data** (Phase 2 step 6, #62) before deleting world standings,
+  `CombatState.activeEffects`, encounter `effectOps` and the `combat-resolution` resolver (the
+  last also needs five private-pack tests removed).
+- **Notes audiences** (campaign spec I-044–051: only me / me and the DMs / chosen people): a new
+  permission model and a migration of the existing shared notes.
+- **Italian SRD text** in the public catalogue: confirm its provenance before exporting it.
