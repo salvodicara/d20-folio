@@ -37,7 +37,15 @@ export type RuleTarget =
   | `speed:${MoveMode}:walking`
   | "speed:multiplier"
   | "speed:floor"
-  | "speed:cap";
+  | "speed:cap"
+  | `prof:save:${string}`
+  | `prof:skill:${string}`
+  | `prof:expertise:${string}`
+  | `prof:language:${string}`
+  | `prof:tool:${string}`
+  | `prof:weapon:${string}`
+  | `prof:armor:${string}`
+  | "trait:half-proficiency-all-skills";
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1";
@@ -91,6 +99,13 @@ export function ruleFlag(values: RuleValues, target: RuleTarget): boolean {
   return values.flags.includes(target);
 }
 
+/** The ids flagged under a family prefix, in grant order: `prof:skill:` → skill ids. */
+export function ruleFlagIds(values: RuleValues, prefix: `${string}:`): string[] {
+  return values.flags.flatMap((flag) =>
+    flag.startsWith(prefix) ? [flag.slice(prefix.length)] : []
+  );
+}
+
 const WALKING_MULTIPLE = { "equal-to-walking": 1, "twice-walking": 2 } as const;
 
 /** Compile one leaf Grant to rules; `null` for a kind not migrated yet. */
@@ -142,6 +157,22 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "max", target: "speed:floor", value: grant.minFt }];
     case "speed-cap":
       return [{ op: "min", target: "speed:cap", value: grant.maxFt }];
+    case "save-proficiency":
+      return [{ op: "flag", target: `prof:save:${grant.ability}` }];
+    case "skill-proficiency":
+      return [{ op: "flag", target: `prof:skill:${grant.skill}` }];
+    case "expertise":
+      return [{ op: "flag", target: `prof:expertise:${grant.skill}` }];
+    case "language":
+      return [{ op: "flag", target: `prof:language:${grant.language}` }];
+    case "tool-proficiency":
+      return [{ op: "flag", target: `prof:tool:${grant.tool}` }];
+    case "weapon-proficiency":
+      return [{ op: "flag", target: `prof:weapon:${grant.proficiency}` }];
+    case "armor-proficiency":
+      return [{ op: "flag", target: `prof:armor:${grant.proficiency}` }];
+    case "half-proficiency-all-skills":
+      return [{ op: "flag", target: "trait:half-proficiency-all-skills" }];
     default:
       return null;
   }
@@ -177,5 +208,6 @@ export function foldRules(rules: readonly Rule[]): RuleValues {
     for (const value of byStack.values()) total += value;
     numbers[key] = total;
   }
-  return { numbers, flags: [...flags].sort() };
+  // Flags keep grant order (first occurrence), so projections stay stable.
+  return { numbers, flags: [...flags] };
 }

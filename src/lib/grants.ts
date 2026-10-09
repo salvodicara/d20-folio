@@ -36,6 +36,7 @@ import {
   foldRules,
   ruleConditional,
   ruleFlag,
+  ruleFlagIds,
   ruleNumber,
   ruleValue,
   type MoveMode,
@@ -2366,14 +2367,6 @@ export function evaluateGrants(
   const weaponAttackCantrips: WeaponAttackCantripEntry[] = [];
 
   // Proficiencies
-  const saveProficiencies = new Set<AbilityCode>();
-  const skillProficiencies = new Set<string>();
-  const expertiseSkills = new Set<string>();
-  let halfProficiencyAllSkills = false;
-  const languages = new Set<string>();
-  const toolProficiencies = new Set<string>();
-  const weaponProficiencies = new Set<ProficiencyToken>();
-  const armorProficiencies = new Set<ProficiencyToken>();
   const weaponAttackAbilities: {
     ability: AbilityCode;
     magicOnly: boolean;
@@ -2990,28 +2983,14 @@ export function evaluateGrants(
 
       // ── Proficiencies ───────────────────────────────────────────────
       case "save-proficiency":
-        saveProficiencies.add(g.ability);
-        break;
       case "skill-proficiency":
-        skillProficiencies.add(g.skill);
-        break;
       case "expertise":
-        expertiseSkills.add(g.skill);
-        break;
       case "half-proficiency-all-skills":
-        halfProficiencyAllSkills = true;
-        break;
       case "language":
-        languages.add(g.language);
-        break;
       case "tool-proficiency":
-        toolProficiencies.add(g.tool);
-        break;
       case "weapon-proficiency":
-        weaponProficiencies.add(g.proficiency);
-        break;
       case "armor-proficiency":
-        armorProficiencies.add(g.proficiency);
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "weapon-attack-ability":
         weaponAttackAbilities.push({
@@ -3648,7 +3627,7 @@ export function evaluateGrants(
           // existing seams so a CARRIED weapon the Warlock bonds with benefits
           // identically (Equipment proficiency union + best-of attack ability).
           // The `pact-weapon` TOKEN localizes from the catalogue (no EN leak).
-          weaponProficiencies.add(asProficiencyToken("pact-weapon"));
+          rules.push({ op: "flag", target: "prof:weapon:pact-weapon" });
           if (
             !weaponAttackAbilities.some(
               (wa) => wa.ability === g.attackAbility && !wa.magicOnly
@@ -3906,14 +3885,18 @@ export function evaluateGrants(
     cantripEffectRiders,
     cantripRangeBonuses,
     weaponAttackCantrips,
-    saveProficiencies,
-    skillProficiencies,
-    expertiseSkills,
-    halfProficiencyAllSkills,
-    languages,
-    toolProficiencies,
-    weaponProficiencies,
-    armorProficiencies,
+    saveProficiencies: new Set(ruleFlagIds(values, "prof:save:") as AbilityCode[]),
+    skillProficiencies: new Set(ruleFlagIds(values, "prof:skill:")),
+    expertiseSkills: new Set(ruleFlagIds(values, "prof:expertise:")),
+    halfProficiencyAllSkills: ruleFlag(values, "trait:half-proficiency-all-skills"),
+    languages: new Set(ruleFlagIds(values, "prof:language:")),
+    toolProficiencies: new Set(ruleFlagIds(values, "prof:tool:")),
+    weaponProficiencies: new Set(
+      ruleFlagIds(values, "prof:weapon:").map(asProficiencyToken)
+    ),
+    armorProficiencies: new Set(
+      ruleFlagIds(values, "prof:armor:").map(asProficiencyToken)
+    ),
     weaponAttackAbilities,
     weaponAttackBonuses,
     damageDieModifiers,
