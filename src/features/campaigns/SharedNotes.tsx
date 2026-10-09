@@ -259,8 +259,12 @@ export function SharedNotes() {
         </div>
       </InfoCard>
     ) : (
-      <InfoCard as="li" key={n.id} className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <InfoCard
+        as="li"
+        key={n.id}
+        className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1"
+      >
+        <div className="min-w-0 flex-[1_1_14rem]">
           {n.dmOnly ? (
             // Shown only on the DM's board (a player never sees the note at all) —
             // a calm muted chip marking it held back.
@@ -284,7 +288,7 @@ export function SharedNotes() {
             </NoteClamp>
           ) : null}
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="ml-auto flex shrink-0 gap-1">
           {isDm ? (
             // Content-sharing lens (DM only): hide a note from players or reveal it.
             // Eye = currently shared (tap to hide); EyeOff = hidden (tap to reveal).
