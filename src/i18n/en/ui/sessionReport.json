@@ -42,11 +42,10 @@
       "victory": "victory",
       "ended": "ended"
     },
-    "panelTitle": "Session reports",
-    "empty": "Nothing recorded yet. Play a session and its report writes itself.",
-    "toggle": "Show or hide this report",
     "entries_one": "{{count}} entry",
     "entries_other": "{{count}} entries",
-    "copied": "Report copied"
+    "copied": "Report copied",
+    "automatic": "Automatic report",
+    "addNotes": "Write notes"
   }
 }

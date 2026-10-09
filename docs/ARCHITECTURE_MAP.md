@@ -228,9 +228,10 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    lines produce a Chronicle beat, so nothing duplicates the DM mirror. Found on the way:
    `applyDeclaredCombatEffects`, `applyResolvedCombatEffects` and `applySoloCombatEffects` had
    no production caller (dead since the resolver went) — deleted with their reducers.
-5. **Done.** `SessionReports` (campaign Journal tab): one row per session from
-   `SessionLogStore.recent`, opening to the round-by-round report rendered by
-   `renderSessionReport` (`src/lib/views/session-report-view.ts`, EN/IT) with "Copy for AI".
+5. **Done.** `useSessionReports` + `SessionDayReport`: each session page in the Journal joins the same local
+   day's `SessionLogStore` logs as an "Automatic report" disclosure (an evening with a log but
+   no page still lists, with "Write notes"), rendered by `renderSessionReport`
+   (`src/lib/views/session-report-view.ts`, EN/IT) with "Copy".
    The encounter start line now carries the monsters' names so the report can name them after
    the fight. `session-log-source.ts` picks the store: Firestore, or memory under dev bypass, so
    the whole flow (DM mirror → log → report) runs locally with no backend. Manual session notes

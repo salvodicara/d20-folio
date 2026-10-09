@@ -5,9 +5,13 @@
  * on-open + cached) plus "new session" create, both through the 2a `campaign-io`
  * subcollection helpers.
  *
- * D28 — the selected session is a directly editable living document, not a read card
- * followed by an Edit → Save ceremony. The draft is mirrored to localStorage on every
- * keystroke, debounced to Firestore, and flushed on blur / page hide / route unmount.
+ * D28 — the selected session is a living document: it reads as rendered prose and one
+ * click (or the Edit button) turns it into its markdown source, with no Save ceremony.
+ * The draft is mirrored to localStorage on every keystroke, debounced to Firestore, and
+ * flushed on blur / page hide / route unmount; blur returns to the rendered page. An
+ * empty session opens straight into the editor. Each session page also carries the
+ * same evening's automatic report ({@link SessionDayReport}); an evening that was
+ * played but never given a session page still shows, with "Write notes".
  * Switching campaign workspace tabs keeps this component mounted; leaving the route is
  * still safe because the local draft survives until a confirmed remote write.
  *
@@ -25,6 +29,7 @@ import {
   Check,
   ChevronDown,
   LoaderCircle,
+  Pencil,
   ScrollText,
   Trash2,
 } from "lucide-react";
@@ -32,6 +37,14 @@ import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Textarea } from "@/components/ui/input";
 import { InlineEditable } from "@/components/shared/InlineEditable";
+import { BlockMarkdown } from "@/components/shared/BlockMarkdown";
+import { SessionDayReport } from "@/features/campaigns/SessionDayReport";
+import {
+  dayKey,
+  dayOfLog,
+  useSessionReports,
+  type SessionLog,
+} from "@/features/campaigns/useSessionReports";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useConfirmStore } from "@/stores/confirmStore";
 import type { SessionLogDoc } from "@/types/campaign";
@@ -61,6 +74,12 @@ function firstLine(notes: string): string {
   return "";
 }
 
+type Row =
+  | { kind: "session"; session: SessionLogDoc }
+  | { kind: "evening"; day: Date; logs: SessionLog[] };
+
+const rowDate = (row: Row): Date => (row.kind === "session" ? row.session.date : row.day);
+
 type SummarySaveState = "saved" | "pending" | "saving" | "error";
 
 const SUMMARY_SAVE_DELAY = 900;
@@ -88,13 +107,14 @@ function readSessionDraft(campaignId: string, session: SessionLogDoc): string {
 
 export function Sessions({
   campaignId,
-  liveDesk = false,
+  openLatest = false,
 }: {
   campaignId: string;
-  /** Open the newest session as the live campaign desk's directly editable document. */
-  liveDesk?: boolean;
+  /** Open the newest session's page on load. */
+  openLatest?: boolean;
 }) {
   const { t, i18n } = useTranslation();
+  const reports = useSessionReports(campaignId);
   const [sessions, setSessions] = useState<SessionLogDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -184,7 +204,15 @@ export function Sessions({
   }
 
   function blurEditor(id: string): void {
-    flushNotes(id, activeDraft.current?.value ?? draft);
+    const value = activeDraft.current?.value ?? draft;
+    flushNotes(id, value);
+    // Back to the rendered page once there is something to read.
+    if (value.trim()) setEditingId(null);
+  }
+
+  function startEditing(id: string): void {
+    focusEditorRequested.current = true;
+    setEditingId(id);
   }
 
   // Focus the editor when a row enters edit mode — WITHOUT scrolling (the old
@@ -206,10 +234,10 @@ export function Sessions({
       .then((s) => {
         if (!cancelled) {
           setSessions(s);
-          if (liveDesk && s[0]) {
+          if (openLatest && s[0]) {
             setOpenIds(new Set([s[0].id]));
-            setEditingId(s[0].id);
             const value = readSessionDraft(campaignId, s[0]);
+            if (!value) setEditingId(s[0].id);
             setDraft(value);
             activeDraft.current = { id: s[0].id, value, saved: s[0].notes };
           }
@@ -224,7 +252,7 @@ export function Sessions({
     return () => {
       cancelled = true;
     };
-  }, [campaignId, liveDesk]);
+  }, [campaignId, openLatest]);
 
   // The browser may freeze a background tab without firing beforeunload. The local
   // draft is already durable per keystroke; these events also make a best-effort remote
@@ -260,20 +288,20 @@ export function Sessions({
     const active = activeDraft.current;
     if (active && active.value !== active.saved) flushNotes(active.id, active.value);
     setOpenIds(new Set([s.id]));
-    focusEditorRequested.current = true;
-    setEditingId(s.id);
     const value = readSessionDraft(campaignId, s);
+    // Something to read opens the rendered page; an empty session opens the editor.
+    focusEditorRequested.current = !value;
+    setEditingId(value ? null : s.id);
     setDraft(value);
     activeDraft.current = { id: s.id, value, saved: s.notes };
     setSaveState("saved");
   }
 
-  async function addSession(): Promise<void> {
+  async function addSession(date = new Date()): Promise<void> {
     const active = activeDraft.current;
     if (active && active.value !== active.saved) flushNotes(active.id, active.value);
     setBusy(true);
     const label = t("campaignHub.sessionN", { n: sessions.length + 1 });
-    const date = new Date();
     try {
       const id = await createSession(campaignId, { label, date });
       const created: SessionLogDoc = {
@@ -288,7 +316,9 @@ export function Sessions({
         generatedRecap: null,
         addedToChronicle: false,
       };
-      setSessions((prev) => [created, ...prev]);
+      setSessions((prev) =>
+        [created, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime())
+      );
       // Open it AND drop straight into edit mode — write the recap on the spot.
       setOpenIds(new Set([id]));
       focusEditorRequested.current = true;
@@ -370,53 +400,79 @@ export function Sessions({
           <div className="sess-body">
             <div className="sess-notes">
               {editing ? (
-                <>
-                  <Textarea
-                    ref={editorRef}
-                    rows={3}
-                    className="sess-notes-edit"
-                    value={draft}
-                    onChange={(e) => updateDraft(s.id, e.target.value)}
-                    onBlur={() => blurEditor(s.id)}
-                    placeholder={t("campaignHub.sessionNotesPlaceholder")}
-                    aria-label={t("campaignHub.sessionNotes")}
-                  />
-                  <div className="sess-notes-actions">
-                    <span
-                      className="sess-save-state"
-                      data-state={saveState}
-                      role="status"
-                    >
-                      {saveState === "saving" && (
-                        <Icon
-                          as={LoaderCircle}
-                          size="sm"
-                          decorative
-                          className="animate-spin"
-                        />
-                      )}
-                      {saveState === "saved" && <Icon as={Check} size="sm" decorative />}
-                      {saveState === "error"
-                        ? t("campaignHub.sessionSaveError")
-                        : saveState === "saved"
-                          ? t("save.saved")
-                          : t("save.saving")}
-                    </span>
+                <Textarea
+                  ref={editorRef}
+                  rows={3}
+                  className="sess-notes-edit"
+                  value={draft}
+                  onChange={(e) => updateDraft(s.id, e.target.value)}
+                  onBlur={() => blurEditor(s.id)}
+                  placeholder={t("campaignHub.sessionNotesPlaceholder")}
+                  aria-label={t("campaignHub.sessionNotes")}
+                />
+              ) : open ? (
+                <div
+                  className="sess-notes-read"
+                  onClick={(e) => {
+                    // A link inside the prose keeps its own click.
+                    if (!(e.target as HTMLElement).closest("a")) startEditing(s.id);
+                  }}
+                >
+                  <BlockMarkdown text={draft} className="chronicle-prose" />
+                </div>
+              ) : null}
+              {open && (
+                <div className="sess-notes-actions">
+                  <span className="sess-save-state" data-state={saveState} role="status">
+                    {saveState === "saving" && (
+                      <Icon
+                        as={LoaderCircle}
+                        size="sm"
+                        decorative
+                        className="animate-spin"
+                      />
+                    )}
+                    {saveState === "saved" && <Icon as={Check} size="sm" decorative />}
+                    {saveState === "error"
+                      ? t("campaignHub.sessionSaveError")
+                      : saveState === "saved"
+                        ? t("save.saved")
+                        : t("save.saving")}
+                  </span>
+                  {!editing && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="sess-delete-action"
-                      onClick={() => void confirmDeleteSession(s.id)}
+                      aria-label={t("campaignHub.editSessionNotes")}
+                      onClick={() => startEditing(s.id)}
                     >
-                      <Icon as={Trash2} size="sm" decorative />
-                      {t("campaignHub.deleteSession")}
+                      <Icon as={Pencil} size="sm" decorative />
+                      {t("common.edit")}
                     </Button>
-                  </div>
-                </>
-              ) : (
-                <p className="sess-notes-empty">{t("campaignHub.sessionNoSummary")}</p>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="sess-delete-action"
+                    onClick={() => void confirmDeleteSession(s.id)}
+                  >
+                    <Icon as={Trash2} size="sm" decorative />
+                    {t("campaignHub.deleteSession")}
+                  </Button>
+                </div>
               )}
             </div>
+            {open &&
+              reports
+                .logsOn(s.date)
+                .map((log) => (
+                  <SessionDayReport
+                    key={log.id}
+                    log={log}
+                    date={s.date}
+                    onOpen={reports.reload}
+                  />
+                ))}
           </div>
         </div>
       </li>
@@ -426,7 +482,58 @@ export function Sessions({
   // The latest session is the FIXED at-a-glance signal (a real, expandable row); the
   // OLDER sessions are the collapsible DETAIL, bounded to keep the at-a-glance set the
   // latest VISIBLE_SESSIONS total (1 fixed + the rest below) with "View all".
-  const [latest, ...older] = sessions;
+  // Evenings that were played (a session log exists) but never given a page.
+  const pagedDays = new Set(sessions.map((x) => dayKey(x.date)));
+  const evenings = new Map<string, { day: Date; logs: SessionLog[] }>();
+  for (const log of reports.logs) {
+    const day = dayOfLog(log.id);
+    if (!day || pagedDays.has(dayKey(day))) continue;
+    const key = dayKey(day);
+    evenings.set(key, { day, logs: [...(evenings.get(key)?.logs ?? []), log] });
+  }
+  const rows: Row[] = [
+    ...sessions.map((session) => ({ kind: "session" as const, session })),
+    ...[...evenings.values()].map((e) => ({ kind: "evening" as const, ...e })),
+  ].sort((a, b) => rowDate(b).getTime() - rowDate(a).getTime());
+  const renderRow = (row: Row): ReactElement =>
+    row.kind === "session" ? renderSession(row.session) : renderEvening(row.day);
+
+  // An evening with a report but no page: the report, and "Write notes" to give it one.
+  function renderEvening(day: Date): ReactElement {
+    return (
+      <li key={dayKey(day)} className="sess-item" data-open>
+        <div className="sess-summary">
+          <div className="sess-head">
+            <Icon as={ScrollText} size="sm" decorative className="sess-ico" />
+            <span className="sess-label">{day.toLocaleDateString(i18n.language)}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={busy}
+              onClick={() => void addSession(day)}
+            >
+              <Icon as={Pencil} size="sm" decorative />
+              {t("sessionReport.addNotes")}
+            </Button>
+          </div>
+        </div>
+        <div className="sess-bodywrap">
+          <div className="sess-body">
+            {reports.logsOn(day).map((log) => (
+              <SessionDayReport
+                key={log.id}
+                log={log}
+                date={day}
+                onOpen={reports.reload}
+              />
+            ))}
+          </div>
+        </div>
+      </li>
+    );
+  }
+
+  const [latest, ...older] = rows;
   const detailPreview = VISIBLE_SESSIONS - 1;
   const visibleOlder = showAll ? older : older.slice(0, detailPreview);
   const hiddenCount = older.length - visibleOlder.length;
@@ -434,7 +541,7 @@ export function Sessions({
   const olderDetail =
     older.length > 0 ? (
       <div className="flex flex-col gap-3">
-        <ul className="sess-list">{visibleOlder.map(renderSession)}</ul>
+        <ul className="sess-list">{visibleOlder.map(renderRow)}</ul>
         {hiddenCount > 0 || showAll ? (
           <button
             type="button"
@@ -443,7 +550,7 @@ export function Sessions({
           >
             {showAll
               ? t("common.showLess")
-              : t("campaignHub.viewAll", { count: sessions.length })}
+              : t("campaignHub.viewAll", { count: rows.length })}
           </button>
         ) : null}
       </div>
@@ -453,7 +560,7 @@ export function Sessions({
     <SectionPanel
       sectionId="sessions"
       title={t("campaignHub.sessions")}
-      count={sessions.length || undefined}
+      count={rows.length || undefined}
       headerAction={
         <Button
           variant="ghost"
@@ -471,10 +578,10 @@ export function Sessions({
       hideLabel={t("campaignHub.hideOlderSessions")}
     >
       <div className="flex flex-col gap-3">
-        {loading ? null : sessions.length === 0 ? (
+        {loading ? null : rows.length === 0 ? (
           <p className="text-sm text-text-secondary">{t("campaignHub.sessionsEmpty")}</p>
         ) : (
-          <ul className="sess-list">{latest ? renderSession(latest) : null}</ul>
+          <ul className="sess-list">{latest ? renderRow(latest) : null}</ul>
         )}
       </div>
     </SectionPanel>

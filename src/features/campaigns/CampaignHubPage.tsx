@@ -43,7 +43,7 @@ import {
 } from "@/features/campaigns/campaignStore";
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
 import { useSessionLogMirror } from "@/features/campaigns/useSessionLogMirror";
-import { SessionReports } from "@/features/campaigns/SessionReports";
+import { LastTime } from "@/features/campaigns/LastTime";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { CampaignArtControl } from "@/features/campaigns/CampaignArtControl";
@@ -303,7 +303,11 @@ function CampaignWorkspace({
           </IsolatedSection>
           <IsolatedSection>
             <div className="campaign-live-recap">
-              <Sessions campaignId={campaignId} liveDesk />
+              <LastTime
+                campaignId={campaignId}
+                visible={activeView === "live"}
+                onOpenJournal={() => selectView("journal")}
+              />
             </div>
           </IsolatedSection>
         </section>
@@ -316,13 +320,15 @@ function CampaignWorkspace({
           className="campaign-workspace-panel campaign-journal-grid"
         >
           <IsolatedSection>
-            <Chronicle campaignId={campaignId} campaignName={campaignName} />
-          </IsolatedSection>
-          <IsolatedSection>
-            <SessionReports campaignId={campaignId} visible={activeView === "journal"} />
+            <Sessions campaignId={campaignId} openLatest />
           </IsolatedSection>
           <IsolatedSection>
             <SharedNotes />
+          </IsolatedSection>
+          <IsolatedSection>
+            <div className="campaign-journal-archive">
+              <Chronicle campaignId={campaignId} campaignName={campaignName} />
+            </div>
           </IsolatedSection>
         </section>
 
@@ -336,9 +342,11 @@ function CampaignWorkspace({
           <IsolatedSection>
             <Treasury />
           </IsolatedSection>
-          <IsolatedSection>
-            <CampaignInvite canManage={canManage} />
-          </IsolatedSection>
+          {!canManage && (
+            <IsolatedSection>
+              <CampaignInvite canManage={false} />
+            </IsolatedSection>
+          )}
         </section>
 
         {canManage && (
@@ -349,9 +357,14 @@ function CampaignWorkspace({
             hidden={activeView !== "dm"}
             className="campaign-workspace-panel"
           >
-            <IsolatedSection>
-              <DmTools />
-            </IsolatedSection>
+            <div className="campaign-dm-grid">
+              <IsolatedSection>
+                <CampaignInvite canManage />
+              </IsolatedSection>
+              <IsolatedSection>
+                <DmTools />
+              </IsolatedSection>
+            </div>
           </section>
         )}
       </div>

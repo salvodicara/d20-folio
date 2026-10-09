@@ -12402,6 +12402,14 @@ button.uc-chevron::before {
   .campaign-journal-grid {
     grid-template-columns: minmax(0, 1.55fr) minmax(19rem, 0.65fr);
   }
+  .campaign-journal-archive {
+    grid-column: 1 / -1;
+  }
+}
+.campaign-dm-grid {
+  display: grid;
+  align-items: start;
+  gap: var(--sp-6);
 }
 
 @media (max-width: 720px) {
@@ -12837,9 +12845,13 @@ h6.bm-heading {
 }
 .sess-notes-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--sp-2);
+}
+.sess-notes-actions .btn {
+  white-space: nowrap;
 }
 .sess-save-state {
   display: inline-flex;
@@ -22062,6 +22074,85 @@ body:has(.fob) .toast-region {
 /* §16.5 — the cockpit's primary tabs are BOOK TABS: the same bound-page
    linguette construction the Compendium wears (the cockpit selectors twin the
    .cmp-tab rules) biting the ribbon rule below. */
+
+/* Session page — the notes read as rendered prose; a click turns them into source. */
+.sess-notes-read {
+  cursor: text;
+  border-radius: var(--radius-md);
+  padding: var(--sp-1) var(--sp-2);
+  margin-inline: calc(var(--sp-2) * -1);
+  transition: background var(--m-fast);
+}
+.sess-notes-read:hover {
+  background: color-mix(in oklab, var(--accent-primary) 6%, transparent);
+}
+.sess-notes-read .chronicle-prose {
+  max-width: var(--measure, 72ch);
+}
+.sess-notes-actions .btn:not(.sess-delete-action) {
+  margin-left: auto;
+}
+.sess-notes-actions .btn:not(.sess-delete-action) + .sess-delete-action {
+  margin-left: 0;
+}
+/* The same evening's automatic report: a quiet disclosure under the notes. */
+.sess-report-block {
+  margin-top: var(--sp-3);
+  border-top: 1px dashed var(--border-soft);
+  padding-top: var(--sp-2);
+}
+.sess-report-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+.sess-report-toggle:hover,
+.sess-report-toggle:focus-visible {
+  color: var(--accent-text);
+}
+.sess-report-count {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.sess-report-block[data-open] .sess-chevron {
+  transform: rotate(180deg);
+}
+.sess-report-block .sess-report {
+  padding-top: var(--sp-2);
+}
+
+/* Live tab — "Last time…": the newest session's notes, read-only. */
+.last-time {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.last-time-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+.last-time-label {
+  color: var(--text-primary);
+  font-family: var(--font-title);
+  font-size: var(--text-md);
+}
+.last-time-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
 
 /* Session reports — the automatic round-by-round chronicle inside a `sess-item`. */
 .sess-report {

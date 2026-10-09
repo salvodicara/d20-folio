@@ -42,11 +42,10 @@
       "victory": "vittoria",
       "ended": "concluso"
     },
-    "panelTitle": "Resoconti di sessione",
-    "empty": "Ancora niente di registrato. Giocate una sessione e il resoconto si scrive da solo.",
-    "toggle": "Mostra o nascondi questo resoconto",
     "entries_one": "{{count}} voce",
     "entries_other": "{{count}} voci",
-    "copied": "Resoconto copiato"
+    "copied": "Resoconto copiato",
+    "automatic": "Resoconto automatico",
+    "addNotes": "Scrivi le note"
   }
 }
