@@ -286,7 +286,7 @@ SRD catalogue as static JSON. Only SRD material goes out.
 
 - **(1) In progress.** The rules grammar (`src/lib/rules`) now covers senses, speeds,
   proficiencies, defenses, derived numbers, roll bonuses and blockers (#39–#49); the session log
-  is the play record. `deriveCharacter(doc)` (`src/lib/derive-character.ts`) is the one
+  is the play record. `deriveCharacter(doc)` (`src/lib/views/derive-character.ts`) is the one
   stored-character → computed-sheet derivation (abilities, saves, skills, passives, AC, HP,
   initiative, speeds, senses, spell DC/attack, defenses), composed from the seams the player's
   sheet reads; the DM's party view is a projection of it. Next: the PDF and the cockpit rail read

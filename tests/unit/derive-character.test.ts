@@ -7,7 +7,7 @@
  * must read the same numbers — including a hand-set passive override.
  */
 import { describe, it, expect } from "vitest";
-import { deriveCharacter } from "@/lib/derive-character";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";

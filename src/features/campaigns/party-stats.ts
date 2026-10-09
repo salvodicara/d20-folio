@@ -14,7 +14,7 @@
 
 import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { applyCombatToSession } from "@/lib/combat-state";
-import { deriveCharacter } from "@/lib/derive-character";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CombatState } from "@/types/combat-state";
 import type { PcLive } from "@/features/campaigns/encounter-view";
 import type { SenseEntry, SpeedEntry } from "@/lib/views/sheet-view";
