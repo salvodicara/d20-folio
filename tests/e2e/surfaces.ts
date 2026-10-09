@@ -1069,8 +1069,15 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
+      await page.getByRole("tab", { name: /^journal$|^diario$/i }).click();
       await page
-        .getByRole("textbox", { name: /session summary|riassunto della sessione/i })
+        .getByRole("button", {
+          name: /edit session summary|modifica il riassunto della sessione/i,
+        })
+        .first()
+        .click();
+      await page
+        .getByRole("textbox", { name: /^(session summary|riassunto della sessione)$/i })
         .waitFor({ timeout: 5000 });
     },
   },

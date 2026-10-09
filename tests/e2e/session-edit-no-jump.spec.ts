@@ -1,5 +1,5 @@
 /**
- * E2E: the live-session summary is a durable, directly editable document.
+ * E2E: a session's summary (Journal) is a durable, directly editable document.
  *
  * jsdom can pin the save calls, but only a browser can prove the real workflow:
  * write during play, jump to the character realm through the global header, then
@@ -21,12 +21,18 @@ async function seedHub(page: Page) {
   await page.goto("/campaigns/DEVCAMPAIGN24");
 }
 
-test("the live recap survives a campaign → character → campaign round trip", async ({
+test("a session recap survives a campaign → character → campaign round trip", async ({
   page,
 }) => {
   await seedHub(page);
 
-  const editor = page.getByRole("textbox", { name: /session summary/i });
+  // The newest session opens rendered in the Journal; Edit shows its source.
+  await page.getByRole("tab", { name: /^journal$/i }).click();
+  await page
+    .getByRole("button", { name: /edit session summary/i })
+    .first()
+    .click();
+  const editor = page.getByRole("textbox", { name: /^session summary$/i });
   await editor.waitFor();
   await expect(editor).toHaveValue(/The party crossed at dawn/);
 
@@ -50,7 +56,7 @@ test("the live recap survives a campaign → character → campaign round trip",
   await expect(page).toHaveURL(/\/characters$/);
   await page.goBack();
   await expect(page).toHaveURL(/\/campaigns\/DEVCAMPAIGN24$/);
-  await expect(page.getByRole("textbox", { name: /session summary/i })).toHaveValue(
-    recap
-  );
+  // Back on the hub the Journal shows the page rendered from the restored draft.
+  await page.getByRole("tab", { name: /^journal$/i }).click();
+  await expect(page.locator(".sess-notes-read").first()).toContainText(recap);
 });
