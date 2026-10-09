@@ -47,7 +47,6 @@
     "toggle": "Show or hide this report",
     "entries_one": "{{count}} entry",
     "entries_other": "{{count}} entries",
-    "copy": "Copy for AI",
     "copied": "Report copied"
   }
 }

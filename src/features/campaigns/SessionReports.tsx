@@ -1,7 +1,7 @@
 /**
  * SessionReports — the automatic, deterministic report of each play session, built from
  * the campaign's session log (nobody writes it). One row per session, newest first; a
- * row opens to the round-by-round chronicle with "Copy for AI". A one-shot read on open,
+ * row opens to the round-by-round chronicle with a Copy button. A one-shot read on open,
  * like Sessions (no standing listener). Wears the Sessions row vocabulary (`sess-*`).
  */
 
@@ -148,7 +148,7 @@ export function SessionReports({
                 <CopyButton
                   value={markdown}
                   toastMessage={t("sessionReport.copied")}
-                  label={t("sessionReport.copy")}
+                  label={t("common.copy")}
                   variant="ghost"
                   size="sm"
                   className="self-start"
