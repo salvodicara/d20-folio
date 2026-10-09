@@ -226,6 +226,13 @@
     "nextSessionSet": "Fissa la prossima sessione",
     "nextSessionChange": "Cambia",
     "nextSessionInput": "Data e ora della prossima sessione",
-    "nextSessionClear": "Togli"
+    "nextSessionClear": "Togli",
+    "partySummary": "Il gruppo a colpo d'occhio",
+    "partySummaryHero": "Personaggio",
+    "partySummaryLevel": "Liv {{level}}",
+    "partySummaryBest": "Il migliore del gruppo",
+    "partySummaryEmpty": "Nessun personaggio collegato. I giocatori collegano il loro personaggio dalla scheda Live.",
+    "partySummaryLoading_one": "{{count}} personaggio ancora in caricamento…",
+    "partySummaryLoading_other": "{{count}} personaggi ancora in caricamento…"
   }
 }

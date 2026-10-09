@@ -54,6 +54,7 @@ import { Sessions } from "@/features/campaigns/Sessions";
 import { Treasury } from "@/features/campaigns/Treasury";
 import { SharedNotes } from "@/features/campaigns/SharedNotes";
 import { DmTools } from "@/features/campaigns/DmTools";
+import { PartySummary } from "@/features/campaigns/PartySummary";
 
 /**
  * The bundled default campaign backdrop — the war-table plate, fed to the app's
@@ -359,6 +360,9 @@ function CampaignWorkspace({
             className="campaign-workspace-panel"
           >
             <div className="campaign-dm-grid">
+              <IsolatedSection>
+                <PartySummary />
+              </IsolatedSection>
               <IsolatedSection>
                 <CampaignInvite canManage />
               </IsolatedSection>
