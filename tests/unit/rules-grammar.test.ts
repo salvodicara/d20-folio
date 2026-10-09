@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { evaluateGrants, type GrantSource } from "@/lib/grants";
-import { compileGrant, foldRules, ruleFlag, ruleFlagIds, ruleNumber } from "@/lib/rules";
+import {
+  compileGrant,
+  foldRules,
+  ruleFlag,
+  ruleFlagIds,
+  ruleNumber,
+  ruleTerms,
+} from "@/lib/rules";
 
 const source = (id: string, grants: GrantSource["grants"]): GrantSource => ({
   id,
@@ -48,7 +55,7 @@ describe("generic rules grammar — senses", () => {
   });
 
   it("leaves kinds that have not migrated yet to the bespoke evaluator", () => {
-    expect(compileGrant({ type: "ac-bonus", amount: 1 })).toBeNull();
+    expect(compileGrant({ type: "hp-flat", amount: 5 })).toBeNull();
   });
 });
 
@@ -134,5 +141,105 @@ describe("generic rules grammar — defenses", () => {
     expect(out.sourceConditionImmunities).toEqual([
       { condition: "unconscious", sourceId: "sleep" },
     ]);
+  });
+});
+
+describe("generic rules grammar — derived numbers", () => {
+  it("keeps ability terms apart from the numeric sum, in grant order", () => {
+    const values = foldRules([
+      { op: "add", target: "ac:bonus", value: 1 },
+      { op: "add", target: "ac:bonus", value: { ability: "INT", min: 1 } },
+      { op: "add", target: "ac:bonus", value: 2 },
+      { op: "add", target: "ac:bonus", value: { ability: "WIS" } },
+    ]);
+    expect(ruleNumber(values, "ac:bonus")).toBe(3);
+    expect(ruleTerms(values, "ac:bonus")).toEqual([
+      { ability: "INT", min: 1 },
+      { ability: "WIS" },
+    ]);
+    expect(ruleTerms(values, "hp:per-level")).toEqual([]);
+  });
+
+  it("sums flat AC bonuses and lists ability-based ones through the real evaluator", () => {
+    const out = evaluateGrants([
+      source("ring", [{ type: "ac-bonus", amount: 1 }]),
+      source("bladesong", [{ type: "ac-bonus", ability: "INT", min: 1 }]),
+      source("cloak", [{ type: "ac-bonus", amount: 1 }]),
+      source("dwarven-toughness", [{ type: "hp-per-level", amount: 1 }]),
+      source("tough", [{ type: "hp-per-level", amount: 2 }]),
+    ]);
+    expect(out.acBonus).toBe(2);
+    expect(out.acBonusAbilities).toEqual([{ ability: "INT", min: 1 }]);
+    expect(out.hpPerLevel).toBe(3);
+  });
+
+  it("applies the rules baselines: crits on a 20, 3 attunement slots, no extra attack", () => {
+    const none = evaluateGrants([]);
+    expect(none.critThreshold).toBe(20);
+    expect(none.deathSaveCritThreshold).toBe(20);
+    expect(none.attunementSlots).toBe(3);
+    expect(none.extraAttacks).toBe(0);
+
+    const out = evaluateGrants([
+      source("improved-critical", [{ type: "crit-range", threshold: 19 }]),
+      source("superior-critical", [{ type: "crit-range", threshold: 18 }]),
+      source("odd-item", [
+        { type: "crit-range", threshold: 21 },
+        { type: "attunement-slots", amount: 2 },
+      ]),
+      source("artificer", [{ type: "attunement-slots", amount: 5 }]),
+      source("extra-attack", [{ type: "extra-attack", count: 1 }]),
+      source("devouring-blade", [{ type: "extra-attack", count: 2 }]),
+      source("death-ward", [{ type: "death-save-crit-range", threshold: 18 }]),
+    ]);
+    expect(out.critThreshold).toBe(18);
+    expect(out.attunementSlots).toBe(5);
+    expect(out.extraAttacks).toBe(2);
+    expect(out.deathSaveCritThreshold).toBe(18);
+  });
+
+  it("keeps the long-rest and short-rest exhaustion channels apart", () => {
+    const out = evaluateGrants([
+      source("self-restoration", [{ type: "exhaustion-recovery", amount: 1 }]),
+      source("tireless", [
+        { type: "exhaustion-recovery", amount: 1, recovery: "short-rest" },
+      ]),
+      source("other", [
+        { type: "exhaustion-recovery", amount: 1, recovery: "long-rest" },
+      ]),
+    ]);
+    expect(out.exhaustionRecoveryBonus).toBe(2);
+    expect(out.exhaustionRecoveryShortRest).toBe(1);
+  });
+
+  it("raises ability floors to the highest set score", () => {
+    const out = evaluateGrants([
+      source("gauntlets", [{ type: "ability-score-set", ability: "STR", value: 19 }]),
+      source("belt", [{ type: "ability-score-set", ability: "STR", value: 21 }]),
+      source("headband", [{ type: "ability-score-set", ability: "INT", value: 19 }]),
+    ]);
+    expect(out.abilityScoreFloors).toEqual({ STR: 21, INT: 19 });
+  });
+
+  it("adds ability-score bonuses only from magic items, with the tightest cap", () => {
+    const item = (id: string, grants: GrantSource["grants"]): GrantSource => ({
+      ...source(id, grants),
+      ref: { kind: "magic-item", key: id },
+    });
+    const out = evaluateGrants([
+      item("ioun-stone", [{ type: "ability-score", ability: "CON", amount: 2, cap: 22 }]),
+      item("tome", [{ type: "ability-score", ability: "CON", amount: 2, cap: 20 }]),
+      item("manual", [{ type: "ability-score", ability: "STR", amount: 1 }]),
+      source("feat-asi", [{ type: "ability-score", ability: "CON", amount: 1 }]),
+    ]);
+    expect(out.itemAbilityScoreBonus).toEqual({
+      STR: 1,
+      DEX: 0,
+      CON: 4,
+      INT: 0,
+      WIS: 0,
+      CHA: 0,
+    });
+    expect(out.itemAbilityScoreCap).toEqual({ CON: 20 });
   });
 });

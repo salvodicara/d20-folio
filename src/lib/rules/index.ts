@@ -11,8 +11,19 @@
  * Conditions: a rule may hold only `when` a fact is true ("no-heavy-armor", "round-1").
  * The fold keeps conditional contributions apart; the reader passes the facts it knows
  * (`ruleNumber(values, target, facts)`), because only the reader has that context.
+ *
+ * Ability terms: an `add` rule's value may be an ability modifier (`{ ability, min? }`,
+ * "+INT modifier, minimum 1") that the fold cannot resolve, because it has no scores.
+ * Terms never enter `numbers`: each one is kept on its target in grant order
+ * (`ruleTerms`), and the reader adds `max(modifier, min)` per term (the bare modifier
+ * when `min` is absent) on top of the numeric part.
+ *
+ * Baselines: a `max`/`min` target whose rule starts from a fixed value (3 attunement
+ * slots, a critical hit on a 20) folds only the granted values; the reader applies the
+ * baseline, e.g. `Math.min(20, ruleValue(values, "crit:attack") ?? 20)`.
  */
 
+import type { AbilityCode } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 
 /** The sense kinds, in display order (the i18n coverage guard reads this list). */
@@ -53,14 +64,40 @@ export type RuleTarget =
   | `defense:resist-source:${string}`
   | `defense:condition-immune:${string}`
   /** Immune to a condition only when that source causes it (`<condition>@<source>`). */
-  | `defense:condition-immune-from:${string}`;
+  | `defense:condition-immune-from:${string}`
+  | "ac:bonus"
+  | "hp:per-level"
+  | "attunement:slots"
+  | "crit:attack"
+  | "crit:death-save"
+  | "attack:extra"
+  /** Extra Exhaustion levels removed by that rest, beyond the default. */
+  | `exhaustion:recovery:${"long-rest" | "short-rest"}`
+  /** A score the ability is raised to ("no effect if already higher"). */
+  | `ability:floor:${AbilityCode}`
+  /** A magic item's additive bonus, and the resulting-score ceiling it allows. */
+  | `ability:item-bonus:${AbilityCode}`
+  | `ability:item-cap:${AbilityCode}`;
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1";
 
+/** An ability modifier added to a target, floored at `min` when given. */
+export interface AbilityTerm {
+  ability: AbilityCode;
+  min?: number;
+}
+
 export type Rule =
   | {
-      op: "add" | "max" | "min";
+      op: "add";
+      target: RuleTarget;
+      value: number | AbilityTerm;
+      stack?: string;
+      when?: RuleFact;
+    }
+  | {
+      op: "max" | "min";
       target: RuleTarget;
       value: number;
       stack?: string;
@@ -72,6 +109,7 @@ export type Rule =
  *  target, or `target?fact` for a contribution that holds only when the fact does. */
 export interface RuleValues {
   readonly numbers: Readonly<Record<string, number>>;
+  readonly terms: Readonly<Record<string, readonly AbilityTerm[]>>;
   readonly flags: readonly RuleTarget[];
 }
 
@@ -101,6 +139,14 @@ export function ruleConditional(
   fact: RuleFact
 ): number {
   return values.numbers[keyOf(target, fact)] ?? 0;
+}
+
+/** The target's unresolved ability terms, in grant order (empty when none). */
+export function ruleTerms(
+  values: RuleValues,
+  target: RuleTarget
+): readonly AbilityTerm[] {
+  return values.terms[target] ?? [];
 }
 
 export function ruleFlag(values: RuleValues, target: RuleTarget): boolean {
@@ -200,6 +246,54 @@ export function compileGrant(grant: Grant): Rule[] | null {
             }
           : { op: "flag", target: `defense:condition-immune:${grant.condition}` },
       ];
+    case "ac-bonus":
+      return [
+        {
+          op: "add",
+          target: "ac:bonus",
+          value: grant.ability
+            ? { ability: grant.ability, min: grant.min ?? 0 }
+            : (grant.amount ?? 0),
+        },
+      ];
+    case "hp-per-level":
+      return [{ op: "add", target: "hp:per-level", value: grant.amount }];
+    case "attunement-slots":
+      return [{ op: "max", target: "attunement:slots", value: grant.amount }];
+    case "crit-range":
+      return [{ op: "min", target: "crit:attack", value: grant.threshold }];
+    case "death-save-crit-range":
+      return [{ op: "min", target: "crit:death-save", value: grant.threshold }];
+    case "extra-attack":
+      // Extra Attack never stacks (multiclass); Devouring Blade upgrades Thirsting Blade.
+      return [{ op: "max", target: "attack:extra", value: grant.count }];
+    case "exhaustion-recovery":
+      return [
+        {
+          op: "add",
+          target: `exhaustion:recovery:${grant.recovery ?? "long-rest"}`,
+          value: grant.amount,
+        },
+      ];
+    case "ability-score-set":
+      return [
+        { op: "max", target: `ability:floor:${grant.ability}`, value: grant.value },
+      ];
+    case "ability-score": {
+      // A magic item's bonus: the evaluator feeds only item sources here, because
+      // every other ASI is already baked into the stored scores. `cap` is the
+      // resulting-score ceiling ("to a maximum of 20"); the tightest one wins.
+      const rules: Rule[] = [
+        { op: "add", target: `ability:item-bonus:${grant.ability}`, value: grant.amount },
+      ];
+      if (grant.cap != null)
+        rules.push({
+          op: "min",
+          target: `ability:item-cap:${grant.ability}`,
+          value: grant.cap,
+        });
+      return rules;
+    }
     default:
       return null;
   }
@@ -207,6 +301,7 @@ export function compileGrant(grant: Grant): Rule[] | null {
 
 export function foldRules(rules: readonly Rule[]): RuleValues {
   const buckets = new Map<string, Map<string, number>>();
+  const terms: Record<string, AbilityTerm[]> = {};
   const flags = new Set<RuleTarget>();
   for (const rule of rules) {
     if (rule.op === "flag") {
@@ -214,6 +309,10 @@ export function foldRules(rules: readonly Rule[]): RuleValues {
       continue;
     }
     const key = keyOf(rule.target, rule.when);
+    if (typeof rule.value !== "number") {
+      (terms[key] ??= []).push(rule.value);
+      continue;
+    }
     const byStack = buckets.get(key) ?? new Map<string, number>();
     const stack = rule.stack ?? rule.op;
     const prior = byStack.get(stack);
@@ -236,5 +335,5 @@ export function foldRules(rules: readonly Rule[]): RuleValues {
     numbers[key] = total;
   }
   // Flags keep grant order (first occurrence), so projections stay stable.
-  return { numbers, flags: [...flags] };
+  return { numbers, terms, flags: [...flags] };
 }
