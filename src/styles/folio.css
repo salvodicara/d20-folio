@@ -22154,8 +22154,13 @@ body:has(.fob) .toast-region {
    pinned; the best value of each column is gilded. */
 .party-summary-scroll {
   overflow-x: auto;
+  border-radius: var(--radius-md);
   margin-inline: calc(var(--sp-2) * -1);
   padding-inline: var(--sp-2);
+}
+.party-summary-scroll:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 .party-summary {
   width: 100%;

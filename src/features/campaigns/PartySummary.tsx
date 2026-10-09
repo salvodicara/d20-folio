@@ -81,7 +81,14 @@ export function PartySummary() {
           {t("campaignHub.partySummaryEmpty")}
         </p>
       ) : (
-        <div className="party-summary-scroll">
+        <div
+          className="party-summary-scroll"
+          // A sideways-scrolling region must be reachable by keyboard (axe
+          // scrollable-region-focusable): focusable, named after the table.
+          tabIndex={0}
+          role="region"
+          aria-label={t("campaignHub.partySummary")}
+        >
           <table className="party-summary">
             <thead>
               <tr>
