@@ -16,6 +16,7 @@ import { SRD_FEATS } from "@/data/feats";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { SRD_RACES } from "@/data/races";
+import { SRD_WEAPONS } from "@/data/weapons";
 import { spells } from "@/data/spells";
 import type {
   BeastAttack,
@@ -35,6 +36,7 @@ import {
 } from "./from-creature";
 import { activityFromItemActivation } from "./from-item";
 import { translateSpell } from "./from-spell";
+import { translateWeapon } from "./from-weapon";
 import type { ActivityTranslation, MonsterSection } from "./types";
 
 export interface CatalogueAction {
@@ -195,8 +197,8 @@ export function catalogueItemActivations(): Array<{
 /**
  * Every active mechanic in the catalogue as one Activity with the source fields it
  * cannot express yet: spells, feature/feat/species/equipment/invocation actions,
- * monster stat-block entries, beast-form and companion attacks, and magic-item
- * activations, in that order.
+ * monster stat-block entries, beast-form and companion attacks, magic-item
+ * activations and weapon attacks, in that order.
  */
 export async function catalogueActivities(): Promise<ActivityTranslation[]> {
   const monsterEntries = await catalogueMonsterEntries();
@@ -218,5 +220,6 @@ export async function catalogueActivities(): Promise<ActivityTranslation[]> {
       const activity = activityFromItemActivation(itemId, grant);
       return activity ? [{ activity, gaps: [] }] : [];
     }),
+    ...SRD_WEAPONS.flatMap((weapon) => translateWeapon(weapon) ?? []),
   ];
 }

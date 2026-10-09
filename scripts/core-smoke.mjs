@@ -60,8 +60,10 @@ deepStrictEqual(
   },
   "spell:fireball"
 );
-if (!activities.some(({ activity }) => activity.source.kind === "monster")) {
-  throw new Error("core-smoke: no monster activities");
+for (const kind of ["monster", "weapon"]) {
+  if (!activities.some(({ activity }) => activity.source.kind === kind)) {
+    throw new Error(`core-smoke: no ${kind} activities`);
+  }
 }
 console.log(
   `core-smoke: the built package derives ${checked} fixture sheets exactly and lists ${activities.length} activities`
