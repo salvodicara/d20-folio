@@ -5027,6 +5027,9 @@ button.sc-pip:disabled {
   flex-shrink: 0;
   color: var(--accent-text);
 }
+.conc-pill .conc-rounds {
+  opacity: 0.8;
+}
 .conc-pill .conc-x {
   all: unset;
   cursor: pointer;
@@ -16452,6 +16455,11 @@ button.econ-tok-filter:active .econ-disc {
 }
 .status-badge .sb-label {
   white-space: nowrap;
+}
+/* Rounds left on what the status holds — a quiet numeral after the name. */
+.status-badge .sb-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
 }
 /* Concentration — the one GOLD badge (a held state, not a penalty): the accent
    register + a soft candlelit halo so it leads the ledge. */

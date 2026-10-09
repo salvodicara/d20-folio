@@ -118,6 +118,7 @@ import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
 import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
+import { concentrationRoundsLeft, deriveStatuses, statusRoundCounts } from "@/lib/status";
 
 /** The six set-valued override maps on CharacterData (#68). */
 type SetOverrideField =
@@ -261,13 +262,18 @@ export function ResourceRail() {
   );
   const [openCompanionId, setOpenCompanionId] = useState<string | null>(null);
 
+  // Phase 2 — every active status (toggles, their countdowns, drunk potions,
+  // what Concentration holds) read ONCE through the status view.
+  const statuses = useMemo(
+    () => (character ? deriveStatuses(character) : []),
+    [character]
+  );
   // S9 — active CONSUMED buff-potion countdowns (Potion of Speed / Giant
-  // Strength / …) resolved from the self-sustaining `potion:` effectTimers the
-  // store armed when each potion was drunk. Localized once; rendered as small
-  // duration banners reusing the same timer chrome the while-active states use.
+  // Strength / …). Localized once; rendered as small duration banners reusing
+  // the same timer chrome the while-active states use.
   const potionTimers = useMemo(
-    () => potionTimerVMs(character?.session.effectTimers, locale),
-    [character?.session.effectTimers, locale]
+    () => potionTimerVMs(statuses, locale),
+    [statuses, locale]
   );
 
   // REST-frequency variant bundles (re-chosen each rest per RAW) — the
@@ -296,6 +302,9 @@ export function ResourceRail() {
   );
   const spellSlots = charData.spellSlots;
   const concentration = vitalConcentration(session);
+  const concentrationRounds = concentration
+    ? concentrationRoundsLeft(statuses)
+    : undefined;
   const conditions = effectiveSessionConditions(session);
   const exhaustion = vitalExhaustion(session);
   const inspiration = session.inspiration;
@@ -620,7 +629,7 @@ export function ResourceRail() {
                 toggles={activatableToggles(
                   aggregate.activatableGroups,
                   locale,
-                  session.effectTimers,
+                  statusRoundCounts(statuses),
                   // S5 — gate the Bloodied boon toggles (Desperate Resilience /
                   // Furious Storm) on the SAME `isBloodied` predicate every surface
                   // reads; an unmet gate hints (override-first, never hard-locks).
@@ -932,6 +941,11 @@ export function ResourceRail() {
           <div className="conc-pill" style={{ marginBottom: "var(--sp-2)" }}>
             <FocusMark label={t("combat.concentration")} />
             <span>{concentrationLabel(concentration, locale)}</span>
+            {concentrationRounds !== undefined && (
+              <span className="conc-rounds">
+                {t("combat.effectTimerShort", { count: concentrationRounds })}
+              </span>
+            )}
             <button
               type="button"
               className="conc-x"

@@ -88,6 +88,7 @@ const CONDITION_ICONS: Record<string, LucideIcon> = {
 export function StatusLedge({
   limiters,
   concentration,
+  concentrationRounds,
   concBlockedConditionId,
   readonly,
 }: {
@@ -95,6 +96,9 @@ export function StatusLedge({
   limiters: TurnLimiterVM[];
   /** The concentrated-on spell (session value; `null` = not concentrating). */
   concentration: string | null;
+  /** Rounds left on the status Concentration holds (status view); absent when
+   *  it holds no countdown. */
+  concentrationRounds?: number;
   /** B1 — the first active condition that forbids holding concentration. */
   concBlockedConditionId: string | null;
   /** P10 glass case — a read-only viewer sees the badges, never the drop action. */
@@ -164,6 +168,14 @@ export function StatusLedge({
               <span className="sb-label">
                 {concentrationLabel(concentration, locale)}
               </span>
+              {concentrationRounds !== undefined && (
+                <span className="sb-count">
+                  <span aria-hidden>{concentrationRounds}</span>
+                  <span className="sr-only">
+                    {t("combat.effectTimerShort", { count: concentrationRounds })}
+                  </span>
+                </span>
+              )}
             </button>
           </PopoverTrigger>
           <PopoverContent
@@ -178,6 +190,11 @@ export function StatusLedge({
                 spell: concentrationLabel(concentration, locale),
               })}
             </p>
+            {concentrationRounds !== undefined && (
+              <p className="sp-line">
+                {t("combat.effectTimerShort", { count: concentrationRounds })}
+              </p>
+            )}
             {/* B1 — an active condition (Incapacitated family) forbids holding
                 Concentration: name the cause. Override-first — the drop action
                 beside it lets the player end it; the engine never auto-drops on

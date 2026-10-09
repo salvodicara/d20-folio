@@ -2596,7 +2596,7 @@ export function castSourceActiveKey(sourceId: string, spellId: string): string {
   return `${CAST_SOURCE_ACTIVE_PREFIX}${sourceId}:${spellId}`;
 }
 
-function castSourceIdFromActiveKey(key: string): string | null {
+export function castSourceIdFromActiveKey(key: string): string | null {
   if (!key.startsWith(CAST_SOURCE_ACTIVE_PREFIX)) return null;
   const spellSeparator = key.lastIndexOf(":");
   return spellSeparator > CAST_SOURCE_ACTIVE_PREFIX.length
@@ -7760,7 +7760,7 @@ export type ActiveStateBlocker = "heavy-armor" | "incapacitated";
 /** Full mechanical sources plus hidden spell-lifecycle wrappers. The latter do
  * not surface in the feature rail, but their active keys still own timers and
  * deterministic expiry. Callers dedupe by active key. */
-function resolveLifecycleGrantSources(character: CharacterDoc): GrantSource[] {
+export function resolveLifecycleGrantSources(character: CharacterDoc): GrantSource[] {
   return [
     ...resolveAllGrantSources(character.character, character.session.itemResources),
     ...resolveGrantSourcesForSpellLifecycles(character.character.spells),
