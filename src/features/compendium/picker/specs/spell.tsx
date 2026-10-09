@@ -12,7 +12,7 @@ import { spells } from "@/data/spells";
 import { primaryClassId, primarySubclassId } from "@/lib/classes";
 import { getSubclassSpellcasting } from "@/lib/subclass-spellcasting";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
-import { castingTimeI18nKey } from "@/lib/utils";
+import { activityFromSpell, castingTimeKey, fixedDamageType } from "@/lib/activities";
 import { useCharacterStore } from "@/stores/characterStore";
 import { Icon } from "@/components/ui/icon";
 import { InfoCard } from "@/components/shared/InfoCard";
@@ -247,6 +247,7 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
 
   row: (spell, ctx) => {
     const { t, locale } = ctx;
+    const activity = activityFromSpell(spell);
     return {
       leading: (
         <span
@@ -270,8 +271,8 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
           {spell.level === 0
             ? t("spells.cantrip")
             : t("spells.levelShort", { level: spell.level })}{" "}
-          · {t(`srd.castingTime_${castingTimeI18nKey(spell.castingTime)}`)}
-          {spell.concentration && ` · ${t("spells.concentrationShort")}`}
+          · {t(`srd.castingTime_${castingTimeKey(activity.cost)}`)}
+          {activity.concentration && ` · ${t("spells.concentrationShort")}`}
         </>
       ),
       trailing: isCrossClass(spell, ctx) ? (
@@ -285,20 +286,24 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
     const charClass = ctx.character ? primaryClassId(ctx.character.character) : "";
     const schoolName = t(`srd.school_${spell.school}`);
     const crossClass = isCrossClass(spell, ctx);
+    // The mechanics facts read the spell's Activity, never the flat fields.
+    const activity = activityFromSpell(spell);
+    const components = activity.cost.components;
+    const damageType = fixedDamageType(activity);
 
     const meta: NonNullable<PickerDetailView["meta"]> = [
       {
         label: t("spells.castingTime"),
-        value: t(`srd.castingTime_${castingTimeI18nKey(spell.castingTime)}`),
+        value: t(`srd.castingTime_${castingTimeKey(activity.cost)}`),
       },
       { label: t("spells.range"), value: spellText(spell, "range", locale) },
       { label: t("spells.duration"), value: spellText(spell, "duration", locale) },
       {
         label: t("spells.components"),
         value: [
-          spell.components.v ? "V" : "",
-          spell.components.s ? "S" : "",
-          spell.components.m ? "M" : "",
+          components?.v ? "V" : "",
+          components?.s ? "S" : "",
+          components?.m ? "M" : "",
         ]
           .filter(Boolean)
           .join(", "),
@@ -307,25 +312,25 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
         term: "components",
       },
     ];
-    if (spell.concentration)
+    if (activity.concentration)
       meta.push({
         label: t("spells.concentration"),
         value: t("common.yes"),
         term: "concentration",
       });
-    if (spell.ritual)
+    if (activity.cost.ritual)
       meta.push({ label: t("spells.ritual"), value: t("common.yes"), term: "ritual" });
-    if (spell.damageType)
+    if (damageType)
       meta.push({
         label: t("spells.damageType"),
-        value: t(`srd.damage_${spell.damageType.toLowerCase()}`),
+        value: t(`srd.damage_${damageType.toLowerCase()}`),
       });
-    if (spell.saveAbility)
+    if (activity.save)
       meta.push({
         label: t("spells.saveType"),
         // D1 — localize the ability code (DEX→DES in IT); the raw code leaked here
         // while the cockpit already used the *_short keys.
-        value: t(`abilities.${spell.saveAbility}_short`),
+        value: t(`abilities.${activity.save.ability}_short`),
         term: "savingThrow",
       });
 

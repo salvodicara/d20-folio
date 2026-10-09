@@ -31,6 +31,7 @@
  * `spells-tab-memo` test pins).
  */
 
+import { activityFromSpell, type Activity } from "@/lib/activities";
 import type { Locale } from "@/lib/locale";
 import type {
   CharacterData,
@@ -125,6 +126,9 @@ export interface SpellCardVM {
   /** The underlying SRD data (null for custom) — for the verdict/facts the edge
    *  still reads structured fields (damageType, saveAbility, …) off it. */
   data: SrdSpellData | null;
+  /** The spell's mechanics as one Activity (null for custom): the card's verdict,
+   *  gloss and facts read cost, save, attack, damage and healing from it. */
+  activity: Activity | null;
   /** The stored ref (for edit writes + notes). */
   ref: SpellRef;
 
@@ -364,6 +368,7 @@ function buildSrdCardVM(args: {
     idx,
     kind: "srd",
     data,
+    activity: activityFromSpell(data),
     ref,
     name,
     searchEn: localizeSrd("spell", id, "name", "en"),
@@ -408,6 +413,7 @@ function buildCustomCardVM(args: {
     idx,
     kind: "custom",
     data: null,
+    activity: null,
     ref,
     name: localizeCustom(ref.name),
     searchEn: localizeCustom(ref.name),

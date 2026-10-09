@@ -18,6 +18,7 @@ import {
 } from "@/features/character/center/tabs/spells/spell-card-helpers";
 import type { SpellCardVM } from "@/lib/views/spells-view";
 import { getSpellById } from "@/data/spells";
+import { activityFromSpell } from "@/lib/activities";
 import type { TFunction } from "i18next";
 import enSpells from "@/i18n/en/ui/spells.json";
 import itSpells from "@/i18n/it/ui/spells.json";
@@ -31,6 +32,7 @@ function vmFor(id: string): SpellCardVM {
     idx: 0,
     kind: "srd",
     data,
+    activity: activityFromSpell(data),
     ref: { srdId: id },
     name: id,
     searchEn: id,

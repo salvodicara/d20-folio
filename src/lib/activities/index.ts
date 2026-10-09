@@ -12,3 +12,10 @@ export {
   translateMonsterEntry,
 } from "./from-creature";
 export { activityFromItemActivation } from "./from-item";
+export {
+  castingTimeKey,
+  fixedDamageType,
+  healDice,
+  primaryDamage,
+  secondaryDamage,
+} from "./read";

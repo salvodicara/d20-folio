@@ -121,7 +121,8 @@ export const SpellCard = memo(function SpellCard({
   // G24 — a self-side cadence note for a spell whose damage RE-APPLIES (Moonbeam /
   // Spirit Guardians per-turn area save, Flaming Sphere bonus-action move, Call
   // Lightning re-fire). The token localizes to a short "when it recurs" chip.
-  if (vm.data?.recurrence) tags.push(t(`spells.recurrence_${vm.data.recurrence}`));
+  if (vm.activity?.recurrence)
+    tags.push(t(`spells.recurrence_${vm.activity.recurrence}`));
   if (vm.overrideAbility) tags.push(`${t("spells.ability")} · ${vm.overrideAbility}`);
   if (vm.wizardMastery) tags.push(t("spellPrep.spellMasteryBadge"));
   if (vm.wizardSignature) tags.push(t("spellPrep.signatureSpellBadge"));
