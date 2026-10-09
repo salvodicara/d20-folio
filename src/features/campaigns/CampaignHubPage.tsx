@@ -322,7 +322,11 @@ function CampaignWorkspace({
           className="campaign-workspace-panel campaign-journal-grid"
         >
           <IsolatedSection>
-            <Sessions campaignId={campaignId} openLatest />
+            <Sessions
+              campaignId={campaignId}
+              openLatest
+              visible={activeView === "journal"}
+            />
           </IsolatedSection>
           <IsolatedSection>
             <SharedNotes />

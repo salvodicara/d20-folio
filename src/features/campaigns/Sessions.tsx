@@ -108,13 +108,16 @@ function readSessionDraft(campaignId: string, session: SessionLogDoc): string {
 export function Sessions({
   campaignId,
   openLatest = false,
+  visible = true,
 }: {
   campaignId: string;
   /** Open the newest session's page on load. */
   openLatest?: boolean;
+  /** The hub keeps hidden tabs mounted: re-read the evening reports when shown. */
+  visible?: boolean;
 }) {
   const { t, i18n } = useTranslation();
-  const reports = useSessionReports(campaignId);
+  const reports = useSessionReports(campaignId, visible);
   const [sessions, setSessions] = useState<SessionLogDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
