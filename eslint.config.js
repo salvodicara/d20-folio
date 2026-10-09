@@ -13,6 +13,9 @@ export default tseslint.config(
       "node_modules",
       "*.config.*",
       "packages/*/*.config.*",
+      // Type-checked against the BUILT declarations by `pnpm core:build`; before a
+      // build (CI's lint job) the package types do not exist yet.
+      "packages/*/smoke",
       "coverage",
       ".claude",
     ],
