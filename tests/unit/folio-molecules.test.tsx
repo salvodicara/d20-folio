@@ -22,6 +22,7 @@ import {
 } from "@/components/shared/UniversalCard";
 import { StatCard } from "@/components/shared/StatCard";
 import { Tracker } from "@/components/shared/Tracker";
+import i18n from "@/i18n";
 
 // ─── UniversalCard ────────────────────────────────────────────────────────────
 
@@ -47,6 +48,29 @@ describe("UniversalCard", () => {
     // translation (translation is allowed app-wide; see dom-resilience).
     expect(verdict).toHaveAttribute("translate", "no");
     expect(screen.getByText("Faerie Fire")).not.toHaveAttribute("translate", "no");
+  });
+
+  it("names the slot pips in the reader's language", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      render(
+        <UniversalCard
+          kind="spell"
+          spellLevel={1}
+          name="Benedizione"
+          slot="action"
+          ctaLabel="Lancia"
+          mode="combat-CTA"
+          onCommit={() => undefined}
+          slotPips={{ level: 1, total: 4, used: 2 }}
+        />
+      );
+      expect(
+        screen.getByRole("img", { name: "2 su 4 slot di livello 1 disponibili" })
+      ).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 
   it("colours the left border by action slot via data-slot", () => {
