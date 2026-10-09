@@ -38,11 +38,14 @@ import {
   ruleFlag,
   ruleFlagIds,
   ruleNumber,
+  ruleTerms,
   ruleValue,
   type MoveMode,
   type Rule,
+  type RuleTarget,
   type RuleValues,
 } from "@/lib/rules";
+import { ABILITY_CODES } from "@/types/ability";
 import type { DamageType } from "@/types/damage";
 import {
   arraySchema,
@@ -2180,6 +2183,31 @@ function nonWalkingSpeed(values: RuleValues, mode: MoveMode): NonWalkingSpeed | 
   return ruleValue(values, `speed:${mode}`);
 }
 
+/** The abilities a per-ability target holds a value for, keeping only `keep`. */
+function perAbility(
+  values: RuleValues,
+  family: "floor" | "item-cap",
+  keep: (value: number) => boolean = () => true
+): Partial<Record<AbilityCode, number>> {
+  const out: Partial<Record<AbilityCode, number>> = {};
+  for (const ability of ABILITY_CODES) {
+    const value = ruleValue(values, `ability:${family}:${ability}`);
+    if (value !== null && keep(value)) out[ability] = value;
+  }
+  return out;
+}
+
+/** The ability-modifier terms of a target, each with its floor (0 when none). */
+function abilityTerms(
+  values: RuleValues,
+  target: RuleTarget
+): { ability: AbilityCode; min: number }[] {
+  return ruleTerms(values, target).map(({ ability, min }) => ({
+    ability,
+    min: min ?? 0,
+  }));
+}
+
 /**
  * Exhaustiveness guard for the {@link Grant} discriminated union — the single
  * data↔logic seam. Mirrors `cost-engine.ts`'s `assertNever`: because every
@@ -2280,16 +2308,12 @@ export function evaluateGrants(
   // Movement (speeds fold through `lib/rules`)
   const round1DamageDoubles: AggregatedGrants["round1DamageDoubles"][number][] = [];
 
-  // Derived stats
-  let acBonus = 0;
-  const acBonusAbilities: { ability: AbilityCode; min: number }[] = [];
+  // Derived stats (AC bonus, HP per level, crit ranges, extra attack, attunement,
+  // exhaustion recovery and ability floors/item bonuses fold through `lib/rules`)
   const acFormulas: AcFormula[] = [];
   let mediumArmorDexCap: { cap: number; minDex: number } | null = null;
-  let hpPerLevel = 0;
   let hpFlat = 0;
   const hpFlatParts: AggregatedGrants["hpFlatParts"][number][] = [];
-  let critThreshold = 20;
-  let deathSaveCritThreshold = 20;
   const startOfTurnRegen: AggregatedGrants["startOfTurnRegen"][number][] = [];
   const onCritMovement: AggregatedGrants["onCritMovement"][number][] = [];
   const replaceAttackWithCast: AggregatedGrants["replaceAttackWithCast"][number][] = [];
@@ -2302,27 +2326,10 @@ export function evaluateGrants(
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
   const resources: AggregatedGrants["resources"][number][] = [];
   const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
-  let extraAttacks = 0;
   const extraActions: AggregatedGrants["extraActions"][number][] = [];
   let turnEconomyBlocked = false;
   let heroicInspirationAtTurnStart = false;
   let heroicInspirationOnLongRest = false;
-  let attunementSlots = 3;
-  let exhaustionRecoveryBonus = 0;
-  let exhaustionRecoveryShortRest = 0;
-  const abilityScoreFloors: Partial<Record<AbilityCode, number>> = {};
-  const itemAbilityScoreBonus: Record<AbilityCode, number> = {
-    STR: 0,
-    DEX: 0,
-    CON: 0,
-    INT: 0,
-    WIS: 0,
-    CHA: 0,
-  };
-  // Tightest resulting-SCORE ceiling per ability among contributing item
-  // `ability-score` grants (RAW "to a maximum of 20"). Applied against the
-  // actual base by `effectiveAbilityScores`; absent ⇒ no cap.
-  const itemAbilityScoreCap: Partial<Record<AbilityCode, number>> = {};
   const spellSaveDcBonus: CastingModifierEntry[] = [];
   const spellAttackBonus: CastingModifierEntry[] = [];
   const saveBonusAbilities: { ability: AbilityCode; min: number }[] = [];
@@ -2538,12 +2545,28 @@ export function evaluateGrants(
         break;
 
       // ── Derived stats ───────────────────────────────────────────────
+      // Migrated to the generic rules grammar: sums, crit minimums, the extra-attack
+      // maximum and ability floors fold in `foldRules`; baselines live in the projection.
       case "ac-bonus":
-        if (g.ability) {
-          acBonusAbilities.push({ ability: g.ability, min: g.min ?? 0 });
-        } else {
-          acBonus += g.amount ?? 0;
-        }
+      case "hp-per-level":
+      case "attunement-slots":
+      case "exhaustion-recovery":
+      case "crit-range":
+      case "death-save-crit-range":
+      case "extra-attack":
+      case "ability-score-set":
+        rules.push(...(compileGrant(g) ?? []));
+        break;
+      case "ability-score":
+        // ADDITIVE ability bonus. ONLY magic-item sources fold into the live
+        // render channel — feat/class/race/background ASIs are already BAKED
+        // into the stored scores (`applyFeatAsi`), so re-adding them here would
+        // double-count. `gref.kind` is the originating source's SRD kind,
+        // preserved through `while-active` / `choice-grant-bundle` recursion by
+        // `childGrantRef`/`optionGrantRef` (so a bundled Ioun-Stone +2 still
+        // reads `magic-item`). A non-item `ability-score` grant is a no-op here
+        // (its effect is already in the stored base — golden rule 2).
+        if (gref?.kind === "magic-item") rules.push(...(compileGrant(g) ?? []));
         break;
       case "ac-formula":
         acFormulas.push({
@@ -2568,10 +2591,9 @@ export function evaluateGrants(
         }
         break;
       }
-      case "hp-per-level":
-        hpPerLevel += g.amount;
-        break;
       case "hp-flat": {
+        // Stays bespoke: the amount needs the activation's cast level or the engine
+        // world's exact delta, and each contribution is attributed to its source.
         // The engine world's `max-hp-delta` standing carries the EXACT resolved
         // amount (cast level included), so it is authoritative for its key;
         // legacy activations fall back to the runtime cast-level arithmetic.
@@ -2597,26 +2619,8 @@ export function evaluateGrants(
         if (sourceRef) hpFlatParts.push({ ref: sourceRef, amount });
         break;
       }
-      case "attunement-slots":
-        if (g.amount > attunementSlots) attunementSlots = g.amount;
-        break;
-      case "exhaustion-recovery":
-        if (g.recovery === "short-rest") {
-          exhaustionRecoveryShortRest += g.amount;
-        } else {
-          exhaustionRecoveryBonus += g.amount;
-        }
-        break;
       case "resource":
         resources.push({ sourceId, spec: g.spec });
-        break;
-      case "crit-range":
-        // The most generous (lowest) threshold wins.
-        if (g.threshold < critThreshold) critThreshold = g.threshold;
-        break;
-      case "death-save-crit-range":
-        // The most generous (lowest) threshold wins (mirrors `crit-range`).
-        if (g.threshold < deathSaveCritThreshold) deathSaveCritThreshold = g.threshold;
         break;
       case "regen-at-turn-start": {
         const amount =
@@ -2686,46 +2690,12 @@ export function evaluateGrants(
           zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
         }
         break;
-      case "extra-attack":
-        // Extra Attack never stacks (multiclass) and Devouring Blade UPGRADES
-        // Thirsting Blade — the most extra attacks granted wins.
-        if (g.count > extraAttacks) extraAttacks = g.count;
-        break;
       case "heroic-inspiration-at-turn-start":
         heroicInspirationAtTurnStart = true;
         break;
       case "heroic-inspiration-on-rest":
         heroicInspirationOnLongRest = true;
         break;
-      case "ability-score-set": {
-        // Floor: keep the highest value seen per ability ("no effect if your
-        // score is already higher" is resolved against the base by the consumer).
-        const prev = abilityScoreFloors[g.ability] ?? 0;
-        if (g.value > prev) abilityScoreFloors[g.ability] = g.value;
-        break;
-      }
-      case "ability-score": {
-        // ADDITIVE ability bonus. ONLY magic-item sources fold into the live
-        // render channel — feat/class/race/background ASIs are already BAKED
-        // into the stored scores (`applyFeatAsi`), so re-adding them here would
-        // double-count. `gref.kind` is the originating source's SRD kind,
-        // preserved through `while-active` / `choice-grant-bundle` recursion by
-        // `childGrantRef`/`optionGrantRef` (so a bundled Ioun-Stone +2 still
-        // reads `magic-item`). A non-item `ability-score` grant is a no-op here
-        // (its effect is already in the stored base — golden rule 2).
-        if (gref?.kind === "magic-item") {
-          itemAbilityScoreBonus[g.ability] += g.amount;
-          // The grant's `cap` is the resulting SCORE ceiling (RAW "to a maximum
-          // of 20"), NOT a bonus ceiling — it must clamp `base + bonus`, and
-          // `base` is unknown here. So carry the TIGHTEST cap per ability for
-          // `effectiveAbilityScores` to apply against the actual base.
-          if (g.cap != null) {
-            const prev = itemAbilityScoreCap[g.ability];
-            itemAbilityScoreCap[g.ability] = prev == null ? g.cap : Math.min(prev, g.cap);
-          }
-        }
-        break;
-      }
       case "spell-save-dc-bonus":
         spellSaveDcBonus.push({ amount: g.amount, scope: g.scope });
         break;
@@ -3817,15 +3787,17 @@ export function evaluateGrants(
     speedMultiplier: Math.max(1, ruleValue(values, "speed:multiplier") ?? 1),
     speedFloorFt: Math.max(0, ruleValue(values, "speed:floor") ?? 0),
     speedCapFt: ruleValue(values, "speed:cap"),
-    acBonus,
-    acBonusAbilities,
+    // Projections of the folded rules; each baseline (crit on 20, 3 attunement
+    // slots, no extra attack) is applied here, not in the fold.
+    acBonus: ruleNumber(values, "ac:bonus"),
+    acBonusAbilities: abilityTerms(values, "ac:bonus"),
     acFormulas,
     mediumArmorDexCap,
-    hpPerLevel,
+    hpPerLevel: ruleNumber(values, "hp:per-level"),
     hpFlat,
     hpFlatParts,
-    critThreshold,
-    deathSaveCritThreshold,
+    critThreshold: Math.min(20, ruleValue(values, "crit:attack") ?? 20),
+    deathSaveCritThreshold: Math.min(20, ruleValue(values, "crit:death-save") ?? 20),
     startOfTurnRegen,
     onCritMovement,
     replaceAttackWithCast,
@@ -3836,17 +3808,28 @@ export function evaluateGrants(
     atZeroHpInterrupts,
     resources,
     zeroHpFloors,
-    extraAttacks,
+    extraAttacks: Math.max(0, ruleValue(values, "attack:extra") ?? 0),
     extraActions,
     turnEconomyBlocked,
     heroicInspirationAtTurnStart,
     heroicInspirationOnLongRest,
-    attunementSlots,
-    exhaustionRecoveryBonus,
-    exhaustionRecoveryShortRest,
-    abilityScoreFloors,
-    itemAbilityScoreBonus,
-    itemAbilityScoreCap,
+    attunementSlots: Math.max(3, ruleValue(values, "attunement:slots") ?? 3),
+    exhaustionRecoveryBonus: ruleNumber(values, "exhaustion:recovery:long-rest"),
+    exhaustionRecoveryShortRest: ruleNumber(values, "exhaustion:recovery:short-rest"),
+    // "No effect if your score is already higher" is resolved against the base by
+    // the consumer; a floor of 0 or less never raises anything.
+    abilityScoreFloors: perAbility(values, "floor", (value) => value > 0),
+    itemAbilityScoreBonus: {
+      STR: ruleNumber(values, "ability:item-bonus:STR"),
+      DEX: ruleNumber(values, "ability:item-bonus:DEX"),
+      CON: ruleNumber(values, "ability:item-bonus:CON"),
+      INT: ruleNumber(values, "ability:item-bonus:INT"),
+      WIS: ruleNumber(values, "ability:item-bonus:WIS"),
+      CHA: ruleNumber(values, "ability:item-bonus:CHA"),
+    },
+    // The tightest resulting-SCORE ceiling per ability, applied against the actual
+    // base by `effectiveAbilityScores`; absent ⇒ no cap.
+    itemAbilityScoreCap: perAbility(values, "item-cap"),
     spellSaveDcBonus,
     spellAttackBonus,
     saveBonusAbilities,
