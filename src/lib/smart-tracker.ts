@@ -16,8 +16,12 @@
  */
 
 import {
+  activityFromAction,
   activityFromSpell,
   addsSpellMod,
+  type Activity,
+  type ActivityDice,
+  type FeatureOwnerKind,
   damageTypeFacet,
   effectsOfKind,
   primaryDamage,
@@ -33,8 +37,6 @@ import type {
 import type { ProficiencyToken } from "@/types/ids";
 import type {
   ActionType,
-  ActionHeal,
-  ActionAttack,
   DiceCount,
   HealTerm,
   Recovery,
@@ -937,7 +939,7 @@ function resolveHealTerm(
  * ability term reads the current ability modifier.
  */
 function resolveActionHeal(
-  heal: ActionHeal,
+  heal: ActivityDice | undefined,
   sourceId: string,
   character: CharacterDoc,
   // D2 — the EFFECTIVE ability scores (set-score item floors), so a heal-on-action
@@ -949,16 +951,23 @@ function resolveActionHeal(
   // A VARIABLE die count (PB, or an ability mod ≥1) is multiplied out to a
   // concrete dice string at emission via the shared resolver, so the chip reads
   // "3d4"/"3d8" — a number the player never has to compute (owner 2026-06-12).
-  const resolvedDice =
-    heal.diceCount && heal.dieFace
-      ? resolveDiceCount(heal.diceCount, heal.dieFace, charData, scores)
-      : resolveActionDie(heal.dice, sourceId, character);
+  const resolvedDice = heal?.count
+    ? resolveDiceCount(heal.count.of, heal.count.face, charData, scores)
+    : resolveActionDie(heal?.dice, sourceId, character);
   const dice = resolvedDice?.startsWith("d") ? `1${resolvedDice}` : resolvedDice;
-  const term = heal.plus;
+  const term = healTermOf(heal);
   const bonus = resolveHealTerm(term, charData, scores);
   return term?.kind === "class-level" || term?.kind === "ability-mod"
     ? { dice, bonus, term }
     : { dice, bonus };
+}
+
+/** The one catalogue heal term a feature formula adds, when it adds one. */
+function healTermOf(formula: ActivityDice | undefined): HealTerm | undefined {
+  return formula?.plus?.find(
+    (term): term is HealTerm =>
+      term.kind === "class-level" || term.kind === "ability-mod" || term.kind === "flat"
+  );
 }
 
 /**
@@ -4715,25 +4724,19 @@ function resolveBundleDamageType(
 }
 
 /**
- * S11 — resolve an action's SAVE + ATTACK halves onto its summary, SHARED by the
- * SRD-feature loop AND the race-trait loop so a save-based attack surfaces
- * identically wherever the action lives (single source of truth — golden rule 6).
- * The save half routes the DC through the one `featureSaveDc` formula (8 + PB +
- * mod, override-aware); the attack half resolves the dice at `scalingLevel` and
- * the damage type (fixed id / player-choice / ancestry-bundle-derived) onto the
- * SAME `summary.damage`/`damageType`(`/damageTypes`) a damage spell uses — so the
+ * S11 — resolve an action's SAVE + ATTACK halves onto its summary, SHARED by
+ * every feature-action source (class features, feats, species traits, equipment,
+ * invocations, homebrew) so a save-based attack surfaces identically wherever the
+ * action lives (single source of truth — golden rule 6). The save half routes the
+ * DC through the one `featureSaveDc` formula (8 + PB + mod, override-aware); the
+ * damage half resolves the dice at `scalingLevel` and the damage type (fixed id /
+ * player-choice / ancestry-bundle-derived) onto the SAME
+ * `summary.damage`/`damageType`(`/damageTypes`) a damage spell uses — so the
  * existing chip + facts recipe renders "2d10 Fire · DC N DEX" with no view code.
  */
 function applySaveAttackSummary(
   summary: RawActionSummary,
-  action: {
-    saveAbility?: AbilityCode;
-    saveDcAbility?: AbilityCode;
-    attack?: ActionAttack;
-    conditionApplication?: CombatConditionApplication;
-    targeting?: ActionTargeting;
-    area?: boolean;
-  },
+  activity: Activity,
   character: CharacterDoc,
   ctx: ActionResolveCtx,
   scalingLevel: number
@@ -4742,58 +4745,85 @@ function applySaveAttackSummary(
   // ability + the character ability that GOVERNS the DC. The DC routes through
   // the ONE `featureSaveDc` formula (PB derives from TOTAL level) so it can't
   // drift; the app never models the enemy (BG3 on-rails — golden rule 21).
-  if (action.saveAbility && action.saveDcAbility) {
-    summary.saveAbility = action.saveAbility;
+  const { save, target } = activity;
+  if (save && save.dc?.kind === "ability") {
+    summary.saveAbility = save.ability;
     summary.saveDC = featureSaveDc(
       ctx.level,
-      ctx.abilityScores[action.saveDcAbility],
+      ctx.abilityScores[save.dc.ability],
       character.character.proficiencyBonusOverride
     );
   }
-  if (action.conditionApplication)
-    summary.conditionApplication = action.conditionApplication;
-  if (action.targeting) summary.targeting = resolveActionTargeting(action.targeting, ctx);
-  if (action.area) summary.area = true;
+  const [condition] = effectsOfKind(activity, "condition");
+  if (condition) summary.conditionApplication = condition.apply;
+  if (target?.affinity) {
+    summary.targeting = resolveActionTargeting(
+      {
+        affinity: target.affinity,
+        ...(target.excludeSelf ? { excludeSelf: true } : {}),
+        ...(target.creatureTypes ? { creatureTypes: target.creatureTypes } : {}),
+        ...(target.count !== undefined ? { maxTargets: target.count } : {}),
+        ...(target.countPerUpcast !== undefined
+          ? { maxTargetsPerUpcast: target.countPerUpcast }
+          : {}),
+        ...(target.sharedAmount ? { sharedAmount: true } : {}),
+      },
+      ctx
+    );
+  }
+  if (target?.area) summary.area = true;
   // Declarative damage half (S11) — dice scale from the class/feature table at
   // the action's scaling level (golden rule 5 — scale from data, never hardcode);
   // the damage type is an id resolved at the render edge (golden rule 7).
-  const attack = action.attack;
-  if (attack) {
+  const [damage] = effectsOfKind(activity, "damage");
+  if (damage) {
     const charData = character.character;
+    const formula = damage.dice;
     // The rolled portion: a variable die COUNT (S11b — Sear Undead's WIS-many d8,
     // resolved via the SHARED helper the heal side uses), else the level-scaled
     // table, else a fixed die.
-    const baseDice =
-      attack.diceCount && attack.dieFace
-        ? resolveDiceCount(attack.diceCount, attack.dieFace, charData, ctx.abilityScores)
-        : (pickDiceByLevel(attack.diceByLevel, scalingLevel) ?? attack.dice);
+    const baseDice = formula?.count
+      ? resolveDiceCount(
+          formula.count.of,
+          formula.count.face,
+          charData,
+          ctx.abilityScores
+        )
+      : (pickDiceByLevel(formula?.byLevel, scalingLevel) ?? formula?.dice);
     // S11b — the additive total folded into the rolled dice (Divine Spark +WIS,
     // Radiance +Cleric level), resolved to a NUMBER so the chip reads "1d8+3" /
     // "2d10+5" — never a value the player must compute (owner 2026-06-12). The
     // level additive resolves on the OWNING-class `scalingLevel` (B2 lesson).
-    const bonus =
-      (attack.addMod ? abilityModifier(ctx.abilityScores[attack.addMod]) : 0) +
-      (attack.addLevel ? scalingLevel : 0);
+    let bonus = 0;
+    let modTerm: Extract<HealTerm, { kind: "ability-mod" }> | undefined;
+    for (const term of formula?.plus ?? []) {
+      if (term.kind === "ability-mod") {
+        bonus += abilityModifier(ctx.abilityScores[term.ability]);
+        modTerm = term;
+      }
+      if (term.kind === "owner-level") bonus += scalingLevel;
+    }
     if (baseDice) {
       // `appendAbilityModToDice` is the SAME flat-fold the spell/heal formulas use.
       summary.damage = appendAbilityModToDice(baseDice, bonus);
     }
-    if (attack.damageOnSave) summary.damageOnSave = attack.damageOnSave;
-    if (attack.resolution) summary.damageResolution = attack.resolution;
-    if (attack.damageType) {
-      summary.damageType = attack.damageType;
+    if (damage.onSave) summary.damageOnSave = damage.onSave;
+    if (damage.gate) summary.damageResolution = damage.gate;
+    const fixedType = !damage.choose ? damage.types?.[0] : undefined;
+    if (fixedType) {
+      summary.damageType = fixedType;
     } else {
       const damageTypeChoices =
-        pickByLevel(attack.damageTypeChoicesByLevel, scalingLevel) ??
-        attack.damageTypeChoices;
+        pickByLevel(damage.chooseByLevel, scalingLevel) ??
+        (damage.choose ? damage.types : undefined);
       if (damageTypeChoices && damageTypeChoices.length > 0) {
         // Player picks one each use — surface every option (the chip joins them
         // "/"); the primary `damageType` keeps the damage chip + facts row lit.
         summary.damageType = damageTypeChoices[0];
         summary.damageTypes = [...damageTypeChoices];
         summary.multiDamageTypeFlavor = "choice";
-      } else if (attack.damageTypeFromBundle) {
-        const derived = resolveBundleDamageType(attack.damageTypeFromBundle, character);
+      } else if (damage.fromBundle) {
+        const derived = resolveBundleDamageType(damage.fromBundle, character);
         if (derived) summary.damageType = derived;
       }
     }
@@ -4802,14 +4832,8 @@ function applySaveAttackSummary(
     // rides the existing `summary.heal` register (so it formats + applies through
     // the same seam as Second Wind), carrying the SAME `baseDice` + `bonus`. The
     // player picks one each use; the engine never chooses (override-first).
-    if (attack.mode === "heal-or-damage" && baseDice) {
-      summary.heal = {
-        dice: baseDice,
-        bonus,
-        ...(attack.addMod
-          ? { term: { kind: "ability-mod", ability: attack.addMod } as const }
-          : {}),
-      };
+    if (damage.orHeal && baseDice) {
+      summary.heal = { dice: baseDice, bonus, ...(modTerm ? { term: modTerm } : {}) };
     }
   }
 }
@@ -4884,93 +4908,115 @@ function resolveUnarmedAttackSummary(
   };
 }
 
-/** Apply every target-facing capability authored on a feature/homebrew action.
- * All source kinds use this one projection. */
+/**
+ * A feature action's Activity, as the card's target, check and effect facts read
+ * it. The tracker it spends is resolved by each source loop, so the Activity's
+ * cost carries no tracker here.
+ */
+function featureActionActivity(
+  action: SrdActionDef,
+  where: { owner: FeatureOwnerKind; ownerId: string; index: number },
+  grants?: ReadonlyArray<Grant>
+): Activity {
+  return activityFromAction(action, {
+    source: {
+      kind: "feature",
+      ...where,
+      ...(action.id ? { actionId: action.id } : {}),
+    },
+    ...(grants ? { grants } : {}),
+  });
+}
+
+/** Apply every target-facing capability a feature/homebrew action declares,
+ * read from its Activity. All source kinds use this one projection. */
 function applyActionEffectSummary(
   summary: RawActionSummary,
-  action: SrdActionDef,
+  activity: Activity,
   sourceId: string,
   character: CharacterDoc,
   ctx: ActionResolveCtx,
   scalingLevel: number
 ): void {
-  if (action.attackSequence?.attackId === "unarmed-strike") {
+  const unlocked = (effect: { fromLevel?: number }) =>
+    effect.fromLevel === undefined || scalingLevel >= effect.fromLevel;
+  const { attack, repeats } = activity;
+  // A weapon-profile attack sequence: today only the Unarmed Strike (Flurry of Blows).
+  if (attack?.bonus.kind === "weapon") {
     const aggregate = aggregateCharacterGrants(character.character, character.session);
     Object.assign(summary, resolveUnarmedAttackSummary(character, ctx, aggregate));
-    const scaled = Object.entries(action.attackSequence.instancesByLevel ?? {})
-      .map(([level, instances]) => [Number(level), instances] as const)
-      .filter(([level]) => level <= scalingLevel)
-      .sort(([a], [b]) => b - a)[0]?.[1];
-    summary.instances = scaled ?? action.attackSequence.instances;
+    summary.instances = pickByLevel(repeats?.byLevel, scalingLevel) ?? repeats?.count;
     summary.targeting = { affinity: "enemy", maxTargets: summary.instances };
     summary.attackMode = "melee";
   }
-  if (action.heal) {
-    summary.heal = resolveActionHeal(action.heal, sourceId, character, ctx.abilityScores);
+  const heals = effectsOfKind(activity, "heal");
+  const heal = heals.find((effect) => !effect.fromPool);
+  if (heal) {
+    summary.heal = resolveActionHeal(heal.dice, sourceId, character, ctx.abilityScores);
   }
-  if (action.damageReduction) {
-    const die = resolveActionDie(action.damageReduction.dice, sourceId, character);
-    const damageTypes = pickByLevel(
-      action.damageReduction.damageTypesByLevel,
-      scalingLevel
-    );
+  const [reduction] = effectsOfKind(activity, "reduce-damage");
+  if (reduction) {
+    const die = resolveActionDie(reduction.dice.dice, sourceId, character);
+    const damageTypes = pickByLevel(reduction.typesByLevel, scalingLevel);
     if (die && damageTypes) {
-      summary.damageReduction = {
-        dice: die,
-        bonus:
-          (action.damageReduction.addAbility
-            ? abilityModifier(ctx.abilityScores[action.damageReduction.addAbility])
-            : 0) + (action.damageReduction.addLevel ? scalingLevel : 0),
-        damageTypes,
-      };
+      let bonus = 0;
+      for (const term of reduction.dice.plus ?? []) {
+        if (term.kind === "ability-mod") {
+          bonus += abilityModifier(ctx.abilityScores[term.ability]);
+        }
+        if (term.kind === "owner-level") bonus += scalingLevel;
+      }
+      summary.damageReduction = { dice: die, bonus, damageTypes };
     }
   }
-  if (action.trackerTopUp) summary.trackerTopUp = action.trackerTopUp;
-  if (action.grantDie) {
-    const die = resolveActionDie(action.grantDie.die, sourceId, character);
-    if (die) summary.grantedDie = { kind: action.grantDie.kind, die };
+  const [topUp] = effectsOfKind(activity, "restore-resource");
+  if (topUp) summary.trackerTopUp = { trackerId: topUp.trackerId, upTo: topUp.upTo };
+  const [grantDie] = effectsOfKind(activity, "grant-die");
+  if (grantDie) {
+    const die = resolveActionDie(grantDie.die, sourceId, character);
+    if (die) summary.grantedDie = { kind: "bardic-inspiration", die };
   }
-  if (action.grantHeroicInspiration) summary.grantsHeroicInspiration = true;
-  if (action.stabilize) summary.stabilize = true;
-  if (action.poolSpendEffect) summary.poolSpendEffect = action.poolSpendEffect;
-  if (action.skillCheck) summary.skillCheck = action.skillCheck;
-  if (
-    action.conditionRemoval &&
-    (action.conditionRemoval.fromLevel === undefined ||
-      scalingLevel >= action.conditionRemoval.fromLevel)
-  ) {
-    const { options, max } = action.conditionRemoval;
-    summary.conditionRemoval = { options, ...(max === undefined ? {} : { max }) };
+  if (effectsOfKind(activity, "heroic-inspiration").length > 0) {
+    summary.grantsHeroicInspiration = true;
   }
-  if (action.cureConditions) {
-    const cures = action.cureConditions
-      .filter((c) => c.fromLevel === undefined || scalingLevel >= c.fromLevel)
-      .map((c) => ({ condition: c.condition, costHp: c.costHp }));
-    if (cures.length > 0) summary.cureOptions = cures;
+  if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
+  if (heals.some((effect) => effect.fromPool)) summary.poolSpendEffect = "healing";
+  if (activity.skill) summary.skillCheck = activity.skill;
+  const removals = effectsOfKind(activity, "end-condition");
+  const removal = removals.find((effect) => effect.costHp === undefined);
+  if (removal && unlocked(removal)) {
+    summary.conditionRemoval = {
+      options: [...removal.options],
+      ...(removal.max === undefined ? {} : { max: removal.max }),
+    };
   }
-  if (
-    action.tempHpRoll &&
-    (action.tempHpRoll.fromLevel === undefined ||
-      scalingLevel >= action.tempHpRoll.fromLevel)
-  ) {
-    const die = resolveActionDie(action.tempHpRoll.die, sourceId, character);
+  const cures = removals.flatMap((effect) => {
+    const [condition] = effect.options;
+    return effect.costHp !== undefined && condition && unlocked(effect)
+      ? [{ condition, costHp: effect.costHp }]
+      : [];
+  });
+  if (cures.length > 0) summary.cureOptions = cures;
+  const tempHp = effectsOfKind(activity, "temp-hp").find(
+    (effect) => effect.dice !== undefined
+  );
+  if (tempHp?.dice && unlocked(tempHp)) {
+    const die = resolveActionDie(tempHp.dice.dice, sourceId, character);
     if (die) {
       const bonus = resolveHealTerm(
-        action.tempHpRoll.plus,
+        healTermOf(tempHp.dice),
         character.character,
         ctx.abilityScores
       );
+      const multiplier = tempHp.dice.multiplier;
       summary.tempHpRoll = {
-        dice: `${action.tempHpRoll.rolls}${die}`,
+        dice: `${tempHp.dice.rolls}${die}`,
         ...(bonus === 0 ? {} : { bonus }),
-        ...(action.tempHpRoll.multiplier === undefined ||
-        action.tempHpRoll.multiplier === 1
-          ? {}
-          : { multiplier: action.tempHpRoll.multiplier }),
+        ...(multiplier === undefined || multiplier === 1 ? {} : { multiplier }),
       };
     }
   }
-  applySaveAttackSummary(summary, action, character, ctx, scalingLevel);
+  applySaveAttackSummary(summary, activity, character, ctx, scalingLevel);
 }
 
 function actionTurnConstraints(
@@ -5034,7 +5080,14 @@ function resolveEquipmentActions(
             }
           : {}),
       };
-      applyActionEffectSummary(summary, action, item.id, character, ctx, ctx.level);
+      applyActionEffectSummary(
+        summary,
+        featureActionActivity(action, { owner: "equipment", ownerId: item.id, index }),
+        item.id,
+        character,
+        ctx,
+        ctx.level
+      );
       const id = `equipment-action-${item.id}-${action.id ?? index}`;
       actions.push({
         id,
@@ -5086,7 +5139,7 @@ function resolveFeatureActions(
   for (const featureRef of charData.features) {
     if ("custom" in featureRef) {
       if (featureRef.actions) {
-        for (const a of featureRef.actions) {
+        for (const [index, a] of featureRef.actions.entries()) {
           const id = `custom-${featureRef.instanceId}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
@@ -5113,7 +5166,11 @@ function resolveFeatureActions(
           }
           applyActionEffectSummary(
             summary,
-            a,
+            featureActionActivity(a, {
+              owner: "custom-feature",
+              ownerId: featureRef.instanceId,
+              index,
+            }),
             `custom-${featureRef.instanceId}`,
             character,
             ctx,
@@ -5309,7 +5366,21 @@ function resolveFeatureActions(
 
       applyActionEffectSummary(
         summary,
-        action,
+        featureActionActivity(
+          action,
+          "raceId" in srdFeature
+            ? {
+                owner: "race-trait",
+                ownerId: `${srdFeature.raceId}:${srdFeature.id}`,
+                index: actionIndex,
+              }
+            : {
+                owner: "category" in srdFeature ? "feat" : "class-feature",
+                ownerId: srdFeature.id,
+                index: actionIndex,
+              },
+          "grants" in srdFeature ? srdFeature.grants : undefined
+        ),
         featureRef.srdId,
         character,
         ctx,
@@ -5486,7 +5557,22 @@ function resolveFeatureActions(
             unit: tspec.unit,
           };
         }
-        applyActionEffectSummary(summary, action, trait.id, character, ctx, ctx.level);
+        applyActionEffectSummary(
+          summary,
+          featureActionActivity(
+            action,
+            {
+              owner: "race-trait",
+              ownerId: `${raceForActions.id}:${trait.id}`,
+              index: raceActionIndex,
+            },
+            trait.grants
+          ),
+          trait.id,
+          character,
+          ctx,
+          ctx.level
+        );
         // G14 — the TRANSFORM action (a species revelation's Bonus Action,
         // the activation that picks the form) surfaces the ACTIVE form's
         // once-per-turn +PB `attack-or-spell` rider as a self-side reminder chip:
@@ -5568,7 +5654,18 @@ function resolveFeatureActions(
           }
           summary.effect = undefined;
         }
-        applyActionEffectSummary(summary, action, inv.id, character, ctx, warlockLevel);
+        applyActionEffectSummary(
+          summary,
+          featureActionActivity(
+            action,
+            { owner: "invocation", ownerId: inv.id, index: invActionIndex },
+            inv.grants
+          ),
+          inv.id,
+          character,
+          ctx,
+          warlockLevel
+        );
         actions.push({
           id,
           name: srdText("invocation", inv.id, "name"),

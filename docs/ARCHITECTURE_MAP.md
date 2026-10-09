@@ -150,7 +150,9 @@ There are six parallel records. The same hit can land in four of them.
   feature actions, monster entries, beast and companion attacks and item
   activations; readers move to it one consumer family at a time. Done: the spell
   card, the Compendium and the spell cast rows of `resolveActions` (the combat cards and
-  the spellbook Cast row) read a spell's facts from its Activity.
+  the spellbook Cast row) read a spell's facts from its Activity; every feature action
+  (class features, feats, species traits, equipment, invocations, homebrew) reads its
+  target, check and effect facts from its Activity.
 - `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**

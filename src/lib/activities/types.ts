@@ -58,6 +58,8 @@ export type ActivitySource =
 
 export type FeatureOwnerKind =
   | "class-feature"
+  /** A homebrew feature on one character, keyed by its instance id. */
+  | "custom-feature"
   | "race-trait"
   | "feat"
   | "equipment"
