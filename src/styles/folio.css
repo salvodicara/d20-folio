@@ -314,6 +314,13 @@ svg.icon[stroke],
   color: var(--text-on-backdrop);
   text-shadow: var(--on-art-halo);
 }
+/* A plated button (primary / secondary / destructive) carries its own ground, so it
+   never inherits the backdrop halo from on-art text around it (a header's
+   `.sec-meta` passed it down: dark ink + dark halo smeared "Aggiungi nota" in
+   light). Ghost buttons are transparent over the art and keep it. */
+[data-theme="light"] .on-art-scope .btn:not(.ghost) {
+  text-shadow: none;
+}
 /* ON-ART SCOPE (light) — a region whose LOOSE content sits directly on the
    candlelit backdrop (the creation-wizard column, the campaign hub, the settings
    form, …). Loose text takes the illuminated-parchment ink + a crisp dark outline
