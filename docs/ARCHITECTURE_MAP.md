@@ -145,7 +145,10 @@ There are six parallel records. The same hit can land in four of them.
 - `characterStore` becomes a thin store over `dispatch(event)` plus a pure reducer.
 - Round, initiative and HP each get one home.
 - `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
-- The 8 active dialects become 1 Action shape (Phases 2 and 6).
+- The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
+  `src/lib/activities` holds the `Activity` shape and pure translators from spells,
+  feature actions, monster entries, beast and companion attacks and item
+  activations; readers move to it one consumer family at a time.
 - `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**
