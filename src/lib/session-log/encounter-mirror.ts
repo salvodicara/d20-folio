@@ -1,8 +1,9 @@
 /**
  * Mirror the DM's live encounter (its turn markers and Combat Chronicle beats) into the
  * session log. Pure and idempotent: given the encounter and the session's folded lines,
- * it returns only what is missing — a new beat as an event, a changed beat (an attacker
- * tapped later) as a correction, an undone beat as a retraction. Item ids are derived
+ * it returns only what is missing — a new beat as an event, a renamed start line as a
+ * correction, an undone beat as a retraction. Who struck a beat is not the mirror's
+ * business: the feed appends that correction itself (`encounter-feed.ts`). Item ids are derived
  * from the encounter's epoch and the beat's id, so a reload or a repeated snapshot never
  * duplicates anything.
  */
@@ -10,7 +11,7 @@
 import type { EncounterState } from "@/types/campaign";
 import type { CombatChronicleEvent } from "@/types/combat-chronicle";
 
-import type { SessionEntry } from "./fold";
+import { stableJson, type SessionEntry } from "./fold";
 import type { LogItem, PlayEvent } from "./types";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
@@ -75,32 +76,57 @@ export function chronicleToPlayEvent(event: CombatChronicleEvent): PlayEvent | n
   }
 }
 
-/** JSON with sorted keys, so a value read back from Firestore compares equal. */
-function stable(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
-  if (typeof value === "object" && value !== null) {
-    const entries = Object.entries(value as Record<string, unknown>)
-      .filter(([, v]) => v !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : 1));
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stable(v)}`).join(",")}}`;
-  }
-  return JSON.stringify(value);
+/** Every item id already in the raw log, retracted lines included: an id is never
+ *  written twice (the fold keeps only the first), so the mirror never re-adds a line
+ *  someone retracted while its beat still stands. */
+export function loggedIds(items: readonly LogItem[]): Set<string> {
+  return new Set(items.map((item) => item.id));
+}
+
+/**
+ * The DM's close of a fight ("Save to Chronicle"): the narrative note, then the end line
+ * with the outcome, under the ids the mirror would use, so the mirror adds no second,
+ * outcome-less end. The note comes first so it sits inside the encounter.
+ */
+export function encounterCloseDrafts(
+  encounterId: string,
+  note: string,
+  outcome: "victory" | "ended"
+): Array<Extract<MirrorDraft, { type: "event" }>> {
+  const text = note.trim();
+  return [
+    ...(text
+      ? [
+          {
+            type: "event" as const,
+            id: `enc:${encounterId}:note`,
+            event: { kind: "note" as const, text },
+          },
+        ]
+      : []),
+    {
+      type: "event",
+      id: `enc:${encounterId}:end`,
+      event: { kind: "encounter-end", encounterId, outcome },
+    },
+  ];
 }
 
 export function mirrorEncounter(
   encounter: EncounterState | null,
-  logged: readonly SessionEntry[]
+  logged: readonly SessionEntry[],
+  written: ReadonlySet<string> = new Set()
 ): MirrorDraft[] {
   const byId = new Map(logged.map((entry) => [entry.id, entry]));
   const drafts: MirrorDraft[] = [];
   const add = (id: string, event: PlayEvent): void => {
-    if (!byId.has(id)) drafts.push({ type: "event", id, event });
+    if (!byId.has(id) && !written.has(id)) drafts.push({ type: "event", id, event });
   };
   /** Record `event` under `id`, or correct the recorded line when it changed. */
   const upsert = (id: string, event: PlayEvent): void => {
     const known = byId.get(id);
-    if (!known) drafts.push({ type: "event", id, event });
-    else if (stable(known.event) !== stable(event)) {
+    if (!known) add(id, event);
+    else if (stableJson(known.event) !== stableJson(event)) {
       // Numbered by the line's own correction count: stable while a write is in flight,
       // and unique if a line flips back to an earlier content.
       const correction = `${id}:c:${known.corrections + 1}`;
@@ -118,9 +144,16 @@ export function mirrorEncounter(
   if (!encounter || live === null) return drafts;
 
   const prefix = `enc:${live}`;
-  const names: Record<string, string> = {};
+  // Players read the log, so a hidden (ambush) creature is named only once revealed;
+  // until then its lines identify it by id alone. A name once logged stays, so the
+  // report still names every creature that was seen.
+  const loggedStart = byId.get(`${prefix}:start`)?.event;
+  const names: Record<string, string> = {
+    ...(loggedStart?.kind === "encounter-start" ? loggedStart.names : {}),
+  };
   for (const combatant of encounter.combatants) {
-    if (combatant.kind === "monster") names[combatant.id] = combatant.name;
+    if (combatant.kind === "monster" && combatant.hidden !== true)
+      names[combatant.id] = combatant.name;
   }
   const start: PlayEvent = {
     kind: "encounter-start",
@@ -138,9 +171,18 @@ export function mirrorEncounter(
   for (const beat of encounter.events ?? []) {
     const event = chronicleToPlayEvent(beat);
     if (!event) continue;
-    const id = `${prefix}:ev:${beat.id}`;
+    // The encounter numbers beats from its live array, so a beat appended after the
+    // newest one was undone reuses that id. The mirror's own retraction (`<line>:x`)
+    // marks the old line as gone for good; the new beat takes the next generation.
+    const base = `${prefix}:ev:${beat.id}`;
+    let id = base;
+    for (let generation = 2; written.has(`${id}:x`); generation++) {
+      id = `${base}:g${generation}`;
+    }
     present.add(id);
-    upsert(id, event);
+    // A beat never changes once recorded: who struck it is a correction appended by
+    // the feed, and the mirror must not revert it.
+    add(id, event);
   }
   for (const entry of logged) {
     if (entry.id.startsWith(`${prefix}:ev:`) && !present.has(entry.id)) {

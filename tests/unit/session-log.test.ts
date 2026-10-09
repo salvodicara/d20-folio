@@ -92,6 +92,42 @@ describe("foldSession", () => {
     expect(foldSession(log, { dmUid: DM })).toEqual(foldSession(evening, { dmUid: DM }));
   });
 
+  it("lets a player name who struck their own character on the DM's line, nothing more", () => {
+    const struck = event("d9", DM, { kind: "damage", amount: 6, target: "pc-ben" });
+    const correct = (id: string, by: string, ev: PlayEvent): LogItem => ({
+      type: "correct",
+      id,
+      by,
+      at: ++clock,
+      target: "d9",
+      event: ev,
+    });
+    const named = { kind: "damage", amount: 6, target: "pc-ben", actor: "monster-1" };
+    // Ben may attribute the hit he took; Ana (not the target) and an amount change may not.
+    const log: LogItem[] = [
+      ...evening,
+      struck,
+      correct("c1", "ana", {
+        kind: "damage",
+        amount: 6,
+        target: "pc-ben",
+        actor: "pc-ana",
+      }),
+      correct("c2", "ben", { kind: "damage", amount: 1, target: "pc-ben" }),
+      correct("c3", "ben", named as PlayEvent),
+    ];
+    const line = foldSession(log, { dmUid: DM }).find((e) => e.id === "d9");
+    expect(line).toMatchObject({ corrections: 1, event: named });
+    // Nor may he retract the DM's line.
+    const retracted = [
+      ...log,
+      { type: "retract", id: "r9", by: "ben", at: 0, target: "d9" },
+    ];
+    expect(foldSession(retracted as LogItem[], { dmUid: DM }).map((e) => e.id)).toContain(
+      "d9"
+    );
+  });
+
   it("drops a retracted line and re-derives positions when a marker is retracted", () => {
     const log: LogItem[] = [
       ...evening,

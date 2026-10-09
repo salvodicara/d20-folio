@@ -43,6 +43,8 @@ export type PlayEvent =
       actor?: CombatantId;
       source?: LocText;
       provenance?: RollProvenance;
+      /** "Who struck?" answered with "no one": the attacker is deliberately unknown. */
+      unattributed?: true;
     }
   | {
       kind: "condition";

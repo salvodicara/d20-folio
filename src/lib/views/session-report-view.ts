@@ -19,7 +19,7 @@ export interface SessionReportNames {
   spell(ref: ConcentrationRef): string;
 }
 
-function lineFor(
+export function localizePlayEvent(
   event: PlayEvent,
   t: TranslateFn,
   who: (id: string | undefined) => string,
@@ -119,7 +119,7 @@ export function renderSessionReport(
     const who = (id: string | undefined): string =>
       (id && (named[id] ?? names.pc(id))) || t("combatChronicle.someone");
     for (const entry of entries) {
-      const line = lineFor(entry.event, t, who, names);
+      const line = localizePlayEvent(entry.event, t, who, names);
       if (line) out.push(`- ${line}`);
     }
   };

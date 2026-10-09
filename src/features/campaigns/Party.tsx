@@ -61,12 +61,24 @@ import {
   appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { ChronicleFeed, EndEncounterDialog } from "@/features/campaigns/party-chronicle";
-import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import {
-  flattenDeclarations,
-  reconcileChronicle,
-} from "@/features/campaigns/chronicle-reconcile";
+  ChronicleFeed,
+  EndEncounterDialog,
+  type EncounterClose,
+} from "@/features/campaigns/party-chronicle";
+import { useChronicleStore } from "@/features/campaigns/chronicleStore";
+import { feedHp, undoableBeatId } from "@/features/campaigns/chronicle-feed";
+import { useSessionLog, type SessionDraft } from "@/features/campaigns/useSessionLog";
+import {
+  attributionCorrection,
+  encounterCloseDrafts,
+  encounterFeed,
+  hideCombatants,
+  strikeDraft,
+  type FeedLine,
+} from "@/lib/session-log";
+import { diagnosticsLog } from "@/lib/diagnostics";
+import { undoAdversaryChronicleEvent } from "@/features/campaigns/encounter-world-command";
 import { useGatheringScrollAnchor } from "@/features/campaigns/gathering-scroll-anchor";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
 import {
@@ -473,6 +485,7 @@ export function Party() {
           ctx={cardCtx}
           pcLiveById={pcLiveById}
           dmName={dmName}
+          dmUid={campaign.dmUid}
           memberDetails={campaign.memberDetails}
           skipped={campaign.encounterSkipped ?? {}}
           onParticipationChange={(participating) => {
@@ -562,6 +575,7 @@ function CombatLayer({
   ctx,
   pcLiveById,
   dmName,
+  dmUid,
   memberDetails,
   skipped,
   onParticipationChange,
@@ -580,6 +594,8 @@ function CombatLayer({
    *  PC's live initiative to slot a mid-combat monster into the frozen order (C3). */
   pcLiveById: Record<string, PcLive>;
   dmName: string;
+  /** The campaign's DM — the one uid the session log lets correct any line. */
+  dmUid: string;
   memberDetails: CampaignDocMemberDetails;
   skipped: Record<string, boolean>;
   onParticipationChange: (participating: boolean) => void;
@@ -704,16 +720,51 @@ function CombatLayer({
       .map((m) => [m.id, m])
   );
 
-  // The RECONCILED chronicle feed (auto-narrated combat, Phase 1): fuse the stored beats
-  // with the players' declared attacks (from every member's live `combat/state` ring) —
-  // auto-attributing hits to a matching HP drop, synthesizing certain miss lines, marking
-  // an ambiguous match uncertain. PURE + derived every render (no write), so the
-  // correlation costs no Firestore budget. Both the live feed and the end entry read THIS.
-  const reconciled = useMemo(
-    () =>
-      reconcileChronicle(encounter.events ?? [], flattenDeclarations(ctx.combatStates)),
-    [encounter.events, ctx.combatStates]
+  // The Combat Chronicle is a view of the session log: this encounter's lines, with
+  // auto-attribution applied at read time. Every member reads it; a hidden ambush stays
+  // out of a player's feed, and the HP readout follows the monster card's rule.
+  const sessionLog = useSessionLog(
+    ctx.campaignId,
+    ctx.currentUid,
+    dmUid,
+    encounter.epoch
   );
+  const viewer = useMemo(
+    () => ({ uid: ctx.currentUid, isDm: ctx.currentUid === dmUid }),
+    [ctx.currentUid, dmUid]
+  );
+  const encounterId = String(encounter.epoch);
+  const feedLines = useMemo(() => {
+    const lines = encounterFeed(sessionLog.entries, encounterId);
+    if (isDm) return lines;
+    const hidden = new Set(encounter.combatants.filter((c) => c.hidden).map((c) => c.id));
+    return hideCombatants(lines, hidden);
+  }, [sessionLog.entries, encounterId, isDm, encounter.combatants]);
+  const startNames = useMemo(() => {
+    const start = sessionLog.entries.find(
+      (entry) =>
+        entry.event.kind === "encounter-start" && entry.event.encounterId === encounterId
+    );
+    return start?.event.kind === "encounter-start" ? (start.event.names ?? {}) : {};
+  }, [sessionLog.entries, encounterId]);
+  const writeLog = (drafts: SessionDraft[]): void => {
+    void sessionLog.append(drafts).catch((error: unknown) =>
+      diagnosticsLog("warn", "session-log.feed-write-failed", {
+        message: String(error),
+      })
+    );
+  };
+  const attribute = (line: FeedLine, actor: string | null): void =>
+    writeLog([
+      { type: "correct", target: line.id, event: attributionCorrection(line, actor) },
+    ]);
+  const retract = (line: FeedLine): void => writeLog([strikeDraft(line)]);
+  const undoFor = (line: FeedLine): (() => void) | null => {
+    const beatId = isDm ? undoableBeatId(line, encounter) : null;
+    if (beatId === null || !apply) return null;
+    return () =>
+      apply((live) => undoAdversaryChronicleEvent(live, ctx.campaignId, beatId));
+  };
 
   // INIT-6 — the SHARED turn pointer is advanceable by the DM (always) OR the player
   // whose PC is the current combatant. BOTH route through the ONE `advanceEncounterTurn`
@@ -888,7 +939,10 @@ function CombatLayer({
   // Save the DM's finished chronicle chapter — the SINGLE persisted Chronicle write per
   // fight. Resolves → the caller clears the encounter (the dialog unmounts); rejects
   // (offline) → the dialog stays open + the fight running for a retry.
-  const saveChronicle = (chapter: string): Promise<void> => {
+  const saveChronicle = ({ chapter, note, outcome }: EncounterClose): Promise<void> => {
+    // The session report keeps the DM's note and the outcome. Not awaited: offline, the
+    // writes queue in order and land with the next connection.
+    writeLog(encounterCloseDrafts(encounterId, note, outcome));
     // DEV ONLY — under bypass `appendChronicleChapter` is a no-op (no Firestore) and there
     // is no listener echo, so mirror the append into the chronicle store optimistically so
     // the saved chapter shows in the dev/e2e Chronicle exactly as the live echo would.
@@ -1080,19 +1134,20 @@ function CombatLayer({
           onEnd={() => setEndOpen(true)}
         />
 
-        {/* The Combat Chronicle — DM-only live feed (the events ride the encounter doc,
-            which only the DM writes; exact monster HP must not leak to a player). */}
-        {isDm && apply && (
-          <ChronicleFeed
-            campaignId={ctx.campaignId}
-            events={reconciled}
-            rows={view.rows}
-            memberDetails={memberDetails}
-            currentId={view.currentId}
-            apply={apply}
-            embedded
-          />
-        )}
+        {/* The Combat Chronicle — every member's live view of the session log. */}
+        <ChronicleFeed
+          lines={feedLines}
+          rows={view.rows}
+          memberDetails={memberDetails}
+          names={startNames}
+          currentId={view.currentId}
+          viewer={viewer}
+          hpFor={(line) => feedHp(line, encounter, isDm)}
+          undoFor={undoFor}
+          onAttribute={attribute}
+          onRetract={retract}
+          embedded
+        />
       </section>
 
       {/* The editable end entry — Save appends ONE chapter to the Chronicle then clears
@@ -1100,9 +1155,11 @@ function CombatLayer({
       {endOpen && (
         <EndEncounterDialog
           encounter={encounter}
-          reconciled={reconciled}
+          lines={feedLines}
           rows={view.rows}
           memberDetails={memberDetails}
+          names={startNames}
+          hpFor={(line) => feedHp(line, encounter, false)}
           onSave={saveChronicle}
           onSkip={() => {
             setEndOpen(false);

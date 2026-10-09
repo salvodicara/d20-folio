@@ -25,7 +25,6 @@ import { useEffect, useState } from "react";
 import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { devDeclarations } from "@/features/campaigns/dev-fixture";
 import { resolveDevDoc } from "@/features/campaigns/useMemberCharacterDocs";
 import type { MemberCharacterRef } from "@/features/campaigns/useMemberCharacterDocs";
 import type { CombatState } from "@/types/combat-state";
@@ -56,7 +55,6 @@ export function usePartyCombatStates(
 
     if (DEV_BYPASS_AUTH) {
       const unsubs: Array<() => void> = [];
-      const seededDeclarations = devDeclarations();
       for (const { uid, characterId } of current) {
         let seeded = false;
         const unsubscribe = subscribeCombatState(uid, characterId, (combat) => {
@@ -70,11 +68,7 @@ export function usePartyCombatStates(
           seeded = true;
           void resolveDevDoc(characterId, uid).then((doc) => {
             if (cancelled) return;
-            void writeCombatState(
-              uid,
-              characterId,
-              sessionToCombatState(doc.session, 1, seededDeclarations[uid] ?? [])
-            );
+            void writeCombatState(uid, characterId, sessionToCombatState(doc.session, 1));
           });
         });
         unsubs.push(unsubscribe);

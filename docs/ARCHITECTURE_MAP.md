@@ -236,14 +236,25 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    the fight. `session-log-source.ts` picks the store: Firestore, or memory under dev bypass, so
    the whole flow (DM mirror → log → report) runs locally with no backend. Manual session notes
    (`Sessions.tsx`) are untouched; merging the two is a later step.
-6. **Corrections as events (visible).** Each player corrects their own lines and the DM corrects all
-   of them. Corrections are appended `correct`/`retract` events, and the report recomputes.
-   Chronicle undo stops deleting history.
+6. **Done.** The Combat Chronicle feed is a view of the session log (`encounterFeed`), shown to every
+   member. "Who struck?" appends a `correct` (the DM on any line; a player on a hit their character
+   took, which the fold now allows); any line is struck with a `retract` by its author or the DM;
+   the DM's undo on a monster line still restores it through the engine and the mirror retracts the
+   line. Beats never change once mirrored, and a beat id reused after an undo is recorded as a new
+   line (`…:g2`) instead of being dropped (it was silently lost before). "Save to Chronicle" also
+   records the DM's note and the outcome in the log. The log carries no HP totals; the feed's
+   readout comes from the live beat and follows the monster card's rule.
 7. **Optional detail row (visible).** Per VISION's interaction decision: the tap records at once,
    and an inline, skippable row adds target, hit/miss and damage, now or later from the log.
 8. **Retire the duplicates.**
-   - `encounter.events`, `chronicle-reconcile`-at-render and the `RecentAttack` ring become views
-     of the log, or are deleted.
+   - Done: `chronicle-reconcile` (render-time fusion), the synthesized miss/multi/save chronicle
+     kinds, `setEventAttacker`/`skipEventAttacker` and the dev declarations seed are gone;
+     auto-attribution is `encounterFeed` over the log.
+   - Left: `encounter.events` stays, because the DM's undo reverses a beat's engine action and the
+     HP readout reads the beat; it goes when HP is derived from the log (Phase 4). The
+     `RecentAttack` ring (`combat/state.recentActions`) has had no writer since the resolver went
+     (`declareAttack` has no caller) and nothing reads it now; deleting it touches the
+     combat-state codec, its strict-field check and stored subdocs, so it is its own step.
    - The character's log panel reads the session log when attached.
    - Delete the IndexedDB mirror and `src/lib/combat/*`.
 

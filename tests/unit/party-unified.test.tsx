@@ -958,6 +958,14 @@ describe("Party combat — player (read-only)", () => {
     expect(screen.queryByRole("button", { name: /reveal hp/i })).not.toBeInTheDocument();
   });
 
+  it("a player sees the Combat Chronicle too (a view of the session log)", async () => {
+    renderParty();
+    await screen.findAllByLabelText(/^Armor Class:/);
+    expect(
+      screen.getByRole("button", { name: /Chronicle of the fight/i })
+    ).toBeInTheDocument();
+  });
+
   it("a player whose PC is NOT the current turn gets no advance controls", async () => {
     // member-bren is a PC but NOT the seeded current combatant (pc-member-mara is) —
     // so the turn-advance controls are withheld (the UI ownership gate).

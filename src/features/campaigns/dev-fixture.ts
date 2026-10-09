@@ -24,7 +24,6 @@ import type {
   PipState,
   PendingTurn,
 } from "@/features/campaigns/global-combat-context";
-import type { RecentAttack } from "@/types/combat-state";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { asRaceId } from "@/data/srd-names";
 
@@ -1233,30 +1232,4 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
     initiativeRoll: 15,
     round,
   };
-}
-
-/**
- * The DM-HUB-side seam. The reconciled feed fuses the DM's observed HP deltas with the
- * PLAYERS' declared attacks, read live off each attached member's `combat/state` ring. Under
- * bypass there is no such live ring — {@link
- * "@/features/campaigns/usePartyCombatStates".usePartyCombatStates} projects each member's
- * dev fixture session ONCE — so this seam lets a spec seed the party's declarations (the
- * dev-bypass stand-in for "the other players already tapped their targets on their own
- * sheets") via the `d20-dev-declarations` localStorage key: a JSON `{ "<uid>": RecentAttack[] }`
- * map. The projected combat state then carries those `recentActions`, so `reconcileChronicle`
- * fuses them with the DM's live-booked HP for real. Returns `{}` when unset / malformed.
- */
-export function devDeclarations(): Record<string, RecentAttack[]> {
-  if (typeof window === "undefined") return {};
-  const raw = window.localStorage.getItem("d20-dev-declarations");
-  if (!raw) return {};
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (parsed === null || typeof parsed !== "object") return {};
-    // Trust the shape loosely (dev-only seed); the reconcile layer + `flattenDeclarations`
-    // already tolerate partial/odd rings, and this never runs in production.
-    return parsed as Record<string, RecentAttack[]>;
-  } catch {
-    return {};
-  }
 }

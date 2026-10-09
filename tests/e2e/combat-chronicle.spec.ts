@@ -1,7 +1,7 @@
 /**
- * E2E — the auto-narrated Combat Chronicle, driven through the ACTUAL app surfaces in
- * REAL Chromium under dev-bypass (no Firebase). This is a KEEPER regression for the
- * chronicle pipeline (the real `reconcileChronicle` engine + the real feed/end/chapter
+ * E2E — the Combat Chronicle, driven through the ACTUAL app surfaces in REAL Chromium
+ * under dev-bypass (no Firebase; the session log lives in page memory). This is a KEEPER
+ * regression for the chronicle pipeline (DM mirror → session log → feed/end/chapter
  * UI) AND the source of the owner-review screenshots (rule 25): it makes NO bespoke
  * showcase component — every pixel is a genuine in-app surface, produced by genuine user
  * actions against the real engine.
@@ -12,16 +12,12 @@
  *     resolver. Weapon use, spell slots, upcasting and mobile confirmation remain
  *     real UI journeys. Outcomes stay with the table; saved HP must not change.
  *
- *  B. The DM hub's reconciled LIVE FEED + editable end entry + saved Chronicle chapter —
- *     the dev campaign (`mock-1`) runs a begun encounter with the bypass user as DM. The
- *     party's declared attacks are seeded (`d20-dev-declarations` — the dev-bypass
- *     stand-in for the players' live `combat/state` rings), and the DM books monster HP +
- *     conditions through the REAL encounter tracker across two rounds. The real
- *     `reconcileChronicle` fuses the two streams live: an auto-attributed weapon hit, a
- *     synthesized miss, a fused Magic Missile multi-line, a Fireball area-save with mixed
- *     saves (some resisted), a Topple→Prone rider credited to its caster, a plain
- *     Frightened condition, and a one-tap "No one" skip. End encounter → the editable
- *     entry → Save appends ONE chapter to the Chronicle.
+ *  B. The DM hub's LIVE FEED (a view of the session log) + editable end entry + saved
+ *     Chronicle chapter — the dev campaign (`mock-1`) runs a begun encounter with the
+ *     bypass user as DM. The DM books monster HP + conditions through the REAL encounter
+ *     tracker across two rounds, answers "Who struck?" (a correction appended to the
+ *     log) and taps "No one" once. End encounter → the editable entry → Save appends ONE
+ *     chapter to the Chronicle.
  *
  * Screenshots: when CHRONICLE_SHOT_DIR is set the key surfaces are written there as PNGs
  * (light + dark) for the owner's review; the assertions run either way (the regression).
@@ -200,51 +196,18 @@ test.describe("Combat Chronicle — simple sheet actions in shared encounters", 
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// B. The DM hub's reconciled live feed + end entry + saved chapter
+// B. The DM hub's live feed (the session log's view) + end entry + saved chapter
 // ════════════════════════════════════════════════════════════════════════════
 
-/** The party's DECLARED attacks — the dev-bypass stand-in for the players' live
- *  `combat/state` rings. Keyed by member uid; the reconcile fuses them with the DM's
- *  live-booked HP below. Target ids + rounds are chosen so each (target, round) has ONE
- *  claimant (clean, un-ambiguous lines). Monster ids match the begun dev encounter:
- *  monster-1 Goblin (the aggregate Goblin row), monster-2 Goblin Chief, monster-3 Shadow. */
-const DEV_DECLARATIONS = {
-  "member-mara": [
-    // R2 — a weapon swing that also knocks Prone (a Topple-mastery rider).
-    { id: "1", targetIds: ["monster-2"], outcome: "hit", round: 2, riders: ["prone"] },
-    // R2 — a clean miss (synthesized, needs no HP).
-    { id: "2", targetIds: ["monster-3"], outcome: "miss", round: 2 },
-    // R3 — Fireball over the whole field (area save-for-half).
-    {
-      id: "3",
-      targetIds: ["monster-1", "monster-2", "monster-3"],
-      outcome: "hit",
-      round: 3,
-      save: true,
-    },
-  ],
-  "member-bren": [
-    // R2 — a multi-instance spell splitting darts across two foes (Magic Missile shape).
-    {
-      id: "1",
-      targetIds: ["monster-1", "monster-3"],
-      outcome: "hit",
-      round: 2,
-      instances: 3,
-    },
-  ],
-};
-
-/** Boot the dev campaign hub as the DM of a begun encounter, with the party's
- *  declarations seeded, in `theme`. Returns once the party (Coralino) has painted. */
+/** Boot the dev campaign hub as the DM of a begun encounter, in `theme`. Returns once
+ *  the party (Coralino) has painted. */
 async function bootDmHub(page: Page, theme: Theme): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 1400 });
   await seedUI(page, theme, "play");
   await seedLang(page, "en");
-  await page.addInitScript((decls) => {
+  await page.addInitScript(() => {
     window.localStorage.setItem("d20-dev-encounter", "1");
-    window.localStorage.setItem("d20-dev-declarations", JSON.stringify(decls));
-  }, DEV_DECLARATIONS);
+  });
   await page.goto("/campaigns/mock-1");
   await expect(page.getByText(/coralino/i).first()).toBeVisible({ timeout: 20_000 });
 }
@@ -298,7 +261,7 @@ async function addCondition(page: Page, id: string, label: string): Promise<void
   await expect(listbox).toBeHidden();
 }
 
-/** Scroll the collapsible feed's line list to its end so the newest reconciled lines
+/** Scroll the collapsible feed's line list to its end so the newest lines
  *  are in frame for a screenshot (the feed is a fixed-height scroll region). */
 async function scrollFeedToEnd(page: Page): Promise<void> {
   await feed(page)
@@ -320,8 +283,8 @@ test.describe("Combat Chronicle — the DM hub feed, end entry, and saved chapte
       page,
     }) => {
       await bootDmHub(page, theme);
-      // The reconciled feed is live from the seeded declarations + the pre-seeded round-1
-      // beats before the DM books a thing.
+      // The feed is the session log's view of this encounter: the DM mirror records the
+      // pre-seeded round-1 beats as soon as the hub mounts.
       await expect(feed(page).getByText("Chronicle of the fight")).toBeVisible();
       if (SHOT_DIR) {
         await shotEncounterSummary(page, theme, "expanded");
@@ -333,41 +296,29 @@ test.describe("Combat Chronicle — the DM hub feed, end entry, and saved chapte
         await summaryToggle.click();
       }
 
-      // ── Round 2: the DM books what the party declared ────────────────────────
-      // Goblin Chief takes Coralino's weapon hit (auto-attributed) + is knocked Prone
-      // (the Topple rider, credited to Coralino).
+      // ── Round 2: the DM books a hit and answers "Who struck?" ─────────────────
       await bookDamage(page, "monster-2", 0, "7");
-      await addCondition(page, "monster-2", "Prone");
-      // Bren's multi-instance darts strike the Goblin group + the Shadow (fused).
-      await bookDamage(page, "monster-1", 0, "5");
-      await bookDamage(page, "monster-3", 0, "9");
-
-      // The reconciled feed now carries the round-2 fusions.
-      await expect(feed(page).getByText(/Coralino.*hits Goblin Chief for/)).toBeVisible();
+      const chiefLine = feed(page).locator("li", { hasText: "Goblin Chief takes 7" });
+      await chiefLine.getByRole("button", { name: /Coralino/ }).click();
+      // The answer is a correction in the log: the line now names the attacker.
       await expect(
-        feed(page).getByText(/Goblin Chief is Prone \(Coralino/)
+        feed(page).getByText(/Coralino.*hits Goblin Chief for 7/)
       ).toBeVisible();
-      await expect(feed(page).getByText(/Bren.*hits Goblin.*Shadow/)).toBeVisible();
-      await expect(feed(page).getByText(/Coralino.*misses Shadow/)).toBeVisible();
+      await addCondition(page, "monster-2", "Prone");
+      await expect(feed(page).getByText(/Goblin Chief is Prone/)).toBeVisible();
       await scrollFeedToEnd(page);
       await shot(page, `B1-feed-round2-${theme}`);
 
-      // ── The one-tap "No one" skip on the pre-seeded pending PC hit ────────────
-      await feed(page).getByRole("button", { name: "No one" }).first().click();
+      // ── The one-tap "No one" on a still-open hit ──────────────────────────────
+      await bookDamage(page, "monster-3", 0, "4");
+      const shadowLine = feed(page).locator("li", { hasText: "Shadow takes 4" });
+      await shadowLine.getByRole("button", { name: "No one" }).click();
+      await expect(shadowLine.getByRole("button", { name: "No one" })).toHaveCount(0);
 
       // ── Advance to round 3 ───────────────────────────────────────────────────
       await page.getByRole("button", { name: "Next turn" }).click();
       await expect(page.getByText("Round 3").first()).toBeVisible();
-
-      // ── Round 3: Coralino's Fireball — Goblin + Chief take it, the Shadow saves ─
-      await bookDamage(page, "monster-1", 0, "1");
-      await bookDamage(page, "monster-2", 0, "5");
-      // A plain Frightened on the Shadow (no matching rider → an un-attributed line).
       await addCondition(page, "monster-3", "Frightened");
-
-      await expect(
-        feed(page).getByText(/Coralino.*blasts Goblin.*Goblin Chief.*Shadow.*no damage/)
-      ).toBeVisible();
       await expect(feed(page).getByText(/Shadow is Frightened/)).toBeVisible();
       await scrollFeedToEnd(page);
       await shot(page, `B2-feed-round3-${theme}`);
@@ -384,9 +335,9 @@ test.describe("Combat Chronicle — the DM hub feed, end entry, and saved chapte
         .fill(
           "The goblins sprang the trap on the bridge, but Coralino's fire broke them and the Shadow fled into the dark."
         );
-      // The editable record carries the reconciled lines (the DM may prune any).
+      // The editable record carries the encounter's lines (the DM may prune any).
       await expect(endDialog.getByText(/Coralino.*hits Goblin Chief for/)).toBeVisible();
-      await expect(endDialog.getByText(/blasts Goblin/)).toBeVisible();
+      await expect(endDialog.getByText(/Shadow is Frightened/)).toBeVisible();
       await shotEndEntry(page, endDialog, theme);
       await shot(page, `B3-end-entry-${theme}`);
 
@@ -395,7 +346,7 @@ test.describe("Combat Chronicle — the DM hub feed, end entry, and saved chapte
       await expect(endDialog).toBeHidden();
       // The Chronicle section now carries the appended chapter: its title is the newest
       // entry in the chapter navigator, and the FIXED reading body (which follows the
-      // latest chapter) shows the saved narrative note + the reconciled record lines.
+      // latest chapter) shows the saved narrative note + the record lines.
       const chronicle = page.locator('section[aria-labelledby="chronicle-head"]');
       // The appended chapter is the newest entry (its title shows in the chapter navigator
       // + as the reading heading)…
@@ -403,28 +354,31 @@ test.describe("Combat Chronicle — the DM hub feed, end entry, and saved chapte
         chronicle.getByText("The Ambush at the Ravine Bridge").first()
       ).toBeAttached();
       // …and the FIXED reading body (which follows the latest chapter) shows the saved
-      // narrative note + the reconciled record lines — proof the real save landed.
+      // narrative note + the record lines — proof the real save landed.
       const prose = chronicle.locator(".chronicle-prose").first();
       await expect(prose).toContainText("The goblins sprang the trap on the bridge");
       await expect(prose).toContainText("hits Goblin Chief for");
-      await expect(prose).toContainText("blasts Goblin");
+      await expect(prose).toContainText("Shadow is Frightened");
       await shot(page, `B4-saved-chapter-${theme}`);
     });
 
     // REMEDIABILITY (owner 2026-08-02 — "mistakes should always be remediable"): a
-    // player-applied hit drops the monster's HP and reads as an attributed feed line; the
-    // DM can UNDO it in one tap — the line disappears AND the monster's HP is restored.
+    // booked hit drops the monster's HP and reads as a feed line; the DM can UNDO it in
+    // one tap — the line disappears (the log retracts it) AND the monster's HP is restored.
     // (In dev-bypass the DM tracker stands in for the cross-user apply write; the real
     // member write path is proven by tests/rules/firestore-rules.test.ts.)
     test(`the DM can undo an auto-applied hit — line + HP both revert (${theme})`, async ({
       page,
     }) => {
       await bootDmHub(page, theme);
-      // A player's declared weapon hit lands on the Goblin Chief (21 HP) — the applied
-      // damage drops its HP and the reconciled feed reads it as Coralino's hit.
+      // A hit lands on the Goblin Chief (21 HP) and the DM names Coralino as the attacker.
       await bookDamage(page, "monster-2", 0, "7");
       const chiefCard = monsterCard(page, "monster-2");
       await expect(chiefCard.locator(".vital-hp").first()).toContainText("14");
+      await feed(page)
+        .locator("li", { hasText: "Goblin Chief takes 7" })
+        .getByRole("button", { name: /Coralino/ })
+        .click();
       const hitLine = feed(page).getByText(/Coralino.*hits Goblin Chief for 7/);
       await expect(hitLine).toBeVisible();
       await scrollFeedToEnd(page);

@@ -1203,80 +1203,26 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   components may also declare eligible creature types; the resolver includes that component only for matching
   targets, keeping typed resistance intake and roll entry separate (Divine Smite is the first consumer).
 
-  **THE SOURCE-OF-TRUTH FLIP (owner 2026-08-02).** On a HIT the player types the damage they rolled and it
-  **AUTO-APPLIES to the target monster's HP right away** — the chronicle now narrates the PLAYER's number,
-  not the DM's manual HP delta. Two writes fire on confirm, and the reconcile pipeline is **unchanged**
-  (it still fuses a declaration with the observed `hp-damage` events — those events are now written by the
-  player instead of the DM):
-  1. the effect application — `features/character/center/apply-damage.ts` (the historical Firebase-free
-     dynamic-import bridge) → `campaign-io.applyDeclaredCombatEffects`, a **narrow cross-user dot-path
-     transaction** that re-reads the encounter and applies damage/healing/condition effects to exact
-     monster instances through the pure recorders and writes peer-PC combat slices directly, writing back
-     only `encounter.{combatants,events}` plus the exact target subdocs.
-     The monster state lives on the CAMPAIGN doc the player doesn't own, so `firestore.rules`
-     `combatEffectFieldsOnlyChanged()`
-     grants a member that exact new-action diff (`affectedKeys().hasOnly(['combatants','events'])` +
-     combatants count unchanged + append-only events/effects), the SAME diff-scoped member-grant idiom as
-     `turnFieldsOnlyChanged()`. The deployed queue fields remain accepted only so an encounter already in
-     progress during the upgrade can drain once; new resolutions never append to them.
-     A miss/successful save with no half damage applies nothing.
-  2. the declaration — the exact action `LocText`, target SET + outcome (+ the multi-instance drop bound,
-     or a `save` flag, + any
-     applied-condition `riders`; **no amount** — the amount rides the applied event) to a small capped
-     **`recentActions` ring** on the player's own `combat/state` subdoc
-     (`characterStore.declareAttack` → `pushRecentAttack` → the EXISTING `writeCombatState`) — **no new
-     document, no new subscription, no per-sub-action write**; the DM/hub already streams every member's
-     subdoc via `usePartyCombatStates`.
+  **The Combat Chronicle is a view of the session log (2026-10-09).** The DM's tracker still appends
+  structured beats to `encounter.events`; the DM mirror copies each into the campaign's session log
+  (`src/lib/session-log/encounter-mirror.ts`, ids `enc:<epoch>:ev:<beat>`), next to the players' own
+  sheet lines (`pc:<character>:<line>`). Every member's feed (`party-chronicle.tsx → ChronicleFeed`)
+  renders `encounterFeed` (`src/lib/session-log/encounter-feed.ts`): the current encounter's folded
+  lines, with auto-attribution applied at read time (a player's declared `action` that landed on a
+  creature claims that creature's unattributed damage in the same round; ambiguity is marked, amounts
+  are never invented). "Who struck?" appends a `correct` (the DM on any line, a player on a hit their
+  character took; the fold enforces the same rule); a line is struck with a `retract` by its author or
+  the DM. The DM's undo on a monster HP/condition line reverses the beat's engine action
+  (`encounter-world-command.undoAdversaryChronicleEvent`) and the mirror then retracts the line. The
+  log carries no HP totals: the "(4/12 HP)" readout comes from the live beat (`chronicle-feed.ts`) and
+  follows the monster card's `showExact` rule. Hidden (ambush) creatures stay out of a player's feed.
 
-  The PURE, derived-every-render correlation layer `features/campaigns/chronicle-reconcile.ts`
-  (`flattenDeclarations` + `reconcileChronicle`) fuses those declarations with the observed HP deltas +
-  conditions, keyed on (target, round):
-  - **single-target** — a declared HIT + a matching pending `hp-damage` ⇒ an **auto-attributed** hit line
-    (amount = the applied delta, i.e. the player's number) and retains the exact action name; a declared
-    MISS ⇒ a **certain** synthesized
-    `attack-miss` line; an ambiguous match (>1 declarer) ⇒ **uncertain**-marked; a declared hit with no
-    delta ⇒ no line;
-  - **multi-target** — a declared HIT with a target SET binds the several drops the DM applied across those
-    targets in-window (bounded by the action's `instances`), FUSING them into ONE **`attack-multi`** line
-    that carries each struck target's real amount ("A hits G (22), the Chief (22) and the Ogre (11)"); a
-    declared target with no drop is **omitted** (never an invented number); drops that can't cleanly match
-    the set (over the bound, or a competing declaration on a shared target) ⇒ **uncertain**; a multi MISS ⇒
-    one line naming the whole set;
-  - **area save** — a declared SAVE action binds **all** its declared targets' drops this round (no
-    instance cap — an area hits everyone at once) into ONE **`attack-save`** line. The resolver asks the
-    save outcome per target and applies the shared rolled amount in full or half as reviewed; a no-damage
-    saved target is positively logged as resisted. Each damaged target carries the applied number; a
-    competing declaration on a shared target ⇒ **uncertain**;
-  - **condition rider (Phase 3)** — a DM-booked `condition-gain` is **credited to a caster** only when the
-    gained condition id is that action's declared RIDER (a Topple mastery's Prone) on the SAME (target,
-    round) — the confident provenance, never guessed from mere co-occurrence; >1 caster with the same rider ⇒
-    uncertain. An un-correlated condition stays a plain logged line;
-  - and, every class: a delta with no declaration ⇒ stays pending for the one-tap fallback.
-
-  The correlation layer is **deterministic and never fabricated** (a hit line needs a real HP delta, a miss line an explicit
-  tap, a per-target amount a real drop, a resisted target the spell having resolved, a condition credit an
-  exact rider match) and **writes nothing back** (no additional Firestore cost). **DM remediability is airtight**
-  (owner mandate — "mistakes should always be remediable"): the DM freely re-adjusts any monster's HP (the
-  HP popover), overrides any pending/uncertain single-target line via the one-tap picker (writing the
-  stored `attackerId`), and — for any applied MONSTER hit line — taps **Undo** in the live feed
-  (`party-chronicle.tsx` → `combat-chronicle.undoHpEvent`), which removes the line AND restores the monster
-  HP by the same amount in one motion; condition gain/loss lines have the identical reversal through
-  `undoConditionEvent`, restoring the monster condition and removing the line. Reconcile then re-derives
-  the feed with the effect gone. All lines
-  remain editable/removable at the end entry. Locked by `chronicle-reconcile.test.ts` (single/multi/save/
-  condition branches) + `combat-resolver.test.tsx` (the review/apply flow) + `combat-resolution.test.ts`
-  - `combat-chronicle-view.test.ts` + `party-chronicle.test.tsx` (the Undo affordance) + the two-user
-    `combatEffectFieldsOnlyChanged()` grant in `firestore-rules.test.ts`.
-
-- **Localize + close** — ONE presenter `src/lib/views/combat-chronicle-view.ts` resolves each event to its
-  prose line (injected combatant-name + condition-name resolvers → EN/IT re-localizes on a language
-  switch) and `buildChronicleChapter` assembles the kept lines into one round-grouped markdown `##`
-  chapter. At "End encounter" the DM's editable entry (`party-chronicle.tsx → EndEncounterDialog`: title,
-  free-text narrative note, state-inferred outcome, removable lines) appends that chapter via
-  `campaign-io.appendChronicleChapter` — a transaction that concatenates onto the SERVER's current
-  chronicle text (`joinChronicleText`), the **single persisted Chronicle write per fight**. "Skip" saves
-  nothing; either way the encounter then clears. Locked by `combat-chronicle.test.ts`,
-  `combat-chronicle-view.test.ts`, `party-chronicle.test.tsx`, and the `campaign-io` append tests.
+- **Close** — `combat-chronicle-view.ts` localizes each feed line and `buildEncounterChapter`
+  assembles the kept lines into one round-grouped markdown `##` chapter. At "End encounter" the DM's
+  editable entry (`EndEncounterDialog`: title, note, state-inferred outcome, removable lines) appends
+  the DM's note and an `encounter-end` with the outcome to the session log, then the chapter via
+  `campaign-io.appendChronicleChapter`. The chapter shows HP only where players could see it, since the
+  book is shared. "Skip" saves nothing; either way the encounter then clears.
 
 ---
 

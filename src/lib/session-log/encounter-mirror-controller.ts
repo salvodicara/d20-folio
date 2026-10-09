@@ -1,6 +1,6 @@
 import type { EncounterState } from "@/types/campaign";
 
-import { mirrorEncounter } from "./encounter-mirror";
+import { loggedIds, mirrorEncounter } from "./encounter-mirror";
 import { foldSession, type SessionEntry } from "./fold";
 import { nextSessionId, type SessionLogStore } from "./recorder";
 
@@ -20,6 +20,7 @@ export function createEncounterMirror(deps: {
   const now = deps.now ?? (() => new Date());
   let encounter: EncounterState | null = null;
   let entries: SessionEntry[] | null = null;
+  let written: Set<string> = new Set();
   let sessionId: string | null = null;
   let unsubscribe: (() => void) | null = null;
   let stopped = false;
@@ -28,7 +29,7 @@ export function createEncounterMirror(deps: {
   const flush = (): void => {
     if (stopped || entries === null || sessionId === null) return;
     const target = sessionId;
-    for (const draft of mirrorEncounter(encounter, entries)) {
+    for (const draft of mirrorEncounter(encounter, entries, written)) {
       if (inFlight.has(draft.id)) continue;
       inFlight.add(draft.id);
       deps.store
@@ -49,6 +50,7 @@ export function createEncounterMirror(deps: {
         sessionId,
         (items) => {
           entries = foldSession(items, { dmUid: deps.dmUid });
+          written = loggedIds(items);
           flush();
         },
         deps.onError

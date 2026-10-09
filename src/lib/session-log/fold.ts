@@ -20,6 +20,35 @@ export interface SessionAuthority {
   dmUid?: string;
 }
 
+/** JSON with sorted keys, so a value read back from Firestore compares equal. */
+export function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (typeof value === "object" && value !== null) {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : 1));
+    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableJson(v)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+/** The event without who struck it: two events that differ only here are the same fact
+ *  with a different attribution. */
+function withoutAttribution(event: PlayEvent): PlayEvent {
+  if (event.kind !== "damage") return event;
+  const rest = { ...event };
+  delete rest.actor;
+  delete rest.unattributed;
+  return rest;
+}
+
+/** A player may name who struck their own character (`pc-<uid>`) on anyone's line, and
+ *  change nothing else about it. */
+function isOwnAttribution(by: string, line: PlayEvent, next: PlayEvent): boolean {
+  if (line.kind !== "damage" || line.target !== `pc-${by}`) return false;
+  return stableJson(withoutAttribution(line)) === stableJson(withoutAttribution(next));
+}
+
 /**
  * Fold the raw log into its effective lines. Pure and total: the same items always
  * yield the same entries, so every device derives the same session. Items that cannot
@@ -49,8 +78,12 @@ export function foldSession(
       continue;
     }
     const line = lines.get(item.target);
-    if (line === undefined || (item.by !== line.by && item.by !== authority.dmUid))
-      continue;
+    if (line === undefined) continue;
+    const entitled =
+      item.by === line.by ||
+      item.by === authority.dmUid ||
+      (item.type === "correct" && isOwnAttribution(item.by, line.event, item.event));
+    if (!entitled) continue;
     if (item.type === "retract") lines.delete(item.target);
     else
       lines.set(item.target, {
