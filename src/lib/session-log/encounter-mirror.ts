@@ -144,9 +144,16 @@ export function mirrorEncounter(
   if (!encounter || live === null) return drafts;
 
   const prefix = `enc:${live}`;
-  const names: Record<string, string> = {};
+  // Players read the log, so a hidden (ambush) creature is named only once revealed;
+  // until then its lines identify it by id alone. A name once logged stays, so the
+  // report still names every creature that was seen.
+  const loggedStart = byId.get(`${prefix}:start`)?.event;
+  const names: Record<string, string> = {
+    ...(loggedStart?.kind === "encounter-start" ? loggedStart.names : {}),
+  };
   for (const combatant of encounter.combatants) {
-    if (combatant.kind === "monster") names[combatant.id] = combatant.name;
+    if (combatant.kind === "monster" && combatant.hidden !== true)
+      names[combatant.id] = combatant.name;
   }
   const start: PlayEvent = {
     kind: "encounter-start",

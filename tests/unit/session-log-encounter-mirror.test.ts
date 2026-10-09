@@ -165,6 +165,46 @@ describe("mirrorEncounter", () => {
     ]);
   });
 
+  it("names a hidden monster only once it is revealed; its lines carry only its id", () => {
+    const goblin = {
+      kind: "monster" as const,
+      id: "monster-1",
+      name: "Goblin",
+      ac: 15,
+      initiative: 12,
+      conditions: [],
+      hp: { current: 7, temp: 0, max: 7 },
+    };
+    const lurker = { ...goblin, id: "monster-2", name: "Lurker", hidden: true };
+    const ambush = (hidden: boolean, events: CombatChronicleEvent[] = []) => ({
+      ...fight(1, events),
+      combatants: [goblin, { ...lurker, hidden }],
+    });
+    const struck = { ...hit, targetId: "monster-2" };
+    let log = sync([], ambush(true, [struck]));
+    // Nothing in the raw log (what a player can read) names the hidden creature.
+    expect(JSON.stringify(log)).not.toContain("Lurker");
+    expect(foldSession(log, { dmUid: DM })[0]?.event).toEqual({
+      kind: "encounter-start",
+      encounterId: "77",
+      names: { "monster-1": "Goblin" },
+    });
+    // Revealed: one deterministic correction of the start line, and the report names it.
+    log = sync(log, ambush(false, [struck]));
+    expect(log.at(-1)).toMatchObject({
+      type: "correct",
+      id: "enc:77:start:c:1",
+      target: "enc:77:start",
+    });
+    expect(sync(log, ambush(false, [struck]))).toEqual(log);
+    const [section] = buildReport(foldSession(log, { dmUid: DM }));
+    expect(section).toMatchObject({
+      names: { "monster-1": "Goblin", "monster-2": "Lurker" },
+    });
+    // Hidden again later: the name already seen stays (no correction erasing it).
+    expect(sync(log, ambush(true, [struck]))).toEqual(log);
+  });
+
   it("records each new round as the DM advances", () => {
     const log = sync(sync([], fight(1, [])), fight(2, []));
     expect(log.map((i) => i.id)).toEqual([
