@@ -226,6 +226,12 @@
     "nextSessionSet": "Set the next session",
     "nextSessionChange": "Change",
     "nextSessionInput": "Date and time of the next session",
-    "nextSessionClear": "Clear"
+    "nextSessionClear": "Clear",
+    "partySummary": "Party at a glance",
+    "partySummaryHero": "Hero",
+    "partySummaryBest": "Best in the party",
+    "partySummaryEmpty": "No hero attached yet. Players link their character on the Live tab.",
+    "partySummaryLoading_one": "{{count}} hero still loading…",
+    "partySummaryLoading_other": "{{count}} heroes still loading…"
   }
 }
