@@ -88,7 +88,7 @@
     "name": "Stonecunning"
   },
   "dwarf.traits.stonecunning.grants.0": {
-    "label": "Stonecunning active"
+    "label": "Stonecunning"
   },
   "dwarf.traits.stonecunning.mechanics.actions.0": {
     "description": "Gain Tremorsense 60 ft for 10 min"

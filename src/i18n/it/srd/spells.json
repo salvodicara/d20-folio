@@ -161,7 +161,7 @@
     "material": "Una goccia di sangue"
   },
   "bane.grants.0": {
-    "label": "Flagello attivo"
+    "label": "Anatema"
   },
   "banishment": {
     "description": "Tenti di inviare una creatura che puoi vedere entro gittata in un altro piano di esistenza. Il bersaglio deve superare un tiro salvezza su Carisma o essere bandito. Se il bersaglio è nativo del piano in cui ti trovi, viene bandito in un semipiano innocuo ed è Incapacitato lì. Se il bersaglio è nativo di un piano diverso, viene bandito nel suo piano natale. Se l'incantesimo termina prima che sia passato 1 minuto, il bersaglio riappare nello spazio che ha lasciato.",
@@ -872,7 +872,7 @@
     "range": "18 metri"
   },
   "faerie-fire.grants.0": {
-    "label": "Luminescenza attiva"
+    "label": "Luminescenza"
   },
   "faerie-fire.grants.0.grants.0": {
     "description": "Gli attacchi contro la creatura influenzata hanno Vantaggio"
@@ -1284,7 +1284,7 @@
     "range": "Contatto"
   },
   "heroism.grants.0": {
-    "label": "Eroismo attivo"
+    "label": "Eroismo"
   },
   "hex": {
     "description": "Poni una maledizione su una creatura che puoi vedere entro gittata. Fino al termine dell'incantesimo, infliggi 1d6 danni Necrotici aggiuntivi al bersaglio ogni volta che lo colpisci con un attacco. Inoltre, scegli una caratteristica quando lanci l'incantesimo. Il bersaglio ha svantaggio sulle prove di caratteristica effettuate con la caratteristica scelta.",
@@ -1297,7 +1297,7 @@
     "material": "L'occhio pietrificato di un tritone"
   },
   "hex.grants.0": {
-    "label": "Sortilegio attivo"
+    "label": "Sortilegio"
   },
   "hold-monster": {
     "description": "Scegli una creatura che puoi vedere entro gittata. Il bersaglio deve superare un tiro salvezza su Saggezza o essere Paralizzato per la durata. Alla fine di ciascuno dei suoi turni, il bersaglio può effettuare un altro tiro salvezza su Saggezza. In caso di successo, l'incantesimo termina sul bersaglio.",
@@ -1336,7 +1336,7 @@
     "range": "27 metri"
   },
   "hunters-mark.grants.0": {
-    "label": "Marchio del Cacciatore attivo"
+    "label": "Marchio del Cacciatore"
   },
   "hypnotic-pattern": {
     "description": "Crei un motivo vorticoso di colori che si intreccia nell'aria all'interno di un Cubo di 9 metri entro gittata. Ogni creatura nell'area che vede il motivo deve effettuare un tiro salvezza su Saggezza. Se fallisce, la creatura diventa Affascinata e Incapacitata per la durata. L'effetto termina per una creatura se subisce qualsiasi danno o se qualcuno usa un'azione per scuoterla dal suo torpore.",
@@ -2751,91 +2751,91 @@
     "range": "18 metri"
   },
   "mage-armor.grants.0": {
-    "label": "Armatura Magica attiva"
+    "label": "Armatura Magica"
   },
   "shield.grants.0": {
     "label": "Scudo (fino al tuo prossimo turno)"
   },
   "bless.grants.0": {
-    "label": "Benedizione attiva"
+    "label": "Benedizione"
   },
   "searing-smite.grants.0": {
-    "label": "Punizione Incandescente attiva"
+    "label": "Punizione Incandescente"
   },
   "searing-smite.grants.1": {
     "label": "In fiamme per Punizione Incandescente"
   },
   "shield-of-faith.grants.0": {
-    "label": "Scudo della Fede attivo"
+    "label": "Scudo della Fede"
   },
   "blur.grants.0": {
-    "label": "Sfocatura attiva"
+    "label": "Sfocatura"
   },
   "blur.grants.0.grants.0": {
     "description": "Gli attacchi contro di te hanno Svantaggio"
   },
   "warding-bond.grants.0": {
-    "label": "Vincolo di Interdizione attivo"
+    "label": "Vincolo di Interdizione"
   },
   "warding-bond.grants.0.grants.2": {
     "description": "La creatura protetta ha Resistenza a tutti i danni; l'incantatore subisce gli stessi danni che subisce lei"
   },
   "death-ward.grants.0": {
-    "label": "Interdizione alla Morte attiva"
+    "label": "Interdizione alla Morte"
   },
   "death-ward.grants.0.grants.0": {
     "description": "La prima volta che scenderesti a 0 PF, scendi invece a 1 PF e la protezione termina"
   },
   "mirror-image.grants.0": {
-    "label": "Immagine Speculare attiva"
+    "label": "Immagine Speculare"
   },
   "mirror-image.grants.0.grants.0": {
     "description": "Tre duplicati: quando vieni colpito, tira 1d6 per ogni duplicato rimasto; con un 3+ un duplicato viene distrutto al tuo posto"
   },
   "longstrider.grants.0": {
-    "label": "Passo Veloce attivo"
+    "label": "Passo Veloce"
   },
   "divine-favor.grants.0": {
-    "label": "Favore Divino attivo"
+    "label": "Favore Divino"
   },
   "barkskin.grants.0": {
-    "label": "Pelle Coriacea attiva"
+    "label": "Pelle Coriacea"
   },
   "spider-climb.grants.0": {
-    "label": "Camminare sui Muri attivo"
+    "label": "Movimenti del Ragno"
   },
   "darkvision.grants.0": {
-    "label": "Scurovisione (incantesimo) attiva"
+    "label": "Scurovisione"
   },
   "aid.grants.0": {
-    "label": "Aiuto attivo"
+    "label": "Aiuto"
   },
   "fly.grants.0": {
-    "label": "Volare attivo"
+    "label": "Volare"
   },
   "haste.grants.0": {
-    "label": "Velocità attiva"
+    "label": "Velocità"
   },
   "protection-from-energy.grants.0": {
-    "label": "Protezione dall'Energia attiva"
+    "label": "Protezione dall'Energia"
   },
   "stoneskin.grants.0": {
-    "label": "Pelle di Pietra attiva"
+    "label": "Pelle di Pietra"
   },
   "fire-shield.grants.0": {
-    "label": "Scudo di Fuoco attivo"
+    "label": "Scudo di Fuoco"
   },
   "freedom-of-movement.grants.0": {
-    "label": "Libertà di Movimento attiva"
+    "label": "Libertà di Movimento"
   },
   "true-seeing.grants.0": {
-    "label": "Vista Pura attiva"
+    "label": "Visione del Vero"
   },
   "mind-blank.grants.0": {
-    "label": "Mente Vacua attiva"
+    "label": "Vuoto Mentale"
   },
   "foresight.grants.0": {
-    "label": "Premonizione attiva"
+    "label": "Previsione"
   },
   "haste.grants.0.grants.2": {
     "description": "Tiri salvezza su Destrezza (Velocità)"
