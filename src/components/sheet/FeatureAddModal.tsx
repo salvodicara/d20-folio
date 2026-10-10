@@ -66,7 +66,7 @@ export function FeatureAddModal({
                 setDetailTitle(null);
               }}
               tabs={[
-                { id: "srd", label: t("custom.srdTab") },
+                { id: "srd", label: t("nav.features") },
                 { id: "custom", label: t("custom.customTab") },
               ]}
             />

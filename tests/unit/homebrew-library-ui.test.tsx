@@ -250,6 +250,15 @@ describe("the Custom tab — the detail leg (the SRD flow)", () => {
     expect(within(dialog).queryByRole("button", { name: /increase/i })).toBeNull();
   });
 
+  it("names its catalogue tab in a player's words, like the item modal", () => {
+    loadCharacter();
+    render(<SpellAddModal open onClose={() => {}} />);
+    const dialog = screen.getAllByRole("dialog").at(-1);
+    if (!dialog) throw new Error("dialog missing");
+    expect(within(dialog).getByRole("button", { name: "Spells" })).toBeInTheDocument();
+    expect(within(dialog).queryByText(/SRD/)).toBeNull();
+  });
+
   it("its footer Add lands the entry on the character's own array", () => {
     const doc = structuredClone(MOCK_CHARACTER);
     doc.character.weapons = [];
