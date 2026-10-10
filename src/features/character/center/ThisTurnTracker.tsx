@@ -51,13 +51,9 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { vitalConcentration, vitalExhaustion } from "@/lib/character-vitals";
 import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
-import {
-  registerUndoableResult,
-  registerUndoableToast,
-  useUndoStore,
-  wireUndoToast,
-} from "@/stores/undoStore";
+import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
+import { applyFirstRollTopUps } from "./initiative-top-up";
 import { StatusLedge } from "./StatusLedge";
 import { concentrationRoundsLeft, deriveStatuses } from "@/lib/status";
 import { useTurnEconomy } from "./useTurnEconomy";
@@ -149,9 +145,6 @@ export function ThisTurnTracker({
     (s) => s.character?.session.grantBundleChoices
   );
   const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
-  const applyInitiativeTrackerTopUps = useCharacterStore(
-    (s) => s.applyInitiativeTrackerTopUps
-  );
 
   // S4 — rolling Initiative tops up the listed trackers (Persistent Rage, Battle
   // Master Relentless, Superior Inspiration, Archdruid, Perfect Focus). Fires when
@@ -186,25 +179,7 @@ export function ThisTurnTracker({
       setInitiative(roll);
     }
     if (!wasEmpty || roll === "") return;
-    const { sourceIds, restore } = applyInitiativeTrackerTopUps();
-    if (sourceIds.length === 0) return;
-    // Pattern B (the reversal contract): the top-up already ran and the message
-    // names its source — register on the session undo stack so ⌘Z / the standing
-    // control reach it too, then wire the standard 5s snackbar. Character-state
-    // entry (a tracker restore, not per-turn economy) → turnScoped false.
-    const message = t("combat.initiativeTopUp", {
-      source: grantSourceLabel(sourceIds[0] ?? "", locale),
-    });
-    const entryId = useUndoStore.getState().register({
-      label: { message },
-      turnScoped: false,
-      undo: restore,
-      redo: () => {
-        const again = useCharacterStore.getState().applyInitiativeTrackerTopUps();
-        return again.sourceIds.length > 0 ? again.restore : null;
-      },
-    });
-    wireUndoToast(entryId, { message });
+    applyFirstRollTopUps(t, locale);
   }
 
   // Coin re-arm — mis-tap recovery WITHOUT a button (owner-ratified 2026-07-03):

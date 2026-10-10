@@ -35,6 +35,8 @@ import {
   type PipEntry,
 } from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
+import { useCharacterStore } from "@/stores/characterStore";
+import { makeCharacterDoc } from "./_helpers";
 
 /** The live status that BACKS a needs-roll pip (init bonus / raw roll). */
 function gc(over: Partial<GlobalCombat> = {}): GlobalCombat {
@@ -130,6 +132,39 @@ describe("CombatPip", () => {
     await waitFor(() =>
       expect(setEncounterInitiative).toHaveBeenCalledWith("mock-1", "u1", 15)
     );
+  });
+
+  it("a first roll from the pip regains the open hero's initiative top-ups (Superior Inspiration)", async () => {
+    const bard = {
+      ...makeCharacterDoc(
+        {
+          classId: "bard",
+          level: 18,
+          abilityScores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 20 },
+          features: [
+            { srdId: "bard-bardic-inspiration" },
+            { srdId: "bard-superior-inspiration" },
+          ],
+        },
+        { trackers: { "bard-bardic-inspiration": { used: 5 } } }
+      ),
+      id: "char-x",
+    };
+    useCharacterStore.getState().setCharacter(bard);
+    useCombatStatusStore.setState({ status: gc(), pip: pip("needs-roll") });
+    renderPip();
+    fireEvent.click(screen.getByRole("button", { name: /roll your initiative/i }));
+    const input = await screen.findByPlaceholderText("d20");
+    fireEvent.change(input, { target: { value: "15" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() =>
+      expect(
+        useCharacterStore.getState().character?.session.trackers[
+          "bard-bardic-inspiration"
+        ]
+      ).toEqual({ used: 3 })
+    );
+    useCharacterStore.getState().setCharacter(null);
   });
 
   it("renders every OTHER state as a PORTRAIT-SOCKET split switch — status carries NO destination text (P1)", () => {
