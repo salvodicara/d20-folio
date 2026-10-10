@@ -172,9 +172,8 @@ describe("legacy parent cutover apply path (emulator)", () => {
     // The peer collections are canonicalized (or shed) so the migrated document
     // satisfies the STRICT v1 reader — a child the app could not parse is a
     // character the owner could not open.
-    expect(woundedChild?.recentActions).toEqual([
-      { id: "1", targetIds: ["t"], outcome: "hit", round: 2 },
-    ]);
+    // The retired declared-attack ring is shed, as the client's own next save sheds it.
+    expect(woundedChild?.recentActions).toBeUndefined();
     expect(woundedChild?.activeEffects).toBeUndefined();
     expect(woundedChild?.turnEconomy).toBeUndefined();
     expect(woundedChild?.pendingConcentrationSaves).toBeUndefined();

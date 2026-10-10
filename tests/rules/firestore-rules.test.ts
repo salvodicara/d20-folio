@@ -535,6 +535,20 @@ describe("firestore.rules — /campaigns access", () => {
       }
     });
 
+    // A malformed round makes every client's encounter parse throw (`safeInteger`),
+    // breaking the fight for the whole table: a member may only write a round ≥ 1.
+    it("a member may not write a malformed round", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      for (const round of [0, -1, 1.5, "2", null]) {
+        await assertFails(
+          updateDoc(doc(db, "campaigns", "camp1"), {
+            "encounter.currentCombatantId": "pc-member",
+            "encounter.round": round,
+          })
+        );
+      }
+    });
+
     it("a non-member is denied a turn-only write", async () => {
       const db = testEnv.authenticatedContext("outsider").firestore();
       await assertFails(

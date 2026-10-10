@@ -506,11 +506,18 @@ service cloud.firestore {
       // therefore stay DM/admin-only by construction (the unconstrained isDm()/isAdmin()
       // update branch writes the whole encounter, `order` included) — no new write path,
       // no loosening. Pinned by the "frozen order is DM-only" rules tests.
+      // A member-written round must be a whole round ≥ 1: every client's encounter
+      // parse rejects anything else, which would break the fight for the whole table.
+      function validEncounterRound() {
+        return request.resource.data.encounter.get('round', 1) is int
+          && request.resource.data.encounter.get('round', 1) >= 1;
+      }
       function turnFieldsOnlyChanged() {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['currentCombatantId', 'round']);
+               .affectedKeys().hasOnly(['currentCombatantId', 'round'])
+          && validEncounterRound();
       }
 
       // COMBAT RESOLUTION: a player who confirms a reviewed target effect AUTO-APPLIES
@@ -547,6 +554,7 @@ service cloud.firestore {
                >= resource.data.encounter.get('events', []).size()
           && request.resource.data.encounter.get('memberEffects', []).size()
                >= resource.data.encounter.get('memberEffects', []).size()
+          && validEncounterRound()
           && validCombatEffectOpsChange();
       }
 
