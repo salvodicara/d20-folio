@@ -48,6 +48,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { InitVital } from "@/features/campaigns/init-vital";
 import { Portrait } from "@/components/shared/Portrait";
 import { useAuthStore } from "@/stores/authStore";
+import { useCharacterStore } from "@/stores/characterStore";
+import { applyFirstRollTopUps } from "@/features/character/center/initiative-top-up";
+import { useLocale } from "@/hooks/useLocale";
 import { useToastStore } from "@/stores/toastStore";
 import {
   usePipCombat,
@@ -65,6 +68,7 @@ function firstNameOf(name: string): string {
 
 export function CombatPip() {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
   const pip = usePipCombat();
   const status = useGlobalCombat();
   const uid = useAuthStore((s) => s.user?.uid);
@@ -155,6 +159,15 @@ export function CombatPip() {
   // swallow that reads as the roll "not saving".
   const commitRoll = (roll: number | null): void => {
     if (!rollTarget) return;
+    // The fight's first roll regains the open hero's initiative top-ups, exactly as a
+    // roll from the sheet's turn band does (the trackers live on that hero's sheet).
+    if (
+      roll !== null &&
+      rollTarget.status.initiativeRoll === null &&
+      useCharacterStore.getState().character?.id === rollTarget.status.characterId
+    ) {
+      applyFirstRollTopUps(t, locale);
+    }
     void import("@/features/campaigns/campaign-io")
       .then(({ setEncounterInitiative }) =>
         setEncounterInitiative(rollTarget.status.campaignId, rollTarget.uid, roll)
