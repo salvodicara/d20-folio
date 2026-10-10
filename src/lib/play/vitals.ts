@@ -13,6 +13,7 @@ import { slotUsageKey } from "@/lib/cast-options";
 import { clampHp, clampTemp } from "@/lib/combat-hp";
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import type { ExhaustionLevel } from "@/types/condition";
 import {
   cellWith,
   commitWorldVitals,
@@ -204,4 +205,51 @@ export function restoreTracker(
       [trackerId]: { ...entry, used: Math.max(0, (entry?.used ?? 0) - amount) },
     },
   };
+}
+
+/** The death-save track set to exact counts (0–3 each), or null when unchanged.
+ *  `newMark` names a mark that was ADDED (the story beat); clearing a pip or
+ *  resetting the track is bookkeeping. The world's `stable`/`dead` states carry no
+ *  counts, so the requested counts are re-asserted on the session. */
+export function setDeathSaves(
+  doc: CharacterDoc,
+  successes: number,
+  failures: number
+): { session: SessionState; newMark: "success" | "failure" | null } | null {
+  const succ = Math.max(0, Math.min(3, Math.round(successes)));
+  const fail = Math.max(0, Math.min(3, Math.round(failures)));
+  const prevSucc = doc.session.deathSucc;
+  const prevFail = doc.session.deathFail;
+  if (succ === prevSucc && fail === prevFail) return null;
+  // A track write against a standing character is not a world fact.
+  const engine = commitWorldVitals(doc, "death-save-set", (state) => {
+    if (state.vitals.hitPoints.current !== 0 || state.vitals.zeroHitPoints === null) {
+      return null;
+    }
+    state.vitals = { ...state.vitals, zeroHitPoints: zeroTrackFor(succ, fail) };
+    return state;
+  });
+  return {
+    session: {
+      ...(engine ? engine.session : doc.session),
+      deathSucc: succ,
+      deathFail: fail,
+    },
+    newMark: succ > prevSucc ? "success" : fail > prevFail ? "failure" : null,
+  };
+}
+
+/** The exhaustion level set to exactly `level` (0–6), or null when unchanged. The
+ *  world's own invariant makes level 6 death, so the sixth pip on a living world
+ *  degrades to the legacy write. */
+export function setExhaustion(doc: CharacterDoc, level: number): SessionState | null {
+  if (!Number.isFinite(level)) return null;
+  const target = Math.max(0, Math.min(6, Math.round(level)));
+  if (doc.session.exhaustion === target) return null;
+  const engine = commitWorldVitals(doc, "exhaustion-set", (state) => {
+    if (target === 6 && state.vitals.zeroHitPoints?.kind !== "dead") return null;
+    state.exhaustion = target as ExhaustionLevel;
+    return state;
+  });
+  return engine ? engine.session : { ...doc.session, exhaustion: target };
 }
