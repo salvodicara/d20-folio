@@ -40,64 +40,6 @@ import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { ConcentrationRef } from "@/types/ids";
 import type { PersistedPlayStateV1 } from "@/lib/session-state-codec";
 
-/**
- * A player-DECLARED attack in a live campaign encounter — the target(s) the player
- * chose on their sheet plus the HIT/MISS they tapped after rolling at the table.
- *
- * RETIRED READER (2026-10-09): nothing reads this ring any more. Auto-attribution is
- * now a view of the session log (`src/lib/session-log/encounter-feed.ts`, over the
- * players' `action` events), and nothing has written the ring since the resolver went
- * (`characterStore.declareAttack` has no caller). It stays in the stored shape until
- * its own removal step (codec + stored subdocs); see docs/ARCHITECTURE_MAP.md.
- *
- * IDS + NUMBERS ONLY (golden rule 7): the target(s) are ENCOUNTER combatant ids
- * (`monster-<n>`), never a display name; the attacker is the owning PC (`pc-<uid>`),
- * derived at read time from the subdoc's uid (not stored here). SOLO play never writes
- * one (the sheet gates the target/HIT-MISS UI on being in a live encounter).
- */
-export interface RecentAttack {
-  /** Stable, monotonically-increasing id within the ring (the max existing id + 1 —
-   *  deterministic, no RNG; survives the ring so a de-dup handle never repeats). */
-  id: string;
-  /** The encounter combatant ids the player targeted (`monster-<n>`). One for a
-   *  single-target swing; the SET the player struck for a multi-target action (Phase 2 —
-   *  Magic Missile's darts, Scorching Ray's rays across several foes). */
-  targetIds: string[];
-  /** The outcome the player tapped after rolling — the fact the app never infers. */
-  outcome: "hit" | "miss";
-  /** The encounter round the attack was declared in — the correlation window key. */
-  round: number;
-  /** The exact action used, as a stable localizable reference. */
-  action?: LocText;
-  /**
-   * The action's multi-instance DROP BOUND — how many separate damage instances the
-   * declared action creates (Magic Missile 3, Scorching Ray 3), so the DM-side
-   * correlation caps how many observed HP drops it may fuse. Present ONLY for a
-   * multi-target declaration; ABSENT for a single-target swing (bound = 1 by shape).
-   */
-  instances?: number;
-  /**
-   * S13 — the declared action is an AREA SAVE-for-half spell (Fireball class). The
-   * DM's correlation treats this specially: a declared target with a real HP drop
-   * took the DM's number (half or full — the number is the truth), and a declared
-   * target the DM left un-dropped RESISTED (full save, no damage) — the outcome is a
-   * SAVE, not an attack-roll hit/miss (which is why `outcome` is always `"hit"` here,
-   * meaning "cast/resolved"). Present ONLY for an area save declaration; absent for a
-   * weapon swing or a multi-instance attack (Magic Missile). See the feature-layer
-   * (retired) chronicle correlation.
-   */
-  save?: boolean;
-  /**
-   * S13 — the stable CONDITION ids this action applies on a hit as a RIDER (a weapon
-   * Mastery's Topple → `["prone"]`, a spell's rider). The DM-side correlation binds a
-   * DM-applied `condition-gain` on a declared target THIS round to the declaring PC
-   * when the gained condition id is in this set — the confident "who applied it"
-   * provenance (never guessed from mere co-occurrence). Absent when the action carries
-   * no modelled condition rider. Ids only (golden rule 7).
-   */
-  riders?: string[];
-}
-
 /** Durable identity of one action-economy occupant for the current turn. */
 export interface PersistedTurnAction {
   id: string;
@@ -186,11 +128,6 @@ export interface CombatState {
    *  to — this subdoc is its SOLE persisted home (an encounter uses the shared doc). `1`
    *  when combat has not advanced. */
   round: number;
-  /**
-   * The capped ring of the player's recently-DECLARED in-encounter attacks
-   * ({@link RecentAttack}). Retired: no writer and no reader (see {@link RecentAttack}).
-   */
-  recentActions: RecentAttack[];
   /** Source-owned effects applied to this character outside a campaign encounter.
    * They use the same occurrence model and lifetime algebra as shared encounters.
    * (A branch-era `effectOps` mirror ledger existed here briefly; it never had a

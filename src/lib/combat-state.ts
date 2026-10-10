@@ -25,7 +25,7 @@
  * always-eager path with zero SRD/Firebase weight.
  */
 import type { SessionState } from "@/types/character";
-import type { CombatState, RecentAttack } from "@/types/combat-state";
+import type { CombatState } from "@/types/combat-state";
 import type { MemberCombatEffect } from "@/types/campaign";
 import { applyDamage, applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
 import { diedInPlay } from "@/lib/character-status";
@@ -33,28 +33,6 @@ import {
   parsePersistedPlayStateV1,
   sessionToPlayStateV1,
 } from "@/lib/session-state-codec";
-
-/** The `recentActions` ring cap — the last few declared attacks are all the correlation
- *  window ever needs; older ones fall off (a fight rarely correlates beyond the round). */
-export const RECENT_ATTACK_CAP = 8;
-
-/**
- * Append a player-declared attack to the `recentActions` ring, stamping a stable,
- * monotonically-increasing id (max existing + 1 — deterministic, NO RNG, golden rule
- * 21) and capping the ring at {@link RECENT_ATTACK_CAP}. Pure: the store injects the
- * `round`/`targetIds`/`outcome`; the id derivation lives here (one place, testable) so
- * ids keep climbing even as the ring slides (a de-dup handle never repeats). SOLO never
- * calls this (the sheet gates the declaration UI on being in a live encounter).
- */
-export function pushRecentAttack(
-  s: CombatState,
-  entry: Omit<RecentAttack, "id">
-): CombatState {
-  const actions = s.recentActions;
-  const nextId = actions.reduce((m, a) => Math.max(m, Number(a.id) || 0), 0) + 1;
-  const full: RecentAttack = { ...entry, id: String(nextId) };
-  return { ...s, recentActions: [...actions, full].slice(-RECENT_ATTACK_CAP) };
-}
 
 /**
  * REMOTE-CHANGE FENCE comparison (§5.4): whether an incoming combat-state snapshot
@@ -110,7 +88,6 @@ export function initiativeToString(value: number | null): string {
 export function sessionToCombatState(
   session: SessionState,
   round = 1,
-  recentActions: RecentAttack[] = [],
   appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
   turnEconomy?: CombatState["turnEconomy"],
   activeEffects?: CombatState["activeEffects"],
@@ -124,7 +101,6 @@ export function sessionToCombatState(
     bardicInspirationDie: session.bardicInspirationDie ?? "",
     heroicInspiration: session.inspiration,
     round,
-    recentActions,
     playState: sessionToPlayStateV1(session),
     ...(activeEffects?.length ? { activeEffects } : {}),
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),
@@ -251,7 +227,6 @@ export function defaultCombatState(max: number): CombatState {
     initiativeRoll: null,
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
-    recentActions: [],
     // The child is the sole play owner, so even the seed carries one: an empty v1
     // envelope decodes to the default session. Without it the write seam refuses the
     // document (`combat-state-io.combatStateWriteData`).

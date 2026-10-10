@@ -119,7 +119,6 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
       failures: state.deathSaves.failures,
     },
     round: state.round,
-    recentActions: state.recentActions,
     ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }

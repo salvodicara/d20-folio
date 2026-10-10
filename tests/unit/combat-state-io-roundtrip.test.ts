@@ -179,18 +179,6 @@ function completeState(): CombatState {
     initiativeRoll: 18,
     deathSaves: { successes: 2, failures: 1 },
     round: 8,
-    recentActions: [
-      {
-        id: "recent-1",
-        targetIds: ["monster-0", "monster-1"],
-        outcome: "hit",
-        round: 8,
-        action: LOC_TEXTS.srd,
-        instances: 3,
-        save: true,
-        riders: ["prone"],
-      },
-    ],
     activeEffects: EFFECTS,
     appliedEncounterEffects: { epoch: 12, ids: ["effect-a", "effect-b"] },
     pendingConcentrationSaves: [
@@ -354,29 +342,6 @@ describe("combat-state IO — full persistence contract", () => {
           ids: ["effect-a"],
         }),
     },
-    {
-      name: "recentActions",
-      patch: {
-        recentActions: [
-          {
-            id: "valid",
-            targetIds: ["monster-0"],
-            outcome: "hit",
-            round: 3,
-          },
-          { id: "broken", targetIds: [], outcome: "hit", round: 3 },
-        ],
-      },
-      assertLegacy: (state: CombatState) =>
-        expect(state.recentActions).toEqual([
-          {
-            id: "valid",
-            targetIds: ["monster-0"],
-            outcome: "hit",
-            round: 3,
-          },
-        ]),
-    },
   ])("rejects malformed present v1 $name but preserves legacy tolerance", (testCase) => {
     const { playState: _playState, ...legacyBase } =
       combatStateWriteData(completeState());
@@ -408,7 +373,7 @@ describe("combat-state IO — full persistence contract", () => {
   it("rejects hostile present v1 fields without invoking accessors", () => {
     const hostile = combatStateWriteData(completeState());
     let getterRead = false;
-    Object.defineProperty(hostile, "recentActions", {
+    Object.defineProperty(hostile, "turnEconomy", {
       enumerable: true,
       get: () => {
         getterRead = true;
@@ -420,6 +385,18 @@ describe("combat-state IO — full persistence contract", () => {
       reason: "invalid-combat-state",
     });
     expect(getterRead).toBe(false);
+  });
+
+  it("ignores a stored legacy recentActions ring and sheds it on the next write", () => {
+    const stored = {
+      ...combatStateWriteData(completeState()),
+      recentActions: [{ id: "1", targetIds: ["monster-0"], outcome: "hit", round: 2 }],
+    };
+    const parsed = parseCombatState(stored);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.state).not.toHaveProperty("recentActions");
+    expect(combatStateWriteData(parsed.state)).not.toHaveProperty("recentActions");
   });
 
   it("rejects partial combat docs instead of fabricating a 0-HP character", () => {
@@ -631,7 +608,6 @@ describe("combat-state IO — full persistence contract", () => {
       initiativeRoll: Number.POSITIVE_INFINITY,
       deathSaves: { successes: Number.NaN, failures: 2 },
       round: Number.NEGATIVE_INFINITY,
-      recentActions: [{ id: "bad", targetIds: [], outcome: "hit", round: 1 }],
       activeEffects: [validEffect, { id: "broken" }],
       appliedEncounterEffects: { epoch: "wrong", ids: ["effect-a"] },
       turnEconomy: {

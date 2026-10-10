@@ -67,7 +67,6 @@ describe("hydrateMemberDoc — combat/state subdoc is the sole source", () => {
       initiativeRoll: 13,
       deathSaves: { successes: 0, failures: 1 },
       round: 1,
-      recentActions: [],
       playState: sessionToPlayStateV1(MOCK_CHARACTER.session),
     };
     const hydrated = hydrateMemberDoc(MOCK_CHARACTER, wounded);
@@ -94,7 +93,6 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
     initiativeRoll: null,
     deathSaves: { successes: 0, failures: 0 },
     round: 1,
-    recentActions: [],
     playState: sessionToPlayStateV1(MOCK_CHARACTER.session),
     ...over,
   });
