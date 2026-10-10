@@ -21,6 +21,22 @@ import type {
   PendingConcentrationSave,
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
+import {
+  restoreSpellSlot as restoreSpellSlotTo,
+  restoreTracker as restoreTrackerTo,
+  setHp,
+  setTempHp,
+  spendSpellSlot,
+  spendTracker,
+  UNCONSCIOUS_CONDITION_ID,
+} from "@/lib/play/vitals";
+import {
+  cellWith,
+  commitWorldCondition,
+  commitWorldVitals,
+  drainedTemporary,
+  vitalsWithTemporary,
+} from "@/lib/play/world-commit";
 import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
 import {
@@ -61,7 +77,7 @@ import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
-import { applyHealing as healHp, clampHp, clampTemp } from "@/lib/combat-hp";
+import { applyHealing as healHp } from "@/lib/combat-hp";
 import { reducePcDamage } from "@/lib/combat-transition";
 import {
   allBundleSpellIds,
@@ -103,16 +119,12 @@ import {
   engineConcentrationHandle,
   persistedWorldUid,
   zeroTrackFor,
-  planCharacterVitalsTransition,
   planEngineConcentrationEnd,
   planSelfConditionApply,
   planSelfConditionEnd,
   undoCharacterAction,
 } from "@/lib/mechanics-world-store";
-import type { JournalActionDraft } from "@/types/action-journal";
-import type { CharacterMaterialState } from "@/types/material-state";
 import type { ExhaustionLevel } from "@/types/condition";
-import type { CreatureVitals } from "@/types/vitals";
 import {
   canCharacterRest,
   DEATH_FAIL_LIMIT,
@@ -699,14 +711,6 @@ interface CharacterState {
  * durable write — no re-reduce, no double clamp (the session is already clamped; the read
  * boundary `applyCombatToSession` re-clamps). A no-op with no character / no seam.
  */
-/**
- * The Unconscious condition id (RA-10) — auto-applied by `applyDamage` when a
- * character drops to 0 HP (SRD "Falling Unconscious") and auto-shed by the
- * heal-from-0 seam in `setHP` / the at-zero "drop to 1 instead" interrupt. The
- * chip stays hand-removable like any condition (override-first).
- */
-const UNCONSCIOUS_CONDITION_ID = "unconscious";
-
 /** Stacking-normalized view of the persisted solo occurrence list. */
 function effectiveCombatEffects(
   legacy: ReadonlyArray<ActiveCombatEffect>
@@ -947,118 +951,6 @@ function undoWorldAction(get: () => CharacterState, actionId: string): void {
   useCharacterStore.setState({ character: { ...doc, session: undone.session } });
 }
 
-/** One committed world transition: the journal action id (its undo pairing)
- * plus the mirrored session (world + every world-owned legacy field, ONE
- * value the caller folds into a single store update). */
-interface WorldVitalsCommit {
-  actionId: string;
-  session: SessionState;
-}
-
-/**
- * Commit one TABLE-AUTHORITY vitals transition against the character's
- * PERSISTED engine world — the write-path twin of the `character-vitals` read
- * seam. The caller's `mutate` moves the fact fields on a cloned state (the
- * rest boundary's rebase-on-session-truth discipline) and returns null when
- * the world cannot express the transition. FAIL-CLOSED (the encounter seam's
- * degradation): no persisted world, an unparseable world, an inexpressible
- * transition, or a rejected plan/commit all return null and the caller runs
- * the documented legacy session write instead — nothing engine-side moves.
- */
-function commitWorldVitals(
-  doc: CharacterDoc,
-  prefix: string,
-  mutate: (state: CharacterMaterialState) => CharacterMaterialState | null
-): WorldVitalsCommit | null {
-  if (doc.session.world === undefined) return null;
-  const uid = persistedWorldUid(doc.session.world);
-  if (uid === null) return null;
-  const world = characterWorldState(
-    doc,
-    uid,
-    doc.character.hp.max,
-    {},
-    characterTrackerSeeds(doc)
-  );
-  if (!world) return null;
-  const next = mutate(structuredClone(world));
-  if (!next) return null;
-  const actionId = `${prefix}-${crypto.randomUUID()}`;
-  const action = planCharacterVitalsTransition(doc, uid, world, next, actionId);
-  if (!action) return null;
-  const committed = commitCharacterAction(
-    doc,
-    uid,
-    world,
-    action,
-    boundaryCommitFacts(action)
-  );
-  return committed ? { actionId, session: committed.session } : null;
-}
-
-/** Commit one planned condition action (apply/end) over the persisted world —
- * the {@link commitWorldVitals} skeleton with a caller-supplied planner. */
-function commitWorldCondition(
-  doc: CharacterDoc,
-  prefix: string,
-  plan: (
-    uid: string,
-    world: Readonly<CharacterMaterialState>,
-    actionId: string
-  ) => Readonly<JournalActionDraft> | null
-): WorldVitalsCommit | null {
-  if (doc.session.world === undefined) return null;
-  const uid = persistedWorldUid(doc.session.world);
-  if (uid === null) return null;
-  const world = characterWorldState(
-    doc,
-    uid,
-    doc.character.hp.max,
-    {},
-    characterTrackerSeeds(doc)
-  );
-  if (!world) return null;
-  const actionId = `${prefix}-${crypto.randomUUID()}`;
-  const action = plan(uid, world, actionId);
-  if (!action) return null;
-  const committed = commitCharacterAction(
-    doc,
-    uid,
-    world,
-    action,
-    boundaryCommitFacts(action)
-  );
-  return committed ? { actionId, session: committed.session } : null;
-}
-
-/** The next temporary-HP cell for a legacy write: a drain of the same pool
- * (0 < next ≤ prior) keeps its source occurrence (an engine THP source keeps
- * its empty-trigger linkage); a raise or an emptied pool drops it (a manual
- * grant is table truth; an empty cell must carry no source). */
-function drainedTemporary(
-  prior: CreatureVitals["hitPoints"]["temporary"],
-  nextTemp: number
-): CreatureVitals["hitPoints"]["temporary"] {
-  return {
-    current: nextTemp,
-    sourceOccurrence:
-      nextTemp > 0 && nextTemp <= prior.current ? prior.sourceOccurrence : null,
-  };
-}
-
-/** The vitals value with only the temporary pool replaced. */
-function vitalsWithTemporary(
-  vitals: CreatureVitals,
-  temporary: CreatureVitals["hitPoints"]["temporary"]
-): CreatureVitals {
-  return { ...vitals, hitPoints: { ...vitals.hitPoints, temporary } };
-}
-
-/** One count cell with its current value replaced (cells are frozen-shaped). */
-function cellWith<T extends { readonly current: number }>(cell: T, current: number): T {
-  return { ...cell, current };
-}
-
 /**
  * Where the sheet's play-log appends and undos are forwarded beyond the character (the
  * campaign session log). Set by the owner's cockpit; never by a read-only view. A sink
@@ -1241,64 +1133,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    // D1 — clamp against the EFFECTIVE max (stored base + hp-flat boons + Aid), not
-    // the by-the-book stored base, so a Draconic Sorcerer / Boon-of-Fortitude / Aided
-    // character can hold their correct higher HP (rule 6 — one source for max).
-    const max = effectiveMaxHp(character.character, character.session);
-    const clamped = clampHp(current, max);
-    const prevCurrent = character.session.hp.current;
-    // RAW 2024 PHB: "If you regain any hit points, your Death Saving Throws
-    // are reset." Trigger: any transition from 0 → positive HP.
-    // Bug fix (2026-05-28): previously deathSucc / deathFail kept their
-    // values across a heal, so a character revived after 2 failed saves
-    // would re-enter combat already mid-death-throw on the next knockout.
-    const healingFromZero = prevCurrent === 0 && clamped > 0;
-    const deathReset = healingFromZero ? { deathSucc: 0, deathFail: 0 } : {};
-    // RA-10 — SRD "Falling Unconscious": the condition lasts "until you regain
-    // any Hit Points", so the SAME 0 → positive transition that resets the dying
-    // track sheds it. Log-free like the rest of `setHP` (an undo restoring HP
-    // must not mint story beats); `applyHealing` logs the story-side
-    // `condition-loss` for a real heal.
-    const sheddingUnconscious =
-      healingFromZero && character.session.conditions.includes(UNCONSCIOUS_CONDITION_ID);
-    // WORLD-FIRST (the write-path cutover): express the same transition on the
-    // persisted engine world; the commit's mirror writes hp + the death track
-    // onto the legacy session in the SAME value. Fail-closed: a missing or
-    // rejecting world keeps the legacy direct write below as the documented
-    // degradation. The Unconscious shed stays a legacy-only overlay (the world
-    // never owned a manually-tracked knockout chip; session wins on drift).
-    const nextSucc = healingFromZero ? 0 : character.session.deathSucc;
-    const nextFail = healingFromZero ? 0 : character.session.deathFail;
-    const engine = commitWorldVitals(character, "hp-set", (state) => {
-      state.vitals = {
-        hitPoints: {
-          current: clamped,
-          temporary: state.vitals.hitPoints.temporary,
-        },
-        zeroHitPoints: clamped > 0 ? null : zeroTrackFor(nextSucc, nextFail),
-      };
-      return state;
-    });
-    const base = engine
-      ? engine.session
-      : {
-          ...character.session,
-          hp: { ...character.session.hp, current: clamped },
-          ...deathReset,
-        };
-    set({
-      character: {
-        ...character,
-        session: {
-          ...base,
-          ...(sheddingUnconscious
-            ? {
-                conditions: base.conditions.filter((c) => c !== UNCONSCIOUS_CONDITION_ID),
-              }
-            : {}),
-        },
-      },
-    });
+    set({ character: { ...character, session: setHp(character, current) } });
     // Persist the whole resulting combat state (offline-safe). `persist: false` skips it
     // for `applyHealing`, which persists once after its own optimistic update.
     if (opts?.persist !== false) persistCombat(get);
@@ -1308,29 +1143,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    const clampedTemp = clampTemp(temp);
-    // WORLD-FIRST: the temp pool moves on the persisted world and the mirror
-    // writes the legacy field in the same value; a missing/rejecting world
-    // (or a no-op write) degrades to the legacy direct write.
-    const engine = commitWorldVitals(character, "temp-hp-set", (state) => {
-      if (state.vitals.hitPoints.temporary.current === clampedTemp) return null;
-      state.vitals = vitalsWithTemporary(
-        state.vitals,
-        drainedTemporary(state.vitals.hitPoints.temporary, clampedTemp)
-      );
-      return state;
-    });
-    set({
-      character: {
-        ...character,
-        session: engine
-          ? engine.session
-          : {
-              ...character.session,
-              hp: { ...character.session.hp, temp: clampedTemp },
-            },
-      },
-    });
+    set({ character: { ...character, session: setTempHp(character, temp) } });
     persistCombat(get);
   },
 
@@ -1635,39 +1448,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    // WORLD-FIRST: the slot cell debits on the persisted world and the mirror
-    // writes the legacy usage counter in the same value. Fail-closed: a
-    // missing world or an empty cell (a spend the world cannot express)
-    // degrades to the legacy direct write below.
-    const engine = commitWorldVitals(character, "slot-spend", (state) => {
-      const cell = pactMagic
-        ? state.resources.pactSpellSlot
-        : state.resources.standardSpellSlots[String(level)];
-      if (!cell || cell.current < 1) return null;
-      if (pactMagic) state.resources.pactSpellSlot = cellWith(cell, cell.current - 1);
-      else {
-        state.resources.standardSpellSlots[String(level)] = cellWith(
-          cell,
-          cell.current - 1
-        );
-      }
-      return state;
-    });
-    const key = slotUsageKey({ level, pactMagic });
-    const current = character.session.spellSlots[key]?.used ?? 0;
     set({
-      character: {
-        ...character,
-        session: engine
-          ? engine.session
-          : {
-              ...character.session,
-              spellSlots: {
-                ...character.session.spellSlots,
-                [key]: { used: current + 1 },
-              },
-            },
-      },
+      character: { ...character, session: spendSpellSlot(character, level, pactMagic) },
     });
     flushParentPersistence(get);
   },
@@ -1676,40 +1458,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    // WORLD-FIRST: the slot cell restores on the persisted world, capped at
-    // the character's own slot table total (a restore past full is not a
-    // world fact); the mirror writes the legacy counter in the same value.
-    const row = character.character.spellSlots.find(
-      (slot) => slot.level === level && !!slot.pactMagic === pactMagic
-    );
-    const engine = commitWorldVitals(character, "slot-restore", (state) => {
-      const cell = pactMagic
-        ? state.resources.pactSpellSlot
-        : state.resources.standardSpellSlots[String(level)];
-      if (!cell || !row || cell.current >= row.total) return null;
-      if (pactMagic) state.resources.pactSpellSlot = cellWith(cell, cell.current + 1);
-      else {
-        state.resources.standardSpellSlots[String(level)] = cellWith(
-          cell,
-          cell.current + 1
-        );
-      }
-      return state;
-    });
-    const key = slotUsageKey({ level, pactMagic });
-    const current = character.session.spellSlots[key]?.used ?? 0;
     set({
       character: {
         ...character,
-        session: engine
-          ? engine.session
-          : {
-              ...character.session,
-              spellSlots: {
-                ...character.session.spellSlots,
-                [key]: { used: Math.max(0, current - 1) },
-              },
-            },
+        session: restoreSpellSlotTo(character, level, pactMagic),
       },
     });
     flushParentPersistence(get);
@@ -1719,38 +1471,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    // WORLD-FIRST: the pool cell debits on the persisted world (seeding the
-    // pool from the legacy counters exactly once when the world has never
-    // seen it); the mirror writes the legacy counter, preserving any recorded
-    // rolls. A pool that cannot afford the spend degrades to the legacy write.
-    const engine = commitWorldVitals(character, "tracker-spend", (state) => {
-      const cell = state.resources.pools[trackerId];
-      if (
-        cell?.kind !== "count" ||
-        !Number.isSafeInteger(amount) ||
-        amount < 1 ||
-        cell.current < amount
-      ) {
-        return null;
-      }
-      state.resources.pools[trackerId] = cellWith(cell, cell.current - amount);
-      return state;
-    });
-    const entry = character.session.trackers[trackerId];
-    const current = entry?.used ?? 0;
     set({
-      character: {
-        ...character,
-        session: engine
-          ? engine.session
-          : {
-              ...character.session,
-              trackers: {
-                ...character.session.trackers,
-                [trackerId]: { ...entry, used: current + amount },
-              },
-            },
-      },
+      character: { ...character, session: spendTracker(character, trackerId, amount) },
     });
     flushParentPersistence(get);
   },
@@ -1759,37 +1481,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    // WORLD-FIRST: the pool cell restores on the persisted world, clamped to
-    // its own derived capacity (the same floor law as the legacy max(0, …)),
-    // and the mirror writes the legacy counter in the same value.
-    const engine = commitWorldVitals(character, "tracker-restore", (state) => {
-      const cell = state.resources.pools[trackerId];
-      if (cell?.kind !== "count" || !Number.isSafeInteger(amount) || amount < 1) {
-        return null;
-      }
-      const capacity =
-        cell.capacity.override ??
-        (cell.capacity.base.kind === "derived" ? cell.capacity.base.value : null);
-      if (capacity === null) return null;
-      const delta = Math.min(amount, Math.max(0, capacity - cell.current));
-      if (delta < 1) return null;
-      state.resources.pools[trackerId] = cellWith(cell, cell.current + delta);
-      return state;
-    });
-    const entry = character.session.trackers[trackerId];
-    const current = entry?.used ?? 0;
     set({
       character: {
         ...character,
-        session: engine
-          ? engine.session
-          : {
-              ...character.session,
-              trackers: {
-                ...character.session.trackers,
-                [trackerId]: { ...entry, used: Math.max(0, current - amount) },
-              },
-            },
+        session: restoreTrackerTo(character, trackerId, amount),
       },
     });
     flushParentPersistence(get);
