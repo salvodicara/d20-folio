@@ -13076,9 +13076,16 @@ textarea.input.sess-notes-edit {
    (one divider grammar; the old dashed border-top read as a second voice). */
 .uc-detail-foot {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+/* The foot action ("☆ Pin to top" / "★ Unpin") never breaks onto two lines: when
+   the tags fill the row it drops whole to the next line, right-aligned. */
+.uc-detail-foot > .btn {
+  margin-left: auto;
+  white-space: nowrap;
 }
 .uc-tags {
   display: flex;
