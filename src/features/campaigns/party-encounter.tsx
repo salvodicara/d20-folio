@@ -145,7 +145,6 @@ import {
   setEncounterInitiative,
   writeCampaignCombatEffect,
 } from "@/features/campaigns/campaign-io";
-import { reduceHpDelta, defaultCombatState } from "@/lib/combat-state";
 import { isCharacterAlive } from "@/lib/character-status";
 import { revokeConditionEffectOps } from "@/lib/combat-effects";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
@@ -946,13 +945,13 @@ function PcReadyCard({
  *  (e.g. removed from the campaign mid-fight), not a stale cache to retry. The live
  *  subscription still reconciles the UI to the truth. ONE seam shared by the HP tile,
  *  the INIT chip, and the conditions / death-save block (golden rule 3). */
-type CombatWrite = (run: () => Promise<void>) => void;
+type CombatWrite = (run: () => Promise<unknown>) => void;
 
 function useCombatWrite(): CombatWrite {
   const { t } = useTranslation();
   const showToast = useToastStore((s) => s.showToast);
   return useCallback(
-    (run: () => Promise<void>): void => {
+    (run: () => Promise<unknown>): void => {
       void run().catch((e: unknown) => {
         console.error("Combat write failed", e);
         showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
@@ -1080,58 +1079,54 @@ function HpVital({
       // untyped amount — summed for safety.
       onDamage={(parts) => {
         const amount = parts.reduce((s, p) => s + p.amount, 0);
-        write(() =>
-          writeCampaignCombatEffect(uid, charId, base, max, {
-            kind: "hp",
-            operation: { kind: "damage", amount },
-          })
-        );
-        // Record the chronicle beat in the SAME motion (DM only) — the PC's live HP
-        // lives in its subdoc, so we reduce the pre/post here off the same base the
-        // write uses. Unattributed; the feed's one-tap picker adds the "who".
-        if (recordEvent && amount > 0) {
-          const post = reduceHpDelta(
-            base ?? defaultCombatState(max),
-            { kind: "damage", amount },
-            max
-          ).hp.current;
-          recordEvent((e) =>
-            recordPcHp(e, {
-              targetId: combatantId,
-              kind: "damage",
-              amount,
-              preCurrent: current,
-              postCurrent: post,
-              max,
-            })
+        write(async () => {
+          const { before, after } = await writeCampaignCombatEffect(
+            uid,
+            charId,
+            base,
+            max,
+            { kind: "hp", operation: { kind: "damage", amount } }
           );
-        }
+          // Record the chronicle beat (DM only) from the numbers the transaction
+          // itself reduced over — the card's snapshot can lag a quick second tap.
+          // Unattributed; the feed's one-tap picker adds the "who".
+          if (recordEvent && amount > 0) {
+            recordEvent((e) =>
+              recordPcHp(e, {
+                targetId: combatantId,
+                kind: "damage",
+                amount,
+                preCurrent: before.hp.current,
+                postCurrent: after.hp.current,
+                max,
+              })
+            );
+          }
+        });
       }}
       onHeal={(n) => {
         if (dead) return;
-        write(() =>
-          writeCampaignCombatEffect(uid, charId, base, max, {
-            kind: "hp",
-            operation: { kind: "heal", amount: n },
-          })
-        );
-        if (recordEvent && n > 0) {
-          const post = reduceHpDelta(
-            base ?? defaultCombatState(max),
-            { kind: "heal", amount: n },
-            max
-          ).hp.current;
-          recordEvent((e) =>
-            recordPcHp(e, {
-              targetId: combatantId,
-              kind: "heal",
-              amount: n,
-              preCurrent: current,
-              postCurrent: post,
-              max,
-            })
+        write(async () => {
+          const { before, after } = await writeCampaignCombatEffect(
+            uid,
+            charId,
+            base,
+            max,
+            { kind: "hp", operation: { kind: "heal", amount: n } }
           );
-        }
+          if (recordEvent && n > 0) {
+            recordEvent((e) =>
+              recordPcHp(e, {
+                targetId: combatantId,
+                kind: "heal",
+                amount: n,
+                preCurrent: before.hp.current,
+                postCurrent: after.hp.current,
+                max,
+              })
+            );
+          }
+        });
       }}
       onTemp={(n) =>
         write(() =>

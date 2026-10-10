@@ -47,7 +47,12 @@ const {
   // permission-denied) to exercise the honest-failure toast.
   writeCombatEffectMock: vi.fn<
     typeof import("@/features/campaigns/campaign-io").writeCampaignCombatEffect
-  >(() => Promise.resolve()),
+  >(() =>
+    Promise.resolve({
+      before: { hp: { current: 10, temp: 0 } },
+      after: { hp: { current: 10, temp: 0 } },
+    } as never)
+  ),
   // The INIT write — a campaign-doc `encounterInit` row (the initiative SSOT);
   // asserted to store the RAW d20 roll (never the total).
   setEncounterInitiativeMock: vi.fn<
@@ -240,7 +245,10 @@ beforeEach(() => {
   alertFixtureEnabled.value = false;
   isAdminState.value = false;
   writeCombatEffectMock.mockReset();
-  writeCombatEffectMock.mockResolvedValue(undefined);
+  writeCombatEffectMock.mockResolvedValue({
+    before: { hp: { current: 10, temp: 0 } },
+    after: { hp: { current: 10, temp: 0 } },
+  } as never);
   setEncounterInitiativeMock.mockReset();
   setEncounterInitiativeMock.mockResolvedValue(undefined);
   rosterRef.value = [];
@@ -1112,6 +1120,30 @@ describe("PC combat editor — the multi-writer edit gate", () => {
     expect(uid).toBe("member-mara");
     expect(charId).toBe("team-catalion-bard");
     expect(mutation).toEqual({ kind: "hp", operation: { kind: "damage", amount: 6 } });
+  });
+
+  it("in a fight, the chronicle beat records the HP the transaction read, not the card's", async () => {
+    // The card's snapshot can lag a quick second tap; the beat must carry the fresh
+    // before/after the write itself reduced over.
+    writeCombatEffectMock.mockResolvedValueOnce({
+      before: { hp: { current: 9, temp: 0 } },
+      after: { hp: { current: 3, temp: 0 } },
+    } as never);
+    setCampaign(encounterCampaign());
+    renderParty();
+    await screen.findAllByLabelText(/^Armor Class:/);
+    const scope = maraScope();
+    fireEvent.click(scope.getByRole("button", { name: /hit points/i }));
+    fireEvent.change(screen.getByLabelText(/amount of damage/i), {
+      target: { value: "6" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Damage$/ }));
+    await waitFor(() => {
+      const beat = (useCampaignStore.getState().campaign?.encounter?.events ?? [])
+        .filter((event) => event.kind === "hp-damage")
+        .at(-1);
+      expect(beat).toMatchObject({ kind: "hp-damage", amount: 6, current: 3 });
+    });
   });
 
   it("a rejected DM write SURFACES an honest toast — no silent swallow, no retry theater", async () => {
