@@ -8,6 +8,8 @@
  * commit mirrors that exact field write-through so the two can never diverge.
  */
 
+import { DEATH_FAIL_LIMIT, DEATH_SUCCESS_LIMIT } from "@/lib/character-status";
+import type { ZeroHitPointsState } from "@/types/vitals";
 import { CONJURED_ITEM_BLUEPRINTS, CONJURED_ITEM_PROGRAMS } from "@/data/conjured-items";
 import { spellIndex } from "@/data/spells";
 import { concentrationValue } from "@/lib/concentration";
@@ -182,6 +184,65 @@ export function characterTrackerSeeds(
  * fail-closed; a document that has never carried one derives it exactly once
  * from the legacy session facts the world supersedes.
  */
+/** The world's zero-HP track for one stored death-save pair: three failures
+ * are death, three successes are stable, anything else is the dying track
+ * with its counts (the world's `dying` counts cap at 2 — the third mark IS
+ * the state transition). */
+export function zeroTrackFor(
+  successes: number,
+  failures: number
+): Exclude<ZeroHitPointsState, null> {
+  if (failures >= DEATH_FAIL_LIMIT) return { kind: "dead" };
+  if (successes >= DEATH_SUCCESS_LIMIT) return { kind: "stable" };
+  return {
+    failures: Math.min(2, Math.max(0, failures)),
+    kind: "dying",
+    successes: Math.min(2, Math.max(0, successes)),
+  };
+}
+
+/**
+ * The persisted world with its hit points, temporary HP and zero-HP track
+ * rebased on the STORED values. The stored HP is the one truth: the DM's party
+ * card, a level-up and every legacy write change it without touching the
+ * world, so a world commit that started from the world's own older copy would
+ * copy that copy back over them (the DM's damage undone by a slot spend). A
+ * temporary pool that still holds the same amount keeps its source occurrence;
+ * any other value is table truth with no source. Unchanged when they agree.
+ */
+function rebasedOnStoredVitals(
+  world: Readonly<CharacterMaterialState>,
+  session: Readonly<SessionState>,
+  material: CharacterMaterialRef
+): Readonly<CharacterMaterialState> {
+  const { hitPoints, zeroHitPoints } = world.vitals;
+  const current = Math.max(0, Math.floor(session.hp.current));
+  const temp = Math.max(0, Math.floor(session.hp.temp));
+  const zero = current > 0 ? null : zeroTrackFor(session.deathSucc, session.deathFail);
+  const sameZero = JSON.stringify(zero) === JSON.stringify(zeroHitPoints);
+  if (hitPoints.current === current && hitPoints.temporary.current === temp && sameZero) {
+    return world;
+  }
+  const rebased = parseCharacterMaterialState(
+    {
+      ...structuredClone(world),
+      vitals: {
+        ...structuredClone(world.vitals),
+        hitPoints: {
+          current,
+          temporary:
+            temp === hitPoints.temporary.current
+              ? structuredClone(hitPoints.temporary)
+              : { current: temp, sourceOccurrence: null },
+        },
+        zeroHitPoints: zero,
+      },
+    },
+    material
+  );
+  return rebased.ok ? rebased.value : world;
+}
+
 export function characterWorldState(
   doc: Readonly<CharacterDoc>,
   uid: string,
@@ -208,7 +269,9 @@ export function characterWorldState(
       const cell = persisted.value.resources.pools[trackerId];
       return cell?.kind === "count" && cell.capacity.base.kind === "unbounded";
     });
-    if (missing.length === 0 && legacyShaped.length === 0) return persisted.value;
+    if (missing.length === 0 && legacyShaped.length === 0) {
+      return rebasedOnStoredVitals(persisted.value, doc.session, material);
+    }
     const reseeded = parseCharacterMaterialState(
       {
         ...structuredClone(persisted.value),
@@ -234,7 +297,9 @@ export function characterWorldState(
       },
       material
     );
-    return reseeded.ok ? reseeded.value : null;
+    return reseeded.ok
+      ? rebasedOnStoredVitals(reseeded.value, doc.session, material)
+      : null;
   }
 
   const session = doc.session;

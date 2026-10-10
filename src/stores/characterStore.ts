@@ -102,6 +102,7 @@ import {
   commitCharacterAction,
   engineConcentrationHandle,
   persistedWorldUid,
+  zeroTrackFor,
   planCharacterVitalsTransition,
   planEngineConcentrationEnd,
   planSelfConditionApply,
@@ -111,7 +112,7 @@ import {
 import type { JournalActionDraft } from "@/types/action-journal";
 import type { CharacterMaterialState } from "@/types/material-state";
 import type { ExhaustionLevel } from "@/types/condition";
-import type { CreatureVitals, ZeroHitPointsState } from "@/types/vitals";
+import type { CreatureVitals } from "@/types/vitals";
 import {
   canCharacterRest,
   DEATH_FAIL_LIMIT,
@@ -1035,23 +1036,6 @@ function commitWorldCondition(
     boundaryCommitFacts(action)
   );
   return committed ? { actionId, session: committed.session } : null;
-}
-
-/** The world's zero-HP track for one legacy death-save pair: three failures
- * are death, three successes are stable, anything else is the dying track
- * with its counts (the world's `dying` counts cap at 2 — the third mark IS
- * the state transition). */
-function zeroTrackFor(
-  successes: number,
-  failures: number
-): Exclude<ZeroHitPointsState, null> {
-  if (failures >= DEATH_FAIL_LIMIT) return { kind: "dead" };
-  if (successes >= DEATH_SUCCESS_LIMIT) return { kind: "stable" };
-  return {
-    failures: Math.min(2, Math.max(0, failures)),
-    kind: "dying",
-    successes: Math.min(2, Math.max(0, successes)),
-  };
 }
 
 /** The next temporary-HP cell for a legacy write: a drain of the same pool

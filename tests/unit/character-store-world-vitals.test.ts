@@ -311,6 +311,82 @@ describe("hp/death family", () => {
   });
 });
 
+describe("the stored HP is the truth: a write outside the world survives later commits", () => {
+  // The DM's party card (and a level-up) write the stored HP, death saves and
+  // conditions directly; the persisted world keeps its older copy. Any later
+  // world commit on the player's sheet must start from the stored values, never
+  // copy the world's older HP back over them.
+  const fixture = () =>
+    docWithWorld(
+      { classId: "wizard", level: 5, spellSlots: [{ level: 2, total: 3 }] },
+      { hp: { current: 30, temp: 0 } }
+    );
+
+  /** A direct write to the stored vitals, as the DM's card merges it. */
+  function dmWrites(patch: Partial<SessionState>): void {
+    const doc = liveDoc();
+    useCharacterStore.setState({
+      character: { ...doc, session: { ...doc.session, ...patch } },
+    });
+  }
+
+  it("every world reader starts from the stored HP (the turn pass, the solo turn, rests)", () => {
+    const doc = fixture();
+    doc.session = {
+      ...doc.session,
+      hp: { current: 0, temp: 3 },
+      deathSucc: 1,
+      deathFail: 2,
+    };
+    const world = characterWorldState(doc, UID, doc.character.hp.max);
+    expect(world?.vitals.hitPoints).toEqual({
+      current: 0,
+      temporary: { current: 3, sourceOccurrence: null },
+    });
+    expect(world?.vitals.zeroHitPoints).toEqual({
+      failures: 2,
+      kind: "dying",
+      successes: 1,
+    });
+  });
+
+  it("keeps the DM's damage when the player then spends a spell slot", () => {
+    load(fixture());
+    dmWrites({ hp: { current: 20, temp: 0 } });
+    useCharacterStore.getState().useSpellSlot(2);
+    expect(liveDoc().session.spellSlots["2"]?.used).toBe(1);
+    expect(liveDoc().session.hp.current).toBe(20);
+    expect(liveWorld().vitals.hitPoints.current).toBe(20);
+  });
+
+  it("keeps the DM's damage when the player then gains temporary HP", () => {
+    load(fixture());
+    dmWrites({ hp: { current: 20, temp: 0 } });
+    useCharacterStore.getState().gainTempHp(5);
+    expect(liveDoc().session.hp).toMatchObject({ current: 20, temp: 5 });
+  });
+
+  it("applies the player's own damage on top of the DM's", () => {
+    load(fixture());
+    dmWrites({ hp: { current: 20, temp: 0 } });
+    useCharacterStore.getState().applyDamage(5);
+    expect(liveDoc().session.hp.current).toBe(15);
+  });
+
+  it("records a death save after the DM dropped the character to 0", () => {
+    load(fixture());
+    dmWrites({ hp: { current: 0, temp: 0 } });
+    useCharacterStore.getState().setDeathSaves(1, 0);
+    expect(liveDoc().session).toMatchObject({ deathSucc: 1, deathFail: 0 });
+    expect(liveDoc().session.hp.current).toBe(0);
+    expect(liveWorld().vitals.zeroHitPoints).toEqual({
+      failures: 0,
+      kind: "dying",
+      successes: 1,
+    });
+  });
+});
+
 describe("exhaustion family: setExhaustion", () => {
   it("moves the world level and mirrors the legacy field", () => {
     load(docWithWorld({}, { exhaustion: 1 }));
