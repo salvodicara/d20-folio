@@ -21,6 +21,7 @@ import type {
   PendingConcentrationSave,
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
+import { takeDamage } from "@/lib/play/damage";
 import {
   addCondition as addConditionTo,
   removeCondition as removeConditionFrom,
@@ -72,18 +73,13 @@ import { getBeast } from "@/data/beasts";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
-import {
-  aggregateCharacterGrants,
-  effectiveAC,
-  effectiveMaxHp,
-} from "@/lib/aggregate-character";
+import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { concentrationStatusKeys, endStatuses, endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
 import { applyHealing as healHp } from "@/lib/combat-hp";
-import { reducePcDamage } from "@/lib/combat-transition";
 import {
   allBundleSpellIds,
   getAlwaysPreparedFromGrants,
@@ -1161,50 +1157,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       const after = captureD20Command(get());
       return after ? causalD20CommandUndo(before, after, get) : null;
     };
-    const { current, temp } = character.session.hp;
-    const max = effectiveMaxHp(character.character, character.session);
-    const aggregate = aggregateCharacterGrants(character.character, character.session);
-    const persistentEffects = character.session.encounterEffects ?? [];
-    const stateFloorByKey = new Map(
-      aggregate.zeroHpFloors.map((floor) => [
-        floor.activeKey,
-        { stateKey: floor.activeKey, hitPoints: floor.hitPoints },
-      ])
-    );
-    const transition = reducePcDamage({
-      state: {
-        hp: { current, temp, max },
-        conditions: character.session.conditions,
-        deathSaves: {
-          successes: character.session.deathSucc,
-          failures: character.session.deathFail,
-        },
-      },
-      intake: { stage: "resolved", amount },
-      ...(opts?.crit ? { crit: true } : {}),
-      ...(opts?.hit ? { hit: opts.hit } : {}),
-      persistentEffects,
-      stateZeroHpFloors: [...stateFloorByKey.values()],
-    });
-    if (!transition.changed) return null;
-
-    const consumedEffectIds = new Set(transition.consumedEffectIds);
-    const consumedActiveKeys = new Set([
-      ...transition.consumedStateKeys,
-      ...persistentEffects.flatMap((effect) =>
-        consumedEffectIds.has(effect.id) &&
-        (effect.payload.kind === "grant-group" || effect.payload.kind === "target-mark")
-          ? [effect.payload.activeKey]
-          : []
-      ),
-    ]);
+    const taken = takeDamage(character, amount, opts);
+    if (!taken) return null;
+    const { transition, consumedEffectIds } = taken;
+    const current = character.session.hp.current;
     const nextLegacyEffects = get().combatLegacyActiveEffects.filter(
       (effect) => !consumedEffectIds.has(effect.id)
     );
     const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
-    const nextEncounterEffects = persistentEffects.filter(
-      (effect) => !consumedEffectIds.has(effect.id)
-    );
     const encounterProjection = get().encounterEffectProjection;
     const nextEncounterEffectProjection =
       consumedEffectIds.size > 0 && encounterProjection?.characterId === character.id
@@ -1232,32 +1192,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       }
     };
 
-    // WORLD-FIRST (the write-path cutover): the reduced packet lands on the
-    // persisted engine world too — hp, temp, and the zero-HP track move in one
-    // journal action whose mirror writes the same legacy fields the overrides
-    // below re-assert (identical values by construction). Conditions and
-    // consumed effects/active keys stay legacy-only overlays. Fail-closed: a
-    // missing or rejecting world keeps the legacy direct write alone.
-    const engine = commitWorldVitals(character, "damage-entry", (state) => {
-      state.vitals = {
-        hitPoints: {
-          current: transition.state.hp.current,
-          temporary: drainedTemporary(
-            state.vitals.hitPoints.temporary,
-            transition.state.hp.temp
-          ),
-        },
-        zeroHitPoints:
-          transition.state.hp.current > 0
-            ? null
-            : zeroTrackFor(
-                transition.state.deathSaves.successes,
-                transition.state.deathSaves.failures
-              ),
-      };
-      return state;
-    });
-
     if (current === 0) {
       set({
         combatActiveEffects: nextLocalEffects,
@@ -1266,30 +1200,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         // any legacy/stale queued prompts are therefore ineligible.
         combatPendingConcentrationSaves: [],
         encounterEffectProjection: nextEncounterEffectProjection,
-        character: {
-          ...character,
-          session: {
-            ...(engine ? engine.session : character.session),
-            hp: {
-              ...character.session.hp,
-              current: transition.state.hp.current,
-              temp: transition.state.hp.temp,
-            },
-            conditions: [...transition.state.conditions],
-            deathSucc: transition.state.deathSaves.successes,
-            deathFail: transition.state.deathSaves.failures,
-            ...(consumedEffectIds.size > 0
-              ? { encounterEffects: nextEncounterEffects }
-              : {}),
-            ...(consumedActiveKeys.size > 0
-              ? {
-                  activeFeatures: (character.session.activeFeatures ?? []).filter(
-                    (key) => !consumedActiveKeys.has(key)
-                  ),
-                }
-              : {}),
-          },
-        },
+        character: { ...character, session: taken.session },
       });
       logTransitionEvents();
       persistCombat(get);
@@ -1373,26 +1284,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       combatLegacyActiveEffects: nextLegacyEffects,
       combatPendingConcentrationSaves: nextPendingConcentrationSaves,
       encounterEffectProjection: nextEncounterEffectProjection,
-      character: {
-        ...character,
-        session: {
-          ...(engine ? engine.session : character.session),
-          hp: { ...character.session.hp, current: newCurrent, temp: newTemp },
-          conditions: [...transition.state.conditions],
-          deathSucc: transition.state.deathSaves.successes,
-          deathFail: transition.state.deathSaves.failures,
-          ...(consumedEffectIds.size > 0
-            ? { encounterEffects: nextEncounterEffects }
-            : {}),
-          ...(consumedActiveKeys.size > 0
-            ? {
-                activeFeatures: (character.session.activeFeatures ?? []).filter(
-                  (key) => !consumedActiveKeys.has(key)
-                ),
-              }
-            : {}),
-        },
-      },
+      character: { ...character, session: taken.session },
     });
     logTransitionEvents();
     if (concentrationBreaks) {
