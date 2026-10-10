@@ -15,9 +15,12 @@ vi.mock("@/lib/firebase", () => ({
 }));
 
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
+import { addCondition, removeCondition } from "@/lib/play/conditions";
 import {
   restoreSpellSlot,
   restoreTracker,
+  setDeathSaves,
+  setExhaustion,
   setHp,
   setTempHp,
   spendSpellSlot,
@@ -111,5 +114,44 @@ describe("trackers", () => {
     expect(spent.trackers["fighter-second-wind"]).toMatchObject({ used: 1 });
     const restored = restoreTracker({ ...doc, session: spent }, "fighter-second-wind", 5);
     expect(restored.trackers["fighter-second-wind"]?.used).toBe(0);
+  });
+});
+
+describe("death saves and exhaustion", () => {
+  it("names only an ADDED mark; unchanged counts are no transition", () => {
+    const down = wizard({ hp: { current: 0, temp: 0 }, deathSucc: 1, deathFail: 0 });
+    expect(setDeathSaves(down, 2, 0)?.newMark).toBe("success");
+    expect(setDeathSaves(down, 1, 1)?.newMark).toBe("failure");
+    expect(setDeathSaves(down, 0, 0)?.newMark).toBeNull();
+    expect(setDeathSaves(down, 1, 0)).toBeNull();
+    expect(setDeathSaves(down, 9, -2)?.session).toMatchObject({
+      deathSucc: 3,
+      deathFail: 0,
+    });
+  });
+
+  it("sets exhaustion within 0–6, or nothing when unchanged", () => {
+    expect(setExhaustion(wizard(), 2.6)?.exhaustion).toBe(3);
+    expect(setExhaustion(wizard({ exhaustion: 2 }), 2)).toBeNull();
+    expect(setExhaustion(wizard(), Number.NaN)).toBeNull();
+  });
+});
+
+describe("conditions", () => {
+  it("adds a condition once and removes it, forgetting the hidden find-DC with Invisible", () => {
+    const added = addCondition(wizard(), "invisible");
+    expect(added?.conditions).toEqual(["invisible"]);
+    expect(
+      addCondition(
+        { ...wizard(), session: { ...wizard().session, conditions: ["invisible"] } },
+        "invisible"
+      )
+    ).toBeNull();
+    const hidden = wizard({ conditions: ["invisible"], hiddenDc: 17 });
+    const removed = removeCondition(hidden, "invisible");
+    expect(removed?.session.conditions).toEqual([]);
+    expect(removed?.session.hiddenDc).toBeUndefined();
+    expect(removed?.worldActionId).toBeNull();
+    expect(removeCondition(wizard(), "prone")).toBeNull();
   });
 });

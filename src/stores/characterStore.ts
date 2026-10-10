@@ -22,8 +22,14 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import {
+  addCondition as addConditionTo,
+  removeCondition as removeConditionFrom,
+} from "@/lib/play/conditions";
+import {
   restoreSpellSlot as restoreSpellSlotTo,
   restoreTracker as restoreTrackerTo,
+  setDeathSaves as setDeathSavesTo,
+  setExhaustion as setExhaustionTo,
   setHp,
   setTempHp,
   spendSpellSlot,
@@ -74,7 +80,6 @@ import {
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { concentrationStatusKeys, endStatuses, endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
 import { applyHealing as healHp } from "@/lib/combat-hp";
@@ -121,10 +126,8 @@ import {
   zeroTrackFor,
   planEngineConcentrationEnd,
   planSelfConditionApply,
-  planSelfConditionEnd,
   undoCharacterAction,
 } from "@/lib/mechanics-world-store";
-import type { ExhaustionLevel } from "@/types/condition";
 import {
   canCharacterRest,
   DEATH_FAIL_LIMIT,
@@ -2139,26 +2142,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    if (character.session.conditions.includes(condition)) return;
     // WORLD-FIRST: a manual chip commits as a real world condition occurrence
-    // (the manual-condition seam program), and the commit's mirror lights the
-    // legacy chip in the same value. Fail-closed: an uncatalogued condition
-    // id, a missing world, or a rejecting kernel degrades to the legacy chip
-    // write alone.
-    const engine = commitWorldCondition(character, "condition-apply", (uid, world, id) =>
-      planSelfConditionApply(character, uid, world, condition, id)
-    );
-    // The chip always lights: the mirror only moves chips on an engine transition,
-    // and a world that still holds a condition the DM's card removed sees none.
-    const base = engine ? engine.session : character.session;
-    set({
-      character: {
-        ...character,
-        session: base.conditions.includes(condition)
-          ? base
-          : { ...base, conditions: [...base.conditions, condition] },
-      },
-    });
+    // (the manual-condition seam program); see `addCondition` in lib/play.
+    const session = addConditionTo(character, condition);
+    if (!session) return;
+    set({ character: { ...character, session } });
     // Events-as-data: a gained condition is a story beat (the condition id is
     // stable; the presenter resolves its localized name).
     get().logEvent({ kind: "condition-gain", conditionId: condition });
@@ -2254,7 +2242,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    if (!effectiveSessionConditions(character.session).includes(condition)) return null;
+    const removed = removeConditionFrom(character, condition);
+    if (!removed) return null;
     const prevConditions = character.session.conditions;
     const prevConcentrationConditions = character.session.concentrationConditions;
     const prevLocalEffects = get().combatLegacyActiveEffects;
@@ -2262,34 +2251,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       (effect) =>
         effect.payload.kind !== "condition" || effect.payload.conditionId !== condition
     );
-    const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
     // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
     // goes with it (and comes back on undo).
     const prevHiddenDc = character.session.hiddenDc;
     const clearsHiddenDc = condition === "invisible" && prevHiddenDc !== undefined;
-    // WORLD-FIRST: when the world owns the condition (an engine-applied or
-    // manually-booked occurrence), the removal ends it through the canonical
-    // kernel end machinery and the commit's mirror strips the chip in the
-    // same value. Fail-closed: a chip the world never owned (or a rejecting
-    // kernel) keeps the legacy chip write alone.
-    const engine = commitWorldCondition(character, "condition-end", (uid, world, id) =>
-      planSelfConditionEnd(character, uid, world, condition, id)
-    );
-    const base = engine ? engine.session : character.session;
     set({
-      combatActiveEffects: nextLocalEffects,
+      combatActiveEffects: effectiveCombatEffects(nextLegacyEffects),
       combatLegacyActiveEffects: nextLegacyEffects,
-      character: {
-        ...character,
-        session: {
-          ...base,
-          conditions: base.conditions.filter((c) => c !== condition),
-          concentrationConditions: prevConcentrationConditions?.filter(
-            (id) => id !== condition
-          ),
-          ...(clearsHiddenDc ? { hiddenDc: undefined } : {}),
-        },
-      },
+      character: { ...character, session: removed.session },
     });
     // Events-as-data: a lost condition is a story beat. Capture the id so the
     // reverse removes EXACTLY this line (a mis-tapped removal restores both the
@@ -2305,7 +2274,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // Reverse the ENGINE end first (the exact journal reverse restores the
       // world occurrence and re-lights the chip through its mirror), so the
       // legacy field restores below compose onto the restored world.
-      if (engine) undoWorldAction(get, engine.actionId);
+      if (removed.worldActionId) undoWorldAction(get, removed.worldActionId);
       const cur = get().character;
       if (!cur) return;
       set({
@@ -2381,41 +2350,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    const succ = Math.max(0, Math.min(3, Math.round(successes)));
-    const fail = Math.max(0, Math.min(3, Math.round(failures)));
-    const prevSucc = character.session.deathSucc;
-    const prevFail = character.session.deathFail;
-    if (succ === prevSucc && fail === prevFail) return;
-    // WORLD-FIRST: the death track moves on the persisted world (only while a
-    // zero-HP track exists — a track write against a standing character is
-    // not a world fact). The exact requested counts are re-asserted on top:
-    // the world's `stable`/`dead` states carry no counts, so session stays
-    // the sole expresser there (the arbitration's documented direction).
-    const engine = commitWorldVitals(character, "death-save-set", (state) => {
-      if (state.vitals.hitPoints.current !== 0 || state.vitals.zeroHitPoints === null) {
-        return null;
-      }
-      state.vitals = { ...state.vitals, zeroHitPoints: zeroTrackFor(succ, fail) };
-      return state;
-    });
-    set({
-      character: {
-        ...character,
-        session: {
-          ...(engine ? engine.session : character.session),
-          deathSucc: succ,
-          deathFail: fail,
-        },
-      },
-    });
+    const next = setDeathSavesTo(character, successes, failures);
+    if (!next) return;
+    set({ character: { ...character, session: next.session } });
     // Events-as-data: log ONLY when a NEW mark was added (a count rose) — clearing
     // a pip or resetting the track is bookkeeping, not a story beat.
-    if (succ > prevSucc || fail > prevFail) {
+    if (next.newMark) {
       get().logEvent({
         kind: "death-save",
-        outcome: succ > prevSucc ? "success" : "failure",
-        successes: succ,
-        failures: fail,
+        outcome: next.newMark,
+        successes: next.session.deathSucc,
+        failures: next.session.deathFail,
       });
     }
     // Persist the whole resulting combat state (offline-safe, whole-object LWW).
@@ -2425,23 +2370,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   setExhaustion: (level) => {
     if (get().readonly) return;
     const { character } = get();
-    if (!character || !Number.isFinite(level)) return;
-    const target = Math.max(0, Math.min(6, Math.round(level)));
-    if (character.session.exhaustion === target) return;
-    const engine = commitWorldVitals(character, "exhaustion-set", (state) => {
-      // The world's own invariant: level 6 IS death (the parse rejects a
-      // living level-6 world), so the sixth pip degrades to the legacy write
-      // unless the world already holds the dead state.
-      if (target === 6 && state.vitals.zeroHitPoints?.kind !== "dead") return null;
-      state.exhaustion = target as ExhaustionLevel;
-      return state;
-    });
-    set({
-      character: {
-        ...character,
-        session: engine ? engine.session : { ...character.session, exhaustion: target },
-      },
-    });
+    if (!character) return;
+    const session = setExhaustionTo(character, level);
+    if (session) set({ character: { ...character, session } });
   },
 
   commitDeathSave: (faces) => {
