@@ -24,7 +24,6 @@ const STRICT_V1_FIELDS = [
   "pendingConcentrationSaves",
   "turnEconomy",
   "appliedEncounterEffects",
-  "recentActions",
 ] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -190,15 +189,15 @@ function parseStoredCombatState(
   // Stored subdocs written by the deleted effect-program runtime may still carry
   // `actionRevision` / `actionHead` / `actionLifecycles` / `effectLifecycles`,
   // and a branch-era `effectOps` mirror ledger existed briefly with no
-  // production writer. All are ignored here fail-safe and shed by the next
-  // full-overwrite write.
+  // production writer; the `recentActions` declared-attack ring lost its last
+  // writer with the combat resolver. All are ignored here fail-safe and shed by
+  // the next full-overwrite write.
   const applied = parseAppliedEncounterEffects(data.appliedEncounterEffects);
   const turnEconomy = parseTurnEconomy(data.turnEconomy);
   const activeEffects = conformActiveCombatEffects(data.activeEffects);
   const pendingConcentrationSaves = parsePendingConcentrationSaves(
     data.pendingConcentrationSaves
   );
-  const recentActions = parseRecentActions(data.recentActions);
   if (
     playState?.ok &&
     (!presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
@@ -209,8 +208,7 @@ function parseStoredCombatState(
         pendingConcentrationSaves
       ) ||
       !presentFieldIsCanonical(data, "turnEconomy", turnEconomy) ||
-      !presentFieldIsCanonical(data, "appliedEncounterEffects", applied) ||
-      !presentFieldIsCanonical(data, "recentActions", recentActions))
+      !presentFieldIsCanonical(data, "appliedEncounterEffects", applied))
   ) {
     return { ok: false, reason: "invalid-combat-state" };
   }
@@ -228,7 +226,6 @@ function parseStoredCombatState(
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
-    recentActions,
     ...(activeEffects.length ? { activeEffects } : {}),
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),
@@ -431,48 +428,6 @@ function parseAppliedEncounterEffects(
     ? row.ids.filter((id): id is string => typeof id === "string")
     : [];
   return { epoch: row.epoch, ids };
-}
-
-/** Defensively parse the `recentActions` ring (ids + numbers only; drop any malformed
- *  entry so a stray/legacy shape can never crash the DM's correlation read). */
-function parseRecentActions(value: unknown): CombatState["recentActions"] {
-  if (!Array.isArray(value)) return [];
-  const out: CombatState["recentActions"] = [];
-  for (const raw of value) {
-    if (typeof raw !== "object" || raw === null) continue;
-    const a = raw as Record<string, unknown>;
-    const outcome = a.outcome === "hit" || a.outcome === "miss" ? a.outcome : null;
-    const targetIds = Array.isArray(a.targetIds)
-      ? a.targetIds.filter((t): t is string => typeof t === "string")
-      : [];
-    if (typeof a.id !== "string" || outcome === null || targetIds.length === 0) continue;
-    // The multi-instance drop bound (Magic Missile 3, …) — carried only when a valid
-    // count > 1; a single-target swing (absent / ≤ 1) stays unbounded-single (omitted).
-    const instances =
-      typeof a.instances === "number" && Number.isFinite(a.instances) && a.instances > 1
-        ? Math.floor(a.instances)
-        : undefined;
-    // S13 — an area save-for-half declaration (Fireball class); reconcile logs a
-    // resisted target positively rather than omitting it.
-    const save = a.save === true ? true : undefined;
-    // S13 — the action's applied-condition rider ids (Topple → prone, a spell rider):
-    // string ids only, malformed dropped.
-    const riders = Array.isArray(a.riders)
-      ? a.riders.filter((r): r is string => typeof r === "string")
-      : [];
-    const action = parseLocText(a.action);
-    out.push({
-      id: a.id,
-      targetIds,
-      outcome,
-      round: typeof a.round === "number" && Number.isFinite(a.round) ? a.round : 1,
-      ...(action ? { action } : {}),
-      ...(instances !== undefined ? { instances } : {}),
-      ...(save !== undefined ? { save } : {}),
-      ...(riders.length > 0 ? { riders } : {}),
-    });
-  }
-  return out;
 }
 
 /** Minimal defensive reader for the JSON-plain localizable action reference. */

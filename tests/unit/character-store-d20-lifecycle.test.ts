@@ -219,7 +219,6 @@ describe("characterStore — entered D20 lifecycle", () => {
       initiativeRoll: null,
       deathSaves: { successes: 0, failures: 0 },
       round: 1,
-      recentActions: [],
       pendingConcentrationSaves: [matching, stale],
       // The child owns the whole play session, concentration included.
       playState: sessionToPlayStateV1(session),

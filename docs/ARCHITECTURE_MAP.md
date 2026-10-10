@@ -71,7 +71,7 @@ There are six parallel records. The same hit can land in four of them.
 | `CombatEvent` / `LogEntry`  | per character, `combat/state` + IndexedDB     | none (only `turn-end{round}`)     | capped at 200              |
 | Action journal (patches)    | `session.world`, `encounter.world`            | actor, before/after               | capped at 20, evicted      |
 | `CombatChronicleEvent`      | `campaign.encounter.events` (DM only)         | target, round, attacker if tapped | **wiped at End encounter** |
-| `RecentAttack` declarations | per character, `combat/state.recentActions`   | targets, hit/miss, round          | ring of 8                  |
+| `RecentAttack` declarations | per character, `combat/state.recentActions`   | targets, hit/miss, round          | deleted 2026-10-10         |
 | `effectOps`                 | `encounter.effectOps`                         | apply/revoke                      | folded into effects        |
 | `lib/combat` `Action` log   | `campaigns/{c}/encounters/{e}` (`arrayUnion`) | full                              | **test-only, unwired**     |
 
@@ -266,10 +266,9 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
      kinds, `setEventAttacker`/`skipEventAttacker` and the dev declarations seed are gone;
      auto-attribution is `encounterFeed` over the log.
    - Left: `encounter.events` stays, because the DM's undo reverses a beat's engine action and the
-     HP readout reads the beat; it goes when HP is derived from the log (Phase 4). The
-     `RecentAttack` ring (`combat/state.recentActions`) has had no writer since the resolver went
-     (`declareAttack` has no caller) and nothing reads it now; deleting it touches the
-     combat-state codec, its strict-field check and stored subdocs, so it is its own step.
+     HP readout reads the beat; it goes when HP is derived from the log (Phase 4).
+   - Done: the `RecentAttack` ring (`combat/state.recentActions`, no writer since the resolver
+     went) is gone; the codec ignores a stored ring and the next full overwrite sheds it.
    - The character's log panel reads the session log when attached.
    - Delete the IndexedDB mirror and `src/lib/combat/*`.
 

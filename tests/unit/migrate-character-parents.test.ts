@@ -178,7 +178,7 @@ describe("legacy parent cutover", () => {
         family(
           legacyParent({ notes: "n" }),
           legacyChild({
-            // A malformed ring the lenient reader conforms to a shorter list.
+            // The retired declared-attack ring, which the app no longer persists.
             recentActions: [
               { id: "1", targetIds: ["t"], outcome: "hit", round: 2 },
               { nope: true },
@@ -192,9 +192,8 @@ describe("legacy parent cutover", () => {
     );
     expect(plan.issues).toEqual([]);
     const child = writeAt(plan, childPath);
-    expect(child.data.recentActions).toEqual([
-      { id: "1", targetIds: ["t"], outcome: "hit", round: 2 },
-    ]);
+    // The retired declared-attack ring is shed, as the client's own next save sheds it.
+    expect(projectedChild(plan)).not.toHaveProperty("recentActions");
     // The client's next overwrite sheds an empty collection; so does the migration.
     expect(child.data.activeEffects).toBeDefined();
     expect(projectedChild(plan)).not.toHaveProperty("activeEffects");

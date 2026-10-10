@@ -210,7 +210,6 @@ describe("campaign-io — reviewed combat effects", () => {
               initiativeRoll: 17,
               deathSaves: { successes: 0, failures: 0 },
               round: 3,
-              recentActions: [],
               playState,
             }),
           });
@@ -273,7 +272,6 @@ describe("campaign-io — reviewed combat effects", () => {
               initiativeRoll: null,
               deathSaves: { successes: 0, failures: 3 },
               round: 2,
-              recentActions: [],
               appliedEffectIds: [],
               playState: PLAY_STATE,
             }),
@@ -416,7 +414,6 @@ describe("campaign-io — persistent combat-effect operation log", () => {
                   initiativeRoll: null,
                   deathSaves: { successes: 0, failures: 0 },
                   round: 1,
-                  recentActions: [],
                   playState: PLAY_STATE,
                 }),
               })
@@ -460,7 +457,6 @@ describe("campaign-io — persistent combat-effect operation log", () => {
                   initiativeRoll: null,
                   deathSaves: { successes: 0, failures: 0 },
                   round: 1,
-                  recentActions: [],
                   playState: PLAY_STATE,
                 }),
               })

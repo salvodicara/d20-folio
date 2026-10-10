@@ -143,7 +143,6 @@ interface ParsedCombatState {
   bardicInspirationDie?: string;
   heroicInspiration?: boolean;
   round: number;
-  recentActions: unknown[];
   activeEffects?: unknown[];
   appliedEncounterEffects?: unknown;
   turnEconomy?: unknown;
@@ -284,7 +283,6 @@ function combatStateWriteData(state: ParsedCombatState, updatedAt: Timestamp): R
       failures: state.deathSaves.failures,
     },
     round: state.round,
-    recentActions: state.recentActions,
     ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }
