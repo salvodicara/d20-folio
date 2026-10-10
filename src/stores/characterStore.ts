@@ -232,7 +232,7 @@ interface CharacterState {
    * in-store mirror (the parallel of {@link combatEpoch}). The SESSION no longer carries
    * round (it moved to the subdoc as its sole persisted home); the turn engine
    * (`combatStore.round`) is its live in-memory home, and this is the value a combat write
-   * persists back. Kept in sync by `hydrateCombatState` (inbound) and `persistCombatRound`
+   * persists back. Kept in sync by `hydrateCombatState` (inbound) and `persistCombatTurnState`
    * (a local turn advance), so every whole-object combat write carries the current round.
    */
   combatRound: number;
@@ -311,13 +311,6 @@ interface CharacterState {
    * never passes through here. A no-op without an injected persistence.
    */
   persistInitiative: () => void;
-  /**
-   * Persist a SOLO turn-round advance to the `combat/state` subdoc — its sole home. The
-   * turn engine (`combatStore.round`) advances in memory; `TurnEconomyProvider` mirrors the
-   * new round here (optimistic `combatRound` update) and this whole-object write lands it.
-   * A no-op without an injected persistence.
-   */
-  persistCombatRound: (round: number) => void;
   /** Persist the current turn's spent economy together with its solo-round mirror. */
   persistCombatTurnState: (
     round: number,
@@ -2896,17 +2889,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
   },
 
-  persistCombatRound: (round) => {
-    if (get().readonly) return;
-    if (!get().character) return;
-    // Mirror the new round onto `combatRound` UNCONDITIONALLY (even with no injected
-    // persistence): it is the in-store round the reconcile path reads, so a subsequent
-    // `[character]` resync sees the advanced round and never clobbers it back. The durable
-    // write then rides `persistCombat` (a no-op `?.write` when there is no persistence).
-    set({ combatRound: round });
-    persistCombat(get);
-  },
-
   persistCombatTurnState: (round, turnEconomy) => {
     if (get().readonly || !get().character) return;
     set({ combatRound: round, combatTurnEconomy: turnEconomy });
@@ -2919,7 +2901,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   // store; round + initiative live in `combatStore` (in-memory). The Combat
   // page now (1) hydrates the combat store from the `combat/state` subdoc's round +
   // the reconciled `session.initiative` on mount and (2) persists changes back via
-  // `persistCombatRound` / `persistInitiative`. So those live values ARE used — they
+  // `persistCombatTurnState` / `persistInitiative`. So those live values ARE used — they
   // just don't need a parallel mutator here.
 
   addSessionDefense: (kind, id) => {

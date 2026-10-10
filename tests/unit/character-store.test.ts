@@ -2658,8 +2658,22 @@ describe("characterStore — combat-state persistence (C7 offline-safe write sea
   // subdoc (it left `session.round`). Advancing the round writes it there, and — critically —
   // a subsequent NON-round combat write must PRESERVE that round (never reset it to the
   // default 1). Fails before the move: there was no `round` on CombatState to persist.
-  it("persistCombatRound writes the SOLO round to the subdoc + mirrors combatRound; later writes preserve it", () => {
-    useCharacterStore.getState().persistCombatRound(4);
+  it("persistCombatTurnState writes the SOLO round to the subdoc + mirrors combatRound; later writes preserve it", () => {
+    useCharacterStore.getState().persistCombatTurnState(4, {
+      key: "solo:turn",
+      selected: { action: [], bonus: [], free: [] },
+      attacksUsed: 0,
+      attackSwings: [],
+      outcomeOrdinal: 0,
+      outcomeReceipts: [],
+      reactionUsed: false,
+      reactionUsedId: null,
+      reactionOutcomeOccurrenceId: null,
+      movementUsedFt: 0,
+      dashesThisTurn: 0,
+      spellSlotCastsThisTurn: 0,
+      damageTakenThisRound: false,
+    });
     expect(lastWrite().round).toBe(4);
     expect(useCharacterStore.getState().combatRound).toBe(4);
     // A later HP write carries the advanced round forward — one home, never clobbered.
