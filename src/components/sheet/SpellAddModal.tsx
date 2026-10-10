@@ -40,7 +40,7 @@ export function SpellAddModal({ open, onClose }: SpellAddModalProps) {
             setDetailTitle(null);
           }}
           tabs={[
-            { id: "srd", label: t("custom.srdTab") },
+            { id: "srd", label: t("nav.spells") },
             { id: "custom", label: t("custom.customTab") },
           ]}
         />
