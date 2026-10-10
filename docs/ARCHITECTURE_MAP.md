@@ -108,6 +108,19 @@ There are six parallel records. The same hit can land in four of them.
   | monster HP         | 2                                                                                       |
   | log                | 2 (Firestore + IndexedDB)                                                               |
 
+  Re-mapped 2026-10-10 (round: 6 homes counting both mechanics worlds; initiative: 5). Since then:
+  - **Round:** one rule, `sheetRound` (`global-combat-context.ts`): the encounter's round when the
+    sheet's character is the user's PC in the live fight, else the solo round. The turn band, the
+    round-1 attack clauses and timer stamps read it (#96); ending an encounter ends turn-edge
+    states (#105); a member may only write an integer round ≥ 1 (rules, #99, next deploy).
+  - **PC HP:** the stored `combat/state` HP, temp HP and death saves are the truth;
+    `characterWorldState` rebases the world's vitals on them before any commit, so the world is a
+    projection that can no longer undo the DM's change (#95). Conditions: re-adding one the DM
+    removed lights its chip (#97).
+  - Still open: the solo round still has its in-memory and subdoc copies; the DM's view of a
+    member's sheet shows the viewer's solo round; the mechanics worlds keep their own round and
+    initiative copies (they go with the world).
+
 - **`mechanics-*` (30k lines) is half-retired.**
   - Its cast executor is dead: `EngineCastFlow`, `EngineActionFlow`, `EnginePulseStrip`,
     `EngineConsumablesStrip`, `MechanicsCastModal`, `useMechanicsCast`, `useMechanicsPulse` and
@@ -142,7 +155,12 @@ There are six parallel records. The same hit can land in four of them.
 
 **Simplify (later phases, not Phase 1)**
 
-- `characterStore` becomes a thin store over `dispatch(event)` plus a pure reducer.
+- `characterStore` becomes a thin store over `dispatch(event)` plus a pure reducer. In progress:
+  `src/lib/play/` holds the pure transitions (character in, next session out) — `vitals.ts` (HP,
+  temp HP, slots, trackers, death saves, exhaustion), `conditions.ts`, `damage.ts`, and the shared
+  world-commit seam `world-commit.ts` (#101–#103). The store actions for those only guard, apply,
+  persist, log and keep undo. Next families: recoveries, polymorph, concentration, active states,
+  rests; then the event union and one `dispatch`.
 - Round, initiative and HP each get one home.
 - `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
@@ -364,11 +382,12 @@ Recover ideas and tests, rarely files.
 - `docs/ARCHITECTURE.md` (3.6k lines) describes `mechanics-*` as the "canonical runtime cutover
   (active)". That is no longer true; fix it when the dead code is deleted (step 0).
 
-## Owner decisions pending (2026-10-09)
+## Owner decisions pending (2026-10-10)
 
 Each needs the owner's explicit yes; agents prepare, never decide.
 
-- **Deploy** of everything merged since the last release — judged from the demo videos.
+- **Deploy** of everything merged since the last release — judged from the demo videos. It also
+  ships the round-validation rule (#99) and the `activities.json` catalogue (#80, #89).
 - **`@d20-folio/core`**: publish to npm or not, and its licence (the repo is AGPL-3.0; a permissive
   core would let other apps use it freely).
 - **Statuses migration** (Phase 2 steps 3–4, #61): ship the dual-write, then backfill, `--check`,
