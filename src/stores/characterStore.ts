@@ -2448,15 +2448,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const engine = commitWorldCondition(character, "condition-apply", (uid, world, id) =>
       planSelfConditionApply(character, uid, world, condition, id)
     );
+    // The chip always lights: the mirror only moves chips on an engine transition,
+    // and a world that still holds a condition the DM's card removed sees none.
+    const base = engine ? engine.session : character.session;
     set({
       character: {
         ...character,
-        session: engine
-          ? engine.session
-          : {
-              ...character.session,
-              conditions: [...character.session.conditions, condition],
-            },
+        session: base.conditions.includes(condition)
+          ? base
+          : { ...base, conditions: [...base.conditions, condition] },
       },
     });
     // Events-as-data: a gained condition is a story beat (the condition id is

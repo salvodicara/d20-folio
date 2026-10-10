@@ -373,6 +373,19 @@ describe("the stored HP is the truth: a write outside the world survives later c
     expect(liveDoc().session.hp.current).toBe(15);
   });
 
+  it("shows a condition the player adds again after the DM removed it", () => {
+    load(fixture());
+    useCharacterStore.getState().addCondition("prone");
+    expect(liveDoc().session.conditions).toContain("prone");
+    // The DM's card removes Prone from the stored conditions; the world keeps it.
+    dmWrites({ conditions: liveDoc().session.conditions.filter((id) => id !== "prone") });
+    useCharacterStore.getState().addCondition("prone");
+    expect(liveDoc().session.conditions).toContain("prone");
+    // And it ends again like any other condition.
+    useCharacterStore.getState().removeCondition("prone");
+    expect(liveDoc().session.conditions).not.toContain("prone");
+  });
+
   it("records a death save after the DM dropped the character to 0", () => {
     load(fixture());
     dmWrites({ hp: { current: 0, temp: 0 } });
