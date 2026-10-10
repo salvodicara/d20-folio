@@ -1092,10 +1092,22 @@ function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
   }
 }
 
-/** The round before the current combat round: a timer lit now must not have the
- *  current round counted against it again by a turn-boundary catch-up. */
-function litRound(): number {
-  return useCombatStore.getState().round - 1;
+/** The live encounter round of a character in a DM-run fight, or null when it is not
+ *  in one. Registered by the combat status store (`global-combat-context`). */
+let encounterRoundOf: (characterId: string) => number | null = () => null;
+
+/** Register the live encounter round source (the combat status store does, at load). */
+export function setEncounterRoundSource(
+  source: (characterId: string) => number | null
+): void {
+  encounterRoundOf = source;
+}
+
+/** The round before the sheet's current round (the encounter's in a DM-run fight, else
+ *  the solo turn engine's): a timer lit now must not have the current round counted
+ *  against it again by a turn-boundary catch-up. */
+function litRound(characterId: string): number {
+  return (encounterRoundOf(characterId) ?? useCombatStore.getState().round) - 1;
 }
 
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
@@ -3266,7 +3278,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             effectTimers: {
               ...(updated.session.effectTimers ?? {}),
               // Lit during the current round: that round is already this state's.
-              [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound() },
+              [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound(updated.id) },
             },
           },
         };
@@ -3346,7 +3358,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           ...character.session,
           effectTimers: {
             ...(character.session.effectTimers ?? {}),
-            [key]: { roundsLeft: rounds, tickedRound: litRound() },
+            [key]: { roundsLeft: rounds, tickedRound: litRound(character.id) },
           },
         },
       },

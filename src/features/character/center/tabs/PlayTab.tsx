@@ -57,6 +57,7 @@ import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
+import { useTurnState } from "@/features/character/center/turn-state";
 import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { formatModifier, localeDistance } from "@/lib/utils";
@@ -330,7 +331,8 @@ export function PlayTab() {
   );
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
-  const round = useCombatStore((s) => s.round);
+  // The sheet's round: the DM's encounter round in a shared fight, else the solo one.
+  const { round } = useTurnState();
   const nextAttackAdvantage = useCombatStore((s) => s.nextAttackAdvantage);
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);

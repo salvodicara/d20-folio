@@ -239,7 +239,11 @@ function activateActionState(
   const restoreTimer = action.activeDurationRounds
     ? store.armEffectTimer(key, action.activeDurationRounds)
     : null;
-  const status = useCombatStatusStore.getState().status;
+  // Scoped to the open sheet: another of the user's heroes in a fight is not this one.
+  const status = sheetEncounter(
+    useCombatStatusStore.getState().status,
+    useCharacterStore.getState().character?.id ?? null
+  );
   const relativeBoundary = action.activeTurnBoundary
     ? turnBoundaryAfter(
         status?.myId ?? "self",
@@ -737,7 +741,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // conditions) SURVIVE: their reverse-appliers don't touch the per-turn economy
   // (§1.4 encounter turn-start / encounter end).
   useEffect(() => {
-    const initialStatus = useCombatStatusStore.getState().status;
+    const initialStatus = sheetEncounter(
+      useCombatStatusStore.getState().status,
+      useCharacterStore.getState().character?.id ?? null
+    );
     if (initialStatus) {
       // Hydration/reload may happen after the shared pointer already crossed the
       // boundary. The persisted round+phase makes this idempotent and prevents a
