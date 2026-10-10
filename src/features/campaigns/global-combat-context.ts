@@ -15,6 +15,7 @@
  */
 
 import { create } from "zustand";
+import { setEncounterRoundSource } from "@/stores/characterStore";
 import type { EncounterView } from "@/features/campaigns/encounter-view";
 import type { ViewerEncounter } from "@/features/campaigns/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
@@ -229,6 +230,27 @@ export const useCombatStatusStore = create<CombatStatusStore>((set) => ({
   setPendingTurn: (pending) => set({ pendingTurn: pending }),
   clearPendingTurn: () => set({ pendingTurn: null }),
 }));
+
+/**
+ * The round a character's sheet is in: the encounter's round when that character is
+ * the user's PC in the live fight, otherwise the solo turn engine's round. The one
+ * rule the turn band, the round-1 attack clauses and the round a timed state is lit
+ * in all read, so a solo round left over from before the fight never leaks in.
+ */
+export function sheetRound(
+  status: GlobalCombat | null,
+  characterId: string | null,
+  soloRound: number
+): number {
+  return status && status.characterId === characterId ? status.round : soloRound;
+}
+
+// The character store stamps timed states with the sheet's round; it reads the live
+// encounter through this source (stores never import features).
+setEncounterRoundSource((characterId) => {
+  const status = useCombatStatusStore.getState().status;
+  return status && status.characterId === characterId ? status.round : null;
+});
 
 /** The live combat status of this user's OWN PC fight (or `null` when not in one) — the
  *  cockpit turn meter + in-combat chip source. */
