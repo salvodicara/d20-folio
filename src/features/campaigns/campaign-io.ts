@@ -927,26 +927,30 @@ function reduceCampaignCombatMutation(
 
 /** Fresh-read manual correction used by the campaign PC card. It shares the same
  * effect-only patch/revision fence as reviewed resolutions instead of invoking the
- * owner's offline whole-document writer on a peer document. */
+ * owner's offline whole-document writer on a peer document. Resolves with the combat
+ * state the write reduced over and the one it wrote, so a caller recording the change
+ * (the Chronicle beat) uses the fresh numbers, never its own possibly-stale preview. */
 export async function writeCampaignCombatEffect(
   uid: string,
   characterId: string,
   preview: CombatState | null,
   maxHp: number,
   mutation: CampaignCombatMutation
-): Promise<void> {
+): Promise<{ before: CombatState; after: CombatState }> {
   const fallback = preview ?? defaultCombatState(maxHp);
   if (devBypassEnabled()) {
-    updateDevCombatState(uid, characterId, fallback, (current) => {
+    let before = fallback;
+    const after = updateDevCombatState(uid, characterId, fallback, (current) => {
+      before = current;
       return reduceCampaignCombatMutation(current, mutation, maxHp, {
         status: "active",
       });
     });
-    return;
+    return { before, after };
   }
   const combatRef = combatStateRef(uid, characterId);
   const parentRef = memberCharacterDoc(uid, characterId);
-  await runTransaction(db, async (txn) => {
+  return runTransaction(db, async (txn) => {
     const [combatSnap, parentSnap] = await Promise.all([
       txn.get(combatRef),
       txn.get(parentRef),
@@ -958,6 +962,7 @@ export async function writeCampaignCombatEffect(
     );
     const next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
     writePeerCombatEffect(txn, combatRef, current, next);
+    return { before: current, after: next };
   });
 }
 
