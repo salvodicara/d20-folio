@@ -28,7 +28,21 @@
 import { useCallback, useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Layers } from "lucide-react";
+import {
+  Crosshair,
+  Dices,
+  Heart,
+  Hourglass,
+  Layers,
+  MoveHorizontal,
+  Ruler,
+  Shield,
+  ShieldPlus,
+  Sparkles,
+  Swords,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { localizeSrd } from "@/i18n/resolver";
 import { CollapsibleSearch } from "@/components/shared/CollapsibleSearch";
 import { SectionHeader } from "@/components/shared/SectionHeader";
@@ -1250,11 +1264,12 @@ function combatFacts(
   summary: ResolvedAction["summary"],
   t: TFunction,
   locale: Locale
-): { label: ReactNode; value: string }[] {
+): { label: ReactNode; value: string; icon: LucideIcon }[] {
   return [
     summary.range
       ? {
           label: t("spells.range"),
+          icon: Ruler,
           value: summary.rangeBonusFt
             ? `${summary.range} (${t("combat.rangeBonus", { distance: localeDistance(summary.rangeBonusFt, locale) })})`
             : summary.range,
@@ -1264,12 +1279,14 @@ function combatFacts(
       ? {
           // P2 — same attack-roll gloss as the inventory WeaponCard (uniform).
           label: <GlossaryTip term="attackRoll" rubric={t("srd.toHit")} />,
+          icon: Crosshair,
           value: formatModifier(summary.attackBonus),
         }
       : null,
     summary.saveDC != null && summary.saveAbility
       ? {
           label: t("spells.save"),
+          icon: Shield,
           value: `${t(`abilities.${summary.saveAbility}_short`)} · ${t("stats.dc")} ${summary.saveDC}`,
         }
       : null,
@@ -1281,6 +1298,7 @@ function combatFacts(
           // label from `weaponFacts.breakdown` (issue #27 dogfood: "+3 STR · +2
           // Rage…"). This branch stays a plain label.
           label: t("combat.damage"),
+          icon: Swords,
           value: [
             `${summary.damage} ${t(`srd.damage_${summary.damageType}`)}`,
             summary.oneRollDamageBonus
@@ -1293,10 +1311,13 @@ function combatFacts(
             .join(" · "),
         }
       : null,
-    summary.healing ? { label: t("combat.heal"), value: summary.healing } : null,
+    summary.healing
+      ? { label: t("combat.heal"), value: summary.healing, icon: Heart }
+      : null,
     summary.forcedMovement
       ? {
           label: t("combat.forcedMoveLabel"),
+          icon: MoveHorizontal,
           value: t(
             summary.forcedMovement.direction === "push"
               ? "combat.forcedMovePush"
@@ -1308,12 +1329,17 @@ function combatFacts(
           ),
         }
       : null,
-    summary.duration ? { label: t("spells.duration"), value: summary.duration } : null,
-    summary.trigger ? { label: t("combat.reaction"), value: summary.trigger } : null,
+    summary.duration
+      ? { label: t("spells.duration"), value: summary.duration, icon: Hourglass }
+      : null,
+    summary.trigger
+      ? { label: t("combat.reaction"), value: summary.trigger, icon: Zap }
+      : null,
     // G23 — Tactical Mind's "+1d10 to a failed check" as a labeled accordion fact.
     summary.checkBonus
       ? {
           label: t("combat.checkBonusLabel"),
+          icon: Dices,
           value: t(
             summary.checkBonus.refundOnFail
               ? "combat.checkBonusRefund"
@@ -1327,6 +1353,7 @@ function combatFacts(
     summary.cureOptions && summary.cureOptions.length > 0
       ? {
           label: t("combat.cureConditionsLabel"),
+          icon: Sparkles,
           value: t("combat.cureConditions", {
             cost: summary.cureOptions[0]?.costHp ?? 0,
             conditions: summary.cureOptions
@@ -1339,12 +1366,13 @@ function combatFacts(
     summary.tempHpRoll
       ? {
           label: t("combat.tempHpRollLabel"),
+          icon: ShieldPlus,
           value: t("combat.tempHpRoll", {
             dice: tempHpRollFormula(summary.tempHpRoll),
           }),
         }
       : null,
-  ].filter((f): f is { label: string; value: string } => f != null);
+  ].filter((f): f is { label: string; value: string; icon: LucideIcon } => f != null);
 }
 
 /**
