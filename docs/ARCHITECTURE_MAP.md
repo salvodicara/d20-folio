@@ -111,9 +111,9 @@ There are six parallel records. The same hit can land in four of them.
   Re-mapped 2026-10-10 (round: 6 homes counting both mechanics worlds; initiative: 5). Since then:
   - **Round:** one rule, `sheetRound` (`global-combat-context.ts`): the encounter's round when the
     sheet's character is the user's PC in the live fight, else the solo round. The turn band, the
-    round-1 attack clauses and timer stamps read it (#96); ending turn-edge
-    states is proposed in #105 (player-visible, awaiting the owner); a member may only write an
-    integer round ≥ 1 (rules, #99, next deploy).
+    round-1 attack clauses and timer stamps read it (#96); ending turn-edge states when the
+    encounter ends is proposed in #105 (player-visible, awaiting the owner); a member may only
+    write an integer round ≥ 1 (rules, #99, next deploy).
   - **PC HP:** the stored `combat/state` HP, temp HP and death saves are the truth;
     `characterWorldState` rebases the world's vitals on them before any commit, so the world is a
     projection that can no longer undo the DM's change (#95). Conditions: re-adding one the DM
