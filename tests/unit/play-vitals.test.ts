@@ -16,6 +16,7 @@ vi.mock("@/lib/firebase", () => ({
 
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
 import { addCondition, removeCondition } from "@/lib/play/conditions";
+import { takeDamage } from "@/lib/play/damage";
 import {
   restoreSpellSlot,
   restoreTracker,
@@ -153,5 +154,29 @@ describe("conditions", () => {
     expect(removed?.session.hiddenDc).toBeUndefined();
     expect(removed?.worldActionId).toBeNull();
     expect(removeCondition(wizard(), "prone")).toBeNull();
+  });
+});
+
+describe("takeDamage", () => {
+  it("temp HP absorbs first, then current HP", () => {
+    const taken = takeDamage(wizard({ hp: { current: 20, temp: 5 } }), 8);
+    expect(taken?.session.hp).toMatchObject({ current: 17, temp: 0 });
+    expect(taken?.transition.events.some((event) => event.kind === "hp-damage")).toBe(
+      true
+    );
+  });
+
+  it("dropping to 0 knocks the character unconscious on the dying track", () => {
+    const taken = takeDamage(wizard({ hp: { current: 6, temp: 0 } }), 10);
+    expect(taken?.session.hp.current).toBe(0);
+    expect(taken?.session.conditions).toContain("unconscious");
+    expect(taken?.session).toMatchObject({ deathSucc: 0, deathFail: 0 });
+  });
+
+  it("never mutates the character it reads", () => {
+    const doc = wizard({ hp: { current: 20, temp: 5 } });
+    const before = structuredClone(doc);
+    takeDamage(doc, 8);
+    expect(doc).toEqual(before);
   });
 });
