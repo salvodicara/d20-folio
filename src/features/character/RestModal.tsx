@@ -16,6 +16,7 @@
  * to that legacy flow alone.
  */
 
+import { hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
 import { useState, useMemo, useRef, useId } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
@@ -141,12 +142,15 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       agg.itemAbilityScoreCap
     ).CON
   );
+  // A multiclass pool mixes die sizes (Fighter d10s + Wizard d6s): the total is
+  // checked against the largest dice the pool holds.
+  const rollRange = hitDiceTotalRange(hitDicePool(charData), hitDiceToSpend);
   const roll = Number(diceTotal);
   const rollValid =
     diceTotal.trim() !== "" &&
     Number.isInteger(roll) &&
-    roll >= hitDiceToSpend &&
-    roll <= hitDiceToSpend * hitDie;
+    roll >= rollRange.min &&
+    roll <= rollRange.max;
   const diceCountValid = hitDiceToSpend <= hitDiceAvailable;
   const shortRestHeal =
     hitDiceToSpend === 0
@@ -479,8 +483,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   id={inputId}
                   type="number"
                   inputMode="numeric"
-                  min={hitDiceToSpend}
-                  max={hitDiceToSpend * hitDie}
+                  min={rollRange.min}
+                  max={rollRange.max}
                   step={1}
                   value={diceTotal}
                   onChange={(event) => setDiceTotal(event.target.value)}
@@ -496,8 +500,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                 {diceTotal !== "" && !rollValid && (
                   <p id={`${inputId}-error`} className="rest-input-hint text-error">
                     {t("rest.diceTotalError", {
-                      min: hitDiceToSpend,
-                      max: hitDiceToSpend * hitDie,
+                      min: rollRange.min,
+                      max: rollRange.max,
                     })}
                   </p>
                 )}
