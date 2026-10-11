@@ -112,8 +112,9 @@ There are six parallel records. The same hit can land in four of them.
   - **Round:** one rule, `sheetRound` (`global-combat-context.ts`): the encounter's round when the
     sheet's character is the user's PC in the live fight, else the solo round. The turn band, the
     round-1 attack clauses and timer stamps read it (#96); ending turn-edge states when the
-    encounter ends is proposed in #105 (player-visible, awaiting the owner); a member may only
-    write an integer round ≥ 1 (rules, #99, next deploy).
+    encounter ends (#105); a member may only write an integer round ≥ 1 (rules, #99, next deploy).
+    The DM's read-only view of a member's sheet still shows the viewer's own turn band (a
+    display-only design item, handed to the design session).
   - **PC HP:** the stored `combat/state` HP, temp HP and death saves are the truth;
     `characterWorldState` rebases the world's vitals on them before any commit, so the world is a
     projection that can no longer undo the DM's change (#95). Conditions: re-adding one the DM
@@ -159,9 +160,11 @@ There are six parallel records. The same hit can land in four of them.
 - `characterStore` becomes a thin store over `dispatch(event)` plus a pure reducer. In progress:
   `src/lib/play/` holds the pure transitions (character in, next session out) — `vitals.ts` (HP,
   temp HP, slots, trackers, death saves, exhaustion), `conditions.ts`, `damage.ts`, and the shared
-  world-commit seam `world-commit.ts` (#101–#103). The store actions for those only guard, apply,
-  persist, log and keep undo. Next families: recoveries, polymorph, concentration, active states,
-  rests; then the event union and one `dispatch`.
+  world-commit seam `world-commit.ts` (#101–#103), `recoveries.ts` (#107), `forms.ts` and
+  `states.ts` (#115), `concentration.ts` (#132), `rests.ts` (#133). The store actions for those only
+  guard, apply, persist, log and keep undo. Left: the event union and one `dispatch` (an API change
+  for the store's ~70 importers, its own phase), and the smaller actions (casting, companions,
+  log, pins).
 - Round, initiative and HP each get one home.
 - `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
