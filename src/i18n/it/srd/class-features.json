@@ -1353,5 +1353,14 @@
   },
   "cleric-improved-blessed-strikes.grants.0.options.potent-spellcasting": {
     "label": "Incantesimo Potente"
+  },
+  "barbarian-indomitable-might.grants.0": {
+    "description": "Prove di Forza: se il totale è inferiore al tuo punteggio di Forza, usa il punteggio"
+  },
+  "barbarian-indomitable-might.grants.1": {
+    "description": "Tiri salvezza su Forza: se il totale è inferiore al tuo punteggio di Forza, usa il punteggio"
+  },
+  "ranger-hunter-superior-hunters-prey.grants.hunters-mark-damage": {
+    "effect": "Una volta per turno, i danni extra di Marchio del Cacciatore colpiscono anche una creatura diversa che puoi vedere entro 9 metri dalla prima"
   }
 }

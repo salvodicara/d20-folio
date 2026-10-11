@@ -91,5 +91,12 @@
   "boon-of-fate.mechanics.actions.0": {
     "description": "Improve Fate — add or subtract 2d4 to a nearby creature's D20 Test result",
     "summary": "Add or subtract 2d4 to a nearby creature's d20 Test"
+  },
+  "boon-of-combat-prowess.mechanics.actions.0": {
+    "description": "Peerless Aim — when you miss with an attack roll, you hit instead",
+    "summary": "Turn a missed attack roll into a hit"
+  },
+  "boon-of-the-night-spirit.grants.1": {
+    "label": "Shadowy Form (Dim Light or Darkness)"
   }
 }

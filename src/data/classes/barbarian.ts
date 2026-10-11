@@ -433,6 +433,13 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-indomitable-might",
     class: "barbarian",
     level: 18,
+    // A Strength check or save whose total is below your Strength score uses the
+    // score instead: one Passives note per roll type. The floor is the live
+    // Strength score, which the numeric `floor` can't name; only the note renders.
+    grants: [
+      { type: "roll-floor", rollType: "check", floor: 0, appliesTo: "all" },
+      { type: "roll-floor", rollType: "save", floor: 0, appliesTo: "all" },
+    ],
     source: "SRD",
   },
   {
