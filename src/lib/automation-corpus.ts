@@ -314,6 +314,8 @@ const METAMAGIC_FIELDS: Readonly<Record<string, FieldRule>> = {
   cost: compiled("system:metamagic-choice"),
   stacksWithPrimary: compiled("system:metamagic-choice"),
   appliesWhen: compiled("system:metamagic-choice"),
+  castsAs: compiled("system:metamagic-choice"),
+  extendsDuration: compiled("system:metamagic-choice"),
   grants: compiled("grant"),
 };
 
