@@ -140,6 +140,9 @@
     "name": "Aura di Vita",
     "range": "Sé stessi (emanazione di 9 metri)"
   },
+  "aura-of-life.grants.0": {
+    "label": "Aura di Vita"
+  },
   "awaken": {
     "description": "Dopo aver trascorso il tempo di lancio tracciando percorsi magici in una gemma preziosa, tocchi una Bestia o pianta Enorme o più piccola. Il bersaglio deve avere un punteggio di Intelligenza assente o pari a 3 o meno. Il bersaglio ottiene un'Intelligenza di 10 e la capacità di parlare una lingua che conosci. Una Bestia diventa una creatura a tua scelta: mantiene le sue statistiche ma ottiene la senzienza. Una pianta risvegliata può muovere i suoi arti e diventa una creatura. La creatura risvegliata è affascinata da te per 30 giorni o finché tu o i tuoi compagni non le fate del male.",
     "duration": "Istantanea",
