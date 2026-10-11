@@ -32,6 +32,7 @@ import type {
   WeaponType,
 } from "@/data/types";
 import {
+  AC_BONUS_CONDITIONS,
   compileGrant,
   foldRules,
   ruleConditional,
@@ -41,6 +42,7 @@ import {
   ruleNumberIds,
   ruleTerms,
   ruleValue,
+  type AcBonusCondition,
   type MoveMode,
   type Rule,
   type RuleTarget,
@@ -1347,6 +1349,12 @@ export interface AggregatedGrants {
   // Derived stats
   /** Sum of AC bonuses from items / class features. */
   acBonus: number;
+  /**
+   * Flat AC bonuses that hold only in one armor state, keyed by that state
+   * (Bracers of Defense → `no-armor-no-shield`, Defense → `armored`). Kept out
+   * of `acBonus`; `computeAC` adds a bucket only when its state holds.
+   */
+  conditionalAcBonus: Readonly<Partial<Record<AcBonusCondition, number>>>;
   /** Every Unarmored-Defense-style AC formula candidate. */
   acFormulas: ReadonlyArray<AcFormula>;
   /**
@@ -2073,6 +2081,7 @@ export function emptyAggregate(): AggregatedGrants {
     speedFloorFt: 0,
     speedCapFt: null,
     acBonus: 0,
+    conditionalAcBonus: {},
     acBonusAbilities: [],
     acFormulas: [],
     mediumArmorDexCap: null,
@@ -3756,6 +3765,13 @@ export function evaluateGrants(
     // Projections of the folded rules; each baseline (crit on 20, 3 attunement
     // slots, no extra attack) is applied here, not in the fold.
     acBonus: ruleNumber(values, "ac:bonus"),
+    conditionalAcBonus: Object.fromEntries(
+      AC_BONUS_CONDITIONS.flatMap((condition) =>
+        values.numbers[`ac:bonus?${condition}`] === undefined
+          ? []
+          : [[condition, ruleConditional(values, "ac:bonus", condition)]]
+      )
+    ),
     acBonusAbilities: abilityTerms(values, "ac:bonus"),
     acFormulas,
     mediumArmorDexCap,

@@ -427,14 +427,10 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "6000 GP",
     properties: ["+2 AC", "no armor/shield"],
-    // +2 AC, but only "if you are wearing no armor and using no shield". The flat
-    // `ac-bonus` path (ref.acBonus → computeAC) does NOT gate on armor state, so
-    // the +2 is applied unconditionally; the unarmored-only restriction stays in
-    // `properties`/description for the player to honor (override-first — the
-    // player can clear the AC override if they armor up). Not modeled as an
-    // `ac-formula` because the bracers ADD to the base 10+DEX rather than
-    // replacing it; an unconditional flat +2 is the closest faithful render.
-    grants: [{ type: "ac-bonus", amount: 2 }],
+    // +2 AC, but only "if you are wearing no armor and using no shield": the
+    // `no-armor-no-shield` condition gates both the grant and the ref's acBonus
+    // in computeAC. Not an `ac-formula`: the bracers ADD to the base AC.
+    grants: [{ type: "ac-bonus", amount: 2, condition: "no-armor-no-shield" }],
     source: "SRD",
   },
   {

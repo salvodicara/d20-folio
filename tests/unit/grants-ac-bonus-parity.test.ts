@@ -28,7 +28,12 @@ describe("Phase 5 — Magic item AC bonus migration parity", () => {
 
         grants: item.grants,
       };
-      const declarative = evaluateGrants([source]).acBonus;
+      // An armor-state-gated bonus (Bracers of Defense) lives in its own bucket.
+      const agg = evaluateGrants([source]);
+      const declarative = Object.values(agg.conditionalAcBonus).reduce(
+        (sum, n) => sum + n,
+        agg.acBonus
+      );
       expect(declarative).toBe(legacy);
     });
   }

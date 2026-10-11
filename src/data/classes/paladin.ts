@@ -211,12 +211,10 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     id: "paladin-fighting-style-defense",
     class: "paladin",
     level: 2,
-    // The Defense fighting style's +1 AC, now flowing through the canonical AC
-    // seam (a Paladin wears armor, so it applies). NOTE (follow-ups): the "while
-    // wearing armor" gate is not yet a primitive (an unarmored Paladin would get
-    // it), and the fighting style should be a player CHOICE rather than Defense
-    // being auto-assigned — both tracked in docs/AUTOMATION_BACKLOG.md.
-    grants: [{ type: "ac-bonus", amount: 1 }],
+    // The Defense fighting style's +1 AC, only while wearing armor. NOTE
+    // (follow-up): the fighting style should be a player CHOICE rather than
+    // Defense being auto-assigned — tracked in docs/AUTOMATION_BACKLOG.md.
+    grants: [{ type: "ac-bonus", amount: 1, condition: "armored" }],
     source: "SRD",
   },
   {

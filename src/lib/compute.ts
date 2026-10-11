@@ -38,6 +38,7 @@ import type {
 } from "@/types/character";
 import type { SrdEquipmentData, SrdClassTable, CompanionStatBlock } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
+import type { AcBonusCondition } from "@/lib/rules";
 
 /**
  * Calculate ability modifier from ability score (`floor((score - 10) / 2)`).
@@ -169,7 +170,11 @@ export function computeAC(
   // `minDex` (Medium Armor Master → cap 3 at DEX 16+). Light armor (uncapped)
   // and Heavy armor (no DEX) are untouched. Defaults to `null` so existing
   // callers are behavior-preserving.
-  mediumArmorDexCap: { cap: number; minDex: number } | null = null
+  mediumArmorDexCap: { cap: number; minDex: number } | null = null,
+  // The aggregate's armor-state-gated flat AC bonuses
+  // (`evaluateGrants(...).conditionalAcBonus`): Bracers of Defense hold only
+  // with no armor and no shield, the Defense fighting style only in armor.
+  conditionalAcBonus: Readonly<Partial<Record<AcBonusCondition, number>>> = {}
 ): number {
   return computeACDetailed(
     equipment,
@@ -179,7 +184,8 @@ export function computeAC(
     extraBonus,
     aggregateAcBonus,
     activeAcFormulas,
-    mediumArmorDexCap
+    mediumArmorDexCap,
+    conditionalAcBonus
   ).ac;
 }
 
@@ -200,13 +206,17 @@ export function computeACDetailed(
   extraBonus = 0,
   aggregateAcBonus = 0,
   activeAcFormulas: ReadonlyArray<AcFormula> = [],
-  mediumArmorDexCap: { cap: number; minDex: number } | null = null
+  mediumArmorDexCap: { cap: number; minDex: number } | null = null,
+  conditionalAcBonus: Readonly<Partial<Record<AcBonusCondition, number>>> = {}
 ): { ac: number; parts: RawBreakdownPart[] } {
   const dexMod = abilityModifier(abilityScores.DEX);
   let bestArmorAC = 10 + dexMod; // default: no armor (10 + full DEX)
   let armorEquipped = false;
   let shieldBonus = 0;
   let itemBonuses = 0;
+  // Per-ref item bonuses whose catalogue `ac-bonus` holds only in one armor
+  // state (Bracers of Defense) — added once the worn armor/shield is known.
+  const gatedItemBonuses: Array<{ condition: AcBonusCondition; amount: number }> = [];
   // The base/DEX composition of the winning branch (for the tip). Default is
   // "no armor": base 10 + full DEX. When an armor piece WINS, these are replaced
   // with that armor's base and its (possibly capped) DEX contribution; a worn
@@ -305,7 +315,9 @@ export function computeACDetailed(
       // acBonus (Ring/Cloak of Protection, +1 armor, etc.) that stacks on
       // top of any base armor + shield contribution.
       if (item.acBonus && !requiresAttunementButNotAttuned) {
-        itemBonuses += item.acBonus;
+        const condition = resolveItemAcBonusCondition(item.srdId);
+        if (condition) gatedItemBonuses.push({ condition, amount: item.acBonus });
+        else itemBonuses += item.acBonus;
       }
       const srd = resolveSrd(item.srdId);
       if (!srd?.ac || !srd.armorCategory) continue;
@@ -413,13 +425,33 @@ export function computeACDetailed(
     bestArmorAC = bestFormulaAC;
   }
 
+  // Armor-state-gated flat bonuses: Bracers of Defense need no armor AND no
+  // shield; the Defense fighting style needs worn armor. The aggregate's held
+  // buckets join the flat total below; a gated item ref joins `itemBonuses`.
+  const conditionHolds: Record<AcBonusCondition, boolean> = {
+    "no-armor-no-shield": !armorEquipped && shieldBonus === 0,
+    armored: armorEquipped,
+  };
+  for (const { condition, amount } of gatedItemBonuses) {
+    if (conditionHolds[condition]) itemBonuses += amount;
+  }
+  let heldConditionalBonus = 0;
+  for (const [condition, amount] of Object.entries(conditionalAcBonus) as Array<
+    [AcBonusCondition, number]
+  >) {
+    if (conditionHolds[condition]) heldConditionalBonus += amount;
+  }
+
   // Flat NON-equipment AC bonus (a species protection trait +1, Defense
   // fighting style, …). `aggregateAcBonus` also contains the equipped magic
   // items' flat bonuses, which `itemBonuses` already counted above — subtract
   // them so each item bonus lands exactly once. Clamp at 0 so an item bonus
   // that's gated OUT here (e.g. unattuned, so it's in the aggregate but NOT in
   // `itemBonuses`) can never push the feature remainder negative.
-  const featureFlatBonus = Math.max(0, aggregateAcBonus - itemBonuses);
+  const featureFlatBonus = Math.max(
+    0,
+    aggregateAcBonus + heldConditionalBonus - itemBonuses
+  );
 
   const normalAC =
     bestArmorAC + shieldBonus + itemBonuses + extraBonus + featureFlatBonus;
@@ -586,6 +618,15 @@ function resolveItemAcFormulaGrants(
     if (g.type === "ac-formula") out.push(g);
   }
   return out;
+}
+
+// The armor state a worn magic item's flat `ac-bonus` depends on (Bracers of
+// Defense → `no-armor-no-shield`), or `undefined` when it always holds.
+function resolveItemAcBonusCondition(srdId: string): AcBonusCondition | undefined {
+  for (const g of _getMagicItem(srdId)?.grants ?? []) {
+    if (g.type === "ac-bonus" && g.condition) return g.condition;
+  }
+  return undefined;
 }
 
 /**
