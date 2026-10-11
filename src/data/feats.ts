@@ -182,11 +182,8 @@ const PUBLIC_FEATS: SrdFeatData[] = [
     id: "defense",
     category: "fighting-style",
     repeatable: false,
-    // Wiki: "+1 bonus to Armor Class" while wearing armor. effectiveAC consumes
-    // ac-bonus; the "while wearing armor" condition is the common case and stays
-    // informational (a Defense-fighting-style character is essentially always
-    // armored).
-    grants: [{ type: "ac-bonus", amount: 1 }],
+    // "+1 bonus to Armor Class" only while wearing Light, Medium, or Heavy armor.
+    grants: [{ type: "ac-bonus", amount: 1, condition: "armored" }],
     source: "SRD",
   },
   {

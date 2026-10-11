@@ -152,6 +152,7 @@ export function computeCharacterAC(
     | "itemAbilityScoreCap"
     | "acBonusAbilities"
     | "acBonus"
+    | "conditionalAcBonus"
     | "acFormulas"
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
@@ -180,7 +181,9 @@ export function computeCharacterAC(
     // an active Mage Armor (13 + DEX), and a Barkskin floor (17) into the shown
     // AC. Previously dropped here, so a Moon form's AC never reached the cockpit/
     // roster. The override still wins upstream in {@link acFromAggregate}.
-    agg.acFormulas
+    agg.acFormulas,
+    null,
+    agg.conditionalAcBonus
   );
 }
 
@@ -201,6 +204,7 @@ export function computeCharacterAcBreakdown(
     | "itemAbilityScoreCap"
     | "acBonusAbilities"
     | "acBonus"
+    | "conditionalAcBonus"
     | "acFormulas"
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
@@ -221,7 +225,9 @@ export function computeCharacterAcBreakdown(
     // S7 — same active formulas as {@link computeCharacterAC}, so the medallion
     // breakdown tip composes the SAME total the headline shows (rule 6): a lit
     // form reads "Form base 13 · +4 WIS", a Barkskin floor "AC floor 17".
-    agg.acFormulas
+    agg.acFormulas,
+    null,
+    agg.conditionalAcBonus
   ).parts;
 }
 
@@ -241,6 +247,7 @@ export function acFromAggregate(
     | "itemAbilityScoreCap"
     | "acBonusAbilities"
     | "acBonus"
+    | "conditionalAcBonus"
     | "acFormulas"
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]

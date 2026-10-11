@@ -96,7 +96,11 @@ export type RuleTarget =
   | "trait:heroic-inspiration-on-long-rest";
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
-export type RuleFact = "no-heavy-armor" | "round-1";
+export type RuleFact = "no-heavy-armor" | "round-1" | AcBonusCondition;
+
+/** The armor states a flat AC bonus can depend on (`ac-bonus` `condition`). */
+export const AC_BONUS_CONDITIONS = ["no-armor-no-shield", "armored"] as const;
+export type AcBonusCondition = (typeof AC_BONUS_CONDITIONS)[number];
 
 /** An ability modifier added to a target, floored at `min` when given. */
 export interface AbilityTerm {
@@ -280,6 +284,7 @@ export function compileGrant(grant: Grant): Rule[] | null {
           value: grant.ability
             ? { ability: grant.ability, min: grant.min ?? 0 }
             : (grant.amount ?? 0),
+          ...(grant.condition ? { when: grant.condition } : {}),
         },
       ];
     case "hp-per-level":

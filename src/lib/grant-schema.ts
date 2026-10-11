@@ -323,6 +323,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("CHA"),
       ]),
       amount: numberSchema,
+      /** Holds only while wearing no armor and no shield (Bracers of Defense), or
+       *  only while wearing Light/Medium/Heavy armor (Defense fighting style). */
+      condition: unionSchema([
+        literalSchema("no-armor-no-shield"),
+        literalSchema("armored"),
+      ]),
       min: numberSchema,
     }
   ),

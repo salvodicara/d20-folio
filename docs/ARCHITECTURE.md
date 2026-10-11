@@ -285,7 +285,7 @@ Each kind documents its evaluator merge rule:
 | { type: "darkvision";       range: number }                 // max
 | { type: "damage-resistance"; damageType: DamageType }       // set-union
 | { type: "speed";            amount: number }                // sum
-| { type: "ac-bonus";         amount: number }                // sum
+| { type: "ac-bonus";         amount: number; condition? }    // sum, gated by armor state
 | { type: "fly-speed";        amount: number | "equal-to-walking" }  // max
 | { type: "free-cast-spell";  spellId; chargesPerRest; rest; castLevels? }
 …
