@@ -47,6 +47,19 @@ test.describe("Campaigns flow", () => {
     await expect(page.getByText(/the starless keep/i).first()).toBeVisible();
   });
 
+  test("the card's More actions button opens its menu, not the campaign", async ({
+    page,
+  }) => {
+    await page.goto("/campaigns");
+    const more = page.getByRole("button", { name: /more actions/i }).first();
+    await expect(more).toBeVisible();
+    // A real click at the button's centre: the stretched "open" hit-target must not
+    // sit above it (it once did, so the kebab opened the hub instead).
+    await more.click({ trial: false });
+    await expect(page.getByRole("menu")).toBeVisible();
+    await expect(page).toHaveURL(/\/campaigns$/);
+  });
+
   test("join by invite code reaches the hub", async ({ page }) => {
     await page.goto("/campaigns");
     await expect(page.getByText(/the starless keep/i).first()).toBeVisible();

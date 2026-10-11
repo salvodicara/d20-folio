@@ -8163,13 +8163,16 @@ button.create-need:focus-visible .create-need-chev {
   outline-offset: -3px;
   box-shadow: var(--illumination);
 }
-.ch-card > .ch-overflow,
+/* Not a direct-child selector: on a campaign card the kebab sits inside the share
+   popover's anchor span, and a `>` rule left it UNDER the stretched open target
+   (tapping ⋯ opened the hub instead of the menu). */
+.ch-card .ch-overflow,
 .ch-card .ch-menu,
 .ch-card .ch-hp .hp-bar {
   position: relative;
   z-index: 2;
 }
-.ch-card > .ch-overflow {
+.ch-card .ch-overflow {
   position: absolute;
 }
 .ch-name {
