@@ -2097,13 +2097,18 @@ export function resolveFamiliarEnhancements(
 /**
  * Carrying capacity (2024 PHB): your Strength score × 15 (pounds). You can
  * push, drag, or lift up to twice that. Returned in pounds; the UI converts to
- * kg for IT via `formatWeight`.
+ * kg for IT via `formatWeight`. A character is Small or Medium (×1); counting
+ * as one size larger (Powerful Build) makes a Medium one Large (×2).
  */
-export function carryingCapacity(strScore: number): {
+export function carryingCapacity(
+  strScore: number,
+  options: { asLargerSize?: boolean } = {}
+): {
   carry: number;
   pushDragLift: number;
 } {
-  return { carry: strScore * 15, pushDragLift: strScore * 30 };
+  const factor = options.asLargerSize ? 2 : 1;
+  return { carry: strScore * 15 * factor, pushDragLift: strScore * 30 * factor };
 }
 
 /**

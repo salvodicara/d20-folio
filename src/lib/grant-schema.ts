@@ -127,6 +127,10 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
   "air-and-water-breathing": objectSchema({
     type: literalSchema("air-and-water-breathing"),
   }),
+  /** Count as one size larger for carrying capacity and push/drag/lift. */
+  "carry-as-larger-size": objectSchema({
+    type: literalSchema("carry-as-larger-size"),
+  }),
   "damage-resistance": objectSchema({
     damageType: DAMAGE_TYPE_SCHEMA,
     type: literalSchema("damage-resistance"),

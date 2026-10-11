@@ -67,6 +67,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "airAndWaterBreathing",
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
+  "carry-as-larger-size": {
+    via: "carryAsLargerSize",
+    consumer: "src/lib/views/inventory-view.ts",
+  },
 
   // ── Defenses → Right HUD Defenses (set-override editors #68) ──
   "damage-resistance": {
