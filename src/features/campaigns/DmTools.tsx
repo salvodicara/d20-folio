@@ -200,7 +200,7 @@ export function DmTools() {
               <p className="mb-1 text-xs text-text-muted">
                 {t("campaignHub.yieldDmHint")}
               </p>
-              <div className="flex items-center gap-2 [&>:first-child]:min-w-0 [&>:first-child]:flex-1">
+              <div className="flex flex-wrap items-center gap-2 [&>:first-child]:min-w-[10rem] [&>:first-child]:flex-1">
                 <Select
                   value={yieldTo}
                   onChange={(e) => setYieldTo(e.target.value)}
@@ -236,7 +236,7 @@ export function DmTools() {
               <p className="mb-1 text-xs text-text-muted">
                 {t("campaignHub.removeMemberHint")}
               </p>
-              <div className="flex items-center gap-2 [&>:first-child]:min-w-0 [&>:first-child]:flex-1">
+              <div className="flex flex-wrap items-center gap-2 [&>:first-child]:min-w-[10rem] [&>:first-child]:flex-1">
                 <Select
                   value={removeTo}
                   onChange={(e) => setRemoveTo(e.target.value)}
