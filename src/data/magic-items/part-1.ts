@@ -212,6 +212,9 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "2500 GP",
     properties: ["+1 bonus", "+2d10 poison 1/day", "DC 15 CON"],
+    // PRIM-item-bound-bonus — the printed +1 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
     source: "SRD",
   },
   {
@@ -234,6 +237,9 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
       "+2d10 radiant vs fiends/undead",
       "aura: 10 ft save advantage",
     ],
+    // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
     source: "SRD",
   },
   {
@@ -246,7 +252,10 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // +1 to ALL saving throws while the weapon is on your person (save-bonus
     // flat). The +1 attack/damage rides the weapon-attack pipeline (the item's
     // `+1 bonus` weapon enchant), and the reroll / Wish charges stay manual.
-    grants: [{ type: "save-bonus", amount: 1 }],
+    grants: [
+      { type: "save-bonus", amount: 1 },
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
+    ],
     source: "SRD",
   },
   {
@@ -256,6 +265,9 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "30000 GP",
     properties: ["+2 bonus", "charges: 1d8+1", "instant death on crit DC 15 CON"],
+    // PRIM-item-bound-bonus — the printed +2 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 }],
     source: "SRD",
   },
   // ============================================================
@@ -725,6 +737,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
       { type: "ac-bonus", amount: 2 },
       { type: "save-bonus", amount: 2 },
       { type: "spell-attack-bonus", amount: 2, scope: "all" },
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 },
     ],
     source: "SRD",
   },
