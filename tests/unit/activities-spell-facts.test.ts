@@ -150,9 +150,7 @@ describe("spell facts read Activity — same output as the flat fields", () => {
       expect(line, spell.id).toContain(
         `srd.castingTime_${castingTimeI18nKey(spell.castingTime)}`
       );
-      expect(line.includes("spells.concentrationShort"), spell.id).toBe(
-        spell.concentration
-      );
+      expect(line.includes("combat.concentration"), spell.id).toBe(spell.concentration);
     }
   });
 });
