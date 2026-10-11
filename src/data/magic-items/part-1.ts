@@ -709,7 +709,14 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     type: "staff",
     attunement: true,
     price: "60000 GP",
-    properties: ["+2 bonus", "+2 AC", "+2 saves", "charges: 20", "retributive strike"],
+    properties: [
+      "+2 bonus",
+      "+2 AC",
+      "+2 saves",
+      "charges: 20",
+      "retributive strike",
+      "recharge: 2d8+4 / dawn",
+    ],
     // While holding: +2 AC (ref.acBonus → computeAC), +2 to ALL saves
     // (save-bonus flat), and +2 to spell attack rolls (spell-attack-bonus, all
     // classes). The +2 quarterstaff enchant rides the weapon pipeline; the 20
@@ -732,6 +739,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
       "charges: 50",
       "advantage vs spells",
       "spell absorption",
+      "recharge: 4d6+2 / dawn",
     ],
     source: "SRD",
   },
@@ -1252,6 +1260,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -1261,6 +1270,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {

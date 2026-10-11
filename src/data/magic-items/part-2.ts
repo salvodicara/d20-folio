@@ -267,7 +267,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "wand",
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -582,7 +582,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -663,7 +663,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "weapon",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -789,7 +789,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "ring",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -825,7 +825,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "ring",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -1139,7 +1139,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "staff",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -1239,7 +1239,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "wand",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 7"],
+    properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
     source: "SRD",
   },
   {
@@ -1413,7 +1413,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "wand",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 7"],
+    properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
     source: "SRD",
   },
   {
@@ -1424,7 +1424,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "wand",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 7"],
+    properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
     source: "SRD",
   },
   {

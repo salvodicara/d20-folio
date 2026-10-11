@@ -983,7 +983,7 @@
   },
   "staff-of-power": {
     "attunementReq": "by a sorcerer, warlock, or wizard",
-    "description": "+2 to attack/damage, AC, saves, and spell attack rolls. Has 20 charges for various spells. Retributive Strike: break to release all remaining charges in an explosion.",
+    "description": "+2 to attack/damage, AC, saves, and spell attack rolls. Has 20 charges for various spells. The staff regains 2d8 + 4 expended charges daily at dawn. Retributive Strike: break to release all remaining charges in an explosion.",
     "name": "Staff of Power"
   },
   "staff-of-striking": {
@@ -997,7 +997,7 @@
   },
   "staff-of-the-magi": {
     "attunementReq": "by a sorcerer, warlock, or wizard",
-    "description": "+2 to spell attacks. Has 50 charges for powerful spells. Grants Advantage on saves vs spells. Can absorb spells targeting you to regain charges. Retributive Strike option.",
+    "description": "+2 to spell attacks. Has 50 charges for powerful spells. The staff regains 4d6 + 2 expended charges daily at dawn. Grants Advantage on saves vs spells. Can absorb spells targeting you to regain charges. Retributive Strike option.",
     "name": "Staff of the Magi"
   },
   "staff-of-the-python": {

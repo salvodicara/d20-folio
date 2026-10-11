@@ -983,7 +983,7 @@
   },
   "staff-of-power": {
     "attunementReq": "da uno stregone, warlock o mago",
-    "description": "+2 ad attacco/danni, CA, tiri salvezza e tiri per colpire degli incantesimi. Ha 20 cariche per vari incantesimi. Colpo Retributivo: spezzalo per rilasciare tutte le cariche in un'esplosione.",
+    "description": "+2 ad attacco/danni, CA, tiri salvezza e tiri per colpire degli incantesimi. Ha 20 cariche per vari incantesimi. Il bastone recupera 2d8 + 4 cariche spese ogni giorno all'alba. Colpo Retributivo: spezzalo per rilasciare tutte le cariche in un'esplosione.",
     "name": "Bastone del Potere"
   },
   "staff-of-striking": {
@@ -997,7 +997,7 @@
   },
   "staff-of-the-magi": {
     "attunementReq": "da uno stregone, warlock o mago",
-    "description": "+2 ai tiri per colpire degli incantesimi. Ha 50 cariche per incantesimi potenti. Vantaggio ai tiri salvezza contro incantesimi. Può assorbire incantesimi diretti a te per ricaricarsi. Opzione Colpo Retributivo.",
+    "description": "+2 ai tiri per colpire degli incantesimi. Ha 50 cariche per incantesimi potenti. Il bastone recupera 4d6 + 2 cariche spese ogni giorno all'alba. Vantaggio ai tiri salvezza contro incantesimi. Può assorbire incantesimi diretti a te per ricaricarsi. Opzione Colpo Retributivo.",
     "name": "Bastone del Mago"
   },
   "staff-of-the-python": {

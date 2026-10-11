@@ -185,7 +185,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "ring",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 6"],
+    properties: ["charges: 6", "recharge: 1d6 / dawn"],
     source: "SRD",
   },
   {
@@ -206,7 +206,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -421,7 +421,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "staff",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 10"],
+    properties: ["charges: 10", "recharge: 1d6+4 / dawn"],
     source: "SRD",
   },
   {
@@ -580,7 +580,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -621,7 +621,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 3"],
+    properties: ["charges: 3", "recharge: 1d3 / dawn"],
     source: "SRD",
   },
   {
@@ -641,7 +641,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "weapon",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 5"],
+    properties: ["charges: 5", "recharge: 1d4+1 / dawn"],
     source: "SRD",
   },
   {
@@ -769,7 +769,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     type: "rod",
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 5"],
+    properties: ["charges: 5", "recharge: 1 / dawn"],
     source: "SRD",
   },
   {
