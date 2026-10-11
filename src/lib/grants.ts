@@ -1245,6 +1245,8 @@ export interface AggregatedGrants {
   seeInvisibleFt: number;
   /** True when any source lets the character breathe both air and water. */
   airAndWaterBreathing: boolean;
+  /** True when any source counts the character as one size larger for carrying. */
+  carryAsLargerSize: boolean;
   /** Folded generic rules (`lib/rules`): the one read path for migrated families. */
   values: RuleValues;
 
@@ -2049,6 +2051,7 @@ export function emptyAggregate(): AggregatedGrants {
     truesightFt: 0,
     seeInvisibleFt: 0,
     airAndWaterBreathing: false,
+    carryAsLargerSize: false,
     values: foldRules([]),
     damageResistances: new Set(),
     allDamageResistance: false,
@@ -2496,6 +2499,7 @@ export function evaluateGrants(
       case "truesight":
       case "see-invisible":
       case "air-and-water-breathing":
+      case "carry-as-larger-size":
         rules.push(...(compileGrant(g) ?? []));
         break;
 
@@ -3715,6 +3719,7 @@ export function evaluateGrants(
     truesightFt: ruleNumber(values, "sense:truesight"),
     seeInvisibleFt: ruleNumber(values, "sense:see-invisible"),
     airAndWaterBreathing: ruleFlag(values, "trait:air-and-water-breathing"),
+    carryAsLargerSize: ruleFlag(values, "trait:carry-as-larger-size"),
     values,
     damageResistances: new Set(ruleFlagIds(values, "defense:resist:") as DamageType[]),
     allDamageResistance: ruleFlag(values, "defense:resist-all"),

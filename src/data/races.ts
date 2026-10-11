@@ -659,14 +659,15 @@ const PUBLIC_RACES: SrdRaceData[] = [
       {
         id: "powerful-build",
         // 2024 RAW: Advantage on the ability CHECK (not a saving throw) to end
-        // the Grappled condition → `advantage-on` with rollType "check". The
-        // carrying-capacity half stays descriptive.
+        // the Grappled condition → `advantage-on` with rollType "check", and
+        // carrying capacity as one size larger.
         grants: [
           {
             type: "advantage-on",
             rollType: "check",
             vs: "grappled",
           },
+          { type: "carry-as-larger-size" },
         ],
       },
       {

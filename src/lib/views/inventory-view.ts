@@ -892,7 +892,9 @@ export function buildInventoryViewModel(
   const carried =
     weapons.reduce((s, w) => s + w.weight * w.quantity, 0) +
     items.reduce((s, i) => s + i.weight * i.quantity, 0);
-  const { carry: capacity, pushDragLift } = carryingCapacity(effectiveScores.STR);
+  const { carry: capacity, pushDragLift } = carryingCapacity(effectiveScores.STR, {
+    asLargerSize: scoreAgg.carryAsLargerSize,
+  });
   const encumbrance: EncumbranceVM = {
     carried,
     capacity,

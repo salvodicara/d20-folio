@@ -42,6 +42,7 @@ export type MoveMode = "fly" | "swim" | "climb";
 export type RuleTarget =
   | `sense:${SenseKind}`
   | "trait:air-and-water-breathing"
+  | "trait:carry-as-larger-size"
   | "speed:walk"
   | `speed:${MoveMode}`
   /** A speed equal to (1) or twice (2) the walking speed; outranks a fixed number. */
@@ -203,6 +204,8 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "max", target: `sense:${grant.type}`, value: grant.range }];
     case "air-and-water-breathing":
       return [{ op: "flag", target: "trait:air-and-water-breathing" }];
+    case "carry-as-larger-size":
+      return [{ op: "flag", target: "trait:carry-as-larger-size" }];
     case "speed": {
       const when: RuleFact | undefined = grant.round1 ? "round-1" : grant.condition;
       return [
