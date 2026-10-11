@@ -52,6 +52,7 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
+import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { tempHpRollFormula } from "@/lib/combat-resolution";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
@@ -316,6 +317,7 @@ export function PlayTab() {
   const { language: locale } = useLocale();
   const compactActions = useMediaQuery("(max-width: 720px)");
   const character = useCharacterStore((s) => s.character);
+  const sheetReadonly = useSheetReadonly();
   const selected = useCombatStore((s) => s.selected);
   const budget = useCombatStore((s) => s.budget);
   const attackBudget = useCombatStore((s) => s.attackBudget);
@@ -978,24 +980,29 @@ export function PlayTab() {
           pin the meter to the viewport. The meter reads/dispatches the SAME shared
           combatStore + useTurnEconomy as the cards below: a card commit lights this
           meter; End Turn clears the turn. */}
-      <div className="mb-4">
-        {/* Item e — the meter's economy tokens double as board filters, wired to the
+      {/* Someone else's sheet (read-only viewer) shows no turn meter: its round,
+          initiative and tokens belong to the VIEWER's own combat state, not the
+          member's. Their statuses still read on the rail (Attive / Stato). */}
+      {!sheetReadonly && (
+        <div className="mb-4">
+          {/* Item e — the meter's economy tokens double as board filters, wired to the
             SAME `filter` state the fchips drive (one source of truth): tapping an OPEN
             token narrows the board to that type, tapping the active one clears to "all"
             (a SPENT token re-arms its slot instead). Solo, the meter also carries the
             "End Combat" control beside End Turn (owner-ratified 2026-07-03). */}
-        <ThisTurnTracker
-          activeFilter={activeFilter}
-          onFilterByType={(type) => setFilter(activeFilter === type ? "all" : type)}
-          attackRollState={attackRoll.state}
-        />
-        {/* NO separate encounter Prev/Next controls here (removed 2026-08-02): in an
+          <ThisTurnTracker
+            activeFilter={activeFilter}
+            onFilterByType={(type) => setFilter(activeFilter === type ? "all" : type)}
+            attackRollState={attackRoll.state}
+          />
+          {/* NO separate encounter Prev/Next controls here (removed 2026-08-02): in an
             encounter the meter's gilded End Turn IS the shared advance (`turn-state`'s
             `endTurn` → the SAME `advanceEncounterTurn` transaction), so a duplicate
             "Next turn" was a second path that skipped the local end-of-turn
             finalization, and "Previous turn" is the DM's correction tool (it lives in
             the hub's EncounterTurnControls — golden rule 6, one control per job). */}
-      </div>
+        </div>
+      )}
 
       {/* Filter bar — folio .filters/.fchip system (4px lapidary facet radius,
           tonal aria-pressed state, carved search input) — same recipe as Spells.
