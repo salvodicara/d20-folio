@@ -117,6 +117,14 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("turn-end");
     case "effect-expired":
       return resolveLogStyle("effect-expired");
+    case "effect-given":
+      return resolveLogStyle(
+        event.effect === "damage"
+          ? "damage"
+          : event.effect === "condition"
+            ? "condition-add"
+            : "heal"
+      );
     case "legacy":
       // A pre-events entry keeps the glyph/hue it was stored with.
       return resolveLogStyle(event.legacyType ?? "generic", event.slot);
@@ -201,6 +209,20 @@ export function localizeCombatEvent(
       return t("combat.endTurnToast", { round: event.round });
     case "effect-expired":
       return t("combatLog.effectExpired", { name: resolveSourceName(event.sourceId) });
+    case "effect-given":
+      return event.effect === "condition"
+        ? t("combatLog.givenCondition", {
+            target: event.targetName,
+            condition: resolveConditionName(event.conditionId ?? ""),
+          })
+        : t(
+            event.effect === "heal"
+              ? "combatLog.givenHeal"
+              : event.effect === "damage"
+                ? "combatLog.givenDamage"
+                : "combatLog.givenTempHp",
+            { target: event.targetName, amount: event.amount ?? 0 }
+          );
     case "legacy":
       return event.text;
   }

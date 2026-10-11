@@ -13,6 +13,10 @@
     "shortRest": "Fatto un Riposo Breve",
     "longRest": "Fatto un Riposo Lungo",
     "riderUse": "{{rider}} speso su {{name}}",
-    "effectExpired": "{{name}} terminato (durata esaurita)"
+    "effectExpired": "{{name}} terminato (durata esaurita)",
+    "givenHeal": "Curati {{amount}} PF a {{target}}",
+    "givenDamage": "{{target}} ha subito {{amount}} danni",
+    "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",
+    "givenCondition": "{{target}} ha fallito il TS: {{condition}}"
   }
 }
