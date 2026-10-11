@@ -272,7 +272,7 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
             ? t("spells.cantrip")
             : t("spells.levelShort", { level: spell.level })}{" "}
           · {t(`srd.castingTime_${castingTimeKey(activity.cost)}`)}
-          {activity.concentration && ` · ${t("spells.concentrationShort")}`}
+          {activity.concentration && ` · ${t("combat.concentration")}`}
         </>
       ),
       trailing: isCrossClass(spell, ctx) ? (

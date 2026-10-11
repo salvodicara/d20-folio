@@ -172,7 +172,7 @@ export function buildGloss(vm: SpellCardVM, t: TFunction): string {
     parts.push(t(`srd.castingTime_${castingKey(vm)}`));
   }
   if (vm.concentratingNow) parts.push(t("spells.concentratingNow"));
-  else if (vm.concentration) parts.push(t("spells.concShort"));
+  else if (vm.concentration) parts.push(t("combat.concentration"));
   return parts.filter(Boolean).join(" · ");
 }
 

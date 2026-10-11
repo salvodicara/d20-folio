@@ -352,7 +352,7 @@ export function SpellLevelFilter({
             aria-label={t("spells.filterConcentration")}
             onClick={onToggleConc}
           >
-            {t("spells.concentrationShort")}
+            {t("combat.concentration")}
             <span className="fc-count" aria-hidden>
               {concCount}
             </span>
