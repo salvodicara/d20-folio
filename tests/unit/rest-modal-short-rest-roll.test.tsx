@@ -144,3 +144,28 @@ describe("RestModal — clear short-rest input", () => {
     ).toBe(0);
   });
 });
+
+describe("RestModal — multiclass Hit Point Dice", () => {
+  it("accepts a total only the larger class die can roll (Fighter 5 / Wizard 1)", () => {
+    const doc = seed();
+    doc.character.classes = [
+      { classId: "fighter", level: 5 },
+      { classId: "wizard", level: 1 },
+    ];
+    // The class advanced last: the legacy single die.
+    doc.character.hitDieType = 6;
+    doc.character.hitDiceTotalOverride = null;
+    doc.session.hitDice = { used: 0 };
+    useCharacterStore.setState({ character: doc, readonly: false });
+    openRest();
+    addDie();
+    addDie();
+    expect(rollField()).toHaveAccessibleDescription(
+      "Roll 2 Hit Dice (d10/d6) · without Constitution"
+    );
+    enterRoll("16");
+    expect(confirm()).toBeEnabled();
+    enterRoll("21");
+    expect(confirm()).toBeDisabled();
+  });
+});

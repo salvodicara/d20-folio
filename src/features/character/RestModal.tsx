@@ -16,6 +16,7 @@
  * to that legacy flow alone.
  */
 
+import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
 import { useState, useMemo, useRef, useId } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
@@ -119,7 +120,12 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const { character: charData, session } = restCharacter;
   const restEligible = canCharacterRest(restCharacter.status, session);
   const level = totalLevel(charData);
-  const hitDie = charData.hitDieType;
+  // A multiclass pool mixes die sizes (Fighter d10s + Wizard d6s).
+  const hitDice = hitDicePool(charData);
+  const hitDieSizes = hitDiceLabel(hitDice).sizes;
+  const hitDiceText = (count: number) =>
+    hitDiceLabel(hitDice, count).dice ??
+    t("rest.hitDiceMixed", { count, sizes: hitDieSizes });
   const hitDiceMax = charData.hitDiceTotalOverride ?? level;
   const hitDiceUsed = session.hitDice.used;
   const hitDiceAvailable = Math.max(0, hitDiceMax - hitDiceUsed);
@@ -141,12 +147,14 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       agg.itemAbilityScoreCap
     ).CON
   );
+  // The total is checked against the largest dice the pool holds.
+  const rollRange = hitDiceTotalRange(hitDice, hitDiceToSpend);
   const roll = Number(diceTotal);
   const rollValid =
     diceTotal.trim() !== "" &&
     Number.isInteger(roll) &&
-    roll >= hitDiceToSpend &&
-    roll <= hitDiceToSpend * hitDie;
+    roll >= rollRange.min &&
+    roll <= rollRange.max;
   const diceCountValid = hitDiceToSpend <= hitDiceAvailable;
   const shortRestHeal =
     hitDiceToSpend === 0
@@ -330,8 +338,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                 // player's entered roll), never a fabricated average.
                 label={t("rest.hitDiceSpent")}
                 value={t("rest.hitDiceSpentValue", {
-                  count: summary.hitDiceUsed,
-                  die: hitDie,
+                  dice: hitDiceText(summary.hitDiceUsed),
                   hp: summary.hpAfter - summary.hpBefore,
                 })}
               />
@@ -460,7 +467,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                 >
                   +
                 </button>
-                <span className="text-sm text-text-secondary">d{hitDie}</span>
+                <span className="text-sm text-text-secondary">{hitDieSizes}</span>
               </div>
               <p className="rest-input-hint">
                 {t("rest.hitDiceAvailable", {
@@ -479,8 +486,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   id={inputId}
                   type="number"
                   inputMode="numeric"
-                  min={hitDiceToSpend}
-                  max={hitDiceToSpend * hitDie}
+                  min={rollRange.min}
+                  max={rollRange.max}
                   step={1}
                   value={diceTotal}
                   onChange={(event) => setDiceTotal(event.target.value)}
@@ -491,13 +498,13 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   className="rest-roll-input"
                 />
                 <p id={`${inputId}-hint`} className="rest-input-hint">
-                  {t("rest.diceTotalHint", { count: hitDiceToSpend, die: hitDie })}
+                  {t("rest.diceTotalHint", { dice: hitDiceText(hitDiceToSpend) })}
                 </p>
                 {diceTotal !== "" && !rollValid && (
                   <p id={`${inputId}-error`} className="rest-input-hint text-error">
                     {t("rest.diceTotalError", {
-                      min: hitDiceToSpend,
-                      max: hitDiceToSpend * hitDie,
+                      min: rollRange.min,
+                      max: rollRange.max,
                     })}
                   </p>
                 )}
@@ -722,7 +729,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               <Heart className="h-3.5 w-3.5" />
               {t("rest.shortRestHealPerDie", {
                 conMod: conMod >= 0 ? `+${conMod}` : `${conMod}`,
-                die: hitDie,
+                die: hitDiceLabel(hitDice, 1).dice ?? hitDieSizes,
               })}
             </li>
           </ul>
