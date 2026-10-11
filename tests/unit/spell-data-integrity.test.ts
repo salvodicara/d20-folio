@@ -24,6 +24,7 @@ import { SRD_SPELLS_LEVEL7 } from "@/data/spells/level7";
 import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
 import type { SrdSpellData } from "@/data/types";
+import { activityFromSpell } from "@/lib/activities";
 
 function conditionLifetimeGaps(entries: readonly SrdSpellData[]): string[] {
   return entries.flatMap((spell) => {
@@ -531,25 +532,41 @@ describe("spell-data integrity", () => {
   // IMPOSSIBLE to ship a damage spell with no dice or a heal verdict with no
   // amount — a future spell can't regress to a bare-type or wrong-"Utility" card.
 
-  it("every dice-dealing damage spell carries a structured `damageDice` (S12 lock)", () => {
-    // A few damage-TYPED spells deal NO direct dice — their type colours a
-    // retaliation/aura whose damage lives in prose with no leading die (the combat
-    // tab showed no dice for them before S12 either). Allowlisted by construction.
-    const NO_DICE_DAMAGE = new Set([
-      "armor-of-agathys", // 5 temp HP; melee attacker takes 5 cold (flat, prose)
-      "aura-of-life", // resistance aura, no direct dice
-      "guardian-of-faith", // 20 radiant on entry (flat, prose)
-    ]);
-    const offenders = spells
-      .filter((s) => {
-        const hasFacet =
-          !!s.damageType ||
-          (s.damageTypes?.length ?? 0) > 0 ||
-          (s.damageChoice?.length ?? 0) > 0;
-        return hasFacet && !s.damageDice && !NO_DICE_DAMAGE.has(s.id);
-      })
-      .map((s) => s.id);
+  it("a damage type without `damageDice` is a flat amount the EN rules text deals", () => {
+    // A declared damage type becomes a "damage" effect on the spell's Activity.
+    // Without dice it is legitimate only when the rules text names a flat amount
+    // of that type ("takes 5 Cold damage"); a type merely mentioned ("Resistance
+    // to Necrotic damage") must not read as damage the spell deals.
+    const offenders = spells.flatMap((s) => {
+      if (s.damageDice) return [];
+      const types = [
+        s.damageType,
+        ...(s.damageTypes ?? []),
+        ...(s.damageChoice ?? []),
+      ].filter((type): type is NonNullable<typeof type> => !!type);
+      const text = srd("spell", s.id, "description", "en");
+      return types
+        .filter((type) => !new RegExp(`\\b\\d+ ${type} damage\\b`, "i").test(text))
+        .map((type) => `${s.id}:${type}`);
+    });
     expect(offenders).toEqual([]);
+  });
+
+  it("models Aura of Life as standing Necrotic resistance, not Necrotic damage", () => {
+    const aura = getSpellById("aura-of-life");
+    if (!aura) throw new Error("aura-of-life missing");
+    const activity = activityFromSpell(aura);
+    expect(activity.effects.filter((effect) => effect.kind === "damage")).toEqual([]);
+    expect(activity.effects).toContainEqual(
+      expect.objectContaining({ kind: "status", key: "spell-aura-of-life" })
+    );
+    expect(aura.grants).toEqual([
+      expect.objectContaining({
+        type: "while-active",
+        activeKey: "spell-aura-of-life",
+        grants: [{ type: "damage-resistance", damageType: "necrotic" }],
+      }),
+    ]);
   });
 
   it("every damageDice is a well-formed NdM[+K] dice string (S12 lock)", () => {

@@ -130,6 +130,7 @@ const STANDING_SPELLS = [
     recipient: "selected",
     targeting: { affinity: "enemy", maxTargets: 1 },
   },
+  { id: "aura-of-life", recipient: "caster" },
   {
     id: "death-ward",
     recipient: "selected",

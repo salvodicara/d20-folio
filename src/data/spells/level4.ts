@@ -26,7 +26,17 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: true,
-    damageType: "necrotic",
+    grants: [
+      // Resistance to Necrotic damage for you (and allies in the aura) while it
+      // lasts; it deals no damage. The HP-maximum floor and the 0-HP regain
+      // stay in the rules text.
+      {
+        type: "while-active",
+        activeKey: "spell-aura-of-life",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "damage-resistance", damageType: "necrotic" }],
+      },
+    ],
     source: "SRD",
   },
   {
