@@ -766,7 +766,26 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       const result = syncCombatTurnContext(scoped);
       if (result === null) return;
       useUndoStore.getState().purgeTurnScoped();
-      if (result === "turn-start" && scoped) {
+      if (result === "encounter-ended") {
+        // The fight is over: every "until your next turn" state (Shield) ends with it.
+        // Its turn edge was counted in the encounter's rounds, and the solo engine
+        // restarts at round 1, so it would otherwise linger for the fight's length.
+        const { expired } = useCharacterStore.getState().expireEffectBoundaries({
+          round: Number.MAX_SAFE_INTEGER,
+          phase: "turn-end",
+        });
+        for (const effect of expired) {
+          showToast({
+            message: t("combatLog.effectExpired", {
+              name: grantSourceLabel(effect.sourceId, locale),
+            }),
+            duration: 4000,
+          });
+        }
+        return;
+      }
+      // A turn start inside the fight.
+      if (scoped) {
         // Engine effect spans: a boundary crossing expires until-your-next-turn
         // effects (Shield's AC bonus, …) and surfaces each expiry as a toast.
         const boundaryExpiry = useCharacterStore.getState().expireEffectBoundaries({
