@@ -239,7 +239,12 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     ],
     // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
     // the weapon row it is bound to; other effects stay as noted).
-    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
+    // The wielder stands in their own aura: Advantage on saves against spells
+    // and magical effects. The allies' half and the radiant rider stay manual.
+    grants: [
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 },
+      { type: "advantage-on", rollType: "save", vs: "spells-magic" },
+    ],
     source: "SRD",
   },
   {
@@ -522,6 +527,9 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "12000 GP",
     properties: ["attacks have disadvantage against you"],
+    // The against-you Disadvantage is a rail reminder; the "ceases for a turn
+    // after a hit / while Incapacitated or Restrained" clause stays with the player.
+    grants: [{ type: "incoming-attack-disadvantage" }],
     source: "SRD",
   },
   {
@@ -753,6 +761,12 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
       "advantage vs spells",
       "spell absorption",
       "recharge: 4d6+2 / dawn",
+    ],
+    // While held: +2 to spell attack rolls and Advantage on saves against
+    // spells. Charges, Spell Absorption and Retributive Strike stay manual.
+    grants: [
+      { type: "spell-attack-bonus", amount: 2, scope: "all" },
+      { type: "advantage-on", rollType: "save", vs: "spells" },
     ],
     source: "SRD",
   },
@@ -1065,6 +1079,10 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    // Advantage on Investigation checks to examine something within 1 foot. The
+    // situational `vs` keeps it out of Passive Investigation; the 1-foot
+    // Darkvision is too short to belong on the Senses rail.
+    grants: [{ type: "advantage-on", rollType: "check", vs: "investigation-close" }],
     source: "SRD",
   },
   {

@@ -46,6 +46,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "ring",
     attunement: true,
+    // A 2d8 reduction of Cold damage (not Resistance) has no numeric kind: it is a
+    // reminder line in the rail's Defenses section.
+    grants: [{ type: "defense-note" }],
     source: "SRD",
   },
   {
@@ -452,6 +455,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "armor",
     attunement: true,
+    // +2 AC only against ranged attack rolls: a Defenses reminder line, never a
+    // flat AC bonus. The intercept Reaction stays manual.
+    grants: [{ type: "defense-note" }],
     source: "SRD",
   },
   {
@@ -486,14 +492,15 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // resistance/advantage are a pure bonus with no dwarf-specific downside.
     // PROSE-SWEPT 2026-06-10 — Toughness (+2 CON, max 20) and the Dwarvish
     // language were hidden in prose; both are standing while-attuned stats.
-    // Friend of Dwarvenkind (Persuasion advantage vs dwarves) is situational —
-    // descriptive.
+    // Friend of Dwarvenkind (Persuasion advantage with dwarves and duergar)
+    // is a situational advantage chip.
     grants: [
       { type: "darkvision", range: 60 },
       { type: "ability-score", ability: "CON", amount: 2, cap: 20 },
       { type: "language", language: "Dwarvish" },
       { type: "damage-resistance", damageType: "poison" },
       { type: "advantage-on", rollType: "save", vs: "poisoned" },
+      { type: "advantage-on", rollType: "check", vs: "persuasion-dwarves" },
     ],
     source: "SRD",
   },
@@ -1555,10 +1562,20 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "armor",
     attunement: true,
     properties: ["+1 AC"],
-    // +1 AC (ref.acBonus → computeAC). The Abyssal language, the 1d8-Slashing /
-    // +1 Unarmed Strike enchant, and the curse (Disadvantage vs demons) stay
-    // descriptive — the curse is not a deterministic always-on numeric.
-    grants: [{ type: "ac-bonus", amount: 1 }],
+    // +1 AC (ref.acBonus → computeAC), Abyssal, and the clawed gauntlets'
+    // 1d8 Slashing Unarmed Strike (+ STR, like any Unarmed Strike). The +1 to the
+    // Unarmed Strike's attack and damage has no unarmed-only kind, and the curse
+    // (Disadvantage vs demons) is not an always-on numeric: both stay descriptive.
+    grants: [
+      { type: "ac-bonus", amount: 1 },
+      { type: "language", language: "Abyssal" },
+      {
+        type: "unarmed-strike-die",
+        die: "1d8",
+        damageType: "slashing",
+        damageAbility: "STR",
+      },
+    ],
     source: "SRD",
   },
   {

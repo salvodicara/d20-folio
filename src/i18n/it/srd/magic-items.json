@@ -99,6 +99,9 @@
     "description": "Ottieni un bonus di +2 alla Classe Armatura contro i tiri per colpire a distanza mentre impugni questo Scudo. Questo bonus si aggiunge al normale bonus dello Scudo alla CA. Ogni volta che un attaccante effettua un tiro per colpire a distanza contro un bersaglio entro 1,5 metri da te, puoi compiere una Reazione per diventare invece tu il bersaglio dell'attacco.",
     "name": "Scudo Catturafrecce"
   },
+  "arrow-catching-shield.grants.0": {
+    "description": "+2 CA contro i tiri per colpire a distanza"
+  },
   "bag-of-beans": {
     "description": "Questo pesante sacco di stoffa contiene 3d4 fagioli secchi quando viene trovato. Il sacco pesa circa 200 grammi indipendentemente da quanti fagioli contiene e diventa un oggetto non magico quando non contiene più alcun fagiolo. Se rovesci uno o più fagioli fuori dal sacco, essi esplodono in una Sfera dal raggio di 3 metri centrata su di essi. Tutti i fagioli rovesciati vengono distrutti nell'esplosione, e ogni creatura nella Sfera, te compreso, effettua un tiro salvezza su Destrezza con CD 15, subendo 5d4 danni da Forza se fallisce o la metà di quei danni se riesce. Se estrai un fagiolo dal sacco, lo pianti nella terra o nella sabbia e poi lo innaffi, il fagiolo scompare producendo un effetto 1 minuto dopo dal terreno in cui è stato piantato. Il DM può scegliere un effetto dalla tabella seguente o determinarlo casualmente. 1d100 Effetto 01 Spuntano 5d4 funghi velenosi. Se una creatura mangia un fungo velenoso, tira un dado qualsiasi. Con un risultato dispari, chi lo mangia deve riuscire in un tiro salvezza su Costituzione con CD 15 o subire 5d6 danni da Veleno e ottenere la condizione Avvelenato per 1 ora. Con un risultato pari, chi lo mangia ottiene 5d6 Punti Ferita Temporanei per 1 ora. 02-10 Un geyser erutta e zampilla acqua, birra, maionese, tè, aceto, vino o olio (a scelta del DM) a 9 metri d'altezza per 1d4 minuti. 11-20 Spunta un Treant. Tira un dado qualsiasi. Con un risultato dispari, il treant è Caotico Malvagio. Con un risultato pari, il treant è Caotico Buono. 21-30 Una statua di pietra animata ma immobile con le tue sembianze si erge e profferisce minacce verbali contro di te.",
     "name": "Borsa dei Fagioli Magici"
@@ -129,6 +132,9 @@
   },
   "belt-of-dwarvenkind.grants.4": {
     "description": "Tiri salvezza per evitare o terminare la condizione Avvelenato"
+  },
+  "belt-of-dwarvenkind.grants.5": {
+    "description": "Prove di Carisma (Persuasione) per interagire con nani e duergar"
   },
   "belt-of-giant-strength": {
     "description": "Imposta il tuo punteggio di Forza in base al tipo: Collina (21), Gelo/Pietra (23), Fuoco (25), Nube (27), Tempesta (29). Nessun effetto se la Forza è già uguale o superiore.",
@@ -236,6 +242,9 @@
   "cloak-of-displacement": {
     "description": "Proietta un'illusione che ti fa apparire leggermente spostato. I tiri per colpire contro di te hanno Svantaggio. Se colpito, cessa fino all'inizio del tuo prossimo turno. Cessa anche se Incapacitato o Trattenuto.",
     "name": "Mantello Distorcente"
+  },
+  "cloak-of-displacement.grants.0": {
+    "description": "I tiri per colpire contro di te hanno Svantaggio (cessa dopo un colpo fino al tuo prossimo turno, e se Incapacitato o Trattenuto)"
   },
   "cloak-of-elvenkind": {
     "description": "Mentre indossi questo mantello con il cappuccio alzato, le prove di Saggezza (Percezione) per vederti hanno Svantaggio, e hai Vantaggio sulle prove di Destrezza (Furtività) per nasconderti.",
@@ -406,6 +415,9 @@
     "description": "Queste lenti di cristallo si applicano sugli occhi. Mentre le indossi, la tua vista migliora notevolmente fino a una portata di 30 centimetri, garantendoti Scurovisione entro quella portata e Vantaggio alle prove di Intelligenza (Indagare) effettuate per esaminare qualcosa entro quella portata.",
     "name": "Lenti della Visione Dettagliata"
   },
+  "eyes-of-minute-seeing.grants.0": {
+    "description": "Prove di Intelligenza (Indagare) per esaminare qualcosa entro 30 cm"
+  },
   "eyes-of-the-eagle": {
     "description": "Queste lenti di cristallo si adattano agli occhi. Mentre le indossi, hai Vantaggio alle prove di Saggezza (Percezione) che dipendono dalla vista. In condizioni di visibilità chiara, riesci a distinguere i dettagli anche di creature e oggetti estremamente lontani, fino a una grandezza di 60 cm.",
     "name": "Lenti dell'Aquila"
@@ -502,6 +514,9 @@
     "attunementReq": "da un Paladino",
     "description": "+3 ai tiri per colpire e danni. Infligge +2d10 danni Radianti a demoni e non morti. Mentre impugnata, alleati entro 3 metri hanno Vantaggio ai tiri salvezza contro incantesimi ed effetti magici.",
     "name": "Vendicatore Sacro"
+  },
+  "holy-avenger.grants.1": {
+    "description": "Tiri salvezza contro incantesimi e altri effetti magici"
   },
   "horn-of-blasting": {
     "description": "Puoi compiere un'azione Magia per suonare il corno, che emette un boato tonante in un Cono di 9 metri udibile fino a 180 metri. Ogni creatura nel Cono effettua un tiro salvezza su Costituzione con CD 15. Se fallisce, una creatura subisce 5d8 danni da Tuono e ottiene la condizione Assordato per 1 minuto. Se riesce, una creatura subisce solo la metà di quei danni. Gli oggetti di vetro o cristallo nel Cono che non vengono indossati o trasportati subiscono 10d8 danni da Tuono. Ogni uso della magia del corno ha una probabilità del 20 percento di far esplodere il corno. L'esplosione infligge 10d6 danni da Forza a chi lo usa e distrugge il corno.",
@@ -745,6 +760,9 @@
     "description": "Hai un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. Mentre impugni quest'arma, puoi farle emettere Luce Fioca verde fino a 3 metri, come un'Azione Bonus o dopo che tiri l'Iniziativa, oppure puoi spegnere la luce come un'Azione Bonus. Mentre impugni quest'arma, puoi compiere un'Azione Bonus per alterarne la forma, trasformandola in una verga di 15 centimetri (per facilitarne il trasporto) o in un'asta di 3 metri, oppure facendola tornare un Bastone Ferrato; l'arma si allunga solo per quanto lo spazio circostante consente. In certe forme, l'arma ha le seguenti proprietà aggiuntive. Assistenza Acrobatica (solo nelle forme di Bastone Ferrato e Asta di 3 Metri). Mentre impugni quest'arma, hai Vantaggio alle prove di Destrezza (Acrobazia). Deviazione dell'Attacco (solo nella forma di Bastone Ferrato). Quando vieni colpito da un attacco mentre impugni l'arma, puoi compiere una Reazione per far roteare l'arma attorno a te, ottenendo un bonus di +5 alla tua Classe Armatura contro l'attacco scatenante, facendo potenzialmente mancare l'attacco. Non puoi usare di nuovo questa proprietà finché non termini un Riposo Breve o Lungo. Arma a Distanza (solo nella forma di Bastone Ferrato). Quest'arma ha la proprietà Da Lancio con una gittata normale di 9 metri e una gittata lunga di 36 metri. Immediatamente dopo che effettui un attacco a distanza con l'arma, essa vola di nuovo nella tua mano.",
     "name": "Bastone Ferrato dell'Acrobata"
   },
+  "quarterstaff-of-the-acrobat.grants.1": {
+    "description": "Prove di Destrezza (Acrobazia) mentre lo impugni (forma di bastone o di pertica)"
+  },
   "ring-of-animal-influence": {
     "description": "Questo anello ha 3 cariche, e recupera 1d3 cariche spese ogni giorno all'alba. Mentre indossi l'anello, puoi spendere 1 carica per lanciare uno dei seguenti incantesimi (CD del tiro salvezza 13) da esso: Amicizia con gli Animali Paura (interessa solo le Bestie) Parlare con gli Animali",
     "name": "Anello dell'Influenza sugli Animali"
@@ -819,6 +837,9 @@
   "ring-of-warmth": {
     "description": "Se subisci danni da Freddo mentre indossi questo anello, l'anello riduce i danni che subisci di 2d8. Inoltre, mentre indossi questo anello, tu e tutto ciò che indossi e trasporti siete illesi da temperature pari o inferiori a -18 gradi Celsius.",
     "name": "Anello del Calore"
+  },
+  "ring-of-warmth.grants.0": {
+    "description": "I danni da freddo che subisci sono ridotti di 2d8"
   },
   "ring-of-water-walking": {
     "description": "Mentre indossi questo anello, lanci Camminare sull'Acqua da esso, prendendo di mira solo te stesso.",
@@ -957,6 +978,9 @@
   "spellguard-shield.grants.0": {
     "description": "Tiri salvezza contro incantesimi e altri effetti magici"
   },
+  "spellguard-shield.grants.1": {
+    "description": "I tiri per colpire con incantesimi contro di te hanno Svantaggio"
+  },
   "sphere-of-annihilation": {
     "description": "Questa sfera nera dal diametro di circa 60 centimetri è un foro nel multiverso, sospesa nello spazio e stabilizzata da un campo magico che la circonda. La sfera oblitera tutta la materia che attraversa e tutta la materia che la attraversa. Gli Artefatti sono l'eccezione. A meno che un Artefatto non sia suscettibile ai danni da una Sfera Annientatrice, esso attraversa la sfera illeso. Qualsiasi altra cosa che tocchi la sfera ma non sia interamente inghiottita e obliterata da essa subisce 8d10 danni da Forza. Controllare la Sfera. Una Sfera Annientatrice è immobile finché qualcuno non ne prende il controllo. Se ti trovi entro 18 metri da una sfera, puoi compiere un'azione Magia per effettuare una prova di Intelligenza (Arcano) con CD 25. Se la prova riesce, controlli la sfera fino all'inizio del tuo turno successivo, e se era sotto il controllo di un'altra creatura, quella creatura perde il controllo della sfera. Se la prova fallisce, la sfera si muove di 3 metri verso di te in linea retta. Mentre controlli la sfera, puoi compiere un'Azione Bonus per farla muovere in una direzione a tua scelta, fino a un numero di metri pari a 1,5 volte il tuo modificatore di Intelligenza (minimo 1,5 metri). Qualsiasi creatura nello spazio in cui la sfera entra deve riuscire in un tiro salvezza su Destrezza con CD 19 o esserne toccata, subendo 8d10 danni da Forza. Una creatura ridotta a 0 Punti Ferita da questi danni viene obliterata, lasciandosi dietro i suoi averi ma nessun altro resto fisico. Interazioni della Sfera.",
     "name": "Sfera Annientatrice"
@@ -999,6 +1023,9 @@
     "attunementReq": "da uno stregone, warlock o mago",
     "description": "+2 ai tiri per colpire degli incantesimi. Ha 50 cariche per incantesimi potenti. Il bastone recupera 4d6 + 2 cariche spese ogni giorno all'alba. Vantaggio ai tiri salvezza contro incantesimi. Può assorbire incantesimi diretti a te per ricaricarsi. Opzione Colpo Retributivo.",
     "name": "Bastone del Mago"
+  },
+  "staff-of-the-magi.grants.1": {
+    "description": "Tiri salvezza contro incantesimi"
   },
   "staff-of-the-python": {
     "description": "Con un'azione Magia, puoi lanciare questo bastone in modo che atterri in uno spazio libero entro 3 metri da te, facendo diventare il bastone un Serpente Stritolatore Gigante in quello spazio. Il serpente è sotto il tuo controllo e condivide il tuo ordine di Iniziativa, agendo immediatamente dopo di te. Nel tuo turno, puoi comandare mentalmente il serpente (non è richiesta alcuna azione) se si trova entro 18 metri da te e non hai la condizione Incapacitato. Decidi quale azione compie il serpente e dove si sposta durante il suo turno, oppure puoi impartirgli un comando generale, come attaccare i tuoi nemici o sorvegliare un luogo. In assenza di comandi da parte tua, il serpente si difende. Come un'Azione Bonus, puoi comandare al serpente di tornare alla forma di bastone nel suo spazio attuale, e non puoi usare di nuovo la proprietà del bastone per 1 ora. Se il serpente è ridotto a 0 Punti Ferita, muore e torna alla sua forma di bastone; il bastone va quindi in frantumi ed è distrutto. Se il serpente torna alla forma di bastone prima di perdere tutti i suoi Punti Ferita, li recupera tutti.",

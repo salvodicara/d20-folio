@@ -99,6 +99,9 @@
     "description": "You gain a +2 bonus to Armor Class against ranged attack rolls while you wield this Shield. This bonus is in addition to the Shield’s normal bonus to AC. Whenever an attacker makes a ranged attack roll against a target within 5 feet of you, you can take a Reaction to become the target of the attack instead.",
     "name": "Arrow-Catching Shield"
   },
+  "arrow-catching-shield.grants.0": {
+    "description": "+2 AC against ranged attack rolls"
+  },
   "bag-of-beans": {
     "description": "This heavy cloth bag contains 3d4 dry beans when found. The bag weighs half a pound regardless of how many beans it contains and becomes a nonmagical item when it no longer contains any beans. If you dump one or more beans out of the bag, they explode in a 10-foot-radius Sphere centered on them. All the dumped beans are destroyed in the explosion, and each creature in the Sphere, including you, makes a DC 15 Dexterity saving throw, taking 5d4 Force damage on a failed save or half as much damage on a successful one. If you remove a bean from the bag, plant it in dirt or sand, and then water it, the bean disappears as it produces an effect 1 minute later from the ground where it was planted. The DM can choose an effect from the following table or determine it randomly. 1d100 Effect 01 5d4 toadstools sprout. If a creature eats a toadstool, roll any die. On an odd roll, the eater must succeed on a DC 15 Constitution saving throw or take 5d6 Poison damage and have the Poisoned condition for 1 hour. On an even roll, the eater gains 5d6 Temporary Hit Points for 1 hour. 02–10 A geyser erupts and spouts water, beer, mayonnaise, tea, vinegar, wine, or oil (DM’s choice) 30 feet into the air for 1d4 minutes. 11–20 A Treant sprouts. Roll any die. On an odd roll, the treant is Chaotic Evil. On an even roll, the treant is Chaotic Good. 21–30 An animate but immobile stone statue in your likeness rises and makes verbal threats against you.",
     "name": "Bag of Beans"
@@ -129,6 +132,9 @@
   },
   "belt-of-dwarvenkind.grants.4": {
     "description": "Saving throws to avoid or end the Poisoned condition"
+  },
+  "belt-of-dwarvenkind.grants.5": {
+    "description": "Charisma (Persuasion) checks to interact with dwarves and duergar"
   },
   "belt-of-giant-strength": {
     "description": "Sets your Strength score to a value based on the belt type: Hill (21), Frost/Stone (23), Fire (25), Cloud (27), Storm (29). No effect if your Strength is already equal or higher.",
@@ -236,6 +242,9 @@
   "cloak-of-displacement": {
     "description": "Projects an illusion making you appear slightly displaced. Attack rolls against you have Disadvantage. On a hit, this property ceases until your next turn starts. Also ceases while Incapacitated or Restrained.",
     "name": "Cloak of Displacement"
+  },
+  "cloak-of-displacement.grants.0": {
+    "description": "Attack rolls against you have Disadvantage (ceases after a hit until your next turn, and while Incapacitated or Restrained)"
   },
   "cloak-of-elvenkind": {
     "description": "While wearing this cloak with its hood up, Wisdom (Perception) checks to see you have Disadvantage, and you have Advantage on Dexterity (Stealth) checks to hide.",
@@ -406,6 +415,9 @@
     "description": "These crystal lenses fit over the eyes. While wearing them, your vision improves significantly out to a range of 1 foot, granting you Darkvision within that range and Advantage on Intelligence (Investigation) checks made to examine something within that range.",
     "name": "Eyes of Minute Seeing"
   },
+  "eyes-of-minute-seeing.grants.0": {
+    "description": "Intelligence (Investigation) checks to examine something within 1 foot"
+  },
   "eyes-of-the-eagle": {
     "description": "These crystal lenses fit over the eyes. While wearing them, you have Advantage on Wisdom (Perception) checks that rely on sight. In conditions of clear visibility, you can make out details of even extremely distant creatures and objects as small as 2 feet across.",
     "name": "Eyes of the Eagle"
@@ -502,6 +514,9 @@
     "attunementReq": "by a Paladin",
     "description": "+3 bonus to attack and damage. Deals +2d10 radiant damage to fiends and undead. While held, allies within 10 feet gain Advantage on saves against spells and magical effects.",
     "name": "Holy Avenger"
+  },
+  "holy-avenger.grants.1": {
+    "description": "Saving throws against spells and other magical effects"
   },
   "horn-of-blasting": {
     "description": "You can take a Magic action to blow the horn, which emits a thunderous blast in a 30-foot Cone that is audible out to 600 feet. Each creature in the Cone makes a DC 15 Constitution saving throw. On a failed save, a creature takes 5d8 Thunder damage and has the Deafened condition for 1 minute. On a successful save, a creature takes half as much damage only. Glass or crystal objects in the Cone that aren’t being worn or carried take 10d8 Thunder damage. Each use of the horn’s magic has a 20 percent chance of causing the horn to explode. The explosion deals 10d6 Force damage to the user and destroys the horn.",
@@ -745,6 +760,9 @@
     "description": "You have a +2 bonus to attack rolls and damage rolls made with this magic weapon. While holding this weapon, you can cause it to emit green Dim Light out to 10 feet, either as a Bonus Action or after you roll Initiative, or you can extinguish the light as a Bonus Action. While holding this weapon, you can take a Bonus Action to alter its form, turning it into a 6-inch rod (for ease of storage) or a 10-foot pole, or reverting it a Quarterstaff; the weapon will elongate only as far as the surrounding space allows. In certain forms, the weapon has the following additional properties. Acrobatic Assist (Quarterstaff and 10-Foot Pole Forms Only). While holding this weapon, you have Advantage on Dexterity (Acrobatics) checks. Attack Deflection (Quarterstaff Form Only). When you are hit by an attack while holding the weapon, you can take a Reaction to twirl the weapon around you, gaining a +5 bonus to your Armor Class against the triggering attack, potentially causing the attack to miss you. You can’t use this property again until you finish a Short or Long Rest. Ranged Weapon (Quarterstaff Form Only). This weapon has the Thrown property with a normal range of 30 feet and a long range of 120 feet. Immediately after you make a ranged attack with the weapon, it flies back to your hand.",
     "name": "Quarterstaff of the Acrobat"
   },
+  "quarterstaff-of-the-acrobat.grants.1": {
+    "description": "Dexterity (Acrobatics) checks while held (Quarterstaff or pole form)"
+  },
   "ring-of-animal-influence": {
     "description": "This ring has 3 charges, and it regains 1d3 expended charges daily at dawn. While wearing the ring, you can expend 1 charge to cast one of the following spells (save DC 13) from it: Animal Friendship Fear (affects Beasts only) Speak with Animals",
     "name": "Ring of Animal Influence"
@@ -819,6 +837,9 @@
   "ring-of-warmth": {
     "description": "If you take Cold damage while wearing this ring, the ring reduces the damage you take by 2d8. In addition, while wearing this ring, you and everything you wear and carry are unharmed by temperatures of 0 degrees Fahrenheit or lower.",
     "name": "Ring of Warmth"
+  },
+  "ring-of-warmth.grants.0": {
+    "description": "Cold damage you take is reduced by 2d8"
   },
   "ring-of-water-walking": {
     "description": "While wearing this ring, you cast Water Walk from it, targeting only yourself.",
@@ -957,6 +978,9 @@
   "spellguard-shield.grants.0": {
     "description": "Saving throws against spells and other magical effects"
   },
+  "spellguard-shield.grants.1": {
+    "description": "Spell attack rolls against you have Disadvantage"
+  },
   "sphere-of-annihilation": {
     "description": "This 2-foot-diameter black sphere is a hole in the multiverse, hovering in space and stabilized by a magical field surrounding it. The sphere obliterates all matter it passes through and all matter that passes through it. Artifacts are the exception. Unless an Artifact is susceptible to damage from a Sphere of Annihilation , it passes through the sphere unscathed. Anything else that touches the sphere but isn’t wholly engulfed and obliterated by it takes 8d10 Force damage. Controlling the Sphere. A Sphere of Annihilation is stationary until someone takes control of it. If you are within 60 feet of a sphere, you can take a Magic action to make a DC 25 Intelligence (Arcana) check. On a successful check, you control the sphere until the start of your next turn, and if it was under another creature’s control, that creature loses control of the sphere. On a failed check, the sphere moves 10 feet toward you in a straight line. While in control of the sphere, you can take a Bonus Action to cause it to move in one direction of your choice, up to a number of feet equal to 5 times your Intelligence modifier (minimum 5 feet). Any creature whose space the sphere enters must succeed on a DC 19 Dexterity saving throw or be touched by it, taking 8d10 Force damage. A creature reduced to 0 Hit Points by this damage is obliterated, leaving its possessions behind but no other physical remains. Sphere Interactions.",
     "name": "Sphere of Annihilation"
@@ -999,6 +1023,9 @@
     "attunementReq": "by a sorcerer, warlock, or wizard",
     "description": "+2 to spell attacks. Has 50 charges for powerful spells. The staff regains 4d6 + 2 expended charges daily at dawn. Grants Advantage on saves vs spells. Can absorb spells targeting you to regain charges. Retributive Strike option.",
     "name": "Staff of the Magi"
+  },
+  "staff-of-the-magi.grants.1": {
+    "description": "Saving throws against spells"
   },
   "staff-of-the-python": {
     "description": "As a Magic action, you can throw this staff so that it lands in an unoccupied space within 10 feet of you, causing the staff to become a Giant Constrictor Snake in that space. The snake is under your control and shares your Initiative count, taking its turn immediately after yours. On your turn, you can mentally command the snake (no action required) if it is within 60 feet of you and you don’t have the Incapacitated condition. You decide what action the snake takes and where it moves during its turn, or you can issue it a general command, such as to attack your enemies or guard a location. Absent commands from you, the snake defends itself. As a Bonus Action, you can command the snake to revert to staff form in its current space, and you can’t use the staff’s property again for 1 hour. If the snake is reduced to 0 Hit Points, it dies and reverts to its staff form; the staff then shatters and is destroyed. If the snake reverts to staff form before losing all its Hit Points, it regains all of them.",

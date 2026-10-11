@@ -78,6 +78,13 @@ function checkAggregate(sources: ReadonlyArray<GrantSource>): void {
     assertResolves(adv.description);
   }
   for (const f of agg.rollFloors) assertResolves(f.description);
+  for (const n of [
+    ...agg.incomingAttackAdvantages,
+    ...agg.incomingAttackDisadvantages,
+    ...agg.defenseNotes,
+  ]) {
+    assertResolves(n.description);
+  }
   for (const t of agg.tempHpGrants) assertResolves(t.trigger);
   for (const g of agg.activatableGroups) assertResolves(g.label);
   for (const b of agg.grantBundles) {
