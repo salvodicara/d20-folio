@@ -21,6 +21,7 @@ import type {
   PendingConcentrationSave,
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
+import { changeConcentration } from "@/lib/play/concentration";
 import { takeDamage } from "@/lib/play/damage";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
@@ -74,14 +75,14 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import { polymorphPriorSnapshot, revertBuildFromPrior } from "@/lib/polymorph";
+import { polymorphPriorSnapshot } from "@/lib/polymorph";
 import { getBeast } from "@/data/beasts";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
-import { concentrationStatusKeys, endStatuses, endsConcentration } from "@/lib/status";
+import { endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { evaluateGrants } from "@/lib/grants";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -1805,37 +1806,23 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const prev = character.session.concentration;
     // Retain the transformed body fields for a surgical concentration inverse.
     const before = character;
-    // S7 — a Polymorph SELF-form is sustained by its spell's Concentration, so
-    // ENDING or SWAPPING that concentration ends the form: restore the caster's own
-    // AC/speeds/scores (the `prior` snapshot) + retract the Beast Temp HP + drop the
-    // form, all in the SAME `set` (mirrors the while-active retract seam below).
-    // Fires only when the dropped spell IS the active form's spell (a swap into a
-    // DIFFERENT spell, or a manual clear); `assumePolymorphForm` calls this BEFORE
-    // stamping `polymorphForm`, so a self-assume never trips it.
+    // The next character (statuses the dropped spell held end with it; a self Beast
+    // form sustained by it ends too) — see `changeConcentration` in lib/play.
+    const change = changeConcentration(character, spell, {
+      ...(opts?.castLevel !== undefined ? { castLevel: opts.castLevel } : {}),
+      ...(opts?.retractedFormTempHp !== undefined
+        ? { retractedFormTempHp: opts.retractedFormTempHp }
+        : {}),
+    });
     const form = character.session.polymorphForm;
-    const retractForm = form !== undefined && prev === form.spellId && prev !== spell;
-    const revertBuild = retractForm ? revertBuildFromPrior(form.prior) : undefined;
-    // Concentration is a flag on the statuses it holds: when it ENDS or SWAPS,
-    // every status the dropped (old) spell holds ends with it (Fly, Haste, Bless
-    // lit on yourself, a condition spell's hidden countdown), through the ONE
-    // pure `endStatuses` patch. On a swap only the OLD spell's statuses end —
-    // the new spell's state stays the cast's own act. The prior fields are
-    // snapshotted for an atomic undo.
-    const priorActive = character.session.activeFeatures ?? [];
-    const droppedActiveKeys = prev && prev !== spell ? concentrationStatusKeys(prev) : [];
+    const { revertBuild, droppedActiveKeys } = change;
+    const retractForm = revertBuild !== undefined;
     const droppedActiveKeySet = new Set(droppedActiveKeys);
+    const priorActive = character.session.activeFeatures ?? [];
     const priorActiveSpellCastLevels = character.session.activeSpellCastLevels;
     const priorEffectTimers = character.session.effectTimers;
     const priorEffectBoundaries = character.session.effectBoundaries;
-    const {
-      activeFeatures: nextActive,
-      activeSpellCastLevels: nextActiveSpellCastLevels,
-      effectTimers: nextEffectTimers,
-      effectBoundaries: nextEffectBoundaries,
-    } = endStatuses(character.session, droppedActiveKeys);
     const priorConcentrationConditions = character.session.concentrationConditions;
-    const nextConcentrationConditions =
-      prev && prev !== spell ? undefined : priorConcentrationConditions;
     const priorPendingConcentrationSaves = get().combatPendingConcentrationSaves;
     const nextPendingConcentrationSaves =
       prev !== spell ? [] : priorPendingConcentrationSaves;
@@ -1889,36 +1876,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         combatActiveEffects: nextLocalEffects,
         combatLegacyActiveEffects: nextLegacyEffects,
         combatPendingConcentrationSaves: nextPendingConcentrationSaves,
-        character: {
-          ...character,
-          // S7 — fold the body-restore patch when the form is retracted.
-          ...(revertBuild
-            ? { character: { ...character.character, ...revertBuild } }
-            : {}),
-          session: {
-            ...character.session,
-            concentration: spell,
-            concentrationCastLevel:
-              spell && opts?.castLevel && opts.castLevel > 0
-                ? Math.round(opts.castLevel)
-                : undefined,
-            activeFeatures: nextActive,
-            activeSpellCastLevels: nextActiveSpellCastLevels,
-            effectTimers: nextEffectTimers,
-            effectBoundaries: nextEffectBoundaries,
-            concentrationConditions: nextConcentrationConditions,
-            // S7 — drop the form + retract the Beast Temp HP to the caster's own.
-            ...(retractForm
-              ? {
-                  polymorphForm: undefined,
-                  hp: {
-                    ...character.session.hp,
-                    temp: opts?.retractedFormTempHp ?? form.prior.tempHp,
-                  },
-                }
-              : {}),
-          },
-        },
+        character: change.doc,
       });
       // The engine twin of the teardown (fresh read: it composes ONTO the doc
       // the set above just wrote, so the legacy field changes are never lost).
@@ -1981,7 +1939,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             : {}),
           session: {
             ...cur.session,
-            ...(retractForm
+            ...(retractForm && form
               ? {
                   polymorphForm: form,
                   hp: { ...cur.session.hp, temp: before.session.hp.temp },
