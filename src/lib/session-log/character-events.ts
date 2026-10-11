@@ -37,11 +37,22 @@ export function combatEventToPlayEvent(
     case "rider-use":
       return { kind: "action", actor: me, source: event.rider };
     case "hp-damage":
-      return { kind: "damage", amount: event.amount, target: me };
     case "hp-heal":
-      return { kind: "heal", amount: event.amount, target: me };
     case "temp-hp-gain":
-      return { kind: "temp-hp", amount: event.amount, target: me };
+      return {
+        kind:
+          event.kind === "hp-damage"
+            ? "damage"
+            : event.kind === "hp-heal"
+              ? "heal"
+              : "temp-hp",
+        amount: event.amount,
+        target: me,
+        // A follow-up line on myself: my own action did it.
+        ...(event.source
+          ? { actor: me, source: event.source, provenance: "manual" as const }
+          : {}),
+      };
     case "condition-gain":
     case "condition-loss":
       return {
@@ -49,7 +60,27 @@ export function combatEventToPlayEvent(
         conditionId: event.conditionId,
         gained: event.kind === "condition-gain",
         target: me,
+        ...(event.kind === "condition-gain" && event.source
+          ? { source: event.source }
+          : {}),
       };
+    case "effect-given":
+      return event.effect === "condition"
+        ? {
+            kind: "condition",
+            conditionId: event.conditionId ?? "",
+            gained: true,
+            target: event.target,
+            ...(event.source ? { source: event.source } : {}),
+          }
+        : {
+            kind: event.effect,
+            amount: event.amount ?? 0,
+            target: event.target,
+            actor: me,
+            ...(event.source ? { source: event.source } : {}),
+            provenance: "manual",
+          };
     case "concentration-start":
     case "concentration-end":
       return {

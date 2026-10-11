@@ -92,14 +92,32 @@ export type CombatEvent =
       rider: LocText;
       effect: ActionEffect;
     }
-  /** The character took damage (HP reduced). `amount` is the total incoming hit. */
-  | { kind: "hp-damage"; amount: number; current: number; max: number }
+  /** The character took damage (HP reduced). `amount` is the total incoming hit.
+   *  `source` (on these four kinds): the character's own action that caused it, when
+   *  the follow-up line under a used card says so. */
+  | { kind: "hp-damage"; amount: number; current: number; max: number; source?: LocText }
   /** The character regained HP (a heal — NOT a rest, which has its own kind). */
-  | { kind: "hp-heal"; amount: number; current: number; max: number }
+  | { kind: "hp-heal"; amount: number; current: number; max: number; source?: LocText }
   /** Temporary HP were gained (pool set to `amount`; temp HP don't stack). */
-  | { kind: "temp-hp-gain"; amount: number }
+  | { kind: "temp-hp-gain"; amount: number; source?: LocText }
   /** A condition was gained. */
-  | { kind: "condition-gain"; conditionId: string }
+  | { kind: "condition-gain"; conditionId: string; source?: LocText }
+  /**
+   * The character's action did something to ANOTHER creature, declared on the
+   * follow-up line under the used card (owner 2026-10-11): healed Aria 8, the goblin
+   * took 9, the goblin failed the save and is Paralyzed. `target` is the combatant id
+   * (`pc-<uid>` / `monster-<n>`); `targetName` is the user-authored name this sheet's
+   * log shows (the session report resolves names from the party and the encounter).
+   */
+  | {
+      kind: "effect-given";
+      effect: "heal" | "damage" | "temp-hp" | "condition";
+      target: string;
+      targetName: string;
+      amount?: number;
+      conditionId?: string;
+      source?: LocText;
+    }
   /** A condition was lost / removed. */
   | { kind: "condition-loss"; conditionId: string }
   /**

@@ -72,6 +72,100 @@ describe("combatEventToPlayEvent", () => {
     });
   });
 
+  it("a follow-up line on another creature records target, amount, actor and source", () => {
+    const source = { custom: "Cure Wounds" };
+    expect(
+      combatEventToPlayEvent(
+        {
+          kind: "effect-given",
+          effect: "heal",
+          target: "pc-aria",
+          targetName: "Aria",
+          amount: 8,
+          source,
+        },
+        ME
+      )
+    ).toEqual({
+      kind: "heal",
+      amount: 8,
+      target: "pc-aria",
+      actor: ME,
+      source,
+      provenance: "manual",
+    });
+    expect(
+      combatEventToPlayEvent(
+        {
+          kind: "effect-given",
+          effect: "damage",
+          target: "monster-1",
+          targetName: "Goblin",
+          amount: 9,
+          source,
+        },
+        ME
+      )
+    ).toMatchObject({ kind: "damage", amount: 9, target: "monster-1", actor: ME });
+    expect(
+      combatEventToPlayEvent(
+        {
+          kind: "effect-given",
+          effect: "temp-hp",
+          target: "pc-aria",
+          targetName: "Aria",
+          amount: 5,
+        },
+        ME
+      )
+    ).toMatchObject({ kind: "temp-hp", amount: 5, target: "pc-aria", actor: ME });
+    expect(
+      combatEventToPlayEvent(
+        {
+          kind: "effect-given",
+          effect: "condition",
+          target: "monster-1",
+          targetName: "Goblin",
+          conditionId: "paralyzed",
+          source,
+        },
+        ME
+      )
+    ).toEqual({
+      kind: "condition",
+      conditionId: "paralyzed",
+      gained: true,
+      target: "monster-1",
+      source,
+    });
+  });
+
+  it("a follow-up line on myself keeps the sheet line and adds actor and source", () => {
+    const source = { custom: "Cure Wounds" };
+    expect(
+      combatEventToPlayEvent(
+        { kind: "hp-heal", amount: 8, current: 18, max: 20, source },
+        ME
+      )
+    ).toEqual({
+      kind: "heal",
+      amount: 8,
+      target: ME,
+      actor: ME,
+      source,
+      provenance: "manual",
+    });
+    expect(
+      combatEventToPlayEvent({ kind: "condition-gain", conditionId: "prone", source }, ME)
+    ).toEqual({
+      kind: "condition",
+      conditionId: "prone",
+      gained: true,
+      target: ME,
+      source,
+    });
+  });
+
   it("records an effect running out as the end of a status", () => {
     expect(
       combatEventToPlayEvent({ kind: "effect-expired", sourceId: "rage" }, ME)
