@@ -72,6 +72,17 @@ export interface SrdMetamagicOption {
    * meaningful (the app surfaces the option + debits SP; it never re-routes the
    * action economy or rolls dice — golden rule 21).
    */
+  /**
+   * Per-cast economy change: the cast is taken with this slot instead of an
+   * Action (Quickened: "change the casting time to a Bonus Action").
+   */
+  castsAs?: "bonus";
+  /**
+   * Per-cast duration change, in rounds: a duration of at least `minRounds` is
+   * multiplied by `factor`, capped at `maxRounds` (Extended: "double its
+   * duration to a maximum duration of 24 hours", spells of 1 minute or longer).
+   */
+  extendsDuration?: { factor: number; minRounds: number; maxRounds: number };
   appliesWhen?: {
     requiresSave?: boolean;
     requiresActionCastingTime?: boolean;
@@ -112,6 +123,8 @@ export const SRD_METAMAGIC: SrdMetamagicOption[] = [
   {
     id: "extended-spell",
     cost: 1,
+    // 1 minute = 10 rounds; 24 hours = 14,400 rounds.
+    extendsDuration: { factor: 2, minRounds: 10, maxRounds: 14_400 },
     // "a spell that has a duration of 1 minute or longer" — no cantrip qualifies
     // (and we carry no structured duration to gate levelled spells finer).
     appliesWhen: { excludesCantrip: true },
@@ -126,6 +139,7 @@ export const SRD_METAMAGIC: SrdMetamagicOption[] = [
   {
     id: "quickened-spell",
     cost: 2,
+    castsAs: "bonus",
     // "change the casting time ... from an action to a Bonus Action" — only a
     // spell whose casting time is an Action can be Quickened.
     appliesWhen: { requiresActionCastingTime: true },

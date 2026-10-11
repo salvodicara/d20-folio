@@ -111,6 +111,7 @@ import {
   type MetamagicCastRow,
 } from "@/components/sheet/CastLevelModal";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
+import { castEconomySlot, withMetamagicDuration } from "@/lib/play/metamagic";
 import { getSpellById } from "@/data/spells";
 import { buildCastOptions, slotUsageKey, bareSlotIsPact } from "@/lib/cast-options";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
@@ -278,10 +279,12 @@ function activateActionState(
         concentrationLogIds.length > 0 &&
         current.character?.session.concentration === "" &&
         (current.character.session.activeFeatures ?? []).includes(key);
-      if (activated) current.setActiveFeature(key, false);
-      if (action.source === "spell") current.setActiveSpellCastLevel(key, previousLevel);
+      // Timers first: lighting the state armed its own default countdown, which
+      // `restoreTimer` would otherwise re-plant after the deactivation drops it.
       restoreTimer?.();
       restoreBoundary?.();
+      if (activated) current.setActiveFeature(key, false);
+      if (action.source === "spell") current.setActiveSpellCastLevel(key, previousLevel);
       restoreActivationTrackers?.();
       if (canRestoreConcentration) {
         current.setConcentration(previousConcentration, {
@@ -1372,7 +1375,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         : null;
     const selectedMetamagicCost = metamagicCost(metamagicIds);
     const targets = pendingResolutionFor(action)?.targets ?? [];
-    const castAction = withSelfRecipient(action, targets, selfCombatantId());
+    const castAction = withMetamagicDuration(
+      withSelfRecipient(action, targets, selfCombatantId()),
+      metamagicIds
+    );
     const message = execution.ritual
       ? t("combat.castRitualToast", { name: action.name })
       : t("combat.actionUsedToast", { name: action.name });
@@ -1405,7 +1411,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           kind: "action-use",
           action: action.nameLoc,
           effect: logTypeForAction(action),
-          slot: action.type,
+          slot: castEconomySlot(action.type, metamagicIds),
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
         });
         return () => {
@@ -2057,7 +2063,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           // hand-set state; arms the round countdown. Read state FRESH.
           const targets = applyResolution?.targets ?? [];
           const activation = activateActionState(
-            withSelfRecipient(action, targets, selfCombatantId()),
+            withMetamagicDuration(
+              withSelfRecipient(action, targets, selfCombatantId()),
+              cast?.metamagicIds ?? []
+            ),
             castLevel
           );
           // Log a STRUCTURED reaction-use event (always the reaction slot → red row).
