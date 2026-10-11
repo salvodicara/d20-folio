@@ -7543,7 +7543,7 @@ button.trk-pip:active {
   align-items: center;
   padding: 3px 10px;
   font-family: var(--font-numeric);
-  font-size: 0.55rem;
+  font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -13585,7 +13585,7 @@ textarea.input.sess-notes-edit {
    reads), token-driven (no hardcoded hex). */
 .sc-autofail {
   font-family: var(--font-numeric);
-  font-size: 9px;
+  font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -15705,12 +15705,12 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   right: -3px;
   bottom: -3px;
   min-width: 17px;
-  height: 15px;
+  height: 16px;
   padding: 0 3px;
   display: grid;
   place-items: center;
   border-radius: 8px;
-  font-size: 9px;
+  font-size: var(--text-micro);
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.02em;
@@ -18358,7 +18358,7 @@ button.econ-tok-filter:active .econ-disc {
   align-items: center;
   gap: var(--sp-2, 8px);
   font-family: var(--font-numeric);
-  font-size: 0.62rem;
+  font-size: var(--text-micro); /* the 10px legibility floor (was 0.62rem = 9.92px) */
   letter-spacing: 0.06em;
   color: var(--text-faint);
 }

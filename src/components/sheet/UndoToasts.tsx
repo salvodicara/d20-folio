@@ -147,7 +147,7 @@ function ToastItem({
           textAnchor="middle"
           dominantBaseline="central"
           fontFamily="var(--font-numeric)"
-          fontSize="8"
+          fontSize="10"
           fontWeight="700"
           fill="currentColor"
         >
