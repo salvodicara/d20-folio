@@ -160,6 +160,9 @@ describe("RestModal — multiclass Hit Point Dice", () => {
     openRest();
     addDie();
     addDie();
+    expect(rollField()).toHaveAccessibleDescription(
+      "Roll 2 Hit Dice (d10/d6) · without Constitution"
+    );
     enterRoll("16");
     expect(confirm()).toBeEnabled();
     enterRoll("21");

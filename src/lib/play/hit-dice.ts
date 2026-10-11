@@ -22,16 +22,21 @@ type HitDiceBearer = Pick<CharacterData, "classes" | "hitDieType"> &
   Partial<Pick<CharacterData, "hitDiceTotalOverride">>;
 
 /**
- * The character's Hit Point Dice, largest die first. A manual total override, or
- * a class with no catalogue table (homebrew), counts in the stored die.
+ * The character's Hit Point Dice, largest die first. A single class, a manual
+ * total override, or a class with no catalogue table (homebrew) counts in the
+ * stored die.
  */
 export function hitDicePool(character: HitDiceBearer): HitDiceEntry[] {
   const override = character.hitDiceTotalOverride;
+  const classes = getClasses(character);
   if (override !== undefined && override !== null) {
     return [{ die: character.hitDieType, count: override }];
   }
+  if (classes.length === 1) {
+    return [{ die: character.hitDieType, count: classes[0]?.level ?? 0 }];
+  }
   const counts = new Map<HitDieSize, number>();
-  for (const entry of getClasses(character)) {
+  for (const entry of classes) {
     const die =
       getClassTable(resolveClassId(entry.classId))?.hitDie ?? character.hitDieType;
     counts.set(die, (counts.get(die) ?? 0) + entry.level);
@@ -54,4 +59,18 @@ export function hitDiceTotalRange(
     left -= taken;
   }
   return { min: count, max };
+}
+
+/** The dice as a player reads them: "2d8" for one size, "d10/d6" sizes for a mixed pool. */
+export function hitDiceLabel(
+  pool: ReadonlyArray<HitDiceEntry>,
+  count?: number
+): { sizes: string; dice: string | null } {
+  const sizes = pool.map((entry) => `d${entry.die}`).join("/");
+  const [only] = pool;
+  return {
+    sizes,
+    dice:
+      pool.length === 1 && only && count !== undefined ? `${count}d${only.die}` : null,
+  };
 }
