@@ -1188,6 +1188,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
             grants: [
               { type: "language", language: "Aquan" },
               { type: "swim-speed", amount: 60 },
+              { type: "air-and-water-breathing" },
               { type: "always-prepared-spell", spellId: "create-or-destroy-water" },
               { type: "always-prepared-spell", spellId: "ice-storm" },
               { type: "always-prepared-spell", spellId: "tsunami" },

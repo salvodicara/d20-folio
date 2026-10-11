@@ -219,6 +219,7 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
     // free-cast pattern the feats use (Fey-Touched → Misty Step 1/LR).
     grants: [
       { type: "swim-speed", amount: "equal-to-walking" },
+      { type: "air-and-water-breathing" },
       { type: "always-prepared-spell", spellId: "water-breathing", spellAbility: "CHA" },
       {
         type: "free-cast-spell",
