@@ -1609,7 +1609,7 @@ function RailSlot({
         {slot.pactMagic ? "P" : ""}
       </span>
       <span
-        className="sc-pips"
+        className="sc-pips sc-pips-tap"
         role="group"
         aria-label={t("character.slotsAvailableAria", {
           available,
@@ -1620,10 +1620,12 @@ function RailSlot({
         {Array.from({ length: total }).map((_, i) => {
           const isOn = i < available;
           return (
+            // An UNROTATED hit box around the rotated gem: the boxes tile the row
+            // edge to edge, so a tap always lands on the gem under the finger.
             <button
               key={i}
               type="button"
-              className={cn("sc-pip", !isOn && "used")}
+              className="sc-pip-hit"
               aria-label={
                 isOn
                   ? t("character.slotSpendAria", { level: slot.level })
@@ -1631,7 +1633,9 @@ function RailSlot({
               }
               onClick={isOn ? spend : restore}
               disabled={!isOn && used <= 0}
-            />
+            >
+              <span className={cn("sc-pip", !isOn && "used")} aria-hidden />
+            </button>
           );
         })}
       </span>
