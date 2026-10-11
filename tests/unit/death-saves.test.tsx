@@ -82,7 +82,7 @@ describe("DeathSaves", () => {
     render(<DeathSaves />);
     // A 20px gem alone is a fiddly touch target at the table — every tappable pip
     // in the app grows its hit box with an oversized pseudo (`button.trk-pip::before`
-    // / `button.sc-pip::before`); the death-save pips ride the same mechanism via
+    // / the `.sc-pip-hit` box); the death-save pips ride the same mechanism via
     // the Tailwind pseudo utilities (relative + before:-inset-2).
     for (const pip of screen.getAllByRole("button", { pressed: false })) {
       expect(pip.className).toContain("before:-inset-2");
