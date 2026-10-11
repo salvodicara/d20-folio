@@ -24,6 +24,11 @@ import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { takeDamage } from "@/lib/play/damage";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
+  recoverPerTurnTrackers as recoverPerTurnTrackersOf,
+  setActiveSpellCastLevel as setActiveSpellCastLevelTo,
+  setActiveState,
+} from "@/lib/play/states";
+import {
   recoverTrackerByAltCost as recoverByAltCost,
   recoverTrackerByMinSlot as recoverByMinSlot,
   recoverTrackerFromSpellSlot as recoverFromSpellSlot,
@@ -60,8 +65,6 @@ import {
   gainsHeroicInspirationOnLongRest,
   applyShortRestExhaustion,
   getInitiativeTrackerTopUps,
-  resolvePerTurnRecoveryTrackerIds,
-  resolveActiveTimedEffects,
   resolveActiveBoundaryEffects,
   resolveActiveStatesEndingOn,
   resolveActiveStatesEndingOnRest,
@@ -2739,75 +2742,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    const active = character.session.activeFeatures ?? [];
-    if (active.includes(key) === isActive) return;
-    const next = isActive ? [...active, key] : active.filter((k) => k !== key);
-    const levels = isActive
-      ? character.session.activeSpellCastLevels
-      : Object.fromEntries(
-          Object.entries(character.session.activeSpellCastLevels ?? {}).filter(
-            ([entryKey]) => entryKey !== key
-          )
-        );
-    const previousTimers = character.session.effectTimers ?? {};
-    const timers = Object.fromEntries(
-      Object.entries(previousTimers).filter(([timerKey]) => timerKey !== key)
-    );
-    const boundaries = Object.fromEntries(
-      Object.entries(character.session.effectBoundaries ?? {}).filter(
-        ([boundaryKey]) => boundaryKey !== key
-      )
-    );
-    let updated: CharacterDoc = {
-      ...character,
-      session: {
-        ...character.session,
-        activeFeatures: next,
-        activeSpellCastLevels:
-          levels && Object.keys(levels).length > 0 ? levels : undefined,
-        effectTimers: Object.keys(timers).length > 0 ? timers : undefined,
-        effectBoundaries: Object.keys(boundaries).length > 0 ? boundaries : undefined,
-      },
-    };
-    if (isActive) {
-      const timed = resolveActiveTimedEffects(updated).find(
-        (effect) => effect.activeKey === key
-      );
-      if (timed) {
-        updated = {
-          ...updated,
-          session: {
-            ...updated.session,
-            effectTimers: {
-              ...(updated.session.effectTimers ?? {}),
-              // Lit during the current round: that round is already this state's.
-              [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound(updated.id) },
-            },
-          },
-        };
-      }
-    }
-    set({ character: updated });
+    const session = setActiveState(character, key, isActive, litRound(character.id));
+    if (session) set({ character: { ...character, session } });
   },
 
   setActiveSpellCastLevel: (key, level) => {
     if (get().readonly) return;
     const character = get().character;
     if (!character) return;
-    const previous = character.session.activeSpellCastLevels ?? {};
-    const levels =
-      level !== undefined && Number.isFinite(level) && level > 0
-        ? { ...previous, [key]: Math.round(level) }
-        : Object.fromEntries(
-            Object.entries(previous).filter(([entryKey]) => entryKey !== key)
-          );
     set({
       character: {
         ...character,
-        session: {
-          ...character.session,
-          activeSpellCastLevels: Object.keys(levels).length > 0 ? levels : undefined,
-        },
+        session: setActiveSpellCastLevelTo(character, key, level),
       },
     });
   },
@@ -2816,22 +2762,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    const ids = resolvePerTurnRecoveryTrackerIds(character);
-    if (ids.length === 0) return null;
-    // Snapshot the prior entries for undo, then drop each (missing === used: 0,
-    // the canonical "unspent" state — same convention `restoreTrackerEntry` uses).
-    const prior = new Map<string, { used: number } | undefined>();
-    let trackers = character.session.trackers;
-    for (const id of ids) {
-      prior.set(id, character.session.trackers[id]);
-      trackers = restoreTrackerEntry(trackers, id, undefined);
-    }
-    set({
-      character: {
-        ...character,
-        session: { ...character.session, trackers },
-      },
-    });
+    const recovered = recoverPerTurnTrackersOf(character);
+    if (!recovered) return null;
+    const { prior } = recovered;
+    set({ character: { ...character, session: recovered.session } });
     return () => {
       const cur = get().character;
       if (!cur) return;
