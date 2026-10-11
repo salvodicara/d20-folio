@@ -22,6 +22,7 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { takeDamage } from "@/lib/play/damage";
+import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   recoverTrackerByAltCost as recoverByAltCost,
   recoverTrackerByMinSlot as recoverByMinSlot,
@@ -50,7 +51,6 @@ import {
   commitWorldCondition,
   commitWorldVitals,
   drainedTemporary,
-  vitalsWithTemporary,
 } from "@/lib/play/world-commit";
 import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
@@ -71,11 +71,7 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import {
-  polymorphBuildPatch,
-  polymorphPriorSnapshot,
-  revertBuildFromPrior,
-} from "@/lib/polymorph";
+import { polymorphPriorSnapshot, revertBuildFromPrior } from "@/lib/polymorph";
 import { getBeast } from "@/data/beasts";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
@@ -3175,7 +3171,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // doc is the atomic undo target — nothing below mutates it in place).
     const before = character;
     const prior = polymorphPriorSnapshot(character);
-    const buildPatch = polymorphBuildPatch(beast, prior);
 
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
@@ -3183,32 +3178,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     const cur = get().character;
     if (!cur) return null;
-    // Apply the Beast: stamp AC/speeds/scores into the overrides + Temp HP = the
-    // Beast's HP (max-wins), and record the active form + snapshot on the session.
-    // WORLD-FIRST for the temp pool (the S7 wild-shape temp-HP flow): the world
-    // cell adopts the Beast Temp HP; the whole-doc undo below restores the
-    // prior world value by construction (the world rides the session).
-    const newTemp = Math.max(cur.session.hp.temp, beast.hp);
-    const engine = commitWorldVitals(cur, "temp-hp-set", (state) => {
-      if (state.vitals.hitPoints.temporary.current === newTemp) return null;
-      state.vitals = vitalsWithTemporary(
-        state.vitals,
-        drainedTemporary(state.vitals.hitPoints.temporary, newTemp)
-      );
-      return state;
-    });
-    set({
-      character: {
-        ...cur,
-        character: { ...cur.character, ...buildPatch },
-        session: {
-          ...(engine ? engine.session : cur.session),
-          hp: { ...cur.session.hp, temp: newTemp },
-          polymorphForm: { beastId, spellId, prior },
-        },
-      },
-    });
-    get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
+    // Apply the Beast (AC/speeds/scores, Temp HP = the Beast's HP, max-wins, the
+    // active form + snapshot); the whole-doc undo below restores the prior world
+    // value by construction (the world rides the session).
+    const assumed = assumeBeastForm(cur, beast, spellId, prior);
+    set({ character: assumed.doc });
+    get().logEvent({ kind: "temp-hp-gain", amount: assumed.tempHp });
 
     return () => set({ character: before });
   },
@@ -3223,36 +3198,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const before = character; // undo = re-assume the exact same form
     const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
     const legacyEffectsBefore = get().combatLegacyActiveEffects;
-    const revert = revertBuildFromPrior(form.prior);
     // Restore the body, retract the Beast Temp HP, drop the form. The form's
     // concentration (only if it is still the form's spell — a prior swap would
     // already have retracted the form) then ends through the ONE concentration
     // teardown, so its held statuses, engine occurrence and log line end with it.
     const clearConc = character.session.concentration === form.spellId;
-    // WORLD-FIRST for the retracted temp pool (the S7 wild-shape temp-HP
-    // flow); the whole-doc undo below restores the prior world value.
-    const engine = commitWorldVitals(character, "temp-hp-set", (state) => {
-      if (state.vitals.hitPoints.temporary.current === form.prior.tempHp) return null;
-      state.vitals = vitalsWithTemporary(
-        state.vitals,
-        drainedTemporary(state.vitals.hitPoints.temporary, form.prior.tempHp)
-      );
-      return state;
-    });
-    const { polymorphForm: _dropped, ...restSession } = engine
-      ? engine.session
-      : character.session;
-    void _dropped;
-    set({
-      character: {
-        ...character,
-        character: { ...character.character, ...revert },
-        session: {
-          ...restSession,
-          hp: { ...character.session.hp, temp: form.prior.tempHp },
-        },
-      },
-    });
+    const dropped = dropBeastForm(character);
+    if (!dropped) return null;
+    set({ character: dropped });
     const concentrationLogIds = clearConc
       ? get().setConcentration("", { undoable: false })
       : [];
