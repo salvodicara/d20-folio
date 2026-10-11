@@ -17,6 +17,7 @@ vi.mock("@/lib/firebase", () => ({
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
 import { addCondition, removeCondition } from "@/lib/play/conditions";
 import { takeDamage } from "@/lib/play/damage";
+import { recoverTrackerByMinSlot, restorePrior } from "@/lib/play/recoveries";
 import {
   restoreSpellSlot,
   restoreTracker,
@@ -178,5 +179,39 @@ describe("takeDamage", () => {
     const before = structuredClone(doc);
     takeDamage(doc, 8);
     expect(doc).toEqual(before);
+  });
+});
+
+describe("recoveries", () => {
+  const cleric = (session: Partial<SessionState> = {}) =>
+    makeCharacterDoc(
+      {
+        classId: "cleric",
+        level: 6,
+        features: [{ srdId: "cleric-channel-divinity" }],
+        spellSlots: [
+          { level: 1, total: 4 },
+          { level: 2, total: 3 },
+          { level: 3, total: 3 },
+        ],
+      },
+      session
+    );
+
+  it("buys back a use with the cheapest eligible slot, and the prior values undo it", () => {
+    const spent = cleric({ trackers: { "cleric-channel-divinity": { used: 99 } } });
+    const total = spent.session.trackers["cleric-channel-divinity"]?.used ?? 0;
+    const commit = recoverTrackerByMinSlot(spent, "cleric-channel-divinity", 2);
+    if (!commit) throw new Error("expected a recovery");
+    expect(commit.worldActionId).toBeNull();
+    expect(commit.session.spellSlots["2"]?.used).toBe(1);
+    expect(commit.session.trackers["cleric-channel-divinity"]?.used).toBe(total - 1);
+    const undone = restorePrior(commit.session, commit.prior);
+    expect(undone.spellSlots["2"]?.used).toBe(0);
+    expect(undone.trackers["cleric-channel-divinity"]).toEqual({ used: 99 });
+  });
+
+  it("does nothing while the tracker still has uses", () => {
+    expect(recoverTrackerByMinSlot(cleric(), "cleric-channel-divinity", 2)).toBeNull();
   });
 });

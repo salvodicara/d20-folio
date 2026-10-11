@@ -23,6 +23,14 @@ import type {
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { takeDamage } from "@/lib/play/damage";
 import {
+  recoverTrackerByAltCost as recoverByAltCost,
+  recoverTrackerByMinSlot as recoverByMinSlot,
+  recoverTrackerFromSpellSlot as recoverFromSpellSlot,
+  restorePrior,
+  restoreTrackerEntry,
+  type PlayCommit,
+} from "@/lib/play/recoveries";
+import {
   addCondition as addConditionTo,
   removeCondition as removeConditionFrom,
 } from "@/lib/play/conditions";
@@ -52,7 +60,6 @@ import {
   gainsHeroicInspirationOnLongRest,
   applyShortRestExhaustion,
   getInitiativeTrackerTopUps,
-  getSpellSlotTrackerRecovery,
   resolvePerTurnRecoveryTrackerIds,
   resolveActiveTimedEffects,
   resolveActiveBoundaryEffects,
@@ -169,25 +176,6 @@ export interface D20TestCommitResult {
  * UI window (`ActionLog maxEntries`) is a smaller VIEW slice on top of this bound.
  */
 export const MAX_LOG = 200;
-
-/**
- * Restore a tracker entry to its prior value, or REMOVE it (rebuild without the
- * key) when it had none before — the undo helper for the S4 apply actions. Pure;
- * never mutates (a missing entry === `used: 0`, so an absent key is the canonical
- * "unspent" state). Avoids a dynamic `delete` (lint-clean, immutable).
- */
-function restoreTrackerEntry(
-  trackers: Record<string, TrackerState>,
-  trackerId: string,
-  prior: TrackerState | undefined
-): Record<string, TrackerState> {
-  if (prior !== undefined) return { ...trackers, [trackerId]: prior };
-  const next: Record<string, TrackerState> = {};
-  for (const [k, v] of Object.entries(trackers)) {
-    if (k !== trackerId) next[k] = v;
-  }
-  return next;
-}
 
 function trackerStateEquals(a: TrackerState | undefined, b: TrackerState): boolean {
   if (!a || a.used !== b.used) return false;
@@ -948,6 +936,25 @@ function undoWorldAction(get: () => CharacterState, actionId: string): void {
   const undone = undoCharacterAction(doc, uid, world, actionId);
   if (!undone) return;
   useCharacterStore.setState({ character: { ...doc, session: undone.session } });
+}
+
+/** Apply one pure play transition and return its undo: the exact journal reverse
+ *  when the world committed it, otherwise the legacy prior values restored. */
+function applyPlayCommit(
+  get: () => CharacterState,
+  character: CharacterDoc,
+  commit: PlayCommit
+): () => void {
+  useCharacterStore.setState({ character: { ...character, session: commit.session } });
+  const { worldActionId, prior } = commit;
+  if (worldActionId) return () => undoWorldAction(get, worldActionId);
+  return () => {
+    const cur = get().character;
+    if (!cur) return;
+    useCharacterStore.setState({
+      character: { ...cur, session: restorePrior(cur.session, prior) },
+    });
+  };
 }
 
 /**
@@ -3414,232 +3421,24 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    const option = getSpellSlotTrackerRecovery(character).get(trackerId);
-    if (!option || option.availableSlotLevels.length === 0) return null;
-    // Spend the LOWEST available slot (cheapest conversion) and restore the
-    // tracker uses. Snapshot both for undo.
-    const slotLevel = option.availableSlotLevels[0];
-    if (slotLevel === undefined) return null;
-    // The only grantor (Bard) has no Pact Magic, so the recovered slot is always
-    // a normal slot (key = `String(level)` via slotUsageKey's normal branch).
-    const slotKey = slotUsageKey({ level: slotLevel });
-    const priorSlotUsed = character.session.spellSlots[slotKey]?.used ?? 0;
-    const priorTracker = character.session.trackers[trackerId];
-    // WORLD-FIRST: the slot debit and the pool restore commit as ONE journal
-    // action (atomic); the mirror writes both legacy counters in the same
-    // value, and the undo is the exact journal reverse.
-    const engine = commitWorldVitals(character, "tracker-slot-recovery", (state) => {
-      const slotCell = state.resources.standardSpellSlots[String(slotLevel)];
-      const pool = state.resources.pools[trackerId];
-      if (!slotCell || slotCell.current < 1 || pool?.kind !== "count") return null;
-      const capacity =
-        pool.capacity.override ??
-        (pool.capacity.base.kind === "derived" ? pool.capacity.base.value : null);
-      if (capacity === null) return null;
-      const target = Math.max(0, Math.min(capacity, capacity - option.newUsed));
-      if (target <= pool.current) return null;
-      state.resources.standardSpellSlots[String(slotLevel)] = cellWith(
-        slotCell,
-        slotCell.current - 1
-      );
-      state.resources.pools[trackerId] = cellWith(pool, target);
-      return state;
-    });
-    if (engine) {
-      set({ character: { ...character, session: engine.session } });
-      return () => undoWorldAction(get, engine.actionId);
-    }
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          spellSlots: {
-            ...character.session.spellSlots,
-            [slotKey]: { used: priorSlotUsed + 1 },
-          },
-          trackers: {
-            ...character.session.trackers,
-            [trackerId]: { used: option.newUsed },
-          },
-        },
-      },
-    });
-    return () => {
-      const cur = get().character;
-      if (!cur) return;
-      const revertedTrackers = restoreTrackerEntry(
-        cur.session.trackers,
-        trackerId,
-        priorTracker
-      );
-      set({
-        character: {
-          ...cur,
-          session: {
-            ...cur.session,
-            spellSlots: {
-              ...cur.session.spellSlots,
-              [slotKey]: { used: priorSlotUsed },
-            },
-            trackers: revertedTrackers,
-          },
-        },
-      });
-    };
+    const commit = recoverFromSpellSlot(character, trackerId);
+    return commit ? applyPlayCommit(get, character, commit) : null;
   },
 
   recoverTrackerByAltCost: (trackerId, fromTracker, amount) => {
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    if (amount <= 0) return null;
-    // Resolve both trackers' live totals/used (the engine is the single source).
-    const resolved = new Map(resolveTrackers(character).map((tr) => [tr.id, tr]));
-    const target = resolved.get(trackerId);
-    const pool = resolved.get(fromTracker);
-    if (!target || !pool) return null;
-    // Only when the target is exhausted AND the pool can afford the cost.
-    if (target.total - target.used > 0) return null;
-    if (pool.total - pool.used < amount) return null;
-
-    const priorTarget = character.session.trackers[trackerId];
-    const priorPool = character.session.trackers[fromTracker];
-    const priorPoolUsed = priorPool?.used ?? 0;
-    // WORLD-FIRST: the funding-pool spend and the one-use restore commit as
-    // ONE journal action; the undo is the exact journal reverse.
-    const engine = commitWorldVitals(character, "tracker-alt-recovery", (state) => {
-      const pool = state.resources.pools[fromTracker];
-      const targetCell = state.resources.pools[trackerId];
-      if (
-        pool?.kind !== "count" ||
-        targetCell?.kind !== "count" ||
-        pool.current < amount
-      ) {
-        return null;
-      }
-      const capacity =
-        targetCell.capacity.override ??
-        (targetCell.capacity.base.kind === "derived"
-          ? targetCell.capacity.base.value
-          : null);
-      if (capacity === null || targetCell.current >= capacity) return null;
-      state.resources.pools[fromTracker] = cellWith(pool, pool.current - amount);
-      state.resources.pools[trackerId] = cellWith(targetCell, targetCell.current + 1);
-      return state;
-    });
-    if (engine) {
-      set({ character: { ...character, session: engine.session } });
-      return () => undoWorldAction(get, engine.actionId);
-    }
-    // Restore one use of the target (used − 1, floored at 0); spend the pool.
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          trackers: {
-            ...character.session.trackers,
-            [trackerId]: { used: Math.max(0, target.used - 1) },
-            [fromTracker]: { used: priorPoolUsed + amount },
-          },
-        },
-      },
-    });
-    return () => {
-      const cur = get().character;
-      if (!cur) return;
-      let reverted = restoreTrackerEntry(cur.session.trackers, trackerId, priorTarget);
-      reverted = restoreTrackerEntry(reverted, fromTracker, priorPool);
-      set({
-        character: { ...cur, session: { ...cur.session, trackers: reverted } },
-      });
-    };
+    const commit = recoverByAltCost(character, trackerId, fromTracker, amount);
+    return commit ? applyPlayCommit(get, character, commit) : null;
   },
 
   recoverTrackerByMinSlot: (trackerId, minLevel) => {
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    // Only when the target tracker is exhausted (no normal uses left).
-    const target = resolveTrackers(character).find((t) => t.id === trackerId);
-    if (!target || target.total - target.used > 0) return null;
-    // Cheapest UNSPENT slot of level ≥ minLevel (the slot-funded alt-recovery
-    // requires a level N+ slot). The grantors (Cleric, Ranger) have no Pact
-    // Magic, so every eligible slot is a normal slot (key = `String(level)`).
-    const eligible = character.character.spellSlots
-      .filter((s) => {
-        const used = character.session.spellSlots[slotUsageKey(s)]?.used ?? 0;
-        return s.level >= minLevel && s.total - used > 0;
-      })
-      .map((s) => s.level)
-      .sort((a, b) => a - b);
-    const slotLevel = eligible[0];
-    if (slotLevel === undefined) return null;
-
-    const slotKey = slotUsageKey({ level: slotLevel });
-    const priorSlotUsed = character.session.spellSlots[slotKey]?.used ?? 0;
-    const priorTracker = character.session.trackers[trackerId];
-    // WORLD-FIRST: the eligible-slot debit and the one-use restore commit as
-    // ONE journal action; the undo is the exact journal reverse.
-    const engine = commitWorldVitals(character, "tracker-min-slot-recovery", (state) => {
-      const slotCell = state.resources.standardSpellSlots[String(slotLevel)];
-      const pool = state.resources.pools[trackerId];
-      if (!slotCell || slotCell.current < 1 || pool?.kind !== "count") return null;
-      const capacity =
-        pool.capacity.override ??
-        (pool.capacity.base.kind === "derived" ? pool.capacity.base.value : null);
-      if (capacity === null || pool.current >= capacity) return null;
-      state.resources.standardSpellSlots[String(slotLevel)] = cellWith(
-        slotCell,
-        slotCell.current - 1
-      );
-      state.resources.pools[trackerId] = cellWith(pool, pool.current + 1);
-      return state;
-    });
-    if (engine) {
-      set({ character: { ...character, session: engine.session } });
-      return () => undoWorldAction(get, engine.actionId);
-    }
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          spellSlots: {
-            ...character.session.spellSlots,
-            [slotKey]: { used: priorSlotUsed + 1 },
-          },
-          trackers: {
-            ...character.session.trackers,
-            // Restore exactly ONE use (alt-recovery semantics).
-            [trackerId]: { used: Math.max(0, target.used - 1) },
-          },
-        },
-      },
-    });
-    return () => {
-      const cur = get().character;
-      if (!cur) return;
-      const revertedTrackers = restoreTrackerEntry(
-        cur.session.trackers,
-        trackerId,
-        priorTracker
-      );
-      set({
-        character: {
-          ...cur,
-          session: {
-            ...cur.session,
-            spellSlots: {
-              ...cur.session.spellSlots,
-              [slotKey]: { used: priorSlotUsed },
-            },
-            trackers: revertedTrackers,
-          },
-        },
-      });
-    };
+    const commit = recoverByMinSlot(character, trackerId, minLevel);
+    return commit ? applyPlayCommit(get, character, commit) : null;
   },
 
   applyAtZeroHpInterrupt: (trackerId) => {
