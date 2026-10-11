@@ -31,6 +31,7 @@ import { srdEn } from "@/i18n/srd-en";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { ALL_SKILLS } from "@/lib/skills";
 import { netRollState } from "@/lib/condition-effects";
+import { conditionDamageDefenseRules } from "@/lib/condition";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
 
@@ -543,17 +544,26 @@ export function deriveDamageDefenses(
     | Partial<Record<"resistance" | "immunity" | "vulnerability", string[]>>
     | undefined,
   pb: number,
-  heavyArmorEquipped: boolean
+  heavyArmorEquipped: boolean,
+  /** Effective condition ids (`effectiveSessionConditions`): Petrified resists all. */
+  conditions: ReadonlyArray<string>
 ): DamageDefenses {
+  // Condition resistances from the 2024 table; an empty type list means all damage.
+  const conditionResistances = conditionDamageDefenseRules(conditions).filter(
+    (rule) => rule.kind === "resistance"
+  );
   return {
-    allDamageResistance: aggregate.allDamageResistance,
-    resistances: new Set(
-      deriveDefenseKind(
+    allDamageResistance:
+      aggregate.allDamageResistance ||
+      conditionResistances.some((rule) => rule.selector.damageTypes.length === 0),
+    resistances: new Set([
+      ...(deriveDefenseKind(
         aggregate.damageResistances,
         overrides.resistance,
         sessionDefenses?.resistance
-      ).effective as DamageType[]
-    ),
+      ).effective as DamageType[]),
+      ...conditionResistances.flatMap((rule) => rule.selector.damageTypes),
+    ]),
     immunities: new Set(
       deriveDefenseKind(
         aggregate.damageImmunities,

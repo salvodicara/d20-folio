@@ -446,6 +446,45 @@ export const CONDITION_RULES = deepFreeze({
   },
 } satisfies ConditionRuleTable);
 
+/**
+ * Close a list of condition ids over the table's implications (Unconscious →
+ * Incapacitated + Prone, Paralyzed → Incapacitated, …). Input order is kept and
+ * implied ids are appended once; unknown or custom ids pass through untouched.
+ */
+export function withImpliedConditions(ids: ReadonlyArray<string>): string[] {
+  const closed = [...new Set(ids)];
+  for (let index = 0; index < closed.length; index += 1) {
+    const id = closed[index] as string;
+    if (!(NON_EXHAUSTION_CONDITION_IDS as ReadonlyArray<string>).includes(id)) continue;
+    for (const implied of occurrenceRule(id as NonExhaustionConditionId).implications) {
+      if (!closed.includes(implied)) closed.push(implied);
+    }
+  }
+  return closed;
+}
+
+/**
+ * The unrestricted damage-defense rules (no delivery or trait filter) the table
+ * grants to a creature with these condition ids — Petrified's resistance to all
+ * damage. Unknown or custom ids contribute nothing.
+ */
+export function conditionDamageDefenseRules(
+  ids: ReadonlyArray<string>
+): Readonly<DamageDefenseRule>[] {
+  return [...new Set(ids)].flatMap((id) =>
+    (NON_EXHAUSTION_CONDITION_IDS as ReadonlyArray<string>).includes(id)
+      ? occurrenceRule(id as NonExhaustionConditionId).effects.flatMap((effect) =>
+          effect.kind === "damage-defense" &&
+          effect.rule.selector.deliveries.length === 0 &&
+          effect.rule.selector.requiredTraits.length === 0 &&
+          effect.rule.selector.forbiddenTraits.length === 0
+            ? [effect.rule]
+            : []
+        )
+      : []
+  );
+}
+
 /** Exact condition-instance boundary; multiplicity is retained, identities are unique. */
 export function conformConditionInstances(
   value: unknown

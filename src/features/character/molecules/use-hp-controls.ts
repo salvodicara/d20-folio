@@ -43,6 +43,7 @@ import {
 } from "@/lib/damage-intake";
 import { vitalDeathSaves, vitalHp } from "@/lib/character-vitals";
 import { deriveDamageDefenses } from "@/lib/views/sheet-view";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { getEquipment } from "@/data/equipment";
@@ -173,7 +174,8 @@ export function useHpControls(): HpControls {
       },
       session.sessionDefenses,
       effectiveProficiencyBonus(totalLevel(charData), charData.proficiencyBonusOverride),
-      isHeavyArmorEquipped(charData.equipment, getEquipment)
+      isHeavyArmorEquipped(charData.equipment, getEquipment),
+      effectiveSessionConditions(session)
     );
   }, [charData, session]);
 
