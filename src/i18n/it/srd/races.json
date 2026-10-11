@@ -177,49 +177,44 @@
   "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt": {
     "label": "Balzo delle Nuvole"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt": {
-    "description": "Ti teletrasporti magicamente fino a 9 metri in uno spazio non occupato che puoi vedere.",
-    "name": "Balzo delle Nuvole"
-  },
   "goliath.traits.giant-ancestry.grants.0.options.fires-burn": {
     "label": "Bruciatura del Fuoco"
-  },
-  "goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn": {
-    "description": "Infliggi 1d10 danni da Fuoco aggiuntivi al bersaglio.",
-    "name": "Bruciatura del Fuoco",
-    "trigger": "quando colpisci un bersaglio con un tiro per colpire e infliggi danni"
   },
   "goliath.traits.giant-ancestry.grants.0.options.frosts-chill": {
     "label": "Gelo del Ghiaccio"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill": {
-    "description": "Infliggi 1d6 danni da Freddo aggiuntivi al bersaglio e riduci la sua Velocità di 3 metri fino all'inizio del tuo prossimo turno.",
-    "name": "Gelo del Ghiaccio",
-    "trigger": "quando colpisci un bersaglio con un tiro per colpire e infliggi danni"
-  },
   "goliath.traits.giant-ancestry.grants.0.options.hills-tumble": {
     "label": "Spinta della Collina"
-  },
-  "goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble": {
-    "description": "Infliggi al bersaglio la condizione Prono.",
-    "name": "Spinta della Collina",
-    "trigger": "quando colpisci una creatura di taglia Grande o inferiore con un tiro per colpire e infliggi danni"
   },
   "goliath.traits.giant-ancestry.grants.0.options.stones-endurance": {
     "label": "Resistenza della Pietra"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance": {
-    "description": "Tira 1d12, aggiungi il tuo modificatore di Costituzione e riduci i danni che subisci di quel totale.",
-    "name": "Resistenza della Pietra",
-    "trigger": "quando subisci danni"
-  },
   "goliath.traits.giant-ancestry.grants.0.options.storms-thunder": {
     "label": "Tuono della Tempesta"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder": {
-    "description": "Infliggi 1d8 danni da Tuono alla creatura che ti ha danneggiato.",
-    "name": "Tuono della Tempesta",
-    "trigger": "quando subisci danni da una creatura entro 18 metri da te"
+  "goliath.traits.giant-ancestry.mechanics.actions.0": {
+    "description": "Balzo delle Nuvole: ti teletrasporti magicamente fino a 9 metri in uno spazio non occupato che puoi vedere.",
+    "summary": "Balzo delle Nuvole: teletrasporto fino a 9 m"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.1": {
+    "description": "Bruciatura del Fuoco: quando colpisci un bersaglio con un tiro per colpire e infliggi danni, infliggi 1d10 danni da Fuoco aggiuntivi al bersaglio.",
+    "summary": "Bruciatura del Fuoco: se colpisci, +1d10 danni da Fuoco"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.2": {
+    "description": "Gelo del Ghiaccio: quando colpisci un bersaglio con un tiro per colpire e infliggi danni, infliggi 1d6 danni da Freddo aggiuntivi al bersaglio e riduci la sua Velocità di 3 metri fino all'inizio del tuo prossimo turno.",
+    "summary": "Gelo del Ghiaccio: se colpisci, +1d6 Freddo, Velocità −3 m"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.3": {
+    "description": "Spinta della Collina: quando colpisci una creatura di taglia Grande o inferiore con un tiro per colpire e infliggi danni, le infliggi la condizione Prono.",
+    "summary": "Spinta della Collina: se colpisci, il bersaglio cade Prono"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.4": {
+    "description": "Resistenza della Pietra: quando subisci danni, tira 1d12, aggiungi il tuo modificatore di Costituzione e riduci i danni che subisci di quel totale.",
+    "summary": "Resistenza della Pietra: riduci i danni di 1d12 + COS"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.5": {
+    "description": "Tuono della Tempesta: quando subisci danni da una creatura entro 18 metri da te, infliggi 1d8 danni da Tuono a quella creatura.",
+    "summary": "Tuono della Tempesta: 1d8 Tuono a chi ti ha colpito"
   },
   "goliath.traits.large-form": {
     "description": "A partire dal 5° livello del personaggio, puoi cambiare la tua taglia a Grande come Azione Bonus se ti trovi in uno spazio sufficientemente ampio. Questo cambiamento di taglia dura 10 minuti o fino a quando non lo termini (nessuna azione richiesta). Per quella durata, hai Vantaggio alle prove di Forza e la tua Velocità aumenta di 3 metri. Una volta usato questo tratto, non puoi usarlo di nuovo finché non completi un Riposo Lungo.",

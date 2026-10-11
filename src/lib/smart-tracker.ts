@@ -5504,6 +5504,12 @@ function resolveFeatureActions(
             raceActionKey(raceForActions.id, trait, raceActionIndex)
           ),
         };
+        // A reaction's structured trigger token, as the feature and invocation
+        // branches emit it. The effect line stays: the row is named after the
+        // trait, so the effect is what says which option this is (Giant Ancestry).
+        if (action.type === "reaction" && action.trigger) {
+          summary.trigger = uiText(`combat.reactionTrigger_${action.trigger}`);
+        }
         if (tspec) {
           const total = resolveTrackerTotal(tspec.total, character);
           const used = session.trackers[trackerId]?.used ?? 0;

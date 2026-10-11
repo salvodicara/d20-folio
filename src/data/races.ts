@@ -671,95 +671,84 @@ const PUBLIC_RACES: SrdRaceData[] = [
         ],
       },
       {
-        // M9 — Storm's Thunder added (was missing). Action type intentionally
-        // unset here: the six ancestry choices have different action economies
-        // (Cloud's Jaunt = Bonus, Stone's/Storm's = Reaction, the other three
-        // trigger automatically on a hit). Until A4 choice-modeling lands and
-        // picks one ancestry, surfacing a single action card would mislead.
         id: "giant-ancestry",
+        // One shared PB / Long Rest counter (session id
+        // "race:goliath:giant-ancestry") for whichever boon was chosen.
+        //
+        // The chosen giant is a single-select `choice-grant-bundle` (bundleKey
+        // "goliath-giant-ancestry"); each boon is a real action row gated on its
+        // option by `requiresBundleOption`, so only the chosen one surfaces. The
+        // on-hit boons (Fire/Frost/Hill) are optional per-use riders, NOT
+        // always-on weapon damage, so they are free action rows the player spends
+        // after a hit rather than `damage-rider` grants (which the attack engine
+        // would over-report as bonus damage on every swing). The options carry no
+        // grants of their own: the pick only selects which action row appears.
         mechanics: {
           tracker: { total: "PB", recovery: "long-rest" },
+          actions: [
+            {
+              id: "clouds-jaunt",
+              type: "bonus",
+              requiresBundleOption: {
+                bundleKey: "goliath-giant-ancestry",
+                optionId: "clouds-jaunt",
+              },
+            },
+            {
+              id: "fires-burn",
+              type: "free",
+              requiresBundleOption: {
+                bundleKey: "goliath-giant-ancestry",
+                optionId: "fires-burn",
+              },
+            },
+            {
+              id: "frosts-chill",
+              type: "free",
+              requiresBundleOption: {
+                bundleKey: "goliath-giant-ancestry",
+                optionId: "frosts-chill",
+              },
+            },
+            {
+              id: "hills-tumble",
+              type: "free",
+              requiresBundleOption: {
+                bundleKey: "goliath-giant-ancestry",
+                optionId: "hills-tumble",
+              },
+            },
+            {
+              id: "stones-endurance",
+              type: "reaction",
+              trigger: "takeDamage",
+              requiresBundleOption: {
+                bundleKey: "goliath-giant-ancestry",
+                optionId: "stones-endurance",
+              },
+            },
+            {
+              id: "storms-thunder",
+              type: "reaction",
+              trigger: "takeDamage",
+              requiresBundleOption: {
+                bundleKey: "goliath-giant-ancestry",
+                optionId: "storms-thunder",
+              },
+            },
+          ],
         },
-        // M-species-extended — single-select `choice-grant-bundle` (bundleKey
-        // "goliath-giant-ancestry"): the chosen giant surfaces its boon as a
-        // `granted-action` row on the Combat page, each spending one use of the
-        // shared PB/Long-Rest tracker above (cost → the trait's own tracker id
-        // "goliath-giant-ancestry"). The on-hit boons (Fire/Frost/Hill) are
-        // optional per-use riders, NOT always-on weapon damage, so they are
-        // modelled as action rows with an on-hit `trigger` rather than
-        // `damage-rider` grants (which the attack engine would over-report as
-        // unconditional bonus damage on every swing).
         grants: [
           {
             type: "choice-grant-bundle",
             bundleKey: "goliath-giant-ancestry",
             options: [
-              {
-                id: "clouds-jaunt",
-                grants: [
-                  {
-                    id: "clouds-jaunt",
-                    type: "granted-action",
-                    slot: "bonus",
-                    cost: { kind: "tracker", trackerId: "goliath-giant-ancestry" },
-                  },
-                ],
-              },
-              {
-                id: "fires-burn",
-                grants: [
-                  {
-                    id: "fires-burn",
-                    type: "granted-action",
-                    slot: "free",
-                    cost: { kind: "tracker", trackerId: "goliath-giant-ancestry" },
-                  },
-                ],
-              },
-              {
-                id: "frosts-chill",
-                grants: [
-                  {
-                    id: "frosts-chill",
-                    type: "granted-action",
-                    slot: "free",
-                    cost: { kind: "tracker", trackerId: "goliath-giant-ancestry" },
-                  },
-                ],
-              },
-              {
-                id: "hills-tumble",
-                grants: [
-                  {
-                    id: "hills-tumble",
-                    type: "granted-action",
-                    slot: "free",
-                    cost: { kind: "tracker", trackerId: "goliath-giant-ancestry" },
-                  },
-                ],
-              },
-              {
-                id: "stones-endurance",
-                grants: [
-                  {
-                    id: "stones-endurance",
-                    type: "granted-action",
-                    slot: "reaction",
-                    cost: { kind: "tracker", trackerId: "goliath-giant-ancestry" },
-                  },
-                ],
-              },
-              {
-                id: "storms-thunder",
-                grants: [
-                  {
-                    id: "storms-thunder",
-                    type: "granted-action",
-                    slot: "reaction",
-                    cost: { kind: "tracker", trackerId: "goliath-giant-ancestry" },
-                  },
-                ],
-              },
+              { id: "clouds-jaunt", grants: [] },
+              { id: "fires-burn", grants: [] },
+              { id: "frosts-chill", grants: [] },
+              { id: "hills-tumble", grants: [] },
+              { id: "stones-endurance", grants: [] },
+              { id: "storms-thunder", grants: [] },
             ],
           },
         ],

@@ -177,49 +177,44 @@
   "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt": {
     "label": "Cloud's Jaunt"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.clouds-jaunt.grants.clouds-jaunt": {
-    "description": "Magically teleport up to 30 feet to an unoccupied space you can see.",
-    "name": "Cloud's Jaunt"
-  },
   "goliath.traits.giant-ancestry.grants.0.options.fires-burn": {
     "label": "Fire's Burn"
-  },
-  "goliath.traits.giant-ancestry.grants.0.options.fires-burn.grants.fires-burn": {
-    "description": "Deal an extra 1d10 Fire damage to the target.",
-    "name": "Fire's Burn",
-    "trigger": "when you hit a target with an attack roll and deal damage"
   },
   "goliath.traits.giant-ancestry.grants.0.options.frosts-chill": {
     "label": "Frost's Chill"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.frosts-chill.grants.frosts-chill": {
-    "description": "Deal an extra 1d6 Cold damage to the target and reduce its Speed by 10 feet until the start of your next turn.",
-    "name": "Frost's Chill",
-    "trigger": "when you hit a target with an attack roll and deal damage"
-  },
   "goliath.traits.giant-ancestry.grants.0.options.hills-tumble": {
     "label": "Hill's Tumble"
-  },
-  "goliath.traits.giant-ancestry.grants.0.options.hills-tumble.grants.hills-tumble": {
-    "description": "Give the target the Prone condition.",
-    "name": "Hill's Tumble",
-    "trigger": "when you hit a Large or smaller creature with an attack roll and deal damage"
   },
   "goliath.traits.giant-ancestry.grants.0.options.stones-endurance": {
     "label": "Stone's Endurance"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.stones-endurance.grants.stones-endurance": {
-    "description": "Roll 1d12, add your Constitution modifier, and reduce the damage you take by that total.",
-    "name": "Stone's Endurance",
-    "trigger": "when you take damage"
-  },
   "goliath.traits.giant-ancestry.grants.0.options.storms-thunder": {
     "label": "Storm's Thunder"
   },
-  "goliath.traits.giant-ancestry.grants.0.options.storms-thunder.grants.storms-thunder": {
-    "description": "Deal 1d8 Thunder damage to the creature that damaged you.",
-    "name": "Storm's Thunder",
-    "trigger": "when you take damage from a creature within 60 feet of you"
+  "goliath.traits.giant-ancestry.mechanics.actions.0": {
+    "description": "Cloud's Jaunt: magically teleport up to 30 feet to an unoccupied space you can see.",
+    "summary": "Cloud's Jaunt: teleport up to 30 ft"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.1": {
+    "description": "Fire's Burn: when you hit a target with an attack roll and deal damage, deal an extra 1d10 Fire damage to the target.",
+    "summary": "Fire's Burn: on a hit, +1d10 Fire damage"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.2": {
+    "description": "Frost's Chill: when you hit a target with an attack roll and deal damage, deal an extra 1d6 Cold damage to the target and reduce its Speed by 10 feet until the start of your next turn.",
+    "summary": "Frost's Chill: on a hit, +1d6 Cold, Speed −10 ft"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.3": {
+    "description": "Hill's Tumble: when you hit a Large or smaller creature with an attack roll and deal damage, give the target the Prone condition.",
+    "summary": "Hill's Tumble: on a hit, the target falls Prone"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.4": {
+    "description": "Stone's Endurance: when you take damage, roll 1d12, add your Constitution modifier, and reduce the damage you take by that total.",
+    "summary": "Stone's Endurance: reduce the damage by 1d12 + CON"
+  },
+  "goliath.traits.giant-ancestry.mechanics.actions.5": {
+    "description": "Storm's Thunder: when you take damage from a creature within 60 feet of you, deal 1d8 Thunder damage to that creature.",
+    "summary": "Storm's Thunder: 1d8 Thunder to your attacker"
   },
   "goliath.traits.large-form": {
     "description": "Starting at character level 5, you can change your size to Large as a Bonus Action if you're in a big enough space. This size change lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can't use it again until you finish a Long Rest.",
