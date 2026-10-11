@@ -212,6 +212,12 @@ export interface EncounterMonster extends EncounterCombatantBase {
   bardicInspirationDie?: string;
   /** Held Heroic Inspiration for non-PC combatants. PCs read combat/state. */
   heroicInspiration?: boolean;
+  /**
+   * Spent limited uses of the stat block, keyed by `monsterLimitedUses` keys
+   * (`<section>:<entryId>` for a Recharge or N/Day entry, `legendary` for the
+   * legendary action pool). Absent or missing key = nothing spent.
+   */
+  spent?: Readonly<Record<string, number>>;
 }
 
 /**

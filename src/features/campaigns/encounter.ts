@@ -31,7 +31,7 @@ import type {
   EncounterPc,
   EncounterMonster,
 } from "@/types/campaign";
-import type { CreatureType } from "@/data/types";
+import type { CreatureType, MonsterStatBlock } from "@/data/types";
 import type { PortraitCrop } from "@/types/character";
 import type { CombatDefenseSnapshot } from "@/types/campaign";
 
@@ -91,6 +91,7 @@ const MONSTER_COMBATANT_KEYS = new Set([
   "defenses",
   "bardicInspirationDie",
   "heroicInspiration",
+  "spent",
 ]);
 
 function hasOnlyKeys(value: Record<string, unknown>, keys: ReadonlySet<string>): boolean {
@@ -116,6 +117,15 @@ function isEncounterPc(value: Record<string, unknown>): boolean {
     value.id === `pc-${value.memberUid}` &&
     nonEmptyString(value.characterId) &&
     (value.hidden === undefined || typeof value.hidden === "boolean")
+  );
+}
+
+function isSpentUses(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(
+      ([key, count]) => key !== "" && safeInteger(count) && count >= 1
+    )
   );
 }
 
@@ -158,7 +168,8 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
     (value.bardicInspirationDie !== undefined &&
       !nonEmptyString(value.bardicInspirationDie)) ||
     (value.heroicInspiration !== undefined &&
-      typeof value.heroicInspiration !== "boolean")
+      typeof value.heroicInspiration !== "boolean") ||
+    (value.spent !== undefined && !isSpentUses(value.spent))
   ) {
     return false;
   }
@@ -830,7 +841,8 @@ export function advanceTurn(state: EncounterState): EncounterState {
     idx = raw % order.length;
     const nextId = order[idx];
     if (nextId !== undefined && !dead.has(nextId)) {
-      return { ...state, currentCombatantId: nextId, round };
+      // A legendary creature regains its legendary actions when its turn starts.
+      return refillLegendaryPool({ ...state, currentCombatantId: nextId, round }, nextId);
     }
   }
   return state; // every candidate was a defeated monster — no live target (no-op)
@@ -1105,4 +1117,85 @@ export function pcEncounter(
     }
   }
   return null;
+}
+
+// ─── Limited uses (Recharge, N/Day, legendary actions) ─────────────────────
+
+const LIMITED_USE_SECTIONS = [
+  "traits",
+  "actions",
+  "bonusActions",
+  "reactions",
+  "legendaryActions",
+] as const;
+
+/** One counter a stat block declares: a Recharge or N/Day entry, or the legendary pool. */
+export interface MonsterLimitedUse {
+  key: string;
+  max: number;
+  kind: "recharge" | "uses" | "legendary";
+}
+
+/** Every limited use the stat block prints, in stat-block order, the legendary pool last. */
+export function monsterLimitedUses(block: MonsterStatBlock): MonsterLimitedUse[] {
+  const out: MonsterLimitedUse[] = [];
+  for (const section of LIMITED_USE_SECTIONS) {
+    for (const entry of block[section] ?? []) {
+      const key = `${section}:${entry.id}`;
+      if (entry.recharge) out.push({ key, max: 1, kind: "recharge" });
+      else if (entry.uses) out.push({ key, max: entry.uses.count, kind: "uses" });
+    }
+  }
+  if (block.legendary) {
+    out.push({ key: "legendary", max: block.legendary.uses, kind: "legendary" });
+  }
+  return out;
+}
+
+function withSpent(
+  monster: EncounterMonster,
+  key: string,
+  count: number
+): EncounterMonster {
+  const spent = Object.fromEntries(
+    Object.entries({ ...monster.spent, [key]: count }).filter(([, used]) => used > 0)
+  );
+  const next: EncounterMonster = { ...monster, spent };
+  if (Object.keys(spent).length === 0) delete next.spent;
+  return next;
+}
+
+/** Spend one use of `key`, never past `max` (a no-op at the limit). */
+export function spendMonsterUse(
+  state: EncounterState,
+  id: string,
+  key: string,
+  max: number
+): EncounterState {
+  return mapCombatant(state, id, (combatant) => {
+    if (combatant.kind === "pc") return combatant;
+    const used = combatant.spent?.[key] ?? 0;
+    return used >= max ? combatant : withSpent(combatant, key, used + 1);
+  });
+}
+
+/** Give one use of `key` back (a Recharge roll succeeded, or a correction). */
+export function restoreMonsterUse(
+  state: EncounterState,
+  id: string,
+  key: string
+): EncounterState {
+  return mapCombatant(state, id, (combatant) => {
+    if (combatant.kind === "pc") return combatant;
+    const used = combatant.spent?.[key] ?? 0;
+    return used <= 0 ? combatant : withSpent(combatant, key, used - 1);
+  });
+}
+
+function refillLegendaryPool(state: EncounterState, id: string): EncounterState {
+  return mapCombatant(state, id, (combatant) =>
+    combatant.kind === "monster" && combatant.spent?.legendary
+      ? withSpent(combatant, "legendary", 0)
+      : combatant
+  );
 }
