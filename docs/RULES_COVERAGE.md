@@ -1,4 +1,4 @@
-# Rules coverage map — 2026-10-11
+# Rules coverage map — 2026-10-11 (updated after the first fixes)
 
 Every SRD 5.2.1 rules element against today's `main`: auto = the engine computes it or one tap makes
 every consequence flow; 1-tap = one dedicated tap records it; manual = no dedicated support, but
@@ -14,8 +14,8 @@ over `catalogueActivities()` and the data modules. A closed gap updates its row 
 | Catalogue        | Backgrounds (4 × 5 facets)                                                                           | 20 / 0 / 0 / 0    | —                                                                                                   |
 | Catalogue        | Feats (19)                                                                                           | 9 / 4 / 6 / 0     | Grappler, Boons of Combat Prowess, Irresistible Offense, Spell Recall, Night Spirit have no grants  |
 | Catalogue        | Invocations (28)                                                                                     | 12 / 15 / 1 / 0   | Gift of the Protectors has no counter                                                               |
-| Catalogue        | Metamagic (10)                                                                                       | 0 / 8 / 2 / 0     | Quickened keeps the Action; Extended does not double the timer                                      |
-| Catalogue        | Magic items (258)                                                                                    | 52 / 50 / 148 / 8 | Existing grant kinds missing from item data (+N, damage riders, cast rows, breathing, speeds)       |
+| Catalogue        | Metamagic (10)                                                                                       | 1 / 8 / 1 / 0     | Quickened logs as a Bonus Action but does not block it (owner 2026-09-21: casts never block)        |
+| Catalogue        | Magic items (258)                                                                                    | 69 / 50 / 131 / 8 | Damage riders need an item-bound rider seam; cast rows, speeds, potions                             |
 | Catalogue        | Monster stat blocks (330, 1326 entries)                                                              | 0 / 0 / 1326 / 0  | `translateMonsterEntry` feeds no screen: actions, recharge, N/day, legendary pool are prose         |
 | Combat           | Attack, Dash, Hide, two-weapon (Light, Nick)                                                         | auto              | —                                                                                                   |
 | Combat           | Disengage, Help, Influence, Magic, Search, Study, Utilize                                            | 1-tap             | Logged only (no state needed)                                                                       |
@@ -41,9 +41,9 @@ over `catalogueActivities()` and the data modules. A closed gap updates its row 
 | Conditions       | Charmed, Deafened                                                                                    | manual            | Label only                                                                                          |
 | Rest & resources | Long rest, spell slots, Pact Magic, cantrip scaling, one slot per turn                               | auto              | Manual slot-pip spend not logged                                                                    |
 | Rest & resources | Short rest + Hit Point Dice                                                                          | 1-tap             | —                                                                                                   |
-| Rest & resources | Hit Point Dice with multiclass (mixed die sizes)                                                     | **impossible**    | One `hitDieType` → per-die pool from class levels                                                   |
+| Rest & resources | Hit Point Dice with multiclass (mixed die sizes)                                                     | 1-tap             | Total checked against the mixed pool; only the count spent is stored                                |
 | Rest & resources | Concentration (DC, one at a time, ends on Incapacitated)                                             | auto              | —                                                                                                   |
-| Rest & resources | Ritual, upcasting, potions, item charges                                                             | 1-tap             | Charges `1d6+3` parse as 1; long rest refills dawn charges                                          |
+| Rest & resources | Ritual, upcasting, potions, item charges                                                             | 1-tap             | Legacy dawn-recharge items still refill fully on a long rest (no dawn roll entry)                   |
 | Rest & resources | Material components with cost                                                                        | manual            | One-tap gp deduction on cast                                                                        |
 | Rest & resources | Max HP reduction (Harm, monster attacks)                                                             | **impossible**    | `hpMaxReduction` cleared by long rest                                                               |
 | Rest & resources | d20 penalty fading per long rest (Raise Dead)                                                        | **impossible**    | Status counted in rests carrying `roll-die-adjustment`                                              |
