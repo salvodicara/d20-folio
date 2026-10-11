@@ -21,6 +21,7 @@
  * every derived stat here without a legacy activation row, and key-identity
  * dedupe makes double-counting unrepresentable.
  */
+import { resolveBaseActionStateSources } from "@/lib/base-action-states";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import {
   resolveAllGrantSources,
@@ -114,9 +115,15 @@ export function aggregateCharacterGrants(
   session: AggregationSession
 ): AggregatedGrants {
   const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
+  const activeKeys = aggregationActiveKeys(session);
   return evaluateGrants(
-    [...resolveAllGrantSources(character, session.itemResources), ...encounterSources],
-    aggregationActiveKeys(session),
+    [
+      ...resolveAllGrantSources(character, session.itemResources),
+      ...encounterSources,
+      // A lit Dodge (a base action's state) carries its rules until it ends.
+      ...resolveBaseActionStateSources(activeKeys),
+    ],
+    activeKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {})),
     {
       level: totalLevel(character),

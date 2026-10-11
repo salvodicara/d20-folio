@@ -15,6 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { baseActionState } from "@/lib/base-action-states";
 import {
   actionTypeOf,
   activityFromAction,
@@ -7365,6 +7366,9 @@ function resolveTemporaryHpActions(
     // RA-04 — Grapple/Shove carry the live Unarmed Strike save DC (STR-governed);
     // every other base action forces no save.
     const isUnarmedStrikeOption = ba.id === "base-grapple" || ba.id === "base-shove";
+    // A base action that puts its user in a state (Dodge) lights it on use; the
+    // state ends by itself at its turn edge (`base-action-states.ts`).
+    const state = baseActionState(ba.id)?.grant;
     // The base action menu is an engine-authored bilingual table (not SRD data).
     actions.push({
       id: ba.id,
@@ -7407,6 +7411,15 @@ function resolveTemporaryHpActions(
       // spends the slot + engages Concentration on a concentration spell); this
       // note only bridges the two — no held-spell state is modeled.
       ...(ba.id === "base-ready" ? { description: uiText("combat.readySpellNote") } : {}),
+      ...(state
+        ? {
+            activatesKey: state.activeKey,
+            activeTurnBoundary: {
+              phase: state.duration.phase,
+              turns: state.duration.turns,
+            },
+          }
+        : {}),
       costsSlot: false,
       pinned: pinnedSet.has(ba.id),
       defaultPinned: false,
