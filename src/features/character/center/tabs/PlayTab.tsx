@@ -52,6 +52,7 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
+import { CastFollowUpLine } from "../CastFollowUpLine";
 import { tempHpRollFormula } from "@/lib/combat-resolution";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
@@ -1645,154 +1646,163 @@ function CombatActionCard({
   }
 
   return (
-    <UniversalCard
-      mode="combat-CTA"
-      kind={kind}
-      sealIcon={
-        itemPoolSeal ??
-        (action.source === "weapon" ? weaponSealIcon(action.weaponId) : undefined)
-      }
-      name={action.name}
-      slot={action.type}
-      spellLevel={action.source === "spell" ? (action.spellLevel ?? 0) : undefined}
-      cantripSealLabel={t("spells.cantripSeal")}
-      magical={action.source === "spell" && kind !== "spell"}
-      concentration={action.concentration}
-      concentrationTitle={t("combat.concentration")}
-      gloss={gloss}
-      verdict={verdict}
-      verdictOutcome={verdictOutcome}
-      riderSummary={
-        collapsedRiders.length > 0 ? <RiderSummary riders={collapsedRiders} /> : undefined
-      }
-      verdictBreakdown={
-        effectiveSummary.healingBreakdown
-          ? { flavor: "heal", lines: effectiveSummary.healingBreakdown }
-          : undefined
-      }
-      active={occupant}
-      ctaLabel={ctaVerb}
-      ctaAriaLabel={ctaAriaLabel}
-      // The committed occupant — the recessed "Used" treatment + the card's
-      // gold ring, so WHICH card spent the token stays legible while disabled.
-      ctaCommitted={occupant}
-      // The grammar's hard stops: a spent economy token (this card committed,
-      // slot at budget, Attack action fully swung) and a depleted pool are both
-      // DISABLED — never a tap that toasts "already used". Reversal lives on
-      // the undo system (5s toast · masthead · ⌘Z), not on the card.
-      ctaDisabled={cta.disabled}
-      // B2 — the persistent inline "why you can't use this" line (Stunned / No
-      // uses left), never shown on a spent card (the "Used" label says it). A
-      // condition-blocked card DIMS but stays tappable (the toast guard is the
-      // backstop, override-first); a depleted card is hard-disabled.
-      // BG3 grammar — a LIVE pip-attack card carries NO standing label: its CTA
-      // turns struck gold (`ctaEmphasis`) + the count rides hover/sr-only
-      // (`ctaTitle`).
-      ctaReason={!cta.spent ? (blockedReason ?? undefined) : undefined}
-      ctaEmphasis={cta.emphasis}
-      ctaTitle={cta.emphasis ? (attackCount ?? undefined) : undefined}
-      ctaDimmed={cta.dimmed}
-      onCommit={onCommit}
-      slotPips={slotData}
-      open={open}
-      onOpenChange={onOpenChange}
-      ariaExpandLabel={t("common.expand")}
-    >
-      {/* Pin/unpin lives in the detail foot (progressive disclosure) — the
+    <>
+      <UniversalCard
+        mode="combat-CTA"
+        kind={kind}
+        sealIcon={
+          itemPoolSeal ??
+          (action.source === "weapon" ? weaponSealIcon(action.weaponId) : undefined)
+        }
+        name={action.name}
+        slot={action.type}
+        spellLevel={action.source === "spell" ? (action.spellLevel ?? 0) : undefined}
+        cantripSealLabel={t("spells.cantripSeal")}
+        magical={action.source === "spell" && kind !== "spell"}
+        concentration={action.concentration}
+        concentrationTitle={t("combat.concentration")}
+        gloss={gloss}
+        verdict={verdict}
+        verdictOutcome={verdictOutcome}
+        riderSummary={
+          collapsedRiders.length > 0 ? (
+            <RiderSummary riders={collapsedRiders} />
+          ) : undefined
+        }
+        verdictBreakdown={
+          effectiveSummary.healingBreakdown
+            ? { flavor: "heal", lines: effectiveSummary.healingBreakdown }
+            : undefined
+        }
+        active={occupant}
+        ctaLabel={ctaVerb}
+        ctaAriaLabel={ctaAriaLabel}
+        // The committed occupant — the recessed "Used" treatment + the card's
+        // gold ring, so WHICH card spent the token stays legible while disabled.
+        ctaCommitted={occupant}
+        // The grammar's hard stops: a spent economy token (this card committed,
+        // slot at budget, Attack action fully swung) and a depleted pool are both
+        // DISABLED — never a tap that toasts "already used". Reversal lives on
+        // the undo system (5s toast · masthead · ⌘Z), not on the card.
+        ctaDisabled={cta.disabled}
+        // B2 — the persistent inline "why you can't use this" line (Stunned / No
+        // uses left), never shown on a spent card (the "Used" label says it). A
+        // condition-blocked card DIMS but stays tappable (the toast guard is the
+        // backstop, override-first); a depleted card is hard-disabled.
+        // BG3 grammar — a LIVE pip-attack card carries NO standing label: its CTA
+        // turns struck gold (`ctaEmphasis`) + the count rides hover/sr-only
+        // (`ctaTitle`).
+        ctaReason={!cta.spent ? (blockedReason ?? undefined) : undefined}
+        ctaEmphasis={cta.emphasis}
+        ctaTitle={cta.emphasis ? (attackCount ?? undefined) : undefined}
+        ctaDimmed={cta.dimmed}
+        onCommit={onCommit}
+        slotPips={slotData}
+        open={open}
+        onOpenChange={onOpenChange}
+        ariaExpandLabel={t("common.expand")}
+      >
+        {/* Pin/unpin lives in the detail foot (progressive disclosure) — the
           flagship row gesture is the Cast/Attack/Use CTA, so the secondary
           "keep this at top" control doesn't compete in the collapsed row. */}
-      {action.weaponFacts ? (
-        // The ONE shared weapon facts block (damage / to-hit / range + the
-        // glossed category / property / owned-mastery chips) — identical to
-        // the inventory WeaponCard by construction. Combat keeps its extras:
-        // the Versatile wield-stance toggle (between grid and chips) and the
-        // pin action (in the chip foot). The on-hit rider strip rides inside
-        // `WeaponFacts` from `weaponFacts.riders` (no double-render).
-        <WeaponFacts
-          facts={action.weaponFacts}
-          // RA-14 — the live TRACKED-ammunition count as one more fact row
-          // ("Arrows · 18"), present only when the player carries the matching
-          // ammo item (the engine stamps nothing otherwise). Debited by the
-          // attack commit; reads straight from the inventory (rule 6).
-          extraFacts={
-            effectiveSummary.ammo
-              ? [
-                  {
-                    label: localizeSrd(
-                      "equipment",
-                      effectiveSummary.ammo.itemId,
-                      "name",
-                      locale
-                    ),
-                    value: String(effectiveSummary.ammo.remaining),
-                    icon: Layers,
-                  },
-                ]
-              : undefined
-          }
-          footExtra={<PinAction pinned={pinned} label={pinLabel} onPin={onPin} />}
-          onSpendRider={(rider) => onSpendRider(action, rider)}
-          depletedTrackers={depletedTrackers}
-        >
-          {/* Item g — Versatile stance toggle: swaps the damage the VERDICT
+        {action.weaponFacts ? (
+          // The ONE shared weapon facts block (damage / to-hit / range + the
+          // glossed category / property / owned-mastery chips) — identical to
+          // the inventory WeaponCard by construction. Combat keeps its extras:
+          // the Versatile wield-stance toggle (between grid and chips) and the
+          // pin action (in the chip foot). The on-hit rider strip rides inside
+          // `WeaponFacts` from `weaponFacts.riders` (no double-render).
+          <WeaponFacts
+            facts={action.weaponFacts}
+            // RA-14 — the live TRACKED-ammunition count as one more fact row
+            // ("Arrows · 18"), present only when the player carries the matching
+            // ammo item (the engine stamps nothing otherwise). Debited by the
+            // attack commit; reads straight from the inventory (rule 6).
+            extraFacts={
+              effectiveSummary.ammo
+                ? [
+                    {
+                      label: localizeSrd(
+                        "equipment",
+                        effectiveSummary.ammo.itemId,
+                        "name",
+                        locale
+                      ),
+                      value: String(effectiveSummary.ammo.remaining),
+                      icon: Layers,
+                    },
+                  ]
+                : undefined
+            }
+            footExtra={<PinAction pinned={pinned} label={pinLabel} onPin={onPin} />}
+            onSpendRider={(rider) => onSpendRider(action, rider)}
+            depletedTrackers={depletedTrackers}
+          >
+            {/* Item g — Versatile stance toggle: swaps the damage the VERDICT
               chip shows (the facts grid prints both labelled rows). */}
-          {versatileDamage && (
-            <WieldStance twoHanded={twoHanded} onChange={setTwoHanded} />
-          )}
-          {/* S6 — the Rogue Cunning Strike picker rides a weapon ATTACK (the
+            {versatileDamage && (
+              <WieldStance twoHanded={twoHanded} onChange={setTwoHanded} />
+            )}
+            {/* S6 — the Rogue Cunning Strike picker rides a weapon ATTACK (the
               effect is added to a Sneak Attack hit), reusing the shared
               `.rider-strip` register beside the on-hit riders. */}
-          {action.type === "action" && cunningStrike.options.length > 0 && (
-            <CunningStrikeOptions
-              options={cunningStrike.options}
-              onApply={(option) => cunningStrike.onApply(action, option)}
-            />
-          )}
-        </WeaponFacts>
-      ) : (
-        <>
-          <UniversalCardFacts facts={facts} />
-          {/* RA-12 — the Hide check roll-entry (d20 + live Stealth bonus vs the
+            {action.type === "action" && cunningStrike.options.length > 0 && (
+              <CunningStrikeOptions
+                options={cunningStrike.options}
+                onApply={(option) => cunningStrike.onApply(action, option)}
+              />
+            )}
+          </WeaponFacts>
+        ) : (
+          <>
+            <UniversalCardFacts facts={facts} />
+            {/* RA-12 — the Hide check roll-entry (d20 + live Stealth bonus vs the
               flat DC 15): the outcome APPLIES (Invisible + the remembered
               find-DC), never just informs. The end-conditions hint teaches when
               the hidden state breaks (progressive disclosure — expanded only). */}
-          {effectiveSummary.skillCheck && (
-            <>
-              <HideCheckEntry
-                dc={effectiveSummary.skillCheck.dc}
-                bonus={skillCheckBonusFor?.(effectiveSummary.skillCheck.skill) ?? 0}
-                onApply={applyHideCheck}
-              />
-              <p className="mt-1 px-1 text-[0.7rem] italic text-text-secondary">
-                {t("combat.hideEndsHint")}
-              </p>
-            </>
-          )}
-          {/* A non-weapon action row (a weapon-attack cantrip) surfaces its
+            {effectiveSummary.skillCheck && (
+              <>
+                <HideCheckEntry
+                  dc={effectiveSummary.skillCheck.dc}
+                  bonus={skillCheckBonusFor?.(effectiveSummary.skillCheck.skill) ?? 0}
+                  onApply={applyHideCheck}
+                />
+                <p className="mt-1 px-1 text-[0.7rem] italic text-text-secondary">
+                  {t("combat.hideEndsHint")}
+                </p>
+              </>
+            )}
+            {/* A non-weapon action row (a weapon-attack cantrip) surfaces its
               riders through the SAME shared strip — weapon rows render it inside
               `WeaponFacts` from `weaponFacts.riders` (no double-render). */}
-          {action.riders && action.riders.length > 0 && (
-            <ActionRiders
-              riders={action.riders}
-              onSpend={(rider) => onSpendRider(action, rider)}
-              depletedTrackers={depletedTrackers}
-            />
-          )}
-        </>
-      )}
-      {action.description && <UniversalCardDesc>{action.description}</UniversalCardDesc>}
-      {/* D9 — "At Higher Levels" callout for leveled spells (mirrors Spells page). */}
-      {higherLevels && (
-        <UniversalCardHigher title={t("spells.atHigherLevels")}>
-          {higherLevels}
-        </UniversalCardHigher>
-      )}
-      {!action.weaponFacts && (
-        <UniversalCardFoot>
-          <PinAction pinned={pinned} label={pinLabel} onPin={onPin} />
-        </UniversalCardFoot>
-      )}
-    </UniversalCard>
+            {action.riders && action.riders.length > 0 && (
+              <ActionRiders
+                riders={action.riders}
+                onSpend={(rider) => onSpendRider(action, rider)}
+                depletedTrackers={depletedTrackers}
+              />
+            )}
+          </>
+        )}
+        {action.description && (
+          <UniversalCardDesc>{action.description}</UniversalCardDesc>
+        )}
+        {/* D9 — "At Higher Levels" callout for leveled spells (mirrors Spells page). */}
+        {higherLevels && (
+          <UniversalCardHigher title={t("spells.atHigherLevels")}>
+            {higherLevels}
+          </UniversalCardHigher>
+        )}
+        {!action.weaponFacts && (
+          <UniversalCardFoot>
+            <PinAction pinned={pinned} label={pinLabel} onPin={onPin} />
+          </UniversalCardFoot>
+        )}
+      </UniversalCard>
+      {/* The optional follow-up line after a use ("Aria +__ HP"): outside the card's
+        accordion so it shows on the collapsed row too. */}
+      <CastFollowUpLine actionId={action.id} />
+    </>
   );
 }
 

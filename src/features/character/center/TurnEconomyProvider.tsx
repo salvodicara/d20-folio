@@ -55,6 +55,8 @@ import {
   type TargetStep,
 } from "@/features/character/center/target-step";
 import { sheetEncounter } from "@/features/character/center/turn-state";
+import { useCastFollowUpStore } from "@/features/character/center/cast-follow-up-store";
+import { castFollowUps } from "@/lib/play/cast-follow-ups";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -985,6 +987,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       ...(attackOf ? { attackOf } : {}),
       ...(targets.length > 0 ? { targets: [...targets] } : {}),
     });
+    offerFollowUps(action, targets, loggedId);
     return () => {
       const c2 = useCharacterStore.getState();
       if (c2.readonly || c2.character?.id !== characterId) return;
@@ -1020,7 +1023,25 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         c2.setTempHP(prevTempHp);
       }
       c2.removeLogEntry(loggedId);
+      useCastFollowUpStore.getState().withdraw(loggedId);
     };
+  }
+
+  /** Offer the optional line under the used card ("Aria +__ HP", "Goblin −__ HP"). */
+  function offerFollowUps(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>,
+    castLogId: string | null
+  ): void {
+    const characterId = useCharacterStore.getState().character?.id;
+    if (!characterId) return;
+    useCastFollowUpStore.getState().show({
+      characterId,
+      actionId: action.id,
+      source: action.nameLoc,
+      castLogId,
+      items: castFollowUps(action, targets, selfCombatantId()),
+    });
   }
 
   // Display record for the economy slot.
@@ -1408,6 +1429,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           slot: action.type,
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
         });
+        offerFollowUps(action, targets, loggedId);
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1428,6 +1450,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (selectedMetamagicCost > 0)
             live.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
           live.removeLogEntry(loggedId);
+          useCastFollowUpStore.getState().withdraw(loggedId);
           return true;
         };
       },
