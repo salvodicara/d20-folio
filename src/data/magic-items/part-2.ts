@@ -508,7 +508,10 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // attuned is modeled via hp-per-level (the evaluator multiplies amount by
     // character level). The +1 attack/damage rides the attack seam; the curse /
     // berserk DC-15 WIS save stay narrative.
-    grants: [{ type: "hp-per-level", amount: 1 }],
+    grants: [
+      { type: "hp-per-level", amount: 1 },
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
+    ],
     source: "SRD",
   },
   {
@@ -653,6 +656,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "weapon",
     attunement: false,
+    // PRIM-item-bound-bonus — the printed +1 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
     source: "SRD",
   },
   {
@@ -1065,8 +1071,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose, and
     // "+2 bonus to spell attack rolls while holding it" is a standing stat
-    // (the quarterstaff's own +2 attack/damage stays the item-bound weapon
-    // bonus model gap — per-weapon attackBonusOverride is the seam today).
+    // (the quarterstaff's own +2 attack/damage is the appended item-bound grant).
     properties: ["charges: 6"],
     resources: [
       {
@@ -1128,6 +1133,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         },
         resourceCost: { resourceId: "charges" },
       },
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 },
     ],
     source: "SRD",
   },

@@ -22,6 +22,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
     source: "SRD",
   },
   {
@@ -40,6 +43,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +1 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
     source: "SRD",
   },
   {
@@ -166,6 +172,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +2 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 }],
     source: "SRD",
   },
   {
@@ -271,6 +280,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +2 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 }],
     source: "SRD",
   },
   {
@@ -422,6 +434,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10", "recharge: 1d6+4 / dawn"],
+    // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
     source: "SRD",
   },
   {
@@ -431,6 +446,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +2 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 }],
     source: "SRD",
   },
   {
@@ -631,6 +649,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "weapon",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
     source: "SRD",
   },
   {
@@ -642,6 +663,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 5", "recharge: 1d4+1 / dawn"],
+    // PRIM-item-bound-bonus — the printed +1 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
     source: "SRD",
   },
   {
@@ -759,6 +783,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "rod",
     attunement: true,
+    // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
+    // the weapon row it is bound to; other effects stay as noted).
+    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
     source: "SRD",
   },
   {
