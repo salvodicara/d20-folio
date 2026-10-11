@@ -141,6 +141,10 @@ import { WEAPONS_BY_ID } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { resolveItemResources } from "@/lib/item-resources";
+import {
+  legacyMagicItemCharges,
+  parseMagicItemDawnRecharge,
+} from "@/lib/magic-item-utils";
 import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
 import { resolveItemConsumable, consumableActionSlot } from "@/lib/srd-resolve";
 import {
@@ -7519,6 +7523,13 @@ function resolveTemporaryHpActions(
  * is left alone. ONE law shared by the legacy store rest (the fail-closed
  * degradation) and the canonical rest boundary (rest-world-boundary.ts), so
  * the two paths can never drift.
+ *
+ * An SRD item whose charges come from the catalogue only regains what its text
+ * says (stored refs all carry `recovery: "long-rest"` regardless): no dawn
+ * recharge (Gem of Brightness, Scarab of Protection) → never refilled; a fixed
+ * amount (Rod of Resurrection, 1) → that much. A rolled amount still refills:
+ * the legacy field has no way to enter the roll yet, and refilling lets the
+ * player spend down to the table's result instead of stranding the item.
  */
 export function equipmentAfterLongRest(
   equipment: CharacterData["equipment"]
@@ -7532,8 +7543,17 @@ export function equipmentAfterLongRest(
     ) {
       return ref;
     }
-    if (ref.charges.current === ref.charges.max) return ref;
-    return { ...ref, charges: { ...ref.charges, current: ref.charges.max } };
+    let current = ref.charges.max;
+    const item = "srdId" in ref ? getMagicItem(ref.srdId) : undefined;
+    if (item && legacyMagicItemCharges(item) !== undefined) {
+      const recharge = parseMagicItemDawnRecharge(item);
+      if (!recharge) return ref;
+      if (recharge.kind === "fixed") {
+        current = Math.min(ref.charges.max, ref.charges.current + recharge.amount);
+      }
+    }
+    if (ref.charges.current >= current) return ref;
+    return { ...ref, charges: { ...ref.charges, current } };
   });
 }
 

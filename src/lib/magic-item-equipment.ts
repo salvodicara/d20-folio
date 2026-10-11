@@ -2,7 +2,7 @@
 
 import type { SrdMagicItemData } from "@/data/types";
 import type { SrdEquipmentRef } from "@/types/character";
-import { parseMagicItemAcBonus, parseMagicItemCharges } from "@/lib/magic-item-utils";
+import { legacyMagicItemCharges, parseMagicItemAcBonus } from "@/lib/magic-item-utils";
 import { createItemInstanceId, type ItemInstanceIdFactory } from "@/lib/item-resources";
 
 const MAX_PICKER_QUANTITY = 9_999;
@@ -33,13 +33,7 @@ export function createMagicItemEquipmentRefs(
   // Compatibility bridge for the not-yet-migrated corpus only. A typed item
   // never gets this second owner; migrated rows resolve exclusively from
   // `resources`. Delete this branch once the corpus guard reaches zero.
-  const hasLegacyGrantPool = item.grants?.some(
-    (grant) => grant.type === "free-cast-spell" || grant.type === "free-cast-from-list"
-  );
-  const legacyCharges =
-    !item.resources?.length && !hasLegacyGrantPool
-      ? parseMagicItemCharges(item)
-      : undefined;
+  const legacyCharges = legacyMagicItemCharges(item);
   const base: SrdEquipmentRef = {
     srdId: item.id,
     equipped: item.type === "armor" || item.type === "ring",
