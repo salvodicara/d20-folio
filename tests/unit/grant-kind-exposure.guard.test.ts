@@ -383,7 +383,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "exhaustion-recovery": {
     via: "exhaustionRecoveryBonus",
-    consumer: "src/stores/characterStore.ts",
+    consumer: "src/lib/play/rests.ts",
   },
   "initiative-tracker-topup": {
     via: "initiativeTrackerTopUps",
