@@ -11,7 +11,7 @@
  *    card uses, then an `effect-given` log line;
  *  - a monster → only the `effect-given` log line (players cannot write monster HP).
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ export function CastFollowUpLine({ actionId }: { actionId: string }) {
   if (!offer || offer.actionId !== actionId || offer.characterId !== characterId)
     return null;
   return (
-    <div data-testid="cast-follow-up" className="px-3 pb-2">
+    <div data-testid="cast-follow-up" className="border-b border-border-soft">
       {offer.items.map((item) => (
         <FollowUpRow
           key={`${item.kind}:${item.targetId}`}
@@ -170,48 +170,72 @@ function FollowUpRow({ item, source }: { item: CastFollowUp; source: LocText }) 
       ? item.conditionIds.map((id) => [id])
       : [item.conditionIds];
     return (
-      <div className="heal-roll-entry">
-        <span className="heal-roll-label">
-          {t("combat.followUpSave", { target: name })}
-        </span>
-        {choices.map((ids) => (
+      <FollowUpGrid
+        action={choices.map((ids) => (
           <Button
             key={ids.join("+")}
             variant="secondary"
             size="sm"
             onClick={() => ids.forEach(applyCondition)}
           >
-            → {ids.map((id) => conditionLabel(id, locale)).join(" + ")}
+            {ids.map((id) => conditionLabel(id, locale)).join(" + ")}
           </Button>
         ))}
-      </div>
+      >
+        <span className="min-w-0 truncate">
+          {t("combat.followUpSave", { target: name })}
+        </span>
+      </FollowUpGrid>
     );
   }
 
-  const labelKey =
+  const ariaKey =
     item.kind === "heal"
       ? "combat.followUpHeal"
       : item.kind === "temp-hp"
         ? "combat.followUpTempHp"
         : "combat.followUpDamage";
+  // Temp HP on myself reads "+[__] PF temporanei": the name adds nothing there.
+  const showName = !(self && item.kind === "temp-hp");
   return (
-    <div className="heal-roll-entry">
-      <span className="heal-roll-label">{t(labelKey, { target: name })}</span>
-      <span className="w-16 shrink-0">
-        <Input
-          type="number"
-          min="1"
-          inputMode="numeric"
-          className="sm"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0"
-          aria-label={t(labelKey, { target: name })}
-        />
+    <FollowUpGrid
+      action={
+        <Button variant="secondary" size="sm" onClick={applyAmount}>
+          {t("combat.apply")}
+        </Button>
+      }
+    >
+      {showName && <span className="min-w-0 truncate">{name}</span>}
+      <span className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+        {item.kind === "damage" ? "−" : item.kind === "temp-hp" ? "+" : null}
+        <span className="w-14 shrink-0">
+          <Input
+            type="number"
+            min="1"
+            inputMode="numeric"
+            className="sm center"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="—"
+            aria-label={t(ariaKey, { target: name })}
+          />
+        </span>
+        {item.kind === "temp-hp" ? t("combat.tempHpRollLabel") : t("units.hp")}
       </span>
-      <Button variant="secondary" size="sm" onClick={applyAmount}>
-        {t("combat.apply")}
-      </Button>
+    </FollowUpGrid>
+  );
+}
+
+/** One follow-up row on the card's own grid: the seal column left empty so the text
+ *  lines up under the card name, the action on the CTA column. */
+function FollowUpGrid({ children, action }: { children: ReactNode; action: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-1.5">
+      <span aria-hidden />
+      <span className="flex min-w-0 items-center gap-2 text-sm text-text-secondary">
+        {children}
+      </span>
+      <span className="flex items-center justify-end gap-1.5">{action}</span>
     </div>
   );
 }

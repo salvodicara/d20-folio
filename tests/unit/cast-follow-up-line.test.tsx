@@ -154,7 +154,9 @@ describe("the follow-up line after a heal", () => {
 
   it("solo, it offers the heal to me; filling it heals me and logs one line with source", async () => {
     const line = await castHealingWord();
-    expect(line).toHaveTextContent("Mirovel + HP");
+    expect(
+      within(line).getByRole("spinbutton", { name: "Hit points Mirovel regains" })
+    ).toBeInTheDocument();
     expect(live().session.hp.current).toBe(5);
 
     fireEvent.change(within(line).getByRole("spinbutton"), { target: { value: "4" } });
@@ -212,7 +214,9 @@ describe("the follow-up line after a heal", () => {
     const dialog = await screen.findByRole("dialog", { name: /on whom/i });
     fireEvent.click(within(dialog).getByRole("button", { name: /aria/i }));
     const line = await screen.findByTestId("cast-follow-up");
-    expect(line).toHaveTextContent("Aria + HP");
+    expect(
+      within(line).getByRole("spinbutton", { name: "Hit points Aria regains" })
+    ).toBeInTheDocument();
 
     fireEvent.change(within(line).getByRole("spinbutton"), { target: { value: "7" } });
     fireEvent.click(within(line).getByRole("button", { name: /^apply/i }));
@@ -263,7 +267,7 @@ it("damage on a monster is recorded for the DM, not written anywhere", async () 
   const dialog = await screen.findByRole("dialog", { name: /on whom/i });
   fireEvent.click(within(dialog).getByRole("button", { name: /goblin/i }));
   const line = await screen.findByTestId("cast-follow-up");
-  expect(line).toHaveTextContent("Goblin − HP");
+  expect(line).toHaveTextContent("Goblin−HP");
 
   fireEvent.change(within(line).getByRole("spinbutton"), { target: { value: "3" } });
   fireEvent.click(within(line).getByRole("button", { name: /^apply/i }));
