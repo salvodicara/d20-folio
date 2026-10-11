@@ -938,9 +938,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
-    // Swim Speed 60 ft. The underwater-breathing clause has no engine field and
-    // stays descriptive.
-    grants: [{ type: "swim-speed", amount: 60 }],
+    grants: [{ type: "swim-speed", amount: 60 }, { type: "air-and-water-breathing" }],
     source: "SRD",
   },
   {
@@ -1223,14 +1221,13 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
-    // Advantage on saves vs the Poisoned condition is modeled; the "breathe in
-    // any environment" clause stays descriptive (no engine mechanic).
     grants: [
       {
         type: "advantage-on",
         rollType: "save",
         vs: "poisoned",
       },
+      { type: "air-and-water-breathing" },
     ],
     source: "SRD",
   },
