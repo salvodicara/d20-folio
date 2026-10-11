@@ -19,6 +19,8 @@ import { addCondition, removeCondition } from "@/lib/play/conditions";
 import { BEASTS } from "@/data/beasts";
 import { polymorphPriorSnapshot } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
+import { concentrationValue } from "@/lib/concentration";
+import { changeConcentration } from "@/lib/play/concentration";
 import { takeDamage } from "@/lib/play/damage";
 import { setActiveState } from "@/lib/play/states";
 import { recoverTrackerByMinSlot, restorePrior } from "@/lib/play/recoveries";
@@ -257,5 +259,35 @@ describe("active states", () => {
     expect(ended?.activeFeatures).not.toContain("barbarian-rage");
     expect(ended?.effectTimers).toBeUndefined();
     expect(setActiveState(barbarian(), "barbarian-rage", false, 6)).toBeNull();
+  });
+});
+
+describe("changeConcentration", () => {
+  it("records the new spell and its cast level", () => {
+    const next = changeConcentration(wizard(), concentrationValue("bless"), {
+      castLevel: 2,
+    });
+    expect(next.doc.session.concentration).toBe(concentrationValue("bless"));
+    expect(next.doc.session.concentrationCastLevel).toBe(2);
+    expect(next.droppedActiveKeys).toEqual([]);
+  });
+
+  it("dropping the spell that sustains a Beast form restores the body and Temp HP", () => {
+    const beast = BEASTS[0];
+    if (!beast) throw new Error("no beast");
+    const doc = wizard({ hp: { current: 20, temp: 2 } });
+    const formed = assumeBeastForm(
+      {
+        ...doc,
+        session: { ...doc.session, concentration: concentrationValue("polymorph") },
+      },
+      beast,
+      concentrationValue("polymorph"),
+      polymorphPriorSnapshot(doc)
+    ).doc;
+    const cleared = changeConcentration(formed, "");
+    expect(cleared.doc.session.polymorphForm).toBeUndefined();
+    expect(cleared.doc.session.hp.temp).toBe(2);
+    expect(cleared.revertBuild).toBeDefined();
   });
 });
