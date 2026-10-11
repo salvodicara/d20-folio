@@ -16,7 +16,11 @@ vi.mock("@/lib/firebase", () => ({
 
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
 import { addCondition, removeCondition } from "@/lib/play/conditions";
+import { BEASTS } from "@/data/beasts";
+import { polymorphPriorSnapshot } from "@/lib/polymorph";
+import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { takeDamage } from "@/lib/play/damage";
+import { setActiveState } from "@/lib/play/states";
 import { recoverTrackerByMinSlot, restorePrior } from "@/lib/play/recoveries";
 import {
   restoreSpellSlot,
@@ -213,5 +217,45 @@ describe("recoveries", () => {
 
   it("does nothing while the tracker still has uses", () => {
     expect(recoverTrackerByMinSlot(cleric(), "cleric-channel-divinity", 2)).toBeNull();
+  });
+});
+
+describe("Beast forms", () => {
+  it("assumes a form with its Temporary HP and restores the caster's own body on drop", () => {
+    const doc = wizard({ hp: { current: 20, temp: 3 } });
+    const beast = BEASTS[0];
+    if (!beast) throw new Error("no beast");
+    const assumed = assumeBeastForm(doc, beast, "polymorph", polymorphPriorSnapshot(doc));
+    expect(assumed.tempHp).toBe(Math.max(3, beast.hp));
+    expect(assumed.doc.character.acOverride).toBe(beast.ac);
+    expect(assumed.doc.session.polymorphForm?.beastId).toBe(beast.id);
+    const dropped = dropBeastForm(assumed.doc);
+    expect(dropped?.session.polymorphForm).toBeUndefined();
+    expect(dropped?.session.hp.temp).toBe(3);
+    expect(dropped?.character.acOverride ?? null).toBe(doc.character.acOverride ?? null);
+    expect(dropBeastForm(doc)).toBeNull();
+  });
+});
+
+describe("active states", () => {
+  const barbarian = (session: Partial<SessionState> = {}) =>
+    makeCharacterDoc(
+      { classId: "barbarian", level: 5, features: [{ srdId: "barbarian-rage" }] },
+      session
+    );
+
+  it("lights Rage with its round cap stamped from the lighting round, and ends it", () => {
+    const lit = setActiveState(barbarian(), "barbarian-rage", true, 6);
+    expect(lit?.activeFeatures).toContain("barbarian-rage");
+    expect(lit?.effectTimers?.["barbarian-rage"]?.tickedRound).toBe(6);
+    const ended = setActiveState(
+      { ...barbarian(), session: lit ?? barbarian().session },
+      "barbarian-rage",
+      false,
+      6
+    );
+    expect(ended?.activeFeatures).not.toContain("barbarian-rage");
+    expect(ended?.effectTimers).toBeUndefined();
+    expect(setActiveState(barbarian(), "barbarian-rage", false, 6)).toBeNull();
   });
 });

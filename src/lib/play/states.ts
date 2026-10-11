@@ -1,0 +1,92 @@
+/**
+ * Pure play transitions for the character's active states (Rage, Bless lit on
+ * yourself, a potion's timer): the character in, the next session out.
+ */
+import {
+  resolveActiveTimedEffects,
+  resolvePerTurnRecoveryTrackerIds,
+} from "@/lib/smart-tracker";
+import type { CharacterDoc, SessionState, TrackerState } from "@/types/character";
+import { restoreTrackerEntry } from "./recoveries";
+
+/** Drop one key from an optional record; undefined when nothing is left. */
+function without<T>(
+  record: Readonly<Record<string, T>> | undefined,
+  key: string
+): Record<string, T> | undefined {
+  const next = Object.fromEntries(
+    Object.entries(record ?? {}).filter(([entryKey]) => entryKey !== key)
+  );
+  return Object.keys(next).length > 0 ? next : undefined;
+}
+
+/**
+ * Light or end an active state, or null when it already is. Either way its countdown,
+ * turn edge (and, when ending, its cast level) restart; a state with a declared round
+ * cap is armed with it, stamped `litRound` (the round before the sheet's current one,
+ * so a turn-boundary catch-up never counts the lighting round again).
+ */
+export function setActiveState(
+  doc: CharacterDoc,
+  key: string,
+  isActive: boolean,
+  litRound: number
+): SessionState | null {
+  const active = doc.session.activeFeatures ?? [];
+  if (active.includes(key) === isActive) return null;
+  const levels = isActive
+    ? doc.session.activeSpellCastLevels
+    : without(doc.session.activeSpellCastLevels, key);
+  const session: SessionState = {
+    ...doc.session,
+    activeFeatures: isActive ? [...active, key] : active.filter((k) => k !== key),
+    activeSpellCastLevels: levels && Object.keys(levels).length > 0 ? levels : undefined,
+    effectTimers: without(doc.session.effectTimers, key),
+    effectBoundaries: without(doc.session.effectBoundaries, key),
+  };
+  if (!isActive) return session;
+  const timed = resolveActiveTimedEffects({ ...doc, session }).find(
+    (effect) => effect.activeKey === key
+  );
+  if (!timed) return session;
+  return {
+    ...session,
+    effectTimers: {
+      ...(session.effectTimers ?? {}),
+      [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound },
+    },
+  };
+}
+
+/** Record (or clear, with no level) the slot level an active spell state was cast at. */
+export function setActiveSpellCastLevel(
+  doc: CharacterDoc,
+  key: string,
+  level: number | undefined
+): SessionState {
+  const previous = doc.session.activeSpellCastLevels ?? {};
+  const levels =
+    level !== undefined && Number.isFinite(level) && level > 0
+      ? { ...previous, [key]: Math.round(level) }
+      : (without(previous, key) ?? {});
+  return {
+    ...doc.session,
+    activeSpellCastLevels: Object.keys(levels).length > 0 ? levels : undefined,
+  };
+}
+
+/** Refill every spent per-turn tracker (Sneak Attack) at the owner's turn start, or
+ *  null when none needs it; `prior` is what the undo restores. */
+export function recoverPerTurnTrackers(
+  doc: CharacterDoc
+): { session: SessionState; prior: Map<string, TrackerState | undefined> } | null {
+  const ids = resolvePerTurnRecoveryTrackerIds(doc);
+  if (ids.length === 0) return null;
+  const prior = new Map<string, TrackerState | undefined>();
+  let trackers = doc.session.trackers;
+  for (const id of ids) {
+    prior.set(id, doc.session.trackers[id]);
+    trackers = restoreTrackerEntry(trackers, id, undefined);
+  }
+  return { session: { ...doc.session, trackers }, prior };
+}

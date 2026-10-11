@@ -22,6 +22,12 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { takeDamage } from "@/lib/play/damage";
+import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
+import {
+  recoverPerTurnTrackers as recoverPerTurnTrackersOf,
+  setActiveSpellCastLevel as setActiveSpellCastLevelTo,
+  setActiveState,
+} from "@/lib/play/states";
 import {
   recoverTrackerByAltCost as recoverByAltCost,
   recoverTrackerByMinSlot as recoverByMinSlot,
@@ -50,7 +56,6 @@ import {
   commitWorldCondition,
   commitWorldVitals,
   drainedTemporary,
-  vitalsWithTemporary,
 } from "@/lib/play/world-commit";
 import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
@@ -60,8 +65,6 @@ import {
   gainsHeroicInspirationOnLongRest,
   applyShortRestExhaustion,
   getInitiativeTrackerTopUps,
-  resolvePerTurnRecoveryTrackerIds,
-  resolveActiveTimedEffects,
   resolveActiveBoundaryEffects,
   resolveActiveStatesEndingOn,
   resolveActiveStatesEndingOnRest,
@@ -71,11 +74,7 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import {
-  polymorphBuildPatch,
-  polymorphPriorSnapshot,
-  revertBuildFromPrior,
-} from "@/lib/polymorph";
+import { polymorphPriorSnapshot, revertBuildFromPrior } from "@/lib/polymorph";
 import { getBeast } from "@/data/beasts";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
@@ -2743,75 +2742,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-    const active = character.session.activeFeatures ?? [];
-    if (active.includes(key) === isActive) return;
-    const next = isActive ? [...active, key] : active.filter((k) => k !== key);
-    const levels = isActive
-      ? character.session.activeSpellCastLevels
-      : Object.fromEntries(
-          Object.entries(character.session.activeSpellCastLevels ?? {}).filter(
-            ([entryKey]) => entryKey !== key
-          )
-        );
-    const previousTimers = character.session.effectTimers ?? {};
-    const timers = Object.fromEntries(
-      Object.entries(previousTimers).filter(([timerKey]) => timerKey !== key)
-    );
-    const boundaries = Object.fromEntries(
-      Object.entries(character.session.effectBoundaries ?? {}).filter(
-        ([boundaryKey]) => boundaryKey !== key
-      )
-    );
-    let updated: CharacterDoc = {
-      ...character,
-      session: {
-        ...character.session,
-        activeFeatures: next,
-        activeSpellCastLevels:
-          levels && Object.keys(levels).length > 0 ? levels : undefined,
-        effectTimers: Object.keys(timers).length > 0 ? timers : undefined,
-        effectBoundaries: Object.keys(boundaries).length > 0 ? boundaries : undefined,
-      },
-    };
-    if (isActive) {
-      const timed = resolveActiveTimedEffects(updated).find(
-        (effect) => effect.activeKey === key
-      );
-      if (timed) {
-        updated = {
-          ...updated,
-          session: {
-            ...updated.session,
-            effectTimers: {
-              ...(updated.session.effectTimers ?? {}),
-              // Lit during the current round: that round is already this state's.
-              [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound(updated.id) },
-            },
-          },
-        };
-      }
-    }
-    set({ character: updated });
+    const session = setActiveState(character, key, isActive, litRound(character.id));
+    if (session) set({ character: { ...character, session } });
   },
 
   setActiveSpellCastLevel: (key, level) => {
     if (get().readonly) return;
     const character = get().character;
     if (!character) return;
-    const previous = character.session.activeSpellCastLevels ?? {};
-    const levels =
-      level !== undefined && Number.isFinite(level) && level > 0
-        ? { ...previous, [key]: Math.round(level) }
-        : Object.fromEntries(
-            Object.entries(previous).filter(([entryKey]) => entryKey !== key)
-          );
     set({
       character: {
         ...character,
-        session: {
-          ...character.session,
-          activeSpellCastLevels: Object.keys(levels).length > 0 ? levels : undefined,
-        },
+        session: setActiveSpellCastLevelTo(character, key, level),
       },
     });
   },
@@ -2820,22 +2762,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    const ids = resolvePerTurnRecoveryTrackerIds(character);
-    if (ids.length === 0) return null;
-    // Snapshot the prior entries for undo, then drop each (missing === used: 0,
-    // the canonical "unspent" state — same convention `restoreTrackerEntry` uses).
-    const prior = new Map<string, { used: number } | undefined>();
-    let trackers = character.session.trackers;
-    for (const id of ids) {
-      prior.set(id, character.session.trackers[id]);
-      trackers = restoreTrackerEntry(trackers, id, undefined);
-    }
-    set({
-      character: {
-        ...character,
-        session: { ...character.session, trackers },
-      },
-    });
+    const recovered = recoverPerTurnTrackersOf(character);
+    if (!recovered) return null;
+    const { prior } = recovered;
+    set({ character: { ...character, session: recovered.session } });
     return () => {
       const cur = get().character;
       if (!cur) return;
@@ -3175,7 +3105,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // doc is the atomic undo target — nothing below mutates it in place).
     const before = character;
     const prior = polymorphPriorSnapshot(character);
-    const buildPatch = polymorphBuildPatch(beast, prior);
 
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
@@ -3183,32 +3112,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     const cur = get().character;
     if (!cur) return null;
-    // Apply the Beast: stamp AC/speeds/scores into the overrides + Temp HP = the
-    // Beast's HP (max-wins), and record the active form + snapshot on the session.
-    // WORLD-FIRST for the temp pool (the S7 wild-shape temp-HP flow): the world
-    // cell adopts the Beast Temp HP; the whole-doc undo below restores the
-    // prior world value by construction (the world rides the session).
-    const newTemp = Math.max(cur.session.hp.temp, beast.hp);
-    const engine = commitWorldVitals(cur, "temp-hp-set", (state) => {
-      if (state.vitals.hitPoints.temporary.current === newTemp) return null;
-      state.vitals = vitalsWithTemporary(
-        state.vitals,
-        drainedTemporary(state.vitals.hitPoints.temporary, newTemp)
-      );
-      return state;
-    });
-    set({
-      character: {
-        ...cur,
-        character: { ...cur.character, ...buildPatch },
-        session: {
-          ...(engine ? engine.session : cur.session),
-          hp: { ...cur.session.hp, temp: newTemp },
-          polymorphForm: { beastId, spellId, prior },
-        },
-      },
-    });
-    get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
+    // Apply the Beast (AC/speeds/scores, Temp HP = the Beast's HP, max-wins, the
+    // active form + snapshot); the whole-doc undo below restores the prior world
+    // value by construction (the world rides the session).
+    const assumed = assumeBeastForm(cur, beast, spellId, prior);
+    set({ character: assumed.doc });
+    get().logEvent({ kind: "temp-hp-gain", amount: assumed.tempHp });
 
     return () => set({ character: before });
   },
@@ -3223,36 +3132,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const before = character; // undo = re-assume the exact same form
     const pendingConcentrationSavesBefore = get().combatPendingConcentrationSaves;
     const legacyEffectsBefore = get().combatLegacyActiveEffects;
-    const revert = revertBuildFromPrior(form.prior);
     // Restore the body, retract the Beast Temp HP, drop the form. The form's
     // concentration (only if it is still the form's spell — a prior swap would
     // already have retracted the form) then ends through the ONE concentration
     // teardown, so its held statuses, engine occurrence and log line end with it.
     const clearConc = character.session.concentration === form.spellId;
-    // WORLD-FIRST for the retracted temp pool (the S7 wild-shape temp-HP
-    // flow); the whole-doc undo below restores the prior world value.
-    const engine = commitWorldVitals(character, "temp-hp-set", (state) => {
-      if (state.vitals.hitPoints.temporary.current === form.prior.tempHp) return null;
-      state.vitals = vitalsWithTemporary(
-        state.vitals,
-        drainedTemporary(state.vitals.hitPoints.temporary, form.prior.tempHp)
-      );
-      return state;
-    });
-    const { polymorphForm: _dropped, ...restSession } = engine
-      ? engine.session
-      : character.session;
-    void _dropped;
-    set({
-      character: {
-        ...character,
-        character: { ...character.character, ...revert },
-        session: {
-          ...restSession,
-          hp: { ...character.session.hp, temp: form.prior.tempHp },
-        },
-      },
-    });
+    const dropped = dropBeastForm(character);
+    if (!dropped) return null;
+    set({ character: dropped });
     const concentrationLogIds = clearConc
       ? get().setConcentration("", { undoable: false })
       : [];
