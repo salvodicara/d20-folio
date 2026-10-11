@@ -22,6 +22,7 @@ import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { concentrationValue } from "@/lib/concentration";
 import { changeConcentration } from "@/lib/play/concentration";
 import { takeDamage } from "@/lib/play/damage";
+import { longRestCharacter, shortRestCharacter } from "@/lib/play/rests";
 import { setActiveState } from "@/lib/play/states";
 import { recoverTrackerByMinSlot, restorePrior } from "@/lib/play/recoveries";
 import {
@@ -289,5 +290,32 @@ describe("changeConcentration", () => {
     expect(cleared.doc.session.polymorphForm).toBeUndefined();
     expect(cleared.doc.session.hp.temp).toBe(2);
     expect(cleared.revertBuild).toBeDefined();
+  });
+});
+
+describe("rests", () => {
+  it("a Long Rest restores HP, slots and Hit Dice and clears the death saves", () => {
+    const tired = wizard({
+      hp: { current: 3, temp: 4 },
+      spellSlots: { "2": { used: 2 } },
+      hitDice: { used: 3 },
+      deathSucc: 1,
+      deathFail: 1,
+    });
+    const rested = longRestCharacter(tired);
+    expect(rested.session.hp).toEqual({ current: tired.character.hp.max, temp: 0 });
+    expect(rested.session.spellSlots).toEqual({});
+    expect(rested.session.hitDice).toEqual({ used: 0 });
+    expect(rested.session).toMatchObject({ deathSucc: 0, deathFail: 0 });
+  });
+
+  it("a Short Rest keeps normal slots and Concentration", () => {
+    const doc = wizard({
+      spellSlots: { "2": { used: 1 } },
+      concentration: concentrationValue("bless"),
+    });
+    const rested = shortRestCharacter(doc);
+    expect(rested.session.spellSlots["2"]?.used).toBe(1);
+    expect(rested.session.concentration).toBe(concentrationValue("bless"));
   });
 });
