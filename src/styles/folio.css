@@ -3966,7 +3966,10 @@ button.pr-dot.lg::before {
   height: 11px;
 }
 .lvl-chip:hover,
-.lvl-chip:focus-visible {
+.lvl-chip:focus-visible,
+/* XP reached the next threshold: the chip holds its hover glow (a cue, never a
+   gate — the sheet does not level by itself). */
+.lvl-chip[data-ready] {
   box-shadow: 0 0 10px rgb(212 172 77 / 0.35);
 }
 /* LIGHT ember — at pill scale a tinted wash vanishes on ivory, so the enamel goes
@@ -3982,7 +3985,8 @@ button.pr-dot.lg::before {
     0 3px 9px rgba(var(--ember-umber), 0.45);
 }
 [data-theme="light"] .lvl-chip:hover,
-[data-theme="light"] .lvl-chip:focus-visible {
+[data-theme="light"] .lvl-chip:focus-visible,
+[data-theme="light"] .lvl-chip[data-ready] {
   box-shadow:
     0 1px 2px rgba(var(--ember-seat), 0.32),
     0 4px 12px rgba(var(--ember-umber), 0.5);

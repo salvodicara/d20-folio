@@ -92,6 +92,7 @@ import {
   backgroundNameById,
 } from "@/data/srd-names";
 import { alignmentIdByLabel, asAlignmentId } from "@/lib/lore-utils";
+import { isExperiencePoints } from "@/lib/experience";
 import { nonEmptyString, assertNonEmptyString } from "@/lib/non-empty-string";
 import { enToProficiencyToken } from "@/data/proficiency-vocab";
 import { isItemInstanceId, parseItemResources } from "@/lib/item-resources";
@@ -1079,6 +1080,7 @@ export const KNOWN_BUILD_KEYS: readonly string[] = [
   "features",
   "customs",
   "lore",
+  "experience",
 ];
 
 /** Reshape a minimal flat character record into the id-based `build`. */
@@ -1152,6 +1154,9 @@ function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
 
   const lore = loreToBuild(min.lore);
   if (lore) build.lore = lore;
+
+  // Optional XP total — absent for a table that levels by milestone.
+  if (isExperiencePoints(min.experience)) build.experience = min.experience;
 
   // Unknown `build` keys the reader preserved: written back LAST, so a canonical
   // document (which has none) keeps its exact byte layout.
@@ -1259,8 +1264,14 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
 
   min.lore = loreFromBuild(build.lore);
 
+  if (isExperiencePoints(build.experience)) min.experience = build.experience;
+
   // Everything this app version does not know about `build`, preserved verbatim.
-  const unknownBuild = leftover(build, KNOWN_BUILD_KEYS);
+  let unknownBuild = leftover(build, KNOWN_BUILD_KEYS);
+  // A malformed XP value is not read, but it is still the player's data: keep it.
+  if (build.experience !== undefined && min.experience === undefined) {
+    unknownBuild = { ...unknownBuild, experience: build.experience };
+  }
   if (unknownBuild) min.unknown = unknownBuild;
 
   return min as MinimalCharacter;

@@ -147,6 +147,7 @@ read-shim (the migration converted every live main doc + snapshot; golden rule 1
 | `overrides`               | `{ ac?, speed?, proficiencyBonus?, saves?, … }` | manual deltas; only when set (`speed` = the effective-walking-Speed override; NO `languages`/`tools` strings)                                                                                             |
 | `lore`                    | `{ traits?, ideals?, … }`                       | flavor; only non-empty fields                                                                                                                                                                             |
 | `quote`                   | string?                                         | omit when empty                                                                                                                                                                                           |
+| `experience`              | integer ≥ 0?                                    | total XP; omitted when never set (milestone tables). A malformed value is not read but is kept verbatim; a reader older than this field keeps it as an unknown key                                        |
 
 ### `ClassEntry` (R4 — the multiclass breakdown)
 
