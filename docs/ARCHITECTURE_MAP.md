@@ -182,7 +182,12 @@ There are six parallel records. The same hit can land in four of them.
   use. What stays in the component is orchestration across the stores and the dialogs.
 - Round, initiative and HP each have one home or one read rule (above); the last copies sit in
   the mechanics worlds and go with them.
-- `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
+- `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry. Done as
+  one seam per derived value, which `deriveCharacter` composes (the live sheet calls the seams
+  directly, to keep its memoization): AC, max HP, senses and speeds, saves/skills/passives,
+  defenses and spell DC/attack already had one; the Initiative bonus and its breakdown now share
+  `computedInitiativeBonus` / `computedInitiativeBreakdown` (#164, #166), and the effective
+  scores one `aggregateAbilityScores` call (#167).
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
   `src/lib/activities` holds the `Activity` shape and pure translators from spells,
   feature actions, monster entries, beast and companion attacks and item
