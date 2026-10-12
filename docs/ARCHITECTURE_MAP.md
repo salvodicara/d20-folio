@@ -315,7 +315,9 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    - Done: the `RecentAttack` ring (`combat/state.recentActions`, no writer since the resolver
      went) is gone; the codec ignores a stored ring and the next full overwrite sheds it.
    - The character's log panel reads the session log when attached.
-   - Delete the IndexedDB mirror and `src/lib/combat/*`.
+   - Delete the IndexedDB mirror once the log panel reads the session log: it is still read,
+     since `useCharacterSubscription` restores an empty stored log from the device. (`src/lib/combat/*`
+     is gone, #28.)
 
 ## Phase 2: states and timers (one session each, each shippable)
 
@@ -336,14 +338,16 @@ pure `expire(statuses, boundary)`; Grants keep gating on status keys; later stat
 `status-start` / `status-end` log events (the rules-model "Stati" box).
 
 0. **Done (#35).** Cast lights a self buff again (owner 2026-10-08).
-1. `Status` type + a read-only derived view over today's fields; rail, `StatusLedge` and
-   aggregation read it; concentration shows its remaining rounds.
-2. Round timers count on the owner's turn start from the shared pointer, so they tick when the DM
-   advances (today they only tick on the owner's own End Turn).
+1. **Done (#57).** `Status` + `deriveStatuses` (`src/lib/status.ts`), a read-only view over
+   today's fields; the rail, the potion timers and the concentration badge read it, and
+   concentration shows its remaining rounds.
+2. **Done (#37).** A round timer counts each round once, whoever advances the turn (the owner's
+   End Turn or the DM's pointer), via `tickedRound`.
 3. `session.statuses[]` written beside the old fields; idempotent migration (dry-run first).
 4. Fold `effectTimers`, `effectBoundaries`, `activeSpellCastLevels` and the maintenance prompt into
    `expire`; delete the old fields after the migration is applied (owner yes).
-5. Concentration becomes a flag on a status: dropping it ends its dependents in one place.
+5. **Done (#59).** Concentration is a flag on a status: dropping it ends its dependents in one
+   place (`endStatuses`).
 6. Delete the dead residue (`effectOps`, `CombatState.activeEffects`, standing resolution, world
    standings).
 7. Selected-recipient statuses (Mage Armor, Bless on an ally) via the optional target detail.
