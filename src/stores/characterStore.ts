@@ -22,25 +22,17 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { changeConcentration } from "@/lib/play/concentration";
-import {
-  dismissFamiliar,
-  setCompanionHp,
-  setCompanionVariant,
-  setFamiliarDismissed,
-  summonFamiliar,
-} from "@/lib/play/companions";
+import { applyPlayEvent, type PlayEvent } from "@/lib/play/events";
 import {
   amendLogEntry as amendLogEntryEvent,
   appendLogEntry,
   removeLogEntry as removeLogEntryById,
 } from "@/lib/play/log";
-import { togglePinnedAction } from "@/lib/play/pins";
 import { takeDamage } from "@/lib/play/damage";
 import { longRestCharacter, omitStateKeys, shortRestCharacter } from "@/lib/play/rests";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   recoverPerTurnTrackers as recoverPerTurnTrackersOf,
-  setActiveSpellCastLevel as setActiveSpellCastLevelTo,
   setActiveState,
 } from "@/lib/play/states";
 import {
@@ -576,6 +568,11 @@ interface CharacterState {
    * `null` when not transformed.
    */
   dropPolymorphForm: () => (() => void) | null;
+  /**
+   * Apply one play event to the sheet (see `lib/play/events`). Returns the undo that
+   * restores the prior character, or `null` when read-only or nothing changes.
+   */
+  dispatch: (event: PlayEvent) => (() => void) | null;
   /** Set a summoned companion's current HP (Steel Defender / Eldritch Cannon). */
   setCompanionHp: (featureId: string, current: number) => void;
   /**
@@ -2490,15 +2487,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   togglePinnedAction: (actionId, defaultPinned = false) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({
-      character: {
-        ...character,
-        session: togglePinnedAction(character.session, actionId, defaultPinned),
-      },
-    });
+    get().dispatch({ kind: "toggle-pin", actionId, defaultPinned });
   },
 
   toggleActiveFeature: (key) => {
@@ -2515,15 +2504,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   setActiveSpellCastLevel: (key, level) => {
-    if (get().readonly) return;
-    const character = get().character;
-    if (!character) return;
-    set({
-      character: {
-        ...character,
-        session: setActiveSpellCastLevelTo(character, key, level),
-      },
-    });
+    get().dispatch({ kind: "set-active-cast-level", key, level });
   },
 
   recoverPerTurnTrackers: () => {
@@ -2924,64 +2905,34 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
+  dispatch: (event) => {
+    if (get().readonly) return null;
+    const { character } = get();
+    if (!character) return null;
+    const next = applyPlayEvent(character, event);
+    if (!next) return null;
+    set({ character: next });
+    return () => set({ character });
+  },
+
   setCompanionHp: (featureId, current) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({
-      character: {
-        ...character,
-        session: setCompanionHp(character.session, featureId, current),
-      },
-    });
+    get().dispatch({ kind: "set-companion-hp", featureId, current });
   },
 
-  setCompanionVariant: (featureId, variantId) => {
-    if (get().readonly) return null;
-    const { character } = get();
-    if (!character) return null;
-    const before = character; // undo = restore the prior variant pick + HP pool
-    set({
-      character: {
-        ...character,
-        session: setCompanionVariant(character.session, featureId, variantId),
-      },
-    });
-    return () => set({ character: before });
-  },
+  // Undo = restore the prior variant pick + HP pool.
+  setCompanionVariant: (featureId, variantId) =>
+    get().dispatch({ kind: "set-companion-variant", featureId, variantId }),
 
-  summonFamiliar: (monsterId, creatureType, maxHp) => {
-    if (get().readonly) return null;
-    const { character } = get();
-    if (!character) return null;
-    const before = character; // undo = restore the exact prior familiar + HP entry
-    set({
-      character: {
-        ...character,
-        session: summonFamiliar(character.session, monsterId, creatureType, maxHp),
-      },
-    });
-    return () => set({ character: before });
-  },
+  // Undo = restore the exact prior familiar + HP entry.
+  summonFamiliar: (monsterId, creatureType, maxHp) =>
+    get().dispatch({ kind: "summon-familiar", monsterId, creatureType, maxHp }),
 
   setFamiliarDismissed: (dismissed) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    const session = setFamiliarDismissed(character.session, dismissed);
-    if (session) set({ character: { ...character, session } });
+    get().dispatch({ kind: "set-familiar-dismissed", dismissed });
   },
 
-  dismissFamiliar: () => {
-    if (get().readonly) return null;
-    const { character } = get();
-    if (!character) return null;
-    const session = dismissFamiliar(character.session);
-    if (!session) return null;
-    const before = character; // undo = re-summon the exact prior familiar + HP
-    set({ character: { ...character, session } });
-    return () => set({ character: before });
-  },
+  // Undo = re-summon the exact prior familiar + HP.
+  dismissFamiliar: () => get().dispatch({ kind: "dismiss-familiar" }),
 
   applyInitiativeTrackerTopUps: () => {
     const noop = { sourceIds: [], restore: () => {} };
