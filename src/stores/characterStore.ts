@@ -31,10 +31,7 @@ import {
 import { takeDamage } from "@/lib/play/damage";
 import { longRestCharacter, omitStateKeys, shortRestCharacter } from "@/lib/play/rests";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
-import {
-  recoverPerTurnTrackers as recoverPerTurnTrackersOf,
-  setActiveState,
-} from "@/lib/play/states";
+import { recoverPerTurnTrackers as recoverPerTurnTrackersOf } from "@/lib/play/states";
 import {
   recoverTrackerByAltCost as recoverByAltCost,
   recoverTrackerByMinSlot as recoverByMinSlot,
@@ -43,14 +40,9 @@ import {
   restoreTrackerEntry,
   type PlayCommit,
 } from "@/lib/play/recoveries";
-import {
-  addCondition as addConditionTo,
-  removeCondition as removeConditionFrom,
-} from "@/lib/play/conditions";
+import { removeCondition as removeConditionFrom } from "@/lib/play/conditions";
 import {
   setDeathSaves as setDeathSavesTo,
-  setHp,
-  setTempHp,
   UNCONSCIOUS_CONDITION_ID,
 } from "@/lib/play/vitals";
 import {
@@ -1122,20 +1114,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // — that path computes concentration-save DCs from the **total** incoming
     // damage (incl. the slice absorbed by temp HP). `setHP` is a low-level
     // setter used by rest / undo / level-up / heal where the change isn't a hit.
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({ character: { ...character, session: setHp(character, current) } });
+    if (!get().dispatch({ kind: "set-hp", current })) return;
     // Persist the whole resulting combat state (offline-safe). `persist: false` skips it
     // for `applyHealing`, which persists once after its own optimistic update.
     if (opts?.persist !== false) persistCombat(get);
   },
 
   setTempHP: (temp) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({ character: { ...character, session: setTempHp(character, temp) } });
+    if (!get().dispatch({ kind: "set-temp-hp", temp })) return;
     persistCombat(get);
   },
 
@@ -1958,14 +1944,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   addCondition: (condition, opts) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
     // WORLD-FIRST: a manual chip commits as a real world condition occurrence
     // (the manual-condition seam program); see `addCondition` in lib/play.
-    const session = addConditionTo(character, condition);
-    if (!session) return;
-    set({ character: { ...character, session } });
+    if (!get().dispatch({ kind: "add-condition", condition })) return;
     // Events-as-data: a gained condition is a story beat (the condition id is
     // stable; the presenter resolves its localized name).
     get().logEvent({ kind: "condition-gain", conditionId: condition });
@@ -2464,11 +2445,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   setActiveFeature: (key, isActive) => {
-    if (get().readonly) return;
-    const { character } = get();
+    const character = get().character;
     if (!character) return;
-    const session = setActiveState(character, key, isActive, litRound(character.id));
-    if (session) set({ character: { ...character, session } });
+    get().dispatch({
+      kind: "set-active-state",
+      key,
+      isActive,
+      litRound: litRound(character.id),
+    });
   },
 
   setActiveSpellCastLevel: (key, level) => {
