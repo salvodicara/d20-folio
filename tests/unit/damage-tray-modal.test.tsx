@@ -294,6 +294,18 @@ describe("Fireball on three goblins", () => {
     fireEvent.click(
       within(row(dialog, "Goblin 2")).getByRole("button", { name: "Goblin 2 saved" })
     );
+    // The segment IS the multiplier: Saved selects ½ on that row.
+    const goblin2 = row(dialog, "Goblin 2");
+    const segment = (name: string) => within(goblin2).getByRole("button", { name });
+    expect(segment("×½")).toHaveAttribute("aria-pressed", "true");
+    expect(segment("×1")).toHaveAttribute("aria-pressed", "false");
+    // A hand-picked segment wins; Saved stays on (it still drops a condition).
+    fireEvent.click(segment("×1"));
+    expect(within(goblin2).getByTestId("damage-tray-preview")).toHaveTextContent("−28");
+    expect(
+      within(goblin2).getByRole("button", { name: "Goblin 2 saved" })
+    ).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(segment("×½"));
     const previews = within(dialog)
       .getAllByTestId("damage-tray-preview")
       .map((el) => el.textContent);

@@ -22,8 +22,10 @@ import {
   previewHp,
   rowAmount,
   rowConditions,
+  setMultiplier,
   toggleCondition,
   toggleDefense,
+  toggleSaved,
   type DamageTrayPlan,
 } from "@/lib/play/damage-tray";
 import type { DamageType } from "@/types/damage";
@@ -94,7 +96,7 @@ describe("the catalogue", () => {
 });
 
 describe("damageTrayPlan + rows over the catalogue", () => {
-  it("every save-for-half damage spell starts at ×1 and Saved gives half", () => {
+  it("every save-for-half damage spell starts at ×1 and Saved selects ½", () => {
     for (const a of halfOnSave) {
       const p = plan(a, FOES);
       expect(p.effect, a.id).toBe("damage");
@@ -103,17 +105,25 @@ describe("damageTrayPlan + rows over the catalogue", () => {
       const row = initialTrayRow(p, FOE);
       expect(row.multiplier, a.id).toBe("1");
       expect(rowAmount(28, row, p), a.id).toBe(28);
-      expect(rowAmount(27, { ...row, saved: true }, p), a.id).toBe(13);
+      const saved = toggleSaved(row, p);
+      expect(saved, a.id).toMatchObject({ saved: true, multiplier: "0.5" });
+      expect(rowAmount(27, saved, p), a.id).toBe(13);
+      expect(toggleSaved(saved, p), a.id).toMatchObject({
+        saved: false,
+        multiplier: "1",
+      });
     }
   });
 
-  it("every damage spell that does nothing on a save gives 0 once Saved", () => {
+  it("every damage spell that does nothing on a save selects 0 once Saved", () => {
     for (const a of noneOnSave) {
       const p = plan(a);
       expect(p.save?.onSave, a.id).toBe("none");
       const row = initialTrayRow(p, FOE);
       expect(rowAmount(9, row, p), a.id).toBe(9);
-      expect(rowAmount(9, { ...row, saved: true }, p), a.id).toBe(0);
+      const saved = toggleSaved(row, p);
+      expect(saved.multiplier, a.id).toBe("0");
+      expect(rowAmount(9, saved, p), a.id).toBe(0);
     }
   });
 
@@ -139,7 +149,7 @@ describe("damageTrayPlan + rows over the catalogue", () => {
         rowConditions(row).every((id) => application.options.includes(id)),
         a.id
       ).toBe(true);
-      expect(rowConditions({ ...row, saved: true }), a.id).toEqual([]);
+      expect(rowConditions(toggleSaved(row, p)), a.id).toEqual([]);
     }
   });
 
@@ -194,8 +204,10 @@ describe("the target's own defenses pre-set the multiplier", () => {
     const resist = initialTrayRow(fireball, FOE, defenses({ res: ["fire"] }));
     expect(resist).toMatchObject({ multiplier: "0.5", defense: "resistant" });
     expect(rowAmount(27, resist, fireball)).toBe(13);
-    expect(toggleDefense(resist).multiplier).toBe("1");
-    expect(toggleDefense(toggleDefense(resist)).multiplier).toBe("0.5");
+    expect(toggleDefense(resist, fireball).multiplier).toBe("1");
+    expect(toggleDefense(toggleDefense(resist, fireball), fireball).multiplier).toBe(
+      "0.5"
+    );
 
     const vuln = initialTrayRow(fireball, FOE, defenses({ vul: ["fire"] }));
     expect(rowAmount(27, vuln, fireball)).toBe(54);
@@ -208,12 +220,27 @@ describe("the target's own defenses pre-set the multiplier", () => {
     expect(rowAmount(27, immune, fireball)).toBe(0);
   });
 
-  it("saved and resistant: halve, then halve again, rounding down each time", () => {
-    const row = {
-      ...initialTrayRow(fireball, FOE, defenses({ res: ["fire"] })),
-      saved: true,
-    };
+  it("saved and resistant: Saved selects ¼ (halve, halve again, rounding down)", () => {
+    const row = toggleSaved(
+      initialTrayRow(fireball, FOE, defenses({ res: ["fire"] })),
+      fireball
+    );
+    expect(row.multiplier).toBe("0.25");
     expect(rowAmount(27, row, fireball)).toBe(6);
+    // Vulnerable and saved: ½ × 2 = ×1; immune stays 0.
+    const vuln = initialTrayRow(fireball, FOE, defenses({ vul: ["fire"] }));
+    expect(toggleSaved(vuln, fireball).multiplier).toBe("1");
+    const immune = initialTrayRow(fireball, FOE, defenses({ imm: ["fire"] }));
+    expect(toggleSaved(immune, fireball).multiplier).toBe("0");
+  });
+
+  it("the segment IS the multiplier: a hand-picked segment wins over Saved", () => {
+    const saved = toggleSaved(initialTrayRow(fireball, FOE), fireball);
+    const manual = setMultiplier(saved, "2");
+    expect(manual).toMatchObject({ saved: true, multiplier: "2" });
+    expect(rowAmount(10, manual, fireball)).toBe(20);
+    // Turning Saved off again recomputes from the facts: ×1.
+    expect(toggleSaved(manual, fireball).multiplier).toBe("1");
   });
 
   it("another type, both resistance and vulnerability, or no defenses: ×1", () => {

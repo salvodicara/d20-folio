@@ -36,8 +36,10 @@ import {
   previewHp,
   rowAmount,
   rowConditions,
+  setMultiplier,
   toggleCondition,
   toggleDefense,
+  toggleSaved,
   type DamageTrayPlan,
   type TrayEffect,
   type TrayMultiplier,
@@ -86,6 +88,7 @@ interface TrayTarget {
 
 const MULTIPLIER_LABEL: Record<TrayMultiplier, string> = {
   "0": "0",
+  "0.25": "¼",
   "0.5": "½",
   "1": "1",
   "2": "2",
@@ -307,7 +310,7 @@ function TrayTargetRow({
               ariaLabel: `×${MULTIPLIER_LABEL[value]}`,
             }))}
             value={row.multiplier}
-            onChange={(multiplier) => onChange({ ...row, multiplier })}
+            onChange={(multiplier) => onChange(setMultiplier(row, multiplier))}
             aria-label={t("combat.damageTray.multiplier", { name: target.name })}
           />
         )}
@@ -317,7 +320,7 @@ function TrayTargetRow({
             className="fchip"
             aria-pressed={row.saved}
             aria-label={t("combat.damageTray.savedAria", { name: target.name })}
-            onClick={() => onChange({ ...row, saved: !row.saved })}
+            onClick={() => onChange(toggleSaved(row, plan))}
           >
             {t("combat.damageTray.saved")}
           </button>
@@ -326,8 +329,8 @@ function TrayTargetRow({
           <button
             type="button"
             className="fchip"
-            aria-pressed={row.multiplier !== "1"}
-            onClick={() => onChange(toggleDefense(row))}
+            aria-pressed={row.defenseOn}
+            onClick={() => onChange(toggleDefense(row, plan))}
           >
             {t(`combat.damageTray.${row.defense}`)}
           </button>

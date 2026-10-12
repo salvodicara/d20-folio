@@ -106,6 +106,16 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(tray.getByTestId("damage-tray-row")).toHaveCount(3);
     await tray.getByRole("textbox", { name: "Totale tirato" }).fill("8+6+5+4+3+2");
     await tray.getByRole("button", { name: "Goblin Chief ha superato il TS" }).click();
+    // The segment IS the multiplier: Salvato selected ½ on that row.
+    const chief = tray.getByTestId("damage-tray-row").nth(1);
+    await expect(chief.getByRole("button", { name: "×½" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    await expect(chief.getByRole("button", { name: "×1" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
     await expect(tray.getByTestId("damage-tray-preview")).toHaveText([
       "−28",
       "−14",

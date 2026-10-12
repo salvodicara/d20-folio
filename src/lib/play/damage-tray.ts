@@ -20,8 +20,10 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { DamageType } from "@/types/damage";
 
 export type TrayEffect = "damage" | "heal" | "temp-hp";
-export type TrayMultiplier = "0" | "0.5" | "1" | "2";
-export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.5", "1", "2"];
+/** The per-target multiplier, on Foundry dnd5e's scale: ¼ is a resistant target that
+ *  saved for half (halve, then halve again). */
+export type TrayMultiplier = "0" | "0.25" | "0.5" | "1" | "2";
+export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.25", "0.5", "1", "2"];
 
 export interface DamageTrayPlan {
   /** What the one number is; `null` for a condition-only action (Hold Person). */
@@ -121,18 +123,51 @@ export function targetDefense(
   return resistant ? "resistant" : vulnerable ? "vulnerable" : null;
 }
 
+const FACTOR: Record<TrayMultiplier, number> = {
+  "0": 0,
+  "0.25": 0.25,
+  "0.5": 0.5,
+  "1": 1,
+  "2": 2,
+};
+
 export function defenseMultiplier(defense: TargetDefense): TrayMultiplier {
   return defense === "immune" ? "0" : defense === "resistant" ? "0.5" : "2";
 }
 
 export interface TrayRow {
   targetId: string;
+  /** THE multiplier this row applies — what the segmented control shows. "Saved"
+   *  and the defense chip only set it; a hand-picked segment wins. */
   multiplier: TrayMultiplier;
   saved: boolean;
   /** The known defense that pre-set the multiplier, shown as a chip. */
   defense: TargetDefense | null;
+  /** Whether the defense chip is on (it counts in the multiplier it sets). */
+  defenseOn: boolean;
   /** The failed-save conditions this row will apply. */
   conditions: string[];
+}
+
+/**
+ * The multiplier the row's facts give: a successful save halves (or cancels) the
+ * damage, then the target's defense halves, doubles or cancels it (SRD order). Saved
+ * and resistant is ¼; saved and vulnerable is ×1.
+ */
+export function factsMultiplier(
+  row: Pick<TrayRow, "saved" | "defense" | "defenseOn">,
+  plan: DamageTrayPlan
+): TrayMultiplier {
+  const save =
+    row.saved && plan.save && plan.effect === "damage"
+      ? plan.save.onSave === "half"
+        ? 0.5
+        : 0
+      : 1;
+  const defense =
+    row.defense && row.defenseOn ? FACTOR[defenseMultiplier(row.defense)] : 1;
+  const product = save * defense;
+  return TRAY_MULTIPLIERS.find((m) => FACTOR[m] === product) ?? "1";
 }
 
 export function initialTrayRow(
@@ -142,11 +177,11 @@ export function initialTrayRow(
 ): TrayRow {
   const defense =
     plan.effect === "damage" ? targetDefense(defenses, plan.damageType) : null;
+  const facts = { saved: false, defense, defenseOn: defense !== null };
   return {
     targetId,
-    multiplier: defense ? defenseMultiplier(defense) : "1",
-    saved: false,
-    defense,
+    ...facts,
+    multiplier: factsMultiplier(facts, plan),
     conditions: plan.conditions
       ? plan.conditions.pickOne
         ? plan.conditions.options.slice(0, 1)
@@ -155,18 +190,16 @@ export function initialTrayRow(
   };
 }
 
-/**
- * What this row applies from the rolled total. SRD order: a successful save halves
- * (or cancels) the damage first, then the target's multiplier (resistance halves,
- * vulnerability doubles); every halving rounds down.
- */
+/** What this row applies from the rolled total: the total × its multiplier, every
+ *  halving rounded down (¼ = halve twice, the same as ⌊total / 4⌋). */
 export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
-  let amount = Math.max(0, Math.floor(total));
-  if (row.saved && plan.save && plan.effect === "damage")
-    amount = plan.save.onSave === "half" ? Math.floor(amount / 2) : 0;
+  const amount = Math.max(0, Math.floor(total));
+  if (plan.effect !== "damage") return amount;
   switch (row.multiplier) {
     case "0":
       return 0;
+    case "0.25":
+      return Math.floor(amount / 4);
     case "0.5":
       return Math.floor(amount / 2);
     case "2":
@@ -181,11 +214,22 @@ export function rowConditions(row: TrayRow): string[] {
   return row.saved ? [] : row.conditions;
 }
 
-/** Toggle the defense chip: off falls back to ×1, on restores the pre-set. */
-export function toggleDefense(row: TrayRow): TrayRow {
+/** Toggle "Saved": it selects the multiplier its facts give (½, 0, ¼…). */
+export function toggleSaved(row: TrayRow, plan: DamageTrayPlan): TrayRow {
+  const next = { ...row, saved: !row.saved };
+  return { ...next, multiplier: factsMultiplier(next, plan) };
+}
+
+/** Toggle the defense chip: on, it counts in the multiplier; off, it does not. */
+export function toggleDefense(row: TrayRow, plan: DamageTrayPlan): TrayRow {
   if (!row.defense) return row;
-  const preset = defenseMultiplier(row.defense);
-  return { ...row, multiplier: row.multiplier === preset ? "1" : preset };
+  const next = { ...row, defenseOn: !row.defenseOn };
+  return { ...next, multiplier: factsMultiplier(next, plan) };
+}
+
+/** A hand-picked segment IS the multiplier (Saved and the chip keep their state). */
+export function setMultiplier(row: TrayRow, multiplier: TrayMultiplier): TrayRow {
+  return { ...row, multiplier };
 }
 
 /** Toggle a condition chip; a pick-one action keeps exactly the tapped one. */
