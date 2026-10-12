@@ -1,0 +1,116 @@
+/**
+ * The play vocabulary: one event per sheet transition, and one pure `applyPlayEvent`
+ * that runs it. A caller describes WHAT happened; the matching `lib/play` transition
+ * decides the next character. Side effects (the encounter cell, the log, undo,
+ * toasts) stay with the caller.
+ */
+import type { FamiliarCreatureType } from "@/lib/familiar-ids";
+import type { CharacterDoc, SessionState } from "@/types/character";
+import {
+  dismissFamiliar,
+  setCompanionHp,
+  setCompanionVariant,
+  setFamiliarDismissed,
+  summonFamiliar,
+} from "./companions";
+import { addCondition, removeCondition } from "./conditions";
+import { dropBeastForm } from "./forms";
+import { togglePinnedAction } from "./pins";
+import { longRestCharacter, shortRestCharacter } from "./rests";
+import { setActiveSpellCastLevel, setActiveState } from "./states";
+import {
+  restoreSpellSlot,
+  restoreTracker,
+  setDeathSaves,
+  setExhaustion,
+  setHp,
+  setTempHp,
+  spendSpellSlot,
+  spendTracker,
+} from "./vitals";
+
+export type PlayEvent =
+  | { kind: "set-hp"; current: number }
+  | { kind: "set-temp-hp"; temp: number }
+  | { kind: "spend-slot"; level: number; pactMagic: boolean }
+  | { kind: "restore-slot"; level: number; pactMagic: boolean }
+  | { kind: "spend-tracker"; trackerId: string; amount: number }
+  | { kind: "restore-tracker"; trackerId: string; amount: number }
+  | { kind: "set-death-saves"; successes: number; failures: number }
+  | { kind: "set-exhaustion"; level: number }
+  | { kind: "add-condition"; condition: string }
+  | { kind: "remove-condition"; condition: string }
+  | { kind: "set-active-state"; key: string; isActive: boolean; litRound: number }
+  | { kind: "set-active-cast-level"; key: string; level: number | undefined }
+  | { kind: "drop-beast-form" }
+  | { kind: "set-companion-hp"; featureId: string; current: number }
+  | { kind: "set-companion-variant"; featureId: string; variantId: string }
+  | {
+      kind: "summon-familiar";
+      monsterId: string;
+      creatureType: FamiliarCreatureType;
+      maxHp: number;
+    }
+  | { kind: "set-familiar-dismissed"; dismissed: boolean }
+  | { kind: "dismiss-familiar" }
+  | { kind: "toggle-pin"; actionId: string; defaultPinned: boolean }
+  | { kind: "long-rest" }
+  | { kind: "short-rest" };
+
+export type PlayEventKind = PlayEvent["kind"];
+
+/** The character after the event; null when the event changes nothing. */
+export function applyPlayEvent(doc: CharacterDoc, event: PlayEvent): CharacterDoc | null {
+  const withSession = (session: SessionState | null | undefined): CharacterDoc | null =>
+    session ? { ...doc, session } : null;
+  switch (event.kind) {
+    case "set-hp":
+      return withSession(setHp(doc, event.current));
+    case "set-temp-hp":
+      return withSession(setTempHp(doc, event.temp));
+    case "spend-slot":
+      return withSession(spendSpellSlot(doc, event.level, event.pactMagic));
+    case "restore-slot":
+      return withSession(restoreSpellSlot(doc, event.level, event.pactMagic));
+    case "spend-tracker":
+      return withSession(spendTracker(doc, event.trackerId, event.amount));
+    case "restore-tracker":
+      return withSession(restoreTracker(doc, event.trackerId, event.amount));
+    case "set-death-saves":
+      return withSession(setDeathSaves(doc, event.successes, event.failures)?.session);
+    case "set-exhaustion":
+      return withSession(setExhaustion(doc, event.level));
+    case "add-condition":
+      return withSession(addCondition(doc, event.condition));
+    case "remove-condition":
+      return withSession(removeCondition(doc, event.condition)?.session);
+    case "set-active-state":
+      return withSession(setActiveState(doc, event.key, event.isActive, event.litRound));
+    case "set-active-cast-level":
+      return withSession(setActiveSpellCastLevel(doc, event.key, event.level));
+    case "drop-beast-form":
+      return dropBeastForm(doc);
+    case "set-companion-hp":
+      return withSession(setCompanionHp(doc.session, event.featureId, event.current));
+    case "set-companion-variant":
+      return withSession(
+        setCompanionVariant(doc.session, event.featureId, event.variantId)
+      );
+    case "summon-familiar":
+      return withSession(
+        summonFamiliar(doc.session, event.monsterId, event.creatureType, event.maxHp)
+      );
+    case "set-familiar-dismissed":
+      return withSession(setFamiliarDismissed(doc.session, event.dismissed));
+    case "dismiss-familiar":
+      return withSession(dismissFamiliar(doc.session));
+    case "toggle-pin":
+      return withSession(
+        togglePinnedAction(doc.session, event.actionId, event.defaultPinned)
+      );
+    case "long-rest":
+      return longRestCharacter(doc);
+    case "short-rest":
+      return shortRestCharacter(doc);
+  }
+}
