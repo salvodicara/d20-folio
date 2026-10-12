@@ -37,6 +37,7 @@ import {
   formatWeaponRange,
   type WeaponFactsVM,
 } from "@/lib/views/weapon-facts-view";
+import { buildMasteryRiders, type MasteryRiderVM } from "@/lib/views/mastery-rider-view";
 import { buildRiders, type RiderVM } from "@/lib/views/rider-view";
 import { className } from "@/lib/views/level-up-view";
 import { economyActionCategory } from "@/lib/combat-economy";
@@ -250,9 +251,9 @@ function localizeSummary(
   delete rest.properties;
   delete rest.weaponCategory;
   delete rest.weaponMastery;
-  // RA-13 — the resolved mastery numbers ride `weaponFacts` (the chip labels),
-  // not the display summary.
-  delete rest.masteryDetail;
+  // RA-13 — the resolved mastery numbers (`masteryDetail`) stay: locale-free
+  // numbers the resolution spec reads (Graze's on-miss damage part, Topple's
+  // Prone option in the damage tray). The chip labels read them via weaponFacts.
   // RA-17 — the Heavy-property Disadvantage advisory rides `weaponFacts`, not the
   // display summary.
   delete rest.heavyDisadvantage;
@@ -355,6 +356,8 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
   // heal) — ONE seam both weapon surfaces feed, built from the engine's locale-free
   // rider data. Empty array when the action has no rider (the surface shows none).
   const riders = buildRiders(summary, locale);
+  const masteryRiders =
+    action.source === "weapon" ? buildMasteryRiders(summary, locale) : [];
   // The dual-wield off-hand row appends a fixed bilingual suffix to the weapon's
   // own name (composed here — the engine carries only the base name ref).
   const suffix = action.offhand ? OFFHAND_SUFFIX[locale] : "";
@@ -422,6 +425,9 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
     nameLoc: name,
     summary: localizeSummary(summary, locale, localizedName),
     ...(weaponFacts ? { weaponFacts } : {}),
+    // The weapon's declarable Weapon-Mastery effects (Graze, Topple, Vex, …) as
+    // one-tap rider tokens — combat-only (the inventory card keeps the chip).
+    ...(masteryRiders.length > 0 ? { masteryRiders } : {}),
     // A non-weapon action row (a weapon-attack cantrip etc.) carries no
     // `weaponFacts`, so its riders ride the action directly for the card to
     // render. Weapon rows render them through `weaponFacts.riders` (above), so the
@@ -447,6 +453,8 @@ export interface CombatAction extends ResolvedAction {
    * this top-level field only when there is no `weaponFacts` (no double-render).
    */
   riders?: RiderVM[];
+  /** The weapon's declarable Weapon-Mastery riders (one-tap rows). */
+  masteryRiders?: MasteryRiderVM[];
 }
 
 /**

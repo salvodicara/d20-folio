@@ -32,8 +32,9 @@ export interface DamageTrayPlan {
   damageType?: DamageType;
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
-  /** The conditions a failed save imposes; `pickOne` when the caster picks one. */
-  conditions?: { options: string[]; pickOne: boolean };
+  /** The conditions a failed save imposes; `pickOne` when the caster picks one;
+   *  `optIn` when a hit-gated rider (Topple) offers it with the chip off. */
+  conditions?: { options: string[]; pickOne: boolean; optIn?: true };
   targets: string[];
 }
 
@@ -89,6 +90,7 @@ export function damageTrayPlan(
           conditions: {
             options: condition.conditionIds,
             pickOne: condition.pickOne,
+            ...(condition.optIn ? { optIn: true as const } : {}),
           },
         }
       : {}),
@@ -182,11 +184,12 @@ export function initialTrayRow(
     targetId,
     ...facts,
     multiplier: factsMultiplier(facts, plan),
-    conditions: plan.conditions
-      ? plan.conditions.pickOne
-        ? plan.conditions.options.slice(0, 1)
-        : [...plan.conditions.options]
-      : [],
+    conditions:
+      plan.conditions && !plan.conditions.optIn
+        ? plan.conditions.pickOne
+          ? plan.conditions.options.slice(0, 1)
+          : [...plan.conditions.options]
+        : [],
   };
 }
 

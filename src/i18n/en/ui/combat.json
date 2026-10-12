@@ -291,6 +291,15 @@
     "limiterExhaustion": "−{{n}} to all d20 Tests · −{{speed}} Speed",
     "limiterSpellSlotLimit": "Only one spell slot per turn (used {{n}})",
     "cunningStrike": "Cunning Strike",
+    "masteryRider": {
+      "graze": "{{name}}: {{amount}} damage if you miss",
+      "topple": "{{name}}: CON save DC {{dc}} → Prone",
+      "push": "{{name}}: push {{distance}} away",
+      "sap": "{{name}}: Disadvantage on the target's next attack",
+      "slow": "{{name}}: −{{distance}} Speed",
+      "vex": "{{name}}: Advantage on your next attack",
+      "cleave": "{{name}}: extra attack on an adjacent creature (1/turn)"
+    },
     "effectReview": {
       "rubric": "Effect review",
       "title": "Review consequences",
