@@ -1,8 +1,9 @@
 /**
- * The play vocabulary: one event per sheet transition, and one pure `applyPlayEvent`
- * that runs it. A caller describes WHAT happened; the matching `lib/play` transition
+ * The sheet vocabulary: one event per sheet transition, and one pure `applySheetEvent`
+ * that runs it. A caller describes WHAT changes; the matching `lib/play` transition
  * decides the next character. Side effects (the encounter cell, the log, undo,
- * toasts) stay with the caller.
+ * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
+ * what happened at the table.
  */
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -29,7 +30,7 @@ import {
   spendTracker,
 } from "./vitals";
 
-export type PlayEvent =
+export type SheetEvent =
   | { kind: "set-hp"; current: number }
   | { kind: "set-temp-hp"; temp: number }
   | { kind: "spend-slot"; level: number; pactMagic: boolean }
@@ -57,10 +58,13 @@ export type PlayEvent =
   | { kind: "long-rest" }
   | { kind: "short-rest" };
 
-export type PlayEventKind = PlayEvent["kind"];
+export type SheetEventKind = SheetEvent["kind"];
 
 /** The character after the event; null when the event changes nothing. */
-export function applyPlayEvent(doc: CharacterDoc, event: PlayEvent): CharacterDoc | null {
+export function applySheetEvent(
+  doc: CharacterDoc,
+  event: SheetEvent
+): CharacterDoc | null {
   const withSession = (session: SessionState | null | undefined): CharacterDoc | null =>
     session ? { ...doc, session } : null;
   switch (event.kind) {

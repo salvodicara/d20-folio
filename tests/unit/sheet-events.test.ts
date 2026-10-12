@@ -1,5 +1,5 @@
 /**
- * `applyPlayEvent`: every play event runs exactly its `lib/play` transition. Each case
+ * `applySheetEvent`: every play event runs exactly its `lib/play` transition. Each case
  * names the direct call the event must equal, so a miswired branch fails by name.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,7 +13,11 @@ vi.mock("@/lib/firebase", () => ({
 }));
 
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
-import { applyPlayEvent, type PlayEvent, type PlayEventKind } from "@/lib/play/events";
+import {
+  applySheetEvent,
+  type SheetEvent,
+  type SheetEventKind,
+} from "@/lib/play/sheet-events";
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
 import * as forms from "@/lib/play/forms";
@@ -56,7 +60,7 @@ const at = (session: SessionState | null | undefined): CharacterDoc | null =>
 
 /** One case per event kind: the event, and the direct transition it must equal. */
 const CASES: {
-  [K in PlayEventKind]: [Extract<PlayEvent, { kind: K }>, () => CharacterDoc | null];
+  [K in SheetEventKind]: [Extract<SheetEvent, { kind: K }>, () => CharacterDoc | null];
 } = {
   "set-hp": [{ kind: "set-hp", current: 4 }, () => at(vitals.setHp(doc, 4))],
   "set-temp-hp": [{ kind: "set-temp-hp", temp: 5 }, () => at(vitals.setTempHp(doc, 5))],
@@ -129,7 +133,7 @@ const CASES: {
   "short-rest": [{ kind: "short-rest" }, () => rests.shortRestCharacter(doc)],
 };
 
-describe("applyPlayEvent", () => {
+describe("applySheetEvent", () => {
   // World actions carry a fresh id; pin it so the two runs compare.
   beforeEach(() => {
     vi.spyOn(crypto, "randomUUID").mockReturnValue("0-0-0-0-0");
@@ -138,19 +142,19 @@ describe("applyPlayEvent", () => {
   it.each(Object.entries(CASES))(
     "%s runs its own transition",
     (_kind, [event, direct]) => {
-      expect(applyPlayEvent(doc, event)).toEqual(direct());
+      expect(applySheetEvent(doc, event)).toEqual(direct());
     }
   );
 
   it("never mutates the character it reads", () => {
     const before = structuredClone(doc);
-    for (const [event] of Object.values(CASES)) applyPlayEvent(doc, event);
+    for (const [event] of Object.values(CASES)) applySheetEvent(doc, event);
     expect(doc).toEqual(before);
   });
 
   it("an event that changes nothing returns null", () => {
     const plain = makeCharacterDoc({ classId: "wizard", level: 5 });
-    expect(applyPlayEvent(plain, { kind: "dismiss-familiar" })).toBeNull();
-    expect(applyPlayEvent(plain, { kind: "drop-beast-form" })).toBeNull();
+    expect(applySheetEvent(plain, { kind: "dismiss-familiar" })).toBeNull();
+    expect(applySheetEvent(plain, { kind: "drop-beast-form" })).toBeNull();
   });
 });

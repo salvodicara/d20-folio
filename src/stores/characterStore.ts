@@ -22,7 +22,7 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { changeConcentration } from "@/lib/play/concentration";
-import { applyPlayEvent, type PlayEvent } from "@/lib/play/events";
+import { applySheetEvent, type SheetEvent } from "@/lib/play/sheet-events";
 import {
   amendLogEntry as amendLogEntryEvent,
   appendLogEntry,
@@ -559,7 +559,7 @@ interface CharacterState {
    * Apply one play event to the sheet (see `lib/play/events`). Returns the undo that
    * restores the prior character, or `null` when read-only or nothing changes.
    */
-  dispatch: (event: PlayEvent) => (() => void) | null;
+  dispatch: (event: SheetEvent) => (() => void) | null;
   /** Set a summoned companion's current HP (Steel Defender / Eldritch Cannon). */
   setCompanionHp: (featureId: string, current: number) => void;
   /**
@@ -2861,7 +2861,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    const next = applyPlayEvent(character, event);
+    const next = applySheetEvent(character, event);
     if (!next) return null;
     set({ character: next });
     return () => set({ character });
