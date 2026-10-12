@@ -19,6 +19,9 @@ export type CastFollowUp =
       conditionIds: string[];
       /** The spell imposes one of them (Blindness/Deafness): the player picks. */
       pickOne: boolean;
+      /** A hit-gated rider (Topple's Prone): offered, never assumed — the chip
+       *  starts off until the player says the attack hit and the save failed. */
+      optIn?: true;
     };
 
 export function castFollowUps(
@@ -38,7 +41,8 @@ export function castFollowUps(
         ? [selfId]
         : [];
   const application =
-    spec.conditionApplication?.on === "failed-save"
+    spec.conditionApplication?.on === "failed-save" ||
+    spec.conditionApplication?.on === "hit"
       ? spec.conditionApplication
       : undefined;
 
@@ -57,6 +61,7 @@ export function castFollowUps(
             pickOne:
               application.max !== undefined &&
               application.max < application.options.length,
+            ...(application.on === "hit" ? { optIn: true as const } : {}),
           },
         ]
       : []),

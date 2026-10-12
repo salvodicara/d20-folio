@@ -104,6 +104,9 @@ import {
 import { uiText } from "@/lib/loc-text";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
+import { MasteryRiders } from "@/components/shared/MasteryRiders";
+import { masteryRiderLine } from "@/lib/views/mastery-rider-view";
+import { applyMasteryRider } from "@/features/character/center/mastery-rider-commit";
 import {
   buildCunningStrikeOptions,
   type CunningStrikeVM,
@@ -1753,6 +1756,23 @@ function CombatActionCard({
             <CunningStrikeOptions
               options={cunningStrike.options}
               onApply={(option) => cunningStrike.onApply(action, option)}
+            />
+          )}
+          {/* The weapon's Weapon-Mastery effects (Graze, Topple, Vex, …) as
+              one-tap rows in the same rider register: a tap logs it and, for
+              Vex, lights the next-attack Advantage. */}
+          {action.masteryRiders && (
+            <MasteryRiders
+              riders={action.masteryRiders}
+              onApply={(rider) =>
+                applyMasteryRider(action, rider, {
+                  applied: t("combat.cunningStrikeAppliedToast", {
+                    option: masteryRiderLine(rider, t),
+                    name: action.name,
+                  }),
+                  blocked: t("combat.blockedReasonDead"),
+                })
+              }
             />
           )}
         </WeaponFacts>

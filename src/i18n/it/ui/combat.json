@@ -291,6 +291,15 @@
     "limiterExhaustion": "−{{n}} a tutti i Test con d20 · −{{speed}} di Velocità",
     "limiterSpellSlotLimit": "Solo uno slot incantesimo per turno (usati {{n}})",
     "cunningStrike": "Colpo Astuto",
+    "masteryRider": {
+      "graze": "{{name}}: danni {{amount}} se manchi",
+      "topple": "{{name}}: TS COS CD {{dc}} → Prono",
+      "push": "{{name}}: spingi di {{distance}}",
+      "sap": "{{name}}: Svantaggio al prossimo attacco del bersaglio",
+      "slow": "{{name}}: −{{distance}} velocità",
+      "vex": "{{name}}: Vantaggio al tuo prossimo attacco",
+      "cleave": "{{name}}: attacco extra a una creatura adiacente (1/turno)"
+    },
     "effectReview": {
       "rubric": "Verifica effetto",
       "title": "Verifica le conseguenze",
