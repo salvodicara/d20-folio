@@ -3,6 +3,7 @@
     "title": "Registro Azioni",
     "clear": "Cancella Registro",
     "clearTitle": "Cancella registro",
-    "empty": "Nessuna azione registrata. Gli eventi appariranno qui durante il gioco."
+    "empty": "Nessuna azione registrata. Gli eventi appariranno qui durante il gioco.",
+    "fromSession": "Dalla sessione condivisa"
   }
 }
