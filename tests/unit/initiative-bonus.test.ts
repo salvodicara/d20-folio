@@ -6,7 +6,9 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateCharacterGrants,
   computedInitiativeBonus,
+  computedInitiativeBreakdown,
 } from "@/lib/aggregate-character";
+import { breakdownTotal } from "@/lib/value-breakdown";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -47,5 +49,20 @@ describe("computedInitiativeBonus", () => {
     const alert = doc({ bgFeat: "alert" }, 1);
     expect(deriveCharacter(alert).initiativeBonus).toBe(bonus(alert));
     expect(deriveCharacter(doc({ initiativeBonusOverride: 9 })).initiativeBonus).toBe(9);
+  });
+
+  it("the breakdown tip always sums to the bonus", () => {
+    for (const d of [
+      doc(),
+      doc({ bgFeat: "alert" }, 2),
+      doc({ humanOriginFeat: "alert" }, 1),
+    ]) {
+      const parts = computedInitiativeBreakdown(
+        d.character,
+        aggregateCharacterGrants(d.character, d.session),
+        d.session.exhaustion
+      );
+      expect(breakdownTotal(parts)).toBe(bonus(d));
+    }
   });
 });

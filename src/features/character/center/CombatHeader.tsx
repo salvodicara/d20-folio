@@ -49,20 +49,14 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { RestModal } from "../RestModal";
-import {
-  abilityModifier,
-  proficiencyBonus,
-  buildInitiativeBreakdown,
-  initiativeRollState,
-  characterHasFeat,
-  effectiveAbilityScores,
-} from "@/lib/compute";
+import { proficiencyBonus, initiativeRollState } from "@/lib/compute";
 import type { InitiativeAdvantageOverride } from "@/types/character";
 import {
   aggregateCharacterGrants,
   computeCharacterAC,
   computeCharacterAcBreakdown,
   computedInitiativeBonus,
+  computedInitiativeBreakdown,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
@@ -218,27 +212,10 @@ export function CombatHeader() {
   const level = totalLevel(charData);
   const tablePB = proficiencyBonus(level);
   const effectivePB = charData.proficiencyBonusOverride ?? tablePB;
-  const effectiveScores = effectiveAbilityScores(
-    charData.abilityScores,
-    initAgg.abilityScoreFloors,
-    initAgg.itemAbilityScoreBonus,
-    initAgg.itemAbilityScoreCap
-  );
   // Single AC formula shared with the persisted snapshot the roster reads (6b):
   // computed default (for the inline-edit hint + reset) and the override-aware value.
   const computedAc = computeCharacterAC(charData, initAgg, itemResources);
   const acValue = charData.acOverride ?? computedAc;
-  const hasAlertFeat = characterHasFeat("alert", {
-    humanOriginFeat: charData.humanOriginFeat,
-    bgFeat: charData.bgFeat,
-    features: charData.features,
-  });
-  const initiativeGrantBonus =
-    initAgg.initiativeBonusFlat +
-    initAgg.initiativeBonusAbilities.reduce(
-      (sum, a) => sum + abilityModifier(effectiveScores[a]),
-      0
-    );
   const computedInitiative = computedInitiativeBonus(charData, initAgg, exhaustion);
   const initValue = charData.initiativeBonusOverride ?? computedInitiative;
 
@@ -256,13 +233,7 @@ export function CombatHeader() {
       : [];
   const initBreakdownParts =
     charData.initiativeBonusOverride == null
-      ? buildInitiativeBreakdown(
-          effectiveScores.DEX,
-          effectivePB,
-          hasAlertFeat,
-          exhaustion,
-          initiativeGrantBonus
-        )
+      ? computedInitiativeBreakdown(charData, initAgg, exhaustion)
       : [];
   const initBreakdown = localizeBreakdown(initBreakdownParts, locale);
   // #68 / U2 / RA-25 — the initiative ROLL is override-first: it auto-derives the
