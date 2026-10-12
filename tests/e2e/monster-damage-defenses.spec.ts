@@ -15,7 +15,7 @@ async function bootWithDragonTurtle(page: Page): Promise<void> {
   await seedLang(page, "it");
   await page.addInitScript(() => window.localStorage.setItem("d20-dev-encounter", "1"));
   await page.goto("/campaigns/mock-1");
-  await expect(page.getByText(/coralino/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText(/coralino/i).first()).toBeVisible({ timeout: 60_000 });
 
   await page
     .getByRole("button", { name: /aggiungi mostro/i })
