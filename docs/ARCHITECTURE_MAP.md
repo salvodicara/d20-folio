@@ -313,7 +313,9 @@ Each step is merged on its own with the app working. Steps 1–4 change nothing 
    - Done: the `RecentAttack` ring (`combat/state.recentActions`, no writer since the resolver
      went) is gone; the codec ignores a stored ring and the next full overwrite sheds it.
    - The character's log panel reads the session log when attached.
-   - Delete the IndexedDB mirror and `src/lib/combat/*`.
+   - Delete the IndexedDB mirror once the log panel reads the session log: it is still read,
+     since `useCharacterSubscription` restores an empty stored log from the device. (`src/lib/combat/*`
+     is gone, #28.)
 
 ## Phase 2: states and timers (one session each, each shippable)
 
