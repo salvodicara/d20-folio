@@ -124,9 +124,11 @@ There are six parallel records. The same hit can land in four of them.
     initiative copies (they go with the world).
 
 - **`mechanics-*` (30k lines) is half-retired.**
-  - Its cast executor is dead: `EngineCastFlow`, `EngineActionFlow`, `EnginePulseStrip`,
-    `EngineConsumablesStrip`, `MechanicsCastModal`, `useMechanicsCast`, `useMechanicsPulse` and
-    `engine-spell-gate` are about 1.8k lines that only import each other.
+  - Its dead cast executor (`EngineCastFlow`, `MechanicsCastModal`, `useMechanicsCast` and the
+    rest, about 1.8k lines) was deleted in #28. Re-checked 2026-10-12 with an import graph from
+    the app, the core package, the scripts and the functions: no other `src/` module is
+    unreachable, apart from `lib/on-cast-effects.ts` (an open gap, wired again with casting) and
+    the test-only `lib/automation-*` corpus.
   - Its `world` is still the store of record for vitals, conditions, concentration, rest and DM
     adversary damage.
 - **Undo is three mechanisms:** snapshot, hand-written inverse closure, and journal generation flip.
