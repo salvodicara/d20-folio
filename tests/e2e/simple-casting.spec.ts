@@ -51,6 +51,8 @@ for (const locale of ["en", "it"] as const) {
               locale === "en" ? /Level 1 slot \(base\)/ : /Slot di livello 1 \(base\)/,
           })
           .click();
+        // The damage tray follows a heal cast; skipping it leaves the cast logged.
+        await dialog.getByRole("button", { name: /^(Skip|Salta)$/ }).click();
         await expect(dialog).toBeHidden();
         await expect
           .poll(async () => (await savedState(page)).used)

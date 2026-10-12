@@ -70,6 +70,8 @@ test.describe("Spells Page", () => {
     await castButton.click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: /Level 1 slot \(base\)/i }).click();
+    // The damage tray follows a heal cast; skipping it leaves the cast logged.
+    await dialog.getByRole("button", { name: /^Skip$/ }).click();
     await expect(dialog).toBeHidden();
     await expect(
       page.locator(".fob").getByRole("button", { name: /^Undo:/i })
