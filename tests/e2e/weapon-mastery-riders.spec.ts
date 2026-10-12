@@ -52,6 +52,8 @@ for (const size of ["desktop", "mobile"] as const) {
       name: "Rovesciamento: TS COS CD 14 → Prono",
     });
     await expect(topple).toBeVisible();
+    // One fact, one home: the footer chip steps aside for the rider row.
+    await expect(staff.getByText(/Rovesciamento · CD/i)).toHaveCount(0);
     await expectNoSideScroll(page);
     await topple.scrollIntoViewIfNeeded();
     await page.screenshot({ path: shotPath(`topple-${size}.png`) });
@@ -66,6 +68,7 @@ for (const size of ["desktop", "mobile"] as const) {
       name: "Colpo di Striscio: danni 3 se manchi",
     });
     await expect(graze).toBeVisible();
+    await expect(glaive.getByText(/Colpo di Striscio · 3/i)).toHaveCount(0);
     await expectNoSideScroll(page);
     await graze.scrollIntoViewIfNeeded();
     await page.screenshot({ path: shotPath(`graze-${size}.png`) });

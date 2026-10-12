@@ -424,7 +424,23 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
     // acceptable minor residual.
     nameLoc: name,
     summary: localizeSummary(summary, locale, localizedName),
-    ...(weaponFacts ? { weaponFacts } : {}),
+    // One fact, one home: a mastery that rides the card as a rider row drops its
+    // footer chip here (the inventory card, with no rows, keeps the chip; Nick has
+    // no row, so it keeps its chip on both).
+    ...(weaponFacts
+      ? {
+          weaponFacts:
+            masteryRiders.length > 0
+              ? {
+                  ...weaponFacts,
+                  chips: weaponFacts.chips.filter(
+                    (c) =>
+                      c.kind !== "mastery" || !masteryRiders.some((r) => r.id === c.id)
+                  ),
+                }
+              : weaponFacts,
+        }
+      : {}),
     // The weapon's declarable Weapon-Mastery effects (Graze, Topple, Vex, …) as
     // one-tap rider tokens — combat-only (the inventory card keeps the chip).
     ...(masteryRiders.length > 0 ? { masteryRiders } : {}),

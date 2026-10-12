@@ -125,6 +125,19 @@ describe("buildWeaponFacts — chips + range (EN/IT)", () => {
 
 // ── surface equivalence (the shared-recipe pin) ───────────────────────────────
 
+/** The inventory facts as the combat card shows them: a mastery that rides the
+ *  card as a rider row drops its chip there (one fact, one home). */
+function asCombat(
+  facts: WeaponFactsVM | undefined,
+  riderIds: ReadonlyArray<string>
+): WeaponFactsVM | undefined {
+  if (!facts) return facts;
+  return {
+    ...facts,
+    chips: facts.chips.filter((c) => c.kind !== "mastery" || !riderIds.includes(c.id)),
+  };
+}
+
 describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => {
   function withMasteredLongsword(): CharacterDoc {
     const doc = mock();
@@ -147,7 +160,9 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
       );
       expect(inventory).toBeDefined();
       expect(combat?.weaponFacts).toBeDefined();
-      expect(combat?.weaponFacts).toEqual(inventory?.facts);
+      expect(combat?.weaponFacts).toEqual(
+        asCombat(inventory?.facts, combat?.masteryRiders?.map((r) => r.id) ?? [])
+      );
       // …and the owned mastery chip is present on BOTH (longsword → Sap).
       expect(inventory?.facts.chips.find((c) => c.kind === "mastery")).toMatchObject({
         id: "sap",
@@ -169,11 +184,15 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
     );
     const combat = localizeActions(doc, "en").find((a) => a.id === "weapon-quarterstaff");
     const invLabel = inventory?.facts.chips.find((c) => c.id === "topple")?.label;
-    const combatLabel = combat?.weaponFacts?.chips.find((c) => c.id === "topple")?.label;
     expect(invLabel).toMatch(/^Topple · DC \d+$/);
-    expect(combatLabel).toBe(invLabel);
+    // Combat shows the same DC once, on its rider row (the chip steps aside).
+    const dc = combat?.masteryRiders?.find((r) => r.id === "topple")?.dc;
+    expect(invLabel).toBe(`Topple · DC ${dc}`);
+    expect(combat?.weaponFacts?.chips.some((c) => c.id === "topple")).toBe(false);
     // The whole VM agrees too (the number lives inside the shared chip).
-    expect(combat?.weaponFacts).toEqual(inventory?.facts);
+    expect(combat?.weaponFacts).toEqual(
+      asCombat(inventory?.facts, combat?.masteryRiders?.map((r) => r.id) ?? [])
+    );
   });
 
   // RA-17 — the Heavy-property attack-roll Disadvantage advisory rides the ONE
@@ -189,7 +208,9 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
     expect(inventory?.facts.heavyDisadvantage).toBe(true);
     expect(combat?.weaponFacts?.heavyDisadvantage).toBe(true);
     // The whole VM agrees across surfaces.
-    expect(combat?.weaponFacts).toEqual(inventory?.facts);
+    expect(combat?.weaponFacts).toEqual(
+      asCombat(inventory?.facts, combat?.masteryRiders?.map((r) => r.id) ?? [])
+    );
   });
 
   it("RA-17 — a Heavy RANGED weapon reads DEX (not STR): DEX 16 clears the advisory", () => {
@@ -203,7 +224,9 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
     const combat = localizeActions(doc, "en").find((a) => a.id === "weapon-longbow");
     expect(inventory?.facts.heavyDisadvantage).toBe(false);
     expect(combat?.weaponFacts?.heavyDisadvantage).toBe(false);
-    expect(combat?.weaponFacts).toEqual(inventory?.facts);
+    expect(combat?.weaponFacts).toEqual(
+      asCombat(inventory?.facts, combat?.masteryRiders?.map((r) => r.id) ?? [])
+    );
   });
 
   it("RA-17 — a non-Heavy weapon never flags the advisory (defaults off)", () => {
@@ -246,7 +269,9 @@ describe("weapon facts — combat and inventory surfaces are EQUIVALENT", () => 
         modOf(facts?.damageOneHanded ?? "")
       );
     }
-    expect(combat?.weaponFacts).toEqual(inv?.facts);
+    expect(combat?.weaponFacts).toEqual(
+      asCombat(inv?.facts, combat?.masteryRiders?.map((r) => r.id) ?? [])
+    );
   });
 
   it("REGRESSION (#94): Archery's +2 lands in the to-hit AND its breakdown on BOTH surfaces", () => {
