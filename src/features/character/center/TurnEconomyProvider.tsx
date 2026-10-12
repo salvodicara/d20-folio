@@ -112,9 +112,16 @@ import {
 import { castEconomySlot, withMetamagicDuration } from "@/lib/play/metamagic";
 import { activateActionState, applyActionConcentration } from "./action-state-commit";
 import {
+  asRitualAction,
+  executionFor,
+  TURN_EXECUTION,
+  type ActionExecution,
+} from "@/lib/play/cast-execution";
+import {
   actionPaymentAffordable as actionPaymentAffordableFor,
   actionWithCost,
   bareActionSpend,
+  castItemPayment,
   castOptionAffordable as castOptionAffordableFor,
   castOptionSpends,
   castOptionExpendsSpellSlot,
@@ -155,18 +162,6 @@ import {
   advanceGlobalCombat,
   syncPipToStatus,
 } from "@/features/campaigns/combat-reconcile";
-
-interface ActionExecution {
-  consumesTurnEconomy: boolean;
-  turnScoped: boolean;
-  ritual: boolean;
-}
-
-const TURN_EXECUTION: ActionExecution = {
-  consumesTurnEconomy: true,
-  turnScoped: true,
-  ritual: false,
-};
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -331,43 +326,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       }),
       duration: 2500,
     });
-  }
-
-  function executionFor(
-    action: ResolvedAction,
-    intent?: ExecuteActionIntent
-  ): ActionExecution | null {
-    if (intent?.ritual) {
-      const spell = action.spellId ? getSpellById(action.spellId) : undefined;
-      if (action.source !== "spell" || !spell?.ritual || spell.level === 0) return null;
-      return { consumesTurnEconomy: false, turnScoped: false, ritual: true };
-    }
-    if (
-      action.source === "spell" ||
-      action.castPoolSourceId ||
-      action.castTiming === "extended"
-    ) {
-      return { consumesTurnEconomy: false, turnScoped: false, ritual: false };
-    }
-    return TURN_EXECUTION;
-  }
-
-  function asRitualAction(action: ResolvedAction): ResolvedAction {
-    return {
-      ...action,
-      type: "free",
-      costsSlot: false,
-      slotLevel: undefined,
-      costTracker: undefined,
-      trackerCost: undefined,
-      costTrackerIsPool: undefined,
-      costTrackerUnit: undefined,
-      resourcePayment: undefined,
-      resourceCost: undefined,
-      costEquipment: undefined,
-      alternateCost: undefined,
-      castPoolSourceId: undefined,
-    };
   }
 
   // Pool-spend prompt state. Ordinary variable-cost actions commit after the
@@ -1238,17 +1196,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     };
     if (!canCommit() || !(await confirmConcentrationBreak(action)) || !canCommit())
       return;
-    const itemPayment =
-      opt.kind === "free-cast" && opt.payment?.kind === "item-resource"
-        ? opt.payment
-        : null;
-    const preparedResource =
-      itemPayment && opt.kind === "free-cast"
-        ? await itemResourceCommands?.prepare(
-            itemResourceSpend(itemPayment, opt.cost),
-            opt.sourceName
-          )
-        : undefined;
+    const itemPayment = castItemPayment(action, opt);
+    const preparedResource = itemPayment
+      ? await itemResourceCommands?.prepare(
+          itemResourceSpend(itemPayment.payment, itemPayment.amount),
+          itemPayment.label
+        )
+      : undefined;
     if (!canCommit() || (itemPayment && (!itemResourceCommands || !preparedResource)))
       return;
     const resourceCycle =
@@ -1714,21 +1668,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       showSpellSlotExpenditureLimit();
       return;
     }
-    const reactionItemPayment =
-      cast?.option.kind === "free-cast" && cast.option.payment?.kind === "item-resource"
-        ? cast.option.payment
-        : !cast
-          ? action.resourcePayment
-          : undefined;
+    const reactionItemPayment = castItemPayment(action, cast?.option);
     const preparedResource = reactionItemPayment
       ? await itemResourceCommands?.prepare(
-          itemResourceSpend(
-            reactionItemPayment,
-            cast?.option.kind === "free-cast"
-              ? cast.option.cost
-              : (action.resourceCost ?? 1)
-          ),
-          cast?.option.kind === "free-cast" ? cast.option.sourceName : action.name
+          itemResourceSpend(reactionItemPayment.payment, reactionItemPayment.amount),
+          reactionItemPayment.label
         )
       : undefined;
     if (reactionItemPayment && (!itemResourceCommands || !preparedResource)) return;
@@ -2499,7 +2443,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
-    const execution = executionFor(action, intent);
+    const execution = executionFor(action, intent?.ritual === true);
     if (!execution) return;
     const executable = execution.ritual ? asRitualAction(action) : action;
     prepareResolution(

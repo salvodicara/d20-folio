@@ -259,3 +259,32 @@ export function bareActionSpend(
   }
   return null;
 }
+
+/** An item resource a use pays with, how many units, and the name its prompt shows. */
+export interface ItemPayment {
+  payment: NonNullable<ResolvedAction["resourcePayment"]>;
+  amount: number;
+  label: string;
+}
+
+/**
+ * The item resource a use pays with, paid through its own prepared item command: a
+ * configured free cast drawn from an item, or a bare action's own item cost.
+ */
+export function castItemPayment(
+  action: ResolvedAction,
+  option?: CastCommitOption
+): ItemPayment | null {
+  if (option) {
+    return option.kind === "free-cast" && option.payment?.kind === "item-resource"
+      ? { payment: option.payment, amount: option.cost, label: option.sourceName }
+      : null;
+  }
+  return action.resourcePayment
+    ? {
+        payment: action.resourcePayment,
+        amount: action.resourceCost ?? 1,
+        label: action.name,
+      }
+    : null;
+}
