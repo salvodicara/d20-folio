@@ -231,6 +231,10 @@ There are six parallel records. The same hit can land in four of them.
     2. **Done (#180).** Exhaustion mirrors only a change, as the death track already did.
     3. `sessionActiveKeys` stops reading world standings. Needs the live-data survey first
        (`scripts/survey-dead-effect-fields.ts`, `liveStandings`).
+       Slices 4–6 wait for slice 3: the world still ends its own lifetimes (an old buff
+       standing "until long rest") and `sessionActiveKeys` reads them, so a sheet-only write
+       would leave such a buff lit. The rest paths already leave the same sheet on every
+       scenario (`rest-path-parity.test.ts`, #184).
     4. `world-commit.ts` and its callers keep only the session write; `applyPlayCommit`
        restores the prior values on undo.
     5. Rests: the modal calls `shortRest`/`longRest`; `rest-world-boundary.ts` goes.
