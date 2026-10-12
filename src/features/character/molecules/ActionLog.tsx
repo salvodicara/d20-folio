@@ -81,8 +81,11 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
   const renderSessionLine = useCallback(
     (entry: SessionEntry): string | null => {
       if (!shared) return null;
+      // This sheet names itself from its own character, never a stale party snapshot.
+      const nameOf = (id: string): string | undefined =>
+        id === shared.me ? character?.character.name : shared.nameOf(id);
       const names: SessionReportNames = {
-        pc: shared.nameOf,
+        pc: nameOf,
         condition: (id) =>
           hasSrd("condition", id, "name", language)
             ? localizeSrd("condition", id, "name", language)
@@ -92,10 +95,10 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
         source: (id) => grantSourceLabel(id, language),
       };
       const who = (id: string | undefined): string =>
-        (id && shared.nameOf(id)) || t("combatChronicle.someone");
+        (id && nameOf(id)) || t("combatChronicle.someone");
       return localizePlayEvent(entry.event, t, who, names);
     },
-    [shared, t, language]
+    [shared, character?.character.name, t, language]
   );
 
   if (!character) return null;
