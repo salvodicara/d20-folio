@@ -92,6 +92,12 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   rest: { kind: "rest", restKind: "long" },
   "turn-end": { kind: "turn-end", round: 3 },
   "effect-expired": { kind: "effect-expired", sourceId: "barbarian-rage" },
+  "tracker-regain": {
+    kind: "tracker-regain",
+    trackerId: "wizard-abjurer-arcane-ward",
+    amount: 2,
+  },
+  "slot-regain": { kind: "slot-regain", level: 1 },
   "effect-given": {
     kind: "effect-given",
     effect: "heal",
@@ -125,6 +131,15 @@ describe("effect-given — the follow-up line on another creature", () => {
         conditionId: "paralyzed",
       })
     ).toContain("combatLog.givenCondition");
+  });
+});
+
+describe("on-cast regains — what a cast gave back", () => {
+  it("names the refilled feature and the amount, or the slot level", () => {
+    expect(localize(SAMPLES["tracker-regain"])).toMatch(
+      /^combatLog\.trackerRegain .*"amount":2/
+    );
+    expect(localize(SAMPLES["slot-regain"])).toBe('combatLog.slotRegain {"level":1}');
   });
 });
 
