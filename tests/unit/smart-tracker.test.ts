@@ -250,8 +250,9 @@ describe("resolveActions — dual-wield", () => {
     expect(glaive?.weaponFacts?.chips.find((c) => c.id === "graze")?.label).toBe(
       "Graze · 3"
     );
-    // The raw numbers are a facts-block concern — stripped from the display summary.
-    expect(staff?.summary.masteryDetail).toBeUndefined();
+    // The raw numbers stay on the summary: the resolution spec reads them (Topple's
+    // Prone option in the damage tray, Graze's on-miss part).
+    expect(staff?.summary.masteryDetail).toEqual({ toppleDc: 14 });
     // An unmastered weapon resolves NO detail (the chip itself is gated already).
     const bare = makeChar({ weapons: [{ srdId: "quarterstaff", quantity: 1 }] });
     const bareStaff = localizeActions(bare, "en").find(
