@@ -119,9 +119,13 @@ There are six parallel records. The same hit can land in four of them.
     `characterWorldState` rebases the world's vitals on them before any commit, so the world is a
     projection that can no longer undo the DM's change (#95). Conditions: re-adding one the DM
     removed lights its chip (#97).
-  - Still open: the solo round still has its in-memory and subdoc copies; the DM's view of a
-    member's sheet shows the viewer's solo round; the mechanics worlds keep their own round and
-    initiative copies (they go with the world).
+  - **Initiative:** one rule too (INIT-3, `ThisTurnTracker.tsx`): in a live encounter the roll's
+    home is the campaign's `encounterInit` row; solo it is `combatStore.initiative`, persisted to
+    `combat/state.initiativeRoll`.
+  - The solo round and roll each keep an in-memory copy and the saved `combat/state` copy it
+    persists to: one value, its cache and its storage, not two truths. The DM's read-only view
+    of a member's sheet hides the turn meter (#137). Still open: the mechanics worlds keep their
+    own round and initiative copies (they go with the world).
 
 - **`mechanics-*` (30k lines) is half-retired.**
   - Its dead cast executor (`EngineCastFlow`, `MechanicsCastModal`, `useMechanicsCast` and the
@@ -176,7 +180,8 @@ There are six parallel records. The same hit can land in four of them.
   exactly it on undo (#146, #151); `action-state-commit.ts` lights the use's state and holds its
   Concentration (#157); `cast-follow-ups.ts` and `damage-tray.ts` (#144) hold what follows a
   use. What stays in the component is orchestration across the stores and the dialogs.
-- Round, initiative and HP each get one home.
+- Round, initiative and HP each have one home or one read rule (above); the last copies sit in
+  the mechanics worlds and go with them.
 - `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
   `src/lib/activities` holds the `Activity` shape and pure translators from spells,
