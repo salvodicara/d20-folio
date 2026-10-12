@@ -236,11 +236,11 @@ describe("what a use spends", () => {
       amount: 1,
     });
     expect(
-      bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }))?.amount
-    ).toBe(2);
+      bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }))
+    ).toMatchObject({ amount: 2 });
     expect(
-      bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }), 5)?.amount
-    ).toBe(5);
+      bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }), 5)
+    ).toMatchObject({ amount: 5 });
     expect(bareActionSpend([], action({ costEquipment: "potion" }))).toBeNull();
   });
 });
