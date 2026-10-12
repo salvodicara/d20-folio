@@ -1193,6 +1193,12 @@ export interface SrdSpellData {
    */
   companion?: CompanionStatBlock;
   /**
+   * The bestiary creatures the spell raises, several per cast (Animate Dead,
+   * Create Undead). The Companions rail lists one row per creature ("Skeleton 1",
+   * "Skeleton 2"), each with its own HP, while the spell is prepared.
+   */
+  summonedMonsters?: SpellSummonedMonsters;
+  /**
    * Source book/setting. Non-`"SRD"` tags mark content outside the CC-BY SRD
    * 5.2.1 subset — such entries live in the content pack, never in `src/data`
    * (mirrors `SrdFeatData.source`).
@@ -1831,6 +1837,44 @@ export interface CompanionAttack {
    * value ("1d6 + 9" for Rend at level 5).
    */
   damagePerSpellLevel?: number;
+  /**
+   * Dice added per spell level above the block's {@link CompanionStatBlock.spellLevel}
+   * base (Animated Object's Slam: "increases by 1d4 for each spell slot level
+   * above 5"). Same die as `dice`.
+   */
+  damageDicePerSpellLevel?: string;
+  /** Adds the owner's spellcasting ability modifier to the damage (a Large or
+   *  Huge Animated Object's Slam). */
+  addSpellMod?: true;
+}
+
+/**
+ * How many creatures one cast makes (Animate Dead, Animate Objects, Create
+ * Undead). The count resolves at the slot level the spell was cast with; every
+ * part is optional and the first that applies wins:
+ *   - `byLevel` — the printed table, slot level → creatures (Create Undead: 3
+ *     Ghouls at 6, 4 at 7…); a level below the lowest entry takes that entry;
+ *   - `spellModPer` — the caster's spellcasting modifier divided by this, rounded
+ *     down (Animate Objects: a Large object counts as two);
+ *   - `base` + `perLevel` × slot levels above `baseLevel` (Animate Dead: 1, +2).
+ * The player can still field fewer or more (the spell says "up to"; Animate Dead
+ * accumulates across days) — `session.companionCount` overrides it. Never < 1.
+ */
+export interface SummonCount {
+  base?: number;
+  perLevel?: number;
+  byLevel?: Readonly<Record<number, number>>;
+  spellModPer?: number;
+}
+
+/**
+ * The bestiary creatures a spell raises (Animate Dead's Skeleton or Zombie,
+ * Create Undead's Ghoul / Ghast / Wight / Mummy): each option names a monster
+ * stat block (`src/data/monsters`, printed verbatim) and how many one cast makes.
+ * The first option is the default; the pick rides `session.companionVariant`.
+ */
+export interface SpellSummonedMonsters {
+  options: ReadonlyArray<{ monsterId: string; count: SummonCount }>;
 }
 
 /**
@@ -1864,6 +1908,11 @@ export interface CompanionStatBlock {
    * `concentrationCastLevel`) and the base level otherwise.
    */
   spellLevel?: { base: number; acPer?: number; hpPer?: number };
+  /**
+   * Several creatures from one cast (Animate Objects). Each gets its own HP
+   * tracker (`session.companionHp["<spellId>#<n>"]`). Absent = one creature.
+   */
+  count?: SummonCount;
   /**
    * The companion's Hit Die (one per scaling level), e.g. "d8" — display only.
    * 2024 companion stat blocks state "a number of hit dice equal to your level".

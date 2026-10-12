@@ -704,9 +704,11 @@ deliberately-deferred neighbours, each with its reason (YAGNI, not a gap):
   `CompanionStatBlock` + a slot-level input on `resolveCompanion`.
 - **Find Steed / Phantom Steed / Giant Insect / Summon Dragon / Arcane Hand (SRD):** SHIPPED as
   spell `companion` blocks (`src/data/spells/companions.ts`). Find Steed resolves at level 2 (an
-  Instantaneous spell stores no cast level); its scaling is printed in the Slam rider. Still open:
-  several-creature summons (Animate Objects, Animate Dead, Create Undead — one HP pool would
-  misreport them) and chosen-creature summons (Conjure Fey, Planar Ally / Binding, Gate — no
+  Instantaneous spell stores no cast level); its scaling is printed in the Slam rider. Several-creature
+  summons SHIPPED too: Animate Objects (a `count` on the Animated Object block), Animate Dead and
+  Create Undead (`summonedMonsters`, bestiary blocks) list one rail row per creature, each with its
+  own HP (`companionHp["<spellId>#<n>"]`) and a player count (`companionCount`). Still open:
+  chosen-creature summons (Conjure Fey, Planar Ally / Binding, Gate — no
   "pick from the bestiary" shape outside Find Familiar).
 - **Wild Shape forms:** a SELF-swap (the Polymorph/S7 contract below), not a
   companion — tracked in this same section.

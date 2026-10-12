@@ -9,6 +9,7 @@ import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/famili
 import { normalizeItemResources, parseItemResources } from "@/lib/item-resources";
 import { sanitizeSession } from "@/lib/sanitize-session";
 import { CodecFailureError, fail, leftover } from "@/lib/codec-failure";
+import { MAX_SUMMONED } from "@/lib/summon-count";
 
 type CompactTrackerState = number | { used?: number; rolls: Array<number | null> };
 type Coin = keyof SessionState["currency"];
@@ -44,6 +45,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   grantBundleChoices?: NonNullable<SessionState["grantBundleChoices"]>;
   companionHp?: NonNullable<SessionState["companionHp"]>;
   companionVariant?: NonNullable<SessionState["companionVariant"]>;
+  companionCount?: NonNullable<SessionState["companionCount"]>;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -94,6 +96,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "grantBundleChoices",
   "companionHp",
   "companionVariant",
+  "companionCount",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -304,6 +307,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (isNonEmptyRecord(session.companionVariant)) {
     state.companionVariant = session.companionVariant;
   }
+  if (isNonEmptyRecord(session.companionCount)) {
+    state.companionCount = session.companionCount;
+  }
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -344,6 +350,19 @@ function parseStringRecord(value: unknown): Record<string, string> | undefined {
   const entries = Object.entries(value);
   if (!entries.every(([, item]) => typeof item === "string")) return undefined;
   return Object.fromEntries(entries) as Record<string, string>;
+}
+
+/** Whole-number counts 1..MAX_SUMMONED (`companionCount`); anything else is dropped. */
+function parseCountRecord(value: unknown): Record<string, number> | undefined {
+  if (!isRecord(value)) return undefined;
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, number] =>
+      typeof entry[1] === "number" &&
+      Number.isInteger(entry[1]) &&
+      entry[1] >= 1 &&
+      entry[1] <= MAX_SUMMONED
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 function parseSessionDefenses(value: unknown): SessionState["sessionDefenses"] {
@@ -583,6 +602,7 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   }
   session.companionHp = parseCompanionHp(state.companionHp);
   session.companionVariant = parseStringRecord(state.companionVariant);
+  session.companionCount = parseCountRecord(state.companionCount);
   if (
     isRecord(state.familiar) &&
     typeof state.familiar.monsterId === "string" &&

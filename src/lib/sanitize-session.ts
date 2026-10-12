@@ -161,6 +161,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // an untrusted `familiar` (the polymorphForm precedent), this rebuild only
     // preserves the field. Absent on every non–companion doc (additive-only).
     companionVariant: session.companionVariant,
+    companionCount: session.companionCount,
     familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,

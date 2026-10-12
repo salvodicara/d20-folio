@@ -189,6 +189,7 @@ const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
     handler: "stat-block",
     allowBackReferences: true,
   },
+  summonedMonsters: compiled("stat-block"),
 };
 
 const SUBCLASS_RULE = object({

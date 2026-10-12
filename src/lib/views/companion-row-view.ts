@@ -33,6 +33,8 @@ import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import type { Locale } from "@/lib/locale";
 import { formatSpeed, localeDistance } from "@/lib/utils";
+import { abilityModifier } from "@/lib/ability";
+import { summonCount, summonInstanceKey } from "@/lib/summon-count";
 
 /** The translator (chrome keys only — `srd.damage_*`). */
 type Translate = (key: string, opts?: Record<string, unknown>) => string;
@@ -59,8 +61,15 @@ export interface CompanionVariantOption {
 
 /** The fully localized companion stat-block view both mounts render. */
 export interface CompanionCardView {
-  /** The granting source id (class-feature srdId or spell id) — the HP/variant key. */
+  /** The granting source id (class-feature srdId or spell id) — the HP key; for one
+   *  creature of a multi-creature summon, its instance key ("animate-objects#2"). */
   featureId: string;
+  /** The granting source id — the variant/count key. Equals `featureId` except for
+   *  one creature of a multi-creature summon; absent = `featureId`. */
+  groupId?: string;
+  /** How many creatures the group fields — present only on a multi-creature
+   *  summon (Animate Objects); each creature is its own view, numbered. */
+  count?: number;
   label: string;
   kind?: string;
   ac: number;
@@ -126,8 +135,8 @@ function buildOne(
   spellAttackMod: number | undefined,
   locale: Locale,
   t: Translate,
-  spell?: { castLevel?: number; ownerMaxHp?: number }
-): CompanionCardView {
+  spell?: { castLevel?: number; ownerMaxHp?: number; spellMod?: number }
+): CompanionCardView[] {
   const selectedVariantId = session.companionVariant?.[featureId];
   const active = selectCompanionVariant(block, selectedVariantId);
   const resolved = resolveCompanion(
@@ -176,8 +185,9 @@ function buildOne(
     return { variantId: v.variantId ?? "", label: vLabel };
   });
 
-  return {
+  const one: CompanionCardView = {
     featureId,
+    groupId: featureId,
     label,
     kind,
     ac: resolved.ac,
@@ -188,6 +198,27 @@ function buildOne(
     variants,
     selectedVariantId: active.variantId,
   };
+  if (!active.count) return [one];
+
+  // Several creatures from one cast: one numbered view each, its own HP entry.
+  const count =
+    session.companionCount?.[featureId] ??
+    summonCount(
+      active.count,
+      active.spellLevel?.base ?? 0,
+      spell?.castLevel ?? active.spellLevel?.base ?? 0,
+      spell?.spellMod ?? 0
+    );
+  return Array.from({ length: count }, (_, i) => {
+    const key = summonInstanceKey(featureId, i + 1);
+    return {
+      ...one,
+      featureId: key,
+      label: `${label} ${i + 1}`,
+      count,
+      current: session.companionHp?.[key]?.current,
+    };
+  });
 }
 
 /**
@@ -200,6 +231,7 @@ function ownerContext(doc: CharacterDoc): {
   scores: Record<AbilityCode, number>;
   pbOverride: number | null | undefined;
   spellAttackMod: number | undefined;
+  spellMod: number;
   agg: ReturnType<typeof aggregateCharacterGrants>;
 } {
   const charData = doc.character;
@@ -226,6 +258,7 @@ function ownerContext(doc: CharacterDoc): {
     scores,
     pbOverride: charData.proficiencyBonusOverride,
     spellAttackMod,
+    spellMod: sc ? abilityModifier(scores[sc.ability]) : 0,
     agg,
   };
 }
@@ -241,7 +274,7 @@ export function buildCompanionCardViews(
   locale: Locale,
   t: Translate
 ): CompanionCardView[] {
-  const { level, scores, pbOverride, spellAttackMod, agg } = ownerContext(doc);
+  const { level, scores, pbOverride, spellAttackMod, spellMod, agg } = ownerContext(doc);
   const charData = doc.character;
   const views: CompanionCardView[] = [];
 
@@ -255,7 +288,7 @@ export function buildCompanionCardViews(
       if (entry?.subclassId !== feat.subclass) continue;
     }
     views.push(
-      buildOne(
+      ...buildOne(
         feat.id,
         feat.companion,
         "class-feature",
@@ -287,7 +320,7 @@ export function buildCompanionCardViews(
     const concentrating = doc.session.concentration === spellId;
     if (spell.concentration && !concentrating) continue;
     views.push(
-      buildOne(
+      ...buildOne(
         spellId,
         spell.companion,
         "spell",
@@ -301,10 +334,68 @@ export function buildCompanionCardViews(
         {
           castLevel: concentrating ? doc.session.concentrationCastLevel : undefined,
           ownerMaxHp,
+          spellMod,
         }
       )
     );
   }
 
   return views;
+}
+
+/** One spell's group of bestiary creatures (Animate Dead's Skeletons). */
+export interface SummonedMonsterGroup {
+  /** The spell id — the variant/count key; creature `n` keys its HP `"<spellId>#<n>"`. */
+  spellId: string;
+  /** The monster ids the spell can raise (the first is the default). */
+  options: string[];
+  /** The chosen monster id (`session.companionVariant`, else the first option). */
+  monsterId: string;
+  /** How many the player fields (`session.companionCount`, else the spell's count
+   *  at the spell's own level). */
+  count: number;
+  /** Creature `n` (index n - 1) → its stored current HP; undefined = full. */
+  current: ReadonlyArray<number | undefined>;
+}
+
+/**
+ * Every spell on the character that raises bestiary creatures (Animate Dead,
+ * Create Undead), resolved to the monster ids, the count and each creature's HP.
+ * Corpus-free (the eager rail reads it); the lazy leaf looks the monsters up. `agg`
+ * is the caller's grant aggregate when it already holds one (never a second pass).
+ */
+export function buildSummonedMonsterGroups(
+  doc: CharacterDoc,
+  agg: { alwaysPrepared: Iterable<string> } = aggregateCharacterGrants(
+    doc.character,
+    doc.session
+  )
+): SummonedMonsterGroup[] {
+  const spellIds = new Set<string>(agg.alwaysPrepared);
+  for (const ref of doc.character.spells) {
+    if ("srdId" in ref) spellIds.add(ref.srdId);
+  }
+  const groups: SummonedMonsterGroup[] = [];
+  for (const spellId of spellIds) {
+    const spell = getSpellById(spellId);
+    const options = spell?.summonedMonsters?.options;
+    if (!spell || !options?.length) continue;
+    const picked = doc.session.companionVariant?.[spellId];
+    const option = options.find((o) => o.monsterId === picked) ?? options[0];
+    if (!option) continue;
+    const count =
+      doc.session.companionCount?.[spellId] ??
+      summonCount(option.count, spell.level, spell.level, 0);
+    groups.push({
+      spellId,
+      options: options.map((o) => o.monsterId),
+      monsterId: option.monsterId,
+      count,
+      current: Array.from(
+        { length: count },
+        (_, i) => doc.session.companionHp?.[summonInstanceKey(spellId, i + 1)]?.current
+      ),
+    });
+  }
+  return groups;
 }

@@ -270,8 +270,10 @@ Play-state also carries several **additive-only optional** keys, each absent on 
 uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`, `effectBoundaries`
 (`{ activeKey: { round, phase: "turn-start"|"turn-end" } }` for exact self-effect expiry), `grantBundleChoices`,
 `concentrationConditions` (conditions owned by the current solo concentration),
-`companionHp` (summoned-companion current HP, keyed by granting source id), `companionVariant`
-(Beast Master's chosen `variantId`, keyed by feature id), `familiar`
+`companionHp` (summoned-companion current HP, keyed by granting source id; a multi-creature
+summon keys each creature `"<spellId>#<n>"`), `companionVariant` (Beast Master's chosen
+`variantId`, keyed by feature id), `companionCount` (how many creatures a multi-creature summon
+fields when the player changed it, keyed by spell id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
 current HP rides `companionHp["find-familiar"]`), `manifestedWeaponOverrides`, `pactWeaponConfig`,
 `pactWeaponRiderTypes`, `polymorphForm`, `bardicInspirationDie`, `sessionDefenses`, `hiddenDc`, and

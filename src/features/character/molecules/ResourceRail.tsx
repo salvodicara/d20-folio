@@ -98,7 +98,10 @@ import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalScrollColumn } from "@/components/ui/modal-head";
 import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
 import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
-import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
+import {
+  buildCompanionCardViews,
+  buildSummonedMonsterGroups,
+} from "@/lib/views/companion-row-view";
 import { RailNotes } from "./RailNotes";
 import { ResourceConversions } from "./ResourceConversions";
 import { TableClockControl } from "./TableClockControl";
@@ -154,6 +157,14 @@ const FamiliarPanel = lazy(() =>
   Promise.all([import("../companions/FamiliarPanel"), ensureSrdKind("monster")]).then(
     ([m]) => ({ default: m.FamiliarPanel })
   )
+);
+// Same recipe for the bestiary creatures a spell raises (Animate Dead, Create
+// Undead): mounted only when the character has such a spell.
+const SummonedMonstersPanel = lazy(() =>
+  Promise.all([
+    import("../companions/SummonedMonstersPanel"),
+    ensureSrdKind("monster"),
+  ]).then(([m]) => ({ default: m.SummonedMonstersPanel }))
 );
 
 export function ResourceRail() {
@@ -264,6 +275,11 @@ export function ResourceRail() {
   const companionCardViews = useMemo(
     () => (character ? buildCompanionCardViews(character, locale, t) : []),
     [character, locale, t]
+  );
+  const summonedMonsterGroups = useMemo(
+    () =>
+      character && aggregate ? buildSummonedMonsterGroups(character, aggregate) : [],
+    [character, aggregate]
   );
   const [openCompanionId, setOpenCompanionId] = useState<string | null>(null);
 
@@ -692,7 +708,9 @@ export function ResourceRail() {
           HP ± steppers · variant chip); the full stat block is one tap (the modal).
           Hidden entirely when the character fields none (§4.15). The FAMILIAR row is
           a separate lazy leaf (its form's stat block joins the monster corpus). ── */}
-      {(companionCardViews.length > 0 || session.familiar) && (
+      {(companionCardViews.length > 0 ||
+        summonedMonsterGroups.length > 0 ||
+        session.familiar) && (
         <RailSection rubric={t("character.hud.companions")}>
           <ul className="flex flex-col gap-2">
             {companionCardViews.map((v) => {
@@ -731,6 +749,18 @@ export function ResourceRail() {
                 </li>
               );
             })}
+            {/* The bestiary creatures a spell raised (Skeleton 1, Skeleton 2…) —
+                a LAZY leaf like the familiar's, one per spell. */}
+            {summonedMonsterGroups.map((group) => (
+              <Suspense
+                key={group.spellId}
+                fallback={
+                  <li className="h-5 animate-pulse rounded bg-surface-2" aria-hidden />
+                }
+              >
+                <SummonedMonstersPanel group={group} />
+              </Suspense>
+            ))}
             {/* The familiar row — a LAZY leaf (its form's stat block joins the
                 monster corpus), mounted only when a familiar exists so a familiar-
                 less character downloads zero corpus bytes. One-row skeleton under
@@ -751,7 +781,13 @@ export function ResourceRail() {
       {/* The full companion stat block — one tap from a rail row. The SHARED card
           (golden rule 6): the SAME component the Features tab mounts inline. */}
       {(() => {
-        const view = companionCardViews.find((v) => v.featureId === openCompanionId);
+        // A creature the count stepper just removed falls back to the first of its
+        // group, so the modal stays open on the group.
+        const view =
+          companionCardViews.find((v) => v.featureId === openCompanionId) ??
+          companionCardViews.find(
+            (v) => v.groupId && openCompanionId?.startsWith(`${v.groupId}#`)
+          );
         return (
           <ModalShell
             open={view != null}
@@ -767,6 +803,11 @@ export function ResourceRail() {
                   view={view}
                   interactive={sheetMode === "play"}
                   onHpChange={setCompanionHp}
+                  onCountChange={(groupId, count) => {
+                    useCharacterStore
+                      .getState()
+                      .dispatch({ kind: "set-companion-count", groupId, count });
+                  }}
                   onVariantChange={(featureId, variantId) => {
                     const label =
                       view.variants?.find((o) => o.variantId === variantId)?.label ??

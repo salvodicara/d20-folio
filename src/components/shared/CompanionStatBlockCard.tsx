@@ -19,6 +19,7 @@
 import { useTranslation } from "react-i18next";
 import { Segmented } from "@/components/ui/segmented";
 import { CompanionHpStepper } from "./CompanionHpStepper";
+import { SummonCountStepper } from "./SummonCountStepper";
 import { useLocale } from "@/hooks/useLocale";
 import { formatModifier, localeDistance } from "@/lib/utils";
 import type { CompanionCardView } from "@/lib/views/companion-row-view";
@@ -34,6 +35,8 @@ export interface CompanionStatBlockCardProps {
   onHpChange?: (featureId: string, current: number) => void;
   /** Pick a variant (Beast Master); the store resets the HP pool + toasts undo. */
   onVariantChange?: (featureId: string, variantId: string) => void;
+  /** Set how many creatures a multi-creature summon fields (keyed by its group). */
+  onCountChange?: (groupId: string, count: number) => void;
 }
 
 export function CompanionStatBlockCard({
@@ -41,7 +44,9 @@ export function CompanionStatBlockCard({
   interactive,
   onHpChange,
   onVariantChange,
+  onCountChange,
 }: CompanionStatBlockCardProps) {
+  const groupId = view.groupId ?? view.featureId;
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const cur = view.current ?? view.hpMax;
@@ -68,7 +73,7 @@ export function CompanionStatBlockCard({
             <Segmented
               aria-label={t("features.variantLabel")}
               value={view.selectedVariantId}
-              onChange={(variantId) => onVariantChange(view.featureId, variantId)}
+              onChange={(variantId) => onVariantChange(groupId, variantId)}
               options={view.variants.map((o) => ({ value: o.variantId, label: o.label }))}
             />
           ) : (
@@ -76,6 +81,22 @@ export function CompanionStatBlockCard({
               {view.variants.find((o) => o.variantId === view.selectedVariantId)?.label}
             </span>
           )}
+        </div>
+      )}
+
+      {/* Several creatures from one cast (Animate Objects): how many are fielded;
+          each has its own HP row on the rail. */}
+      {view.count != null && (
+        <div className="mt-2">
+          <SummonCountStepper
+            label={view.label}
+            count={view.count}
+            onChange={
+              interactive && onCountChange
+                ? (next) => onCountChange(groupId, next)
+                : undefined
+            }
+          />
         </div>
       )}
 

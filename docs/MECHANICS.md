@@ -1215,6 +1215,11 @@ The structural reasons the declarative-grant model is intentionally not the righ
   printed stat block (Find Steed, Phantom Steed, Giant Insect, Summon Dragon, Arcane Hand) declare
   it as the spell's `companion`; `spellLevel` scales AC / HP / damage with the cast level when the
   session knows it (a Concentration spell's `concentrationCastLevel`), the spell's own level
-  otherwise (Find Steed). Residual: summons that field several creatures or a bestiary pick
-  (Animate Objects / Dead, Create Undead, Conjure Fey, Planar Ally / Binding, Gate); tracked in
+  otherwise (Find Steed). A summon that fields several creatures lists one numbered rail row per creature, each with
+  its own HP (`companionHp["<spellId>#<n>"]`): Animate Objects (`count` on the block — the
+  spellcasting modifier, a Large object counting two), Animate Dead and Create Undead
+  (`summonedMonsters` — bestiary Skeletons, Zombies, Ghouls… with the printed per-slot counts).
+  The count defaults from the text at the cast level; the player's stepper stores
+  `session.companionCount`. Residual: chosen-creature summons (Conjure Fey, Planar Ally / Binding,
+  Gate); tracked in
   `docs/AUTOMATION_BACKLOG.md`.

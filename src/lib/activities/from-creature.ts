@@ -162,7 +162,9 @@ export function activityFromCompanionAttack(
         kind: "damage",
         dice: dice({
           dice: attack.dice,
+          perUpcast: attack.damageDicePerSpellLevel,
           plus: terms(
+            attack.addSpellMod ? { kind: "spell-mod" } : undefined,
             attack.addAbility
               ? { kind: "ability-mod", ability: attack.addAbility }
               : undefined,

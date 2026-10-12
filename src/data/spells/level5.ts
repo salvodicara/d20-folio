@@ -1,5 +1,5 @@
 import type { SrdSpellData } from "../types";
-import { ARCANE_HAND, DRACONIC_SPIRIT } from "./companions";
+import { ANIMATED_OBJECT, ARCANE_HAND, DRACONIC_SPIRIT } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
@@ -12,6 +12,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    companion: ANIMATED_OBJECT,
     source: "SRD",
   },
   {

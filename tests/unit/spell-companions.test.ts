@@ -55,7 +55,10 @@ function withSpells(
 describe("spell companions — declared from the catalogue text", () => {
   it("finds the summon spells in the text", () => {
     expect(summonSpellIds).toEqual([
+      "animate-dead",
+      "animate-objects",
       "bigbys-hand",
+      "create-undead",
       "find-steed",
       "giant-insect",
       "phantom-steed",
@@ -64,8 +67,10 @@ describe("spell companions — declared from the catalogue text", () => {
   });
 
   it("declares a companion on exactly the spells whose text prints a stat block", () => {
+    // A printed block is the spell's `companion`; bestiary creatures (Animate
+    // Dead's Skeleton) are its `summonedMonsters`.
     const declared = spells
-      .filter((spell) => spell.companion)
+      .filter((spell) => spell.companion || spell.summonedMonsters)
       .map((spell) => spell.id)
       .sort();
     expect(declared).toEqual(summonSpellIds);

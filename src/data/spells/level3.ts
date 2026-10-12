@@ -17,6 +17,13 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: false,
     instantaneous: true,
+    // A Skeleton (bones) or a Zombie (a corpse); two more per slot level above 3.
+    summonedMonsters: {
+      options: [
+        { monsterId: "skeleton", count: { base: 1, perLevel: 2 } },
+        { monsterId: "zombie", count: { base: 1, perLevel: 2 } },
+      ],
+    },
     source: "SRD",
   },
   {

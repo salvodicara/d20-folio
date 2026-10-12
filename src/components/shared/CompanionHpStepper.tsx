@@ -38,7 +38,7 @@ export function CompanionHpStepper({
           <Icon as={Minus} size="xs" decorative />
         </IconButton>
       )}
-      <span className="font-mono font-semibold text-text-primary">
+      <span className="min-w-[7ch] text-center font-mono font-semibold text-text-primary">
         {current} / {max}
       </span>
       {onChange && (

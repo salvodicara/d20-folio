@@ -58,9 +58,9 @@
     "range": "9 metri"
   },
   "animate-dead": {
-    "description": "Crei un servitore non morto. Scegli un cumulo di ossa o un cadavere di un Umanoide Medio o Piccolo entro gittata. Il tuo incantesimo infonde nel bersaglio una vile parodia di vita, facendolo risorgere come creatura Non Morta. Il bersaglio diventa uno Scheletro se hai scelto le ossa o uno Zombie se hai scelto il cadavere. La creatura è sotto il tuo controllo per 24 ore, dopo le quali smette di obbedire ai tuoi comandi. Devi lanciare nuovamente questo incantesimo per mantenere il controllo.",
+    "description": "Scegli un cumulo di ossa o il cadavere di un Umanoide Medio o Piccolo entro gittata. Il bersaglio diventa una creatura Non Morta: uno Scheletro se hai scelto le ossa o uno Zombi se hai scelto il cadavere (vedi \"Mostri\" per la sua scheda).\n\nIn ognuno dei tuoi turni puoi effettuare un'Azione Bonus per comandare mentalmente qualsiasi creatura creata con questo incantesimo, se si trova entro 18 metri da te (se controlli più creature, puoi comandarle tutte insieme, impartendo a ciascuna lo stesso comando). Decidi quale azione la creatura effettuerà e dove si muoverà nel suo turno successivo, oppure impartisci un comando generico, come sorvegliare un luogo. Se non impartisci comandi, la creatura effettua l'azione Schivare e si muove solo per evitare pericoli. Una volta ricevuto un ordine, la creatura continua a seguirlo finché il compito non è concluso.\n\nLa creatura resta sotto il tuo controllo per 24 ore, poi smette di obbedire a qualsiasi comando le abbia dato. Per mantenerne il controllo per altre 24 ore, devi lanciare di nuovo questo incantesimo sulla creatura prima che scada il periodo in corso. Questo uso dell'incantesimo riafferma il tuo controllo su un massimo di quattro creature animate con questo incantesimo, invece di animarne una nuova.",
     "duration": "Istantaneo",
-    "higherLevels": "Quando lanci questo incantesimo usando uno slot incantesimo di 4° livello o superiore, animi o riaffermi il controllo su due creature Non Morte aggiuntive per ogni livello di slot superiore al 3°.",
+    "higherLevels": "Animi o riaffermi il controllo su due creature Non Morte aggiuntive per ogni livello dello slot superiore al 3°. Ogni creatura deve provenire da un cadavere o da un cumulo di ossa diverso.",
     "name": "Animare i Morti",
     "range": "3 metri"
   },
@@ -68,11 +68,38 @@
     "material": "Una goccia di sangue, un pezzo di carne e un pizzico di polvere d'ossa"
   },
   "animate-objects": {
-    "description": "Gli oggetti prendono vita al tuo comando. Scegli fino a dieci oggetti non magici entro gittata che non sono indossati o trasportati. I bersagli Medi contano come due oggetti, quelli Grandi come quattro, quelli Enormi come otto. Ogni bersaglio si anima e diventa una creatura sotto il tuo controllo fino al termine dell'incantesimo o fino a quando viene ridotto a 0 punti ferita. Come Azione Bonus, puoi comandare mentalmente qualsiasi creatura creata con questo incantesimo entro 150 metri da te.",
+    "description": "Gli oggetti si animano al tuo comando. Scegli un numero di oggetti non magici entro gittata che non siano indossati o trasportati, non siano fissati a una superficie e non siano Mastodontici. Il numero massimo di oggetti è pari al tuo modificatore di caratteristica da incantatore; per questo conteggio, un bersaglio Medio o più piccolo conta come un oggetto, uno Grande come due e uno Enorme come tre.\n\nOgni bersaglio si anima, mette le zampe e diventa un Costrutto che usa la scheda Oggetto animato; la creatura è sotto il tuo controllo finché l'incantesimo non termina o finché non scende a 0 Punti Ferita. Ogni creatura creata con questo incantesimo è alleata tua e dei tuoi alleati. In combattimento condivide il tuo valore di Iniziativa ed effettua il suo turno subito dopo il tuo.\n\nFinché l'incantesimo non termina, puoi effettuare un'Azione Bonus per comandare mentalmente qualsiasi creatura creata con questo incantesimo, se si trova entro 150 metri da te (se controlli più creature, puoi comandarle tutte insieme, impartendo a ciascuna lo stesso comando). Se non impartisci comandi, la creatura effettua l'azione Schivare e si muove solo per evitare pericoli. Quando la creatura scende a 0 Punti Ferita, torna alla sua forma di oggetto e il danno in eccesso si trasferisce a quella forma.",
     "duration": "Concentrazione, fino a 1 minuto",
-    "higherLevels": "Quando lanci questo incantesimo usando uno slot di 6° livello o superiore, puoi animare due oggetti aggiuntivi per ogni livello dello slot superiore al 5°.",
+    "higherLevels": "Il danno dello Schianto della creatura aumenta di 1d4 (Media o più piccola), 1d6 (Grande) o 1d12 (Enorme) per ogni livello dello slot superiore al 5°.",
     "name": "Animare Oggetti",
     "range": "36 metri"
+  },
+  "animate-objects.companion": {
+    "name": "Oggetto animato",
+    "kind": "Costrutto Medio o più piccolo",
+    "variantLabel": "Medio o più piccolo"
+  },
+  "animate-objects.companion.attacks.slam": {
+    "name": "Schianto",
+    "rider": "Mostrato al livello 5: ogni slot superiore aggiunge 1d4. Immune ai danni da Veleno e Psichici; Vista cieca 9 m. A 0 PF torna alla sua forma di oggetto."
+  },
+  "animate-objects.companion.variants.large": {
+    "name": "Oggetto animato",
+    "kind": "Costrutto Grande",
+    "variantLabel": "Grande"
+  },
+  "animate-objects.companion.variants.large.attacks.slam": {
+    "name": "Schianto",
+    "rider": "Mostrato al livello 5: ogni slot superiore aggiunge 1d6. Conta come due oggetti. Immune ai danni da Veleno e Psichici; Vista cieca 9 m. A 0 PF torna alla sua forma di oggetto."
+  },
+  "animate-objects.companion.variants.huge": {
+    "name": "Oggetto animato",
+    "kind": "Costrutto Enorme",
+    "variantLabel": "Enorme"
+  },
+  "animate-objects.companion.variants.huge.attacks.slam": {
+    "name": "Schianto",
+    "rider": "Mostrato al livello 5: ogni slot superiore aggiunge 1d12. Conta come tre oggetti. Immune ai danni da Veleno e Psichici; Vista cieca 9 m. A 0 PF torna alla sua forma di oggetto."
   },
   "antilife-shell": {
     "description": "Una barriera scintillante si estende da te in un raggio di 3 metri e si muove con te, restando centrata su di te e tenendo fuori le creature diverse da Non Morti e Costrutti. Una creatura non può entrare volontariamente nella barriera con mezzi non magici. Se una creatura tenta di usare un teletrasporto o un viaggio interplanare per entrare nella barriera, deve prima superare un tiro salvezza su Carisma.",
@@ -542,9 +569,9 @@
     "material": "Una goccia d'acqua se crei acqua o alcuni granelli di sabbia se la distruggi"
   },
   "create-undead": {
-    "description": "Puoi lanciare questo incantesimo solo di notte. Scegli fino a tre cadaveri di umanoidi Medi o Piccoli entro gittata. Ogni cadavere diventa un ghoul sotto il tuo controllo. Le creature obbediscono ai tuoi comandi mentali e restano sotto il tuo controllo per 24 ore, dopodiché smettono di obbedire a meno che tu non lanci di nuovo questo incantesimo.",
+    "description": "Puoi lanciare questo incantesimo solo di notte. Scegli fino a tre cadaveri di Umanoidi Medi o Piccoli entro gittata. Ognuno diventa un Ghoul sotto il tuo controllo (vedi \"Mostri\" per la sua scheda).\n\nCome Azione Bonus in ognuno dei tuoi turni, puoi comandare mentalmente qualsiasi creatura animata con questo incantesimo, se si trova entro 36 metri da te (se controlli più creature, puoi comandarle tutte insieme, impartendo a ciascuna lo stesso comando). Decidi quale azione la creatura effettuerà e dove si muoverà nel suo turno successivo, oppure impartisci un comando generico, come sorvegliare un luogo. Se non impartisci comandi, la creatura effettua l'azione Schivare e si muove solo per evitare pericoli. Una volta ricevuto un ordine, la creatura continua a seguirlo finché il compito non è concluso.\n\nLa creatura resta sotto il tuo controllo per 24 ore, poi smette di obbedire a qualsiasi comando le abbia dato. Per mantenerne il controllo per altre 24 ore, devi lanciare questo incantesimo sulla creatura prima che scada il periodo in corso. Questo uso dell'incantesimo riafferma il tuo controllo su un massimo di tre creature animate con questo incantesimo, invece di animarne di nuove.",
     "duration": "Istantanea",
-    "higherLevels": "Quando lanci questo incantesimo usando uno slot di 7° livello, puoi creare o riaffermare il controllo su quattro ghoul. Con uno slot di 8° livello, puoi creare ghast o spettri. Con uno slot di 9° livello, puoi creare mummie.",
+    "higherLevels": "Con uno slot di livello 7 puoi animare o riaffermare il controllo su quattro Ghoul. Con uno slot di livello 8, su cinque Ghoul oppure due Ghast o Wight. Con uno slot di livello 9, su sei Ghoul, tre Ghast o Wight, oppure due Mummie.",
     "name": "Creare Non Morti",
     "range": "3 metri"
   },

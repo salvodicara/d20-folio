@@ -1087,6 +1087,14 @@ export interface SessionState {
    */
   companionVariant?: Record<string, string>;
   /**
+   * How many creatures a multi-creature summon fields (Animate Dead, Animate
+   * Objects, Create Undead), keyed by the spell id — set only when the player
+   * changes it; absent = the count the spell text gives at the cast level. Each
+   * creature's HP rides `companionHp["<spellId>#<n>"]`. ADDITIVE-ONLY: an older
+   * client keeps it verbatim as an unknown key.
+   */
+  companionCount?: Record<string, number>;
+  /**
    * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
    * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0
    * Beast or an unlocked Pact-of-the-Chain special form); `creatureType` is the
