@@ -32,6 +32,7 @@ import {
   abilityModifier,
   computeAC,
   computeACDetailed,
+  buildInitiativeBreakdown,
   computeInitiative,
   characterHasFeat,
   effectiveAbilityScores,
@@ -391,25 +392,21 @@ export function computeCharacterMaxHpBreakdown(
 
 // ─── Effective max HP — stored by-the-book base + live transient deltas (D1) ─────
 
-/**
- * The Initiative bonus the engine computes (before a hand-set override): the
- * effective DEX modifier (score floors and item bonuses folded in), Alert's
- * Proficiency Bonus, the initiative grants (flat, or an ability's modifier such as
- * Dread Ambusher's WIS) and the exhaustion penalty. The ONE assembly the sheet, the
- * party view and the PDF share; `aggregate` is the caller's full grant aggregate.
- */
-export function computedInitiativeBonus(
+type InitiativeAggregate = Pick<
+  AggregatedGrants,
+  | "abilityScoreFloors"
+  | "itemAbilityScoreBonus"
+  | "itemAbilityScoreCap"
+  | "initiativeBonusFlat"
+  | "initiativeBonusAbilities"
+>;
+
+/** The inputs of the Initiative bonus, gathered once for its total and its breakdown. */
+function initiativeInputs(
   character: CharacterDoc["character"],
-  aggregate: Pick<
-    AggregatedGrants,
-    | "abilityScoreFloors"
-    | "itemAbilityScoreBonus"
-    | "itemAbilityScoreCap"
-    | "initiativeBonusFlat"
-    | "initiativeBonusAbilities"
-  >,
+  aggregate: InitiativeAggregate,
   exhaustion: number
-): number {
+): Parameters<typeof computeInitiative> {
   const scores = effectiveAbilityScores(
     character.abilityScores,
     aggregate.abilityScoreFloors,
@@ -422,7 +419,7 @@ export function computedInitiativeBonus(
       (sum, ability) => sum + abilityModifier(scores[ability]),
       0
     );
-  return computeInitiative(
+  return [
     scores.DEX,
     effectiveProficiencyBonus(totalLevel(character), character.proficiencyBonusOverride),
     characterHasFeat("alert", {
@@ -431,8 +428,32 @@ export function computedInitiativeBonus(
       features: character.features,
     }),
     exhaustion,
-    grantBonus
-  );
+    grantBonus,
+  ];
+}
+
+/**
+ * The Initiative bonus the engine computes (before a hand-set override): the
+ * effective DEX modifier (score floors and item bonuses folded in), Alert's
+ * Proficiency Bonus, the initiative grants (flat, or an ability's modifier such as
+ * Dread Ambusher's WIS) and the exhaustion penalty. The ONE assembly the sheet, the
+ * party view and the PDF share; `aggregate` is the caller's full grant aggregate.
+ */
+export function computedInitiativeBonus(
+  character: CharacterDoc["character"],
+  aggregate: InitiativeAggregate,
+  exhaustion: number
+): number {
+  return computeInitiative(...initiativeInputs(character, aggregate, exhaustion));
+}
+
+/** The parts of {@link computedInitiativeBonus} for the breakdown tip; they sum to it. */
+export function computedInitiativeBreakdown(
+  character: CharacterDoc["character"],
+  aggregate: InitiativeAggregate,
+  exhaustion: number
+): RawBreakdownPart[] {
+  return buildInitiativeBreakdown(...initiativeInputs(character, aggregate, exhaustion));
 }
 
 /**
