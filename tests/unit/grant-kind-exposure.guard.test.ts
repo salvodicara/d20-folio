@@ -352,7 +352,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "concentration-blocked": {
     via: "concentrationBlocked",
-    consumer: "src/features/character/center/TurnEconomyProvider.tsx",
+    consumer: "src/features/character/center/action-state-commit.ts",
   },
   "manifested-weapon": { via: "manifestedWeapons", consumer: "src/lib/smart-tracker.ts" },
   "form-attack": { via: "formAttacks", consumer: "src/lib/smart-tracker.ts" },
