@@ -20,7 +20,16 @@ import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dic
 import { useState, useMemo, useRef, useId } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
-import { Moon, Sun, Heart, Dice5 } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  Heart,
+  Dice5,
+  Sparkles,
+  RotateCcw,
+  TrendingDown,
+  Focus,
+} from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -561,30 +570,24 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             </li>
             {totalSlotsSpent > 0 && (
               <li>
-                <span className="magic-mark" aria-hidden />
+                <Sparkles className="h-4 w-4 text-accent-text" />
                 {t("rest.longRestSlotsItem", { count: totalSlotsSpent })}
               </li>
             )}
             {totalTrackersSpent > 0 && (
               <li>
-                <span className="flex h-4 w-4 items-center justify-center text-accent">
-                  ⟳
-                </span>
+                <RotateCcw className="h-4 w-4 text-accent-text" />
                 {t("rest.longRestTrackersItem", { count: totalTrackersSpent })}
               </li>
             )}
             {session.exhaustion > 0 && (
               <li>
-                <span className="flex h-4 w-4 items-center justify-center text-warning">
-                  ↓
-                </span>
+                <TrendingDown className="h-4 w-4 text-accent-text" />
                 {t("rest.longRestExhaustionItem", { level: session.exhaustion })}
               </li>
             )}
             <li>
-              <span className="flex h-4 w-4 items-center justify-center text-text-secondary">
-                ○
-              </span>
+              <Focus className="h-4 w-4 text-accent-text" />
               {t("rest.longRestConditionsItem")}
             </li>
           </ul>
@@ -752,12 +755,15 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             </li>
             {totalSlotsSpent > 0 && (
               <li>
-                <span className="magic-mark" aria-hidden />
+                <Sparkles className="h-3.5 w-3.5" />
                 {t("rest.longRestSlotsItem", { count: totalSlotsSpent })}
               </li>
             )}
             {session.exhaustion > 0 && (
-              <li>{t("rest.longRestExhaustionItem", { level: session.exhaustion })}</li>
+              <li>
+                <TrendingDown className="h-3.5 w-3.5" />
+                {t("rest.longRestExhaustionItem", { level: session.exhaustion })}
+              </li>
             )}
           </ul>
           <span className="rest-card-cta">{t("rest.takeLongRest")}</span>
