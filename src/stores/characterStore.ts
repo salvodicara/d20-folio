@@ -48,14 +48,9 @@ import {
   removeCondition as removeConditionFrom,
 } from "@/lib/play/conditions";
 import {
-  restoreSpellSlot as restoreSpellSlotTo,
-  restoreTracker as restoreTrackerTo,
   setDeathSaves as setDeathSavesTo,
-  setExhaustion as setExhaustionTo,
   setHp,
   setTempHp,
-  spendSpellSlot,
-  spendTracker,
   UNCONSCIOUS_CONDITION_ID,
 } from "@/lib/play/vitals";
 import {
@@ -1338,49 +1333,26 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   useSpellSlot: (level, pactMagic = false) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({
-      character: { ...character, session: spendSpellSlot(character, level, pactMagic) },
-    });
-    flushParentPersistence(get);
+    if (get().dispatch({ kind: "spend-slot", level, pactMagic }))
+      flushParentPersistence(get);
   },
 
   restoreSpellSlot: (level, pactMagic = false) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({
-      character: {
-        ...character,
-        session: restoreSpellSlotTo(character, level, pactMagic),
-      },
-    });
-    flushParentPersistence(get);
+    if (get().dispatch({ kind: "restore-slot", level, pactMagic })) {
+      flushParentPersistence(get);
+    }
   },
 
   useTracker: (trackerId, amount = 1) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({
-      character: { ...character, session: spendTracker(character, trackerId, amount) },
-    });
-    flushParentPersistence(get);
+    if (get().dispatch({ kind: "spend-tracker", trackerId, amount })) {
+      flushParentPersistence(get);
+    }
   },
 
   restoreTracker: (trackerId, amount = 1) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    set({
-      character: {
-        ...character,
-        session: restoreTrackerTo(character, trackerId, amount),
-      },
-    });
-    flushParentPersistence(get);
+    if (get().dispatch({ kind: "restore-tracker", trackerId, amount })) {
+      flushParentPersistence(get);
+    }
   },
 
   applyMechanicsPlan: (plan) => {
@@ -2215,11 +2187,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   setExhaustion: (level) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    const session = setExhaustionTo(character, level);
-    if (session) set({ character: { ...character, session } });
+    get().dispatch({ kind: "set-exhaustion", level });
   },
 
   commitDeathSave: (faces) => {
