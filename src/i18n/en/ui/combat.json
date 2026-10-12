@@ -399,6 +399,19 @@
     "targetMe": "Me ({{name}})",
     "targetSkipNone": "Skip · no target",
     "targetConfirmCast": "Cast on {{count}}",
-    "targetConfirmUse": "Use on {{count}}"
+    "targetConfirmUse": "Use on {{count}}",
+    "damageTray": {
+      "rubricDamage": "{{type}} damage",
+      "total": "Rolled total",
+      "totalHint": "What you rolled at the table, e.g. 8+6+3",
+      "saved": "Saved",
+      "savedAria": "{{name}} saved",
+      "multiplier": "Multiplier for {{name}}",
+      "resistant": "Resistant",
+      "vulnerable": "Vulnerable",
+      "immune": "Immune",
+      "noEffect": "No effect",
+      "appliedToast": "{{name}}: applied"
+    }
   }
 }

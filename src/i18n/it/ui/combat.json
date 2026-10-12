@@ -399,6 +399,19 @@
     "targetMe": "Io ({{name}})",
     "targetSkipNone": "Salta · nessun bersaglio",
     "targetConfirmCast": "Lancia su {{count}}",
-    "targetConfirmUse": "Usa su {{count}}"
+    "targetConfirmUse": "Usa su {{count}}",
+    "damageTray": {
+      "rubricDamage": "Danni da {{type}}",
+      "total": "Totale tirato",
+      "totalHint": "Quanto hai tirato al tavolo, es. 8+6+3",
+      "saved": "Salvato",
+      "savedAria": "{{name}} ha superato il TS",
+      "multiplier": "Moltiplicatore per {{name}}",
+      "resistant": "Resistente",
+      "vulnerable": "Vulnerabile",
+      "immune": "Immune",
+      "noEffect": "Nessun effetto",
+      "appliedToast": "{{name}}: applicato"
+    }
   }
 }

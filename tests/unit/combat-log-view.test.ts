@@ -90,8 +90,41 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   rest: { kind: "rest", restKind: "long" },
   "turn-end": { kind: "turn-end", round: 3 },
   "effect-expired": { kind: "effect-expired", sourceId: "barbarian-rage" },
+  "effect-given": {
+    kind: "effect-given",
+    effect: "heal",
+    target: "pc-aria",
+    targetName: "Aria",
+    amount: 8,
+  },
   legacy: { kind: "legacy", text: "Cast Hypnotic Pattern" },
 };
+
+describe("effect-given — the follow-up line on another creature", () => {
+  it("names the target and the amount or condition", () => {
+    expect(localize(SAMPLES["effect-given"])).toBe(
+      'combatLog.givenHeal {"target":"Aria","amount":8}'
+    );
+    expect(
+      localize({
+        kind: "effect-given",
+        effect: "damage",
+        target: "monster-1",
+        targetName: "Goblin",
+        amount: 9,
+      })
+    ).toBe('combatLog.givenDamage {"target":"Goblin","amount":9}');
+    expect(
+      localize({
+        kind: "effect-given",
+        effect: "condition",
+        target: "monster-1",
+        targetName: "Goblin",
+        conditionId: "paralyzed",
+      })
+    ).toContain("combatLog.givenCondition");
+  });
+});
 
 describe("localizeCombatEvent — every kind routes to a non-empty template", () => {
   it.each(Object.keys(SAMPLES) as CombatEventKind[])(

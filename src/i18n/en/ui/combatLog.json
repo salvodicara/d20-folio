@@ -13,6 +13,10 @@
     "shortRest": "Took a Short Rest",
     "longRest": "Took a Long Rest",
     "riderUse": "Spent {{rider}} on {{name}}",
-    "effectExpired": "{{name}} ended (duration elapsed)"
+    "effectExpired": "{{name}} ended (duration elapsed)",
+    "givenHeal": "Healed {{target}} {{amount}} HP",
+    "givenDamage": "{{target}} took {{amount}} damage",
+    "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
+    "givenCondition": "{{target}} failed the save: {{condition}}"
   }
 }

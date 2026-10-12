@@ -55,6 +55,9 @@ import {
   type TargetStep,
 } from "@/features/character/center/target-step";
 import { sheetEncounter } from "@/features/character/center/turn-state";
+import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
+import { DamageTray } from "@/features/character/center/DamageTray";
+import { damageTrayPlan } from "@/lib/play/damage-tray";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -988,6 +991,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       ...(attackOf ? { attackOf } : {}),
       ...(targets.length > 0 ? { targets: [...targets] } : {}),
     });
+    offerFollowUps(action, targets, loggedId);
     return () => {
       const c2 = useCharacterStore.getState();
       if (c2.readonly || c2.character?.id !== characterId) return;
@@ -1023,7 +1027,27 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         c2.setTempHP(prevTempHp);
       }
       c2.removeLogEntry(loggedId);
+      useDamageTrayStore.getState().withdraw(loggedId);
     };
+  }
+
+  /** Open the damage tray when the use has something to apply to its targets. */
+  function offerFollowUps(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>,
+    castLogId: string | null
+  ): void {
+    const characterId = useCharacterStore.getState().character?.id;
+    if (!characterId) return;
+    const plan = damageTrayPlan(action, targets, selfCombatantId());
+    if (!plan) return;
+    useDamageTrayStore.getState().show({
+      characterId,
+      actionName: action.name,
+      source: action.nameLoc,
+      castLogId,
+      plan,
+    });
   }
 
   // Display record for the economy slot.
@@ -1414,6 +1438,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           slot: castEconomySlot(action.type, metamagicIds),
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
         });
+        offerFollowUps(action, targets, loggedId);
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1434,6 +1459,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (selectedMetamagicCost > 0)
             live.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
           live.removeLogEntry(loggedId);
+          useDamageTrayStore.getState().withdraw(loggedId);
           return true;
         };
       },
@@ -2898,6 +2924,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         }}
         onCancel={() => setTargetRequest(null)}
       />
+
+      {/* The damage tray right after the use: one rolled total, one row per target. */}
+      <DamageTray />
 
       {/* S4 — Arcane Recovery guided picker (enforces the ⌈level/2⌉ cap).
           Conditional mounting gives every use a fresh, cancel-safe draft. */}
