@@ -18,23 +18,48 @@ import { patchCharacter } from "../patch-character";
 /** Upper bound of the editor — well past level 20's 355,000. */
 const XP_MAX = 9_999_999;
 
+/**
+ * Edit mode, XP unset: the empty field rides the identity line inline, so toggling
+ * edit never adds a masthead row (the no-reflow rule) and the play view is unchanged.
+ */
+export function HeaderXpStart() {
+  const { t } = useTranslation();
+  return (
+    // A zero-height inline box: the field shows on the line but never makes the
+    // line taller, so the masthead keeps its exact height.
+    <span className="tr-numeric ml-2 inline-block h-0 overflow-visible align-top">
+      <InlineEditable
+        type="number"
+        editable
+        // NaN while unset: the editor opens empty and a committed 0 still saves.
+        value={Number.NaN}
+        min={0}
+        max={XP_MAX}
+        format={() => ""}
+        placeholder="—"
+        onChange={(v) => patchCharacter({ experience: Math.round(v) })}
+        ariaLabel={t("character.xpAria")}
+      />{" "}
+      {t("common.xp")}
+    </span>
+  );
+}
+
+/** The XP line once a total is set: the same row in play and edit mode. */
 export function HeaderXp({
   experience,
   level,
   editable,
-  showWhenUnset,
 }: {
   experience: number | undefined;
   level: number;
   editable: boolean;
-  /** Edit mode: offer the empty field so a table that uses XP can start it. */
-  showWhenUnset: boolean;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
-  if (experience === undefined && !showWhenUnset) return null;
+  if (experience === undefined) return null;
 
-  const xp = experience ?? 0;
+  const xp = experience;
   const { next, fraction, canLevelUp } = xpProgress(xp, level);
   return (
     <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1">
@@ -42,13 +67,10 @@ export function HeaderXp({
         <InlineEditable
           type="number"
           editable={editable}
-          // NaN while unset: the editor opens empty and a committed 0 still saves.
-          value={experience ?? Number.NaN}
+          value={xp}
           min={0}
           max={XP_MAX}
-          // Unset reads as the placeholder, never as a real "0".
-          format={(v) => (experience === undefined ? "" : fmtXp(v, locale))}
-          placeholder="—"
+          format={(v) => fmtXp(v, locale)}
           onChange={(v) => patchCharacter({ experience: Math.round(v) })}
           ariaLabel={t("character.xpAria")}
         />{" "}
@@ -74,7 +96,7 @@ export function HeaderXp({
           />
         </span>
       )}
-      {experience !== undefined && canLevelUp && (
+      {canLevelUp && (
         <span className="tr-numeric">
           <b>{t("character.levelUpReady")}</b>
         </span>
