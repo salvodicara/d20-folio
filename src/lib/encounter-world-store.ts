@@ -91,10 +91,7 @@ import type {
 } from "@/types/material-state";
 import type { MechanicOccurrence } from "@/types/mechanic-occurrence";
 import type { MechanicsAuthorityDefinition } from "@/types/mechanics-authority";
-import type {
-  MechanicsCoordinationInput,
-  MechanicsCoordinationResult,
-} from "@/types/mechanics-coordinator";
+import type { MechanicsCoordinationResult } from "@/types/mechanics-coordinator";
 import type {
   CharacterMaterialRef,
   EntityRef,
@@ -1144,144 +1141,8 @@ export function planPartyTurnBoundary(
   );
 }
 
-/**
- * The closed system program stamping one cross-material action's PC side: a
- * single `record-manual-boundary` turn claim whose boundary id IS the
- * correlation id shared with the encounter-side journal action. It commits
- * into the leased participant's own-turn economy ledger (the kernel's
- * table-authority per-turn record), so the character journal carries the
- * action identity AND the turn it was spent on - the minimal composed commit
- * the current machinery supports (see the seam comment above for why the two
- * materials never share one atomic journal action).
- */
-function participationProgram(correlationId: string) {
-  return conformedProgram({
-    id: "party-attack-participation",
-    phases: [
-      {
-        inputs: [],
-        phaseId: "resolve",
-        steps: [
-          {
-            claim: {
-              authority: "table",
-              boundaryId: correlationId,
-              claimId: correlationId,
-              kind: "record-manual-boundary",
-            },
-            combatant: "owner",
-            kind: "turn-claim",
-            stepId: "record-participation",
-            when: null,
-          },
-          { kind: "end-program", stepId: "finish", when: null },
-        ],
-        trigger: { kind: "invocation" },
-      },
-    ],
-    registers: [],
-    version: 1,
-  });
-}
-
 export interface PartyActionCapability {
   readonly authority: Readonly<MechanicsProgramAuthorityReceipt>;
-}
-
-/** The participation authority for one correlation id, anchored on the character. */
-export function partyAttackParticipationCapability(
-  characterId: string,
-  uid: string,
-  correlationId: string
-): PartyActionCapability | null {
-  const trimmed = correlationId.trim();
-  if (trimmed === "" || trimmed !== correlationId || correlationId.length > 128) {
-    return null;
-  }
-  const program = participationProgram(correlationId);
-  const self = characterPlaySelf(characterId, uid);
-  const capability = {
-    capabilityId: program.id,
-    definition: {
-      catalogueKind: "class-feature" as const,
-      entityId: program.id,
-      kind: "catalogue" as const,
-      mechanicsRevision: canonicalFingerprint({ program }),
-    },
-    kind: "program" as const,
-  };
-  const authority = conformMechanicsProgramAuthorityReceipt({
-    anchors: { activator: self, caster: self, owner: self, source: self, target: self },
-    installation: {
-      capability,
-      generation: 1,
-      installationId: `${program.id}.${characterId}`,
-      owner: self,
-    },
-    schema: 1,
-    snapshot: {
-      grantGroups: {},
-      program,
-      ref: capability,
-      resources: {},
-      schema: 1,
-    },
-    source: { capability, kind: "capability", owner: self },
-    staticBindings: {},
-  });
-  return authority ? { authority } : null;
-}
-
-/** Run one party capability to its fixed point over the character's world. */
-export function runPartyCharacterAction(
-  characterId: string,
-  uid: string,
-  world: Readonly<CharacterMaterialState>,
-  capability: Readonly<PartyActionCapability>,
-  actionId: string,
-  turnEconomy: MechanicsCoordinationInput["turnEconomy"]
-): Readonly<MechanicsCoordinationResult> | null {
-  const material = characterPlayMaterial(characterId, uid);
-  const state = beginMechanicsCausalState({
-    documents: [{ kind: "character", material, state: world }],
-    scope: material,
-  });
-  if (!state.ok) return null;
-  return runMechanicsCausalAction({
-    answers: [],
-    authoritySnapshot: {
-      definitions: [seamAuthorityDefinition(capability.authority)],
-    },
-    facts: [],
-    frameAnswers: [],
-    intent: {
-      actionId,
-      factGuards: [],
-      frame: {
-        authority: capability.authority,
-        invocation: {
-          installation: capability.authority.installation,
-          kind: "installed-capability",
-        },
-        rootReceipt: {
-          kind: "create",
-          materialEpoch: world.epoch,
-          next: { execution: 1, phaseId: "resolve", triggerEventId: null },
-          root: {
-            occurrence: {
-              material,
-              occurrenceId: `party-${world.nextOccurrenceOrdinal}`,
-            },
-            ordinal: world.nextOccurrenceOrdinal,
-          },
-        },
-        trigger: { kind: "invocation" },
-      },
-    },
-    responses: [],
-    state: state.value,
-    turnEconomy,
-  });
 }
 
 /** Active engine condition ids on one shared entity, for the legacy mirror. */

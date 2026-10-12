@@ -49,17 +49,14 @@
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import {
-  partyAttackParticipationCapability,
   partyLeaseIdentity,
   planPartyEncounterJoin,
   planPartyEncounterLeave,
   planPartyTurnBoundary,
-  runPartyCharacterAction,
 } from "@/lib/encounter-world-store";
 import {
   boundaryCommitFacts,
   characterTrackerSeeds,
-  characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
 } from "@/lib/mechanics-world-store";
@@ -255,49 +252,4 @@ export function observePartyWorldFights(
 ): void {
   firePassedTurnBoundaries(previous, fights);
   reconcileLease(fights, primaryCampaignId);
-}
-
-/**
- * Stamp the PC side of one cross-material action: the acting member commits
- * the correlation id into its OWN journal as a `record-manual-boundary` turn
- * claim on the leased participant's economy (the encounter side of the same
- * action carries the identical id prefix on the encounter journal and the
- * chronicle beat - see `applyAdversaryDamage`). Best-effort and fail-closed:
- * the adversary's damage is table truth and lands first; a missing lease,
- * closed sheet, foreign actor or rejected claim skips the stamp silently.
- */
-export function commitPartyAttackParticipation(
-  campaignId: string,
-  actorId: string,
-  correlationId: string
-): void {
-  const uid = useAuthStore.getState().user?.uid;
-  if (uid === undefined || actorId !== `pc-${uid}`) return;
-  const resolved = openCharacterWorld();
-  if (!resolved) return;
-  const lease = partyLeaseIdentity(resolved.world);
-  if (!lease || lease.campaignId !== campaignId) return;
-  const capability = partyAttackParticipationCapability(
-    resolved.doc.id,
-    resolved.uid,
-    correlationId
-  );
-  if (!capability) return;
-  const outcome = runPartyCharacterAction(
-    resolved.doc.id,
-    resolved.uid,
-    resolved.world,
-    capability,
-    correlationId,
-    characterTurnEconomy(resolved.doc, resolved.uid)
-  );
-  if (!outcome || outcome.status !== "complete" || !outcome.action) return;
-  const committed = commitCharacterAction(
-    resolved.doc,
-    resolved.uid,
-    resolved.world,
-    outcome.action,
-    boundaryCommitFacts(outcome.action)
-  );
-  if (committed) useCharacterStore.getState().updateSession(committed.session);
 }
