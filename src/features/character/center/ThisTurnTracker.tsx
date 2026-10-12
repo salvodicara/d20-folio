@@ -22,7 +22,6 @@
  */
 
 import { useMemo } from "react";
-import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Swords, Zap, RefreshCw, ArrowRight, Flag } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -32,13 +31,9 @@ import { useConfirmStore } from "@/stores/confirmStore";
 import { useLocale } from "@/hooks/useLocale";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
-  abilityModifier,
-  characterHasFeat,
-  computeInitiative,
-  effectiveAbilityScores,
-  effectiveProficiencyBonus,
-} from "@/lib/compute";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+  aggregateCharacterGrants,
+  computedInitiativeBonus,
+} from "@/lib/aggregate-character";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import {
   resolveStartOfTurnRegen,
@@ -324,39 +319,12 @@ export function ThisTurnTracker({
   const initBonus = useMemo(() => {
     if (!charData) return 0;
     if (charData.initiativeBonusOverride != null) return charData.initiativeBonusOverride;
-    const effectivePB = effectiveProficiencyBonus(
-      totalLevel(charData),
-      charData.proficiencyBonusOverride
-    );
-    const hasAlertFeat = characterHasFeat("alert", {
-      humanOriginFeat: charData.humanOriginFeat,
-      bgFeat: charData.bgFeat,
-      features: charData.features,
-    });
     const initAgg = aggregateCharacterGrants(charData, {
       activeFeatures,
       grantBundleChoices,
       itemResources,
     });
-    const effectiveScores = effectiveAbilityScores(
-      charData.abilityScores,
-      initAgg.abilityScoreFloors,
-      initAgg.itemAbilityScoreBonus,
-      initAgg.itemAbilityScoreCap
-    );
-    const initiativeGrantBonus =
-      initAgg.initiativeBonusFlat +
-      initAgg.initiativeBonusAbilities.reduce(
-        (sum, a) => sum + abilityModifier(effectiveScores[a]),
-        0
-      );
-    return computeInitiative(
-      effectiveScores.DEX,
-      effectivePB,
-      hasAlertFeat,
-      exhaustion,
-      initiativeGrantBonus
-    );
+    return computedInitiativeBonus(charData, initAgg, exhaustion);
   }, [charData, exhaustion, activeFeatures, grantBundleChoices, itemResources]);
 
   if (!character || !charData) return null;

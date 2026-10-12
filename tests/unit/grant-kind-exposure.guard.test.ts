@@ -166,7 +166,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "initiative-bonus": {
     via: "initiativeBonusAbilities",
-    consumer: "src/features/character/center/ThisTurnTracker.tsx",
+    consumer: "src/lib/aggregate-character.ts",
   },
   "concentration-save-bonus": {
     via: "resolveConcentrationSaveBonus",

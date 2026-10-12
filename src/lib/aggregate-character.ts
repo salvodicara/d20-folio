@@ -29,9 +29,13 @@ import {
   resolveCombatEffectGrantSources,
 } from "@/lib/resolve-grant-sources";
 import {
+  abilityModifier,
   computeAC,
   computeACDetailed,
+  computeInitiative,
+  characterHasFeat,
   effectiveAbilityScores,
+  effectiveProficiencyBonus,
   abilityAcBonus,
 } from "@/lib/compute";
 import { inferHpContributions } from "@/lib/character-infer";
@@ -386,6 +390,50 @@ export function computeCharacterMaxHpBreakdown(
 }
 
 // ─── Effective max HP — stored by-the-book base + live transient deltas (D1) ─────
+
+/**
+ * The Initiative bonus the engine computes (before a hand-set override): the
+ * effective DEX modifier (score floors and item bonuses folded in), Alert's
+ * Proficiency Bonus, the initiative grants (flat, or an ability's modifier such as
+ * Dread Ambusher's WIS) and the exhaustion penalty. The ONE assembly the sheet, the
+ * party view and the PDF share; `aggregate` is the caller's full grant aggregate.
+ */
+export function computedInitiativeBonus(
+  character: CharacterDoc["character"],
+  aggregate: Pick<
+    AggregatedGrants,
+    | "abilityScoreFloors"
+    | "itemAbilityScoreBonus"
+    | "itemAbilityScoreCap"
+    | "initiativeBonusFlat"
+    | "initiativeBonusAbilities"
+  >,
+  exhaustion: number
+): number {
+  const scores = effectiveAbilityScores(
+    character.abilityScores,
+    aggregate.abilityScoreFloors,
+    aggregate.itemAbilityScoreBonus,
+    aggregate.itemAbilityScoreCap
+  );
+  const grantBonus =
+    aggregate.initiativeBonusFlat +
+    aggregate.initiativeBonusAbilities.reduce(
+      (sum, ability) => sum + abilityModifier(scores[ability]),
+      0
+    );
+  return computeInitiative(
+    scores.DEX,
+    effectiveProficiencyBonus(totalLevel(character), character.proficiencyBonusOverride),
+    characterHasFeat("alert", {
+      humanOriginFeat: character.humanOriginFeat,
+      bgFeat: character.bgFeat,
+      features: character.features,
+    }),
+    exhaustion,
+    grantBonus
+  );
+}
 
 /**
  * The EFFECTIVE max HP every play surface clamps/heals/displays against:

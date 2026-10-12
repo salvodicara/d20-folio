@@ -20,8 +20,6 @@ import { totalLevel, primaryClassId } from "@/lib/classes";
 import {
   abilityModifier,
   ALL_ABILITIES,
-  characterHasFeat,
-  computeInitiative,
   effectiveAbilityScores,
   effectiveProficiencyBonus,
   effectiveSpellAttackBonus,
@@ -32,6 +30,7 @@ import {
 } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
+  computedInitiativeBonus,
   effectiveAC,
   effectiveMaxHp,
 } from "@/lib/aggregate-character";
@@ -134,21 +133,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
 
   const initiativeBonus =
     character.initiativeBonusOverride ??
-    computeInitiative(
-      scores.DEX,
-      pb,
-      characterHasFeat("alert", {
-        humanOriginFeat: character.humanOriginFeat,
-        bgFeat: character.bgFeat,
-        features: character.features,
-      }),
-      session.exhaustion,
-      aggregate.initiativeBonusFlat +
-        aggregate.initiativeBonusAbilities.reduce(
-          (sum, a) => sum + abilityModifier(scores[a]),
-          0
-        )
-    );
+    computedInitiativeBonus(character, aggregate, session.exhaustion);
 
   const sc = character.spellcasting;
   const casterClass = primaryClassId(character);
