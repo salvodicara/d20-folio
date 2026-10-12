@@ -49,6 +49,14 @@ describe.each(BASE_ACTION_STATES.map((state) => [state.actionId, state]))(
       }
     });
 
+    it("its rail lines never repeat the Adv./Disadv. label the rail prefixes", () => {
+      for (const inner of state.grant.grants) {
+        if (!("description" in inner) || !inner.description) continue;
+        expect(inner.description.en).not.toMatch(/^(dis)?advantage\b/i);
+        expect(inner.description.it).not.toMatch(/^(s)?vantaggio\b/i);
+      }
+    });
+
     it("while off, nothing of it shows", () => {
       const off = doc([]);
       const aggregate = aggregateCharacterGrants(off.character, off.session);

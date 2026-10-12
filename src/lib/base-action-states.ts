@@ -39,8 +39,8 @@ export const BASE_ACTION_STATES: ReadonlyArray<BaseActionState> = [
           rollType: "save",
           vs: "dex",
           description: {
-            en: "Advantage on Dexterity saving throws (Dodge)",
-            it: "Vantaggio ai tiri salvezza su Destrezza (Schivata)",
+            en: "Dexterity saving throws (Dodge)",
+            it: "Tiri salvezza su Destrezza (Schivata)",
           },
         },
       ],
