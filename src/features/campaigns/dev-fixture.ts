@@ -228,7 +228,7 @@ The party took the Fennicks' bargain and set out for the ravine.`,
 }
 
 /** The dev encounter modes the Party section can seed (dev-bypass only). */
-type EncounterDemoMode = "begun" | "gathering" | null;
+type EncounterDemoMode = "begun" | "gathering" | "reflexes" | null;
 
 /**
  * Which encounter the dev campaign should seed in the Party section. The DEFAULT is the
@@ -244,6 +244,9 @@ function encounterDemo(): EncounterDemoMode {
   const flag = window.localStorage.getItem("d20-dev-encounter");
   if (flag === "1") return "begun";
   if (flag === "gathering") return "gathering";
+  // Thief's Reflexes: gathering with every roll in and Mara's hero a level-17 Thief
+  // (`scn-thief-reflexes`), so Begin turns slots her second turn at Initiative − 10.
+  if (flag === "reflexes") return "reflexes";
   return null;
 }
 
@@ -324,7 +327,9 @@ export function makeDevNotes(): SharedNote[] {
  * demo). Rolls sit under the monsters' 12–16 so the frozen order reads naturally.
  */
 function devEncounterInitSeed(): Record<string, number> {
-  if (encounterDemo() !== "begun") return {};
+  const mode = encounterDemo();
+  if (mode === "reflexes") return { "member-bren": 3, "member-mara": 15 };
+  if (mode !== "begun") return {};
   return { "member-bren": 8, "member-mara": 6 };
 }
 
@@ -398,27 +403,42 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
       },
       // D29 — Mara attached a character snapshot (the party card shows her hero);
       // Bren attached a character; the DM has none — every state is visible.
-      "member-mara": {
-        displayName: "Mara",
-        // A real dev-fixture id so the DM read-only sheet view (T4) renders a
-        // full character locally + in e2e (resolved via the dev fixture seam).
-        characterId: "team-catalion-bard",
-        role: "player",
-        character: {
-          // The owner's REAL party hero (AC-ZERO, 2026-06-12) — long enough to
-          // exercise the CARD-NAMES wrap (it mid-truncated to "Coralino di
-          // Sanval…" before the No-Truncation fix). Matches its `team-catalion`
-          // id, so the DM read-only sheet shows the same hero.
-          name: assertNonEmptyString("Coralino di Sanvaldo"),
-          race: asRaceId("human"),
-          class: "Bard",
-          level: 8,
-          ac: 15,
-          hpMax: 52,
-          // Owner-7 — a hero with a portrait shows the portrait (not an initial).
-          portraitUrl: DEV_HERO_PORTRAIT,
-        },
-      },
+      "member-mara":
+        encounterDemo() === "reflexes"
+          ? {
+              displayName: "Mara",
+              characterId: "scn-thief-reflexes",
+              role: "player",
+              character: {
+                name: assertNonEmptyString("Vess, Quickfingers"),
+                race: asRaceId("halfling"),
+                class: "Rogue",
+                level: 17,
+                ac: 15,
+                hpMax: 110,
+              },
+            }
+          : {
+              displayName: "Mara",
+              // A real dev-fixture id so the DM read-only sheet view (T4) renders a
+              // full character locally + in e2e (resolved via the dev fixture seam).
+              characterId: "team-catalion-bard",
+              role: "player",
+              character: {
+                // The owner's REAL party hero (AC-ZERO, 2026-06-12) — long enough to
+                // exercise the CARD-NAMES wrap (it mid-truncated to "Coralino di
+                // Sanval…" before the No-Truncation fix). Matches its `team-catalion`
+                // id, so the DM read-only sheet shows the same hero.
+                name: assertNonEmptyString("Coralino di Sanvaldo"),
+                race: asRaceId("human"),
+                class: "Bard",
+                level: 8,
+                ac: 15,
+                hpMax: 52,
+                // Owner-7 — a hero with a portrait shows the portrait (not an initial).
+                portraitUrl: DEV_HERO_PORTRAIT,
+              },
+            },
       "member-bren": {
         displayName: "Bren",
         characterId: "team-mandorlino-paladin",
@@ -973,7 +993,7 @@ export function resolveDevCampaign(id: string): CampaignDoc {
  */
 function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
   if (mode === null) return null;
-  const gathering = mode === "gathering";
+  const gathering = mode === "gathering" || mode === "reflexes";
   return {
     round: gathering ? 1 : 2,
     // Gathering = no current turn yet (the DM presses Begin-turns); begun = mid-fight.
@@ -1002,7 +1022,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         kind: "pc",
         id: "pc-member-mara",
         memberUid: "member-mara",
-        characterId: "team-catalion-bard",
+        characterId: mode === "reflexes" ? "scn-thief-reflexes" : "team-catalion-bard",
       },
       {
         kind: "monster",
@@ -1034,7 +1054,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         ac: 17,
         // Gathering demo: the Boss is the one combatant still UN-ROLLED, so the Begin-turns
         // gate is DISABLED with its rolled/total reason; begun: typed initiative 12.
-        initiative: gathering ? null : 12,
+        initiative: mode === "gathering" ? null : 12,
         conditions: [],
         hp: { current: 21, temp: 0, max: 21 },
         creatureType: "humanoid", // Ad-hoc: no srdId, so the monogram is intentional.

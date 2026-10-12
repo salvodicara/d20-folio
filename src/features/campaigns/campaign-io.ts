@@ -709,6 +709,11 @@ export async function advanceEncounterTurn(
       ...(next.world !== undefined && next.world !== encounter.world
         ? { "encounter.world": next.world }
         : {}),
+      // Round 1's second turns (Thief's Reflexes) flip `started` as the pointer
+      // reaches or rewinds them — the one extra turn field a member may write.
+      ...(next.extraTurns !== encounter.extraTurns
+        ? { "encounter.extraTurns": next.extraTurns ?? [] }
+        : {}),
     };
     const position = {
       order: next.order ?? [],
@@ -1553,6 +1558,7 @@ export async function persistBeginTurns(
     currentCombatantId: string;
     round: number;
     skipped?: Record<string, boolean>;
+    extraTurns?: EncounterState["extraTurns"];
   }
 ): Promise<void> {
   if (devBypassEnabled()) return;
@@ -1560,6 +1566,7 @@ export async function persistBeginTurns(
     "encounter.order": turn.order,
     "encounter.currentCombatantId": turn.currentCombatantId,
     "encounter.round": turn.round,
+    ...(turn.extraTurns ? { "encounter.extraTurns": turn.extraTurns } : {}),
     ...(turn.skipped ? { encounterSkipped: turn.skipped } : {}),
     updatedAt: serverTimestamp(),
   });
@@ -1742,18 +1749,19 @@ function reconcileEncounterPointer(data: CampaignWritable): CampaignWritable {
   if (!live || live.epoch !== pending.epoch) return data; // different / no live fight
   if (
     live.currentCombatantId === pending.currentCombatantId &&
-    live.round === pending.round
+    live.round === pending.round &&
+    live.extraTurns === pending.extraTurns
   ) {
     return data; // pointer already current — nothing to reconcile
   }
-  return {
-    ...data,
-    encounter: {
-      ...pending,
-      currentCombatantId: live.currentCombatantId,
-      round: live.round,
-    },
+  const encounter: EncounterState = {
+    ...pending,
+    currentCombatantId: live.currentCombatantId,
+    round: live.round,
   };
+  // The second-turn `started` flags move with the pointer, so they follow it too.
+  if (live.extraTurns) encounter.extraTurns = live.extraTurns;
+  return { ...data, encounter };
 }
 
 /**

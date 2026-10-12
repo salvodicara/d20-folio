@@ -108,6 +108,16 @@ import { useLiftReorder } from "@/features/campaigns/use-lift-reorder";
 import { derivePcLive } from "@/features/campaigns/party-stats";
 import { characterHasFeat } from "@/lib/compute";
 import {
+  THIEFS_REFLEXES_ID,
+  THIEFS_REFLEXES_INITIATIVE_OFFSET,
+  firstRoundSlots,
+  onExtraTurn,
+  thiefsReflexesTurns,
+} from "@/lib/play/extra-turns";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { InitVital } from "@/features/campaigns/init-vital";
+import {
+  CombatantCard,
   DmControlBanner,
   EncounterRoundBar,
   EncounterTurnControls,
@@ -830,7 +840,10 @@ function CombatLayer({
         skippedAtStart[combatant.memberUid] = true;
       }
     }
-    apply((e) => beginEncounterTurns(e, rolledIds));
+    // Thief's Reflexes: each holder's round-1 second turn, slotted at its Initiative
+    // minus 10 (the classes and totals the DM's view already reads live).
+    const extraTurns = thiefsReflexesTurns(rolledIds, view.rows);
+    apply((e) => beginEncounterTurns(e, rolledIds, extraTurns));
     const campaignStore = useCampaignStore.getState();
     if (campaignStore.campaign) {
       campaignStore.setCampaign({
@@ -851,6 +864,7 @@ function CombatLayer({
         currentCombatantId: enc.currentCombatantId,
         round: enc.round,
         skipped: skippedAtStart,
+        ...(enc.extraTurns ? { extraTurns: enc.extraTurns } : {}),
       }).catch((e: unknown) => {
         console.error("Begin-turns write failed", e);
         useToastStore.getState().showToast({
@@ -923,6 +937,10 @@ function CombatLayer({
   const displayRows = canReorder
     ? [...view.rows].sort((a, b) => (orderPos.get(a.id) ?? 0) - (orderPos.get(b.id) ?? 0))
     : view.rows;
+  // Round 1's second turns (Thief's Reflexes) show as their own row; while the pointer
+  // is on one, that row — not the holder's first-turn card — carries the highlight.
+  const rowById = new Map(displayRows.map((row) => [row.id, row]));
+  const secondTurnNow = onExtraTurn(encounter);
 
   // B23 — while GATHERING, the list live-re-sorts by initiative (`displayRows === view.rows`)
   // with no frozen order, so committing an initiative moves the just-edited card under the
@@ -1176,7 +1194,30 @@ function CombatLayer({
       )}
 
       <ul ref={listRef} className="encounter-turn-order flex flex-col gap-2">
-        {displayRows.map((row) => {
+        {firstRoundSlots(
+          displayRows.map((row) => row.id),
+          encounter.extraTurns,
+          encounter.round
+        ).map(({ id, extra }) => {
+          const row = rowById.get(id);
+          if (!row) return null;
+          if (extra) {
+            const m = row.memberUid ? memberDetails[row.memberUid] : undefined;
+            if (!m?.character) return null;
+            return (
+              <SecondTurnCard
+                key={`${row.id}:second-turn`}
+                m={m}
+                initiative={
+                  row.initiative === null
+                    ? null
+                    : row.initiative - THIEFS_REFLEXES_INITIATIVE_OFFSET
+                }
+                isCurrent={secondTurnNow && row.id === view.currentId}
+                indent={canReorder}
+              />
+            );
+          }
           if (row.kind === "pc") {
             const uid = row.memberUid;
             const m = uid ? memberDetails[uid] : undefined;
@@ -1188,7 +1229,7 @@ function CombatLayer({
                 m={m}
                 ctx={ctx}
                 encounterConditions={row.conditions}
-                isCurrent={row.id === view.currentId}
+                isCurrent={row.id === view.currentId && !secondTurnNow}
                 reorder={reorderFor(row.id)}
               />
             );
@@ -1227,6 +1268,71 @@ function CombatLayer({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * Thief's Reflexes' second turn in round 1 — a quiet, non-expandable row in the turn
+ * order at the rogue's Initiative minus 10 (the full card stays at the first turn).
+ */
+function SecondTurnCard({
+  m,
+  initiative,
+  isCurrent,
+  indent,
+}: {
+  m: CampaignMember;
+  initiative: number | null;
+  isCurrent: boolean;
+  /** Line up with the draggable rows: the second turn itself is not draggable. */
+  indent: boolean;
+}) {
+  const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  const char = m.character;
+  if (!char) return null;
+  return (
+    <CombatantCard
+      side="ally"
+      role={m.role}
+      isCurrent={isCurrent}
+      lead={
+        <>
+          {indent && <span aria-hidden className="w-[18px] shrink-0" />}
+          <InitVital
+            value={initiative}
+            bonus={0}
+            canEdit={false}
+            name={char.name}
+            onCommit={() => {}}
+          />
+        </>
+      }
+      seal={
+        <span className="seal party-avatar" aria-hidden>
+          <Portrait
+            src={char.portraitUrl ?? null}
+            crop={char.portraitCrop ?? null}
+            name={char.name}
+            seed={char.name}
+            loading="lazy"
+          />
+        </span>
+      }
+      title={char.name}
+      subline={
+        <span className="party-sub-player">
+          {t("combat.secondTurn", {
+            source: grantSourceLabel(THIEFS_REFLEXES_ID, locale),
+          })}
+        </span>
+      }
+      cluster={null}
+      open={false}
+      onToggle={() => {}}
+      detailId={`second-turn-${char.name}`}
+      toggleLabel={char.name}
+    />
   );
 }
 

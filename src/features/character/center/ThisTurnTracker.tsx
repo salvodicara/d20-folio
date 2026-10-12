@@ -21,7 +21,7 @@
  * Play-tab cards, which share the store), never the Left/Right HUD.
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Swords, Zap, RefreshCw, ArrowRight, Flag } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -56,6 +56,19 @@ import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
 import { MovementSlider } from "./MovementSlider";
 import { isCharacterAlive } from "@/lib/character-status";
+import { Input } from "@/components/ui/input";
+import {
+  classesGrantThiefsReflexes,
+  timeStopCastThisTurn,
+  onExtraTurn,
+  parseTimeStopTurns,
+  soloExtraTurnOffer,
+  soloExtraTurnOrdinal,
+  TIME_STOP_ID,
+  TIME_STOP_MAX_TURNS,
+  TIME_STOP_MIN_TURNS,
+} from "@/lib/play/extra-turns";
+import { takeSoloExtraTurn } from "./extra-turn";
 
 /** The economy-token types the meter can filter the action board by (item e). */
 export type EconFilterType = "action" | "bonus" | "reaction";
@@ -121,6 +134,10 @@ export function ThisTurnTracker({
   // stored value (golden rule 6). Solo keeps `combatStore.initiative` → the subdoc.
   const gc = useSheetCombat();
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
+  // Extra turns (Thief's Reflexes' second turn, Time Stop's turns in a row).
+  const reflexesTaken = useCombatStore((s) => s.reflexesTaken);
+  const timeStopTurns = useCombatStore((s) => s.timeStopTurns);
+  const [timeStopDraft, setTimeStopDraft] = useState("");
   const movementLocked = useCombatStore((s) => s.movementLocked);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
@@ -365,6 +382,35 @@ export function ThisTurnTracker({
   // reactions), driven by `data-phase` in folio.css.
   const endTurnInert = phase === "waiting" || phase === "gathering";
 
+  // EXTRA TURNS — solo only: a shared encounter steps the second turn through its own
+  // turn order (the DM's list shows it), so the sheet just follows the pointer there.
+  // Thief's Reflexes offers its second turn in round 1; a Time Stop cast this turn asks
+  // for the rolled count, then offers each turn in a row until they are used up.
+  const soloTurns = !inEncounter && !readonly && lifecycleEligible;
+  const extraTurnOffer = soloTurns
+    ? soloExtraTurnOffer({
+        round,
+        thiefsReflexes: classesGrantThiefsReflexes(charData.classes),
+        reflexesTaken,
+        timeStop: timeStopTurns,
+      })
+    : null;
+  const askTimeStopTurns =
+    soloTurns &&
+    timeStopTurns?.round !== round &&
+    timeStopCastThisTurn(character.session.logEntries);
+  const turnOrdinal = inEncounter
+    ? gc && onExtraTurn(gc.encounter)
+      ? { n: 2, of: 2 }
+      : null
+    : soloExtraTurnOrdinal({ round, reflexesTaken, timeStop: timeStopTurns });
+  function commitTimeStopTurns() {
+    const turns = parseTimeStopTurns(timeStopDraft);
+    if (turns === null) return;
+    useCombatStore.getState().setTimeStopTurns(turns);
+    setTimeStopDraft("");
+  }
+
   // Start-of-turn regen riders (`regen-at-turn-start` — Champion Survivor's
   // Heroic Rally: 5+CON HP while Bloodied). AX exposure audit — the resolver
   // existed but nothing mounted it. Surface ONLY the currently-ACTIVE entries
@@ -586,6 +632,11 @@ export function ThisTurnTracker({
               {round}
             </span>
           </span>
+          {turnOrdinal && (
+            <span className="r-lbl" data-testid="extra-turn-ordinal">
+              {t("combat.turnOfRound", turnOrdinal)}
+            </span>
+          )}
         </div>
         {/* TB4 — ONE init-entry widget app-wide: the SHARED roll-to-total InitVital
             (the same tile the encounter + the global pip use), so the sheet and the
@@ -728,6 +779,73 @@ export function ThisTurnTracker({
           />
         )}
       </div>
+
+      {/* EXTRA TURNS — the next turn in the SAME round, in one tap: the End-Turn
+          recipe (it ends this turn too) inside the action-prompt banner, which says
+          where the turn comes from. No CSS of its own. */}
+      {extraTurnOffer && (
+        <div className="conc-banner" role="status" data-testid="extra-turn-offer">
+          <span className="conc-banner-mark" aria-hidden />
+          <span className="conc-banner-text">
+            {extraTurnOffer.source === TIME_STOP_ID
+              ? t("combat.extraTurnsNextNote", {
+                  source: grantSourceLabel(extraTurnOffer.source, locale),
+                  n: extraTurnOffer.n,
+                  of: extraTurnOffer.of,
+                })
+              : t("combat.secondTurnNote", {
+                  source: grantSourceLabel(extraTurnOffer.source, locale),
+                })}
+          </span>
+          <button
+            type="button"
+            className="endturn"
+            onClick={() => takeSoloExtraTurn(extraTurnOffer, t, locale)}
+          >
+            <span>
+              {extraTurnOffer.source === TIME_STOP_ID
+                ? t("combat.nextExtraTurn", {
+                    source: grantSourceLabel(extraTurnOffer.source, locale),
+                    n: extraTurnOffer.n,
+                    of: extraTurnOffer.of,
+                  })
+                : t("combat.secondTurn", {
+                    source: grantSourceLabel(extraTurnOffer.source, locale),
+                  })}
+            </span>
+            <Icon as={ArrowRight} decorative />
+          </button>
+        </div>
+      )}
+      {askTimeStopTurns && (
+        <div className="conc-banner" role="status" data-testid="time-stop-turns">
+          <span className="conc-banner-mark" aria-hidden />
+          <span className="conc-banner-text">
+            {t("combat.extraTurnsNote", {
+              source: grantSourceLabel(TIME_STOP_ID, locale),
+            })}
+          </span>
+          <label className="flex shrink-0 items-center gap-2">
+            <span className="whitespace-nowrap text-[0.7rem] uppercase tracking-[0.12em] text-text-muted">
+              {t("combat.extraTurnsLabel")}
+            </span>
+            <Input
+              type="number"
+              min={TIME_STOP_MIN_TURNS}
+              max={TIME_STOP_MAX_TURNS}
+              inputMode="numeric"
+              className="sm w-16"
+              value={timeStopDraft}
+              onChange={(e) => setTimeStopDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitTimeStopTurns();
+              }}
+              onBlur={commitTimeStopTurns}
+              placeholder="—"
+            />
+          </label>
+        </div>
+      )}
 
       {/* RA-19 — while Prone, a one-tap Stand on the turn meter clears the
           condition and debits half the base Speed (undoable). Reuses the

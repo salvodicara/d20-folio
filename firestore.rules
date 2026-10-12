@@ -516,7 +516,7 @@ service cloud.firestore {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['currentCombatantId', 'round'])
+               .affectedKeys().hasOnly(['currentCombatantId', 'round', 'extraTurns'])
           && validEncounterRound();
       }
 
@@ -547,7 +547,7 @@ service cloud.firestore {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round', 'world'])
+               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round', 'extraTurns', 'world'])
           && request.resource.data.encounter.combatants.size()
                == resource.data.encounter.combatants.size()
           && request.resource.data.encounter.get('events', []).size()

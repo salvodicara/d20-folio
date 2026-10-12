@@ -27,6 +27,7 @@
  * {@link LocText} — a homebrew name with no SRD id).
  */
 
+import type { ExtraTurnSource } from "@/lib/play/extra-turns";
 import type { ActionType } from "@/data/types";
 import type { ConcentrationRef } from "@/types/ids";
 import type { LocText } from "@/lib/loc-text";
@@ -142,8 +143,17 @@ export type CombatEvent =
     }
   /** A rest was taken. */
   | { kind: "rest"; restKind: "short" | "long" }
-  /** A turn ended → a new round started (`round` = the new round number). */
-  | { kind: "turn-end"; round: number }
+  /**
+   * A turn ended → a new round started (`round` = the new round number). With
+   * `extraTurn`, the turn ended and an EXTRA turn started in the SAME round
+   * (`round` unchanged): turn `n` of `of` granted by `source` (Thief's Reflexes or
+   * Time Stop, catalogue ids). Additive: an older reader shows the plain round line.
+   */
+  | {
+      kind: "turn-end";
+      round: number;
+      extraTurn?: { source: ExtraTurnSource; n: number; of: number };
+    }
   /**
    * FRONTIER-S3 — a timed `while-active` state's round countdown reached 0 and
    * AUTO-EXPIRED at End Turn (Rage after 100 rounds). `sourceId` is the granting

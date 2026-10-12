@@ -623,6 +623,32 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball + Hold Person).",
   },
+  // Extra turns. `/characters/scn-thief-reflexes`: a level-17 Thief whose round 1
+  // offers the second turn (Thief's Reflexes). `/characters/scn-time-stop`: a
+  // level-17 Wizard with Time Stop prepared — the cast asks for the 1d4 + 1 count.
+  "thief-reflexes": {
+    name: "Vess, Quickfingers",
+    raceId: "halfling",
+    classId: "rogue",
+    subclassId: "thief",
+    level: 17,
+    background: "criminal",
+    abilityScores: { STR: 10, DEX: 20, CON: 14, INT: 12, WIS: 13, CHA: 14 },
+    weapons: [{ srdId: "shortsword", quantity: 1 }],
+    exercises:
+      "Thief's Reflexes: round 1 offers a one-tap second turn (economy refreshed, round stays 1); the encounter shows a second row at Initiative − 10.",
+  },
+  "time-stop": {
+    name: "Orrin, Keeper of Hours",
+    raceId: "human",
+    classId: "wizard",
+    level: 17,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 20, WIS: 12, CHA: 10 },
+    spells: [{ srdId: "fire-bolt" }, { srdId: "time-stop", prepared: true }],
+    exercises:
+      "Time Stop: the cast asks for the rolled 1d4 + 1 count, then offers each extra turn in a row without advancing the round.",
+  },
   "potent-druid": {
     // Elemental Fury (L7) Potent Spellcasting — the `druid-elemental-fury` choice
     // picks `potent-spellcasting`, a `spell-damage-bonus` (cantripOnly, +WIS,
