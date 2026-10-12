@@ -36,7 +36,7 @@ import {
   effectiveAbilityScores,
   effectiveSkillAbility,
   resolveAbilityCheckBonus,
-  flatSaveBonus,
+  resolveSaveBonus,
   type ProficiencyTier,
 } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
@@ -215,7 +215,10 @@ export function deriveSavesAndChecks(
     charData.savingThrows,
     aggregate.saveProficiencies
   );
-  const saveBonusFlat = flatSaveBonus(aggregate, effectiveScores);
+  // Save bonuses come from EVERY source (worn items included: Cloak of Protection
+  // +1), resolved per save so an ability-scoped bonus lands only on its save.
+  const saveBonusFor = (code: AbilityCode): number =>
+    resolveSaveBonus(fullAggregate, effectiveScores, code);
   const displayedSkills = mergeSkillProficiencies(
     charData.skills,
     aggregate.skillProficiencies,
@@ -245,7 +248,7 @@ export function deriveSavesAndChecks(
       null,
       exhaustion,
       pbOverride,
-      saveBonusFlat
+      saveBonusFor(code)
     );
     const bonus = savingThrowBonus(
       effectiveScores[code],
@@ -254,7 +257,7 @@ export function deriveSavesAndChecks(
       override,
       exhaustion,
       pbOverride,
-      saveBonusFlat
+      saveBonusFor(code)
     );
     const cause = autoFail.get(code);
     return {
@@ -271,7 +274,7 @@ export function deriveSavesAndChecks(
         override,
         exhaustion,
         pbOverride,
-        saveBonus: saveBonusFlat,
+        saveBonus: saveBonusFor(code),
       }),
       ...(cause ? { autoFailCause: cause } : {}),
     };

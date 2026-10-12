@@ -150,11 +150,10 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "hp-per-level": { via: "hp-per-level", consumer: "src/lib/level-up.ts" },
   "save-bonus": {
-    // B8 — the all-saves `saveBonusAbilities`/`saveBonusFlat` layers reach the
-    // medallion through the shared `flatSaveBonus` helper, consumed by the
-    // `deriveSavesAndChecks` builder (the Stats rail's save/skill/passive math);
-    // the helper itself reads `saveBonusAbilities` in compute.ts.
-    via: "flatSaveBonus",
+    // Every save-bonus layer (flat, ability-modifier, per-save scoped) reaches the
+    // medallion through `resolveSaveBonus` over the WHOLE-character aggregate
+    // (worn items included), consumed by the `deriveSavesAndChecks` builder.
+    via: "resolveSaveBonus",
     consumer: "src/lib/views/saves-checks-view.ts",
   },
   "ability-check-bonus": {
