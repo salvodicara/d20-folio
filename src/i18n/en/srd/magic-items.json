@@ -849,6 +849,9 @@
     "description": "While wearing this ring, you can take a Magic action to gain X-ray vision with a range of 30 feet for 1 minute. To you, solid objects within that radius appear transparent and don’t prevent light from passing through them. The vision can penetrate 1 foot of stone, 1 inch of common metal, or up to 3 feet of wood or dirt. Thicker substances or a thin sheet of lead block the vision. Whenever you use the ring again before taking a Long Rest, you must succeed on a DC 15 Constitution saving throw or gain 1 Exhaustion level.",
     "name": "Ring of X-ray Vision"
   },
+  "ring-of-x-ray-vision.grants.0": {
+    "label": "X-ray Vision"
+  },
   "robe-of-eyes": {
     "description": "This robe is adorned with eyelike patterns. While you wear the robe, you gain the following benefits: All-Around Vision. The robe gives you Advantage on Wisdom (Perception) checks that rely on sight. Special Senses. You have Darkvision and Truesight, both with a range of 120 feet. Drawbacks. A Light spell cast on the robe or a Daylight spell cast within 5 feet of the robe gives you the Blinded condition for 1 minute. At the end of each of your turns, you make a Constitution saving throw (DC 11 for Light or DC 15 for Daylight ), ending the condition on yourself on a success.",
     "name": "Robe of Eyes"

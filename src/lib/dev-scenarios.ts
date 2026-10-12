@@ -555,6 +555,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "S13 effective Speed: Boots of Speed ×2 (G12) − heavy-armor Strength penalty (G11) reaches the Speed vital; unproficient-armor Disadvantage (G13) shows in the combat adv/dis list.",
   },
+  "xray-ring": {
+    // The Ring of X-ray Vision worn and attuned: its Magic action lights 1 minute
+    // of X-ray vision (30 ft) on the Senses rail. Visit `/characters/scn-xray-ring`.
+    name: "Iska, the Seer of Walls",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    equipment: [{ srdId: "ring-of-x-ray-vision", equipped: true, attuned: true }],
+    exercises:
+      "Ring of X-ray Vision: the Magic action lights X-ray Vision 30 ft on the Senses rail with a 10-round countdown.",
+  },
   "evoker-wizard": {
     name: "Pyra, Evoker Wizard",
     raceId: "gnome",

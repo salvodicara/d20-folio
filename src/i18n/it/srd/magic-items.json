@@ -849,6 +849,9 @@
     "description": "Mentre indossi questo anello, puoi compiere un'azione Magia per ottenere la vista a raggi X con una portata di 9 metri per 1 minuto. Per te, gli oggetti solidi entro quel raggio appaiono trasparenti e non impediscono alla luce di attraversarli. La vista può penetrare 30 centimetri di pietra, 2,5 centimetri di metallo comune, oppure fino a 90 centimetri di legno o terra. Sostanze più spesse o una sottile lamina di piombo bloccano la vista. Ogni volta che usi di nuovo l'anello prima di terminare un Riposo Lungo, devi riuscire in un tiro salvezza su Costituzione con CD 15 o acquisire 1 livello di Indebolimento.",
     "name": "Anello della Vista a Raggi X"
   },
+  "ring-of-x-ray-vision.grants.0": {
+    "label": "Vista a raggi X"
+  },
   "robe-of-eyes": {
     "description": "Questa veste è ornata di motivi a forma di occhio. Mentre la indossi, ottieni i seguenti benefici: Visione Circolare. La veste ti conferisce Vantaggio alle prove di Saggezza (Percezione) che si basano sulla vista. Sensi Speciali. Hai Scurovisione e Vista Pura, entrambe con una portata di 36 metri. Svantaggi. Un incantesimo Luce lanciato sulla veste o un incantesimo Luce Diurna lanciato entro 1,5 metri dalla veste ti infligge la condizione Accecato per 1 minuto. Alla fine di ognuno dei tuoi turni effettui un tiro salvezza su Costituzione (CD 11 per Luce o CD 15 per Luce Diurna), terminando la condizione su di te con un successo.",
     "name": "Tunica degli Occhi"

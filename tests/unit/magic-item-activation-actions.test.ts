@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { magicItemChargeMax, resolveActions, resolveTrackers } from "@/lib/smart-tracker";
+import {
+  magicItemChargeMax,
+  resolveActions,
+  resolveActiveTimedEffects,
+  resolveTrackers,
+} from "@/lib/smart-tracker";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { deriveSensesAndSpeeds } from "@/lib/views/sheet-view";
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveGrantSourcesForEquipment } from "@/lib/resolve-grant-sources";
@@ -191,6 +198,54 @@ describe("magic-item activated properties", () => {
         (row) => row.resourcePayment?.itemId === "armor-of-invulnerability"
       )
     ).toBe(false);
+  });
+});
+
+describe("Ring of X-ray Vision", () => {
+  // The catalogue text: "take a Magic action to gain X-ray vision with a range of
+  // 30 feet for 1 minute".
+  const text =
+    (magicItemsEn as Record<string, { description?: string }>)["ring-of-x-ray-vision"]
+      ?.description ?? "";
+  const rangeFt = Number(/range of (\d+) feet/.exec(text)?.[1]);
+  const minutes = Number(/for (\d+) minute/.exec(text)?.[1]);
+
+  function wearer(active: boolean): CharacterDoc {
+    const doc = bearerOf({
+      srdId: "ring-of-x-ray-vision",
+      equipped: true,
+      attuned: true,
+      quantity: 1,
+    });
+    if (active) doc.session.activeFeatures = ["ring-of-x-ray-vision"];
+    return doc;
+  }
+
+  function senses(doc: CharacterDoc) {
+    return deriveSensesAndSpeeds(aggregateCharacterGrants(doc.character, doc.session), 30)
+      .senses;
+  }
+
+  it("is a Magic action that lights the ring's state for 1 minute", () => {
+    expect(rangeFt).toBe(30);
+    expect(minutes).toBe(1);
+    const action = resolveActions(wearer(false)).find((row) =>
+      row.id.startsWith("item-activate-ring-of-x-ray-vision-")
+    );
+    expect(action).toMatchObject({
+      type: "action",
+      activatesKey: "ring-of-x-ray-vision",
+    });
+    expect(
+      resolveActiveTimedEffects(wearer(true)).find(
+        (effect) => effect.activeKey === "ring-of-x-ray-vision"
+      )?.maxRounds
+    ).toBe(minutes * 10);
+  });
+
+  it("shows X-ray vision on the Senses rail only while lit", () => {
+    expect(senses(wearer(false)).some((sense) => sense.kind === "x-ray")).toBe(false);
+    expect(senses(wearer(true))).toContainEqual({ kind: "x-ray", rangeFt });
   });
 });
 

@@ -2507,6 +2507,7 @@ export function evaluateGrants(
       case "tremorsense":
       case "truesight":
       case "see-invisible":
+      case "x-ray":
       case "air-and-water-breathing":
       case "carry-as-larger-size":
         rules.push(...(compileGrant(g) ?? []));
