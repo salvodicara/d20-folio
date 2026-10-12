@@ -113,8 +113,18 @@ import {
   type CastLevelOption,
   type MetamagicCastRow,
 } from "@/components/sheet/CastLevelModal";
-import { METAMAGIC_BY_ID } from "@/data/metamagic";
 import { castEconomySlot, withMetamagicDuration } from "@/lib/play/metamagic";
+import {
+  actionPaymentAffordable as actionPaymentAffordableFor,
+  actionWithCost,
+  castOptionAffordable as castOptionAffordableFor,
+  castOptionExpendsSpellSlot,
+  metamagicAffordable as metamagicAffordableFor,
+  metamagicCost,
+  paymentAffordable as paymentAffordableFor,
+  trackerAffordable,
+  type CastCommitOption,
+} from "@/lib/play/cast-payment";
 import { getSpellById } from "@/data/spells";
 import { buildCastOptions, slotUsageKey, bareSlotIsPact } from "@/lib/cast-options";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
@@ -147,8 +157,6 @@ import {
   syncPipToStatus,
 } from "@/features/campaigns/combat-reconcile";
 
-type CastCommitOption = CastLevelOption | { kind: "ritual"; level: number };
-
 interface ActionExecution {
   consumesTurnEconomy: boolean;
   turnScoped: boolean;
@@ -160,14 +168,6 @@ const TURN_EXECUTION: ActionExecution = {
   turnScoped: true,
   ritual: false,
 };
-
-function castOptionExpendsSpellSlot(option: CastCommitOption): boolean {
-  return (
-    option.kind === undefined ||
-    option.kind === "slot" ||
-    (option.kind === "free-cast" && option.expendsSpellSlot === true)
-  );
-}
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -1468,84 +1468,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     clearPendingResolution(action);
   }
 
-  function actionWithCost(action: ResolvedAction, cost: ActionCostOption["cost"]) {
-    const withoutPrimaryCost: ResolvedAction = {
-      ...action,
-      costsSlot: false,
-      slotLevel: undefined,
-      costTracker: undefined,
-      trackerCost: undefined,
-      costTrackerIsPool: undefined,
-      costTrackerUnit: undefined,
-      costEquipment: undefined,
-      resourcePayment: undefined,
-      resourceCost: undefined,
-    };
-    if (cost.kind === "spell-slot") {
-      return {
-        ...withoutPrimaryCost,
-        costsSlot: true,
-        slotLevel: cost.minLevel,
-      };
-    }
-    if (cost.kind === "item-resource") {
-      return {
-        ...withoutPrimaryCost,
-        resourcePayment: {
-          kind: "item-resource" as const,
-          itemId: cost.itemId,
-          instanceId: cost.instanceId,
-          resourceId: cost.resourceId,
-          key: cost.key,
-        },
-        resourceCost: cost.amount,
-      };
-    }
-    if (cost.kind === "tracker") {
-      return {
-        ...withoutPrimaryCost,
-        costTracker: cost.trackerId,
-        trackerCost: cost.amount ?? 1,
-        costTrackerIsPool: cost.pool ?? false,
-      };
-    }
-    if (cost.kind === "equipment") {
-      return { ...withoutPrimaryCost, costEquipment: cost.key };
-    }
-    if (cost.kind === "free-cast") {
-      return { ...withoutPrimaryCost, costTracker: cost.sourceId, trackerCost: 1 };
-    }
-    if (cost.kind === "signature") {
-      return { ...withoutPrimaryCost, costTracker: cost.trackerId, trackerCost: 1 };
-    }
-    // Mastery / ritual / none are explicitly cost-free alternatives.
-    return withoutPrimaryCost;
-  }
-
-  // S6 — whether a payment is affordable right now (the picker disables the rest;
-  // constrained input). A slot payment needs an open slot ≥ its minLevel; a tracker
-  // payment needs remaining uses. Other kinds (mastery/none) are always affordable.
+  // S6 — the picker disables the payments the character cannot afford right now.
   function paymentAffordable(cost: ActionCostOption["cost"]): boolean {
-    if (!character) return false;
-    if (cost.kind === "spell-slot") {
-      return character.character.spellSlots.some((s) => {
-        if (s.level < cost.minLevel) return false;
-        // Each pool (normal vs pact) is checked against its OWN counter (B3) —
-        // a slot is affordable iff THAT pool has an opening, never the conflation
-        // of both pools' totals against one key.
-        const used = character.session.spellSlots[slotUsageKey(s)]?.used ?? 0;
-        return used < s.total;
-      });
-    }
-    if (cost.kind === "tracker") {
-      const tr = trackerMap.get(cost.trackerId);
-      return tr ? tr.total - tr.used >= (cost.amount ?? 1) : false;
-    }
-    if (cost.kind === "item-resource") {
-      const availability = resolveItemResourceAvailability(character, cost);
-      return Boolean(availability && availability.current >= cost.amount);
-    }
-    return true;
+    return character ? paymentAffordableFor(character, trackerMap, cost) : false;
   }
 
   function paymentOptionLabel(cost: ActionCostOption["cost"]): string {
@@ -1571,80 +1496,25 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     return null;
   }
 
+  // The commit revalidates against the LIVE character, never the render snapshot.
   function liveTrackerAffordable(trackerId: string, amount: number): boolean {
     const doc = useCharacterStore.getState().character;
-    if (!doc) return false;
-    const tracker = resolveTrackers(doc).find((entry) => entry.id === trackerId);
-    return tracker !== undefined && tracker.total - tracker.used >= amount;
-  }
-
-  function metamagicCost(metamagicIds: ReadonlyArray<string>): number {
-    return metamagicIds.reduce(
-      (sum, id) => sum + (METAMAGIC_BY_ID.get(id)?.cost ?? 0),
-      0
-    );
+    return doc ? trackerAffordable(doc, trackerId, amount) : false;
   }
 
   function metamagicAffordable(metamagicIds: ReadonlyArray<string>): boolean {
-    const cost = metamagicCost(metamagicIds);
-    return cost === 0 || liveTrackerAffordable("sorcerer-font-of-magic", cost);
+    const doc = useCharacterStore.getState().character;
+    return doc ? metamagicAffordableFor(doc, metamagicIds) : false;
   }
 
-  /** Revalidate a bare reaction/action payment that did not come through the
-   * rich cast-option picker. Item resources own their stricter prepared CAS. */
   function actionPaymentAffordable(action: ResolvedAction): boolean {
     const doc = useCharacterStore.getState().character;
-    if (!doc) return false;
-    if (action.costsSlot) {
-      if (action.slotLevel == null) return false;
-      const pactMagic = bareSlotIsPact(doc.character.spellSlots, action.slotLevel);
-      const row = doc.character.spellSlots.find(
-        (entry) =>
-          entry.level === action.slotLevel && Boolean(entry.pactMagic) === pactMagic
-      );
-      return Boolean(
-        row && (doc.session.spellSlots[slotUsageKey(row)]?.used ?? 0) < row.total
-      );
-    }
-    if (!action.resourcePayment && action.costTracker) {
-      return liveTrackerAffordable(action.costTracker, action.trackerCost ?? 1);
-    }
-    if (action.costEquipment) {
-      return doc.character.equipment.some(
-        (ref) =>
-          ("custom" in ref ? `custom-${ref.instanceId}` : ref.srdId) ===
-            action.costEquipment && (ref.quantity ?? 1) > 0
-      );
-    }
-    return true;
+    return doc ? actionPaymentAffordableFor(doc, action) : false;
   }
 
-  /** Revalidate a configured cast against LIVE state. The picker is only a
-   * proposal: a sync, another action, or redo may have spent the resource in the
-   * meantime, and no commit path may overdraw it. */
   function castOptionAffordable(opt: CastCommitOption): boolean {
     const doc = useCharacterStore.getState().character;
-    if (!doc) return false;
-    if (opt.kind === "ritual") return true;
-    if (!opt.kind || opt.kind === "slot") {
-      const row = doc.character.spellSlots.find(
-        (entry) =>
-          entry.level === opt.level && Boolean(entry.pactMagic) === Boolean(opt.pactMagic)
-      );
-      return Boolean(
-        row && (doc.session.spellSlots[slotUsageKey(row)]?.used ?? 0) < row.total
-      );
-    }
-    if (opt.kind === "free-cast") {
-      if (opt.payment?.kind === "item-resource") {
-        const available = resolveItemResourceAvailability(doc, opt.payment);
-        return available !== null && available.current >= opt.cost;
-      }
-      const trackerId =
-        opt.payment?.kind === "tracker" ? opt.payment.trackerId : opt.sourceId;
-      return liveTrackerAffordable(trackerId, opt.cost);
-    }
-    return true;
+    return doc ? castOptionAffordableFor(doc, opt) : false;
   }
 
   /**
