@@ -10,6 +10,7 @@ import {
   parseEncounterState,
   removeCombatant,
   setHp,
+  setMonsterAc,
   setMonsterCondition,
   setMonsterTempHp,
   startEncounter,
@@ -132,6 +133,22 @@ describe("encounter scalar monster model", () => {
     });
     expect(monster(setHp(withTemp, "monster-1", 100), "monster-1").hp.current).toBe(7);
     expect(monster(setHp(withTemp, "monster-1", -10), "monster-1").hp.current).toBe(0);
+  });
+
+  it("sets a monster's AC as an integer clamped to 0-40, a no-op when equal or for a PC", () => {
+    const seeded = addMonster(startEncounter({ u1: { characterId: "c1" } }, ["u1"], 1), {
+      ...goblins,
+      count: 1,
+    });
+    const slowed = setMonsterAc(seeded, "monster-1", 13);
+    expect(monster(slowed, "monster-1").ac).toBe(13);
+    expect(monster(setMonsterAc(seeded, "monster-1", 17.6), "monster-1").ac).toBe(18);
+    expect(monster(setMonsterAc(seeded, "monster-1", 99), "monster-1").ac).toBe(40);
+    expect(monster(setMonsterAc(seeded, "monster-1", -3), "monster-1").ac).toBe(0);
+    expect(setMonsterAc(seeded, "monster-1", 15)).toBe(seeded);
+    expect(setMonsterAc(seeded, "monster-1", Number.NaN)).toBe(seeded);
+    expect(setMonsterAc(seeded, "pc-u1", 20)).toBe(seeded);
+    expect(parseEncounterState(slowed)).toBe(slowed);
   });
 
   it("sets and toggles conditions idempotently per combatant", () => {

@@ -628,6 +628,21 @@ export function setMonsterXp(
   );
 }
 
+/** Set a MONSTER's Armor Class mid-encounter (Slow −2, Shield of Faith, a donned
+ *  shield). Clamped to an integer in `[0, 40]`; an equal value or a PC is a no-op
+ *  (a PC's AC lives on its character doc). */
+export function setMonsterAc(
+  state: EncounterState,
+  id: string,
+  ac: number
+): EncounterState {
+  if (!Number.isFinite(ac)) return state;
+  const next = Math.min(40, Math.max(0, Math.round(ac)));
+  return mapCombatant(state, id, (c) =>
+    c.kind === "pc" || c.ac === next ? c : { ...c, ac: next }
+  );
+}
+
 /** Apply a signed HP delta (damage negative, heal positive) to one MONSTER,
  *  clamped to `[0, hp.max]`. A PC is a no-op — its HP lives in the `combat/state`
  *  subdoc (the player/DM multi-writer edit lands in a later chunk). */

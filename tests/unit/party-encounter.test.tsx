@@ -25,7 +25,7 @@ import { monsterPortraitUrl } from "@/data/monster-art";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
-import type { CustomMonster, EncounterMonster } from "@/types/campaign";
+import type { CustomMonster, EncounterMonster, EncounterState } from "@/types/campaign";
 
 /** A budget view fixture — override the fields a given test cares about. */
 function budgetView(over: Partial<EncounterBudgetView> = {}): EncounterBudgetView {
@@ -273,6 +273,37 @@ describe("MonsterCard — DM rename-in-place routes through apply (§C.4)", () =
     fireEvent.change(input, { target: { value: "Goblin B" } });
     fireEvent.blur(input);
     expect(apply).toHaveBeenCalled();
+  });
+});
+
+describe("MonsterCard — the DM edits a monster's AC in place", () => {
+  it("committing a new AC routes setMonsterAc through apply", () => {
+    const monster = goblinWithSrd();
+    const apply = vi.fn<(fn: (e: EncounterState) => EncounterState) => void>();
+    render(
+      <MonsterCard campaignId="camp-test" monster={monster} isCurrent apply={apply} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "AC for Goblin A 1" }));
+    const input = screen.getByRole("textbox", { name: "AC for Goblin A 1" });
+    fireEvent.change(input, { target: { value: "11" } });
+    fireEvent.blur(input);
+    expect(apply).toHaveBeenCalledTimes(1);
+    const state = addMonster(startEncounter({}, [], 1), {
+      name: "Goblin A",
+      ac: 13,
+      maxHp: 7,
+      count: 1,
+      initiative: null,
+    });
+    const [update] = apply.mock.calls[0] ?? [];
+    const next = update?.(state);
+    expect((next?.combatants[0] as EncounterMonster).ac).toBe(11);
+  });
+
+  it("a PLAYER card (no apply) shows the AC as plain text, never an editor", () => {
+    render(<MonsterCard campaignId="camp-test" monster={goblinWithSrd()} isCurrent />);
+    expect(screen.queryByRole("button", { name: "AC for Goblin A 1" })).toBeNull();
+    expect(screen.getByLabelText("Armor Class: 13")).toBeTruthy();
   });
 });
 
