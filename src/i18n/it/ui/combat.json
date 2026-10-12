@@ -55,7 +55,7 @@
     "readiedSpellReleasedToast": "Incantesimo rilasciato: {{name}}",
     "readiedSpellLostToast": "Incantesimo preparato perso: {{name}}",
     "readiedSpellName": "Preparato: {{name}}",
-    "readiedSpellGloss": "Mantenuto con Concentrazione fino all'innesco. Si perde all'inizio del tuo prossimo turno o se la Concentrazione si interrompe.",
+    "readiedSpellGloss": "Si perde all'inizio del tuo turno o se perdi la Concentrazione.",
     "releaseReadiedSpell": "Rilascia",
     "queued": "In coda",
     "roundLog": "Round {{round}}: {{actions}}",

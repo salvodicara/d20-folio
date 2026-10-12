@@ -55,7 +55,7 @@
     "readiedSpellReleasedToast": "{{name}} released",
     "readiedSpellLostToast": "Readied spell lost: {{name}}",
     "readiedSpellName": "Readied: {{name}}",
-    "readiedSpellGloss": "Held with Concentration until your trigger. Lost at the start of your next turn or if Concentration breaks.",
+    "readiedSpellGloss": "Lost at the start of your turn or if Concentration ends.",
     "releaseReadiedSpell": "Release",
     "queued": "Queued",
     "roundLog": "Round {{round}}: {{actions}}",
