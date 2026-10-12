@@ -57,7 +57,7 @@ Diagrams (archify, open in a browser): [today](architecture/today.html) ·
   - `Character` mixes build, play state, UI choices (`pinnedActions`) and a log (`logEntries`).
 - **Monsters and NPCs:**
   - `EncounterMonster` is embedded in `campaigns/{id}.encounter`. An improvised NPC already works
-    (only a name is required), but `ac` and the HP trio are typed as required.
+    (only a name is required); `ac` and the HP trio stay required (owner 2026-10-12).
   - `EncounterPc` is a pure reference. Keep that.
 - **No common shape:** PCs and monsters never share one. The chronicle's combatant ids
   (`pc-<uid>`, `monster-<n>`) are the only common identity. Reuse them as the actor/target id.
