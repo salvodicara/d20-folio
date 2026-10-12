@@ -63,6 +63,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "deriveSensesAndSpeeds",
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
+  "x-ray": {
+    via: "deriveSensesAndSpeeds",
+    consumer: "src/features/character/hud/LeftHud.tsx",
+  },
   "air-and-water-breathing": {
     via: "airAndWaterBreathing",
     consumer: "src/features/character/hud/LeftHud.tsx",

@@ -33,6 +33,7 @@ export const SENSE_KINDS = [
   "tremorsense",
   "truesight",
   "see-invisible",
+  "x-ray",
 ] as const;
 export type SenseKind = (typeof SENSE_KINDS)[number];
 
@@ -205,6 +206,7 @@ export function compileGrant(grant: Grant): Rule[] | null {
     case "tremorsense":
     case "truesight":
     case "see-invisible":
+    case "x-ray":
       return [{ op: "max", target: `sense:${grant.type}`, value: grant.range }];
     case "air-and-water-breathing":
       return [{ op: "flag", target: "trait:air-and-water-breathing" }];

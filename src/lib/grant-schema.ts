@@ -124,6 +124,11 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     range: numberSchema,
     type: literalSchema("see-invisible"),
   }),
+  /** X-ray vision: solid objects within this range look transparent (Ring of X-ray Vision). */
+  "x-ray": objectSchema({
+    range: numberSchema,
+    type: literalSchema("x-ray"),
+  }),
   "air-and-water-breathing": objectSchema({
     type: literalSchema("air-and-water-breathing"),
   }),

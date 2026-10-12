@@ -14,7 +14,7 @@
  * the bilingual `BiText` descriptions that already live on the grants.
  */
 
-import { SENSE_KINDS } from "@/lib/rules";
+import { ruleNumber, SENSE_KINDS } from "@/lib/rules";
 import type {
   AggregatedGrants,
   AdvantageClause,
@@ -674,6 +674,8 @@ export function deriveSensesAndSpeeds(
     senses.push({ kind: "truesight", rangeFt: aggregate.truesightFt });
   if (aggregate.seeInvisibleFt > 0)
     senses.push({ kind: "see-invisible", rangeFt: aggregate.seeInvisibleFt });
+  const xRayFt = ruleNumber(aggregate.values, "sense:x-ray");
+  if (xRayFt > 0) senses.push({ kind: "x-ray", rangeFt: xRayFt });
 
   const speeds: SpeedEntry[] = [];
   const fly = resolveNonWalkingSpeed(aggregate.flySpeed, walkingSpeedFt);

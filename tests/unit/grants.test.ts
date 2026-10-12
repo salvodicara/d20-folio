@@ -194,6 +194,7 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     { type: "tremorsense", range: 30 },
     { type: "truesight", range: 120 },
     { type: "see-invisible", range: 60 },
+    { type: "x-ray", range: 30 },
     // Defensive
     { type: "damage-resistance", damageType: "fire" },
     { type: "damage-immunity", damageType: "poison" },
@@ -353,10 +354,10 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     expect(() => evaluateGrants([make("all-kinds", sample)])).not.toThrow();
   });
 
-  it("covers exactly the 70 distinct Grant kinds (roster guard)", () => {
+  it("covers exactly the 72 distinct Grant kinds (roster guard)", () => {
     const kinds = new Set(sample.map((g) => g.type));
     expect(kinds.size).toBe(sample.length); // no duplicate kinds in the roster
-    expect(kinds.size).toBe(71);
+    expect(kinds.size).toBe(72);
   });
 
   it("each kind writes its expected aggregate field (nothing silently dropped)", () => {

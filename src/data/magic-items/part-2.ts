@@ -848,6 +848,17 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "ring",
     attunement: true,
+    // A Magic action lights 1 minute of X-ray vision (30 ft) on the Senses rail.
+    // The DC 15 CON save on a reuse before a Long Rest stays in the action's text.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "ring-of-x-ray-vision",
+        activation: { action: "action" },
+        duration: { kind: "timed", minutes: 1, maxRounds: 10 },
+        grants: [{ type: "x-ray", range: 30 }],
+      },
+    ],
     source: "SRD",
   },
   {
