@@ -52,7 +52,6 @@ import { RestModal } from "../RestModal";
 import {
   abilityModifier,
   proficiencyBonus,
-  computeInitiative,
   buildInitiativeBreakdown,
   initiativeRollState,
   characterHasFeat,
@@ -63,6 +62,7 @@ import {
   aggregateCharacterGrants,
   computeCharacterAC,
   computeCharacterAcBreakdown,
+  computedInitiativeBonus,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
@@ -239,13 +239,7 @@ export function CombatHeader() {
       (sum, a) => sum + abilityModifier(effectiveScores[a]),
       0
     );
-  const computedInitiative = computeInitiative(
-    effectiveScores.DEX,
-    effectivePB,
-    hasAlertFeat,
-    exhaustion,
-    initiativeGrantBonus
-  );
+  const computedInitiative = computedInitiativeBonus(charData, initAgg, exhaustion);
   const initValue = charData.initiativeBonusOverride ?? computedInitiative;
 
   // Breakdown tips (play mode only) — the "where does this number come from?"
