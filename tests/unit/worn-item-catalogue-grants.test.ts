@@ -30,7 +30,10 @@ const wornItems: ReadonlyArray<{
   item: SrdMagicItemData;
   text: string;
   grants: Grant[];
-}> = SRD_MAGIC_ITEMS.filter((item) => !CONSUMABLE_TYPES.has(item.type)).map((item) => ({
+  // Public SRD items only: the private pack curates its own items' grants.
+}> = SRD_MAGIC_ITEMS.filter(
+  (item) => item.source === "SRD" && !CONSUMABLE_TYPES.has(item.type)
+).map((item) => ({
   item,
   text: srd("magic-item", item.id, "description", "en"),
   grants: allGrants(item.grants),
