@@ -102,11 +102,13 @@ describe("buildSrdCatalogue", () => {
   it("serializes the real spells, summoned companions and their variants included", () => {
     // A companion's `variants` must be plain acyclic data: a block that lists
     // itself among its variants overflowed the catalogue's canonical walk.
+    // The export runs SRD-only; a composed run also loads the private pack's spells.
+    const srdSpells = spells.filter((spell) => spell.source === "SRD");
     const out = buildSrdCatalogue({
       ...base,
-      collections: { spells: { entries: spells } },
+      collections: { spells: { entries: srdSpells } },
     });
-    const withCompanion = spells.filter((spell) => spell.companion).map((s) => s.id);
+    const withCompanion = srdSpells.filter((spell) => spell.companion).map((s) => s.id);
     expect(withCompanion.length).toBeGreaterThan(0);
     const serialized = (out.files["spells.json"] ?? []) as Array<{
       id: string;
