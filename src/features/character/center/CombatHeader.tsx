@@ -79,7 +79,7 @@ import { nonEmptyString } from "@/lib/non-empty-string";
 import { localizeCharacterIdentity } from "@/lib/views/srd-i18n";
 import { HeaderHpControl } from "./HeaderHpControl";
 import { HoverTip } from "./HoverTip";
-import { HeaderXp } from "./HeaderXp";
+import { HeaderXp, HeaderXpStart } from "./HeaderXp";
 import { xpProgress } from "@/lib/experience";
 
 /** Folio modifier convention: U+2212 minus, explicit + for non-negatives. */
@@ -469,6 +469,9 @@ export function CombatHeader() {
             <p className="text-sm text-text-secondary">
               {identity}
               {levelChip}
+              {isEdit && !readonly && charData.experience === undefined && (
+                <HeaderXpStart />
+              )}
               {/* T4 — the ONE app-wide read-only marker: a quiet pill riding the
                   identity line (the level chip's owner-only slot, so they never
                   collide), so a read-only sheet reads structurally identical to the
@@ -481,12 +484,7 @@ export function CombatHeader() {
               )}
             </p>
           )}
-          <HeaderXp
-            experience={charData.experience}
-            level={level}
-            editable={!readonly}
-            showWhenUnset={isEdit}
-          />
+          <HeaderXp experience={charData.experience} level={level} editable={!readonly} />
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The
               in-combat session controls (live round, roll-to-total initiative, the
               your-turn cue + the shared turn-advance via End Turn) belong WITH the
