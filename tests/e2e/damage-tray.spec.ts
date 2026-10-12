@@ -3,7 +3,7 @@
  *  (a) Parola Guaritrice on myself — type the roll, Applica, the hero's HP persist;
  *  (b) Palla di Fuoco on three monsters, one "Salvato" — one total, three rows;
  *  (c) Blocca Persone on a goblin — no number, the Paralizzato chip.
- * Saves review shots for the owner under REVIEW_SHOTS (default below).
+ * Saves review shots under REVIEW_SHOTS when set, else in the test output dir.
  */
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
@@ -11,8 +11,11 @@ import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 60_000 });
 
-const SHOTS =
-  process.env.REVIEW_SHOTS ?? "/private/tmp/claude-501/review-shots/damage-tray";
+/** Review shots land in the test's own output dir, or under REVIEW_SHOTS locally. */
+function shotPath(name: string): string {
+  const dir = process.env.REVIEW_SHOTS;
+  return dir ? `${dir}/${name}` : test.info().outputPath(name);
+}
 
 async function savedHp(page: Page) {
   return page.evaluate(() => {
@@ -79,7 +82,7 @@ for (const size of ["desktop", "mobile"] as const) {
     await field.fill("4+2");
     await expect(tray.getByTestId("damage-tray-preview")).toContainText("+6");
     await expectFits(page, tray);
-    await page.screenshot({ path: `${SHOTS}/a-parola-guaritrice-${size}.png` });
+    await page.screenshot({ path: shotPath(`a-parola-guaritrice-${size}.png`) });
 
     await tray.getByRole("button", { name: "Applica" }).click();
     await expect(tray).toBeHidden();
@@ -122,7 +125,7 @@ for (const size of ["desktop", "mobile"] as const) {
       "−28",
     ]);
     await expectFits(page, tray);
-    await page.screenshot({ path: `${SHOTS}/b-palla-di-fuoco-${size}.png` });
+    await page.screenshot({ path: shotPath(`b-palla-di-fuoco-${size}.png`) });
 
     await tray.getByRole("button", { name: "Applica" }).click();
     await expect(tray).toBeHidden();
@@ -147,7 +150,7 @@ for (const size of ["desktop", "mobile"] as const) {
       "true"
     );
     await expectFits(page, tray);
-    await page.screenshot({ path: `${SHOTS}/c-blocca-persone-${size}.png` });
+    await page.screenshot({ path: shotPath(`c-blocca-persone-${size}.png`) });
 
     await tray.getByRole("button", { name: "Applica" }).click();
     await expect(tray).toBeHidden();
