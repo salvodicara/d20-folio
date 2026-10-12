@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { GIANT_INSECT } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
@@ -1092,6 +1093,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    companion: GIANT_INSECT,
     source: "SRD",
   },
   {

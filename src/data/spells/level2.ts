@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { OTHERWORLDLY_STEED } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
@@ -264,6 +265,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     instantaneous: true,
+    companion: OTHERWORLDLY_STEED,
     source: "SRD",
   },
   {

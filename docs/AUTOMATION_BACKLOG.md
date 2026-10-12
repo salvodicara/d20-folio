@@ -702,9 +702,12 @@ deliberately-deferred neighbours, each with its reason (YAGNI, not a gap):
   contract the persistent-companion model deliberately doesn't own (the
   concentration chip + spell card carry them today). Follow-up seam:
   `CompanionStatBlock` + a slot-level input on `resolveCompanion`.
-- **Find Steed / Phantom Steed (SRD):** the same cast-level-scaling contract
-  (Otherworldly Steed is a spell-embedded scaling block, not a corpus monster);
-  rides the same follow-up.
+- **Find Steed / Phantom Steed / Giant Insect / Summon Dragon / Arcane Hand (SRD):** SHIPPED as
+  spell `companion` blocks (`src/data/spells/companions.ts`). Find Steed resolves at level 2 (an
+  Instantaneous spell stores no cast level); its scaling is printed in the Slam rider. Still open:
+  several-creature summons (Animate Objects, Animate Dead, Create Undead — one HP pool would
+  misreport them) and chosen-creature summons (Conjure Fey, Planar Ally / Binding, Gate — no
+  "pick from the bestiary" shape outside Find Familiar).
 - **Wild Shape forms:** a SELF-swap (the Polymorph/S7 contract below), not a
   companion — tracked in this same section.
 - **Sidekicks / wholly custom companions:** homebrew-ladder territory (the epic's

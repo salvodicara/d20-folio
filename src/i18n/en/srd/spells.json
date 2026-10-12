@@ -208,14 +208,18 @@
     "range": "Touch"
   },
   "bigbys-hand": {
-    "description": "You create a Large hand of shimmering, translucent force in an unoccupied space within range. The hand lasts for the duration, moves at your command, and mimics the movements of your own hand. The hand is an object that has AC 20, HP equal to your Hit Point maximum, and a Strength of 26. It doesn't occupy its space. You can command the hand to perform: Clenched Fist (melee spell attack, 4d8 Force damage), Forceful Hand (push creature 5 feet + 5 × Str mod), Grasping Hand (grapple), or Interposing Hand (half cover).",
+    "description": "You create a Large hand of shimmering magical energy in an unoccupied space that you can see within range. The hand lasts for the duration, and it moves at your command, mimicking the movements of your own hand. The hand is an object that has AC 20 and Hit Points equal to your Hit Point maximum. If it drops to 0 Hit Points, the spell ends. When you cast the spell and as a Bonus Action on your later turns, you can move the hand up to 60 feet and then cause one effect: Clenched Fist (melee spell attack, 5d8 Force damage), Forceful Hand (Strength save or pushed 5 feet plus five times your spellcasting ability modifier), Grasping Hand (Dexterity save or Grappled, escape DC equal to your spell save DC; a Bonus Action crushes for 4d6 plus your spellcasting ability modifier Bludgeoning damage), or Interposing Hand (Half Cover against attacks from its space).",
     "duration": "Concentration, up to 1 minute",
-    "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the damage of the Clenched Fist increases by 2d8 for each slot level above 5th.",
+    "higherLevels": "The damage of the Clenched Fist increases by 2d8 and the damage of the Grasping Hand increases by 2d6 for each spell slot level above 5.",
     "name": "Arcane Hand",
     "range": "120 feet"
   },
   "bigbys-hand.components": {
     "material": "An eggshell and a snakeskin glove"
+  },
+  "bigbys-hand.companion": {
+    "name": "Arcane Hand",
+    "kind": "Large object"
   },
   "blade-barrier": {
     "description": "You create a vertical wall of whirling, razor-sharp blades made of magical energy. The wall appears within range and lasts for the duration. A creature takes 6d10 slashing damage when it enters the wall's area for the first time on a turn or ends its turn there. A creature can make a Dexterity saving throw to take half damage.",
@@ -919,10 +923,38 @@
     "material": "Charcoal, incense, and herbs worth 10 gp, consumed"
   },
   "find-steed": {
-    "description": "You summon a spirit that assumes the form of an unusually intelligent, strong, and loyal steed, creating a long-lasting bond with it. The steed takes the form of a warhorse, pony, camel, elk, or mastiff. It serves as a mount and has an Intelligence of at least 6. While mounted on it, you can make any spell you cast that targets only you also target the steed.",
+    "description": "You summon an otherworldly being that appears as a loyal steed in an unoccupied space of your choice within range. This creature uses the Otherworldly Steed stat block. If you already have a steed from this spell, the steed is replaced by the new one. The steed resembles a Large, rideable animal of your choice, such as a horse, a camel, a dire wolf, or an elk. Whenever you cast the spell, choose the steed's creature type—Celestial, Fey, or Fiend—which determines certain traits in the stat block. The steed is an ally to you and your allies. In combat, it shares your Initiative count, and it functions as a controlled mount while you ride it. If you have the Incapacitated condition, the steed takes its turn immediately after yours and acts independently, focusing on protecting you. The steed disappears if it drops to 0 Hit Points or if you die.",
     "duration": "Instantaneous",
     "name": "Find Steed",
-    "range": "30 feet"
+    "range": "30 feet",
+    "higherLevels": "Use the spell slot's level for the spell's level in the stat block."
+  },
+  "find-steed.companion": {
+    "name": "Otherworldly Steed",
+    "kind": "Large Celestial",
+    "variantLabel": "Celestial"
+  },
+  "find-steed.companion.attacks.otherworldly-slam": {
+    "name": "Otherworldly Slam",
+    "rider": "Shown at level 2: each higher slot adds +1 AC, +10 HP and +1 damage; Fly 60 ft. from level 4. Healing Touch (Bonus Action, 1/Long Rest): one creature within 5 ft. regains 2d8 + the spell's level HP. Life Bond: when you regain HP from a level 1+ spell within 5 ft. of the steed, it regains the same."
+  },
+  "find-steed.companion.variants.fey": {
+    "name": "Otherworldly Steed",
+    "kind": "Large Fey",
+    "variantLabel": "Fey"
+  },
+  "find-steed.companion.variants.fey.attacks.otherworldly-slam": {
+    "name": "Otherworldly Slam",
+    "rider": "Shown at level 2: each higher slot adds +1 AC, +10 HP and +1 damage; Fly 60 ft. from level 4. Fey Step (Bonus Action, 1/Long Rest): the steed teleports with its rider up to 60 ft. Life Bond: when you regain HP from a level 1+ spell within 5 ft. of the steed, it regains the same."
+  },
+  "find-steed.companion.variants.fiend": {
+    "name": "Otherworldly Steed",
+    "kind": "Large Fiend",
+    "variantLabel": "Fiend"
+  },
+  "find-steed.companion.variants.fiend.attacks.otherworldly-slam": {
+    "name": "Otherworldly Slam",
+    "rider": "Shown at level 2: each higher slot adds +1 AC, +10 HP and +1 damage; Fly 60 ft. from level 4. Fell Glare (Bonus Action, 1/Long Rest): one creature within 60 ft. makes a Wisdom save against your spell save DC or is Frightened until the end of your next turn. Life Bond: when you regain HP from a level 1+ spell within 5 ft. of the steed, it regains the same."
   },
   "find-the-path": {
     "description": "This spell allows you to find the shortest, most direct physical route to a specific fixed location that you are familiar with on the same plane of existence. For the duration, as long as you are on the same plane as the destination, you know how far it is and in what direction it lies.",
@@ -1104,11 +1136,42 @@
     "material": "2 copper pieces, which the spell consumes"
   },
   "giant-insect": {
-    "description": "You summon a giant centipede, spider, wasp, or scorpion, which appears in an unoccupied space you can see within range. The creature is friendly to you and your companions. In combat it acts on your initiative and obeys your verbal commands. The creature disappears when it drops to 0 Hit Points or when the spell ends.",
+    "description": "You summon a giant centipede, spider, or wasp (chosen when you cast the spell). It manifests in an unoccupied space you can see within range and uses the Giant Insect stat block. The form you choose determines certain details in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, it shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don't issue any, it takes the Dodge action and uses its movement to avoid danger.",
     "duration": "Concentration, up to 10 minutes",
-    "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, you can summon an additional insect for every two slot levels above 4th.",
+    "higherLevels": "Use the spell slot's level for the spell's level in the stat block.",
     "name": "Giant Insect",
-    "range": "30 feet"
+    "range": "60 feet"
+  },
+  "giant-insect.companion": {
+    "name": "Giant Centipede",
+    "kind": "Large Beast",
+    "variantLabel": "Centipede"
+  },
+  "giant-insect.companion.attacks.poison-jab": {
+    "name": "Poison Jab",
+    "rider": "Plus 1d4 Poison damage. Multiattack: half the spell's level (round down) attacks. Venomous Spew (Bonus Action): one creature within 10 ft. makes a Constitution save against your spell save DC or is Poisoned until the start of the insect's next turn."
+  },
+  "giant-insect.companion.variants.spider": {
+    "name": "Giant Spider",
+    "kind": "Large Beast",
+    "variantLabel": "Spider"
+  },
+  "giant-insect.companion.variants.spider.attacks.poison-jab": {
+    "name": "Poison Jab",
+    "rider": "Plus 1d4 Poison damage. Multiattack: half the spell's level (round down) attacks. Spider Climb: climbs difficult surfaces, ceilings included, without a check."
+  },
+  "giant-insect.companion.variants.spider.attacks.web-bolt": {
+    "name": "Web Bolt",
+    "rider": "The target's Speed is 0 until the start of the insect's next turn."
+  },
+  "giant-insect.companion.variants.wasp": {
+    "name": "Giant Wasp",
+    "kind": "Large Beast",
+    "variantLabel": "Wasp"
+  },
+  "giant-insect.companion.variants.wasp.attacks.poison-jab": {
+    "name": "Poison Jab",
+    "rider": "Plus 1d4 Poison damage. Multiattack: half the spell's level (round down) attacks."
   },
   "glibness": {
     "description": "Until the spell ends, when you make a Charisma check, you can replace the number you roll with a 15. Additionally, no matter what you say, magic that would determine if you are telling the truth indicates that you are being truthful.",
@@ -1878,6 +1941,10 @@
     "name": "Phantom Steed",
     "range": "30 feet"
   },
+  "phantom-steed.companion": {
+    "name": "Phantom Steed",
+    "kind": "Large Beast · Riding Horse"
+  },
   "planar-ally": {
     "description": "You beseech an otherworldly entity for aid. The being sends a celestial, an elemental, or a fiend loyal to it to aid you. If you know a specific creature's name, you can speak that name to request that creature. The creature is under no compulsion to behave in any particular way and you must negotiate for its services.",
     "duration": "Instantaneous",
@@ -2430,14 +2497,22 @@
     "material": "A snake's tongue and either a bit of honeycomb or a drop of sweet oil"
   },
   "summon-dragon": {
-    "description": "You call forth a draconic spirit. It manifests in an unoccupied space that you can see within range. This corporeal form uses the Draconic Spirit stat block. When you cast this spell, choose a family of dragon: Chromatic, Gem, or Metallic. The creature resembles a dragon of the chosen family, which determines certain traits in its stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends.",
+    "description": "You call forth a Dragon spirit. It manifests in an unoccupied space that you can see within range and uses the Draconic Spirit stat block. The creature disappears when it drops to 0 Hit Points or when the spell ends. The creature is an ally to you and your allies. In combat, the creature shares your Initiative count, but it takes its turn immediately after yours. It obeys your verbal commands (no action required by you). If you don't issue any, it takes the Dodge action and uses its movement to avoid danger.",
     "duration": "Concentration, up to 1 hour",
-    "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, the creature assumes the higher level for that casting wherever it uses the spell's level in its stat block.",
+    "higherLevels": "Use the spell slot's level for the spell's level in the stat block.",
     "name": "Summon Dragon",
     "range": "60 feet"
   },
   "summon-dragon.components": {
     "material": "An object with the image of a dragon engraved on it, worth at least 500 gp"
+  },
+  "summon-dragon.companion": {
+    "name": "Draconic Spirit",
+    "kind": "Large Dragon"
+  },
+  "summon-dragon.companion.attacks.rend": {
+    "name": "Rend",
+    "rider": "Multiattack: half the spell's level (round down) Rend attacks, and Breath Weapon — each creature in a 30-ft. Cone makes a Dexterity save against your spell save DC: 2d6 damage of a type the spirit resists (Acid, Cold, Fire, Lightning or Poison; chosen at casting), half on a success. Shared Resistances: you share one of its Resistances until the spell ends."
   },
   "sunbeam": {
     "description": "A beam of brilliant light flashes out from your hand in a 5-foot-wide, 60-foot-long line. Each creature in the line must make a Constitution saving throw, taking 6d8 radiant damage on a failed save, or half on a success. A creature that fails is also blinded until the start of your next turn. You can create a new line of radiance as your action on any turn until the spell ends.",

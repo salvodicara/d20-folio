@@ -757,6 +757,7 @@ export function ResourceRail() {
             open={view != null}
             onClose={() => setOpenCompanionId(null)}
             title={view?.label ?? ""}
+            rubric={t("character.hud.companions")}
             size="sm"
             compact
           >

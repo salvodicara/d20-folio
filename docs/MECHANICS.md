@@ -1211,7 +1211,10 @@ The structural reasons the declarative-grant model is intentionally not the righ
   the Companions rail section).
 - **Cast-level-scaling summons.** The feature-declared companions (Steel Defender / Eldritch Cannon
   / Beast Master Primal Companion / pack Homunculus) AND the Find Familiar summon are now modeled +
-  rendered (the Companions rail; `docs/AUTOMATION_COVERAGE.md`). The remaining residual is the
-  narrower **cast-level-scaling summon family** — Summon Beast/Fey/etc., Find Steed / Phantom Steed —
-  whose stat block scales with the CAST slot level (a per-cast contract the persistent-companion
-  model deliberately doesn't own); tracked in `docs/AUTOMATION_BACKLOG.md`.
+  rendered (the Companions rail; `docs/AUTOMATION_COVERAGE.md`). The SRD summon spells with a
+  printed stat block (Find Steed, Phantom Steed, Giant Insect, Summon Dragon, Arcane Hand) declare
+  it as the spell's `companion`; `spellLevel` scales AC / HP / damage with the cast level when the
+  session knows it (a Concentration spell's `concentrationCastLevel`), the spell's own level
+  otherwise (Find Steed). Residual: summons that field several creatures or a bestiary pick
+  (Animate Objects / Dead, Create Undead, Conjure Fey, Planar Ally / Binding, Gate); tracked in
+  `docs/AUTOMATION_BACKLOG.md`.

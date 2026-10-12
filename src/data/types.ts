@@ -1182,13 +1182,14 @@ export interface SrdSpellData {
    */
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /**
-   * A persistent summoned companion's stat block (pack Homunculus Servant). Same
-   * seam as {@link SrdClassFeatureData.companion} (Steel Defender / Primal
-   * Companion): the sheet resolves AC + max HP from the owner's level/ability and
-   * tracks current HP in session, keyed by the SPELL id. The public SRD carries no
-   * such spell, so this field is inert public-side (D11 — the SHAPE is public, the
-   * content is pack); the Companions surface renders it when the spell is
-   * prepared / always-prepared.
+   * The stat block of the creature the spell summons (Find Steed's Otherworldly
+   * Steed, Summon Dragon's Draconic Spirit, Giant Insect, Phantom Steed, the
+   * Arcane Hand; pack Homunculus Servant). Same seam as
+   * {@link SrdClassFeatureData.companion} (Steel Defender / Primal Companion): the
+   * sheet resolves AC + max HP and tracks current HP in session, keyed by the
+   * SPELL id. The Companions surface renders it when the spell is prepared /
+   * always-prepared — a Concentration spell's creature only while the caster
+   * concentrates on that spell (it exists only then).
    */
   companion?: CompanionStatBlock;
   /**
@@ -1823,6 +1824,13 @@ export interface CompanionAttack {
   /** `true` for a ranged attack (Force Ballista 120 ft) → the view labels the
    *  distance "range" not "reach". Omitted for a melee attack. */
   ranged?: boolean;
+  /**
+   * Flat damage added per spell level above the block's
+   * {@link CompanionStatBlock.spellLevel} base — a spell-summoned creature's
+   * "plus the spell's level" (Otherworldly Slam, Rend). `dice` holds the base-level
+   * value ("1d6 + 9" for Rend at level 5).
+   */
+  damagePerSpellLevel?: number;
 }
 
 /**
@@ -1841,8 +1849,21 @@ export interface CompanionUpgrade {
 export interface CompanionStatBlock {
   /** AC = `base` (+ the owner's `ability` modifier, if set). */
   ac: { base: number; ability?: AbilityCode };
-  /** Max HP = `base` + `perLevel` × owner's class level. */
-  hp: { base: number; perLevel: number };
+  /**
+   * Max HP = `base` + `perLevel` × owner's class level. `ownerMax` replaces the
+   * sum with the owner's own Hit Point maximum (Arcane Hand: "Hit Points equal to
+   * your Hit Point maximum").
+   */
+  hp: { base: number; perLevel: number; ownerMax?: true };
+  /**
+   * A spell-summoned block whose printed numbers use the spell's level ("AC 11 +
+   * the spell's level"). `ac.base` / `hp.base` and each attack's `dice` hold the
+   * values at `base` (the spell's own level); every level above it adds `acPer`
+   * AC and `hpPer` HP (and each attack's `damagePerSpellLevel`). The resolver
+   * takes the cast level when the session knows it (a concentration spell's
+   * `concentrationCastLevel`) and the base level otherwise.
+   */
+  spellLevel?: { base: number; acPer?: number; hpPer?: number };
   /**
    * The companion's Hit Die (one per scaling level), e.g. "d8" — display only.
    * 2024 companion stat blocks state "a number of hit dice equal to your level".
