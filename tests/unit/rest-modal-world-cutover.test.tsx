@@ -78,7 +78,7 @@ describe("RestModal canonical-world cutover", () => {
     );
 
     fireEvent.click(screen.getByText("Long Rest"));
-    fireEvent.click(screen.getByRole("button", { name: "Take Long Rest" }));
+    fireEvent.click(screen.getByRole("button", { name: "Complete rest" }));
     await screen.findByText("Long Rest Complete");
 
     const doc = useCharacterStore.getState().character;

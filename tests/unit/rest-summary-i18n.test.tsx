@@ -34,9 +34,7 @@ describe("Long Rest summary in Italian", () => {
       </ItemResourceCommandProvider>
     );
     fireEvent.click(screen.getByText("Riposo Lungo"));
-    const confirm = screen.getAllByRole("button", { name: "Fai Riposo Lungo" }).at(-1);
-    if (!confirm) throw new Error("confirm missing");
-    fireEvent.click(confirm);
+    fireEvent.click(screen.getByRole("button", { name: "Completa riposo" }));
     await screen.findByText("Riposo Lungo Completato");
     const dialog = screen.getAllByRole("dialog").at(-1) as HTMLElement;
     expect(within(dialog).queryByText(/\bof\b/)).toBeNull();

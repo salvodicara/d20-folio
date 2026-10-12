@@ -47,9 +47,9 @@
     "conAdded": "Costituzione (aggiunta)",
     "hpAfterRest": "PF dopo il riposo",
     "withoutHealing": "Nessuna cura · recuperi le risorse da riposo breve",
-    "completeShortRest": "Completa riposo",
     "hitDiceRecoveredValue": "{{count}} di {{total}}",
     "longRestSummaryTitle": "Riepilogo del riposo lungo",
-    "shortRestSummaryTitle": "Riepilogo del riposo breve"
+    "shortRestSummaryTitle": "Riepilogo del riposo breve",
+    "completeRest": "Completa riposo"
   }
 }

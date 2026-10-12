@@ -47,9 +47,9 @@
     "conAdded": "Constitution (added)",
     "hpAfterRest": "HP after rest",
     "withoutHealing": "No healing · recover short-rest resources",
-    "completeShortRest": "Complete rest",
     "hitDiceRecoveredValue": "{{count}} of {{total}}",
     "longRestSummaryTitle": "Long Rest Summary",
-    "shortRestSummaryTitle": "Short Rest Summary"
+    "shortRestSummaryTitle": "Short Rest Summary",
+    "completeRest": "Complete rest"
   }
 }

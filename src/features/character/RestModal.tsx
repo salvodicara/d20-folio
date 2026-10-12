@@ -544,7 +544,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               className="flex-1"
               disabled={committing || shortRestHeal === null || !diceCountValid}
             >
-              {t("rest.completeShortRest")}
+              {t("rest.completeRest")}
             </Button>
             <Button onClick={handleDismiss} variant="ghost" disabled={committing}>
               {t("common.cancel")}
@@ -602,7 +602,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               className="flex-1"
               disabled={committing}
             >
-              {t("rest.takeLongRest")}
+              {t("rest.completeRest")}
             </Button>
             <Button onClick={handleDismiss} variant="ghost" disabled={committing}>
               {t("common.cancel")}
