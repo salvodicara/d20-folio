@@ -314,8 +314,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               <Sun className="h-5 w-5" />
             )}
             <span className="rest-summary-title">
-              {summary.type === "long" ? t("rest.longRest") : t("rest.shortRest")}{" "}
-              {t("rest.summary")}
+              {summary.type === "long"
+                ? t("rest.longRestSummaryTitle")
+                : t("rest.shortRestSummaryTitle")}
             </span>
           </div>
 
@@ -356,7 +357,10 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               <>
                 <SummaryRow
                   label={t("rest.hitDiceRecovered")}
-                  value={`${summary.hitDiceUsed} of ${hitDiceMax}`}
+                  value={t("rest.hitDiceRecoveredValue", {
+                    count: summary.hitDiceUsed,
+                    total: hitDiceMax,
+                  })}
                   highlight
                 />
                 {summary.slotsRestored > 0 && (
