@@ -32,7 +32,7 @@
     "chooseMetamagic": "Choose {{n}} Metamagic options",
     "chooseInvocations": "Choose {{n}} Eldritch Invocations",
     "chooseManeuvers": "Choose {{n}} Maneuvers",
-    "buildChoices": "Subclass Options",
+    "buildChoices": "Choices at this level",
     "newCantrip": "New Cantrip",
     "slotsUpdated": "{{count}} total slots across {{levels}} levels",
     "checklistAsi": "Choose: Ability Score Improvement (+2/+1+1) or a Feat",
