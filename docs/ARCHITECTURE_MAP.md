@@ -166,9 +166,16 @@ There are six parallel records. The same hit can land in four of them.
   `states.ts` (#115), `concentration.ts` (#132), `rests.ts` (#133), `companions.ts`, `pins.ts`
   and `log.ts` (#138). `sheet-events.ts` names them as one `SheetEvent` union run by a pure
   `applySheetEvent` (#139); the store's `dispatch(event)` applies one and returns its undo (#140).
-  Companions, familiar, pins, cast level, slots, trackers and exhaustion already go through it
-  (#140, #141). Left: the actions with side effects (HP, conditions, death saves, active states,
-  rests: encounter cell, log, toasts) move one at a time, and casting comes last.
+  Companions, familiar, pins, cast level, slots, trackers, exhaustion, HP, temp HP, active states
+  and added conditions go through it (#140, #141, #143). Removing a condition, death saves,
+  damage, rests and Concentration keep calling their `lib/play` function directly: each returns
+  more than the next character (the world action id, the new death-save mark, the pending
+  saves), which the store needs for its log and undo.
+- Casting (`TurnEconomyProvider.tsx`, 2,983 → 2,678 lines): `lib/play/cast-payment.ts` holds what
+  a use costs, whether it is affordable now, and one spend plan that pays a use and refunds
+  exactly it on undo (#146, #151); `action-state-commit.ts` lights the use's state and holds its
+  Concentration (#157); `cast-follow-ups.ts` and `damage-tray.ts` (#144) hold what follows a
+  use. What stays in the component is orchestration across the stores and the dialogs.
 - Round, initiative and HP each get one home.
 - `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
