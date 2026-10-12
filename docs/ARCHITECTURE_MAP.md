@@ -162,8 +162,8 @@ There are six parallel records. The same hit can land in four of them.
   temp HP, slots, trackers, death saves, exhaustion), `conditions.ts`, `damage.ts`, and the shared
   world-commit seam `world-commit.ts` (#101–#103), `recoveries.ts` (#107), `forms.ts` and
   `states.ts` (#115), `concentration.ts` (#132), `rests.ts` (#133), `companions.ts`, `pins.ts`
-  and `log.ts` (#138). `events.ts` names them as one `PlayEvent` union run by a pure
-  `applyPlayEvent` (#139); the store's `dispatch(event)` applies one and returns its undo (#140).
+  and `log.ts` (#138). `sheet-events.ts` names them as one `SheetEvent` union run by a pure
+  `applySheetEvent` (#139); the store's `dispatch(event)` applies one and returns its undo (#140).
   Companions, familiar, pins, cast level, slots, trackers and exhaustion already go through it
   (#140, #141). Left: the actions with side effects (HP, conditions, death saves, active states,
   rests: encounter cell, log, toasts) move one at a time, and casting comes last.
