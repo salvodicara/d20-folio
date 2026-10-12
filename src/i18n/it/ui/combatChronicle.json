@@ -46,6 +46,8 @@
     "saveFailedToast": "Impossibile salvare nella Cronaca. Controlla la connessione e riprova.",
     "hpReadout": "({{current}}/{{max}} PF)",
     "retractLine": "Togli dal resoconto",
-    "retractLineHint": "Toglie la riga dal resoconto. Le schede non cambiano."
+    "retractLineHint": "Toglie la riga dal resoconto. Le schede non cambiano.",
+    "noteLabel": "Aggiungi una nota al registro",
+    "notePlaceholder": "Scrivi una nota…"
   }
 }

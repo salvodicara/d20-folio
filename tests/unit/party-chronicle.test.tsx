@@ -187,6 +187,50 @@ describe("ChronicleFeed — the live feed", () => {
   });
 });
 
+describe("ChronicleFeed — a player adds a note to the log", () => {
+  function withComposer() {
+    const onNote = vi.fn<(text: string) => void>();
+    const onRetract = vi.fn<(line: FeedLine) => void>();
+    const note = line(
+      { kind: "note", text: "I hide behind the pillar", actor: "pc-mara" },
+      { id: "n1", by: "mara" }
+    );
+    render(
+      <ChronicleFeed
+        lines={[note]}
+        rows={ROWS}
+        memberDetails={{}}
+        currentId="pc-mara"
+        viewer={MARA}
+        hpFor={() => null}
+        undoFor={() => null}
+        onAttribute={vi.fn()}
+        onRetract={onRetract}
+        onNote={onNote}
+      />
+    );
+    return { onNote, onRetract, note };
+  }
+
+  it("renders the note signed with the character, and its author may strike it", () => {
+    const { onRetract, note } = withComposer();
+    expect(screen.getByText("Mara: I hide behind the pillar")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Strike from the record" }));
+    expect(onRetract).toHaveBeenCalledWith(note);
+  });
+
+  it("'Add' hands the typed text over and clears the field; a blank note cannot be added", () => {
+    const { onNote } = withComposer();
+    const field = screen.getByRole("textbox", { name: "Add a note to the log" });
+    const add = screen.getByRole("button", { name: "Add" });
+    expect((add as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.change(field, { target: { value: "  The door creaks  " } });
+    fireEvent.click(add);
+    expect(onNote).toHaveBeenCalledWith("  The door creaks  ");
+    expect((field as HTMLInputElement).value).toBe("");
+  });
+});
+
 describe("EndEncounterDialog — the editable end entry", () => {
   const encounter: EncounterState = {
     combatants: [

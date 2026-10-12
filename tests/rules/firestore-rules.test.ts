@@ -2587,6 +2587,39 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
     ]);
   });
 
+  it("a player adds a free-text note in their own name, then strikes it", async () => {
+    await seed();
+    const member = testEnv.authenticatedContext("member").firestore();
+    const note = {
+      type: "event",
+      id: "n1",
+      by: "member",
+      at: 2,
+      event: { kind: "note", text: "I hide behind the pillar", actor: "pc-member" },
+    };
+    await assertSucceeds(
+      updateDoc(doc(member, ...logPath), { log: arrayUnion(note), lastAt: 2 })
+    );
+    await assertSucceeds(
+      updateDoc(doc(member, ...logPath), {
+        log: arrayUnion({
+          type: "retract",
+          id: "n1:struck",
+          by: "member",
+          at: 3,
+          target: "n1",
+        }),
+        lastAt: 3,
+      })
+    );
+    await assertFails(
+      updateDoc(doc(member, ...logPath), {
+        log: arrayUnion({ ...note, id: "n2", by: "dm" }),
+        lastAt: 4,
+      })
+    );
+  });
+
   it("nobody rewrites history: no shrink, no edit, no item in someone else's name", async () => {
     await seed();
     const member = testEnv.authenticatedContext("member").firestore();

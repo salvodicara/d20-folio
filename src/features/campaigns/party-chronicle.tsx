@@ -45,6 +45,7 @@ import {
   mayAttribute,
   mayRetract,
   needsAttribution,
+  NOTE_MAX,
   type CombatantId,
   type FeedLine,
   type FeedViewer,
@@ -146,6 +147,7 @@ export function ChronicleFeed({
   undoFor,
   onAttribute,
   onRetract,
+  onNote,
   embedded = false,
 }: {
   lines: ReadonlyArray<FeedLine>;
@@ -164,6 +166,8 @@ export function ChronicleFeed({
   onAttribute: (line: FeedLine, actor: CombatantId | null) => void;
   /** Strike a line from the record. */
   onRetract: (line: FeedLine) => void;
+  /** Add a free-text line to the log; without it the feed has no composer. */
+  onNote?: (text: string) => void;
   /** Join the feed to the encounter status rail inside one framed folio surface. */
   embedded?: boolean;
 }) {
@@ -236,9 +240,39 @@ export function ChronicleFeed({
               })}
             </ol>
           )}
+          {onNote && <NoteComposer onNote={onNote} />}
         </div>
       )}
     </section>
+  );
+}
+
+/** One text field + "Add": a free-text line in the log, for what no gesture records. */
+function NoteComposer({ onNote }: { onNote: (text: string) => void }) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState("");
+  return (
+    <form
+      className="mt-2 flex items-stretch gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!draft.trim()) return;
+        onNote(draft);
+        setDraft("");
+      }}
+    >
+      <Input
+        className="min-w-0 flex-1"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder={t("combatChronicle.notePlaceholder")}
+        aria-label={t("combatChronicle.noteLabel")}
+        maxLength={NOTE_MAX}
+      />
+      <Button type="submit" variant="secondary" size="sm" disabled={!draft.trim()}>
+        {t("common.add")}
+      </Button>
+    </form>
   );
 }
 

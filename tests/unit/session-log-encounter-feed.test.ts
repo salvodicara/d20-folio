@@ -14,6 +14,8 @@ import {
   mayAttribute,
   mayRetract,
   needsAttribution,
+  NOTE_MAX,
+  noteDraft,
 } from "@/lib/session-log";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 
@@ -275,5 +277,49 @@ describe("hideCombatants", () => {
     expect(hideCombatants(lines, new Set(["monster-2"])).map((l) => l.id)).toEqual([
       "d1",
     ]);
+  });
+});
+
+describe("noteDraft — a free-text line anyone at the table adds to the log", () => {
+  const MARA = { uid: "mara", isDm: false };
+
+  it("trims the text, caps it at NOTE_MAX and signs it with the player's character", () => {
+    expect(noteDraft("  Flanking from the left  ", MARA)).toEqual({
+      type: "event",
+      event: { kind: "note", text: "Flanking from the left", actor: "pc-mara" },
+    });
+    const long = noteDraft("x".repeat(NOTE_MAX + 50), MARA);
+    expect(long?.event.kind === "note" && long.event.text.length).toBe(NOTE_MAX);
+  });
+
+  it("writes nothing for a blank note; the DM's note carries no character", () => {
+    expect(noteDraft("   ", MARA)).toBeNull();
+    expect(noteDraft("Lights go out", { uid: DM, isDm: true })).toEqual({
+      type: "event",
+      event: { kind: "note", text: "Lights go out" },
+    });
+  });
+
+  it("shows in the encounter feed, and only its author or the DM strikes it", () => {
+    const note = noteDraft("I hide behind the pillar", MARA);
+    if (!note) throw new Error("note expected");
+    const log: LogItem[] = [start, round(1), item("n1", "mara", note.event)];
+    const [line] = encounterFeed(foldSession(log, { dmUid: DM }), "7");
+    expect(line?.event).toEqual({
+      kind: "note",
+      text: "I hide behind the pillar",
+      actor: "pc-mara",
+    });
+    if (!line) throw new Error("line expected");
+    expect(mayRetract(line, MARA)).toBe(true);
+    expect(mayRetract(line, { uid: "ben", isDm: false })).toBe(false);
+    const struck = (by: string): LogItem[] => [
+      ...log,
+      { type: "retract", id: `x-${by}`, by, at: 99, target: "n1" },
+    ];
+    expect(encounterFeed(foldSession(struck("ben"), { dmUid: DM }), "7")).toHaveLength(1);
+    expect(encounterFeed(foldSession(struck("mara"), { dmUid: DM }), "7")).toHaveLength(
+      0
+    );
   });
 });

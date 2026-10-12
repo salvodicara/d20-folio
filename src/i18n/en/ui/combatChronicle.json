@@ -46,6 +46,8 @@
     "saveFailedToast": "Could not save to the Chronicle. Check your connection and try again.",
     "hpReadout": "({{current}}/{{max}} HP)",
     "retractLine": "Strike from the record",
-    "retractLineHint": "Strikes this line from the record. Nothing on the sheets changes."
+    "retractLineHint": "Strikes this line from the record. Nothing on the sheets changes.",
+    "noteLabel": "Add a note to the log",
+    "notePlaceholder": "Write a note…"
   }
 }

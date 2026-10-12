@@ -74,6 +74,7 @@ import {
   encounterCloseDrafts,
   encounterFeed,
   hideCombatants,
+  noteDraft,
   strikeDraft,
   type FeedLine,
 } from "@/lib/session-log";
@@ -759,6 +760,10 @@ function CombatLayer({
       { type: "correct", target: line.id, event: attributionCorrection(line, actor) },
     ]);
   const retract = (line: FeedLine): void => writeLog([strikeDraft(line)]);
+  const addNote = (text: string): void => {
+    const draft = noteDraft(text, viewer);
+    if (draft) writeLog([draft]);
+  };
   const undoFor = (line: FeedLine): (() => void) | null => {
     const beatId = isDm ? undoableBeatId(line, encounter) : null;
     if (beatId === null || !apply) return null;
@@ -1146,6 +1151,7 @@ function CombatLayer({
           undoFor={undoFor}
           onAttribute={attribute}
           onRetract={retract}
+          onNote={addNote}
           embedded
         />
       </section>
