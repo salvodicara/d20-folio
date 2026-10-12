@@ -238,6 +238,13 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "a summoned companion is an entity with its own stat block, not an activity",
     });
   }
+  if (spell.summonedMonsters) {
+    gaps.push({
+      field: "summonedMonsters",
+      reason:
+        "raised bestiary creatures are entities with their own stat blocks (their attacks are monster Activities)",
+    });
+  }
   return gaps;
 }
 

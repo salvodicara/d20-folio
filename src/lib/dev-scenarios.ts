@@ -175,6 +175,15 @@ export interface ScenarioSpec {
     /** Current HP (absent = full — max derives from the form at render). */
     hpCurrent?: number;
   };
+  /**
+   * Start with a multi-creature summon fielded (Animate Dead's undead): the
+   * player's count per spell id and any creature's current HP
+   * (`"<spellId>#<n>"`), seeded into `session.companionCount` / `companionHp`.
+   */
+  sessionSummons?: {
+    count: Record<string, number>;
+    hp?: Record<string, { current: number }>;
+  };
 }
 
 /**
@@ -362,6 +371,14 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
                   },
                 },
               }
+            : {}),
+        }
+      : {}),
+    ...(spec.sessionSummons
+      ? {
+          companionCount: { ...spec.sessionSummons.count },
+          ...(spec.sessionSummons.hp
+            ? { companionHp: { ...spec.sessionSummons.hp } }
             : {}),
         }
       : {}),
@@ -1248,6 +1265,24 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     spells: [{ srdId: "find-steed", prepared: true }],
     exercises:
       "Spell companions: the Companions rail lists the Otherworldly Steed (AC 12, 25 HP at the spell's level 2); one tap opens its stat block with the Celestial / Fey / Fiend picker and the Otherworldly Slam row (+spell attack, 1d8 + 2 Radiant/Psychic/Necrotic).",
+  },
+  // Multi-creature summons — a Wizard with Animate Dead prepared fields four
+  // Skeletons, one rail row each. Visit `/characters/scn-animate-dead-wizard`.
+  "animate-dead-wizard": {
+    name: "Ossian, Bone Warden",
+    raceId: "human",
+    classId: "wizard",
+    subclassId: "evoker",
+    level: 5,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 16, WIS: 12, CHA: 10 },
+    spells: [{ srdId: "animate-dead", prepared: true }],
+    sessionSummons: {
+      count: { "animate-dead": 4 },
+      hp: { "animate-dead#2": { current: 7 } },
+    },
+    exercises:
+      "Multi-creature summons: the Companions rail lists Skeleton 1–4 (AC 14, 13 HP each; Skeleton 2 at 7), each with its own HP steppers; one tap opens the Skeleton stat block with the Skeleton / Zombie picker, the creature count stepper and the Bonus Action command line.",
   },
   // PRIM-resource-conversion `pact-slot` — Warlock Magical Cunning (L2). A Fiend
   // Warlock 5 starts with BOTH Pact-Magic slots (pool of 2, slot level 3)

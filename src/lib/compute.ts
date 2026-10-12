@@ -1947,6 +1947,18 @@ function addFlatToDice(dice: string, flat: number): string {
   return total === 0 ? head : `${head} ${total > 0 ? "+" : "-"} ${Math.abs(total)}`;
 }
 
+/** "1d4 + 3" plus 2 × "1d4" → "3d4 + 3": adds dice of the formula's own die. */
+function addDiceToDice(dice: string, extra: string | undefined, times: number): string {
+  if (!extra || times <= 0) return dice;
+  const add = extra.match(/^(\d+)d(\d+)$/);
+  if (!add) return dice;
+  const count = times * Number(add[1]);
+  const lead = dice.match(/^(\d+)d(\d+)(.*)$/);
+  return lead && lead[2] === add[2]
+    ? `${Number(lead[1]) + count}d${lead[2]}${lead[3]}`
+    : `${dice} + ${count}d${add[2]}`;
+}
+
 /**
  * Resolve a summoned companion's stat block against its owner. Covers both the
  * Artificer constructs (Steel Defender → AC 12 + INT, HP 5 + 5×level, Poison
@@ -1964,7 +1976,8 @@ function addFlatToDice(dice: string, flat: number): string {
  * flow into the borrowed-PB bonus and the companion's saves. Pure — NO dice.
  *
  * A spell-summoned block (`spellLevel`) resolves at `spell.castLevel` (the base
- * level when absent or lower); `spell.ownerMaxHp` feeds `hp.ownerMax` (Arcane Hand).
+ * level when absent or lower); `spell.ownerMaxHp` feeds `hp.ownerMax` (Arcane Hand);
+ * `spell.spellMod` (the owner's spellcasting ability modifier) feeds `addSpellMod`.
  */
 export function resolveCompanion(
   block: CompanionStatBlock,
@@ -1972,7 +1985,7 @@ export function resolveCompanion(
   abilityScores: Record<AbilityCode, number>,
   pbOverride?: number | null,
   spellAttackMod?: number,
-  spell?: { castLevel?: number; ownerMaxHp?: number }
+  spell?: { castLevel?: number; ownerMaxHp?: number; spellMod?: number }
 ): ResolvedCompanion {
   const steps = block.spellLevel
     ? Math.max(0, (spell?.castLevel ?? block.spellLevel.base) - block.spellLevel.base)
@@ -2013,7 +2026,11 @@ export function resolveCompanion(
         ? (spellAttackMod ?? pb)
         : pb +
           (atk.attackAbility ? abilityModifier(abilityScores[atk.attackAbility]) : 0);
-    let damageDice = addFlatToDice(atk.dice, (atk.damagePerSpellLevel ?? 0) * steps);
+    let damageDice = addFlatToDice(
+      addDiceToDice(atk.dice, atk.damageDicePerSpellLevel, steps),
+      (atk.damagePerSpellLevel ?? 0) * steps +
+        (atk.addSpellMod ? (spell?.spellMod ?? 0) : 0)
+    );
     if (atk.addAbility) {
       const mod = abilityModifier(abilityScores[atk.addAbility]);
       damageDice += mod >= 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`;

@@ -58,9 +58,9 @@
     "range": "30 feet"
   },
   "animate-dead": {
-    "description": "You create an undead servant. Choose a pile of bones or a corpse of a Medium or Small Humanoid within range. Your spell imbues the target with a foul mimicry of life, raising it as an Undead creature. The target becomes a Skeleton if you chose bones or a Zombie if you chose a corpse. The creature is under your control for 24 hours, after which it stops obeying any commands. You must cast this spell again to maintain control.",
+    "description": "Choose a pile of bones or a corpse of a Medium or Small Humanoid within range. The target becomes an Undead creature: a Skeleton if you chose bones or a Zombie if you chose a corpse (see \"Monsters\" for its stat block).\n\nOn each of your turns, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 60 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move on its next turn, or you can issue a general command, such as to guard a particular place. If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. Once given an order, the creature continues to follow it until its task is complete.\n\nThe creature is under your control for 24 hours, after which it stops obeying any command you've given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature again before the current 24-hour period ends. This use of the spell reasserts your control over up to four creatures you have animated with this spell rather than animating a new creature.",
     "duration": "Instantaneous",
-    "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, you animate or reassert control over two additional Undead creatures for each slot level above 3rd.",
+    "higherLevels": "You animate or reassert control over two additional Undead creatures for each spell slot level above 3. Each of the creatures must come from a different corpse or pile of bones.",
     "name": "Animate Dead",
     "range": "10 feet"
   },
@@ -68,11 +68,38 @@
     "material": "A drop of blood, a piece of flesh, and a pinch of bone dust"
   },
   "animate-objects": {
-    "description": "Objects come to life at your command. Choose up to ten nonmagical objects within range that are not being worn or carried. Medium targets count as two objects, Large targets count as four objects, Huge targets count as eight objects. Each target animates and becomes a creature under your control until the spell ends or until reduced to 0 hit points. As a Bonus Action, you can mentally command any creature you made with this spell within 500 feet of you.",
+    "description": "Objects animate at your command. Choose a number of nonmagical objects within range that aren't being worn or carried, aren't fixed to a surface, and aren't Gargantuan. The maximum number of objects is equal to your spellcasting ability modifier; for this number, a Medium or smaller target counts as one object, a Large target counts as two, and a Huge target counts as three.\n\nEach target animates, sprouts legs, and becomes a Construct that uses the Animated Object stat block; this creature is under your control until the spell ends or until it is reduced to 0 Hit Points. Each creature you make with this spell is an ally to you and your allies. In combat, it shares your Initiative count and takes its turn immediately after yours.\n\nUntil the spell ends, you can take a Bonus Action to mentally command any creature you made with this spell if the creature is within 500 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. When the creature drops to 0 Hit Points, it reverts to its object form, and any remaining damage carries over to that form.",
     "duration": "Concentration, up to 1 minute",
-    "higherLevels": "When you cast this spell using a spell slot of 6th level or higher, you can animate two additional objects for each slot level above 5th.",
+    "higherLevels": "The creature's Slam damage increases by 1d4 (Medium or smaller), 1d6 (Large), or 1d12 (Huge) for each spell slot level above 5.",
     "name": "Animate Objects",
     "range": "120 feet"
+  },
+  "animate-objects.companion": {
+    "name": "Animated Object",
+    "kind": "Medium or smaller Construct",
+    "variantLabel": "Medium or smaller"
+  },
+  "animate-objects.companion.attacks.slam": {
+    "name": "Slam",
+    "rider": "Shown at level 5: each higher slot adds 1d4. Immune to Poison and Psychic damage; Blindsight 30 ft. At 0 HP it reverts to its object form."
+  },
+  "animate-objects.companion.variants.large": {
+    "name": "Animated Object",
+    "kind": "Large Construct",
+    "variantLabel": "Large"
+  },
+  "animate-objects.companion.variants.large.attacks.slam": {
+    "name": "Slam",
+    "rider": "Shown at level 5: each higher slot adds 1d6. Counts as two objects. Immune to Poison and Psychic damage; Blindsight 30 ft. At 0 HP it reverts to its object form."
+  },
+  "animate-objects.companion.variants.huge": {
+    "name": "Animated Object",
+    "kind": "Huge Construct",
+    "variantLabel": "Huge"
+  },
+  "animate-objects.companion.variants.huge.attacks.slam": {
+    "name": "Slam",
+    "rider": "Shown at level 5: each higher slot adds 1d12. Counts as three objects. Immune to Poison and Psychic damage; Blindsight 30 ft. At 0 HP it reverts to its object form."
   },
   "antilife-shell": {
     "description": "A shimmering barrier extends out from you in a 10-foot radius and moves with you, remaining centered on you and hedging out creatures other than Undead and Constructs. A creature can't willingly enter the barrier by nonmagical means. If a creature tries to use a teleport or interplanar travel to enter the barrier, it must first succeed on a Charisma saving throw.",
@@ -542,9 +569,9 @@
     "material": "A drop of water if creating water or a few grains of sand if destroying it"
   },
   "create-undead": {
-    "description": "You can cast this spell only at night. Choose up to three corpses of Medium or Small humanoids within range. Each corpse becomes a ghoul under your control. The creatures obey your mental commands and remain under your control for 24 hours, after which they stop obeying unless you cast this spell again.",
+    "description": "You can cast this spell only at night. Choose up to three corpses of Medium or Small Humanoids within range. Each one becomes a Ghoul under your control (see \"Monsters\" for its stat block).\n\nAs a Bonus Action on each of your turns, you can mentally command any creature you animated with this spell if the creature is within 120 feet of you (if you control multiple creatures, you can command any of them at the same time, issuing the same command to each one). You decide what action the creature will take and where it will move on its next turn, or you can issue a general command, such as to guard a particular place. If you issue no commands, the creature takes the Dodge action and moves only to avoid harm. Once given an order, the creature continues to follow it until its task is complete.\n\nThe creature is under your control for 24 hours, after which it stops obeying any command you've given it. To maintain control of the creature for another 24 hours, you must cast this spell on the creature before the current 24-hour period ends. This use of the spell reasserts your control over up to three creatures you have animated with this spell rather than animating new ones.",
     "duration": "Instantaneous",
-    "higherLevels": "When you cast this spell using a 7th-level slot, you can create or reassert control over four ghouls. With an 8th-level slot, you can create ghasts or wights. With a 9th-level slot, you can create mummies.",
+    "higherLevels": "If you use a level 7 spell slot, you can animate or reassert control over four Ghouls. If you use a level 8 spell slot, you can animate or reassert control over five Ghouls or two Ghasts or Wights. If you use a level 9 spell slot, you can animate or reassert control over six Ghouls, three Ghasts or Wights, or two Mummies.",
     "name": "Create Undead",
     "range": "10 feet"
   },

@@ -50,6 +50,7 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   mechanicsProgram: "hand-written runtime program",
   weaponAttackCantrip: "wielded-weapon damage with a type swap",
   companion: "a summoned entity, not an activity",
+  summonedMonsters: "raised bestiary creatures, each a monster stat block",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   saveAbility: "a save with no declared DC ability",
@@ -508,6 +509,7 @@ function companionAttackFromActivity(activity: Activity): CompanionAttack {
   const bonus = must(activity.attack).bonus;
   const addAbility = damage?.dice?.plus?.find((term) => term.kind === "ability-mod");
   const perLevel = damage?.dice?.plus?.find((term) => term.kind === "flat-per-upcast");
+  const spellMod = damage?.dice?.plus?.some((term) => term.kind === "spell-mod");
   return clean({
     id: activity.source.kind === "companion" ? activity.source.attack : "",
     attackBonus: bonus.kind === "spell" ? "spell-attack" : "PB+ability",
@@ -519,6 +521,8 @@ function companionAttackFromActivity(activity: Activity): CompanionAttack {
     ranged: activity.attack?.mode === "ranged" ? true : undefined,
     damagePerSpellLevel:
       perLevel?.kind === "flat-per-upcast" ? perLevel.value : undefined,
+    damageDicePerSpellLevel: damage?.dice?.perUpcast,
+    addSpellMod: spellMod ? true : undefined,
   });
 }
 
@@ -628,6 +632,9 @@ describe("activities — stat blocks", () => {
         "giant-insect:spider",
         "giant-insect:wasp",
         "summon-dragon",
+        "animate-objects:medium",
+        "animate-objects:large",
+        "animate-objects:huge",
       ])
     );
     const activities = attacks.map(({ ownerId, attack }) => {

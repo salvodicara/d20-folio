@@ -130,3 +130,46 @@ export const ARCANE_HAND: CompanionStatBlock = {
   ac: { base: 20 },
   hp: { base: 0, perLevel: 0, ownerMax: true },
 };
+
+// Animate Objects (level 5) — the Animated Object stat block, one per object.
+// AC 15, HP by size (10 Medium or smaller / 20 Large / 40 Huge), Speed 30 ft.,
+// Slam (+ spell attack, Force) 1d4 + 3, or 2d6 / 2d12 + 3 + the spellcasting
+// modifier; each slot level above 5 adds 1d4 / 1d6 / 1d12. The caster animates up
+// to their spellcasting modifier in objects — a Large one counts as two, a Huge
+// one as three.
+const animatedObject = (
+  variantId: "medium" | "large" | "huge",
+  hp: number,
+  dice: string,
+  perLevel: string,
+  spellModPer: number
+): CompanionStatBlock => ({
+  variantId,
+  ac: { base: 15 },
+  hp: { base: hp, perLevel: 0 },
+  spellLevel: { base: 5 },
+  count: { spellModPer },
+  speeds: { walk: 30 },
+  abilityScores: { STR: 16, DEX: 10, CON: 10, INT: 3, WIS: 3, CHA: 1 },
+  damageImmunities: ["poison", "psychic"],
+  conditionImmunities: ["charmed", "exhaustion", "frightened", "paralyzed", "poisoned"],
+  senses: { blindsightFt: 30 },
+  attacks: [
+    {
+      id: "slam",
+      attackBonus: "spell-attack",
+      dice,
+      damageDicePerSpellLevel: perLevel,
+      ...(variantId === "medium" ? {} : { addSpellMod: true as const }),
+      damageType: "force",
+      reachFt: 5,
+    },
+  ],
+});
+
+export const ANIMATED_OBJECT = animatedObject("medium", 10, "1d4 + 3", "1d4", 1);
+ANIMATED_OBJECT.variants = [
+  ANIMATED_OBJECT,
+  animatedObject("large", 20, "2d6 + 3", "1d6", 2),
+  animatedObject("huge", 40, "2d12 + 3", "1d12", 3),
+];

@@ -97,6 +97,16 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: false,
     instantaneous: true,
+    // Ghouls (3; 4 at level 7, 5 at 8, 6 at 9); from level 8 Ghasts or Wights (2;
+    // 3 at 9); at level 9 Mummies (2).
+    summonedMonsters: {
+      options: [
+        { monsterId: "ghoul", count: { byLevel: { 6: 3, 7: 4, 8: 5, 9: 6 } } },
+        { monsterId: "ghast", count: { byLevel: { 8: 2, 9: 3 } } },
+        { monsterId: "wight", count: { byLevel: { 8: 2, 9: 3 } } },
+        { monsterId: "mummy", count: { byLevel: { 9: 2 } } },
+      ],
+    },
     source: "SRD",
   },
   {

@@ -113,6 +113,10 @@ const CASES: {
     { kind: "set-companion-variant", featureId: "wolf", variantId: "sea" },
     () => at(companions.setCompanionVariant(doc.session, "wolf", "sea")),
   ],
+  "set-companion-count": [
+    { kind: "set-companion-count", groupId: "animate-dead", count: 4 },
+    () => at(companions.setCompanionCount(doc.session, "animate-dead", 4)),
+  ],
   "summon-familiar": [
     { kind: "summon-familiar", monsterId: "cat", creatureType: "fiend", maxHp: 2 },
     () => at(companions.summonFamiliar(doc.session, "cat", "fiend", 2)),
