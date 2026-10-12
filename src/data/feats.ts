@@ -229,6 +229,12 @@ const PUBLIC_FEATS: SrdFeatData[] = [
     id: "boon-of-combat-prowess",
     category: "epic-boon",
     repeatable: false,
+    // Peerless Aim: turn a missed attack roll into a hit, then not again until the
+    // start of your next turn — a Free row capped at one use per turn (the same
+    // shape as Reckless Attack); the player taps it after a miss.
+    mechanics: {
+      actions: [{ type: "free", maxUsesPerTurn: 1 }],
+    },
     grants: [
       {
         type: "choice-ability-score",
@@ -310,6 +316,26 @@ const PUBLIC_FEATS: SrdFeatData[] = [
         abilities: ["STR", "DEX", "CON", "INT", "WIS", "CHA"],
         amount: 1,
         cap: 30,
+      },
+      // Shadowy Form: while in Dim Light or Darkness, Resistance to all damage
+      // except Force, Psychic and Radiant. Lighting is the table's call, so it is
+      // a toggle the player turns on. Merge with Shadows is the Invisible
+      // condition itself, which the player applies from the conditions picker.
+      {
+        type: "while-active",
+        activeKey: "boon-of-the-night-spirit-shadowy-form",
+        grants: [
+          { type: "damage-resistance", damageType: "acid" },
+          { type: "damage-resistance", damageType: "bludgeoning" },
+          { type: "damage-resistance", damageType: "cold" },
+          { type: "damage-resistance", damageType: "fire" },
+          { type: "damage-resistance", damageType: "lightning" },
+          { type: "damage-resistance", damageType: "necrotic" },
+          { type: "damage-resistance", damageType: "piercing" },
+          { type: "damage-resistance", damageType: "poison" },
+          { type: "damage-resistance", damageType: "slashing" },
+          { type: "damage-resistance", damageType: "thunder" },
+        ],
       },
     ],
     source: "SRD",

@@ -1353,5 +1353,11 @@
   },
   "cleric-improved-blessed-strikes.grants.0.options.potent-spellcasting": {
     "label": "Potent Spellcasting"
+  },
+  "barbarian-indomitable-might.grants.0": {
+    "description": "Strength checks: if the total is lower than your Strength score, use the score"
+  },
+  "barbarian-indomitable-might.grants.1": {
+    "description": "Strength saving throws: if the total is lower than your Strength score, use the score"
   }
 }

@@ -1353,5 +1353,11 @@
   },
   "cleric-improved-blessed-strikes.grants.0.options.potent-spellcasting": {
     "label": "Incantesimo Potente"
+  },
+  "barbarian-indomitable-might.grants.0": {
+    "description": "Prove di Forza: se il totale è inferiore al tuo punteggio di Forza, usa il punteggio"
+  },
+  "barbarian-indomitable-might.grants.1": {
+    "description": "Tiri salvezza su Forza: se il totale è inferiore al tuo punteggio di Forza, usa il punteggio"
   }
 }
