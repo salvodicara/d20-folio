@@ -167,9 +167,12 @@ const animatedObject = (
   ],
 });
 
-export const ANIMATED_OBJECT = animatedObject("medium", 10, "1d4 + 3", "1d4", 1);
-ANIMATED_OBJECT.variants = [
-  ANIMATED_OBJECT,
-  animatedObject("large", 20, "2d6 + 3", "1d6", 2),
-  animatedObject("huge", 40, "2d12 + 3", "1d12", 3),
-];
+// Variants are separate plain copies (never the block itself) — acyclic data.
+export const ANIMATED_OBJECT: CompanionStatBlock = {
+  ...animatedObject("medium", 10, "1d4 + 3", "1d4", 1),
+  variants: [
+    animatedObject("medium", 10, "1d4 + 3", "1d4", 1),
+    animatedObject("large", 20, "2d6 + 3", "1d6", 2),
+    animatedObject("huge", 40, "2d12 + 3", "1d12", 3),
+  ],
+};
