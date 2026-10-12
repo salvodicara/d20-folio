@@ -62,10 +62,6 @@
     "whileActiveNote": "active",
     "heal": "Heal",
     "healRollLabel": "Roll {{dice}}, then apply",
-    "followUpHeal": "Hit points {{target}} regains",
-    "followUpDamage": "Damage {{target}} takes",
-    "followUpTempHp": "Temporary HP for {{target}}",
-    "followUpSave": "{{target}} failed the save?",
     "healRollField": "Your {{dice}} roll",
     "healRollApply": "Heal +{{bonus}}",
     "healRollApplyFlat": "Apply heal",
@@ -403,6 +399,19 @@
     "targetMe": "Me ({{name}})",
     "targetSkipNone": "Skip · no target",
     "targetConfirmCast": "Cast on {{count}}",
-    "targetConfirmUse": "Use on {{count}}"
+    "targetConfirmUse": "Use on {{count}}",
+    "damageTray": {
+      "rubricDamage": "{{type}} damage",
+      "total": "Rolled total",
+      "totalHint": "What you rolled at the table, e.g. 8+6+3",
+      "saved": "Saved",
+      "savedAria": "{{name}} saved",
+      "multiplier": "Multiplier for {{name}}",
+      "resistant": "Resistant",
+      "vulnerable": "Vulnerable",
+      "immune": "Immune",
+      "noEffect": "No effect",
+      "appliedToast": "{{name}}: applied"
+    }
   }
 }

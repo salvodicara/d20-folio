@@ -86,6 +86,11 @@ arrivare al tavolo prima di aprire la successiva.
   da attaccare; quanti bersagli si possono scegliere dipende da ogni incantesimo o azione. Appare
   solo se la scelta cambia qualcosa (uno scontro con creature, o uno stato che si accende su di te).
   Mai scelte dentro il toast di Annulla.
+  **Danni e cure (12/10, sostituisce la riga sotto la carta):** dopo «Su chi?» si apre un
+  vassoio (su telefono un pannello dal basso, su laptop una finestra al centro) copiato dal
+  vassoio danni di Foundry dnd5e: un solo numero «Totale tirato», una riga per bersaglio con
+  0 · ½ · 1 · 2, «Salvato», la condizione del TS fallito e le resistenze note; «Applica» o
+  «Salta». Saltarlo lascia il lancio registrato com'è.
 - **Danni ai PG:** li può inserire sia il giocatore sulla propria scheda sia il DM dal suo
   pannello; l'altro vede l'aggiornamento.
 - **Iniziativa:** in Folio ma facoltativa. Se il DM apre lo scontro, Folio gestisce turni e timer;

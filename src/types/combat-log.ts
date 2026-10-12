@@ -94,7 +94,7 @@ export type CombatEvent =
     }
   /** The character took damage (HP reduced). `amount` is the total incoming hit.
    *  `source` (on these four kinds): the character's own action that caused it, when
-   *  the follow-up line under a used card says so. */
+   *  the damage tray after a use says so. */
   | { kind: "hp-damage"; amount: number; current: number; max: number; source?: LocText }
   /** The character regained HP (a heal — NOT a rest, which has its own kind). */
   | { kind: "hp-heal"; amount: number; current: number; max: number; source?: LocText }
@@ -104,7 +104,7 @@ export type CombatEvent =
   | { kind: "condition-gain"; conditionId: string; source?: LocText }
   /**
    * The character's action did something to ANOTHER creature, declared on the
-   * follow-up line under the used card (owner 2026-10-11): healed Aria 8, the goblin
+   * damage tray after the use (owner 2026-10-12): healed Aria 8, the goblin
    * took 9, the goblin failed the save and is Paralyzed. `target` is the combatant id
    * (`pc-<uid>` / `monster-<n>`); `targetName` is the user-authored name this sheet's
    * log shows (the session report resolves names from the party and the encounter).

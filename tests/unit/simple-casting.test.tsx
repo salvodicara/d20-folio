@@ -106,6 +106,11 @@ describe.each(["spellbook", "play"] as const)("simple casting from %s", (surface
           useCharacterStore.getState().character?.session.spellSlots["1"]?.used
         ).toBe(1)
       );
+      // The only screen after the cast is the damage tray (owner 2026-10-12): the
+      // heal is the player's to type. Skipping it applies nothing.
+      const tray = screen.getByRole("dialog");
+      expect(tray).toHaveAttribute("data-testid", "damage-tray");
+      fireEvent.click(within(tray).getByRole("button", { name: /^skip$/i }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(useCharacterStore.getState().character?.session.hp).toEqual({
         current: 5,

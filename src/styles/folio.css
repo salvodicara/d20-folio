@@ -10229,6 +10229,29 @@ button.create-need:focus-visible .create-need-chev {
 .scrim.scrim-top .modal-body.palette-body {
   max-height: min(660px, calc(100svh - var(--scrim-top) - 8rem));
 }
+/* Bottom sheet (the damage tray, owner 2026-10-12): on a phone the same dialog rises
+   from the bottom edge at full width, within thumb reach, its rows scrolling inside;
+   wider screens keep the centered dialog. */
+@media (max-width: 720px) {
+  .scrim.scrim-sheet {
+    place-items: end stretch;
+    padding: 0;
+  }
+  .scrim.scrim-sheet .modal {
+    max-width: none;
+    border-radius: 0;
+    padding-bottom: var(--safe-bottom, 0px);
+  }
+  .scrim.scrim-sheet .modal-body {
+    max-height: 48svh;
+  }
+  /* The undo toast would cover the sheet's rows and actions: while a sheet is open
+     it moves to the top edge. */
+  body:has(.scrim.scrim-sheet) .toast-region {
+    top: calc(var(--sp-3) + env(safe-area-inset-top, 0px));
+    bottom: auto;
+  }
+}
 /* OWN-25/31 — the palette rows BREATHE but stay COMPACT enough that the whole launcher
    (sections + actions + legend) fits without scrolling on a normal screen: a comfortable
    tap target + clear label/glyph, trimmed just enough vs the original roomy pass. */

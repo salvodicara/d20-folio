@@ -55,8 +55,9 @@ import {
   type TargetStep,
 } from "@/features/character/center/target-step";
 import { sheetEncounter } from "@/features/character/center/turn-state";
-import { useCastFollowUpStore } from "@/features/character/center/cast-follow-up-store";
-import { castFollowUps } from "@/lib/play/cast-follow-ups";
+import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
+import { DamageTray } from "@/features/character/center/DamageTray";
+import { damageTrayPlan } from "@/lib/play/damage-tray";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -1026,11 +1027,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         c2.setTempHP(prevTempHp);
       }
       c2.removeLogEntry(loggedId);
-      useCastFollowUpStore.getState().withdraw(loggedId);
+      useDamageTrayStore.getState().withdraw(loggedId);
     };
   }
 
-  /** Offer the optional line under the used card ("Aria +__ HP", "Goblin −__ HP"). */
+  /** Open the damage tray when the use has something to apply to its targets. */
   function offerFollowUps(
     action: ResolvedAction,
     targets: ReadonlyArray<string>,
@@ -1038,12 +1039,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   ): void {
     const characterId = useCharacterStore.getState().character?.id;
     if (!characterId) return;
-    useCastFollowUpStore.getState().show({
+    const plan = damageTrayPlan(action, targets, selfCombatantId());
+    if (!plan) return;
+    useDamageTrayStore.getState().show({
       characterId,
-      actionId: action.id,
+      actionName: action.name,
       source: action.nameLoc,
       castLogId,
-      items: castFollowUps(action, targets, selfCombatantId()),
+      plan,
     });
   }
 
@@ -1456,7 +1459,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (selectedMetamagicCost > 0)
             live.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
           live.removeLogEntry(loggedId);
-          useCastFollowUpStore.getState().withdraw(loggedId);
+          useDamageTrayStore.getState().withdraw(loggedId);
           return true;
         };
       },
@@ -2921,6 +2924,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         }}
         onCancel={() => setTargetRequest(null)}
       />
+
+      {/* The damage tray right after the use: one rolled total, one row per target. */}
+      <DamageTray />
 
       {/* S4 — Arcane Recovery guided picker (enforces the ⌈level/2⌉ cap).
           Conditional mounting gives every use a fresh, cancel-safe draft. */}

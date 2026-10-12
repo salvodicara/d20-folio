@@ -52,7 +52,6 @@ import { NumberStepper } from "@/components/ui/input";
 import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
-import { CastFollowUpLine } from "../CastFollowUpLine";
 import { tempHpRollFormula } from "@/lib/combat-resolution";
 import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
@@ -1698,9 +1697,6 @@ function CombatActionCard({
       open={open}
       onOpenChange={onOpenChange}
       ariaExpandLabel={t("common.expand")}
-      // The optional follow-up line after a use ("Aria +__ HP"): under the row,
-      // outside the accordion, so it shows on the collapsed card too.
-      afterHead={<CastFollowUpLine actionId={action.id} />}
     >
       {/* Pin/unpin lives in the detail foot (progressive disclosure) — the
           flagship row gesture is the Cast/Attack/Use CTA, so the secondary

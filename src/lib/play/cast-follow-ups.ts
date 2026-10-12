@@ -1,9 +1,9 @@
 /**
- * The optional follow-up line under a used card (owner 2026-10-11, "B"): after a spell
- * or feature is used, the player may say what it did to whom — "Aria +__ HP",
- * "Goblin −__ HP", "Goblin: failed the save? → Paralyzed", "+__ temp HP" — or ignore it.
+ * What a used spell or feature can still do to whom (owner 2026-10-11, the damage tray
+ * since 2026-10-12): heal Aria, damage the goblin, the goblin failed the save →
+ * Paralyzed, temp HP on me. {@link "./damage-tray".damageTrayPlan} turns it into a tray.
  *
- * Pure: what the line offers follows from the action's resolution spec and the
+ * Pure: what it offers follows from the action's resolution spec and the
  * targets picked in the "On whom?" step. No pick means "me" only for a heal or temp HP
  * that can land on the caster; anything aimed elsewhere needs a pick.
  */

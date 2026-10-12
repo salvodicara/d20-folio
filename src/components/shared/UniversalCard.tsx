@@ -299,12 +299,6 @@ export interface UniversalCardProps {
    * aid is dead weight while editing, and it forced the name to truncate).
    */
   isEdit?: boolean;
-  /**
-   * Always-visible content under the head row, inside the card (so the slot's
-   * left rule stays continuous) and outside the accordion — e.g. the optional
-   * follow-up line after a combat use.
-   */
-  afterHead?: ReactNode;
   className?: string;
 }
 
@@ -352,7 +346,6 @@ export function UniversalCard({
   concentrationTitle,
   editAction,
   isEdit,
-  afterHead,
   className,
 }: UniversalCardProps) {
   const detailId = useId();
@@ -581,8 +574,6 @@ export function UniversalCard({
           <span className="uc-chevron" aria-hidden />
         )}
       </div>
-
-      {afterHead}
 
       {/* Inline accordion detail — grid-rows 0fr→1fr animation via CSS.
           Named region so screen readers can announce/skip the disclosed facts;

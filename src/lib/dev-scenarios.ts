@@ -574,9 +574,11 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       { srdId: "fire-bolt" },
       { srdId: "fireball", prepared: true },
       { srdId: "magic-missile", prepared: true },
+      // Hold Person: the save-or-condition shape for the damage tray's review shots.
+      { srdId: "hold-person", prepared: true },
     ],
     exercises:
-      "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball).",
+      "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball + Hold Person).",
   },
   "potent-druid": {
     // Elemental Fury (L7) Potent Spellcasting — the `druid-elemental-fury` choice

@@ -48,7 +48,7 @@ export function combatEventToPlayEvent(
               : "temp-hp",
         amount: event.amount,
         target: me,
-        // A follow-up line on myself: my own action did it.
+        // The damage tray on myself: my own action did it.
         ...(event.source
           ? { actor: me, source: event.source, provenance: "manual" as const }
           : {}),
