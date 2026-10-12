@@ -1858,7 +1858,12 @@ function mirroredCommit(
       temp: next.vitals.hitPoints.temporary.current,
     },
     ...deathTrack,
-    exhaustion: next.exhaustion,
+    // Exhaustion mirror: like the death track, only a level the commit CHANGED moves
+    // the stored level, so an unrelated commit (a slot spend) never copies the
+    // world's older level back over one the sheet holds alone (a DM's edit, a level 6
+    // the world refuses on a living character).
+    exhaustion:
+      next.exhaustion !== world.exhaustion ? next.exhaustion : doc.session.exhaustion,
     spellSlots: usedSlots,
     world: next,
   };
