@@ -73,6 +73,7 @@
     "failedCreate": "Errore nella creazione del personaggio",
     "noConditions": "Nessuna condizione",
     "addCondition": "Aggiungi condizione",
+    "impliedCondition": "Da {{source}}",
     "addDefense": "Aggiungi difesa",
     "addDefenseHint": "Una difesa temporanea da un incantesimo, una pozione o un effetto. Rimuovila quando l'effetto termina; le difese permanenti si modificano in modalità modifica.",
     "override": {
@@ -182,6 +183,7 @@
     "usesWord": "usi",
     "choiceResistanceHint": "Scegli la tua resistenza. Riselezionabile secondo i tempi del privilegio.",
     "damageSource_spell": "Incantesimi",
+    "damageAll": "Tutti i danni",
     "damageSource_ranged-weapon": "Attacchi con armi a distanza",
     "flatDamageReduction": "{{types}} −{{amount}}",
     "flatDamageReductionInHeavyArmor": "con armatura pesante",

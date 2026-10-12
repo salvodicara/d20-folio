@@ -31,7 +31,7 @@ describe("effective source-owned conditions", () => {
         concentrationConditions: ["paralyzed"],
         encounterEffects: [projected],
       })
-    ).toEqual(["prone", "paralyzed"]);
+    ).toEqual(["prone", "paralyzed", "incapacitated"]);
   });
 
   it("makes a solo condition inert when its owning concentration ends or swaps", () => {

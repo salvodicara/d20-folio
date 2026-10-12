@@ -182,7 +182,8 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     },
     session.sessionDefenses,
     pb,
-    isHeavyArmorEquipped(character.equipment, getEquipment)
+    isHeavyArmorEquipped(character.equipment, getEquipment),
+    effectiveSessionConditions(session)
   );
   const conditionImmunities = new Set(
     deriveDefenseKind(

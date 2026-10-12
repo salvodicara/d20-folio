@@ -1,4 +1,5 @@
 import { vitalConditions } from "@/lib/character-vitals";
+import { withImpliedConditions } from "@/lib/condition";
 import type { SessionState } from "@/types/character";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
@@ -13,20 +14,19 @@ export function projectedEncounterConditions(
 
 /** The one read seam for condition state: manual/base chips plus source-owned
  * solo and encounter occurrences. Provenance stays separate so ending one source
- * never removes a manual override or another caster's identical condition. */
+ * never removes a manual override or another caster's identical condition.
+ * Implied conditions (Unconscious → Incapacitated + Prone) are included. */
 export function effectiveSessionConditions(
   session: Pick<
     SessionState,
     "conditions" | "concentrationConditions" | "encounterEffects" | "concentration"
   > & { readonly world?: unknown }
 ): string[] {
-  return [
-    ...new Set([
-      // The manual/base ledger reads through the ONE vitals projection seam
-      // (session-truth reconciled against the persisted world).
-      ...vitalConditions(session),
-      ...(session.concentration ? (session.concentrationConditions ?? []) : []),
-      ...projectedEncounterConditions(session.encounterEffects),
-    ]),
-  ];
+  return withImpliedConditions([
+    // The manual/base ledger reads through the ONE vitals projection seam
+    // (session-truth reconciled against the persisted world).
+    ...vitalConditions(session),
+    ...(session.concentration ? (session.concentrationConditions ?? []) : []),
+    ...projectedEncounterConditions(session.encounterEffects),
+  ]);
 }
