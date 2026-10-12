@@ -22,6 +22,7 @@ import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
 import * as forms from "@/lib/play/forms";
 import * as pins from "@/lib/play/pins";
+import * as ready from "@/lib/play/ready";
 import * as rests from "@/lib/play/rests";
 import * as states from "@/lib/play/states";
 import * as vitals from "@/lib/play/vitals";
@@ -109,6 +110,10 @@ const CASES: {
     () => at(states.setActiveSpellCastLevel(doc, "haste", 4)),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
+  "set-readied-spell": [
+    { kind: "set-readied-spell", readied: { expiresRound: 2 } },
+    () => at(ready.setReadiedSpell(doc.session, { expiresRound: 2 })),
+  ],
   "set-companion-hp": [
     { kind: "set-companion-hp", featureId: "wolf", current: 2 },
     () => at(companions.setCompanionHp(doc.session, "wolf", 2)),

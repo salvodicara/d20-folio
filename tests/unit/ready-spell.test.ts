@@ -106,13 +106,13 @@ describe("releasing it", () => {
         ts: 0,
         event: {
           kind: "action-use",
-          action: { kind: "lit", en: "Fireball", it: "Palla di Fuoco" },
+          action: { lit: { en: "Fireball", it: "Palla di Fuoco" } },
           effect: "spell-cast",
           slot: "action",
           targets: ["monster-1"],
         },
       },
-    ] as typeof doc.session.logEntries;
+    ];
     doc.session = hold(doc.session, 1, "log-1");
     expect(readiedTargets(doc)).toEqual(["monster-1"]);
     doc.session = hold(doc.session, 1, null);
