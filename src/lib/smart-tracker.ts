@@ -33,8 +33,10 @@ import {
   type FeatureOwnerKind,
   damageTypeFacet,
   effectsOfKind,
+  fixedDamageType,
   primaryDamage,
   secondaryDamage,
+  translateWeapon,
 } from "@/lib/activities";
 import { ruleConditional, ruleNumber, type RuleFact } from "@/lib/rules";
 import { buildWeaponRange, type WeaponRangeSpec } from "@/lib/weapon-range";
@@ -6762,7 +6764,12 @@ function resolveWeaponActions(
     // larger, on Monk weapons (a Dagger 1d4 → 1d6, a Shortsword 1d6 → 1d8 at
     // Monk L5). Resolved against the Monk's OWN level (multiclass-correct) via
     // the same `featureClassRow` deferred resolver the Unarmed Strike row uses.
-    const printedDie = isCustom ? weaponRef.damageDie : (srdWeapon?.damage?.die ?? "1d8");
+    // An SRD weapon's printed die and damage type come from its Activity, the one
+    // shape every card reads (`translateWeapon`); a custom weapon carries its own.
+    const weaponActivity = srdWeapon ? translateWeapon(srdWeapon)?.activity : undefined;
+    const printedDie = isCustom
+      ? weaponRef.damageDie
+      : ((weaponActivity && primaryDamage(weaponActivity)?.dice?.dice) ?? "1d8");
     const dieResolution: ResolvedWeaponDie = isCustom
       ? { die: printedDie }
       : effectiveWeaponDie(
@@ -6777,7 +6784,7 @@ function resolveWeaponActions(
     const dieWhy = weaponDieWhy(dieResolution, character);
     const damageType = isCustom
       ? weaponRef.damageType
-      : (srdWeapon?.damage?.type ?? "bludgeoning");
+      : ((weaponActivity && fixedDamageType(weaponActivity)) ?? "bludgeoning");
     const properties = isCustom
       ? weaponRef.properties
         ? weaponRef.properties
