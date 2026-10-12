@@ -5505,8 +5505,7 @@ function resolveFeatureActions(
           ),
         };
         // A reaction's structured trigger token, as the feature and invocation
-        // branches emit it. The effect line stays: the row is named after the
-        // trait, so the effect is what says which option this is (Giant Ancestry).
+        // branches emit it.
         if (action.type === "reaction" && action.trigger) {
           summary.trigger = uiText(`combat.reactionTrigger_${action.trigger}`);
         }
@@ -5552,9 +5551,19 @@ function resolveFeatureActions(
           );
           if (formRiders.length) summary.extraDamage = formRiders;
         }
+        // Per-action NAME, as the feat branch does: a trait whose actions are
+        // distinct abilities (Giant Ancestry's six boons) titles each row by its
+        // own catalogue `name`; otherwise the row carries the trait name.
+        const raceActionNameKey = raceActionKey(
+          raceForActions.id,
+          trait,
+          raceActionIndex
+        );
         actions.push({
           id,
-          name: raceTraitLoc(raceForActions.id, trait, "name"),
+          name: srdEn("race", raceActionNameKey, "name")
+            ? srdText("race", raceActionNameKey, "name")
+            : raceTraitLoc(raceForActions.id, trait, "name"),
           type: action.type,
           source: "feature",
           spellLevel: null,

@@ -5,6 +5,7 @@ import type {
   TrackerSpec,
   SrdActionDef,
 } from "./types";
+import { DAMAGE_TYPES } from "@/types/damage";
 import { mergePack } from "@/lib/pack-merge";
 import { withPackGrantExtensions } from "@/lib/pack-grant-extensions";
 import { packGrantExtensions, packRaces } from "@pack";
@@ -697,6 +698,8 @@ const PUBLIC_RACES: SrdRaceData[] = [
             {
               id: "fires-burn",
               type: "free",
+              attack: { dice: "1d10", damageType: "fire", resolution: "automatic" },
+              targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
                 optionId: "fires-burn",
@@ -705,6 +708,8 @@ const PUBLIC_RACES: SrdRaceData[] = [
             {
               id: "frosts-chill",
               type: "free",
+              attack: { dice: "1d6", damageType: "cold", resolution: "automatic" },
+              targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
                 optionId: "frosts-chill",
@@ -713,6 +718,8 @@ const PUBLIC_RACES: SrdRaceData[] = [
             {
               id: "hills-tumble",
               type: "free",
+              conditionApplication: { options: ["prone"], on: "automatic" },
+              targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
                 optionId: "hills-tumble",
@@ -722,6 +729,12 @@ const PUBLIC_RACES: SrdRaceData[] = [
               id: "stones-endurance",
               type: "reaction",
               trigger: "takeDamage",
+              damageReduction: {
+                dice: "1d12",
+                addAbility: "CON",
+                damageTypesByLevel: { 1: [...DAMAGE_TYPES] },
+              },
+              targeting: { affinity: "self", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
                 optionId: "stones-endurance",
@@ -731,6 +744,8 @@ const PUBLIC_RACES: SrdRaceData[] = [
               id: "storms-thunder",
               type: "reaction",
               trigger: "takeDamage",
+              attack: { dice: "1d8", damageType: "thunder", resolution: "automatic" },
+              targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
                 optionId: "storms-thunder",

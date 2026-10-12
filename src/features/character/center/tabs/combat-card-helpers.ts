@@ -15,6 +15,9 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { VerdictOutcome } from "@/components/shared/UniversalCard";
 import type { GatedSlot } from "@/lib/condition-effects";
 import { chipText } from "@/lib/views/combat-action-view";
+import { conditionLabel } from "@/lib/views/tracker-view";
+import { formatModifier } from "@/lib/utils";
+import type { Locale } from "@/lib/locale";
 
 /**
  * Base action IDs whose verdict chip conveys no information beyond the card's
@@ -85,7 +88,12 @@ export function combatVerdictOutcome(summary: ResolvedAction["summary"]): Verdic
  * Returns "" when there's no tight token — the long effect sentence then lives
  * in the gloss (`combatGloss`), not crammed into a fixed-width chip.
  */
-export function combatVerdict(action: ResolvedAction, t: TFunction): string {
+export function combatVerdict(
+  action: ResolvedAction,
+  t: TFunction,
+  /** Resolves a condition-only chip (Hill's Tumble → "Prone"); omitted, none shows. */
+  locale?: Locale
+): string {
   const { summary } = action;
   if (summary.damage) {
     // S12b — a multi-instance spell (Magic Missile 3 darts, Scorching Ray 3 rays)
@@ -131,6 +139,22 @@ export function combatVerdict(action: ResolvedAction, t: TFunction): string {
   if (action.id.startsWith("base-")) {
     if (BASE_ACTIONS_NO_CHIP.has(action.id)) return "";
     return chipText(t(`combat.verdict_${action.id}`)) ?? "";
+  }
+  // A damage-reduction reaction (Deflect Attacks, Stone's Endurance) shows the
+  // amount it takes off the hit: "−1d12+2".
+  if (summary.damageReduction) {
+    const { dice, bonus } = summary.damageReduction;
+    return chipText(`−${dice}${bonus !== 0 ? formatModifier(bonus) : ""}`) ?? "";
+  }
+  // A no-save action whose whole effect is a condition (Hill's Tumble) names it.
+  if (locale && summary.conditionApplication && !summary.saveAbility) {
+    return (
+      chipText(
+        summary.conditionApplication.options
+          .map((id) => conditionLabel(id, locale))
+          .join("/")
+      ) ?? ""
+    );
   }
   // Control / debuff fallback — a save-forcing action with no damage/heal (e.g.
   // Suggestion, Hypnotic Pattern, Fear) is precisely the spell whose whole point

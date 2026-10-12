@@ -1555,7 +1555,7 @@ function CombatActionCard({
       ? { ...action.summary, damage: versatileDamage }
       : action.summary;
 
-  const verdict = combatVerdict({ ...action, summary: effectiveSummary }, t);
+  const verdict = combatVerdict({ ...action, summary: effectiveSummary }, t, locale);
   const verdictOutcome = combatVerdictOutcome(effectiveSummary);
   const gloss = combatGloss(
     effectiveSummary,
@@ -1956,7 +1956,7 @@ function ReactionCard({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const kind = combatKind(action);
-  const verdict = combatVerdict(action, t);
+  const verdict = combatVerdict(action, t, locale);
   const verdictOutcome = combatVerdictOutcome(action.summary);
   const gloss = combatGloss(
     action.summary,

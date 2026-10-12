@@ -74,6 +74,22 @@ describe("worn magic items declare what their text grants", () => {
       it(item.id, () => {
         expect(grants.some((g) => g.type === "incoming-attack-disadvantage")).toBe(true);
       });
+      // The rail shows the line under "Adv." at rail width: a compact phrase
+      // like Blur's, with the item's fine print left to its description.
+      (item.grants ?? []).forEach((g, index) => {
+        if (g.type !== "incoming-attack-disadvantage") return;
+        it(`${item.id}: its rail line is compact`, () => {
+          for (const locale of ["en", "it"] as const) {
+            const line = srd(
+              "magic-item",
+              `${item.id}.grants.${index}`,
+              "description",
+              locale
+            );
+            expect(line.length).toBeLessThanOrEqual(64);
+          }
+        });
+      });
     }
   });
 

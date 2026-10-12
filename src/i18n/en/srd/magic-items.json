@@ -244,7 +244,7 @@
     "name": "Cloak of Displacement"
   },
   "cloak-of-displacement.grants.0": {
-    "description": "Attack rolls against you have Disadvantage (ceases after a hit until your next turn, and while Incapacitated or Restrained)"
+    "description": "Attack rolls against you have Disadvantage"
   },
   "cloak-of-elvenkind": {
     "description": "While wearing this cloak with its hood up, Wisdom (Perception) checks to see you have Disadvantage, and you have Advantage on Dexterity (Stealth) checks to hide.",

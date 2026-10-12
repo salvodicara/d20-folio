@@ -12,7 +12,10 @@ import { asRaceId } from "@/data/srd-names";
 import { resolveActions } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { makeCharacterDoc } from "./_helpers";
-import { srd } from "../_harness/loc";
+import { loc, srd } from "../_harness/loc";
+import i18n from "@/i18n";
+import { localizeAction } from "@/lib/views/combat-action-view";
+import { combatVerdict } from "@/features/character/center/tabs/combat-card-helpers";
 
 const BUNDLE_KEY = "goliath-giant-ancestry";
 const TRACKER_ID = "race:goliath:giant-ancestry";
@@ -46,15 +49,63 @@ describe("Goliath Giant Ancestry → one action row for the chosen boon", () => 
       "label",
       "en"
     );
-    it(`${label}: one row naming the boon, on the shared PB / Long Rest counter`, () => {
+    it(`${label}: one row titled by the boon, on the shared PB / Long Rest counter`, () => {
       const rows = goliathRows(optionId);
       expect(rows).toHaveLength(1);
       const [row] = rows;
-      const effect = row?.summary.effect;
-      expect(effect && localizeText(effect, "en")).toContain(label);
+      for (const locale of ["en", "it"] as const) {
+        const optionLabel = srd(
+          "race",
+          `goliath.traits.giant-ancestry.grants.0.options.${optionId}`,
+          "label",
+          locale
+        );
+        expect(row && localizeText(row.name, locale)).toBe(optionLabel);
+      }
       expect(row?.costTracker).toBe(TRACKER_ID);
       // Level 5 → Proficiency Bonus 3.
       expect(row?.summary.uses).toMatchObject({ current: 3, total: 3 });
+    });
+  }
+
+  // The dice, damage type and condition each boon's own catalogue line names.
+  for (const [index, optionId] of optionIds.entries()) {
+    const text = srd(
+      "race",
+      `goliath.traits.giant-ancestry.mechanics.actions.${index}`,
+      "description",
+      "en"
+    );
+    const dice = /\b(\d+d\d+)\b/.exec(text)?.[1];
+    const damageType = /\d+d\d+ (\w+) damage/i.exec(text)?.[1]?.toLowerCase();
+    const prone = /Prone condition/.test(text);
+    const reduces = /reduce the damage you take/.test(text);
+    it(`${optionId} row carries the chip its text names`, () => {
+      const [row] = goliathRows(optionId);
+      if (!row) throw new Error(`no ${optionId} row`);
+      const chip = (locale: "en" | "it") =>
+        combatVerdict(localizeAction(row, locale), i18n.getFixedT(locale), locale);
+      if (reduces) {
+        expect(row.summary.damageReduction?.dice).toBe(dice);
+        expect(row.summary.damageReduction?.damageTypes.length).toBeGreaterThan(10);
+        for (const locale of ["en", "it"] as const) {
+          expect(chip(locale)).toMatch(new RegExp(`^−${dice}`));
+        }
+      } else if (damageType) {
+        expect(row.summary.damage).toBe(dice);
+        expect(row.summary.damageType).toBe(damageType);
+        for (const locale of ["en", "it"] as const) {
+          expect(chip(locale)).toMatch(new RegExp(`^${dice} `));
+        }
+      } else if (prone) {
+        expect(row.summary.conditionApplication?.options).toEqual(["prone"]);
+        for (const locale of ["en", "it"] as const) {
+          expect(chip(locale)).toBe(srd("condition", "prone", "name", locale));
+        }
+      } else {
+        // Cloud's Jaunt: no dice; its short line says teleport.
+        expect(loc(row.summary.effect, "en")).toMatch(/teleport/i);
+      }
     });
   }
 
