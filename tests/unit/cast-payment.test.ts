@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   actionPaymentAffordable,
   actionWithCost,
+  bareActionSpend,
   castOptionAffordable,
   castOptionExpendsSpellSlot,
+  castOptionSpends,
   metamagicAffordable,
   metamagicCost,
   paymentAffordable,
@@ -170,5 +172,75 @@ describe("trackers and Metamagic", () => {
     expect(actionPaymentAffordable(doc, action({ costEquipment: "nothing-here" }))).toBe(
       false
     );
+  });
+});
+
+describe("what a use spends", () => {
+  it("a slot cast spends its slot from its own pool, then the Metamagic points", () => {
+    expect(
+      castOptionSpends(
+        { kind: "slot", level: 3, remaining: 1, total: 1, pactMagic: true },
+        ["quickened-spell"]
+      )
+    ).toEqual([
+      { kind: "slot", level: 3, pactMagic: true },
+      { kind: "tracker", trackerId: SORCERY_POINTS_TRACKER_ID, amount: 2 },
+    ]);
+  });
+
+  it("a free cast spends its own tracker; an item-paid one and a ritual spend nothing here", () => {
+    const free = {
+      kind: "free-cast",
+      sourceId: "fey-touched",
+      sourceName: "Fey-Touched",
+      level: 1,
+      remaining: 1,
+      total: 1,
+      cost: 1,
+      recovery: "long",
+    } as unknown as CastCommitOption & { kind: "free-cast" };
+    expect(castOptionSpends(free, [])).toEqual([
+      { kind: "tracker", trackerId: "fey-touched", amount: 1 },
+    ]);
+    expect(
+      castOptionSpends(
+        { ...free, payment: { kind: "tracker", trackerId: "pool" } } as never,
+        []
+      )
+    ).toEqual([{ kind: "tracker", trackerId: "pool", amount: 1 }]);
+    expect(
+      castOptionSpends({ ...free, payment: { kind: "item-resource" } } as never, [])
+    ).toEqual([]);
+    expect(castOptionSpends({ kind: "ritual", level: 1 }, [])).toEqual([]);
+  });
+
+  it("a bare slot cost draws from the normal pool when there is one, else Pact", () => {
+    const slots = warlockWizard().character.spellSlots;
+    expect(bareActionSpend(slots, action({ costsSlot: true, slotLevel: 3 }))).toEqual({
+      kind: "slot",
+      level: 3,
+      pactMagic: false,
+    });
+    const pactOnly = slots.filter((s) => s.pactMagic);
+    expect(bareActionSpend(pactOnly, action({ costsSlot: true, slotLevel: 3 }))).toEqual({
+      kind: "slot",
+      level: 3,
+      pactMagic: true,
+    });
+  });
+
+  it("a bare tracker cost spends the chosen amount, else its own, else 1", () => {
+    expect(bareActionSpend([], action({ costTracker: "ki" }))).toEqual({
+      kind: "tracker",
+      trackerId: "ki",
+      amount: 1,
+    });
+    expect(
+      bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }))?.amount
+    ).toBe(2);
+    expect(
+      bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }), 5)?.amount
+    ).toBe(5);
+    expect(bareActionSpend([], action({ costEquipment: "potion" }))).toBeNull();
   });
 });

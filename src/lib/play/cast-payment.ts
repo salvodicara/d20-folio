@@ -192,3 +192,70 @@ export function castOptionAffordable(doc: CharacterDoc, opt: CastCommitOption): 
   }
   return true;
 }
+
+/** One store-paid part of a use: a spell slot from one pool, or tracker uses. */
+export type CastSpend =
+  | { kind: "slot"; level: number; pactMagic: boolean }
+  | { kind: "tracker"; trackerId: string; amount: number };
+
+/**
+ * What a configured cast spends from the sheet: its slot or its free-cast tracker,
+ * then the Sorcery Points for its Metamagic. An item-resource payment is not here:
+ * it is paid through its own prepared item command.
+ */
+export function castOptionSpends(
+  option: CastCommitOption,
+  metamagicIds: ReadonlyArray<string>
+): CastSpend[] {
+  const spends: CastSpend[] = [];
+  if (option.kind === "slot") {
+    spends.push({
+      kind: "slot",
+      level: option.level,
+      pactMagic: Boolean(option.pactMagic),
+    });
+  } else if (option.kind === "free-cast" && option.payment?.kind !== "item-resource") {
+    spends.push({
+      kind: "tracker",
+      trackerId:
+        option.payment?.kind === "tracker" ? option.payment.trackerId : option.sourceId,
+      amount: option.cost,
+    });
+  }
+  const points = metamagicCost(metamagicIds);
+  if (points > 0) {
+    spends.push({
+      kind: "tracker",
+      trackerId: SORCERY_POINTS_TRACKER_ID,
+      amount: points,
+    });
+  }
+  return spends;
+}
+
+/**
+ * What a bare action (no cast-option pick) spends: its slot, its pool resolved from
+ * the slot table (normal when one exists at that level, else Pact), or else its
+ * tracker. Equipment is spent through the store's own item command.
+ */
+export function bareActionSpend(
+  spellSlots: CharacterDoc["character"]["spellSlots"],
+  action: ResolvedAction,
+  trackerAmount?: number
+): CastSpend | null {
+  if (action.costsSlot && action.slotLevel != null) {
+    return {
+      kind: "slot",
+      level: action.slotLevel,
+      pactMagic: bareSlotIsPact(spellSlots, action.slotLevel),
+    };
+  }
+  if (action.costTracker) {
+    return {
+      kind: "tracker",
+      trackerId: action.costTracker,
+      amount: trackerAmount ?? action.trackerCost ?? 1,
+    };
+  }
+  return null;
+}

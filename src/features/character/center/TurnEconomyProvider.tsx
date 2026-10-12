@@ -117,16 +117,18 @@ import { castEconomySlot, withMetamagicDuration } from "@/lib/play/metamagic";
 import {
   actionPaymentAffordable as actionPaymentAffordableFor,
   actionWithCost,
+  bareActionSpend,
   castOptionAffordable as castOptionAffordableFor,
+  castOptionSpends,
   castOptionExpendsSpellSlot,
   metamagicAffordable as metamagicAffordableFor,
-  metamagicCost,
   paymentAffordable as paymentAffordableFor,
   trackerAffordable,
   type CastCommitOption,
+  type CastSpend,
 } from "@/lib/play/cast-payment";
 import { getSpellById } from "@/data/spells";
-import { buildCastOptions, slotUsageKey, bareSlotIsPact } from "@/lib/cast-options";
+import { buildCastOptions, slotUsageKey } from "@/lib/cast-options";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";
@@ -893,17 +895,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // apply the higher of current/granted, then the reverse-applier sets it back).
     const prevTempHp = cs.character?.session.hp.temp ?? 0;
     // A bare slot cost (no cast-option pool pick — a feature/custom-spell commit)
-    // resolves its pool from the slot table: normal when one exists, else Pact
-    // (a pure Warlock). Computed ONCE so spend + undo target the SAME counter (B3).
-    const slotIsPact =
-      action.costsSlot && action.slotLevel != null
-        ? bareSlotIsPact(cs.character?.character.spellSlots ?? [], action.slotLevel)
-        : false;
-    if (action.costsSlot && action.slotLevel != null) {
-      cs.useSpellSlot(action.slotLevel, slotIsPact);
-    } else if (action.costTracker) {
-      cs.useTracker(action.costTracker, trackerAmount ?? action.trackerCost);
-    } else if (action.costEquipment) {
+    // resolves its pool ONCE, so spend + undo target the SAME counter (B3).
+    const bareSpend = bareActionSpend(
+      cs.character?.character.spellSlots ?? [],
+      action,
+      trackerAmount
+    );
+    const spends = bareSpend ? [bareSpend] : [];
+    paySpends(spends);
+    if (!bareSpend && action.costEquipment) {
       restoreEquipment = cs.useEquipmentItem(action.costEquipment);
     }
     // S9 — a CONSUMED buff potion (Speed / Giant Strength / …) arms its
@@ -995,13 +995,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     return () => {
       const c2 = useCharacterStore.getState();
       if (c2.readonly || c2.character?.id !== characterId) return;
-      if (action.costsSlot && action.slotLevel != null) {
-        c2.restoreSpellSlot(action.slotLevel, slotIsPact);
-      } else if (action.costTracker) {
-        c2.restoreTracker(action.costTracker, trackerAmount ?? action.trackerCost);
-      } else if (action.costEquipment) {
-        restoreEquipment?.();
-      }
+      refundSpends(spends);
+      restoreEquipment?.();
       // S9 — revert the armed potion countdown (restores the exact prior timers).
       restorePotionTimer?.();
       // RA-14 — credit the fired ammunition unit back (exact inverse op).
@@ -1397,7 +1392,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       itemResourceCommands && preparedResource
         ? createItemResourcePaymentCycle(itemResourceCommands, preparedResource)
         : null;
-    const selectedMetamagicCost = metamagicCost(metamagicIds);
     const targets = pendingResolutionFor(action)?.targets ?? [];
     const castAction = withMetamagicDuration(
       withSelfRecipient(action, targets, selfCombatantId()),
@@ -1418,14 +1412,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         const resourceCommit = resourceCycle?.apply() ?? null;
         if (resourceCycle && !resourceCommit) return null;
         const cs = useCharacterStore.getState();
-        if (opt.kind === "slot") cs.useSpellSlot(opt.level, opt.pactMagic);
-        else if (opt.kind === "free-cast" && opt.payment?.kind !== "item-resource")
-          cs.useTracker(
-            opt.payment?.kind === "tracker" ? opt.payment.trackerId : opt.sourceId,
-            opt.cost
-          );
-        if (selectedMetamagicCost > 0)
-          cs.useTracker("sorcerer-font-of-magic", selectedMetamagicCost);
+        const spends = castOptionSpends(opt, metamagicIds);
+        paySpends(spends);
         const restoreConcentration = applyActionConcentration(action, opt.level);
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
         // activate with one tap and expire by themselves). Only flips when OFF, so undo
@@ -1449,16 +1437,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             return false;
           activation.restore();
           restoreConcentration(activation.activated);
-          const live = useCharacterStore.getState();
-          if (opt.kind === "slot") live.restoreSpellSlot(opt.level, opt.pactMagic);
-          else if (opt.kind === "free-cast" && opt.payment?.kind !== "item-resource")
-            live.restoreTracker(
-              opt.payment?.kind === "tracker" ? opt.payment.trackerId : opt.sourceId,
-              opt.cost
-            );
-          if (selectedMetamagicCost > 0)
-            live.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
-          live.removeLogEntry(loggedId);
+          refundSpends(spends);
+          useCharacterStore.getState().removeLogEntry(loggedId);
           useDamageTrayStore.getState().withdraw(loggedId);
           return true;
         };
@@ -1494,6 +1474,23 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       return availability ? `${availability.current}/${availability.capacity}` : null;
     }
     return null;
+  }
+
+  /** Pay a use's sheet spends, and refund exactly them on undo (the same counters). */
+  function paySpends(spends: ReadonlyArray<CastSpend>): void {
+    const cs = useCharacterStore.getState();
+    for (const spend of spends) {
+      if (spend.kind === "slot") cs.useSpellSlot(spend.level, spend.pactMagic);
+      else cs.useTracker(spend.trackerId, spend.amount);
+    }
+  }
+
+  function refundSpends(spends: ReadonlyArray<CastSpend>): void {
+    const cs = useCharacterStore.getState();
+    for (const spend of spends) {
+      if (spend.kind === "slot") cs.restoreSpellSlot(spend.level, spend.pactMagic);
+      else cs.restoreTracker(spend.trackerId, spend.amount);
+    }
   }
 
   // The commit revalidates against the LIVE character, never the render snapshot.
@@ -1919,36 +1916,20 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           }
           const characterStore = useCharacterStore.getState();
           // Resolve the slot pool once (normal vs Pact for a pure Warlock) so the
-          // spend and the reverse hit the SAME counter (B3).
-          const reactionSlotIsPact =
-            cast?.option.kind === "slot"
-              ? cast.option.pactMagic
-              : action.costsSlot && action.slotLevel != null
-                ? bareSlotIsPact(
-                    characterStore.character?.character.spellSlots ?? [],
-                    action.slotLevel
-                  )
-                : false;
-          if (cast?.option.kind === "slot") {
-            characterStore.useSpellSlot(cast.option.level, cast.option.pactMagic);
-          } else if (
-            cast?.option.kind === "free-cast" &&
-            cast.option.payment?.kind !== "item-resource"
-          ) {
-            characterStore.useTracker(
-              cast.option.payment?.kind === "tracker"
-                ? cast.option.payment.trackerId
-                : cast.option.sourceId,
-              cast.option.cost
-            );
-          } else if (!cast && action.costsSlot && action.slotLevel != null) {
-            characterStore.useSpellSlot(action.slotLevel, reactionSlotIsPact);
-          } else if (!action.resourcePayment && action.costTracker) {
-            characterStore.useTracker(action.costTracker, action.trackerCost);
-          }
-          const selectedMetamagicCost = metamagicCost(cast?.metamagicIds ?? []);
-          if (selectedMetamagicCost > 0)
-            characterStore.useTracker("sorcerer-font-of-magic", selectedMetamagicCost);
+          // spend and the reverse hit the SAME counter (B3). A bare tracker cost an
+          // item resource already pays is not spent twice.
+          const bareSpend = cast
+            ? null
+            : bareActionSpend(
+                characterStore.character?.character.spellSlots ?? [],
+                action
+              );
+          const spends = cast
+            ? castOptionSpends(cast.option, cast.metamagicIds)
+            : bareSpend && !(bareSpend.kind === "tracker" && action.resourcePayment)
+              ? [bareSpend]
+              : [];
+          paySpends(spends);
           // Store the spell's STABLE id (golden rule 7); a custom spell stamps its
           // name behind the `custom:` marker, never a bare SRD name.
           const castLevel =
@@ -1977,27 +1958,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             () => {
               // Only undo reaction status — selections are unaffected (resetReaction).
               resetReaction();
-              const c2 = useCharacterStore.getState();
               // Restore EXACTLY what was deducted (the same amount).
-              if (cast?.option.kind === "slot") {
-                c2.restoreSpellSlot(cast.option.level, cast.option.pactMagic);
-              } else if (
-                cast?.option.kind === "free-cast" &&
-                cast.option.payment?.kind !== "item-resource"
-              ) {
-                c2.restoreTracker(
-                  cast.option.payment?.kind === "tracker"
-                    ? cast.option.payment.trackerId
-                    : cast.option.sourceId,
-                  cast.option.cost
-                );
-              } else if (!cast && action.costsSlot && action.slotLevel != null) {
-                c2.restoreSpellSlot(action.slotLevel, reactionSlotIsPact);
-              } else if (!action.resourcePayment && action.costTracker) {
-                c2.restoreTracker(action.costTracker, action.trackerCost);
-              }
-              if (selectedMetamagicCost > 0)
-                c2.restoreTracker("sorcerer-font-of-magic", selectedMetamagicCost);
+              refundSpends(spends);
               // SURGICAL concentration restore (mirrors `commitCastOption`'s reverse).
               activation.restore();
               restoreConcentration(activation.activated);
