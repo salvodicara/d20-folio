@@ -568,6 +568,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Ring of X-ray Vision: the Magic action lights X-ray Vision 30 ft on the Senses rail with a 10-round countdown.",
   },
+  "flying-potion": {
+    // Two Potions of Flying in the pack: drinking one lights a fly speed equal to
+    // the walking Speed with a 1-hour countdown. Visit `/characters/scn-flying-potion`.
+    name: "Corvo, the Potion Taster",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    equipment: [{ srdId: "potion-of-flying", quantity: 2 }],
+    exercises:
+      "Potion of Flying: drinking lights Fly = walking Speed on the Senses rail with a 600-round countdown that clears it.",
+  },
   "evoker-wizard": {
     name: "Pyra, Evoker Wizard",
     raceId: "gnome",

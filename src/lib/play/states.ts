@@ -2,7 +2,9 @@
  * Pure play transitions for the character's active states (Rage, Bless lit on
  * yourself, a potion's timer): the character in, the next session out.
  */
+import { potionStateGrant, potionTimerKey } from "@/lib/potion-states";
 import {
+  potionDurationRounds,
   resolveActiveTimedEffects,
   resolvePerTurnRecoveryTrackerIds,
 } from "@/lib/smart-tracker";
@@ -89,4 +91,55 @@ export function recoverPerTurnTrackers(
     trackers = restoreTrackerEntry(trackers, id, undefined);
   }
   return { session: { ...doc.session, trackers }, prior };
+}
+
+/**
+ * Drink a timed potion: a potion that declares a standing state (Flying's fly
+ * speed) lights its `potion:<id>` key, armed to the declared countdown (drinking
+ * another restarts it); any other timed potion only arms the bare countdown. Null
+ * for an instant potion (Healing), which has nothing to arm.
+ */
+export function drinkPotion(
+  doc: CharacterDoc,
+  itemId: string,
+  litRound: number
+): SessionState | null {
+  const key = potionTimerKey(itemId);
+  if (potionStateGrant(itemId)) {
+    const off = setActiveState(doc, key, false, litRound) ?? doc.session;
+    return setActiveState({ ...doc, session: off }, key, true, litRound);
+  }
+  const rounds = potionDurationRounds(itemId);
+  if (rounds === undefined || !Number.isFinite(rounds) || rounds <= 0) return null;
+  return {
+    ...doc.session,
+    effectTimers: {
+      ...(doc.session.effectTimers ?? {}),
+      [key]: { roundsLeft: rounds, tickedRound: litRound },
+    },
+  };
+}
+
+/** Put one state key back as it was in `prior` (the undo of a drink), leaving
+ *  every other state started in the meantime untouched. */
+export function restoreStateKey(
+  session: SessionState,
+  prior: SessionState,
+  key: string
+): SessionState {
+  const wasActive = (prior.activeFeatures ?? []).includes(key);
+  const active = (session.activeFeatures ?? []).filter((k) => k !== key);
+  const put = <T>(
+    now: Readonly<Record<string, T>> | undefined,
+    before: Readonly<Record<string, T>> | undefined
+  ): Record<string, T> | undefined => {
+    const value = before?.[key];
+    return value === undefined ? without(now, key) : { ...(now ?? {}), [key]: value };
+  };
+  return {
+    ...session,
+    activeFeatures: wasActive ? [...active, key] : active,
+    effectTimers: put(session.effectTimers, prior.effectTimers),
+    effectBoundaries: put(session.effectBoundaries, prior.effectBoundaries),
+  };
 }

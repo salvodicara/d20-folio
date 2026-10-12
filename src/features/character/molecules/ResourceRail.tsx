@@ -277,8 +277,8 @@ export function ResourceRail() {
   // Strength / …). Localized once; rendered as small duration banners reusing
   // the same timer chrome the while-active states use.
   const potionTimers = useMemo(
-    () => potionTimerVMs(statuses, locale),
-    [statuses, locale]
+    () => potionTimerVMs(statuses, locale, character?.session.activeFeatures),
+    [statuses, locale, character]
   );
 
   // REST-frequency variant bundles (re-chosen each rest per RAW) — the

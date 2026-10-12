@@ -22,6 +22,7 @@
  * dedupe makes double-counting unrepresentable.
  */
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
+import { resolvePotionStateSources } from "@/lib/potion-states";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import {
   resolveAllGrantSources,
@@ -122,6 +123,8 @@ export function aggregateCharacterGrants(
       ...encounterSources,
       // A lit Dodge (a base action's state) carries its rules until it ends.
       ...resolveBaseActionStateSources(activeKeys),
+      // A drunk potion's state (Flying's fly speed) holds while its countdown runs.
+      ...resolvePotionStateSources(activeKeys),
     ],
     activeKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {})),

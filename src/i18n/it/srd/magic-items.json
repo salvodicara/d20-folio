@@ -682,6 +682,12 @@
     "name": "Pozione di Scalata",
     "summary": "Scalare = Velocità per 1 ora; Vantaggio per scalare"
   },
+  "potion-of-climbing.grants.0": {
+    "label": "Pozione di Scalata"
+  },
+  "potion-of-climbing.grants.0.grants.1": {
+    "description": "Prove di Forza (Atletica) per scalare"
+  },
   "potion-of-diminution": {
     "description": "Quando bevi questa pozione, ottieni l'effetto di “riduzione” dell'incantesimo Ingrandire/Ridurre per 1d4 ore (non è richiesta Concentrazione). Il rosso nel liquido della pozione si contrae continuamente in una minuscola perlina e poi si espande per colorare il liquido limpido attorno a esso. Agitare la bottiglia non interrompe questo processo.",
     "name": "Pozione di Diminuzione",
@@ -692,10 +698,34 @@
     "name": "Pozione di Volo",
     "summary": "Velocità di Volo = Velocità per 1 ora; fluttui"
   },
+  "potion-of-flying.grants.0": {
+    "label": "Pozione di Volo"
+  },
   "potion-of-giant-strength": {
     "description": "Il tuo punteggio di Forza cambia in base al tipo di gigante: Collina (21), Gelo/Pietra (23), Fuoco (25), Nube (27), Tempesta (29). Dura 1 ora.",
     "name": "Pozione di Forza del Gigante",
     "summary": "For diventa 21–29 (per tipo di gigante) per 1 ora"
+  },
+  "potion-of-giant-strength.grants.0": {
+    "label": "Pozione di Forza del Gigante"
+  },
+  "potion-of-giant-strength.grants.0.grants.0": {
+    "label": "Tipo di Gigante"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.hill": {
+    "label": "Collina (21)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.frost-stone": {
+    "label": "Gelo o Pietra (23)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.fire": {
+    "label": "Fuoco (25)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.cloud": {
+    "label": "Nuvole (27)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.storm": {
+    "label": "Tempesta (29)"
   },
   "potion-of-growth": {
     "description": "La tua taglia raddoppia e il peso si moltiplica per otto per 1d4 ore. Hai Vantaggio su prove e tiri salvezza di Forza, e infliggi +1d4 danni extra con le armi.",
@@ -711,6 +741,9 @@
     "name": "Pozione di Eroismo",
     "summary": "10 PF temporanei + effetto Benedizione per 1 ora"
   },
+  "potion-of-heroism.grants.0": {
+    "label": "Pozione di Eroismo"
+  },
   "potion-of-invisibility": {
     "description": "Tu e tutto ciò che trasporti diventate invisibili per 1 ora. L'effetto termina anticipatamente se attacchi o lanci un incantesimo.",
     "name": "Pozione di Invisibilità",
@@ -720,6 +753,9 @@
     "description": "Per 1 minuto dopo aver bevuto questa pozione, hai Resistenza a tutti i danni. Il liquido sciropposo di questa pozione somiglia a ferro liquefatto.",
     "name": "Pozione di Invulnerabilità",
     "summary": "Resistenza a tutti i danni per 1 minuto"
+  },
+  "potion-of-invulnerability.grants.0": {
+    "label": "Pozione di Invulnerabilità"
   },
   "potion-of-longevity": {
     "description": "Quando bevi questa pozione, la tua età fisica si riduce di 1d6 + 6 anni, fino a un minimo di 13 anni. Ogni volta che successivamente bevi una Pozione di Longevità, c'è una probabilità cumulativa del 10 percento che tu invecchi invece di 1d6 + 6 anni. Sospeso in questo liquido ambrato c'è un minuscolo cuore che, contro ogni ragione, batte ancora. Questi ingredienti svaniscono quando la pozione viene aperta.",
@@ -741,10 +777,52 @@
     "name": "Pozione di Resistenza",
     "summary": "Resistenza a un tipo di danno per 1 ora"
   },
+  "potion-of-resistance.grants.0": {
+    "label": "Pozione di Resistenza"
+  },
+  "potion-of-resistance.grants.0.grants.0": {
+    "label": "Tipo di Resistenza"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.acid": {
+    "label": "Acido"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.cold": {
+    "label": "Freddo"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.fire": {
+    "label": "Fuoco"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.force": {
+    "label": "Forza"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.lightning": {
+    "label": "Fulmine"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.necrotic": {
+    "label": "Necrotico"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.poison": {
+    "label": "Veleno"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.psychic": {
+    "label": "Psichico"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.radiant": {
+    "label": "Radiante"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.thunder": {
+    "label": "Tuono"
+  },
   "potion-of-speed": {
     "description": "Ottieni gli effetti di Velocità per 1 minuto (senza concentrazione). La velocità raddoppia, +2 CA, Vantaggio ai tiri salvezza di DES, e un'Azione aggiuntiva ogni turno.",
     "name": "Pozione di Velocità",
     "summary": "Effetto Velocità 1 min: +2 CA, azione extra"
+  },
+  "potion-of-speed.grants.0": {
+    "label": "Pozione di Velocità"
+  },
+  "potion-of-speed.grants.0.grants.2": {
+    "description": "Tiri salvezza su Destrezza (Pozione di Velocità)"
   },
   "potion-of-vitality": {
     "description": "Quando bevi questa pozione, essa rimuove tutti i livelli di Indebolimento che hai e termina la condizione Avvelenato su di te. Per le successive 24 ore, recuperi il numero massimo di Punti Ferita per ogni Dado Vita che spendi. Il liquido cremisi di questa pozione pulsa regolarmente di una luce fioca, evocando un battito cardiaco.",
@@ -755,6 +833,9 @@
     "description": "Puoi respirare sott'acqua per 1 ora dopo aver bevuto questa pozione.",
     "name": "Pozione di Respirare sott'Acqua",
     "summary": "Respiri sott'acqua per 1 ora"
+  },
+  "potion-of-water-breathing.grants.0": {
+    "label": "Pozione di Respirare sott'Acqua"
   },
   "quarterstaff-of-the-acrobat": {
     "description": "Hai un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. Mentre impugni quest'arma, puoi farle emettere Luce Fioca verde fino a 3 metri, come un'Azione Bonus o dopo che tiri l'Iniziativa, oppure puoi spegnere la luce come un'Azione Bonus. Mentre impugni quest'arma, puoi compiere un'Azione Bonus per alterarne la forma, trasformandola in una verga di 15 centimetri (per facilitarne il trasporto) o in un'asta di 3 metri, oppure facendola tornare un Bastone Ferrato; l'arma si allunga solo per quanto lo spazio circostante consente. In certe forme, l'arma ha le seguenti proprietà aggiuntive. Assistenza Acrobatica (solo nelle forme di Bastone Ferrato e Asta di 3 Metri). Mentre impugni quest'arma, hai Vantaggio alle prove di Destrezza (Acrobazia). Deviazione dell'Attacco (solo nella forma di Bastone Ferrato). Quando vieni colpito da un attacco mentre impugni l'arma, puoi compiere una Reazione per far roteare l'arma attorno a te, ottenendo un bonus di +5 alla tua Classe Armatura contro l'attacco scatenante, facendo potenzialmente mancare l'attacco. Non puoi usare di nuovo questa proprietà finché non termini un Riposo Breve o Lungo. Arma a Distanza (solo nella forma di Bastone Ferrato). Quest'arma ha la proprietà Da Lancio con una gittata normale di 9 metri e una gittata lunga di 36 metri. Immediatamente dopo che effettui un attacco a distanza con l'arma, essa vola di nuovo nella tua mano.",
@@ -1293,6 +1374,18 @@
     "description": "Quando bevi questa pozione, ottieni l'effetto dell'incantesimo Forma Gassosa per 1 ora (senza bisogno di Concentrazione) o finché non termini l'effetto con un'Azione Bonus. Il contenitore di questa pozione sembra racchiudere nebbia che si muove e si versa come acqua.",
     "name": "Pozione della Forma Gassosa",
     "summary": "Effetto Forma Gassosa per 1 ora (termina con Azione Bonus)"
+  },
+  "potion-of-gaseous-form.grants.0": {
+    "label": "Pozione della Forma Gassosa"
+  },
+  "potion-of-gaseous-form.grants.0.grants.5": {
+    "description": "Tiri salvezza su Forza (Forma Gassosa)"
+  },
+  "potion-of-gaseous-form.grants.0.grants.6": {
+    "description": "Tiri salvezza su Destrezza (Forma Gassosa)"
+  },
+  "potion-of-gaseous-form.grants.0.grants.7": {
+    "description": "Tiri salvezza su Costituzione (Forma Gassosa)"
   },
   "ring-of-resistance": {
     "description": "Hai Resistenza a un tipo di danno mentre indossi questo anello. La gemma incastonata nell'anello ne indica il tipo, che il DM sceglie o determina casualmente tirando sulla tabella seguente. 1d10 Tipo di Danno Gemma 1 Acido Perla 2 Forza Zaffiro 3 Freddo Tormalina 4 Fulmine Citrino 5 Fuoco Granato 6 Necrotico Giaietto 7 Psichico Giada 8 Radiante Topazio 9 Tuono Spinello 10 Veleno Ametista",

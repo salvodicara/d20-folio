@@ -682,6 +682,12 @@
     "name": "Potion of Climbing",
     "summary": "Climb Speed = Speed for 1 hour; Advantage to climb"
   },
+  "potion-of-climbing.grants.0": {
+    "label": "Potion of Climbing"
+  },
+  "potion-of-climbing.grants.0.grants.1": {
+    "description": "Strength (Athletics) checks made to climb"
+  },
   "potion-of-diminution": {
     "description": "When you drink this potion, you gain the “reduce” effect of the Enlarge/Reduce spell for 1d4 hours (no Concentration required). The red in the potion’s liquid continuously contracts to a tiny bead and then expands to color the clear liquid around it. Shaking the bottle fails to interrupt this process.",
     "name": "Potion of Diminution",
@@ -692,10 +698,34 @@
     "name": "Potion of Flying",
     "summary": "Fly Speed = Speed for 1 hour; you can hover"
   },
+  "potion-of-flying.grants.0": {
+    "label": "Potion of Flying"
+  },
   "potion-of-giant-strength": {
     "description": "Your Strength score changes to a value determined by the type of giant: Hill (21), Frost/Stone (23), Fire (25), Cloud (27), Storm (29). Lasts 1 hour.",
     "name": "Potion of Giant Strength",
     "summary": "STR becomes 21–29 (by giant type) for 1 hour"
+  },
+  "potion-of-giant-strength.grants.0": {
+    "label": "Potion of Giant Strength"
+  },
+  "potion-of-giant-strength.grants.0.grants.0": {
+    "label": "Giant Type"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.hill": {
+    "label": "Hill (21)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.frost-stone": {
+    "label": "Frost or Stone (23)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.fire": {
+    "label": "Fire (25)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.cloud": {
+    "label": "Cloud (27)"
+  },
+  "potion-of-giant-strength.grants.0.grants.0.options.storm": {
+    "label": "Storm (29)"
   },
   "potion-of-growth": {
     "description": "Your size doubles and your weight multiplies by eight for 1d4 hours. You have Advantage on Strength checks and saving throws, and deal +1d4 extra weapon damage.",
@@ -711,6 +741,9 @@
     "name": "Potion of Heroism",
     "summary": "10 temp HP + Bless effect for 1 hour"
   },
+  "potion-of-heroism.grants.0": {
+    "label": "Potion of Heroism"
+  },
   "potion-of-invisibility": {
     "description": "You and everything you carry become invisible for 1 hour. The effect ends early if you attack or cast a spell.",
     "name": "Potion of Invisibility",
@@ -720,6 +753,9 @@
     "description": "For 1 minute after you drink this potion, you have Resistance to all damage. This potion’s syrupy liquid looks like liquefied iron.",
     "name": "Potion of Invulnerability",
     "summary": "Resistance to all damage for 1 minute"
+  },
+  "potion-of-invulnerability.grants.0": {
+    "label": "Potion of Invulnerability"
   },
   "potion-of-longevity": {
     "description": "When you drink this potion, your physical age is reduced by 1d6 + 6 years, to a minimum of 13 years. Each time you subsequently drink a Potion of Longevity , there is 10 percent cumulative chance that you instead age by 1d6 + 6 years. Suspended in this amber liquid is a tiny heart that, against all reason, is still beating. These ingredients vanish when the potion is opened.",
@@ -741,10 +777,52 @@
     "name": "Potion of Resistance",
     "summary": "Resistance to one damage type for 1 hour"
   },
+  "potion-of-resistance.grants.0": {
+    "label": "Potion of Resistance"
+  },
+  "potion-of-resistance.grants.0.grants.0": {
+    "label": "Resistance Type"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.acid": {
+    "label": "Acid"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.cold": {
+    "label": "Cold"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.fire": {
+    "label": "Fire"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.force": {
+    "label": "Force"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.lightning": {
+    "label": "Lightning"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.necrotic": {
+    "label": "Necrotic"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.poison": {
+    "label": "Poison"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.psychic": {
+    "label": "Psychic"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.radiant": {
+    "label": "Radiant"
+  },
+  "potion-of-resistance.grants.0.grants.0.options.thunder": {
+    "label": "Thunder"
+  },
   "potion-of-speed": {
     "description": "You gain the effects of Haste for 1 minute (no concentration). Your speed doubles, you gain +2 AC, Advantage on DEX saves, and an additional Action each turn.",
     "name": "Potion of Speed",
     "summary": "Haste effect 1 min: 2 × Speed, +2 AC, extra action"
+  },
+  "potion-of-speed.grants.0": {
+    "label": "Potion of Speed"
+  },
+  "potion-of-speed.grants.0.grants.2": {
+    "description": "Dexterity saving throws (Potion of Speed)"
   },
   "potion-of-vitality": {
     "description": "When you drink this potion, it removes any Exhaustion levels you have and ends the Poisoned condition on you. For the next 24 hours, you regain the maximum number of Hit Points for any Hit Point Die you spend. This potion’s crimson liquid regularly pulses with dull light, calling to mind a heartbeat.",
@@ -755,6 +833,9 @@
     "description": "You can breathe underwater for 1 hour after drinking this potion.",
     "name": "Potion of Water Breathing",
     "summary": "Breathe underwater for 1 hour"
+  },
+  "potion-of-water-breathing.grants.0": {
+    "label": "Potion of Water Breathing"
   },
   "quarterstaff-of-the-acrobat": {
     "description": "You have a +2 bonus to attack rolls and damage rolls made with this magic weapon. While holding this weapon, you can cause it to emit green Dim Light out to 10 feet, either as a Bonus Action or after you roll Initiative, or you can extinguish the light as a Bonus Action. While holding this weapon, you can take a Bonus Action to alter its form, turning it into a 6-inch rod (for ease of storage) or a 10-foot pole, or reverting it a Quarterstaff; the weapon will elongate only as far as the surrounding space allows. In certain forms, the weapon has the following additional properties. Acrobatic Assist (Quarterstaff and 10-Foot Pole Forms Only). While holding this weapon, you have Advantage on Dexterity (Acrobatics) checks. Attack Deflection (Quarterstaff Form Only). When you are hit by an attack while holding the weapon, you can take a Reaction to twirl the weapon around you, gaining a +5 bonus to your Armor Class against the triggering attack, potentially causing the attack to miss you. You can’t use this property again until you finish a Short or Long Rest. Ranged Weapon (Quarterstaff Form Only). This weapon has the Thrown property with a normal range of 30 feet and a long range of 120 feet. Immediately after you make a ranged attack with the weapon, it flies back to your hand.",
@@ -1293,6 +1374,18 @@
     "description": "When you drink this potion, you gain the effect of the Gaseous Form spell for 1 hour (no Concentration required) or until you end the effect as a Bonus Action. This potion’s container seems to hold fog that moves and pours like water.",
     "name": "Potion of Gaseous Form",
     "summary": "Gaseous Form effect for 1 hour; end it as a Bonus Action"
+  },
+  "potion-of-gaseous-form.grants.0": {
+    "label": "Potion of Gaseous Form"
+  },
+  "potion-of-gaseous-form.grants.0.grants.5": {
+    "description": "Strength saving throws (Gaseous Form)"
+  },
+  "potion-of-gaseous-form.grants.0.grants.6": {
+    "description": "Dexterity saving throws (Gaseous Form)"
+  },
+  "potion-of-gaseous-form.grants.0.grants.7": {
+    "description": "Constitution saving throws (Gaseous Form)"
   },
   "ring-of-resistance": {
     "description": "You have Resistance to one damage type while wearing this ring. The gemstone in the ring indicates the type, which the DM chooses or determines randomly by rolling on the following table. 1d10 Damage Type Gemstone 1 Acid Pearl 2 Cold Tourmaline 3 Fire Garnet 4 Force Sapphire 5 Lightning Citrine 6 Necrotic Jet 7 Poison Amethyst 8 Psychic Jade 9 Radiant Topaz 10 Thunder Spinel",

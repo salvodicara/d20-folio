@@ -17,6 +17,11 @@
 
 import { baseActionState } from "@/lib/base-action-states";
 import {
+  POTION_TIMER_PREFIX,
+  potionTimerKey,
+  resolvePotionStateSources,
+} from "@/lib/potion-states";
+import {
   actionTypeOf,
   activityFromAction,
   activityFromBeastAttack,
@@ -7884,6 +7889,7 @@ export function resolveLifecycleGrantSources(character: CharacterDoc): GrantSour
   return [
     ...resolveAllGrantSources(character.character, character.session.itemResources),
     ...resolveGrantSourcesForSpellLifecycles(character.character.spells),
+    ...resolvePotionStateSources(character.session.activeFeatures ?? []),
   ];
 }
 
@@ -8208,23 +8214,16 @@ export function advanceEffectTimers(
   return { timers: next, expired };
 }
 
-/** S9 — the `session.effectTimers` key prefix for a consumed buff-potion's
- *  self-sustaining round countdown (`potion:<itemId>`). */
-export const POTION_TIMER_PREFIX = "potion:";
-
-/** The `effectTimers` key for a consumed buff potion's duration countdown. */
-export function potionTimerKey(itemId: string): string {
-  return `${POTION_TIMER_PREFIX}${itemId}`;
-}
+export { POTION_TIMER_PREFIX, potionTimerKey };
 
 /**
  * S9 — the round-duration a CONSUMED buff potion arms, or `undefined` for an
  * instant/non-timed potion. Reads the magic-item's `durationRounds` (1 minute =
  * 10 rounds, 1 hour = 600) straight from the SRD catalogue — PURE, no clock,
  * no RNG. The store's `consumePotionBuff` uses this to arm a `potion:<id>`
- * countdown in `effectTimers` (reusing the A2 cadence map); the cast/drink is
- * still the player's explicit act (override-first — the engine never auto-drinks
- * and never auto-applies the buff's stats).
+ * countdown in `effectTimers` (reusing the A2 cadence map); the drink is still
+ * the player's explicit act. A potion that declares its standing state
+ * (`potion-states.ts`) lights it for the same countdown.
  */
 export function potionDurationRounds(itemId: string): number | undefined {
   const item = getMagicItem(itemId);
