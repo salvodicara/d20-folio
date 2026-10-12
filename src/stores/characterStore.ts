@@ -22,6 +22,19 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { changeConcentration } from "@/lib/play/concentration";
+import {
+  dismissFamiliar,
+  setCompanionHp,
+  setCompanionVariant,
+  setFamiliarDismissed,
+  summonFamiliar,
+} from "@/lib/play/companions";
+import {
+  amendLogEntry as amendLogEntryEvent,
+  appendLogEntry,
+  removeLogEntry as removeLogEntryById,
+} from "@/lib/play/log";
+import { togglePinnedAction } from "@/lib/play/pins";
 import { takeDamage } from "@/lib/play/damage";
 import { longRestCharacter, omitStateKeys, shortRestCharacter } from "@/lib/play/rests";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
@@ -74,7 +87,7 @@ import {
 import { totalLevel } from "@/lib/classes";
 import { polymorphPriorSnapshot } from "@/lib/polymorph";
 import { getBeast } from "@/data/beasts";
-import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
+import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
@@ -164,15 +177,8 @@ export interface D20TestCommitResult {
   undo: () => boolean;
 }
 
-/**
- * Hard cap on the PERSISTED/synced log array. The log is append-only and never
- * auto-cleared (only the manual trash button empties it), and the whole
- * `session.logEntries` array ships to Firestore on every auto-save + mirrors to
- * IndexedDB — so an uncapped log grows monotonically for a character's lifetime
- * and inflates every sync payload. Cap at write time (keep the last MAX_LOG); the
- * UI window (`ActionLog maxEntries`) is a smaller VIEW slice on top of this bound.
- */
-export const MAX_LOG = 200;
+/** The persisted log cap lives with the log transitions; re-exported for callers. */
+export { MAX_LOG } from "@/lib/play/log";
 
 function trackerStateEquals(a: TrackerState | undefined, b: TrackerState): boolean {
   if (!a || a.used !== b.used) return false;
@@ -2487,32 +2493,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return;
     const { character } = get();
     if (!character) return;
-
-    if (defaultPinned) {
-      // Default-pinned item (e.g. weapon): toggle in unpinnedActions blacklist
-      const unpinned = character.session.unpinnedActions ?? [];
-      const newUnpinned = unpinned.includes(actionId)
-        ? unpinned.filter((id) => id !== actionId)
-        : [...unpinned, actionId];
-      set({
-        character: {
-          ...character,
-          session: { ...character.session, unpinnedActions: newUnpinned },
-        },
-      });
-    } else {
-      // Default-unpinned item (spell/feature): toggle in pinnedActions whitelist
-      const pinned = character.session.pinnedActions;
-      const newPinned = pinned.includes(actionId)
-        ? pinned.filter((id) => id !== actionId)
-        : [...pinned, actionId];
-      set({
-        character: {
-          ...character,
-          session: { ...character.session, pinnedActions: newPinned },
-        },
-      });
-    }
+    set({
+      character: {
+        ...character,
+        session: togglePinnedAction(character.session, actionId, defaultPinned),
+      },
+    });
   },
 
   toggleActiveFeature: (key) => {
@@ -2945,13 +2931,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     set({
       character: {
         ...character,
-        session: {
-          ...character.session,
-          companionHp: {
-            ...(character.session.companionHp ?? {}),
-            [featureId]: { current: Math.max(0, current) },
-          },
-        },
+        session: setCompanionHp(character.session, featureId, current),
       },
     });
   },
@@ -2961,21 +2941,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return null;
     const before = character; // undo = restore the prior variant pick + HP pool
-    // A different variant is a different beast = a different HP pool; RESET the
-    // companion's HP entry so a stale current can't misreport the new max.
-    const { [featureId]: _dropped, ...restHp } = character.session.companionHp ?? {};
-    void _dropped;
     set({
       character: {
         ...character,
-        session: {
-          ...character.session,
-          companionVariant: {
-            ...(character.session.companionVariant ?? {}),
-            [featureId]: variantId,
-          },
-          companionHp: restHp,
-        },
+        session: setCompanionVariant(character.session, featureId, variantId),
       },
     });
     return () => set({ character: before });
@@ -2989,14 +2958,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     set({
       character: {
         ...character,
-        session: {
-          ...character.session,
-          familiar: { monsterId, creatureType },
-          companionHp: {
-            ...(character.session.companionHp ?? {}),
-            [FIND_FAMILIAR_SPELL_ID]: { current: Math.max(1, maxHp) },
-          },
-        },
+        session: summonFamiliar(character.session, monsterId, creatureType, maxHp),
       },
     });
     return () => set({ character: before });
@@ -3005,37 +2967,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   setFamiliarDismissed: (dismissed) => {
     if (get().readonly) return;
     const { character } = get();
-    const familiar = character?.session.familiar;
-    if (!character || !familiar) return;
-    const { dismissed: _prev, ...rest } = familiar;
-    void _prev;
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          familiar: dismissed ? { ...rest, dismissed: true } : rest,
-        },
-      },
-    });
+    if (!character) return;
+    const session = setFamiliarDismissed(character.session, dismissed);
+    if (session) set({ character: { ...character, session } });
   },
 
   dismissFamiliar: () => {
     if (get().readonly) return null;
     const { character } = get();
-    if (!character?.session.familiar) return null;
+    if (!character) return null;
+    const session = dismissFamiliar(character.session);
+    if (!session) return null;
     const before = character; // undo = re-summon the exact prior familiar + HP
-    const { [FIND_FAMILIAR_SPELL_ID]: _hp, ...restHp } =
-      character.session.companionHp ?? {};
-    void _hp;
-    const { familiar: _f, ...restSession } = character.session;
-    void _f;
-    set({
-      character: {
-        ...character,
-        session: { ...restSession, companionHp: restHp },
-      },
-    });
+    set({ character: { ...character, session } });
     return () => set({ character: before });
   },
 
@@ -3263,7 +3207,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const id = crypto.randomUUID();
     const entry: LogEntry = { event, ts: Date.now(), id };
     // Cap at write time so the stored/synced array stays bounded (see MAX_LOG).
-    const next = [...character.session.logEntries, entry].slice(-MAX_LOG);
+    const next = appendLogEntry(character.session.logEntries, entry);
     set({
       character: { ...character, session: { ...character.session, logEntries: next } },
     });
@@ -3276,9 +3220,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!id) return;
     const { character } = get();
     if (!character) return;
-    const current = character.session.logEntries;
-    if (!current.some((e) => e.id === id)) return;
-    const next = current.filter((e) => e.id !== id);
+    const next = removeLogEntryById(character.session.logEntries, id);
+    if (!next) return;
     set({
       character: { ...character, session: { ...character.session, logEntries: next } },
     });
@@ -3294,9 +3237,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const write = (next: CombatEvent): void => {
       const cur = get().character;
       if (!cur) return;
-      const entries = cur.session.logEntries.map((e) =>
-        e.id === id ? { ...e, event: next } : e
-      );
+      const entries = amendLogEntryEvent(cur.session.logEntries, id, next);
       set({ character: { ...cur, session: { ...cur.session, logEntries: entries } } });
       void saveLogToIDB(cur.id, entries);
       const entry = entries.find((e) => e.id === id);
