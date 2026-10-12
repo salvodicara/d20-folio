@@ -161,10 +161,12 @@ There are six parallel records. The same hit can land in four of them.
   `src/lib/play/` holds the pure transitions (character in, next session out) — `vitals.ts` (HP,
   temp HP, slots, trackers, death saves, exhaustion), `conditions.ts`, `damage.ts`, and the shared
   world-commit seam `world-commit.ts` (#101–#103), `recoveries.ts` (#107), `forms.ts` and
-  `states.ts` (#115), `concentration.ts` (#132), `rests.ts` (#133). The store actions for those only
-  guard, apply, persist, log and keep undo. Left: the event union and one `dispatch` (an API change
-  for the store's ~70 importers, its own phase), and the smaller actions (casting, companions,
-  log, pins).
+  `states.ts` (#115), `concentration.ts` (#132), `rests.ts` (#133), `companions.ts`, `pins.ts`
+  and `log.ts` (#138). `events.ts` names them as one `PlayEvent` union run by a pure
+  `applyPlayEvent` (#139); the store's `dispatch(event)` applies one and returns its undo (#140).
+  Companions, familiar, pins, cast level, slots, trackers and exhaustion already go through it
+  (#140, #141). Left: the actions with side effects (HP, conditions, death saves, active states,
+  rests: encounter cell, log, toasts) move one at a time, and casting comes last.
 - Round, initiative and HP each get one home.
 - `evaluateGrants`, `compute` and `smart-tracker` sit behind one `deriveCharacter` entry.
 - The 8 active dialects become 1 Action shape (Phases 2 and 6). In progress:
