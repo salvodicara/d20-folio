@@ -78,6 +78,7 @@
     "failedCreate": "Failed to create character",
     "noConditions": "No conditions",
     "addCondition": "Add condition",
+    "conditionImmune": "Immune to this condition",
     "impliedCondition": "From {{source}}",
     "addDefense": "Add defense",
     "addDefenseHint": "A temporary defense from a spell, potion, or effect. Remove it when the effect ends; permanent defenses are edited in edit mode.",

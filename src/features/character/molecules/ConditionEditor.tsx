@@ -33,8 +33,12 @@ export function ConditionEditor({
   onToggle,
   emptyLabel,
   hiddenDc,
+  immunities,
 }: {
   conditions: string[];
+  /** Condition ids the creature is immune to: offered as disabled options with
+   *  an "Immune" tooltip, never added. */
+  immunities?: ReadonlySet<string>;
   onToggle: (conditionId: string) => void;
   /** When set, an empty list is announced to assistive tech via a visually-hidden
    *  label ("No conditions") — nothing renders visibly (no placeholder dash), just
@@ -100,18 +104,26 @@ export function ConditionEditor({
         </PopoverTrigger>
         <PopoverContent rubric={t("character.addCondition")} className="max-w-[15rem]">
           <div role="listbox" aria-label={t("character.addCondition")}>
-            {conditionOptions(locale).map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                role="option"
-                aria-selected={active.has(c.id)}
-                className={cn("co-pick-item", active.has(c.id) && "active")}
-                onClick={() => onToggle(c.id)}
-              >
-                {c.label}
-              </button>
-            ))}
+            {conditionOptions(locale).map((c) => {
+              // An immune creature cannot gain the condition (an already-active
+              // one stays removable from its chip and from here).
+              const immune = !active.has(c.id) && (immunities?.has(c.id) ?? false);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="option"
+                  data-condition={c.id}
+                  aria-selected={active.has(c.id)}
+                  className={cn("co-pick-item", active.has(c.id) && "active")}
+                  disabled={immune}
+                  title={immune ? t("character.conditionImmune") : undefined}
+                  onClick={() => onToggle(c.id)}
+                >
+                  {c.label}
+                </button>
+              );
+            })}
           </div>
         </PopoverContent>
       </Popover>

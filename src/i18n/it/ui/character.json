@@ -78,6 +78,7 @@
     "failedCreate": "Errore nella creazione del personaggio",
     "noConditions": "Nessuna condizione",
     "addCondition": "Aggiungi condizione",
+    "conditionImmune": "Immune a questa condizione",
     "impliedCondition": "Da {{source}}",
     "addDefense": "Aggiungi difesa",
     "addDefenseHint": "Una difesa temporanea da un incantesimo, una pozione o un effetto. Rimuovila quando l'effetto termina; le difese permanenti si modificano in modalità modifica.",
