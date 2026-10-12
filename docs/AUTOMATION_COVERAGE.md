@@ -10,8 +10,9 @@
 > `roll-die-adjustment` lost their only consumer when the mandatory combat resolver was removed
 > (2026-09-21). They are modeled but have no effect in play until the Activity model gives them a
 > consumer again (see `docs/architecture/rules-model.html`). The on-cast triggers in
-> `src/lib/on-cast-effects.ts` (Arcane Ward refill, Expert Divination slot regain) are likewise
-> unwired since the same change.
+> `src/lib/on-cast-effects.ts` (Arcane Ward refill, Expert Divination slot regain) are wired
+> again (2026-10-12): `src/lib/play/on-cast.ts` folds them into every slot-spending cast and
+> reaction cast, logged and undone with the cast. The Wild Magic Surge reminder is still unwired.
 
 ## Status legend
 

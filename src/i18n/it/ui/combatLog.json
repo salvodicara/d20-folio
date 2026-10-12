@@ -18,6 +18,8 @@
     "effectExpired": "{{name}} terminato (durata esaurita)",
     "fadingPenaltyStart": "{{name}}: −{{amount}} ai tiri d20 (cala di 1 a ogni riposo lungo)",
     "fadingPenaltyEnd": "{{name}}: penalità ai tiri d20 terminata",
+    "trackerRegain": "{{name}} recupera {{amount}}",
+    "slotRegain": "Recuperato uno slot incantesimo di livello {{level}}",
     "givenHeal": "Curati {{amount}} PF a {{target}}",
     "givenDamage": "{{target}} ha subito {{amount}} danni",
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",

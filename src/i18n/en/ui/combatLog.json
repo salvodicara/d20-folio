@@ -18,6 +18,8 @@
     "effectExpired": "{{name}} ended (duration elapsed)",
     "fadingPenaltyStart": "{{name}}: −{{amount}} to d20 Tests (drops by 1 each Long Rest)",
     "fadingPenaltyEnd": "{{name}}: d20 Test penalty ended",
+    "trackerRegain": "{{name}} regained {{amount}}",
+    "slotRegain": "Regained a level {{level}} spell slot",
     "givenHeal": "Healed {{target}} {{amount}} HP",
     "givenDamage": "{{target}} took {{amount}} damage",
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
