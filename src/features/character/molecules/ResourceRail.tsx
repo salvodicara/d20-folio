@@ -1622,7 +1622,7 @@ function ConditionStrip({
     registerUndoableToast(
       {
         message: running
-          ? t("character.fadingPenaltyEndToast", { name })
+          ? t("combatLog.fadingPenaltyEnd", { name })
           : t("character.fadingPenaltyStartToast", {
               name,
               n: FADING_PENALTIES[id]?.start ?? 0,
