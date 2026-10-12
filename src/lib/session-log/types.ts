@@ -47,6 +47,12 @@ export type PlayEvent =
       unattributed?: true;
     }
   | {
+      /** The Hit Point maximum is reduced by `reduction` in total (0 = restored). */
+      kind: "max-hp";
+      reduction: number;
+      target?: CombatantId;
+    }
+  | {
       kind: "condition";
       conditionId: string;
       gained: boolean;

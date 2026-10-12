@@ -65,6 +65,21 @@ export function setHp(doc: CharacterDoc, current: number): SessionState {
     : base;
 }
 
+/**
+ * Set the TOTAL Hit Point maximum reduction (Harm, a wight's Life Drain): never more
+ * than the whole maximum, 0 restores it. Current HP clamps down to the reduced
+ * maximum; restoring the maximum heals nothing. Null when the total is unchanged.
+ */
+export function setHpMaxReduction(doc: CharacterDoc, total: number): SessionState | null {
+  const unreduced = { ...doc.session, hpMaxReduction: undefined };
+  const full = effectiveMaxHp(doc.character, unreduced);
+  const next = Math.min(full, Math.max(0, Math.round(total)));
+  if (next === (doc.session.hpMaxReduction ?? 0)) return null;
+  const session = { ...doc.session, hpMaxReduction: next > 0 ? next : undefined };
+  const max = full - next;
+  return session.hp.current > max ? setHp({ ...doc, session }, max) : session;
+}
+
 /** Set temporary HP. A drain of the same pool keeps its source occurrence. */
 export function setTempHp(doc: CharacterDoc, temp: number): SessionState {
   const clampedTemp = clampTemp(temp);

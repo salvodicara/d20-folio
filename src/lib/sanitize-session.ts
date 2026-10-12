@@ -108,6 +108,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
       // A legacy `hp.aidBonus` is SUPERSEDED by the Aid `while-active` hp-flat grant —
       // one-way read-normalization (golden rule 10): silently dropped, never re-emitted.
     },
+    // The play-time Hit Point maximum reduction (Harm, a life drain) until a Long Rest.
+    hpMaxReduction: session.hpMaxReduction,
     hitDice: { used: session.hitDice?.used ?? 0 },
     trackers: session.trackers ?? {},
     ...(Object.keys(itemResources).length > 0 ? { itemResources } : {}),

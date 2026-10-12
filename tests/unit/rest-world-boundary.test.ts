@@ -427,6 +427,20 @@ describe("restThroughWorld: long rest", () => {
     expect(world.timeline.nextBoundaryOrdinal).toBe(2);
   });
 
+  it("ends a Hit Point maximum reduction and wakes at the full maximum", () => {
+    const doc = makeCharacterDoc(
+      { classId: "wizard", level: 5 },
+      { hp: { current: 5, temp: 0 }, hpMaxReduction: 9 }
+    );
+    armed(doc);
+
+    expect(restThroughWorld("long")).toBe("engine");
+
+    expect(liveDoc().session.hpMaxReduction).toBeUndefined();
+    expect(liveDoc().session.hp.current).toBe(doc.character.hp.max);
+    expect(worldFor(liveDoc()).vitals.hitPoints.current).toBe(doc.character.hp.max);
+  });
+
   it("ends an until-long-rest engine lifetime at the exact boundary and clears its chip", () => {
     const base = makeCharacterDoc({ classId: "fighter", level: 5 }, {});
     const authority = authoredAuthority(

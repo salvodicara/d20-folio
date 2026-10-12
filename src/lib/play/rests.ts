@@ -14,7 +14,7 @@ import {
   resolveActiveStatesEndingOnRest,
   resolveTrackers,
 } from "@/lib/smart-tracker";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, SessionState } from "@/types/character";
 
 /** A record without the given keys; undefined when nothing is left. */
 export function omitStateKeys<T>(
@@ -26,11 +26,27 @@ export function omitStateKeys<T>(
   return kept.length > 0 ? Object.fromEntries(kept) : undefined;
 }
 
+/**
+ * The session with its Hit Point maximum reduction ended: 2024 drains last "until
+ * the target finishes a Long Rest". Shared by the legacy rest and the world rest.
+ */
+export function sessionAfterLongRestReduction<
+  S extends Pick<SessionState, "hpMaxReduction">,
+>(session: S): S {
+  return session.hpMaxReduction === undefined
+    ? session
+    : { ...session, hpMaxReduction: undefined };
+}
+
 /** A Long Rest (Concentration already ended by the caller). */
 export function longRestCharacter(character: CharacterDoc): CharacterDoc {
   // D1 — a Long Rest restores HP to the EFFECTIVE max (stored base + hp-flat boons
-  // + any standing Aid), so an Aided / Draconic / Boon character wakes at full.
-  const max = effectiveMaxHp(character.character, character.session);
+  // + any standing Aid), so an Aided / Draconic / Boon character wakes at full. The
+  // rest ends a Hit Point maximum reduction first (Harm, a life drain).
+  const max = effectiveMaxHp(
+    character.character,
+    sessionAfterLongRestReduction(character.session)
+  );
   // RA-01 — 2024 RAW (SRD 5.2.1 Rules Glossary "Long Rest"): a Long Rest
   // restores HP, ends 1 level of Exhaustion, and regains ALL spent Hit Point
   // Dice ("you regain all lost Hit Points and all spent Hit Point Dice"). The
@@ -86,7 +102,7 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
     ...character,
     character: { ...character.character, equipment: newEquipment },
     session: {
-      ...character.session,
+      ...sessionAfterLongRestReduction(character.session),
       hp: { current: max, temp: 0 },
       hitDice: { used: newHitDiceUsed },
       spellSlots: {},

@@ -109,6 +109,12 @@ export interface HpControls {
   applyTemp: (amount: number) => void;
   /** Clear all temp HP. */
   clearTemp: () => void;
+  /** How far the Hit Point maximum is reduced right now (0 = not reduced). */
+  maxReduction: number;
+  /** Reduce the Hit Point maximum by `amount` more (Harm, a life drain); ≤ 0 is a no-op. */
+  reduceMax: (amount: number) => void;
+  /** End the Hit Point maximum reduction (Greater Restoration, a table ruling). */
+  restoreMax: () => void;
   /**
    * RA-11 — apply an ENTERED death-save d20 (the player rolled it in real
    * life; golden rule 21). SRD "Death Saving Throws": nat 1 = two failures,
@@ -131,6 +137,7 @@ export function useHpControls(): HpControls {
   const applyHealing = useCharacterStore((s) => s.applyHealing);
   const gainTempHp = useCharacterStore((s) => s.gainTempHp);
   const setTempHP = useCharacterStore((s) => s.setTempHP);
+  const setHpMaxReduction = useCharacterStore((s) => s.setHpMaxReduction);
   const restoreHpSnapshot = useCharacterStore((s) => s.restoreHpSnapshot);
 
   // The current/temp readout reads through the ONE vitals projection seam
@@ -345,6 +352,30 @@ export function useHpControls(): HpControls {
     );
   }
 
+  const maxReduction = character?.session.hpMaxReduction ?? 0;
+
+  /** Set the reduction total through the store seam, with the standard undo toast. */
+  function changeMaxReduction(total: number, message: () => string) {
+    registerUndoableToast({ message: message() }, () => setHpMaxReduction(total), {
+      turnScoped: false,
+    });
+  }
+
+  function reduceMax(amount: number) {
+    if (!character || dead || !amount || amount <= 0) return;
+    const nextMax = Math.max(0, max - amount);
+    changeMaxReduction(maxReduction + amount, () =>
+      t("combat.maxHpReducedToast", { val: amount, max: nextMax })
+    );
+  }
+
+  function restoreMax() {
+    if (!character || maxReduction === 0) return;
+    changeMaxReduction(0, () =>
+      t("combat.maxHpRestoredToast", { max: max + maxReduction })
+    );
+  }
+
   function applyDeathSave(faces: number | ReadonlyArray<number>) {
     const enteredFaces = typeof faces === "number" ? [faces] : Array.from(faces);
     const commit = useCharacterStore.getState().commitDeathSave(enteredFaces);
@@ -395,6 +426,9 @@ export function useHpControls(): HpControls {
     applyHeal,
     applyTemp,
     clearTemp,
+    maxReduction,
+    reduceMax,
+    restoreMax,
     applyDeathSave,
   };
 }

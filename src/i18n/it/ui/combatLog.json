@@ -5,6 +5,8 @@
     "hpDamage": "Subiti {{amount}} danni ({{current}}/{{max}} PF)",
     "hpHeal": "Curati {{amount}} PF ({{current}}/{{max}} PF)",
     "tempHpGain": "Ottenuti {{amount}} PF temporanei",
+    "hpMaxReduced": "PF massimi ridotti di {{reduction}} (massimo {{max}})",
+    "hpMaxRestored": "PF massimi ripristinati ({{max}})",
     "conditionGain": "Ottenuta condizione {{condition}}",
     "conditionLoss": "Persa condizione {{condition}}",
     "concentrationStart": "Iniziata concentrazione su {{spell}}",

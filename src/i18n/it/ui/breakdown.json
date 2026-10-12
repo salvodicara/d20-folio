@@ -3,6 +3,7 @@
     "rubric": "Scomposizione",
     "base": "Base",
     "featureBonus": "Bonus da privilegi",
+    "hpMaxReduction": "Riduzione dei PF massimi",
     "ac": {
       "formBase": "Base della forma",
       "floor": "Soglia minima CA",

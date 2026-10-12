@@ -54,6 +54,7 @@
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { canCharacterRest } from "@/lib/character-status";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { sessionAfterLongRestReduction } from "@/lib/play/rests";
 import { endsConcentration } from "@/lib/status";
 import { evaluateGrants } from "@/lib/grants";
 import { planMechanicsWorldAction } from "@/lib/mechanics-action";
@@ -274,7 +275,10 @@ function recoveredCharacterState(
     // Inspiration; it never clears one already held.
     next.vitals = {
       hitPoints: {
-        current: effectiveMaxHp(doc.character, doc.session),
+        current: effectiveMaxHp(
+          doc.character,
+          sessionAfterLongRestReduction(doc.session)
+        ),
         temporary: { current: 0, sourceOccurrence: null },
       },
       zeroHitPoints: null,
@@ -473,6 +477,8 @@ function restFinalizedSession(
     bardicInspirationDie: "",
     ...(kind === "long"
       ? {
+          // The rest ends a Hit Point maximum reduction (the legacy rest's law).
+          hpMaxReduction: undefined,
           hitDice: { used: 0 },
           concentration: "",
           concentrationCastLevel: undefined,

@@ -17,6 +17,7 @@ type Coin = keyof SessionState["currency"];
 /** Typed form of the portable envelope's compact `state` map. */
 export interface CompactSessionState extends Record<string, unknown> {
   hp?: { current?: number; temp?: number };
+  hpMaxReduction?: number;
   usedHitDice?: number;
   trackers?: Record<string, CompactTrackerState>;
   itemResources?: NonNullable<SessionState["itemResources"]>;
@@ -69,6 +70,7 @@ export interface CompactSessionState extends Record<string, unknown> {
  */
 export const KNOWN_STATE_KEYS: readonly string[] = [
   "hp",
+  "hpMaxReduction",
   "usedHitDice",
   "trackers",
   "itemResources",
@@ -241,6 +243,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.hp.current !== 0) hp.current = session.hp.current;
   if (session.hp.temp !== 0) hp.temp = session.hp.temp;
   if (Object.keys(hp).length > 0) state.hp = hp;
+  if (typeof session.hpMaxReduction === "number") {
+    state.hpMaxReduction = session.hpMaxReduction;
+  }
 
   if (session.hitDice.used !== 0) state.usedHitDice = session.hitDice.used;
 
@@ -505,6 +510,9 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
     current: numOr(hp.current, 0),
     temp: numOr(hp.temp, 0),
   };
+  if (typeof state.hpMaxReduction === "number" && Number.isFinite(state.hpMaxReduction)) {
+    session.hpMaxReduction = state.hpMaxReduction;
+  }
   session.hitDice = { used: numOr(state.usedHitDice, 0) };
   session.trackers = expandUsed(state.trackers);
   session.itemResources = normalizeItemResources(state.itemResources);

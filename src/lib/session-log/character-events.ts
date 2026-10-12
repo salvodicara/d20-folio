@@ -53,6 +53,8 @@ export function combatEventToPlayEvent(
           ? { actor: me, source: event.source, provenance: "manual" as const }
           : {}),
       };
+    case "hp-max-reduction":
+      return { kind: "max-hp", reduction: event.reduction, target: me };
     case "condition-gain":
     case "condition-loss":
       return {
