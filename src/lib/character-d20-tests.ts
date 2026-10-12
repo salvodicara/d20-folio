@@ -15,12 +15,12 @@ import {
 } from "@/lib/combat-test-context";
 import {
   concentrationSaveDc,
-  effectiveAbilityScores,
   exhaustionPenalty,
   flatSaveBonus,
   resolveConcentrationSaveBonus,
   resolveSaveBonus,
   savingThrowBonus,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import type { CharacterDoc } from "@/types/character";
 import type { D20RollMode, D20TestRequest, D20TestResult } from "@/types/d20-test";
@@ -101,12 +101,7 @@ function effectiveScores(character: CharacterDoc) {
   const aggregate = aggregateCharacterGrants(character.character, character.session);
   return {
     aggregate,
-    scores: effectiveAbilityScores(
-      character.character.abilityScores,
-      aggregate.abilityScoreFloors,
-      aggregate.itemAbilityScoreBonus,
-      aggregate.itemAbilityScoreCap
-    ),
+    scores: aggregateAbilityScores(character.character.abilityScores, aggregate),
   };
 }
 

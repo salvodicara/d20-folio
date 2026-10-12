@@ -23,11 +23,11 @@ import { getSpellById } from "@/data/spells";
 import { classEntryLevel, totalLevel } from "@/lib/classes";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import {
-  effectiveAbilityScores,
   effectiveSpellAttackBonus,
   resolveCastingModifier,
   resolveCompanion,
   selectCompanionVariant,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
@@ -236,12 +236,7 @@ function ownerContext(doc: CharacterDoc): {
 } {
   const charData = doc.character;
   const agg = aggregateCharacterGrants(charData, doc.session);
-  const scores = effectiveAbilityScores(
-    charData.abilityScores,
-    agg.abilityScoreFloors,
-    agg.itemAbilityScoreBonus,
-    agg.itemAbilityScoreCap
-  );
+  const scores = aggregateAbilityScores(charData.abilityScores, agg);
   const sc = charData.spellcasting;
   const spellAttackMod = sc
     ? effectiveSpellAttackBonus(

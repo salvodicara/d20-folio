@@ -65,9 +65,9 @@ import {
   resolveItemBoundWeaponBonus,
   exhaustionPenalty,
   carryingCapacity,
-  effectiveAbilityScores,
   effectiveWeaponDie,
   heavyWeaponDisadvantage,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -813,12 +813,7 @@ export function buildInventoryViewModel(
   // Behaviour-preserving with no ability-score item (floors/bonus empty → an equal-
   // valued copy of the stored scores).
   const scoreAgg = aggregateCharacterGrants(character, doc.session);
-  const effectiveScores = effectiveAbilityScores(
-    character.abilityScores,
-    scoreAgg.abilityScoreFloors,
-    scoreAgg.itemAbilityScoreBonus,
-    scoreAgg.itemAbilityScoreCap
-  );
+  const effectiveScores = aggregateAbilityScores(character.abilityScores, scoreAgg);
 
   const level = totalLevel(character);
   const effectivePB = effectiveProficiencyBonus(

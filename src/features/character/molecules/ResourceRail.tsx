@@ -79,11 +79,11 @@ import {
 import { patchCharacter } from "../patch-character";
 import { OverrideChipSet, type OverrideChipOption } from "./OverrideChipSet";
 import {
-  effectiveAbilityScores,
   effectiveProficiencyBonus,
   exhaustionPenalty,
   hasWeaponMastery,
   isHeavyArmorEquipped,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { getEquipment } from "@/data/equipment";
 import { getClassTable } from "@/data/classes";
@@ -315,12 +315,7 @@ export function ResourceRail() {
   // keying CHA/WIS); per RAW the formula uses the CURRENT (effective) score, so an
   // ability-boosting item raises it. Resolve effective scores ONCE and feed the
   // aura effect line, never the raw stored scores (rule 6).
-  const effectiveScores = effectiveAbilityScores(
-    charData.abilityScores,
-    aggregate.abilityScoreFloors,
-    aggregate.itemAbilityScoreBonus,
-    aggregate.itemAbilityScoreCap
-  );
+  const effectiveScores = aggregateAbilityScores(charData.abilityScores, aggregate);
   const spellSlots = charData.spellSlots;
   const concentration = vitalConcentration(session);
   const concentrationRounds = concentration

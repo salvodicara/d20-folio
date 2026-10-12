@@ -27,8 +27,8 @@ import {
   ALL_ABILITIES,
   abilityModifier,
   effectiveProficiencyBonus,
-  effectiveAbilityScores,
   jumpDistance,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
@@ -132,12 +132,7 @@ export function LeftHud() {
 
   const level = totalLevel(charData);
   const pb = effectiveProficiencyBonus(level, charData.proficiencyBonusOverride);
-  const effectiveScores = effectiveAbilityScores(
-    charData.abilityScores,
-    fullAggregate.abilityScoreFloors,
-    fullAggregate.itemAbilityScoreBonus,
-    fullAggregate.itemAbilityScoreCap
-  );
+  const effectiveScores = aggregateAbilityScores(charData.abilityScores, fullAggregate);
   // The per-save row keyed for the medallion loop (bonus + breakdown + auto-fail
   // cause + proficiency all come from the shared builder).
   const saveByCode = new Map(savesChecks.saves.map((s) => [s.id, s]));
