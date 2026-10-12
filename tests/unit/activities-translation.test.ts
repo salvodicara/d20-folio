@@ -507,6 +507,7 @@ function companionAttackFromActivity(activity: Activity): CompanionAttack {
   const [damage] = damageEffects(activity);
   const bonus = must(activity.attack).bonus;
   const addAbility = damage?.dice?.plus?.find((term) => term.kind === "ability-mod");
+  const perLevel = damage?.dice?.plus?.find((term) => term.kind === "flat-per-upcast");
   return clean({
     id: activity.source.kind === "companion" ? activity.source.attack : "",
     attackBonus: bonus.kind === "spell" ? "spell-attack" : "PB+ability",
@@ -516,6 +517,8 @@ function companionAttackFromActivity(activity: Activity): CompanionAttack {
     damageType: must(damage?.types?.[0]),
     reachFt: activity.target?.reachFt ?? activity.target?.rangeFt?.near,
     ranged: activity.attack?.mode === "ranged" ? true : undefined,
+    damagePerSpellLevel:
+      perLevel?.kind === "flat-per-upcast" ? perLevel.value : undefined,
   });
 }
 
@@ -613,8 +616,21 @@ describe("activities — stat blocks", () => {
   });
 
   it("translates and reads back every companion attack", () => {
-    // The public SRD declares no companion; the content pack does.
-    const activities = catalogueCompanionAttacks().map(({ ownerId, attack }) => {
+    // The public SRD's summon spells (Find Steed, Summon Dragon, Giant Insect)
+    // declare attacking companions; the content pack adds class-feature ones.
+    const attacks = catalogueCompanionAttacks();
+    expect(attacks.map(({ ownerId }) => ownerId)).toEqual(
+      expect.arrayContaining([
+        "find-steed:celestial",
+        "find-steed:fey",
+        "find-steed:fiend",
+        "giant-insect:centipede",
+        "giant-insect:spider",
+        "giant-insect:wasp",
+        "summon-dragon",
+      ])
+    );
+    const activities = attacks.map(({ ownerId, attack }) => {
       const activity = activityFromCompanionAttack(ownerId, attack);
       expect(companionAttackFromActivity(activity), activity.id).toEqual(clean(attack));
       return activity;

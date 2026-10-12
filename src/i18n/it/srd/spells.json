@@ -208,14 +208,18 @@
     "range": "Contatto"
   },
   "bigbys-hand": {
-    "description": "Crei una Mano Grande di forza traslucida e scintillante in uno spazio non occupato entro gittata. La mano dura per la durata, si muove al tuo comando e imita i movimenti della tua mano. La mano è un oggetto con CA 20, PF pari al tuo massimo di punti ferita e Forza 26. Non occupa il suo spazio. Puoi comandare la mano di eseguire: Pugno Chiuso (attacco incantesimo in mischia, 4d8 danni da Forza), Mano Potente (spingere creatura 1,5 m + 1,5 × mod For), Mano Afferrante (lotta), o Mano Interposta (mezza copertura).",
+    "description": "Crei una mano Grande di energia magica scintillante in uno spazio libero entro gittata che puoi vedere. La mano dura per la durata e si muove al tuo comando, imitando i movimenti della tua mano. La mano è un oggetto con CA 20 e punti ferita pari al tuo massimo di punti ferita. Se scende a 0 punti ferita, l'incantesimo termina. Quando lanci l'incantesimo e come Azione Bonus nei turni successivi, puoi muovere la mano fino a 18 metri e poi produrre un effetto: Pugno serrato (attacco con incantesimo in mischia, 5d8 danni da forza), Mano possente (tiro salvezza su Forza o spinto di 1,5 metri più 1,5 metri per punto del tuo modificatore di caratteristica da incantatore), Mano stringente (tiro salvezza su Destrezza o afferrato, CD per liberarsi pari alla CD del tiro salvezza dei tuoi incantesimi; con un'Azione Bonus lo stritola per 4d6 più il tuo modificatore di caratteristica da incantatore danni contundenti) o Mano interposta (mezza copertura contro gli attacchi che provengono dal suo spazio).",
     "duration": "Concentrazione, fino a 1 minuto",
-    "higherLevels": "Quando lanci questo incantesimo usando uno slot di 6° livello o superiore, il danno del Pugno Chiuso aumenta di 2d8 per ogni livello dello slot superiore al 5°.",
+    "higherLevels": "Il danno del Pugno serrato aumenta di 2d8 e quello della Mano stringente di 2d6 per ogni livello dello slot superiore al 5º.",
     "name": "Mano Arcana",
     "range": "36 metri"
   },
   "bigbys-hand.components": {
     "material": "Un guscio d'uovo e un guanto di pelle di serpente"
+  },
+  "bigbys-hand.companion": {
+    "name": "Mano arcana",
+    "kind": "Oggetto Grande"
   },
   "blade-barrier": {
     "description": "Crei un muro verticale di lame rotanti e affilate fatte di energia magica. Il muro appare entro gittata e dura per la durata. Una creatura subisce 6d10 danni Taglienti quando entra nell'area del muro per la prima volta in un turno o vi termina il suo turno. Una creatura può effettuare un tiro salvezza su Destrezza per subire metà dei danni.",
@@ -919,10 +923,38 @@
     "material": "Carbone, incenso ed erbe per un valore di 10 mo, consumati"
   },
   "find-steed": {
-    "description": "Evochi uno spirito che assume la forma di un destriero insolitamente intelligente, forte e leale, creando un legame duraturo con esso. Il destriero assume la forma di un cavallo da guerra, pony, cammello, alce o mastino. Serve come cavalcatura e ha un'Intelligenza di almeno 6. Mentre sei in sella, puoi fare in modo che qualsiasi incantesimo che lanci e che bersaglia solo te bersagli anche il destriero.",
+    "description": "Evochi un essere ultraterreno che appare come una cavalcatura fedele in uno spazio libero a tua scelta entro gittata. Questa creatura usa la scheda delle statistiche della cavalcatura ultraterrena. Se possiedi già una cavalcatura evocata con questo incantesimo, viene sostituita da quella nuova. La cavalcatura ha l'aspetto di un animale Grande cavalcabile a tua scelta, per esempio un cavallo, un cammello, un lupo feroce o un alce. Ogni volta che lanci l'incantesimo, scegli il tipo di creatura della cavalcatura (celestiale, folletto o immondo), che determina alcuni tratti della scheda. La cavalcatura è un alleato per te e i tuoi alleati. In combattimento ha il tuo stesso punteggio di iniziativa e, quando la cavalchi, funziona come una cavalcatura controllata. Se sei incapacitato, la cavalcatura agisce subito dopo il tuo turno in modo indipendente, concentrandosi sul proteggerti. La cavalcatura scompare se scende a 0 punti ferita o se muori.",
     "duration": "Istantanea",
     "name": "Trova Cavalcatura",
-    "range": "9 metri"
+    "range": "9 metri",
+    "higherLevels": "Usa il livello dello slot incantesimo come livello dell'incantesimo nella scheda delle statistiche."
+  },
+  "find-steed.companion": {
+    "name": "Cavalcatura ultraterrena",
+    "kind": "Celestiale Grande",
+    "variantLabel": "Celestiale"
+  },
+  "find-steed.companion.attacks.otherworldly-slam": {
+    "name": "Schianto ultraterreno",
+    "rider": "Valori al 2º livello: ogni slot superiore aggiunge +1 CA, +10 PF e +1 danno; volo 18 m dal 4º livello. Tocco guaritore (Azione Bonus, 1/riposo lungo): una creatura entro 1,5 m recupera 2d8 + il livello dell'incantesimo PF. Legame vitale: quando recuperi PF da un incantesimo di 1º livello o superiore entro 1,5 m dalla cavalcatura, lei recupera gli stessi."
+  },
+  "find-steed.companion.variants.fey": {
+    "name": "Cavalcatura ultraterrena",
+    "kind": "Folletto Grande",
+    "variantLabel": "Folletto"
+  },
+  "find-steed.companion.variants.fey.attacks.otherworldly-slam": {
+    "name": "Schianto ultraterreno",
+    "rider": "Valori al 2º livello: ogni slot superiore aggiunge +1 CA, +10 PF e +1 danno; volo 18 m dal 4º livello. Passo fatato (Azione Bonus, 1/riposo lungo): la cavalcatura si teletrasporta con il cavaliere fino a 18 m. Legame vitale: quando recuperi PF da un incantesimo di 1º livello o superiore entro 1,5 m dalla cavalcatura, lei recupera gli stessi."
+  },
+  "find-steed.companion.variants.fiend": {
+    "name": "Cavalcatura ultraterrena",
+    "kind": "Immondo Grande",
+    "variantLabel": "Immondo"
+  },
+  "find-steed.companion.variants.fiend.attacks.otherworldly-slam": {
+    "name": "Schianto ultraterreno",
+    "rider": "Valori al 2º livello: ogni slot superiore aggiunge +1 CA, +10 PF e +1 danno; volo 18 m dal 4º livello. Sguardo letale (Azione Bonus, 1/riposo lungo): una creatura entro 18 m effettua un tiro salvezza su Saggezza contro la CD dei tuoi incantesimi o è spaventata fino al termine del tuo turno successivo. Legame vitale: quando recuperi PF da un incantesimo di 1º livello o superiore entro 1,5 m dalla cavalcatura, lei recupera gli stessi."
   },
   "find-the-path": {
     "description": "Questo incantesimo ti permette di trovare il percorso fisico più breve e diretto verso una specifica posizione fissa che conosci sullo stesso piano di esistenza. Per la durata, finché sei sullo stesso piano della destinazione, sai quanto è distante e in quale direzione si trova.",
@@ -1104,11 +1136,42 @@
     "material": "2 monete di rame, consumate dall'incantesimo"
   },
   "giant-insect": {
-    "description": "Evochi un centopiedi gigante, ragno, vespa o scorpione, che appare in uno spazio non occupato che puoi vedere entro gittata. La creatura è amichevole verso te e i tuoi compagni. In combattimento agisce alla tua iniziativa e obbedisce ai tuoi comandi verbali. La creatura scompare quando scende a 0 punti ferita o quando l'incantesimo termina.",
+    "description": "Evochi un millepiedi gigante, un ragno gigante o una vespa gigante (a tua scelta al momento del lancio). L'insetto si manifesta in uno spazio libero entro gittata che puoi vedere e usa la scheda delle statistiche dell'insetto gigante. La forma scelta determina alcuni dettagli della sua scheda. La creatura scompare quando scende a 0 punti ferita o quando l'incantesimo termina. La creatura è un alleato per te e i tuoi alleati. In combattimento ha il tuo stesso punteggio di iniziativa, ma agisce subito dopo il tuo turno. Obbedisce ai tuoi comandi verbali (nessuna azione richiesta); se non ne dai, compie l'azione di Schivata e usa il suo movimento per sottrarsi al pericolo.",
     "duration": "Concentrazione, fino a 10 minuti",
-    "higherLevels": "Quando lanci questo incantesimo usando uno slot di 5° livello o superiore, puoi evocare un insetto aggiuntivo ogni due livelli dello slot superiori al 4°.",
+    "higherLevels": "Usa il livello dello slot incantesimo come livello dell'incantesimo nella scheda delle statistiche.",
     "name": "Insetto Gigante",
-    "range": "9 metri"
+    "range": "18 metri"
+  },
+  "giant-insect.companion": {
+    "name": "Millepiedi gigante",
+    "kind": "Bestia Grande",
+    "variantLabel": "Millepiedi"
+  },
+  "giant-insect.companion.attacks.poison-jab": {
+    "name": "Colpo velenoso",
+    "rider": "Più 1d4 danni da veleno. Multiattacco: attacchi pari alla metà del livello dell'incantesimo (per difetto). Rigurgito velenoso (Azione Bonus): una creatura entro 3 m effettua un tiro salvezza su Costituzione contro la CD dei tuoi incantesimi o è avvelenata fino all'inizio del turno successivo dell'insetto."
+  },
+  "giant-insect.companion.variants.spider": {
+    "name": "Ragno gigante",
+    "kind": "Bestia Grande",
+    "variantLabel": "Ragno"
+  },
+  "giant-insect.companion.variants.spider.attacks.poison-jab": {
+    "name": "Colpo velenoso",
+    "rider": "Più 1d4 danni da veleno. Multiattacco: attacchi pari alla metà del livello dell'incantesimo (per difetto). Movimenti del ragno: scala superfici difficili, soffitti compresi, senza prove."
+  },
+  "giant-insect.companion.variants.spider.attacks.web-bolt": {
+    "name": "Dardo di ragnatela",
+    "rider": "La velocità del bersaglio è 0 fino all'inizio del turno successivo dell'insetto."
+  },
+  "giant-insect.companion.variants.wasp": {
+    "name": "Vespa gigante",
+    "kind": "Bestia Grande",
+    "variantLabel": "Vespa"
+  },
+  "giant-insect.companion.variants.wasp.attacks.poison-jab": {
+    "name": "Colpo velenoso",
+    "rider": "Più 1d4 danni da veleno. Multiattacco: attacchi pari alla metà del livello dell'incantesimo (per difetto)."
   },
   "glibness": {
     "description": "Fino al termine dell'incantesimo, quando effettui una prova di Carisma, puoi sostituire il numero che tiri con un 15. Inoltre, indipendentemente da ciò che dici, la magia che determinerebbe se stai dicendo la verità indica che sei sincero.",
@@ -1878,6 +1941,10 @@
     "name": "Destriero Fantomatico",
     "range": "9 metri"
   },
+  "phantom-steed.companion": {
+    "name": "Destriero fantomatico",
+    "kind": "Bestia Grande · Cavallo da galoppo"
+  },
   "planar-ally": {
     "description": "Implori un'entità ultraterrena per aiuto. L'essere invia un celestiale, un elementale o un immondo leale a sé per aiutarti. Se conosci il nome di una creatura specifica, puoi pronunciare quel nome per richiedere quella creatura. La creatura non è obbligata a comportarsi in un modo particolare e devi negoziare per i suoi servizi.",
     "duration": "Istantanea",
@@ -2430,14 +2497,22 @@
     "material": "Una lingua di serpente e un po' di favo o una goccia di olio dolce"
   },
   "summon-dragon": {
-    "description": "Evochi uno spirito draconico. Si manifesta in uno spazio non occupato che puoi vedere entro gittata. Questa forma corporea usa il blocco statistiche dello Spirito Draconico. Quando lanci l'incantesimo, scegli una famiglia di drago: Cromatico, Gemma o Metallico. La creatura assomiglia a un drago della famiglia scelta, che determina certi tratti nel suo blocco statistiche. La creatura scompare quando scende a 0 punti ferita o quando l'incantesimo termina.",
+    "description": "Invochi uno spirito di drago, che si manifesta in uno spazio libero entro gittata che puoi vedere e usa la scheda delle statistiche dello spirito draconico. La creatura scompare quando scende a 0 punti ferita o quando l'incantesimo termina. La creatura è un alleato per te e i tuoi alleati. In combattimento ha il tuo stesso punteggio di iniziativa, ma agisce subito dopo il tuo turno. Obbedisce ai tuoi comandi verbali (nessuna azione richiesta); se non ne dai, compie l'azione di Schivata e usa il suo movimento per sottrarsi al pericolo.",
     "duration": "Concentrazione, fino a 1 ora",
-    "higherLevels": "Quando lanci questo incantesimo usando uno slot di 6° livello o superiore, la creatura assume il livello superiore per quel lancio ovunque usi il livello dell'incantesimo nel suo blocco statistiche.",
+    "higherLevels": "Usa il livello dello slot incantesimo come livello dell'incantesimo nella scheda delle statistiche.",
     "name": "Richiama Drago",
     "range": "18 metri"
   },
   "summon-dragon.components": {
     "material": "Un oggetto con l'immagine di un drago incisa, del valore di almeno 500 mo"
+  },
+  "summon-dragon.companion": {
+    "name": "Spirito draconico",
+    "kind": "Drago Grande"
+  },
+  "summon-dragon.companion.attacks.rend": {
+    "name": "Squarcio",
+    "rider": "Multiattacco: attacchi Squarcio pari alla metà del livello dell'incantesimo (per difetto), più Soffio — ogni creatura in un cono di 9 m effettua un tiro salvezza su Destrezza contro la CD dei tuoi incantesimi: 2d6 danni di un tipo a cui lo spirito è resistente (acido, freddo, fulmine, fuoco o veleno; scelto al lancio), dimezzati se lo supera. Resistenze condivise: condividi una delle sue resistenze fino al termine dell'incantesimo."
   },
   "sunbeam": {
     "description": "Un raggio di luce brillante erompe dalla tua mano in una linea larga 1,5 metri e lunga 18 metri. Ogni creatura nella linea deve effettuare un tiro salvezza su Costituzione, subendo 6d8 danni Radianti in caso di fallimento, o la metà in caso di successo. Una creatura che fallisce è anche accecata fino all'inizio del tuo prossimo turno. Puoi creare una nuova linea di luce come azione in qualsiasi turno fino alla fine dell'incantesimo.",

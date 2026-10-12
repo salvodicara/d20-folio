@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { PHANTOM_STEED } from "./companions";
 import { timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
@@ -695,6 +696,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     ritual: true,
     components: { v: true, s: true, m: false },
     concentration: false,
+    companion: PHANTOM_STEED,
     source: "SRD",
   },
   {

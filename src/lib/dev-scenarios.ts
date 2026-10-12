@@ -1221,6 +1221,21 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Sacred Weapon to-hit: with the `paladin-devotion-sacred-weapon` toggle LIT, the Longsword attack row's to-hit gains +CHA mod (CHA 20 → +5, min +1) on the melee weapon (breakdown tip names '+5 CHA'); toggling off in the rail drops it back to base STR + PB. Proves the ability-derived weapon-attack-bonus reaches the rendered weapon row.",
   },
+  // Spell companions — a Paladin with Find Steed prepared fields the Otherworldly
+  // Steed on the Companions rail (a non-Concentration summon shows while the spell
+  // is prepared). Visit `/characters/scn-steed-paladin` (Play tab, Companions rail).
+  "steed-paladin": {
+    name: "Brienne, Steed Paladin",
+    raceId: "human",
+    classId: "paladin",
+    subclassId: "oath-of-devotion",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 8, WIS: 12, CHA: 16 },
+    spells: [{ srdId: "find-steed", prepared: true }],
+    exercises:
+      "Spell companions: the Companions rail lists the Otherworldly Steed (AC 12, 25 HP at the spell's level 2); one tap opens its stat block with the Celestial / Fey / Fiend picker and the Otherworldly Slam row (+spell attack, 1d8 + 2 Radiant/Psychic/Necrotic).",
+  },
   // PRIM-resource-conversion `pact-slot` — Warlock Magical Cunning (L2). A Fiend
   // Warlock 5 starts with BOTH Pact-Magic slots (pool of 2, slot level 3)
   // expended, so the rail's Resources section surfaces the "Restore Pact Slots"

@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { ARCANE_HAND, DRACONIC_SPIRIT } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
@@ -1043,8 +1044,10 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     },
     concentration: true,
     damageType: "force",
-    damageDice: "4d8",
+    damageDice: "5d8",
+    damageDicePerUpcast: "2d8",
     attackType: "melee",
+    companion: ARCANE_HAND,
     source: "SRD",
   },
   {
@@ -1248,6 +1251,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
       costGp: 500,
     },
     concentration: true,
+    companion: DRACONIC_SPIRIT,
     source: "SRD",
   },
   {

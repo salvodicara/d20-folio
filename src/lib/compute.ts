@@ -1937,6 +1937,16 @@ export function selectCompanionVariant(
   return block.variants.find((v) => v.variantId === selectedVariantId) ?? block;
 }
 
+/** "1d6 + 9" plus 2 → "1d6 + 11": folds a flat amount into the formula's
+ *  trailing constant, or appends one. */
+function addFlatToDice(dice: string, flat: number): string {
+  if (flat === 0) return dice;
+  const tail = dice.match(/^(.*?)\s*([+-])\s*(\d+)$/);
+  const total = tail ? (tail[2] === "-" ? -1 : 1) * Number(tail[3]) + flat : flat;
+  const head = tail?.[1] ?? dice;
+  return total === 0 ? head : `${head} ${total > 0 ? "+" : "-"} ${Math.abs(total)}`;
+}
+
 /**
  * Resolve a summoned companion's stat block against its owner. Covers both the
  * Artificer constructs (Steel Defender → AC 12 + INT, HP 5 + 5×level, Poison
@@ -1952,18 +1962,31 @@ export function selectCompanionVariant(
  * Artificer constructs declare no such attack), spell-attack attacks fall back
  * to `PB`. `pbOverride` (override-first) lets the character's manual PB override
  * flow into the borrowed-PB bonus and the companion's saves. Pure — NO dice.
+ *
+ * A spell-summoned block (`spellLevel`) resolves at `spell.castLevel` (the base
+ * level when absent or lower); `spell.ownerMaxHp` feeds `hp.ownerMax` (Arcane Hand).
  */
 export function resolveCompanion(
   block: CompanionStatBlock,
   level: number,
   abilityScores: Record<AbilityCode, number>,
   pbOverride?: number | null,
-  spellAttackMod?: number
+  spellAttackMod?: number,
+  spell?: { castLevel?: number; ownerMaxHp?: number }
 ): ResolvedCompanion {
+  const steps = block.spellLevel
+    ? Math.max(0, (spell?.castLevel ?? block.spellLevel.base) - block.spellLevel.base)
+    : 0;
   const ac =
     block.ac.base +
-    (block.ac.ability ? abilityModifier(abilityScores[block.ac.ability]) : 0);
-  const hpMax = Math.max(1, block.hp.base + block.hp.perLevel * level);
+    (block.ac.ability ? abilityModifier(abilityScores[block.ac.ability]) : 0) +
+    (block.spellLevel?.acPer ?? 0) * steps;
+  const hpMax = Math.max(
+    1,
+    block.hp.ownerMax
+      ? (spell?.ownerMaxHp ?? 1)
+      : block.hp.base + block.hp.perLevel * level + (block.spellLevel?.hpPer ?? 0) * steps
+  );
   const pb = effectiveProficiencyBonus(level, pbOverride);
   const pbToChecks = block.pbToChecks ? pb : null;
 
@@ -1990,7 +2013,7 @@ export function resolveCompanion(
         ? (spellAttackMod ?? pb)
         : pb +
           (atk.attackAbility ? abilityModifier(abilityScores[atk.attackAbility]) : 0);
-    let damageDice = atk.dice;
+    let damageDice = addFlatToDice(atk.dice, (atk.damagePerSpellLevel ?? 0) * steps);
     if (atk.addAbility) {
       const mod = abilityModifier(abilityScores[atk.addAbility]);
       damageDice += mod >= 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`;

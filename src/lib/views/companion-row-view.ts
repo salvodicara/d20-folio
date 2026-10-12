@@ -1,8 +1,8 @@
 /**
  * Companion presenter (R2) — the ONE enumerate + resolve + localize seam for every
  * feature-declared companion (Artificer Steel Defender / Eldritch Cannon, Beast
- * Master Primal Companion, and — pack — a spell-declared companion like the
- * Homunculus Servant). Both mounts read it, so the Features-tab card and the
+ * Master Primal Companion, and the creature a spell summons — Find Steed's
+ * Otherworldly Steed, Summon Dragon's Draconic Spirit, pack Homunculus Servant). Both mounts read it, so the Features-tab card and the
  * Companions rail section agree BY CONSTRUCTION (golden rule 6), and the Beast
  * Master's Land/Sea/Sky variant pick (`session.companionVariant`) is finally a live
  * consumer of `selectCompanionVariant` (closing the documented dead-code gap).
@@ -32,6 +32,7 @@ import {
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import type { Locale } from "@/lib/locale";
+import { formatSpeed, localeDistance } from "@/lib/utils";
 
 /** The translator (chrome keys only — `srd.damage_*`). */
 type Translate = (key: string, opts?: Record<string, unknown>) => string;
@@ -91,6 +92,28 @@ function variantPrefix(
   return base;
 }
 
+/** The localized Speed line: walking speed, then each other mode ("18 m, Volo 18 m"). */
+function speedLabel(
+  resolved: ReturnType<typeof resolveCompanion>,
+  locale: Locale,
+  t: Translate
+): string | undefined {
+  const parts: string[] = [];
+  if (resolved.speeds.walk != null) {
+    parts.push(localeDistance(resolved.speeds.walk, locale));
+  } else if (resolved.speed) {
+    parts.push(formatSpeed(resolved.speed, locale));
+  }
+  for (const mode of ["climb", "fly", "swim", "burrow"] as const) {
+    const ft = resolved.speeds[mode];
+    if (ft == null) continue;
+    const label =
+      mode === "burrow" ? t("polymorph.speedBurrow") : t(`character.speed_${mode}`);
+    parts.push(`${label} ${localeDistance(ft, locale)}`);
+  }
+  return parts.length > 0 ? parts.join(", ") : undefined;
+}
+
 /** Resolve + localize ONE companion into its card view (the active variant applied). */
 function buildOne(
   featureId: string,
@@ -102,11 +125,19 @@ function buildOne(
   pbOverride: number | null | undefined,
   spellAttackMod: number | undefined,
   locale: Locale,
-  t: Translate
+  t: Translate,
+  spell?: { castLevel?: number; ownerMaxHp?: number }
 ): CompanionCardView {
   const selectedVariantId = session.companionVariant?.[featureId];
   const active = selectCompanionVariant(block, selectedVariantId);
-  const resolved = resolveCompanion(active, level, scores, pbOverride, spellAttackMod);
+  const resolved = resolveCompanion(
+    active,
+    level,
+    scores,
+    pbOverride,
+    spellAttackMod,
+    spell
+  );
   const prefix = variantPrefix(featureId, block, active.variantId);
 
   const label = hasSrd(ns, prefix, "name", locale)
@@ -150,7 +181,7 @@ function buildOne(
     label,
     kind,
     ac: resolved.ac,
-    speed: resolved.speed,
+    speed: speedLabel(resolved, locale, t),
     hpMax: resolved.hpMax,
     current: session.companionHp?.[featureId]?.current,
     attacks,
@@ -239,17 +270,22 @@ export function buildCompanionCardViews(
     );
   }
 
-  // (b) Spells with a companion (the spell-companion seam — pack Homunculus Servant).
-  //     Public SRD carries none, so this leg is inert public-side (D11: shape public,
-  //     content pack). A spell counts as "on the character" when it is prepared/known
-  //     (a stored ref) OR always-prepared (a grant).
+  // (b) Spells with a companion (Find Steed, Summon Dragon, Giant Insect, Phantom
+  //     Steed, Arcane Hand; pack Homunculus Servant). A spell counts as "on the
+  //     character" when it is prepared/known (a stored ref) OR always-prepared (a
+  //     grant). A Concentration spell's creature exists only while the caster
+  //     concentrates on it, so it shows only then, at the slot level it was cast
+  //     with; any other spell's creature resolves at the spell's own level.
   const spellIds = new Set<string>(agg.alwaysPrepared);
   for (const ref of charData.spells) {
     if ("srdId" in ref) spellIds.add(ref.srdId);
   }
+  const ownerMaxHp = charData.hp.max + agg.hpFlat;
   for (const spellId of spellIds) {
     const spell = getSpellById(spellId);
     if (!spell?.companion) continue;
+    const concentrating = doc.session.concentration === spellId;
+    if (spell.concentration && !concentrating) continue;
     views.push(
       buildOne(
         spellId,
@@ -261,7 +297,11 @@ export function buildCompanionCardViews(
         pbOverride,
         spellAttackMod,
         locale,
-        t
+        t,
+        {
+          castLevel: concentrating ? doc.session.concentrationCastLevel : undefined,
+          ownerMaxHp,
+        }
       )
     );
   }

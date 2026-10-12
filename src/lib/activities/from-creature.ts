@@ -165,6 +165,9 @@ export function activityFromCompanionAttack(
           plus: terms(
             attack.addAbility
               ? { kind: "ability-mod", ability: attack.addAbility }
+              : undefined,
+            attack.damagePerSpellLevel
+              ? { kind: "flat-per-upcast", value: attack.damagePerSpellLevel }
               : undefined
           ),
         }),
