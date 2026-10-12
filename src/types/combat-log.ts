@@ -149,6 +149,11 @@ export type CombatEvent =
    * reads "Rage ended (duration elapsed)".
    */
   | { kind: "effect-expired"; sourceId: string }
+  /** Casting a spell refilled a feature's pool (Arcane Ward regains 2× the slot
+   *  level); `trackerId` is the feature's stable id. */
+  | { kind: "tracker-regain"; trackerId: string; amount: number }
+  /** Casting a spell gave back one expended spell slot (Expert Divination). */
+  | { kind: "slot-regain"; level: number }
   /**
    * Read-normalization ONLY (the bounded one-way boundary, golden rule 10): a
    * pre-events-as-data persisted entry that carried a frozen localized `text`.

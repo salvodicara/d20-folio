@@ -98,6 +98,8 @@ export function combatEventToPlayEvent(
     case "effect-expired":
       return { kind: "status", sourceId: event.sourceId, started: false, actor: me };
     case "turn-end":
+    case "tracker-regain":
+    case "slot-regain":
     case "legacy":
       return null;
   }

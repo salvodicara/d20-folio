@@ -131,6 +131,7 @@ import {
   type CastCommitOption,
   type CastSpend,
 } from "@/lib/play/cast-payment";
+import { expendedSlotLevel, onCastRegains } from "@/lib/play/on-cast";
 import { getSpellById } from "@/data/spells";
 import { buildCastOptions, slotUsageKey } from "@/lib/cast-options";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
@@ -1243,6 +1244,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           slot: castEconomySlot(action.type, metamagicIds),
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
         });
+        const undoRegains = applyOnCastRegains(
+          action.spellId,
+          expendedSlotLevel(opt, spends)
+        );
         offerFollowUps(action, targets, loggedId);
         return () => {
           if (!canCommit()) return false;
@@ -1252,6 +1257,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             !itemResourceCommands.revert(resourceCommit)
           )
             return false;
+          undoRegains();
           activation.restore();
           restoreConcentration(activation.activated);
           refundSpends(spends);
@@ -1291,6 +1297,27 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       return availability ? `${availability.current}/${availability.capacity}` : null;
     }
     return null;
+  }
+
+  /**
+   * What the cast gives back (Arcane Ward, Expert Divination): refunded and logged
+   * after the cast's own line; the returned undo pays it again and drops the lines.
+   */
+  function applyOnCastRegains(
+    spellId: string | undefined,
+    slotLevel: number | null
+  ): () => void {
+    const cs = useCharacterStore.getState();
+    if (!cs.character) return () => {};
+    const regains = onCastRegains(cs.character, spellId, slotLevel);
+    const refunds = regains.map((regain) => regain.refund);
+    refundSpends(refunds);
+    const logIds = regains.map((regain) => cs.logEvent(regain.event));
+    return () => {
+      paySpends(refunds);
+      const live = useCharacterStore.getState();
+      for (const id of logIds) live.removeLogEntry(id);
+    };
   }
 
   /** Pay a use's sheet spends, and refund exactly them on undo (the same counters). */
@@ -1761,8 +1788,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             effect: logTypeForAction(action),
             ...(targets.length > 0 ? { targets: [...targets] } : {}),
           });
+          const undoRegains = applyOnCastRegains(
+            action.spellId,
+            expendedSlotLevel(cast?.option, spends)
+          );
           return withResolutionUndo(
             () => {
+              undoRegains();
               // Only undo reaction status — selections are unaffected (resetReaction).
               resetReaction();
               // Restore EXACTLY what was deducted (the same amount).

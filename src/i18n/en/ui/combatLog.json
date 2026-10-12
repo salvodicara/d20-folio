@@ -16,6 +16,8 @@
     "longRest": "Took a Long Rest",
     "riderUse": "Spent {{rider}} on {{name}}",
     "effectExpired": "{{name}} ended (duration elapsed)",
+    "trackerRegain": "{{name}} regained {{amount}}",
+    "slotRegain": "Regained a level {{level}} spell slot",
     "givenHeal": "Healed {{target}} {{amount}} HP",
     "givenDamage": "{{target}} took {{amount}} damage",
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",

@@ -119,6 +119,10 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("turn-end");
     case "effect-expired":
       return resolveLogStyle("effect-expired");
+    case "tracker-regain":
+      return resolveLogStyle("tracker-use");
+    case "slot-regain":
+      return resolveLogStyle("spell-cast");
     case "effect-given":
       return resolveLogStyle(
         event.effect === "damage"
@@ -215,6 +219,13 @@ export function localizeCombatEvent(
       return t("combat.endTurnToast", { round: event.round });
     case "effect-expired":
       return t("combatLog.effectExpired", { name: resolveSourceName(event.sourceId) });
+    case "tracker-regain":
+      return t("combatLog.trackerRegain", {
+        name: resolveSourceName(event.trackerId),
+        amount: event.amount,
+      });
+    case "slot-regain":
+      return t("combatLog.slotRegain", { level: event.level });
     case "effect-given":
       return event.effect === "condition"
         ? t("combatLog.givenCondition", {

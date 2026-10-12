@@ -16,6 +16,8 @@
     "longRest": "Fatto un Riposo Lungo",
     "riderUse": "{{rider}} speso su {{name}}",
     "effectExpired": "{{name}} terminato (durata esaurita)",
+    "trackerRegain": "{{name}} recupera {{amount}}",
+    "slotRegain": "Recuperato uno slot incantesimo di livello {{level}}",
     "givenHeal": "Curati {{amount}} PF a {{target}}",
     "givenDamage": "{{target}} ha subito {{amount}} danni",
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",

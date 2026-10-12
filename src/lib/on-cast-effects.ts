@@ -201,10 +201,9 @@ export interface OnCastSlotRegainStore {
 
 /**
  * Apply the resolved on-cast refills to the store and return the inverse
- * (undo). The wiring the cast-commit seam (`commitCastOption`) relies on — kept
- * here as a pure, store-injected helper so it can be unit-tested without
- * mounting the provider (golden rule 13 — the cheapest test that pins the
- * wiring). Each refill REDUCES `used` (clamped at 0); undo re-spends EXACTLY the
+ * (undo). The app applies refills through `lib/play/on-cast` (folded into the
+ * cast's spends); this store-injected form stays for the content pack's tests.
+ * Each refill REDUCES `used` (clamped at 0); undo re-spends EXACTLY the
  * HP that was restored (clamp-aware), so undoing a near-full ward never
  * over-spends. Returns a no-op closure when nothing fires.
  */
@@ -230,7 +229,8 @@ export function applyOnCastTrackerRefills(
 
 /**
  * Apply the resolved Expert-Divination slot regain to the store and return the
- * inverse (undo). The wiring `commitCastOption` relies on — un-expend the chosen
+ * inverse (undo). The app applies it through `lib/play/on-cast`; this form stays
+ * for the content pack's tests. Un-expend the chosen
  * lower slot (`restoreSpellSlot`), and undo re-expends EXACTLY that slot
  * (`useSpellSlot`), so the regain is folded into the cast's ONE undoable unit
  * (override-first — the player can still hand-edit slots). A `null` regain (the
