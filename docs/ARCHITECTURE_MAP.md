@@ -196,8 +196,10 @@ There are six parallel records. The same hit can land in four of them.
   the spellbook Cast row, including the recurring "use again" row) read a spell's facts
   from its Activity; every feature action (class features, feats, species traits,
   equipment, invocations, homebrew), beast-form attack and magic-item activation reads
-  its facts from its Activity. Weapons translate too (`translateWeapon`); their attack
-  cards still read the weapon fields, the last reader to move.
+  its facts from its Activity. Weapons translate too (`translateWeapon`), and the carried-weapon
+  attack card reads its printed die and damage type from that Activity. Its properties (heavy,
+  light, versatile, reach) stay on the weapon until the Activity can hold them (they are the
+  translation's recorded gaps).
 - `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**
