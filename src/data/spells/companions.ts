@@ -31,12 +31,16 @@ const otherworldlySteed = (
   ],
 });
 
-export const OTHERWORLDLY_STEED = otherworldlySteed("celestial", "radiant");
-OTHERWORLDLY_STEED.variants = [
-  OTHERWORLDLY_STEED,
-  otherworldlySteed("fey", "psychic"),
-  otherworldlySteed("fiend", "necrotic"),
-];
+// The default block lists every option as a separate plain copy (never itself):
+// the data stays acyclic JSON for the public catalogue export.
+export const OTHERWORLDLY_STEED: CompanionStatBlock = {
+  ...otherworldlySteed("celestial", "radiant"),
+  variants: [
+    otherworldlySteed("celestial", "radiant"),
+    otherworldlySteed("fey", "psychic"),
+    otherworldlySteed("fiend", "necrotic"),
+  ],
+};
 
 // Phantom Steed (level 3) — the Riding Horse stat block with a Speed of 100 ft.
 // Its Hooves (+5, printed) is left out: the shape derives to-hit from the owner,
@@ -75,25 +79,27 @@ const giantInsect = (
   ...extra,
 });
 
-export const GIANT_INSECT = giantInsect("centipede");
-GIANT_INSECT.variants = [
-  GIANT_INSECT,
-  giantInsect("spider", {
-    attacks: [
-      POISON_JAB,
-      {
-        id: "web-bolt",
-        attackBonus: "spell-attack",
-        dice: "1d10 + 7",
-        damagePerSpellLevel: 1,
-        damageType: "bludgeoning",
-        reachFt: 60,
-        ranged: true,
-      },
-    ],
-  }),
-  giantInsect("wasp", { speeds: { walk: 40, climb: 40, fly: 40 } }),
-];
+export const GIANT_INSECT: CompanionStatBlock = {
+  ...giantInsect("centipede"),
+  variants: [
+    giantInsect("centipede"),
+    giantInsect("spider", {
+      attacks: [
+        POISON_JAB,
+        {
+          id: "web-bolt",
+          attackBonus: "spell-attack",
+          dice: "1d10 + 7",
+          damagePerSpellLevel: 1,
+          damageType: "bludgeoning",
+          reachFt: 60,
+          ranged: true,
+        },
+      ],
+    }),
+    giantInsect("wasp", { speeds: { walk: 40, climb: 40, fly: 40 } }),
+  ],
+};
 
 // Summon Dragon (level 5) — Draconic Spirit: AC 14 + the spell's level, HP 50 +
 // 10 per level above 5, Rend 1d6 + 4 + the spell's level.

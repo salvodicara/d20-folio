@@ -6,6 +6,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { buildSrdCatalogue } from "@/lib/srd-catalogue";
+import { spells } from "@/data/spells";
 
 /** A data entry: an id plus whatever fields the collection carries. */
 const e = (fields: { id: string } & Record<string, unknown>) => fields;
@@ -96,5 +97,24 @@ describe("buildSrdCatalogue", () => {
         collections: { spells: { entries: [e({ id: "x", source: "PHB" })] } },
       })
     ).toThrow(/spells "x" is not SRD/);
+  });
+
+  it("serializes the real spells, summoned companions and their variants included", () => {
+    // A companion's `variants` must be plain acyclic data: a block that lists
+    // itself among its variants overflowed the catalogue's canonical walk.
+    const out = buildSrdCatalogue({
+      ...base,
+      collections: { spells: { entries: spells } },
+    });
+    const withCompanion = spells.filter((spell) => spell.companion).map((s) => s.id);
+    expect(withCompanion.length).toBeGreaterThan(0);
+    const serialized = (out.files["spells.json"] ?? []) as Array<{
+      id: string;
+      companion?: unknown;
+    }>;
+    for (const id of withCompanion) {
+      expect(serialized.find((entry) => entry.id === id)?.companion, id).toBeDefined();
+    }
+    expect(() => JSON.stringify(out.files)).not.toThrow();
   });
 });
