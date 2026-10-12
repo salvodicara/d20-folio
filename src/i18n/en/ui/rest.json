@@ -7,7 +7,6 @@
     "hitDiceToSpend": "Hit Dice to use",
     "longRestSummary": "Long Rest Complete",
     "shortRestSummary": "Short Rest Complete",
-    "summary": "Summary",
     "slotsRestored": "Spell Slots Restored",
     "slotsRestoredValue_one": "{{count}} slot",
     "slotsRestoredValue_other": "{{count}} slots",
@@ -48,6 +47,9 @@
     "conAdded": "Constitution (added)",
     "hpAfterRest": "HP after rest",
     "withoutHealing": "No healing · recover short-rest resources",
-    "completeShortRest": "Complete rest"
+    "completeShortRest": "Complete rest",
+    "hitDiceRecoveredValue": "{{count}} of {{total}}",
+    "longRestSummaryTitle": "Long Rest Summary",
+    "shortRestSummaryTitle": "Short Rest Summary"
   }
 }

@@ -7,7 +7,6 @@
     "hitDiceToSpend": "Dadi vita da usare",
     "longRestSummary": "Riposo Lungo Completato",
     "shortRestSummary": "Riposo Breve Completato",
-    "summary": "Riepilogo",
     "slotsRestored": "Slot Incantesimo Ripristinati",
     "slotsRestoredValue_one": "{{count}} slot",
     "slotsRestoredValue_other": "{{count}} slot",
@@ -48,6 +47,9 @@
     "conAdded": "Costituzione (aggiunta)",
     "hpAfterRest": "PF dopo il riposo",
     "withoutHealing": "Nessuna cura · recuperi le risorse da riposo breve",
-    "completeShortRest": "Completa riposo"
+    "completeShortRest": "Completa riposo",
+    "hitDiceRecoveredValue": "{{count}} di {{total}}",
+    "longRestSummaryTitle": "Riepilogo del riposo lungo",
+    "shortRestSummaryTitle": "Riepilogo del riposo breve"
   }
 }
