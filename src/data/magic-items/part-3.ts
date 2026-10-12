@@ -1,4 +1,5 @@
 import type { SrdMagicItemData } from "../types";
+import { POTION_STATE } from "./_potion";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
 
 export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
@@ -1089,6 +1090,22 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "rare",
     type: "potion",
     attunement: false,
+    durationRounds: 600,
+    // Gaseous Form for 1 hour (no Concentration): a Fly Speed of 10 feet is the
+    // only movement, Resistance to Bludgeoning/Piercing/Slashing, Advantage on
+    // STR/DEX/CON saves. Ending it early is the state's own toggle.
+    grants: [
+      POTION_STATE("potion-of-gaseous-form", 60, [
+        { type: "fly-speed", amount: 10 },
+        { type: "speed-cap", maxFt: 0 },
+        { type: "damage-resistance", damageType: "bludgeoning" },
+        { type: "damage-resistance", damageType: "piercing" },
+        { type: "damage-resistance", damageType: "slashing" },
+        { type: "advantage-on", rollType: "save", vs: "str" },
+        { type: "advantage-on", rollType: "save", vs: "dex" },
+        { type: "advantage-on", rollType: "save", vs: "con" },
+      ]),
+    ],
     source: "SRD",
   },
   {

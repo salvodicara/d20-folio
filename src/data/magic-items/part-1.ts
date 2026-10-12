@@ -1,5 +1,7 @@
 import type { SrdMagicItemData } from "../types";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
+import { POTION_STATE } from "./_potion";
+import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
 
 export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
   // ============================================================
@@ -28,6 +30,25 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["duration: 1 hour"],
     // S9 — 1 hour = 600 combat rounds; drinking arms a round-countdown.
     durationRounds: 600,
+    // The giant's type sets the score; the player picks it once drunk.
+    grants: [
+      POTION_STATE("potion-of-giant-strength", 60, [
+        {
+          type: "choice-grant-bundle",
+          bundleKey: "potion-of-giant-strength-giant",
+          options: [
+            { id: "hill", value: 21 },
+            { id: "frost-stone", value: 23 },
+            { id: "fire", value: 25 },
+            { id: "cloud", value: 27 },
+            { id: "storm", value: 29 },
+          ].map(({ id, value }) => ({
+            id,
+            grants: [{ type: "ability-score-set", ability: "STR", value }],
+          })),
+        },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -38,6 +59,12 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     price: "200 GP",
     properties: ["duration: 1 hour", "resistance"],
     durationRounds: 600,
+    // The type is the potion's own; the player picks it once drunk.
+    grants: [
+      POTION_STATE("potion-of-resistance", 60, [
+        RESISTANCE_TYPE_BUNDLE("potion-of-resistance"),
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -48,6 +75,12 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     price: "50 GP",
     properties: ["climbing speed", "duration: 1 hour"],
     durationRounds: 600,
+    grants: [
+      POTION_STATE("potion-of-climbing", 60, [
+        { type: "climb-speed", amount: "equal-to-walking" },
+        { type: "advantage-on", rollType: "check", vs: "athletics-climb" },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -58,6 +91,11 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     price: "100 GP",
     properties: ["duration: 1 hour"],
     durationRounds: 600,
+    grants: [
+      POTION_STATE("potion-of-water-breathing", 60, [
+        { type: "air-and-water-breathing" },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -78,6 +116,22 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["duration: 1 minute", "haste"],
     // S9 — 1 minute = 10 combat rounds.
     durationRounds: 10,
+    // Haste's standing package (no Concentration). Its end-of-effect lethargy
+    // turn is not projected for a potion.
+    grants: [
+      POTION_STATE("potion-of-speed", 1, [
+        { type: "speed-multiplier", factor: 2 },
+        { type: "ac-bonus", amount: 2 },
+        { type: "advantage-on", rollType: "save", vs: "dex-save" },
+        {
+          type: "extra-action",
+          slot: "action",
+          count: 1,
+          allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
+          maxAttacks: 1,
+        },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -98,6 +152,11 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     price: "5000 GP",
     properties: ["flying speed", "duration: 1 hour"],
     durationRounds: 600,
+    grants: [
+      POTION_STATE("potion-of-flying", 60, [
+        { type: "fly-speed", amount: "equal-to-walking" },
+      ]),
+    ],
     source: "SRD",
   },
   // ============================================================

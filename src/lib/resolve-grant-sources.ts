@@ -166,6 +166,8 @@ export function resolveGrantSourcesForEquipment(
     if (!attunementSatisfied(e)) continue; // attunement-required, not yet attuned
     const item = getMagicItem(e.srdId);
     if (!item?.grants?.length) continue;
+    // A potion's state comes from drinking it (`potion-states.ts`), never from carrying it.
+    if (item.type === "potion") continue;
     const instanceId = isValidItemInstanceId(e.instanceId) ? e.instanceId : undefined;
     const itemState = instanceId ? itemResources?.[instanceId] : undefined;
     if (

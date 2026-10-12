@@ -31,7 +31,11 @@ import {
 import { takeDamage } from "@/lib/play/damage";
 import { longRestCharacter, omitStateKeys, shortRestCharacter } from "@/lib/play/rests";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
-import { recoverPerTurnTrackers as recoverPerTurnTrackersOf } from "@/lib/play/states";
+import {
+  drinkPotion,
+  recoverPerTurnTrackers as recoverPerTurnTrackersOf,
+  restoreStateKey,
+} from "@/lib/play/states";
 import {
   recoverTrackerByAltCost as recoverByAltCost,
   recoverTrackerByMinSlot as recoverByMinSlot,
@@ -60,7 +64,6 @@ import {
   resolveActiveStatesEndingOnRest,
   advanceEffectTimers as advanceEffectTimersEngine,
   resolveTrackers,
-  potionDurationRounds,
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
@@ -2683,9 +2686,23 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   consumePotionBuff: (itemId: string) => {
-    const rounds = potionDurationRounds(itemId);
-    if (rounds === undefined) return null; // instant potion — nothing to arm
-    return get().armEffectTimer(potionTimerKey(itemId), rounds);
+    if (get().readonly) return null;
+    const character = get().character;
+    if (!character) return null;
+    const session = drinkPotion(character, itemId, litRound(character.id));
+    if (!session) return null; // instant potion — nothing to arm
+    set({ character: { ...character, session } });
+    return () => {
+      const cur = get().character;
+      if (!cur) return;
+      const key = potionTimerKey(itemId);
+      set({
+        character: {
+          ...cur,
+          session: restoreStateKey(cur.session, character.session, key),
+        },
+      });
+    };
   },
 
   advanceEffectTimers: (forRound) => {

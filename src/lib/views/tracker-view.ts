@@ -608,15 +608,17 @@ export interface PotionTimerVM {
  * lifetime). The item NAME localizes here at the presenter edge (SoC — the
  * engine view is locale-free); the rail renders each as a small duration banner
  * reusing the SAME `combat.effectTimerShort` chrome the while-active timers use.
- * Empty when no potion is active.
+ * Empty when no potion is active. A potion whose state is lit (`litKeys`:
+ * Flying's fly speed) already shows as its own active chip, so it is left out.
  */
 export function potionTimerVMs(
   statuses: ReadonlyArray<Status>,
-  locale: Locale
+  locale: Locale,
+  litKeys: ReadonlyArray<string> = []
 ): PotionTimerVM[] {
   const out: PotionTimerVM[] = [];
   for (const status of statuses) {
-    if (!status.key.startsWith("potion:")) continue;
+    if (!status.key.startsWith("potion:") || litKeys.includes(status.key)) continue;
     const roundsLeft = statusRoundsLeft(status);
     if (roundsLeft === undefined) continue;
     const itemId = status.source;

@@ -1,4 +1,5 @@
 import type { SrdMagicItemData } from "../types";
+import { POTION_STATE } from "./_potion";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
 
 export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
@@ -735,6 +736,27 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "potion",
     attunement: false,
+    durationRounds: 600,
+    // Bless for 1 hour (no Concentration). The 10 Temporary Hit Points are added
+    // by hand on the HP vital.
+    grants: [
+      POTION_STATE("potion-of-heroism", 60, [
+        {
+          type: "roll-die-adjustment",
+          rollType: "attack",
+          operation: "add",
+          dice: "1d4",
+          consume: "each",
+        },
+        {
+          type: "roll-die-adjustment",
+          rollType: "save",
+          operation: "add",
+          dice: "1d4",
+          consume: "each",
+        },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -744,6 +766,10 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "potion",
     attunement: false,
+    durationRounds: 10,
+    grants: [
+      POTION_STATE("potion-of-invulnerability", 1, [{ type: "all-damage-resistance" }]),
+    ],
     source: "SRD",
   },
   {
