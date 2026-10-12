@@ -145,7 +145,9 @@ describe("Expert Divination slot regain", () => {
 
 describe("the slot a use expended", () => {
   it("is the slot or scoped-slot level, never a free cast, ritual or cantrip", () => {
-    expect(expendedSlotLevel({ kind: "slot", level: 3 }, [])).toBe(3);
+    expect(
+      expendedSlotLevel({ kind: "slot", level: 3, remaining: 1, total: 2 }, [])
+    ).toBe(3);
     expect(
       expendedSlotLevel(
         {
