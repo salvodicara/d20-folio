@@ -89,12 +89,9 @@ test.describe("Rest Flow", () => {
     const dialog = restDialog(page);
     await dialog.getByRole("button", { name: /long rest/i }).click();
 
-    const confirmButton = dialog
-      .getByRole("button", { name: /confirm|yes|start|take/i })
-      .first();
-    if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await confirmButton.click();
-    }
+    // Short and Long Rest confirm with the same "Complete rest" button.
+    await dialog.getByRole("button", { name: "Complete rest" }).click();
+    await expect(dialog.getByText("Long Rest Complete")).toBeVisible();
   });
 
   test("can cancel a rest", async ({ page }) => {

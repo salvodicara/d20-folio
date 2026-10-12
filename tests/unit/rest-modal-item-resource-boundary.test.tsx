@@ -54,7 +54,7 @@ function mount(api: ItemResourceCommandApi) {
 
 function openLongRest() {
   fireEvent.click(screen.getByText("Long Rest"));
-  fireEvent.click(screen.getByRole("button", { name: "Take Long Rest" }));
+  fireEvent.click(screen.getByRole("button", { name: "Complete rest" }));
 }
 
 beforeEach(() => {
