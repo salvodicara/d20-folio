@@ -59,6 +59,13 @@ export function localizePlayEvent(
         })
       );
     }
+    case "max-hp":
+      return event.reduction > 0
+        ? t("sessionReport.maxHpReduced", {
+            target: who(event.target),
+            reduction: event.reduction,
+          })
+        : t("sessionReport.maxHpRestored", { target: who(event.target) });
     case "condition":
       return withSource(
         t(event.gained ? "sessionReport.conditionGain" : "sessionReport.conditionLoss", {

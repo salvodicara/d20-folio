@@ -334,6 +334,11 @@ interface CharacterState {
    * non-positive amount. */
   gainTempHp: (amount: number) => void;
   /**
+   * Set the TOTAL Hit Point maximum reduction (`lib/play/vitals`), log it and
+   * persist. Returns the undo (prior total, prior current HP, the log line), or
+   * null when nothing changed. */
+  setHpMaxReduction: (total: number) => (() => void) | null;
+  /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
    * pool (which can co-exist with a normal pool at the same level — Sorlock); it
    * defaults to the normal/shared pool. Both pools route through one
@@ -1319,6 +1324,30 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (newTemp === prevTemp) return;
     get().setTempHP(newTemp);
     get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
+  },
+
+  setHpMaxReduction: (total) => {
+    const before = get().character;
+    if (!before || !get().dispatch({ kind: "set-hp-max-reduction", total })) return null;
+    const after = get().character;
+    if (!after) return null;
+    const logId = get().logEvent({
+      kind: "hp-max-reduction",
+      reduction: after.session.hpMaxReduction ?? 0,
+      max: effectiveMaxHp(after.character, after.session),
+    });
+    persistCombat(get);
+    return () => {
+      get().dispatch({
+        kind: "set-hp-max-reduction",
+        total: before.session.hpMaxReduction ?? 0,
+      });
+      if (after.session.hp.current !== before.session.hp.current) {
+        get().dispatch({ kind: "set-hp", current: before.session.hp.current });
+      }
+      get().removeLogEntry(logId);
+      persistCombat(get);
+    };
   },
 
   useSpellSlot: (level, pactMagic = false) => {

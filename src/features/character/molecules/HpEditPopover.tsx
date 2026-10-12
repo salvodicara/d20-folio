@@ -148,6 +148,14 @@ interface HpEditPopoverProps {
    */
   hideTemp?: boolean;
   /**
+   * The Hit Point maximum reduction entry (Harm, a life drain): with
+   * `onReduceMax`, a "Max HP −" verb applies the typed amount like Temp does, and
+   * a reduced maximum shows its total with a restore button. Omitted = no entry.
+   */
+  maxReduction?: number;
+  onReduceMax?: (amount: number) => void;
+  onRestoreMax?: () => void;
+  /**
    * RA-05 — the character's effective damage defenses. Presence (together with
    * a non-empty `defendedTypes`/`resistedSources`) enables the typed-damage
    * section; omit for the plain integer editor (the encounter card).
@@ -193,6 +201,9 @@ export function HpEditPopover({
   footer,
   align = "end",
   hideTemp = false,
+  maxReduction = 0,
+  onReduceMax,
+  onRestoreMax,
   defenses,
   defendedTypes = [],
   resistedSources = [],
@@ -354,11 +365,18 @@ export function HpEditPopover({
               <span className="text-base text-text-secondary">/</span>
               {maxSlot ?? <span className="text-base text-text-secondary">{max}</span>}
             </span>
-            {!hideTemp && temp > 0 && (
-              <span className="font-mono text-xs text-info">
-                +{temp} {t("character.tempHpShort")}
-              </span>
-            )}
+            <span className="flex items-baseline gap-2">
+              {maxReduction > 0 && (
+                <span className="font-mono text-xs text-error">
+                  {t("combat.maxHpReducedShort", { amount: maxReduction })}
+                </span>
+              )}
+              {!hideTemp && temp > 0 && (
+                <span className="font-mono text-xs text-info">
+                  +{temp} {t("character.tempHpShort")}
+                </span>
+              )}
+            </span>
           </div>
           {/* The shared Liquid-Mercury bar — temp HP reads as the lapis overlay
               segment here too (one bar component, golden rule 6). */}
@@ -415,9 +433,32 @@ export function HpEditPopover({
                 {t("combat.temp")}
               </Button>
             )}
+            {onReduceMax && (
+              <Button
+                variant="neutral"
+                size="sm"
+                disabled={dead}
+                title={t("combat.reduceMaxHpHint")}
+                onClick={commit(onReduceMax)}
+              >
+                {t("combat.reduceMaxHp")}
+              </Button>
+            )}
             {!hideTemp && temp > 0 && (
               <Button variant="ghost" size="sm" disabled={dead} onClick={clear}>
                 {t("combat.clearTemp", { amount: temp })}
+              </Button>
+            )}
+            {onRestoreMax && maxReduction > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onRestoreMax();
+                  setOpen(false);
+                }}
+              >
+                {t("combat.restoreMaxHp", { amount: maxReduction })}
               </Button>
             )}
           </div>

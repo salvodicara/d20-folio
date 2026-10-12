@@ -64,6 +64,10 @@ const CASES: {
 } = {
   "set-hp": [{ kind: "set-hp", current: 4 }, () => at(vitals.setHp(doc, 4))],
   "set-temp-hp": [{ kind: "set-temp-hp", temp: 5 }, () => at(vitals.setTempHp(doc, 5))],
+  "set-hp-max-reduction": [
+    { kind: "set-hp-max-reduction", total: 6 },
+    () => at(vitals.setHpMaxReduction(doc, 6)),
+  ],
   "spend-slot": [
     { kind: "spend-slot", level: 2, pactMagic: false },
     () => at(vitals.spendSpellSlot(doc, 2, false)),

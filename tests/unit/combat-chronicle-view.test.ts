@@ -39,6 +39,7 @@ const SAMPLES: Record<
   damage: { kind: "damage", amount: 8, target: "monster-1" },
   heal: { kind: "heal", amount: 5, target: "pc-mara" },
   "temp-hp": { kind: "temp-hp", amount: 5, target: "pc-mara" },
+  "max-hp": { kind: "max-hp", reduction: 6, target: "pc-mara" },
   condition: { kind: "condition", conditionId: "prone", gained: true, target: "pc-mara" },
   concentration: {
     kind: "concentration",

@@ -100,6 +100,9 @@ export type CombatEvent =
   | { kind: "hp-heal"; amount: number; current: number; max: number; source?: LocText }
   /** Temporary HP were gained (pool set to `amount`; temp HP don't stack). */
   | { kind: "temp-hp-gain"; amount: number; source?: LocText }
+  /** The Hit Point maximum reduction changed to `reduction` (0 = restored); `max`
+   *  is the maximum after it. */
+  | { kind: "hp-max-reduction"; reduction: number; max: number }
   /** A condition was gained. */
   | { kind: "condition-gain"; conditionId: string; source?: LocText }
   /**

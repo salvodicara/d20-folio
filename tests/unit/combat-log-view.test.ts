@@ -77,6 +77,7 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   "hp-damage": { kind: "hp-damage", amount: 8, current: 4, max: 30 },
   "hp-heal": { kind: "hp-heal", amount: 5, current: 9, max: 30 },
   "temp-hp-gain": { kind: "temp-hp-gain", amount: 7 },
+  "hp-max-reduction": { kind: "hp-max-reduction", reduction: 6, max: 24 },
   "condition-gain": { kind: "condition-gain", conditionId: "prone" },
   "condition-loss": { kind: "condition-loss", conditionId: "prone" },
   "concentration-start": { kind: "concentration-start", spell: conc("bless") },

@@ -5,6 +5,8 @@
     "hpDamage": "Took {{amount}} damage ({{current}}/{{max}} HP)",
     "hpHeal": "Healed {{amount}} HP ({{current}}/{{max}} HP)",
     "tempHpGain": "Gained {{amount}} temporary HP",
+    "hpMaxReduced": "Hit Point maximum reduced by {{reduction}} (maximum {{max}})",
+    "hpMaxRestored": "Hit Point maximum restored ({{max}})",
     "conditionGain": "Gained {{condition}}",
     "conditionLoss": "Lost {{condition}}",
     "concentrationStart": "Started concentrating on {{spell}}",

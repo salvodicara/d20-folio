@@ -963,6 +963,12 @@ export interface SessionState {
     current: number;
     temp: number;
   };
+  /**
+   * How far the Hit Point maximum is currently reduced by play, not by the build
+   * (Harm, a wight's Life Drain, a vampire's Bite): `effectiveMaxHp` subtracts it
+   * and a Long Rest clears it. Absent when nothing reduces it.
+   */
+  hpMaxReduction?: number;
   /** Active source occurrences projected onto this open sheet at runtime. Campaign
    * occurrences stay in the encounter ledger; solo occurrences stay in `combat/state`.
    * The character codec deliberately never serializes this composed read field. */

@@ -26,6 +26,7 @@ import {
   setDeathSaves,
   setExhaustion,
   setHp,
+  setHpMaxReduction,
   setTempHp,
   spendSpellSlot,
   spendTracker,
@@ -34,6 +35,7 @@ import {
 export type SheetEvent =
   | { kind: "set-hp"; current: number }
   | { kind: "set-temp-hp"; temp: number }
+  | { kind: "set-hp-max-reduction"; total: number }
   | { kind: "spend-slot"; level: number; pactMagic: boolean }
   | { kind: "restore-slot"; level: number; pactMagic: boolean }
   | { kind: "spend-tracker"; trackerId: string; amount: number }
@@ -74,6 +76,8 @@ export function applySheetEvent(
       return withSession(setHp(doc, event.current));
     case "set-temp-hp":
       return withSession(setTempHp(doc, event.temp));
+    case "set-hp-max-reduction":
+      return withSession(setHpMaxReduction(doc, event.total));
     case "spend-slot":
       return withSession(spendSpellSlot(doc, event.level, event.pactMagic));
     case "restore-slot":

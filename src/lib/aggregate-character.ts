@@ -40,6 +40,7 @@ import {
   abilityPart,
   locPart,
   breakdownTotal,
+  termPart,
   type RawBreakdownPart,
 } from "@/lib/value-breakdown";
 import { srdText } from "@/lib/loc-text";
@@ -90,6 +91,7 @@ export type AggregationSession = Pick<
       | "concentration"
       | "itemResources"
       | "world"
+      | "hpMaxReduction"
     >
   >;
 
@@ -400,15 +402,25 @@ export function computeCharacterMaxHpBreakdown(
  * understated a Draconic Sorcerer (−3) / a Boon-of-Fortitude char (−40) / an Aided
  * character.
  *
- * Effective ≥ stored always (every delta is a non-negative boon), so a heal/clamp to
- * effective max can never reduce a character below their by-the-book max.
+ * The one play-time drop is `session.hpMaxReduction` (Harm, a wight's Life Drain):
+ * subtracted last and floored at a zero maximum, it lasts until a Long Rest clears
+ * it. Every grant delta is a non-negative boon, so without a reduction a heal/clamp
+ * to effective max can never reduce a character below their by-the-book max.
  */
 export function effectiveMaxHp(
   character: CharacterDoc["character"],
   session: AggregationSession
 ): number {
   const agg = aggregateCharacterGrants(character, session);
-  return character.hp.max + agg.hpFlat;
+  return Math.max(0, character.hp.max + agg.hpFlat - hpMaxReductionOf(session));
+}
+
+/** The session's Hit Point maximum reduction (0 when none or malformed). */
+function hpMaxReductionOf(session: AggregationSession): number {
+  const reduction = session.hpMaxReduction;
+  return typeof reduction === "number" && Number.isFinite(reduction) && reduction > 0
+    ? reduction
+    : 0;
 }
 
 /**
@@ -453,5 +465,10 @@ export function effectiveMaxHpBreakdown(
   const flatParts = agg.hpFlatParts
     .filter((p) => p.amount !== 0)
     .map((p) => locPart(srdText(p.ref.kind, p.ref.key, "name"), p.amount));
-  return [...base, ...flatParts];
+  const reduction = hpMaxReductionOf(session);
+  return [
+    ...base,
+    ...flatParts,
+    ...(reduction > 0 ? [termPart("breakdown.hpMaxReduction", -reduction)] : []),
+  ];
 }

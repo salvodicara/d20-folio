@@ -3,6 +3,7 @@
     "rubric": "Breakdown",
     "base": "Base",
     "featureBonus": "Feature bonus",
+    "hpMaxReduction": "Hit Point maximum reduction",
     "ac": {
       "formBase": "Form base",
       "floor": "AC floor",

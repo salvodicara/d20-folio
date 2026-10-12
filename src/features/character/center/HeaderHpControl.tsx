@@ -112,6 +112,9 @@ export function HeaderHpControl() {
     applyHeal,
     applyTemp,
     clearTemp,
+    maxReduction,
+    reduceMax,
+    restoreMax,
   } = useHpControls();
 
   if (!hasCharacter) return null;
@@ -135,7 +138,11 @@ export function HeaderHpControl() {
   const maxBreakdown =
     charData && sheetMode !== "edit" && storedMax === computedBase
       ? localizeBreakdown(
-          effectiveMaxHpBreakdown(charData, { activeFeatures, grantBundleChoices }),
+          effectiveMaxHpBreakdown(charData, {
+            activeFeatures,
+            grantBundleChoices,
+            hpMaxReduction: maxReduction,
+          }),
           locale
         )
       : [];
@@ -184,6 +191,9 @@ export function HeaderHpControl() {
         onHeal={applyHeal}
         onTemp={applyTemp}
         onClearTemp={clearTemp}
+        maxReduction={maxReduction}
+        onReduceMax={reduceMax}
+        onRestoreMax={restoreMax}
         ariaLabel={t("character.hitPoints")}
         align="end"
         rubric={
@@ -255,6 +265,9 @@ export function HeaderHpControl() {
       onHeal={applyHeal}
       onTemp={applyTemp}
       onClearTemp={clearTemp}
+      maxReduction={maxReduction}
+      onReduceMax={reduceMax}
+      onRestoreMax={restoreMax}
       ariaLabel={t("character.hitPoints")}
       align="end"
       // P2 — the rubric doubles as the glossary trigger: "Hit Points" expands into

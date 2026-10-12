@@ -19,6 +19,8 @@
     "heal": "{{target}} recupera {{amount}} PF",
     "healBy": "{{actor}} fa recuperare {{amount}} PF a {{target}}",
     "tempHp": "{{target}} ottiene {{amount}} PF temporanei",
+    "maxHpReduced": "I PF massimi di {{target}} sono ridotti di {{reduction}}",
+    "maxHpRestored": "I PF massimi di {{target}} tornano normali",
     "conditionGain": "{{target}} ottiene la condizione {{condition}}",
     "conditionLoss": "{{target}} perde la condizione {{condition}}",
     "concentrationStart": "{{actor}} si concentra su {{spell}}",

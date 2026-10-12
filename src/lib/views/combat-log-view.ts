@@ -102,6 +102,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("heal");
     case "temp-hp-gain":
       return resolveLogStyle("heal");
+    case "hp-max-reduction":
+      return resolveLogStyle(event.reduction > 0 ? "damage" : "heal");
     case "condition-gain":
       return resolveLogStyle("condition-add");
     case "condition-loss":
@@ -178,6 +180,10 @@ export function localizeCombatEvent(
       });
     case "temp-hp-gain":
       return t("combatLog.tempHpGain", { amount: event.amount });
+    case "hp-max-reduction":
+      return event.reduction > 0
+        ? t("combatLog.hpMaxReduced", { reduction: event.reduction, max: event.max })
+        : t("combatLog.hpMaxRestored", { max: event.max });
     case "condition-gain":
       return t("combatLog.conditionGain", {
         condition: resolveConditionName(event.conditionId),
