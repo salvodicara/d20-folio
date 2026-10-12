@@ -2375,6 +2375,18 @@ button.pr-dot.lg::before {
 .modal-close:hover {
   color: var(--accent-text);
 }
+/* Touch screens: the dialog's close × answers a finger in the 44px --touch-min box
+   without growing visibly (PRODUCT: touch targets ≥ 44px on mobile). */
+@media (pointer: coarse) {
+  .modal-close {
+    position: relative;
+  }
+  .modal-close::before {
+    content: "";
+    position: absolute;
+    inset: calc((var(--touch-min) - 28px) / -2);
+  }
+}
 .modal-body {
   /* The scroll + padding live on ModalScroll (the primitive) + the
      frame's-margin law; only the height cap is this class's own. */
