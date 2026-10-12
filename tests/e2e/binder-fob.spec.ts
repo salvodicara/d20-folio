@@ -55,7 +55,12 @@ async function castHealingWord(page: Page): Promise<void> {
   await detail.getByRole("button", { name: /cast/i }).first().click();
   const modal = page.getByRole("dialog");
   await modal.getByRole("button", { name: /Level 1 slot \(base\)/i }).click();
-  await expect(modal).toBeHidden();
+  // The damage tray follows a heal cast; skipping it leaves the cast logged.
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: /^Skip$/ })
+    .click();
+  await expect(page.getByRole("dialog")).toBeHidden();
 }
 
 test("no-reflow: the ✎ coin toggles edit by lighting in place; the masthead is pure identity + vitals", async ({
