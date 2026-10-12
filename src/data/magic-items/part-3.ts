@@ -64,6 +64,10 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
+    // Ruby Resistance: Fire Resistance while the helm keeps a ruby (2d10 to
+    // start; the Defenses override covers the last one spent). Gem spells,
+    // Fire Opal flames and the Diamond emanation stay manual.
+    grants: [{ type: "damage-resistance", damageType: "fire" }],
     source: "SRD",
   },
   {
@@ -174,7 +178,12 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PRIM-item-bound-bonus — the printed +2 weapon enchant (rides only
     // the weapon row it is bound to; other effects stay as noted).
-    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 }],
+    // Acrobatic Assist: Advantage on Acrobatics while held (Quarterstaff or pole
+    // form). Attack Deflection (Reaction) and the form changes stay manual.
+    grants: [
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 },
+      { type: "advantage-on", rollType: "check", vs: "acrobatics-held" },
+    ],
     source: "SRD",
   },
   {
@@ -305,15 +314,15 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "armor",
     attunement: true,
-    // Always-on: Advantage on saves vs spells & magical effects. The
-    // "spell attack rolls have Disadvantage against you" half is on attackers,
-    // not the wearer's own roll, so it stays descriptive (no against-you path).
+    // Always-on: Advantage on saves vs spells & magical effects, and spell
+    // attack rolls against you have Disadvantage (a rail reminder).
     grants: [
       {
         type: "advantage-on",
         rollType: "save",
         vs: "spells-magic",
       },
+      { type: "incoming-attack-disadvantage" },
     ],
     source: "SRD",
   },
@@ -847,6 +856,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
+    // +2 to spell attack rolls while worn or held.
+    grants: [{ type: "spell-attack-bonus", amount: 2, scope: "all" }],
     source: "SRD",
   },
   {
@@ -867,6 +878,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 6"],
+    // +2 to spell attack rolls while worn or held.
+    grants: [{ type: "spell-attack-bonus", amount: 2, scope: "all" }],
     source: "SRD",
   },
   {
