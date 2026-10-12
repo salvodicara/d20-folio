@@ -33,11 +33,11 @@ import {
   buildSaveBreakdown,
   buildSkillBreakdown,
   buildPassiveBreakdown,
-  effectiveAbilityScores,
   effectiveSkillAbility,
   resolveAbilityCheckBonus,
   resolveSaveBonus,
   type ProficiencyTier,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { evaluateGrants } from "@/lib/grants";
@@ -205,12 +205,7 @@ export function deriveSavesAndChecks(
     itemResources: session.itemResources,
   });
 
-  const effectiveScores = effectiveAbilityScores(
-    charData.abilityScores,
-    fullAggregate.abilityScoreFloors,
-    fullAggregate.itemAbilityScoreBonus,
-    fullAggregate.itemAbilityScoreCap
-  );
+  const effectiveScores = aggregateAbilityScores(charData.abilityScores, fullAggregate);
   const displayedSaves = mergeSaveProficiencies(
     charData.savingThrows,
     aggregate.saveProficiencies

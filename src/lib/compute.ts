@@ -1838,6 +1838,26 @@ export function effectiveAbilityScores(
   return out;
 }
 
+/**
+ * The effective ability scores over a grant aggregate: {@link effectiveAbilityScores}
+ * fed the aggregate's floors, item bonuses and caps. The one call every surface makes.
+ */
+export function aggregateAbilityScores(
+  base: Record<AbilityCode, number>,
+  aggregate: {
+    readonly abilityScoreFloors: Partial<Record<AbilityCode, number>>;
+    readonly itemAbilityScoreBonus?: Partial<Record<AbilityCode, number>>;
+    readonly itemAbilityScoreCap?: Partial<Record<AbilityCode, number>>;
+  }
+): Record<AbilityCode, number> {
+  return effectiveAbilityScores(
+    base,
+    aggregate.abilityScoreFloors,
+    aggregate.itemAbilityScoreBonus,
+    aggregate.itemAbilityScoreCap
+  );
+}
+
 /** The six ability codes in canonical stat-block order. */
 const ABILITY_CODES: ReadonlyArray<AbilityCode> = [
   "STR",

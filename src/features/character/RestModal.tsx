@@ -28,7 +28,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { useItemResourceCommands } from "./center/useItemResourceCommands";
 import { restThroughWorld } from "./rest-world-boundary";
 import { canCharacterRest } from "@/lib/character-status";
-import { abilityModifier, effectiveAbilityScores } from "@/lib/compute";
+import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
 import {
   getShortRestExhaustionRecovery,
@@ -139,14 +139,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   // against effective CON (smart-tracker `combatAbilityScores`); the preview must
   // use the SAME score, never raw, or it disagrees with the actual heal (rule 6).
   const agg = aggregateCharacterGrants(charData, session);
-  const conMod = abilityModifier(
-    effectiveAbilityScores(
-      charData.abilityScores,
-      agg.abilityScoreFloors,
-      agg.itemAbilityScoreBonus,
-      agg.itemAbilityScoreCap
-    ).CON
-  );
+  const conMod = abilityModifier(aggregateAbilityScores(charData.abilityScores, agg).CON);
   // The total is checked against the largest dice the pool holds.
   const rollRange = hitDiceTotalRange(hitDice, hitDiceToSpend);
   const roll = Number(diceTotal);

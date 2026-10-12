@@ -35,9 +35,9 @@ import {
   buildInitiativeBreakdown,
   computeInitiative,
   characterHasFeat,
-  effectiveAbilityScores,
   effectiveProficiencyBonus,
   abilityAcBonus,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { inferHpContributions } from "@/lib/character-infer";
 import { getClasses, totalLevel } from "@/lib/classes";
@@ -174,12 +174,7 @@ export function computeCharacterAC(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  const scores = effectiveAbilityScores(
-    character.abilityScores,
-    agg.abilityScoreFloors,
-    agg.itemAbilityScoreBonus,
-    agg.itemAbilityScoreCap
-  );
+  const scores = aggregateAbilityScores(character.abilityScores, agg);
   return computeAC(
     effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
@@ -226,12 +221,7 @@ export function computeCharacterAcBreakdown(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): RawBreakdownPart[] {
-  const scores = effectiveAbilityScores(
-    character.abilityScores,
-    agg.abilityScoreFloors,
-    agg.itemAbilityScoreBonus,
-    agg.itemAbilityScoreCap
-  );
+  const scores = aggregateAbilityScores(character.abilityScores, agg);
   return computeACDetailed(
     effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
@@ -407,12 +397,7 @@ function initiativeInputs(
   aggregate: InitiativeAggregate,
   exhaustion: number
 ): Parameters<typeof computeInitiative> {
-  const scores = effectiveAbilityScores(
-    character.abilityScores,
-    aggregate.abilityScoreFloors,
-    aggregate.itemAbilityScoreBonus,
-    aggregate.itemAbilityScoreCap
-  );
+  const scores = aggregateAbilityScores(character.abilityScores, aggregate);
   const grantBonus =
     aggregate.initiativeBonusFlat +
     aggregate.initiativeBonusAbilities.reduce(

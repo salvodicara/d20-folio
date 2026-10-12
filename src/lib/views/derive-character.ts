@@ -20,13 +20,13 @@ import { totalLevel, primaryClassId } from "@/lib/classes";
 import {
   abilityModifier,
   ALL_ABILITIES,
-  effectiveAbilityScores,
   effectiveProficiencyBonus,
   effectiveSpellAttackBonus,
   effectiveSpellSaveDc,
   isHeavyArmorEquipped,
   resolveCastingModifier,
   type ProficiencyTier,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
@@ -98,12 +98,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
   const level = totalLevel(character);
   const pbOverride = character.proficiencyBonusOverride;
   const pb = effectiveProficiencyBonus(level, pbOverride);
-  const scores = effectiveAbilityScores(
-    character.abilityScores,
-    aggregate.abilityScoreFloors,
-    aggregate.itemAbilityScoreBonus,
-    aggregate.itemAbilityScoreCap
-  );
+  const scores = aggregateAbilityScores(character.abilityScores, aggregate);
   const abilities = Object.fromEntries(
     ALL_ABILITIES.map(({ code }) => [
       code,

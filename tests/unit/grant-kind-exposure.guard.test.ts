@@ -145,7 +145,7 @@ const EXPOSURE: Record<string, Exposure> = {
   "ac-formula": { via: "acFormulas", consumer: "src/lib/compute.ts" },
   "medium-armor-dex-cap": { via: "mediumArmorDexCap", consumer: "src/lib/compute.ts" },
   "ability-score-set": {
-    via: "effectiveAbilityScores",
+    via: "aggregateAbilityScores",
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
   "hp-per-level": { via: "hp-per-level", consumer: "src/lib/level-up.ts" },

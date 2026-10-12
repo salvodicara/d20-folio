@@ -165,7 +165,6 @@ import {
 import {
   abilityModifier,
   unarmedStrikeSaveDc,
-  effectiveAbilityScores,
   effectiveProficiencyBonus,
   effectiveSpellSaveDc,
   effectiveSpellAttackBonus,
@@ -193,6 +192,7 @@ import {
   type ResolvedWeaponDie,
   type ResolvedWeaponAttackStat,
   type UnarmedStrikeProfile,
+  aggregateAbilityScores,
 } from "@/lib/compute";
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
@@ -7737,12 +7737,7 @@ function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, numbe
     sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
-  return effectiveAbilityScores(
-    character.character.abilityScores,
-    agg.abilityScoreFloors,
-    agg.itemAbilityScoreBonus,
-    agg.itemAbilityScoreCap
-  );
+  return aggregateAbilityScores(character.character.abilityScores, agg);
 }
 
 /**
