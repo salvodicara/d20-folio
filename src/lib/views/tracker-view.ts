@@ -50,6 +50,7 @@ import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import { getRace, rawRaceTraitCatKey } from "@/data/races";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { condColor, condInkColor } from "@/lib/condition-color";
+import { impliedConditionSources } from "@/lib/condition";
 import { combatHigherLevels } from "@/lib/views/combat-action-view";
 import { statusRoundsLeft, type Status } from "@/lib/status";
 export {
@@ -299,6 +300,9 @@ export interface ConditionChipVM {
   color: string;
   /** `--co-ink` AA-safe label-hue token (`condInkColor`). */
   ink: string;
+  /** Localized name of the listed condition that implies this one (Prone from
+   *  Unconscious) — such a chip cannot be removed on its own. */
+  impliedBy?: string;
 }
 
 /**
@@ -309,14 +313,21 @@ export function conditionChips(
   conditions: ReadonlyArray<string>,
   locale: Locale
 ): ConditionChipVM[] {
-  return conditions.map((id) => ({
-    id,
-    label: hasSrd("condition", id, "name", locale)
+  const label = (id: string): string =>
+    hasSrd("condition", id, "name", locale)
       ? localizeSrd("condition", id, "name", locale)
-      : id,
-    color: condColor(id),
-    ink: condInkColor(id),
-  }));
+      : id;
+  const sources = impliedConditionSources(conditions);
+  return conditions.map((id) => {
+    const source = sources.get(id);
+    return {
+      id,
+      label: label(id),
+      color: condColor(id),
+      ink: condInkColor(id),
+      ...(source ? { impliedBy: label(source) } : {}),
+    };
+  });
 }
 
 /** A picker / select option: the stable id + its localized label. */

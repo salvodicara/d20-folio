@@ -52,6 +52,7 @@ import { localizeText } from "@/lib/views/srd-i18n";
 import {
   applySetOverride,
   deriveAdvantageChips,
+  deriveConditionResistances,
   deriveDamageSourceResistances,
   deriveDefenseKind,
   deriveFlatDamageReductions,
@@ -383,6 +384,13 @@ export function ResourceRail() {
   const vulnerabilities = defViews.vulnerability.permanent as DamageType[];
   const conditionImmunities = defViews.conditionImmunity.permanent as ConditionId[];
   const sourceResistances = deriveDamageSourceResistances(aggregate);
+  // Condition resistances (Petrified: all damage) — the same read the HP
+  // popover's damage intake applies, so the two never disagree.
+  const conditionResistances = deriveConditionResistances(conditions);
+  const allDamageResistance = aggregate.allDamageResistance || conditionResistances.all;
+  const shownResistances = [
+    ...new Set([...resistances, ...conditionResistances.types]),
+  ] as DamageType[];
   // Flat incoming-damage reductions (Heavy Armor Master's −PB on B/P/S while in
   // Heavy armor) — a self-side defense LINE, gated on the armor actually being
   // worn; the same resolved entries feed the HP popover's RA-05 intake math.
@@ -396,6 +404,8 @@ export function ResourceRail() {
   // `aggregate` is guaranteed present here (the render body runs past its guard).
   const defenseNoteVMs = incomingAttackAdvantageVMs(aggregate.defenseNotes, locale);
   const hasDefenses =
+    allDamageResistance ||
+    shownResistances.length > 0 ||
     sourceResistances.length > 0 ||
     flatReductions.length > 0 ||
     defenseNoteVMs.length > 0 ||
@@ -993,11 +1003,14 @@ export function ResourceRail() {
         {hasDefenses || isEdit ? (
           <div className="flex flex-col gap-1 text-sm">
             {(defViews.resistance.effective.length > 0 ||
+              allDamageResistance ||
+              shownResistances.length > 0 ||
               sourceResistances.length > 0) && (
               <DefenseRow
                 label={t("abilities.resistancesLabel")}
                 value={[
-                  ...resistances.map(dmgLabel),
+                  ...(allDamageResistance ? [t("character.damageAll")] : []),
+                  ...shownResistances.map(dmgLabel),
                   // Damage-SOURCE resistances (Abjurer Spell Resistance, Shield
                   // of Missile Attraction) — orthogonal to the element list.
                   ...sourceResistances.map((src) => t(`character.damageSource_${src}`)),

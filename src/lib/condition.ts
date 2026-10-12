@@ -464,6 +464,24 @@ export function withImpliedConditions(ids: ReadonlyArray<string>): string[] {
 }
 
 /**
+ * Which listed conditions are implied by another listed one (Unconscious →
+ * Incapacitated + Prone): implied id → the first listed id that implies it.
+ * Removing an implied condition on its own does nothing while its source holds.
+ */
+export function impliedConditionSources(
+  ids: ReadonlyArray<string>
+): ReadonlyMap<string, string> {
+  const sources = new Map<string, string>();
+  for (const id of ids) {
+    if (!(NON_EXHAUSTION_CONDITION_IDS as ReadonlyArray<string>).includes(id)) continue;
+    for (const implied of occurrenceRule(id as NonExhaustionConditionId).implications) {
+      if (ids.includes(implied) && !sources.has(implied)) sources.set(implied, id);
+    }
+  }
+  return sources;
+}
+
+/**
  * The unrestricted damage-defense rules (no delivery or trait filter) the table
  * grants to a creature with these condition ids — Petrified's resistance to all
  * damage. Unknown or custom ids contribute nothing.

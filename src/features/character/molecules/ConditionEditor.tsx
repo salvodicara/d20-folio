@@ -65,6 +65,11 @@ export function ConditionEditor({
           key={chip.id}
           className="co-chip"
           style={{ ["--co" as string]: chip.color, ["--co-ink" as string]: chip.ink }}
+          title={
+            chip.impliedBy
+              ? t("character.impliedCondition", { source: chip.impliedBy })
+              : undefined
+          }
         >
           {chip.label}
           {/* RA-12 — the find-DC rides the Invisible chip (SRD "Hide": your check
@@ -72,14 +77,18 @@ export function ConditionEditor({
           {chip.id === "invisible" && hiddenDc != null
             ? ` · ${t("stats.dc")} ${hiddenDc}`
             : ""}
-          <button
-            type="button"
-            className="co-x"
-            aria-label={`${t("common.remove")} ${chip.label}`}
-            onClick={() => onToggle(chip.id)}
-          >
-            <Icon as={X} size="sm" decorative />
-          </button>
+          {/* An implied chip (Prone from Unconscious) has no ×: removing it
+              alone would change nothing while its source holds. */}
+          {!chip.impliedBy && (
+            <button
+              type="button"
+              className="co-x"
+              aria-label={`${t("common.remove")} ${chip.label}`}
+              onClick={() => onToggle(chip.id)}
+            >
+              <Icon as={X} size="sm" decorative />
+            </button>
+          )}
         </span>
       ))}
       <Popover open={open} onOpenChange={setOpen}>

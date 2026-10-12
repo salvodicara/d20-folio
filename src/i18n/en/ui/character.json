@@ -73,6 +73,7 @@
     "failedCreate": "Failed to create character",
     "noConditions": "No conditions",
     "addCondition": "Add condition",
+    "impliedCondition": "From {{source}}",
     "addDefense": "Add defense",
     "addDefenseHint": "A temporary defense from a spell, potion, or effect. Remove it when the effect ends; permanent defenses are edited in edit mode.",
     "override": {
@@ -182,6 +183,7 @@
     "usesWord": "uses",
     "choiceResistanceHint": "Pick your resistance. Re-selectable per the feature's own timing.",
     "damageSource_spell": "Spells",
+    "damageAll": "All damage",
     "damageSource_ranged-weapon": "Ranged weapon attacks",
     "flatDamageReduction": "{{types}} −{{amount}}",
     "flatDamageReductionInHeavyArmor": "in heavy armor",

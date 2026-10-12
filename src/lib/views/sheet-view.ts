@@ -524,6 +524,24 @@ export function deriveFlatDamageReductions(
 // ─── RA-05 — the damage-intake defense bundle ────────────────────────────────
 
 /**
+ * The damage resistances the character's effective conditions grant from the
+ * 2024 table (Petrified: all damage). An empty type list on a rule means all
+ * damage. One read for the damage intake AND the rail's Defenses section.
+ */
+export function deriveConditionResistances(conditions: ReadonlyArray<string>): {
+  all: boolean;
+  types: DamageType[];
+} {
+  const rules = conditionDamageDefenseRules(conditions).filter(
+    (rule) => rule.kind === "resistance"
+  );
+  return {
+    all: rules.some((rule) => rule.selector.damageTypes.length === 0),
+    types: [...new Set(rules.flatMap((rule) => rule.selector.damageTypes))],
+  };
+}
+
+/**
  * Assemble the character's EFFECTIVE damage defenses for the damage-intake
  * math (`lib/damage-intake.ts`) from the SAME seams the rail renders — each
  * typed kind through {@link deriveDefenseKind} (grants + #68 build override
@@ -548,21 +566,16 @@ export function deriveDamageDefenses(
   /** Effective condition ids (`effectiveSessionConditions`): Petrified resists all. */
   conditions: ReadonlyArray<string>
 ): DamageDefenses {
-  // Condition resistances from the 2024 table; an empty type list means all damage.
-  const conditionResistances = conditionDamageDefenseRules(conditions).filter(
-    (rule) => rule.kind === "resistance"
-  );
+  const conditionResistances = deriveConditionResistances(conditions);
   return {
-    allDamageResistance:
-      aggregate.allDamageResistance ||
-      conditionResistances.some((rule) => rule.selector.damageTypes.length === 0),
+    allDamageResistance: aggregate.allDamageResistance || conditionResistances.all,
     resistances: new Set([
       ...(deriveDefenseKind(
         aggregate.damageResistances,
         overrides.resistance,
         sessionDefenses?.resistance
       ).effective as DamageType[]),
-      ...conditionResistances.flatMap((rule) => rule.selector.damageTypes),
+      ...conditionResistances.types,
     ]),
     immunities: new Set(
       deriveDefenseKind(
