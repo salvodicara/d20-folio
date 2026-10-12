@@ -166,6 +166,7 @@
     "encounterRound": "Round {{round}}",
     "encounterTurnOrder": "Turn order",
     "encounterInitiativeFor": "Initiative for {{name}}",
+    "encounterAcFor": "AC for {{name}}",
     "encounterHpFor": "Hit points for {{name}}",
     "encounterTokenHp": "{{name}}, token {{n}}",
     "encounterTokenLabel": "Token {{n}}",

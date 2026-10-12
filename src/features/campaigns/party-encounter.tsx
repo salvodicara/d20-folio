@@ -131,6 +131,7 @@ import {
   setMonsterNotes,
   setMonsterBardicInspirationDie,
   setMonsterSide,
+  setMonsterAc,
   setMonsterTempHp,
   setRevealed,
   setMonsterCondition,
@@ -1710,18 +1711,26 @@ export function MonsterCard({
   // card uses, so the two read identically.
   const cluster = (
     <div className="party-vitals">
-      <StatBadge
-        density="chip"
-        icon={Shield}
-        acronym={
-          <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
-            {t("character.vitals.ac")}
-          </GlossaryTip>
-        }
-        fullLabel={t("character.vitals.acFull")}
-        value={monster.ac}
-        valueText={monster.ac}
-      />
+      {apply ? (
+        <MonsterAcChip
+          value={monster.ac}
+          ariaLabel={t("campaignHub.encounterAcFor", { name: displayName })}
+          onCommit={(ac) => apply((e) => setMonsterAc(e, monster.id, ac))}
+        />
+      ) : (
+        <StatBadge
+          density="chip"
+          icon={Shield}
+          acronym={
+            <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
+              {t("character.vitals.ac")}
+            </GlossaryTip>
+          }
+          fullLabel={t("character.vitals.acFull")}
+          value={monster.ac}
+          valueText={monster.ac}
+        />
+      )}
       {apply ? (
         <MonsterHpControl
           monster={monster}
@@ -2165,6 +2174,87 @@ function MonsterInitChip({
       </PopoverTrigger>
       <PopoverContent rubric={ariaLabel} align="start">
         <div className="party-vitals">{editBox}</div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * MonsterAcChip — the DM's in-place AC edit (Slow −2, Shield of Faith, a donned shield).
+ * The SAME floating-popover recipe as {@link MonsterInitChip}: the resting `.vital` chip
+ * is the trigger and the edit box floats, so editing never reflows the card. Players
+ * never receive it (the caller renders a static StatBadge without `apply`).
+ */
+function MonsterAcChip({
+  value,
+  ariaLabel,
+  onCommit,
+}: {
+  value: number;
+  ariaLabel: string;
+  onCommit: (value: number) => void;
+}) {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const acr = t("character.vitals.ac");
+  useReportEditorOpen(editing);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus({ preventScroll: true });
+  }, [editing]);
+
+  function commit(): void {
+    setEditing(false);
+    const next = parseInitInput(draft);
+    if (next !== null && next !== value) onCommit(next);
+  }
+
+  return (
+    <Popover
+      open={editing}
+      onOpenChange={(open) => {
+        if (open) setDraft(String(value));
+        setEditing(open);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="vital"
+          data-density="chip"
+          title={ariaLabel}
+          aria-label={ariaLabel}
+        >
+          <InitBadge value={value} acronym={acr} icon={Shield} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent rubric={ariaLabel} align="start">
+        <div className="party-vitals">
+          <span className="vital vital-init vital-init-edit" data-density="chip">
+            <span className="vi-input">
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="numeric"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                onFocus={(e) => e.target.select()}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  } else if (e.key === "Escape") setEditing(false);
+                }}
+                aria-label={ariaLabel}
+                className="init-edit-input"
+              />
+            </span>
+            <StatLabel icon={Shield} acronym={acr} />
+          </span>
+        </div>
       </PopoverContent>
     </Popover>
   );
