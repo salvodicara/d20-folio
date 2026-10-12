@@ -117,6 +117,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("rest");
     case "turn-end":
       return resolveLogStyle("turn-end");
+    case "fading-penalty":
+      return resolveLogStyle(event.amount > 0 ? "condition-add" : "condition-remove");
     case "effect-expired":
       return resolveLogStyle("effect-expired");
     case "effect-given":
@@ -213,6 +215,13 @@ export function localizeCombatEvent(
       // Reuse the End-Turn toast's key — one semantic unit (a round advance) =
       // one i18n key (golden rule 6), so a wording fix propagates to both.
       return t("combat.endTurnToast", { round: event.round });
+    case "fading-penalty":
+      return event.amount > 0
+        ? t("combatLog.fadingPenaltyStart", {
+            name: resolveSpellName(event.penaltyId),
+            amount: event.amount,
+          })
+        : t("combatLog.fadingPenaltyEnd", { name: resolveSpellName(event.penaltyId) });
     case "effect-expired":
       return t("combatLog.effectExpired", { name: resolveSourceName(event.sourceId) });
     case "effect-given":

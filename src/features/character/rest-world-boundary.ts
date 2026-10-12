@@ -57,6 +57,7 @@ import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { sessionAfterLongRestReduction } from "@/lib/play/rests";
 import { endsConcentration } from "@/lib/status";
 import { evaluateGrants } from "@/lib/grants";
+import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { planMechanicsWorldAction } from "@/lib/mechanics-action";
 import { selectActiveMechanicsEffects } from "@/lib/mechanics-program-effects";
 import {
@@ -480,6 +481,7 @@ function restFinalizedSession(
           // The rest ends a Hit Point maximum reduction (the legacy rest's law).
           hpMaxReduction: undefined,
           hitDice: { used: 0 },
+          fadingPenalties: fadingPenaltiesAfterLongRest(doc.session.fadingPenalties),
           concentration: "",
           concentrationCastLevel: undefined,
           concentrationConditions: undefined,

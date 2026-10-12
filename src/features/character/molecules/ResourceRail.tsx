@@ -38,6 +38,7 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
+import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
 // The rail's core vital reads (concentration, exhaustion, slot pips) go
 // through the ONE vitals projection seam (session truth reconciled against
@@ -1599,12 +1600,46 @@ function ConditionStrip({
   onToggle: (conditionId: string) => void;
 }) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
+  // A fading D20 Test penalty (Raise Dead) is lit from the same picker and shows
+  // as a chip counting down each Long Rest.
+  const statuses = Object.entries(FADING_PENALTIES).map(([id, def]) => {
+    const name = localizeSrd(def.ref.kind, def.ref.key, "name", locale);
+    const amount = fadingPenalties?.[id];
+    return {
+      id,
+      option: t("character.fadingPenaltyOption", { name, n: def.start }),
+      ...(amount ? { chip: t("character.fadingPenaltyChip", { n: amount }) } : {}),
+      hint: t("character.fadingPenaltyHint", { name }),
+    };
+  });
+  const toggleStatus = (id: string): void => {
+    const store = useCharacterStore.getState();
+    const running = store.character?.session.fadingPenalties?.[id] !== undefined;
+    const ref = FADING_PENALTIES[id]?.ref;
+    const name = ref ? localizeSrd(ref.kind, ref.key, "name", locale) : id;
+    registerUndoableToast(
+      {
+        message: running
+          ? t("character.fadingPenaltyEndToast", { name })
+          : t("character.fadingPenaltyStartToast", {
+              name,
+              n: FADING_PENALTIES[id]?.start ?? 0,
+            }),
+      },
+      () => (running ? store.endFadingPenalty(id) : store.startFadingPenalty(id)),
+      { turnScoped: false }
+    );
+  };
   return (
     <ConditionEditor
       conditions={conditions}
       hiddenDc={hiddenDc}
       emptyLabel={t("character.noConditions")}
       onToggle={onToggle}
+      statuses={statuses}
+      onToggleStatus={toggleStatus}
     />
   );
 }

@@ -93,6 +93,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     activeFeatures: session.activeFeatures,
     grantBundleChoices: session.grantBundleChoices,
     itemResources: session.itemResources,
+    fadingPenalties: session.fadingPenalties,
   };
   const aggregate = aggregateCharacterGrants(character, aggSession);
   const level = totalLevel(character);

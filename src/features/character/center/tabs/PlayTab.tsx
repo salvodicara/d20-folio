@@ -416,6 +416,7 @@ export function PlayTab() {
             activeFeatures: character.session.activeFeatures,
             conditions: effectiveSessionConditions(character.session),
             grantBundleChoices: character.session.grantBundleChoices,
+            fadingPenalties: character.session.fadingPenalties,
           }).skills
         : [],
     [character]

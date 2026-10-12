@@ -4,6 +4,7 @@
  * logs the rest, persists, and fences the undo stack.
  */
 import { evaluateGrants } from "@/lib/grants";
+import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import {
@@ -123,6 +124,7 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
         endedActiveKeys
       ),
       exhaustion: Math.max(0, character.session.exhaustion - exhaustionRemoved),
+      fadingPenalties: fadingPenaltiesAfterLongRest(character.session.fadingPenalties),
       inspiration: gainsInspiration,
       // A Bardic Inspiration die lasts at most 1 hour; a Long Rest always
       // outlasts it, so the combat-state SSOT clears deterministically.

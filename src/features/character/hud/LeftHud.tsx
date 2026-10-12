@@ -97,6 +97,7 @@ export function LeftHud() {
     (s) => s.character?.session.grantBundleChoices
   );
   const itemResources = characterDoc?.session.itemResources;
+  const fadingPenalties = characterDoc?.session.fadingPenalties;
 
   // Full aggregate → ability-score floors + senses/speeds (grants), threading the
   // chosen grant-bundle so a picked lineage's senses/floors apply. The save /
@@ -110,9 +111,10 @@ export function LeftHud() {
             activeFeatures,
             grantBundleChoices,
             itemResources,
+            fadingPenalties,
           })
         : null,
-    [charData, activeFeatures, grantBundleChoices, itemResources]
+    [charData, activeFeatures, grantBundleChoices, itemResources, fadingPenalties]
   );
   const savesChecks = useMemo(
     () =>
@@ -123,9 +125,18 @@ export function LeftHud() {
             conditions,
             grantBundleChoices,
             itemResources,
+            fadingPenalties,
           })
         : null,
-    [charData, exhaustion, activeFeatures, conditions, grantBundleChoices, itemResources]
+    [
+      charData,
+      exhaustion,
+      activeFeatures,
+      conditions,
+      grantBundleChoices,
+      itemResources,
+      fadingPenalties,
+    ]
   );
 
   if (!charData || !fullAggregate || !savesChecks) return null;

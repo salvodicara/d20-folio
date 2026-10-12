@@ -26,7 +26,20 @@ import { Icon } from "@/components/ui/icon";
 import { useReportEditorOpen } from "@/components/shared/card-editor-scope";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
+import { condColor, condInkColor } from "@/lib/condition-color";
 import { conditionChips, conditionOptions } from "@/lib/views/tracker-view";
+
+/** A lasting status the same control lights and ends beside the conditions (a
+ *  fading D20 Test penalty — Raise Dead). Cockpit-only. */
+export interface StatusOptionVM {
+  id: string;
+  /** The picker row ("Raise Dead (−4 to d20 Tests)"). */
+  option: string;
+  /** The chip while it runs ("−4 to d20 Tests"); absent when it does not run. */
+  chip?: string;
+  /** The hover gloss: what it is and how it ends. */
+  hint: string;
+}
 
 export function ConditionEditor({
   conditions,
@@ -34,6 +47,8 @@ export function ConditionEditor({
   emptyLabel,
   hiddenDc,
   immunities,
+  statuses = [],
+  onToggleStatus,
 }: {
   conditions: string[];
   /** Condition ids the creature is immune to: offered as disabled options with
@@ -50,6 +65,9 @@ export function ConditionEditor({
    *  the DC to find you never evaporates with its toast. Cockpit-only (the
    *  encounter/monster bindings omit it). */
   hiddenDc?: number;
+  /** Lasting statuses offered in the same picker, shown as chips while they run. */
+  statuses?: ReadonlyArray<StatusOptionVM>;
+  onToggleStatus?: (statusId: string) => void;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -95,6 +113,31 @@ export function ConditionEditor({
           )}
         </span>
       ))}
+      {statuses.map((status) =>
+        status.chip ? (
+          <span
+            key={status.id}
+            className="co-chip"
+            style={{
+              ["--co" as string]: condColor("exhaustion"),
+              ["--co-ink" as string]: condInkColor("exhaustion"),
+            }}
+            title={status.hint}
+          >
+            {status.chip}
+            {onToggleStatus && (
+              <button
+                type="button"
+                className="co-x"
+                aria-label={`${t("common.remove")} ${status.option}`}
+                onClick={() => onToggleStatus(status.id)}
+              >
+                <Icon as={X} size="sm" decorative />
+              </button>
+            )}
+          </span>
+        ) : null
+      )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button type="button" className="co-add">
@@ -102,8 +145,18 @@ export function ConditionEditor({
             {t("character.addCondition")}
           </button>
         </PopoverTrigger>
-        <PopoverContent rubric={t("character.addCondition")} className="max-w-[15rem]">
-          <div role="listbox" aria-label={t("character.addCondition")}>
+        <PopoverContent
+          rubric={t("character.addCondition")}
+          className="max-w-[15rem]"
+          collisionPadding={12}
+        >
+          {/* Capped to the room Radix measured, so every option (the statuses come
+              last) stays reachable when the list would run off the screen. */}
+          <div
+            role="listbox"
+            aria-label={t("character.addCondition")}
+            className="max-h-[calc(var(--radix-popover-content-available-height)-4rem)] overflow-y-auto"
+          >
             {conditionOptions(locale).map((c) => {
               // An immune creature cannot gain the condition (an already-active
               // one stays removable from its chip and from here).
@@ -124,6 +177,23 @@ export function ConditionEditor({
                 </button>
               );
             })}
+            {onToggleStatus &&
+              statuses.map((status) => (
+                <button
+                  key={status.id}
+                  type="button"
+                  role="option"
+                  aria-selected={status.chip !== undefined}
+                  title={status.hint}
+                  className={cn("co-pick-item", status.chip !== undefined && "active")}
+                  onClick={() => {
+                    onToggleStatus(status.id);
+                    setOpen(false);
+                  }}
+                >
+                  {status.option}
+                </button>
+              ))}
           </div>
         </PopoverContent>
       </Popover>

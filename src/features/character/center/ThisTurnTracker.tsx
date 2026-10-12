@@ -140,6 +140,7 @@ export function ThisTurnTracker({
     (s) => s.character?.session.grantBundleChoices
   );
   const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
+  const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
 
   // S4 — rolling Initiative tops up the listed trackers (Persistent Rage, Battle
   // Master Relentless, Superior Inspiration, Archdruid, Perfect Focus). Fires when
@@ -323,9 +324,17 @@ export function ThisTurnTracker({
       activeFeatures,
       grantBundleChoices,
       itemResources,
+      fadingPenalties,
     });
     return computedInitiativeBonus(charData, initAgg, exhaustion);
-  }, [charData, exhaustion, activeFeatures, grantBundleChoices, itemResources]);
+  }, [
+    charData,
+    exhaustion,
+    activeFeatures,
+    grantBundleChoices,
+    itemResources,
+    fadingPenalties,
+  ]);
 
   if (!character || !charData) return null;
 

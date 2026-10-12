@@ -34,6 +34,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   inspiration?: true;
   bardicInspirationDie?: string;
   exhaustion?: number;
+  fadingPenalties?: NonNullable<SessionState["fadingPenalties"]>;
   sessionDefenses?: SessionState["sessionDefenses"];
   pinnedActions?: string[];
   unpinnedActions?: string[];
@@ -86,6 +87,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "deathFail",
   "inspiration",
   "exhaustion",
+  "fadingPenalties",
   "sessionDefenses",
   "pinnedActions",
   "unpinnedActions",
@@ -283,6 +285,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.deathFail !== 0) state.deathFail = session.deathFail;
   if (session.inspiration) state.inspiration = true;
   if (session.exhaustion !== 0) state.exhaustion = session.exhaustion;
+  if (isNonEmptyRecord(session.fadingPenalties)) {
+    state.fadingPenalties = session.fadingPenalties;
+  }
   if (isNonEmptyRecord(session.sessionDefenses)) {
     state.sessionDefenses = session.sessionDefenses;
   }
@@ -382,6 +387,15 @@ function parseSessionDefenses(value: unknown): SessionState["sessionDefenses"] {
     if (Array.isArray(value[key])) defenses[key] = stringArray(value[key]);
   }
   return Object.keys(defenses).length > 0 ? defenses : undefined;
+}
+
+function parseFadingPenalties(value: unknown): SessionState["fadingPenalties"] {
+  if (!isRecord(value)) return undefined;
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, number] =>
+      typeof entry[1] === "number" && Number.isFinite(entry[1])
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 function parseCompanionHp(value: unknown): SessionState["companionHp"] {
@@ -544,6 +558,7 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   session.deathFail = numOr(state.deathFail, 0);
   session.inspiration = state.inspiration === true;
   session.exhaustion = numOr(state.exhaustion, 0);
+  session.fadingPenalties = parseFadingPenalties(state.fadingPenalties);
   session.sessionDefenses = parseSessionDefenses(state.sessionDefenses);
   session.pinnedActions = stringArray(state.pinnedActions);
   if (Array.isArray(state.unpinnedActions)) {

@@ -23,6 +23,7 @@
  */
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
 import { resolvePotionStateSources } from "@/lib/potion-states";
+import { resolveFadingPenaltySources } from "@/lib/play/fading-penalties";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import {
   resolveAllGrantSources,
@@ -97,6 +98,7 @@ export type AggregationSession = Pick<
       | "itemResources"
       | "world"
       | "hpMaxReduction"
+      | "fadingPenalties"
     >
   >;
 
@@ -132,6 +134,8 @@ export function aggregateCharacterGrants(
       ...resolveBaseActionStateSources(activeKeys),
       // A drunk potion's state (Flying's fly speed) holds while its countdown runs.
       ...resolvePotionStateSources(activeKeys),
+      // A fading D20 Test penalty (Raise Dead) carries its flat penalties until it ends.
+      ...resolveFadingPenaltySources(session.fadingPenalties),
     ],
     activeKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {})),

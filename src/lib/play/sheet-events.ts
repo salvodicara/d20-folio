@@ -16,6 +16,7 @@ import {
   summonFamiliar,
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
+import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { dropBeastForm } from "./forms";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
@@ -42,6 +43,8 @@ export type SheetEvent =
   | { kind: "restore-tracker"; trackerId: string; amount: number }
   | { kind: "set-death-saves"; successes: number; failures: number }
   | { kind: "set-exhaustion"; level: number }
+  | { kind: "start-fading-penalty"; penaltyId: string }
+  | { kind: "set-fading-penalty"; penaltyId: string; amount: number }
   | { kind: "add-condition"; condition: string }
   | { kind: "remove-condition"; condition: string }
   | { kind: "set-active-state"; key: string; isActive: boolean; litRound: number }
@@ -90,6 +93,10 @@ export function applySheetEvent(
       return withSession(setDeathSaves(doc, event.successes, event.failures)?.session);
     case "set-exhaustion":
       return withSession(setExhaustion(doc, event.level));
+    case "start-fading-penalty":
+      return withSession(startFadingPenalty(doc, event.penaltyId));
+    case "set-fading-penalty":
+      return withSession(setFadingPenalty(doc, event.penaltyId, event.amount));
     case "add-condition":
       return withSession(addCondition(doc, event.condition));
     case "remove-condition":

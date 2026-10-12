@@ -108,6 +108,7 @@ export function CombatHeader() {
     (s) => s.character?.session.grantBundleChoices
   );
   const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
+  const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
   // Portrait lives at the DOC level (not in charData) — feeds the hero seal (#92).
   const portraitUrl = useCharacterStore((s) => s.character?.portraitUrl);
   const portraitCrop = useCharacterStore((s) => s.character?.portraitCrop);
@@ -169,9 +170,10 @@ export function CombatHeader() {
             activeFeatures,
             grantBundleChoices,
             itemResources,
+            fadingPenalties,
           })
         : null,
-    [charData, activeFeatures, grantBundleChoices, itemResources]
+    [charData, activeFeatures, grantBundleChoices, itemResources, fadingPenalties]
   );
 
   // Esc exits edit mode (parity with the pre-rewrite sheet; the pill's hint

@@ -441,6 +441,19 @@ describe("restThroughWorld: long rest", () => {
     expect(worldFor(liveDoc()).vitals.hitPoints.current).toBe(doc.character.hp.max);
   });
 
+  it("counts a fading D20 Test penalty down by one", () => {
+    const doc = makeCharacterDoc(
+      { classId: "wizard", level: 5 },
+      { fadingPenalties: { "raise-dead": 2 } }
+    );
+    armed(doc);
+
+    expect(restThroughWorld("long")).toBe("engine");
+    expect(liveDoc().session.fadingPenalties).toEqual({ "raise-dead": 1 });
+    expect(restThroughWorld("long")).toBe("engine");
+    expect(liveDoc().session.fadingPenalties).toBeUndefined();
+  });
+
   it("ends an until-long-rest engine lifetime at the exact boundary and clears its chip", () => {
     const base = makeCharacterDoc({ classId: "fighter", level: 5 }, {});
     const authority = authoredAuthority(
