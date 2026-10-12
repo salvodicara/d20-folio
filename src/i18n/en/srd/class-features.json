@@ -1359,8 +1359,5 @@
   },
   "barbarian-indomitable-might.grants.1": {
     "description": "Strength saving throws: if the total is lower than your Strength score, use the score"
-  },
-  "ranger-hunter-superior-hunters-prey.grants.hunters-mark-damage": {
-    "effect": "Once per turn, Hunter's Mark's extra damage also hits a different creature you can see within 30 feet of the first"
   }
 }

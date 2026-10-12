@@ -93,10 +93,11 @@
     "summary": "Aggiungi o sottrai 2d4 alla Prova di d20 di una creatura"
   },
   "boon-of-the-night-spirit.grants.1": {
-    "label": "Forma d'Ombra (Luce Fioca od Oscurità)"
+    "label": "Forma d'Ombra"
   },
   "boon-of-combat-prowess.mechanics.actions.0": {
-    "description": "Mira Impareggiabile — quando manchi con un tiro per colpire, colpisci invece",
+    "name": "Mira Impareggiabile",
+    "description": "Quando manchi con un tiro per colpire, colpisci invece",
     "summary": "Trasforma un tiro per colpire mancato in un colpo"
   }
 }

@@ -428,10 +428,10 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
     class: "ranger",
     subclass: "hunter",
     level: 11,
-    // Once per turn, Hunter's Mark's extra damage also lands on a second creature
-    // within 30 ft of the first: an informational copy note on the feature card
-    // (targeting stays the player's call).
-    grants: [{ type: "copy-to-2nd-target", copyId: "hunters-mark-damage" }],
+    // Conditional cleave of the Hunter's Mark bonus die — no numeric grant kind
+    // models "copy this turn's Hunter's Mark damage to a second creature", so it
+    // stays a descriptive feature (REPLACES the removed 2014 Volley/Whirlwind
+    // "Multiattack" at this level).
     source: "SRD",
   },
   {

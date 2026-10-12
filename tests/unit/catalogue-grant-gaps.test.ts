@@ -11,12 +11,13 @@ import { srdEn } from "@/i18n/srd-en";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
 import { resolveActions } from "@/lib/smart-tracker";
-import {
-  activatableToggles,
-  copyTargetVMs,
-  rollFloorVMs,
-} from "@/lib/views/tracker-view";
+import { activatableToggles, rollFloorVMs } from "@/lib/views/tracker-view";
+import { localizeAction } from "@/lib/views/combat-action-view";
+import itFeats from "@/i18n/it/srd/feats.json";
 import { DAMAGE_TYPES } from "@/types/damage";
+
+const srdTextIt = (id: string): string =>
+  (itFeats as Record<string, { description?: string }>)[id]?.description ?? "";
 
 const SCORES = { STR: 20, DEX: 14, CON: 16, INT: 10, WIS: 12, CHA: 10 } as const;
 
@@ -30,8 +31,18 @@ function build(spec: Partial<ScenarioSpec> & Pick<ScenarioSpec, "classId" | "lev
   });
 }
 
+/** The bold benefit name in an SRD feat text that mentions `hint` ("**Shadowy Form.**"). */
+function benefitName(
+  text: string,
+  hint = "Resistance|Resistenza|hit instead|colpire invece"
+): string {
+  const block = text.split(/\n\n/).find((para) => new RegExp(hint).test(para));
+  return /^\*\*([^*]+?)\.\*\*/.exec(block ?? "")?.[1] ?? "";
+}
+
 describe("Boon of the Night Spirit — Shadowy Form is a toggled resistance state", () => {
   const text = srdEn("feat", "boon-of-the-night-spirit", "description") ?? "";
+  const itText = srdTextIt("boon-of-the-night-spirit");
   // "Resistance to all damage except Force, Psychic, and Radiant."
   const except = /Resistance to all damage except ([^.]+)\./.exec(text)?.[1] ?? "";
   const excluded = new Set(
@@ -60,9 +71,10 @@ describe("Boon of the Night Spirit — Shadowy Form is a toggled resistance stat
     for (const d of expected) expect(off.damageResistances.has(d)).toBe(false);
     const [vmEn] = activatableToggles(toggle ? [toggle] : [], "en");
     const [vmIt] = activatableToggles(toggle ? [toggle] : [], "it");
-    expect(vmEn?.label).toMatch(/Shadowy Form/);
-    expect(vmIt?.label.length).toBeGreaterThan(0);
-    expect(vmIt?.label).not.toBe(vmEn?.label);
+    // The toggle names the state only; its lighting condition lives in the
+    // feat description, so the chip stays short enough for the rail.
+    expect(vmEn?.label).toBe(benefitName(text));
+    expect(vmIt?.label).toBe(benefitName(itText));
 
     const on = aggregateCharacterGrants(doc.character, {
       ...doc.session,
@@ -89,6 +101,23 @@ describe("Boon of Combat Prowess — Peerless Aim is a once-per-turn free use", 
       a.id.startsWith("boon-of-combat-prowess")
     );
     expect(row).toMatchObject({ type: "free", maxUsesPerTurn: 1 });
+  });
+
+  it("the row is titled by the benefit, not the feat", () => {
+    const doc = build({
+      classId: "fighter",
+      level: 19,
+      extraFeatures: [{ srdId: "boon-of-combat-prowess" }],
+    });
+    const row = resolveActions(doc).find((a) =>
+      a.id.startsWith("boon-of-combat-prowess")
+    );
+    if (!row) throw new Error("no Peerless Aim row");
+    const en = srdEn("feat", "boon-of-combat-prowess", "description") ?? "";
+    expect(localizeAction(row, "en").name).toBe(benefitName(en));
+    expect(localizeAction(row, "it").name).toBe(
+      benefitName(srdTextIt("boon-of-combat-prowess"))
+    );
   });
 });
 
@@ -122,30 +151,5 @@ describe("Barbarian Indomitable Might — Strength checks and saves floor at the
     expect(agg.rollFloors.some((f) => f.sourceId === "barbarian-indomitable-might")).toBe(
       false
     );
-  });
-});
-
-describe("Ranger Superior Hunter's Prey — Hunter's Mark copies to a second creature", () => {
-  it("the SRD text names the Hunter's Mark copy", () => {
-    const text = srdEn(
-      "class-feature",
-      "ranger-hunter-superior-hunters-prey",
-      "description"
-    );
-    expect(text).toMatch(/Hunter's Mark/);
-    expect(text).toMatch(/different creature/);
-  });
-
-  it("a Hunter 11 carries the copy note on its feature, in EN and IT", () => {
-    const doc = build({ classId: "ranger", subclassId: "hunter", level: 11 });
-    const agg = aggregateCharacterGrants(doc.character, doc.session);
-    const copies = agg.copyToTargets.filter(
-      (c) => c.sourceId === "ranger-hunter-superior-hunters-prey"
-    );
-    expect(copies).toHaveLength(1);
-    const [en] = copyTargetVMs(copies, "en");
-    const [it] = copyTargetVMs(copies, "it");
-    expect(en?.effect).toMatch(/Hunter's Mark/);
-    expect(it?.effect).toMatch(/Marchio del Cacciatore/);
   });
 });
