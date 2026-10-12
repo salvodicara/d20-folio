@@ -755,6 +755,11 @@ export interface CharacterData {
   abilityBudget: number;
   proficiencyBonusOverride: number | null;
   levelUpChecklist: LevelUpChecklistItem[] | null;
+  /**
+   * Total experience points (SRD "Character Advancement"). Optional: absent for a
+   * table that levels by milestone. Informs the Level-Up cue, never gates it.
+   */
+  experience?: number;
   backgroundAsi: Record<string, number>;
   humanOriginFeat: string;
   bgFeat: string;

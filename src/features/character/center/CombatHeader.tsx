@@ -79,6 +79,8 @@ import { nonEmptyString } from "@/lib/non-empty-string";
 import { localizeCharacterIdentity } from "@/lib/views/srd-i18n";
 import { HeaderHpControl } from "./HeaderHpControl";
 import { HoverTip } from "./HoverTip";
+import { HeaderXp } from "./HeaderXp";
+import { xpProgress } from "@/lib/experience";
 
 /** Folio modifier convention: U+2212 minus, explicit + for non-negatives. */
 function fmtMod(mod: number): string {
@@ -291,11 +293,19 @@ export function CombatHeader() {
   //     availability). Absent at L20 (the shipped availability knowledge) and,
   //     like every management affordance, owner-only (hidden in the glass case).
   const showLevelCeremony = !readonly && level < 20;
+  // XP only informs: the chip glows when the next threshold is reached, never levels.
+  const levelUpReady =
+    charData.experience !== undefined &&
+    xpProgress(charData.experience, level).canLevelUp;
   const levelChip = showLevelCeremony ? (
-    <HoverTip show={fineTip} content={t("character.levelUp")}>
+    <HoverTip
+      show={fineTip}
+      content={t(levelUpReady ? "character.levelUpReady" : "character.levelUp")}
+    >
       <button
         type="button"
         className="lvl-chip"
+        data-ready={levelUpReady ? "" : undefined}
         onClick={() => void navigate(`/characters/${charId ?? ""}/level-up`)}
         // 2.5.3 Label-in-Name — the accessible name CONTAINS the visible "Level {n}"
         // AND carries the verb, so a screen reader hears the full action. On hover
@@ -471,6 +481,12 @@ export function CombatHeader() {
               )}
             </p>
           )}
+          <HeaderXp
+            experience={charData.experience}
+            level={level}
+            editable={!readonly}
+            showWhenUnset={isEdit}
+          />
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The
               in-combat session controls (live round, roll-to-total initiative, the
               your-turn cue + the shared turn-advance via End Turn) belong WITH the

@@ -63,6 +63,7 @@
     "items_other": "{{count}} items",
     "clickToOverride": "Click to override",
     "resetToAuto": "Reset to auto-computed value",
+    "xp": "XP",
     "level": "Level",
     "quantity": "Quantity",
     "showMore": "Show more",

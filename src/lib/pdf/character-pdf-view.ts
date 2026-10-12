@@ -649,7 +649,7 @@ export function buildCharacterPdfViewModel(
     species: t("character.species"),
     background: t("character.background"),
     level: t("common.level"),
-    xp: t("pdf.sheet.xp"),
+    xp: t("common.xp"),
     armorClass: t("character.armorClass"),
     shield: t("equipment.shield"),
     hitPoints: t("character.hitPoints"),
