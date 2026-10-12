@@ -109,6 +109,21 @@ describe("renderSessionReport", () => {
     expect(text).toContain("- Qualcuno subisce 14 danni");
   });
 
+  it("a player's note lands in its round, signed with the character's name", () => {
+    const withNote: LogItem[] = [
+      ev("dm", { kind: "encounter-start", encounterId: "8" }),
+      ev("dm", { kind: "round-start", round: 2 }),
+      ev("ana", { kind: "note", text: "I hide behind the pillar", actor: "pc-ana" }),
+    ];
+    const text = renderSessionReport(
+      buildReport(foldSession(withNote, { dmUid: "dm" })),
+      "S",
+      (k, a) => (k === "sessionReport.round" ? `Round ${String(a?.round)}` : k),
+      names
+    );
+    expect(text).toContain("- Ana: I hide behind the pillar");
+  });
+
   it("names a status that ran out, in both languages", async () => {
     const line = (t: (k: string, a?: Record<string, unknown>) => string) =>
       localizePlayEvent(

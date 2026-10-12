@@ -36,6 +36,8 @@ export {
   mayAttribute,
   mayRetract,
   needsAttribution,
+  NOTE_MAX,
+  noteDraft,
   strikeDraft,
   type FeedLine,
   type FeedViewer,

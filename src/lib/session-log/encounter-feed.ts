@@ -166,6 +166,24 @@ export function strikeDraft(line: FeedLine): {
   return { type: "retract", id: `${line.id}:struck`, target: line.id };
 }
 
+/** The longest free-text note a line holds (the shared inline-text cap). */
+export const NOTE_MAX = 500;
+
+/** A free-text line for the log ("every gesture leaves a trace"), trimmed and capped; a
+ *  player's note is signed with their character, the DM's with no one. `null` when blank. */
+export function noteDraft(
+  text: string,
+  viewer: FeedViewer
+): { type: "event"; event: PlayEvent } | null {
+  const trimmed = text.trim().slice(0, NOTE_MAX);
+  if (trimmed === "") return null;
+  const actor = !viewer.isDm && viewer.uid !== undefined ? `pc-${viewer.uid}` : null;
+  return {
+    type: "event",
+    event: { kind: "note", text: trimmed, ...(actor ? { actor } : {}) },
+  };
+}
+
 /** The correction that answers "Who struck?": the logged event with the attacker set, or
  *  marked as deliberately unknown (`null`). */
 export function attributionCorrection(
