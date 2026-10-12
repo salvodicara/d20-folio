@@ -200,7 +200,6 @@ There are six parallel records. The same hit can land in four of them.
   attack card reads its printed die and damage type from that Activity. Its properties (heavy,
   light, versatile, reach) stay on the weapon until the Activity can hold them (they are the
   translation's recorded gaps).
-- `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**
 
@@ -208,7 +207,8 @@ There are six parallel records. The same hit can land in four of them.
 - The K1 kernel: `src/lib/command/*`, `types/command.ts`, `rule-definition.ts` and the functions
   bundle (about 1.5k lines). Removing its export from `functions/` takes effect at the next deploy
   the owner approves.
-- `automation-compiler`/`automation-corpus` after checking CI.
+- Not `automation-compiler`/`automation-corpus`: test-only, but they are the live guard that
+  every mechanic in the data is handled or marked manual in both languages (kept 2026-10-12).
 - `src/lib/combat/*`, `combat-io.ts` and `prototype-catalogue.ts` (about 4.5k lines) _after_ the
   session log lifts its id/fold ideas.
 - Later:
