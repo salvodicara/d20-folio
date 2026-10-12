@@ -139,7 +139,7 @@ import {
 } from "@/features/campaigns/encounter";
 import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import {
-  applyAdversaryDamage,
+  applyAdversaryDamageParts,
   applyAdversaryHeal,
 } from "@/features/campaigns/encounter-world-command";
 import {
@@ -148,7 +148,12 @@ import {
 } from "@/features/campaigns/campaign-io";
 import { isCharacterAlive } from "@/lib/character-status";
 import { revokeConditionEffectOps } from "@/lib/combat-effects";
-import type { EncounterBudgetView } from "@/features/campaigns/encounter-view";
+import {
+  monsterConditionImmunities,
+  monsterDamageDefenses,
+  type EncounterBudgetView,
+} from "@/features/campaigns/encounter-view";
+import { defendedDamageTypes, type DamageInstance } from "@/lib/damage-intake";
 import type { BudgetVerdict } from "@/lib/encounter-difficulty";
 import { useToastStore } from "@/stores/toastStore";
 import type { CharacterDoc } from "@/types/character";
@@ -1736,8 +1741,8 @@ export function MonsterCard({
           monster={monster}
           // The engine command boundary: damage AND healing route derive →
           // coordinator → journal commit → legacy mirror, on the SAME apply seam.
-          onDamage={(amount) =>
-            apply((e) => applyAdversaryDamage(e, campaignId, monster.id, amount))
+          onDamage={(parts) =>
+            apply((e) => applyAdversaryDamageParts(e, campaignId, monster.id, parts))
           }
           onHeal={(amount) =>
             apply((e) => applyAdversaryHeal(e, campaignId, monster.id, amount))
@@ -1799,6 +1804,7 @@ export function MonsterCard({
 
       <ConditionEditor
         conditions={monster.conditions}
+        immunities={monsterConditionImmunities(monster.defenses)}
         onToggle={(conditionId) =>
           apply((e) => {
             const active = monster.conditions.includes(conditionId);
@@ -2276,13 +2282,16 @@ function MonsterHpControl({
   onClearTemp,
 }: {
   monster: EncounterMonster;
-  onDamage: (amount: number) => void;
+  onDamage: (parts: ReadonlyArray<DamageInstance>) => void;
   onHeal: (amount: number) => void;
   onTemp: (amount: number) => void;
   onClearTemp: () => void;
 }) {
   const { t } = useTranslation();
   const hpLabel = t("character.health.hpAbbr");
+  // The monster's own defenses drive the SAME optional type chips + math hint
+  // the PC popover shows; an undefended monster keeps the plain editor.
+  const defenses = monsterDamageDefenses(monster.defenses);
   const { current, max, temp } = monster.hp;
   const state = hpState(current, max);
   const pct = max > 0 ? Math.round((current / max) * 100) : 0;
@@ -2293,7 +2302,9 @@ function MonsterHpControl({
         current={current}
         max={max}
         temp={temp}
-        onDamage={(parts) => onDamage(parts.reduce((sum, part) => sum + part.amount, 0))}
+        onDamage={onDamage}
+        defenses={defenses}
+        defendedTypes={defenses ? defendedDamageTypes(defenses) : []}
         onHeal={onHeal}
         onTemp={onTemp}
         onClearTemp={onClearTemp}

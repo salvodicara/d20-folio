@@ -16,7 +16,8 @@
  *     section below.
  *   • ENCOUNTER — `PcCombatEditor` binds the callbacks to `combat-state-io`
  *     against an explicit `(uid, charId)`, with no max/footer slots and no
- *     intake section (a DM books final numbers).
+ *     intake section (a DM books final numbers). `MonsterHpControl` passes the
+ *     monster's own defenses, so a DM damaging a monster gets the same chips.
  *
  * **RA-05 — the damage-intake section** (rendered ONLY when the caller passes
  * `defenses` and the character actually defends something — minimum

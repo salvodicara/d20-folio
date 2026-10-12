@@ -56,6 +56,12 @@ import {
   setMonsterCondition,
   setMonsterTempHp,
 } from "@/features/campaigns/encounter";
+import { monsterDamageDefenses } from "@/features/campaigns/encounter-view";
+import {
+  NO_DEFENSES,
+  resolveDamageIntake,
+  type DamageInstance,
+} from "@/lib/damage-intake";
 import type { EncounterState } from "@/types/campaign";
 import type { LocText } from "@/lib/loc-text";
 import type { SharedMaterialState } from "@/types/material-state";
@@ -266,6 +272,27 @@ export function applyAdversaryDamage(
     provenance?.actorId,
     provenance?.action
   );
+}
+
+/**
+ * Book one ENTERED hit (one or more damage parts, typed or not) onto one
+ * adversary: the parts go through the shared damage intake with the monster's
+ * OWN defenses (resistance halves, vulnerability doubles, immunity zeroes —
+ * the same math the PC sheet and the HP popover preview use), then the net
+ * total lands through {@link applyAdversaryDamage} (temp HP first, chronicle
+ * beat reads the applied amount). Untyped parts apply verbatim.
+ */
+export function applyAdversaryDamageParts(
+  encounter: EncounterState,
+  campaignId: string,
+  monsterId: string,
+  parts: ReadonlyArray<DamageInstance>
+): EncounterState {
+  const monster = encounter.combatants.find(({ id }) => id === monsterId);
+  if (!monster || monster.kind !== "monster") return encounter;
+  const defenses = monsterDamageDefenses(monster.defenses) ?? NO_DEFENSES;
+  const { netTotal } = resolveDamageIntake(parts, defenses);
+  return applyAdversaryDamage(encounter, campaignId, monsterId, netTotal);
 }
 
 /**

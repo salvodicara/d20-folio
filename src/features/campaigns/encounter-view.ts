@@ -62,6 +62,20 @@ export function monsterDamageDefenses(
     : undefined;
 }
 
+/** The monster's UNCONDITIONAL condition immunities (a qualified entry — "unless
+ *  it has Mind Blank" — stays a table call, so it is not an immunity here). */
+export function monsterConditionImmunities(
+  defenses: CombatDefenseSnapshot | undefined
+): ReadonlySet<ConditionId> | undefined {
+  return defenses?.conditionImmunities
+    ? new Set(
+        defenses.conditionImmunities.flatMap((entry) =>
+          typeof entry === "string" ? [entry] : []
+        )
+      )
+    : undefined;
+}
+
 /**
  * The LIVE facts for one PC, assembled by the caller from the member's character doc
  * (name · AC · max HP · race · classes · portrait) + their `combat/state` subdoc
@@ -232,13 +246,7 @@ export function buildEncounterView(
         portraitUrl: c.portraitUrl ?? null,
         portraitCrop: c.portraitCrop ?? null,
         defenses: monsterDamageDefenses(c.defenses),
-        conditionImmunities: c.defenses?.conditionImmunities
-          ? new Set(
-              c.defenses.conditionImmunities.flatMap((entry) =>
-                typeof entry === "string" ? [entry] : []
-              )
-            )
-          : undefined,
+        conditionImmunities: monsterConditionImmunities(c.defenses),
         sourceConditionImmunities: [],
         qualifiedDefenseCount: c.defenses?.qualifiedDefenses?.length ?? 0,
       });
