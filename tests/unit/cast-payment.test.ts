@@ -4,6 +4,7 @@ import {
   actionPaymentAffordable,
   actionWithCost,
   bareActionSpend,
+  castItemPayment,
   castOptionAffordable,
   castOptionExpendsSpellSlot,
   castOptionSpends,
@@ -242,5 +243,55 @@ describe("what a use spends", () => {
       bareActionSpend([], action({ costTracker: "ki", trackerCost: 2 }), 5)
     ).toMatchObject({ amount: 5 });
     expect(bareActionSpend([], action({ costEquipment: "potion" }))).toBeNull();
+  });
+});
+
+describe("castItemPayment", () => {
+  const item = {
+    kind: "item-resource",
+    itemId: "wand",
+    resourceId: "charges",
+    key: "k",
+  } as const;
+
+  it("a free cast drawn from an item pays its cost with that item", () => {
+    const option = {
+      kind: "free-cast",
+      sourceId: "wand",
+      sourceName: "Wand",
+      level: 1,
+      remaining: 3,
+      total: 7,
+      cost: 2,
+      recovery: "dawn",
+      payment: item,
+    } as unknown as CastCommitOption;
+    expect(castItemPayment(action(), option)).toEqual({
+      payment: item,
+      amount: 2,
+      label: "Wand",
+    });
+  });
+
+  it("any other configured cast pays no item, even when the bare action would", () => {
+    expect(
+      castItemPayment(action({ resourcePayment: item as never }), {
+        kind: "slot",
+        level: 1,
+        remaining: 1,
+        total: 1,
+      })
+    ).toBeNull();
+  });
+
+  it("a bare action pays its own item cost, 1 unit by default", () => {
+    expect(
+      castItemPayment(action({ name: "Zap", resourcePayment: item as never }))
+    ).toEqual({
+      payment: item,
+      amount: 1,
+      label: "Zap",
+    });
+    expect(castItemPayment(action())).toBeNull();
   });
 });
