@@ -23,8 +23,10 @@ export function changeConcentration(
   spell: StoredConcentration,
   opts: { castLevel?: number; retractedFormTempHp?: number } = {}
 ): ConcentrationChange {
-  const { session } = doc;
-  const prev = session.concentration;
+  const prev = doc.session.concentration;
+  // A readied spell lives only as long as the concentration holding it.
+  const { readiedSpell, ...withoutReadied } = doc.session;
+  const session = prev === spell || !readiedSpell ? doc.session : withoutReadied;
   const form = session.polymorphForm;
   // A self form ends when its sustaining spell is dropped or swapped (never on a
   // self-assume, which sets concentration before stamping the form).

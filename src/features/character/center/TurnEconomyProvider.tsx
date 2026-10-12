@@ -88,7 +88,7 @@ import {
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
-import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
 import { isCharacterAlive } from "@/lib/character-status";
 import { observedOwnerBoundary } from "./turn-state";
@@ -132,6 +132,14 @@ import {
   type CastSpend,
 } from "@/lib/play/cast-payment";
 import { expendedSlotLevel, onCastRegains } from "@/lib/play/on-cast";
+import {
+  castReadiesSpell,
+  READIED_SPELL_REACTION_ID,
+  readiedHold,
+  readiedSpellExpires,
+  readiedTargets,
+  releaseKeepsConcentration,
+} from "@/lib/play/ready";
 import { getSpellById } from "@/data/spells";
 import { buildCastOptions, slotUsageKey } from "@/lib/cast-options";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
@@ -196,6 +204,33 @@ function durableTurnChanged(
 /** The Rogue Sneak Attack feature's stable srdId — its once-per-turn use tracker
  *  is the resource a Cunning Strike option debits (golden rule 7 — a stable id). */
 const SNEAK_ATTACK_TRACKER_ID = "rogue-sneak-attack";
+
+/**
+ * The readied spell is lost at the start of your next turn: Concentration on it ends
+ * (logged). Returns the lost spell and the exact inverse, or null when nothing was
+ * held or due.
+ */
+function expireReadiedHold(round: number): { spell: string; restore: () => void } | null {
+  const cs = useCharacterStore.getState();
+  const doc = cs.character;
+  if (!doc || cs.readonly || !readiedSpellExpires(doc.session, round)) return null;
+  const spell = doc.session.concentration;
+  let restoreConcentration: (() => void) | undefined;
+  const logIds = cs.setConcentration("", {
+    undoable: false,
+    captureUndo: (undo) => {
+      restoreConcentration = undo;
+    },
+  });
+  return {
+    spell,
+    restore: () => {
+      restoreConcentration?.();
+      const current = useCharacterStore.getState();
+      for (const id of logIds) current.removeLogEntry(id);
+    },
+  };
+}
 
 export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -588,6 +623,18 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         phase: "turn-start",
       });
     }
+    const announceLostHold = (round: number): void => {
+      const lost = expireReadiedHold(round);
+      if (!lost) return;
+      showToast({
+        message: t("combat.readiedSpellLostToast", {
+          name: concentrationLabel(lost.spell, locale),
+        }),
+        duration: 4000,
+      });
+    };
+    // A hold whose turn start passed while the sheet was closed is already lost.
+    if (!initialStatus) announceLostHold(useCombatStore.getState().round);
     const reconcile = (
       status: ReturnType<typeof useCombatStatusStore.getState>["status"]
     ): void => {
@@ -622,6 +669,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           round: scoped.round,
           phase: "turn-start",
         });
+        // A readied spell is lost at the start of your next turn.
+        announceLostHold(scoped.round);
         // Round countdowns (Rage, 1-minute spells) count the turn that just ended even
         // when the DM advanced past it: catch the previous round up, once — a round
         // already counted by the owner's End Turn is left alone.
@@ -1195,7 +1244,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       const live = useCharacterStore.getState();
       return !!characterId && live.character?.id === characterId && !live.readonly;
     };
-    if (!canCommit() || !(await confirmConcentrationBreak(action)) || !canCommit())
+    // After Ready, the turn's action-time spell is readied: held with Concentration.
+    const liveSession = useCharacterStore.getState().character?.session;
+    const readies =
+      !execution.ritual &&
+      !!liveSession &&
+      castReadiesSpell(action, useCombatStore.getState().selected.action, liveSession);
+    const heldAction = readies ? { ...action, concentration: true } : action;
+    if (!canCommit() || !(await confirmConcentrationBreak(heldAction)) || !canCommit())
       return;
     const itemPayment = castItemPayment(action, opt);
     const preparedResource = itemPayment
@@ -1217,7 +1273,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     );
     const message = execution.ritual
       ? t("combat.castRitualToast", { name: action.name })
-      : t("combat.actionUsedToast", { name: action.name });
+      : readies
+        ? t("combat.readiedSpellToast", { name: action.name })
+        : t("combat.actionUsedToast", { name: action.name });
     registerUndoableToast(
       { message },
       () => {
@@ -1232,11 +1290,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         const cs = useCharacterStore.getState();
         const spends = castOptionSpends(opt, metamagicIds);
         paySpends(spends);
-        const restoreConcentration = applyActionConcentration(action, opt.level);
+        const restoreConcentration = applyActionConcentration(heldAction, opt.level);
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
         // activate with one tap and expire by themselves). Only flips when OFF, so undo
-        // never clears a hand-set state; arms the round countdown.
-        const activation = activateActionState(castAction, opt.level);
+        // never clears a hand-set state; arms the round countdown. A readied spell has
+        // no effect until its release.
+        const activation = readies
+          ? { activated: false, restore: () => {} }
+          : activateActionState(castAction, opt.level);
         const loggedId = cs.logEvent({
           kind: "action-use",
           action: action.nameLoc,
@@ -1248,7 +1309,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           action.spellId,
           expendedSlotLevel(opt, spends)
         );
-        offerFollowUps(action, targets, loggedId);
+        const undoHold = readies
+          ? useCharacterStore
+              .getState()
+              .setReadiedSpell(readiedHold(currentRound(), loggedId || null))
+          : null;
+        if (!readies) offerFollowUps(action, targets, loggedId);
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1257,6 +1323,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             !itemResourceCommands.revert(resourceCommit)
           )
             return false;
+          undoHold?.();
           undoRegains();
           activation.restore();
           restoreConcentration(activation.activated);
@@ -2103,6 +2170,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       round: c.round + 1,
       phase: "turn-start",
     });
+    const restoreReadied = expireReadiedSpell(c.round + 1);
     // Log the round advance as a STRUCTURED turn-end event (the new round number).
     // Undoable: removing the entry on undo keeps the log faithful to the restored turn.
     const turnLogId = useCharacterStore
@@ -2143,6 +2211,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         // timers/toggles/log. The whole step undoes atomically.
         restorePerTurn?.();
         restoreTimers();
+        restoreReadied?.();
         boundaryAtStart.restore();
         boundaryAtEnd.restore();
         // Re-evaluate the maintenance prompt for the restored round (it was set for
@@ -2493,6 +2562,95 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   }
 
   /** This player's combatant id: the live encounter's, else the uid-derived one. */
+  /** The round this sheet is in: the shared encounter's, else the solo counter. */
+  function currentRound(): number {
+    const status = sheetEncounter(
+      useCombatStatusStore.getState().status,
+      useCharacterStore.getState().character?.id ?? null
+    );
+    return status?.round ?? useCombatStore.getState().round;
+  }
+
+  /** The readied spell as a castable action at the level it was cast with. */
+  function readiedAction(): ResolvedAction | null {
+    const doc = useCharacterStore.getState().character;
+    const spellId = doc?.session.concentration;
+    if (!doc?.session.readiedSpell || !spellId) return null;
+    const spell = getSpellById(spellId);
+    const base = spell
+      ? localizeActions(doc, locale).find(
+          (action) => action.spellId === spellId && !action.summary.recurringUse
+        )
+      : undefined;
+    if (!spell || !base) return null;
+    return actionAtCastLevel(
+      base,
+      spell,
+      doc.session.concentrationCastLevel ?? spell.level
+    );
+  }
+
+  /**
+   * Release the readied spell with the Reaction (2024 Ready): the Reaction is spent,
+   * the release is logged, a spell that needs no Concentration lets it go, and the
+   * spell's follow-ups (the damage tray) open on the targets the cast picked. One undo.
+   */
+  function releaseReadiedSpell(): void {
+    const doc = useCharacterStore.getState().character;
+    const action = readiedAction();
+    if (!doc || !action || useCombatStore.getState().reactionUsed) return;
+    const targets = readiedTargets(doc);
+    registerUndoableToast(
+      { message: t("combat.readiedSpellReleasedToast", { name: action.name }) },
+      () => {
+        const live = useCharacterStore.getState();
+        if (!live.character?.session.readiedSpell || live.readonly) return null;
+        if (!markReactionUsed(READIED_SPELL_REACTION_ID)) return null;
+        const loggedId = live.logEvent({
+          kind: "reaction-use",
+          action: action.nameLoc,
+          effect: logTypeForAction(action),
+          ...(targets.length > 0 ? { targets } : {}),
+        });
+        let restoreConcentration: (() => void) | undefined;
+        const concentrationLogIds = releaseKeepsConcentration(live.character.session)
+          ? []
+          : live.setConcentration("", {
+              undoable: false,
+              captureUndo: (undo) => {
+                restoreConcentration = undo;
+              },
+            });
+        const undoDrop = restoreConcentration
+          ? null
+          : useCharacterStore.getState().setReadiedSpell(undefined);
+        offerFollowUps(action, targets, loggedId);
+        return () => {
+          undoDrop?.();
+          restoreConcentration?.();
+          const current = useCharacterStore.getState();
+          for (const id of [loggedId, ...concentrationLogIds]) current.removeLogEntry(id);
+          useDamageTrayStore.getState().withdraw(loggedId);
+          resetReaction();
+        };
+      },
+      { turnScoped: false }
+    );
+  }
+
+  /** {@link expireReadiedHold}, announced. */
+  function expireReadiedSpell(round: number): (() => void) | null {
+    const lost = expireReadiedHold(round);
+    if (!lost) return null;
+    showToast({
+      message: t("combat.readiedSpellLostToast", {
+        name: concentrationLabel(lost.spell, locale),
+      }),
+      duration: 4000,
+    });
+    return lost.restore;
+  }
+
   function selfCombatantId(): string {
     const status = useCombatStatusStore.getState().status;
     const uid = useAuthStore.getState().user?.uid;
@@ -2522,6 +2680,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     maintenancePrompts,
     keepMaintainedEffect,
     endMaintainedEffect,
+    releaseReadiedSpell,
   };
 
   return (

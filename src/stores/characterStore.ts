@@ -568,6 +568,12 @@ interface CharacterState {
    * restores the prior character, or `null` when read-only or nothing changes.
    */
   dispatch: (event: SheetEvent) => (() => void) | null;
+  /**
+   * Hold (or drop, with undefined) the readied spell riding the current
+   * concentration, persisted with it. Returns the exact inverse, or null when
+   * nothing changed.
+   */
+  setReadiedSpell: (readied: SessionState["readiedSpell"]) => (() => void) | null;
   /** Set a summoned companion's current HP (Steel Defender / Eldritch Cannon). */
   setCompanionHp: (featureId: string, current: number) => void;
   /**
@@ -1928,6 +1934,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
               : {}),
             concentration: prev,
             concentrationCastLevel: character.session.concentrationCastLevel,
+            ...(character.session.readiedSpell
+              ? { readiedSpell: character.session.readiedSpell }
+              : {}),
             // Restore the EXACT prior active toggles alongside concentration,
             // so the chip re-lights atomically with the spell (mirrors the
             // cast-undo + `advanceEffectTimers` revert).
@@ -2915,6 +2924,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   setCompanionHp: (featureId, current) => {
     get().dispatch({ kind: "set-companion-hp", featureId, current });
+  },
+
+  setReadiedSpell: (readied) => {
+    const prior = get().character?.session.readiedSpell;
+    if (!get().dispatch({ kind: "set-readied-spell", readied })) return null;
+    persistCombat(get);
+    flushParentPersistence(get);
+    return () => {
+      if (!get().dispatch({ kind: "set-readied-spell", readied: prior })) return;
+      persistCombat(get);
+      flushParentPersistence(get);
+    };
   },
 
   // Undo = restore the prior variant pick + HP pool.

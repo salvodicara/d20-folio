@@ -17,6 +17,7 @@ import {
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
 import { dropBeastForm } from "./forms";
+import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
 import { setActiveSpellCastLevel, setActiveState } from "./states";
@@ -47,6 +48,7 @@ export type SheetEvent =
   | { kind: "set-active-state"; key: string; isActive: boolean; litRound: number }
   | { kind: "set-active-cast-level"; key: string; level: number | undefined }
   | { kind: "drop-beast-form" }
+  | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
   | { kind: "set-companion-variant"; featureId: string; variantId: string }
   | { kind: "set-companion-count"; groupId: string; count: number }
@@ -100,6 +102,8 @@ export function applySheetEvent(
       return withSession(setActiveSpellCastLevel(doc, event.key, event.level));
     case "drop-beast-form":
       return dropBeastForm(doc);
+    case "set-readied-spell":
+      return withSession(setReadiedSpell(doc.session, event.readied));
     case "set-companion-hp":
       return withSession(setCompanionHp(doc.session, event.featureId, event.current));
     case "set-companion-variant":
