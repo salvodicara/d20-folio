@@ -7,6 +7,7 @@ import {
   packAliasTarget,
   packItemArtAliasTarget,
   packMonsterArtAliasTarget,
+  packEnProseAliasTarget,
   packMonstersAliasTarget,
 } from "./scripts/content-pack-mode";
 
@@ -25,6 +26,7 @@ const alias = {
   // The pack's lazy monster sub-entry — mirrors vite.config.ts, and MUST stay
   // ahead of "@pack" (string aliases match by prefix).
   "@pack/monsters": packMonstersAliasTarget(),
+  "@pack/i18n-en-prose": packEnProseAliasTarget(),
   // The content-pack seam — mirrors vite.config.ts.
   "@pack": packAliasTarget(),
   // Root-anchored test-helper aliases: the pack's suites live in a separate

@@ -74,6 +74,8 @@ export const packBackgroundNames: readonly NamedEntry[] = [];
 
 /** EN SRD catalogue additions for pack entries (statically bundled, like EN). */
 export const packSrdEn: SrdCataloguePatch = {};
+/** The pack's lazy English prose (`@pack/i18n-en-prose`): none without the pack. */
+export const packSrdEnProse: SrdCataloguePatch = {};
 
 /** Lazy non-EN SRD catalogue additions for pack entries. */
 export const loadPackSrdCatalogues: PackSrdLoader = () => Promise.resolve({});

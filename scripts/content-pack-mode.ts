@@ -30,6 +30,17 @@ export const PACK_EMPTY_ENTRY = path.join(ROOT, "src", "data", "pack-empty.ts");
  * Absolute path of the pack's LAZY monster sub-entry (may not exist) — the
  * `@pack/monsters` alias target in pack mode.
  */
+/**
+ * Absolute path of the pack's LAZY English prose sub-entry (may not exist): the
+ * `description` text of the pack's catalogue, kept off the eager `@pack` barrel.
+ */
+export const CONTENT_PACK_EN_PROSE_ENTRY = path.join(
+  ROOT,
+  "content-pack",
+  "i18n",
+  "en-prose.ts"
+);
+
 export const CONTENT_PACK_MONSTERS_ENTRY = path.join(
   ROOT,
   "content-pack",
@@ -84,6 +95,18 @@ export function packAliasTarget(): string {
  */
 export function packMonstersAliasTarget(): string {
   return contentPackEnabled() ? CONTENT_PACK_MONSTERS_ENTRY : PACK_EMPTY_ENTRY;
+}
+
+/**
+ * The module the `@pack/i18n-en-prose` alias resolves to for this run: the pack's lazy
+ * English prose (the catalogue `description` text, ~70% of the pack's EN bytes) when
+ * the pack ships it, else the typed-empty stub. A pack from before the facts/prose
+ * split has no such file, and its descriptions stay in the eager `packSrdEn`.
+ */
+export function packEnProseAliasTarget(): string {
+  return contentPackEnabled() && existsSync(CONTENT_PACK_EN_PROSE_ENTRY)
+    ? CONTENT_PACK_EN_PROSE_ENTRY
+    : PACK_EMPTY_ENTRY;
 }
 
 /** The module the `@pack/monster-art` alias resolves to for this run. */

@@ -36,7 +36,8 @@
  * {@link localizeCustom}. The resolver is for SRD ids only.
  */
 import type { Locale } from "@/lib/locale";
-import { srdCatalogues, type SrdKind } from "./srd-en";
+import { diagnosticsLog } from "@/lib/diagnostics";
+import { hasEnProse, requestEnProse, srdCatalogues, type SrdKind } from "./srd-en";
 
 /** Re-exported so existing `import { SrdKind } from "@/i18n/resolver"` sites stay. */
 export type { SrdKind } from "./srd-en";
@@ -74,7 +75,17 @@ export function localizeSrd(
   const entry = cats?.[kind]?.[key];
   if (entry === undefined) return missing(kind, key, field, locale);
   const value = entry[field];
-  if (value === undefined) return missing(kind, key, field, locale);
+  if (value === undefined) {
+    // The pack's English descriptions arrive lazily (`@pack/i18n-en-prose`): until
+    // then a description is a quiet blank, the load is asked for, and the app
+    // re-renders when it lands. Never a crash.
+    if (field === "description" && locale === "en" && !hasEnProse()) {
+      diagnosticsLog("info", "srd.prose-not-loaded", { kind, key });
+      requestEnProse();
+      return "";
+    }
+    return missing(kind, key, field, locale);
+  }
   return Array.isArray(value) ? value.join("\n") : value;
 }
 
