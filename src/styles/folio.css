@@ -3457,20 +3457,15 @@ button.pr-dot.lg::before {
     var(--sheet-plate-body) 320px
   );
   /* a NORMAL panel — the seat line IS this border (see .cmp-tome) */
-  border: 1px solid var(--seat-ink);
-  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-xl);
   overflow: hidden;
 }
-/* The cockpit's OWN page tones (the compendium keeps the global vellum pair):
-   head band = --page-tone (the active tab fuses with it by token identity),
-   body = the deeper smoky umber beneath. */
+/* The sheet page is the same slab as every panel (vision 1): its tones are the
+   surface pair, in both themes. */
 .content {
-  --page-tone: #201c19;
-  --sheet-plate-body: #130e0b;
-}
-[data-theme="light"] .content {
-  --page-tone: #ded2bc;
-  --sheet-plate-body: #c9bda6;
+  --page-tone: var(--bg-surface-2);
+  --sheet-plate-body: var(--bg-surface-1);
 }
 /* SYMMETRIC TAIL (owner, 2026-07-31): the page's breath is `.sheet-page`'s
    own sp-3 padding, every side; TabBody's `pb-3` keeps the tail's mirror. The
@@ -9584,9 +9579,8 @@ button.create-need:focus-visible .create-need-chev {
 [data-theme="light"] .cmp-tome,
 [data-theme="light"] .sheet-page {
   box-shadow:
-    0 2px 5px rgba(46, 30, 6, 0.24),
-    0 12px 28px rgba(46, 30, 6, 0.34),
-    var(--gilt-glow);
+    inset 0 1px 0 var(--panel-highlight),
+    0 14px 30px -22px rgba(80, 55, 15, 0.45);
 }
 
 /* ── `.cmp-tome` — the compendium codex panel, composing `.tome-leaf-surface`
@@ -13079,8 +13073,8 @@ textarea.input.sess-notes-edit {
   letter-spacing: 0.04em;
   padding: 7px 16px;
   border-radius: var(--radius-md);
-  color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--at-c) 78%, white);
+  color: var(--text-primary);
+  border: 1px solid color-mix(in oklab, var(--at-c) 70%, transparent);
   /* Text-safe band: --text-inverse flips per theme (ink in dark, cream in light)
      and is only contrast-correct ON solid --at-c. The old wide band reached a
      mix(at,70% white) top (cream → ~2-3:1 in light) AND a mix(at,80% black)
@@ -13088,17 +13082,11 @@ textarea.input.sess-notes-edit {
      --at-c through the top half and only gently darken the lower edge, so both
      extremes clear 4.5:1 in both themes. The embossed brass read comes from the
      inset highlight (below) + the 1px text-shadow, not a wide tonal gradient. */
-  background: linear-gradient(
-    180deg,
-    var(--at-c) 0%,
-    var(--at-c) 45%,
-    color-mix(in oklab, var(--at-c) 88%, black) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 2px 0 color-mix(in oklab, var(--at-c) 55%, black),
-    0 3px 8px color-mix(in oklab, var(--at-c) 28%, transparent);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
+  /* Vision 1: a dark plate edged in its action colour (green action, blue bonus,
+     red reaction — BG3's economy colours), never a solid colour fill. */
+  background: color-mix(in oklab, var(--at-c) 16%, var(--bg-surface-2));
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--at-c) 25%, transparent);
+  text-shadow: none;
   /* box-shadow rides the same `--m-fast` lane as every `.btn` — it makes the
      Extra-Attack gold bloom KINDLE in as the Action coin tarnishes (one causal
      read: "the action went in, the remaining attacks lit up"), and softens
@@ -13107,11 +13095,6 @@ textarea.input.sess-notes-edit {
     transform var(--m-fast) var(--ease-settle),
     filter var(--m-fast),
     box-shadow var(--m-fast);
-}
-[data-theme="light"] .cc-btn {
-  /* light theme uses cream --text-inverse → reinforce edge with a light-up
-     top-highlight shadow instead of a dark one. */
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .cc-btn:hover:not(:disabled) {
   transform: translateY(-1px);
