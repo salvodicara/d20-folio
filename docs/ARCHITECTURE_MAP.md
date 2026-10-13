@@ -239,7 +239,18 @@ There are six parallel records. The same hit can land in four of them.
        restores the prior values on undo.
     5. Rests: the modal calls `shortRest`/`longRest`; `rest-world-boundary.ts` goes.
     6. `solo-world-turn.ts` and `party-world-lease.ts` go (turn-timed world lifetimes).
-    7. The encounter world: damage/heal/undo through the plain encounter writers.
+    7. The encounter world (plan only; nothing changes during live play):
+       - 7a. The DM's damage, heal and undo of a monster beat go through the plain
+         writers. The undo's fallback (`undoHpEvent`) already leaves the same fight as the
+         journal revert (`dm-undo-parity.test.ts`).
+       - 7b. Conditions: no app code creates a world condition on a monster any more
+         (`applyAdversaryCondition` has no caller), so `undoConditionEvent` and the
+         chip toggles already carry them.
+       - 7c. `stepEncounterTurn` stops expiring world lifetimes. First, extend the survey to
+         count live condition occurrences stored in encounter worlds: one found would stop
+         expiring and needs the DM to clear it by hand.
+       - 7d. Drop the encounter `world` write (`campaign-io.ts`) and the rules' `world` key
+         (a rules deploy, owner-gated).
     8. `session.world` itself and the `mechanics-*` modules (39 app tests, 3 pack tests);
        `EntityRef` and its schema move out first. Old `world` blobs stay in Firestore,
        unread.
