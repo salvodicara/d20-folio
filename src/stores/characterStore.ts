@@ -1366,7 +1366,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       prevCurrent === 0 &&
       character.session.conditions.includes(UNCONSCIOUS_CONDITION_ID);
     get().setHP(newCurrent, { persist: false });
-    get().logEvent({ kind: "hp-heal", amount, current: newCurrent, max });
+    // Log the HP that landed, not the request: the clamp at max eats any overheal.
+    get().logEvent({
+      kind: "hp-heal",
+      amount: newCurrent - prevCurrent,
+      current: newCurrent,
+      max,
+    });
     // RA-10 — a real heal off 0 is the story beat that ends Unconscious (the
     // low-level `setHP` shed it silently above).
     if (wasUnconsciousAtZero) {

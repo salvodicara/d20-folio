@@ -67,10 +67,10 @@ describe("combat-log emission at the state-seam", () => {
     expect(last()).toEqual({ kind: "hp-heal", amount: 7, current: 17, max: 40 });
   });
 
-  it("applyHealing clamps to max but logs the requested amount", () => {
+  it("applyHealing clamps to max and logs the HP actually regained", () => {
     load({ hp: { current: 38, temp: 0 } });
-    store().applyHealing(10); // clamps current to 40
-    expect(last()).toEqual({ kind: "hp-heal", amount: 10, current: 40, max: 40 });
+    store().applyHealing(10); // clamps current to 40: only 2 HP land
+    expect(last()).toEqual({ kind: "hp-heal", amount: 2, current: 40, max: 40 });
   });
 
   it("a no-op heal (already at max) logs nothing", () => {
