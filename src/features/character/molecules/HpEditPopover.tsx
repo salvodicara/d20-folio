@@ -65,6 +65,8 @@ import {
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/hooks/useLocale";
+import { fallDamageDice } from "@/lib/play/fall";
 import { hpState } from "./hp-tier";
 
 /**
@@ -170,6 +172,12 @@ interface HpEditPopoverProps {
   atZero?: boolean;
   /** Dead in play — ordinary HP mutation controls disable. */
   dead?: boolean;
+  /**
+   * The fall preset (SRD "Falling"): with it, a "Caduta" chip opens a distance
+   * field that names the d6 to roll and a total field that applies them as
+   * Bludgeoning damage, landing Prone when offered. Omitted = no preset.
+   */
+  onFall?: (total: number, opts: { prone: boolean }) => void;
 }
 
 /** "12 → 6" plus the verdict words for one resolved part. */
@@ -210,8 +218,17 @@ export function HpEditPopover({
   resistedSources = [],
   atZero = false,
   dead = false,
+  onFall,
 }: HpEditPopoverProps) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  // The fall preset: open state, distance fallen (locale unit), rolled total, Prone.
+  const [fallOpen, setFallOpen] = useState(false);
+  const [fallDistance, setFallDistance] = useState("");
+  const [fallTotal, setFallTotal] = useState("");
+  const [fallProne, setFallProne] = useState(true);
+  const fallUnit = locale === "it" ? "m" : "ft";
+  const fallDice = fallDamageDice(Number(fallDistance.replace(",", ".")), fallUnit);
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   // RA-05 — the typed-damage entry state: the current part's selected type /
@@ -304,6 +321,22 @@ export function HpEditPopover({
     setSelSource(null);
     setStaged([]);
     setCrit(false);
+    setFallOpen(false);
+    setFallDistance("");
+    setFallTotal("");
+    setFallProne(true);
+  };
+  /** Apply the rolled fall total (1..dice × 6), then close. */
+  const fallTotalValue = parseInt(fallTotal, 10);
+  const fallReady =
+    fallDice > 0 &&
+    Number.isFinite(fallTotalValue) &&
+    fallTotalValue >= fallDice &&
+    fallTotalValue <= fallDice * 6;
+  const commitFall = () => {
+    if (!onFall || !fallReady) return;
+    onFall(fallTotalValue, { prone: fallProne });
+    handleOpenChange(false);
   };
 
   // RA-05 — the live math preview (the same pure functions the commit applies).
@@ -477,6 +510,72 @@ export function HpEditPopover({
               <span className="text-xs text-text-secondary">
                 {t("combat.zeroHpDamageHint")}
               </span>
+            </div>
+          )}
+
+          {/* The fall preset (SRD "Falling"): the distance names the d6 to roll
+              (1d6 per 10 ft / 3 m, at most 20d6); the rolled total applies as
+              Bludgeoning through the damage path, landing Prone when it hurts. */}
+          {onFall && !dead && (
+            <div className="flex flex-col gap-2 border-t border-border-subtle pt-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <ToggleChip
+                  label={t("combat.fallToggle")}
+                  pressed={fallOpen}
+                  onToggle={() => setFallOpen((o) => !o)}
+                />
+                {fallOpen && (
+                  <>
+                    <Input
+                      type="number"
+                      min="0"
+                      inputMode="decimal"
+                      className="sm w-16"
+                      value={fallDistance}
+                      onChange={(e) => setFallDistance(e.target.value)}
+                      placeholder={fallUnit}
+                      aria-label={t("combat.fallDistanceAria", { unit: fallUnit })}
+                    />
+                    <span
+                      className="font-mono text-xs font-semibold tabular-nums text-text-primary"
+                      aria-live="polite"
+                    >
+                      {fallDice > 0
+                        ? t("combat.fallDice", { n: fallDice })
+                        : t("combat.fallNoDamage")}
+                    </span>
+                  </>
+                )}
+              </div>
+              {fallOpen && fallDice > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    type="number"
+                    min={fallDice}
+                    max={fallDice * 6}
+                    inputMode="numeric"
+                    className="sm w-16"
+                    value={fallTotal}
+                    onChange={(e) => setFallTotal(e.target.value)}
+                    placeholder={`${fallDice}–${fallDice * 6}`}
+                    aria-label={t("combat.fallTotalAria", { n: fallDice })}
+                  />
+                  <Button
+                    variant="neutral"
+                    size="sm"
+                    className="hp-act-dmg"
+                    disabled={!fallReady}
+                    onClick={commitFall}
+                  >
+                    {t("combat.fallApply")}
+                  </Button>
+                  <ToggleChip
+                    label={t("combat.fallProne")}
+                    pressed={fallProne}
+                    onToggle={() => setFallProne((p) => !p)}
+                  />
+                </div>
+              )}
             </div>
           )}
 

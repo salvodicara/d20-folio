@@ -52,8 +52,11 @@ import {
   stabilisedInPlay,
   DEATH_FAIL_LIMIT,
 } from "@/lib/character-status";
+import { FALL_DAMAGE_TYPE, fallLandsProne } from "@/lib/play/fall";
+import { uiText, type LocText } from "@/lib/loc-text";
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
+import type { CombatEvent } from "@/types/combat-log";
 
 // hpState + HpStateValue moved to the dependency-free `./hp-tier` module so the
 // roster card can import the tier without pulling this store-coupled hook (which
@@ -61,6 +64,37 @@ import type { DamageType } from "@/types/damage";
 // and re-exported for back-compat.
 import { hpState, type HpStateValue } from "./hp-tier";
 export { hpState, type HpStateValue };
+
+/** How an entered hit lands: a Critical Hit, its log source, landing Prone. */
+interface DamageOpts {
+  crit?: boolean;
+  /** Stamped on the damage (and Prone) log lines. */
+  source?: LocText;
+  /** Gain Prone with the hit when it deals damage (a fall). */
+  landProne?: boolean;
+}
+
+/** The ids of the log lines on the sheet now. */
+function logIds(): Set<string> {
+  return new Set(
+    useCharacterStore.getState().character?.session.logEntries.map((e) => e.id) ?? []
+  );
+}
+
+/** Stamp `source` on the newest `kind` line logged since `before`; returns its reverse. */
+function stampSource(
+  before: ReadonlySet<string>,
+  kind: "hp-damage" | "condition-gain",
+  source: LocText
+): (() => void) | null {
+  const store = useCharacterStore.getState();
+  const entry = store.character?.session.logEntries.findLast(
+    (e) => !before.has(e.id) && e.event.kind === kind
+  );
+  return entry
+    ? store.amendLogEntry(entry.id, { ...entry.event, source } as CombatEvent)
+    : null;
+}
 
 /** The derived readout + the amount-arg mutators every cockpit HP surface needs. */
 export interface HpControls {
@@ -99,10 +133,13 @@ export interface HpControls {
    *
    * Manual entry commits immediately; reactions are adjudicated at the table.
    */
-  handleApplyDamage: (
-    parts: ReadonlyArray<DamageInstance>,
-    opts?: { crit?: boolean }
-  ) => void;
+  handleApplyDamage: (parts: ReadonlyArray<DamageInstance>, opts?: DamageOpts) => void;
+  /**
+   * A fall (SRD "Falling"): the entered d6 total as Bludgeoning damage through
+   * the same path, and, when `prone` and the fall dealt damage, you land Prone.
+   * One undo; both log lines carry the fall as their source.
+   */
+  applyFall: (total: number, opts: { prone: boolean }) => void;
   /** Heal by `amount` (clamped to max); ≤ 0 is a no-op. */
   applyHeal: (amount: number) => void;
   /** Gain `amount` temp HP (doesn't stack — take the higher); ≤ 0 is a no-op. */
@@ -213,10 +250,7 @@ export function useHpControls(): HpControls {
     };
   }
 
-  function handleApplyDamage(
-    parts: ReadonlyArray<DamageInstance>,
-    opts?: { crit?: boolean }
-  ) {
+  function handleApplyDamage(parts: ReadonlyArray<DamageInstance>, opts?: DamageOpts) {
     if (!character || dead) return;
     // RA-05 — resolve the ENTERED roll against the character's own defenses
     // (the same pure math the popover previews). Untyped parts pass verbatim.
@@ -239,10 +273,36 @@ export function useHpControls(): HpControls {
     // re-light it on undo.
     const hadDeathWard =
       character.session.activeFeatures?.includes("spell-death-ward") ?? false;
+    // A fall lands you Prone when it deals damage: the chip goes on first, so the
+    // damage receipt below is the last change and its causal undo stays valid.
+    const source = opts?.source;
+    const landsProne =
+      opts?.landProne === true &&
+      fallLandsProne(intake.netTotal) &&
+      !effectiveSessionConditions(character.session).includes("prone");
+    const dropProne = () =>
+      void useCharacterStore.getState().removeConditionSilent("prone");
+    if (landsProne) {
+      const before = logIds();
+      useCharacterStore.getState().addCondition("prone");
+      if (source) stampSource(before, "condition-gain", source);
+    }
     // Delegate to the store (temp absorption + the concentration DC from the FULL
     // damage taken + the Death Ward interrupt + the 0-HP rules — RA-03/RA-10).
-    const undoDamage = applyDamage(intake.netTotal, { crit });
-    if (!undoDamage) return;
+    const beforeDamage = logIds();
+    const undoHit = applyDamage(intake.netTotal, { crit });
+    if (!undoHit) {
+      if (landsProne) dropProne();
+      return;
+    }
+    const unstamp = source ? stampSource(beforeDamage, "hp-damage", source) : null;
+    // Reverse newest first: the source stamp, the hit, then Prone.
+    const undoDamage = (): boolean => {
+      unstamp?.();
+      if (!undoHit()) return false;
+      if (landsProne) dropProne();
+      return true;
+    };
     // Read the ACTUAL resulting state from the store (Death Ward may have clamped
     // to 1; the 0-HP rules may have marked failures) — the toast reflects truth.
     const after = useCharacterStore.getState().character;
@@ -283,6 +343,13 @@ export function useHpControls(): HpControls {
               });
     // Redo repeats the same manual damage entry.
     registerUndoableResult({ message }, undoDamage, () => handleApplyDamage(parts, opts));
+  }
+
+  function applyFall(total: number, opts: { prone: boolean }) {
+    handleApplyDamage([{ amount: total, type: FALL_DAMAGE_TYPE }], {
+      source: uiText("combat.fallSource"),
+      landProne: opts.prone,
+    });
   }
 
   function applyHeal(amount: number) {
@@ -423,6 +490,7 @@ export function useHpControls(): HpControls {
     dead,
     stable,
     handleApplyDamage,
+    applyFall,
     applyHeal,
     applyTemp,
     clearTemp,
