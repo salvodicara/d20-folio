@@ -91,6 +91,8 @@ export interface TurnEconomyApi {
   endMaintainedEffect: (activeKey: string) => void;
   /** Release the readied spell with the Reaction (2024 Ready): one tap, one undo. */
   releaseReadiedSpell: () => void;
+  /** After a Wish cast: the picker over every spell of level 8 or lower, no slot. */
+  duplicateWithWish: () => void;
 }
 
 export const TurnEconomyContext = createContext<TurnEconomyApi | null>(null);

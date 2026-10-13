@@ -26,6 +26,7 @@ import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
 import { setActiveSpellCastLevel, setActiveState } from "./states";
 import { setSurprised } from "./surprise";
+import { setWishStress } from "./wish";
 import {
   restoreSpellSlot,
   restoreTracker,
@@ -61,6 +62,7 @@ export type SheetEvent =
     }
   | { kind: "set-surprised"; surprised: boolean }
   | { kind: "adjust-currency"; delta: CurrencyDelta }
+  | { kind: "set-wish-stress"; stressed: boolean }
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
@@ -124,6 +126,8 @@ export function applySheetEvent(
       return withSession(setSurprised(doc, event.surprised));
     case "adjust-currency":
       return withSession(adjustCurrency(doc.session, event.delta));
+    case "set-wish-stress":
+      return withSession(setWishStress(doc, event.stressed));
     case "drop-beast-form":
       return dropBeastForm(doc);
     case "set-readied-spell":

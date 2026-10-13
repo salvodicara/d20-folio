@@ -34,6 +34,7 @@ import type {
 import { resolveTrackers } from "@/lib/smart-tracker";
 import { coverReference, coverStateName, type CoverStateLevel } from "@/lib/cover-states";
 import { surpriseStateName } from "@/lib/surprise-state";
+import { wishStressStateName } from "@/lib/wish-state";
 import type { CharacterDoc } from "@/types/character";
 import type { ActivatableGroup } from "@/lib/grants";
 import type { AdvantageChip } from "@/lib/views/sheet-view";
@@ -496,7 +497,7 @@ export interface AuraVM {
 export function grantSourceLabel(sourceId: string, locale: Locale): string {
   const cover = coverStateName(sourceId);
   if (cover) return cover[locale];
-  const state = surpriseStateName(sourceId);
+  const state = surpriseStateName(sourceId) ?? wishStressStateName(sourceId);
   if (state) return state[locale];
   // Race-trait session ids carry the `race:<raceId>:<trait.id>` shape — resolve
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a

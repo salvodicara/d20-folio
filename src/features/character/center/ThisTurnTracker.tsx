@@ -70,6 +70,8 @@ import {
 } from "@/lib/play/extra-turns";
 import { takeSoloExtraTurn } from "./extra-turn";
 import { SURPRISE_STATE, isSurprised } from "@/lib/surprise-state";
+import { WISH_STRESS_STATE, isWishStressed } from "@/lib/wish-state";
+import { WISH_DUPLICATE_MAX_LEVEL, pendingWish } from "@/lib/play/wish";
 
 /** The economy-token types the meter can filter the action board by (item e). */
 export type EconFilterType = "action" | "bonus" | "reaction";
@@ -103,8 +105,13 @@ export function ThisTurnTracker({
 } = {}) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
-  const { handleEndTurn, maintenancePrompts, keepMaintainedEffect, endMaintainedEffect } =
-    useTurnEconomy();
+  const {
+    handleEndTurn,
+    maintenancePrompts,
+    keepMaintainedEffect,
+    endMaintainedEffect,
+    duplicateWithWish,
+  } = useTurnEconomy();
 
   const character = useCharacterStore((s) => s.character);
   // The ONE turn seam: in an active campaign encounter `round` is the SHARED encounter
@@ -139,6 +146,8 @@ export function ThisTurnTracker({
   const reflexesTaken = useCombatStore((s) => s.reflexesTaken);
   const timeStopTurns = useCombatStore((s) => s.timeStopTurns);
   const [timeStopDraft, setTimeStopDraft] = useState("");
+  // The Wish cast whose follow-up was answered (Duplicate or Wish Stress).
+  const [wishHandled, setWishHandled] = useState<string | null>(null);
   const movementLocked = useCombatStore((s) => s.movementLocked);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
@@ -401,6 +410,28 @@ export function ThisTurnTracker({
           useCharacterStore
             .getState()
             .dispatch({ kind: "set-surprised", surprised: !next });
+      },
+      { turnScoped: false }
+    );
+  }
+
+  // WISH — after a Wish cast, its two follow-ups: duplicate a spell of level 8 or lower
+  // (the picker), or light Wish Stress for any other use. Either closes the banner; a
+  // later use or the turn's end closes it too.
+  const wishId = readonly ? null : pendingWish(character.session.logEntries);
+  const showWish = wishId !== null && wishId !== wishHandled;
+  const wishStressed = isWishStressed({ activeFeatures });
+  function lightWishStress(): void {
+    setWishHandled(wishId);
+    registerUndoableToast(
+      { message: t("combat.wishStressOnToast") },
+      () => {
+        const store = useCharacterStore.getState();
+        if (!store.dispatch({ kind: "set-wish-stress", stressed: true })) return null;
+        return () =>
+          useCharacterStore
+            .getState()
+            .dispatch({ kind: "set-wish-stress", stressed: false });
       },
       { turnScoped: false }
     );
@@ -853,6 +884,41 @@ export function ThisTurnTracker({
             </span>
             <Icon as={ArrowRight} decorative />
           </button>
+        </div>
+      )}
+      {showWish && (
+        <div
+          className="conc-banner conc-banner-prompt"
+          role="status"
+          data-testid="wish-follow-up"
+        >
+          <span className="conc-banner-mark" aria-hidden />
+          <span className="conc-banner-text">
+            {t("combat.wishNote", { level: WISH_DUPLICATE_MAX_LEVEL })}
+          </span>
+          {/* One pair: stacked full width on the phone, inline on desktop. */}
+          <div className="flex shrink-0 gap-2 max-[720px]:w-full max-[720px]:flex-col">
+            <button
+              type="button"
+              className="conc-banner-keep max-[720px]:!w-full max-[720px]:!basis-auto max-[720px]:!text-center"
+              onClick={() => {
+                setWishHandled(wishId);
+                duplicateWithWish();
+              }}
+            >
+              {t("combat.wishDuplicate")}
+            </button>
+            {!wishStressed && (
+              <button
+                type="button"
+                className="conc-banner-drop max-[720px]:!w-full max-[720px]:!basis-auto max-[720px]:!text-center"
+                title={t("combat.wishStressHint")}
+                onClick={lightWishStress}
+              >
+                {grantSourceLabel(WISH_STRESS_STATE.activeKey, locale)}
+              </button>
+            )}
+          </div>
         </div>
       )}
       {askTimeStopTurns && (

@@ -182,6 +182,13 @@
     "materialShort": "{{spell}} consuma un componente da {{gp}} mo: oro e platino non bastano, sistema le monete a mano",
     "materialPay": "−{{gp}} mo",
     "materialPaidToast": "−{{gp}} mo per {{spell}}",
+    "wishNote": "Desiderio: duplica un incantesimo di livello {{level}} o inferiore, oppure esprimi un altro desiderio e subisci lo Stress.",
+    "wishDuplicate": "Duplica un incantesimo",
+    "wishRubric": "Desiderio",
+    "wishDuplicateHint": "Qualsiasi incantesimo di livello {{level}} o inferiore, senza componenti né slot.",
+    "wishStressHint": "Fino al termine di un Riposo Lungo, ogni incantesimo che lanci ti infligge 1d10 danni necrotici per livello dell'incantesimo, non riducibili. La tua Forza è 3 per 2d4 giorni (tira il tavolo).",
+    "wishStressOnToast": "Stress di Desiderio fino al prossimo Riposo Lungo",
+    "wishStressCastToast": "{{used}}. Stress di Desiderio: subisci {{n}}d10 danni necrotici, non riducibili.",
     "endCombatConfirmTitle": "Terminare il combattimento?",
     "endCombatConfirmBody": "Riporta il round a 1, riarma le tue azioni, ricarica il movimento e azzera l'iniziativa. Il Registro delle azioni, le condizioni, la concentrazione, i PF e i tiri salvezza contro la morte restano invariati.",
     "rearmSlot": "Riarma {{slot}}",
@@ -454,7 +461,11 @@
       "immune": "Immune",
       "noEffect": "Nessun effetto",
       "appliedToast": "{{name}}: applicato",
-      "outcome": { "hit": "Colpito", "miss": "Mancato", "critical": "Critico" },
+      "outcome": {
+        "hit": "Colpito",
+        "miss": "Mancato",
+        "critical": "Critico"
+      },
       "outcomeGroup": "Esito dell'attacco su {{name}}",
       "critHint": "dadi raddoppiati"
     }
