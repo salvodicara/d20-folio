@@ -387,7 +387,8 @@ SRD catalogue as static JSON. Only SRD material goes out.
   is the play record. `deriveCharacter(doc)` (`src/lib/views/derive-character.ts`) is the one
   stored-character → computed-sheet derivation (abilities, saves, skills, passives, AC, HP,
   initiative, speeds, senses, spell DC/attack, defenses), composed from the seams the player's
-  sheet reads; the DM's party view and the PDF are projections of it. Next: the cockpit rail.
+  sheet reads; the DM's party view and the PDF are projections of it, and the cockpit rail shows
+  the same numbers on every fixture (`rail-derive-parity.test.ts`).
 - **(2) Built, not published.** `packages/folio-core` (`@d20-folio/core`, `private: true`,
   AGPL like the repo): `parseCharacter` → `deriveCharacter`, the rules grammar and the session
   log and the activities (`catalogueActivities()` plus the translators), bundled SRD-only by Vite library mode (every `@pack` alias → the empty stub), declarations
