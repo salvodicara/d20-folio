@@ -151,6 +151,26 @@ describe("encounter scalar monster model", () => {
     expect(parseEncounterState(slowed)).toBe(slowed);
   });
 
+  it("reads an optional monster speed override and rejects a malformed one", () => {
+    const seeded = addMonster(empty(), { ...goblins, count: 1 });
+    const withSpeed = {
+      ...seeded,
+      combatants: [{ ...monster(seeded, "monster-1"), speed: 20 }],
+    };
+    expect(parseEncounterState(seeded)).toBe(seeded);
+    expect(parseEncounterState(withSpeed)).toBe(withSpeed);
+    for (const speed of [-10, 2.5, "30", null, 100000]) {
+      expect(
+        () =>
+          parseEncounterState({
+            ...seeded,
+            combatants: [{ ...monster(seeded, "monster-1"), speed }],
+          }),
+        String(speed)
+      ).toThrow();
+    }
+  });
+
   it("sets and toggles conditions idempotently per combatant", () => {
     const seeded = addMonster(empty(), { ...goblins, count: 1 });
     const poisoned = setMonsterCondition(seeded, "monster-1", "poisoned", true);

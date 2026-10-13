@@ -88,11 +88,13 @@ describe("eager-partition tripwires", () => {
     // `encounter-bestiary.tsx` (the components) + `encounter-monster-spec.ts` (the
     // corpus-bearing spec factory, split out so the .tsx stays component-only for
     // react-refresh). Only these may statically reach the corpus / monster spec.
-    // `encounter-trait-chips.tsx` (the DM card's trait-fact chips) is a third lazy leaf.
+    // `encounter-trait-chips.tsx` (the DM card's trait-fact chips) is a third lazy leaf,
+    // `encounter-monster-speed.tsx` (the card's stat-block walking speed) a fourth.
     const SEAM = new Set([
       "encounter-bestiary.tsx",
       "encounter-monster-spec.ts",
       "encounter-trait-chips.tsx",
+      "encounter-monster-speed.tsx",
     ]);
     const dir = join(REPO_ROOT, "src/features/campaigns");
     const files = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f));
@@ -107,6 +109,7 @@ describe("eager-partition tripwires", () => {
         expect(src, f).not.toMatch(/from\s+["']\.\/encounter-bestiary["']/);
         expect(src, f).not.toMatch(/from\s+["']\.\/encounter-monster-spec["']/);
         expect(src, f).not.toMatch(/from\s+["']\.\/encounter-trait-chips["']/);
+        expect(src, f).not.toMatch(/from\s+["']\.\/encounter-monster-speed["']/);
       }
       // BOTH lazy factories must pair the dynamic import with the catalogue gate.
       if (/import\(["']\.\/encounter-bestiary["']\)/.test(src)) {
