@@ -290,6 +290,8 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     instantaneous: true,
+    // A Celestial, an Elemental or a Fiend, of any Challenge Rating.
+    bestiaryPick: { types: ["celestial", "elemental", "fiend"] },
     source: "SRD",
   },
   {

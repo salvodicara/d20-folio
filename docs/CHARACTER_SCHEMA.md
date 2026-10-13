@@ -273,7 +273,8 @@ uses it (so the envelope stays byte-identical): `activeFeatures`, `effectTimers`
 `concentrationConditions` (conditions owned by the current solo concentration),
 `companionHp` (summoned-companion current HP, keyed by granting source id; a multi-creature
 summon keys each creature `"<spellId>#<n>"`), `companionVariant` (Beast Master's chosen
-`variantId`, keyed by feature id), `companionCount` (how many creatures a multi-creature summon
+`variantId`, keyed by feature id; for a bestiary-pick summon such as Planar Ally or Gate, the
+chosen monster id keyed by spell id), `companionCount` (how many creatures a multi-creature summon
 fields when the player changed it, keyed by spell id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
 current HP rides `companionHp["find-familiar"]`), `manifestedWeaponOverrides`, `pactWeaponConfig`,

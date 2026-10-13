@@ -64,6 +64,8 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       costGp: 5000,
     },
     concentration: true,
+    // Any creature named through the portal.
+    bestiaryPick: {},
     source: "SRD",
   },
   {

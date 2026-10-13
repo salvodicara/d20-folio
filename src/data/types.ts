@@ -1199,6 +1199,13 @@ export interface SrdSpellData {
    */
   summonedMonsters?: SpellSummonedMonsters;
   /**
+   * The spell brings one creature the CASTER picks from the bestiary (Planar Ally,
+   * Planar Binding, Gate, Awaken), limited by the spell's text. The pick rides
+   * `session.companionVariant[<spellId>]` (a monster id); the Companions rail shows
+   * it like a raised creature (HP + stat block), or a "choose" row until picked.
+   */
+  bestiaryPick?: BestiaryPickRule;
+  /**
    * Source book/setting. Non-`"SRD"` tags mark content outside the CC-BY SRD
    * 5.2.1 subset — such entries live in the content pack, never in `src/data`
    * (mirrors `SrdFeatData.source`).
@@ -1875,6 +1882,21 @@ export interface SummonCount {
  */
 export interface SpellSummonedMonsters {
   options: ReadonlyArray<{ monsterId: string; count: SummonCount }>;
+}
+
+/**
+ * Which bestiary creatures a {@link SrdSpellData.bestiaryPick} spell allows. Every
+ * part is optional (absent = no limit) and all must hold: Planar Ally's Celestial /
+ * Elemental / Fiend is `types`; Awaken's "Huge or smaller Beast or plant with an
+ * Intelligence of 3 or less" is `types` + `sizeMax` + `intMax`, and `include`
+ * names the creatures it makes outright (the Awakened Shrub and Tree).
+ */
+export interface BestiaryPickRule {
+  types?: ReadonlyArray<CreatureType>;
+  crMax?: number;
+  sizeMax?: CreatureSize;
+  intMax?: number;
+  include?: ReadonlyArray<string>;
 }
 
 /**

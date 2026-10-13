@@ -59,3 +59,39 @@ describe("SummonedMonstersPanel — one row per creature", () => {
     });
   });
 });
+
+describe("SummonedMonstersPanel — a creature the caster picks", () => {
+  function mountPick(session: Partial<CharacterDoc["session"]>) {
+    const d: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      character: {
+        ...MOCK_CHARACTER.character,
+        spells: [{ srdId: "planar-ally", prepared: true }],
+      },
+      session: { ...MOCK_CHARACTER.session, ...session },
+    };
+    useCharacterStore.setState({ character: d, loading: false, error: null });
+    const [group] = buildSummonedMonsterGroups(d);
+    render(<ul>{group && <SummonedMonstersPanel group={group} />}</ul>);
+  }
+
+  it("asks for a creature until one is chosen", () => {
+    mountPick({});
+    expect(screen.getByText("Planar Ally")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose a creature" })).toBeInTheDocument();
+  });
+
+  it("a stored creature the spell does not allow reads as unpicked", () => {
+    mountPick({ companionVariant: { "planar-ally": "wolf" } });
+    expect(screen.queryByText("Wolf")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose a creature" })).toBeInTheDocument();
+  });
+
+  it("fields the chosen creature with its HP, and Release sends it away", () => {
+    mountPick({ companionVariant: { "planar-ally": "planetar" } });
+    expect(screen.getByText("Planetar")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Planetar"));
+    fireEvent.click(screen.getByRole("button", { name: "Release" }));
+    expect(useCharacterStore.getState().character?.session.companionVariant).toEqual({});
+  });
+});

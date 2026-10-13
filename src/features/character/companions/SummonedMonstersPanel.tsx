@@ -1,7 +1,9 @@
 /**
  * SummonedMonstersPanel — the rail rows for a spell that raises several bestiary
  * creatures (Animate Dead's Skeletons or Zombies, Create Undead's Ghouls…) and
- * their shared stat-block modal (LAZY leaf).
+ * their shared stat-block modal (LAZY leaf). A bestiary-pick spell (Planar Ally,
+ * Gate…) fields the one creature the player chose: a "Choose a creature" row until
+ * then, and Change creature / Release in its modal.
  *
  * SEAM file: imports the monster corpus (`getMonster`), so it is lazy-only (the
  * eager-partition sweep pins it). The rail mounts it only when the character has
@@ -13,8 +15,9 @@
  * several), how many, the Bonus Action command, and the printed stat block.
  */
 
-import { useState } from "react";
+import { Suspense, lazy, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalScroll } from "@/components/ui/modal-head";
 import { Segmented } from "@/components/ui/segmented";
@@ -23,6 +26,7 @@ import { monsterIdentity } from "@/components/shared/monster-identity";
 import { CompanionHpStepper } from "@/components/shared/CompanionHpStepper";
 import { SummonCountStepper } from "@/components/shared/SummonCountStepper";
 import { getMonster } from "@/data/monsters";
+import { bestiaryPickAllows } from "@/lib/bestiary-pick";
 import { summonInstanceKey } from "@/lib/summon-count";
 import type { SummonedMonsterGroup } from "@/lib/views/companion-row-view";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -30,6 +34,14 @@ import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { localizeSrd } from "@/i18n/resolver";
+import { ensureSrdKind } from "@/i18n";
+
+// The bestiary picker rides the same lazy recipe as the familiar's form picker.
+const BestiarySummonPicker = lazy(() =>
+  Promise.all([import("./bestiary-summon-picker"), ensureSrdKind("monster")]).then(
+    ([m]) => ({ default: m.BestiarySummonPicker })
+  )
+);
 
 export interface SummonedMonstersPanelProps {
   group: SummonedMonsterGroup;
@@ -41,10 +53,45 @@ export function SummonedMonstersPanel({ group }: SummonedMonstersPanelProps) {
   const sheetMode = useUIStore((s) => s.sheetMode);
   const setCompanionHp = useCharacterStore((s) => s.setCompanionHp);
   const [statOpen, setStatOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const monster = getMonster(group.monsterId);
-  if (!monster) return null;
   const play = sheetMode === "play";
+  const pick = group.pick;
+  const found = group.monsterId ? getMonster(group.monsterId) : undefined;
+  // A stored pick the spell no longer allows (or an unknown id) reads as unpicked.
+  const monster = found && (!pick || bestiaryPickAllows(pick, found)) ? found : undefined;
+  const spellName = localizeSrd("spell", group.spellId, "name", locale);
+  const picker = pick && pickerOpen && (
+    <Suspense fallback={null}>
+      <BestiarySummonPicker
+        spellId={group.spellId}
+        rule={pick}
+        onClose={() => setPickerOpen(false)}
+      />
+    </Suspense>
+  );
+
+  if (!monster) {
+    if (!pick) return null;
+    return (
+      <>
+        <li className="flex items-center gap-2 text-sm">
+          <span className="min-w-0 flex-1 text-text-primary">{spellName}</span>
+          {play && (
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="text-[0.68rem] text-text-secondary underline hover:text-accent"
+            >
+              {t("features.pickCreature")}
+            </button>
+          )}
+        </li>
+        {picker}
+      </>
+    );
+  }
+
   const name = localizeSrd("monster", monster.id, "name", locale);
   const maxHp = monster.hp.average;
 
@@ -53,6 +100,17 @@ export function SummonedMonstersPanel({ group }: SummonedMonstersPanelProps) {
     registerUndoableToast(
       { message: t("features.variantSwitched", { name: label }) },
       () => useCharacterStore.getState().setCompanionVariant(group.spellId, monsterId),
+      { turnScoped: false }
+    );
+  };
+  const release = () => {
+    setStatOpen(false);
+    registerUndoableToast(
+      { message: t("features.creatureReleased", { name }) },
+      () =>
+        useCharacterStore
+          .getState()
+          .dispatch({ kind: "release-companion", featureId: group.spellId }),
       { turnScoped: false }
     );
   };
@@ -94,36 +152,58 @@ export function SummonedMonstersPanel({ group }: SummonedMonstersPanelProps) {
         open={statOpen}
         onClose={() => setStatOpen(false)}
         title={name}
-        rubric={localizeSrd("spell", group.spellId, "name", locale)}
+        rubric={spellName}
         subtitle={monsterIdentity(monster, t)}
         size="md"
       >
         <ModalScroll className="flex min-h-0 flex-1 flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            {group.options.length > 1 &&
-              (play ? (
-                <Segmented
-                  aria-label={t("features.variantLabel")}
-                  value={group.monsterId}
-                  onChange={changeCreature}
-                  options={group.options.map((id) => ({
-                    value: id,
-                    label: localizeSrd("monster", id, "name", locale),
-                  }))}
-                />
-              ) : null)}
-            <SummonCountStepper
-              label={name}
-              count={group.count}
-              onChange={play ? changeCount : undefined}
-            />
-          </div>
-          <p className="text-[0.72rem] text-text-secondary">
-            {t("features.summonCommand")}
-          </p>
+          {!pick && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              {group.options.length > 1 &&
+                (play ? (
+                  <Segmented
+                    aria-label={t("features.variantLabel")}
+                    value={monster.id}
+                    onChange={changeCreature}
+                    options={group.options.map((id) => ({
+                      value: id,
+                      label: localizeSrd("monster", id, "name", locale),
+                    }))}
+                  />
+                ) : null)}
+              <SummonCountStepper
+                label={name}
+                count={group.count}
+                onChange={play ? changeCount : undefined}
+              />
+            </div>
+          )}
+          {!pick && (
+            <p className="text-[0.72rem] text-text-secondary">
+              {t("features.summonCommand")}
+            </p>
+          )}
+          {pick && play && (
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setStatOpen(false);
+                  setPickerOpen(true);
+                }}
+              >
+                {t("features.changeCreature")}
+              </Button>
+              <Button size="sm" variant="ghost" className="icon-danger" onClick={release}>
+                {t("features.releaseCreature")}
+              </Button>
+            </div>
+          )}
           <MonsterStatBlockCard monster={monster} locale={locale} />
         </ModalScroll>
       </ModalShell>
+      {picker}
     </>
   );
 }
