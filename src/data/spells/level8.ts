@@ -40,6 +40,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       s: true,
       m: true,
       costGp: 1000,
+      consumed: true,
     },
     concentration: false,
     instantaneous: true,
@@ -132,6 +133,8 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     damageType: "psychic",
     damageDice: "10d12",
     saveAbility: "INT",
+    // SRD 5.2.1: "On a successful save, the target takes half as much damage only."
+    damageOnSave: "half",
     source: "SRD",
   },
   {

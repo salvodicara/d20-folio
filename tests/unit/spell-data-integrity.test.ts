@@ -197,10 +197,28 @@ describe("spell-data integrity", () => {
       // 2024 reworks that added a save where the data had none.
       "inflict-wounds": "CON",
       counterspell: "CON",
+      // SRD 5.2.1: "Each creature in that area makes a Strength saving throw."
+      "evards-black-tentacles": "STR",
     };
     for (const [id, ability] of Object.entries(expected)) {
       expect(getSpellById(id)?.saveAbility, id).toBe(ability);
     }
+  });
+
+  it("follows the SRD 5.2.1 text where the 2014 data differed", () => {
+    // "taking 6d10 Force damage on a failed save"
+    expect(getSpellById("blade-barrier")).toMatchObject({ damageType: "force" });
+    expect(srd("spell", "blade-barrier", "description", "en")).toContain(
+      "6d10 Force damage"
+    );
+    // "taking 4d8 Bludgeoning damage on a failed save"
+    expect(getSpellById("wind-wall")).toMatchObject({ damageDice: "4d8" });
+    expect(srd("spell", "wind-wall", "description", "en")).toContain(
+      "4d8 Bludgeoning damage"
+    );
+    // You and up to eight willing creatures: no save to banish an unwilling one.
+    expect(getSpellById("plane-shift")?.saveAbility).toBeUndefined();
+    expect(srd("spell", "plane-shift", "description", "en")).not.toMatch(/saving throw/);
   });
 
   it("S13 — the Fireball-class burst spells carry `area` (the AoE save-for-half signal)", () => {
@@ -237,14 +255,15 @@ describe("spell-data integrity", () => {
     expect(poisonSpray?.attackType).toBe("ranged");
     expect(poisonSpray?.saveAbility).toBeUndefined();
 
-    // Ray of Sickness is intentionally hybrid: the attack gates damage, then a
-    // Constitution save gates Poisoned. Flattening it to either branch loses RAW.
+    // Ray of Sickness follows SRD 5.2.1: "Make a ranged spell attack against
+    // the target. On a hit, the target takes 2d8 Poison damage and has the
+    // Poisoned condition until the end of your next turn." No saving throw.
     const ray = getSpellById("ray-of-sickness");
     expect(ray?.attackType).toBe("ranged");
-    expect(ray?.saveAbility).toBe("CON");
+    expect(ray?.saveAbility).toBeUndefined();
     expect(ray?.conditionApplication).toEqual({
       options: ["poisoned"],
-      on: "failed-save",
+      on: "hit",
       lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
     });
   });
@@ -768,7 +787,10 @@ describe("spell-data integrity", () => {
           srd("spell", spell.id, "description", "en")
         )
     );
-    expect(splitCantrips.length).toBeGreaterThan(0);
+    // SRD 5.2.1 Acid Splash is a 5-foot-radius Sphere, no longer the 2014
+    // "one creature, or two within 5 feet" split — it is an area spell now.
+    expect(getSpellById("acid-splash")).toMatchObject({ area: true });
+    expect(getSpellById("acid-splash")?.targeting).toBeUndefined();
     for (const spell of splitCantrips) {
       expect(spell.targeting, spell.id).toEqual({
         affinity: "enemy",
@@ -933,9 +955,19 @@ describe("spell-data integrity", () => {
   });
 
   it("models every catalogued damaging save-for-half spell as structured data", () => {
+    // Storm of Vengeance's primary 2d6 Thunder has no half; its "half as much"
+    // belongs to the Turn 3 bolts, which its mechanicsProgram already halves.
+    // Prismatic Spray and Prismatic Wall halve per ray / per layer (rows 1-5),
+    // never for the indigo and violet rows: their mechanicsPrograms own the half.
+    const HALF_ELSEWHERE = new Set([
+      "storm-of-vengeance",
+      "prismatic-spray",
+      "prismatic-wall",
+    ]);
     const missing = spells
       .filter(
         (spell) =>
+          !HALF_ELSEWHERE.has(spell.id) &&
           spell.damageDice !== undefined &&
           spell.saveAbility !== undefined &&
           /half (?:as much|the damage)/i.test(

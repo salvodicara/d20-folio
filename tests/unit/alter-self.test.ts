@@ -23,10 +23,12 @@ const KEY = "spell-alter-self";
 const TEXT = (spellsEn as Record<string, { description?: string }>)["alter-self"]
   ?.description;
 
-/** The option names the text lists: "Aquatic Adaptation (…), Change Appearance (…)…". */
+/** The option names the text lists, one paragraph each after "Choose one of the
+ *  following options.": "Aquatic Adaptation. …", "Change Appearance. …", … */
 function optionsFromText(): string[] {
-  const list = /choose one of the following options: (.*)$/.exec(TEXT ?? "")?.[1] ?? "";
-  return [...list.matchAll(/([A-Z][a-z]+ [A-Z][a-z]+) \(/g)].map((m) =>
+  const list =
+    /Choose one of the following options\.[\s\S]*$/.exec(TEXT ?? "")?.[0] ?? "";
+  return [...list.matchAll(/^([A-Z][a-z]+ [A-Z][a-z]+)\. /gm)].map((m) =>
     (m[1] ?? "").toLowerCase().replace(/ /g, "-")
   );
 }

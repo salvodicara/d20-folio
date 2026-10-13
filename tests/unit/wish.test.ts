@@ -37,8 +37,10 @@ import type { CharacterDoc, LogEntry } from "@/types/character";
 const wishText =
   (spellsEn as unknown as Record<string, { description: string }>)[WISH_ID]
     ?.description ?? "";
-/** "duplicate any spell of 8th level or lower" → 8. */
-const cap = Number(/duplicate any spell of (\d)th level or lower/.exec(wishText)?.[1]);
+/** "duplicate any other spell of level 8 or lower" → 8. */
+const cap = Number(
+  /duplicate any other spell of level (\d) or lower/.exec(wishText)?.[1]
+);
 
 function must<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) throw new Error("expected a value");
