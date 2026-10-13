@@ -170,18 +170,40 @@ export function localizeCombatEvent(
           outcome: t(`sessionReport.outcome.${outcome}`),
         })
       : line;
+  // The check entered with the use ("Used Search: Perception 17 vs DC 15, success").
+  const withCheck = (
+    line: string,
+    check: { skill: string; total: number; dc?: number } | undefined
+  ): string => {
+    if (!check) return line;
+    const skill = t(`skills.${check.skill}`);
+    if (check.dc === undefined)
+      return t("combatLog.withCheck", { line, skill, total: check.total });
+    return t("combatLog.withCheckDc", {
+      line,
+      skill,
+      total: check.total,
+      dc: check.dc,
+      verdict: t(
+        check.total >= check.dc ? "combatLog.checkSuccess" : "combatLog.checkFailure"
+      ),
+    });
+  };
   switch (event.kind) {
     case "action-use":
       // ATTACK-PIPS — an Extra-Attack swing appends its count ("… — attack 2 of 2").
-      return withOutcome(
-        event.attackOf
-          ? t("combatLog.actionUseAttackOf", {
-              name: resolveActionRef(event.action),
-              n: event.attackOf.n,
-              total: event.attackOf.total,
-            })
-          : t("combatLog.actionUse", { name: resolveActionRef(event.action) }),
-        event.outcome
+      return withCheck(
+        withOutcome(
+          event.attackOf
+            ? t("combatLog.actionUseAttackOf", {
+                name: resolveActionRef(event.action),
+                n: event.attackOf.n,
+                total: event.attackOf.total,
+              })
+            : t("combatLog.actionUse", { name: resolveActionRef(event.action) }),
+          event.outcome
+        ),
+        event.check
       );
     case "reaction-use":
       return withOutcome(

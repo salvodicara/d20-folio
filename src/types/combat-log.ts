@@ -71,6 +71,9 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result, when the damage tray said one for every target. */
       outcome?: AttackOutcome;
+      /** The check entered with the use (Search, Study, Influence): the skill id, the
+       *  total and the DC when one was set. An older reader ignores it. */
+      check?: { skill: string; total: number; dc?: number };
     }
   /** A reaction was used (always the reaction slot → red). */
   | {
