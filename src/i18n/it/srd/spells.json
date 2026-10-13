@@ -2996,5 +2996,20 @@
   },
   "enlarge-reduce.grants.0.grants.0.options.reduce.grants.2": {
     "description": "Ridurre: la taglia diminuisce di una categoria (da Media a Piccola, per esempio); gli attacchi con armi ridotte o colpi senz'armi infliggono 1d4 danni in meno se vanno a segno (minimo 1)"
+  },
+  "alter-self.grants.0": {
+    "label": "Alterare Sé Stesso"
+  },
+  "alter-self.grants.0.grants.0": {
+    "label": "Forma"
+  },
+  "alter-self.grants.0.grants.0.options.aquatic-adaptation": {
+    "label": "Adattamento acquatico"
+  },
+  "alter-self.grants.0.grants.0.options.change-appearance": {
+    "label": "Cambiare aspetto"
+  },
+  "alter-self.grants.0.grants.0.options.natural-weapons": {
+    "label": "Armi naturali"
   }
 }

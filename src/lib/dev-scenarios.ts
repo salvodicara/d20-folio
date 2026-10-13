@@ -1384,6 +1384,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Multi-creature summons: the Companions rail lists Skeleton 1–4 (AC 14, 13 HP each; Skeleton 2 at 7), each with its own HP steppers; one tap opens the Skeleton stat block with the Skeleton / Zombie picker, the creature count stepper and the Bonus Action command line.",
   },
+  // Alter Self — a level-5 Wizard with Alter Self prepared.
+  // Visit `/characters/scn-alter-self-wizard?tab=spells`.
+  "alter-self-wizard": {
+    name: "Ilvara Quickquill",
+    raceId: "human",
+    classId: "wizard",
+    level: 5,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
+    spells: [{ srdId: "alter-self", prepared: true }],
+    exercises:
+      "Alter Self: casting it lights the state under Concentration; the Active rail picks one option: Aquatic Adaptation (breathe underwater, swim at your Speed), Change Appearance, or Natural Weapons (the Unarmed Strike becomes 1d6 + INT, Slashing, Piercing or Bludgeoning).",
+  },
   // Bestiary-pick summons — a Cleric with Planar Ally prepared and no ally chosen
   // yet. Visit `/characters/scn-planar-ally-cleric`.
   "planar-ally-cleric": {

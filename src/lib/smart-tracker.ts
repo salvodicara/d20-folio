@@ -4863,12 +4863,23 @@ function resolveUnarmedAttackSummary(
 ): RawActionSummary {
   const deferredResolve = (sourceId: string | undefined, key: string) =>
     sourceId ? featureClassRow(sourceId, character)?.[key] : undefined;
+  // A spell-granted upgrade (Alter Self's Natural Weapons) uses that spell's
+  // casting ability on this sheet.
+  const spellAbility = (sourceId: string | undefined): AbilityCode | undefined => {
+    const ref = ctx.charData.spells.find((s) => "srdId" in s && s.srdId === sourceId);
+    const spell = sourceId ? spellIndex.get(sourceId) : undefined;
+    return ref && spell
+      ? (resolveSpellAbility(ref, ctx.charData, spell.classes) ?? undefined)
+      : undefined;
+  };
   const profile = effectiveUnarmedStrike(
     aggregate.unarmedStrikeDice,
     ctx.abilityScores,
     ctx.level,
     deferredResolve,
-    ctx.charData.proficiencyBonusOverride
+    ctx.charData.proficiencyBonusOverride,
+    undefined,
+    spellAbility
   );
   const altTypes = aggregate.unarmedStrikeDamageTypeOptions.filter(
     (type) => type !== profile.damageType

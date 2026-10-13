@@ -2267,10 +2267,11 @@ function dieAverage(die: string): number {
 export interface UnarmedStrikeDieGrant {
   /** A fixed die (`"d6"`) or the deferred `"classSpecific:<key>"` sentinel. */
   die: string;
-  /** Ability usable for the attack roll in place of STR (best-of wins). */
-  attackAbility?: AbilityCode;
+  /** Ability usable for the attack roll in place of STR (best-of wins);
+   *  `"spellcasting"` is the granting spell's ability (`spellAbility` resolves it). */
+  attackAbility?: AbilityCode | "spellcasting";
   /** Ability modifier added to the damage roll (omit = die only). */
-  damageAbility?: AbilityCode;
+  damageAbility?: AbilityCode | "spellcasting";
   /** Damage type the upgrade deals. */
   damageType: DamageType;
   /**
@@ -2346,7 +2347,8 @@ export function effectiveUnarmedStrike(
   level: number,
   deferredDice: Record<string, number | string> | DeferredDieResolver | undefined,
   pbOverride?: number | null,
-  override?: { attackBonus?: number; damage?: string; damageType?: DamageType }
+  override?: { attackBonus?: number; damage?: string; damageType?: DamageType },
+  spellAbility?: (sourceId: string | undefined) => AbilityCode | undefined
 ): UnarmedStrikeProfile {
   const pb = effectiveProficiencyBonus(level, pbOverride);
 
@@ -2370,7 +2372,19 @@ export function effectiveUnarmedStrike(
         const raw = resolveKey(u.sourceId, sentinel[1] ?? "");
         die = typeof raw === "string" ? raw : "";
       }
-      return { ...u, die };
+      // A spell-granted upgrade (Alter Self) uses that spell's casting ability;
+      // unresolvable, it adds none.
+      const ability = (a: AbilityCode | "spellcasting" | undefined) =>
+        a === "spellcasting" ? spellAbility?.(u.sourceId) : a;
+      const attackAbility = ability(u.attackAbility);
+      const damageAbility = ability(u.damageAbility);
+      return {
+        die,
+        damageType: u.damageType,
+        ...(u.sourceId !== undefined ? { sourceId: u.sourceId } : {}),
+        ...(attackAbility ? { attackAbility } : {}),
+        ...(damageAbility ? { damageAbility } : {}),
+      };
     })
     .filter((u) => dieAverage(u.die) > 0);
 
