@@ -9834,37 +9834,23 @@ button.create-need:focus-visible .create-need-chev {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  /* INTEGER height (not font-derived): a fractional row bottom makes the
-     browser snap the seat line and the tab's overlap onto DIFFERENT device
-     pixel rows — the un-killable hairline under the active tab (owner,
-     2026-07-31). An integer edge snaps identically at every DPR. */
+  /* Vision 1 (owner 2026-10-13): a tab is a word on the page's hairline, not a
+     boxed folder tab. The active one is lit from below: a gilt underline that
+     lands on the panel's top edge (the shell's -2px seat) and a soft glow. */
   height: 36px;
-  /* 9px + 0.05em: the five cockpit tabs fit the 656px centre column in Italian
-     (the longest locale) with no scroll on every desktop width; phones still
-     scroll with the dissolve. */
-  padding: 0 9px;
+  padding: 0 10px;
   font-family: var(--font-numeric);
   font-size: var(--text-2xs);
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-secondary);
-  border: 1px solid var(--border-medium);
-  /* NO own bottom border: the panel's seat line runs beneath EVERY tab, so a
-     per-tab bottom stroke would STACK on it — the thicker, brighter segment
-     the owner flagged 2026-08-01 ("ogni linguetta un bordo inferiore dorato
-     che non dovrebbe esserci"). The resting tab stands ON the page's one
-     stroke; only its fill meets the line. */
-  border-bottom-color: transparent;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  /* OPAQUE: the tabs protrude over the scene art — translucency would read as
-     dirt. Resting = the page ground warmed a step toward the leather dark. */
-  background: color-mix(in oklab, var(--bg-surface-1) 92%, var(--gold-leaf-900));
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  background: transparent;
   transition:
-    background var(--m-fast),
-    border-color var(--m-fast),
     color var(--m-fast),
-    transform var(--m-fast);
+    border-color var(--m-fast),
+    background var(--m-fast);
 }
 .cmp-tab .icon,
 .wb .tabstrip [role="tab"] .icon {
@@ -9876,22 +9862,12 @@ button.create-need:focus-visible .create-need-chev {
 .cmp-tab:hover,
 .wb .tabstrip [role="tab"]:hover {
   color: var(--text-primary);
-  border-color: var(--border-strong);
-  /* the 4-side shorthand above must never resurrect a bottom stroke over the
-     panel's seat line (the doubled-line defect) */
-  border-bottom-color: transparent;
-  background: var(--bg-surface-2);
+  border-bottom-color: var(--border-strong);
 }
 /* Light strike: surface-2 on the ivory band was IMPERCEPTIBLE (near-ivory on
    ivory) — the one resting tab state with no visible hover. Kindle it with the
    tabstrip's warm accent wash (light's --accent-primary is the deep gold-brown
    ink, so ~9% reads as a soft candle-warmth on cream), same voice both themes. */
-[data-theme="light"] .cmp-tab:hover,
-[data-theme="light"] .wb .tabstrip [role="tab"]:hover {
-  background: color-mix(in oklab, var(--accent-primary) 9%, var(--bg-surface-2));
-  border-color: color-mix(in oklab, var(--accent-primary) 35%, var(--border-strong));
-  border-bottom-color: transparent;
-}
 .cmp-tab:hover .icon,
 .wb .tabstrip [role="tab"]:hover .icon {
   color: var(--accent-text);
@@ -9910,23 +9886,14 @@ button.create-need:focus-visible .create-need-chev {
 }
 .cmp-tab[aria-selected="true"],
 .wb .tabstrip [role="tab"][aria-selected="true"] {
-  color: var(--accent-text);
-  /* the seat ink — the tab's outline continues the page's stroke */
-  border-color: var(--seat-ink);
-  border-bottom-color: transparent;
-  /* THE FUSION: the fill EQUALS the panel's head band (`--page-tone`), and
-     the tab overlaps the panel border by 2px — in a stretch flex row a
-     negative margin alone does NOT extend the box, so the box itself grows
-     (38px) while the margin returns its LAYOUT size to 36 and the padding
-     keeps the label optically centered. Two opaque device rows over a 1px
-     border: sub-pixel layout can never leave a fringe. */
-  background: var(--page-tone);
-  height: 38px;
-  margin-bottom: -2px;
-  padding-bottom: 2px;
-  /* NO box-shadow: the active tab is a PIECE OF THE PAGE (owner, 2026-07-31 —
-     "un pezzo unico"); a halo ring would draw a line across the fused base.
-     Identity = gold ink + the one continuous border stroke. */
+  color: var(--text-primary);
+  border-bottom-color: var(--accent-primary-bright);
+  background: radial-gradient(
+    70% 100% at 50% 100%,
+    color-mix(in oklab, var(--accent-glow) 18%, transparent),
+    transparent 72%
+  );
+  text-shadow: 0 0 14px color-mix(in oklab, var(--accent-glow) 55%, transparent);
 }
 .cmp-tab[aria-selected="true"] .icon,
 .wb .tabstrip [role="tab"][aria-selected="true"] .icon {
@@ -18580,26 +18547,11 @@ button.econ-tok-filter:active .econ-disc {
     var(--elev-recessed),
     inset 0 0 0 1px var(--emboss-sheen);
 }
-[data-theme="light"] .cmp-tab,
-[data-theme="light"] .wb .tabstrip [role="tab"] {
-  background: color-mix(in oklab, var(--bg-surface-2) 85%, var(--accent-primary));
-  border-color: color-mix(in oklab, var(--accent-primary) 24%, var(--border-medium));
-  border-bottom-color: transparent;
-  box-shadow: inset 0 1px 0 var(--emboss-sheen);
-}
-/* Light ACTIVE — placed AFTER the light base so the cascade cannot re-paint
-   the fused bottom edge (the base rule's 4-side border-color once resurrected
-   the seat line under the active tab). One piece with the page: the band
-   fill, an open bottom, no embossed sheen. */
+/* Light: the lit tab carries no glow on vellum. */
 [data-theme="light"] .cmp-tab[aria-selected="true"],
 [data-theme="light"] .wb .tabstrip [role="tab"][aria-selected="true"] {
-  background: var(--page-tone);
-  border-color: var(--seat-ink);
-  border-bottom-color: transparent;
-  box-shadow: none;
+  text-shadow: none;
 }
-/* (The legacy light-lux active-tab gradient + halo died with the one-piece
-   construction — the shared aria-selected rules above own the fusion fill.) */
 [data-theme="light"] .fchip[aria-pressed="true"] {
   background: linear-gradient(
     180deg,
