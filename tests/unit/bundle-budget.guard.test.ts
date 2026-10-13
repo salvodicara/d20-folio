@@ -475,7 +475,11 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // 2026-09-02 (combat P1): raised 9501 → 9525. Fresh origin/main measured 9497 KiB
 // (334 entries); P1 adds +14 KiB of eager diagnostics/codec JS → 9511 KiB / 334 entries;
 // 9525 keeps ~14 KiB never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 9525;
+// 2026-10-13 (release review of 22b9e6d6): raised 9525 → 9575. `just budget-pack`
+// with the frozen pack (5a0186a9) measured 9562.19 KiB / 338 entries: 152 merged PRs
+// of lazy rules/UI weight (+4 entries) that Verify never measures composed. No
+// duplicated corpus (en-prose is its own lazy chunk); +~13 KiB never-exact-fit headroom.
+const PRECACHE_CEILING_KIB = 9575;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
