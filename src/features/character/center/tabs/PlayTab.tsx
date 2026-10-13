@@ -132,8 +132,10 @@ import {
   attacksRemainingInAction,
   isPipAttackAction,
   maxReplaceAttackSpellLevel,
+  baseActionName,
   type CombatAction,
 } from "@/lib/views/combat-action-view";
+import { repeatUseCost } from "@/lib/play/object-interaction";
 import {
   actionHigherLevels,
   concentrationLabel,
@@ -1633,6 +1635,14 @@ function CombatActionCard({
     action.source
   );
   const facts = combatFacts(effectiveSummary, t, locale);
+  // The free object interaction, used this turn: another one takes the Utilize
+  // action, so the spent card names it instead of a bare "Used".
+  const repeatCost = repeatUseCost(action, selected);
+  const repeatNote = repeatCost
+    ? t("combat.repeatUseCosts", {
+        action: baseActionName(repeatCost, locale) ?? repeatCost,
+      })
+    : undefined;
 
   // D9 — "At Higher Levels" upcast text via the tracker presenter (mirrors the
   // Spells page); null for cantrips, weapons, and features.
@@ -1755,7 +1765,7 @@ function CombatActionCard({
       // BG3 grammar — a LIVE pip-attack card carries NO standing label: its CTA
       // turns struck gold (`ctaEmphasis`) + the count rides hover/sr-only
       // (`ctaTitle`).
-      ctaReason={!cta.spent ? (blockedReason ?? undefined) : undefined}
+      ctaReason={!cta.spent ? (blockedReason ?? undefined) : repeatNote}
       ctaEmphasis={cta.emphasis}
       ctaTitle={cta.emphasis ? (attackCount ?? undefined) : undefined}
       ctaDimmed={cta.dimmed}

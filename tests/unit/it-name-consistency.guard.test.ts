@@ -47,6 +47,7 @@ const EXPECTED_BASE_ACTION_IT: Record<string, string> = {
   "base-search": "Ricerca",
   "base-study": "Studio",
   "base-utilize": "Utilizzo",
+  "base-object-interaction": "Interagisci con un oggetto",
   "base-grapple": "Afferrare",
   "base-shove": "Spingere",
   "base-opportunity-attack": "Attacco di Opportunità",

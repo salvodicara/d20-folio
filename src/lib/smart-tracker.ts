@@ -721,6 +721,9 @@ export interface ResolvedAction {
   requiresOutcomeThisTurn?: SrdActionDef["requiresOutcomeThisTurn"];
   requiresActionCategoryThisTurn?: ActionEconomyCategory;
   maxUsesPerTurn?: number;
+  /** A once-per-turn free action whose next use this turn takes another action:
+   *  that action's id (a second object interaction is the Utilize action). */
+  repeatUseCosts?: string;
   /** Active state this action explicitly maintains for the current round. */
   maintainsActiveKey?: string;
   economyCategory?: ActionEconomyCategory;
@@ -1313,6 +1316,8 @@ export const BASE_ACTIONS: ReadonlyArray<{
   type: ActionType;
   effect: Record<Locale, string>;
   trigger?: Record<Locale, string>;
+  /** The action a second use this turn takes (see `ResolvedAction.repeatUseCosts`). */
+  repeatUseCosts?: string;
 }> = [
   {
     id: "base-dash",
@@ -1420,6 +1425,19 @@ export const BASE_ACTIONS: ReadonlyArray<{
       en: "Use a nonmagical object needing an action",
       it: "Usa un oggetto non magico che richiede un'azione",
     },
+  },
+  {
+    // 2024 "Interacting with Things": one object interaction (draw or stow a
+    // weapon, open a door) is free during your move or action, once per turn; a
+    // second one in the same turn takes the Utilize action.
+    id: "base-object-interaction",
+    name: { en: "Interact with an Object", it: "Interagisci con un oggetto" },
+    type: "free",
+    effect: {
+      en: "Draw, stow or open one object per turn",
+      it: "Estrai, riponi o apri un oggetto a turno",
+    },
+    repeatUseCosts: "base-utilize",
   },
   {
     // RA-04 — 2024 Unarmed Strike option: the target makes a Strength or
@@ -7465,6 +7483,7 @@ function resolveTemporaryHpActions(
             },
           }
         : {}),
+      ...(ba.repeatUseCosts ? { repeatUseCosts: ba.repeatUseCosts } : {}),
       costsSlot: false,
       pinned: pinnedSet.has(ba.id),
       defaultPinned: false,
