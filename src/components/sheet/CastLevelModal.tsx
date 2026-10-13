@@ -175,7 +175,6 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
       {request && (
         <DialogContent
           size="sm"
-          rubric={t("combat.castLevelHint")}
           title={t("combat.castLevelTitle", { name: request.spellName })}
           description={t("combat.castLevelHint")}
           closeLabel={t("common.cancel")}

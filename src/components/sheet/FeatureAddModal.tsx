@@ -47,7 +47,6 @@ export function FeatureAddModal({
     <ModalShell
       open={open}
       onClose={onClose}
-      rubric={editing ? t("common.edit") : undefined}
       title={editing ? t("custom.editFeature") : (detailTitle ?? t("nav.addFeature"))}
     >
       <ModalStage>

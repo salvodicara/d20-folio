@@ -154,7 +154,6 @@ export function FamiliarPanel({ formIds }: FamiliarPanelProps) {
         open={statOpen && form != null}
         onClose={() => setStatOpen(false)}
         title={name ?? ""}
-        rubric={t("familiar.eyebrow")}
         subtitle={
           form
             ? monsterIdentity(

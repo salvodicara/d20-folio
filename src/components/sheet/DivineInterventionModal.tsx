@@ -94,22 +94,14 @@ export function DivineInterventionModal({
   const itemId = pool.itemId;
   const isItemPool = itemId !== undefined;
   const { rubricKey, hintKey } = poolCopy(pool.sourceId);
-  const rubric = itemId
-    ? localizeSrd("magic-item", itemId, "name", locale)
-    : t(rubricKey);
+  // The pool's own name (Divine Intervention, Wish, the item) names the dialog.
+  const title = itemId ? localizeSrd("magic-item", itemId, "name", locale) : t(rubricKey);
   const subtitle = isItemPool
     ? t("combat.itemPoolCastHint")
     : t(hintKey, { level: pool.maxSpellLevel });
 
   return (
-    <ModalShell
-      open
-      size="md"
-      onClose={onCancel}
-      rubric={rubric}
-      title={t("combat.divineInterventionTitle")}
-      subtitle={subtitle}
-    >
+    <ModalShell open size="md" onClose={onCancel} title={title} subtitle={subtitle}>
       <ModalStage className="gap-3 px-4 pb-4">
         {/* S9 — an item pool spends a shared CHARGE budget at a per-spell cost, so
             the picker leads with the live remaining/total charges the rows draw

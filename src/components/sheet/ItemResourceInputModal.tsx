@@ -76,7 +76,6 @@ export function ItemResourceInputModal({
       compact
       size="sm"
       onClose={onCancel}
-      rubric={t("magicItems.resourceInputRubric")}
       title={request.sourceName}
       subtitle={t("magicItems.resourceInputHint")}
     >

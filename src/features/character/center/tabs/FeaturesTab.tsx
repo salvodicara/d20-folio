@@ -231,7 +231,6 @@ export function FeaturesTab() {
     const cls = primaryClassId(cd);
     const groups: Array<{
       key: string;
-      eyebrow: string;
       title: string;
       label: string;
       max: number;
@@ -255,7 +254,6 @@ export function FeaturesTab() {
         const entries = listManeuvers();
         groups.push({
           key: "maneuvers",
-          eyebrow: t("maneuvers.eyebrow"),
           title: t("maneuvers.section"),
           label: t("maneuvers.pickLabel"),
           max,
@@ -276,7 +274,6 @@ export function FeaturesTab() {
         const entries = listMetamagicOptions();
         groups.push({
           key: "metamagic",
-          eyebrow: t("metamagic.eyebrow"),
           title: t("metamagic.section"),
           label: t("metamagic.pickLabel"),
           max,
@@ -305,7 +302,6 @@ export function FeaturesTab() {
         const entries = [...knownInvs, ...eligibleInvocations(lvl, known)];
         groups.push({
           key: "invocations",
-          eyebrow: t("invocations.eyebrow"),
           title: t("invocations.section"),
           label: t("invocations.pickLabel"),
           max,
@@ -334,7 +330,6 @@ export function FeaturesTab() {
         const weapons = listMasterableWeapons();
         groups.push({
           key: "weapon-mastery",
-          eyebrow: t("character.weaponMastery"),
           title: t("character.weaponMastery"),
           label: t("abilities.weaponMasteryPick", {
             count: max,
@@ -886,7 +881,6 @@ export function FeaturesTab() {
               options={g.options}
               current={g.current}
               onCommit={(ids) => commitRePick(g.field, ids)}
-              eyebrow={g.eyebrow}
               title={g.title}
               label={g.label}
               searchPlaceholder={t("rePick.search")}

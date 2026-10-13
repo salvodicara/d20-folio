@@ -75,7 +75,6 @@ export function JoinCampaignModal({
       onClose={handleClose}
       compact
       size="md"
-      rubric={t("campaigns.rubric")}
       title={t("campaigns.joinTitle")}
     >
       <ModalBody className="flex flex-col gap-4">

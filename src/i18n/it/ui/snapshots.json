@@ -1,7 +1,6 @@
 {
   "snapshots": {
     "title": "Istantanee",
-    "rubric": "Cronologia",
     "hint": "Le istantanee catturano lo stato del personaggio. Il ripristino sovrascrive il foglio attuale. Non può essere annullato.",
     "empty": "Nessuna istantanea. Le istantanee vengono create automaticamente prima di ogni aumento di livello.",
     "emptyEyebrow": "Ancora nessuna cronologia",

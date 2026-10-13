@@ -1,6 +1,5 @@
 {
   "campaigns": {
-    "rubric": "Campagna",
     "hint": "I tavoli, i gruppi e i mondi in cui giochi.",
     "new": "Nuova campagna",
     "atCap": "Limite di campagne raggiunto ({{max}}). Eliminane una per aggiungerne un'altra.",

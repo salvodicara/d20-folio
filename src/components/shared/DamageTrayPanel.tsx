@@ -122,7 +122,7 @@ export function DamageTrayPanel({
     <DialogContent
       size="md"
       overlayClassName="scrim-sheet"
-      rubric={line}
+      subtitle={line || undefined}
       title={title}
       description={line}
       closeLabel={t("common.close")}

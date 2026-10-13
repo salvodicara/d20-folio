@@ -63,12 +63,7 @@ export function AddItemModal({ open, onClose }: AddItemModalProps) {
   const modalTitle = detailTitle ?? tabs.find((tab) => tab.id === activeTab)?.label ?? "";
 
   return (
-    <ModalShell
-      open={open}
-      onClose={onClose}
-      title={modalTitle}
-      rubric={t("equipment.addItem")}
-    >
+    <ModalShell open={open} onClose={onClose} title={modalTitle}>
       <ModalStage>
         <ModalTabSwitcher
           activeTab={activeTab}

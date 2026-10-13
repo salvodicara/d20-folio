@@ -97,8 +97,8 @@ function TargetPickerContent({
   return (
     <DialogContent
       size="sm"
-      rubric={hint}
       title={t("combat.targetStepTitle", { name: request.actionName })}
+      subtitle={hint}
       description={hint}
       closeLabel={t("common.cancel")}
     >

@@ -12,9 +12,7 @@
       "invalidCrop": "Impossibile applicare questo ritaglio. Riprova.",
       "saveError": "Impossibile salvare il ritratto. Controlla la connessione e riprova.",
       "cropperError": "Si è verificato un errore caricando lo strumento di ritaglio.",
-      "eyebrow": "Ritratto",
       "banner": {
-        "eyebrow": "Immagine campagna",
         "title": "Imposta Immagine"
       }
     },

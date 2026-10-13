@@ -28,7 +28,6 @@ function renderPicker(props: Partial<Parameters<typeof ChoiceRePicker>[0]> = {})
       options={options}
       current={[]}
       onCommit={() => {}}
-      eyebrow="Metamagic"
       title="Metamagic Options"
       label="Choose your metamagic options"
       {...props}

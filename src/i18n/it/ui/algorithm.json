@@ -12,7 +12,6 @@
     "bulletPlaceholder": "Azione o risultato…",
     "indent": "Rientro",
     "importJSON": "Importa da JSON",
-    "importJSONRubric": "Importa",
     "importJSONHint": "Modifica l'esempio qui sotto, poi Conferma. Ogni passo ha un'icona, un titolo e uno o più rami decisionali con righe puntate.",
     "importJSONHintCurrent": "Questo è il tuo algoritmo attuale in formato JSON. Modificalo, poi Conferma: ciò che confermi sostituisce tutti i passi.",
     "importJSONField": "JSON dell'algoritmo",

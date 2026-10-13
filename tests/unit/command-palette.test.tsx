@@ -84,7 +84,6 @@ describe("CommandPalette — sections navigator (C7)", () => {
   it("names itself as global search, never as an assistant", () => {
     renderPalette();
     expect(screen.getByRole("dialog", { name: "Search the Folio" })).toBeInTheDocument();
-    expect(screen.getByText("Quick access")).toBeInTheDocument();
     expect(screen.queryByText(/ask the folio/i)).not.toBeInTheDocument();
   });
 

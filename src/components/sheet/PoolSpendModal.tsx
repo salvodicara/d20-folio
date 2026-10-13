@@ -58,7 +58,6 @@ export function PoolSpendModal({ request, onConfirm, onCancel }: PoolSpendModalP
       compact
       size="sm"
       onClose={onCancel}
-      rubric={t("common.use")}
       title={request.featureName}
       subtitle={t("combat.poolSpendRemaining", {
         remaining: request.max,

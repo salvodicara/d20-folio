@@ -95,7 +95,6 @@ export function RestModal({ open, onClose }: { open: boolean; onClose: () => voi
     <ModalShell
       open={open}
       onClose={onClose}
-      rubric={t("character.restEyebrow")}
       title={t("character.rest")}
       size="lg"
       compact

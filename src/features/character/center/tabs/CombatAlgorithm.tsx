@@ -539,7 +539,6 @@ function ImportJSONModal({
       open={open}
       onClose={handleClose}
       title={t("algorithm.importJSON")}
-      rubric={t("algorithm.importJSONRubric")}
       size="md"
     >
       <ModalBody className="flex flex-col gap-3">

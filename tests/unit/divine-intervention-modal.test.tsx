@@ -48,9 +48,8 @@ describe("DivineInterventionModal", () => {
         onCancel={() => {}}
       />
     );
-    expect(screen.getByRole("dialog")).toHaveAccessibleName(/choose a spell/i);
-    // The rubric eyebrow still announces the feature.
-    expect(screen.getByText(/divine intervention/i)).toBeInTheDocument();
+    // The pool's own name titles the dialog (vision 1: no eyebrow above the title).
+    expect(screen.getByRole("dialog")).toHaveAccessibleName(/divine intervention/i);
     expect(screen.getByText("Cure Wounds")).toBeInTheDocument();
     expect(screen.getByText("Revivify")).toBeInTheDocument();
     expect(screen.getByText("Guiding Bolt")).toBeInTheDocument();

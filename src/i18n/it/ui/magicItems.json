@@ -22,7 +22,6 @@
     "type_scroll": "Pergamena",
     "type_staff": "Bastone",
     "type_wand": "Bacchetta",
-    "resourceInputRubric": "Tiro al tavolo",
     "resourceInputHint": "Inserisci il risultato dei tuoi dadi fisici. Non viene speso nulla finché non continui.",
     "resourceCapacityRoll": "Tira {{roll}} per la capacità di questa copia",
     "resourceInitialRoll": "Tira {{roll}} per la quantità iniziale di questa copia",

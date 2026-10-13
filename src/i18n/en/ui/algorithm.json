@@ -12,7 +12,6 @@
     "bulletPlaceholder": "Action or outcome…",
     "indent": "Indent",
     "importJSON": "Import from JSON",
-    "importJSONRubric": "Import",
     "importJSONHint": "Edit the example below, then Confirm. Each step has an icon, a title, and one or more decision branches with bullet lines.",
     "importJSONHintCurrent": "This is your current algorithm in JSON form. Edit it, then Confirm: what you confirm replaces every step.",
     "importJSONField": "Algorithm JSON",

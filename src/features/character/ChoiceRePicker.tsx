@@ -45,8 +45,6 @@ interface ChoiceRePickerProps {
   /** Currently-learned ids (seeds the selection). */
   current: ReadonlyArray<string>;
   onCommit: (ids: string[]) => void;
-  /** Diamond eyebrow (e.g. the maneuver subclass's name / "Sorcerer"). */
-  eyebrow: string;
   /** Cinzel title (e.g. "Maneuvers" / "Metamagic"). */
   title: string;
   /** The OptionGrid instruction label (e.g. "Choose your maneuvers"). */
@@ -65,7 +63,6 @@ export function ChoiceRePicker({
   options,
   current,
   onCommit,
-  eyebrow,
   title,
   label,
   searchPlaceholder,
@@ -96,7 +93,6 @@ export function ChoiceRePicker({
     <ModalShell
       open={open}
       onClose={onClose}
-      rubric={eyebrow}
       title={title}
       size="lg"
       // Hug the content so a short set (weapon mastery = a few weapons) doesn't leave

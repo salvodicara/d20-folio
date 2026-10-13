@@ -39,8 +39,6 @@ export function PickerDetailModal<T extends { id: string }>({
           ? spec.getName(entry, { t, locale, character, mode: "add" as const })
           : undefined
       }
-      // A read view, not an add-modal: no "Add" eyebrow (the body names the kind).
-      rubric={null}
       // Hug the content (a read-only detail) — a short feat/spell shouldn't leave a
       // big empty void below; long descriptions still scroll under the 88vh cap.
       compact

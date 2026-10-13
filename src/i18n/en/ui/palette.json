@@ -1,7 +1,6 @@
 {
   "palette": {
     "title": "Search the Folio",
-    "rubric": "Quick access",
     "description": "Find characters, campaigns, rules, and commands from anywhere.",
     "placeholder": "Characters, rules, and commands…",
     "empty": "No matches",

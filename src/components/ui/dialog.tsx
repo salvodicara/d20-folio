@@ -2,7 +2,7 @@
  * Dialog — folio modal shell (§ overlays), on Radix Dialog.
  *
  * The canonical accessible modal: scrim + carved `.modal` card with a branded
- * diamond-rubric head, scrollable body, and footer for actions. Radix gives the
+ * engraved head, scrollable body, and footer for actions. Radix gives the
  * focus trap, portal to body at the modal z-layer, ESC + outside-click close,
  * and the `aria-labelledby`/`aria-describedby` wiring (Title/Description).
  *
@@ -10,7 +10,7 @@
  * viewports the card already fills width with `--sp-4` gutters via `.scrim`.
  *
  *   <Dialog open={open} onOpenChange={setOpen}>
- *     <DialogContent rubric="Add Spell" title="Choose a spell" size="lg">
+ *     <DialogContent title="Choose a spell" size="lg">
  *       …body…
  *       <DialogFooter>…buttons…</DialogFooter>
  *     </DialogContent>
@@ -49,12 +49,12 @@ export interface DialogContentProps extends Omit<
   ComponentPropsWithoutRef<typeof RadixDialog.Content>,
   "title" | "aria-describedby"
 > {
-  /** Mono uppercase eyebrow with a diamond prefix (the branded head). */
-  rubric?: ReactNode;
   /** Display-font title — also becomes the dialog's accessible name. */
   title: ReactNode;
   /** Visually-hidden description for AT (optional but recommended). */
   description?: ReactNode;
+  /** A visible line under the title (what to do, what it costs). */
+  subtitle?: ReactNode;
   size?: DialogSize;
   /** Accessible label for the close button (bilingual copy from caller). */
   closeLabel?: string;
@@ -75,9 +75,9 @@ export interface DialogContentProps extends Omit<
 }
 
 export function DialogContent({
-  rubric,
   title,
   description,
+  subtitle,
   size = "md",
   closeLabel = "Close",
   className,
@@ -100,7 +100,7 @@ export function DialogContent({
           {...(description ? {} : { "aria-describedby": undefined })}
           {...props}
         >
-          <ModalHead title={title} rubric={rubric} closeLabel={closeLabel} />
+          <ModalHead title={title} subtitle={subtitle} closeLabel={closeLabel} />
           {description ? (
             <RadixDialog.Description className="sr-only">
               {description}

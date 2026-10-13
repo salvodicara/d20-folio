@@ -32,7 +32,6 @@ export function ConfirmDialog() {
       compact
       backDismiss={false}
       onClose={() => respond(false)}
-      rubric={t("common.confirm")}
       title={options.title}
       size="sm"
     >
