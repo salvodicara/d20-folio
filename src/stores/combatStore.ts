@@ -36,6 +36,11 @@ import type { EconomyActionCategory } from "@/lib/combat-economy";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import { allocateCombatOutcomeOccurrenceId } from "@/lib/combat-outcomes";
 import { useCharacterStore } from "@/stores/characterStore";
+import {
+  THIEFS_REFLEXES_ID,
+  type ExtraTurnSource,
+  type TimeStopTurns,
+} from "@/lib/play/extra-turns";
 
 /**
  * Read-only backstop (P10 glass case): a member/DM/admin viewer loads the sheet
@@ -220,6 +225,10 @@ interface CombatState {
   nextAttackAdvantage: boolean;
   /** A turn effect has set Speed to 0 until this turn ends. */
   movementLocked: boolean;
+  /** Thief's Reflexes' second turn was taken this combat (only round 1 offers it). */
+  reflexesTaken: boolean;
+  /** The Time Stop turns the player entered, for the round the spell was cast in. */
+  timeStopTurns: TimeStopTurns | null;
 
   // Actions
   setRound: (round: number) => void;
@@ -333,6 +342,15 @@ interface CombatState {
    * the batch staleness failure mode is gone.
    */
   endTurn: () => void;
+  /**
+   * Start an EXTRA turn in the same round (Thief's Reflexes, Time Stop): the same
+   * economy refresh as {@link endTurn} — Action, Bonus Action, Reaction, movement —
+   * but the round stays, so round-based durations do not tick. Records which source
+   * granted it.
+   */
+  extraTurn: (source: ExtraTurnSource) => void;
+  /** Record the Time Stop count the player rolled (1d4 + 1) for the current round. */
+  setTimeStopTurns: (total: number) => void;
 }
 
 const emptySelected = (): CombatState["selected"] => ({
@@ -394,6 +412,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   damageTakenThisRound: false,
   nextAttackAdvantage: false,
   movementLocked: false,
+  reflexesTaken: false,
+  timeStopTurns: null,
 
   setRound: (round) => set({ round }),
   setInitiative: (value) => set({ initiative: value }),
@@ -735,6 +755,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
       movementLocked: false,
+      reflexesTaken: false,
+      timeStopTurns: null,
       initiative: "",
     }),
 
@@ -744,29 +766,81 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     // refresh the reaction, reset movement. Resources were already committed
     // at use-time. (Reaction refreshes each round per 2024 rules.)
     set((state) => ({
+      ...freshTurn(),
       round: state.round + 1,
-      selected: emptySelected(),
-      // The budget resets to default at the turn boundary; the economy provider
-      // re-derives it from the active features for the new turn (an expired
-      // Action Surge toggle has already dropped, so the budget falls back to 1).
-      budget: { ...DEFAULT_BUDGET },
-      // Attack budget likewise falls back to 1 and is re-derived for the new turn;
-      // the swing counter clears (a fresh turn opens a fresh Attack action).
-      attackBudget: 1,
-      attacksUsed: 0,
-      attackSwings: [],
-      outcomeReceipts: [],
-      outcomeOrdinal: 0,
-      reactionUsed: false,
-      reactionUsedId: null,
-      reactionOutcomeOccurrenceId: null,
-      movementUsedFt: 0,
-      dashesThisTurn: 0,
-      spellSlotCastsThisTurn: 0,
-      spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
-      nextAttackAdvantage: false,
-      movementLocked: false,
     }));
   },
+
+  extraTurn: (source) => {
+    if (sheetReadonly()) return;
+    set((state) => ({
+      ...freshTurn(),
+      ...(source === THIEFS_REFLEXES_ID
+        ? { reflexesTaken: true }
+        : state.timeStopTurns && state.timeStopTurns.round === state.round
+          ? {
+              timeStopTurns: {
+                ...state.timeStopTurns,
+                taken: state.timeStopTurns.taken + 1,
+              },
+            }
+          : {}),
+    }));
+  },
+
+  setTimeStopTurns: (total) => {
+    if (sheetReadonly()) return;
+    set((state) => ({ timeStopTurns: { round: state.round, total, taken: 0 } }));
+  },
 }));
+
+/**
+ * The economy a NEW turn starts with — shared by {@link CombatState.endTurn} (which
+ * also advances the round) and {@link CombatState.extraTurn} (which does not). The
+ * round-scoped `damageTakenThisRound` is deliberately absent: an extra turn starts
+ * no new round.
+ */
+export function freshTurn(): Pick<
+  CombatState,
+  | "selected"
+  | "budget"
+  | "attackBudget"
+  | "attacksUsed"
+  | "attackSwings"
+  | "outcomeReceipts"
+  | "outcomeOrdinal"
+  | "reactionUsed"
+  | "reactionUsedId"
+  | "reactionOutcomeOccurrenceId"
+  | "movementUsedFt"
+  | "dashesThisTurn"
+  | "spellSlotCastsThisTurn"
+  | "spellSlotCastTurnKey"
+  | "nextAttackAdvantage"
+  | "movementLocked"
+> {
+  return {
+    selected: emptySelected(),
+    // The budget resets to default at the turn boundary; the economy provider
+    // re-derives it from the active features for the new turn (an expired
+    // Action Surge toggle has already dropped, so the budget falls back to 1).
+    budget: { ...DEFAULT_BUDGET },
+    // Attack budget likewise falls back to 1 and is re-derived for the new turn;
+    // the swing counter clears (a fresh turn opens a fresh Attack action).
+    attackBudget: 1,
+    attacksUsed: 0,
+    attackSwings: [],
+    outcomeReceipts: [],
+    outcomeOrdinal: 0,
+    reactionUsed: false,
+    reactionUsedId: null,
+    reactionOutcomeOccurrenceId: null,
+    movementUsedFt: 0,
+    dashesThisTurn: 0,
+    spellSlotCastsThisTurn: 0,
+    spellSlotCastTurnKey: null,
+    nextAttackAdvantage: false,
+    movementLocked: false,
+  };
+}

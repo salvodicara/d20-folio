@@ -32,6 +32,12 @@ import type {
   EncounterMonster,
 } from "@/types/campaign";
 import type { CreatureType, MonsterStatBlock } from "@/data/types";
+import {
+  currentSlotIndex,
+  firstRoundSlots,
+  markExtraTurn,
+  type StoredExtraTurn,
+} from "@/lib/play/extra-turns";
 import type { PortraitCrop } from "@/types/character";
 import type { CombatDefenseSnapshot } from "@/types/campaign";
 
@@ -186,8 +192,24 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
   );
 }
 
+/** Round 1's second turns: shape only. A stale id (a combatant removed since Begin
+ *  turns) is fine — `firstRoundSlots` drops it. */
+function validExtraTurns(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (turn) =>
+        isRecord(turn) &&
+        nonEmptyString(turn.id) &&
+        (turn.beforeId === null || nonEmptyString(turn.beforeId)) &&
+        (turn.started === undefined || typeof turn.started === "boolean")
+    )
+  );
+}
+
 /** Strict encounter boundary. It returns the original current-model value and never
- * repairs, expands or rewrites persisted combatants. */
+ * repairs, expands or rewrites persisted combatants. The one exception is the
+ * member-writable `extraTurns`: a malformed value reads as absent instead of throwing. */
 export function parseEncounterState(value: unknown): EncounterState {
   if (
     !isRecord(value) ||
@@ -256,6 +278,13 @@ export function parseEncounterState(value: unknown): EncounterState {
     ) {
       throw new TypeError("Invalid encounter initiative swap");
     }
+  }
+  if (value.extraTurns !== undefined && !validExtraTurns(value.extraTurns)) {
+    // A member may write this field (turn advance), so a malformed value must never
+    // break the fight for the whole table: it reads as absent (the plain order).
+    const rest: Record<string, unknown> = { ...value };
+    delete rest.extraTurns;
+    return rest as unknown as EncounterState;
   }
   return value as unknown as EncounterState;
 }
@@ -330,13 +359,20 @@ export function freezeOrder(
  */
 export function beginEncounterTurns(
   state: EncounterState,
-  orderedIds: ReadonlyArray<string>
+  orderedIds: ReadonlyArray<string>,
+  extraTurns: ReadonlyArray<StoredExtraTurn> = []
 ): EncounterState {
   if (state.currentCombatantId !== null) return state;
   const frozen = freezeOrder(state, orderedIds);
   const first = frozen.order?.[0];
   if (first === undefined) return state;
-  return { ...frozen, currentCombatantId: first };
+  const begun: EncounterState = { ...frozen, currentCombatantId: first };
+  // Round 1's second turns (Thief's Reflexes) ride the frozen order; none → no field.
+  const kept = extraTurns.filter(({ id }) => frozen.order?.includes(id));
+  if (kept.length > 0)
+    begun.extraTurns = kept.map(({ id, beforeId }) => ({ id, beforeId }));
+  else delete begun.extraTurns;
+  return begun;
 }
 
 // ─── Adding / removing combatants ───────────────────────────────────────────
@@ -847,17 +883,33 @@ export function advanceTurn(state: EncounterState): EncounterState {
   const order = state.order ?? [];
   if (order.length === 0) return state;
   const dead = deadMonsterIds(state);
-  let idx =
-    state.currentCombatantId === null ? -1 : order.indexOf(state.currentCombatantId);
+  // Round 1 may carry second turns (Thief's Reflexes) slotted into the frozen order.
+  let slots = firstRoundSlots(order, state.extraTurns, state.round);
+  let idx = currentSlotIndex(slots, state);
+  if (idx < 0 && state.currentCombatantId !== null) {
+    idx = order.indexOf(state.currentCombatantId);
+    slots = order.map((id) => ({ id, extra: false }));
+  }
   let round = state.round;
-  for (let i = 0; i < order.length; i++) {
-    const raw = idx + 1;
-    if (raw >= order.length) round += 1; // wrapped past the last → next round
-    idx = raw % order.length;
-    const nextId = order[idx];
-    if (nextId !== undefined && !dead.has(nextId)) {
+  const bound = slots.length + order.length;
+  for (let i = 0; i < bound; i++) {
+    let raw = idx + 1;
+    if (raw >= slots.length) {
+      // Wrapped past the last → next round, whose sequence is the plain order.
+      round += 1;
+      slots = firstRoundSlots(order, state.extraTurns, round);
+      raw = 0;
+    }
+    idx = raw;
+    const slot = slots[idx];
+    if (slot !== undefined && !dead.has(slot.id)) {
+      const extraTurns = slot.extra
+        ? markExtraTurn(state.extraTurns, slot.id, true)
+        : state.extraTurns;
+      const moved: EncounterState = { ...state, currentCombatantId: slot.id, round };
+      if (extraTurns !== state.extraTurns && extraTurns) moved.extraTurns = extraTurns;
       // A legendary creature regains its legendary actions when its turn starts.
-      return refillLegendaryPool({ ...state, currentCombatantId: nextId, round }, nextId);
+      return refillLegendaryPool(moved, slot.id);
     }
   }
   return state; // every candidate was a defeated monster — no live target (no-op)
@@ -865,21 +917,31 @@ export function advanceTurn(state: EncounterState): EncounterState {
 
 /**
  * Step the current-turn pointer back one place along the FROZEN `order` (read from the
- * doc). From the first id it wraps to the last and decrements the round (floored at 1).
+ * doc), round 1's second turns included. From the first id it wraps to the last and
+ * decrements the round (floored at 1).
  * No-op when the order is empty. The DM's correction tool — unlike {@link advanceTurn} it
  * does NOT auto-skip dead monsters (stepping back is a deliberate manual rewind).
  */
 export function prevTurn(state: EncounterState): EncounterState {
   const order = state.order ?? [];
   if (order.length === 0) return state;
-  const idx =
-    state.currentCombatantId === null ? 0 : order.indexOf(state.currentCombatantId);
+  const slots = firstRoundSlots(order, state.extraTurns, state.round);
+  const found = currentSlotIndex(slots, state);
+  const idx = found < 0 ? 0 : found;
   const wrap = idx <= 0;
-  const prevId = wrap ? order[order.length - 1] : order[idx - 1];
-  if (prevId === undefined) return state; // unreachable: the index is bounds-checked
-  return wrap
-    ? { ...state, currentCombatantId: prevId, round: Math.max(1, state.round - 1) }
-    : { ...state, currentCombatantId: prevId };
+  const round = wrap ? Math.max(1, state.round - 1) : state.round;
+  const target = wrap
+    ? firstRoundSlots(order, state.extraTurns, round).at(-1)
+    : slots[idx - 1];
+  if (target === undefined) return state; // unreachable: the index is bounds-checked
+  let extraTurns = state.extraTurns;
+  // Leaving a second turn backwards un-starts it; landing on one starts it.
+  const current = slots[idx];
+  if (current?.extra && !wrap) extraTurns = markExtraTurn(extraTurns, current.id, false);
+  if (round === 1) extraTurns = markExtraTurn(extraTurns, target.id, target.extra);
+  const moved: EncounterState = { ...state, currentCombatantId: target.id, round };
+  if (extraTurns !== state.extraTurns && extraTurns) moved.extraTurns = extraTurns;
+  return moved;
 }
 
 /**

@@ -216,6 +216,15 @@ export function localizeCombatEvent(
     case "rest":
       return t(event.restKind === "long" ? "combatLog.longRest" : "combatLog.shortRest");
     case "turn-end":
+      if (event.extraTurn) {
+        // An extra turn in the same round — the extra-turn control's own key.
+        return t("combat.extraTurnToast", {
+          source: resolveSourceName(event.extraTurn.source),
+          n: event.extraTurn.n,
+          of: event.extraTurn.of,
+          round: event.round,
+        });
+      }
       // Reuse the End-Turn toast's key — one semantic unit (a round advance) =
       // one i18n key (golden rule 6), so a wording fix propagates to both.
       return t("combat.endTurnToast", { round: event.round });

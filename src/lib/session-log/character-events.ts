@@ -7,6 +7,8 @@
 
 import type { LogEntry } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
+import { srdText } from "@/lib/loc-text";
+import { TIME_STOP_ID } from "@/lib/play/extra-turns";
 
 import type { SessionRecorder } from "./recorder";
 import type { CombatantId, PlayEvent } from "./types";
@@ -105,6 +107,19 @@ export function combatEventToPlayEvent(
     case "effect-expired":
       return { kind: "status", sourceId: event.sourceId, started: false, actor: me };
     case "turn-end":
+      // A round advance is known from the encounter; an EXTRA turn is not, so it is
+      // recorded as a use of the feature or spell that granted it.
+      return event.extraTurn
+        ? {
+            kind: "action",
+            actor: me,
+            source: srdText(
+              event.extraTurn.source === TIME_STOP_ID ? "spell" : "class-feature",
+              event.extraTurn.source,
+              "name"
+            ),
+          }
+        : null;
     case "tracker-regain":
     case "slot-regain":
     case "legacy":

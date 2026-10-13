@@ -499,6 +499,18 @@ describe("firestore.rules — /campaigns access", () => {
       );
     });
 
+    it("a member's advance may also flip a round-1 second turn (Thief's Reflexes)", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.currentCombatantId": "pc-member",
+          "encounter.extraTurns": [
+            { id: "pc-member", beforeId: "monster-1", started: true },
+          ],
+        })
+      );
+    });
+
     // ── C3: the FROZEN turn order (`encounter.order`) is DM-only STRUCTURAL state ──
     // Begin-turns FREEZES it and the DM drag-reorder rewrites it; a regular member may
     // advance the turn pointer but must NEVER touch `order`, the encounter status, or

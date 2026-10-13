@@ -306,6 +306,14 @@ export interface EncounterState {
    *  lets the DM correct or remove a table decision before turns begin. */
   initiativeSwaps?: Array<{ sourceId: string; targetId: string }>;
   /**
+   * Second turns in round 1 (Thief's Reflexes), set by the DM's Begin turns: `id` acts
+   * again just before `beforeId` (`null` = at the round's end). `started` turns true
+   * when the turn pointer reaches that second turn, which is how a pointer on `id`
+   * tells the first turn from the second. Additive: older clients ignore it and step
+   * the plain order. See `@/lib/play/extra-turns`.
+   */
+  extraTurns?: Array<{ id: string; beforeId: string | null; started?: boolean }>;
+  /**
    * The per-encounter identity STAMP, set once at {@link startEncounter} (a monotonic
    * `Date.now()`). Identifies ONE fight across surfaces — the pip's "most recently
    * started" default when the viewer is in several fights, and the debounced writer's
