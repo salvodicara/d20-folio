@@ -136,6 +136,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     deathFail: session.deathFail ?? 0,
     inspiration: session.inspiration ?? false,
     exhaustion: session.exhaustion ?? 0,
+    // A D20 Test penalty fading by one each Long Rest (Raise Dead).
+    fadingPenalties: session.fadingPenalties,
     pinnedActions: session.pinnedActions ?? [],
     unpinnedActions: session.unpinnedActions ?? [],
     notes: session.notes ?? "",

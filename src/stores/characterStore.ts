@@ -333,6 +333,11 @@ interface CharacterState {
    * seam, so `setTempHP` (rest/undo/USE-APPLIES) stays log-free. No-op for a
    * non-positive amount. */
   gainTempHp: (amount: number) => void;
+  /** Start (or restart) a fading D20 Test penalty (Raise Dead −4), logged; returns
+   *  the undo, or null when nothing changed. */
+  startFadingPenalty: (penaltyId: string) => (() => void) | null;
+  /** End a fading D20 Test penalty early, logged; returns the undo. */
+  endFadingPenalty: (penaltyId: string) => (() => void) | null;
   /**
    * Set the TOTAL Hit Point maximum reduction (`lib/play/vitals`), log it and
    * persist. Returns the undo (prior total, prior current HP, the log line), or
@@ -689,6 +694,32 @@ function effectiveCombatEffects(
   legacy: ReadonlyArray<ActiveCombatEffect>
 ): ActiveCombatEffect[] {
   return mergeActiveCombatEffects(legacy, []);
+}
+
+/** Run one fading-penalty event (`lib/play/fading-penalties`), log where it now
+ *  stands and persist; the undo restores the prior amount and drops the line. */
+function commitFadingPenalty(
+  get: () => CharacterState,
+  event: Extract<SheetEvent, { kind: "start-fading-penalty" | "set-fading-penalty" }>
+): (() => void) | null {
+  const prior = get().character?.session.fadingPenalties?.[event.penaltyId] ?? 0;
+  if (!get().dispatch(event)) return null;
+  const amount = get().character?.session.fadingPenalties?.[event.penaltyId] ?? 0;
+  const logId = get().logEvent({
+    kind: "fading-penalty",
+    penaltyId: event.penaltyId,
+    amount,
+  });
+  persistCombat(get);
+  return () => {
+    get().dispatch({
+      kind: "set-fading-penalty",
+      penaltyId: event.penaltyId,
+      amount: prior,
+    });
+    get().removeLogEntry(logId);
+    persistCombat(get);
+  };
 }
 
 function persistCombat(get: () => CharacterState): void {
@@ -1349,6 +1380,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       persistCombat(get);
     };
   },
+
+  startFadingPenalty: (penaltyId) =>
+    commitFadingPenalty(get, { kind: "start-fading-penalty", penaltyId }),
+
+  endFadingPenalty: (penaltyId) =>
+    commitFadingPenalty(get, { kind: "set-fading-penalty", penaltyId, amount: 0 }),
 
   useSpellSlot: (level, pactMagic = false) => {
     if (get().dispatch({ kind: "spend-slot", level, pactMagic }))

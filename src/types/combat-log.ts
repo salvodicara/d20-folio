@@ -103,6 +103,8 @@ export type CombatEvent =
   /** The Hit Point maximum reduction changed to `reduction` (0 = restored); `max`
    *  is the maximum after it. */
   | { kind: "hp-max-reduction"; reduction: number; max: number }
+  /** A fading D20 Test penalty (Raise Dead) now stands at `amount` (0 = ended). */
+  | { kind: "fading-penalty"; penaltyId: string; amount: number }
   /** A condition was gained. */
   | { kind: "condition-gain"; conditionId: string; source?: LocText }
   /**

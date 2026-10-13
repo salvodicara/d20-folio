@@ -20,6 +20,7 @@ import {
 } from "@/lib/play/sheet-events";
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
+import * as fading from "@/lib/play/fading-penalties";
 import * as forms from "@/lib/play/forms";
 import * as pins from "@/lib/play/pins";
 import * as rests from "@/lib/play/rests";
@@ -91,6 +92,14 @@ const CASES: {
   "set-exhaustion": [
     { kind: "set-exhaustion", level: 3 },
     () => at(vitals.setExhaustion(doc, 3)),
+  ],
+  "start-fading-penalty": [
+    { kind: "start-fading-penalty", penaltyId: "raise-dead" },
+    () => at(fading.startFadingPenalty(doc, "raise-dead")),
+  ],
+  "set-fading-penalty": [
+    { kind: "set-fading-penalty", penaltyId: "raise-dead", amount: 2 },
+    () => at(fading.setFadingPenalty(doc, "raise-dead", 2)),
   ],
   "add-condition": [
     { kind: "add-condition", condition: "poisoned" },

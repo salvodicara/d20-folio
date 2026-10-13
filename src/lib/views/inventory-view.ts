@@ -92,6 +92,7 @@ import {
 // its own string-returning `srdText` helper below).
 import { srdText as srdTextRef, customText as customTextRef } from "@/lib/loc-text";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
+import { fadingD20Penalty, fadingPenaltyParts } from "@/lib/play/fading-penalties";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import { buildWeaponRange } from "@/lib/smart-tracker";
 import { appendAbilityModToDice } from "@/lib/utils";
@@ -462,12 +463,15 @@ function buildWeaponVM(
       : {}),
     featureBonuses: attackFeatureBonuses,
     exhaustionPenalty: exPenalty,
+    fadingParts: fadingPenaltyParts(doc.session.fadingPenalties),
     hasOverride: hasAtkOverride,
   });
   // The to-hit DERIVES from the breakdown (golden rule 6; the AC pattern), so
   // the figure and the tip are the same arithmetic. Override pins it directly.
   const attackBonus = hasAtkOverride
-    ? (ref.attackBonusOverride ?? 0) + exPenalty
+    ? (ref.attackBonusOverride ?? 0) +
+      exPenalty +
+      fadingD20Penalty(doc.session.fadingPenalties)
     : breakdownTotal(attackBreakdownParts);
   const attackBreakdown = localizeBreakdown(attackBreakdownParts, locale);
   // Flat damage bonuses currently up (`weapon-damage-bonus` — Rage Damage while

@@ -62,6 +62,7 @@ export interface SavesChecksSession {
   concentration?: SessionState["concentration"];
   grantBundleChoices?: Record<string, string>;
   itemResources?: SessionState["itemResources"];
+  fadingPenalties?: SessionState["fadingPenalties"];
 }
 
 /** One saving-throw row (STR…CHA), engine-computed + override-first. */
@@ -194,7 +195,9 @@ export function deriveSavesAndChecks(
 
   // Feature-scoped aggregate → granted skill/save proficiencies; full aggregate →
   // ability-score floors/bonuses + expertise + JoaT + check bonuses. The SAME two
-  // aggregates LeftHud threads (mirrored exactly so the numbers can't diverge).
+  // aggregates LeftHud threads (mirrored exactly so the numbers can't diverge). A
+  // fading D20 Test penalty (Raise Dead) rides the full one, so it reaches every
+  // save, check and passive.
   const aggregate = evaluateGrants(
     resolveGrantSourcesForFeatures(charData.features),
     new Set(activeFeatures ?? [])
@@ -203,6 +206,7 @@ export function deriveSavesAndChecks(
     activeFeatures,
     grantBundleChoices: session.grantBundleChoices,
     itemResources: session.itemResources,
+    fadingPenalties: session.fadingPenalties,
   });
 
   const effectiveScores = aggregateAbilityScores(charData.abilityScores, fullAggregate);

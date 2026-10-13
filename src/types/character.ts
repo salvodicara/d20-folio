@@ -1028,6 +1028,11 @@ export interface SessionState {
   bardicInspirationDie?: string;
   exhaustion: number;
   /**
+   * D20 Test penalties that fade by one each Long Rest (Raise Dead's −4), keyed by
+   * the imposing catalogue id → the amount still remaining. Absent when none runs.
+   */
+  fadingPenalties?: Record<string, number>;
+  /**
    * PLAY-NO-EDIT — defenses gained DURING play (a Potion of Fire Resistance,
    * Protection from Energy, a curse's vulnerability, Heroes' Feast's Frightened
    * immunity), layered ADDITIVELY on top of the build's permanent defenses

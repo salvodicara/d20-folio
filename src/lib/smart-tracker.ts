@@ -194,6 +194,11 @@ import {
   type UnarmedStrikeProfile,
   aggregateAbilityScores,
 } from "@/lib/compute";
+import {
+  fadingD20Penalty,
+  fadingPenaltyParts,
+  resolveFadingPenaltySources,
+} from "@/lib/play/fading-penalties";
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
@@ -2376,6 +2381,8 @@ export function buildWeaponAttackBreakdown(opts: {
   featureBonuses?: ReadonlyArray<ResolvedWeaponAttackBonus>;
   /** Exhaustion to-hit penalty (≤ 0). */
   exhaustionPenalty?: number;
+  /** A fading D20 Test penalty's named rows (Raise Dead −4). */
+  fadingParts?: ReadonlyArray<RawBreakdownPart>;
   /** A pinned per-weapon attackBonusOverride suppresses the whole breakdown. */
   hasOverride?: boolean;
 }): RawBreakdownPart[] {
@@ -2397,6 +2404,7 @@ export function buildWeaponAttackBreakdown(opts: {
   if (opts.exhaustionPenalty && opts.exhaustionPenalty !== 0) {
     parts.push(termPart("character.exhaustion", opts.exhaustionPenalty));
   }
+  parts.push(...(opts.fadingParts ?? []));
   return parts;
 }
 
@@ -4590,7 +4598,7 @@ interface ActionResolveCtx {
   level: number;
   /** Proficiency bonus (override-aware). */
   pb: number;
-  /** Exhaustion to-hit penalty (≤ 0). */
+  /** The to-hit D20 Test penalty (≤ 0): Exhaustion plus any fading penalty (Raise Dead). */
   exPenalty: number;
   /** Ids the player explicitly pinned (non-default actions surface when present). */
   pinnedSet: Set<string>;
@@ -4627,7 +4635,8 @@ export function resolveActions(
     abilityScores: combatAbilityScores(character),
     level,
     pb: effectiveProficiencyBonus(level, charData.proficiencyBonusOverride),
-    exPenalty: exhaustionPenalty(session.exhaustion),
+    exPenalty:
+      exhaustionPenalty(session.exhaustion) + fadingD20Penalty(session.fadingPenalties),
     pinnedSet: new Set(session.pinnedActions),
     unpinnedSet: new Set(session.unpinnedActions ?? []),
     scope,
@@ -5710,7 +5719,11 @@ function resolveSpellActions(
   // reach the combat cards too — previously features+invocations only.
   const activeFeatureKeys = sessionActiveKeys(session);
   const spellGrantAggregate = evaluateGrants(
-    resolveAllGrantSources(charData, session.itemResources),
+    [
+      ...resolveAllGrantSources(charData, session.itemResources),
+      // A fading D20 Test penalty (Raise Dead) lowers the spell attack too.
+      ...resolveFadingPenaltySources(session.fadingPenalties),
+    ],
     activeFeatureKeys,
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
@@ -6751,7 +6764,9 @@ function resolveWeaponActions(
         ? { enchantName: srdText("magic-item", enchantItemId, "name") }
         : {}),
       featureBonuses: weaponAtkBonuses,
-      exhaustionPenalty: exPenalty,
+      // `exPenalty` is Exhaustion plus any fading penalty; the tip names each.
+      exhaustionPenalty: exhaustionPenalty(session.exhaustion),
+      fadingParts: fadingPenaltyParts(session.fadingPenalties),
       hasOverride: hasAtkOverride,
     });
     // Override-first: a pinned per-weapon `attackBonusOverride` replaces the

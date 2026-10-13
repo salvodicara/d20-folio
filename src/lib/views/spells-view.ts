@@ -59,6 +59,7 @@ import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { canRitualCast } from "@/lib/ritual";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
+import { resolveFadingPenaltySources } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
 import { vitalSlotUsed } from "@/lib/character-vitals";
 import { evaluateGrants, type SpellDieAugmentEntry } from "@/lib/grants";
@@ -490,7 +491,11 @@ export function buildSpellsViewModel(
   // Robe-of-the-Archmagi-while-active) reaches the Spells-tab card identically to
   // combat — the Spells-tab DC EQUALS the combat-tab DC by construction (rule 6).
   const grantAggregate = evaluateGrants(
-    resolveAllGrantSources(character, session.itemResources),
+    [
+      ...resolveAllGrantSources(character, session.itemResources),
+      // A fading D20 Test penalty (Raise Dead) lowers the spell attack too.
+      ...resolveFadingPenaltySources(session.fadingPenalties),
+    ],
     new Set(session.activeFeatures ?? []),
     new Map(Object.entries(session.grantBundleChoices ?? {}))
   );
