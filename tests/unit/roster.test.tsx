@@ -111,17 +111,13 @@ describe("RosterPage", () => {
     expect(sub?.textContent).toMatch(/9/);
   });
 
-  it("mounts the realm's own backdrop (--app-bg-art → the Hall of Heroes plate) and clears it on unmount", () => {
+  it("paints no picture behind its text (owner 2026-10-13, the image rule)", () => {
     useCharactersMock.mockReturnValue({
       characters: [makeDoc()],
       loading: false,
       error: null,
     });
-    const { unmount } = renderRoster();
-    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe(
-      "var(--asset-roster-scene)"
-    );
-    unmount();
+    renderRoster();
     expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe("");
   });
 

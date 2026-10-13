@@ -500,13 +500,7 @@ svg.icon[stroke],
    with a warm plate + gilt edge so its gold no longer floats outlined on the art. Ink
    stays gold-leaf-100, so the on-art-ink gate + axe hold. */
 [data-theme="light"] .on-art-scope .sec-title {
-  text-shadow:
-    0 0 1px rgba(20, 13, 3, 0.92),
-    1px 1px 0 rgba(20, 13, 3, 0.88),
-    -1px 1px 0 rgba(20, 13, 3, 0.88),
-    1px -1px 0 rgba(20, 13, 3, 0.88),
-    -1px -1px 0 rgba(20, 13, 3, 0.88),
-    0 1px 1px rgba(255, 247, 216, 0.42);
+  text-shadow: var(--on-art-halo);
 }
 /* The plate is for the LOOSE treasury GP-total cartouche only — it must NOT reach a
    card-bound `.badge.muted` (e.g. the party-encounter monster ×N token badge on
