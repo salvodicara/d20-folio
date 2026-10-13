@@ -1,10 +1,10 @@
 /**
  * RA-30 — Mounted & Underwater Combat quick-reference (D&D 2024 SRD 5.2.1).
  *
- * Neither variant carries a per-character mechanic (nothing to compute, no
- * Grant — the DC 10 save and the half-Speed cost live in the summary prose),
- * so these are pure reference tables — exactly like cover.ts / COVER_REFERENCE.
- * They render in the Play tab's "Rules Reference" panel (`SituationalRules`).
+ * They render in the Play tab's "Rules Reference" panel (`SituationalRules`),
+ * and the Underwater and Mounted tables, with the attack situations below, are
+ * the one-tap situation chips on the Play board (`src/lib/situational-states.ts`).
+ * The DC 10 save and the half-Speed cost stay prose.
  * Values are authoritative and shouldn't drift — see
  * tests/unit/combat-variants.test.ts.
  *
@@ -90,6 +90,47 @@ export const UNDERWATER_COMBAT_REFERENCE: ReadonlyArray<CombatVariantNote> = [
     summary: {
       en: "Anything underwater has Resistance to Fire damage.",
       it: "Tutto ciò che si trova sott'acqua ha Resistenza ai danni da Fuoco.",
+    },
+  },
+];
+
+/**
+ * Situational attack-roll rules (SRD 5.2.1 "Unseen Attackers and Targets",
+ * "Ranged Attacks in Close Combat", "Range"). Each line is a fact the table
+ * declares with one tap; the one-tap states (`src/lib/situational-states.ts`)
+ * take their names and sentences from here.
+ */
+export const ATTACK_SITUATION_REFERENCE: ReadonlyArray<CombatVariantNote> = [
+  {
+    id: "unseen-target",
+    name: { en: "Unseen Target", it: "Bersaglio non visto" },
+    summary: {
+      en: "When you attack a target you can't see, you have Disadvantage on the attack roll.",
+      it: "Quando attacchi un bersaglio che non puoi vedere, hai Svantaggio al tiro per colpire.",
+    },
+  },
+  {
+    id: "unseen-attacker",
+    name: { en: "Unseen Attacker", it: "Attaccante non visto" },
+    summary: {
+      en: "When a creature can't see you, you have Advantage on attack rolls against it.",
+      it: "Quando una creatura non può vederti, hai Vantaggio ai tiri per colpire contro di essa.",
+    },
+  },
+  {
+    id: "ranged-in-melee",
+    name: { en: "Ranged in Melee", it: "A distanza in mischia" },
+    summary: {
+      en: "A ranged attack roll has Disadvantage while you are within 5 feet of an enemy who can see you and isn't Incapacitated.",
+      it: "Un tiro per colpire a distanza ha Svantaggio se sei entro 1,5 metri da un nemico che può vederti e non è Incapacitato.",
+    },
+  },
+  {
+    id: "long-range",
+    name: { en: "Long Range", it: "Gittata lunga" },
+    summary: {
+      en: "A weapon attack roll against a target beyond normal range has Disadvantage; beyond long range it can't be made.",
+      it: "Un tiro per colpire con un'arma contro un bersaglio oltre la gittata normale ha Svantaggio; oltre la gittata lunga non si può fare.",
     },
   },
 ];

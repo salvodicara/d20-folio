@@ -16,6 +16,11 @@ import {
   litCoverLevel,
   type CoverStateLevel,
 } from "@/lib/cover-states";
+import {
+  situationKey,
+  situationalState,
+  type SituationId,
+} from "@/lib/situational-states";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { concentrationStatusKeys } from "@/lib/status";
 
@@ -190,6 +195,30 @@ export function commitCover(level: CoverStateLevel | null): (() => void) | null 
     useCharacterStore.getState().dispatch({
       kind: "set-cover",
       level: prior,
+      until: priorUntil,
+    });
+  };
+}
+
+/**
+ * Light (or clear) one situational attack state on the open sheet until its
+ * declared turn edge (the end of the owner's turn); returns the inverse, or null
+ * when nothing changed.
+ */
+export function commitSituation(id: SituationId, lit: boolean): (() => void) | null {
+  const duration = situationalState(id)?.grant.duration;
+  const until =
+    lit && duration?.kind === "turn-boundary"
+      ? (ownTurnBoundary(duration.turns, duration.phase) ?? undefined)
+      : undefined;
+  const store = useCharacterStore.getState();
+  const priorUntil = store.character?.session.effectBoundaries?.[situationKey(id)];
+  if (!store.dispatch({ kind: "set-situation", situation: id, lit, until })) return null;
+  return () => {
+    useCharacterStore.getState().dispatch({
+      kind: "set-situation",
+      situation: id,
+      lit: !lit,
       until: priorUntil,
     });
   };
