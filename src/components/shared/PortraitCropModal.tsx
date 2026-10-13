@@ -146,7 +146,6 @@ export function PortraitCropModal({
     <ModalShell
       open={open}
       onClose={onClose}
-      rubric={t(isBanner ? "portrait.crop.banner.eyebrow" : "portrait.crop.eyebrow")}
       title={t(isBanner ? "portrait.crop.banner.title" : "portrait.crop.title")}
       subtitle={t("portrait.crop.subtitle")}
       // Hug the content: the body is fixed-height (crop stage + slider + actions),

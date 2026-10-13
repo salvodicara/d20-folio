@@ -5,7 +5,7 @@
  * being re-declared in each. `ui/dialog.tsx` re-exports `ModalBody`/`ModalFoot` as
  * `DialogBody`/`DialogFooter`.
  *
- * - `ModalHead` — diamond `.modal-rubric` eyebrow + Cinzel `.modal-title` (the
+ * - `ModalHead` — the Cinzel `.modal-title` (the
  *   Radix `Dialog.Title`, i.e. the accessible name) + `.modal-close` glyph. Must
  *   render inside a `RadixDialog.Root` (both primitives provide it). Close modes:
  *     • `onClose` provided → a plain button driving the caller's controlled close
@@ -36,8 +36,6 @@ import { Icon } from "@/components/ui/icon";
 export interface ModalHeadProps {
   /** Display-font title — also the Radix `Dialog.Title` (the accessible name). */
   title: ReactNode;
-  /** Diamond-prefixed mono eyebrow (the branded `.modal-rubric`). */
-  rubric?: ReactNode;
   /** Optional subtitle line below the title. */
   subtitle?: ReactNode;
   /** Slot for left-side content (e.g. a back button). */
@@ -53,7 +51,6 @@ export interface ModalHeadProps {
 
 export function ModalHead({
   title,
-  rubric,
   subtitle,
   leading,
   closeLabel = "Close",
@@ -63,15 +60,12 @@ export function ModalHead({
     <div className="modal-head">
       {leading}
       <div className="min-w-0 flex-1">
-        {rubric ? <span className="modal-rubric">{rubric}</span> : null}
         {/* A dialog's name must be fully legible at every width — titles WRAP,
             never ellipsize (owner, 2026-06-11: "Abbandonare il passaggio di
             liv…" cut the one line that says what the dialog does). */}
         <RadixDialog.Title className="modal-title">{title}</RadixDialog.Title>
-        {subtitle ? (
-          // Information (what to pick, what it costs): it wraps, never truncates.
-          <p className="mt-0.5 font-mono text-xs text-text-secondary">{subtitle}</p>
-        ) : null}
+        {/* Information (what to pick, what it costs): it wraps, never truncates. */}
+        {subtitle ? <p className="modal-subtitle">{subtitle}</p> : null}
       </div>
       {onClose ? (
         // Plain button (not Dialog.Close) so it drives the controlled onClose

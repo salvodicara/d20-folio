@@ -14,7 +14,7 @@
  * `flex-1 ModalScroll region` scrolls correctly (the plain `Dialog` scrolls its whole
  * `.modal-body` instead) — that's why this primitive stays distinct from `Dialog`.
  * It renders the SAME owner-approved overlay vocabulary (carved `.modal` card,
- * gold-gradient `.modal-head` with a diamond `.modal-rubric` + Cinzel
+ * gold-gradient `.modal-head` with a Cinzel
  * `.modal-title`, `.modal-close` glyph) so every consumer reads as one Illuminated
  * Folio surface.
  *
@@ -46,12 +46,6 @@ interface ShellProps {
   title?: string;
   /** Optional subtitle below the title. */
   subtitle?: string;
-  /**
-   * Mono uppercase eyebrow with a diamond prefix (the branded `.modal-rubric`).
-   * Defaults to the localized "Add" rubric when a `title` is shown; `null`
-   * shows none (read-only views).
-   */
-  rubric?: ReactNode;
   children: ReactNode;
   /** Width tier — defaults to the wide `lg` card these list/detail modals use. */
   size?: ModalSize;
@@ -84,7 +78,6 @@ export function ModalShell({
   onClose,
   title,
   subtitle,
-  rubric,
   children,
   size = "lg",
   compact = false,
@@ -128,10 +121,6 @@ export function ModalShell({
                 onClose={onClose}
                 title={title}
                 subtitle={subtitle}
-                // The add-modals always carry the branded rubric; default to the
-                // localized "Add" eyebrow when the caller doesn't pass one.
-                // `null` opts out (a read-only view is not an add-modal).
-                rubric={rubric === null ? undefined : (rubric ?? t("common.add"))}
                 closeLabel={t("common.close")}
               />
             )}

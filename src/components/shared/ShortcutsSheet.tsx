@@ -48,7 +48,6 @@ export function ShortcutsSheet() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         size="lg"
-        rubric={t("shortcuts.rubric")}
         title={t("shortcuts.title")}
         description={t("shortcuts.description")}
         closeLabel={t("common.close")}

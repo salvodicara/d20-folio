@@ -95,7 +95,6 @@ export function CreateCampaignModal({
       onClose={handleClose}
       compact
       size="md"
-      rubric={t("campaigns.rubric")}
       title={phase === "form" ? t("campaigns.createTitle") : t("campaigns.createdTitle")}
     >
       <ModalBody className="flex flex-col gap-4">

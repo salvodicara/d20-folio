@@ -1,7 +1,6 @@
 {
   "polymorph": {
     "transform": "Transform",
-    "rubric": "Transform",
     "title": "Choose a Beast Form",
     "selfTab": "Myself",
     "referenceTab": "Another creature",

@@ -18,15 +18,16 @@ function Host({ children }: { children: React.ReactNode }) {
 }
 
 describe("ModalHead", () => {
-  it("renders the rubric, title (as the dialog name) and subtitle", () => {
+  it("renders the title (as the dialog name) and a subtitle, with no eyebrow above it", () => {
     render(
       <Host>
-        <ModalHead rubric="History" title="Snapshots" subtitle="3 saved" />
+        <ModalHead title="Snapshots" subtitle="3 saved" />
       </Host>
     );
     // The title doubles as the Radix Dialog.Title → the dialog's accessible name.
     expect(screen.getByRole("dialog", { name: "Snapshots" })).toBeInTheDocument();
-    expect(screen.getByText("History")).toHaveClass("modal-rubric");
+    // Vision 1 (owner 2026-10-13): the title names the dialog; no kicker above it.
+    expect(document.querySelector(".modal-rubric")).toBeNull();
     expect(screen.getByText("3 saved")).toBeInTheDocument();
   });
 

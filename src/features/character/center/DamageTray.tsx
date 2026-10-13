@@ -190,8 +190,8 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
     <DialogContent
       size="md"
       overlayClassName="scrim-sheet"
-      rubric={rubric}
       title={offer.actionName}
+      subtitle={rubric || undefined}
       description={rubric}
       closeLabel={t("common.close")}
       data-testid="damage-tray"

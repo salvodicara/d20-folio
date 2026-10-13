@@ -174,7 +174,6 @@ export function SnapshotsModal({
           never drifts, nothing teleports. */}
       <DialogContent
         overlayClassName="scrim-top"
-        rubric={t("snapshots.rubric")}
         title={t("snapshots.title")}
         description={t("snapshots.hint")}
         closeLabel={t("common.close")}

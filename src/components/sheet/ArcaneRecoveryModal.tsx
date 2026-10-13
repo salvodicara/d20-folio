@@ -86,7 +86,6 @@ export function ArcaneRecoveryModal({
       compact
       size="sm"
       onClose={onCancel}
-      rubric={t("character.spellSlots")}
       title={t("combat.arcaneRecoveryTitle")}
       subtitle={t("combat.arcaneRecoveryBudget", {
         remaining: remainingBudget,

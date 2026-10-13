@@ -205,7 +205,6 @@ export function BeastFormPicker({
       open
       size="md"
       onClose={onClose}
-      rubric={t("polymorph.rubric")}
       title={bestiary ? t("polymorph.creatureTitle") : t("polymorph.title")}
       subtitle={
         mode === "reference"

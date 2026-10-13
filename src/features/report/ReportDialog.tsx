@@ -86,7 +86,6 @@ export function ReportDialog() {
       {open ? (
         <DialogContent
           size="lg"
-          rubric={t("report.rubric")}
           title={t("report.title")}
           description={t("report.description")}
           closeLabel={t("common.close")}

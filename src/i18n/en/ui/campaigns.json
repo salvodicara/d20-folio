@@ -1,6 +1,5 @@
 {
   "campaigns": {
-    "rubric": "Campaign",
     "hint": "The tables, parties, and worlds you play in.",
     "new": "New campaign",
     "atCap": "Campaign limit reached ({{max}}). Delete one to add another.",

@@ -152,7 +152,6 @@ export function SummonedMonstersPanel({ group }: SummonedMonstersPanelProps) {
         open={statOpen}
         onClose={() => setStatOpen(false)}
         title={name}
-        rubric={spellName}
         subtitle={monsterIdentity(monster, t)}
         size="md"
       >

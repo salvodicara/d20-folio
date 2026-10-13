@@ -2248,27 +2248,6 @@ button.pr-dot.lg::before {
     var(--bg-surface-2)
   );
 }
-.modal-rubric {
-  font-family: var(--font-numeric);
-  font-size: var(--text-micro);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--accent-text);
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-.modal-rubric::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-}
-[data-theme="light"] .modal-rubric::before {
-  background: var(--accent-text);
-}
 .modal-title {
   font-family: var(--font-title);
   font-weight: 700;
@@ -2277,6 +2256,15 @@ button.pr-dot.lg::before {
   /* A long unbroken user-supplied name (campaign/character titles reach dialog
      titles) must wrap inside the card, never paint past it onto the scrim. */
   overflow-wrap: anywhere;
+}
+/* The line under a dialog's title: what to do or what it costs. It wraps, never
+   truncates (it is information, not decoration). */
+.modal-subtitle {
+  margin: var(--sp-1) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--text-secondary);
 }
 .modal-close {
   all: unset;

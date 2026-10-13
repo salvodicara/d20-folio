@@ -158,7 +158,6 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         // and the modal grows/shrinks DOWNWARD only as results change (owner
         // 2026-06-07) — not symmetrically from the viewport center.
         overlayClassName="scrim-top"
-        rubric={t("palette.rubric")}
         title={t("palette.title")}
         description={t("palette.description")}
         closeLabel={t("common.close")}

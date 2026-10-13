@@ -22,7 +22,6 @@
     "type_scroll": "Scroll",
     "type_staff": "Staff",
     "type_wand": "Wand",
-    "resourceInputRubric": "Table roll",
     "resourceInputHint": "Enter the result from your physical dice. Nothing is spent until you continue.",
     "resourceCapacityRoll": "Roll {{roll}} for this copy's capacity",
     "resourceInitialRoll": "Roll {{roll}} for this copy's starting amount",

@@ -468,7 +468,7 @@ describe("Dialog", () => {
   it("renders title/body/footer with an accessible name + close button", () => {
     render(
       <Dialog open>
-        <DialogContent rubric="Add Spell" title="Choose a spell" closeLabel="Close">
+        <DialogContent title="Choose a spell" closeLabel="Close">
           <DialogBody>
             <p>Pick from the SRD.</p>
           </DialogBody>

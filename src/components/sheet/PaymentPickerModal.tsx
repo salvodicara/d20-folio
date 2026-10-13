@@ -60,7 +60,6 @@ export function PaymentPickerModal({
       {request && (
         <DialogContent
           size="sm"
-          rubric={t("combat.paymentPickerHint")}
           title={t("combat.paymentPickerTitle", { name: request.actionName })}
           description={t("combat.paymentPickerHint")}
           closeLabel={t("common.cancel")}
