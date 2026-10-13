@@ -163,10 +163,12 @@ export function deterministicItemInstanceId(
 export type CatalogueMode = "srd-only" | "composed";
 
 /** Pinned after the migration corpus was authored. A changed resource catalogue
- * changes migration meaning, so the one-off must be reviewed and re-pinned. */
+ * changes migration meaning, so the one-off must be reviewed and re-pinned.
+ * Re-pinned 2026-10-13: Gem of Seeing gained typed `charges` (3, 1d3 at dawn), so a
+ * legacy Gem counter now migrates into that resource like every other charged item. */
 export const EXPECTED_CATALOGUE_FINGERPRINTS: Readonly<Record<CatalogueMode, string>> = {
-  "srd-only": "3e87784026a8135eb886699146a1fe382d2c6c05f659d345b02d9df6e72d972a",
-  composed: "61eb403c86fa685707b8055745f6076838dcbe8485ad14e347d1cfd17fcd3a3e",
+  "srd-only": "51ac176dc03cda2c22860b95a94110989af85cdf2c858fd1662e42bf6038cc12",
+  composed: "f8f9b72e00257c0daf93b3f8a680f1983fa342fcd1924576e41f9d7f8ec18760",
 };
 
 export function catalogueFingerprint(
