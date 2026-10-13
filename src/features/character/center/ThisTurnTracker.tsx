@@ -55,6 +55,10 @@ import { useTurnEconomy } from "./useTurnEconomy";
 import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
 import { MovementSlider } from "./MovementSlider";
+import {
+  DIFFICULT_TERRAIN_COST_PER_FOOT,
+  spendMovement,
+} from "@/lib/play/difficult-terrain";
 import { isCharacterAlive } from "@/lib/character-status";
 import { Input } from "@/components/ui/input";
 import {
@@ -149,6 +153,7 @@ export function ThisTurnTracker({
   // The Wish cast whose follow-up was answered (Duplicate or Wish Stress).
   const [wishHandled, setWishHandled] = useState<string | null>(null);
   const movementLocked = useCombatStore((s) => s.movementLocked);
+  const difficultTerrain = useCombatStore((s) => s.difficultTerrain);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
   // RA-08 — slot-paid casts tracked by the hard one-slot-per-global-turn gate.
@@ -374,7 +379,16 @@ export function ThisTurnTracker({
   function commitMovementUsed(ft: number) {
     const live = useCharacterStore.getState().character;
     if (!live || !isCharacterAlive(live.status, live.session)) return;
-    useCombatStore.getState().setMovementUsed(ft);
+    // Difficult Terrain (the meter's ×2): the feet marked cost double.
+    const combat = useCombatStore.getState();
+    combat.setMovementUsed(
+      spendMovement(
+        combat.movementUsedFt,
+        ft,
+        combat.difficultTerrain ? DIFFICULT_TERRAIN_COST_PER_FOOT : 1,
+        moveBudgetFt
+      )
+    );
   }
 
   // The shown roll: in an encounter, the campaign's `encounterInit` row (live — a DM
@@ -803,6 +817,10 @@ export function ThisTurnTracker({
               onChange={commitMovementUsed}
               locale={locale}
               speedZero={conditionEffects.speedZero || movementLocked}
+              difficultTerrain={difficultTerrain}
+              onDifficultTerrainChange={(on) =>
+                useCombatStore.getState().setDifficultTerrain(on)
+              }
             />
           </span>
         </div>

@@ -225,6 +225,8 @@ interface CombatState {
   nextAttackAdvantage: boolean;
   /** A turn effect has set Speed to 0 until this turn ends. */
   movementLocked: boolean;
+  /** The movement meter ×2 Difficult Terrain toggle: turn-scoped, never persisted. */
+  difficultTerrain: boolean;
   /** Thief's Reflexes' second turn was taken this combat (only round 1 offers it). */
   reflexesTaken: boolean;
   /** The Time Stop turns the player entered, for the round the spell was cast in. */
@@ -235,6 +237,8 @@ interface CombatState {
   setInitiative: (value: string) => void;
   /** Set movement used this turn (clamped 0..speed by the caller). */
   setMovementUsed: (ft: number) => void;
+  /** Turn the ×2 Difficult Terrain cost on or off for this turn. */
+  setDifficultTerrain: (on: boolean) => void;
   /**
    * RA-09 — commit a Dash: extend this turn's movement budget by one Speed.
    * Returns a restore that decrements it (the action's undo runs it), so a
@@ -420,11 +424,16 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   damageTakenThisRound: false,
   nextAttackAdvantage: false,
   movementLocked: false,
+  difficultTerrain: false,
   reflexesTaken: false,
   timeStopTurns: null,
 
   setRound: (round) => set({ round }),
   setInitiative: (value) => set({ initiative: value }),
+  setDifficultTerrain: (on) => {
+    if (sheetReadonly()) return;
+    set({ difficultTerrain: on });
+  },
   setMovementUsed: (ft) => {
     if (sheetReadonly()) return;
     set({ movementUsedFt: Math.max(0, ft) });
@@ -771,6 +780,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
       movementLocked: false,
+      difficultTerrain: false,
     }),
 
   endCombat: () =>
@@ -793,6 +803,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
       movementLocked: false,
+      difficultTerrain: false,
       reflexesTaken: false,
       timeStopTurns: null,
       initiative: "",
@@ -857,6 +868,7 @@ export function freshTurn(): Pick<
   | "spellSlotCastTurnKey"
   | "nextAttackAdvantage"
   | "movementLocked"
+  | "difficultTerrain"
 > {
   return {
     selected: emptySelected(),
@@ -880,5 +892,6 @@ export function freshTurn(): Pick<
     spellSlotCastTurnKey: null,
     nextAttackAdvantage: false,
     movementLocked: false,
+    difficultTerrain: false,
   };
 }

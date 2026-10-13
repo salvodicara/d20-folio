@@ -49,6 +49,8 @@
     "speedZeroShort": "Speed 0",
     "movementSpend": "Spend movement",
     "movementRemainingField": "Movement remaining",
+    "difficultTerrain": "Difficult terrain: movement costs double",
+    "difficultTerrainHint": "Difficult terrain: every foot you move costs 1 extra foot. Resets at the end of the turn.",
     "filterMeterByType": "Filter actions by {{type}}",
     "wieldStance": "Wield",
     "oneHanded": "One-handed",
