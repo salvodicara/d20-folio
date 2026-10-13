@@ -1472,7 +1472,9 @@ body::after {
   transform: scale(calc(var(--app-bg-art-scale, 1) * 1.15));
 }
 [data-theme="light"][data-app-bg-ambient] body::after {
-  filter: blur(44px) brightness(0.56) saturate(0.72) contrast(1.12);
+  /* Blurred art has no detail to shade back, so the daylight glow stays light. */
+  filter: blur(44px) brightness(0.92) saturate(0.85) sepia(0.12);
+  opacity: 0.6;
 }
 [data-theme="light"][data-app-bg-custom][data-app-bg-ambient] body::after {
   filter: blur(44px) saturate(0.82) contrast(0.94);
