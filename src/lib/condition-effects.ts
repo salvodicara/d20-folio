@@ -20,6 +20,7 @@ import type { AbilityCode, BiText, ConditionId, SrdEquipmentData } from "@/data/
 import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
 import type { AdvantageClause, AggregatedGrants } from "@/lib/grants";
+import type { ConditionSense } from "@/types/condition";
 import { isArmorProficient } from "@/lib/compute";
 import { litText } from "@/lib/loc-text";
 
@@ -36,6 +37,15 @@ export interface ConditionGate {
   breaksConcentration?: boolean;
   /** Ability saves the condition auto-fails (Paralyzed/Stunned → STR + DEX). */
   autoFailSaves?: ReadonlyArray<AbilityCode>;
+  /** Ability checks that need this lost sense auto-fail (Blinded → sight,
+   *  Deafened → hearing). */
+  autoFailSenseChecks?: ReadonlyArray<ConditionSense>;
+  /** You can't attack the condition's source or target it with harmful abilities
+   *  or magical effects (Charmed — the charmer). */
+  cantHarmSource?: boolean;
+  /** The condition's source has Advantage on ability checks to interact socially
+   *  with you (Charmed — the charmer). */
+  sourceSocialAdvantage?: boolean;
   /** Self-side advantage the condition grants (rare — Invisible → your attacks). */
   advantages?: ReadonlyArray<{
     rollType: AdvantageClause["rollType"];
@@ -58,7 +68,15 @@ const INCAPACITATED_SLOTS: ReadonlyArray<GatedSlot> = ["action", "bonus", "react
 
 export const CONDITION_GATES: Readonly<Partial<Record<ConditionId, ConditionGate>>> = {
   blinded: {
+    autoFailSenseChecks: ["sight"],
     disadvantages: [{ rollType: "attack", vs: "blinded", description: ATTACKS }],
+  },
+  charmed: {
+    cantHarmSource: true,
+    sourceSocialAdvantage: true,
+  },
+  deafened: {
+    autoFailSenseChecks: ["hearing"],
   },
   frightened: {
     disadvantages: [
@@ -157,6 +175,12 @@ export interface ResolvedConditionEffects {
   breaksConcentration: boolean;
   /** Ability saves auto-failed. */
   autoFailSaves: ReadonlySet<AbilityCode>;
+  /** Senses whose ability checks auto-fail. */
+  autoFailSenseChecks: ReadonlySet<ConditionSense>;
+  /** The condition's source can't be attacked or harmed by you. */
+  cantHarmSource: boolean;
+  /** The condition's source has Advantage on social checks against you. */
+  sourceSocialAdvantage: boolean;
   /** Self-side advantage clauses (mergeable into the grants advantages list). */
   advantages: ReadonlyArray<AdvantageClause>;
   /** Self-side disadvantage clauses (mergeable into the grants disadvantages list). */
@@ -176,10 +200,13 @@ export function resolveConditionEffects(
 ): ResolvedConditionEffects {
   const blockedSlots = new Set<GatedSlot>();
   const autoFailSaves = new Set<AbilityCode>();
+  const autoFailSenseChecks = new Set<ConditionSense>();
   const advantages: AdvantageClause[] = [];
   const disadvantages: AdvantageClause[] = [];
   let speedZero = false;
   let breaksConcentration = false;
+  let cantHarmSource = false;
+  let sourceSocialAdvantage = false;
 
   for (const id of active) {
     const gate = CONDITION_GATES[id as ConditionId];
@@ -188,6 +215,9 @@ export function resolveConditionEffects(
     if (gate.speedZero) speedZero = true;
     if (gate.breaksConcentration) breaksConcentration = true;
     for (const ability of gate.autoFailSaves ?? []) autoFailSaves.add(ability);
+    for (const sense of gate.autoFailSenseChecks ?? []) autoFailSenseChecks.add(sense);
+    if (gate.cantHarmSource) cantHarmSource = true;
+    if (gate.sourceSocialAdvantage) sourceSocialAdvantage = true;
     for (const a of gate.advantages ?? []) {
       advantages.push({
         sourceId: id,
@@ -212,6 +242,9 @@ export function resolveConditionEffects(
     speedZero,
     breaksConcentration,
     autoFailSaves,
+    autoFailSenseChecks,
+    cantHarmSource,
+    sourceSocialAdvantage,
     advantages,
     disadvantages,
   };
