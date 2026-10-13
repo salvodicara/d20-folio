@@ -47,6 +47,47 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    // One option at a time while you concentrate (a Magic action swaps it):
+    // Aquatic Adaptation breathes underwater and swims at your Speed; Change
+    // Appearance is narrative; Natural Weapons make your Unarmed Strike 1d6
+    // Slashing, Piercing or Bludgeoning with your spellcasting modifier.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-alter-self",
+        duration: timedSpellDuration(60),
+        grants: [
+          {
+            type: "choice-grant-bundle",
+            bundleKey: "spell-alter-self",
+            options: [
+              {
+                id: "aquatic-adaptation",
+                grants: [
+                  { type: "air-and-water-breathing" },
+                  { type: "swim-speed", amount: "equal-to-walking" },
+                ],
+              },
+              { id: "change-appearance", grants: [] },
+              {
+                id: "natural-weapons",
+                grants: [
+                  {
+                    type: "unarmed-strike-die",
+                    die: "d6",
+                    damageType: "slashing",
+                    attackAbility: "spellcasting",
+                    damageAbility: "spellcasting",
+                  },
+                  { type: "unarmed-strike-damage-type-option", toType: "piercing" },
+                  { type: "unarmed-strike-damage-type-option", toType: "bludgeoning" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {

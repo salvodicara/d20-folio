@@ -410,6 +410,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("unarmed-strike-die"),
     },
     {
+      // "spellcasting": the ability of the spell that grants it (Alter Self).
       attackAbility: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),
@@ -417,6 +418,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("INT"),
         literalSchema("WIS"),
         literalSchema("CHA"),
+        literalSchema("spellcasting"),
       ]),
       damageAbility: unionSchema([
         literalSchema("STR"),
@@ -425,6 +427,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("INT"),
         literalSchema("WIS"),
         literalSchema("CHA"),
+        literalSchema("spellcasting"),
       ]),
     }
   ),

@@ -2996,5 +2996,20 @@
   },
   "enlarge-reduce.grants.0.grants.0.options.reduce.grants.2": {
     "description": "Reduce: size decreases by one category (Medium to Small, for example); attacks with reduced weapons or Unarmed Strikes deal 1d4 less damage on a hit (minimum 1)"
+  },
+  "alter-self.grants.0": {
+    "label": "Alter Self"
+  },
+  "alter-self.grants.0.grants.0": {
+    "label": "Form"
+  },
+  "alter-self.grants.0.grants.0.options.aquatic-adaptation": {
+    "label": "Aquatic Adaptation"
+  },
+  "alter-self.grants.0.grants.0.options.change-appearance": {
+    "label": "Change Appearance"
+  },
+  "alter-self.grants.0.grants.0.options.natural-weapons": {
+    "label": "Natural Weapons"
   }
 }

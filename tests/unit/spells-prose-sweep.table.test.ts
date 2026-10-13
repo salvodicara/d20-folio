@@ -32,6 +32,7 @@ interface StandingSpellExpectation {
  * grant models every clause of the spell or whether the resolver persists it.
  */
 const STANDING_SPELLS = [
+  { id: "alter-self", recipient: "caster" },
   {
     id: "bane",
     recipient: "selected",

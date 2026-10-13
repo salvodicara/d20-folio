@@ -1440,8 +1440,10 @@ export interface AggregatedGrants {
    */
   unarmedStrikeDice: ReadonlyArray<{
     die: string;
-    attackAbility?: AbilityCode;
-    damageAbility?: AbilityCode;
+    /** `"spellcasting"`: the ability of the spell that grants it (Alter Self),
+     *  resolved by the attack row against that spell on the sheet. */
+    attackAbility?: AbilityCode | "spellcasting";
+    damageAbility?: AbilityCode | "spellcasting";
     damageType: DamageType;
     /**
      * Source-feature id (provenance) — the consumer resolves a deferred
