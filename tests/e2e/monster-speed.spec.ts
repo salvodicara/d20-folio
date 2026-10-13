@@ -2,7 +2,8 @@
  * monster-speed — a bestiary monster's walking speed on its encounter card in REAL
  * Chromium (dev-bypass, the `mock-1` encounter, Italian, dark): a Goblin Warrior
  * added from the picker shows its stat block's Speed chip next to AC and HP, and the
- * DM edits it in place (Slow: 9 m becomes 6 m). Desktop + phone.
+ * DM edits it in place (Slow: 9 m becomes 6 m), which the chronicle logs. Desktop +
+ * phone.
  */
 
 import { test, expect, type Page } from "@playwright/test";
@@ -70,6 +71,20 @@ for (const leg of [
     await expect(speed).not.toContainText("9");
     await page.screenshot({
       path: test.info().outputPath(`goblin-speed-slowed-${leg.name}.png`),
+    });
+
+    // The change is logged in the fight's chronicle, from 9 m to 6 m.
+    const line = page
+      .locator("section", { hasText: "Cronaca dello scontro" })
+      .first()
+      .locator(".encounter-feed-line")
+      .filter({ hasText: /goblin guerriero/i })
+      .filter({ hasText: "Velocità 9 m" })
+      .filter({ hasText: "6 m" });
+    await expect(line).toHaveCount(1);
+    await line.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await page.screenshot({
+      path: test.info().outputPath(`goblin-speed-logged-${leg.name}.png`),
     });
   });
 }

@@ -35,6 +35,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { localeDistance } from "@/lib/utils";
 import {
   buildEncounterChapter,
   localizeFeedEvent,
@@ -101,6 +102,7 @@ function useFeedNames(
       action: (action) => localizeText(action, language),
       spell: (ref) => concentrationLabel(ref, language),
       source: (id) => grantSourceLabel(id, language),
+      distance: (ft) => localeDistance(ft, language),
     }),
     [name, language]
   );

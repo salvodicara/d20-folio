@@ -69,6 +69,33 @@ describe("mirrorEncounter: the DM's stat change", () => {
       target: "monster-1",
     });
   });
+
+  it("mirrors a speed change, with or without the speed it had", () => {
+    const beats: CombatChronicleEvent[] = [
+      {
+        id: "0",
+        round: 1,
+        kind: "stat-change",
+        targetId: "monster-1",
+        stat: "speed",
+        from: 30,
+        to: 20,
+      },
+      {
+        id: "1",
+        round: 1,
+        kind: "stat-change",
+        targetId: "monster-2",
+        stat: "speed",
+        to: 25,
+      },
+    ];
+    const folded = foldSession(sync([], fight(1, beats)), { dmUid: DM });
+    expect(folded.slice(2).map((entry) => entry.event)).toEqual([
+      { kind: "stat-change", stat: "speed", from: 30, to: 20, target: "monster-1" },
+      { kind: "stat-change", stat: "speed", to: 25, target: "monster-2" },
+    ]);
+  });
 });
 
 describe("mirrorEncounter", () => {

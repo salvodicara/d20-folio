@@ -140,7 +140,6 @@ import {
   setMonsterNotes,
   setMonsterBardicInspirationDie,
   setMonsterSide,
-  setMonsterSpeed,
   setMonsterTempHp,
   setRevealed,
   setMonsterCondition,
@@ -149,6 +148,7 @@ import {
 import {
   recordCondition,
   recordMonsterAc,
+  recordMonsterSpeed,
   recordPcHp,
 } from "@/features/campaigns/combat-chronicle";
 import {
@@ -1743,7 +1743,7 @@ export function MonsterCard({
       <MonsterSpeedChip
         feet={feet}
         ariaLabel={t("campaignHub.encounterSpeedFor", { name: displayName })}
-        onCommit={(next) => apply((e) => setMonsterSpeed(e, monster.id, next))}
+        onCommit={(next) => apply((e) => recordMonsterSpeed(e, monster.id, next, feet))}
       />
     ) : (
       <MonsterSpeedStat feet={feet} />

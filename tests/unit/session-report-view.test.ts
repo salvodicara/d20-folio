@@ -14,6 +14,7 @@ import {
   renderSessionReport,
   type SessionReportNames,
 } from "@/lib/views/session-report-view";
+import { localeDistance } from "@/lib/utils";
 import type { ConcentrationRef } from "@/types/ids";
 
 let n = 0;
@@ -237,6 +238,40 @@ describe("localizePlayEvent: a monster's stat change", () => {
     );
     expect(localizePlayEvent(event, await translator("it"), who, names)).toBe(
       "Goblin: CA 15 → 13"
+    );
+  });
+
+  it("reads a speed change in the reader's unit: 30 ft → 20 ft / 9 m → 6 m", async () => {
+    const slowed: PlayEvent = {
+      kind: "stat-change",
+      stat: "speed",
+      from: 30,
+      to: 20,
+      target: "monster-1",
+    };
+    const set: PlayEvent = {
+      kind: "stat-change",
+      stat: "speed",
+      to: 25,
+      target: "monster-1",
+    };
+    const inUnit = (lng: "en" | "it"): SessionReportNames => ({
+      ...names,
+      distance: (ft) => localeDistance(ft, lng),
+    });
+    const en_ = await translator("en");
+    const it = await translator("it");
+    expect(localizePlayEvent(slowed, en_, who, inUnit("en"))).toBe(
+      "Goblin: Speed 30 ft → 20 ft"
+    );
+    expect(localizePlayEvent(slowed, it, who, inUnit("it"))).toBe(
+      "Goblin: Velocità 9 m → 6 m"
+    );
+    expect(localizePlayEvent(set, en_, who, inUnit("en"))).toBe("Goblin: Speed 25 ft");
+    expect(localizePlayEvent(set, it, who, inUnit("it"))).toBe("Goblin: Velocità 7,5 m");
+    // Without a unit formatter the line still reads, in feet.
+    expect(localizePlayEvent(slowed, en_, who, names)).toBe(
+      "Goblin: Speed 30 ft → 20 ft"
     );
   });
 

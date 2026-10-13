@@ -6,6 +6,7 @@ import {
   recordMonsterAc,
   recordMonsterDamage,
   recordMonsterHp,
+  recordMonsterSpeed,
   undoConditionEvent,
   undoHpEvent,
 } from "@/features/campaigns/combat-chronicle";
@@ -148,5 +149,44 @@ describe("the DM's monster AC change is a chronicle beat", () => {
     expect(recordMonsterAc(state, "monster-1", 15)).toBe(state);
     expect(recordMonsterAc(state, "monster-1", Number.NaN)).toBe(state);
     expect(recordMonsterAc(state, "monster-9", 12)).toBe(state);
+  });
+});
+
+describe("the DM's monster speed change is a chronicle beat", () => {
+  it("sets the override and records 30 ft → 20 ft (Slow) from the speed the card showed", () => {
+    const slowed = recordMonsterSpeed(fight(), "monster-1", 20, 30);
+    expect(monster(slowed).speed).toBe(20);
+    expect(slowed.events).toEqual([
+      {
+        id: "0",
+        round: 2,
+        kind: "stat-change",
+        targetId: "monster-1",
+        stat: "speed",
+        from: 30,
+        to: 20,
+      },
+    ]);
+  });
+
+  it("a monster with no known speed records only the new one", () => {
+    const set = recordMonsterSpeed(fight(), "monster-1", 25, null);
+    expect(set.events).toEqual([
+      {
+        id: "0",
+        round: 2,
+        kind: "stat-change",
+        targetId: "monster-1",
+        stat: "speed",
+        to: 25,
+      },
+    ]);
+  });
+
+  it("an unchanged or rejected speed records nothing", () => {
+    const slowed = recordMonsterSpeed(fight(), "monster-1", 20, 30);
+    expect(recordMonsterSpeed(slowed, "monster-1", 20, 20)).toBe(slowed);
+    expect(recordMonsterSpeed(slowed, "monster-1", Number.NaN, 20)).toBe(slowed);
+    expect(recordMonsterSpeed(slowed, "monster-9", 10, 30)).toBe(slowed);
   });
 });

@@ -23,7 +23,12 @@
     "tempHp": "{{target}} gains {{amount}} temporary HP",
     "maxHpReduced": "{{target}}'s Hit Point maximum is reduced by {{reduction}}",
     "maxHpRestored": "{{target}}'s Hit Point maximum returns to normal",
-    "statChange": { "ac": "{{target}}: AC {{from}} → {{to}}" },
+    "statChange": {
+      "ac": "{{target}}: AC {{from}} → {{to}}",
+      "acSet": "{{target}}: AC {{to}}",
+      "speed": "{{target}}: Speed {{from}} → {{to}}",
+      "speedSet": "{{target}}: Speed {{to}}"
+    },
     "conditionGain": "{{target}} gains {{condition}}",
     "conditionLoss": "{{target}} is no longer {{condition}}",
     "concentrationStart": "{{actor}} concentrates on {{spell}}",

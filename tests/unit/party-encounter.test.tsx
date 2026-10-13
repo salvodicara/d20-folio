@@ -369,6 +369,19 @@ describe("MonsterCard — the DM edits a monster's speed in place", () => {
     ];
     return update?.(state).combatants[0] as EncounterMonster;
   }
+  function appliedEvents(apply: ReturnType<typeof vi.fn>) {
+    const state = addMonster(startEncounter({}, [], 1), {
+      name: "Goblin A",
+      ac: 13,
+      maxHp: 7,
+      count: 1,
+      initiative: null,
+    });
+    const [update] = (apply.mock.calls[0] ?? []) as [
+      ((e: EncounterState) => EncounterState) | undefined,
+    ];
+    return update?.(state).events;
+  }
 
   it("the editor opens on the stat block's speed and a new value routes setMonsterSpeed through apply (Slow: 30 to 20 ft)", async () => {
     const apply = vi.fn<(fn: (e: EncounterState) => EncounterState) => void>();
@@ -393,6 +406,10 @@ describe("MonsterCard — the DM edits a monster's speed in place", () => {
     fireEvent.blur(input);
     expect(apply).toHaveBeenCalledTimes(1);
     expect(applied(apply).speed).toBe(20);
+    // Logged from the speed the card showed (the stat block's 30 ft).
+    expect(appliedEvents(apply)).toEqual([
+      expect.objectContaining({ kind: "stat-change", stat: "speed", from: 30, to: 20 }),
+    ]);
   });
 
   it("an unchanged value writes nothing", () => {
@@ -446,6 +463,9 @@ describe("MonsterCard — the DM edits a monster's speed in place", () => {
     fireEvent.change(input, { target: { value: "25" } });
     fireEvent.blur(input);
     expect(applied(apply).speed).toBe(25);
+    const [beat] = appliedEvents(apply) ?? [];
+    expect(beat).toMatchObject({ kind: "stat-change", stat: "speed", to: 25 });
+    expect(beat).not.toHaveProperty("from");
   });
 
   it("a PLAYER card (no apply) shows the speed as plain text, never an editor", async () => {

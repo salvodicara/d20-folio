@@ -121,13 +121,14 @@ export type CombatChronicleEvent =
       kind: "stat-change";
       targetId: string;
       stat: ChangeableStat;
-      from: number;
+      /** The value before; absent when it was unknown (a hand-typed monster's speed). */
+      from?: number;
       to: number;
     } & ChronicleEventBase);
 
 /** A monster stat the DM edits in place. Readers render an unknown value as a
  *  neutral line, so a newer stat never blanks an older client's feed. */
-export type ChangeableStat = "ac";
+export type ChangeableStat = "ac" | "speed";
 
 /** Every `CombatChronicleEvent.kind` discriminant (for the presenter's exhaustiveness). */
 export type CombatChronicleEventKind = CombatChronicleEvent["kind"];

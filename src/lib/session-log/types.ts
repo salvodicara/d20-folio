@@ -91,7 +91,8 @@ export type PlayEvent =
       /** The DM changed a monster's stat in place: "Goblin: AC 15 → 13". */
       kind: "stat-change";
       stat: ChangeableStat;
-      from: number;
+      /** Absent when the value before was unknown. */
+      from?: number;
       to: number;
       target: CombatantId;
     }
