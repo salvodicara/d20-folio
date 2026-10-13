@@ -132,13 +132,16 @@ import {
   setMonsterNotes,
   setMonsterBardicInspirationDie,
   setMonsterSide,
-  setMonsterAc,
   setMonsterTempHp,
   setRevealed,
   setMonsterCondition,
   monsterInstanceName,
 } from "@/features/campaigns/encounter";
-import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
+import {
+  recordCondition,
+  recordMonsterAc,
+  recordPcHp,
+} from "@/features/campaigns/combat-chronicle";
 import {
   applyAdversaryDamageParts,
   applyAdversaryHeal,
@@ -1733,7 +1736,7 @@ export function MonsterCard({
         <MonsterAcChip
           value={monster.ac}
           ariaLabel={t("campaignHub.encounterAcFor", { name: displayName })}
-          onCommit={(ac) => apply((e) => setMonsterAc(e, monster.id, ac))}
+          onCommit={(ac) => apply((e) => recordMonsterAc(e, monster.id, ac))}
         />
       ) : (
         <StatBadge

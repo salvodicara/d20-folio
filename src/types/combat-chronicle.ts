@@ -115,7 +115,19 @@ export type CombatChronicleEvent =
       value?: string;
       actorId: string;
       action?: LocText;
+    } & ChronicleEventBase)
+  /** The DM changed a monster's stat in place ("Goblin: AC 15 → 13"). */
+  | ({
+      kind: "stat-change";
+      targetId: string;
+      stat: ChangeableStat;
+      from: number;
+      to: number;
     } & ChronicleEventBase);
+
+/** A monster stat the DM edits in place. Readers render an unknown value as a
+ *  neutral line, so a newer stat never blanks an older client's feed. */
+export type ChangeableStat = "ac";
 
 /** Every `CombatChronicleEvent.kind` discriminant (for the presenter's exhaustiveness). */
 export type CombatChronicleEventKind = CombatChronicleEvent["kind"];

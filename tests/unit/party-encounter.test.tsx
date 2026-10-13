@@ -298,6 +298,16 @@ describe("MonsterCard — the DM edits a monster's AC in place", () => {
     const [update] = apply.mock.calls[0] ?? [];
     const next = update?.(state);
     expect((next?.combatants[0] as EncounterMonster).ac).toBe(11);
+    // The change lands in the chronicle (and so the session log): Goblin A 13 → 11.
+    expect(next?.events).toEqual([
+      expect.objectContaining({
+        kind: "stat-change",
+        targetId: "monster-1",
+        stat: "ac",
+        from: 13,
+        to: 11,
+      }),
+    ]);
   });
 
   it("a PLAYER card (no apply) shows the AC as plain text, never an editor", () => {

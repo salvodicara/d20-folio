@@ -49,6 +49,28 @@ function sync(log: LogItem[], encounter: EncounterState | null): LogItem[] {
   return [...log, ...drafts.map((d): LogItem => ({ ...d, by: DM, at: 1 }))];
 }
 
+describe("mirrorEncounter: the DM's stat change", () => {
+  it("mirrors an AC change beat as a stat-change line", () => {
+    const acBeat: CombatChronicleEvent = {
+      id: "0",
+      round: 1,
+      kind: "stat-change",
+      targetId: "monster-1",
+      stat: "ac",
+      from: 15,
+      to: 13,
+    };
+    const log = sync([], fight(1, [acBeat]));
+    expect(foldSession(log, { dmUid: DM })[2]?.event).toEqual({
+      kind: "stat-change",
+      stat: "ac",
+      from: 15,
+      to: 13,
+      target: "monster-1",
+    });
+  });
+});
+
 describe("mirrorEncounter", () => {
   it("records the start, the round and each chronicle beat once", () => {
     const log = sync([], fight(1, [hit]));
