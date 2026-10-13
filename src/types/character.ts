@@ -1003,6 +1003,13 @@ export interface SessionState {
   /** Slot level that established the current concentration spell. Needed only to
    * scale its later repeatable combat action; absent means the spell's base level. */
   concentrationCastLevel?: number;
+  /**
+   * The concentration spell is READIED (2024 Ready action): cast with its slot and
+   * held until the Reaction releases it or the start of your turn in `expiresRound`.
+   * `castLogId` is the readying cast's log line (its targets, the tray's link).
+   * Present only while that concentration lasts: any concentration change drops it.
+   */
+  readiedSpell?: { expiresRound: number; castLogId?: string };
   initiative: string;
   conditions: string[];
   /**

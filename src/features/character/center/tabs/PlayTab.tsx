@@ -58,6 +58,7 @@ import { CombatAlgorithm } from "./CombatAlgorithm";
 import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
+import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
 import { useTurnState } from "@/features/character/center/turn-state";
 import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -130,6 +131,7 @@ import {
 } from "@/lib/views/combat-action-view";
 import {
   actionHigherLevels,
+  concentrationLabel,
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
@@ -347,7 +349,13 @@ export function PlayTab() {
     executeAction: commitAction,
     spendRider,
     applyCunningStrike,
+    releaseReadiedSpell,
   } = useTurnEconomy();
+  // The spell held by Ready (its concentration), shown on the reaction row.
+  const readiedSpellName =
+    character?.session.readiedSpell && character.session.concentration
+      ? concentrationLabel(character.session.concentration, locale)
+      : null;
 
   // Mobile opens on the player's curated hotbar, not a seven-screen catalogue.
   // Desktop keeps the overview. The choice is made only on mount: rotating or
@@ -1168,7 +1176,9 @@ export function PlayTab() {
           carry the off-list "Mark used" row (the meter's reaction token is a
           pure filter; spending lives HERE, owner verdict 2026-06-11). */}
       {reactionsVisible &&
-        (sortedReactions.length > 0 || activeFilter === "reaction") && (
+        (sortedReactions.length > 0 ||
+          activeFilter === "reaction" ||
+          readiedSpellName !== null) && (
           <>
             {/* Pure rubric — the turn-meter Reaction coin alone carries
               availability (a header chip duplicated it, owner order
@@ -1178,6 +1188,14 @@ export function PlayTab() {
               {t("combat.reactionsNote")}
             </p>
             <div className="uc-stack">
+              {readiedSpellName !== null && (
+                <ReadiedSpellRow
+                  name={readiedSpellName}
+                  disabled={reactionUsed || sheetReadonly}
+                  committed={reactionUsedId === READIED_SPELL_REACTION_ID}
+                  onRelease={releaseReadiedSpell}
+                />
+              )}
               {sortedReactions.map((action) => (
                 <ReactionCard
                   key={action.id}
@@ -2068,6 +2086,43 @@ function ReactionCard({
         </>
       )}
     </UniversalCard>
+  );
+}
+
+/**
+ * The spell held by the Ready action (2024): cast already, kept with Concentration
+ * until the trigger. One tap releases it with the Reaction; it reads as the spell it
+ * holds, in the reaction voice, with when it is lost.
+ */
+function ReadiedSpellRow({
+  name,
+  disabled,
+  committed,
+  onRelease,
+}: {
+  name: string;
+  disabled: boolean;
+  committed: boolean;
+  onRelease: () => void;
+}) {
+  const { t } = useTranslation();
+  const title = t("combat.readiedSpellName", { name });
+  const cta = disabled ? t("combat.used") : t("combat.releaseReadiedSpell");
+  return (
+    <UniversalCard
+      mode="combat-CTA"
+      kind="spell"
+      name={title}
+      slot="reaction"
+      concentration
+      gloss={t("combat.readiedSpellGloss")}
+      active={committed}
+      ctaLabel={cta}
+      ctaAriaLabel={`${cta}: ${name}`}
+      ctaDisabled={disabled}
+      ctaCommitted={committed}
+      onCommit={onRelease}
+    />
   );
 }
 

@@ -99,8 +99,22 @@ export function normalizeLogEntry(raw: unknown): LogEntry | null {
   return { event: legacy, ts, id };
 }
 
+/** A stored readied-spell mark, or undefined when it is not one. */
+export function parseReadiedSpell(raw: unknown): SessionState["readiedSpell"] {
+  if (typeof raw !== "object" || raw === null) return undefined;
+  const { expiresRound, castLogId } = raw as Record<string, unknown>;
+  if (typeof expiresRound !== "number" || !Number.isSafeInteger(expiresRound)) {
+    return undefined;
+  }
+  return typeof castLogId === "string" ? { expiresRound, castLogId } : { expiresRound };
+}
+
 export function sanitizeSession(session: Partial<SessionState>): SessionState {
   const itemResources = normalizeItemResources(session.itemResources);
+  // A readied spell rides its concentration: none without one.
+  const readiedSpell = session.concentration
+    ? parseReadiedSpell(session.readiedSpell)
+    : undefined;
   return {
     hp: {
       current: session.hp?.current ?? 0,
@@ -129,6 +143,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
       session.concentrationCastLevel > 0
         ? Math.round(session.concentrationCastLevel)
         : undefined,
+    ...(readiedSpell ? { readiedSpell } : {}),
     initiative: session.initiative ?? "",
     conditions: session.conditions ?? [],
     concentrationConditions: session.concentrationConditions,
