@@ -43,6 +43,19 @@ describe("ModalHead", () => {
     expect(title.classList.contains("truncate")).toBe(false);
   });
 
+  it("the subtitle WRAPS too — it carries information (bug sweep 2026-10-13: Wish's picker cut it)", () => {
+    render(
+      <Host>
+        <ModalHead
+          title="Scegli"
+          subtitle="Qualsiasi incantesimo di livello 8 o inferiore"
+        />
+      </Host>
+    );
+    const subtitle = screen.getByText("Qualsiasi incantesimo di livello 8 o inferiore");
+    expect(subtitle.classList.contains("truncate")).toBe(false);
+  });
+
   it("controlled mode: `onClose` renders a plain button that fires the handler", () => {
     const onClose = vi.fn();
     render(
