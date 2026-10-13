@@ -44,6 +44,7 @@ import {
   Footprints,
   Moon,
   Shield,
+  ShieldHalf,
 } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -75,6 +76,10 @@ import { useCoarsePointer } from "@/hooks/useCoarsePointer";
 import { useLocale } from "@/hooks/useLocale";
 import { formatSpeed, speedFromLocaleValue, speedToLocaleValue } from "@/lib/utils";
 import { patchCharacter } from "../patch-character";
+import { commitCover } from "./action-state-commit";
+import { registerUndoableToast } from "@/stores/undoStore";
+import { litCoverLevel, type CoverStateLevel } from "@/lib/cover-states";
+import { coverText } from "@/lib/views/tracker-view";
 import { nonEmptyString } from "@/lib/non-empty-string";
 import { localizeCharacterIdentity } from "@/lib/views/srd-i18n";
 import { HeaderHpControl } from "./HeaderHpControl";
@@ -109,6 +114,9 @@ export function CombatHeader() {
   );
   const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
   const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
+  const cover = useCharacterStore((s) =>
+    s.character ? litCoverLevel(s.character.session) : null
+  );
   // Portrait lives at the DOC level (not in charData) — feeds the hero seal (#92).
   const portraitUrl = useCharacterStore((s) => s.character?.portraitUrl);
   const portraitCrop = useCharacterStore((s) => s.character?.portraitCrop);
@@ -260,6 +268,29 @@ export function CombatHeader() {
             ? "off"
             : null;
     patchCharacter({ initiativeAdvantageOverride: next });
+  }
+  // Cover — one tap cycles none → Half → Three-Quarters → none; a lit level adds its
+  // AC and DEX-save bonus until the start of the owner's next turn.
+  const coverName = (level: CoverStateLevel): string => coverText(level, locale).name;
+  const nextCover: CoverStateLevel | null =
+    cover === null ? "half" : cover === "half" ? "three-quarters" : null;
+  const coverHint = cover
+    ? t("character.vitals.coverLit", {
+        name: coverName(cover),
+        summary: coverText(cover, locale).summary,
+        next: nextCover ? coverName(nextCover) : t("character.vitals.coverNone"),
+      })
+    : t("character.vitals.coverOff", { next: coverName("half") });
+  function cycleCover(): void {
+    registerUndoableToast(
+      {
+        message: nextCover
+          ? t("character.vitals.coverToast", { name: coverName(nextCover) })
+          : t("character.vitals.coverClearedToast"),
+      },
+      () => commitCover(nextCover),
+      { turnScoped: true }
+    );
   }
   const initAdvStateLabel =
     initAdvOverride == null
@@ -534,6 +565,27 @@ export function CombatHeader() {
               <GlossaryTip term="armorClass" rubric={t("character.vitals.acFull")}>
                 {t("character.vitals.ac")}
               </GlossaryTip>
+            }
+            corner={
+              sheetMode !== "edit" && !readonly ? (
+                <button
+                  type="button"
+                  className="v-adv-toggle v-cover"
+                  data-adv={cover ? "on" : "off"}
+                  data-set={cover ? "" : undefined}
+                  onClick={cycleCover}
+                  title={coverHint}
+                  aria-label={coverHint}
+                >
+                  {cover === "half" ? (
+                    <span aria-hidden>½</span>
+                  ) : cover === "three-quarters" ? (
+                    <span aria-hidden>¾</span>
+                  ) : (
+                    <Icon as={ShieldHalf} size="xs" decorative />
+                  )}
+                </button>
+              ) : null
             }
             value={
               sheetMode !== "edit" && acBreakdown.length > 1 ? (

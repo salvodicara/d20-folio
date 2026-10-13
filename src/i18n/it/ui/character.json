@@ -131,7 +131,12 @@
       "spd": "VEL",
       "pp": "PP",
       "pb": "BC",
-      "pbAria": "Bonus Competenza"
+      "pbAria": "Bonus Competenza",
+      "coverOff": "Copertura: nessuna. Tocca per {{next}}",
+      "coverLit": "{{name}}: {{summary}} Fino all'inizio del tuo prossimo turno. Tocca per {{next}}",
+      "coverNone": "nessuna copertura",
+      "coverToast": "{{name}} fino all'inizio del tuo prossimo turno",
+      "coverClearedToast": "Copertura tolta"
     },
     "health": {
       "hpAbbr": "PF",

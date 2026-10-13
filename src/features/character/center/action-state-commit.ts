@@ -10,8 +10,48 @@ import { sheetEncounter } from "@/features/character/center/turn-state";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { turnBoundaryAfter } from "@/lib/combat-effects";
 import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
+import {
+  COVER_STATES,
+  coverStateKey,
+  litCoverLevel,
+  type CoverStateLevel,
+} from "@/lib/cover-states";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { concentrationStatusKeys } from "@/lib/status";
+
+/**
+ * The open sheet's owner-turn edge `turns` turns from now: in the DM-run fight the
+ * sheet is in, else on the solo turn engine. Null when the owner has no turn there.
+ */
+export function ownTurnBoundary(
+  turns: number,
+  phase: "turn-start" | "turn-end"
+): { round: number; phase: "turn-start" | "turn-end" } | null {
+  // Scoped to the open sheet: another of the user's heroes in a fight is not this one.
+  const status = sheetEncounter(
+    useCombatStatusStore.getState().status,
+    useCharacterStore.getState().character?.id ?? null
+  );
+  const boundary = turnBoundaryAfter(
+    status?.myId ?? "self",
+    turns,
+    phase,
+    status
+      ? {
+          round: status.round,
+          currentCombatantId: status.encounter.currentCombatantId,
+          phase: "turn-start",
+          order: status.encounter.order ?? status.view.turnOrderIds,
+        }
+      : {
+          round: useCombatStore.getState().round,
+          currentCombatantId: "self",
+          phase: "turn-start",
+          order: ["self"],
+        }
+  );
+  return boundary ? { round: boundary.round, phase: boundary.phase } : null;
+}
 
 /** Apply the one shared active-state/cast-level/timer transaction and return its
  * surgical inverse. Feature and spell commit paths differ only in payment. */
@@ -54,30 +94,8 @@ export function activateActionState(
   const restoreTimer = action.activeDurationRounds
     ? store.armEffectTimer(key, action.activeDurationRounds)
     : null;
-  // Scoped to the open sheet: another of the user's heroes in a fight is not this one.
-  const status = sheetEncounter(
-    useCombatStatusStore.getState().status,
-    useCharacterStore.getState().character?.id ?? null
-  );
   const relativeBoundary = action.activeTurnBoundary
-    ? turnBoundaryAfter(
-        status?.myId ?? "self",
-        action.activeTurnBoundary.turns,
-        action.activeTurnBoundary.phase,
-        status
-          ? {
-              round: status.round,
-              currentCombatantId: status.encounter.currentCombatantId,
-              phase: "turn-start",
-              order: status.encounter.order ?? status.view.turnOrderIds,
-            }
-          : {
-              round: useCombatStore.getState().round,
-              currentCombatantId: "self",
-              phase: "turn-start",
-              order: ["self"],
-            }
-      )
+    ? ownTurnBoundary(action.activeTurnBoundary.turns, action.activeTurnBoundary.phase)
     : null;
   const restoreBoundary = relativeBoundary
     ? store.armEffectBoundary(key, {
@@ -145,5 +163,34 @@ export function applyActionConcentration(
       restoreStoredConcentration?.();
     }
     for (const id of loggedIds) current.removeLogEntry(id);
+  };
+}
+
+/**
+ * Light one cover level (or clear it, with null) on the open sheet until its
+ * declared turn edge (the start of the owner's next turn); returns the inverse, or
+ * null when nothing changed.
+ */
+export function commitCover(level: CoverStateLevel | null): (() => void) | null {
+  const duration = COVER_STATES.find((state) => state.level === level)?.grant.duration;
+  const until =
+    duration?.kind === "turn-boundary"
+      ? (ownTurnBoundary(duration.turns, duration.phase) ?? undefined)
+      : undefined;
+  const store = useCharacterStore.getState();
+  const session = store.character?.session;
+  const prior = session ? litCoverLevel(session) : null;
+  const priorUntil = prior
+    ? session?.effectBoundaries?.[coverStateKey(prior)]
+    : undefined;
+  if (!store.dispatch({ kind: "set-cover", level, until })) return null;
+  // The inverse re-runs the prior level with its own edge, so an undo later in the
+  // turn leaves every other change in place.
+  return () => {
+    useCharacterStore.getState().dispatch({
+      kind: "set-cover",
+      level: prior,
+      until: priorUntil,
+    });
   };
 }

@@ -131,7 +131,12 @@
       "spd": "SPD",
       "pp": "PP",
       "pb": "PB",
-      "pbAria": "Proficiency Bonus"
+      "pbAria": "Proficiency Bonus",
+      "coverOff": "Cover: none. Tap for {{next}}",
+      "coverLit": "{{name}}: {{summary}} Until the start of your next turn. Tap for {{next}}",
+      "coverNone": "no cover",
+      "coverToast": "{{name}} until the start of your next turn",
+      "coverClearedToast": "Cover removed"
     },
     "health": {
       "hpAbbr": "HP",

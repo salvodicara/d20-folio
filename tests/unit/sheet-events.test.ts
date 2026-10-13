@@ -20,6 +20,7 @@ import {
 } from "@/lib/play/sheet-events";
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
+import * as cover from "@/lib/play/cover";
 import * as fading from "@/lib/play/fading-penalties";
 import * as forms from "@/lib/play/forms";
 import * as pins from "@/lib/play/pins";
@@ -117,6 +118,10 @@ const CASES: {
   "set-active-cast-level": [
     { kind: "set-active-cast-level", key: "haste", level: 4 },
     () => at(states.setActiveSpellCastLevel(doc, "haste", 4)),
+  ],
+  "set-cover": [
+    { kind: "set-cover", level: "half", until: { round: 3, phase: "turn-start" } },
+    () => at(cover.setCover(doc, "half", { round: 3, phase: "turn-start" })),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
   "set-readied-spell": [
