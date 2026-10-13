@@ -18,6 +18,7 @@ import {
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
 import { setCover, type CoverUntil } from "./cover";
+import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { dropBeastForm } from "./forms";
 import { setReadiedSpell } from "./ready";
@@ -59,6 +60,7 @@ export type SheetEvent =
       until: CoverUntil | undefined;
     }
   | { kind: "set-surprised"; surprised: boolean }
+  | { kind: "adjust-currency"; delta: CurrencyDelta }
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
@@ -120,6 +122,8 @@ export function applySheetEvent(
       return withSession(setCover(doc, event.level, event.until));
     case "set-surprised":
       return withSession(setSurprised(doc, event.surprised));
+    case "adjust-currency":
+      return withSession(adjustCurrency(doc.session, event.delta));
     case "drop-beast-form":
       return dropBeastForm(doc);
     case "set-readied-spell":

@@ -56,6 +56,7 @@ import {
 } from "@/features/character/center/target-step";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
+import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
 import { DamageTray } from "@/features/character/center/DamageTray";
 import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
 import { useLocale } from "@/hooks/useLocale";
@@ -1336,6 +1337,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               .setReadiedSpell(readiedHold(currentRound(), loggedId || null))
           : null;
         if (!readies) offerFollowUps(action, targets, loggedId);
+        // A priced material component: "−300 mo" when consumed, else a reminder.
+        const materialToastId = offerMaterialCost(action.spellId, t, locale);
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1344,6 +1347,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             !itemResourceCommands.revert(resourceCommit)
           )
             return false;
+          if (materialToastId) useToastStore.getState().dismissToast(materialToastId);
           undoHold?.();
           undoRegains();
           activation.restore();

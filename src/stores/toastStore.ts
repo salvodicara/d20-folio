@@ -37,6 +37,11 @@ export interface UndoToast {
    * An undo-bearing toast occupies THE single snackbar slot (one-snackbar rule).
    */
   onUndo?: () => void;
+  /**
+   * An offered follow-up the player may take with one tap ("−300 mo" after a cast
+   * whose material component is consumed). Taking it closes the toast.
+   */
+  action?: { label: string; run: () => void };
   /** Timestamp when toast was created */
   createdAt: number;
   /** Duration in ms (default 5000) */

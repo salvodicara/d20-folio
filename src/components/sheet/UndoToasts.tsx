@@ -39,6 +39,7 @@ export function UndoToasts() {
           createdAt={toast.createdAt}
           duration={toast.duration}
           hasUndo={typeof toast.onUndo === "function"}
+          action={toast.action}
           leaving={toast.leaving ?? false}
           onDismiss={dismissToast}
           onUndo={undoToast}
@@ -54,6 +55,8 @@ interface ToastItemProps {
   createdAt: number;
   duration: number;
   hasUndo: boolean;
+  /** An offered one-tap follow-up; taking it closes the toast. */
+  action?: { label: string; run: () => void };
   /** Mirrors store's `leaving` flag — triggers the CSS exit keyframe. */
   leaving: boolean;
   onDismiss: (id: string) => void;
@@ -69,6 +72,7 @@ function ToastItem({
   createdAt,
   duration,
   hasUndo,
+  action,
   leaving,
   onDismiss,
   onUndo,
@@ -107,6 +111,19 @@ function ToastItem({
         <Icon as={X} size="sm" decorative />
       </IconButton>
       <span className="t-txt">{message}</span>
+      {action && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="t-undo"
+          onClick={() => {
+            onDismiss(id);
+            action.run();
+          }}
+        >
+          {action.label}
+        </Button>
+      )}
       {hasUndo && (
         <Button variant="ghost" size="sm" className="t-undo" onClick={() => onUndo(id)}>
           {t("common.undo")}
