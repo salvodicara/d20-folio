@@ -12265,6 +12265,11 @@ button.uc-chevron::before {
   .campaign-table-nav {
     position: sticky;
     top: calc(var(--topbar-h) + var(--sp-6));
+    padding: var(--sp-2);
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius-xl);
+    background: color-mix(in oklab, var(--bg-surface-1) 92%, transparent);
+    box-shadow: var(--elev-raised);
   }
   .campaign-table-nav-track {
     flex-direction: column;
