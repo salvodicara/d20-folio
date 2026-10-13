@@ -71,6 +71,8 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result, when the damage tray said one for every target. */
       outcome?: AttackOutcome;
+      /** The cast readied the spell (2024 Ready): it goes off on its release. */
+      readied?: true;
     }
   /** A reaction was used (always the reaction slot → red). */
   | {
@@ -81,6 +83,8 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result (see `action-use`). */
       outcome?: AttackOutcome;
+      /** The Reaction released a readied spell. */
+      released?: true;
     }
   /**
    * An on-hit RIDER was spent on an attack (Psi Warrior Psionic Strike → a
