@@ -32,13 +32,18 @@ export function localizePlayEvent(
     source ? t("sessionReport.withSource", { line, source }) : line;
   switch (event.kind) {
     case "action": {
+      // A spell is cast, everything else is used.
+      const verb =
+        event.source && "srd" in event.source && event.source.srd.kind === "spell"
+          ? "cast"
+          : "action";
       const base = event.targets?.length
-        ? t("sessionReport.actionOn", {
+        ? t(`sessionReport.${verb}On`, {
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
             targets: event.targets.map(who).join(", "),
           })
-        : t("sessionReport.action", {
+        : t(`sessionReport.${verb}`, {
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
           });

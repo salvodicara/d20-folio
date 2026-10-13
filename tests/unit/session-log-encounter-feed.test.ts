@@ -16,6 +16,7 @@ import {
   needsAttribution,
   NOTE_MAX,
   noteDraft,
+  spellCastDraft,
 } from "@/lib/session-log";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 
@@ -277,6 +278,26 @@ describe("hideCombatants", () => {
     expect(hideCombatants(lines, new Set(["monster-2"])).map((l) => l.id)).toEqual([
       "d1",
     ]);
+  });
+});
+
+describe("spellCastDraft — the DM taps a monster's per-day spell", () => {
+  it("records the monster casting the spell, and the feed shows it to the table", () => {
+    const draft = spellCastDraft("monster-1", "fireball");
+    expect(draft).toEqual({
+      type: "event",
+      event: {
+        kind: "action",
+        actor: "monster-1",
+        source: { srd: { kind: "spell", key: "fireball", field: "name" } },
+      },
+    });
+    const log: LogItem[] = [start, round(1), item("c1", DM, draft.event)];
+    const [line] = encounterFeed(foldSession(log, { dmUid: DM }), "7");
+    expect(line?.event).toEqual(draft.event);
+    if (!line) throw new Error("line expected");
+    // A hidden caster stays out of a player's feed.
+    expect(hideCombatants([line], new Set(["monster-1"]))).toEqual([]);
   });
 });
 

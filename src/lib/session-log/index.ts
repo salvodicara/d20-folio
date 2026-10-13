@@ -38,6 +38,7 @@ export {
   needsAttribution,
   NOTE_MAX,
   noteDraft,
+  spellCastDraft,
   strikeDraft,
   type FeedLine,
   type FeedViewer,

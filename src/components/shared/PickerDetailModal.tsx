@@ -19,11 +19,14 @@ export function PickerDetailModal<T extends { id: string }>({
   entry,
   spec,
   onClose,
+  rubric,
 }: {
   /** The entry whose detail to show, or undefined/null when closed. */
   entry: T | null | undefined;
   spec: CompendiumPickerSpec<T>;
   onClose: () => void;
+  /** The header eyebrow; defaults to the picker's "Add". */
+  rubric?: string;
 }) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === "it" ? "it" : "en";
@@ -32,6 +35,7 @@ export function PickerDetailModal<T extends { id: string }>({
     <ModalShell
       open={entry != null}
       onClose={onClose}
+      rubric={rubric}
       // The localized title comes from the spec's `getName` (which resolves SRD
       // strings from the catalogue), so the modal never reads the entry's BiText.
       title={

@@ -8,6 +8,8 @@
     "withSource": "{{line}} ({{source}})",
     "action": "{{actor}} uses {{source}}",
     "actionOn": "{{actor}} uses {{source}} on {{targets}}",
+    "cast": "{{actor}} casts {{source}}",
+    "castOn": "{{actor}} casts {{source}} on {{targets}}",
     "outcome": {
       "hit": "hit",
       "miss": "miss",
