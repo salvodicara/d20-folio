@@ -243,13 +243,10 @@ describe("resolveActions — dual-wield", () => {
     const actions = localizeActions(char, "en");
     // Fighter L5: STR 16 (+3), PB 3 → Topple DC 8+3+3 = 14; Graze damage = 3.
     const staff = actions.find((a) => a.id === "weapon-quarterstaff");
-    expect(staff?.weaponFacts?.chips.find((c) => c.id === "topple")?.label).toBe(
-      "Topple · DC 14"
-    );
+    // The numbers ride the attack card's mastery rider rows (the chip steps aside).
+    expect(staff?.masteryRiders?.find((r) => r.id === "topple")?.dc).toBe(14);
     const glaive = actions.find((a) => a.id === "weapon-glaive");
-    expect(glaive?.weaponFacts?.chips.find((c) => c.id === "graze")?.label).toBe(
-      "Graze · 3"
-    );
+    expect(glaive?.masteryRiders?.find((r) => r.id === "graze")?.amount).toBe(3);
     // The raw numbers stay on the summary: the resolution spec reads them (Topple's
     // Prone option in the damage tray, Graze's on-miss part).
     expect(staff?.summary.masteryDetail).toEqual({ toppleDc: 14 });

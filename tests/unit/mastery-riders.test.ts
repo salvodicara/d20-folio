@@ -9,6 +9,7 @@ import { describe, it, expect } from "vitest";
 import { SRD_WEAPONS } from "@/data/weapons";
 import { buildDevScenario } from "@/lib/dev-scenarios";
 import { localizeActions } from "@/lib/views/combat-action-view";
+import { buildInventoryViewModel } from "@/lib/views/inventory-view";
 import type { CharacterDoc } from "@/types/character";
 
 const MASTERED = SRD_WEAPONS.filter((w) => w.mastery);
@@ -75,6 +76,26 @@ describe("weapon mastery riders on the attack card", () => {
       );
       expect(card).toBeDefined();
       expect(card?.masteryRiders ?? []).toEqual([]);
+    }
+  );
+
+  it.each(MASTERED.map((w) => [w.id, w.mastery ?? ""] as const))(
+    "%s (%s): the mastery shows once on the attack card",
+    (weaponId, mastery) => {
+      const id = mastery.toLowerCase();
+      const doc = fighterWith(weaponId);
+      const card = localizeActions(doc, "it").find((a) => a.id === `weapon-${weaponId}`);
+      const chips = (card?.weaponFacts?.chips ?? []).filter((c) => c.kind === "mastery");
+      const rows = card?.masteryRiders ?? [];
+      // A rider row is the mastery's one home; Nick has no row, so it keeps its chip.
+      expect([...chips.map((c) => c.id), ...rows.map((r) => r.id)]).toEqual([id]);
+      // The inventory card has no rider rows: it keeps the chip.
+      const inventory = buildInventoryViewModel(doc, "it").weapons.find(
+        (w) => w.id === weaponId
+      );
+      expect(
+        inventory?.facts.chips.filter((c) => c.kind === "mastery").map((c) => c.id)
+      ).toEqual([id]);
     }
   );
 
