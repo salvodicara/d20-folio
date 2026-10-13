@@ -156,7 +156,9 @@ import {
   monsterConditionImmunities,
   monsterDamageDefenses,
   type EncounterBudgetView,
+  type EncounterCombatantView,
 } from "@/features/campaigns/encounter-view";
+import type { SessionDraft } from "@/features/campaigns/useSessionLog";
 import { defendedDamageTypes, type DamageInstance } from "@/lib/damage-intake";
 import type { BudgetVerdict } from "@/lib/encounter-difficulty";
 import { useToastStore } from "@/stores/toastStore";
@@ -192,9 +194,24 @@ const MonsterStatBlockWalk = lazy(() =>
   import("./encounter-monster-speed").then((m) => ({ default: m.MonsterStatBlockWalk }))
 );
 
+// The DM's one-tap monster actions — a FIFTH lazy door onto the same bestiary chunk
+// (the chips read the corpus + the monster catalogue, so the catalogue gate pairs it).
+const EncounterMonsterActions = lazy(() =>
+  Promise.all([import("./encounter-monster-actions"), ensureSrdKind("monster")]).then(
+    ([m]) => ({ default: m.EncounterMonsterActions })
+  )
+);
+
 /** A reducer applied to the live encounter — present for the DM, absent (read-only)
  *  for a player. */
 export type ApplyFn = (fn: (e: EncounterState) => EncounterState) => void;
+
+/** What the DM's monster actions need from the fight: the creatures they can strike
+ *  and the session log their results go to. */
+export interface MonsterActionsContext {
+  rows: ReadonlyArray<EncounterCombatantView>;
+  log: (drafts: SessionDraft[]) => void;
+}
 
 /**
  * DM DRAG-TO-REORDER controls for ONE combat row (C3) — present ONLY for the DM/admin and
@@ -1662,10 +1679,13 @@ export function MonsterCard({
   initLocked = false,
   apply,
   reorder,
+  actions,
 }: {
   monster: EncounterMonster;
   /** The owning campaign — the engine command boundary's shared-combat material key. */
   campaignId: string;
+  /** The DM's one-tap monster actions (DM only, a bestiary monster only). */
+  actions?: MonsterActionsContext;
   isCurrent: boolean;
   /** C3 — turns have BEGUN (the order is frozen): the typed-initiative chip goes READ-ONLY
    *  (the DM reorders via drag, never a silent live re-sort of a retyped value). */
@@ -2021,6 +2041,16 @@ export function MonsterCard({
                   apply={apply}
                 />
               </Suspense>
+              {actions && (
+                <Suspense fallback={null}>
+                  <EncounterMonsterActions
+                    monster={monster}
+                    campaignId={campaignId}
+                    apply={apply}
+                    context={actions}
+                  />
+                </Suspense>
+              )}
             </>
           ) : (
             conditions

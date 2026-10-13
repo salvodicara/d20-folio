@@ -95,6 +95,7 @@ describe("eager-partition tripwires", () => {
       "encounter-monster-spec.ts",
       "encounter-trait-chips.tsx",
       "encounter-monster-speed.tsx",
+      "encounter-monster-actions.tsx",
     ]);
     const dir = join(REPO_ROOT, "src/features/campaigns");
     const files = readdirSync(dir).filter((f) => /\.(ts|tsx)$/.test(f));
@@ -110,6 +111,13 @@ describe("eager-partition tripwires", () => {
         expect(src, f).not.toMatch(/from\s+["']\.\/encounter-monster-spec["']/);
         expect(src, f).not.toMatch(/from\s+["']\.\/encounter-trait-chips["']/);
         expect(src, f).not.toMatch(/from\s+["']\.\/encounter-monster-speed["']/);
+        expect(src, f).not.toMatch(/from\s+["']\.\/encounter-monster-actions["']/);
+      }
+      // The monster-actions door reads the catalogue: it pairs with the gate too.
+      if (/import\(["']\.\/encounter-monster-actions["']\)/.test(src)) {
+        expect(src, `${f}: dynamic import must gate on ensureSrdKind("monster")`).toMatch(
+          /ensureSrdKind\(["']monster["']\)/
+        );
       }
       // BOTH lazy factories must pair the dynamic import with the catalogue gate.
       if (/import\(["']\.\/encounter-bestiary["']\)/.test(src)) {

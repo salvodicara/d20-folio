@@ -466,6 +466,7 @@
       "rubricDamage": "{{type}} damage",
       "total": "Rolled total",
       "totalHint": "What you rolled at the table, e.g. 8+6+3",
+      "totalHintDice": "Roll {{dice}} at the table and type the total, e.g. 8+6+3",
       "saved": "Saved",
       "savedAria": "{{name}} saved",
       "conditionSave": "{{condition}} · {{ability}} save DC {{dc}}",

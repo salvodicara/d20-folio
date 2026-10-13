@@ -466,6 +466,7 @@
       "rubricDamage": "Danni da {{type}}",
       "total": "Totale tirato",
       "totalHint": "Quanto hai tirato al tavolo, es. 8+6+3",
+      "totalHintDice": "Tira {{dice}} al tavolo e scrivi il totale, es. 8+6+3",
       "saved": "Salvato",
       "savedAria": "{{name}} ha superato il TS",
       "conditionSave": "{{condition}} · TS {{ability}} CD {{dc}}",

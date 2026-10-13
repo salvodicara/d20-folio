@@ -770,6 +770,8 @@ function CombatLayer({
       { type: "correct", target: line.id, event: attributionCorrection(line, actor) },
     ]);
   const retract = (line: FeedLine): void => writeLog([strikeDraft(line)]);
+  // The DM's one-tap monster actions strike the fight's creatures and log the results.
+  const monsterActionsContext = { rows: view.rows, log: writeLog };
   const addNote = (text: string): void => {
     const draft = noteDraft(text, viewer);
     if (draft) writeLog([draft]);
@@ -1245,6 +1247,7 @@ function CombatLayer({
               initLocked={!gathering}
               apply={apply}
               reorder={reorderFor(row.id)}
+              actions={apply ? monsterActionsContext : undefined}
             />
           );
         })}
