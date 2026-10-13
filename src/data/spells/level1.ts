@@ -1475,10 +1475,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
     attackType: "ranged",
-    saveAbility: "CON",
+    // SRD 5.2.1: "On a hit, the target takes 2d8 Poison damage and has the
+    // Poisoned condition until the end of your next turn." No saving throw.
     conditionApplication: {
       options: ["poisoned"],
-      on: "failed-save",
+      on: "hit",
       lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
     },
     source: "SRD",

@@ -255,14 +255,15 @@ describe("spell-data integrity", () => {
     expect(poisonSpray?.attackType).toBe("ranged");
     expect(poisonSpray?.saveAbility).toBeUndefined();
 
-    // Ray of Sickness is intentionally hybrid: the attack gates damage, then a
-    // Constitution save gates Poisoned. Flattening it to either branch loses RAW.
+    // Ray of Sickness follows SRD 5.2.1: "Make a ranged spell attack against
+    // the target. On a hit, the target takes 2d8 Poison damage and has the
+    // Poisoned condition until the end of your next turn." No saving throw.
     const ray = getSpellById("ray-of-sickness");
     expect(ray?.attackType).toBe("ranged");
-    expect(ray?.saveAbility).toBe("CON");
+    expect(ray?.saveAbility).toBeUndefined();
     expect(ray?.conditionApplication).toEqual({
       options: ["poisoned"],
-      on: "failed-save",
+      on: "hit",
       lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
     });
   });
