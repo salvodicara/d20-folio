@@ -23,6 +23,7 @@
     "givenHeal": "Healed {{target}} {{amount}} HP",
     "givenDamage": "{{target}} took {{amount}} damage",
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
-    "givenCondition": "{{target}} failed the save: {{condition}}"
+    "givenCondition": "{{target}} failed the save: {{condition}}",
+    "unknownEvent": "An entry from a newer version of the app"
   }
 }

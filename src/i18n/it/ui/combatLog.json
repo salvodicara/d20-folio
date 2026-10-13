@@ -23,6 +23,7 @@
     "givenHeal": "Curati {{amount}} PF a {{target}}",
     "givenDamage": "{{target}} ha subito {{amount}} danni",
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",
-    "givenCondition": "{{target}} ha fallito il TS: {{condition}}"
+    "givenCondition": "{{target}} ha fallito il TS: {{condition}}",
+    "unknownEvent": "Voce registrata da una versione più nuova dell'app"
   }
 }
