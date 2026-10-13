@@ -144,6 +144,20 @@ export async function readyByName(page: Page): Promise<void> {
  * locale-invariant STRUCTURAL anchor — a role (`readyByH1`), a stable className
  * (`readyBySelector`), or a test id — over an EN|IT regex union.
  */
+/** The dev encounter's Coralino card has painted. A bare /coralino/ text match can
+ *  land first on the top bar's turn pip ("Turno di Coralino…"), hidden on a phone,
+ *  and time out; the encounter card is the real anchor. */
+export function coralinoCard(page: Page) {
+  return page
+    .locator(".combatant-card")
+    .filter({ hasText: /coralino/i })
+    .first();
+}
+
+const readyCoralinoCard = async (page: Page): Promise<void> => {
+  await coralinoCard(page).waitFor({ timeout: 15000 });
+};
+
 function readyText(re: RegExp): (page: Page) => Promise<void> {
   return async (page) => {
     await page.getByText(re).first().waitFor({ timeout: 15000 });
@@ -1136,15 +1150,13 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false, // inline tracker, not a modal — skip the overlay-mounted assert
-    ready: readyText(/coralino/i),
+    ready: readyCoralinoCard,
     prepare: async (page) => {
       await page.addInitScript(() =>
         window.localStorage.setItem("d20-dev-encounter", "1")
       );
       await page.reload();
-      await page
-        .getByText(/coralino/i)
-        .first()
+      await coralinoCard(page)
         .waitFor({ timeout: 8000 })
         .catch(() => {});
     },
@@ -1154,15 +1166,13 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   "campaign-encounter-add-monster": {
     edit: false,
     variants: OVERLAY_VARIANTS,
-    ready: readyText(/coralino/i),
+    ready: readyCoralinoCard,
     prepare: async (page) => {
       await page.addInitScript(() =>
         window.localStorage.setItem("d20-dev-encounter", "1")
       );
       await page.reload();
-      await page
-        .getByText(/coralino/i)
-        .first()
+      await coralinoCard(page)
         .waitFor({ timeout: 8000 })
         .catch(() => {});
       await page
@@ -1183,15 +1193,13 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   "campaign-monster-statblock": {
     edit: false,
     variants: OVERLAY_VARIANTS,
-    ready: readyText(/coralino/i),
+    ready: readyCoralinoCard,
     prepare: async (page) => {
       await page.addInitScript(() =>
         window.localStorage.setItem("d20-dev-encounter", "1")
       );
       await page.reload();
-      await page
-        .getByText(/coralino/i)
-        .first()
+      await coralinoCard(page)
         .waitFor({ timeout: 8000 })
         .catch(() => {});
       // Expand monster-1's DM disclosure via its STABLE card toggle. A name-labelled
