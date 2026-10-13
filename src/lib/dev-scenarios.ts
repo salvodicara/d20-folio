@@ -1437,6 +1437,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Shapechange: the spell card's Transform opens a picker of every creature up to CR 18 that is not a Construct or an Undead; choosing one stamps its AC, speeds, STR/DEX/CON and Temporary HP, keeps INT/WIS/CHA, and a second Transform shifts form without new Temporary HP.",
   },
+  // True Polymorph — a level-17 Wizard with True Polymorph prepared, untransformed.
+  // Visit `/characters/scn-true-polymorph-wizard?tab=spells`.
+  "true-polymorph-wizard": {
+    name: "Maelis Vantorre",
+    raceId: "human",
+    classId: "wizard",
+    level: 17,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 20, WIS: 12, CHA: 10 },
+    spells: [{ srdId: "true-polymorph", prepared: true }],
+    exercises:
+      "True Polymorph: Transform offers every bestiary creature up to CR 17, Constructs and Undead included; Myself replaces all six scores, AC and speeds and adds the form's HP as Temporary HP; Another creature shows the chosen stat block.",
+  },
   // Animal Shapes — a level-15 Druid with Animal Shapes prepared, untransformed.
   // Visit `/characters/scn-animal-shapes-druid?tab=spells`.
   "animal-shapes-druid": {

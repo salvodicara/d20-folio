@@ -29,6 +29,7 @@ import { Segmented } from "@/components/ui/segmented";
 import { SearchField } from "@/components/shared/SearchField";
 import { matchesSearch } from "@/lib/search";
 import { localizeSrd } from "@/i18n/resolver";
+import { bestiaryNameKey } from "@/lib/polymorph";
 import { srdEn } from "@/i18n/srd-en";
 import { formatCr, formatModifier, localeDistance } from "@/lib/utils";
 import { abilityModifier } from "@/lib/ability";
@@ -52,9 +53,11 @@ export interface BeastFormPickerProps {
   /** Apply the SELF-swap for the chosen form (the parent's `assumePolymorphForm`). */
   onAssume: (form: BeastStatBlock) => void;
   onClose: () => void;
-  /** Shapechange: forms from the whole bestiary (names in the `monster`
-   *  catalogue), on yourself only, with its own title. */
-  shapechange?: boolean;
+  /** Forms from the whole bestiary (Shapechange, True Polymorph): names in the
+   *  `monster` catalogue, its own title. */
+  bestiary?: boolean;
+  /** The spell only targets you (Shapechange): no "Another creature" mode. */
+  selfOnly?: boolean;
   /** The form keeps your INT, WIS, CHA and Hit Points (Shapechange, Animal Shapes). */
   keepsMind?: boolean;
 }
@@ -63,12 +66,19 @@ export interface BeastFormPickerProps {
 function BeastStatBlockView({
   beast,
   locale,
+  bestiary,
 }: {
   beast: BeastStatBlock;
   locale: Locale;
+  bestiary: boolean;
 }) {
   const { t } = useTranslation();
-  const name = localizeSrd("beasts", beast.id, "name", locale);
+  // A bestiary form names itself, its attacks and its traits from the monster catalogue.
+  const nameOf = (key: string) =>
+    bestiary
+      ? localizeSrd("monster", bestiaryNameKey(beast.id, key), "name", locale)
+      : localizeSrd("beasts", key, "name", locale);
+  const name = nameOf(beast.id);
   const speedParts: string[] = [];
   if (typeof beast.speeds.walk === "number")
     speedParts.push(
@@ -117,7 +127,7 @@ function BeastStatBlockView({
       <ul className="beast-ref-scores">
         {ABILITY_ORDER.map((code) => (
           <li key={code}>
-            <span className="beast-ref-score-code">{code}</span>{" "}
+            <span className="beast-ref-score-code">{t(`abilities.${code}_short`)}</span>{" "}
             {beast.abilityScores[code]} (
             {formatModifier(abilityModifier(beast.abilityScores[code]))})
           </li>
@@ -136,8 +146,7 @@ function BeastStatBlockView({
                 : localeDistance(atk.reachFt ?? 5, locale);
               return (
                 <li key={`${atk.nameKey}-${i}`}>
-                  {localizeSrd("beasts", atk.nameKey, "name", locale)}{" "}
-                  {formatModifier(atk.toHit)} · {atk.damageDice}{" "}
+                  {nameOf(atk.nameKey)} {formatModifier(atk.toHit)} · {atk.damageDice}{" "}
                   {t(`srd.damage_${atk.damageType}`)} · {dist}
                 </li>
               );
@@ -154,7 +163,7 @@ function BeastStatBlockView({
       {beast.traits && beast.traits.length > 0 && (
         <div className="beast-ref-section">
           <span className="beast-ref-label">{t("polymorph.traits")}</span>{" "}
-          {beast.traits.map((id) => localizeSrd("beasts", id, "name", locale)).join(", ")}
+          {beast.traits.map(nameOf).join(", ")}
         </div>
       )}
     </div>
@@ -167,11 +176,12 @@ export function BeastFormPicker({
   locale,
   onAssume,
   onClose,
-  shapechange = false,
+  bestiary = false,
+  selfOnly = false,
   keepsMind = false,
 }: BeastFormPickerProps) {
   const { t } = useTranslation();
-  const nameKind = shapechange ? "monster" : "beasts";
+  const nameKind = bestiary ? "monster" : "beasts";
   const [mode, setMode] = useState<"self" | "reference">("self");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -196,7 +206,7 @@ export function BeastFormPicker({
       size="md"
       onClose={onClose}
       rubric={t("polymorph.rubric")}
-      title={shapechange ? t("polymorph.shapechangeTitle") : t("polymorph.title")}
+      title={bestiary ? t("polymorph.creatureTitle") : t("polymorph.title")}
       subtitle={
         mode === "reference"
           ? t("polymorph.referenceHint")
@@ -209,7 +219,7 @@ export function BeastFormPicker({
           REFERENCE stat block pins below it (`shrink-0`) so the picked creature is
           always visible — the list shrinks to make room, never the block. */}
       <ModalStage className="gap-3 px-4 pb-4">
-        {!shapechange && (
+        {!selfOnly && (
           <Segmented
             className="poly-mode-switch"
             aria-label={t("polymorph.title")}
@@ -231,16 +241,14 @@ export function BeastFormPicker({
           value={query}
           onChange={setQuery}
           autoFocus
-          placeholder={
-            shapechange ? t("polymorph.searchCreatures") : t("polymorph.search")
-          }
+          placeholder={bestiary ? t("polymorph.searchCreatures") : t("polymorph.search")}
         />
 
         {rows.length === 0 ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
             <p className="m-0 py-4 text-center text-sm text-text-secondary">
               {forms.length === 0
-                ? shapechange
+                ? bestiary
                   ? t("polymorph.noCreatureForms")
                   : t("polymorph.noForms")
                 : t("common.noResults")}
@@ -275,7 +283,7 @@ export function BeastFormPicker({
 
         {mode === "reference" && selected && (
           <div className="shrink-0">
-            <BeastStatBlockView beast={selected} locale={locale} />
+            <BeastStatBlockView beast={selected} locale={locale} bestiary={bestiary} />
           </div>
         )}
       </ModalStage>

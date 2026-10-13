@@ -70,10 +70,11 @@ const FamiliarFormPicker = lazy(() =>
   ]).then(([m]) => ({ default: m.FamiliarFormPicker }))
 );
 
-// The Shapechange picker reads the whole bestiary, so it rides a LAZY leaf too.
-const ShapechangeFormPicker = lazy(() =>
-  Promise.all([import("./spells/ShapechangeFormPicker"), ensureSrdKind("monster")]).then(
-    ([m]) => ({ default: m.ShapechangeFormPicker })
+// The bestiary form picker (Shapechange, True Polymorph) reads the whole bestiary,
+// so it rides a LAZY leaf too.
+const BestiaryFormPicker = lazy(() =>
+  Promise.all([import("./spells/BestiaryFormPicker"), ensureSrdKind("monster")]).then(
+    ([m]) => ({ default: m.BestiaryFormPicker })
   )
 );
 
@@ -541,7 +542,8 @@ export function SpellsTab() {
 
       {transformSpellId !== null && selfFormRule(transformSpellId).pool === "bestiary" ? (
         <Suspense fallback={null}>
-          <ShapechangeFormPicker
+          <BestiaryFormPicker
+            spellId={transformSpellId}
             level={totalLevel(character.character)}
             locale={locale}
             onAssume={handleAssumeForm}
