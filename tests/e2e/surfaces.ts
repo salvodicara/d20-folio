@@ -1118,9 +1118,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     overlay: false,
     ready: readyText(/starless keep/i),
     prepare: async (page) => {
-      await page
-        .getByRole("tab", { name: /^(party resources|risorse del gruppo)$/i })
-        .click();
+      // The treasury lives on the overview (owner 2026-10-13), no tab to open.
       await page
         .getByRole("button", { name: /^add coins$|^aggiungi monete$/i })
         .first()

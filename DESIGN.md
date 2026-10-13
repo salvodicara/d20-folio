@@ -2260,19 +2260,16 @@ test.ts` READS the live `.cp-dest-chip` declaration out of `folio.css`, resolves
      Encounter is the sole destructive control (named icon on phones). The attached Chronicle is a
      real drawer edge when collapsed and a bounded gilt-spine timeline when expanded; round markers
      and event diamonds make the causal record scannable without adding another card or shadow.
-   - ✅ **The campaign hub is a task workspace, not one always-open long page.** Its sticky local
-     tablist switches four table contexts: Live (Party/Encounter beside a read-only "Last time…"
-     card), Journal (session pages — rendered notes, click to edit, with the evening's automatic
-     report — beside Shared Notes, the Chronicle archive below), Resources (Treasury; Access for
-     players), and manager-only DM (Access + DM tools; owner 2026-10-09). These
-     are real tabs, not section anchors: inactive panels leave layout and the accessibility tree but
-     remain mounted, so editors and disclosures survive a task switch; the chosen view is remembered
-     per campaign. Selecting a different task aligns its shared workspace boundary below the sticky
-     topbar + local tab plate, so a scroll position inherited from a long recap can never hide the new
-     panel's title; mounted editor/disclosure state is unaffected. On desktop, Live is a compact split desk; from 1280px Journal becomes a
-     Sessions + Shared Notes spread with the Chronicle archive spanning below, and each closed
-     combatant places identity plus glanceable vitals on one tactical row. Phones and narrower desktop
-     windows keep the touch-safe single-column composition.
+   - ✅ **The campaign hub is a task workspace, not one always-open long page** (owner
+     2026-10-13, "Panoramica ordinata"). Under the image band, a side menu (a row of chips below
+     1100px) switches three table contexts: Overview (Party/Encounter beside "Last time…" and the
+     Treasury; Access for players), Journal (session pages, Shared Notes, the Chronicle archive) and
+     manager-only DM tools. The selected item is a tinted plate with a gilt ring, never the gold
+     fill, which stays for the page's one primary action. These are real tabs: inactive panels leave
+     layout and the accessibility tree but remain mounted, so editors and disclosures survive a task
+     switch; the chosen view is remembered per campaign (a remembered retired "resources" view opens
+     the Overview). In a running encounter the initiative order takes the Overview's full width and
+     the side cards step below it. Phones keep the single-column composition with three equal chips.
    - ✅ **Battle resolution is one compact decision surface.** The shared `ModalShell` resolver leads
      with the action name and its mechanical summary, shows independently targetable creature cards,
      then exposes only the outcome controls that action needs: hit/miss, per-target save, shared area

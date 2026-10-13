@@ -38,7 +38,6 @@ test.describe("Campaigns flow", () => {
 
     await expect(page).toHaveURL(/\/campaigns\/[A-Z0-9]+/i);
     await expect(page.getByRole("heading", { name: /party/i })).toBeVisible();
-    await page.getByRole("tab", { name: /party resources/i }).click();
     await expect(page.getByRole("heading", { name: /treasury/i })).toBeVisible();
 
     // The hub names the campaign in its banner header (the breadcrumb was removed
@@ -74,7 +73,6 @@ test.describe("Campaigns flow", () => {
 
     await expect(page).toHaveURL(/\/campaigns\/ABCDEFGH234567/i);
     await expect(page.getByRole("heading", { name: /party/i })).toBeVisible();
-    await page.getByRole("tab", { name: /party resources/i }).click();
     await expect(page.getByRole("heading", { name: /treasury/i })).toBeVisible();
   });
 

@@ -12164,42 +12164,39 @@ button.uc-chevron::before {
   margin: 0;
 }
 
-/* ── Campaign workspace — real local tabs, not an index above an always-open long
-   page. All panels remain mounted so drafts and disclosures survive view changes;
+/* ── Campaign workspace (owner 2026-10-13, "Panoramica ordinata") — real local tabs
+   in a SIDE MENU beside the content on a laptop, a row of chips above it on narrower
+   screens. All panels remain mounted so drafts and disclosures survive view changes;
    `[hidden]` removes every inactive task-context from layout and the accessibility
-   tree. The selected tab is a filled gilt plate, not a colour-only underline. ── */
+   tree. The selected item is a tinted plate with a gilt ring, never the gold fill:
+   gold fill stays for the one primary action on the page. ── */
+.campaign-shell {
+  display: grid;
+  gap: var(--sp-5);
+  align-items: start;
+}
 .campaign-table-nav {
-  position: sticky;
-  top: var(--topbar-h);
-  z-index: var(--z-sticky);
-  margin: var(--sp-4) 0 var(--sp-6);
-  padding: 5px;
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--radius-2xl);
-  background: color-mix(in oklab, var(--bg-surface-2) 94%, transparent);
-  box-shadow: var(--panel-frame), var(--elev-raised);
-  backdrop-filter: blur(12px) saturate(1.08);
+  min-width: 0;
 }
 .campaign-workspace {
-  /* A newly selected task aligns below the persistent topbar + local tab plate,
-     so its section heading is never hidden by either sticky layer. */
-  scroll-margin-top: calc(var(--topbar-h) + var(--sp-16));
+  /* A newly selected task aligns below the persistent topbar, so its section
+     heading is never hidden under it. */
+  scroll-margin-top: calc(var(--topbar-h) + var(--sp-6));
+  min-width: 0;
 }
 .campaign-table-nav-track {
   display: flex;
-  align-items: stretch;
-  gap: 2px;
-  min-width: max-content;
+  gap: var(--sp-2);
 }
 .campaign-table-nav-item {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: var(--sp-2);
-  min-height: 42px;
-  padding: 0 var(--sp-3);
-  border-radius: calc(var(--radius-lg) - 3px);
+  min-height: 40px;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-xl);
+  background: color-mix(in oklab, var(--bg-surface-1) 88%, transparent);
   color: var(--text-secondary);
   /* Direction B: the campaign's sections speak the sheet tabs' engraved voice. */
   font-family: var(--font-engraved);
@@ -12208,44 +12205,34 @@ button.uc-chevron::before {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  text-decoration: none;
   transition:
     color var(--m-fast) var(--ease-standard),
     background var(--m-fast) var(--ease-standard),
-    box-shadow var(--m-fast) var(--ease-standard);
+    border-color var(--m-fast) var(--ease-standard);
 }
 .campaign-table-nav-item:hover {
-  color: var(--accent-text);
-  background: color-mix(in oklab, var(--accent-primary) 9%, transparent);
+  color: var(--text-primary);
+  background: color-mix(in oklab, var(--accent-glow) 8%, var(--bg-surface-1));
 }
 .campaign-table-nav-item[aria-selected="true"] {
-  color: var(--accent-text);
-  background: color-mix(in oklab, var(--accent-glow) 17%, var(--bg-surface-2));
-  box-shadow: inset 0 -2px 0
-    color-mix(in oklab, var(--accent-primary-bright) 74%, transparent);
-}
-.campaign-table-nav-item[data-live] {
   color: var(--text-primary);
-}
-.campaign-table-nav-item[data-live] .campaign-table-nav-seal {
-  color: var(--semantic-danger);
-  border-color: color-mix(in oklab, var(--semantic-danger) 45%, var(--border-medium));
+  border-color: color-mix(in oklab, var(--accent-primary) 55%, transparent);
+  background: color-mix(in oklab, var(--accent-glow) 16%, var(--bg-surface-1));
 }
 .campaign-table-nav-seal {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
   flex: none;
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 34%, var(--border-medium));
-  border-radius: var(--radius-pill);
+  color: var(--text-muted);
+}
+.campaign-table-nav-item[aria-selected="true"] .campaign-table-nav-seal {
   color: var(--accent-text);
-  background: color-mix(in oklab, var(--accent-glow) 9%, var(--bg-recessed));
+}
+.campaign-table-nav-item[data-live] .campaign-table-nav-seal {
+  color: var(--semantic-danger);
 }
 .campaign-table-nav-item:focus-visible {
   outline: 2px solid var(--focus-ring);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 .campaign-workspace-panel[hidden] {
   display: none;
@@ -12257,28 +12244,54 @@ button.uc-chevron::before {
   min-width: 0;
 }
 .campaign-live-grid,
-.campaign-journal-grid,
-.campaign-resources-grid {
+.campaign-journal-grid {
   display: grid;
   align-items: start;
   gap: var(--sp-6);
 }
+.campaign-live-side {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-6);
+  min-width: 0;
+}
 @media (min-width: 1100px) {
-  .campaign-live-grid {
-    grid-template-columns: minmax(0, 1.65fr) minmax(21rem, 0.72fr);
+  .campaign-shell {
+    grid-template-columns: 12.5rem minmax(0, 1fr);
+    gap: var(--sp-8);
   }
-  .campaign-resources-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* The side menu: a quiet vertical list that stays in view while the content
+     scrolls. */
+  .campaign-table-nav {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--sp-6));
+  }
+  .campaign-table-nav-track {
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+  .campaign-table-nav-item {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 var(--sp-3);
+    gap: var(--sp-3);
+    border-color: transparent;
+    background: transparent;
+  }
+  .campaign-live-grid {
+    grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 0.9fr);
+  }
+  .campaign-live-grid[data-encounter] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .campaign-live-grid[data-encounter] .campaign-live-side {
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
   }
   .campaign-live-grid .sess-notes-edit {
     min-height: clamp(11rem, 32vh, 24rem);
   }
-  .campaign-live-recap {
-    position: sticky;
-    top: calc(var(--topbar-h) + var(--sp-16));
-  }
 }
-@media (min-width: 1280px) {
+@media (min-width: 1400px) {
   .campaign-journal-grid {
     grid-template-columns: minmax(0, 1.55fr) minmax(19rem, 0.65fr);
   }
@@ -12296,43 +12309,38 @@ button.uc-chevron::before {
 .campaign-dm-grid > * {
   min-width: 0;
 }
-
-@media (max-width: 720px) {
+@media (max-width: 1099px) {
+  /* The chip row scrolls sideways if it ever outgrows the screen; it never wraps. */
   .campaign-table-nav {
-    margin-top: var(--sp-3);
-    margin-bottom: var(--sp-5);
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: 0 var(--sp-4);
     overflow-x: auto;
     scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
   }
   .campaign-table-nav::-webkit-scrollbar {
     display: none;
   }
-  .campaign-table-nav-track {
-    min-width: 100%;
-  }
-  /* Phone: four equal cells, the seal stacked over a label that may wrap to two
-     lines — a long label ("Strumenti del DM") never spills into its neighbour. */
+}
+@media (max-width: 720px) {
+  /* Phone: three equal chips that always fit; a long label wraps inside its chip
+     instead of running off the screen. */
   .campaign-table-nav-item {
-    min-width: 0;
-    min-height: 56px;
     flex: 1 1 0;
-    flex-direction: column;
-    gap: 3px;
-    padding: 5px var(--sp-1);
-  }
-  .campaign-table-nav-item > span:last-child {
-    display: block;
-    max-width: 100%;
-    font-size: var(--text-2xs);
+    min-width: 0;
+    min-height: 44px;
+    justify-content: center;
+    padding: var(--sp-1) var(--sp-2);
+    font-size: var(--text-sm);
     line-height: 1.15;
     text-align: center;
     white-space: normal;
-    overflow-wrap: anywhere;
   }
   .campaign-table-nav-seal {
-    width: 24px;
-    height: 24px;
+    display: none;
+  }
+  /* …except the crossed swords that say a fight is on. */
+  .campaign-table-nav-item[data-live] .campaign-table-nav-seal {
+    display: inline-flex;
   }
 }
 
