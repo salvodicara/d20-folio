@@ -27,6 +27,7 @@ export function combatEventToPlayEvent(
         source: event.action,
         slot: event.slot,
         ...(event.targets?.length ? { targets: event.targets } : {}),
+        ...(event.outcome ? { outcome: event.outcome } : {}),
       };
     case "reaction-use":
       return {
@@ -35,6 +36,7 @@ export function combatEventToPlayEvent(
         source: event.action,
         slot: "reaction",
         ...(event.targets?.length ? { targets: event.targets } : {}),
+        ...(event.outcome ? { outcome: event.outcome } : {}),
       };
     case "rider-use":
       return { kind: "action", actor: me, source: event.rider };
@@ -84,6 +86,9 @@ export function combatEventToPlayEvent(
             actor: me,
             ...(event.source ? { source: event.source } : {}),
             provenance: "manual",
+            ...(event.effect === "damage" && event.outcome
+              ? { outcome: event.outcome }
+              : {}),
           };
     case "concentration-start":
     case "concentration-end":

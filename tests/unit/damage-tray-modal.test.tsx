@@ -399,6 +399,127 @@ describe("Hold Person on a goblin", () => {
   });
 });
 
+describe("a Longsword attack on a goblin: Hit · Miss · Critical", () => {
+  const longsword = { srd: { kind: "equipment", key: "longsword", field: "name" } };
+
+  beforeEach(() => {
+    setCharacter("fighter", 1, [], []);
+    live().character.weapons = [{ srdId: "longsword", quantity: 1 }];
+    useCharacterStore.setState({ character: { ...live() } });
+    encounter([
+      { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+      monster("monster-1", "Goblin"),
+    ] as Rows);
+  });
+
+  async function attackGoblin(): Promise<HTMLElement> {
+    renderPlay();
+    const card = screen.getByText("Longsword").closest(".uc") as HTMLElement;
+    fireEvent.click(within(card).getByRole("button", { name: /^attack/i }));
+    const picker = await screen.findByRole("dialog", { name: /on whom/i });
+    fireEvent.click(within(picker).getByRole("button", { name: /goblin/i }));
+    return tray();
+  }
+
+  const outcome = (dialog: HTMLElement, name: string) =>
+    within(
+      within(dialog).getByRole("group", { name: "Attack result on Goblin" })
+    ).getByRole("button", { name });
+
+  it("Critical: the hint, the typed total, and the log says critical, 14", async () => {
+    const dialog = await attackGoblin();
+    expect(outcome(dialog, "Hit")).toHaveAttribute("aria-pressed", "true");
+    expect(within(dialog).queryByTestId("damage-tray-crit-hint")).toBeNull();
+    fireEvent.click(outcome(dialog, "Critical"));
+    expect(within(dialog).getByTestId("damage-tray-crit-hint")).toHaveTextContent(
+      "dice doubled"
+    );
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "14" } });
+    expect(within(dialog).getByTestId("damage-tray-preview")).toHaveTextContent("−14");
+    fireEvent.click(within(dialog).getByRole("button", { name: /^apply$/i }));
+
+    const events = live().session.logEntries.map((e) => e.event);
+    expect(events.find((e) => e.kind === "action-use")).toMatchObject({
+      targets: ["monster-1"],
+      outcome: "critical",
+    });
+    expect(events.find((e) => e.kind === "effect-given")).toMatchObject({
+      effect: "damage",
+      amount: 14,
+      target: "monster-1",
+      outcome: "critical",
+    });
+    const session = await sessionEvents();
+    expect(session.find((e) => e.kind === "action")).toMatchObject({
+      outcome: "critical",
+      targets: ["monster-1"],
+    });
+    expect(session.find((e) => e.kind === "damage")).toEqual({
+      kind: "damage",
+      amount: 14,
+      target: "monster-1",
+      actor: ME,
+      source: longsword,
+      provenance: "manual",
+      outcome: "critical",
+    });
+    // The turn keeps the reviewed fact, bound to this use's occurrence.
+    const receipts = useCombatStore.getState().outcomeReceipts;
+    expect(receipts).toEqual([
+      expect.objectContaining({
+        actionId: "weapon-longsword",
+        target: { combatantId: "monster-1" },
+        fact: { kind: "attack", result: "critical-hit" },
+      }),
+    ]);
+    const occurrence = useCombatStore
+      .getState()
+      .selected.action.find((a) => a.id === "weapon-longsword")?.outcomeOccurrenceId;
+    expect(receipts[0]?.occurrenceId).toBe(occurrence);
+
+    // Undo takes the apply back: the damage line, the result and the receipt.
+    act(() => {
+      useUndoStore.getState().undo();
+    });
+    const after = live().session.logEntries.map((e) => e.event);
+    expect(after.some((e) => e.kind === "effect-given")).toBe(false);
+    expect(after.find((e) => e.kind === "action-use")).not.toHaveProperty("outcome");
+    expect(useCombatStore.getState().outcomeReceipts).toEqual([]);
+    expect((await sessionEvents()).find((e) => e.kind === "action")).not.toHaveProperty(
+      "outcome"
+    );
+  });
+
+  it("Miss: ×0, no number needed, Apply records the miss and no damage", async () => {
+    const dialog = await attackGoblin();
+    fireEvent.click(outcome(dialog, "Miss"));
+    expect(within(dialog).getByRole("button", { name: "×0" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    const apply = within(dialog).getByRole("button", { name: /^apply$/i });
+    expect(apply).toBeEnabled();
+    fireEvent.click(apply);
+
+    const events = live().session.logEntries.map((e) => e.event);
+    expect(events.some((e) => e.kind === "effect-given")).toBe(false);
+    expect(events.find((e) => e.kind === "action-use")).toMatchObject({
+      outcome: "miss",
+    });
+    expect(useCombatStore.getState().outcomeReceipts.map((r) => r.fact)).toEqual([
+      { kind: "attack", result: "miss" },
+    ]);
+  });
+
+  it("Skip records nothing: the attack stays logged as it was", async () => {
+    const dialog = await attackGoblin();
+    const logged = live().session.logEntries.map((e) => e.event);
+    fireEvent.click(within(dialog).getByRole("button", { name: /^skip$/i }));
+    expect(live().session.logEntries.map((e) => e.event)).toEqual(logged);
+    expect(useCombatStore.getState().outcomeReceipts).toEqual([]);
+  });
+});
+
 it("a heal on another PC writes their HP like the PC card, then logs it", async () => {
   setCharacter("cleric", 3, ["healing-word"], [{ level: 1, total: 2 }]);
   encounter([

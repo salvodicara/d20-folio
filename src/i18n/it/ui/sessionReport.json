@@ -11,9 +11,11 @@
     "outcome": {
       "hit": "colpito",
       "miss": "mancato",
+      "critical": "critico",
       "saved": "tiro salvezza riuscito",
       "failed": "tiro salvezza fallito"
     },
+    "attackDamage": "{{actor}}: {{source}} → {{target}}: {{outcome}}, {{amount}}",
     "damage": "{{target}} subisce {{amount}} danni",
     "damageBy": "{{actor}} infligge {{amount}} danni a {{target}}",
     "heal": "{{target}} recupera {{amount}} PF",

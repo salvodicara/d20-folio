@@ -73,6 +73,9 @@ function joinLocalizedList(parts: readonly string[], t: TranslateFn): string {
   return `${head} ${t("common.and")} ${last}`;
 }
 
+/** The attack results a damage line can say; another stored value is left out. */
+const ATTACK_RESULTS = new Set(["hit", "miss", "critical"]);
+
 /** One feed line. `hp` is the target's HP after the beat, when the viewer may see it. */
 export function localizeFeedEvent(
   event: PlayEvent,
@@ -91,12 +94,22 @@ export function localizeFeedEvent(
     case "damage":
       return readout(
         event.actor
-          ? t(action ? "combatChronicle.damageByAction" : "combatChronicle.damageBy", {
-              attacker: name(event.actor),
-              target: name(event.target),
-              amount: event.amount,
-              ...action,
-            })
+          ? t(
+              !action
+                ? "combatChronicle.damageBy"
+                : event.outcome && ATTACK_RESULTS.has(event.outcome)
+                  ? "combatChronicle.damageByActionOutcome"
+                  : "combatChronicle.damageByAction",
+              {
+                attacker: name(event.actor),
+                target: name(event.target),
+                amount: event.amount,
+                ...action,
+                ...(event.outcome && ATTACK_RESULTS.has(event.outcome)
+                  ? { outcome: t(`sessionReport.outcome.${event.outcome}`) }
+                  : {}),
+              }
+            )
           : t("combatChronicle.damage", {
               target: name(event.target),
               amount: event.amount,

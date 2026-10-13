@@ -21,6 +21,9 @@ export interface SessionReportNames {
   source?(sourceId: string): string;
 }
 
+/** The results the report can say; another stored value is left out of the line. */
+const OUTCOMES = new Set(["hit", "miss", "critical", "saved", "failed"]);
+
 export function localizePlayEvent(
   event: PlayEvent,
   t: TranslateFn,
@@ -42,13 +45,28 @@ export function localizePlayEvent(
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
           });
-      return event.outcome
+      return event.outcome && OUTCOMES.has(event.outcome)
         ? `${base} — ${t(`sessionReport.outcome.${event.outcome}`)}`
         : base;
     }
     case "damage":
     case "heal":
     case "temp-hp": {
+      // An attack's damage says its roll: "Aria: Longsword → Goblin: critical, 14".
+      if (
+        event.kind === "damage" &&
+        event.actor &&
+        source &&
+        event.outcome &&
+        OUTCOMES.has(event.outcome)
+      )
+        return t("sessionReport.attackDamage", {
+          actor: who(event.actor),
+          source,
+          target: who(event.target),
+          outcome: t(`sessionReport.outcome.${event.outcome}`),
+          amount: event.amount,
+        });
       const key =
         event.actor && event.kind !== "temp-hp" ? `${event.kind}By` : event.kind;
       return withSource(

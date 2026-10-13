@@ -3,7 +3,8 @@
  * player rolled at the table and one row per target, each with its own multiplier, a
  * "saved" toggle and the failed-save condition. Copied from Foundry VTT dnd5e's damage
  * application tray (one total, ×0 · ×½ · ×1 · ×2 per target, resistance toggles, one
- * Apply) and Roll20 GroupCheck/ApplyDamage's per-target "saved" toggle.
+ * Apply) and Roll20 GroupCheck/ApplyDamage's per-target "saved" toggle. An attack's
+ * rows also say Hit · Miss · Critical, as Foundry dnd5e's chat card does (2026-10-13).
  *
  * Pure: what the tray asks follows from the action's resolution spec and the targets
  * the "On whom?" step picked (through {@link castFollowUps}); what each row applies is
@@ -15,9 +16,16 @@ import {
   type SaveDamageOutcome,
 } from "@/lib/combat-resolution";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import { compileCombatOutcomeReceipts } from "@/lib/combat-outcomes";
 import { castFollowUps } from "@/lib/play/cast-follow-ups";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import type { AttackOutcome } from "@/types/combat-log";
+import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
+
+export type { AttackOutcome } from "@/types/combat-log";
+/** Foundry dnd5e's chat card order: Hit · Miss · Critical. */
+export const ATTACK_OUTCOMES: readonly AttackOutcome[] = ["hit", "miss", "critical"];
 
 export type TrayEffect = "damage" | "heal" | "temp-hp";
 /** The per-target multiplier, on Foundry dnd5e's scale: ¼ is a resistant target that
@@ -35,7 +43,18 @@ export interface DamageTrayPlan {
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
    *  `optIn` when a hit-gated rider (Topple) offers it with the chip off. */
   conditions?: { options: string[]; pickOne: boolean; optIn?: true };
+  /** The action rolls to hit (a weapon, an attack-roll spell): each row says Hit,
+   *  Miss or Critical. A miss deals nothing, half the total (Acid Arrow), or the
+   *  Graze mastery's fixed damage. */
+  attack?: { onMiss: "none" | "half"; graze?: number };
   targets: string[];
+}
+
+/** The action makes an attack roll (a weapon, an attack-roll spell): its tray rows
+ *  say Hit, Miss or Critical. */
+export function rollsToHit(action: ResolvedAction): boolean {
+  const kind = combatResolutionSpec(action).kind;
+  return kind === "attack" || kind === "attack-save";
 }
 
 /** The tray for a committed use, or `null` when there is nothing to apply. */
@@ -45,8 +64,11 @@ export function damageTrayPlan(
   selfId: string
 ): DamageTrayPlan | null {
   const items = castFollowUps(action, targets, selfId);
-  if (items.length === 0) return null;
   const spec = combatResolutionSpec(action);
+  const attacks = rollsToHit(action);
+  // An attack at a picked target always has its result to say, even with nothing
+  // else to apply (Ray of Enfeeblement).
+  if (items.length === 0 && !(attacks && targets.length > 0)) return null;
   // A pool spend (Lay on Hands) already chose its amount in its own picker: there is
   // no roll to type, so the tray would only ask the same number twice.
   if (spec.poolSpend) return null;
@@ -70,9 +92,13 @@ export function damageTrayPlan(
   const hasSave = Boolean(s.saveAbility || s.saveDC);
   // A save governs the damage only when the damage itself rides it (Fireball), not
   // when an attack deals it and the save only gates a rider.
+  const parts = combatDamageParts(action);
   const saveGovernsDamage =
-    effect === "damage" &&
-    combatDamageParts(action).some((part) => part.resolution === "save");
+    effect === "damage" && parts.some((part) => part.resolution === "save");
+  const graze = parts.find((part) => part.appliesOn === "miss")?.fixedAmount;
+  const halfOnMiss = parts.some(
+    (part) => part.id === "primary" && part.damageOnMiss === "half"
+  );
   return {
     effect,
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
@@ -94,7 +120,17 @@ export function damageTrayPlan(
           },
         }
       : {}),
-    targets: [...new Set(items.map((item) => item.targetId))],
+    ...(attacks
+      ? {
+          attack: {
+            onMiss: halfOnMiss ? ("half" as const) : ("none" as const),
+            ...(graze !== undefined && graze > 0 ? { graze } : {}),
+          },
+        }
+      : {}),
+    targets: [
+      ...new Set([...items.map((item) => item.targetId), ...(attacks ? targets : [])]),
+    ],
   };
 }
 
@@ -149,6 +185,8 @@ export interface TrayRow {
   defenseOn: boolean;
   /** The failed-save conditions this row will apply. */
   conditions: string[];
+  /** The attack's result on this target, when the action rolls to hit. */
+  attack?: AttackOutcome;
 }
 
 /**
@@ -157,9 +195,16 @@ export interface TrayRow {
  * and resistant is ¼; saved and vulnerable is ×1.
  */
 export function factsMultiplier(
-  row: Pick<TrayRow, "saved" | "defense" | "defenseOn">,
+  row: Pick<TrayRow, "saved" | "defense" | "defenseOn" | "attack">,
   plan: DamageTrayPlan
 ): TrayMultiplier {
+  // A miss: nothing, half (Acid Arrow), or the whole Graze damage (its own base).
+  const miss =
+    row.attack === "miss" && plan.attack && plan.attack.graze === undefined
+      ? plan.attack.onMiss === "half"
+        ? 0.5
+        : 0
+      : 1;
   const save =
     row.saved && plan.save && plan.effect === "damage"
       ? plan.save.onSave === "half"
@@ -168,7 +213,7 @@ export function factsMultiplier(
       : 1;
   const defense =
     row.defense && row.defenseOn ? FACTOR[defenseMultiplier(row.defense)] : 1;
-  const product = save * defense;
+  const product = miss * save * defense;
   return TRAY_MULTIPLIERS.find((m) => FACTOR[m] === product) ?? "1";
 }
 
@@ -179,7 +224,12 @@ export function initialTrayRow(
 ): TrayRow {
   const defense =
     plan.effect === "damage" ? targetDefense(defenses, plan.damageType) : null;
-  const facts = { saved: false, defense, defenseOn: defense !== null };
+  const facts = {
+    saved: false,
+    defense,
+    defenseOn: defense !== null,
+    ...(plan.attack ? { attack: "hit" as const } : {}),
+  };
   return {
     targetId,
     ...facts,
@@ -193,10 +243,25 @@ export function initialTrayRow(
   };
 }
 
+/** A grazing miss deals the mastery's fixed damage, not the rolled total. */
+function grazes(row: TrayRow, plan: DamageTrayPlan): boolean {
+  return row.attack === "miss" && plan.attack?.graze !== undefined;
+}
+
+/** Whether the row's amount needs the rolled total: a plain miss and a graze do not,
+ *  so a tray of misses applies without a number. */
+export function rowNeedsTotal(row: TrayRow, plan: DamageTrayPlan): boolean {
+  if (plan.effect === null) return false;
+  if (plan.effect !== "damage") return true;
+  return !grazes(row, plan) && row.multiplier !== "0";
+}
+
 /** What this row applies from the rolled total: the total × its multiplier, every
- *  halving rounded down (¼ = halve twice, the same as ⌊total / 4⌋). */
+ *  halving rounded down (¼ = halve twice, the same as ⌊total / 4⌋). A grazing miss
+ *  multiplies the Graze damage instead. */
 export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
-  const amount = Math.max(0, Math.floor(total));
+  const base = grazes(row, plan) ? (plan.attack?.graze ?? 0) : total;
+  const amount = Math.max(0, Math.floor(base));
   if (plan.effect !== "damage") return amount;
   switch (row.multiplier) {
     case "0":
@@ -212,9 +277,53 @@ export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): nu
   }
 }
 
-/** The conditions this row lands: none once the target saved. */
+/** The conditions this row lands: none once the target saved or the attack missed. */
 export function rowConditions(row: TrayRow): string[] {
-  return row.saved ? [] : row.conditions;
+  return row.saved || row.attack === "miss" ? [] : row.conditions;
+}
+
+/** Pick Hit, Miss or Critical: the multiplier follows (a miss cancels or halves the
+ *  damage; a critical keeps it — the player types the doubled dice themselves). */
+export function setAttackOutcome(
+  row: TrayRow,
+  outcome: AttackOutcome,
+  plan: DamageTrayPlan
+): TrayRow {
+  if (!plan.attack) return row;
+  const next = { ...row, attack: outcome };
+  return { ...next, multiplier: factsMultiplier(next, plan) };
+}
+
+/** The one result every row shares (the action's own log line says it), else none. */
+export function sharedAttackOutcome(
+  rows: ReadonlyArray<Pick<TrayRow, "attack">>
+): AttackOutcome | undefined {
+  const first = rows[0]?.attack;
+  return first && rows.every((row) => row.attack === first) ? first : undefined;
+}
+
+/** The rows' declared results as outcome receipts of this use's occurrence. */
+export function trayOutcomeReceipts(
+  occurrenceId: string,
+  actionId: string,
+  rows: ReadonlyArray<Pick<TrayRow, "targetId" | "attack">>
+): CombatOutcomeReceipt[] {
+  return compileCombatOutcomeReceipts({
+    occurrenceId,
+    actionId,
+    targets: rows.flatMap((row) =>
+      row.attack
+        ? [
+            {
+              target: { combatantId: row.targetId },
+              attack: {
+                results: [row.attack === "critical" ? "critical-hit" : row.attack],
+              },
+            },
+          ]
+        : []
+    ),
+  });
 }
 
 /** Toggle "Saved": it selects the multiplier its facts give (½, 0, ¼…). */

@@ -6,6 +6,10 @@
  * phone, the same panel as a centered dialog on wider screens. The app never rolls: the
  * player types what the table rolled.
  *
+ * An attack's row also says Colpito · Mancato · Critico (Foundry dnd5e's chat card):
+ * Apply writes the shared result onto the use's own log line, the per-target result
+ * onto each damage line, and one outcome receipt per target into the turn.
+ *
  * Where an applied row lands:
  *  - me → the sheet's own store seams (heal / temp HP / damage / condition), tagged
  *    with the action as source; undoable as ONE step with the monsters' lines;
@@ -30,16 +34,22 @@ import type { DamageDefenses } from "@/lib/damage-intake";
 import type { LocText } from "@/lib/loc-text";
 import type { Locale } from "@/lib/locale";
 import {
+  ATTACK_OUTCOMES,
   TRAY_MULTIPLIERS,
   initialTrayRow,
   parseRolledTotal,
   previewHp,
   rowAmount,
   rowConditions,
+  rowNeedsTotal,
+  setAttackOutcome,
   setMultiplier,
+  sharedAttackOutcome,
   toggleCondition,
   toggleDefense,
   toggleSaved,
+  trayOutcomeReceipts,
+  type AttackOutcome,
   type DamageTrayPlan,
   type TrayEffect,
   type TrayMultiplier,
@@ -48,6 +58,7 @@ import {
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import type { CombatEvent } from "@/types/combat-log";
@@ -143,7 +154,9 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
   const fieldRef = useRef<HTMLInputElement>(null);
   const total = parseRolledTotal(text);
   const invalid = text.trim() !== "" && total === null;
-  const canApply = plan.effect === null || total !== null;
+  // A number is needed only while some row's amount depends on it (a tray of misses
+  // applies without one).
+  const canApply = total !== null || rows.every((row) => !rowNeedsTotal(row, plan));
 
   const update = (index: number, next: TrayRow) =>
     setRows((current) => current.map((row, i) => (i === index ? next : row)));
@@ -262,7 +275,10 @@ function TrayTargetRow({
   onChange: (row: TrayRow) => void;
 }) {
   const { t } = useTranslation();
-  const amount = plan.effect && total !== null ? rowAmount(total, row, plan) : null;
+  const amount =
+    plan.effect && (total !== null || !rowNeedsTotal(row, plan))
+      ? rowAmount(total ?? 0, row, plan)
+      : null;
   const conditions = rowConditions(row);
   const hpLabel = t("character.health.hpAbbr");
 
@@ -300,6 +316,27 @@ function TrayTargetRow({
           />
         </span>
       </div>
+
+      {row.attack && (
+        <div className="flex flex-wrap items-center gap-2">
+          <Segmented
+            options={ATTACK_OUTCOMES.map((value) => ({
+              value,
+              label: t(`combat.damageTray.outcome.${value}`),
+            }))}
+            value={row.attack}
+            onChange={(outcome: AttackOutcome) =>
+              onChange(setAttackOutcome(row, outcome, plan))
+            }
+            aria-label={t("combat.damageTray.outcomeGroup", { name: target.name })}
+          />
+          {row.attack === "critical" && plan.effect === "damage" && (
+            <span className="text-xs text-text-muted" data-testid="damage-tray-crit-hint">
+              {t("combat.damageTray.critHint")}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {plan.effect === "damage" && (
@@ -458,6 +495,20 @@ interface AppliedRow {
   target: TrayTarget;
   amount: number;
   conditions: string[];
+  outcome?: AttackOutcome;
+}
+
+/** Write the attack's one shared result onto the use's own log line; the returned
+ *  undo puts the line back as it was. */
+function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => void {
+  const store = useCharacterStore.getState();
+  const entry = store.character?.session.logEntries.find((e) => e.id === castLogId);
+  if (
+    !entry ||
+    (entry.event.kind !== "action-use" && entry.event.kind !== "reaction-use")
+  )
+    return () => {};
+  return store.amendLogEntry(entry.id, { ...entry.event, outcome }) ?? (() => {});
 }
 
 function applyTray(
@@ -476,10 +527,19 @@ function applyTray(
         target,
         amount: effect && row ? rowAmount(total, row, plan) : 0,
         conditions: row ? rowConditions(row) : [],
+        ...(row?.attack ? { outcome: row.attack } : {}),
       };
     })
     .filter((row) => row.amount > 0 || row.conditions.length > 0);
-  if (applied.length === 0) return;
+  // Hit / Miss / Critical: the use's line says the shared result, and the turn keeps
+  // one receipt per target (a miss applies nothing, yet it is still recorded).
+  const shared = plan.attack ? sharedAttackOutcome(rows) : undefined;
+  const receipts =
+    plan.attack && offer.occurrenceId
+      ? trayOutcomeReceipts(offer.occurrenceId, offer.actionId, rows)
+      : [];
+  const declares = shared !== undefined || receipts.length > 0;
+  if (applied.length === 0 && !declares) return;
 
   const local = applied.filter((row) => row.target.kind !== "pc");
   const peers = applied.filter((row) => row.target.kind === "pc");
@@ -487,7 +547,7 @@ function applyTray(
     message: t("combat.damageTray.appliedToast", { name: offer.actionName }),
   };
 
-  if (local.length > 0) {
+  if (local.length > 0 || declares) {
     registerUndoableToast(
       label,
       () => {
@@ -495,7 +555,10 @@ function applyTray(
         if (store.readonly || !store.character) return null;
         const before = logIds();
         const reversals: Array<() => void> = [];
-        for (const { target, amount, conditions } of local) {
+        if (shared) reversals.push(stampOutcome(offer.castLogId, shared));
+        const receiptIds = useCombatStore.getState().recordOutcomes(receipts);
+        reversals.push(() => useCombatStore.getState().withdrawOutcomes(receiptIds));
+        for (const { target, amount, conditions, outcome } of local) {
           if (target.kind === "self") {
             if (effect && amount > 0) applySelf(effect, amount, source, reversals);
             for (const conditionId of conditions) {
@@ -517,7 +580,13 @@ function applyTray(
           // A monster: the line is the record (players cannot write monster HP).
           const given = { target: target.id, targetName: target.name, source };
           if (effect && amount > 0)
-            store.logEvent({ kind: "effect-given", effect, amount, ...given });
+            store.logEvent({
+              kind: "effect-given",
+              effect,
+              amount,
+              ...given,
+              ...(outcome && effect === "damage" ? { outcome } : {}),
+            });
           for (const conditionId of conditions)
             store.logEvent({
               kind: "effect-given",
@@ -540,8 +609,9 @@ function applyTray(
     useToastStore.getState().showToast({ ...label, duration: 4000 });
   }
 
-  for (const { target, amount, conditions } of peers) {
-    if (effect && amount > 0) givePeer(target, effect, amount, undefined, source, t);
+  for (const { target, amount, conditions, outcome } of peers) {
+    if (effect && amount > 0)
+      givePeer(target, effect, amount, undefined, source, t, outcome);
     for (const conditionId of conditions)
       givePeer(target, "condition", 0, conditionId, source, t);
   }
@@ -589,7 +659,8 @@ function givePeer(
   amount: number,
   conditionId: string | undefined,
   source: LocText,
-  t: T
+  t: T,
+  outcome?: AttackOutcome
 ): void {
   const row = target.row;
   const memberUid = row?.memberUid;
@@ -602,6 +673,7 @@ function givePeer(
       targetName: target.name,
       source,
       ...(effect === "condition" ? { conditionId } : { amount }),
+      ...(outcome && effect === "damage" ? { outcome } : {}),
     });
   if (!row || !memberUid || !characterId) {
     log();

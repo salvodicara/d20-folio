@@ -445,7 +445,10 @@
       "vulnerable": "Vulnerabile",
       "immune": "Immune",
       "noEffect": "Nessun effetto",
-      "appliedToast": "{{name}}: applicato"
+      "appliedToast": "{{name}}: applicato",
+      "outcome": { "hit": "Colpito", "miss": "Mancato", "critical": "Critico" },
+      "outcomeGroup": "Esito dell'attacco su {{name}}",
+      "critHint": "dadi raddoppiati"
     }
   }
 }

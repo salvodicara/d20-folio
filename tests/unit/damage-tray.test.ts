@@ -22,12 +22,18 @@ import {
   previewHp,
   rowAmount,
   rowConditions,
+  rowNeedsTotal,
+  setAttackOutcome,
   setMultiplier,
+  sharedAttackOutcome,
   toggleCondition,
   toggleDefense,
   toggleSaved,
+  trayOutcomeReceipts,
   type DamageTrayPlan,
 } from "@/lib/play/damage-tray";
+import { SRD_WEAPONS } from "@/data/weapons";
+import { buildDevScenario } from "@/lib/dev-scenarios";
 import type { DamageType } from "@/types/damage";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -254,6 +260,135 @@ describe("the target's own defenses pre-set the multiplier", () => {
   it("a heal is never cut by a defense", () => {
     const heal = plan(action("spell-cure-wounds"), [ME]);
     expect(initialTrayRow(heal, ME, defenses({ res: ["fire"] })).multiplier).toBe("1");
+  });
+});
+
+/** Every SRD weapon's attack card, carried by a level-5 Fighter who mastered it. */
+const weaponCards: ResolvedAction[] = SRD_WEAPONS.flatMap((weapon) => {
+  const fighter = buildDevScenario("weapon-mastery-numbers");
+  if (!fighter) throw new Error("scenario missing");
+  fighter.character.weapons = [{ srdId: weapon.id, quantity: 1 }];
+  const entry = fighter.character.classes[0];
+  if (entry) entry.weaponMasteries = [weapon.id];
+  return localizeActions(fighter, "en").filter((a) => a.id === `weapon-${weapon.id}`);
+});
+/** Every spell the catalogue says makes an attack roll, and every save spell. */
+const attackSpells = catalogue.filter(
+  (a) => spells.find((spell) => spell.id === a.spellId)?.attackType !== undefined
+);
+const saveSpells = catalogue.filter((a) => {
+  const spell = spells.find((s) => s.id === a.spellId);
+  return spell?.saveAbility !== undefined && spell.attackType === undefined;
+});
+
+describe("Hit · Miss · Critical on attacks", () => {
+  it("the catalogue holds every weapon and every attack-roll spell", () => {
+    expect(weaponCards.length).toBe(SRD_WEAPONS.length);
+    expect(new Set(attackSpells.map((a) => a.spellId))).toEqual(
+      new Set(spells.filter((s) => s.attackType).map((s) => s.id))
+    );
+    expect(saveSpells.length).toBeGreaterThan(50);
+  });
+
+  it("every weapon and every attack-roll spell offers the outcome, Hit by default", () => {
+    for (const a of [...weaponCards, ...attackSpells]) {
+      const p = plan(a);
+      expect(p.attack, a.id).toBeDefined();
+      expect(p.targets, a.id).toEqual([FOE]);
+      expect(initialTrayRow(p, FOE).attack, a.id).toBe("hit");
+    }
+  });
+
+  it("no save spell offers it", () => {
+    for (const a of saveSpells) {
+      const p = damageTrayPlan(a, [FOE], ME);
+      expect(p?.attack, a.id).toBeUndefined();
+      if (p) expect(initialTrayRow(p, FOE).attack, a.id).toBeUndefined();
+    }
+  });
+
+  it("Miss deals nothing and needs no number; Critical keeps the typed total", () => {
+    const misses = [...weaponCards, ...attackSpells].filter((a) => {
+      const p = plan(a);
+      return p.effect === "damage" && p.attack?.onMiss === "none" && !p.attack.graze;
+    });
+    expect(misses.length).toBeGreaterThan(30);
+    for (const a of misses) {
+      const p = plan(a);
+      const row = initialTrayRow(p, FOE);
+      expect(rowNeedsTotal(row, p), a.id).toBe(true);
+      const miss = setAttackOutcome(row, "miss", p);
+      expect(miss).toMatchObject({ attack: "miss", multiplier: "0" });
+      expect(rowAmount(14, miss, p), a.id).toBe(0);
+      expect(rowNeedsTotal(miss, p), a.id).toBe(false);
+      const crit = setAttackOutcome(miss, "critical", p);
+      expect(crit).toMatchObject({ attack: "critical", multiplier: "1" });
+      expect(rowAmount(14, crit, p), a.id).toBe(14);
+    }
+  });
+
+  it("a miss with Graze deals the mastery's damage, whatever was rolled", () => {
+    const grazing = weaponCards.filter((a) => a.summary.masteryDetail?.grazeDamage);
+    expect(grazing.length).toBeGreaterThan(0);
+    for (const a of grazing) {
+      const graze = a.summary.masteryDetail?.grazeDamage ?? 0;
+      const p = plan(a);
+      expect(p.attack?.graze, a.id).toBe(graze);
+      const miss = setAttackOutcome(initialTrayRow(p, FOE), "miss", p);
+      expect(miss.multiplier, a.id).toBe("1");
+      expect(rowNeedsTotal(miss, p), a.id).toBe(false);
+      expect(rowAmount(99, miss, p), a.id).toBe(graze);
+      // A known resistance still halves it.
+      const resistant = setAttackOutcome(
+        initialTrayRow(p, FOE, defenses({ res: [p.damageType ?? "slashing"] })),
+        "miss",
+        p
+      );
+      expect(rowAmount(99, resistant, p), a.id).toBe(Math.floor(graze / 2));
+    }
+  });
+
+  it("an attack whose data says half on a miss deals half the total", () => {
+    // No catalogue spell carries `damageOnMiss` yet (Acid Arrow's splash is prose):
+    // the seam is the resolved summary's own fact.
+    const bolt = action("spell-fire-bolt");
+    const p = plan({ ...bolt, summary: { ...bolt.summary, damageOnMiss: "half" } });
+    expect(p.attack?.onMiss).toBe("half");
+    const miss = setAttackOutcome(initialTrayRow(p, FOE), "miss", p);
+    expect(miss.multiplier).toBe("0.5");
+    expect(rowAmount(9, miss, p)).toBe(4);
+  });
+
+  it("a miss lands no hit-gated rider (Topple's Prone)", () => {
+    const topple = weaponCards.find((a) => a.summary.masteryDetail?.toppleDc);
+    if (!topple) throw new Error("no Topple weapon");
+    const p = plan(topple);
+    const row = toggleCondition(initialTrayRow(p, FOE), "prone", p);
+    expect(rowConditions(row)).toEqual(["prone"]);
+    expect(rowConditions(setAttackOutcome(row, "miss", p))).toEqual([]);
+  });
+
+  it("an attack with nothing else to apply still asks its result (Ray of Enfeeblement)", () => {
+    const p = plan(action("spell-ray-of-enfeeblement"));
+    expect(p).toMatchObject({ effect: null, targets: [FOE] });
+    expect(p.attack).toBeDefined();
+    expect(damageTrayPlan(action("spell-ray-of-enfeeblement"), [], ME)).toBeNull();
+  });
+
+  it("the rows become per-target outcome receipts and one shared result", () => {
+    const p = plan(action("spell-scorching-ray"), ["monster-1", "monster-2"]);
+    const hit = initialTrayRow(p, "monster-1");
+    const crit = setAttackOutcome(initialTrayRow(p, "monster-2"), "critical", p);
+    expect(sharedAttackOutcome([hit, crit])).toBeUndefined();
+    expect(sharedAttackOutcome([crit])).toBe("critical");
+    expect(
+      trayOutcomeReceipts("turn:outcome:1:x", "spell-scorching-ray", [hit, crit]).map(
+        (r) => [r.target.combatantId, r.fact]
+      )
+    ).toEqual([
+      ["monster-1", { kind: "attack", result: "hit" }],
+      ["monster-2", { kind: "attack", result: "critical-hit" }],
+    ]);
   });
 });
 
