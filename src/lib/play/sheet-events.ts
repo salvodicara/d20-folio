@@ -5,6 +5,7 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import type { CoverStateLevel } from "@/lib/cover-states";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import {
@@ -16,6 +17,7 @@ import {
   summonFamiliar,
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
+import { setCover, type CoverUntil } from "./cover";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { dropBeastForm } from "./forms";
 import { setReadiedSpell } from "./ready";
@@ -50,6 +52,11 @@ export type SheetEvent =
   | { kind: "remove-condition"; condition: string }
   | { kind: "set-active-state"; key: string; isActive: boolean; litRound: number }
   | { kind: "set-active-cast-level"; key: string; level: number | undefined }
+  | {
+      kind: "set-cover";
+      level: CoverStateLevel | null;
+      until: CoverUntil | undefined;
+    }
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
@@ -107,6 +114,8 @@ export function applySheetEvent(
       return withSession(setActiveState(doc, event.key, event.isActive, event.litRound));
     case "set-active-cast-level":
       return withSession(setActiveSpellCastLevel(doc, event.key, event.level));
+    case "set-cover":
+      return withSession(setCover(doc, event.level, event.until));
     case "drop-beast-form":
       return dropBeastForm(doc);
     case "set-readied-spell":

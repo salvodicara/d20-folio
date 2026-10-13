@@ -32,6 +32,7 @@ import type {
   ResolvedTracker,
 } from "@/lib/smart-tracker";
 import { resolveTrackers } from "@/lib/smart-tracker";
+import { coverReference, coverStateName, type CoverStateLevel } from "@/lib/cover-states";
 import type { CharacterDoc } from "@/types/character";
 import type { ActivatableGroup } from "@/lib/grants";
 import type { AdvantageChip } from "@/lib/views/sheet-view";
@@ -492,6 +493,8 @@ export interface AuraVM {
  * start-of-turn regen/temp-HP note (one helper, rule 6).
  */
 export function grantSourceLabel(sourceId: string, locale: Locale): string {
+  const cover = coverStateName(sourceId);
+  if (cover) return cover[locale];
   // Race-trait session ids carry the `race:<raceId>:<trait.id>` shape — resolve
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a
   // race-trait source would surface its raw session id.
@@ -505,6 +508,15 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
     }
   }
   return sourceId;
+}
+
+/** A cover level's localized name and one-line summary (the cover table's row). */
+export function coverText(
+  level: CoverStateLevel,
+  locale: Locale
+): { name: string; summary: string } {
+  const row = coverReference(level);
+  return { name: row?.name[locale] ?? level, summary: row?.summary[locale] ?? "" };
 }
 
 /** Localized name for a `race:<raceId>:<trait.id>` trait session id (or null). */

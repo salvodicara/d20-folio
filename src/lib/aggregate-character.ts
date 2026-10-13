@@ -22,6 +22,7 @@
  * dedupe makes double-counting unrepresentable.
  */
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
+import { resolveCoverStateSources } from "@/lib/cover-states";
 import { resolvePotionStateSources } from "@/lib/potion-states";
 import { resolveFadingPenaltySources } from "@/lib/play/fading-penalties";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
@@ -132,6 +133,8 @@ export function aggregateCharacterGrants(
       ...encounterSources,
       // A lit Dodge (a base action's state) carries its rules until it ends.
       ...resolveBaseActionStateSources(activeKeys),
+      // A lit cover level (Half / Three-Quarters) holds until it ends.
+      ...resolveCoverStateSources(activeKeys),
       // A drunk potion's state (Flying's fly speed) holds while its countdown runs.
       ...resolvePotionStateSources(activeKeys),
       // A fading D20 Test penalty (Raise Dead) carries its flat penalties until it ends.
