@@ -1335,6 +1335,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           effect: logTypeForAction(action),
           slot: castEconomySlot(action.type, metamagicIds),
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
+          ...(readies ? { readied: true as const } : {}),
         });
         const undoRegains = applyOnCastRegains(
           action.spellId,
@@ -2707,6 +2708,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           action: action.nameLoc,
           effect: logTypeForAction(action),
           ...(targets.length > 0 ? { targets } : {}),
+          released: true,
         });
         let restoreConcentration: (() => void) | undefined;
         const concentrationLogIds = releaseKeepsConcentration(live.character.session)

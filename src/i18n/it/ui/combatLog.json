@@ -2,6 +2,8 @@
   "combatLog": {
     "actionUse": "Usato {{name}}",
     "actionUseAttackOf": "Usato {{name}} (attacco {{n}} di {{total}})",
+    "readiedSpell": "Preparato {{name}}",
+    "releasedSpell": "Rilasciato {{name}}",
     "hpDamage": "Subiti {{amount}} danni ({{current}}/{{max}} PF)",
     "hpHeal": "Curati {{amount}} PF ({{current}}/{{max}} PF)",
     "tempHpGain": "Ottenuti {{amount}} PF temporanei",

@@ -2,6 +2,8 @@
   "combatLog": {
     "actionUse": "Used {{name}}",
     "actionUseAttackOf": "Used {{name}} (attack {{n}} of {{total}})",
+    "readiedSpell": "Readied {{name}}",
+    "releasedSpell": "Released {{name}}",
     "hpDamage": "Took {{amount}} damage ({{current}}/{{max}} HP)",
     "hpHeal": "Healed {{amount}} HP ({{current}}/{{max}} HP)",
     "tempHpGain": "Gained {{amount}} temporary HP",
