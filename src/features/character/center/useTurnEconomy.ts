@@ -89,6 +89,8 @@ export interface TurnEconomyApi {
   keepMaintainedEffect: (activeKey: string) => void;
   /** End an unmaintained state now (clears its `activeFeatures` toggle). */
   endMaintainedEffect: (activeKey: string) => void;
+  /** Release the readied spell with the Reaction (2024 Ready): one tap, one undo. */
+  releaseReadiedSpell: () => void;
 }
 
 export const TurnEconomyContext = createContext<TurnEconomyApi | null>(null);

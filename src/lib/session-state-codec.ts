@@ -7,7 +7,7 @@ import type { AbilityCode } from "@/data/types";
 import { normalizeStoredConcentration } from "@/lib/concentration";
 import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { normalizeItemResources, parseItemResources } from "@/lib/item-resources";
-import { sanitizeSession } from "@/lib/sanitize-session";
+import { parseReadiedSpell, sanitizeSession } from "@/lib/sanitize-session";
 import { CodecFailureError, fail, leftover } from "@/lib/codec-failure";
 import { MAX_SUMMONED } from "@/lib/summon-count";
 
@@ -25,6 +25,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   currency?: Partial<Record<Coin, number>>;
   concentration?: SessionState["concentration"];
   concentrationCastLevel?: number;
+  readiedSpell?: SessionState["readiedSpell"];
   initiative?: string;
   conditions?: string[];
   concentrationConditions?: ReadonlyArray<string>;
@@ -79,6 +80,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "currency",
   "concentration",
   "concentrationCastLevel",
+  "readiedSpell",
   "initiative",
   "conditions",
   "concentrationConditions",
@@ -274,6 +276,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.concentration !== "") state.concentration = session.concentration;
   if (session.concentration !== "" && session.concentrationCastLevel !== undefined) {
     state.concentrationCastLevel = session.concentrationCastLevel;
+  }
+  if (session.concentration !== "" && session.readiedSpell) {
+    state.readiedSpell = session.readiedSpell;
   }
   if (session.initiative !== "") state.initiative = session.initiative;
   if (session.conditions.length > 0) state.conditions = session.conditions;
@@ -548,6 +553,10 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   ) {
     session.concentrationCastLevel = Math.round(state.concentrationCastLevel);
   }
+  const readiedSpell = session.concentration
+    ? parseReadiedSpell(state.readiedSpell)
+    : undefined;
+  if (readiedSpell) session.readiedSpell = readiedSpell;
   session.initiative = asString(state.initiative);
   session.conditions = stringArray(state.conditions);
   if (Array.isArray(state.concentrationConditions)) {
