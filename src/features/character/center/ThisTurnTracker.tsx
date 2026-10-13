@@ -21,7 +21,7 @@
  * Play-tab cards, which share the store), never the Left/Right HUD.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Swords, Zap, RefreshCw, ArrowRight, Flag } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -932,7 +932,7 @@ export function ThisTurnTracker({
             <span className="whitespace-nowrap text-[0.7rem] uppercase tracking-[0.12em] text-text-muted">
               {t("combat.extraTurnsLabel")}
             </span>
-            <Input
+            <PromptedInput
               type="number"
               min={TIME_STOP_MIN_TURNS}
               max={TIME_STOP_MAX_TURNS}
@@ -1152,4 +1152,20 @@ function EconToken({
       </span>
     </button>
   );
+}
+
+/**
+ * A field the turn meter asks for right after a tap elsewhere (Time Stop's turn
+ * count, asked after the cast from its card): it comes into view and takes focus
+ * as it appears, so on a phone it is never left above the screen.
+ */
+function PromptedInput(props: ComponentProps<typeof Input>) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const field = ref.current;
+    if (!field) return;
+    field.scrollIntoView({ block: "center" });
+    field.focus({ preventScroll: true });
+  }, []);
+  return <Input ref={ref} {...props} />;
 }
