@@ -885,6 +885,15 @@ with the Wild-Shape override-first speed limitation — a form's NON-walking spe
 card). `session.polymorphForm` is additive-only (absent on every non-polymorph doc → serialization unchanged;
 the codec + sanitizer round-trip it).
 
+**Other self-form spells** ride the same path, each shaped by one `selfFormRule(spellId)` row in
+`lib/polymorph.ts` (`pool`, `keepsMind`, `reshift`, `endsWithoutTempHp`). **Shapechange** draws its forms
+from the whole bestiary (`lib/shapechange.ts`, a lazy seam: CR ≤ your level, never a Construct or an
+Undead), each projected by `lib/beast-projection.ts` to the same `BeastStatBlock`; the picked block rides
+`session.polymorphForm.statBlock` because the eager sheet cannot read the bestiary, and its names resolve
+from the lazy `monster` catalogue (the cockpit loads it before rendering such a form). It keeps INT / WIS /
+CHA, gains Temp HP from the FIRST form only, shifts form while the spell lasts (keeping the original
+`prior`), and does not end when its Temp HP run out.
+
 ---
 
 ## The activation + use-applies seams

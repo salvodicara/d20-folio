@@ -34,7 +34,7 @@ import {
 } from "@/components/shared/UniversalCard";
 import type { SpellCardVM } from "@/lib/views/spells-view";
 import type { CustomSpell } from "@/types/character";
-import { POLYMORPH_SPELL_IDS } from "@/lib/polymorph";
+import { SELF_FORM_SPELL_IDS } from "@/lib/polymorph";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { CustomSpellEditForm } from "./CustomSpellEditForm";
 import {
@@ -96,7 +96,7 @@ export const SpellCard = memo(function SpellCard({
   // S7 — a Polymorph / True Polymorph card carries a "Transform" affordance that
   // opens the Beast-form picker (self-swap or read-only reference card).
   const canTransform =
-    !isCustom && vm.data != null && POLYMORPH_SPELL_IDS.includes(vm.data.id);
+    !isCustom && vm.data != null && SELF_FORM_SPELL_IDS.includes(vm.data.id);
   // Find Familiar carries a "Summon familiar" / "Change form" affordance that opens
   // the lazy form picker (the corpus-joining leaf).
   const canSummonFamiliar =

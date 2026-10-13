@@ -7,17 +7,13 @@
  * (`tests/unit/beast-monster-projection.guard.test.ts`) owns it, asserting every
  * beast DEEP-EQUALS `beastProjectionFromMonster` of its (Beast-typed) monster twin —
  * numbers, attack rows, and trait lists can never drift (golden rule 6, discharged by
- * CI construction). Runtime `beasts.ts` imports NOTHING from `data/monsters`; this
- * module never enters the client bundle.
+ * CI construction). Runtime `beasts.ts` imports NOTHING from `data/monsters`.
  *
- * PURE + node-safe: imports ONLY types from `../src/data/types` (relative, so it
- * runs under plain `node` type-stripping like `scripts/i18n/check-i18n.ts`).
+ * The same projection maps a bestiary creature to a self-form for Shapechange
+ * (`lib/shapechange.ts`, a lazy seam): one `BeastStatBlock` shape for every form,
+ * so assuming and dropping a form stays one path. PURE: types only.
  */
-import type {
-  BeastStatBlock,
-  MonsterAttackEntry,
-  MonsterStatBlock,
-} from "../src/data/types";
+import type { BeastStatBlock, MonsterAttackEntry, MonsterStatBlock } from "@/data/types";
 
 type MonsterSenses = NonNullable<MonsterStatBlock["senses"]>;
 type BeastSenses = NonNullable<BeastStatBlock["senses"]>;

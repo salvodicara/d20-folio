@@ -8,6 +8,7 @@
 
 import type {
   AbilityCode,
+  BeastStatBlock,
   ActionConditionRemoval,
   ActionEconomyCategory,
   ActionType,
@@ -1195,6 +1196,12 @@ export interface SessionState {
   polymorphForm?: {
     beastId: string;
     spellId: string;
+    /**
+     * The form's stat block when it comes from the bestiary (Shapechange): the
+     * eager sheet cannot read the lazy bestiary, so the projected block rides the
+     * session. Absent for a Beast form, which resolves from the Beast catalogue.
+     */
+    statBlock?: BeastStatBlock;
     prior: {
       acOverride: number | null;
       speedOverride: number | null;

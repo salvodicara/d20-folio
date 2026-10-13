@@ -151,7 +151,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   the aggregates — never a `@pack` (or `@pack/monsters`) path — so the seam stays single: the ONLY
   modules allowed to import either alias are the merge points themselves.
 - **The Polymorph Beast catalogue is a projection of the monster corpus** (D-5): the
-  eager `src/data/beasts/beasts.ts` is not hand-authored — `scripts/beast-projection.ts`
+  eager `src/data/beasts/beasts.ts` is not hand-authored — `src/lib/beast-projection.ts`
   (`beastProjectionFromMonster`, the ONE shared derivation) maps each `MonsterStatBlock` to its
   `BeastStatBlock`, and the **COMPLETENESS** guard
   (`tests/unit/beast-monster-projection.guard.test.ts`) owns that derivation — it asserts EVERY beast

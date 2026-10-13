@@ -32,6 +32,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useEditModeShortcut } from "@/hooks/useEditModeShortcut";
 import { useUndoRedoShortcut } from "@/hooks/useUndoRedoShortcut";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
+import { useLazySrdKind } from "@/hooks/useLazySrdKind";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { Icon } from "@/components/ui";
@@ -115,6 +116,12 @@ export function CockpitView() {
   // (loading, a character, or an error); fires at most once, then `loading` covers
   // every later transition (an id swap re-sets loading=true synchronously).
   const [booting, setBooting] = useState(true);
+  // A Shapechange form from the bestiary names itself and its attacks from the lazy
+  // monster catalogue: load it before the sheet renders those names.
+  const bestiaryForm = useCharacterStore(
+    (s) => s.character?.session.polymorphForm?.statBlock !== undefined
+  );
+  const bestiaryReady = useLazySrdKind("monster", bestiaryForm);
   if (booting && (loading || hasCharacter || error !== null)) {
     setBooting(false);
   }
@@ -165,7 +172,7 @@ export function CockpitView() {
   // It must NOT render the regions (blank HUD) and never not-found (which would FLASH,
   // since fresh-mount {null,false,null} is shaped like settled-not-found — the
   // `booting` mask still distinguishes them).
-  if (loading || booting) {
+  if (loading || booting || !bestiaryReady) {
     return <FolioLoader variant="region" />;
   }
 

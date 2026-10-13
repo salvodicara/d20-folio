@@ -3,7 +3,7 @@
  *
  * PROJECTED CATALOGUE — DO NOT EDIT BY HAND. Every entry is the 2024 projection
  * of its monster twin via `beastProjectionFromMonster` (the ONE shared derivation
- * in `scripts/beast-projection.ts`; D-5, docs/ARCHITECTURE.md). The COMPLETENESS
+ * in `src/lib/beast-projection.ts`; D-5, docs/ARCHITECTURE.md). The COMPLETENESS
  * projection guard (`tests/unit/beast-monster-projection.guard.test.ts`) pins EVERY
  * beast to `beastProjectionFromMonster(getMonster(id))` — a beast that drifts,
  * loses its twin, or gains a non-Beast twin fails the guard, which prints the exact
