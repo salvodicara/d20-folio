@@ -2548,17 +2548,17 @@ guarded `.on-art` register, and the glaze only narrows the art's dynamic range. 
 render native (no veil); dark needs none (0.55 over the near-black field tames any upload) and is
 untouched.
 
-**Per-route backdrop override (the campaign hub).** The same `--app-bg-art` variable is the ONE
-backdrop seam — a route may swap it instead of building a second band. The **campaign hub**
-(`CampaignHubPage`) does exactly this: it opens on a **slim framed `PageHeader`** (the same header
-the campaigns LIST uses — title + member/DM hint + a quiet "Change art" action), NOT a big 3:1 hero
-band, so the Party/combat sit in the fold. The campaign's art — the DM's custom `bannerUrl` when set,
-else `campaign-backdrop.webp` — is fed to `--app-bg-art` on the document root for as long as the hub
-is mounted (restored on unmount), so the global `body::after` painter renders it atmospherically
-under the app's own scrim/grain (craft law 3 — atmosphere under content, never a competing band). The
-hub content keeps its `.on-art-scope` wrapper so every loose-on-backdrop element (section labels, the
-DMPC "attach" button, the treasury "total" chip) stays legible in light theme (guarded by
-`on-art-ink.spec.ts`).
+**The campaign hub's image (owner 2026-10-13, supersedes the 2026-06-30 slim header).** The hub
+opens on a short **hero band** (`CampaignHero`, `.campaign-hero`): the header IS the campaign image —
+the DM's `bannerUrl` at its crop focal + zoom, else the per-theme `--asset-campaign-backdrop` plate —
+under a fixed dark bottom-left scrim, so the Cinzel title and the member/DM line read in on-art ivory
+over ANY upload in both themes. The band stays short (176–248px desktop, 164px phone) so the Party
+still sits in the fold. Image actions (Choose / Re-crop / Change / Remove) live behind the settings
+gear in the band's corner, never as a headline button. Behind the page the same art is fed to
+`--app-bg-art` as **ambient light only**: `data-app-bg-ambient` on `<html>` blurs it into a glow
+(index.css), so a custom picture tints the hub without a second, competing copy. The hub content
+keeps its `.on-art-scope` wrapper so every loose-on-backdrop element stays legible in light theme
+(guarded by `on-art-ink.spec.ts`).
 
 **One 16:9 shape across crop · card · backdrop focal.** Custom campaign art is framed by a single
 **16:9** crop (the `campaign-backdrop.webp` asset's native ratio) — the SAME shape the realm-list card
