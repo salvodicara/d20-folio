@@ -191,9 +191,8 @@ describe("character-vitals — legacy-only spend (session ahead → session wins
   });
 
   it("exhaustion: a legacy stepper edit wins over the stale world level", () => {
-    expect(vitalExhaustion({ exhaustion: 3, world: rawWorld({ exhaustion: 1 }) })).toBe(
-      3
-    );
+    const session = { exhaustion: 3, world: rawWorld({ exhaustion: 1 }) };
+    expect(vitalExhaustion(session)).toBe(3);
   });
 
   it("concentration: a legacy clear wins over a live engine occurrence", () => {
