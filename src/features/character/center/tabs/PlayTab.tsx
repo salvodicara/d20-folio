@@ -137,6 +137,11 @@ import {
 } from "@/lib/views/combat-action-view";
 import { repeatUseCost } from "@/lib/play/object-interaction";
 import {
+  ESCAPE_GRAPPLE_ACTION_ID,
+  escapeGrappleSkill,
+  judgeEscapeGrapple,
+} from "@/lib/play/escape-grapple";
+import {
   actionHigherLevels,
   concentrationLabel,
   conditionLabel,
@@ -1721,6 +1726,32 @@ function CombatActionCard({
     );
   }
 
+  // Escape a grapple (2024 "Unarmed Strike"): the entered d20 face plus the better
+  // of Athletics/Acrobatics against the DC the DM states. A success drops Grappled
+  // (logged, undoable); a failure changes nothing, a plain notice like Hide's.
+  const escapeSkill =
+    action.id === ESCAPE_GRAPPLE_ACTION_ID
+      ? escapeGrappleSkill((id) => skillCheckBonusFor?.(id) ?? 0)
+      : null;
+  function applyEscapeCheck(face: number, dc: number) {
+    if (!escapeSkill) return;
+    const { total, escaped } = judgeEscapeGrapple(face, escapeSkill.bonus, dc);
+    if (!escaped) {
+      useToastStore.getState().showToast({
+        message: t("combat.escapeFailToast", { total, dc }),
+        duration: 4000,
+      });
+      return;
+    }
+    const undo = useCharacterStore.getState().removeConditionSilent("grappled");
+    if (!undo) return;
+    registerUndoableResult(
+      { message: t("combat.escapeSuccessToast", { total, dc }) },
+      undo,
+      () => applyEscapeCheck(face, dc)
+    );
+  }
+
   return (
     <UniversalCard
       mode="combat-CTA"
@@ -1862,6 +1893,18 @@ function CombatActionCard({
               </p>
             </>
           )}
+          {escapeSkill && (
+            <>
+              <EscapeCheckEntry
+                skillLabel={t(`skills.${escapeSkill.skill}`)}
+                bonus={escapeSkill.bonus}
+                onApply={applyEscapeCheck}
+              />
+              <p className="mt-1 px-1 text-[0.7rem] italic text-text-secondary">
+                {t("combat.escapeHint")}
+              </p>
+            </>
+          )}
           {/* A non-weapon action row (a weapon-attack cantrip) surfaces its
               riders through the SAME shared strip — weapon rows render it inside
               `WeaponFacts` from `weaponFacts.riders` (no double-render). */}
@@ -1931,6 +1974,68 @@ function HideCheckEntry({
         onClick={(e) => {
           e.stopPropagation();
           onApply(face);
+          setFace(10);
+        }}
+      >
+        {t("combat.apply")}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * The escape-a-grapple roll-entry: the HideCheckEntry recipe plus the escape DC,
+ * which the DM states (the grappler's 8 + STR + PB, or a stat block's "escape DC").
+ * It opens on DC 13, the commonest escape DC in the SRD stat blocks.
+ */
+function EscapeCheckEntry({
+  skillLabel,
+  bonus,
+  onApply,
+}: {
+  skillLabel: string;
+  bonus: number;
+  onApply: (face: number, dc: number) => void;
+}) {
+  const { t } = useTranslation();
+  const [face, setFace] = useState(10);
+  const [dc, setDc] = useState(13);
+  return (
+    <div className="heal-roll-entry">
+      <span className="heal-roll-label">
+        {t("combat.escapeRollLabel", { skill: skillLabel, bonus: formatModifier(bonus) })}
+      </span>
+      <NumberStepper
+        value={face}
+        onChange={setFace}
+        min={1}
+        max={20}
+        digits={2}
+        compact
+        ariaLabel={t("combat.hideRollField")}
+        decrementLabel={t("combat.healRollDec")}
+        incrementLabel={t("combat.healRollInc")}
+      />
+      <span className="text-[0.7rem] uppercase tracking-[0.06em] text-text-muted">
+        {t("combat.escapeVsDc")}
+      </span>
+      <NumberStepper
+        value={dc}
+        onChange={setDc}
+        min={1}
+        max={30}
+        digits={2}
+        compact
+        ariaLabel={t("combat.escapeDcField")}
+        decrementLabel={t("combat.escapeDcDec")}
+        incrementLabel={t("combat.escapeDcInc")}
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          onApply(face, dc);
           setFace(10);
         }}
       >
