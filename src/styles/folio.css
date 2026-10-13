@@ -1205,37 +1205,18 @@ svg.icon[stroke],
 }
 
 /* primary — gold-leaf brass (the canonical CTA gradient) */
+/* The primary (vision 1, owner 2026-10-13): one LIT SLAB per screen. A dark plate
+   with a gilt edge, gold letters and a warm glow, in both themes, never a gold fill.
+   `--lit-*` tokens (index.css) keep every primary (End Turn, the emphasis CTA) one. */
 .btn.primary,
 .btn.brass {
-  /* the gilt-glint host seat (see the glint block below) */
   position: relative;
   overflow: hidden;
-  --bc: var(--accent-primary);
-  color: var(--text-inverse);
-  border: 1px solid color-mix(in oklab, var(--bc) 70%, white);
-  background: linear-gradient(
-    180deg,
-    color-mix(
-        in oklab,
-        color-mix(in oklab, var(--bc) 60%, var(--accent-primary-bright)) 75%,
-        white
-      )
-      0%,
-    var(--accent-primary-bright) 30%,
-    var(--bc) 70%,
-    color-mix(in oklab, var(--bc) 80%, black) 100%
-  );
-  /* Rest state — a struck brass tile that sits QUIET and warm (BG3 buttons rest
-     calm, then crisp-brighten on hover; they do not bloom at rest). A clean
-     metallic bevel: inset top sheen + bottom inset + a single brass lip + a soft
-     contained drop. No coloured halo at rest (that read cheap/loud) — the kindle
-     is reserved for :hover below. */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.26),
-    0 1px 0 color-mix(in oklab, var(--bc) 55%, black),
-    0 2px 5px color-mix(in oklab, black 28%, transparent);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  color: var(--lit-ink);
+  border: 1px solid var(--lit-edge);
+  background: var(--lit-slab);
+  box-shadow: var(--lit-shadow);
+  text-shadow: none;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 12px;
@@ -1251,83 +1232,19 @@ svg.icon[stroke],
    gradient — gold-700/dark stops would sink the ink below 2.2:1, so the light
    primary stays gold-500-and-lighter (≥~5:1 with gold-900 ink). The white
    top-highlight text-shadow lifts small-text edge legibility on the sheen. */
-[data-theme="light"] .btn.primary,
-[data-theme="light"] .btn.brass,
-/* `.endturn` is the same gilt CTA but had its own recipe keyed off `--accent-primary`
-   (the deep, AA-text-safe gold), so in light it read olive/flat instead of the struck
-   gold-leaf glow the other primaries get. Fold it into the verified light bright-gilt. */
-[data-theme="light"] .endturn,
-/* The LIVE Extra-Attack CTA (struck gold while swings remain) is the same lit
-   primary — folded here so a light-primary change can never drift from it. */
 [data-theme="light"] .uc-cta.is-emphasis .cc-btn:not(:disabled) {
-  color: var(--accent-text);
-  border: 1px solid color-mix(in oklab, var(--gold-leaf-500) 80%, black);
-  /* BRIGHT gilt (gold-300 #d4ac4d), not the muddy/olive gold-500 the prior band
-     used — a struck gold-leaf CTA, with a deeper gold-500 base edge for depth. The
-     deep gold-900 ink (--accent-text) clears AA on this brighter band (~6:1 on the
-     gold-300 body the label sits over). */
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--gold-leaf-300) 76%, white) 0%,
-    var(--gold-leaf-300) 52%,
-    color-mix(in oklab, var(--gold-leaf-300) 70%, var(--gold-leaf-500)) 100%
-  );
-  /* Light needs its OWN rest shadow (the dark rest's light-on-dark insets read
-     wrong on vellum). Ember grammar: brighter top sheen + a seated 2px lip, then
-     the struck band pools a warm burnt-umber ember below (glow-below, not a bright
-     halo) so the light CTA reads struck/lit at rest the way dark reads bloom. */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 color-mix(in oklab, var(--gold-leaf-700) 30%, transparent),
-    0 2px 0 color-mix(in oklab, var(--gold-leaf-700) 45%, transparent),
-    0 4px 12px rgba(var(--ember-umber), 0.5),
-    0 8px 22px rgba(var(--ember-umber), 0.3);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-[data-theme="light"] .btn.primary:hover:not(:disabled):not(.loading),
-[data-theme="light"] .btn.brass:hover:not(:disabled):not(.loading),
-[data-theme="light"] .endturn:hover {
-  /* CRITICAL READABILITY FIX — do NOT brighten on light: brightening the already
-     pale-gold surface washed it toward the deep-gold (--accent-text) LABEL, so the
-     text became unreadable on hover. Instead ENRICH the gold (more saturated top,
-     darker base) so the deep-gold ink gains contrast, plus the standard 1px lift. */
-  filter: none;
-  transform: translateY(-1px);
-  /* Enrich the bright gilt on hover (deeper gold-500 toward the base) so the
-     deep-gold ink gains contrast — never brighten toward the label colour. */
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--gold-leaf-300) 88%, white) 0%,
-    var(--gold-leaf-300) 46%,
-    var(--gold-leaf-500) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -1px 0 color-mix(in oklab, var(--gold-leaf-700) 32%, transparent),
-    0 3px 0 color-mix(in oklab, var(--gold-leaf-700) 48%, transparent),
-    0 6px 16px rgba(var(--ember-umber), 0.55),
-    0 12px 30px rgba(var(--ember-umber), 0.32);
+  color: var(--lit-ink);
+  border: 1px solid var(--lit-edge);
+  background: var(--lit-slab);
+  box-shadow: var(--lit-shadow);
+  text-shadow: none;
 }
 .btn.primary:hover:not(:disabled):not(.loading),
-.btn.brass:hover:not(:disabled):not(.loading) {
-  /* Kindle WITHOUT washing the label: `filter: brightness()` lightens the TEXT
-     as well as the surface, collapsing contrast (the unreadable-on-hover bug), so
-     we brighten via the GRADIENT's top sheen only and keep the body gold so the
-     dark label stays crisp. Lift + contained warm bloom carry the tactile feel. */
+.btn.brass:hover:not(:disabled):not(.loading),
+.endturn:hover {
   transform: translateY(-1px);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 68%, white) 0%,
-    var(--accent-primary-bright) 34%,
-    var(--bc) 76%,
-    color-mix(in oklab, var(--bc) 82%, black) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.62),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.26),
-    0 2px 0 color-mix(in oklab, var(--bc, var(--accent-primary)) 55%, black),
-    0 5px 12px color-mix(in oklab, black 30%, transparent),
-    0 0 10px color-mix(in oklab, var(--accent-primary-bright) 20%, transparent);
+  border-color: var(--lit-edge-hover);
+  box-shadow: var(--lit-shadow-hover);
 }
 .btn.primary:active:not(:disabled):not(.loading),
 .btn.brass:active:not(:disabled):not(.loading) {
@@ -16147,23 +16064,12 @@ button.econ-tok-filter:active .econ-disc {
   font-size: 13px;
   letter-spacing: 0.05em;
   padding: 10px 20px;
-  color: var(--text-inverse);
+  color: var(--lit-ink);
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 70%, white);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--accent-primary-bright) 75%, white),
-    var(--accent-primary-bright) 30%,
-    var(--accent-primary) 70%,
-    color-mix(in oklab, var(--accent-primary) 80%, black)
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.45),
-    0 2px 0 color-mix(in oklab, var(--accent-primary) 60%, black);
+  border: 1px solid var(--lit-edge);
+  background: var(--lit-slab);
+  box-shadow: var(--lit-shadow);
   transition: transform var(--m-fast) var(--ease-settle);
-}
-.endturn:hover {
-  transform: translateY(-1px);
 }
 .endturn:active {
   transform: translateY(2px);
