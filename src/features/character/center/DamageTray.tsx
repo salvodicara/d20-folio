@@ -18,7 +18,7 @@
  *  - a monster → only the `effect-given` log line (players cannot write monster HP).
  * Skip (or closing) applies nothing: the use stays logged exactly as it was.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -148,15 +148,24 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
   );
 
   const [text, setText] = useState("");
+  // Split instances (Magic Missile on two goblins): one typed total per row.
+  const [rowTexts, setRowTexts] = useState<string[]>(() => targets.map(() => ""));
   const [rows, setRows] = useState<TrayRow[]>(() =>
     targets.map((target) => initialTrayRow(plan, target.id, target.defenses))
   );
   const fieldRef = useRef<HTMLInputElement>(null);
+  const firstRowFieldRef = useRef<HTMLInputElement>(null);
   const total = parseRolledTotal(text);
   const invalid = text.trim() !== "" && total === null;
+  const totals = plan.perTarget
+    ? rowTexts.map((value) => parseRolledTotal(value))
+    : targets.map(() => total);
   // A number is needed only while some row's amount depends on it (a tray of misses
-  // applies without one).
-  const canApply = total !== null || rows.every((row) => !rowNeedsTotal(row, plan));
+  // applies without one). Split, a row left empty gets nothing, but a typo blocks.
+  const canApply = plan.perTarget
+    ? rowTexts.every((value, i) => value.trim() === "" || totals[i] !== null) &&
+      rows.some((row, i) => !rowNeedsTotal(row, plan) || totals[i] !== null)
+    : total !== null || rows.every((row) => !rowNeedsTotal(row, plan));
 
   const update = (index: number, next: TrayRow) =>
     setRows((current) => current.map((row, i) => (i === index ? next : row)));
@@ -167,7 +176,13 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
 
   const apply = () => {
     if (!canApply) return;
-    applyTray(offer, targets, rows, total ?? 0, t);
+    applyTray(
+      offer,
+      targets,
+      rows,
+      totals.map((value) => value ?? 0),
+      t
+    );
     useDamageTrayStore.getState().close();
   };
 
@@ -181,12 +196,13 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
       closeLabel={t("common.close")}
       data-testid="damage-tray"
       onOpenAutoFocus={(event) => {
-        if (!fieldRef.current) return;
+        const field = fieldRef.current ?? firstRowFieldRef.current;
+        if (!field) return;
         event.preventDefault();
-        fieldRef.current.focus();
+        field.focus();
       }}
     >
-      {plan.effect !== null && (
+      {plan.effect !== null && !plan.perTarget && (
         <div className="flex flex-col gap-1 px-[var(--sp-6)] pt-[var(--sp-4)]">
           <label
             htmlFor="damage-tray-total"
@@ -234,9 +250,24 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
                 target={target}
                 row={row}
                 plan={plan}
-                total={total}
+                total={totals[index] ?? null}
                 locale={locale}
                 onChange={(next) => update(index, next)}
+                {...(plan.perTarget && index === 0 ? { totalRef: firstRowFieldRef } : {})}
+                {...(plan.perTarget
+                  ? {
+                      field: {
+                        value: rowTexts[index] ?? "",
+                        invalid:
+                          (rowTexts[index] ?? "").trim() !== "" && totals[index] === null,
+                        onChange: (value: string) =>
+                          setRowTexts((current) =>
+                            current.map((v, i) => (i === index ? value : v))
+                          ),
+                        onEnter: apply,
+                      },
+                    }
+                  : {})}
               />
             );
           })}
@@ -259,6 +290,14 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
   );
 }
 
+/** A split tray's own rolled-total field on a row (Magic Missile's darts on it). */
+interface RowTotalField {
+  value: string;
+  invalid: boolean;
+  onChange: (value: string) => void;
+  onEnter: () => void;
+}
+
 function TrayTargetRow({
   target,
   row,
@@ -266,6 +305,8 @@ function TrayTargetRow({
   total,
   locale,
   onChange,
+  field,
+  totalRef,
 }: {
   target: TrayTarget;
   row: TrayRow;
@@ -273,6 +314,9 @@ function TrayTargetRow({
   total: number | null;
   locale: Locale;
   onChange: (row: TrayRow) => void;
+  field?: RowTotalField;
+  /** The first split row's field takes the tray's opening focus. */
+  totalRef?: Ref<HTMLInputElement>;
 }) {
   const { t } = useTranslation();
   const amount =
@@ -316,6 +360,25 @@ function TrayTargetRow({
           />
         </span>
       </div>
+
+      {field && (
+        <Input
+          ref={totalRef}
+          center
+          inputMode="tel"
+          autoComplete="off"
+          enterKeyHint="done"
+          placeholder="—"
+          aria-label={t("combat.damageTray.rowTotal", { name: target.name })}
+          title={t("combat.damageTray.totalHint")}
+          value={field.value}
+          error={field.invalid}
+          onChange={(event) => field.onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") field.onEnter();
+          }}
+        />
+      )}
 
       {row.attack && (
         <div className="flex flex-wrap items-center gap-2">
@@ -521,7 +584,7 @@ function applyTray(
   offer: DamageTrayOffer,
   targets: ReadonlyArray<TrayTarget>,
   rows: ReadonlyArray<TrayRow>,
-  total: number,
+  totals: ReadonlyArray<number>,
   t: T
 ): void {
   const { plan, source } = offer;
@@ -531,7 +594,7 @@ function applyTray(
       const row = rows[index];
       return {
         target,
-        amount: effect && row ? rowAmount(total, row, plan) : 0,
+        amount: effect && row ? rowAmount(totals[index] ?? 0, row, plan) : 0,
         conditions: row ? rowConditions(row) : [],
         ...(row?.attack ? { outcome: row.attack } : {}),
       };

@@ -342,6 +342,45 @@ describe("Fireball on three goblins", () => {
   });
 });
 
+describe("Magic Missile split across two goblins", () => {
+  beforeEach(() => {
+    setCharacter("wizard", 5, ["magic-missile"], [{ level: 1, total: 2 }]);
+    encounter([
+      { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+      monster("monster-1", "Goblin 1"),
+      monster("monster-2", "Goblin 2"),
+    ] as Rows);
+  });
+
+  it("each goblin takes the darts rolled for it, not the sum of all of them", async () => {
+    renderPlay();
+    cast("Magic Missile");
+    const picker = await screen.findByRole("dialog", { name: /on whom/i });
+    for (const name of ["Goblin 1", "Goblin 2"])
+      fireEvent.click(within(picker).getByRole("button", { name: new RegExp(name) }));
+    fireEvent.click(within(picker).getByRole("button", { name: /cast on 2/i }));
+
+    const dialog = await tray();
+    const first = within(row(dialog, "Goblin 1")).getByRole("textbox");
+    const second = within(row(dialog, "Goblin 2")).getByRole("textbox");
+    fireEvent.change(first, { target: { value: "4+3" } });
+    fireEvent.change(second, { target: { value: "2" } });
+    const previews = within(dialog)
+      .getAllByTestId("damage-tray-preview")
+      .map((el) => el.textContent);
+    expect(previews).toEqual(["−7", "−2"]);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /^apply$/i }));
+    const given = live()
+      .session.logEntries.map((e) => e.event)
+      .filter((e) => e.kind === "effect-given");
+    expect(given).toEqual([
+      expect.objectContaining({ target: "monster-1", amount: 7, effect: "damage" }),
+      expect.objectContaining({ target: "monster-2", amount: 2, effect: "damage" }),
+    ]);
+  });
+});
+
 describe("Hold Person on a goblin", () => {
   beforeEach(() => {
     setCharacter("cleric", 3, ["hold-person"], [{ level: 2, total: 2 }]);
