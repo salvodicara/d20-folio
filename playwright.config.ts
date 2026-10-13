@@ -21,6 +21,23 @@ const SELECTED_PROJECTS = process.argv.flatMap((arg, i) => {
   return eq ? [eq] : [];
 });
 const SW_PROJECTS = ["portrait-sw", "portrait-sw-mobile"];
+
+// Two lanes run only on request: the polish screenshot harness (POLISH_SHOT_DIR) and
+// the pixel-baseline suite (VISUAL, or --update-snapshots; `tests/e2e/visual-gate.ts`).
+// Off, every one of their ~900 tests skips, yet `--shard` still counts them, so whole
+// CI shards ran nothing while others ran the heavy sweeps. Leaving them out of the
+// list when they are off changes no result and spreads the real tests evenly.
+const UPDATING_SNAPSHOTS = process.argv.some(
+  (arg) =>
+    arg === "-u" ||
+    arg === "--update-snapshots" ||
+    arg === "--update-snapshots=all" ||
+    arg === "--update-snapshots=changed"
+);
+const OFF_LANES = [
+  ...(process.env.POLISH_SHOT_DIR ? [] : [/_polish-shots\.spec\.ts/]),
+  ...(process.env.VISUAL || UPDATING_SNAPSHOTS ? [] : [/visual-full\.spec\.ts/]),
+];
 // Boot the SW server unless the run is explicitly filtered to non-SW projects only.
 const NEEDS_SW_SERVER =
   SELECTED_PROJECTS.length === 0 ||
@@ -56,7 +73,7 @@ export default defineConfig({
       // The SW-dependent portrait-export spec runs ONLY under the dedicated
       // `portrait-sw` project (its own SW-enabled server + base URL); exclude it
       // here so the normal chromium run (no SW) never picks it up.
-      testIgnore: /portrait-export-journey\.spec\.ts/,
+      testIgnore: [/portrait-export-journey\.spec\.ts/, ...OFF_LANES],
     },
     {
       name: "mobile",
