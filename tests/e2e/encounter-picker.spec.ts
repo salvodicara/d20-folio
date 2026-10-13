@@ -17,7 +17,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { seedUI, seedLang, type Locale } from "./surfaces";
+import { seedUI, seedLang, type Locale, coralinoCard } from "./surfaces";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const PORTRAIT_FIXTURE = resolve(here, "fixtures/portrait.png");
@@ -28,7 +28,7 @@ async function bootEncounter(page: Page, locale: Locale = "en"): Promise<void> {
   await seedLang(page, locale);
   await page.addInitScript(() => window.localStorage.setItem("d20-dev-encounter", "1"));
   await page.goto("/campaigns/mock-1");
-  await expect(page.getByText(/coralino/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(coralinoCard(page)).toBeVisible({ timeout: 20_000 });
 }
 
 const dialog = (page: Page) => page.getByRole("dialog");

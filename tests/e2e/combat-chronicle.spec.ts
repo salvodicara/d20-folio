@@ -26,7 +26,14 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { seedUI, seedLang, freezeMotion, settleForShot, type Theme } from "./surfaces";
+import {
+  seedUI,
+  seedLang,
+  freezeMotion,
+  settleForShot,
+  type Theme,
+  coralinoCard,
+} from "./surfaces";
 
 const SHOT_DIR = process.env.CHRONICLE_SHOT_DIR;
 if (SHOT_DIR) fs.mkdirSync(SHOT_DIR, { recursive: true });
@@ -219,7 +226,7 @@ async function bootDmHub(page: Page, theme: Theme): Promise<void> {
     window.localStorage.setItem("d20-dev-encounter", "1");
   });
   await page.goto("/campaigns/mock-1");
-  await expect(page.getByText(/coralino/i).first()).toBeVisible({ timeout: 20_000 });
+  await expect(coralinoCard(page)).toBeVisible({ timeout: 20_000 });
 }
 
 /** A monster combatant card by its stable id (the DM row carries `data-combatant-id`). */
