@@ -278,7 +278,9 @@ chosen monster id keyed by spell id), `companionCount` (how many creatures a mul
 fields when the player changed it, keyed by spell id), `familiar`
 (`{ monsterId, creatureType: celestial|fey|fiend, dismissed? }` — the Find Familiar summon; its
 current HP rides `companionHp["find-familiar"]`), `manifestedWeaponOverrides`, `pactWeaponConfig`,
-`pactWeaponRiderTypes`, `polymorphForm`, `bardicInspirationDie`, `sessionDefenses`, `hiddenDc`, and
+`pactWeaponRiderTypes`, `polymorphForm` (the self form: `beastId`, `spellId`, the `prior` body it
+replaced and, for a Shapechange form from the bestiary, its projected `statBlock`; a malformed
+`statBlock` alone is dropped), `bardicInspirationDie`, `sessionDefenses`, `hiddenDc`, and
 `world` (the character's persisted mechanics world, `CharacterMaterialState` — carried through the
 codec as an OPAQUE verbatim member, never shape-validated there; `characterWorldState` re-proves it
 fail-closed at read, the architecture's one re-proving seam for engine state). A

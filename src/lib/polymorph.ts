@@ -19,11 +19,78 @@
  */
 import type { BeastStatBlock } from "@/data/types";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
-import { beastsByMaxCR } from "@/data/beasts";
+import { beastsByMaxCR, getBeast } from "@/data/beasts";
 import { totalLevel } from "@/lib/classes";
 
 /** The spell ids that engage a Polymorph SELF-form (concentration by id). */
 export const POLYMORPH_SPELL_IDS: readonly string[] = ["polymorph", "true-polymorph"];
+
+/** How one self-transformation spell shapes the caster's form (its SRD 5.2.1 text). */
+export interface SelfFormRule {
+  /** Where its forms come from: the eager Beast catalogue, or the whole bestiary
+   *  (lazy; the picked block then rides the session as `statBlock`). */
+  pool: "beasts" | "bestiary";
+  /** The caster keeps their own Intelligence, Wisdom and Charisma scores. */
+  keepsMind: boolean;
+  /** The caster may shift into another form while the spell lasts; only the first
+   *  form grants Temporary Hit Points. */
+  reshift: boolean;
+  /** The form ends when its Temporary Hit Points run out. */
+  endsWithoutTempHp: boolean;
+}
+
+const POLYMORPH_RULE: SelfFormRule = {
+  pool: "beasts",
+  keepsMind: false,
+  reshift: false,
+  endsWithoutTempHp: true,
+};
+
+/** Every spell that transforms the caster through the Transform flow, by id. */
+const SELF_FORM_RULES: Readonly<Record<string, SelfFormRule>> = {
+  polymorph: POLYMORPH_RULE,
+  "true-polymorph": POLYMORPH_RULE,
+  // You keep your INT, WIS, CHA, Hit Points and Hit Point Dice; Temporary HP come
+  // from the first form only, and running out of them does not end the spell.
+  shapechange: {
+    pool: "bestiary",
+    keepsMind: true,
+    reshift: true,
+    endsWithoutTempHp: false,
+  },
+};
+
+/** The spell ids whose card carries the Transform affordance. */
+export const SELF_FORM_SPELL_IDS: readonly string[] = Object.keys(SELF_FORM_RULES);
+
+/** The rule for `spellId` (Polymorph's for an id outside the table). */
+export function selfFormRule(spellId: string): SelfFormRule {
+  return SELF_FORM_RULES[spellId] ?? POLYMORPH_RULE;
+}
+
+type ActiveForm = SessionState["polymorphForm"];
+
+/** The active form's stat block: the bestiary block it carries, else the Beast. */
+export function formStatBlock(form: ActiveForm): BeastStatBlock | undefined {
+  if (!form) return undefined;
+  return form.statBlock ?? getBeast(form.beastId);
+}
+
+/** Where the active form's names live: the lazy bestiary or the Beast catalogue. */
+export function formNameKind(form: NonNullable<ActiveForm>): "monster" | "beasts" {
+  return form.statBlock ? "monster" : "beasts";
+}
+
+/** The catalogue key of one of the form's attacks (`attack.rend` in the Beast
+ *  catalogue, `adult-red-dragon.actions.rend` in the bestiary). */
+export function formAttackNameKey(
+  form: NonNullable<ActiveForm>,
+  nameKey: string
+): string {
+  return form.statBlock
+    ? `${form.beastId}.actions.${nameKey.replace(/^attack\./, "")}`
+    : nameKey;
+}
 
 /** The snapshot of the caster's OWN fields the applicator overwrites — restored on drop. */
 export type PolymorphPrior = NonNullable<SessionState["polymorphForm"]>["prior"];
@@ -57,11 +124,12 @@ export function polymorphPriorSnapshot(doc: CharacterDoc): PolymorphPrior {
  * natural AC → `acOverride`, its walking speed → `speedOverride`, its other
  * movement modes → `speedOverrides`, and its six ability scores → `abilityScores`
  * (RAW: Polymorph replaces ALL statistics, mental scores included — unlike Wild
- * Shape). `prior.speedOverride` is the fallback when the Beast omits a walk speed.
+ * Shape); `keepsMind` keeps the caster's INT / WIS / CHA (Shapechange). `prior.speedOverride` is the fallback when the Beast omits a walk speed.
  */
 export function polymorphBuildPatch(
   beast: BeastStatBlock,
-  prior: PolymorphPrior
+  prior: PolymorphPrior,
+  keepsMind = false
 ): Partial<CharacterData> {
   const speedOverrides: Record<string, number | null> = {};
   for (const mode of ["fly", "swim", "climb", "burrow"] as const) {
@@ -72,7 +140,14 @@ export function polymorphBuildPatch(
     acOverride: beast.ac,
     speedOverride: beast.speeds.walk ?? prior.speedOverride ?? null,
     speedOverrides,
-    abilityScores: { ...beast.abilityScores },
+    abilityScores: keepsMind
+      ? {
+          ...beast.abilityScores,
+          INT: prior.abilityScores.INT,
+          WIS: prior.abilityScores.WIS,
+          CHA: prior.abilityScores.CHA,
+        }
+      : { ...beast.abilityScores },
   };
 }
 

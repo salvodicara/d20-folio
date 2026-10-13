@@ -76,7 +76,7 @@ import type {
 import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
-import { getBeast } from "@/data/beasts";
+import { formAttackNameKey, formNameKind, formStatBlock } from "@/lib/polymorph";
 import {
   totalLevel,
   classEntryLevel,
@@ -4395,8 +4395,9 @@ export function resolveBeastFormAttacks(
 ): RawResolvedAction[] {
   const form = session.polymorphForm;
   if (!form) return [];
-  const beast = getBeast(form.beastId);
+  const beast = formStatBlock(form);
   if (!beast) return [];
+  const nameKind = formNameKind(form);
 
   return beast.attacks.map((atk, i): RawResolvedAction => {
     const rowId = `beast-attack-${beast.id}-${i}`;
@@ -4409,7 +4410,7 @@ export function resolveBeastFormAttacks(
       : { kind: "melee", reachFt: target?.reachFt ?? 5 };
     return {
       id: rowId,
-      name: srdText("beasts", atk.nameKey, "name"),
+      name: srdText(nameKind, formAttackNameKey(form, atk.nameKey), "name"),
       type: "action",
       source: "weapon",
       spellLevel: null,

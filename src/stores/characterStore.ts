@@ -67,7 +67,8 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import { polymorphPriorSnapshot } from "@/lib/polymorph";
+import { polymorphPriorSnapshot, selfFormRule } from "@/lib/polymorph";
+import type { BeastStatBlock } from "@/data/types";
 import { getBeast } from "@/data/beasts";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
@@ -559,8 +560,16 @@ interface CharacterState {
    * fields on the session so {@link dropPolymorphForm} restores the body exactly.
    * Returns an undo applier restoring the pre-form state, or `null` when the beast
    * id is unknown / already transformed. Override-first + fully undoable.
+   *
+   * `statBlock` is the picked bestiary form (Shapechange — the eager store cannot
+   * read the bestiary). A spell that allows it (`selfFormRule().reshift`) shifts an
+   * active form of the same spell instead of refusing.
    */
-  assumePolymorphForm: (beastId: string, spellId?: string) => (() => void) | null;
+  assumePolymorphForm: (
+    beastId: string,
+    spellId?: string,
+    statBlock?: BeastStatBlock
+  ) => (() => void) | null;
   /**
    * S7 — drop the active Polymorph form: restore the caster's own AC / speeds /
    * scores / temp HP from the stored snapshot, clear the form's concentration, and
@@ -1246,8 +1255,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // first, `newTemp === 0` SUBSUMES the caster-hits-0-HP case. When the form
     // ends this way the spell ends OUTRIGHT — no Concentration maintenance save
     // is offered (below), and the Beast build is retracted (further below).
+    // Shapechange is the exception: its form outlasts its Temporary HP.
     const activeForm = character.session.polymorphForm;
-    const formEnds = activeForm !== undefined && newTemp === 0;
+    const formEnds =
+      activeForm !== undefined &&
+      newTemp === 0 &&
+      selfFormRule(activeForm.spellId).endsWithoutTempHp;
 
     // Concentration save uses the TOTAL damage taken — including the slice
     // absorbed by temp. 2024 PHB: "If you take damage while concentrating,
@@ -2886,12 +2899,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     });
   },
 
-  assumePolymorphForm: (beastId, spellId = "polymorph") => {
+  assumePolymorphForm: (beastId, spellId = "polymorph", statBlock) => {
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    if (character.session.polymorphForm) return null; // already transformed
-    const beast = getBeast(beastId);
+    const active = character.session.polymorphForm;
+    const reshift = active?.spellId === spellId && selfFormRule(spellId).reshift;
+    if (active && !reshift) return null; // already transformed
+    const beast = statBlock?.id === beastId ? statBlock : getBeast(beastId);
     if (!beast) return null;
 
     // Snapshot the caster's OWN fields for undo + drop-restore (the WHOLE prior
@@ -2901,7 +2916,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
-    get().setConcentration(concentrationValue(spellId));
+    // A reshift is still the same spell: its Concentration simply continues.
+    if (!reshift) get().setConcentration(concentrationValue(spellId));
 
     const cur = get().character;
     if (!cur) return null;
@@ -2910,7 +2926,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // value by construction (the world rides the session).
     const assumed = assumeBeastForm(cur, beast, spellId, prior);
     set({ character: assumed.doc });
-    get().logEvent({ kind: "temp-hp-gain", amount: assumed.tempHp });
+    if (!assumed.reshift)
+      get().logEvent({ kind: "temp-hp-gain", amount: assumed.tempHp });
 
     return () => set({ character: before });
   },

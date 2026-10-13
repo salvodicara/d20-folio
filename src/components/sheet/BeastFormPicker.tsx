@@ -49,9 +49,12 @@ export interface BeastFormPickerProps {
   /** CR-gated Beast forms (`resolvePolymorphForms(character)`). */
   forms: ReadonlyArray<BeastStatBlock>;
   locale: Locale;
-  /** Apply the SELF-swap for `beastId` (the parent's `assumePolymorphForm`). */
-  onAssume: (beastId: string) => void;
+  /** Apply the SELF-swap for the chosen form (the parent's `assumePolymorphForm`). */
+  onAssume: (form: BeastStatBlock) => void;
   onClose: () => void;
+  /** Shapechange: forms from the whole bestiary (names in the `monster`
+   *  catalogue), on yourself only, with its own title and hint. */
+  shapechange?: boolean;
 }
 
 /** The read-only stat block shown for a chosen Beast (reference card + confirm). */
@@ -162,8 +165,10 @@ export function BeastFormPicker({
   locale,
   onAssume,
   onClose,
+  shapechange = false,
 }: BeastFormPickerProps) {
   const { t } = useTranslation();
+  const nameKind = shapechange ? "monster" : "beasts";
   const [mode, setMode] = useState<"self" | "reference">("self");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -172,11 +177,11 @@ export function BeastFormPicker({
     return forms
       .map((b) => ({
         beast: b,
-        name: localizeSrd("beasts", b.id, "name", locale),
-        nameEn: srdEn("beasts", b.id, "name") ?? b.id,
+        name: localizeSrd(nameKind, b.id, "name", locale),
+        nameEn: srdEn(nameKind, b.id, "name") ?? b.id,
       }))
       .filter((r) => matchesSearch(query, r.name, r.nameEn));
-  }, [forms, locale, query]);
+  }, [forms, locale, query, nameKind]);
 
   if (!open) return null;
 
@@ -188,40 +193,54 @@ export function BeastFormPicker({
       size="md"
       onClose={onClose}
       rubric={t("polymorph.rubric")}
-      title={t("polymorph.title")}
-      subtitle={mode === "self" ? t("polymorph.selfHint") : t("polymorph.referenceHint")}
+      title={shapechange ? t("polymorph.shapechangeTitle") : t("polymorph.title")}
+      subtitle={
+        shapechange
+          ? t("polymorph.shapechangeHint")
+          : mode === "self"
+            ? t("polymorph.selfHint")
+            : t("polymorph.referenceHint")
+      }
     >
       {/* Fixed-height flex column: the list is the `flex-1` scroll region, and the
           REFERENCE stat block pins below it (`shrink-0`) so the picked creature is
           always visible — the list shrinks to make room, never the block. */}
       <ModalStage className="gap-3 px-4 pb-4">
-        <Segmented
-          className="poly-mode-switch"
-          aria-label={t("polymorph.title")}
-          value={mode}
-          onChange={(next) => {
-            setMode(next);
-            // The reference selection only shows in "reference" mode; clear it when
-            // returning to "self" so a later switch back never reveals a stale block.
-            if (next === "self") setSelectedId(null);
-          }}
-          options={[
-            { value: "self", label: t("polymorph.selfTab") },
-            { value: "reference", label: t("polymorph.referenceTab") },
-          ]}
-        />
+        {!shapechange && (
+          <Segmented
+            className="poly-mode-switch"
+            aria-label={t("polymorph.title")}
+            value={mode}
+            onChange={(next) => {
+              setMode(next);
+              // The reference selection only shows in "reference" mode; clear it when
+              // returning to "self" so a later switch back never reveals a stale block.
+              if (next === "self") setSelectedId(null);
+            }}
+            options={[
+              { value: "self", label: t("polymorph.selfTab") },
+              { value: "reference", label: t("polymorph.referenceTab") },
+            ]}
+          />
+        )}
 
         <SearchField
           value={query}
           onChange={setQuery}
           autoFocus
-          placeholder={t("polymorph.search")}
+          placeholder={
+            shapechange ? t("polymorph.searchCreatures") : t("polymorph.search")
+          }
         />
 
         {rows.length === 0 ? (
           <div className="flex min-h-0 flex-1 items-center justify-center">
             <p className="m-0 py-4 text-center text-sm text-text-secondary">
-              {forms.length === 0 ? t("polymorph.noForms") : t("common.noResults")}
+              {forms.length === 0
+                ? shapechange
+                  ? t("polymorph.noCreatureForms")
+                  : t("polymorph.noForms")
+                : t("common.noResults")}
             </p>
           </div>
         ) : (
@@ -234,7 +253,7 @@ export function BeastFormPicker({
                 className={`cl-opt${selectedId === r.beast.id ? " is-active" : ""}`}
                 onClick={() => {
                   if (mode === "self") {
-                    onAssume(r.beast.id);
+                    onAssume(r.beast);
                     onClose();
                   } else {
                     setSelectedId(r.beast.id);

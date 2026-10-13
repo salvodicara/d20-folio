@@ -3,7 +3,14 @@
  * character envelope and the versioned combat/play-state owner.
  */
 import type { LogEntry, SessionState } from "@/types/character";
-import type { AbilityCode } from "@/data/types";
+import {
+  CREATURE_SIZE_ORDER,
+  type AbilityCode,
+  type BeastAttack,
+  type BeastStatBlock,
+  type CreatureSize,
+} from "@/data/types";
+import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { normalizeStoredConcentration } from "@/lib/concentration";
 import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { normalizeItemResources, parseItemResources } from "@/lib/item-resources";
@@ -484,6 +491,101 @@ function parsePactWeaponRiderTypes(value: unknown): SessionState["pactWeaponRide
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
+const finite = (candidate: unknown): candidate is number =>
+  typeof candidate === "number" && Number.isFinite(candidate);
+
+/** A record whose keys are all in `keys` and whose values are all finite numbers. */
+function finiteRecord(
+  value: unknown,
+  keys: ReadonlyArray<string>
+): value is Record<string, number> {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(([key, n]) => keys.includes(key) && finite(n))
+  );
+}
+
+const ABILITY_CODES: ReadonlyArray<AbilityCode> = [
+  "STR",
+  "DEX",
+  "CON",
+  "INT",
+  "WIS",
+  "CHA",
+];
+const SPEED_MODES = ["walk", "climb", "fly", "swim", "burrow"] as const;
+const SENSE_KEYS = [
+  "darkvisionFt",
+  "blindsightFt",
+  "tremorsenseFt",
+  "truesightFt",
+] as const;
+
+function parseFormAttack(value: unknown): BeastAttack | undefined {
+  if (
+    !isRecord(value) ||
+    typeof value.nameKey !== "string" ||
+    !finite(value.toHit) ||
+    typeof value.damageDice !== "string" ||
+    !(DAMAGE_TYPES as ReadonlyArray<unknown>).includes(value.damageType) ||
+    (value.reachFt !== undefined && !finite(value.reachFt)) ||
+    (value.range !== undefined &&
+      !(isRecord(value.range) && finite(value.range.nearFt) && finite(value.range.farFt)))
+  ) {
+    return undefined;
+  }
+  const range = value.range as { nearFt: number; farFt: number } | undefined;
+  return {
+    nameKey: value.nameKey,
+    toHit: value.toHit,
+    damageDice: value.damageDice,
+    damageType: value.damageType as DamageType,
+    ...(value.reachFt !== undefined ? { reachFt: value.reachFt } : {}),
+    ...(range ? { range: { nearFt: range.nearFt, farFt: range.farFt } } : {}),
+  };
+}
+
+/** A bestiary form's stat block (Shapechange), rebuilt field by field; undefined
+ *  when any field is malformed. */
+function parseFormStatBlock(value: unknown): BeastStatBlock | undefined {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    !finite(value.cr) ||
+    !(CREATURE_SIZE_ORDER as ReadonlyArray<unknown>).includes(value.size) ||
+    !finite(value.ac) ||
+    !finite(value.hp) ||
+    !finiteRecord(value.speeds, SPEED_MODES) ||
+    !isRecord(value.abilityScores) ||
+    !ABILITY_CODES.every((code) =>
+      finite((value.abilityScores as Record<string, unknown>)[code])
+    ) ||
+    !Array.isArray(value.attacks) ||
+    (value.senses !== undefined && !finiteRecord(value.senses, SENSE_KEYS)) ||
+    (value.traits !== undefined &&
+      !(Array.isArray(value.traits) && value.traits.every((t) => typeof t === "string")))
+  ) {
+    return undefined;
+  }
+  const attacks = value.attacks.map(parseFormAttack);
+  if (attacks.some((a) => a === undefined)) return undefined;
+  const scores = value.abilityScores as Record<AbilityCode, number>;
+  return {
+    id: value.id,
+    cr: value.cr,
+    size: value.size as CreatureSize,
+    ac: value.ac,
+    hp: value.hp,
+    speeds: { ...value.speeds },
+    abilityScores: Object.fromEntries(
+      ABILITY_CODES.map((code) => [code, scores[code]])
+    ) as Record<AbilityCode, number>,
+    attacks: attacks as BeastAttack[],
+    ...(value.senses !== undefined ? { senses: { ...value.senses } } : {}),
+    ...(value.traits !== undefined ? { traits: [...value.traits] } : {}),
+  };
+}
+
 function parsePolymorphForm(value: unknown): SessionState["polymorphForm"] {
   if (!isRecord(value) || !isRecord(value.prior)) return undefined;
   const prior = value.prior;
@@ -508,9 +610,12 @@ function parsePolymorphForm(value: unknown): SessionState["polymorphForm"] {
   ) {
     return undefined;
   }
+  const statBlock = parseFormStatBlock(value.statBlock);
   return {
     beastId: value.beastId,
     spellId: value.spellId,
+    // A malformed block is dropped, never the form: its prior still restores the body.
+    ...(statBlock ? { statBlock } : {}),
     prior: {
       acOverride: prior.acOverride,
       speedOverride: prior.speedOverride,

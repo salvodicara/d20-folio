@@ -138,12 +138,14 @@ describe("eager-partition tripwires", () => {
       "src/features/character/companions/FamiliarPanel.tsx",
       "src/features/character/companions/SummonedMonstersPanel.tsx",
       "src/features/character/companions/bestiary-summon-picker.tsx",
+      "src/lib/shapechange.ts",
+      "src/features/character/center/tabs/spells/ShapechangeFormPicker.tsx",
     ]);
     // A file reaches the corpus if it imports the corpus directly, the monster spec,
-    // OR `@/lib/familiar` (the resolver that imports the corpus) — but NOT
-    // `@/lib/familiar-ids` (the eager-safe id/type module every eager consumer uses).
+    // OR `@/lib/familiar` / `@/lib/shapechange` (resolvers that import the corpus) —
+    // but NOT `@/lib/familiar-ids` (the eager-safe id/type module eager consumers use).
     const REACHES_CORPUS =
-      /from\s+["']@\/data\/monsters|picker\/specs\/monster|from\s+["']@\/lib\/familiar["']/;
+      /from\s+["']@\/data\/monsters|picker\/specs\/monster|from\s+["']@\/lib\/(familiar|shapechange)["']/;
     const files = [
       ...sourceFilesUnder("src/lib"),
       ...sourceFilesUnder("src/features/character"),

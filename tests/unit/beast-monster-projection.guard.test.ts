@@ -29,7 +29,7 @@ import { describe, expect, it } from "vitest";
 import { BEASTS } from "@/data/beasts";
 import { BEASTS as PUBLIC_BEASTS } from "@/data/beasts/beasts";
 import { getMonster } from "@/data/monsters";
-import { beastProjectionFromMonster } from "../../scripts/beast-projection";
+import { beastProjectionFromMonster } from "@/lib/beast-projection";
 
 describe("beast → monster projection (C1)", () => {
   it("pins the public Beast count (RAW Monstrosity sweep: 84)", () => {
