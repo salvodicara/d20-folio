@@ -15,7 +15,7 @@
     "traits": "Traits",
     "activeForm": "Polymorphed: {{name}}",
     "revert": "Revert form",
-    "shapechangeTitle": "Choose a Form",
+    "creatureTitle": "Choose a Form",
     "searchCreatures": "Search creatures",
     "noCreatureForms": "No forms are available at your level.",
     "formOf": "{{spell}}: {{name}}",

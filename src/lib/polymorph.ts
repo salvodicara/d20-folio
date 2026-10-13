@@ -21,6 +21,7 @@ import {
   CREATURE_SIZE_ORDER,
   type BeastStatBlock,
   type CreatureSize,
+  type CreatureType,
 } from "@/data/types";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { beastsByMaxCR, getBeast } from "@/data/beasts";
@@ -45,6 +46,11 @@ export interface SelfFormRule {
   crCap?: number;
   /** The largest size a form may be (Animal Shapes: Large). */
   sizeMax?: CreatureSize;
+  /** Creature types the bestiary pool never offers (Shapechange: Construct, Undead). */
+  excludedTypes?: ReadonlyArray<CreatureType>;
+  /** The spell only ever targets the caster (Shapechange): no reference card for
+   *  another creature in the picker. */
+  selfOnly?: boolean;
 }
 
 const POLYMORPH_RULE: SelfFormRule = {
@@ -57,7 +63,9 @@ const POLYMORPH_RULE: SelfFormRule = {
 /** Every spell that transforms the caster through the Transform flow, by id. */
 const SELF_FORM_RULES: Readonly<Record<string, SelfFormRule>> = {
   polymorph: POLYMORPH_RULE,
-  "true-polymorph": POLYMORPH_RULE,
+  // Creature into Creature: any kind of CR ≤ the target's CR or level; its stat
+  // block replaces yours (mind included), Temporary HP = the new form's HP.
+  "true-polymorph": { ...POLYMORPH_RULE, pool: "bestiary" },
   // You keep your INT, WIS, CHA, Hit Points and Hit Point Dice; Temporary HP come
   // from the first form only, and running out of them does not end the spell.
   shapechange: {
@@ -65,6 +73,8 @@ const SELF_FORM_RULES: Readonly<Record<string, SelfFormRule>> = {
     keepsMind: true,
     reshift: true,
     endsWithoutTempHp: false,
+    excludedTypes: ["construct", "undead"],
+    selfOnly: true,
   },
   // A Large or smaller Beast of CR 4 or lower; you keep your INT, WIS, CHA, Hit
   // Points and Hit Point Dice; Temporary HP from the first form; it lasts until
@@ -106,9 +116,15 @@ export function formAttackNameKey(
   form: NonNullable<ActiveForm>,
   nameKey: string
 ): string {
-  return form.statBlock
-    ? `${form.beastId}.actions.${nameKey.replace(/^attack\./, "")}`
-    : nameKey;
+  return form.statBlock ? bestiaryNameKey(form.beastId, nameKey) : nameKey;
+}
+
+/** A projected form's attack / trait key in the monster catalogue
+ *  (`attack.rend` → `adult-red-dragon.actions.rend`, `trait.x` → `<id>.traits.x`). */
+export function bestiaryNameKey(formId: string, nameKey: string): string {
+  return nameKey
+    .replace(/^attack\./, `${formId}.actions.`)
+    .replace(/^trait\./, `${formId}.traits.`);
 }
 
 /** The snapshot of the caster's OWN fields the applicator overwrites — restored on drop. */

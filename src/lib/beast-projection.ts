@@ -10,7 +10,7 @@
  * CI construction). Runtime `beasts.ts` imports NOTHING from `data/monsters`.
  *
  * The same projection maps a bestiary creature to a self-form for Shapechange
- * (`lib/shapechange.ts`, a lazy seam): one `BeastStatBlock` shape for every form,
+ * and True Polymorph (`lib/bestiary-forms.ts`, a lazy seam): one `BeastStatBlock` shape for every form,
  * so assuming and dropping a form stays one path. PURE: types only.
  */
 import type { BeastStatBlock, MonsterAttackEntry, MonsterStatBlock } from "@/data/types";

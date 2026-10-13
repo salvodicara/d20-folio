@@ -887,7 +887,7 @@ the codec + sanitizer round-trip it).
 
 **Other self-form spells** ride the same path, each shaped by one `selfFormRule(spellId)` row in
 `lib/polymorph.ts` (`pool`, `keepsMind`, `reshift`, `endsWithoutTempHp`). **Shapechange** draws its forms
-from the whole bestiary (`lib/shapechange.ts`, a lazy seam: CR ≤ your level, never a Construct or an
+from the whole bestiary (`lib/bestiary-forms.ts`, a lazy seam: CR ≤ your level, never a Construct or an
 Undead), each projected by `lib/beast-projection.ts` to the same `BeastStatBlock`; the picked block rides
 `session.polymorphForm.statBlock` because the eager sheet cannot read the bestiary, and its names resolve
 from the lazy `monster` catalogue (the cockpit loads it before rendering such a form). It keeps INT / WIS /
@@ -896,7 +896,10 @@ CHA, gains Temp HP from the FIRST form only, shifts form while the spell lasts (
 catalogue capped by the rule (`crCap: 4`, `sizeMax: "Large"`, not your level), keeps the mind, reshifts,
 needs no Concentration (the store engages it only for a Concentration spell), and ends at 0 Temp HP on its
 own: `applyDamage` drops a form no Concentration holds with `dropBeastForm(doc, 0)`, leaving any unrelated
-Concentration in place.
+Concentration in place. **True Polymorph** on yourself shares the bestiary pool with no type excluded
+(`excludedTypes` is Shapechange's alone): any creature of CR ≤ your level whose whole stat block, mind
+included, replaces yours, with Polymorph's Temp HP and end rules; the picker's reference card names a
+bestiary form's attacks and traits from the monster catalogue (`bestiaryNameKey`).
 
 ---
 
