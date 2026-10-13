@@ -166,11 +166,17 @@ svg.icon[stroke],
   background: var(--accent-text);
   box-shadow: none;
 }
-.sec-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-style: italic;
-  font-size: var(--text-md);
+/* The section rubric (vision 1, owner 2026-10-13): engraved Cinzel capitals in the
+   gilt ink, then a hairline that fades out (`.sec-rule`). One recipe for every
+   section head in the app: the sheet, the rails, the campaign, the compendium. */
+.sec-title,
+.wb .rail-head .rh-rubric {
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-style: normal;
+  font-size: var(--text-rubric);
+  letter-spacing: var(--tracking-rubric);
+  text-transform: uppercase;
   color: var(--accent-text);
   margin: 0;
   white-space: nowrap;
@@ -22035,58 +22041,31 @@ body:has(.fob) .toast-region {
    pipeline — verified-CC0 artwork recolored to the folio gold, see the
    first-child rule below). */
 .wb .rail-head {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
 }
-.wb .rail-head .rh-diamond,
-.wb .rail-head .rh-rule {
+.wb .rail-head .rh-diamond {
   display: none;
 }
-.wb .rail-head::after {
+.wb .rail-head .rh-rule {
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, var(--wb-line-700), transparent);
+}
+.wb .cmp-entry-head::after {
   content: "";
   display: block;
-  height: 14px;
-  margin-top: var(--sp-1);
+  height: 1px;
+  margin-top: var(--sp-2);
   background: linear-gradient(
-      to right,
-      transparent,
-      var(--wb-line-700) 18%,
-      var(--wb-line-700) 82%,
-      transparent
-    )
-    center / 100% 1px no-repeat;
-}
-/* The weave is SPENT ONCE per plate (§16.3) — it rides only the plate's first
-   rubric; every later rubric keeps the plain fading hairline. The motif is a
-   RICALCO (§16.3 pipeline): a human-engraved calligraphic center-loop divider,
-   Openclipart #294113 (CC0), its internal rule subpaths REMOVED so the knot
-   rests directly ON the app's own separator (the derived file + provenance:
-   bg3-ui-study/pd-ornaments/derived/) — never a model-improvised stroke.
-   Geometry: motif pinned top at 24px, the old rule's baseline falls at 85.35%
-   -> the 1px separator tops at 20px; the outer curls dip BELOW it (the weave)
-   and the crossing strands COVER it, exactly as engraved. */
-.wb .folio-panel > section:first-child .rail-head::after,
-.wb .cmp-entry-head::after {
-  height: 25px;
-  background:
-    var(--wb-knot) 50% 0 / auto 24px no-repeat,
-    linear-gradient(
-        to right,
-        transparent,
-        var(--wb-knot-ink) 18%,
-        var(--wb-knot-ink) 82%,
-        transparent
-      )
-      50% 20px / 100% 1px no-repeat;
-}
-/* The rubric voice (§16.6): sentence-case serif, the tracked-mono eyebrow
-   retreats. */
-.wb .rail-head .rh-rubric {
-  font-family: var(--font-display);
-  font-size: var(--text-md);
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--text-primary);
+    to right,
+    transparent,
+    var(--wb-line-700) 18%,
+    var(--wb-line-700) 82%,
+    transparent
+  );
 }
 
 /* §16.3 — inside the scope a stamp may not float on a line: the diamonds
