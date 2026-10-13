@@ -14887,16 +14887,123 @@ button.party-avatar-btn:focus-visible {
   text-shadow: var(--engrave-title);
 }
 
-/* ── Campaign hub header art control (owner 2026-06-30) — the big 3:1 hero band
-   was RETIRED. The campaign's art is now the page's atmospheric `--app-bg-art`
-   backdrop: CampaignHubPage sets that variable on the document root and the global
-   `body::after` painter renders it under the app's own scrim/grain (craft law 3 —
-   atmosphere under content, never a competing band). All that remains here is the
-   quiet "set / change art" affordance that lives in the slim `PageHeader` action
-   slot — a relatively-positioned anchor so the shared Re-crop / Replace / Remove
-   menu opens downward beneath the button. ── */
+/* ── Campaign hero band (owner 2026-10-13, "make the campaign image count"). The
+   hub's header IS the campaign image: a short cinematic band (the Party stays in the
+   fold), the DM's art at its crop focal + zoom or the bundled per-theme plate. The
+   scrim is always dark, bottom-left, so the title reads over ANY upload in both
+   themes; the band's ink is therefore the fixed on-art ivory, never a theme token.
+   Behind the page the same art is only ambient light (index.css). ── */
+.campaign-hero {
+  --hero-ink: #f6ead0;
+  --hero-ink-soft: #ded0b0;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(176px, 15vw + 40px, 248px);
+  margin-bottom: var(--sp-6);
+  padding: var(--sp-6) var(--sp-8);
+  border: 1px solid color-mix(in oklab, var(--gold-leaf-500) 34%, transparent);
+  border-radius: var(--radius-xl);
+  /* Decode base: the default plate's own mean tone, never a flash of page colour. */
+  background: #16100a;
+  box-shadow: 0 22px 44px -28px rgb(0 0 0 / 0.85);
+}
+.campaign-hero-art {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-size: cover;
+  background-position: center 42%;
+  background-repeat: no-repeat;
+}
+.campaign-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(
+      to top,
+      rgb(10 7 5 / 0.88) 0%,
+      rgb(10 7 5 / 0.46) 48%,
+      rgb(10 7 5 / 0.06) 100%
+    ),
+    linear-gradient(to right, rgb(10 7 5 / 0.5), transparent 62%);
+}
+.campaign-hero-body {
+  min-width: 0;
+  max-width: 46rem;
+}
+.campaign-hero-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 600;
+  font-size: clamp(1.75rem, 1.15rem + 2.2vw, 2.875rem);
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+  color: var(--hero-ink);
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
+  text-wrap: balance;
+}
+.campaign-hero-title :where(button, input) {
+  color: inherit;
+}
+.campaign-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-5);
+  margin: var(--sp-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--hero-ink-soft);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
+}
+.campaign-hero-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.campaign-hero-actions {
+  position: absolute;
+  top: var(--sp-3);
+  right: var(--sp-3);
+}
 .campaign-art-control {
   position: relative;
+}
+.campaign-hero-gear {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-xl);
+  border: 1px solid rgb(246 234 208 / 0.2);
+  background: rgb(10 7 5 / 0.52);
+  color: var(--hero-ink);
+  transition:
+    background var(--m-fast) var(--ease-standard, ease-out),
+    color var(--m-fast) var(--ease-standard, ease-out);
+}
+.campaign-hero-gear:hover {
+  background: rgb(10 7 5 / 0.74);
+  color: var(--gold-leaf-100);
+}
+.campaign-hero-gear:focus-visible {
+  outline: 2px solid var(--gold-leaf-300);
+  outline-offset: 2px;
+}
+@media (max-width: 720px) {
+  .campaign-hero {
+    min-height: 164px;
+    margin-bottom: var(--sp-5);
+    padding: var(--sp-4);
+    padding-right: calc(var(--sp-4) + 44px);
+  }
+  .campaign-hero-actions {
+    top: var(--sp-2);
+    right: var(--sp-2);
+  }
 }
 
 /* ── Campaign summary card (N1/N2) — the realm-list tile. Reuses the roster

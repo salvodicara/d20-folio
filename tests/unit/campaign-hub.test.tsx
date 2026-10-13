@@ -199,6 +199,55 @@ describe("CampaignHubPage", () => {
     expect(subscribeMock).not.toHaveBeenCalled();
   });
 
+  // The hero band (owner 2026-10-13, "make the campaign image count"): the art is the
+  // header itself, framed at the DM's crop focal + zoom, with the bundled per-theme
+  // plate as the fallback, and the page backdrop is the same art as soft ambient light.
+  it("paints the campaign art in the header band at the crop focal, the bundled plate otherwise", () => {
+    const { container } = renderHubAt("/campaigns/c1");
+    act(() => onDataRef.fn?.(makeCampaign({ id: "c1" })));
+    const art = () => container.querySelector<HTMLElement>(".campaign-hero-art");
+    expect(art()?.style.backgroundImage).toBe("var(--asset-campaign-backdrop)");
+    expect(art()?.style.transform).toBe("");
+    act(() =>
+      onDataRef.fn?.(
+        makeCampaign({
+          id: "c1",
+          bannerUrl: "https://art.example/b.png",
+          bannerCrop: { x: 50, y: 0, width: 50, height: 50 },
+        })
+      )
+    );
+    expect(art()?.style.backgroundImage).toBe('url("https://art.example/b.png")');
+    expect(art()?.style.backgroundPosition).toBe("75% 25%");
+    expect(art()?.style.transform).toBe("scale(2)");
+    expect(
+      screen
+        .getByRole("heading", { name: "Gildenmoor", level: 1 })
+        .closest(".campaign-hero")
+    ).not.toBeNull();
+    expect(document.documentElement.hasAttribute("data-app-bg-ambient")).toBe(true);
+  });
+
+  it("keeps the image actions behind the campaign settings gear", () => {
+    renderHubAt("/campaigns/c1");
+    act(() => onDataRef.fn?.(makeCampaign({ id: "c1" })));
+    expect(screen.queryByRole("menuitem")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /campaign settings/i }));
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Choose an image",
+    ]);
+    fireEvent.keyDown(document, { key: "Escape" });
+    act(() =>
+      onDataRef.fn?.(makeCampaign({ id: "c1", bannerUrl: "https://art.example/b.png" }))
+    );
+    fireEvent.click(screen.getByRole("button", { name: /campaign settings/i }));
+    expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Re-crop image",
+      "Change image",
+      "Remove image",
+    ]);
+  });
+
   // The backdrop seam (daylight-sibling rebuild): the DEFAULT plate rides the
   // per-theme `--asset-campaign-backdrop` token (so each theme paints + downloads
   // its own sibling), and ONLY a custom banner raises `data-app-bg-custom` on
@@ -225,5 +274,6 @@ describe("CampaignHubPage", () => {
     unmount();
     expect(html.style.getPropertyValue("--app-bg-art")).toBe("");
     expect(html.hasAttribute("data-app-bg-custom")).toBe(false);
+    expect(html.hasAttribute("data-app-bg-ambient")).toBe(false);
   });
 });
