@@ -11,6 +11,8 @@
  * or a hit whose damage has not been booked yet) stays its own line.
  */
 
+import { srdText } from "@/lib/loc-text";
+
 import type { SessionEntry } from "./fold";
 import type { CombatantId, PlayEvent } from "./types";
 
@@ -181,6 +183,17 @@ export function noteDraft(
   return {
     type: "event",
     event: { kind: "note", text: trimmed, ...(actor ? { actor } : {}) },
+  };
+}
+
+/** The line the DM's tap on a monster's per-day spell adds: the monster casts it. */
+export function spellCastDraft(
+  actor: CombatantId,
+  spellId: string
+): { type: "event"; event: PlayEvent } {
+  return {
+    type: "event",
+    event: { kind: "action", actor, source: srdText("spell", spellId, "name") },
   };
 }
 

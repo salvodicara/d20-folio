@@ -124,22 +124,35 @@ function StatEntry({
   section,
   entry,
   locale,
+  extra,
 }: {
   m: MonsterStatBlock;
-  section: string;
+  section: MonsterEntrySection;
   entry: MonsterEntry;
   locale: Locale;
+  extra?: MonsterStatBlockCardProps["entryExtra"];
 }) {
   const { t } = useTranslation();
   const key = srdKey(m.id, section, entry.id);
   const name = localizeSrd("monster", key, "name", locale);
   const text = localizeSrd("monster", key, "text", locale);
-  return (
+  // Some prints open the prose with the limit itself ("(3/Day, or 4/Day in Lair) If
+  // the dragon fails…"): the name then carries no second copy of it.
+  const suffix = text.startsWith("(") ? "" : entrySuffix(entry, t);
+  const paragraph = (
     <InlineMarkdown
       className="mon-entry"
-      text={`**${name}${entrySuffix(entry, t)}.** ${text}`}
+      text={`**${name}${suffix}.** ${text}`}
       highlight={highlightRulesText(locale)}
     />
+  );
+  const controls = extra?.(section, entry);
+  if (!controls) return paragraph;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {paragraph}
+      {controls}
+    </div>
   );
 }
 
@@ -151,14 +164,16 @@ function StatSection({
   label,
   locale,
   header,
+  extra,
 }: {
   m: MonsterStatBlock;
-  section: string;
+  section: MonsterEntrySection;
   entries: ReadonlyArray<MonsterEntry> | undefined;
   label: string;
   locale: Locale;
   /** Extra header content (the legendary uses line + preamble). */
   header?: ReactNode;
+  extra?: MonsterStatBlockCardProps["entryExtra"];
 }) {
   if (!entries || entries.length === 0) return null;
   return (
@@ -166,7 +181,14 @@ function StatSection({
       <span className="beast-ref-label">{label}</span>
       {header}
       {entries.map((entry) => (
-        <StatEntry key={entry.id} m={m} section={section} entry={entry} locale={locale} />
+        <StatEntry
+          key={entry.id}
+          m={m}
+          section={section}
+          entry={entry}
+          locale={locale}
+          extra={extra}
+        />
       ))}
     </section>
   );
@@ -194,13 +216,28 @@ export interface MonsterStatBlockCardProps {
    *  detail. On narrow containers it becomes a centred monster-card plate above the
    *  stats instead. */
   portrait?: ReactNode;
+  /** Controls printed under an entry's prose (the DM's encounter counters); omitted ⇒
+   *  the plain read-only statblock. */
+  entryExtra?: (section: MonsterEntrySection, entry: MonsterEntry) => ReactNode;
+  /** Controls printed under the legendary uses line (the DM's legendary pool). */
+  legendaryExtra?: ReactNode;
 }
+
+/** The stat-block sections that print named entries. */
+export type MonsterEntrySection =
+  | "traits"
+  | "actions"
+  | "bonusActions"
+  | "reactions"
+  | "legendaryActions";
 
 export function MonsterStatBlockCard({
   monster: m,
   locale,
   title,
   portrait,
+  entryExtra,
+  legendaryExtra,
 }: MonsterStatBlockCardProps) {
   const { t } = useTranslation();
 
@@ -261,16 +298,26 @@ export function MonsterStatBlockCard({
         })
       : t("monster.xp", { xp: fmtXp(monsterXp(m), locale) });
 
+  const legendaryUses = (
+    <p className="mon-legendary-uses">
+      {m.legendary?.usesInLair != null
+        ? t("monster.legendaryUsesInLair", {
+            count: m.legendary.uses,
+            inLair: m.legendary.usesInLair,
+          })
+        : t("monster.legendaryUses", { count: m.legendary?.uses })}
+    </p>
+  );
   const legendaryHeader = m.legendary ? (
     <>
-      <p className="mon-legendary-uses">
-        {m.legendary.usesInLair != null
-          ? t("monster.legendaryUsesInLair", {
-              count: m.legendary.uses,
-              inLair: m.legendary.usesInLair,
-            })
-          : t("monster.legendaryUses", { count: m.legendary.uses })}
-      </p>
+      {legendaryExtra ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {legendaryUses}
+          {legendaryExtra}
+        </div>
+      ) : (
+        legendaryUses
+      )}
       <p className="mon-legendary-preamble">
         {t("monster.legendaryPreamble", {
           name: localizeSrd("monster", m.id, "name", locale),
@@ -465,6 +512,7 @@ export function MonsterStatBlockCard({
         entries={m.traits}
         label={t("polymorph.traits")}
         locale={locale}
+        extra={entryExtra}
       />
       <StatSection
         m={m}
@@ -472,6 +520,7 @@ export function MonsterStatBlockCard({
         entries={m.actions}
         label={t("combat.actions")}
         locale={locale}
+        extra={entryExtra}
       />
       <StatSection
         m={m}
@@ -479,6 +528,7 @@ export function MonsterStatBlockCard({
         entries={m.bonusActions}
         label={t("combat.groupBonus")}
         locale={locale}
+        extra={entryExtra}
       />
       <StatSection
         m={m}
@@ -486,6 +536,7 @@ export function MonsterStatBlockCard({
         entries={m.reactions}
         label={t("combat.reactions")}
         locale={locale}
+        extra={entryExtra}
       />
       <StatSection
         m={m}
@@ -494,6 +545,7 @@ export function MonsterStatBlockCard({
         label={t("monster.legendaryActions")}
         locale={locale}
         header={legendaryHeader}
+        extra={entryExtra}
       />
     </div>
   );

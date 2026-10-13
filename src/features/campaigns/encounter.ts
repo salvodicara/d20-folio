@@ -1144,11 +1144,27 @@ const LIMITED_USE_SECTIONS = [
   "legendaryActions",
 ] as const;
 
-/** One counter a stat block declares: a Recharge or N/Day entry, or the legendary pool. */
+/** The stat-block sections that can print a limited use. */
+export type MonsterUseSection = (typeof LIMITED_USE_SECTIONS)[number];
+
+/** One counter a stat block declares: a Recharge or N/Day entry, one spell of an
+ *  "N/Day Each" spellcasting tier, or the legendary pool. */
 export interface MonsterLimitedUse {
   key: string;
   max: number;
-  kind: "recharge" | "uses" | "legendary";
+  kind: "recharge" | "uses" | "spell" | "legendary";
+  /** The spell this use casts (kind "spell" only). */
+  spellId?: string;
+}
+
+/** The `spent` key of an entry's use (`actions:fire-breath`), or of one spell of its
+ *  per-day tiers (`actions:spellcasting:fireball`). */
+export function monsterUseKey(
+  section: MonsterUseSection,
+  entryId: string,
+  spellId?: string
+): string {
+  return spellId ? `${section}:${entryId}:${spellId}` : `${section}:${entryId}`;
 }
 
 /** Every limited use the stat block prints, in stat-block order, the legendary pool last. */
@@ -1156,9 +1172,20 @@ export function monsterLimitedUses(block: MonsterStatBlock): MonsterLimitedUse[]
   const out: MonsterLimitedUse[] = [];
   for (const section of LIMITED_USE_SECTIONS) {
     for (const entry of block[section] ?? []) {
-      const key = `${section}:${entry.id}`;
+      const key = monsterUseKey(section, entry.id);
       if (entry.recharge) out.push({ key, max: 1, kind: "recharge" });
       else if (entry.uses) out.push({ key, max: entry.uses.count, kind: "uses" });
+      if (entry.kind !== "spellcasting") continue;
+      for (const tier of entry.perDay ?? []) {
+        for (const spellId of tier.spellIds) {
+          out.push({
+            key: monsterUseKey(section, entry.id, spellId),
+            max: tier.count,
+            kind: "spell",
+            spellId,
+          });
+        }
+      }
     }
   }
   if (block.legendary) {

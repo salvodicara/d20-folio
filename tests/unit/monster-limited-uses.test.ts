@@ -38,6 +38,14 @@ function expectedUses(block: MonsterStatBlock) {
       if (entry.recharge) out.push({ key: `${section}:${entry.id}`, max: 1 });
       else if (entry.uses)
         out.push({ key: `${section}:${entry.id}`, max: entry.uses.count });
+      // Each spell of an "N/Day Each" tier has its own N uses.
+      if (entry.kind === "spellcasting") {
+        for (const tier of entry.perDay ?? []) {
+          for (const spellId of tier.spellIds) {
+            out.push({ key: `${section}:${entry.id}:${spellId}`, max: tier.count });
+          }
+        }
+      }
     }
   }
   if (block.legendary) out.push({ key: "legendary", max: block.legendary.uses });
@@ -76,6 +84,32 @@ describe("monster limited uses", () => {
       ).toEqual(expectedUses(block));
     }
     expect(MONSTERS.some((block) => expectedUses(block).length > 0)).toBe(true);
+  });
+
+  it("every entry whose prose opens with an N/Day limit declares those uses", async () => {
+    // The 2024 prints carry the limit in the entry prose ("(3/Day, or 4/Day in
+    // Lair) If the dragon fails a saving throw…"); the counter needs it as data.
+    const en = (await import("@/i18n/en/srd/monsters.json")).default as Record<
+      string,
+      { text?: string }
+    >;
+    let printed = 0;
+    for (const block of MONSTERS) {
+      for (const section of SECTIONS) {
+        for (const entry of block[section] ?? []) {
+          const text = en[`${block.id}.${section}.${entry.id}`]?.text ?? "";
+          const match = /^\((\d+)\/Day\b/.exec(text);
+          if (!match) continue;
+          printed++;
+          expect(entry.uses, `${block.id}.${section}.${entry.id}`).toEqual({
+            count: Number(match[1]),
+            per: "day",
+          });
+        }
+      }
+    }
+    // Every Legendary Resistance in the bestiary prints its limit this way.
+    expect(printed).toBeGreaterThanOrEqual(32);
   });
 
   it("spends up to the limit and restores down to zero", () => {

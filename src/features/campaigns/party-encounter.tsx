@@ -1645,6 +1645,7 @@ export function MonsterCard({
   isCurrent,
   initLocked = false,
   apply,
+  onCastSpell,
   reorder,
 }: {
   monster: EncounterMonster;
@@ -1655,6 +1656,8 @@ export function MonsterCard({
    *  (the DM reorders via drag, never a silent live re-sort of a retyped value). */
   initLocked?: boolean;
   apply?: ApplyFn;
+  /** The DM spent one of this monster's per-day spells — record the cast. */
+  onCastSpell?: (spellId: string) => void;
   /** C3 — the DM drag-to-reorder controls for this row (DM + turns-begun only). */
   reorder?: ReorderRow;
 }) {
@@ -2008,7 +2011,9 @@ export function MonsterCard({
             combatantName={displayName}
             combatantId={monster.id}
             currentXp={monster.xp}
+            spent={monster.spent}
             apply={apply}
+            onCastSpell={onCastSpell}
             onClose={() => setStatblockOpen(false)}
           />
         </Suspense>

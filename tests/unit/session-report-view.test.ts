@@ -124,6 +124,35 @@ describe("renderSessionReport", () => {
     expect(text).toContain("- Ana: I hide behind the pillar");
   });
 
+  it("a spell use reads as a cast, in both languages", async () => {
+    const line = (t: (k: string, a?: Record<string, unknown>) => string) =>
+      localizePlayEvent(
+        {
+          kind: "action",
+          actor: "monster-1",
+          source: { srd: { kind: "spell", key: "fireball", field: "name" } },
+        },
+        t,
+        (id) => (id === "monster-1" ? "Mage" : "?"),
+        { ...names, action: (text) => ("srd" in text ? "Fireball" : "?") }
+      );
+    for (const [lng, expected] of [
+      ["en", "Mage casts Fireball"],
+      ["it", "Mage lancia Fireball"],
+    ] as const) {
+      const i18n = i18next.createInstance();
+      await i18n.init({
+        lng,
+        resources: {
+          en: { translation: { ...en, ...enChronicle } },
+          it: { translation: { ...it_, ...itChronicle } },
+        },
+        interpolation: { escapeValue: false },
+      });
+      expect(line((k, a) => i18n.t(k, a))).toBe(expected);
+    }
+  });
+
   it("names a status that ran out, in both languages", async () => {
     const line = (t: (k: string, a?: Record<string, unknown>) => string) =>
       localizePlayEvent(

@@ -75,6 +75,7 @@ import {
   encounterFeed,
   hideCombatants,
   noteDraft,
+  spellCastDraft,
   strikeDraft,
   type FeedLine,
 } from "@/lib/session-log";
@@ -1203,6 +1204,11 @@ function CombatLayer({
               isCurrent={row.id === view.currentId}
               initLocked={!gathering}
               apply={apply}
+              onCastSpell={
+                apply
+                  ? (spellId) => writeLog([spellCastDraft(row.id, spellId)])
+                  : undefined
+              }
               reorder={reorderFor(row.id)}
             />
           );

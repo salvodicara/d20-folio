@@ -933,7 +933,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     traits: [
       { id: "divine-awareness", kind: "narrative" },
       { id: "exalted-restoration", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
       { id: "magic-resistance", kind: "narrative" },
     ],
     actions: [
@@ -1075,7 +1075,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 8400,
     traits: [
       { id: "inscrutable", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -1156,7 +1156,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 20000,
     traits: [
       { id: "inscrutable", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },

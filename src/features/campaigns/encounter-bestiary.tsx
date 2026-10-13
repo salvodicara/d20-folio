@@ -19,7 +19,6 @@ import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalTabSwitcher } from "@/components/shared/ModalTabSwitcher";
-import { MonsterStatBlockCard } from "@/components/shared/MonsterStatBlockCard";
 import { ModalScrollColumn, ModalStage } from "@/components/ui/modal-head";
 import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/selection";
@@ -31,6 +30,7 @@ import { fmtXp } from "@/lib/utils";
 import { monsterXp } from "@/lib/monster";
 import { EncounterBudgetReadout, type ApplyFn } from "./party-encounter";
 import { EncounterCustomMonsters } from "./encounter-custom-monsters";
+import { MonsterCountedStatBlock } from "./monster-counters";
 import { makeEncounterMonsterSpec } from "./encounter-monster-spec";
 import { setMonsterXp, type MonsterInput } from "./encounter";
 import type { EncounterBudgetView } from "./encounter-view";
@@ -164,7 +164,9 @@ export function EncounterStatblockModal({
   combatantName,
   combatantId,
   currentXp,
+  spent,
   apply,
+  onCastSpell,
   onClose,
 }: {
   srdId: string;
@@ -177,6 +179,10 @@ export function EncounterStatblockModal({
   /** The DM optimistic-write seam — present only for the DM; when absent (a player,
    *  though players never reach the disclosure) the lair toggle is not rendered. */
   apply?: ApplyFn;
+  /** The combatant's spent limited uses — the DM's counters read them live. */
+  spent?: Readonly<Record<string, number>>;
+  /** A per-day spell was cast with a tap — the caller records it in the chronicle. */
+  onCastSpell?: (spellId: string) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -184,7 +190,12 @@ export function EncounterStatblockModal({
   const m = getMonster(srdId); // corpus resident: the lazy factory gates on ensureSrdKind
   const lairXp = m?.xpInLair; // hoisted so the != null narrowing survives into the toggle callback
   return (
-    <ModalShell open onClose={onClose} title={combatantName}>
+    <ModalShell
+      open
+      onClose={onClose}
+      title={combatantName}
+      rubric={t("campaignHub.encounterStatblock")}
+    >
       {/* The statblock is long, read-only prose: the shared scroll column carries
           the keyboard-reachability contract (axe `scrollable-region-focusable`). */}
       <ModalScrollColumn>
@@ -215,10 +226,14 @@ export function EncounterStatblockModal({
                 />
               </div>
             )}
-            <MonsterStatBlockCard
+            <MonsterCountedStatBlock
               monster={m}
               locale={locale}
               title={localizeSrd("monster", m.id, "name", locale)}
+              combatantId={combatantId}
+              spent={spent}
+              apply={apply}
+              onCastSpell={onCastSpell}
             />
           </>
         ) : (

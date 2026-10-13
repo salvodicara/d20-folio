@@ -1012,7 +1012,7 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 62000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
       { id: "siege-monster", kind: "narrative" },
     ],
     actions: [

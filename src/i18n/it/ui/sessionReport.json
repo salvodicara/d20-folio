@@ -8,6 +8,8 @@
     "withSource": "{{line}} ({{source}})",
     "action": "{{actor}} usa {{source}}",
     "actionOn": "{{actor}} usa {{source}} su {{targets}}",
+    "cast": "{{actor}} lancia {{source}}",
+    "castOn": "{{actor}} lancia {{source}} su {{targets}}",
     "outcome": {
       "hit": "colpito",
       "miss": "mancato",
