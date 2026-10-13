@@ -24,6 +24,7 @@ import * as cover from "@/lib/play/cover";
 import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
 import * as forms from "@/lib/play/forms";
+import * as light from "@/lib/play/light";
 import * as pins from "@/lib/play/pins";
 import * as ready from "@/lib/play/ready";
 import * as rests from "@/lib/play/rests";
@@ -154,6 +155,10 @@ const CASES: {
   "end-fight-situations": [
     { kind: "end-fight-situations" },
     () => at(situations.endFightSituations(doc)),
+  ],
+  "set-light": [
+    { kind: "set-light", level: "dim" },
+    () => at(light.setLight(doc, "dim")),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
   "set-readied-spell": [

@@ -15,6 +15,7 @@ import { litText } from "@/lib/loc-text";
 import type { LocText } from "@/lib/loc-text";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { setActiveState } from "./states";
+import { setLight } from "./light";
 
 export type SituationUntil = { round: number; phase: "turn-start" | "turn-end" };
 
@@ -42,8 +43,8 @@ export function setSituation(
   };
 }
 
-/** Clear the fight-long situations (Underwater, Mounted) when the encounter ends,
- * or null when none is lit. */
+/** Clear the fight-long situations (Underwater, Mounted) and the light level when
+ * the encounter ends, or null when none is lit. */
 export function endFightSituations(doc: CharacterDoc): SessionState | null {
   let session: SessionState | null = null;
   for (const id of FIGHT_SITUATIONS) {
@@ -51,7 +52,7 @@ export function endFightSituations(doc: CharacterDoc): SessionState | null {
       setSituation({ ...doc, session: session ?? doc.session }, id, false, undefined) ??
       session;
   }
-  return session;
+  return setLight({ ...doc, session: session ?? doc.session }, null) ?? session;
 }
 
 /** One situational attack clause, in the advantage-chip shape the cards net

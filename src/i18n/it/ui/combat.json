@@ -190,6 +190,8 @@
     "wishStressOnToast": "Stress di Desiderio fino al prossimo Riposo Lungo",
     "wishStressCastToast": "{{used}}. Stress di Desiderio: subisci {{n}}d10 danni necrotici, non riducibili.",
     "situations": "Situazione",
+    "lightDarkvisionDim": "Scurovisione {{range}}: entro quel raggio vedi la Luce Fioca come Luce Intensa, quindi non cambia nulla.",
+    "lightDarkvisionDark": "Scurovisione {{range}}: entro quel raggio l'Oscurità per te è Luce Fioca: Svantaggio alle prove di Saggezza (Percezione) per vedere, e Percezione passiva −5.",
     "situationOffHint": "{{summary}} Tocca per applicarla fino alla fine del tuo turno.",
     "situationLitHint": "{{summary}} Fino alla fine del tuo turno. Tocca per toglierla.",
     "situationOnToast": "{{name}} fino alla fine del tuo turno",
