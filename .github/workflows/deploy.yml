@@ -10,11 +10,11 @@ name: Deploy
 # private content pack, builds, checks the bundle budget, and deploys — a few
 # minutes instead of re-running a ~48-minute unsharded matrix. The promotion
 # owns the whole Firebase release: a blocking Firestore export, Functions on
-# Node 24, then Hosting + Firestore/Storage rules, all from this exact SHA. It refuses
-# to promote a composition Verify never saw: a PACK-ONLY merge changes what
-# deploys without moving this repo's SHA, so the pack head must not postdate
-# the green Verify run. In either case (superseded run, stale composition),
-# re-verify the SHA first:
+# Node 24, then Hosting + Firestore/Storage rules, all from this exact SHA. It never
+# promotes a composition Verify never saw: the pack is pinned to the commit that
+# was its head when the green Verify run started (a later PACK-ONLY merge does not
+# ride along), and an explicit `pack_sha` input must equal that commit. To ship a
+# newer pack, or after a superseded run, re-verify the SHA first:
 #   gh workflow run verify.yml --ref main
 #
 # `just deploy` is only a convenience dispatcher for this workflow; there is no
@@ -24,6 +24,11 @@ name: Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      pack_sha:
+        description: "Content-pack commit to compose (full SHA). Empty = the pack commit Verify composed."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -84,34 +89,36 @@ jobs:
               echo "✗ $wf did not turn green within the wait budget."; exit 1; }
           done
 
-      # The composed build = this SHA + the pack's CURRENT head. Verify composed
-      # the pack at ITS run time; a pack-only merge after that leaves a composition
-      # no workflow ever tested — refuse to promote it until Verify reruns
-      # (dispatching verify.yml composes the pack's new head against this SHA).
-      - name: Require the verified composition to still be current
+      # Verify composed whatever pack commit was the head when its run STARTED;
+      # that commit is the only composition ever tested with this SHA. Resolve it
+      # (the newest pack commit at or before the green run's createdAt) and pin the
+      # deploy to it, so a pack-only merge after Verify can neither sneak in nor
+      # change what a re-run deploys. An explicit `pack_sha` must match it.
+      - name: Resolve the pack commit Verify composed
+        id: pack
         env:
           GH_TOKEN: ${{ github.token }}
           PACK_TOKEN: ${{ secrets.CONTENT_PACK_TOKEN }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
+          REQUESTED: ${{ inputs.pack_sha }}
         run: |
           set -euo pipefail
-          # createdAt (run START), not updatedAt: a pack commit landing MID-run
-          # postdates the checked-out composition yet predates the run's end.
           verified_at="$(gh run list --repo "$REPO" --workflow verify.yml --commit "$SHA" \
             --json conclusion,createdAt \
             --jq '[.[] | select(.conclusion == "success")][0].createdAt')"
-          pack_at="$(GH_TOKEN="$PACK_TOKEN" gh api \
-            repos/salvodicara/d20-folio-content/branches/main \
-            --jq .commit.commit.committer.date)"
-          echo "Verify green at: $verified_at · pack head committed at: $pack_at"
-          # Both are UTC ISO-8601, so lexical comparison orders them.
-          if [[ "$pack_at" > "$verified_at" ]]; then
-            echo "✗ the content pack moved AFTER this SHA's Verify run — the"
-            echo "  composition that would deploy was never tested. Re-verify:"
-            echo "    gh workflow run verify.yml --ref main"
+          composed="$(GH_TOKEN="$PACK_TOKEN" gh api \
+            "repos/salvodicara/d20-folio-content/commits?sha=main&until=${verified_at}&per_page=1" \
+            --jq '.[0].sha')"
+          echo "Verify green at: $verified_at · pack composed then: $composed"
+          if [ -n "$REQUESTED" ] && [ "$REQUESTED" != "$composed" ]; then
+            echo "✗ pack_sha $REQUESTED is not the pack Verify composed ($composed)."
+            echo "  Re-verify with that pack as head, or deploy the composed one."
             exit 1
           fi
+          echo "sha=$composed" >> "$GITHUB_OUTPUT"
+    outputs:
+      pack_sha: ${{ steps.pack.outputs.sha }}
 
   deploy:
     needs: verify
@@ -132,6 +139,7 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: salvodicara/d20-folio-content
+          ref: ${{ needs.verify.outputs.pack_sha }}
           token: ${{ secrets.CONTENT_PACK_TOKEN }}
           path: .pack
 
