@@ -253,6 +253,50 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "CON",
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      // Enlarge or Reduce, picked once the spell is lit on the target (the
+      // caster or a picked creature). Enlarge: Advantage on Strength checks and
+      // saves, +1d4 on weapon and Unarmed Strike hits. Reduce: Disadvantage on
+      // both, 1d4 less damage (min 1) carried as a note since the app never
+      // rolls. The size step is a note.
+      {
+        type: "while-active",
+        activeKey: "spell-enlarge-reduce",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          {
+            type: "choice-grant-bundle",
+            bundleKey: "spell-enlarge-reduce",
+            options: [
+              {
+                id: "enlarge",
+                grants: [
+                  { type: "advantage-on", rollType: "check", vs: "str" },
+                  { type: "advantage-on", rollType: "save", vs: "str" },
+                  {
+                    type: "damage-rider",
+                    dice: "1d4",
+                    damageType: "same-as-weapon",
+                    appliesTo: "weapon-or-unarmed",
+                  },
+                  { type: "defense-note" },
+                ],
+              },
+              {
+                id: "reduce",
+                grants: [
+                  { type: "disadvantage-on", rollType: "check", vs: "str" },
+                  { type: "disadvantage-on", rollType: "save", vs: "str" },
+                  { type: "defense-note" },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
