@@ -635,21 +635,12 @@ function applySelf(
   if (!character) return;
   const ids = logIds();
   if (effect === "heal") {
-    const { hp, deathSucc, deathFail, conditions } = character.session;
-    const snapshot = {
-      current: hp.current,
-      temp: hp.temp,
-      deathSucc,
-      deathFail,
-      conditions: [...conditions],
-    };
-    store.applyHealing(amount);
-    reversals.push(() => useCharacterStore.getState().restoreHpSnapshot(snapshot));
+    const undo = store.applyHealing(amount);
+    if (undo) reversals.push(undo);
     tagNewLine(ids, "hp-heal", source);
   } else if (effect === "temp-hp") {
-    const prevTemp = character.session.hp.temp;
-    store.gainTempHp(amount);
-    reversals.push(() => useCharacterStore.getState().setTempHP(prevTemp));
+    const undo = store.gainTempHp(amount);
+    if (undo) reversals.push(undo);
     tagNewLine(ids, "temp-hp-gain", source);
   } else {
     const undo = store.applyDamage(amount);

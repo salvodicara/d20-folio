@@ -138,7 +138,6 @@ export function useHpControls(): HpControls {
   const gainTempHp = useCharacterStore((s) => s.gainTempHp);
   const setTempHP = useCharacterStore((s) => s.setTempHP);
   const setHpMaxReduction = useCharacterStore((s) => s.setHpMaxReduction);
-  const restoreHpSnapshot = useCharacterStore((s) => s.restoreHpSnapshot);
 
   // The current/temp readout reads through the ONE vitals projection seam
   // (session truth reconciled against the persisted engine world) — the
@@ -293,48 +292,18 @@ export function useHpControls(): HpControls {
     const message = t("combat.hpHealToast", { val: amount, prev: prevHP, next: newHP });
     // Delegate to the store's healing seam, which clamps + logs the structured
     // `hp-heal` event (events-as-data) and — off 0 — resets the dying track +
-    // sheds Unconscious. Undo restores the exact prior slice.
-    registerUndoableToast(
-      { message },
-      () => {
-        const live = useCharacterStore.getState().character;
-        if (!live || !isCharacterAlive(live.status, live.session)) return null;
-        const liveSnapshot = {
-          current: live.session.hp.current,
-          temp: live.session.hp.temp,
-          deathSucc: live.session.deathSucc,
-          deathFail: live.session.deathFail,
-          conditions: [...live.session.conditions],
-        };
-        applyHealing(amount);
-        if (
-          useCharacterStore.getState().character?.session.hp.current ===
-          liveSnapshot.current
-        ) {
-          return null;
-        }
-        return () => restoreHpSnapshot(liveSnapshot);
-      },
-      { turnScoped: false }
-    );
+    // sheds Unconscious. Its undo restores the exact prior slice and drops the lines.
+    registerUndoableToast({ message }, () => applyHealing(amount), { turnScoped: false });
   }
 
   function applyTemp(amount: number) {
     if (!character) return;
     if (!amount || amount <= 0) return;
-    const prevTemp = temp;
     const newTemp = Math.max(temp, amount); // temp HP doesn't stack — take the higher
     const message = t("combat.tempHpToast", { val: newTemp });
     // Delegate to the store's temp-gain seam, which logs the structured
-    // `temp-hp-gain` event (events-as-data). Undo restores via the log-free setter.
-    registerUndoableToast(
-      { message },
-      () => {
-        gainTempHp(amount);
-        return () => setTempHP(prevTemp);
-      },
-      { turnScoped: false }
-    );
+    // `temp-hp-gain` event (events-as-data); its undo restores the pool and the log.
+    registerUndoableToast({ message }, () => gainTempHp(amount), { turnScoped: false });
   }
 
   function clearTemp() {

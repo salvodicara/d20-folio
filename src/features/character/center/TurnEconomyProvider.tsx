@@ -770,10 +770,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const cs = useCharacterStore.getState();
     const characterId = cs.character?.id;
     let restoreEquipment: (() => boolean) | null = null;
-    // USE-APPLIES — snapshot temp HP BEFORE applying this action's deterministic
-    // effects, so undo restores the exact prior pool (temp HP don't stack — we
-    // apply the higher of current/granted, then the reverse-applier sets it back).
-    const prevTempHp = cs.character?.session.hp.temp ?? 0;
     // A bare slot cost (no cast-option pool pick — a feature/custom-spell commit)
     // resolves its pool ONCE, so spend + undo target the SAME counter (B3).
     const bareSpend = bareActionSpend(
@@ -844,13 +840,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // Tree, Inspiring Leader). The engine already resolved each to a number; route
     // the apply through the store `gainTempHp` seam so the MAX-WINS rule lives in
     // ONE place (golden rule 6 — no fourth copy of `max(prev, granted)`). It logs
-    // a structured `temp-hp-gain` event (events-as-data); the undo below restores
-    // the exact prior pool. Override-first — the temp-HP field stays editable.
+    // a structured `temp-hp-gain` event (events-as-data); each grant's undo restores
+    // the exact prior pool and its log line. Override-first — the temp-HP field stays editable.
     // (Currently the register's only kind is `temp-hp`; the `kind` discriminant
     // is read when a second kind lands — for now every entry is a temp-HP grant.)
-    for (const eff of action.useEffects ?? []) {
-      cs.gainTempHp(eff.amount);
-    }
+    const undoUseEffects = (action.useEffects ?? [])
+      .map((eff) => cs.gainTempHp(eff.amount))
+      .filter((undo): undo is () => void => undo !== null);
     const undoTrackerTopUp = action.summary.trackerTopUp
       ? cs.topUpTracker(
           action.summary.trackerTopUp.trackerId,
@@ -896,11 +892,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       // OFF during the undo window (the cast's own auto-lit key is excluded).
       activation.restore();
       restoreConcentration(activation.activated);
-      // USE-APPLIES — restore the exact temp-HP pool the commit overwrote, so
-      // undoing the action reverts its applied effect too (not just the pip).
-      if ((action.useEffects ?? []).length > 0) {
-        c2.setTempHP(prevTempHp);
-      }
+      // USE-APPLIES — each temp-HP grant's own undo restores the pool it overwrote
+      // and drops its log line, newest first, so the undone action leaves no trace.
+      undoUseEffects.reverse().forEach((undo) => undo());
       c2.removeLogEntry(loggedId);
       useDamageTrayStore.getState().withdraw(loggedId);
     };

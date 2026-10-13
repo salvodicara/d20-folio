@@ -328,13 +328,13 @@ interface CharacterState {
    * action so the combat log gets ONE structured `hp-heal` event from the store,
    * not a low-level `setHP` (which also serves rest/undo/level-up and must stay
    * log-free). No-op for a non-positive amount or a dead character. */
-  applyHealing: (amount: number) => void;
+  applyHealing: (amount: number) => (() => void) | null;
   /**
    * Gain temporary HP: set the temp pool to `max(current, amount)` (temp HP don't
    * stack) and log ONE structured `temp-hp-gain` event. The dedicated temp-gain
    * seam, so `setTempHP` (rest/undo/USE-APPLIES) stays log-free. No-op for a
    * non-positive amount. */
-  gainTempHp: (amount: number) => void;
+  gainTempHp: (amount: number) => (() => void) | null;
   /** Start (or restart) a fading D20 Test penalty (Raise Dead −4), logged; returns
    *  the undo, or null when nothing changed. */
   startFadingPenalty: (penaltyId: string) => (() => void) | null;
@@ -1350,47 +1350,69 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   applyHealing: (amount) => {
-    if (amount <= 0) return;
-    if (get().readonly) return;
+    if (amount <= 0) return null;
+    if (get().readonly) return null;
     const { character } = get();
-    if (!character || !isCharacterAlive(character.status, character.session)) return;
+    if (!character || !isCharacterAlive(character.status, character.session)) return null;
     // D1 — heal up to the effective max (stored base + hp-flat boons + Aid).
     const max = effectiveMaxHp(character.character, character.session);
     const prevCurrent = character.session.hp.current;
     const newCurrent = healHp(prevCurrent, amount, max);
-    if (newCurrent === prevCurrent) return;
+    if (newCurrent === prevCurrent) return null;
+    const { hp, deathSucc, deathFail, conditions } = character.session;
+    const snapshot = {
+      current: hp.current,
+      temp: hp.temp,
+      deathSucc,
+      deathFail,
+      conditions: [...conditions],
+    };
     // Reuse setHP for the OPTIMISTIC in-memory update so the heal-from-0 death-save
     // reset + Unconscious shed (RAW 2024) stay in ONE place — but `persist: false`,
     // so we persist ONCE here (the whole resulting state). setHP never logs.
     const wasUnconsciousAtZero =
-      prevCurrent === 0 &&
-      character.session.conditions.includes(UNCONSCIOUS_CONDITION_ID);
+      prevCurrent === 0 && conditions.includes(UNCONSCIOUS_CONDITION_ID);
     get().setHP(newCurrent, { persist: false });
     // Log the HP that landed, not the request: the clamp at max eats any overheal.
-    get().logEvent({
-      kind: "hp-heal",
-      amount: newCurrent - prevCurrent,
-      current: newCurrent,
-      max,
-    });
+    const logIds = [
+      get().logEvent({
+        kind: "hp-heal",
+        amount: newCurrent - prevCurrent,
+        current: newCurrent,
+        max,
+      }),
+    ];
     // RA-10 — a real heal off 0 is the story beat that ends Unconscious (the
     // low-level `setHP` shed it silently above).
     if (wasUnconsciousAtZero) {
-      get().logEvent({ kind: "condition-loss", conditionId: UNCONSCIOUS_CONDITION_ID });
+      logIds.push(
+        get().logEvent({ kind: "condition-loss", conditionId: UNCONSCIOUS_CONDITION_ID })
+      );
     }
     persistCombat(get);
+    // Undo restores the exact prior slice AND takes the heal's lines back out, like
+    // damage's undo does, so the log never tells of a heal that was taken back.
+    return () => {
+      get().restoreHpSnapshot(snapshot);
+      logIds.forEach((id) => get().removeLogEntry(id));
+    };
   },
 
   gainTempHp: (amount) => {
-    if (amount <= 0) return;
-    if (get().readonly) return;
+    if (amount <= 0) return null;
+    if (get().readonly) return null;
     const { character } = get();
-    if (!character) return;
+    if (!character) return null;
     const prevTemp = character.session.hp.temp;
     const newTemp = Math.max(prevTemp, amount); // temp HP don't stack
-    if (newTemp === prevTemp) return;
+    if (newTemp === prevTemp) return null;
     get().setTempHP(newTemp);
-    get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
+    const logId = get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
+    // Undo restores the prior pool through the log-free setter and drops this line.
+    return () => {
+      get().setTempHP(prevTemp);
+      get().removeLogEntry(logId);
+    };
   },
 
   setHpMaxReduction: (total) => {

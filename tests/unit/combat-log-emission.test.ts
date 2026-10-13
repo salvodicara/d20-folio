@@ -73,6 +73,41 @@ describe("combat-log emission at the state-seam", () => {
     expect(last()).toEqual({ kind: "hp-heal", amount: 2, current: 40, max: 40 });
   });
 
+  it("undoing a heal restores HP and takes its log line back out", () => {
+    load({ hp: { current: 10, temp: 0 } });
+    const undo = store().applyHealing(7);
+    expect(last()?.kind).toBe("hp-heal");
+    undo?.();
+    expect(store().character?.session.hp.current).toBe(10);
+    expect(events()).toEqual([]);
+  });
+
+  it("undoing a heal off 0 puts back Unconscious, the death track and both lines", () => {
+    load({
+      hp: { current: 0, temp: 0 },
+      conditions: ["unconscious"],
+      deathSucc: 1,
+      deathFail: 2,
+    });
+    const undo = store().applyHealing(5);
+    expect(events().map((e) => e.kind)).toEqual(["hp-heal", "condition-loss"]);
+    undo?.();
+    const session = store().character?.session;
+    expect(session?.hp.current).toBe(0);
+    expect(session?.conditions).toContain("unconscious");
+    expect([session?.deathSucc, session?.deathFail]).toEqual([1, 2]);
+    expect(events()).toEqual([]);
+  });
+
+  it("undoing a temp-HP gain restores the prior pool and takes its line back out", () => {
+    load({ hp: { current: 30, temp: 2 } });
+    const undo = store().gainTempHp(8);
+    expect(last()?.kind).toBe("temp-hp-gain");
+    undo?.();
+    expect(store().character?.session.hp.temp).toBe(2);
+    expect(events()).toEqual([]);
+  });
+
   it("a no-op heal (already at max) logs nothing", () => {
     load({ hp: { current: 40, temp: 0 } });
     store().applyHealing(5);
