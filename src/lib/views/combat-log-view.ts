@@ -276,16 +276,25 @@ export function localizeCombatLogRow(
   resolveActionRef: ResolveActionRef,
   resolveRiderRef: ResolveRiderRef
 ): CombatLogRow {
-  return {
-    text: localizeCombatEvent(
-      event,
-      t,
-      resolveConditionName,
-      resolveSourceName,
-      resolveSpellName,
-      resolveActionRef,
-      resolveRiderRef
-    ),
-    style: eventLogStyle(event),
-  };
+  // Widened on purpose: the log travels through the character doc, so an entry a
+  // NEWER app version appended can reach this one with a kind it has never seen.
+  // Both switches then fall through to `undefined`; the row degrades to a neutral
+  // line instead of throwing and taking the sheet down with it.
+  const text = localizeCombatEvent(
+    event,
+    t,
+    resolveConditionName,
+    resolveSourceName,
+    resolveSpellName,
+    resolveActionRef,
+    resolveRiderRef
+  ) as string | undefined;
+  const style = eventLogStyle(event) as LogStyle | undefined;
+  if (text === undefined || style === undefined) {
+    return {
+      text: t("combatLog.unknownEvent"),
+      style: eventLogStyle({ kind: "legacy", text: "" }),
+    };
+  }
+  return { text, style };
 }

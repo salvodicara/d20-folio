@@ -396,3 +396,26 @@ describe("eventLogStyle — glyph (effect) + hue (slot) per event", () => {
     expect(row.style.hueFamily).toBe("action");
   });
 });
+
+describe("combat-log presenter — a kind this version does not know", () => {
+  // A newer app version can append a log kind an older open tab has never seen (the
+  // log is shared through the character doc): the row must degrade to a neutral line,
+  // never throw and take the sheet down with it.
+  it("renders a neutral row for an unknown kind", () => {
+    const future = {
+      kind: "kind-from-a-newer-version",
+      amount: 3,
+    } as unknown as CombatEvent;
+    const row = localizeCombatLogRow(
+      future,
+      t,
+      resolveConditionName,
+      resolveSourceName,
+      resolveSpellName,
+      resolveActionRef,
+      resolveRiderRef
+    );
+    expect(row.text).toBe("combatLog.unknownEvent");
+    expect(row.style).toEqual(eventLogStyle({ kind: "legacy", text: "" }));
+  });
+});
