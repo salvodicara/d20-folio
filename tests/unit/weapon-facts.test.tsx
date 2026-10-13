@@ -134,7 +134,9 @@ function asCombat(
   if (!facts) return facts;
   return {
     ...facts,
-    chips: facts.chips.filter((c) => c.kind !== "mastery" || !riderIds.includes(c.id)),
+    chips: facts.chips.filter(
+      (c) => c.kind !== "mastery" || c.id === null || !riderIds.includes(c.id)
+    ),
   };
 }
 
