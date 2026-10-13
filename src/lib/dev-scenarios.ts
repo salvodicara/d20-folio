@@ -601,6 +601,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Ring of X-ray Vision: the Magic action lights X-ray Vision 30 ft on the Senses rail with a 10-round countdown.",
   },
+  "gem-of-seeing": {
+    // A Gem of Seeing held and attuned: its Magic action spends 1 of 3 charges and
+    // lights 10 minutes of Truesight 120 ft. Visit `/characters/scn-gem-of-seeing`.
+    name: "Vesna, Who Sees True",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    equipment: [{ srdId: "gem-of-seeing", equipped: true, attuned: true }],
+    exercises:
+      "Gem of Seeing: the Magic action spends 1 of 3 charges and lights Truesight 120 ft on the Senses rail with a 100-round countdown.",
+  },
   "flying-potion": {
     // Two Potions of Flying in the pack: drinking one lights a fly speed equal to
     // the walking Speed with a 1-hour countdown. Visit `/characters/scn-flying-potion`.

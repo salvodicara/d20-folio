@@ -249,6 +249,95 @@ describe("Ring of X-ray Vision", () => {
   });
 });
 
+describe("Gem of Seeing", () => {
+  // The catalogue text: "This gem has 3 charges. As a Magic action, you can expend 1
+  // charge. For the next 10 minutes, you have Truesight out to 120 feet … regains
+  // 1d3 expended charges daily at dawn."
+  const text =
+    (magicItemsEn as Record<string, { description?: string }>)["gem-of-seeing"]
+      ?.description ?? "";
+  const charges = Number(/has (\d+) charges/.exec(text)?.[1]);
+  const minutes = Number(/next (\d+) minutes/.exec(text)?.[1]);
+  const rangeFt = Number(/Truesight out to (\d+) feet/.exec(text)?.[1]);
+  const rechargeSides = Number(
+    /regains 1d(\d+) expended charges daily at dawn/.exec(text)?.[1]
+  );
+  const instanceId = "gem-copy";
+  const activeKey = `magic-item:${instanceId}:gem-of-seeing`;
+
+  function holder(active: boolean, current = charges): CharacterDoc {
+    const doc = bearerOf({
+      srdId: "gem-of-seeing",
+      instanceId,
+      equipped: true,
+      attuned: true,
+      quantity: 1,
+    });
+    doc.session.itemResources = {
+      [instanceId]: {
+        itemId: "gem-of-seeing",
+        instanceId,
+        revision: 0,
+        resources: { charges: { capacity: charges, current, disabled: false } },
+        disposition: "magical",
+        causalHead: null,
+      },
+    };
+    if (active) doc.session.activeFeatures = [activeKey];
+    return doc;
+  }
+
+  function senses(doc: CharacterDoc) {
+    return deriveSensesAndSpeeds(aggregateCharacterGrants(doc.character, doc.session), 30)
+      .senses;
+  }
+
+  it("holds its charges and regains a rolled 1d3 at dawn", () => {
+    expect([charges, rechargeSides]).toEqual([3, 3]);
+    expect(getMagicItem("gem-of-seeing")?.resources).toEqual([
+      expect.objectContaining({
+        id: "charges",
+        capacity: { kind: "fixed", amount: charges },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: rechargeSides } },
+          },
+        ],
+      }),
+    ]);
+  });
+
+  it("is a Magic action that spends 1 charge and lights 10 minutes of its state", () => {
+    expect(minutes).toBe(10);
+    const action = resolveActions(holder(false, 2)).find(
+      (row) => row.resourcePayment?.instanceId === instanceId
+    );
+    expect(action).toMatchObject({
+      type: "action",
+      resourcePayment: {
+        kind: "item-resource",
+        itemId: "gem-of-seeing",
+        resourceId: "charges",
+      },
+      resourceCost: 1,
+      activatesKey: activeKey,
+      summary: { uses: { current: 2, total: charges, isPool: true } },
+    });
+    expect(
+      resolveActiveTimedEffects(holder(true)).find(
+        (effect) => effect.activeKey === activeKey
+      )?.maxRounds
+    ).toBe(minutes * 10);
+  });
+
+  it("shows Truesight on the Senses rail only while lit", () => {
+    expect(rangeFt).toBe(120);
+    expect(senses(holder(false)).some((sense) => sense.kind === "truesight")).toBe(false);
+    expect(senses(holder(true))).toContainEqual({ kind: "truesight", rangeFt });
+  });
+});
+
 describe("magic-item tracker recovery", () => {
   it("never auto-fills a tracker whose dawn recovery amount is rolled", () => {
     const descriptions = magicItemsEn as Record<string, { description?: string }>;
