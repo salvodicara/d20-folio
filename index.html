@@ -21,7 +21,7 @@
       name="description"
       content="d20 Folio — A modern character sheet manager for D&D 2024"
     />
-    <meta name="theme-color" content="#0c0a07" />
+    <meta name="theme-color" content="#0a0806" />
     <!--
       OPEN GRAPH — the link-preview card. This STATIC baseline stays ENGLISH always
       (owner decision, 2026-07-31: "English is the most famous language"), and an
@@ -66,13 +66,13 @@
          offline-first / zero-network — no Google Fonts CDN link needed. -->
     <style>
       html {
-        background-color: #0c0a07;
+        background-color: #0a0806;
       }
       /* Light-theme page background — applied pre-paint by the boot script below
          (mirrors the inline dark default) so a light-theme user never sees the
          dark page flash through before the stylesheet/store hydrate. */
       html[data-theme="light"] {
-        background-color: #948f84;
+        background-color: #ede4d1;
       }
       /* App-shell boot splash (PWA app-shell pattern): the gilt d20 mark, shown on
          the page background while the JS bundle downloads/parses on a cold start —
@@ -84,12 +84,12 @@
         inset: 0;
         display: grid;
         place-items: center;
-        background-color: #0c0a07;
+        background-color: #0a0806;
         /* Its own pre-React layer, above everything; the in-app loader sits at --z-boot. */
         z-index: 9999;
       }
       html[data-theme="light"] .boot-splash {
-        background-color: #948f84;
+        background-color: #ede4d1;
       }
       .boot-splash svg {
         width: 76px;

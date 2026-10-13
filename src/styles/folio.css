@@ -1205,7 +1205,9 @@ svg.icon[stroke],
 }
 
 /* primary — gold-leaf brass (the canonical CTA gradient) */
-/* The primary (vision 1, owner 2026-10-13): one LIT SLAB per screen. A dark plate
+/* Every button speaks the control voice of `.btn` (Source Serif 4 capitals, vision 1):
+   one button voice app-wide, so a primary never reads in another face than Cancel.
+   The primary (vision 1, owner 2026-10-13): one LIT SLAB per screen. A dark plate
    with a gilt edge, gold letters and a warm glow, in both themes, never a gold fill.
    `--lit-*` tokens (index.css) keep every primary (End Turn, the emphasis CTA) one. */
 .btn.primary,
@@ -1217,11 +1219,6 @@ svg.icon[stroke],
   background: var(--lit-slab);
   box-shadow: var(--lit-shadow);
   text-shadow: none;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  text-transform: none;
 }
 /* LIGHT theme primary — the design language's "deep-gold ink on gold-leaf"
    rule. In light, --text-inverse resolves to cream (#efe5c8), so the canonical
@@ -1311,11 +1308,6 @@ svg.icon[stroke],
     inset 0 -1px 0 rgba(0, 0, 0, 0.22),
     0 1px 0 rgba(0, 0, 0, 0.3),
     0 2px 5px color-mix(in oklab, black 22%, transparent);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  text-transform: none;
 }
 .btn.secondary:hover:not(:disabled):not(.loading) {
   transform: translateY(-1px);
@@ -1358,10 +1350,6 @@ svg.icon[stroke],
     0 2px 0 var(--vermilion-700),
     0 4px 10px color-mix(in oklab, var(--vermilion-500) 35%, transparent);
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 12px;
-  text-transform: none;
 }
 [data-theme="light"] .btn.destructive {
   color: #f0e4cb;
@@ -13053,11 +13041,12 @@ textarea.input.sess-notes-edit {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
-  --bc: var(--at-c);
-  font-family: var(--font-display);
+  font-family: var(--font-numeric);
+  font-size: 11px;
   font-weight: 600;
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  --bc: var(--at-c);
   padding: 7px 16px;
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -16027,13 +16016,14 @@ button.econ-tok-filter:active .econ-disc {
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  font-family: var(--font-numeric);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.05em;
   padding: 10px 20px;
   color: var(--lit-ink);
   border-radius: var(--radius-md);
@@ -22141,4 +22131,91 @@ body:has(.fob) .toast-region {
   list-style: disc;
   font-size: var(--text-sm, 0.875rem);
   color: var(--text-secondary);
+}
+
+/* ── Dev-only style guide (/_specimens): layout only — every component inside
+   renders through its own production recipe. ── */
+.spec-page-root {
+  max-width: 48rem;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+.spec-column {
+  display: grid;
+  align-content: start;
+  gap: var(--sp-6);
+  padding: var(--sp-8) var(--sp-4);
+  color: var(--text-primary);
+}
+.spec-theme {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: var(--text-xl);
+  letter-spacing: 0.04em;
+}
+.spec-panel {
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+.spec-title {
+  margin: 0;
+}
+.spec-body {
+  margin: 0;
+  max-width: var(--measure);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+.spec-numbers {
+  font-family: var(--font-numeric);
+  font-size: var(--text-md);
+}
+.spec-row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--sp-3);
+}
+.spec-label {
+  font-family: var(--font-numeric);
+  font-size: var(--text-2xs);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.spec-items {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.spec-page {
+  padding: var(--sp-4);
+  color: var(--text-secondary);
+}
+.spec-well {
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-recessed);
+  color: var(--text-secondary);
+}
+.spec-chrome {
+  padding: 0;
+}
+.spec-modal {
+  max-width: 26rem;
+}
+.spec-modal-body {
+  padding: var(--sp-4) var(--sp-6) var(--sp-6);
+  color: var(--text-secondary);
+}
+.spec-menu {
+  position: static;
+  width: 14rem;
+}
+.spec-toast {
+  position: static;
 }

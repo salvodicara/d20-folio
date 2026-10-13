@@ -704,11 +704,11 @@
   /* Soft warm-brown (not the deep umber) so the carved-field gradient is only a
      faint inner-top shadow — the --elev-recessed inset does the real carving. A
      strong umber here banded the top of every select/textarea and read muddy. */
-  --carve-shade: #9c7c44;
+  --carve-shade: #d9c7a2;
   /* Clean light parchment writing-field (see the dark-theme note). Sits just below
      the cards so the inset shadow still reads as carved, without the muddy mid-tan
      of --bg-recessed at field size. Dark text on it clears AA comfortably. */
-  --input-fill: #ded2b8;
+  --input-fill: #fffcf4;
   /* avatar-placeholder well (light vellum) — see the dark-theme note. */
   --portrait-well: radial-gradient(
     circle at 35% 28%,
