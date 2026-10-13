@@ -57,7 +57,15 @@ describe("surveyDocuments", () => {
           },
         },
       },
-      { path: "campaigns/l", data: { encounter: { effectOps: [] } } },
+      {
+        path: "campaigns/l",
+        data: {
+          encounter: {
+            effectOps: [],
+            world: { occurrences: { over: { kind: "condition", ending: { round: 1 } } } },
+          },
+        },
+      },
       { path: "campaigns/k/snapshots/s", data: { encounter: { effectOps: [1] } } },
     ]);
     expect(counts).toEqual({
