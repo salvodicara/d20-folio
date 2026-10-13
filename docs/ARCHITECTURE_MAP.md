@@ -449,19 +449,28 @@ Recover ideas and tests, rarely files.
 - `docs/ARCHITECTURE.md` (3.6k lines) describes `mechanics-*` as the "canonical runtime cutover
   (active)". That is no longer true; fix it when the dead code is deleted (step 0).
 
-## Owner decisions pending (2026-10-10)
+## Owner decisions pending (2026-10-13)
 
 Each needs the owner's explicit yes; agents prepare, never decide.
 
 - **Deploy** of everything merged since the last release — judged from the demo videos. It also
-  ships the round-validation rule (#99) and the `activities.json` catalogue (#80, #89).
+  ships the round-validation rule (#99), the `activities.json` catalogue (#80, #89) and #129
+  (reader-first). The composed bundle is back under budget (#200 + pack #47; check it with
+  `just budget-pack`).
+- **The sheet's log panel in a campaign** (#178, draft): shows the shared session's lines about
+  the character, in the sheet rows' colours; the owner chose "only my lines". Open wording call:
+  drop the character's own name in its own panel.
 - **`@d20-folio/core`**: publish to npm or not, and its licence (the repo is AGPL-3.0; a permissive
   core would let other apps use it freely).
 - **Statuses migration** (Phase 2 steps 3–4, #61): ship the dual-write, then backfill, `--check`,
   switch readers, delete the old fields — one yes per step.
-- **Read-only surveys of live data** (Phase 2 step 6, #62) before deleting world standings,
-  `CombatState.activeEffects`, encounter `effectOps` and the `combat-resolution` resolver (the
-  last also needs five private-pack tests removed).
+- **Read-only survey of live data**: approved 2026-10-13, not yet run. It needs a service-account
+  file this machine does not have:
+  `GOOGLE_APPLICATION_CREDENTIALS=<file outside the repo> node --import ./scripts/alias-loader.mjs scripts/survey-dead-effect-fields.ts`
+  (#176, #195; counts only). All zeros → delete the dead effect fields (Phase 2 step 6) and run
+  world slices 3–6; any count → a migration, which needs a fresh yes. Slice 7c also needs
+  `encounterWorldConditions`. The `combat-resolution` resolver also needs five private-pack tests
+  removed.
 - **Notes audiences** (campaign spec I-044–051: only me / me and the DMs / chosen people): a new
   permission model and a migration of the existing shared notes.
 - **Italian SRD text** in the public catalogue: confirm its provenance before exporting it.
