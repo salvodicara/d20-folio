@@ -205,6 +205,28 @@ describe("localizeCombatEvent — every kind routes to a non-empty template", ()
     );
   });
 
+  it("a weapon mastery is declared, not spent: its rider-use takes combatLog.masteryUse", () => {
+    // SRD 5.2.1 Weapon Mastery: a mastery property is a use of the weapon, not a
+    // resource, so the line drops the "spent" wording (combatLog.masteryUse).
+    expect(
+      localize({
+        kind: "rider-use",
+        action: { custom: "Goblin" },
+        rider: { srd: { kind: "weapon-mastery", key: "topple", field: "name" } },
+        effect: "attack",
+      })
+    ).toBe('combatLog.masteryUse {"rider":"⟨topple⟩","name":"⟨Goblin⟩"}');
+    // A real resource (Sneak Attack, a Psionic die) keeps the "spent" line.
+    expect(
+      localize({
+        kind: "rider-use",
+        action: { custom: "Goblin" },
+        rider: { srd: { kind: "class-feature", key: "sneak-attack", field: "name" } },
+        effect: "damage",
+      })
+    ).toBe('combatLog.riderUse {"rider":"⟨sneak-attack⟩","name":"⟨Goblin⟩"}');
+  });
+
   it("routes hp-damage / hp-heal with amount + resulting current/max", () => {
     expect(localize(SAMPLES["hp-damage"])).toBe(
       'combatLog.hpDamage {"amount":8,"current":4,"max":30}'

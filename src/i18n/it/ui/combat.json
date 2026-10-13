@@ -468,6 +468,7 @@
       "totalHint": "Quanto hai tirato al tavolo, es. 8+6+3",
       "saved": "Salvato",
       "savedAria": "{{name}} ha superato il TS",
+      "conditionSave": "{{condition}} · TS {{ability}} CD {{dc}}",
       "multiplier": "Moltiplicatore per {{name}}",
       "resistant": "Resistente",
       "vulnerable": "Vulnerabile",

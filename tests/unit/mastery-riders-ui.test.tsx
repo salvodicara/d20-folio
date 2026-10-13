@@ -100,6 +100,9 @@ describe("declaring a mastery rider", () => {
     const row = initialTrayRow(tray, "monster-1");
     expect(row.conditions).toEqual([]);
     expect(toggleCondition(row, "prone", tray).conditions).toEqual(["prone"]);
+    // SRD 5.2.1 Topple: a Constitution save, DC 8 + the attack's ability modifier
+    // + PB. STR 16 (+3), PB 3 → DC 14, shown on the Prone chip.
+    expect(tray.conditions?.save).toEqual({ ability: "CON", dc: 14 });
     expect(
       damageTrayPlan(card(doc, "glaive"), ["monster-1"], "pc-me")?.conditions
     ).toBeUndefined();
@@ -115,5 +118,22 @@ describe("declaring a mastery rider", () => {
     act(() => applyMasteryRider(action, topple, { applied: "ok", blocked: "no" }));
     expect(riderLogs()).toBe(1);
     expect(useCombatStore.getState().nextAttackAdvantage).toBe(false);
+  });
+
+  it("the log names the mastery with its weapon in brackets; a resource keeps 'spent'", async () => {
+    // The target is not known when the rider is declared, and "Topple on
+    // Quarterstaff" reads as toppling the weapon: the weapon goes in brackets.
+    const args = { rider: "Topple", name: "Quarterstaff" };
+    expect(i18n.t("combatLog.masteryUse", args)).toBe("Topple (Quarterstaff)");
+    expect(i18n.t("combatLog.riderUse", { rider: "Sneak Attack", name: "Dagger" })).toBe(
+      "Spent Sneak Attack on Dagger"
+    );
+    await i18n.changeLanguage("it");
+    expect(
+      i18n.t("combatLog.masteryUse", { rider: "Rovesciamento", name: "Bastone Ferrato" })
+    ).toBe("Rovesciamento (Bastone Ferrato)");
+    expect(
+      i18n.t("combatLog.riderUse", { rider: "Attacco Furtivo", name: "Pugnale" })
+    ).toBe("Attacco Furtivo speso su Pugnale");
   });
 });
