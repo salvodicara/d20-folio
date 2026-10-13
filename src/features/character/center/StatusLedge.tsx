@@ -30,6 +30,7 @@ import {
   ArrowDownToLine,
   Ban,
   EarOff,
+  Eye,
   EyeOff,
   Ghost,
   Hand,
@@ -62,13 +63,9 @@ import {
  * One glyph per SRD condition that can CURRENTLY render as a badge (BG3 status-icon
  * vocabulary; ids, never labels). A badge only exists for a condition that imposes a
  * turn LIMITER (`composeTurnLimiters` → blocked economy / attack Disadvantage /
- * Speed 0 / auto-fail saves), so this map deliberately covers ONLY the limiter-
- * causing conditions plus the `exhaustion` badge glyph.
- *
- * Omitted on purpose: `invisible` (Invisible grants self-side ADVANTAGE, not a
- * limiter — eager-icon weight the bundle budget must not pay for). SEAM: if it ever
- * gains a self-side limiter (or the ledge starts badging positive statuses), add its
- * id + glyph here (invisible → Eye).
+ * Speed 0 / auto-fail saves / attacks against you), so this map covers the
+ * limiter-causing conditions plus the `exhaustion` badge glyph. Invisible badges
+ * for its attacks-against line (unseen attackers have Disadvantage).
  */
 const CONDITION_ICONS: Record<string, LucideIcon> = {
   blinded: EyeOff,
@@ -77,6 +74,7 @@ const CONDITION_ICONS: Record<string, LucideIcon> = {
   exhaustion: Hourglass,
   frightened: Ghost,
   grappled: Hand,
+  invisible: Eye,
   incapacitated: Ban,
   paralyzed: ZapOff,
   petrified: Mountain,
@@ -147,6 +145,26 @@ export function StatusLedge({
         return t("combat.limiterCantHarmSource");
       case "sourceSocialAdvantage":
         return t("combat.limiterSourceSocialAdvantage");
+      case "attacksAgainst": {
+        const mode = (m: "advantage" | "disadvantage") => t(`combat.rollMode.${m}`);
+        const line = l.line;
+        switch (line.kind) {
+          case "roll":
+            return t("combat.limiterAttacksAgainstRoll", { mode: mode(line.mode) });
+          case "unseen":
+            return t("combat.limiterAttacksAgainstUnseen", { mode: mode(line.mode) });
+          case "range":
+            return t("combat.limiterAttacksAgainstRange", {
+              within: mode(line.within),
+              beyond: mode(line.beyond),
+              distance: localeDistance(line.thresholdFt, locale),
+            });
+          case "autoCrit":
+            return t("combat.limiterAttacksAgainstAutoCrit", {
+              distance: localeDistance(line.distanceFt, locale),
+            });
+        }
+      }
     }
   };
 

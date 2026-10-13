@@ -208,7 +208,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       conditions: ["restrained"],
       attackRollState: "disadvantage",
       exhaustion: 0,
-      expected: ["attackDisadvantage", "speedZero"],
+      expected: ["attackDisadvantage", "speedZero", "attacksAgainst"],
     },
     {
       name: "Stunned + netted disadvantage but NO condition imposes attack-dis → blocked-economy + auto-fail",
@@ -220,14 +220,14 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       // (2024 RAW, unlike 2014) does NOT zero Speed — so no attack limiter and no
       // speed-0 limiter (single source of truth). The blocked-economy limiter
       // leads (it is the most totalising constraint), then the auto-fail line.
-      expected: ["blockedEconomy", "autoFailSaves"],
+      expected: ["blockedEconomy", "autoFailSaves", "attacksAgainst"],
     },
     {
       name: "Stunned alone (roll-state none) → blocked-economy then auto-fail",
       conditions: ["stunned"],
       attackRollState: "none",
       exhaustion: 0,
-      expected: ["blockedEconomy", "autoFailSaves"],
+      expected: ["blockedEconomy", "autoFailSaves", "attacksAgainst"],
     },
     {
       name: "Incapacitated → blocked-economy only (no speed-0 / auto-fail / attack-dis)",
@@ -247,14 +247,28 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
       conditions: ["restrained", "paralyzed"],
       attackRollState: "disadvantage",
       exhaustion: 0,
-      expected: ["blockedEconomy", "attackDisadvantage", "speedZero", "autoFailSaves"],
+      expected: [
+        "blockedEconomy",
+        "attackDisadvantage",
+        "speedZero",
+        "autoFailSaves",
+        "attacksAgainst",
+        "attacksAgainst",
+        "attacksAgainst",
+      ],
     },
     {
       name: "Paralyzed → blocked-economy, speed-0 + auto-fail saves (no attack-dis when roll-state none)",
       conditions: ["paralyzed"],
       attackRollState: "none",
       exhaustion: 0,
-      expected: ["blockedEconomy", "speedZero", "autoFailSaves"],
+      expected: [
+        "blockedEconomy",
+        "speedZero",
+        "autoFailSaves",
+        "attacksAgainst",
+        "attacksAgainst",
+      ],
     },
     {
       name: "Exhaustion 1 alone → exhaustion limiter",
@@ -451,6 +465,8 @@ describe("composeStatusBadges (one badge per cause, first-seen order)", () => {
       "blockedEconomy",
       "speedZero",
       "autoFailSaves",
+      "attacksAgainst",
+      "attacksAgainst",
     ]);
   });
 
@@ -479,6 +495,7 @@ describe("composeStatusBadges (one badge per cause, first-seen order)", () => {
     expect(restrained?.limiters.map((l) => l.kind)).toEqual([
       "attackDisadvantage",
       "speedZero",
+      "attacksAgainst",
     ]);
     // The exhaustion badge carries the level for its "Exhaustion N" label.
     const ex = badges.find((b) => b.kind === "exhaustion");

@@ -28,6 +28,7 @@ import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { GatedSlot } from "@/lib/condition-effects";
 import type { ConditionSense } from "@/types/condition";
+import { attacksAgainstSelf, type AttacksAgainstLine } from "@/lib/play/attacks-against";
 import {
   clampExhaustion,
   exhaustionPenalty,
@@ -697,6 +698,11 @@ export type TurnLimiterVM =
   | { kind: "cantHarmSource"; causeId: string }
   /** The source has Advantage on social checks against you (Charmed). */
   | { kind: "sourceSocialAdvantage"; causeId: string }
+  /** What the condition does to attacks made against you (Paralyzed: Advantage,
+   *  a hit within 5 ft is a Critical Hit; Prone: Advantage within 5 ft,
+   *  Disadvantage beyond; Invisible: unseen attackers have Disadvantage). One
+   *  limiter per rule, read from the rules table (`attacksAgainstSelf`). */
+  | { kind: "attacksAgainst"; causeId: string; line: AttacksAgainstLine }
   /**
    * The Exhaustion penalties, RESOLVED (SRD "Exhaustion"): `d20Penalty` is the
    * magnitude subtracted from every D20 Test (2 × level) and `speedPenaltyFt`
@@ -814,6 +820,14 @@ export function composeTurnLimiters(args: {
   if (effects.sourceSocialAdvantage) {
     const causeId = causeFor((e) => e.sourceSocialAdvantage);
     if (causeId) limiters.push({ kind: "sourceSocialAdvantage", causeId });
+  }
+
+  // 3d. Attacks against you: each active condition's against-self rules, so the
+  //     player and the DM see the Advantage or auto-crit an attacker gets.
+  for (const causeId of conditions) {
+    for (const line of attacksAgainstSelf(causeId)) {
+      limiters.push({ kind: "attacksAgainst", causeId, line });
+    }
   }
 
   // 4. Exhaustion — −2 × level to all d20 Tests AND −5 ft × level Speed (2024).
