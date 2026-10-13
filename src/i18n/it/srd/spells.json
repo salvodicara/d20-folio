@@ -2966,5 +2966,35 @@
   },
   "protection-from-energy.grants.0.grants.0": {
     "label": "Tipo di energia"
+  },
+  "enlarge-reduce.grants.0": {
+    "label": "Ingrandire/Ridurre"
+  },
+  "enlarge-reduce.grants.0.grants.0": {
+    "label": "Effetto"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge": {
+    "label": "Ingrandire"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce": {
+    "label": "Ridurre"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge.grants.0": {
+    "description": "Prove di Forza (Ingrandire)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge.grants.1": {
+    "description": "Tiri salvezza su Forza (Ingrandire)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge.grants.3": {
+    "description": "Ingrandire: la taglia aumenta di una categoria (da Media a Grande, per esempio)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce.grants.0": {
+    "description": "Prove di Forza (Ridurre)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce.grants.1": {
+    "description": "Tiri salvezza su Forza (Ridurre)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce.grants.2": {
+    "description": "Ridurre: la taglia diminuisce di una categoria (da Media a Piccola, per esempio); gli attacchi con armi ridotte o colpi senz'armi infliggono 1d4 danni in meno se vanno a segno (minimo 1)"
   }
 }

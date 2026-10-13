@@ -614,6 +614,21 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Gem of Seeing: the Magic action spends 1 of 3 charges and lights Truesight 120 ft on the Senses rail with a 100-round countdown.",
   },
+  "enlarge-reduce": {
+    // `/characters/scn-enlarge-reduce`: a Sorcerer with Enlarge/Reduce prepared
+    // and a Dagger. Casting it lights the state; the Active Features rail then
+    // offers Enlarge or Reduce.
+    name: "Brin, Who Grows and Shrinks",
+    raceId: "human",
+    classId: "sorcerer",
+    level: 3,
+    background: "sage",
+    abilityScores: { STR: 12, DEX: 14, CON: 14, INT: 10, WIS: 10, CHA: 17 },
+    weapons: [{ srdId: "dagger", quantity: 1 }],
+    spells: [{ srdId: "fire-bolt" }, { srdId: "enlarge-reduce", prepared: true }],
+    exercises:
+      "Enlarge/Reduce: the cast lights the state on the caster (or a picked ally); Enlarge gives Advantage on Strength checks and saves and a +1d4 weapon rider, Reduce gives Disadvantage and a 1d4-less note.",
+  },
   "flying-potion": {
     // Two Potions of Flying in the pack: drinking one lights a fly speed equal to
     // the walking Speed with a 1-hour countdown. Visit `/characters/scn-flying-potion`.

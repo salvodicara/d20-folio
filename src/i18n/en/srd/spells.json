@@ -2966,5 +2966,35 @@
   },
   "protection-from-energy.grants.0.grants.0": {
     "label": "Energy type"
+  },
+  "enlarge-reduce.grants.0": {
+    "label": "Enlarge/Reduce"
+  },
+  "enlarge-reduce.grants.0.grants.0": {
+    "label": "Effect"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge": {
+    "label": "Enlarge"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce": {
+    "label": "Reduce"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge.grants.0": {
+    "description": "Strength checks (Enlarge)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge.grants.1": {
+    "description": "Strength saving throws (Enlarge)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.enlarge.grants.3": {
+    "description": "Enlarge: size increases by one category (Medium to Large, for example)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce.grants.0": {
+    "description": "Strength checks (Reduce)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce.grants.1": {
+    "description": "Strength saving throws (Reduce)"
+  },
+  "enlarge-reduce.grants.0.grants.0.options.reduce.grants.2": {
+    "description": "Reduce: size decreases by one category (Medium to Small, for example); attacks with reduced weapons or Unarmed Strikes deal 1d4 less damage on a hit (minimum 1)"
   }
 }

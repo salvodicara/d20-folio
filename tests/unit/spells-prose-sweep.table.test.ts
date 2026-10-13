@@ -105,6 +105,11 @@ const STANDING_SPELLS = [
   },
   { id: "mirror-image", recipient: "caster" },
   {
+    id: "enlarge-reduce",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
     id: "spider-climb",
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1 },
