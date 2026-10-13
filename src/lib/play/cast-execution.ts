@@ -9,6 +9,8 @@ export interface ActionExecution {
   consumesTurnEconomy: boolean;
   turnScoped: boolean;
   ritual: boolean;
+  /** Cast without its components (Wish's duplicate): no material cost to offer. */
+  withoutComponents?: true;
 }
 
 /** An ordinary turn action: it claims the turn's economy and is undone with the turn. */

@@ -1352,7 +1352,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           : null;
         if (!readies) offerFollowUps(action, targets, loggedId);
         // A priced material component: "−300 mo" when consumed, else a reminder.
-        const materialToastId = offerMaterialCost(action.spellId, t, locale);
+        const materialToastId = execution.withoutComponents
+          ? null
+          : offerMaterialCost(action.spellId, t, locale);
         return () => {
           if (!canCommit()) return false;
           if (
@@ -2447,7 +2449,14 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           outcomes: artifact?.outcomes ?? [],
           ...(artifact?.targets ? { targets: artifact.targets } : {}),
         };
-        void commitCastOption(committedAction, getEconomySlot(committedAction), option);
+        void commitCastOption(
+          committedAction,
+          getEconomySlot(committedAction),
+          option,
+          [],
+          false,
+          { ...TURN_EXECUTION, withoutComponents: true }
+        );
       });
       return;
     }

@@ -39,7 +39,7 @@ async function cast(page: Page, name: string, slot?: RegExp) {
 }
 
 async function skipTargets(page: Page) {
-  const skip = page.getByRole("dialog").getByRole("button", { name: /^Salta$/ });
+  const skip = page.getByRole("dialog").getByRole("button", { name: /^Salta/ });
   if (await skip.isVisible().catch(() => false)) await skip.click();
 }
 
@@ -62,13 +62,18 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(picker.getByRole("listitem")).toHaveCount(1);
     await picker.getByRole("searchbox").fill("Desiderio");
     await expect(picker.getByRole("listitem")).toHaveCount(0);
-    await picker.getByRole("searchbox").fill("Palla di Fuoco");
+    // Stoneskin consumes a 100 gp diamond, which Wish does not need.
+    await picker.getByRole("searchbox").fill("Pelle di Pietra");
     await page.screenshot({ path: shotPath(`wish-picker-${size}.png`) });
     await picker.getByRole("listitem").first().click();
-    await skipTargets(page);
+    await page
+      .getByRole("dialog", { name: /Pelle di Pietra: su chi/ })
+      .getByRole("button", { name: /^Salta/ })
+      .click();
 
-    await expect(page.getByText("Usato Palla di Fuoco", { exact: true })).toBeVisible();
+    await expect(page.getByText("Usato Pelle di Pietra", { exact: true })).toBeVisible();
     await expect(followUp).toHaveCount(0);
+    await expect(page.getByText(/consuma un componente/)).toHaveCount(0);
   });
 
   test(`Wish Stress lights a state and prices later spells (it, dark, ${size})`, async ({
