@@ -525,6 +525,22 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "heal-bonus (Disciple of Life): a healing spell's verdict gains +2 + spell level. S11b: Divine Spark heal-or-damage (1d8+WIS, both chips) + Sear Undead (WIS-many d8 Radiant).",
   },
+  "material-cost": {
+    name: "Ilse, Grave Tender",
+    raceId: "human",
+    classId: "cleric",
+    subclassId: "life-domain",
+    level: 5,
+    background: "acolyte",
+    abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 10, WIS: 18, CHA: 12 },
+    spells: [
+      { srdId: "sacred-flame" },
+      { srdId: "augury", prepared: true },
+      { srdId: "revivify", prepared: true },
+    ],
+    exercises:
+      "Priced material components: casting Revivify offers '−300 gp' from the purse (a diamond the spell consumes; undoable, logged as 'Spent 300 gp on Revivify'); casting Augury only reminds of its 25 gp tokens (kept).",
+  },
   "bg3-projection": {
     // The BG3 can/cannot projection — the condition surfaces. A Cleric 5
     // (WIS 18) STUNNED: the Stats rail (LeftHud) shows the crimson AUTO-FAIL mark on

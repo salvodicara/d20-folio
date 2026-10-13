@@ -21,6 +21,7 @@ import {
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
 import * as cover from "@/lib/play/cover";
+import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
 import * as forms from "@/lib/play/forms";
 import * as pins from "@/lib/play/pins";
@@ -127,6 +128,10 @@ const CASES: {
   "set-surprised": [
     { kind: "set-surprised", surprised: true },
     () => at(surprise.setSurprised(doc, true)),
+  ],
+  "adjust-currency": [
+    { kind: "adjust-currency", delta: { gp: 3 } },
+    () => at(material.adjustCurrency(doc.session, { gp: 3 })),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
   "set-readied-spell": [
