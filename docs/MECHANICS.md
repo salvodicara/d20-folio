@@ -892,7 +892,11 @@ Undead), each projected by `lib/beast-projection.ts` to the same `BeastStatBlock
 `session.polymorphForm.statBlock` because the eager sheet cannot read the bestiary, and its names resolve
 from the lazy `monster` catalogue (the cockpit loads it before rendering such a form). It keeps INT / WIS /
 CHA, gains Temp HP from the FIRST form only, shifts form while the spell lasts (keeping the original
-`prior`), and does not end when its Temp HP run out.
+`prior`), and does not end when its Temp HP run out. **Animal Shapes** on yourself uses the Beast
+catalogue capped by the rule (`crCap: 4`, `sizeMax: "Large"`, not your level), keeps the mind, reshifts,
+needs no Concentration (the store engages it only for a Concentration spell), and ends at 0 Temp HP on its
+own: `applyDamage` drops a form no Concentration holds with `dropBeastForm(doc, 0)`, leaving any unrelated
+Concentration in place.
 
 ---
 

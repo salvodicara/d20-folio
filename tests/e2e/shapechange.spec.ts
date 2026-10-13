@@ -21,8 +21,10 @@ async function shot(page: Page, name: string): Promise<void> {
 }
 
 async function openPicker(page: Page): Promise<void> {
-  const expand = page.getByRole("button", { name: "Espandi: Trasformazione" });
-  if (await expand.count()) await expand.first().click();
+  // Open the spell card (its chevron says whether it is open) before its Transform.
+  const chevron = page.locator('.uc-chevron[aria-label$=": Trasformazione"]').first();
+  if ((await chevron.getAttribute("aria-expanded")) !== "true") await chevron.click();
+  await expect(chevron).toHaveAttribute("aria-expanded", "true");
   const transform = page.getByRole("button", { name: "Trasforma", exact: true });
   await transform.first().scrollIntoViewIfNeeded();
   await transform.first().click();
