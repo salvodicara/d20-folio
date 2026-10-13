@@ -14675,115 +14675,17 @@ button.party-avatar-btn:focus-visible {
    that doubled the dark gold highlight, which — on a gilt-framed rounded panel —
    pooled into a visible "gold corner" arc at the top corners in dark mode only
    (absent in light, hence inconsistent). One sheen reads clean in both themes. ── */
+/* The folio panel (vision 1, owner 2026-10-13): one plain slab in both themes,
+   a hairline edge, a faint top light and a deep soft shadow. No grain or texture:
+   the material reads from depth and edge, not from a pattern. */
 .folio-panel {
+  position: relative;
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-medium);
+  border: 1px solid var(--border-soft);
   border-radius: var(--radius-xl);
-  box-shadow: var(--elev-resting);
-}
-/* BG3-identity material (DESIGN.md §13) — DARK theme lays the seam-blended
-   panel-leather grain UNDER a translucent copy of the surface gradient: the
-   gradient stays the panel's tone (and quiets the grain behind text) while the
-   leather's veins show as low mottle on large empty areas. A soft-light blend
-   (the light-theme `.cmp-tome` idiom) does nothing here — over the near-black
-   dark surfaces soft-light collapses to no-op — hence the layer sandwich instead.
-   Tiled at 512px so the repeat period stays below the panel width.
-   CANDLELIT TRANSLUCENCY (T3): the whole sandwich renders on a `::before` at
-   `--panel-alpha` (0.92) instead of on the element, so the candlelit backdrop
-   glows through the panel UNIFORMLY — texture and glow-through coexist (a
-   per-layer alpha can't do this: the leather image layer is opaque, and CSS has
-   no per-layer opacity). The panel isolates (stacking context) so the negative-z
-   pseudo sits above the page backdrop but below all content; `--elev-resting`'s
-   inset hairlines would be occluded by the pseudo, so the pseudo re-carries them.
-   Graceful: a missing leather file leaves the translucent gradient sandwich —
-   the glow-through still reads. Light theme keeps the plain OPAQUE gradient;
-   its material lands in Phase 2. */
-[data-theme="dark"] .folio-panel {
-  position: relative;
-  isolation: isolate;
-  background: none;
-}
-[data-theme="dark"] .folio-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: calc(var(--radius-xl) - 1px);
-  opacity: var(--panel-alpha);
-  /* Smoke vignette (full-BG3 push): the panel darkens toward its lower edges the
-     way BG3's plates recede into candle-shadow — a top-lit material, not a flat
-     sheet. Darkening only (the composite-floor guard pins the BRIGHTEST stop,
-     which is unchanged) and light text at the edges only GAINS contrast. */
-  background:
-    radial-gradient(130% 115% at 50% -8%, transparent 58%, rgba(0, 0, 0, 0.32) 100%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--bg-surface-2) 62%, transparent),
-      color-mix(in srgb, var(--bg-surface-1) 62%, transparent)
-    ),
-    image-set(var(--asset-panel-leather) type("image/webp")),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  background-size:
-    auto,
-    auto,
-    512px 512px,
-    auto;
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
-  /* The dark --elev-resting inset pair (top sheen + bottom edge), re-carried
-     here because the pseudo paints over the element's own inset shadows. */
   box-shadow:
-    inset 0 1px 0 rgba(245, 230, 180, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.55);
-}
-/* LIGHT material (daylight-sibling rebuild) — the SAME sandwich mechanism with
-   the owner P8 pale cream bookbinding grain (`--asset-panel-light`, DESIGN.md
-   §13): a translucent copy of the ivory surface gradient quiets the grain
-   behind text while its fibre shows as low mottle on empty panel areas, and
-   the whole pseudo renders at the light `--panel-alpha` (0.94 — the
-   MORNING-LIGHT translucency, gentler than dark's 0.9 so the ivory stays
-   unmistakably bright) so the daylight scene breathes through the panel like
-   the candle glow does in dark. The gradient share is higher than dark's 62%
-   (the cream grain band sits BELOW the ivory surfaces, so a low share would
-   darken the panel): 80% keeps the panel reading bright ivory with a quiet
-   tactile grain. Graceful: a missing texture file leaves the translucent
-   gradient sandwich. */
-[data-theme="light"] .folio-panel {
-  position: relative;
-  isolation: isolate;
-  background: none;
-}
-[data-theme="light"] .folio-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: calc(var(--radius-xl) - 1px);
-  opacity: var(--panel-alpha);
-  /* Morning-shade vignette — the light sibling of dark's smoke (full-BG3 push):
-     a whisper of warm umber pooling at the panel's lower edges so the ivory
-     plate reads sunlit-from-above, DESIGNED not adapted (a black vignette would
-     read as grime on vellum). Faint by intent: the ivory must stay bright. */
-  background:
-    radial-gradient(130% 115% at 50% -8%, transparent 62%, rgba(74, 58, 36, 0.1) 100%),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--bg-surface-2) 80%, transparent),
-      color-mix(in srgb, var(--bg-surface-1) 80%, transparent)
-    ),
-    image-set(var(--asset-panel-light) type("image/webp")),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  background-size:
-    auto,
-    auto,
-    512px 512px,
-    auto;
-  background-repeat: no-repeat, no-repeat, repeat, no-repeat;
-  /* The light --elev-resting inset pair (struck-metal top sheen + umber bottom
-     edge), re-carried here because the pseudo paints over the element's own
-     inset shadows. */
-  box-shadow:
-    inset 0 1px 0 rgba(255, 253, 247, 0.92),
-    inset 0 -1px 0 rgba(46, 30, 6, 0.22);
+    inset 0 1px 0 var(--panel-highlight),
+    var(--elev-resting);
 }
 
 /* ═══════════════════ THE ORNAMENT VOCABULARY (BG3 identity T5) ═══════════════════
