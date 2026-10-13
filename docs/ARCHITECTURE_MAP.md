@@ -57,7 +57,7 @@ Diagrams (archify, open in a browser): [today](architecture/today.html) ·
   - `Character` mixes build, play state, UI choices (`pinnedActions`) and a log (`logEntries`).
 - **Monsters and NPCs:**
   - `EncounterMonster` is embedded in `campaigns/{id}.encounter`. An improvised NPC already works
-    (only a name is required), but `ac` and the HP trio are typed as required.
+    (only a name is required); `ac` and the HP trio stay required (owner 2026-10-12).
   - `EncounterPc` is a pure reference. Keep that.
 - **No common shape:** PCs and monsters never share one. The chronicle's combatant ids
   (`pc-<uid>`, `monster-<n>`) are the only common identity. Reuse them as the actor/target id.
@@ -200,7 +200,6 @@ There are six parallel records. The same hit can land in four of them.
   attack card reads its printed die and damage type from that Activity. Its properties (heavy,
   light, versatile, reach) stay on the weapon until the Activity can hold them (they are the
   translation's recorded gaps).
-- `ac` becomes optional on improvised NPCs.
 
 **Delete (no behaviour change, early)**
 
@@ -208,7 +207,8 @@ There are six parallel records. The same hit can land in four of them.
 - The K1 kernel: `src/lib/command/*`, `types/command.ts`, `rule-definition.ts` and the functions
   bundle (about 1.5k lines). Removing its export from `functions/` takes effect at the next deploy
   the owner approves.
-- `automation-compiler`/`automation-corpus` after checking CI.
+- Not `automation-compiler`/`automation-corpus`: test-only, but they are the live guard that
+  every mechanic in the data is handled or marked manual in both languages (kept 2026-10-12).
 - `src/lib/combat/*`, `combat-io.ts` and `prototype-catalogue.ts` (about 4.5k lines) _after_ the
   session log lifts its id/fold ideas.
 - Later:
@@ -219,6 +219,30 @@ There are six parallel records. The same hit can land in four of them.
     reached only by tests, where they generate the programs the LIVE coordinator tests
     run. They go together with the mechanics world (vitals, conditions, concentration,
     rest, DM adversary actions), not before.
+  - **Retiring the mechanics world (mapped 2026-10-12).** The world is now a mirror: every
+    value the sheet shows from it is also in the plain session fields
+    (`character-vitals.ts`'s `reconciled()` always returns the session's). Only four facts
+    live nowhere else: old buff standings (no writer since the cast executor went),
+    engine-held concentration, the encounter journal behind the DM's chronicle undo, and
+    the world's own round/initiative copies. Slices, one PR each: 0. Delete the code with no app caller (party attack participation, adversary
+    conditions, `engineSelfDamage`, `redoCharacterAction`, the `character*Capability`
+    family reached only by tests); rename `mechanics-command.ts` (resource conversions).
+    1. The 24 `character-vitals` readers read `session.*` directly (already an exact no-op).
+    2. **Done (#180).** Exhaustion mirrors only a change, as the death track already did.
+    3. `sessionActiveKeys` stops reading world standings. Needs the live-data survey first
+       (`scripts/survey-dead-effect-fields.ts`, `liveStandings`).
+       Slices 4–6 wait for slice 3: the world still ends its own lifetimes (an old buff
+       standing "until long rest") and `sessionActiveKeys` reads them, so a sheet-only write
+       would leave such a buff lit. The rest paths already leave the same sheet on every
+       scenario (`rest-path-parity.test.ts`, #184).
+    4. `world-commit.ts` and its callers keep only the session write; `applyPlayCommit`
+       restores the prior values on undo.
+    5. Rests: the modal calls `shortRest`/`longRest`; `rest-world-boundary.ts` goes.
+    6. `solo-world-turn.ts` and `party-world-lease.ts` go (turn-timed world lifetimes).
+    7. The encounter world: damage/heal/undo through the plain encounter writers.
+    8. `session.world` itself and the `mechanics-*` modules (39 app tests, 3 pack tests);
+       `EntityRef` and its schema move out first. Old `world` blobs stay in Firestore,
+       unread.
   - The IndexedDB log mirror.
   - `SessionLogDoc.logs`.
 
