@@ -70,9 +70,9 @@ describe("interactive kindle grammar (wave 2)", () => {
     expect(clOptHover).toContain("var(--accent-primary)");
   });
 
-  it("keeps the light-theme compendium tab hover perceptible (its own strike)", () => {
+  it("keeps the tab hover perceptible in both themes (an underline strike, vision 1)", () => {
     expect(folioCss).toMatch(
-      /\[data-theme="light"\] \.cmp-tab:hover[^{]*\{[^}]*var\(--accent-primary\)/
+      /\.cmp-tab:hover,[^{]*\{[^}]*border-bottom-color: var\(--border-strong\)/
     );
   });
 });
