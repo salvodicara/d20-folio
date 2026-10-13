@@ -3,7 +3,7 @@
  * owner 2026-07-23; DESIGN.md §13 "Per-route backdrop override").
  *
  * `--app-bg-art` is the ONE backdrop seam: the `body::after` painter reads it,
- * and a route swaps it on mount/unmount (useRealmBackdrop / useCampaignBackdrop).
+ * and a route swaps it on mount/unmount (useCampaignBackdrop).
  * A bare var swap HARD-CUTS the whole viewport's art — at the raised presence
  * that cut reads as a flash, off the settling motion grammar. This module makes
  * every swap a CROSSFADE without adding a second painter to the steady state:

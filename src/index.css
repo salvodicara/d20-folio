@@ -197,14 +197,6 @@
   --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
   --asset-login: url("/assets/backgrounds/login.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
-  /* Realm scenes (post-v0.22.0 feature layer, kept through the visual rollback):
-       --asset-compendium-scene   the compendium realm (the Grand Library)
-       --asset-roster-scene       the roster realm (the Hall of Heroes)
-       --asset-creation-scene     the wizards' realm (the Ritual of Making) */
-  --asset-compendium-scene: url("/assets/backgrounds/compendium-scene.webp");
-  --asset-roster-scene: url("/assets/backgrounds/roster-scene.webp");
-  --asset-creation-scene: url("/assets/backgrounds/creation-scene.webp");
-
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
      (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
      the `.cmp-tome` recipe covers the tome with it. Light theme shows the warm vellum
@@ -279,10 +271,10 @@
    § 01 Palette · DARK theme (default)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
-  --bg-page: #0c0a07;
-  --bg-surface-1: #15110b;
-  --bg-surface-2: #1d1810;
-  --bg-surface-3: #2a2317;
+  --bg-page: #0a0806;
+  --bg-surface-1: #15110d;
+  --bg-surface-2: #1c1711;
+  --bg-surface-3: #261f17;
   /* Warm-black rule (BG3 identity epic, 2026-07-02): every neutral dark
      surface is RED-BIASED (R > G > B) like BG3's shipped darks (#0b0908 family)
      — never neutral grey, never blue-cast. The prior #07050a was the one
@@ -333,7 +325,7 @@
   /* The candlelit backdrop's presence in dark (was the body::after 0.55
      fallback; now explicit — mirrors the light block's token — so the
      composite-floor guard reads the real value). */
-  --app-bg-art-opacity: 0.55;
+  --app-bg-art-opacity: 0.4;
 
   --text-primary: #f0e4cb;
   /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
@@ -353,9 +345,9 @@
   --text-faint: #9a8c6e;
   --text-inverse: #1a1610;
 
-  --border-soft: #241e15;
-  --border-medium: #352c1f;
-  --border-strong: #4d3f29;
+  --border-soft: #2f2619;
+  --border-medium: #413521;
+  --border-strong: #645230;
   --border-accent: #6b562f;
 
   /* Empty/spent PIP recipe (slot diamonds + tracker pips) — the hollow socket
@@ -641,14 +633,9 @@
      that text/cards over it stay clean; fixed so it doesn't scroll. */
   --vellum-grain:
     radial-gradient(
-      ellipse 90% 70% at 12% 0%,
-      rgba(184, 146, 61, 0.05) 0%,
-      transparent 55%
-    ),
-    radial-gradient(
-      ellipse 90% 70% at 88% 100%,
-      rgba(42, 77, 140, 0.04) 0%,
-      transparent 60%
+      ellipse 70% 50% at 50% -12%,
+      rgba(176, 124, 52, 0.13),
+      transparent 70%
     ),
     radial-gradient(
       ellipse 140% 120% at 50% 38%,
@@ -686,11 +673,11 @@
      environment, while the folio rests in controlled architectural shade. The
      page field is neutral stone/linen rather than honey, so scene, work plane,
      and decision surface occupy three distinct value/temperature bands. */
-  --bg-page: #948f84;
-  --bg-surface-1: #e9dec6;
-  --bg-surface-2: #f6ecd6;
-  --bg-surface-3: #d2c5a9;
-  --bg-recessed: #bdb097;
+  --bg-page: #ede4d1;
+  --bg-surface-1: #f8f2e5;
+  --bg-surface-2: #fdf9f0;
+  --bg-surface-3: #ebdfc6;
+  --bg-recessed: #efe5d0;
   /* Warm umber (not black) so the `.input` recessed gradient reads as a pressed
      vellum channel; mixing the tan fill toward black went muddy-olive (the dirty
      textarea / dropdown boxes). See the dark-theme note. */
@@ -737,9 +724,9 @@
      too near the field's own value. A small darkening lands them crisp on the
      field (and only richer as illuminated-manuscript ink on the bright ivory
      cards), and — being darker — every AA pin only gains headroom. */
-  --text-secondary: #2e2310;
-  --text-muted: #291e0a;
-  --text-faint: #291e0a;
+  --text-secondary: #46371f;
+  --text-muted: #5f4f33;
+  --text-faint: #5f4f33;
   --text-inverse: #fbf4df;
   /* Text that sits DIRECTLY on the candlelit backdrop (not on a card). The inks
      above were tuned for the BARE field, but the prominent atmospheric art
@@ -756,8 +743,8 @@
      light gold patches (the dark edge separates it) AND the dark art (the bright
      fill pops), and the outline is what clears the a11y gate (bright fg vs the dark
      outline axe credits as the backing). Body = warm white; titles = bright gilt. */
-  --text-on-backdrop: #f8f1de;
-  --text-on-backdrop-title: var(--gold-leaf-100);
+  --text-on-backdrop: var(--text-primary);
+  --text-on-backdrop-title: var(--accent-text);
   /* Error/required ink ON the backdrop: the field's --semantic-danger is the deep
      vermilion-700 ink (vanishes on the dark art exactly like the field text). This
      is its on-backdrop sibling — a lifted warm vermilion, bright enough to read on
@@ -775,9 +762,9 @@
      umber shadow, so on-art text reads as gilt lettering catching light, not a
      sticker with a border. Contrast still comes from the dark edge: the 2px
      core sits at the same near-black depth as before. */
-  --on-art-halo:
-    0 0 1px rgba(20, 13, 4, 0.95), 0 0 2px rgba(20, 13, 4, 0.85),
-    0 1px 3px rgba(24, 16, 5, 0.75), 0 2px 10px rgba(28, 19, 6, 0.5);
+  /* No painting sits behind loose text any more (owner 2026-10-13), so loose text
+     on the light field is plain ink: no outline. */
+  --on-art-halo: none;
 
   /* Daylight sibling plates (DESIGN.md §13 — owner-generated batch 3): light no
      longer borrows the dark candlelit plates — each scene token re-points to the
@@ -788,14 +775,11 @@
   --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
   --asset-login: url("/assets/backgrounds/login-light.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
-  --asset-compendium-scene: url("/assets/backgrounds/compendium-scene-light.webp");
-  --asset-roster-scene: url("/assets/backgrounds/roster-scene-light.webp");
-  --asset-creation-scene: url("/assets/backgrounds/creation-scene-light.webp");
 
   /* The daylight scene is deliberately present, then graded into shade in the
      shared painter below. Opacity provides detail; luminance separation comes
      from the theme filter, not from washing the art into the page field. */
-  --app-bg-art-opacity: 0.78;
+  --app-bg-art-opacity: 0.28;
 
   /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit
      translucency (T3): the same page-level surfaces (the `.folio-panel`
@@ -808,9 +792,9 @@
      stay opaque — translucency never compounds (same rule as dark). */
   --panel-alpha: 0.97;
 
-  --border-soft: #c8bda5;
-  --border-medium: #97886a;
-  --border-strong: #706044;
+  --border-soft: #e3d8c2;
+  --border-medium: #cbb894;
+  --border-strong: #a89064;
   --border-accent: #614a1d;
 
   /* Empty/spent PIP recipe — MIRROR dark's hollow-outline SEMANTICS on vellum.
@@ -1143,17 +1127,16 @@
      vignette holds the long-page floor. No global sepia wash. */
   --vellum-grain:
     radial-gradient(
-      ellipse 88% 72% at 78% -8%,
-      rgba(222, 198, 144, 0.36),
-      transparent 62%
+      ellipse 70% 50% at 50% -12%,
+      rgba(255, 249, 232, 0.9),
+      transparent 72%
     ),
-    radial-gradient(ellipse 72% 88% at -8% 56%, rgba(53, 72, 69, 0.2), transparent 68%),
     radial-gradient(
-      ellipse 120% 100% at 50% 40%,
-      transparent 44%,
-      rgba(45, 40, 31, 0.34) 100%
+      ellipse 130% 110% at 50% 40%,
+      transparent 55%,
+      rgba(120, 92, 44, 0.16) 100%
     ),
-    linear-gradient(145deg, #aaa394 0%, #928e84 52%, #77756f 100%);
+    linear-gradient(180deg, #efe7d6 0%, #e8dec8 100%);
 
   /* Light glows pull a BRIGHTER struck gold than the AA-constrained UI-fill: gold-300
      (#d4ac4d) visibly blooms on cream where `--accent-primary` (#4a380c, deep umber for
@@ -1396,71 +1379,30 @@ body::after {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background-image: var(--app-bg-art, var(--asset-home-hero));
+  /* Owner 2026-10-13, the image rule: never a painting behind text. The app field
+     is the calm vellum/graphite of body::before; a route that owns an image (the
+     campaign hub) sets `--app-bg-art`, and behind the page that image is ambient
+     light only — heavily blurred, over-scaled so the blur never shows an edge, and
+     fading out down the page. The sharp image lives in the route's own header. */
+  background-image: var(--app-bg-art, none);
   background-size: cover;
-  /* The campaign hub overrides this with the DM's crop focal (`bannerCrop` centre)
-     so a cropped custom banner positions the cover backdrop; the default asset (and
-     the home hero) keep `center top`. */
   background-position: var(--app-bg-art-position, center top);
   background-repeat: no-repeat;
-  opacity: var(--app-bg-art-opacity, 0.55);
-  /* The campaign hub also honours the crop ZOOM: `--app-bg-art-scale` (the cropper's
-     zoom factor) magnifies the `cover` art around the focal so a tightly-cropped
-     banner shows the SAME framing as its list card, not the whole image. Scaling a
-     viewport-filling layer up around an interior point always still covers, so no
-     gaps appear. Default (unset → 1, origin `center top`) is a pixel-identical no-op. */
+  opacity: var(--app-bg-art-opacity, 0.4);
+  filter: blur(46px) saturate(1.08);
   transform-origin: var(--app-bg-art-position, center top);
-  transform: scale(var(--app-bg-art-scale, 1));
-  pointer-events: none;
-}
-/* Shaded Scriptorium painter. The source remains a daylight scene, but the folio
-   sits in cool architectural shade: detail stays present while brightness and
-   saturation retreat behind the work plane. The tail never disappears into a
-   flat field; it settles to a low atmospheric presence for long pages. */
-[data-theme="light"] body::after {
-  filter: brightness(0.56) saturate(0.72) contrast(1.12) sepia(0.03);
+  transform: scale(calc(var(--app-bg-art-scale, 1) * 1.15));
   -webkit-mask-image: linear-gradient(
     to bottom,
     #000 0%,
-    #000 42%,
-    rgba(0, 0, 0, 0.68) 78%,
-    rgba(0, 0, 0, 0.3) 100%
+    rgb(0 0 0 / 0.5) 45%,
+    transparent 85%
   );
-  mask-image: linear-gradient(
-    to bottom,
-    #000 0%,
-    #000 42%,
-    rgba(0, 0, 0, 0.68) 78%,
-    rgba(0, 0, 0, 0.3) 100%
-  );
+  mask-image: linear-gradient(to bottom, #000 0%, rgb(0 0 0 / 0.5) 45%, transparent 85%);
+  pointer-events: none;
 }
-/* USER-UPLOADED campaign art under light chrome (the hub raises
-   `data-app-bg-custom` on <html> while a DM's own banner is the backdrop — see
-   `useCampaignBackdrop`). The bundled plates are graded into the parchment world,
-   but a custom upload is ANY image — a pure-white photo, a neon screenshot, a
-   pitch-black render — and raw at 0.55 it can shout against the light chrome or
-   wash the field out. The veil is a designed two-part treatment, applied ONLY to
-   custom art (the owner plates render native):
-     1. a parchment GLAZE — a uniform translucent wash of the field's own hue
-        layered over the image inside the same element, pulling every upload
-        toward the warm honey world (neon cools down, pure white warms up,
-        pitch black lifts toward umber);
-     2. a gentle harmonizer filter — small desaturation + contrast ease, so
-        oversaturated uploads sit back as atmosphere instead of competing with
-        the chrome.
-   Text legibility never depends on the upload: loose text on the backdrop is
-   already the guarded `.on-art` bright-ink + dark-outline register, and the
-   glaze only narrows the art's dynamic range further. Dark theme needs no veil
-   (0.55 over the near-black field tames any upload) and stays byte-identical. */
-[data-theme="light"][data-app-bg-custom] body::after {
-  background-image:
-    linear-gradient(
-      color-mix(in srgb, var(--bg-page) 38%, transparent),
-      color-mix(in srgb, var(--bg-page) 38%, transparent)
-    ),
-    var(--app-bg-art, var(--asset-home-hero));
-  filter: saturate(0.82) contrast(0.94);
-  opacity: 0.55;
+[data-theme="light"] body::after {
+  filter: blur(46px) saturate(0.8) sepia(0.25);
 }
 @media (prefers-reduced-motion: no-preference) {
   /* A whisper of parallax-free settle on first paint only (no scroll-jank): the

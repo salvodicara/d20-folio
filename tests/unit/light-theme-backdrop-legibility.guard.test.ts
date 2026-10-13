@@ -185,17 +185,19 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     }
   });
 
-  it("#12 — the light custom-art veil exists (glaze + harmonizer on data-app-bg-custom)", () => {
-    // User uploads are ANY image; the veil (a --bg-page glaze layered in
-    // body::after + a gentle desaturation) is what keeps a pure-white / neon /
-    // pitch-black banner harmonious under the light chrome.
-    const veil =
-      /\[data-theme="light"\]\[data-app-bg-custom\] body::after \{[^}]*color-mix\(in srgb, var\(--bg-page\)[^}]*saturate\(/;
+  it("#12 — behind the page an image is ambient light only (owner 2026-10-13, the image rule)", () => {
+    // No painting behind text: the field defaults to no art, and a route that owns an
+    // image (the campaign hub) gets it back only blurred, in both themes.
+    const painter =
+      /body::after \{[^}]*background-image: var\(--app-bg-art, none\)[^}]*filter: blur\(/;
     expect(
-      veil.test(indexCss),
-      "MISSING: `[data-theme=light][data-app-bg-custom] body::after` with the --bg-page " +
-        "glaze + saturate() harmonizer — without it an arbitrary DM upload (neon, pure " +
-        "white, pitch black) shouts against the light chrome."
+      painter.test(indexCss),
+      "MISSING: body::after defaulting to no art and blurring any route art — a sharp " +
+        "painting would sit behind the page's text again."
+    ).toBe(true);
+    expect(
+      /\[data-theme="light"\] body::after \{[^}]*filter: blur\(/.test(indexCss),
+      "MISSING: the light theme's blurred ambient grade."
     ).toBe(true);
   });
 
@@ -217,21 +219,12 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     ).toBe(true);
   });
 
-  it("#14 — Shaded Scriptorium keeps scene, work plane, and ivory surfaces in distinct bands", () => {
+  it("#14 — the light field is warm vellum, with ivory surfaces above it (owner 2026-10-13)", () => {
     const palette =
-      /\[data-theme="light"\][^{]*\{[^}]*--bg-page:\s*#948f84[^}]*--bg-surface-1:\s*#e9dec6[^}]*--bg-surface-2:\s*#f6ecd6/;
+      /\[data-theme="light"\][^{]*\{[^}]*--bg-page:\s*#ede4d1[^}]*--bg-surface-1:\s*#f8f2e5[^}]*--bg-surface-2:\s*#fdf9f0/;
     expect(
       palette.test(indexCss),
-      "MISSING: the owner-approved Shaded Scriptorium light palette. Reusing the old honey " +
-        "field collapses scene, work plane, and decision surfaces into one beige band."
-    ).toBe(true);
-
-    const painter =
-      /\[data-theme="light"\] body::after \{[^}]*filter:\s*brightness\(0\.56\) saturate\(0\.72\) contrast\(1\.12\) sepia\(0\.03\)[^}]*rgba\(0, 0, 0, 0\.3\) 100%/;
-    expect(
-      painter.test(indexCss),
-      "MISSING: the Shaded Scriptorium daylight grading + retained atmospheric tail. " +
-        "Without both, light returns to a washed scene or a flat long-page floor."
+      "MISSING: the vision-1 light palette (vellum field, ivory work surfaces)."
     ).toBe(true);
   });
 });

@@ -161,12 +161,8 @@ describe("CompendiumPage chrome — facet disclosure + the two-leaf spread", () 
     window.matchMedia = originalMatchMedia;
   });
 
-  it("mounts the realm's own backdrop (--app-bg-art → the Grand Library plate) and clears it on unmount", () => {
-    const { unmount } = renderPage(INDEX_URL);
-    expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe(
-      "var(--asset-compendium-scene)"
-    );
-    unmount();
+  it("paints no picture behind its text (owner 2026-10-13, the image rule)", () => {
+    renderPage(INDEX_URL);
     expect(document.documentElement.style.getPropertyValue("--app-bg-art")).toBe("");
   });
 
