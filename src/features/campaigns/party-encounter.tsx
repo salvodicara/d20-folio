@@ -96,7 +96,15 @@ import {
 } from "@/components/shared/card-editor-scope";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Select } from "@/components/shared/Select";
-import { cn, fmtXp, formatCr, formatSpeed, localeDistance } from "@/lib/utils";
+import {
+  cn,
+  fmtXp,
+  formatCr,
+  formatSpeed,
+  localeDistance,
+  speedFromLocaleValue,
+  speedToLocaleValue,
+} from "@/lib/utils";
 import { CR_VALUES, xpForCr } from "@/lib/monster";
 import { monsterWalkingSpeedFt } from "@/lib/monster-speed";
 import { ensureSrdKind } from "@/i18n";
@@ -132,6 +140,7 @@ import {
   setMonsterNotes,
   setMonsterBardicInspirationDie,
   setMonsterSide,
+  setMonsterSpeed,
   setMonsterTempHp,
   setRevealed,
   setMonsterCondition,
@@ -1728,6 +1737,18 @@ export function MonsterCard({
       </div>
     ) : null;
 
+  // Speed: the DM edits it in place (Slow, Ray of Frost); everyone else reads it.
+  const speedChip = (feet: number | null) =>
+    apply ? (
+      <MonsterSpeedChip
+        feet={feet}
+        ariaLabel={t("campaignHub.encounterSpeedFor", { name: displayName })}
+        onCommit={(next) => apply((e) => setMonsterSpeed(e, monster.id, next))}
+      />
+    ) : (
+      <MonsterSpeedStat feet={feet} />
+    );
+
   // The at-a-glance cluster — AC + HP (or band), in the SAME `.party-vitals` band a PC
   // card uses, so the two read identically.
   const cluster = (
@@ -1781,13 +1802,11 @@ export function MonsterCard({
       {monster.speed === undefined && monster.srdId ? (
         <Suspense fallback={null}>
           <MonsterStatBlockWalk srdId={monster.srdId}>
-            {(walkFt) => (
-              <MonsterSpeedStat feet={monsterWalkingSpeedFt(undefined, walkFt)} />
-            )}
+            {(walkFt) => speedChip(monsterWalkingSpeedFt(undefined, walkFt))}
           </MonsterStatBlockWalk>
         </Suspense>
       ) : (
-        <MonsterSpeedStat feet={monsterWalkingSpeedFt(monster.speed, undefined)} />
+        speedChip(monsterWalkingSpeedFt(monster.speed, undefined))
       )}
     </div>
   );
@@ -2254,6 +2273,92 @@ function MonsterSpeedStat({ feet }: { feet: number | null }) {
       value={text}
       valueText={text}
     />
+  );
+}
+
+/** The DM's in-place speed editor — the AC chip's twin. The DM types in the reading
+ *  unit (feet in English, metres in Italian); the override is stored in feet. An
+ *  unknown speed (a hand-typed monster) shows a dash and opens on an empty field. */
+function MonsterSpeedChip({
+  feet,
+  ariaLabel,
+  onCommit,
+}: {
+  feet: number | null;
+  ariaLabel: string;
+  onCommit: (feet: number) => void;
+}) {
+  const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const acr = t("character.vitals.spd");
+  useReportEditorOpen(editing);
+
+  useEffect(() => {
+    if (editing) inputRef.current?.focus({ preventScroll: true });
+  }, [editing]);
+
+  function commit(): void {
+    setEditing(false);
+    if (draft.trim() === "") return;
+    const next = Number(speedFromLocaleValue(draft, locale));
+    if (Number.isFinite(next) && next !== feet) onCommit(next);
+  }
+
+  return (
+    <Popover
+      open={editing}
+      onOpenChange={(open) => {
+        if (open) setDraft(feet === null ? "" : speedToLocaleValue(feet, locale));
+        setEditing(open);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="vital"
+          data-density="chip"
+          title={ariaLabel}
+          aria-label={ariaLabel}
+        >
+          <InitBadge
+            value={feet === null ? "—" : formatSpeed(feet, locale)}
+            acronym={acr}
+            icon={Footprints}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent rubric={ariaLabel} align="start">
+        <div className="party-vitals">
+          <span className="vital vital-init vital-init-edit" data-density="chip">
+            <span className="vi-input">
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="decimal"
+                value={draft}
+                onChange={(e) =>
+                  setDraft(e.target.value.replace(/[^\d,.]/g, "").slice(0, 4))
+                }
+                onFocus={(e) => e.target.select()}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commit();
+                  } else if (e.key === "Escape") setEditing(false);
+                }}
+                aria-label={ariaLabel}
+                className="init-edit-input"
+              />
+            </span>
+            <StatLabel icon={Footprints} acronym={acr} />
+          </span>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

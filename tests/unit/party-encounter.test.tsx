@@ -355,6 +355,112 @@ describe("MonsterCard — walking speed (stat block, or the DM's override)", () 
   });
 });
 
+describe("MonsterCard — the DM edits a monster's speed in place", () => {
+  function applied(apply: ReturnType<typeof vi.fn>): EncounterMonster {
+    const state = addMonster(startEncounter({}, [], 1), {
+      name: "Goblin A",
+      ac: 13,
+      maxHp: 7,
+      count: 1,
+      initiative: null,
+    });
+    const [update] = (apply.mock.calls[0] ?? []) as [
+      ((e: EncounterState) => EncounterState) | undefined,
+    ];
+    return update?.(state).combatants[0] as EncounterMonster;
+  }
+
+  it("the editor opens on the stat block's speed and a new value routes setMonsterSpeed through apply (Slow: 30 to 20 ft)", async () => {
+    const apply = vi.fn<(fn: (e: EncounterState) => EncounterState) => void>();
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={goblinWithSrd()}
+        isCurrent
+        apply={apply}
+      />
+    );
+    fireEvent.click(
+      await screen.findByRole(
+        "button",
+        { name: "Speed for Goblin A 1" },
+        { timeout: 10000 }
+      )
+    );
+    const input = screen.getByRole("textbox", { name: "Speed for Goblin A 1" });
+    expect((input as HTMLInputElement).value).toBe("30");
+    fireEvent.change(input, { target: { value: "20" } });
+    fireEvent.blur(input);
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(applied(apply).speed).toBe(20);
+  });
+
+  it("an unchanged value writes nothing", () => {
+    const apply = vi.fn<(fn: (e: EncounterState) => EncounterState) => void>();
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={{ ...goblinWithSrd(), speed: 20 }}
+        isCurrent
+        apply={apply}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Speed for Goblin A 1" }));
+    fireEvent.blur(screen.getByRole("textbox", { name: "Speed for Goblin A 1" }));
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it("in Italian the DM types metres and the override is stored in feet (6 m = 20 ft)", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      const apply = vi.fn<(fn: (e: EncounterState) => EncounterState) => void>();
+      render(
+        <MonsterCard
+          campaignId="camp-test"
+          monster={{ ...goblinWithSrd(), speed: 30 }}
+          isCurrent
+          apply={apply}
+        />
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Velocità di Goblin A 1" }));
+      const input = screen.getByRole("textbox", { name: "Velocità di Goblin A 1" });
+      expect((input as HTMLInputElement).value).toBe("9");
+      fireEvent.change(input, { target: { value: "6" } });
+      fireEvent.blur(input);
+      expect(applied(apply).speed).toBe(20);
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+
+  it("a hand-typed monster with no known speed still gives the DM an editor", () => {
+    const { srdId: _srdId, ...handTyped } = goblinWithSrd();
+    void _srdId;
+    const apply = vi.fn<(fn: (e: EncounterState) => EncounterState) => void>();
+    render(
+      <MonsterCard campaignId="camp-test" monster={handTyped} isCurrent apply={apply} />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Speed for Goblin A 1" }));
+    const input = screen.getByRole("textbox", { name: "Speed for Goblin A 1" });
+    expect((input as HTMLInputElement).value).toBe("");
+    fireEvent.change(input, { target: { value: "25" } });
+    fireEvent.blur(input);
+    expect(applied(apply).speed).toBe(25);
+  });
+
+  it("a PLAYER card (no apply) shows the speed as plain text, never an editor", async () => {
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={{ ...goblinWithSrd(), speed: 20 }}
+        isCurrent
+      />
+    );
+    expect(screen.queryByRole("button", { name: "Speed for Goblin A 1" })).toBeNull();
+    expect(await screen.findByLabelText("Speed: 20 ft")).toBeTruthy();
+  });
+});
+
 describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", () => {
   it("initLocked + a NULL initiative keeps the chip EDITABLE (a fresh reinforcement)", () => {
     render(

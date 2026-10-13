@@ -167,6 +167,7 @@
     "encounterTurnOrder": "Ordine di turno",
     "encounterInitiativeFor": "Iniziativa di {{name}}",
     "encounterAcFor": "CA di {{name}}",
+    "encounterSpeedFor": "Velocità di {{name}}",
     "encounterHpFor": "Punti ferita di {{name}}",
     "encounterTokenHp": "{{name}}, gettone {{n}}",
     "encounterTokenLabel": "Gettone {{n}}",

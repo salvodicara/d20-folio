@@ -38,7 +38,7 @@ import {
   markExtraTurn,
   type StoredExtraTurn,
 } from "@/lib/play/extra-turns";
-import { isMonsterSpeedFt } from "@/lib/monster-speed";
+import { clampMonsterSpeedFt, isMonsterSpeedFt } from "@/lib/monster-speed";
 import type { PortraitCrop } from "@/types/character";
 import type { CombatDefenseSnapshot } from "@/types/campaign";
 
@@ -679,6 +679,21 @@ export function setMonsterAc(
   const next = Math.min(40, Math.max(0, Math.round(ac)));
   return mapCombatant(state, id, (c) =>
     c.kind === "pc" || c.ac === next ? c : { ...c, ac: next }
+  );
+}
+
+/** Set a MONSTER's walking-speed override mid-encounter (the Slow mastery's −10 ft,
+ *  a Ray of Frost). Whole feet clamped to `[0, MONSTER_SPEED_MAX_FT]`; an equal
+ *  value or a PC is a no-op (a PC's speed lives on its character doc). */
+export function setMonsterSpeed(
+  state: EncounterState,
+  id: string,
+  feet: number
+): EncounterState {
+  const next = clampMonsterSpeedFt(feet);
+  if (next === null) return state;
+  return mapCombatant(state, id, (c) =>
+    c.kind === "pc" || c.speed === next ? c : { ...c, speed: next }
   );
 }
 
