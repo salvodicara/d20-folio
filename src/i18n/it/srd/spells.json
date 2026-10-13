@@ -1,7 +1,7 @@
 {
   "acid-splash": {
     "description": "L'incantatore crea una bolla di acido in un punto entro gittata, dove la bolla esplode in una sfera del raggio di 1,5 metri. Ogni creatura all'interno della sfera deve superare un tiro salvezza su Destrezza, altrimenti subisce 1d6 danni da acido.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d6 quando l'incantatore raggiunge il 5° livello (2d6), l'11° livello (3d6) e il 17° livello (4d6).",
     "name": "Fiotto Acido",
     "range": "18 metri"
@@ -59,7 +59,7 @@
   },
   "animate-dead": {
     "description": "L'incantatore sceglie una pila di ossa o un cadavere umanoide di taglia Media o Piccola entro gittata, animandolo come creatura non morta. Il bersaglio si trasforma in uno scheletro se l'incantatore sceglie la pila di ossa, o in uno zombi se l'incantatore sceglie un cadavere (vedi \"Mostri\" per le schede delle statistiche).\n\nA ogni suo turno, l'incantatore può effettuare un'azione bonus per comandare mentalmente qualsiasi creatura creata con questo incantesimo, a patto che si trovi entro 18 metri da lui (se controlla varie creature, l'incantatore può comandarne più di una allo stesso momento, impartendo lo stesso comando a ciascuna di loro). L'incantatore decide quale azione effettuerà la creatura e dove si muoverà nel suo turno successivo, oppure può impartirle un comando generale, come restare a guardia di una stanza o un di corridoio. Se invece non impartisce alcun comando, la creatura effettua l'azione Schivata e si sposta solo per evitare di subire danni. Una volta ricevuto un ordine, la creatura continua a seguirlo finché non ha portato a termine il compito.\n\nLa creatura rimane sotto il controllo dell'incantatore per 24 ore, passate le quali smette di obbedire a qualsiasi comando ulteriore. Per mantenere il controllo sulla creatura per altre 24 ore, l'incantatore deve lanciare di nuovo questo incantesimo su di essa prima che l'attuale periodo di 24 ore termini. Questo uso dell'incantesimo gli permette di ristabilire il controllo su un massimo di quattro creature da lui animate tramite questo incantesimo, anziché animarne una nuova.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantatore anima due creature non morte aggiuntive o ristabilisce il controllo su di esse per ogni slot incantesimo di livello superiore al 3°. Ognuna delle creature deve provenire da un diverso cadavere o mucchio d'ossa.",
     "name": "Animare i Morti",
     "range": "3 metri"
@@ -292,7 +292,7 @@
   },
   "burning-hands": {
     "description": "Un sottile velo di fiamme si propaga dall'incantatore. Ogni creatura entro un cono di 4,5 metri effettua un tiro salvezza su Destrezza, subendo 3d6 danni da fuoco in caso di fallimento, o la metà dei danni in caso di successo.\n\nGli oggetti infiammabili nel cono che non sono indossati o trasportati iniziano a bruciare.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d6 per ogni slot di livello superiore al 1°.",
     "name": "Mani Brucianti",
     "range": "Se stessi (cono di 4,5 metri)"
@@ -337,7 +337,7 @@
   },
   "chill-touch": {
     "description": "Incanalando un flusso di gelo sepolcrale, l'incantatore effettua un attacco con incantesimo in mischia contro un bersaglio a portata. Se il colpo va a segno, il bersaglio subisce 1d10 danni necrotici e non può recuperare punti ferita fino al termine del turno successivo dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d10 quando l'incantatore raggiunge il 5° livello (2d10), l'11° livello (3d10) e il 17° livello (4d10).",
     "name": "Tocco Gelido",
     "range": "Contatto"
@@ -347,7 +347,7 @@
   },
   "chromatic-orb": {
     "description": "L'incantatore scaglia un globo di energia contro un bersaglio entro gittata. Può scegliere che tipo di globo creare tra acido, freddo, fulmine, fuoco, tuono o veleno, e poi effettuare un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 3d8 danni del tipo scelto.\n\nSe l'incantatore ottiene lo stesso risultato su due o più d8, il globo schizza verso un altro bersaglio a scelta dell'incantatore che si trovi entro 9 metri dal primo bersaglio. L'incantatore effettua un tiro per colpire contro il secondo bersaglio e anche un altro tiro per i danni. Il globo non può più schizzare verso un altro bersaglio, a meno che l'incantatore non lanci l'incantesimo usando uno slot incantesimo di 2° livello o superiore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 per ogni slot di livello superiore al 1°. Il globo può schizzare verso un altro bersaglio un numero massimo di volte pari al livello dello slot incantesimo consumato, ed è possibile bersagliare una creatura soltanto una volta per ogni lancio di questo incantesimo.",
     "name": "Globo Cromatico",
     "range": "27 metri"
@@ -392,7 +392,7 @@
   },
   "color-spray": {
     "description": "L'incantatore lancia un lampo abbagliante di luce multicolore. Ogni creatura entro un cono di 4,5 metri originato dall'incantatore deve superare un tiro salvezza su Costituzione, altrimenti è accecata fino al termine del turno successivo dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Spruzzo Colorato",
     "range": "Se stessi (cono di 4,5 metri)"
   },
@@ -401,7 +401,7 @@
   },
   "command": {
     "description": "L'incantatore rivolge una parola di comando a una creatura entro gittata che egli è in grado di vedere. Il bersaglio deve superare un tiro salvezza su Saggezza, altrimenti dovrà obbedire al comando nel suo turno successivo. Scegli il comando tra le seguenti opzioni:\n\nAvvicinati. Il bersaglio si muove verso l'incantatore seguendo il percorso più breve e diretto, terminando il suo turno se giunge entro 1,5 metri da lui.\n\nFermo. Nel suo turno, il bersaglio non si muove e non effettua alcuna azione o azione bonus.\n\nFuggi. Il bersaglio usa il suo turno per allontanarsi dall'incantatore nel modo più rapido possibile.\n\nLascia. Il bersaglio lascia cadere ciò che stava impugnando, poi termina il suo turno.\n\nProstrati. Il bersaglio cade a terra prono e termina il suo turno.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantatore può influenzare una creatura aggiuntiva per ogni slot di livello superiore al 1°.",
     "name": "Comando",
     "range": "18 metri"
@@ -548,20 +548,20 @@
   },
   "counterspell": {
     "description": "L'incantatore tenta di interrompere una creatura nell'atto di lanciare un incantesimo. La creatura effettua un tiro salvezza su Costituzione. Se lo fallisce, l'incantesimo si dissolve senza alcun effetto e l'azione, azione bonus o reazione utilizzata per lanciarlo viene sprecata. Se l'incantesimo è stato lanciato usando uno slot incantesimo, lo slot non viene consumato.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "effectWord": "Annulla",
     "name": "Controincantesimo",
     "range": "18 metri"
   },
   "create-food-and-water": {
     "description": "L'incantatore crea 22,5 chili di cibo e 120 litri d'acqua fresca sul terreno o all'interno di un contenitore entro gittata, utili per tenere lontani i rischi di malnutrizione e disidratazione. Il cibo è insipido ma nutriente e assomiglia a un alimento a scelta dell'incantatore; l'acqua è pulita. Il cibo marcisce dopo 24 ore se non viene consumato.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Creare Cibo e Acqua",
     "range": "9 metri"
   },
   "create-or-destroy-water": {
     "description": "L'incantatore esegue una delle seguenti azioni:\n\nCreare acqua. L'incantatore crea fino a 40 litri d'acqua pulita in un contenitore aperto entro gittata. In alternativa, l'acqua cade sotto forma di pioggia in un cubo con spigolo di 9 metri entro gittata, estinguendo le fiamme presenti nell'area.\n\nDistruggere acqua. L'incantatore distrugge fino a 40 litri d'acqua in un contenitore aperto entro gittata. In alternativa, distrugge la nebbia presente in un cubo con spigolo di 9 metri entro gittata.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantatore crea o distrugge 40 litri aggiuntivi d'acqua, oppure la grandezza del cubo aumenta di 1,5 metri per spigolo, per ogni slot di livello superiore al 1°.",
     "name": "Creare o Distruggere Acqua",
     "range": "9 metri"
@@ -591,7 +591,7 @@
   },
   "cure-wounds": {
     "description": "Una creatura toccata dall'incantatore recupera un numero di punti ferita pari a 2d8 più il modificatore di caratteristica da incantatore dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "La guarigione aumenta di 2d8 per ogni slot di livello superiore al 1°.",
     "name": "Cura Ferite",
     "range": "Contatto"
@@ -714,14 +714,14 @@
   },
   "dispel-magic": {
     "description": "L'incantatore sceglie una creatura, un oggetto o un effetto magico situato entro gittata. Ogni incantesimo di 3° livello o inferiore presente sul bersaglio termina. Per ogni incantesimo di 4° livello o superiore presente sul bersaglio, l'incantatore effettua una prova di caratteristica usando la propria caratteristica da incantatore (CD 10 più il livello di quell'incantesimo). Se la prova viene superata, l'incantesimo termina.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantatore termina automaticamente un incantesimo sul bersaglio se il livello di quell'incantesimo è pari o inferiore al livello dello slot incantesimo usato dall'incantatore.",
     "name": "Dissolvi Magie",
     "range": "36 metri"
   },
   "dissonant-whispers": {
     "description": "Una creatura a scelta dell'incantatore, situata entro gittata e che egli è in grado di vedere, sente una melodia dissonante nella sua mente. Il bersaglio effettua un tiro salvezza su Saggezza. Se lo fallisce, subisce 3d6 danni psichici e, se disponibile, deve usare immediatamente la sua reazione per muoversi fin dove la sua velocità glielo consente, percorrendo la via più sicura. In caso di successo, subisce soltanto la metà di quei danni.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d6 per ogni slot di livello superiore al 1°.",
     "name": "Sussurri Dissonanti",
     "range": "18 metri"
@@ -743,7 +743,7 @@
   },
   "divine-smite": {
     "description": "Il bersaglio subisce 2d8 danni radiosi extra dall'attacco. I danni aumentano di 1d8 se il bersaglio è un immondo o un non morto.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 per ogni slot di livello superiore al 1°.",
     "name": "Punizione Divina",
     "range": "Se stessi"
@@ -805,7 +805,7 @@
   },
   "druidcraft": {
     "description": "Sussurrando agli spiriti della natura, l'incantatore crea uno degli effetti seguenti entro gittata.\n\nSensore atmosferico. L'incantatore crea un Minuscolo e innocuo effetto sensoriale che predice il tempo atmosferico nel luogo in cui si trova per le successive 24 ore. L'effetto potrebbe manifestarsi come una sfera dorata in caso di cieli tersi, una nuvola in caso di pioggia, fiocchi di neve in caso di nevicate e così via. Questo effetto permane per 1 round.\n\nFioritura. L'incantatore fa istantaneamente sbocciare un fiore, aprire un baccello o schiudere un germoglio.\n\nEffetto sensoriale. L'incantatore crea un effetto sensoriale innocuo, come la caduta di foglie, delle fate spettrali danzanti, una brezza leggera, il rumore di un piccolo animale o il debole odore di una puzzola. L'effetto deve poter essere contenuto in un cubo con spigolo di 1,5 metri.\n\nTrucchetto col fuoco. L'incantatore accende o spegne una candela, una torcia o un fuoco da campo.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Artificio Druidico",
     "range": "9 metri"
   },
@@ -820,14 +820,14 @@
   },
   "eldritch-blast": {
     "description": "L'incantatore scaglia un raggio di energia crepitante, effettuando un attacco a distanza con incantesimo contro una creatura o un oggetto entro gittata. Se il colpo va a segno, il bersaglio subisce 1d10 danni da forza.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantesimo crea due raggi al 5° livello, tre raggi all'11° livello e quattro raggi al 17° livello. L'incantatore può indirizzare i raggi contro lo stesso bersaglio o contro bersagli differenti, effettuando un tiro per colpire separato per ogni raggio.",
     "name": "Deflagrazione Occulta",
     "range": "36 metri"
   },
   "elementalism": {
     "description": "L'incantatore esercita il suo controllo sugli elementi, creando uno dei seguenti effetti entro gittata.\n\nRichiamo del fuoco. Nell'area di un cubo con spigolo di 1,5 metri, l'incantatore crea una piccola nube di braci non incandescenti, colorate e che emettono fumo e un odore particolare. L'incantatore sceglie il colore e l'odore delle braci, che si possono usare per accendere candele, torce o lampade in quell'area. L'odore del fumo permane per 1 minuto.\n\nRichiamo dell'acqua. L'incantatore crea uno spruzzo d'acqua fresca nebulizzata che inumidisce leggermente le creature e gli oggetti all'interno di un cubo con spigolo di 1,5 metri. In alternativa, crea 1 coppa di acqua pulita da riversare all'interno di un contenitore aperto o su una superficie; l'acqua evapora dopo 1 minuto.\n\nRichiamo dell'aria. Nell'area di un cubo con spigolo di 1,5 metri, l'incantatore crea una brezza in grado di far svolazzare i tessuti, sollevare la polvere, far oscillare le foglie e chiudere porte e persiane aperte. Se le porte e le persiane sono tenute aperte da qualcuno, l'incantesimo non ha effetto su di esse.\n\nRichiamo della terra. L'incantatore crea un sottile velo di polvere o sabbia che ricopre le superfici di un'area di 1,5 metri per lato, oppure fa comparire una singola parola scritta nella sua calligrafia su un lembo di terra o un letto di sabbia.\n\nScolpire elementi. L'incantatore fa in modo che un elemento a sua scelta tra terra, sabbia, fuoco, fumo, nebbia o acqua (in una quantità tale da poter essere contenuto in un cubo con spigolo di 30 centimetri) assuma una forma rozza (come quella di una creatura) per 1 ora.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Elementalismo",
     "range": "9 metri"
   },
@@ -917,7 +917,7 @@
   },
   "false-life": {
     "description": "L'incantatore ottiene 2d4 + 4 punti ferita temporanei.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantatore ottiene 5 punti ferita temporanei aggiuntivi per ogni slot di livello superiore al 1°.",
     "name": "Vita Falsata",
     "range": "Se stessi"
@@ -946,7 +946,7 @@
   },
   "find-familiar": {
     "description": "L'incantatore ottiene i servigi di un famiglio, uno spirito che assume la forma di un animale a sua scelta: pipistrello, gatto, rana, falco, lucertola, piovra, gufo, ratto, corvo, ragno, faina o un'altra bestia che abbia un grado di sfida pari a 0. Il famiglio appare in uno spazio libero entro gittata, ha le statistiche della forma scelta (vedi \"Mostri\"), anche se si tratta di un celestiale, un folletto o un immondo (a scelta dell'incantatore) invece di una bestia. Il famiglio è indipendente dall'incantatore, ma obbedisce ai suoi comandi.\n\nConnessione telepatica. Finché il famiglio si trova a 30 metri dall'incantatore, quest'ultimo può comunicare con lui telepaticamente. Inoltre, come azione bonus, l'incantatore è in grado di vedere attraverso gli occhi del famiglio e sentire ciò che sente fino all'inizio del suo turno successivo, ottenendo i benefici di eventuali sensi speciali posseduti dal famiglio.\n\nInfine, quando l'incantatore lancia un incantesimo con gittata a contatto, il suo famiglio può trasmettere il tocco. Il famiglio deve trovarsi entro 30 metri dall'incantatore e usare la sua reazione per trasmettere il tocco quando l'incantesimo viene lanciato.\n\nCombattimento. Il famiglio diventa un alleato per l'incantatore e i suoi alleati. Tira per la propria iniziativa e agisce nel proprio turno. Un famiglio non può attaccare, ma può effettuare altre azioni normalmente.\n\nScomparsa del famiglio. Quando un famiglio scende a 0 punti ferita, scompare e riappare quando l'incantatore lancia nuovamente questo incantesimo. Come azione di Magia, l'incantatore può temporaneamente congedare il famiglio, che scompare in una sacca dimensionale. In alternativa, l'incantatore può farlo sparire per sempre. Come azione di Magia, finché il famiglio è congedato temporaneamente, l'incantatore può farlo ricomparire in uno spazio libero entro 9 metri da sé. Ogni volta che il famiglio scende a 0 punti ferita o scompare in una sacca dimensionale, nello spazio che occupava in precedenza lascia qualsiasi oggetto stesse indossando o trasportando.\n\nUn solo famiglio. Un incantatore non può avere più di un famiglio alla volta. Se lancia questo incantesimo mentre è già presente un famiglio, l'incantatore gli impartisce un'altra forma possibile.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Trova Famiglio",
     "range": "3 metri"
   },
@@ -1010,7 +1010,7 @@
   },
   "fire-bolt": {
     "description": "L'incantatore scaglia una scintilla di fuoco verso una creatura o un oggetto situato entro gittata, effettuando un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 1d10 danni da fuoco. Un oggetto infiammabile colpito da questo incantesimo prende fuoco se non indossato o trasportato in quel momento.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d10 quando l'incantatore raggiunge il 5° livello (2d10), l'11° livello (3d10) e il 17° livello (4d10).",
     "name": "Dardo di Fuoco",
     "range": "36 metri"
@@ -1032,7 +1032,7 @@
   },
   "fireball": {
     "description": "Una scia di luce brillante parte dall'incantatore e sfreccia fino a un punto a sua scelta entro gittata, provocando un'esplosione infuocata con un profondo boato. Ogni creatura presente in una sfera dal raggio di 6 metri e centrata su quel punto deve effettuare un tiro salvezza su Destrezza, subendo 8d6 danni da fuoco in caso di fallimento, o la metà dei danni in caso di successo.\n\nGli oggetti infiammabili nell'area che non sono indossati o trasportati iniziano a bruciare.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d6 per ogni slot di livello superiore al 3°.",
     "name": "Palla di Fuoco",
     "range": "45 metri"
@@ -1344,7 +1344,7 @@
   },
   "healing-word": {
     "description": "Una creatura scelta dall'incantatore entro gittata e che egli è in grado di vedere recupera un ammontare di punti ferita pari a 2d4 più il modificatore di caratteristica da incantatore dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "La guarigione aumenta di 2d4 per ogni slot di livello superiore al 1°.",
     "name": "Parola Guaritrice",
     "range": "18 metri"
@@ -1361,7 +1361,7 @@
   },
   "hellish-rebuke": {
     "description": "La creatura che ha inflitto danni all'incantatore viene temporaneamente avviluppata da fiamme verdi. La creatura effettua un tiro salvezza su Destrezza, subendo 2d10 danni da fuoco in caso di fallimento, o la metà dei danni in caso di successo.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d10 per ogni slot di livello superiore al 1°.",
     "name": "Intimorire Infernale",
     "range": "18 metri"
@@ -1450,7 +1450,7 @@
   },
   "ice-knife": {
     "description": "L'incantatore crea un frammento di ghiaccio e lo scaglia contro una creatura entro gittata, effettuando un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 1d10 danni perforanti. Che colpisca o manchi il bersaglio, il frammento poi esplode. Il bersaglio e ogni creatura entro 1,5 metri dal punto in cui il ghiaccio è esploso devono superare un tiro salvezza su Destrezza, altrimenti subiscono 2d6 danni da freddo.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni da freddo aumentano di 1d6 per ogni slot di livello superiore al 1°.",
     "name": "Coltello di Ghiaccio",
     "range": "18 metri"
@@ -1470,7 +1470,7 @@
   },
   "identify": {
     "description": "L'incantatore tocca un oggetto per la durata del lancio dell'incantesimo. Se si tratta di un oggetto magico o di un altro oggetto infuso di magia, apprende le sue proprietà e come usarlo, se richiede sintonia e quante cariche contiene, se ce ne sono. Apprende anche se l'oggetto è influenzato da eventuali incantesimi in corso e di quali si tratta. Se l'oggetto è stato creato da un incantesimo, l'incantatore apprende il nome di quell'incantesimo.\n\nSe invece durante il lancio dell'incantesimo l'incantatore tocca una creatura, apprende quali incantesimi in corso la stanno influenzando, se ce ne sono.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Identificare",
     "range": "Contatto"
   },
@@ -1503,7 +1503,7 @@
   },
   "inflict-wounds": {
     "description": "Una creatura toccata dall'incantatore effettua un tiro salvezza su Costituzione, subendo 2d10 danni necrotici in caso di fallimento, o la metà dei danni in caso di successo.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d10 per ogni slot di livello superiore al 1°.",
     "name": "Infliggi Ferite",
     "range": "Contatto"
@@ -1597,7 +1597,7 @@
   },
   "lightning-bolt": {
     "description": "Un fulmine parte dall'incantatore in una direzione a sua scelta, formando una linea lunga 30 metri e larga 1,5 metri. Ogni creatura sulla linea effettua un tiro salvezza su Destrezza; se lo fallisce, subisce 8d6 danni da fulmine, mentre se lo supera subisce la metà dei danni.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d6 per ogni slot di livello superiore al 3°.",
     "name": "Fulmine",
     "range": "Sé stessi (linea di 30 metri)"
@@ -1678,7 +1678,7 @@
   },
   "magic-missile": {
     "description": "L'incantatore crea tre dardi lucenti di forza magica. Ogni dardo colpisce una creatura a scelta dell'incantatore situata entro gittata che egli è in grado di vedere. Un dardo infligge 1d4 + 1 danni da forza al suo bersaglio. Tutti i dardi colpiscono simultaneamente e l'incantatore può dirigerli per colpire una o più creature.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "L'incantesimo crea un dardo aggiuntivo per ogni slot di livello superiore al 1°.",
     "name": "Dardo Incantato",
     "range": "36 metri"
@@ -1724,7 +1724,7 @@
   },
   "mass-healing-word": {
     "description": "Fino a sei creature a scelta dall'incantatore entro gittata e che egli è in grado di vedere recuperano un ammontare di punti ferita pari a 2d4 più il modificatore di caratteristica da incantatore dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "La guarigione aumenta di 1d4 per ogni slot di livello superiore al 3°.",
     "name": "Parola Guaritrice di Massa",
     "range": "18 metri"
@@ -1763,7 +1763,7 @@
   },
   "mending": {
     "description": "Questo incantesimo ripara una singola crepa o uno squarcio in un oggetto toccato dall'incantatore, come l'anello spezzato di una catena, due metà di una chiave spezzata, un mantello strappato o un otre forato. Se le dimensioni della crepa o dello squarcio non superano i 30 centimetri, l'incantatore ripara l'oggetto senza lasciare traccia del danno precedente.\n\nQuesto incantesimo può riparare un oggetto magico solo fisicamente, senza ripristinare la magia in esso contenuta.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Riparare",
     "range": "Contatto"
   },
@@ -2008,13 +2008,13 @@
   },
   "plant-growth": {
     "description": "Questo incantesimo incanala vitalità nei vegetali. Il tempo di lancio utilizzato dall'incantatore determina l'effetto che ha l'incantesimo tra i due descritti di seguito: Groviglio o Fertilità.\n\nGroviglio. L'incantatore sceglie un punto entro gittata e tutti i vegetali normali entro una sfera del raggio di 30 metri centrata su quel punto crescono rigogliosamente fino a formare un groviglio. Una creatura che si muove attraverso quell'area deve usare 1,2 metri di movimento per ogni 30 centimetri di cui si muove. L'incantatore può escludere dall'influenza dell'incantesimo una o più aree di qualsiasi dimensione all'interno dell'area scelta.\n\nFertilità. Tutti i vegetali entro un raggio di 750 metri centrato in un punto entro gittata cresceranno rigogliosamente per 365 giorni e al momento del raccolto produrranno il doppio del cibo normale. I vegetali possono beneficiare di crescita vegetale solo una volta all'anno.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Crescita Vegetale",
     "range": "45 metri"
   },
   "poison-spray": {
     "description": "L'incantatore spruzza una nebbia tossica contro una creatura entro gittata, effettuando un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 1d12 danni da veleno.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d12 quando l'incantatore raggiunge il 5° livello (2d12), l'11° livello (3d12) e il 17° livello (4d12).",
     "name": "Spruzzo Velenoso",
     "range": "9 metri"
@@ -2120,7 +2120,7 @@
   },
   "purify-food-and-drink": {
     "description": "L'incantatore rimuove veleno e marciume da cibi e bevande non magici situati in una sfera del raggio di 1,5 metri centrata su un punto entro gittata.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Purificare Cibo e Bevande",
     "range": "3 metri"
   },
@@ -2150,7 +2150,7 @@
   },
   "ray-of-frost": {
     "description": "Un raggio gelido di luce bianco-azzurra sfreccia verso una creatura entro gittata, contro cui l'incantatore effettua un attacco a distanza con incantesimo. Se il colpo va a segno, il bersaglio subisce 1d8 danni da freddo e la sua velocità è ridotta di 3 metri fino all'inizio del turno successivo dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 quando l'incantatore raggiunge il 5° livello (2d8), l'11° livello (3d8) e il 17° livello (4d8).",
     "name": "Raggio di Gelo",
     "range": "18 metri"
@@ -2160,7 +2160,7 @@
   },
   "ray-of-sickness": {
     "description": "L'incantatore proietta un raggio di energia verdastra verso una creatura entro gittata, effettuando un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 2d8 danni da veleno ed è avvelenato fino al termine del turno successivo dell'incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 per ogni slot di livello superiore al 1°.",
     "name": "Raggio di Infermità",
     "range": "18 metri"
@@ -2185,7 +2185,7 @@
   },
   "remove-curse": {
     "description": "Al tocco dell'incantatore, tutte le maledizioni che affliggono una creatura o un oggetto terminano. Nel caso di un oggetto magico maledetto, la sua maledizione permane, ma l'incantesimo spezza la sintonia del suo proprietario, consentendogli di rimuoverlo o di liberarsene.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Rimuovi Maledizione",
     "range": "Contatto"
   },
@@ -2215,7 +2215,7 @@
   },
   "revivify": {
     "description": "L'incantatore tocca una creatura morta nell'ultimo minuto, la quale ritorna in vita con 1 punto ferita. Questo incantesimo non può riportare in vita una creatura morta di vecchiaia e non ripristina le eventuali parti del corpo mancanti.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Rinascita",
     "range": "Contatto"
   },
@@ -2233,7 +2233,7 @@
   },
   "sacred-flame": {
     "description": "Un bagliore simile a una fiamma discende su una creatura entro gittata che egli è in grado di vedere. Il bersaglio deve superare un tiro salvezza su Destrezza, altrimenti subisce 1d8 danni radiosi. Per questo tiro salvezza, il bersaglio non trae beneficio dalla mezza copertura o dai tre quarti di copertura.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 quando l'incantatore raggiunge il 5° livello (2d8), l'11° livello (3d8) e il 17° livello (4d8).",
     "name": "Fiamma Sacra",
     "range": "18 metri"
@@ -2287,7 +2287,7 @@
   },
   "sending": {
     "description": "L'incantatore invia un breve messaggio di un massimo di 25 parole a una creatura che ha incontrato o a una creatura che gli è stata descritta da qualcuno che ha conosciuto. Il bersaglio sente il messaggio nella sua mente, riconosce l'incantatore come colui che l'ha inviato e può rispondere immediatamente allo stesso modo. L'incantesimo consente ai bersagli di comprendere il significato del messaggio dell'incantatore.\n\nL'incantatore può inviare il messaggio a qualsiasi distanza e perfino ad altri piani di esistenza, ma se il bersaglio si trova su un piano di esistenza diverso dal suo, c'è una probabilità del 5% che il messaggio non arrivi. Se l'invio del messaggio fallisce, l'incantatore se ne rende conto.\n\nQuando riceve il messaggio, una creatura può bloccare la capacità dell'incantatore di contattarla nuovamente tramite questo incantesimo per 8 ore. Se l'incantatore cerca di inviare un altro messaggio durante quel periodo, capisce di essere stato bloccato e l'incantesimo fallisce.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "name": "Inviare",
     "range": "Illimitata"
   },
@@ -2356,7 +2356,7 @@
   },
   "shocking-grasp": {
     "description": "Un fulmine si sprigiona dall'incantatore verso una creatura da lui toccata. Con questo incantesimo, l'incantatore effettua un attacco in mischia contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 1d8 danni da fulmine e non può effettuare attacchi di opportunità fino all'inizio del proprio turno successivo.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 quando l'incantatore raggiunge il 5° livello (2d8), l'11° livello (3d8) e il 17° livello (4d8).",
     "name": "Stretta Folgorante",
     "range": "Contatto"
@@ -2415,14 +2415,14 @@
   },
   "sorcerous-burst": {
     "description": "L'incantatore proietta energia stregonesca verso una creatura o un oggetto entro gittata, effettuando un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 1d8 danni di un tipo a scelta tra: acido, freddo, fuoco, fulmine, psichici, tuono o veleno.\n\nSe l'incantatore ottiene il risultato 8 su un d8, può tirare un altro d8 e aggiungere il risultato ai danni. Quando lancia l'incantesimo, l'incantatore può aggiungere ai danni dell'incantesimo un numero di d8 pari al suo modificatore di caratteristica da incantatore.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni di questo incantesimo aumentano di 1d8 quando l'incantatore raggiunge il 5° livello (2d8), l'11° livello (3d8) e il 17° livello (4d8).",
     "name": "Stregoneria Esplosiva",
     "range": "36 metri"
   },
   "spare-the-dying": {
     "description": "L'incantatore sceglie una creatura entro gittata con 0 punti ferita ma che è ancora in vita, facendola diventare stabile.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "La gittata raddoppia quando l'incantatore raggiunge il 5° livello (9 metri), l'11° livello (18 metri) e il 17° livello (36 metri).",
     "name": "Salvare i Morenti",
     "range": "4,5 metri"
@@ -2486,7 +2486,7 @@
   },
   "starry-wisp": {
     "description": "L'incantatore lancia un globo di luce contro una creatura o un oggetto entro gittata, effettuando un attacco a distanza con incantesimo contro il bersaglio. Se il colpo va a segno, il bersaglio subisce 1d8 danni radiosi e, fino al termine del turno successivo dell'incantatore, emette luce fioca nel raggio di 3 metri e non può beneficiare della condizione di invisibilità.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 quando l'incantatore raggiunge il 5° livello (2d8), l'11° livello (3d8) e il 17° livello (4d8).",
     "name": "Luce Splendente",
     "range": "18 metri"
@@ -2627,7 +2627,7 @@
   },
   "thunderwave": {
     "description": "L'incantatore sprigiona un'ondata di energia tonante. Ogni creatura entro un cubo con spigolo di 4,5 metri originato dall'incantatore effettua un tiro salvezza su Costituzione. Se lo fallisce, subisce 2d8 danni da tuono e viene spinta a una distanza di 3 metri dall'incantatore. In caso di successo, subisce soltanto la metà di quei danni.\n\nInoltre, gli oggetti non fissati e situati interamente nel cubo vengono spinti a 3 metri dall'incantatore, con un boato tonante entro 90 metri.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d8 per ogni slot di livello superiore al 1°.",
     "name": "Onda Tonante",
     "range": "Se stessi (cubo di 4,5 metri)"
@@ -2688,7 +2688,7 @@
   },
   "true-strike": {
     "description": "Guidato da un lampo di intuizione magica, l'incantatore effettua un attacco con l'arma utilizzata per lanciare l'incantesimo. Per determinare il tiro per colpire e il tiro per i danni, l'incantatore utilizza la sua caratteristica da incantatore invece che la Forza o la Destrezza. Se l'attacco infligge danni, possono essere danni radiosi o danni normali inflitti dall'arma (a scelta dell'incantatore).",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "A prescindere dal tipo di danni che l'incantatore sceglie (danni radiosi o danni normali dell'arma), l'attacco infligge danni radiosi extra quando l'incantatore raggiunge il 5° livello (1d6), l'11° livello (2d6) e il 17° livello (3d6).",
     "name": "Colpo Accurato",
     "range": "Se stessi"
@@ -2720,7 +2720,7 @@
   },
   "vicious-mockery": {
     "description": "L'incantatore pronuncia una sequenza di insulti mescolati a impercettibili ammaliamenti contro una creatura entro gittata che egli è in grado di vedere o di sentire. Il bersaglio deve superare un tiro salvezza su Saggezza, altrimenti subisce 1d6 danni psichici e svantaggio al tiro per colpire successivo che effettua prima della fine del suo turno successivo.",
-    "duration": "Istantaneo",
+    "duration": "Istantanea",
     "higherLevels": "I danni aumentano di 1d6 quando l'incantatore raggiunge il 5° livello (2d6), l'11° livello (3d6) e il 17° livello (4d6).",
     "name": "Beffa Crudele",
     "range": "18 metri"

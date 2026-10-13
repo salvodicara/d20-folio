@@ -151,4 +151,11 @@ describe("SRD 5.2.1 text of the table spells", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  it("Italian durations use the SRD's feminine 'Istantanea'", () => {
+    const masculine = Object.entries(it_).filter(
+      ([, entry]) => (entry as { duration?: string }).duration === "Istantaneo"
+    );
+    expect(masculine.map(([id]) => id)).toEqual([]);
+  });
 });
