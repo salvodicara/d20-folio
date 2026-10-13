@@ -6,7 +6,7 @@
   },
   "armor-of-shadows": {
     "description": "Puoi lanciare Armatura Magica su te stesso senza spendere uno slot incantesimo.",
-    "name": "Armatura di Ombre"
+    "name": "Armatura delle Ombre"
   },
   "ascendant-step": {
     "description": "Puoi lanciare Levitazione su te stesso senza spendere uno slot incantesimo.",
@@ -63,12 +63,12 @@
   },
   "gift-of-the-protectors": {
     "description": "Una nuova pagina appare nel tuo Libro delle Ombre quando lo evochi. Con il tuo permesso, una creatura può usare un'azione per scrivere il proprio nome su quella pagina, che può contenere un numero di nomi pari al tuo modificatore di Carisma (minimo un nome).\nQuando una creatura il cui nome è sulla pagina viene ridotta a 0 Punti Ferita senza essere uccisa sul colpo, scende invece magicamente a 1 Punto Ferita. Una volta attivata questa magia, nessuna creatura può beneficiarne finché non completi un Riposo Lungo.\nCon un'azione Magia, puoi cancellare un nome sulla pagina toccandolo.",
-    "name": "Dono dei Protettori",
+    "name": "Dono del Protettore",
     "prerequisite": "Warlock di livello 9+, Supplica Patto del Tomo"
   },
   "investment-of-the-chain-master": {
     "description": "Quando lanci Trova Famiglio, infondi nel famiglio evocato una misura del tuo potere esoterico, conferendo alla creatura i seguenti benefici.\nAereo o Acquatico. Il famiglio ottiene una Velocità di Volo o una Velocità di Nuoto (a tua scelta) di 12 metri.\nAttacco Rapido. Con un'Azione Bonus, puoi comandare al famiglio di compiere l'azione di Attacco.\nDanni Necrotici o Radiosi. Ogni volta che il famiglio infligge danni Contundenti, Perforanti o Taglienti, puoi fargli infliggere invece danni Necrotici o Radiosi.\nLa Tua CD. Se il famiglio costringe una creatura a effettuare un tiro salvezza, usa la CD dei tiri salvezza dei tuoi incantesimi.\nResistenza. Quando il famiglio subisce danni, puoi usare una Reazione per conferirgli Resistenza a tali danni.",
-    "name": "Investitura del Signore della Catena",
+    "name": "Investitura del Signore delle Catene",
     "prerequisite": "Warlock di livello 5+, Supplica Patto della Catena"
   },
   "lessons-of-the-first-ones": {
@@ -141,7 +141,7 @@
   },
   "whispers-of-the-grave": {
     "description": "Puoi lanciare Parlare con i Morti senza spendere uno slot incantesimo.",
-    "name": "Sussurri della Tomba",
+    "name": "Sussurri dalla Tomba",
     "prerequisite": "Warlock di livello 7+"
   },
   "witch-sight": {

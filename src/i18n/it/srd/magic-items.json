@@ -1,11 +1,11 @@
 {
   "adamantine-armor": {
     "description": "Mentre indossi questa armatura, qualsiasi colpo critico contro di te diventa un colpo normale. Solo armature medie o pesanti possono essere in adamantio.",
-    "name": "Armatura in Adamantio"
+    "name": "Armatura Adamantina"
   },
   "ammunition-1-2-or-3": {
     "description": "(+1), Raro (+2) o Molto Raro (+3) Ottieni un bonus ai tiri per colpire e ai tiri per i danni effettuati con questa munizione magica. Il bonus è determinato dalla rarità della munizione. Una volta che colpisce un bersaglio, la munizione non è più magica. Questa munizione si trova o si vende di solito in quantità di dieci o venti pezzi. Dieci pezzi di questa munizione equivalgono in valore a una pozione della stessa rarità.",
-    "name": "Munizione, +1, +2 o +3"
+    "name": "Munizione +1, +2 o +3"
   },
   "amulet-of-health": {
     "description": "Il tuo punteggio di Costituzione è 19 mentre indossi questo amuleto. Non ha effetto se la tua Costituzione è già 19 o superiore.",
@@ -32,7 +32,7 @@
   },
   "armor-of-resistance": {
     "description": "Hai Resistenza a un tipo di danno mentre indossi questa armatura. Il GM sceglie il tipo o lo determina casualmente. Tipi: Acido, Freddo, Fuoco, Forza, Fulmine, Necrotico, Veleno, Psichico, Radiante, Tuono.",
-    "name": "Armatura di Resistenza"
+    "name": "Armatura della Resistenza"
   },
   "armor-of-resistance.grants.0": {
     "label": "Tipo di Resistenza"
@@ -85,15 +85,15 @@
   },
   "armor-plus-1": {
     "description": "Ottieni un bonus di +1 alla CA mentre indossi questa armatura.",
-    "name": "Armatura, +1"
+    "name": "Armatura +1"
   },
   "armor-plus-2": {
     "description": "Ottieni un bonus di +2 alla CA mentre indossi questa armatura.",
-    "name": "Armatura, +2"
+    "name": "Armatura +2"
   },
   "armor-plus-3": {
     "description": "Ottieni un bonus di +3 alla CA mentre indossi questa armatura.",
-    "name": "Armatura, +3"
+    "name": "Armatura +3"
   },
   "arrow-catching-shield": {
     "description": "Ottieni un bonus di +2 alla Classe Armatura contro i tiri per colpire a distanza mentre impugni questo Scudo. Questo bonus si aggiunge al normale bonus dello Scudo alla CA. Ogni volta che un attaccante effettua un tiro per colpire a distanza contro un bersaglio entro 1,5 metri da te, puoi compiere una Reazione per diventare invece tu il bersaglio dell'attacco.",
@@ -138,7 +138,7 @@
   },
   "belt-of-giant-strength": {
     "description": "Imposta il tuo punteggio di Forza in base al tipo: Collina (21), Gelo/Pietra (23), Fuoco (25), Nube (27), Tempesta (29). Nessun effetto se la Forza è già uguale o superiore.",
-    "name": "Cintura di Forza del Gigante"
+    "name": "Cintura della Forza dei Giganti"
   },
   "belt-of-giant-strength.grants.0": {
     "label": "Tipo di Cintura"
@@ -189,7 +189,7 @@
   },
   "boots-of-the-winterlands": {
     "description": "Questi stivali foderati di pelliccia sono comodi e caldi. Mentre li indossi, ottieni i seguenti benefici. Resistenza al Freddo. Hai Resistenza ai danni da Freddo e puoi tollerare temperature gelide senza protezioni aggiuntive. Camminatore Invernale. Ignori il Terreno Difficile creato da ghiaccio o neve.",
-    "name": "Stivali di Terre Invernali"
+    "name": "Stivali dell'Inverno"
   },
   "bowl-of-commanding-water-elementals": {
     "description": "Mentre questa ciotola è riempita d'acqua e tu ti trovi entro 1,5 metri da essa, puoi compiere un'azione Magia per evocare un Elementale dell'Acqua. L'elementale appare in uno spazio libero il più vicino possibile alla ciotola, comprende le tue lingue, obbedisce ai tuoi comandi e agisce immediatamente dopo di te nel tuo ordine di Iniziativa. L'elementale scompare dopo 1 ora, quando muore o quando lo congedi con un'Azione Bonus. La ciotola non può essere usata di nuovo in questo modo fino all'alba successiva. La ciotola ha un diametro di circa 30 centimetri ed è profonda la metà. Contiene circa 11 litri.",
@@ -237,7 +237,7 @@
   },
   "cloak-of-arachnida": {
     "description": "Questo capo pregiato è fatto di seta nera intessuta di tenui fili argentei. Mentre lo indossi, ottieni i seguenti benefici. Resistenza al Veleno. Hai Resistenza ai danni da Veleno. Arrampicata del Ragno. Hai una Velocità di Scalata pari alla tua Velocità e puoi muoverti su, giù e attraverso superfici verticali e lungo i soffitti, tenendo le mani libere. Camminata del Ragno. Non puoi essere catturato da ragnatele di alcun tipo e puoi muoverti attraverso le ragnatele come se fossero Terreno Difficile. Ragnatela. Puoi lanciare Ragnatela (CD 13). La ragnatela creata dall'incantesimo riempie il doppio della sua area normale. Una volta usata, questa proprietà non può essere riutilizzata fino all'alba successiva.",
-    "name": "Mantello di Arachnida"
+    "name": "Mantello dell'Aracnide"
   },
   "cloak-of-displacement": {
     "description": "Proietta un'illusione che ti fa apparire leggermente spostato. I tiri per colpire contro di te hanno Svantaggio. Se colpito, cessa fino all'inizio del tuo prossimo turno. Cessa anche se Incapacitato o Trattenuto.",
@@ -255,7 +255,7 @@
   },
   "cloak-of-invisibility": {
     "description": "Questo mantello ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Mentre indossi il mantello, puoi compiere un'azione Magia per tirarti il cappuccio sulla testa e spendere 1 carica per ottenere la condizione Invisibile per 1 ora. L'effetto termina in anticipo se abbassi il cappuccio (non è richiesta alcuna azione) o smetti di indossare il cappuccio.",
-    "name": "Mantello di Invisibilità"
+    "name": "Mantello dell'Invisibilità"
   },
   "cloak-of-protection": {
     "description": "Ottieni un bonus di +1 alla CA e ai tiri salvezza mentre indossi questo mantello.",
@@ -287,7 +287,7 @@
   },
   "dagger-of-venom": {
     "description": "+1 ai tiri per colpire e danni. Una volta al giorno, ricopri la lama di veleno come Azione. Il prossimo colpo entro 1 minuto infligge +2d10 danni da Veleno (COS CD 15 per dimezzare).",
-    "name": "Pugnale del Veleno"
+    "name": "Pugnale Avvelenato"
   },
   "dancing-sword": {
     "description": "Puoi compiere un'Azione Bonus per lanciare in aria quest'arma magica. Quando lo fai, l'arma inizia a fluttuare, vola fino a 9 metri e attacca una creatura a tua scelta entro 1,5 metri da essa. L'arma usa il tuo tiro per colpire e aggiunge il tuo modificatore di caratteristica ai tiri per i danni. Mentre l'arma fluttua, puoi compiere un'Azione Bonus per farla volare fino a 9 metri verso un altro punto entro 9 metri da te. Come parte della stessa Azione Bonus, puoi far attaccare all'arma una creatura entro 1,5 metri da essa. Dopo che l'arma fluttuante ha attaccato per la quarta volta, vola di nuovo verso di te e cerca di tornare nella tua mano. Se non hai una mano libera, l'arma cade a terra nel tuo spazio. Se l'arma non ha un percorso libero verso di te, si avvicina il più possibile a te e poi cade a terra. Smette anche di fluttuare se la afferri o se ti trovi a più di 9 metri da essa.",
@@ -298,8 +298,8 @@
     "name": "Caraffa dell'Acqua Eterna"
   },
   "deck-of-illusions": {
-    "description": "Questa scatola contiene un mazzo di carte. Un mazzo completo ha 34 carte: 32 che raffigurano creature specifiche e due con una superficie a specchio. Un mazzo trovato come tesoro di solito manca di 1d20 − 1 carte. La magia del mazzo funziona solo se le sue carte vengono pescate a caso. Puoi compiere un'azione Magia per pescare una carta a caso dal mazzo e gettarla a terra in un punto entro 9 metri da te. Un'illusione di una creatura, determinata tirando sulla tabella del Mazzo di Illusioni, si forma sopra la carta gettata e rimane finché non viene dissolta. La creatura illusoria creata dalla carta appare e si comporta come una creatura reale del suo tipo, salvo che non può arrecare alcun danno. Mentre ti trovi entro 36 metri dalla creatura illusoria e puoi vederla, puoi compiere un'azione Magia per spostarla ovunque entro 9 metri dalla sua carta. Qualsiasi interazione fisica con la creatura illusoria ne rivela la falsità, perché gli oggetti la attraversano. Una creatura che compie un'azione Studio per ispezionare visivamente la creatura illusoria la identifica come un'illusione con una prova di Intelligenza (Indagare) con CD 15 riuscita. L'illusione dura finché la sua carta non viene spostata o l'illusione non viene dissolta (usando un incantesimo Dissolvi Magie o un effetto simile). Quando l'illusione termina, l'immagine sulla sua carta scompare, e quella carta non può essere usata di nuovo.",
-    "name": "Mazzo di Illusioni"
+    "description": "Questa scatola contiene un mazzo di carte. Un mazzo completo ha 34 carte: 32 che raffigurano creature specifiche e due con una superficie a specchio. Un mazzo trovato come tesoro di solito manca di 1d20 − 1 carte. La magia del mazzo funziona solo se le sue carte vengono pescate a caso. Puoi compiere un'azione Magia per pescare una carta a caso dal mazzo e gettarla a terra in un punto entro 9 metri da te. Un'illusione di una creatura, determinata tirando sulla tabella del Mazzo delle Illusioni, si forma sopra la carta gettata e rimane finché non viene dissolta. La creatura illusoria creata dalla carta appare e si comporta come una creatura reale del suo tipo, salvo che non può arrecare alcun danno. Mentre ti trovi entro 36 metri dalla creatura illusoria e puoi vederla, puoi compiere un'azione Magia per spostarla ovunque entro 9 metri dalla sua carta. Qualsiasi interazione fisica con la creatura illusoria ne rivela la falsità, perché gli oggetti la attraversano. Una creatura che compie un'azione Studio per ispezionare visivamente la creatura illusoria la identifica come un'illusione con una prova di Intelligenza (Indagare) con CD 15 riuscita. L'illusione dura finché la sua carta non viene spostata o l'illusione non viene dissolta (usando un incantesimo Dissolvi Magie o un effetto simile). Quando l'illusione termina, l'immagine sulla sua carta scompare, e quella carta non può essere usata di nuovo.",
+    "name": "Mazzo delle Illusioni"
   },
   "deck-of-many-things": {
     "description": "Un mazzo di carte in avorio o vellum. Prima di pescare, dichiara quante carte (1-5). Ogni carta pescata ha effetto immediato — gli effetti vanno dal guadagnare ricchezze/livelli all'imprigionamento o morte.",
@@ -371,7 +371,7 @@
   },
   "dust-of-sneezing-and-choking": {
     "description": "Trovata in un piccolo contenitore, questa polvere somiglia alla Polvere dell'Invisibilità, e Identificare la rivela essere tale. Ce n'è abbastanza per un solo uso. Con un'azione Utilizzo, puoi gettare la polvere in aria, costringendo te stesso e ogni creatura entro un'Emanazione di 9 metri che si origina da te a effettuare un tiro salvezza su Costituzione con CD 15. Costrutti, Elementali, Melme, Vegetali e Non Morti superano automaticamente il tiro salvezza. Se fallisce, una creatura inizia a starnutire in modo incontrollabile; ha la condizione Incapacitato e sta soffocando. La creatura ripete il tiro salvezza alla fine di ciascuno dei suoi turni, terminando l'effetto su sé stessa se riesce. L'effetto termina inoltre su qualsiasi creatura bersaglio di un incantesimo Ristorare Inferiore.",
-    "name": "Polvere di Starnuti e Soffocamento"
+    "name": "Polvere dello Starnuto e del Soffocamento"
   },
   "dwarven-plate": {
     "description": "Mentre indossi questa armatura, ottieni un bonus di +2 alla Classe Armatura. Inoltre, se un effetto ti muove contro la tua volontà lungo il terreno, puoi usare una Reazione per ridurre la distanza di cui sei mosso fino a 3 metri.",
@@ -401,7 +401,7 @@
   },
   "energy-bow": {
     "description": "Ottieni un bonus di +1 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica, che è priva di corda. Ogni volta che tiri indietro il braccio nel gesto di scoccare, una freccia magica fatta di energia dorata appare incoccata e pronta a essere scoccata. Una freccia prodotta da quest'arma infligge danni da Forza invece di danni Perforanti quando colpisce, e scompare dopo aver colpito o mancato il suo bersaglio. Finché non scompare, la freccia emette Luce Intensa entro un raggio di 6 metri e Luce Fioca per altri 6 metri. Quest'arma ha le seguenti proprietà aggiuntive. Freccia di Immobilizzazione. Ogni volta che usi quest'arma per effettuare un attacco a distanza contro una creatura, puoi tentare di immobilizzare il bersaglio invece di infliggergli danni. Se la freccia colpisce, il bersaglio deve riuscire in un tiro salvezza su Forza con CD 15 o ottenere la condizione Trattenuto per 1 minuto. Con un'azione, una creatura Trattenuta da una freccia può effettuare una prova di Forza (Atletica) con CD 20 per tentare di liberarsi, terminando l'effetto su sé stessa se la prova riesce. Freccia di Trasporto. Con un'azione Magia, puoi scoccare una freccia di energia da quest'arma verso un bersaglio che puoi vedere entro 18 metri da te. Il bersaglio può essere una creatura consenziente di taglia Media o più piccola, oppure un oggetto che non viene indossato o trasportato, a patto che l'oggetto sia abbastanza piccolo da entrare in un Cubo di 1,5 metri. La freccia teletrasporta il bersaglio in uno spazio libero che puoi vedere entro 3 metri da te. Scala di Energia.",
-    "name": "Arco di Energia"
+    "name": "Arco Energetico"
   },
   "eversmoking-bottle": {
     "description": "Con un'azione Magia, puoi aprire o chiudere questa bottiglia. Aprire la bottiglia fa fuoriuscire fumo denso, formando una nube che riempie un'Emanazione di 18 metri che si origina dalla bottiglia. L'area entro il fumo è Pesantemente Oscurata. Ogni minuto in cui la bottiglia resta aperta, la dimensione dell'Emanazione aumenta di 3 metri finché non raggiunge la sua dimensione massima di 36 metri. Chiudere la bottiglia fa sì che la nube resti fissa al suo posto finché non si disperde dopo 10 minuti. Un forte vento (come quello creato dall'incantesimo Folata di Vento) disperde la nube dopo 1 minuto.",
@@ -431,7 +431,7 @@
   },
   "flame-tongue": {
     "description": "Puoi usare un'Azione Bonus per accendere o spegnere le fiamme su questa spada. Quando è in fiamme, infligge 2d6 danni da Fuoco extra a ogni colpo e irradia luce intensa in un raggio di 12 metri.",
-    "name": "Lingua di Fiamma"
+    "name": "Lingua di Fiamme"
   },
   "folding-boat": {
     "description": "Questo oggetto appare come una scatola di legno che misura 30 centimetri di lunghezza, 15 centimetri di larghezza e 15 centimetri di profondità. Pesa circa 2 chilogrammi e galleggia. Può essere aperta per riporvi oggetti all'interno. Questo oggetto ha anche tre parole di comando, ciascuna delle quali richiede un'azione Magia per essere usata: Prima Parola di Comando. La scatola si dispiega in una Barca a Remi. Seconda Parola di Comando. La scatola si dispiega in una Chiatta. Terza Parola di Comando. La Barca Pieghevole si ripiega in una scatola se non ci sono creature a bordo. Qualsiasi oggetto nell'imbarcazione che non possa entrare nella scatola rimane all'esterno della scatola mentre si ripiega. Qualsiasi oggetto nell'imbarcazione che possa entrare nella scatola lo fa. Quando la scatola diventa un'imbarcazione, il suo peso diventa quello di un'imbarcazione normale della sua taglia, e tutto ciò che era riposto nella scatola rimane nella barca. Le statistiche per la Barca a Remi e la Chiatta sono in “Equipaggiamento”. Se una delle due imbarcazioni viene ridotta a 0 Punti Ferita, la Barca Pieghevole viene distrutta.",
@@ -474,14 +474,14 @@
   },
   "gloves-of-thievery": {
     "description": "Questi guanti sono impercettibili mentre vengono indossati. Mentre li indossi, ottieni un bonus di +5 alle prove di Destrezza (Rapidità di Mano).",
-    "name": "Guanti del Ladrocinio"
+    "name": "Guanti Ladreschi"
   },
   "goggles-of-night": {
     "description": "Mentre indossi queste lenti scure, hai Scurovisione fino a 18 metri. Se hai già la Scurovisione, indossare gli occhiali ne aumenta la portata di 18 metri.",
     "name": "Occhiali della Notte"
   },
   "hammer-of-thunderbolts": {
-    "description": "Ottieni un bonus di +1 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. L'arma ha 5 cariche. Puoi spendere 1 carica ed effettuare un attacco a distanza con l'arma, scagliandola come se avesse la proprietà Da Lancio con una gittata normale di 6 metri e una gittata lunga di 18 metri. Se l'attacco colpisce, l'arma scatena un boato tonante udibile fino a 90 metri. Il bersaglio e ogni creatura entro 9 metri da esso diversa da te deve riuscire in un tiro salvezza su Costituzione con CD 17 o ottenere la condizione Stordito fino alla fine del tuo turno successivo. Immediatamente dopo aver colpito o mancato, l'arma vola di nuovo nella tua mano. L'arma recupera 1d4 + 1 cariche spese ogni giorno all'alba. Rovina dei Giganti. Mentre sei sintonizzato con l'arma e indossi una Cintura di Forza del Gigante o dei Guanti del Potere Orchesco con cui sei anche sintonizzato, ottieni i seguenti benefici: Rovina dei Giganti. Quando ottieni 20 sul d20 per un tiro per colpire effettuato con quest'arma contro un Gigante, la creatura deve riuscire in un tiro salvezza su Costituzione con CD 17 o morire. Potenza dei Giganti. Il punteggio di Forza conferito dalla tua Cintura di Forza del Gigante o dai tuoi Guanti del Potere Orchesco aumenta di 4, fino a un massimo di 30.",
+    "description": "Ottieni un bonus di +1 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. L'arma ha 5 cariche. Puoi spendere 1 carica ed effettuare un attacco a distanza con l'arma, scagliandola come se avesse la proprietà Da Lancio con una gittata normale di 6 metri e una gittata lunga di 18 metri. Se l'attacco colpisce, l'arma scatena un boato tonante udibile fino a 90 metri. Il bersaglio e ogni creatura entro 9 metri da esso diversa da te deve riuscire in un tiro salvezza su Costituzione con CD 17 o ottenere la condizione Stordito fino alla fine del tuo turno successivo. Immediatamente dopo aver colpito o mancato, l'arma vola di nuovo nella tua mano. L'arma recupera 1d4 + 1 cariche spese ogni giorno all'alba. Rovina dei Giganti. Mentre sei sintonizzato con l'arma e indossi una Cintura della Forza dei Giganti o dei Guanti del Potere Orchesco con cui sei anche sintonizzato, ottieni i seguenti benefici: Rovina dei Giganti. Quando ottieni 20 sul d20 per un tiro per colpire effettuato con quest'arma contro un Gigante, la creatura deve riuscire in un tiro salvezza su Costituzione con CD 17 o morire. Potenza dei Giganti. Il punteggio di Forza conferito dalla tua Cintura della Forza dei Giganti o dai tuoi Guanti del Potere Orchesco aumenta di 4, fino a un massimo di 30.",
     "name": "Martello dei Fulmini"
   },
   "hat-of-disguise": {
@@ -507,7 +507,7 @@
   },
   "helm-of-telepathy": {
     "description": "Mentre indossi questo elmo, hai telepatia con una portata di 9 metri, e puoi lanciare Individuazione del Pensiero o Suggestione (CD del tiro salvezza 13) dall'elmo. Una volta che uno dei due incantesimi è lanciato dall'elmo, quell'incantesimo non può essere lanciato di nuovo da esso fino all'alba successiva.",
-    "name": "Elmo di Telepatia"
+    "name": "Elmo della Telepatia"
   },
   "helm-of-teleportation": {
     "description": "Questo elmo ha 3 cariche. Mentre lo indossi, puoi spendere 1 carica per lanciare Teletrasporto da esso. L'elmo recupera 1d3 cariche spese ogni giorno all'alba.",
@@ -516,7 +516,7 @@
   "holy-avenger": {
     "attunementReq": "da un Paladino",
     "description": "+3 ai tiri per colpire e danni. Infligge +2d10 danni Radianti a demoni e non morti. Mentre impugnata, alleati entro 3 metri hanno Vantaggio ai tiri salvezza contro incantesimi ed effetti magici.",
-    "name": "Vendicatore Sacro"
+    "name": "Sacro Vendicatore"
   },
   "holy-avenger.grants.1": {
     "description": "Tiri salvezza contro incantesimi e altri effetti magici"
@@ -531,11 +531,11 @@
   },
   "horseshoes-of-a-zephyr": {
     "description": "Questi ferri di cavallo si presentano in un set di quattro. Con un'azione Magia, puoi toccare uno dei ferri allo zoccolo di un cavallo o di una creatura simile, dopodiché il ferro si fissa allo zoccolo. Anche rimuovere un ferro richiede un'azione Magia. Mentre tutti e quattro i ferri sono fissati agli zoccoli di un cavallo o di una creatura simile, permettono alla creatura di muoversi normalmente mentre fluttua a circa 10 centimetri sopra una superficie. Questo effetto significa che la creatura può attraversare o restare sospesa sopra superfici non solide o instabili, come acqua o lava. La creatura non lascia tracce e ignora il Terreno Difficile. Inoltre, la creatura può viaggiare per un massimo di 12 ore al giorno senza acquisire livelli di Indebolimento dal viaggio prolungato.",
-    "name": "Ferri di Cavallo dello Zefiro"
+    "name": "Ferri dello Zefiro"
   },
   "horseshoes-of-speed": {
     "description": "Questi ferri di cavallo si presentano in un set di quattro. Con un'azione Magia, puoi toccare uno dei ferri allo zoccolo di un cavallo o di una creatura simile, dopodiché il ferro si fissa allo zoccolo. Anche rimuovere un ferro richiede un'azione Magia. Mentre tutti e quattro i ferri sono fissati alla stessa creatura, la sua Velocità aumenta di 9 metri.",
-    "name": "Ferri di Cavallo della Velocità"
+    "name": "Ferri della Velocità"
   },
   "immovable-rod": {
     "description": "Questa verga di ferro ha un pulsante a un'estremità. Puoi compiere un'azione Utilizzo per premere il pulsante, il che fa sì che la verga si fissi magicamente al suo posto. Finché tu o un'altra creatura non compite un'azione Utilizzo per premere di nuovo il pulsante, la verga non si muove, anche se ciò sfida la gravità. La verga può sostenere fino a circa 3.600 chilogrammi di peso. Un peso superiore fa disattivare e cadere la verga. Una creatura può compiere un'azione Utilizzo per effettuare una prova di Forza (Atletica) con CD 30, muovendo la verga fissata fino a 3 metri se la prova riesce.",
@@ -547,7 +547,7 @@
   },
   "lantern-of-revealing": {
     "description": "Mentre è accesa, questa lanterna cieca brucia per 6 ore con circa mezzo litro d'olio, emanando Luce Intensa entro un raggio di 9 metri e Luce Fioca per altri 9 metri. Le creature e gli oggetti invisibili sono visibili finché si trovano nella Luce Intensa della lanterna. Puoi compiere un'azione Utilizzo per abbassare la copertura, riducendo la luce della lanterna a Luce Fioca entro un raggio di 1,5 metri.",
-    "name": "Lanterna del Rivelare"
+    "name": "Lanterna della Rivelazione"
   },
   "luck-blade": {
     "description": "+1 ai tiri per colpire e danni. +1 ai tiri salvezza mentre impugnata. Una volta per alba, ritira un attacco, prova o tiro salvezza. Può contenere 1d4-1 cariche di Desiderio (consumate permanentemente).",
@@ -574,7 +574,7 @@
   },
   "manual-of-bodily-health": {
     "description": "Questo libro contiene consigli su salute e alimentazione, e le sue parole sono cariche di magia. Se trascorri 48 ore in un periodo di 6 giorni o meno studiando il contenuto del libro e mettendone in pratica le linee guida, la tua Costituzione aumenta di 2, fino a un massimo di 30. Il manuale perde quindi la sua magia ma la riacquista dopo un secolo.",
-    "name": "Manuale della Salute Fisica"
+    "name": "Manuale della Salute"
   },
   "manual-of-gainful-exercise": {
     "description": "Questo libro descrive esercizi per la forma fisica, e le sue parole sono cariche di magia. Se trascorri 48 ore in un periodo di 6 giorni o meno studiando il contenuto del libro e mettendone in pratica le linee guida, la tua Forza aumenta di 2, fino a un massimo di 30. Il manuale perde quindi la sua magia ma la riacquista dopo un secolo.",
@@ -682,11 +682,11 @@
   },
   "potion-of-climbing": {
     "description": "Conferisce velocità di scalata pari alla tua velocità di camminata per 1 ora. Hai Vantaggio alle prove di Forza (Atletica) per scalare.",
-    "name": "Pozione di Scalata",
+    "name": "Pozione di Scalare",
     "summary": "Scalare = Velocità per 1 ora; Vantaggio per scalare"
   },
   "potion-of-climbing.grants.0": {
-    "label": "Pozione di Scalata"
+    "label": "Pozione di Scalare"
   },
   "potion-of-climbing.grants.0.grants.1": {
     "description": "Prove di Forza (Atletica) per scalare"
@@ -698,19 +698,19 @@
   },
   "potion-of-flying": {
     "description": "Conferisce velocità di volo pari alla tua velocità di camminata per 1 ora. Puoi librarsi. Quando l'effetto termina, cadi se sei ancora in aria.",
-    "name": "Pozione di Volo",
+    "name": "Pozione di Volare",
     "summary": "Velocità di Volo = Velocità per 1 ora; fluttui"
   },
   "potion-of-flying.grants.0": {
-    "label": "Pozione di Volo"
+    "label": "Pozione di Volare"
   },
   "potion-of-giant-strength": {
     "description": "Il tuo punteggio di Forza cambia in base al tipo di gigante: Collina (21), Gelo/Pietra (23), Fuoco (25), Nube (27), Tempesta (29). Dura 1 ora.",
-    "name": "Pozione di Forza del Gigante",
+    "name": "Pozione della Forza dei Giganti",
     "summary": "For diventa 21–29 (per tipo di gigante) per 1 ora"
   },
   "potion-of-giant-strength.grants.0": {
-    "label": "Pozione di Forza del Gigante"
+    "label": "Pozione della Forza dei Giganti"
   },
   "potion-of-giant-strength.grants.0.grants.0": {
     "label": "Tipo di Gigante"
@@ -772,7 +772,7 @@
   },
   "potion-of-poison": {
     "description": "Questa concozione appare, profuma e ha il sapore di una Pozione di Guarigione o di un'altra pozione benefica. Tuttavia, è in realtà veleno celato da magia illusoria. Identificare ne rivela la vera natura. Se bevi questa pozione, subisci 4d6 danni da Veleno e devi riuscire in un tiro salvezza su Costituzione con CD 13 o ottenere la condizione Avvelenato per 1 ora.",
-    "name": "Pozione di Veleno",
+    "name": "Pozione Velenosa",
     "summary": "Sembra benefica — è veleno: 3d6 + Avvelenato"
   },
   "potion-of-resistance": {
@@ -834,11 +834,11 @@
   },
   "potion-of-water-breathing": {
     "description": "Puoi respirare sott'acqua per 1 ora dopo aver bevuto questa pozione.",
-    "name": "Pozione di Respirare sott'Acqua",
+    "name": "Pozione del Respirare sott'Acqua",
     "summary": "Respiri sott'acqua per 1 ora"
   },
   "potion-of-water-breathing.grants.0": {
-    "label": "Pozione di Respirare sott'Acqua"
+    "label": "Pozione del Respirare sott'Acqua"
   },
   "quarterstaff-of-the-acrobat": {
     "description": "Hai un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. Mentre impugni quest'arma, puoi farle emettere Luce Fioca verde fino a 3 metri, come un'Azione Bonus o dopo che tiri l'Iniziativa, oppure puoi spegnere la luce come un'Azione Bonus. Mentre impugni quest'arma, puoi compiere un'Azione Bonus per alterarne la forma, trasformandola in una verga di 15 centimetri (per facilitarne il trasporto) o in un'asta di 3 metri, oppure facendola tornare un Bastone Ferrato; l'arma si allunga solo per quanto lo spazio circostante consente. In certe forme, l'arma ha le seguenti proprietà aggiuntive. Assistenza Acrobatica (solo nelle forme di Bastone Ferrato e Asta di 3 Metri). Mentre impugni quest'arma, hai Vantaggio alle prove di Destrezza (Acrobazia). Deviazione dell'Attacco (solo nella forma di Bastone Ferrato). Quando vieni colpito da un attacco mentre impugni l'arma, puoi compiere una Reazione per far roteare l'arma attorno a te, ottenendo un bonus di +5 alla tua Classe Armatura contro l'attacco scatenante, facendo potenzialmente mancare l'attacco. Non puoi usare di nuovo questa proprietà finché non termini un Riposo Breve o Lungo. Arma a Distanza (solo nella forma di Bastone Ferrato). Quest'arma ha la proprietà Da Lancio con una gittata normale di 9 metri e una gittata lunga di 36 metri. Immediatamente dopo che effettui un attacco a distanza con l'arma, essa vola di nuovo nella tua mano.",
@@ -849,7 +849,7 @@
   },
   "ring-of-animal-influence": {
     "description": "Questo anello ha 3 cariche, e recupera 1d3 cariche spese ogni giorno all'alba. Mentre indossi l'anello, puoi spendere 1 carica per lanciare uno dei seguenti incantesimi (CD del tiro salvezza 13) da esso: Amicizia con gli Animali Paura (interessa solo le Bestie) Parlare con gli Animali",
-    "name": "Anello dell'Influenza sugli Animali"
+    "name": "Anello di Influenza sugli Animali"
   },
   "ring-of-djinni-summoning": {
     "description": "Mentre indossi questo anello, puoi compiere un'azione Magia per evocare un particolare Djinni dal Piano Elementale dell'Aria. Il djinni appare in uno spazio libero a tua scelta entro 36 metri da te. Rimane finché mantieni la Concentrazione, fino a un massimo di 1 ora, o finché non scende a 0 Punti Ferita. Mentre è evocato, il djinni è Amichevole verso di te e i tuoi alleati, e obbedisce ai tuoi comandi. Se non riesci a comandarlo, il djinni si difende dagli attaccanti ma non compie altre azioni. Dopo che il djinni se ne va, non può essere evocato di nuovo per 24 ore, e l'anello diventa non magico se il djinni muore. Gli Anelli dell'Evocazione del Djinni sono spesso creati dai djinn che evocano e donati ai mortali come pegni di amicizia o segni di stima.",
@@ -857,7 +857,7 @@
   },
   "ring-of-evasion": {
     "description": "Questo anello ha 3 cariche, e recupera 1d3 cariche spese ogni giorno all'alba. Quando fallisci un tiro salvezza su Destrezza mentre indossi l'anello, puoi compiere una Reazione per spendere 1 carica per riuscire invece in quel tiro salvezza.",
-    "name": "Anello dell'Elusione"
+    "name": "Anello di Eludere"
   },
   "ring-of-feather-falling": {
     "description": "Quando cadi mentre indossi questo anello, scendi di 18 metri per round e non subisci danni dalla caduta.",
@@ -865,50 +865,50 @@
   },
   "ring-of-free-action": {
     "description": "Mentre indossi questo anello, il Terreno Difficile non ti costa movimento extra. Inoltre, la magia non può ridurre le tue Velocità né infliggerti le condizioni Paralizzato o Trattenuto.",
-    "name": "Anello di Azione Libera"
+    "name": "Anello della Libertà di Azione"
   },
   "ring-of-invisibility": {
     "description": "Come Azione, diventi invisibile finché non attacchi, lanci un incantesimo o rimuovi l'anello. Puoi terminare l'effetto come Azione.",
-    "name": "Anello dell'Invisibilità"
+    "name": "Anello di Invisibilità"
   },
   "ring-of-jumping": {
     "description": "Mentre indossi questo anello, puoi lanciare Salto da esso, ma puoi prendere di mira solo te stesso quando lo fai.",
-    "name": "Anello del Salto"
+    "name": "Anello del Saltare"
   },
   "ring-of-mind-shielding": {
     "description": "Mentre indossi questo anello, sei immune alla magia che permette ad altre creature di leggere i tuoi pensieri, determinare se stai mentendo, conoscere il tuo allineamento o conoscere il tuo tipo di creatura. Le creature possono comunicare telepaticamente con te solo se lo permetti. Puoi compiere un'azione Magia per rendere l'anello impercettibile finché non compi un'altra azione Magia per renderlo percettibile, finché non rimuovi l'anello, o finché non muori. Se muori mentre indossi l'anello, la tua anima vi entra, a meno che non ospiti già un'anima. Puoi rimanere nell'anello o partire per l'aldilà. Finché la tua anima è nell'anello, puoi comunicare telepaticamente con qualsiasi creatura che lo indossi. Chi lo indossa non può impedire questa comunicazione telepatica.",
-    "name": "Anello dello Scudo Mentale"
+    "name": "Anello di Scudo Mentale"
   },
   "ring-of-protection": {
     "description": "Ottieni un bonus di +1 alla CA e ai tiri salvezza mentre indossi questo anello.",
-    "name": "Anello della Protezione"
+    "name": "Anello di Protezione"
   },
   "ring-of-regeneration": {
     "description": "Mentre indossi questo anello, recuperi 1d6 Punti Ferita ogni 10 minuti se hai almeno 1 Punto Ferita. Se perdi una parte del corpo, l'anello fa ricrescere la parte mancante e la riporta a piena funzionalità dopo 1d6 + 1 giorni se hai almeno 1 Punto Ferita per tutto il tempo.",
-    "name": "Anello della Rigenerazione"
+    "name": "Anello di Rigenerazione"
   },
   "ring-of-shooting-stars": {
     "description": "Puoi lanciare Luci Danzanti o Luce dall'anello. L'anello ha 6 cariche e recupera 1d6 cariche spese ogni giorno all'alba. Puoi spendere le sue cariche per usare le proprietà seguenti. Luminescenza. Puoi spendere 1 carica per lanciare Luminescenza dall'anello. Sfere di Fulmine. Puoi spendere 2 cariche come un'azione Magia per creare fino a quattro sfere di fulmine del diametro di circa 90 centimetri. Ciascuna sfera appare in uno spazio libero che puoi vedere entro 36 metri da te. Le sfere durano finché mantieni la Concentrazione, fino a 1 minuto. Ciascuna sfera emana Luce Fioca entro un raggio di 9 metri. Come un'Azione Bonus, puoi muovere ciascuna sfera fino a 9 metri, ma non più lontano di 36 metri da te. La prima volta che la sfera giunge entro 1,5 metri da una creatura diversa da te che non è dietro Copertura Totale, la sfera scarica un fulmine contro quella creatura e scompare. Quella creatura effettua un tiro salvezza su Destrezza con CD 15. Se fallisce, la creatura subisce danni da Fulmine in base al numero di sfere che hai creato, come indicato nella tabella seguente. Se riesce, la creatura subisce la metà di quei danni. Numero di Sfere Danni da Fulmine 1 4d12 2 5d4 3 2d6 4 2d4 Stelle Cadenti. Puoi spendere da 1 a 3 cariche come un'azione Magia. Per ogni carica che spendi, lanci una scintilla di luce splendente dall'anello verso un punto che puoi vedere entro 18 metri da te.",
-    "name": "Anello delle Stelle Cadenti"
+    "name": "Anello di Stelle Cadenti"
   },
   "ring-of-spell-storing": {
     "description": "Può immagazzinare fino a 5 livelli di incantesimi. Qualsiasi creatura può lanciare un incantesimo immagazzinato usando il bonus di attacco e la CD dell'incantatore originale.",
-    "name": "Anello di Accumulo Incantesimi"
+    "name": "Anello Accumula Incantesimi"
   },
   "ring-of-spell-turning": {
     "description": "Mentre indossi questo anello, hai Vantaggio ai tiri salvezza contro incantesimi. Se superi il tiro salvezza contro un incantesimo di livello 7 o inferiore, l'incantesimo non ha alcun effetto su di te. Se quell'incantesimo aveva come bersaglio solo te e non creava un'area d'effetto, puoi usare una Reazione per rifletterlo sull'incantatore; l'incantatore deve effettuare un tiro salvezza contro l'incantesimo usando la propria CD del tiro salvezza degli incantesimi.",
-    "name": "Anello di Riflettere Incantesimi"
+    "name": "Anello Rifletti Incantesimo"
   },
   "ring-of-spell-turning.grants.0": {
     "description": "Tiri salvezza contro incantesimi"
   },
   "ring-of-swimming": {
     "description": "Hai una Velocità di Nuoto di 12 metri mentre indossi questo anello.",
-    "name": "Anello di Nuoto"
+    "name": "Anello del Nuotare"
   },
   "ring-of-telekinesis": {
     "description": "Mentre indossi questo anello, puoi lanciare Telecinesi da esso.",
-    "name": "Anello della Telecinesi"
+    "name": "Anello di Telecinesi"
   },
   "ring-of-the-ram": {
     "description": "Questo anello ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Mentre indossi l'anello, puoi compiere un'azione Magia per spendere da 1 a 3 cariche per effettuare un attacco con incantesimo a distanza contro una creatura che puoi vedere entro 18 metri da te. L'anello produce una testa d'ariete spettrale ed effettua il suo tiro per colpire con un bonus di +7. Se colpisce, per ogni carica che spendi, il bersaglio subisce 2d10 danni da Forza ed è spinto 1,5 metri lontano da te. In alternativa, puoi spendere da 1 a 3 cariche dell'anello come un'azione Magia per tentare di spezzare un oggetto non magico che puoi vedere entro 18 metri da te che non viene indossato o trasportato. L'anello effettua una prova di Forza con un bonus di +5 per ogni carica che spendi.",
@@ -965,7 +965,7 @@
   },
   "rod-of-absorption": {
     "description": "Mentre impugni questa verga, puoi compiere una Reazione per assorbire un incantesimo che prende di mira solo te e che non crea un'area d'effetto. L'effetto dell'incantesimo assorbito viene annullato, e l'energia dell'incantesimo, non l'incantesimo stesso, viene immagazzinata nella verga. L'energia ha lo stesso livello dell'incantesimo quando è stato lanciato. Un incantesimo annullato si dissipa senza effetto, e qualsiasi risorsa usata per lanciarlo è sprecata. La verga può assorbire e immagazzinare fino a 50 livelli di energia nel corso della sua esistenza. Una volta che la verga assorbe 50 livelli di energia, non può assorbirne di più. Se sei bersaglio di un incantesimo che la verga non può immagazzinare, la verga non ha alcun effetto su quell'incantesimo. Quando ti sintonizzi con la verga, sai quanti livelli di energia la verga ha assorbito nel corso della sua esistenza e quanti livelli di energia incantesimo ha attualmente immagazzinati. Se sei un incantatore che impugna la verga, puoi convertire l'energia immagazzinata in essa in slot incantesimo per lanciare incantesimi che hai preparato o conosci. Puoi creare slot incantesimo solo di un livello pari o inferiore ai tuoi slot incantesimo, fino a un massimo di livello 5. Usi i livelli immagazzinati al posto dei tuoi slot ma per il resto lanci l'incantesimo normalmente. Per esempio, puoi usare 3 livelli immagazzinati nella verga come uno slot incantesimo di livello 3. Una verga appena trovata di solito ha 1d10 livelli di energia incantesimo immagazzinati al suo interno. Una verga che non può più assorbire energia incantesimo e non ha energia rimanente diventa non magica.",
-    "name": "Verga di Assorbimento"
+    "name": "Verga dell'Assorbimento"
   },
   "rod-of-alertness": {
     "description": "Questa verga ha le seguenti proprietà. Vigilanza. Mentre impugni la verga, hai Vantaggio alle prove di Saggezza (Percezione) e ai tiri di Iniziativa. Incantesimi. Mentre impugni la verga, puoi lanciare da essa i seguenti incantesimi: Individuazione del Bene e del Male, Individuazione del Magico, Individuazione delle Malattie e dei Veleni, Vedere Invisibilità. Aura Protettiva. Con un'azione Magia, puoi piantare l'estremità della verga nel terreno; la testa della verga emana Luce Intensa in un raggio di 18 metri e Luce Fioca per altri 18 metri. Mentre ti trovi in quella Luce Intensa, tu e i tuoi alleati ottenete un bonus di +1 alla Classe Armatura e ai tiri salvezza e potete percepire la posizione di qualsiasi creatura Invisibile anch'essa nella Luce Intensa. La testa della verga smette di brillare e l'effetto termina dopo 10 minuti o quando una creatura usa un'azione Magia per estrarre la verga dal terreno. Una volta usata, questa proprietà non può essere riutilizzata fino alla prossima alba.",
@@ -1003,7 +1003,7 @@
   },
   "scarab-of-protection": {
     "description": "Questo medaglione a forma di scarabeo conferisce tre benefici mentre è sulla tua persona. Difesa. Ottieni un bonus di +1 alla Classe Armatura. Preservazione. Lo scarabeo ha 12 cariche. Se fallisci un tiro salvezza contro un incantesimo di Necromanzia o un effetto dannoso proveniente da un Non Morto, puoi usare una Reazione per spendere 1 carica e trasformare il tiro salvezza fallito in un successo. Lo scarabeo si sgretola in polvere e viene distrutto quando l'ultima carica è spesa. Resistenza agli Incantesimi. Hai Vantaggio ai tiri salvezza contro gli incantesimi.",
-    "name": "Scarabeo della Protezione"
+    "name": "Scarabeo di Protezione"
   },
   "scarab-of-protection.grants.1": {
     "description": "Tiri salvezza contro incantesimi"
@@ -1036,19 +1036,19 @@
   },
   "shield-plus-1": {
     "description": "Mentre impugni questo scudo, ottieni un bonus di +1 alla CA oltre al normale bonus alla CA dello scudo.",
-    "name": "Scudo, +1"
+    "name": "Scudo +1"
   },
   "shield-plus-2": {
     "description": "Mentre impugni questo scudo, ottieni un bonus di +2 alla CA oltre al normale bonus alla CA dello scudo.",
-    "name": "Scudo, +2"
+    "name": "Scudo +2"
   },
   "shield-plus-3": {
     "description": "Mentre impugni questo scudo, ottieni un bonus di +3 alla CA oltre al normale bonus alla CA dello scudo.",
-    "name": "Scudo, +3"
+    "name": "Scudo +3"
   },
   "slippers-of-spider-climbing": {
     "description": "Mentre indossi queste scarpe leggere, puoi muoverti su, giù e attraverso superfici verticali e lungo i soffitti, tenendo le mani libere. Hai una Velocità di Scalata pari alla tua Velocità. Tuttavia, le pantofole non ti permettono di muoverti in questo modo su una superficie scivolosa, come una coperta di ghiaccio o olio.",
-    "name": "Pantofole della Scalata del Ragno"
+    "name": "Pantofole del Ragno"
   },
   "sovereign-glue": {
     "description": "Questa sostanza viscosa, di un bianco latteo, può formare un legame adesivo permanente tra due oggetti qualsiasi. Deve essere conservata in un barattolo o in una fiasca rivestiti all'interno di Olio della Scivolosità. Quando viene trovato, un contenitore ne contiene 1d6 + 1 once. Un'oncia della colla può ricoprire una superficie quadrata di 30 centimetri. Applicare un'oncia di Colla Meravigliosa richiede un'azione Utilizzo, e la colla applicata impiega 1 minuto a fare presa. Una volta che lo ha fatto, il legame che crea può essere spezzato solo applicando Solvente Universale od Olio della Forma Eterea, oppure con un incantesimo Desiderio.",
@@ -1104,12 +1104,12 @@
   "staff-of-swarming-insects": {
     "attunementReq": "un Bardo, Chierico, Druido, Stregone, Warlock o Mago",
     "description": "Questo bastone ha 10 cariche. Nube di Insetti. Mentre impugni il bastone, puoi compiere un'azione Magia e spendere 1 carica per far riempire a uno sciame di insetti volanti innocui un'Emanazione di 9 metri che si origina da te. Gli insetti permangono per 10 minuti, rendendo l'area Pesantemente Oscurata per le creature diverse da te. Un forte vento (come quello creato da Folata di Vento) disperde lo sciame e termina l'effetto. Incantesimi. Mentre impugni il bastone, puoi lanciare da esso uno degli incantesimi nella tabella seguente, usando la tua CD del tiro salvezza degli incantesimi e il tuo modificatore di attacco con incantesimi. La tabella indica quante cariche devi spendere per lanciare l'incantesimo. Incantesimo Costo in Cariche Insetto Gigante 4 Piaga degli Insetti 5 Recuperare le Cariche. Il bastone recupera 1d6 + 4 cariche spese ogni giorno all'alba. Se spendi l'ultima carica, tira 1d20. Con un 1, uno sciame di insetti consuma e distrugge il bastone, poi si disperde.",
-    "name": "Bastone degli Insetti Sciamanti"
+    "name": "Bastone dello Sciame di Insetti"
   },
   "staff-of-the-magi": {
     "attunementReq": "da uno stregone, warlock o mago",
     "description": "+2 ai tiri per colpire degli incantesimi. Ha 50 cariche per incantesimi potenti. Il bastone recupera 4d6 + 2 cariche spese ogni giorno all'alba. Vantaggio ai tiri salvezza contro incantesimi. Può assorbire incantesimi diretti a te per ricaricarsi. Opzione Colpo Retributivo.",
-    "name": "Bastone del Mago"
+    "name": "Bastone dei Magi"
   },
   "staff-of-the-magi.grants.1": {
     "description": "Tiri salvezza contro incantesimi"
@@ -1125,7 +1125,7 @@
   },
   "staff-of-thunder-and-lightning": {
     "description": "Questo bastone può essere impugnato come un Bastone Ferrato magico che concede un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con esso. Ha anche le seguenti proprietà aggiuntive. Una volta usata una di queste proprietà, non può essere usata di nuovo fino all'alba successiva. Fulmine. Quando colpisci con un attacco in mischia usando il bastone, puoi far subire al bersaglio 2d6 danni da Fulmine aggiuntivi (non è richiesta alcuna azione). Tuono. Quando colpisci con un attacco in mischia usando il bastone, puoi far emettere al bastone un fragore di tuono udibile fino a 90 metri (non è richiesta alcuna azione). Il bersaglio che colpisci deve riuscire in un tiro salvezza su Costituzione con CD 17 o ottenere la condizione Stordito fino alla fine del tuo turno successivo. Tuono e Fulmine. Immediatamente dopo che colpisci con un attacco in mischia usando il bastone, puoi compiere un'Azione Bonus per usare le proprietà Fulmine e Tuono (vedi sopra) contemporaneamente. Farlo non consuma l'uso giornaliero di quelle proprietà, ma solo l'uso di questa. Saetta. Puoi compiere un'azione Magia per far balzare una saetta dalla punta del bastone in una Linea larga 1,5 metri e lunga 36 metri. Ogni creatura in quella Linea effettua un tiro salvezza su Destrezza con CD 17, subendo 9d6 danni da Fulmine se fallisce o la metà di quei danni se riesce. Fragore di Tuono. Puoi compiere un'azione Magia per far produrre al bastone un fragore di tuono udibile fino a 180 metri. Ogni creatura entro un'Emanazione di 18 metri che si origina da te effettua un tiro salvezza su Costituzione con CD 17.",
-    "name": "Bastone del Tuono e del Fulmine"
+    "name": "Bastone dei Tuoni e Fulmini"
   },
   "staff-of-withering": {
     "description": "Questo bastone ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Il bastone può essere impugnato come un Bastone Ferrato magico. Quando colpisce, infligge danni come un Bastone Ferrato normale, e puoi spendere 1 carica per infliggere al bersaglio 2d10 danni Necrotici aggiuntivi e costringerlo a effettuare un tiro salvezza su Costituzione con CD 15. Se fallisce, il bersaglio ha Svantaggio per 1 ora a qualsiasi prova di caratteristica o tiro salvezza che usi Forza o Costituzione.",
@@ -1137,11 +1137,11 @@
   },
   "stone-of-good-luck-luckstone": {
     "description": "Mentre questa agata levigata è sulla tua persona, ottieni un bonus di +1 alle prove di caratteristica e ai tiri salvezza.",
-    "name": "Pietra della Buona Fortuna"
+    "name": "Pietra della Buona Fortuna (Pietrafortuna)"
   },
   "sun-blade": {
     "description": "Un'elsa di spada lunga che crea una lama di luce. +2 ai tiri per colpire e danni, infligge danni Radianti invece che taglienti, +1d8 contro non morti. Irradia luce solare in un raggio di 4,5 metri.",
-    "name": "Lama Solare"
+    "name": "Lama del Sole"
   },
   "sword-of-life-stealing": {
     "description": "Quando attacchi una creatura con quest'arma magica e ottieni 20 sul d20 per il tiro per colpire, quel bersaglio subisce 15 danni Necrotici aggiuntivi se non è un Costrutto o un Non Morto, e tu ottieni Punti Ferita Temporanei pari alla quantità di danni Necrotici subiti.",
@@ -1170,7 +1170,7 @@
   },
   "thunderous-greatclub": {
     "description": "Mentre sei sintonizzato con quest'arma magica, la tua Forza è 20 a meno che la tua Forza non sia già pari o superiore a quel punteggio. L'arma infligge 1d8 danni da Tuono aggiuntivi a qualsiasi creatura che colpisce e 3d8 danni da Tuono aggiuntivi agli oggetti che colpisce che non vengono indossati o trasportati. L'arma ha le seguenti proprietà aggiuntive. Fragore di Tuono. Con un'azione Magia, puoi battere l'arma contro una superficie dura per creare un forte fragore di tuono udibile fino a 90 metri. Crei anche un Cono di 9 metri di energia tonante. Ogni creatura nel Cono deve riuscire in un tiro salvezza su Forza con CD 15 o ottenere la condizione Prono. Gli oggetti non magici nel Cono che non vengono indossati o trasportati subiscono 3d8 danni da Tuono. Terremoto. Con un'azione Magia, puoi battere l'arma contro il terreno per creare un'intensa perturbazione sismica in un cerchio dal raggio di 15 metri centrato sul punto d'impatto. Le strutture a contatto con il terreno in quell'area subiscono 50 danni Contundenti, e ogni creatura sul terreno in quell'area deve riuscire in un tiro salvezza su Destrezza con CD 20 o ottenere la condizione Prono. Se quella creatura si sta anche concentrando, deve riuscire in un tiro salvezza su Costituzione con CD 20 o la sua Concentrazione si spezza. Inoltre, puoi far aprire nel terreno una fenditura profonda 9 metri e larga 3 metri ovunque nell'area.",
-    "name": "Randello Pesante Tonante"
+    "name": "Randello Pesante del Tuono"
   },
   "tome-of-clear-thought": {
     "description": "Questo libro contiene esercizi di memoria e logica, e le sue parole sono cariche di magia. Se trascorri 48 ore in un periodo di 6 giorni o meno studiando il contenuto del libro e mettendone in pratica le linee guida, la tua Intelligenza aumenta di 2, fino a un massimo di 30. Il manuale perde quindi la sua magia ma la riacquista dopo un secolo.",
@@ -1206,7 +1206,7 @@
   },
   "wand-of-enemy-detection": {
     "description": "Questa bacchetta ha 7 cariche. Mentre la impugni, puoi compiere un'azione Magia per spendere 1 carica. Per 1 minuto, conosci la direzione della creatura più vicina a te Ostile entro 18 metri, ma non la sua distanza da te. La bacchetta può percepire la presenza di creature Ostili Invisibili, eteree, camuffate o nascoste, oltre a quelle in piena vista. L'effetto termina se smetti di impugnare la bacchetta. Recuperare le Cariche. La bacchetta recupera 1d6 + 1 cariche spese ogni giorno all'alba. Se spendi l'ultima carica della bacchetta, tira 1d20. Con un 1, la bacchetta si sgretola in cenere ed è distrutta.",
-    "name": "Bacchetta dell'Individuazione dei Nemici"
+    "name": "Bacchetta di Individuazione dei Nemici"
   },
   "wand-of-fear": {
     "description": "Questa bacchetta ha 7 cariche. Incantesimi. Mentre impugni la bacchetta, puoi lanciare da essa uno degli incantesimi (CD del tiro salvezza 15) nella tabella seguente. La tabella indica quante cariche devi spendere per lanciare l'incantesimo. Incantesimo Costo in Cariche Comando (solo \"Fuggire\" o \"Prostrarsi\") 1 Paura (Cono di 18 metri) 3 Recuperare le Cariche. La bacchetta recupera 1d6 + 1 cariche spese ogni giorno all'alba. Se spendi l'ultima carica della bacchetta, tira 1d20. Con un 1, la bacchetta si sgretola in cenere ed è distrutta.",
@@ -1224,11 +1224,11 @@
   },
   "wand-of-magic-detection": {
     "description": "Questa bacchetta ha 3 cariche. Mentre la impugni, puoi spendere 1 carica per lanciare Individuazione del Magico da essa. La bacchetta recupera 1d3 cariche spese ogni giorno all'alba.",
-    "name": "Bacchetta dell'Individuazione del Magico"
+    "name": "Bacchetta di Individuazione del Magico"
   },
   "wand-of-magic-missiles": {
     "description": "Questa bacchetta ha 7 cariche. Mentre la impugni, puoi spendere non più di 3 cariche per lanciare Dardo Incantato da essa. Per 1 carica, lanci la versione di livello 1 dell'incantesimo. Puoi aumentare il livello dell'incantesimo di 1 per ogni carica aggiuntiva che spendi. Recuperare le Cariche. La bacchetta recupera 1d6 + 1 cariche spese ogni giorno all'alba. Se spendi l'ultima carica della bacchetta, tira 1d20. Con un 1, la bacchetta si sgretola in cenere ed è distrutta.",
-    "name": "Bacchetta dei Dardi Incantati"
+    "name": "Bacchetta di Dardi Incantati"
   },
   "wand-of-paralysis": {
     "attunementReq": "un incantatore",
@@ -1247,17 +1247,17 @@
   "wand-of-the-war-mage-1-2-or-3": {
     "attunementReq": "un incantatore",
     "description": "Non comune (+1), Raro (+2) o Molto Raro (+3). Mentre impugni questa bacchetta, ottieni un bonus ai tiri per colpire degli incantesimi determinato dalla rarità della bacchetta. Inoltre, ignori la Copertura Parziale quando effettui un tiro per colpire con un incantesimo.",
-    "name": "Bacchetta del Mago da Guerra, +1, +2 o +3"
+    "name": "Bacchetta del Mago da Guerra +1, +2 o +3"
   },
   "wand-of-the-war-mage-plus-2": {
     "attunementReq": "un incantatore",
     "description": "Mentre impugni questa bacchetta, ottieni un bonus di +2 ai tiri per colpire degli incantesimi. Inoltre, ignori la Copertura Parziale quando effettui un tiro per colpire con un incantesimo.",
-    "name": "Bacchetta del Mago da Guerra, +2"
+    "name": "Bacchetta del Mago da Guerra +2"
   },
   "wand-of-the-war-mage-plus-3": {
     "attunementReq": "un incantatore",
     "description": "Mentre impugni questa bacchetta, ottieni un bonus di +3 ai tiri per colpire degli incantesimi. Inoltre, ignori la Copertura Parziale quando effettui un tiro per colpire con un incantesimo.",
-    "name": "Bacchetta del Mago da Guerra, +3"
+    "name": "Bacchetta del Mago da Guerra +3"
   },
   "wand-of-web": {
     "attunementReq": "un incantatore",
@@ -1277,23 +1277,23 @@
   },
   "weapon-plus-1": {
     "description": "Ottieni un bonus di +1 ai tiri per colpire e ai danni effettuati con quest'arma magica.",
-    "name": "Arma, +1"
+    "name": "Arma +1"
   },
   "weapon-plus-2": {
     "description": "Ottieni un bonus di +2 ai tiri per colpire e ai danni effettuati con quest'arma magica.",
-    "name": "Arma, +2"
+    "name": "Arma +2"
   },
   "weapon-plus-3": {
     "description": "Ottieni un bonus di +3 ai tiri per colpire e ai danni effettuati con quest'arma magica.",
-    "name": "Arma, +3"
+    "name": "Arma +3"
   },
   "well-of-many-worlds": {
-    "description": "Questo pregiato panno nero, morbido come la seta, è ripiegato fino alle dimensioni di un fazzoletto. Si dispiega in un foglio circolare del diametro di 1,8 metri. Puoi compiere un'azione Magia per dispiegare il Pozzo dei Mille Mondi e collocarlo su una superficie solida, dopodiché esso forma un portale circolare bidirezionale del diametro di 1,8 metri verso un altro mondo o piano di esistenza. Ogni volta che l'oggetto apre un portale, il DM decide dove conduce. Il portale rimane aperto finché una creatura entro 1,5 metri da esso non compie un'azione Magia per chiuderlo afferrando i bordi del panno e ripiegandolo. Una volta che il Pozzo dei Mille Mondi ha aperto un portale, non può farlo di nuovo per 1d8 ore.",
-    "name": "Pozzo dei Mille Mondi"
+    "description": "Questo pregiato panno nero, morbido come la seta, è ripiegato fino alle dimensioni di un fazzoletto. Si dispiega in un foglio circolare del diametro di 1,8 metri. Puoi compiere un'azione Magia per dispiegare il Pozzo dei Mondi e collocarlo su una superficie solida, dopodiché esso forma un portale circolare bidirezionale del diametro di 1,8 metri verso un altro mondo o piano di esistenza. Ogni volta che l'oggetto apre un portale, il DM decide dove conduce. Il portale rimane aperto finché una creatura entro 1,5 metri da esso non compie un'azione Magia per chiuderlo afferrando i bordi del panno e ripiegandolo. Una volta che il Pozzo dei Mondi ha aperto un portale, non può farlo di nuovo per 1d8 ore.",
+    "name": "Pozzo dei Mondi"
   },
   "wind-fan": {
     "description": "Mentre tieni in mano questo ventaglio, puoi lanciare Folata di Vento (CD del tiro salvezza 13) da esso. Ogni volta successiva in cui il ventaglio viene usato prima dell'alba successiva, ha una probabilità cumulativa del 20 percento di non funzionare; se il ventaglio non funziona, si lacera in brandelli inutili e non magici.",
-    "name": "Ventaglio del Vento"
+    "name": "Ventaglio"
   },
   "winged-boots": {
     "description": "Questi stivali hanno 4 cariche e ne recuperano 1d4 ogni giorno all'alba. Mentre li indossi, puoi compiere un'azione Magia per spendere 1 carica, ottenendo una Velocità di Volo di 9 metri per 1 ora.",

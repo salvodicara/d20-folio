@@ -149,7 +149,7 @@
   },
   "barbarian-weapon-mastery": {
     "description": "Il tuo addestramento con le armi ti permette di usare le proprietà di padronanza di due tipi di armi da mischia semplici o marziali di tua scelta con cui hai competenza. Ogni volta che completi un Riposo Lungo, puoi cambiare i tipi di arma scelti.",
-    "name": "Padronanza delle Armi"
+    "name": "Padronanza d'Armi"
   },
   "bard-asi": {
     "description": "Puoi aumentare un punteggio di caratteristica di 2, o due punteggi di caratteristica di 1 ciascuno. In alternativa, puoi scegliere un talento. Non puoi aumentare un punteggio oltre 20 con questo privilegio.",
@@ -295,11 +295,11 @@
   },
   "cleric-life-preserve-life": {
     "description": "Come azione, usi Incanalare Divinità per guarire gli alleati. Distribuisci punti ferita pari a cinque volte il tuo livello da chierico tra le creature entro 9 metri, ripristinando ciascuna a non più della metà del suo massimo di punti ferita.",
-    "name": "Preservare la Vita"
+    "name": "Preservare Vita"
   },
   "cleric-life-preserve-life.mechanics.actions.0": {
     "description": "Incanalare Divinità: distribuisci PF pari a 5 × livello chierico tra gli alleati entro 9 m.",
-    "label": "Preservare la Vita",
+    "label": "Preservare Vita",
     "summary": "Distribuisci PF pari a 5 × livello tra alleati entro 9 m"
   },
   "cleric-life-supreme-healing": {
@@ -514,11 +514,11 @@
   },
   "fighter-extra-attack-2": {
     "description": "Puoi attaccare tre volte ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra (2)"
+    "name": "Due Attacchi Extra"
   },
   "fighter-extra-attack-3": {
     "description": "Puoi attaccare quattro volte ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra (3)"
+    "name": "Tre Attacchi Extra"
   },
   "fighter-fighting-style": {
     "description": "Adotti uno stile di combattimento particolare come tua specialità. Scegli un talento Stile di Combattimento. Non puoi prendere lo stesso talento più di una volta, anche se puoi scegliere di nuovo in seguito.",
@@ -564,7 +564,7 @@
   },
   "fighter-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di tre tipi di armi Semplici o da Guerra a tua scelta, che diventano quattro al 4° livello, cinque al 10° e sei al 16°. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
-    "name": "Padronanza delle Armi"
+    "name": "Padronanza d'Armi"
   },
   "monk-acrobatic-movement": {
     "description": "Mentre non indossi armatura né impugni uno scudo, ottieni la capacità di muoverti lungo superfici verticali e attraverso liquidi nel tuo turno senza cadere durante il movimento.",
@@ -576,7 +576,7 @@
   },
   "monk-deflect-attacks": {
     "description": "Quando un tiro per colpire ti colpisce e i suoi danni includono danni Contundenti, Perforanti o Taglienti, puoi effettuare una Reazione per ridurre quei danni di 1d10 + il tuo modificatore di Destrezza + il tuo livello da Monaco. Se riduci il danno a 0, puoi spendere 1 Punto Concentrazione per ridirigere parte della forza dell'attacco: scegli una creatura entro 5 piedi (se l'attacco era in mischia) o entro 60 piedi e non dietro Copertura Totale (se era a distanza). Quella creatura effettua un tiro salvezza su Destrezza o subisce danni del tipo dell'attacco pari a due tiri del tuo dado Arti Marziali + il tuo modificatore di Destrezza.",
-    "name": "Deviare Attacchi"
+    "name": "Devia Attacchi"
   },
   "monk-deflect-attacks.mechanics.actions.0": {
     "description": "Riduci il danno di un attacco di 1d10 + mod DES + livello Monaco."
@@ -587,7 +587,7 @@
     "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 dadi marziali + DES"
   },
   "monk-deflect-energy": {
-    "description": "Ora puoi usare la tua capacità Deviare Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",
+    "description": "Ora puoi usare la tua capacità Devia Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",
     "name": "Deviare Energia"
   },
   "monk-disciplined-survivor": {
@@ -621,7 +621,7 @@
   },
   "monk-focus": {
     "description": "Il tuo addestramento ti permette di incanalare energia mistica chiamata Punti Concentrazione. Hai un numero di Punti Concentrazione pari al tuo livello da Monaco. Puoi spendere questi punti per alimentare varie capacità come Raffica di Colpi, Difesa Paziente e Passo del Vento. Recuperi tutti i Punti Concentrazione spesi al termine di un Riposo Breve o Lungo.",
-    "name": "Concentrazione del Monaco"
+    "name": "Concentrazione da Monaco"
   },
   "monk-heightened-focus": {
     "description": "La tua Raffica di Colpi, Difesa Paziente e Passo del Vento ottengono benefici aggiuntivi. Raffica: puoi effettuare 3 colpi senz'armi invece di 2. Difesa Paziente: ottieni PF temporanei pari al doppio del tuo dado di Arti Marziali. Passo: la tua distanza di salto è triplicata per quel turno.",
@@ -751,7 +751,7 @@
   },
   "paladin-abjure-foes": {
     "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità per presentare il tuo simbolo sacro. Ogni nemico entro 18 m deve effettuare un TS di Saggezza o essere Spaventato per 1 minuto (TS pone fine).",
-    "name": "Abiurare i Nemici"
+    "name": "Abiurare Nemici"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
     "description": "Incanalare Divinità: i nemici entro 18 m effettuano un TS su SAG o sono Spaventati.",
@@ -853,7 +853,7 @@
   },
   "paladin-weapon-mastery": {
     "description": "Il tuo addestramento con le armi ti permette di usare le proprietà di padronanza di due tipi di armi di tua scelta con cui hai competenza. Ogni volta che completi un Riposo Lungo, puoi cambiare i tipi di arma scelti.",
-    "name": "Padronanza delle Armi"
+    "name": "Padronanza d'Armi"
   },
   "ranger-deft-explorer": {
     "description": "Grazie ai tuoi viaggi, ottieni Maestria: scegli una delle tue competenze nelle abilità in cui non hai Maestria e ottieni Maestria in quell'abilità. Inoltre, conosci due lingue a tua scelta.",
@@ -931,15 +931,15 @@
   },
   "ranger-hunter-superior-hunters-prey": {
     "description": "Una volta per turno quando infliggi danni a una creatura segnata dal tuo Marchio del Cacciatore, puoi infliggere anche i danni extra di quell'incantesimo a una creatura diversa che puoi vedere entro 9 metri dalla prima creatura.",
-    "name": "Preda Superiore del Cacciatore"
+    "name": "Preda del Cacciatore Superiore"
   },
   "ranger-hunter-superior-hunters-defense": {
     "description": "Quando subisci danni, puoi usare una Reazione per ottenere Resistenza a quel danno e a qualsiasi altro danno dello stesso tipo fino alla fine del turno in corso.",
-    "name": "Difesa Superiore del Cacciatore"
+    "name": "Difesa del Cacciatore Superiore"
   },
   "ranger-hunter-superior-hunters-defense.grants.superior-hunters-defense": {
     "description": "Puoi usare una Reazione per ottenere Resistenza a quel danno e a qualsiasi altro danno dello stesso tipo fino alla fine del turno in corso.",
-    "name": "Difesa Superiore del Cacciatore",
+    "name": "Difesa del Cacciatore Superiore",
     "trigger": "Quando subisci danni."
   },
   "ranger-hunter-superior-hunters-defense.mechanics.actions.0": {
@@ -980,7 +980,7 @@
   },
   "ranger-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di due tipi di armi Semplici o da Guerra a tua scelta. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
-    "name": "Padronanza delle Armi"
+    "name": "Padronanza d'Armi"
   },
   "rogue-cunning-action": {
     "description": "Il tuo pensiero rapido e la tua agilità ti permettono di muoverti e agire velocemente. Puoi effettuare un'Azione Bonus in ciascuno dei tuoi turni in combattimento per effettuare l'azione di Scatto, Disimpegno o Nascondersi.",
@@ -1088,7 +1088,7 @@
   },
   "rogue-thief-reflexes": {
     "description": "Sei diventato esperto nel tendere imboscate e sfuggire rapidamente al pericolo. Puoi effettuare due turni durante il primo round di qualsiasi combattimento. Effettui il primo turno alla tua iniziativa normale e il secondo turno alla tua iniziativa meno 10. Non puoi usare questa capacità quando sei sorpreso.",
-    "name": "Riflessi del Furfante"
+    "name": "Riflessi da Furfante"
   },
   "rogue-thief-second-story-work": {
     "description": "Arrampicatore: Ottieni una Velocità di Scalata pari alla tua Velocità. Saltatore: Puoi determinare la distanza dei tuoi salti usando la tua Destrezza invece della tua Forza.",
@@ -1104,7 +1104,7 @@
   },
   "rogue-thief-use-magic-device": {
     "description": "Sintonia: Puoi sintonizzarti con un massimo di quattro oggetti magici contemporaneamente. Cariche: Ogni volta che usi una proprietà di un oggetto magico che consuma cariche, tira 1d6; con un 6 usi la proprietà senza consumare le cariche. Pergamene: Puoi usare qualsiasi Pergamena di Incantesimo, usando Intelligenza come caratteristica da incantatore; lanci in modo affidabile trucchetti e incantesimi di 1° livello, mentre una pergamena di livello superiore richiede una prova di Intelligenza (Arcano) (CD 10 + il livello dell'incantesimo).",
-    "name": "Usare Oggetti Magici"
+    "name": "Usare Oggetto Magico"
   },
   "rogue-thieves-cant": {
     "description": "Hai imparato varie lingue nelle comunità dove hai esercitato i tuoi talenti da ladro. Conosci il Gergo Ladresco e un'altra lingua a tua scelta, scelta dalle tabelle delle lingue.",
@@ -1119,7 +1119,7 @@
   },
   "rogue-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di due tipi di armi Semplici o da Guerra a tua scelta. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
-    "name": "Padronanza delle Armi"
+    "name": "Padronanza d'Armi"
   },
   "sorcerer-arcane-apotheosis": {
     "description": "Mentre il tuo privilegio Stregoneria Innata è attivo, puoi usare un'opzione di Metamagia in ognuno dei tuoi turni senza spendere Punti Stregoneria per essa.",
@@ -1221,7 +1221,7 @@
   },
   "warlock-contact-patron": {
     "description": "Hai sempre preparato l'incantesimo Contattare Altri Piani. Puoi lanciarlo senza consumare uno slot incantesimo per contattare il tuo patrono e superi automaticamente il tiro salvezza dell'incantesimo. Una volta lanciato in questo modo, non puoi rifarlo fino a un Riposo Lungo.",
-    "name": "Contattare il Patrono"
+    "name": "Contatta Patrono"
   },
   "warlock-eldritch-invocations": {
     "description": "Ottieni una Supplica Occulta a tua scelta, come Patto del Tomo. Sono frammenti di conoscenza proibita che ti conferiscono capacità magiche permanenti. Impari suppliche aggiuntive a livelli superiori (secondo la colonna Suppliche Occulte) e puoi sostituirne una quando sali di livello.",
@@ -1252,7 +1252,7 @@
   },
   "warlock-fiend-patron-hurl-through-hell": {
     "description": "Una volta per turno quando colpisci una creatura con un tiro per colpire, puoi tentare di trasportarla istantaneamente attraverso i Piani Inferiori. Il bersaglio deve superare un tiro salvezza su Carisma contro la tua CD del tiro salvezza degli incantesimi, altrimenti scompare e piomba in un paesaggio da incubo. Il bersaglio subisce 8d10 danni Psichici se non è un Immondo e ha la condizione Incapacitato fino alla fine del tuo prossimo turno, quando ritorna nello spazio che occupava in precedenza o nello spazio libero più vicino. Dopo aver usato questo privilegio, non puoi riutilizzarlo finché non completi un Riposo Lungo, a meno che tu non spenda uno slot incantesimo di Magia del Patto (nessuna azione richiesta) per ripristinarne l'uso.",
-    "name": "Scagliare nell'Inferno"
+    "name": "Scagliare all'Inferno"
   },
   "warlock-fiend-patron-fiendish-resilience.grants.0": {
     "label": "Resilienza Immonda"
@@ -1320,7 +1320,7 @@
   },
   "wizard-memorize-spell": {
     "description": "Ogni volta che finisci un Riposo Breve, puoi studiare il tuo libro degli incantesimi e sostituire uno degli incantesimi da Mago di livello 1+ che hai preparato con un altro incantesimo di livello 1+ dal tuo libro. (2024: nessun limite di una volta per Riposo Lungo.)",
-    "name": "Memorizzare Incantesimo"
+    "name": "Memorizzare Incantesimi"
   },
   "wizard-ritual-adept": {
     "description": "Puoi lanciare qualsiasi incantesimo come Rituale se tale incantesimo ha il tag Rituale ed è nel tuo libro degli incantesimi. Non è necessario che l'incantesimo sia preparato, ma devi avere il libro in mano mentre lanci il Rituale.",
