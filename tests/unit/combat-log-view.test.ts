@@ -205,7 +205,7 @@ describe("localizeCombatEvent — every kind routes to a non-empty template", ()
     );
   });
 
-  it("a weapon mastery is declared, not spent: its rider-use reads 'Topple on Goblin'", () => {
+  it("a weapon mastery is declared, not spent: its rider-use takes combatLog.masteryUse", () => {
     // SRD 5.2.1 Weapon Mastery: a mastery property is a use of the weapon, not a
     // resource, so the line drops the "spent" wording (combatLog.masteryUse).
     expect(

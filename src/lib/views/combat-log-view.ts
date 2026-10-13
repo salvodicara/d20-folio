@@ -189,7 +189,7 @@ export function localizeCombatEvent(
         event.outcome
       );
     case "rider-use":
-      // A weapon mastery is declared, not spent ("Topple on Goblin"); a real
+      // A weapon mastery is declared, not spent ("Topple (Quarterstaff)"); a real
       // resource keeps the "spent" line ("Spent Sneak Attack on Goblin").
       return t(
         isMasteryRef(event.rider) ? "combatLog.masteryUse" : "combatLog.riderUse",

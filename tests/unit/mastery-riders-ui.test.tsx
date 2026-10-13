@@ -119,4 +119,21 @@ describe("declaring a mastery rider", () => {
     expect(riderLogs()).toBe(1);
     expect(useCombatStore.getState().nextAttackAdvantage).toBe(false);
   });
+
+  it("the log names the mastery with its weapon in brackets; a resource keeps 'spent'", async () => {
+    // The target is not known when the rider is declared, and "Topple on
+    // Quarterstaff" reads as toppling the weapon: the weapon goes in brackets.
+    const args = { rider: "Topple", name: "Quarterstaff" };
+    expect(i18n.t("combatLog.masteryUse", args)).toBe("Topple (Quarterstaff)");
+    expect(i18n.t("combatLog.riderUse", { rider: "Sneak Attack", name: "Dagger" })).toBe(
+      "Spent Sneak Attack on Dagger"
+    );
+    await i18n.changeLanguage("it");
+    expect(
+      i18n.t("combatLog.masteryUse", { rider: "Rovesciamento", name: "Bastone Ferrato" })
+    ).toBe("Rovesciamento (Bastone Ferrato)");
+    expect(
+      i18n.t("combatLog.riderUse", { rider: "Attacco Furtivo", name: "Pugnale" })
+    ).toBe("Attacco Furtivo speso su Pugnale");
+  });
 });
