@@ -729,13 +729,15 @@ describe("resolveActions — base actions", () => {
     expect(oa?.summary.trigger).toBeDefined();
   });
 
-  it("all base action cards have type 'action' or 'reaction'", () => {
+  it("base action cards are actions or reactions, the object interaction free", () => {
     const char = makeChar();
     const baseActions = localizeActions(char, "en").filter((a) =>
       a.id.startsWith("base-")
     );
     baseActions.forEach((a) => {
-      expect(["action", "reaction"]).toContain(a.type);
+      expect(
+        a.id === "base-object-interaction" ? ["free"] : ["action", "reaction"]
+      ).toContain(a.type);
     });
   });
 

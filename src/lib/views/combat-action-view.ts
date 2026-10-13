@@ -18,7 +18,7 @@ import type {
   ResolvedActionHeal,
   ActionResolveScope,
 } from "@/lib/smart-tracker";
-import { resolveActions } from "@/lib/smart-tracker";
+import { BASE_ACTIONS, resolveActions } from "@/lib/smart-tracker";
 import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
 import type { AbilityCode, BiText } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
@@ -630,6 +630,11 @@ export function sortActions<T extends ResolvedAction>(list: T[]): T[] {
     // Stable alpha tie-break for same tier.
     return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
   });
+}
+
+/** A base action's localized name by id ("base-utilize" → "Utilizzo"), or null. */
+export function baseActionName(id: string, locale: Locale): string | null {
+  return BASE_ACTIONS.find((action) => action.id === id)?.name[locale] ?? null;
 }
 
 /**
