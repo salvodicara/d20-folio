@@ -10,6 +10,7 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.srd-only.tsbuildinfo",
     "paths": {
       "@/*": ["./src/*"],
+      "@pack/i18n-en-prose": ["./src/data/pack-empty.ts"],
       "@pack/item-art": ["./src/data/pack-empty.ts"],
       "@pack/monster-art": ["./src/data/pack-empty.ts"],
       "@pack/monsters": ["./src/data/pack-empty.ts"],

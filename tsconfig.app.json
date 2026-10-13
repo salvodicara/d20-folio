@@ -49,6 +49,10 @@
         "./content-pack/data/monster-art.ts",
         "./src/data/pack-empty.ts"
       ],
+      "@pack/i18n-en-prose": [
+        "./content-pack/i18n/en-prose.ts",
+        "./src/data/pack-empty.ts"
+      ],
       "@pack/monsters": [
         "./content-pack/data/monsters/index.ts",
         "./src/data/pack-empty.ts"

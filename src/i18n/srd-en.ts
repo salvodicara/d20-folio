@@ -203,6 +203,48 @@ const EN: SrdCatalogueSet = Object.fromEntries(
  */
 const REGISTRY: Partial<Record<Locale, SrdCatalogueSet>> = { en: EN };
 
+// ─── The pack's lazy English prose ──────────────────────────────────────────────
+// The pack's catalogue `description` text is ~70% of its English bytes and only
+// ever DISPLAYED (the engine builds `srdText(kind, id, "description")` references,
+// resolved at render), so it ships in a lazy sub-entry (`@pack/i18n-en-prose`) and
+// joins the EN registry once loaded. Until then a description lookup resolves to a
+// quiet blank (see `localizeSrd`), never a crash; the load starts at boot.
+
+let enProseLoaded = false;
+let enProseLoader: (() => void) | null = null;
+
+/** Merge the pack's English prose into the EN registry (eager kinds only). */
+export function registerEnProse(prose: Partial<Record<SrdKind, SrdCatalogue>>): void {
+  for (const [kind, entries] of Object.entries(prose) as [SrdKind, SrdCatalogue][]) {
+    if (!(SRD_KINDS as readonly string[]).includes(kind)) continue;
+    const cat = EN[kind as EagerSrdKind];
+    for (const [id, fields] of Object.entries(entries)) {
+      cat[id] = { ...(cat[id] ?? {}), ...fields };
+    }
+  }
+  enProseLoaded = true;
+}
+
+/** Whether the pack's English prose has joined the EN registry. */
+export function hasEnProse(): boolean {
+  return enProseLoaded;
+}
+
+/** The boot loader that fetches the prose (set by the i18n bootstrap). */
+export function setEnProseLoader(load: () => void): void {
+  enProseLoader = load;
+}
+
+/** Ask for the prose (no-op when loaded or when no loader is set, e.g. in a script). */
+export function requestEnProse(): void {
+  if (!enProseLoaded) enProseLoader?.();
+}
+
+/** Test seam: forget that the prose arrived. */
+export function __resetEnProseForTest(): void {
+  enProseLoaded = false;
+}
+
 /**
  * Register a locale's lazily-loaded SRD catalogue set into the registry. Called by
  * the i18n bootstrap (`ensureLocale`) after it dynamic-imports the locale's

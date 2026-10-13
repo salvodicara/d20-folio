@@ -11,6 +11,7 @@ import {
   packAliasTarget,
   packItemArtAliasTarget,
   packMonsterArtAliasTarget,
+  packEnProseAliasTarget,
   packMonstersAliasTarget,
 } from "./scripts/content-pack-mode.ts";
 
@@ -322,6 +323,8 @@ export default defineConfig({
       // eager-reachable `@pack` barrel (docs/ARCHITECTURE.md → the content-pack
       // seam). MUST precede "@pack": string aliases match by prefix.
       "@pack/monsters": packMonstersAliasTarget(),
+      // The pack's lazy English prose (descriptions), loaded after first paint.
+      "@pack/i18n-en-prose": packEnProseAliasTarget(),
       // The content-pack seam (docs/ARCHITECTURE.md): the private pack when
       // present/enabled, else the typed-empty stub (the SRD-only build).
       "@pack": packAliasTarget(),

@@ -113,5 +113,19 @@ export function srdCatalogue(locale: Locale, file: string): Json {
       );
     }
   }
+  // The pack's lazily-loaded prose (`srd-prose/<file>.json`, the `description`
+  // fields the runtime loads after first paint) joins its entries field by field,
+  // so every check sees the same composed entry the runtime ends up with.
+  const proseFile = join(PACK_I18N_ROOT, locale, "srd-prose", `${file}.json`);
+  if (existsSync(proseFile)) {
+    const prose = JSON.parse(readFileSync(proseFile, "utf-8")) as Record<string, Json>;
+    for (const [id, fields] of Object.entries(prose)) {
+      const entry = merged[id];
+      merged[id] =
+        entry && typeof entry === "object" && !Array.isArray(entry)
+          ? { ...entry, ...fields }
+          : fields;
+    }
+  }
   return merged;
 }

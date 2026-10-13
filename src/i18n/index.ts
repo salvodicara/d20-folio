@@ -35,10 +35,13 @@ import {
   hasSrdKind,
   loadedSrdLocales,
   markLazySrdKindResident,
+  registerEnProse,
   registerLazySrdKind,
   residentLazySrdKinds,
+  setEnProseLoader,
   type LazySrdKind,
 } from "./srd-en";
+import { diagnosticsLog } from "@/lib/diagnostics";
 import { loadUiResources, loadSrdCatalogues, loadLazySrdKind } from "./loaders";
 
 const isProd = import.meta.env.PROD;
@@ -114,6 +117,29 @@ export function ensureSrdKind(kind: LazySrdKind): Promise<void> {
   return task;
 }
 
+let enProseTask: Promise<void> | null = null;
+
+/**
+ * Load the pack's lazy English prose (`@pack/i18n-en-prose`, the catalogue
+ * descriptions) into the EN registry, once. Started at boot without being awaited;
+ * a failed load is retried on the next request.
+ */
+export function ensureEnProse(): Promise<void> {
+  enProseTask ??= import("@pack/i18n-en-prose")
+    .then(({ packSrdEnProse }) => {
+      registerEnProse(packSrdEnProse);
+      // Re-render what showed a blank description: every surface that localizes
+      // re-renders on `languageChanged` (react-i18next), and the language is unchanged.
+      if (i18n.isInitialized) i18n.emit("languageChanged", i18n.language);
+    })
+    .catch((error: unknown) => {
+      enProseTask = null;
+      diagnosticsLog("warn", "srd.prose-load-failed", { message: String(error) });
+    });
+  return enProseTask;
+}
+setEnProseLoader(() => void ensureEnProse());
+
 /**
  * Initialize i18next with NO eager resources, detect the active locale, then load
  * ONLY that locale's catalogues before resolving. The app awaits this promise
@@ -156,6 +182,10 @@ async function bootstrap(): Promise<typeof i18n> {
   if (asLocale(i18n.language) !== "en") {
     await ensureLocale("en");
   }
+  // The pack's English descriptions load in the background, not awaited: the first
+  // paint needs none of them, and a description asked for earlier is a quiet blank
+  // until they land (see `localizeSrd`).
+  void ensureEnProse();
   // Keep `<html lang>` honest: mirror the active locale onto the document root so
   // assistive tech, the browser, and SEO see the language actually rendered (the
   // static `lang="en"` in index.html would otherwise lie for an IT user) — and so
