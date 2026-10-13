@@ -18,7 +18,7 @@
     "longRest": "Fatto un Riposo Lungo",
     "riderUse": "{{rider}} speso su {{name}}",
     "masteryUse": "{{rider}} ({{name}})",
-    "effectExpired": "{{name}} terminato (durata esaurita)",
+    "effectExpired": "{{name}}: durata esaurita",
     "fadingPenaltyStart": "{{name}}: −{{amount}} ai tiri d20 (cala di 1 a ogni riposo lungo)",
     "fadingPenaltyEnd": "{{name}}: penalità ai tiri d20 terminata",
     "trackerRegain": "{{name}} recupera {{amount}}",
