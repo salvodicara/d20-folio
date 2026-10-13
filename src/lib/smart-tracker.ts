@@ -7308,7 +7308,13 @@ function resolveWeaponActions(
       source: "weapon",
       spellLevel: null,
       concentration: false,
-      summary: resolveUnarmedAttackSummary(character, ctx, grantAgg),
+      // The whole character's grants (items and species too, like Flurry of
+      // Blows reads them): Demon Armor's claws upgrade this row as well.
+      summary: resolveUnarmedAttackSummary(
+        character,
+        ctx,
+        aggregateCharacterGrants(character.character, character.session)
+      ),
       costsSlot: false,
       pinned: !unpinnedSet.has(id),
       defaultPinned: true,

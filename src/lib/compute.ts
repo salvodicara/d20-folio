@@ -2252,15 +2252,16 @@ export function featureSaveDc(
 }
 
 /**
- * Average value of a single die expressed as `"dN"` (`"d6"` → 3.5). Used to
- * pick the better of two competing Unarmed-Strike upgrades. A malformed string
- * yields 0 so a typo never beats a real die. Pure, no RNG.
+ * Average value of a die expressed as `"dN"` or `"NdM"` (`"d6"` → 3.5, `"2d6"`
+ * → 7). Used to pick the better of two competing Unarmed-Strike upgrades. A
+ * malformed string yields 0 so a typo never beats a real die. Pure, no RNG.
  */
 function dieAverage(die: string): number {
-  const m = /^d(\d+)$/.exec(die.trim());
+  const m = /^(\d*)d(\d+)$/.exec(die.trim());
   if (!m) return 0;
-  const sides = parseInt(m[1] ?? "0", 10);
-  return sides > 0 ? (sides + 1) / 2 : 0;
+  const count = m[1] ? parseInt(m[1], 10) : 1;
+  const sides = parseInt(m[2] ?? "0", 10);
+  return count > 0 && sides > 0 ? (count * (sides + 1)) / 2 : 0;
 }
 
 /** A single declared Unarmed-Strike damage-die upgrade (the aggregate slice). */
