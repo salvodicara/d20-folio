@@ -251,7 +251,7 @@ export function CombatHeader() {
   // #68 / U2 / RA-25 — the initiative ROLL is override-first: it auto-derives the
   // NET of `advantage-on`/`disadvantage-on { rollType: "initiative" }` grants
   // (Assassin's Assassinate on the boon side), and a manual four-state leg lets
-  // the player force Advantage / Disadvantage (Surprise — the sheet can't see it)
+  // the player force Advantage / Disadvantage (Surprise also has its own chip)
   // / a plain roll. Surfaced only on the Init vital, only when relevant (a quiet
   // gold boon or danger-hued penalty mark in play, a corner toggle in edit) so it
   // never clutters the header. Gold = the app's boon hue (matches `.uc-verdict`).
