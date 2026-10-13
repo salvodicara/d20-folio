@@ -31,6 +31,7 @@ export function ShapechangeFormPicker({
     <BeastFormPicker
       open
       shapechange
+      keepsMind
       forms={forms}
       locale={locale}
       onAssume={onAssume}

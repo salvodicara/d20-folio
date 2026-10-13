@@ -551,7 +551,8 @@ export function SpellsTab() {
       ) : (
         <BeastFormPicker
           open={transformSpellId !== null}
-          forms={resolvePolymorphForms(character)}
+          forms={resolvePolymorphForms(character, transformSpellId ?? "polymorph")}
+          keepsMind={selfFormRule(transformSpellId ?? "polymorph").keepsMind}
           locale={locale}
           onAssume={handleAssumeForm}
           onClose={() => setTransformSpellId(null)}
