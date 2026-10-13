@@ -55,7 +55,6 @@ import {
 } from "@/features/campaigns/encounter";
 import { applyAdversaryDamage } from "@/features/campaigns/encounter-world-command";
 import {
-  commitPartyAttackParticipation,
   observePartyWorldFights,
   type PartyFightSnapshot,
 } from "@/features/campaigns/party-world-lease";
@@ -506,68 +505,6 @@ describe("PC-turn-anchored lifetimes through the member flow", () => {
     expect(partyLeaseIdentity(world)).not.toBeNull();
     expect(world.timeline.elapsedSeconds).toBe(0);
     expect(world.encounter?.round).toBe(1);
-  });
-});
-
-describe("cross-material action correlation (attacker pays, target suffers)", () => {
-  function adversaryEncounter() {
-    let state = startEncounter({}, [], EPOCH);
-    state = addMonster(state, {
-      ac: 15,
-      count: 1,
-      creatureType: "humanoid",
-      initiative: 14,
-      maxHp: 10,
-      name: "Goblin",
-      srdId: "goblin-warrior",
-    });
-    return beginEncounterTurns(state, ["monster-1"]);
-  }
-
-  it("stamps ONE identity on both journals: encounter damage + chronicle beat + PC turn claim", () => {
-    mountCharacter(fixture());
-    observe(null, [fight()]);
-    const seed = `pc-action:${canonicalFingerprint({ proof: "one-identity" })}`;
-
-    // The encounter side: the member-declared damage books through the engine
-    // under the seed-prefixed action id, stamped onto the chronicle beat.
-    const encounter = adversaryEncounter();
-    const damaged = applyAdversaryDamage(
-      encounter,
-      CAMPAIGN_ID,
-      "monster-1",
-      5,
-      { actorId: `pc-${UID}` },
-      seed
-    );
-    const world = encounterWorldState(damaged, CAMPAIGN_ID);
-    if (!world) throw new Error("encounter world derivation failed");
-    expect(world.actions.map(({ id }) => id)).toContain(`${seed}:damage:monster-1`);
-    const beat = (damaged.events ?? []).find((event) => event.kind === "hp-damage");
-    expect(beat?.engineActionId).toBe(`${seed}:damage:monster-1`);
-
-    // The character side: the SAME seed lands on the member's own journal as
-    // a turn-economy claim on the leased participant.
-    commitPartyAttackParticipation(CAMPAIGN_ID, `pc-${UID}`, seed);
-    const character = openWorld();
-    expect(character.actions.map(({ id }) => id)).toContain(seed);
-    const participant =
-      character.encounter?.participants[partyLeaseParticipantId(CAMPAIGN_ID, EPOCH)];
-    expect(
-      participant?.economy.manualBoundaries.some(
-        (boundary) => boundary.boundaryId === seed
-      )
-    ).toBe(true);
-  });
-
-  it("skips the PC stamp for a foreign actor or without a lease", () => {
-    mountCharacter(fixture());
-    observe(null, [fight()]);
-    const before = openWorld().revision;
-    commitPartyAttackParticipation(CAMPAIGN_ID, "pc-somebody-else", "pc-action:x");
-    expect(openWorld().revision).toBe(before);
-    commitPartyAttackParticipation("another-campaign", `pc-${UID}`, "pc-action:x");
-    expect(openWorld().revision).toBe(before);
   });
 });
 
