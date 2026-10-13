@@ -2225,9 +2225,49 @@ export interface MonsterEntryBase {
   uses?: { count: number; per: "day" | "short-or-long-rest" | "long-rest" };
 }
 
+/** A d20 roll a trait fact bends: attack rolls, saving throws, ability checks,
+ *  or every D20 Test (`d20`). */
+export type MonsterTraitRoll = "attack" | "melee-attack" | "save" | "check" | "d20";
+
+/**
+ * The number a prose trait changes at the table, as a FACT (the text stays the
+ * full rule). Only traits that move a roll or Hit Points carry one; the corpus
+ * guard pins every fact against the English print (tests/unit/monster-trait-facts).
+ *  - `advantage` / `disadvantage` — on `rolls` while `when` holds: Magic
+ *    Resistance (saves vs spells), Pack Tactics (an ally within 5 ft of the
+ *    target), Bloodied Fury/Frenzy, Sunlight/Light Sensitivity.
+ *  - `regeneration` — regains `amount` HP at the start of each of its turns;
+ *    `suppressedBy` damage types switch it off for its next turn (Troll);
+ *    `needsHp` = only while it has at least 1 HP (Oni, Shield Guardian).
+ *  - `absorb` — damage of `damageType` heals it by the damage dealt; `instead`
+ *    = it takes none of that damage (Clay Golem's Acid Absorption).
+ *  - `siege` — double damage to objects and structures (Siege Monster).
+ */
+export type MonsterTraitFact =
+  | {
+      kind: "advantage";
+      rolls: ReadonlyArray<MonsterTraitRoll>;
+      when: "vs-spells" | "ally-near-target" | "bloodied";
+    }
+  | {
+      kind: "disadvantage";
+      rolls: ReadonlyArray<MonsterTraitRoll>;
+      when: "sunlight" | "bright-light";
+    }
+  | {
+      kind: "regeneration";
+      amount: number;
+      suppressedBy?: ReadonlyArray<DamageType>;
+      needsHp?: true;
+    }
+  | { kind: "absorb"; damageType: DamageType; instead?: true }
+  | { kind: "siege" };
+
 /** A prose-only entry (Multiattack, auras, most traits, legendary moves). */
 export interface MonsterNarrativeEntry extends MonsterEntryBase {
   kind: "narrative";
+  /** The table-changing number this trait carries, when it has one. */
+  fact?: MonsterTraitFact;
 }
 
 /** A 2024 attack-roll entry: "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6+2) …". */

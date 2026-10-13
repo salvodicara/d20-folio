@@ -102,6 +102,11 @@ export function translateMonsterEntry(
       });
       break;
     case "narrative":
+      // A trait that moves a number carries it as a fact; the rest is prose.
+      if (entry.fact) {
+        activity = { ...base, effects: [], fact: entry.fact };
+        break;
+      }
       activity = { ...base, effects: [] };
       gaps.push({
         field: "text",

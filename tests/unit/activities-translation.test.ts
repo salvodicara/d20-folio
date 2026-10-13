@@ -480,8 +480,9 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
             : "none",
       });
     default:
-      // Spellcasting lists and prose entries keep only their identity and limits.
-      return clean({ ...base, kind: entry.kind } as MonsterEntry);
+      // Spellcasting lists and prose entries keep only their identity and limits
+      // (plus a trait's table fact).
+      return clean({ ...base, kind: entry.kind, fact: activity.fact } as MonsterEntry);
   }
 }
 

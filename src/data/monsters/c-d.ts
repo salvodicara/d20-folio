@@ -126,7 +126,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["infernal"], telepathyFt: 120 },
     traits: [
       { id: "diabolical-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -269,10 +273,18 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"], plusAnyCount: 1 },
     traits: [
-      { id: "acid-absorption", kind: "narrative" },
+      {
+        id: "acid-absorption",
+        kind: "narrative",
+        fact: { kind: "absorb", damageType: "acid", instead: true },
+      },
       { id: "berserk", kind: "narrative" },
       { id: "immutable-form", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -307,7 +319,13 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     conditionImmunities: ["frightened"],
     senses: { darkvisionFt: 120 },
     languages: { ids: ["deep-speech", "undercommon"] },
-    traits: [{ id: "light-sensitivity", kind: "narrative" }],
+    traits: [
+      {
+        id: "light-sensitivity",
+        kind: "narrative",
+        fact: { kind: "disadvantage", rolls: ["attack"], when: "bright-light" },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -822,7 +840,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     languages: { special: "all", telepathyFt: 120 },
     traits: [
       { id: "exalted-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -864,7 +886,13 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 17, DEX: 15, CON: 15, INT: 3, WIS: 12, CHA: 7 },
     skills: [{ skill: "perception", expertise: true }, { skill: "stealth" }],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "bite",
@@ -896,7 +924,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["auran"] },
     traits: [
       { id: "elemental-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "wishes", kind: "narrative" },
     ],
     actions: [
@@ -1108,7 +1140,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["elvish", "undercommon"] },
     traits: [
       { id: "spider-climb", kind: "narrative" },
-      { id: "sunlight-sensitivity", kind: "narrative" },
+      {
+        id: "sunlight-sensitivity",
+        kind: "narrative",
+        fact: { kind: "disadvantage", rolls: ["check", "attack"], when: "sunlight" },
+      },
       { id: "web-walker", kind: "narrative" },
     ],
     actions: [
@@ -1198,7 +1234,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["elvish", "sylvan"] },
     traits: [
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "speak-with-beasts-and-plants", kind: "narrative" },
     ],
     actions: [

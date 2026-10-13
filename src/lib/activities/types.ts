@@ -28,6 +28,7 @@ import type {
   CreatureType,
   DiceCount,
   HealTerm,
+  MonsterTraitFact,
   ReactionTrigger,
   SpellRecurrence,
   WeaponMastery,
@@ -379,6 +380,8 @@ export interface Activity {
   tag?: "advantage" | "control" | "heal" | "buff" | "debuff" | "utility";
   /** The action an active spell grants without spending the slot again. */
   followUp?: Activity;
+  /** A passive monster trait's table number (Magic Resistance, Regeneration). */
+  fact?: MonsterTraitFact;
 }
 
 /** A source field the Activity cannot express yet, kept visible, never dropped. */

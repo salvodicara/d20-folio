@@ -414,6 +414,7 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
     ability: compiled("stat-block"),
     atWill: compiled("stat-block"),
     perDay: compiled("stat-block"),
+    fact: compiled("stat-block"),
   }),
   "cover-rule": object({
     id: IGNORE,

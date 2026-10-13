@@ -28,7 +28,11 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal"], telepathyFt: 120 },
     traits: [
       { id: "demonic-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -83,7 +87,11 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal", "common", "infernal", "primordial"] },
     traits: [
       { id: "coven-magic", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "soul-bag", kind: "narrative" },
     ],
     actions: [
@@ -325,7 +333,13 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
     damageResistances: ["cold"],
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common", "giant"] },
-    traits: [{ id: "regeneration", kind: "narrative" }],
+    traits: [
+      {
+        id: "regeneration",
+        kind: "narrative",
+        fact: { kind: "regeneration", amount: 10, needsHp: true },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -672,7 +686,11 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       { id: "diabolical-restoration", kind: "narrative" },
       { id: "fear-aura", kind: "save", save: "WIS", dc: 21, onSuccess: "special" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -737,7 +755,11 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
     traits: [
       { id: "divine-awareness", kind: "narrative" },
       { id: "exalted-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -976,7 +998,13 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception", expertise: true }, { skill: "stealth" }],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["common", "draconic"], understandsOnly: true },
-    traits: [{ id: "magic-resistance", kind: "narrative" }],
+    traits: [
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {

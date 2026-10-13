@@ -28,9 +28,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 120 },
     traits: [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 6, per: "day" } },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "reflective-carapace", kind: "narrative" },
-      { id: "siege-monster", kind: "narrative" },
+      { id: "siege-monster", kind: "narrative", fact: { kind: "siege" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -117,7 +121,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 15, DEX: 12, CON: 14, INT: 10, WIS: 10, CHA: 11 },
     languages: { ids: ["common"] },
     gear: [{ id: "heavy-crossbow" }, { id: "leather-armor" }, { id: "mace" }],
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "mace",
@@ -152,7 +162,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     saveProficiencies: ["STR", "CON", "CHA"],
     languages: { ids: ["common"], plusAnyCount: 1 },
     gear: [{ id: "chain-mail" }, { id: "heavy-crossbow" }, { id: "warhammer" }],
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -189,7 +205,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     damageVulnerabilities: ["fire"],
     damageResistances: ["bludgeoning", "piercing"],
     languages: { ids: ["common", "druidic", "elvish", "sylvan"] },
-    traits: [{ id: "siege-monster", kind: "narrative" }],
+    traits: [{ id: "siege-monster", kind: "narrative", fact: { kind: "siege" } }],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -253,7 +269,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["giant"] },
     traits: [
       { id: "loathsome-limbs", kind: "narrative", uses: { count: 4, per: "day" } },
-      { id: "regeneration", kind: "narrative" },
+      {
+        id: "regeneration",
+        kind: "narrative",
+        fact: { kind: "regeneration", amount: 15, suppressedBy: ["acid", "fire"] },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -282,7 +302,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 18, DEX: 12, CON: 10, INT: 1, WIS: 9, CHA: 1 },
     senses: { darkvisionFt: 60 },
     traits: [
-      { id: "regeneration", kind: "narrative" },
+      {
+        id: "regeneration",
+        kind: "narrative",
+        fact: { kind: "regeneration", amount: 5, suppressedBy: ["acid", "fire"] },
+      },
       { id: "troll-spawn", kind: "narrative" },
     ],
     actions: [
@@ -351,7 +375,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["celestial", "elvish", "sylvan"], telepathyFt: 120 },
     traits: [
       { id: "legendary-resistance", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -629,7 +657,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal"], telepathyFt: 120 },
     traits: [
       { id: "demonic-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -669,7 +701,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 10, fly: 50 },
     abilityScores: { STR: 7, DEX: 10, CON: 13, INT: 2, WIS: 12, CHA: 4 },
     skills: [{ skill: "perception" }],
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "beak",
@@ -746,7 +784,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 13, DEX: 11, CON: 11, INT: 8, WIS: 11, CHA: 8 },
     gear: [{ id: "chain-shirt" }, { id: "spear" }],
     languages: { ids: ["common"] },
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "spear",
@@ -1080,7 +1124,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"] },
     gear: [{ id: "longbow" }],
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1174,7 +1224,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     gear: [{ id: "studded-leather-armor" }],
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"], plusAnyCount: 1 },
-    traits: [{ id: "sunlight-sensitivity", kind: "narrative" }],
+    traits: [
+      {
+        id: "sunlight-sensitivity",
+        kind: "narrative",
+        fact: { kind: "disadvantage", rolls: ["check", "attack"], when: "sunlight" },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1282,7 +1338,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     ],
     damageImmunities: ["cold"],
     languages: { ids: ["common", "giant"] },
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "bite",
@@ -1317,7 +1379,13 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 14, DEX: 15, CON: 12, INT: 3, WIS: 12, CHA: 6 },
     skills: [{ skill: "perception", expertise: true }, { skill: "stealth" }],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "bite",
@@ -1385,7 +1453,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common"], plusAnyCount: 2 },
     traits: [
       { id: "incorporeal-movement", kind: "narrative" },
-      { id: "sunlight-sensitivity", kind: "narrative" },
+      {
+        id: "sunlight-sensitivity",
+        kind: "narrative",
+        fact: { kind: "disadvantage", rolls: ["check", "attack"], when: "sunlight" },
+      },
     ],
     actions: [
       {

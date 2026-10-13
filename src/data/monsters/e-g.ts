@@ -55,7 +55,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["terran"] },
     traits: [
       { id: "earth-glide", kind: "narrative" },
-      { id: "siege-monster", kind: "narrative" },
+      { id: "siege-monster", kind: "narrative", fact: { kind: "siege" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -97,7 +97,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["ignan"] },
     traits: [
       { id: "elemental-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "wishes", kind: "narrative" },
     ],
     actions: [
@@ -225,7 +229,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["infernal"], telepathyFt: 120 },
     traits: [
       { id: "diabolical-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "magic-rope", kind: "narrative" },
     ],
     actions: [
@@ -460,8 +468,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       { id: "aversion-to-fire", kind: "narrative" },
       { id: "berserk", kind: "narrative" },
       { id: "immutable-form", kind: "narrative" },
-      { id: "lightning-absorption", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "lightning-absorption",
+        kind: "narrative",
+        fact: { kind: "absorb", damageType: "lightning" },
+      },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -904,7 +920,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 40 },
     abilityScores: { STR: 17, DEX: 10, CON: 16, INT: 2, WIS: 7, CHA: 5 },
     saveProficiencies: ["STR"],
-    traits: [{ id: "bloodied-fury", kind: "narrative" }],
+    traits: [
+      {
+        id: "bloodied-fury",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["melee-attack"], when: "bloodied" },
+      },
+    ],
     actions: [
       {
         id: "gore",
@@ -1314,7 +1336,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     saveProficiencies: ["DEX"],
     skills: [{ skill: "perception" }],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "bite",
@@ -1527,7 +1555,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     damageResistances: ["necrotic"],
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"], understandsOnly: true },
-    traits: [{ id: "pack-tactics", kind: "narrative" }],
+    traits: [
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
+    ],
     actions: [
       {
         id: "gouge",
@@ -1681,7 +1715,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal"], telepathyFt: 120 },
     traits: [
       { id: "demonic-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
