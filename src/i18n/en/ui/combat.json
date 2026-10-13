@@ -463,7 +463,21 @@
     "targetConfirmCast": "Cast on {{count}}",
     "targetConfirmUse": "Use on {{count}}",
     "damageTray": {
-      "rubricDamage": "{{type}} damage",
+      "damageOf": {
+        "acid": "Acid damage",
+        "bludgeoning": "Bludgeoning damage",
+        "cold": "Cold damage",
+        "fire": "Fire damage",
+        "force": "Force damage",
+        "lightning": "Lightning damage",
+        "necrotic": "Necrotic damage",
+        "piercing": "Piercing damage",
+        "poison": "Poison damage",
+        "psychic": "Psychic damage",
+        "radiant": "Radiant damage",
+        "slashing": "Slashing damage",
+        "thunder": "Thunder damage"
+      },
       "total": "Rolled total",
       "totalHint": "What you rolled at the table, e.g. 8+6+3",
       "saved": "Saved",
