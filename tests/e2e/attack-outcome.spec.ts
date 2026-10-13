@@ -101,7 +101,7 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(crit).toBeAttached();
     await expect(page.getByText("Goblin: colpito, 9 danni").first()).toBeAttached();
     await expect(
-      page.getByText("Usato Spada Lunga (attacco 2 di 2) — critico").first()
+      page.getByText("Usato Spada Lunga (attacco 2 di 2): critico").first()
     ).toBeAttached();
     if (await crit.isVisible()) {
       await crit.scrollIntoViewIfNeeded();
