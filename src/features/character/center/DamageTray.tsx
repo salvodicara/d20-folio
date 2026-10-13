@@ -381,7 +381,13 @@ function TrayTargetRow({
             disabled={row.saved}
             onClick={() => onChange(toggleCondition(row, id, plan))}
           >
-            {conditionLabel(id, locale)}
+            {plan.conditions?.save
+              ? t("combat.damageTray.conditionSave", {
+                  condition: conditionLabel(id, locale),
+                  ability: t(`abilities.${plan.conditions.save.ability}_short`),
+                  dc: plan.conditions.save.dc,
+                })
+              : conditionLabel(id, locale)}
           </button>
         ))}
       </div>

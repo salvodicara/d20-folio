@@ -41,8 +41,14 @@ export interface DamageTrayPlan {
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
-   *  `optIn` when a hit-gated rider (Topple) offers it with the chip off. */
-  conditions?: { options: string[]; pickOne: boolean; optIn?: true };
+   *  `optIn` when a hit-gated rider (Topple) offers it with the chip off; `save`
+   *  when the condition rides its own save, not the action's (Topple: CON). */
+  conditions?: {
+    options: string[];
+    pickOne: boolean;
+    optIn?: true;
+    save?: { ability: string; dc: number };
+  };
   /** The action rolls to hit (a weapon, an attack-roll spell): each row says Hit,
    *  Miss or Critical. A miss deals nothing, half the total (Acid Arrow), or the
    *  Graze mastery's fixed damage. */
@@ -90,6 +96,7 @@ export function damageTrayPlan(
       : []
   );
   const hasSave = Boolean(s.saveAbility || s.saveDC);
+  const toppleDc = s.masteryDetail?.toppleDc;
   // A save governs the damage only when the damage itself rides it (Fireball), not
   // when an attack deals it and the save only gates a rider.
   const parts = combatDamageParts(action);
@@ -117,6 +124,11 @@ export function damageTrayPlan(
             options: condition.conditionIds,
             pickOne: condition.pickOne,
             ...(condition.optIn ? { optIn: true as const } : {}),
+            // SRD 5.2.1 Topple: a Constitution save, DC 8 + the attack's ability
+            // modifier + PB (the engine's `masteryNumbers`).
+            ...(toppleDc !== undefined && condition.conditionIds.includes("prone")
+              ? { save: { ability: "CON", dc: toppleDc } }
+              : {}),
           },
         }
       : {}),

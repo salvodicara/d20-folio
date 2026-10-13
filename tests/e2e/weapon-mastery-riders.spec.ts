@@ -75,25 +75,40 @@ for (const size of ["desktop", "mobile"] as const) {
   });
 }
 
-test("Topple: the damage tray offers Prone on a hit (it, dark, desktop)", async ({
-  page,
-}) => {
-  await page.addInitScript(() =>
-    window.localStorage.setItem("d20-dev-combat-chronicle", "1")
-  );
-  await openFighter(page, "desktop");
-  await page.getByRole("button", { name: "Attacca: Bastone Ferrato" }).first().click();
-  const picker = page.getByRole("dialog", { name: /su chi\?/i });
-  await picker.locator('.cl-target[data-side="enemy"]').first().click();
-  const tray = page.getByTestId("damage-tray");
-  await expect(tray).toBeVisible();
-  // Topple needs a hit and a failed save: the Prone chip is offered, off.
-  const prone = tray.getByRole("button", { name: "Prono" });
-  await expect(prone).toHaveAttribute("aria-pressed", "false");
-  await prone.click();
-  await expect(prone).toHaveAttribute("aria-pressed", "true");
-  await tray.getByRole("textbox", { name: "Totale tirato" }).fill("4+3");
-  await page.screenshot({ path: shotPath("topple-tray-desktop.png") });
-  await tray.getByRole("button", { name: "Applica" }).click();
-  await expect(tray).toBeHidden();
-});
+for (const size of ["desktop", "mobile"] as const) {
+  test(`Topple: the damage tray offers Prone with its DC on a hit (it, dark, ${size})`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() =>
+      window.localStorage.setItem("d20-dev-combat-chronicle", "1")
+    );
+    await openFighter(page, size);
+    await page.getByRole("button", { name: "Attacca: Bastone Ferrato" }).first().click();
+    const picker = page.getByRole("dialog", { name: /su chi\?/i });
+    await picker.locator('.cl-target[data-side="enemy"]').first().click();
+    const tray = page.getByTestId("damage-tray");
+    await expect(tray).toBeVisible();
+    // Topple needs a hit and a failed save: the Prone chip is offered, off, and
+    // carries the save it rides (CON, DC 8 + STR 3 + PB 3 = 14).
+    const prone = tray.getByRole("button", { name: /^Prono\b.*\b14$/ });
+    await expect(prone).toHaveAttribute("aria-pressed", "false");
+    await prone.click();
+    await expect(prone).toHaveAttribute("aria-pressed", "true");
+    await tray.getByRole("textbox", { name: "Totale tirato" }).fill("4+3");
+    await page.screenshot({ path: shotPath(`topple-tray-${size}.png`) });
+    await tray.getByRole("button", { name: "Applica" }).click();
+    await expect(tray).toBeHidden();
+
+    // Declaring the mastery logs it without "spent": a mastery costs nothing.
+    const staff = await expandCard(page, "Bastone Ferrato");
+    await staff.getByRole("button", { name: /^Rovesciamento\b/ }).click();
+    const line = page
+      .getByRole("log")
+      .locator(".log-text", { hasText: /^Rovesciamento\b/ })
+      .first();
+    await expect(line).toBeVisible();
+    await expect(line).not.toContainText("speso");
+    await line.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: shotPath(`topple-log-${size}.png`) });
+  });
+}

@@ -142,6 +142,11 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
 /** The attack results a line can say; another stored value is left out. */
 const ATTACK_RESULTS = new Set(["hit", "miss", "critical"]);
 
+/** A rider from the `weapon-mastery` catalogue (Topple, Vex, …): no resource. */
+function isMasteryRef(rider: LocText): boolean {
+  return "srd" in rider && rider.srd.kind === "weapon-mastery";
+}
+
 /**
  * Localize a `CombatEvent` to its display LINE. Pure: `t` + the condition-name
  * resolver are injected, so this is unit-testable with trivial fakes and carries
@@ -184,10 +189,15 @@ export function localizeCombatEvent(
         event.outcome
       );
     case "rider-use":
-      return t("combatLog.riderUse", {
-        rider: resolveRiderRef(event.rider),
-        name: resolveActionRef(event.action),
-      });
+      // A weapon mastery is declared, not spent ("Topple on Goblin"); a real
+      // resource keeps the "spent" line ("Spent Sneak Attack on Goblin").
+      return t(
+        isMasteryRef(event.rider) ? "combatLog.masteryUse" : "combatLog.riderUse",
+        {
+          rider: resolveRiderRef(event.rider),
+          name: resolveActionRef(event.action),
+        }
+      );
     case "hp-damage":
       return t("combatLog.hpDamage", {
         amount: event.amount,

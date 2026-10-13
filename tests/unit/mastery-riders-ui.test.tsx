@@ -100,6 +100,9 @@ describe("declaring a mastery rider", () => {
     const row = initialTrayRow(tray, "monster-1");
     expect(row.conditions).toEqual([]);
     expect(toggleCondition(row, "prone", tray).conditions).toEqual(["prone"]);
+    // SRD 5.2.1 Topple: a Constitution save, DC 8 + the attack's ability modifier
+    // + PB. STR 16 (+3), PB 3 → DC 14, shown on the Prone chip.
+    expect(tray.conditions?.save).toEqual({ ability: "CON", dc: 14 });
     expect(
       damageTrayPlan(card(doc, "glaive"), ["monster-1"], "pc-me")?.conditions
     ).toBeUndefined();

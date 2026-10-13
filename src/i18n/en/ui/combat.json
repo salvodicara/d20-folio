@@ -468,6 +468,7 @@
       "totalHint": "What you rolled at the table, e.g. 8+6+3",
       "saved": "Saved",
       "savedAria": "{{name}} saved",
+      "conditionSave": "{{condition}} · {{ability}} save DC {{dc}}",
       "multiplier": "Multiplier for {{name}}",
       "resistant": "Resistant",
       "vulnerable": "Vulnerable",
