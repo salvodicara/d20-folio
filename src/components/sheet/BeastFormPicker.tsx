@@ -53,8 +53,10 @@ export interface BeastFormPickerProps {
   onAssume: (form: BeastStatBlock) => void;
   onClose: () => void;
   /** Shapechange: forms from the whole bestiary (names in the `monster`
-   *  catalogue), on yourself only, with its own title and hint. */
+   *  catalogue), on yourself only, with its own title. */
   shapechange?: boolean;
+  /** The form keeps your INT, WIS, CHA and Hit Points (Shapechange, Animal Shapes). */
+  keepsMind?: boolean;
 }
 
 /** The read-only stat block shown for a chosen Beast (reference card + confirm). */
@@ -166,6 +168,7 @@ export function BeastFormPicker({
   onAssume,
   onClose,
   shapechange = false,
+  keepsMind = false,
 }: BeastFormPickerProps) {
   const { t } = useTranslation();
   const nameKind = shapechange ? "monster" : "beasts";
@@ -195,11 +198,11 @@ export function BeastFormPicker({
       rubric={t("polymorph.rubric")}
       title={shapechange ? t("polymorph.shapechangeTitle") : t("polymorph.title")}
       subtitle={
-        shapechange
-          ? t("polymorph.shapechangeHint")
-          : mode === "self"
-            ? t("polymorph.selfHint")
-            : t("polymorph.referenceHint")
+        mode === "reference"
+          ? t("polymorph.referenceHint")
+          : keepsMind
+            ? t("polymorph.keepsMindHint")
+            : t("polymorph.selfHint")
       }
     >
       {/* Fixed-height flex column: the list is the `flex-1` scroll region, and the

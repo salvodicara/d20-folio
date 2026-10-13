@@ -1437,6 +1437,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Shapechange: the spell card's Transform opens a picker of every creature up to CR 18 that is not a Construct or an Undead; choosing one stamps its AC, speeds, STR/DEX/CON and Temporary HP, keeps INT/WIS/CHA, and a second Transform shifts form without new Temporary HP.",
   },
+  // Animal Shapes — a level-15 Druid with Animal Shapes prepared, untransformed.
+  // Visit `/characters/scn-animal-shapes-druid?tab=spells`.
+  "animal-shapes-druid": {
+    name: "Brannoc Thornfield",
+    raceId: "human",
+    classId: "druid",
+    level: 15,
+    background: "sage",
+    abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 12, WIS: 20, CHA: 10 },
+    spells: [{ srdId: "animal-shapes", prepared: true }],
+    exercises:
+      "Animal Shapes on yourself: Transform offers only Large or smaller Beasts of CR 4 or lower; a form keeps INT/WIS/CHA, brings Temporary HP once, needs no Concentration, and a second Transform shifts form without new Temporary HP.",
+  },
   // PRIM-resource-conversion `pact-slot` — Warlock Magical Cunning (L2). A Fiend
   // Warlock 5 starts with BOTH Pact-Magic slots (pool of 2, slot level 3)
   // expended, so the rail's Resources section surfaces the "Restore Pact Slots"

@@ -69,6 +69,7 @@ import {
 import { totalLevel } from "@/lib/classes";
 import { polymorphPriorSnapshot, selfFormRule } from "@/lib/polymorph";
 import type { BeastStatBlock } from "@/data/types";
+import { getSpellById } from "@/data/spells";
 import { getBeast } from "@/data/beasts";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
@@ -1271,7 +1272,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // current = 0.
     const concentrating = character.session.concentration;
     let nextPendingConcentrationSaves = get().combatPendingConcentrationSaves;
-    const concentrationBreaks = concentrating !== "" && (newCurrent === 0 || formEnds);
+    // A form ends its Concentration only when that Concentration is what holds it.
+    const formHeldByConcentration = formEnds && concentrating === activeForm.spellId;
+    const concentrationBreaks =
+      concentrating !== "" && (newCurrent === 0 || formHeldByConcentration);
     if (concentrating !== "") {
       if (concentrationBreaks) {
         // Concentration ends OUTRIGHT — no maintenance save is offered — when the
@@ -1316,12 +1320,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       }
     }
 
+    // A form no Concentration holds (Animal Shapes) ends here on its own, keeping
+    // the depleted Temporary HP rather than restoring the caster's pool.
+    const damaged = { ...character, session: taken.session };
+    const afterForm =
+      formEnds && !formHeldByConcentration
+        ? (dropBeastForm(damaged, newTemp) ?? damaged)
+        : damaged;
     set({
       combatActiveEffects: nextLocalEffects,
       combatLegacyActiveEffects: nextLegacyEffects,
       combatPendingConcentrationSaves: nextPendingConcentrationSaves,
       encounterEffectProjection: nextEncounterEffectProjection,
-      character: { ...character, session: taken.session },
+      character: afterForm,
     });
     logTransitionEvents();
     if (concentrationBreaks) {
@@ -1329,7 +1340,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // already-resolved depleted-form Temp HP instead of restoring its prior pool.
       get().setConcentration("", {
         undoable: false,
-        ...(formEnds ? { retractedFormTempHp: newTemp } : {}),
+        ...(formHeldByConcentration ? { retractedFormTempHp: newTemp } : {}),
       });
     } else {
       // Persist the whole resulting combat state (offline-safe, durably queued).
@@ -2916,8 +2927,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
-    // A reshift is still the same spell: its Concentration simply continues.
-    if (!reshift) get().setConcentration(concentrationValue(spellId));
+    // A reshift is still the same spell: its Concentration simply continues. A
+    // spell without Concentration (Animal Shapes, 24 hours) leaves it untouched.
+    if (!reshift && getSpellById(spellId)?.concentration !== false) {
+      get().setConcentration(concentrationValue(spellId));
+    }
 
     const cur = get().character;
     if (!cur) return null;
