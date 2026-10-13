@@ -197,7 +197,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }, { skill: "stealth" }],
     senses: { darkvisionFt: 60 },
     traits: [
-      { id: "pack-tactics", kind: "narrative" },
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
       { id: "running-leap", kind: "narrative" },
     ],
     actions: [
@@ -466,7 +470,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal"], telepathyFt: 120 },
     traits: [
       { id: "demonic-restoration", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "reactive", kind: "narrative" },
     ],
     actions: [
@@ -858,7 +866,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 15000,
     traits: [
       { id: "legendary-resistance", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
       { id: "undead-restoration", kind: "narrative" },
     ],
     actions: [

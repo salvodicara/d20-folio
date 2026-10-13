@@ -25,7 +25,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     conditionImmunities: ["poisoned"],
     senses: { darkvisionFt: 120 },
     languages: { ids: ["abyssal", "common"] },
-    traits: [{ id: "magic-resistance", kind: "narrative" }],
+    traits: [
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
+    ],
     actions: [
       {
         id: "rend",
@@ -223,7 +229,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }],
     senses: { blindsightFt: 30 },
     traits: [
-      { id: "pack-tactics", kind: "narrative" },
+      {
+        id: "pack-tactics",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
+      },
       { id: "water-breathing", kind: "narrative" },
     ],
     actions: [
@@ -542,7 +552,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { skill: "stealth" },
     ],
     languages: { ids: ["common", "elvish", "sylvan"] },
-    traits: [{ id: "magic-resistance", kind: "narrative" }],
+    traits: [
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
+    ],
     actions: [
       {
         id: "hooves",
@@ -722,7 +738,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     traits: [
       { id: "amorphous", kind: "narrative" },
-      { id: "sunlight-weakness", kind: "narrative" },
+      {
+        id: "sunlight-weakness",
+        kind: "narrative",
+        fact: { kind: "disadvantage", rolls: ["d20"], when: "sunlight" },
+      },
     ],
     actions: [
       {
@@ -753,7 +773,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["lightning"],
     conditionImmunities: ["deafened", "exhaustion"],
     senses: { blindsightFt: 60 },
-    traits: [{ id: "lightning-absorption", kind: "narrative" }],
+    traits: [
+      {
+        id: "lightning-absorption",
+        kind: "narrative",
+        fact: { kind: "absorb", damageType: "lightning" },
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -795,7 +821,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     languages: { special: "all", understandsOnly: true },
     traits: [
       { id: "bound", kind: "narrative" },
-      { id: "regeneration", kind: "narrative" },
+      {
+        id: "regeneration",
+        kind: "narrative",
+        fact: { kind: "regeneration", amount: 10, needsHp: true },
+      },
       { id: "spell-storing", kind: "narrative" },
     ],
     actions: [
@@ -934,7 +964,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "divine-awareness", kind: "narrative" },
       { id: "exalted-restoration", kind: "narrative" },
       { id: "legendary-resistance", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -1035,7 +1069,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common"], understandsOnly: true, plusAnyCount: 1 },
     traits: [
       { id: "incorporeal-movement", kind: "narrative" },
-      { id: "sunlight-sensitivity", kind: "narrative" },
+      {
+        id: "sunlight-sensitivity",
+        kind: "narrative",
+        fact: { kind: "disadvantage", rolls: ["check", "attack"], when: "sunlight" },
+      },
     ],
     actions: [
       {
@@ -1211,7 +1249,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     damageResistances: ["necrotic", "psychic", "radiant"],
     senses: { darkvisionFt: 60 },
     languages: { ids: ["celestial", "common"] },
-    traits: [{ id: "magic-resistance", kind: "narrative" }],
+    traits: [
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
+    ],
     actions: [
       {
         id: "rend",
@@ -1562,7 +1606,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common"], understandsOnly: true, plusAnyCount: 2 },
     traits: [
       { id: "immutable-form", kind: "narrative" },
-      { id: "magic-resistance", kind: "narrative" },
+      {
+        id: "magic-resistance",
+        kind: "narrative",
+        fact: { kind: "advantage", rolls: ["save"], when: "vs-spells" },
+      },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
