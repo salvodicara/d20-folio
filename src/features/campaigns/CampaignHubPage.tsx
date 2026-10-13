@@ -11,18 +11,18 @@
  * Under dev-bypass the listener opens nothing; a fixture is seeded so the hub (and
  * the create/join → hub flow) renders locally + in e2e (see `dev-fixture.ts`).
  *
- * IA — a compact campaign WORKSPACE, not one permanently expanded document. Real local
- * tabs separate Live (Party/Encounter + current recap), Journal (Chronicle + Notes),
- * Resources (Treasury + Access), and manager-only DM tasks. Inactive panels remain mounted
- * so drafts and disclosures survive task switches; the selected workspace is remembered per
- * campaign. This is navigation by table activity, not a decorative anchor index.
+ * IA (owner 2026-10-13, "Panoramica ordinata") — a campaign WORKSPACE with a side
+ * menu of real local tabs: Overview (Party/Encounter beside the last session and the
+ * treasury), Journal (Sessions + Notes + Chronicle) and manager-only DM tools.
+ * Inactive panels remain mounted so drafts and disclosures survive task switches; the
+ * selected workspace is remembered per campaign.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./encounter.css";
 import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
-import { AlertTriangle, Coins, Crown, Users } from "lucide-react";
+import { AlertTriangle, Castle, Crown, Users } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { FolioBookIcon, FolioCombatIcon } from "@/components/shared/folio-icons";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
@@ -210,7 +210,7 @@ function IsolatedSection({ children }: { children: ReactNode }) {
   );
 }
 
-type CampaignWorkspaceView = "live" | "journal" | "resources" | "dm";
+type CampaignWorkspaceView = "live" | "journal" | "dm";
 
 /**
  * CampaignWorkspaceNav — the campaign's compact local workspace switcher.
@@ -236,18 +236,13 @@ function CampaignWorkspaceNav({
     {
       id: "live" as const,
       label: t("campaignHub.workspaceLive"),
-      icon: encounterRunning ? FolioCombatIcon : Users,
+      icon: encounterRunning ? FolioCombatIcon : Castle,
       live: encounterRunning,
     },
     {
       id: "journal" as const,
       label: t("campaignHub.workspaceJournal"),
       icon: FolioBookIcon,
-    },
-    {
-      id: "resources" as const,
-      label: t("campaignHub.workspaceResources"),
-      icon: Coins,
     },
     ...(canManage
       ? [
@@ -264,6 +259,7 @@ function CampaignWorkspaceNav({
     <div
       className="campaign-table-nav"
       role="tablist"
+      aria-orientation="vertical"
       aria-label={t("campaignHub.workspaceNavAria")}
     >
       <div className="campaign-table-nav-track">
@@ -294,9 +290,9 @@ function CampaignWorkspaceNav({
 function readWorkspace(campaignId: string): CampaignWorkspaceView {
   try {
     const value = localStorage.getItem(`d20.campaignWorkspace.${campaignId}`);
-    return value === "journal" || value === "resources" || value === "dm"
-      ? value
-      : "live";
+    // "resources" (the retired treasury tab) reopens on the overview, where the
+    // treasury now lives.
+    return value === "journal" || value === "dm" ? value : "live";
   } catch {
     return "live";
   }
@@ -338,7 +334,7 @@ function CampaignWorkspace({
   }
 
   return (
-    <>
+    <div className="campaign-shell">
       <CampaignWorkspaceNav
         value={activeView}
         onChange={selectView}
@@ -352,20 +348,31 @@ function CampaignWorkspace({
           aria-labelledby="campaign-tab-live"
           hidden={activeView !== "live"}
           className="campaign-workspace-panel campaign-live-grid"
+          // In a fight the initiative order is what the table needs: it takes the
+          // full width and the last session + treasury step below it.
+          data-encounter={encounterRunning || undefined}
         >
           <IsolatedSection>
             <Party />
           </IsolatedSection>
-          <IsolatedSection>
-            <div className="campaign-live-recap">
+          <div className="campaign-live-side">
+            <IsolatedSection>
               <LastTime
                 campaignId={campaignId}
                 visible={activeView === "live"}
                 canManage={canManage}
                 onOpenJournal={() => selectView("journal")}
               />
-            </div>
-          </IsolatedSection>
+            </IsolatedSection>
+            <IsolatedSection>
+              <Treasury />
+            </IsolatedSection>
+            {!canManage && (
+              <IsolatedSection>
+                <CampaignInvite canManage={false} />
+              </IsolatedSection>
+            )}
+          </div>
         </section>
 
         <section
@@ -392,23 +399,6 @@ function CampaignWorkspace({
           </IsolatedSection>
         </section>
 
-        <section
-          id="campaign-panel-resources"
-          role="tabpanel"
-          aria-labelledby="campaign-tab-resources"
-          hidden={activeView !== "resources"}
-          className="campaign-workspace-panel campaign-resources-grid"
-        >
-          <IsolatedSection>
-            <Treasury />
-          </IsolatedSection>
-          {!canManage && (
-            <IsolatedSection>
-              <CampaignInvite canManage={false} />
-            </IsolatedSection>
-          )}
-        </section>
-
         {canManage && (
           <section
             id="campaign-panel-dm"
@@ -431,7 +421,7 @@ function CampaignWorkspace({
           </section>
         )}
       </div>
-    </>
+    </div>
   );
 }
 

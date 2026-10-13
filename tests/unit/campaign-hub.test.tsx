@@ -143,7 +143,7 @@ describe("CampaignHubPage", () => {
     );
   });
 
-  it("renders a real task workspace and switches context without leaving the campaign", () => {
+  it("opens on the overview, with the treasury folded in, and switches context without leaving the campaign", () => {
     const scrollIntoView = vi.fn();
     Element.prototype.scrollIntoView = scrollIntoView;
     renderHubAt("/campaigns/c1");
@@ -151,12 +151,34 @@ describe("CampaignHubPage", () => {
     expect(
       screen.getByRole("heading", { name: "Gildenmoor", level: 1 })
     ).toBeInTheDocument();
+    // Owner 2026-10-13 ("Panoramica ordinata"): the overview shows the party, the
+    // last session and the treasury at once; the sections are Overview · Journal ·
+    // DM tools, with no separate resources tab.
+    expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "Overview",
+      "Journal",
+      "DM tools",
+    ]);
+    expect(screen.getByRole("tablist")).toHaveAttribute("aria-orientation", "vertical");
     expect(screen.getByRole("heading", { name: /party/i })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: /treasury/i })).toBeNull();
-    fireEvent.click(screen.getByRole("tab", { name: /resources/i }));
     expect(screen.getByRole("heading", { name: /treasury/i })).toBeInTheDocument();
-    expect(localStorage.getItem("d20.campaignWorkspace.c1")).toBe("resources");
+    expect(screen.getByRole("tabpanel")).toHaveAttribute("id", "campaign-panel-live");
+    fireEvent.click(screen.getByRole("tab", { name: /journal/i }));
+    expect(screen.getByRole("tabpanel")).toHaveAttribute("id", "campaign-panel-journal");
+    expect(screen.queryByRole("heading", { name: /treasury/i })).toBeNull();
+    expect(localStorage.getItem("d20.campaignWorkspace.c1")).toBe("journal");
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "start", behavior: "auto" });
+  });
+
+  it("reopens a remembered resources view on the overview, where the treasury now lives", () => {
+    localStorage.setItem("d20.campaignWorkspace.c1", "resources");
+    renderHubAt("/campaigns/c1");
+    act(() => onDataRef.fn?.(makeCampaign({ id: "c1" })));
+    expect(screen.getByRole("tab", { name: "Overview" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByRole("heading", { name: /treasury/i })).toBeInTheDocument();
   });
 
   it("detaches the listener on unmount, flushing the pending write FIRST", () => {
