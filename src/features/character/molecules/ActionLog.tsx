@@ -22,7 +22,11 @@ import {
 import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { formatLogTime } from "@/lib/action-log-style";
-import { localizeCombatLogRow, type CombatLogRow } from "@/lib/views/combat-log-view";
+import {
+  localizeCombatLogRow,
+  playEventLogStyle,
+  type CombatLogRow,
+} from "@/lib/views/combat-log-view";
 import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Icon } from "@/components/ui/icon";
@@ -106,7 +110,9 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
   if (sessionEntries.length > 0) {
     const lines = sessionEntries.slice(-maxEntries).flatMap((entry) => {
       const text = renderSessionLine(entry);
-      return text ? [{ id: entry.id, at: entry.at, text }] : [];
+      return text
+        ? [{ id: entry.id, at: entry.at, text, style: playEventLogStyle(entry.event) }]
+        : [];
     });
     return (
       <section>
@@ -120,9 +126,16 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
             aria-label={t("actionLog.title")}
           >
             {lines.map((line) => (
-              <div key={line.id} className="log-row">
-                <span className="log-glyph shrink-0 text-text-secondary">
-                  <Icon as={ScrollText} size="xs" decorative />
+              <div
+                key={line.id}
+                className="log-row"
+                style={{ borderLeftColor: line.style.borderColor }}
+              >
+                <span
+                  className="log-glyph shrink-0"
+                  style={{ color: line.style.glyphColor }}
+                >
+                  <Icon as={line.style.glyph} size="xs" decorative />
                 </span>
                 <span className="log-body">
                   <span className="log-text leading-tight">{line.text}</span>
