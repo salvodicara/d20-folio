@@ -32,7 +32,7 @@
     "chooseMetamagic": "Scegli {{n}} opzioni di Metamagia",
     "chooseInvocations": "Scegli {{n}} Suppliche Occulte",
     "chooseManeuvers": "Scegli {{n}} Manovre",
-    "buildChoices": "Opzioni di Sottoclasse",
+    "buildChoices": "Scelte di questo livello",
     "newCantrip": "Nuovo Trucchetto",
     "slotsUpdated": "{{count}} slot totali su {{levels}} livelli",
     "checklistAsi": "Scegli: Incremento Punteggio Caratteristica (+2/+1+1) o un Talento",

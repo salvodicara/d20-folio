@@ -144,6 +144,23 @@ components:
 
 # Design System: d20 Folio
 
+**Owner coherence rulings (2026-10-09 → 2026-10-12, design-coherence session):**
+
+- A follow-up choice never lives in a toast. A target pick is a skippable intermediate step
+  (`TargetPickerModal`, the `.cl-opt` rows of the slot picker); a toast only announces + Undo.
+- A held state shows once, as a `status-badge`, under the rail's _Attive_; _Stato_ holds only
+  conditions and exhaustion. A toggle names the state ("Benedizione"), never "… attiva".
+- Full words over abbreviations ("Concentrazione", not "conc."); one label per concept.
+- Unmet / immune options are hidden, never greyed (Picker Doctrine).
+- One home per fact: no chip repeating a row or seal on the same card (e.g. monster CR on the
+  seal, XP on the chip).
+- Rejected, do not re-propose: 44px-tall phone buttons in the HP popover / dialog footers;
+  restyling ghost buttons (ANNULLA) to the display font.
+- Guards that keep these true: `tests/unit/text-floor.guard.test.ts` (no text < 10px),
+  `tests/e2e/slot-pips-hit.spec.ts` and `tests/e2e/dialog-touch-targets.spec.ts` (a tap lands on
+  the control under the finger), `tests/unit/active-toggle-label.test.ts`. Check coverage with
+  `elementFromPoint` at every control centre, not only with axe.
+
 **Owner, 2026-10-08 (supersedes "no spell effect application" below for self states):** Cast
 lights a self-targeted spell's state (Shield's +5 AC, Hunter's Mark) with its countdown; undo
 clears it.
