@@ -707,9 +707,12 @@ deliberately-deferred neighbours, each with its reason (YAGNI, not a gap):
   Instantaneous spell stores no cast level); its scaling is printed in the Slam rider. Several-creature
   summons SHIPPED too: Animate Objects (a `count` on the Animated Object block), Animate Dead and
   Create Undead (`summonedMonsters`, bestiary blocks) list one rail row per creature, each with its
-  own HP (`companionHp["<spellId>#<n>"]`) and a player count (`companionCount`). Still open:
-  chosen-creature summons (Conjure Fey, Planar Ally / Binding, Gate — no
-  "pick from the bestiary" shape outside Find Familiar).
+  own HP (`companionHp["<spellId>#<n>"]`) and a player count (`companionCount`). Chosen-creature
+  summons SHIPPED: Planar Ally, Planar Binding, Gate and Awaken (`bestiaryPick`, the creature
+  types / size / Intelligence the text allows) open the bestiary picker and store the chosen
+  monster id in `companionVariant`. Conjure Fey's catalogue text is still the 2014 one (a CR 6
+  creature); SRD 5.2.1 makes it a Fey spirit with no stat block, so it stays out until the text
+  is updated.
 - **Wild Shape forms:** a SELF-swap (the Polymorph/S7 contract below), not a
   companion — tracked in this same section.
 - **Sidekicks / wholly custom companions:** homebrew-ladder territory (the epic's

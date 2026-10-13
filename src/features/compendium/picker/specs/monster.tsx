@@ -95,6 +95,36 @@ function monsterProse(m: MonsterStatBlock, locale: Locale): string[] {
   return out;
 }
 
+/** The creature-type facet, its chips limited to `types` (a summon spell that
+ *  allows only some types offers only those). */
+export function monsterTypeFilter(
+  types: ReadonlyArray<CreatureType> = ALL_CREATURE_TYPES
+): CompendiumPickerSpec<MonsterStatBlock>["filters"][number] {
+  return defineFilter<MonsterStatBlock, CreatureType | null>({
+    id: "type",
+    label: (t) => t("compendium.type"),
+    initial: null,
+    render: (value, setValue, { t }) => (
+      <>
+        <FilterChip
+          label={t("common.all")}
+          active={value === null}
+          onClick={() => setValue(null)}
+        />
+        {types.map((type) => (
+          <FilterChip
+            key={type}
+            label={t(`srd.creatureType_${type}`)}
+            active={value === type}
+            onClick={() => setValue(value === type ? null : type)}
+          />
+        ))}
+      </>
+    ),
+    predicate: (m, value) => value == null || m.type === value,
+  });
+}
+
 export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
   id: "monster",
   label: (t) => t("compendium.monsters"),
@@ -171,29 +201,7 @@ export const monsterSpec: CompendiumPickerSpec<MonsterStatBlock> = {
       ),
       predicate: (m, value) => value == null || m.sizes.includes(value),
     }),
-    defineFilter<MonsterStatBlock, CreatureType | null>({
-      id: "type",
-      label: (t) => t("compendium.type"),
-      initial: null,
-      render: (value, setValue, { t }) => (
-        <>
-          <FilterChip
-            label={t("common.all")}
-            active={value === null}
-            onClick={() => setValue(null)}
-          />
-          {ALL_CREATURE_TYPES.map((type) => (
-            <FilterChip
-              key={type}
-              label={t(`srd.creatureType_${type}`)}
-              active={value === type}
-              onClick={() => setValue(value === type ? null : type)}
-            />
-          ))}
-        </>
-      ),
-      predicate: (m, value) => value == null || m.type === value,
-    }),
+    monsterTypeFilter(),
   ],
 
   row: (m, { t, locale }) => {

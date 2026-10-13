@@ -72,6 +72,10 @@ const STAGE_HOSTS = new Map<string, string>([
     "src/features/character/companions/familiar-picker.tsx",
     "compound compendium picker owns result scroll",
   ],
+  [
+    "src/features/character/companions/bestiary-summon-picker.tsx",
+    "compound compendium picker owns result scroll",
+  ],
 ]);
 
 /** Page-side files inside the scanned dirs (not dialog content). */

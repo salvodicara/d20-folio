@@ -1220,6 +1220,8 @@ The structural reasons the declarative-grant model is intentionally not the righ
   spellcasting modifier, a Large object counting two), Animate Dead and Create Undead
   (`summonedMonsters` — bestiary Skeletons, Zombies, Ghouls… with the printed per-slot counts).
   The count defaults from the text at the cast level; the player's stepper stores
-  `session.companionCount`. Residual: chosen-creature summons (Conjure Fey, Planar Ally / Binding,
-  Gate); tracked in
+  `session.companionCount`. A spell whose caster picks the creature (Planar Ally, Planar Binding,
+  Gate, Awaken) declares `bestiaryPick` (types / size / Intelligence / CR from its text); the rail
+  offers the bestiary picker filtered by it and stores the chosen monster id in
+  `session.companionVariant`. Residual (Conjure Fey's stale text) tracked in
   `docs/AUTOMATION_BACKLOG.md`.

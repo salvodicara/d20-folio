@@ -10,6 +10,7 @@ import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import {
   dismissFamiliar,
+  releaseCompanion,
   setCompanionCount,
   setCompanionHp,
   setCompanionVariant,
@@ -68,6 +69,7 @@ export type SheetEvent =
   | { kind: "set-companion-hp"; featureId: string; current: number }
   | { kind: "set-companion-variant"; featureId: string; variantId: string }
   | { kind: "set-companion-count"; groupId: string; count: number }
+  | { kind: "release-companion"; featureId: string }
   | {
       kind: "summon-familiar";
       monsterId: string;
@@ -140,6 +142,8 @@ export function applySheetEvent(
       );
     case "set-companion-count":
       return withSession(setCompanionCount(doc.session, event.groupId, event.count));
+    case "release-companion":
+      return withSession(releaseCompanion(doc.session, event.featureId));
     case "summon-familiar":
       return withSession(
         summonFamiliar(doc.session, event.monsterId, event.creatureType, event.maxHp)

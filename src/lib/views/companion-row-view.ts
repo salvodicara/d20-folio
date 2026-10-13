@@ -17,7 +17,7 @@
  */
 
 import type { CharacterDoc, SessionState } from "@/types/character";
-import type { AbilityCode, CompanionStatBlock } from "@/data/types";
+import type { AbilityCode, BestiaryPickRule, CompanionStatBlock } from "@/data/types";
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import { classEntryLevel, totalLevel } from "@/lib/classes";
@@ -338,14 +338,19 @@ export function buildCompanionCardViews(
   return views;
 }
 
-/** One spell's group of bestiary creatures (Animate Dead's Skeletons). */
+/** One spell's group of bestiary creatures (Animate Dead's Skeletons, Planar
+ *  Ally's chosen ally). */
 export interface SummonedMonsterGroup {
   /** The spell id — the variant/count key; creature `n` keys its HP `"<spellId>#<n>"`. */
   spellId: string;
-  /** The monster ids the spell can raise (the first is the default). */
+  /** The monster ids the spell can raise (the first is the default); empty for a
+   *  bestiary-pick spell, whose choice is the whole bestiary filtered by `pick`. */
   options: string[];
-  /** The chosen monster id (`session.companionVariant`, else the first option). */
-  monsterId: string;
+  /** The chosen monster id (`session.companionVariant`, else the first option);
+   *  undefined while a bestiary-pick spell has no creature chosen yet. */
+  monsterId?: string;
+  /** Present on a bestiary-pick spell (Planar Ally, Gate): the creatures it allows. */
+  pick?: BestiaryPickRule;
   /** How many the player fields (`session.companionCount`, else the spell's count
    *  at the spell's own level). */
   count: number;
@@ -355,7 +360,9 @@ export interface SummonedMonsterGroup {
 
 /**
  * Every spell on the character that raises bestiary creatures (Animate Dead,
- * Create Undead), resolved to the monster ids, the count and each creature's HP.
+ * Create Undead) or brings one the caster picks (Planar Ally, Planar Binding,
+ * Gate, Awaken), resolved to the monster ids, the count and each creature's HP. A
+ * Concentration pick (Gate) shows only while the caster concentrates on it.
  * Corpus-free (the eager rail reads it); the lazy leaf looks the monsters up. `agg`
  * is the caller's grant aggregate when it already holds one (never a second pass).
  */
@@ -373,8 +380,23 @@ export function buildSummonedMonsterGroups(
   const groups: SummonedMonsterGroup[] = [];
   for (const spellId of spellIds) {
     const spell = getSpellById(spellId);
-    const options = spell?.summonedMonsters?.options;
-    if (!spell || !options?.length) continue;
+    if (!spell) continue;
+    const pick = spell.bestiaryPick;
+    if (pick) {
+      if (spell.concentration && doc.session.concentration !== spellId) continue;
+      const monsterId = doc.session.companionVariant?.[spellId];
+      groups.push({
+        spellId,
+        options: [],
+        ...(monsterId ? { monsterId } : {}),
+        pick,
+        count: 1,
+        current: [doc.session.companionHp?.[summonInstanceKey(spellId, 1)]?.current],
+      });
+      continue;
+    }
+    const options = spell.summonedMonsters?.options;
+    if (!options?.length) continue;
     const picked = doc.session.companionVariant?.[spellId];
     const option = options.find((o) => o.monsterId === picked) ?? options[0];
     if (!option) continue;

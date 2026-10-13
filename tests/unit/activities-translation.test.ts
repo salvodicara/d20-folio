@@ -51,6 +51,7 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   weaponAttackCantrip: "wielded-weapon damage with a type swap",
   companion: "a summoned entity, not an activity",
   summonedMonsters: "raised bestiary creatures, each a monster stat block",
+  bestiaryPick: "the creature the caster picks, a monster stat block",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   saveAbility: "a save with no declared DC ability",

@@ -1369,6 +1369,20 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Multi-creature summons: the Companions rail lists Skeleton 1–4 (AC 14, 13 HP each; Skeleton 2 at 7), each with its own HP steppers; one tap opens the Skeleton stat block with the Skeleton / Zombie picker, the creature count stepper and the Bonus Action command line.",
   },
+  // Bestiary-pick summons — a Cleric with Planar Ally prepared and no ally chosen
+  // yet. Visit `/characters/scn-planar-ally-cleric`.
+  "planar-ally-cleric": {
+    name: "Seraphine, Envoy of the Dawn",
+    raceId: "human",
+    classId: "cleric",
+    subclassId: "life-domain",
+    level: 11,
+    background: "acolyte",
+    abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 10, WIS: 20, CHA: 12 },
+    spells: [{ srdId: "planar-ally", prepared: true }],
+    exercises:
+      "Bestiary-pick summons: the Companions rail shows Planar Ally with a Choose a creature link; the picker lists only Celestials, Elementals and Fiends (type facet limited to those three); choosing one fields it with its own HP steppers, and its stat block offers Change creature and Release.",
+  },
   // PRIM-resource-conversion `pact-slot` — Warlock Magical Cunning (L2). A Fiend
   // Warlock 5 starts with BOTH Pact-Magic slots (pool of 2, slot level 3)
   // expended, so the rail's Resources section surfaces the "Restore Pact Slots"

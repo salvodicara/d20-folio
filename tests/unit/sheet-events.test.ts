@@ -155,6 +155,10 @@ const CASES: {
     { kind: "set-companion-count", groupId: "animate-dead", count: 4 },
     () => at(companions.setCompanionCount(doc.session, "animate-dead", 4)),
   ],
+  "release-companion": [
+    { kind: "release-companion", featureId: "planar-ally" },
+    () => at(companions.releaseCompanion(doc.session, "planar-ally")),
+  ],
   "summon-familiar": [
     { kind: "summon-familiar", monsterId: "cat", creatureType: "fiend", maxHp: 2 },
     () => at(companions.summonFamiliar(doc.session, "cat", "fiend", 2)),

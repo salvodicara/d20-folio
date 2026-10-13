@@ -134,6 +134,7 @@ describe("eager-partition tripwires", () => {
       "src/features/character/companions/familiar-picker.tsx",
       "src/features/character/companions/FamiliarPanel.tsx",
       "src/features/character/companions/SummonedMonstersPanel.tsx",
+      "src/features/character/companions/bestiary-summon-picker.tsx",
     ]);
     // A file reaches the corpus if it imports the corpus directly, the monster spec,
     // OR `@/lib/familiar` (the resolver that imports the corpus) — but NOT

@@ -42,6 +42,14 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     },
     concentration: false,
     instantaneous: true,
+    // A Huge or smaller Beast or plant of Intelligence 3 or less; an awakened
+    // plant becomes the bestiary's Awakened Shrub or Tree.
+    bestiaryPick: {
+      types: ["beast", "plant"],
+      sizeMax: "Huge",
+      intMax: 3,
+      include: ["awakened-shrub", "awakened-tree"],
+    },
     source: "SRD",
   },
   {
@@ -1203,6 +1211,8 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     },
     concentration: false,
     saveAbility: "CHA",
+    // A Celestial, an Elemental, a Fey or a Fiend, of any Challenge Rating.
+    bestiaryPick: { types: ["celestial", "elemental", "fey", "fiend"] },
     source: "SRD",
   },
   {

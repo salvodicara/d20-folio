@@ -245,6 +245,13 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "raised bestiary creatures are entities with their own stat blocks (their attacks are monster Activities)",
     });
   }
+  if (spell.bestiaryPick) {
+    gaps.push({
+      field: "bestiaryPick",
+      reason:
+        "the creature the caster picks is a bestiary entity with its own stat block (its attacks are monster Activities)",
+    });
+  }
   return gaps;
 }
 

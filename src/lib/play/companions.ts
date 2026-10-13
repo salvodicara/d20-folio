@@ -46,6 +46,29 @@ export function setCompanionVariant(
   };
 }
 
+/** Send a picked bestiary creature away (Planar Ally's ally, Gate's guest): its
+ *  pick, its HP and its count go. Null when nothing was picked. */
+export function releaseCompanion(
+  session: SessionState,
+  featureId: string
+): SessionState | null {
+  if (!session.companionVariant?.[featureId]) return null;
+  const { [featureId]: _pick, ...companionVariant } = session.companionVariant;
+  void _pick;
+  const { [featureId]: _count, ...restCount } = session.companionCount ?? {};
+  void _count;
+  return {
+    ...session,
+    companionVariant,
+    companionHp: Object.fromEntries(
+      Object.entries(session.companionHp ?? {}).filter(
+        ([key]) => key !== featureId && !isSummonInstanceOf(key, featureId)
+      )
+    ),
+    ...(session.companionCount ? { companionCount: restCount } : {}),
+  };
+}
+
 /** Set how many creatures a multi-creature summon fields (1..MAX_SUMMONED). The
  *  creatures past the new count leave, and their HP entries with them. Null when
  *  nothing changes. */
