@@ -6,6 +6,8 @@
  *
  *   - `combat/state.activeEffects`        (a PC's legacy combat effects)
  *   - `campaigns/{id}.encounter.effectOps` (an encounter's apply/revoke ledger)
+ *   - live encounter-world conditions      (`campaigns/{id}.encounter.world`, kind
+ *                                            "condition", not ended)
  *   - live world standings                 (`state.world.occurrences`, kind "standing",
  *                                            not ended, on the character's own self)
  *
@@ -41,6 +43,8 @@ export interface SurveyCounts {
   activeEffects: number;
   /** Campaigns whose encounter holds a non-empty `effectOps` array. */
   effectOps: number;
+  /** Campaigns whose encounter world holds a live (not ended) condition occurrence. */
+  encounterWorldConditions: number;
   /** Documents (parent or child) whose world holds a live self standing. */
   liveStandings: number;
   /** How many live standings carry each fact kind (e.g. `active-key`). */
@@ -72,6 +76,17 @@ export function liveStandingFactKinds(world: unknown): string[] {
   return kinds;
 }
 
+/** How many live (not ended) condition occurrences a stored world holds. */
+export function liveConditionCount(world: unknown): number {
+  if (!isRecord(world) || !isRecord(world.occurrences)) return 0;
+  return Object.values(world.occurrences).filter(
+    (occurrence) =>
+      isRecord(occurrence) &&
+      occurrence.kind === "condition" &&
+      occurrence.ending === null
+  ).length;
+}
+
 /** The world a stored document carries: the child's play state, or a legacy parent state. */
 function storedWorld(data: Record<string, unknown>): unknown {
   const playState = data.playState;
@@ -88,6 +103,7 @@ export function surveyDocuments(
     campaigns: 0,
     activeEffects: 0,
     effectOps: 0,
+    encounterWorldConditions: 0,
     liveStandings: 0,
     standingFactKinds: {},
   };
@@ -97,6 +113,9 @@ export function surveyDocuments(
       const encounter = data.encounter;
       if (isRecord(encounter) && nonEmptyArray(encounter.effectOps))
         counts.effectOps += 1;
+      if (isRecord(encounter) && liveConditionCount(encounter.world) > 0) {
+        counts.encounterWorldConditions += 1;
+      }
       continue;
     }
     const child = CHILD.test(path);

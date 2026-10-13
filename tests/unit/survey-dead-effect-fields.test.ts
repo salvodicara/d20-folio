@@ -43,7 +43,20 @@ describe("surveyDocuments", () => {
       },
       { path: "users/u/characters/d/combat/state", data: { activeEffects: [] } },
       { path: "users/v/characters/e", data: { state: { world } } },
-      { path: "campaigns/k", data: { encounter: { effectOps: [{ op: "apply" }] } } },
+      {
+        path: "campaigns/k",
+        data: {
+          encounter: {
+            effectOps: [{ op: "apply" }],
+            world: {
+              occurrences: {
+                live: { kind: "condition", ending: null },
+                over: { kind: "condition", ending: { round: 2 } },
+              },
+            },
+          },
+        },
+      },
       { path: "campaigns/l", data: { encounter: { effectOps: [] } } },
       { path: "campaigns/k/snapshots/s", data: { encounter: { effectOps: [1] } } },
     ]);
@@ -53,6 +66,7 @@ describe("surveyDocuments", () => {
       campaigns: 2,
       activeEffects: 1,
       effectOps: 1,
+      encounterWorldConditions: 1,
       liveStandings: 2,
       standingFactKinds: { "active-key": 2, "max-hp-delta": 2 },
     });
