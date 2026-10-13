@@ -1,23 +1,18 @@
 /**
- * CampaignArtControl — the campaign hub's "set / change the campaign art"
- * affordance, now a single quiet ghost button in the slim hub header's action
- * slot (the big 3:1 hero band was retired; the art is the page's atmospheric
- * `--app-bg-art` backdrop under the app scrim — see CampaignHubPage). Any member
- * can change it: with no art set the button opens the file picker straight away;
- * once art exists it reveals the shared Re-crop / Replace / Remove menu. The
- * upload + crop flow is the SAME shared `useCampaignBannerCrop` hook +
- * `PortraitCropModal` (golden rule 10 — the affordance just relocated off the
- * deleted band onto the header).
+ * CampaignArtControl — the campaign settings gear in the corner of the hub's hero
+ * band (owner 2026-10-13: the campaign image is the header itself, and changing it
+ * is a setting, not a headline action). Any member can change the art. The gear
+ * opens a small menu: with no art it offers only "Choose an image"; once art exists
+ * it offers Re-crop · Change · Remove. The upload + crop flow is the shared
+ * `useCampaignBannerCrop` hook + `PortraitCropModal`.
  */
 
 import { useRef, useState } from "react";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { useTranslation } from "react-i18next";
-import { Camera } from "lucide-react";
+import { Crop, ImagePlus, Settings, Trash2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Spinner } from "@/components/ui/spinner";
-import { Button } from "@/components/ui/button";
-import { PortraitEditMenu } from "@/components/shared/PortraitEditMenu";
 import { PortraitCropModal } from "@/components/shared/PortraitCropModal";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCampaignBannerCrop } from "@/features/campaigns/useCampaignBannerCrop";
@@ -40,46 +35,80 @@ export function CampaignArtControl() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  // Close the menu on outside pointerdown / Escape (shared, capture-phase).
   useDismissOnOutside(menuOpen, menuRef, () => setMenuOpen(false));
 
-  function onEdit(): void {
-    if (bannerUrl) setMenuOpen((v) => !v);
-    else openFilePickerForNew();
+  function run(action: () => void): () => void {
+    return () => {
+      setMenuOpen(false);
+      action();
+    };
   }
 
   return (
     <div className="campaign-art-control" ref={menuRef}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onEdit}
+      <button
+        type="button"
+        className="campaign-hero-gear"
+        onClick={() => setMenuOpen((v) => !v)}
         disabled={uploading}
-        aria-haspopup={bannerUrl ? "menu" : undefined}
-        aria-expanded={bannerUrl ? menuOpen : undefined}
-        aria-label={t("campaignHub.editBanner")}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        aria-label={t("campaignHub.settingsAria")}
+        title={t("campaignHub.settingsAria")}
       >
-        {uploading ? <Spinner size="sm" /> : <Icon as={Camera} size="sm" decorative />}
-        <span className="hdr-action-label">{t("campaignHub.editBanner")}</span>
-      </Button>
-      {menuOpen && bannerUrl && (
-        // The control lives in the header action row (no clipping band), so the
-        // menu opens DOWNWARD beneath the button.
-        <PortraitEditMenu
-          className="top-full right-0 mt-1.5"
-          onRecrop={() => {
-            setMenuOpen(false);
-            openRecrop();
-          }}
-          onReplace={() => {
-            setMenuOpen(false);
-            openFilePickerForNew();
-          }}
-          onRemove={() => {
-            setMenuOpen(false);
-            void removeBanner();
-          }}
-        />
+        {uploading ? <Spinner size="sm" /> : <Icon as={Settings} decorative />}
+      </button>
+      {menuOpen && (
+        <div className="settings-pop popover absolute top-full right-0 z-[300] mt-1.5 w-52">
+          <div
+            className="pop-body"
+            role="menu"
+            aria-label={t("campaignHub.settingsAria")}
+          >
+            {bannerUrl ? (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="menu-item"
+                  onClick={run(openRecrop)}
+                >
+                  <Icon as={Crop} decorative />
+                  {t("campaignHub.artRecrop")}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="menu-item"
+                  onClick={run(openFilePickerForNew)}
+                >
+                  <Icon as={ImagePlus} decorative />
+                  {t("campaignHub.editBanner")}
+                </button>
+                <div className="menu-div" role="separator" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="menu-item danger"
+                  onClick={run(() => void removeBanner())}
+                >
+                  <Icon as={Trash2} decorative />
+                  {t("campaignHub.artRemove")}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                role="menuitem"
+                className="menu-item"
+                onClick={run(openFilePickerForNew)}
+              >
+                <Icon as={ImagePlus} decorative />
+                {t("campaignHub.artChoose")}
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       <input

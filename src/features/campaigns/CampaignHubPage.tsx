@@ -28,7 +28,6 @@ import { FolioBookIcon, FolioCombatIcon } from "@/components/shared/folio-icons"
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { InlineEditable } from "@/components/shared/InlineEditable";
-import { PageHeader } from "@/components/shared/PageHeader";
 import { ErrorBoundary, SectionErrorFallback } from "@/components/shared/ErrorBoundary";
 import { transitionBackdrop } from "@/lib/backdrop-transition";
 import { cropToBackgroundPosition, cropZoomFactor } from "@/lib/portrait-crop";
@@ -68,7 +67,10 @@ import { PartySummary } from "@/features/campaigns/PartySummary";
 const CAMPAIGN_BACKDROP = "var(--asset-campaign-backdrop)";
 
 /**
- * Atmosphere under content (DESIGN.md §7 craft law 3): paint the campaign's art —
+ * Atmosphere under content (DESIGN.md §7 craft law 3): the hero band shows the art
+ * sharp; behind the page the same art becomes AMBIENT light (blurred, see
+ * `[data-app-bg-ambient]` in index.css), so a custom image tints the whole hub
+ * without competing with it. Paint the campaign's art —
  * the DM's custom banner when set, else the bundled backdrop — as the app's
  * existing viewport-fixed `--app-bg-art` layer for as long as the hub is mounted.
  * This REUSES the one global backdrop mechanism (`body::after` reads `--app-bg-art`
@@ -106,6 +108,9 @@ function useCampaignBackdrop(
       // glaze) so an arbitrary upload sits harmoniously under the chrome; the
       // bundled per-theme plates render native (no veil, full presence).
       if (bannerUrl) html.setAttribute("data-app-bg-custom", "");
+      // The art already fills the hero band, so behind the page it is ambient
+      // light only: the same image, blurred into a glow (`data-app-bg-ambient`).
+      html.setAttribute("data-app-bg-ambient", "");
       // Only a custom banner carries a crop; the default asset stays centred + unscaled.
       const position = bannerUrl ? cropToBackgroundPosition(bannerCrop) : null;
       if (position) {
@@ -123,9 +128,58 @@ function useCampaignBackdrop(
         root.removeProperty("--app-bg-art-position");
         root.removeProperty("--app-bg-art-scale");
         html.removeAttribute("data-app-bg-custom");
+        html.removeAttribute("data-app-bg-ambient");
       });
     };
   }, [bannerUrl, bannerCrop]);
+}
+
+/**
+ * CampaignHero — the hub's header IS the campaign's image (owner 2026-10-13, "make
+ * the campaign image count"). A short cinematic band, so the Party still sits in the
+ * fold: the DM's art framed at its crop focal + zoom (the same crop the list card
+ * shows), else the bundled per-theme plate. A bottom-left scrim keeps the title
+ * legible over ANY upload, so the type on the band is always the ivory on-art ink in
+ * both themes. The settings gear (image actions) sits in the top-right corner.
+ */
+function CampaignHero({
+  bannerUrl,
+  bannerCrop,
+  title,
+  meta,
+}: {
+  bannerUrl: string | null;
+  bannerCrop: PortraitCrop | null;
+  title: ReactNode;
+  meta: ReactNode;
+}) {
+  const position = bannerUrl ? cropToBackgroundPosition(bannerCrop) : null;
+  const zoom = position ? cropZoomFactor(bannerCrop) : 1;
+  return (
+    <header className="campaign-hero" data-custom-art={bannerUrl ? "" : undefined}>
+      <div
+        className="campaign-hero-art"
+        aria-hidden
+        style={{
+          backgroundImage: bannerUrl ? `url("${bannerUrl}")` : CAMPAIGN_BACKDROP,
+          ...(position && {
+            backgroundPosition: position,
+            transformOrigin: position,
+            ...(zoom > 1 && { transform: `scale(${zoom})` }),
+          }),
+        }}
+      />
+      <div className="campaign-hero-body">
+        <h1 className="campaign-hero-title">{title}</h1>
+        <p className="campaign-hero-meta">{meta}</p>
+      </div>
+      <div className="campaign-hero-actions">
+        <IsolatedSection>
+          <CampaignArtControl />
+        </IsolatedSection>
+      </div>
+    </header>
+  );
 }
 
 export function CampaignHubPage() {
@@ -435,15 +489,9 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
 
   return (
     <main id="main" className="wb page-shell py-8">
-      {/* SLIM hub header (owner 2026-06-30) — the big 3:1 hero band was retired so
-          the Party/combat sit in the fold; the campaign's art is now the page's
-          atmospheric `--app-bg-art` backdrop (above). This is the SAME framed
-          `PageHeader` the campaigns LIST opens on, so every campaign surface reads
-          as one family. The title is the DM's inline-editable name (members see it
-          read-only); the hint carries the at-a-glance member count + DM status; the
-          action slot holds the set/change-art affordance. */}
-      <PageHeader
-        as="h1"
+      <CampaignHero
+        bannerUrl={campaign.bannerUrl ?? null}
+        bannerCrop={campaign.bannerCrop ?? null}
         title={
           canManage ? (
             <InlineEditable
@@ -457,17 +505,19 @@ function CampaignHub({ campaignId }: { campaignId: string }) {
             campaign.name
           )
         }
-        hint={
-          <span className="inline-flex items-center gap-1.5">
-            <Users aria-hidden className="h-4 w-4" />
-            {t("campaigns.memberCount", { count: members })}
-            {isDm ? ` · ${t("campaignHub.youAreDm")}` : ""}
-          </span>
-        }
-        actions={
-          <IsolatedSection>
-            <CampaignArtControl />
-          </IsolatedSection>
+        meta={
+          <>
+            <span>
+              <Icon as={Users} size="sm" decorative />
+              {t("campaigns.memberCount", { count: members })}
+            </span>
+            {isDm && (
+              <span>
+                <Icon as={Crown} size="sm" decorative />
+                {t("campaignHub.youAreDm")}
+              </span>
+            )}
+          </>
         }
       />
       <CampaignWorkspace

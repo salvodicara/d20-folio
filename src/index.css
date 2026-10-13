@@ -1414,6 +1414,21 @@ body::after {
 [data-theme="light"] body::after {
   filter: blur(46px) saturate(0.8) sepia(0.25);
 }
+/* AMBIENT campaign art (owner 2026-10-13). On the campaign hub the art is shown
+   sharp in the hero band, so behind the page it only lends its light: the same
+   image, heavily blurred and slightly over-scaled (so the blur never shows a soft
+   edge). A custom upload therefore tints the whole hub in its own colours without
+   a second, competing copy of the picture. Each theme keeps its own grade. */
+[data-app-bg-ambient] body::after {
+  filter: blur(44px) saturate(1.1);
+  transform: scale(calc(var(--app-bg-art-scale, 1) * 1.15));
+}
+[data-theme="light"][data-app-bg-ambient] body::after {
+  filter: blur(44px) brightness(0.56) saturate(0.72) contrast(1.12);
+}
+[data-theme="light"][data-app-bg-custom][data-app-bg-ambient] body::after {
+  filter: blur(44px) saturate(0.82) contrast(0.94);
+}
 @media (prefers-reduced-motion: no-preference) {
   /* A whisper of parallax-free settle on first paint only (no scroll-jank): the
      backdrop fades in so a slow image decode never pops. */
