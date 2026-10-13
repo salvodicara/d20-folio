@@ -37,6 +37,28 @@
     "condNote_except-vampire-master": "except from its vampire master",
     "defenseNote_draconic-origin": "Damage type chosen for the Draconic Origin trait",
     "defenseNote_bless-weapon": "Piercing damage from weapons wielded by creatures under the effect of a Bless spell",
-    "searchPlaceholder": "Search monsters…"
+    "searchPlaceholder": "Search monsters…",
+    "trait": {
+      "roll_attack": "attacks",
+      "roll_melee-attack": "melee attacks",
+      "roll_save": "saves",
+      "roll_check": "checks",
+      "roll_d20": "D20 Tests",
+      "advantage_vs-spells": "Advantage on {{rolls}} vs spells",
+      "advantage_ally-near-target": "Advantage on {{rolls}} with an ally within 5 ft of the target",
+      "advantage_bloodied": "Advantage on {{rolls}} while Bloodied",
+      "disadvantage_sunlight": "Disadvantage on {{rolls}} in sunlight",
+      "disadvantage_bright-light": "Disadvantage on {{rolls}} in Bright Light",
+      "regeneration": "Regains {{amount}} HP at turn start",
+      "regenerationSuppressed": "Regains {{amount}} HP at turn start, not after {{types}} damage",
+      "regenerationNeedsHp": "Regains {{amount}} HP at turn start while above 0 HP",
+      "absorb": "{{type}} damage heals it",
+      "absorbInstead": "{{type}} damage heals it instead",
+      "siege": "Double damage to objects and structures",
+      "regenerate": "Regenerate +{{amount}}",
+      "regenerateHint": "Skip it if it took {{types}} damage since its last turn",
+      "regenerationAction": "Regeneration",
+      "factsLabel": "Traits that change the numbers"
+    }
   }
 }

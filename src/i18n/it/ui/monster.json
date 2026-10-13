@@ -37,6 +37,28 @@
     "condNote_except-vampire-master": "tranne che dal suo padrone vampiro",
     "defenseNote_draconic-origin": "il tipo di danno scelto per il tratto Origine draconica",
     "defenseNote_bless-weapon": "danni Perforanti inflitti da armi brandite da creature sotto l'effetto dell'incantesimo benedizione",
-    "searchPlaceholder": "Cerca mostri…"
+    "searchPlaceholder": "Cerca mostri…",
+    "trait": {
+      "roll_attack": "attacchi",
+      "roll_melee-attack": "attacchi in mischia",
+      "roll_save": "TS",
+      "roll_check": "prove",
+      "roll_d20": "test del d20",
+      "advantage_vs-spells": "Vantaggio {{rolls}} contro incantesimi",
+      "advantage_ally-near-target": "Vantaggio {{rolls}} con un alleato a 1,5 m dal bersaglio",
+      "advantage_bloodied": "Vantaggio {{rolls}} da Sanguinante",
+      "disadvantage_sunlight": "Svantaggio {{rolls}} alla luce del sole",
+      "disadvantage_bright-light": "Svantaggio {{rolls}} in luce intensa",
+      "regeneration": "Rigenera {{amount}} a inizio turno",
+      "regenerationSuppressed": "Rigenera {{amount}} a inizio turno, non dopo danni da {{types}}",
+      "regenerationNeedsHp": "Rigenera {{amount}} a inizio turno se ha almeno 1 PF",
+      "absorb": "I danni da {{type}} lo curano",
+      "absorbInstead": "I danni da {{type}} lo curano invece di ferirlo",
+      "siege": "Danni doppi a oggetti e strutture",
+      "regenerate": "Rigenera +{{amount}}",
+      "regenerateHint": "Saltalo se dall'ultimo turno ha subito danni da {{types}}",
+      "regenerationAction": "Rigenerazione",
+      "factsLabel": "Tratti che cambiano i numeri"
+    }
   }
 }

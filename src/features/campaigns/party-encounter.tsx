@@ -176,6 +176,12 @@ const EncounterStatblockModal = lazy(() =>
   }))
 );
 
+// The DM's trait-fact chips + Regeneration offer — a THIRD lazy door onto the same
+// bestiary chunk (the chips read the corpus; no catalogue strings, so no SRD gate).
+const EncounterTraitChips = lazy(() =>
+  import("./encounter-trait-chips").then((m) => ({ default: m.EncounterTraitChips }))
+);
+
 /** A reducer applied to the live encounter — present for the DM, absent (read-only)
  *  for a player. */
 export type ApplyFn = (fn: (e: EncounterState) => EncounterState) => void;
@@ -1982,7 +1988,23 @@ export function MonsterCard({
         subline={subline}
         cluster={cluster}
         badges={badges}
-        conditions={conditions}
+        conditions={
+          apply && monster.srdId ? (
+            <>
+              {conditions}
+              <Suspense fallback={null}>
+                <EncounterTraitChips
+                  monster={monster}
+                  campaignId={campaignId}
+                  isCurrent={isCurrent}
+                  apply={apply}
+                />
+              </Suspense>
+            </>
+          ) : (
+            conditions
+          )
+        }
         body={body}
         open={open}
         onToggle={() => setOpen((v) => !v)}
