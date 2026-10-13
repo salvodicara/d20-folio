@@ -159,7 +159,11 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // configuration adds ~1.7 KB), so the deploy gate flipped with no single leak: the same
 // 19 chunk families, `cockpit-engine` the bulk. +~5 KB never-exact-fit headroom over the
 // prod measurement; shaving cockpit-engine stays frontier #1.
-const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see ARCHITECTURE P3 frontier #1)
+// 2026-10-13 FALLBACK raise 856 → 875 (only if a deploy must ship before the pack-EN
+// lazy load lands): the composed build measured 867.3 KB gz; the bulk is the pack's
+// English text (`content-pack/i18n/en.ts`, ~318 KB minified) riding the eager
+// `cockpit-engine` chunk. +~8 KB never-exact-fit headroom.
+const EAGER_CEILING_KB = 875; // baseline 727.1 → over budget — see ARCHITECTURE P3 frontier #1
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
