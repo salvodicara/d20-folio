@@ -12020,10 +12020,18 @@ button.uc-chevron::before {
    (chips included) opens the card. They carry no title tooltip, so nothing is
    lost. (The rider cluster keeps `title`/aria on its wrapper for AT, which is
    not a pointer affordance.) */
+.uc-verdict-cluster,
 .uc-verdict,
 .uc-rider-cluster,
 .uc-rider-pill {
   pointer-events: none;
+}
+/* …the WRAPPER too: with only the chip passive, the cluster box itself caught the
+   tap above the row overlay and nothing happened (bug sweep 2026-10-13). A chip
+   that carries a breakdown (an evaluated heal formula) is a real button and keeps
+   its own tap. */
+.uc-verdict-cluster button.uc-verdict {
+  pointer-events: auto;
 }
 /* The collapsed-face on-hit RIDER cluster (#87 rider-render) — the bonus-damage
    chips that sit immediately after the base-damage verdict, grouped so they read
