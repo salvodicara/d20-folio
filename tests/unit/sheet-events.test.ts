@@ -30,6 +30,7 @@ import * as rests from "@/lib/play/rests";
 import * as states from "@/lib/play/states";
 import * as surprise from "@/lib/play/surprise";
 import * as vitals from "@/lib/play/vitals";
+import * as wish from "@/lib/play/wish";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -132,6 +133,10 @@ const CASES: {
   "adjust-currency": [
     { kind: "adjust-currency", delta: { gp: 3 } },
     () => at(material.adjustCurrency(doc.session, { gp: 3 })),
+  ],
+  "set-wish-stress": [
+    { kind: "set-wish-stress", stressed: true },
+    () => at(wish.setWishStress(doc, true)),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
   "set-readied-spell": [

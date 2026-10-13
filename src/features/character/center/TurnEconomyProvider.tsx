@@ -168,6 +168,8 @@ import {
 import { advanceSharedTurn } from "./turn-state";
 import { advanceSoloWorldTurn } from "./solo-world-turn";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
+import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
+import { isWishStressed } from "@/lib/wish-state";
 import {
   advanceGlobalCombat,
   syncPipToStatus,
@@ -1298,8 +1300,20 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       : readies
         ? t("combat.readiedSpellToast", { name: action.name })
         : t("combat.actionUsedToast", { name: action.name });
+    // Wish Stress: each spell cast before a Long Rest costs 1d10 Necrotic per level.
+    const stressDice =
+      action.source === "spell" &&
+      liveSession &&
+      isWishStressed(liveSession) &&
+      !execution.ritual
+        ? wishStressDice(opt.level)
+        : 0;
+    const castMessage =
+      stressDice > 0
+        ? t("combat.wishStressCastToast", { used: message, n: stressDice })
+        : message;
     registerUndoableToast(
-      { message },
+      { message: castMessage },
       () => {
         if (
           !canCommit() ||
@@ -2373,9 +2387,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const { pool: requestedPool, opener, onPrepared } = request;
     const liveCharacter = useCharacterStore.getState().character;
     if (!liveCharacter) return;
-    const pool = resolveFreeCastFromList(liveCharacter).find(
-      (entry) => entry.sourceId === requestedPool.sourceId
-    );
+    // Wish duplicates a spell for nothing more than the Wish cast already spent.
+    const wish = requestedPool.sourceId === WISH_ID;
+    const pool = wish
+      ? wishDuplicatePool()
+      : resolveFreeCastFromList(liveCharacter).find(
+          (entry) => entry.sourceId === requestedPool.sourceId
+        );
     if (!pool || !pool.spellIds.includes(spellId)) return;
     const cost = pool.costBySpell[spellId];
     if (cost === undefined) return;
@@ -2407,6 +2425,32 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const spell = getSpellById(spellId);
     if (!baseAction || !spell) return;
 
+    if (wish) {
+      const option: CastLevelOption = {
+        kind: "mastery",
+        sourceName: localizeSrd("spell", WISH_ID, "name", locale),
+        level: spell.level,
+      };
+      const action = actionForCastOption(
+        { ...baseAction, costsSlot: false, slotLevel: undefined },
+        option,
+        spell.level
+      );
+      onPrepared(action, (afterCommit, artifact) => {
+        const committedAction = artifact?.action ?? action;
+        pendingResolutionRef.current = {
+          actionId: committedAction.id,
+          apply: afterCommit,
+          ...(artifact?.outcomeOccurrenceId
+            ? { occurrenceId: artifact.outcomeOccurrenceId }
+            : {}),
+          outcomes: artifact?.outcomes ?? [],
+          ...(artifact?.targets ? { targets: artifact.targets } : {}),
+        };
+        void commitCastOption(committedAction, getEconomySlot(committedAction), option);
+      });
+      return;
+    }
     const option: CastLevelOption = {
       kind: "free-cast",
       sourceId: pool.payment?.kind === "tracker" ? pool.payment.trackerId : pool.sourceId,
@@ -2568,6 +2612,29 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     onPrepared(action, commitPreparedAction(action, execution));
   }
 
+  /** After a Wish cast: pick any spell of level 8 or lower and cast it, no slot. */
+  function duplicateWithWish(): void {
+    const live = useCharacterStore.getState();
+    if (!character || live.readonly || live.character?.id !== character.id) return;
+    const opener = localizeActions(live.character, locale).find(
+      (action) => action.spellId === WISH_ID
+    );
+    if (!opener) return;
+    setFreeCastFromListRequest({
+      characterId: character.id,
+      pool: wishDuplicatePool(),
+      opener,
+      onPrepared: (prepared, commit) => {
+        const step = targetStepFor(prepared, targetRoster());
+        if (!step) {
+          commit(() => undefined, { action: prepared });
+          return;
+        }
+        setTargetRequest({ characterId: character.id, action: prepared, step, commit });
+      },
+    });
+  }
+
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
     const execution = executionFor(action, intent?.ritual === true);
     if (!execution) return;
@@ -2706,6 +2773,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     keepMaintainedEffect,
     endMaintainedEffect,
     releaseReadiedSpell,
+    duplicateWithWish,
   };
 
   return (

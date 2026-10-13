@@ -2,7 +2,7 @@
  * DivineInterventionModal — the shared guided spell picker for every free-cast-FROM-LIST
  * pool (D4): Cleric Divine Intervention (cast any Cleric spell ≤ 5th, 1/LR — L20 adds
  * Wish to the same pool), War God's Blessing (cast Shield of Faith OR Spiritual
- * Weapon for one Channel Divinity), AND the S9 charged multi-spell ITEMS (Wand of
+ * Weapon for one Channel Divinity), Wish's duplicate (any spell ≤ 8th, no slot), AND the S9 charged multi-spell ITEMS (Wand of
  * Binding/Fear, Ring of Animal Influence, Staff of Charming — cast one of several
  * spells from a shared item-charge pool, with per-spell charge costs). One picker,
  * copy keyed off the pool's `sourceId` (golden rule 3 — never a second bespoke
@@ -49,6 +49,9 @@ export interface DivineInterventionModalProps {
  * Divine Intervention "any spell ≤ {{level}}" copy.
  */
 function poolCopy(sourceId: string): { rubricKey: string; hintKey: string } {
+  if (sourceId === "wish") {
+    return { rubricKey: "combat.wishRubric", hintKey: "combat.wishDuplicateHint" };
+  }
   return sourceId === "cleric-war-war-gods-blessing"
     ? { rubricKey: "combat.warGodsBlessingRubric", hintKey: "combat.warGodsBlessingHint" }
     : {
@@ -136,7 +139,7 @@ export function DivineInterventionModal({
             // The item pool isn't a Cleric list, so it reuses the generic
             // "Search spells…" placeholder (one runtime `common` ns) rather than
             // the Cleric-specific Divine Intervention one.
-            isItemPool
+            isItemPool || pool.sourceId === "wish"
               ? t("levelUp.spells.searchSpells")
               : t("combat.divineInterventionSearch")
           }

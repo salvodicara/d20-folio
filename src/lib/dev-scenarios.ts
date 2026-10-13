@@ -665,6 +665,23 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Time Stop: the cast asks for the rolled 1d4 + 1 count, then offers each extra turn in a row without advancing the round.",
   },
+  wish: {
+    // `/characters/scn-wish`: a level-17 Wizard with Wish prepared. The cast offers
+    // the duplicate picker (any spell of level 8 or lower, no slot) or Wish Stress.
+    name: "Ysolde, the Last Word",
+    raceId: "human",
+    classId: "wizard",
+    level: 17,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 20, WIS: 12, CHA: 10 },
+    spells: [
+      { srdId: "fire-bolt" },
+      { srdId: "magic-missile", prepared: true },
+      { srdId: "wish", prepared: true },
+    ],
+    exercises:
+      "Wish: after the cast, Duplicate opens the picker over every spell of level 8 or lower (cast with no slot); Wish Stress lights a state a Long Rest ends, and each later spell's toast states its Necrotic dice.",
+  },
   "potent-druid": {
     // Elemental Fury (L7) Potent Spellcasting — the `druid-elemental-fury` choice
     // picks `potent-spellcasting`, a `spell-damage-bonus` (cantripOnly, +WIS,

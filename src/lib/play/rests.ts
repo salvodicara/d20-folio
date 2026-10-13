@@ -3,6 +3,7 @@
  * The store ends Concentration first where the rest does (sleep), then applies these,
  * logs the rest, persists, and fences the undo stack.
  */
+import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
@@ -99,6 +100,8 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
     }
   }
   const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "long"));
+  // Wish Stress lasts until the caster finishes a Long Rest.
+  endedActiveKeys.add(WISH_STRESS_STATE.activeKey);
   return {
     ...character,
     character: { ...character.character, equipment: newEquipment },
