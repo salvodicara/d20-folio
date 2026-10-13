@@ -957,7 +957,13 @@ describe("spell-data integrity", () => {
   it("models every catalogued damaging save-for-half spell as structured data", () => {
     // Storm of Vengeance's primary 2d6 Thunder has no half; its "half as much"
     // belongs to the Turn 3 bolts, which its mechanicsProgram already halves.
-    const HALF_ELSEWHERE = new Set(["storm-of-vengeance"]);
+    // Prismatic Spray and Prismatic Wall halve per ray / per layer (rows 1-5),
+    // never for the indigo and violet rows: their mechanicsPrograms own the half.
+    const HALF_ELSEWHERE = new Set([
+      "storm-of-vengeance",
+      "prismatic-spray",
+      "prismatic-wall",
+    ]);
     const missing = spells
       .filter(
         (spell) =>
