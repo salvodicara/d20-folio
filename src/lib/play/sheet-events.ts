@@ -24,6 +24,7 @@ import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
 import { setActiveSpellCastLevel, setActiveState } from "./states";
+import { setSurprised } from "./surprise";
 import {
   restoreSpellSlot,
   restoreTracker,
@@ -57,6 +58,7 @@ export type SheetEvent =
       level: CoverStateLevel | null;
       until: CoverUntil | undefined;
     }
+  | { kind: "set-surprised"; surprised: boolean }
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
@@ -116,6 +118,8 @@ export function applySheetEvent(
       return withSession(setActiveSpellCastLevel(doc, event.key, event.level));
     case "set-cover":
       return withSession(setCover(doc, event.level, event.until));
+    case "set-surprised":
+      return withSession(setSurprised(doc, event.surprised));
     case "drop-beast-form":
       return dropBeastForm(doc);
     case "set-readied-spell":

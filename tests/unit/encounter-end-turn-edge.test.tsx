@@ -68,3 +68,25 @@ it("ends a turn-edge state (Shield) when the DM ends the encounter", () => {
   expect(session?.activeFeatures ?? []).not.toContain("spell-shield");
   expect(session?.effectBoundaries).toBeUndefined();
 });
+
+it("clears Surprise when the DM ends the encounter, and not before", () => {
+  const doc = makeCharacterDoc({ classId: "wizard", level: 7 });
+  doc.session.activeFeatures = ["surprised"];
+  useCharacterStore.setState({ character: doc, readonly: false, loading: false });
+  useCombatStatusStore.setState({ status: encounterStatus(doc.id, 1) });
+  render(
+    <MemoryRouter>
+      <TurnEconomyProvider>
+        <div />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+  act(() => useCombatStatusStore.setState({ status: encounterStatus(doc.id, 2) }));
+  expect(useCharacterStore.getState().character?.session.activeFeatures).toContain(
+    "surprised"
+  );
+  act(() => useCombatStatusStore.setState({ status: null }));
+  expect(
+    useCharacterStore.getState().character?.session.activeFeatures ?? []
+  ).not.toContain("surprised");
+});

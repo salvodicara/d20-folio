@@ -27,6 +27,7 @@ import * as pins from "@/lib/play/pins";
 import * as ready from "@/lib/play/ready";
 import * as rests from "@/lib/play/rests";
 import * as states from "@/lib/play/states";
+import * as surprise from "@/lib/play/surprise";
 import * as vitals from "@/lib/play/vitals";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
@@ -122,6 +123,10 @@ const CASES: {
   "set-cover": [
     { kind: "set-cover", level: "half", until: { round: 3, phase: "turn-start" } },
     () => at(cover.setCover(doc, "half", { round: 3, phase: "turn-start" })),
+  ],
+  "set-surprised": [
+    { kind: "set-surprised", surprised: true },
+    () => at(surprise.setSurprised(doc, true)),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
   "set-readied-spell": [

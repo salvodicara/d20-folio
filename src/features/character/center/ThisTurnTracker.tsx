@@ -69,6 +69,7 @@ import {
   TIME_STOP_MIN_TURNS,
 } from "@/lib/play/extra-turns";
 import { takeSoloExtraTurn } from "./extra-turn";
+import { SURPRISE_STATE, isSurprised } from "@/lib/surprise-state";
 
 /** The economy-token types the meter can filter the action board by (item e). */
 export type EconFilterType = "action" | "bonus" | "reaction";
@@ -318,6 +319,8 @@ export function ThisTurnTracker({
     });
     if (!ok) return;
     useCombatStore.getState().endCombat();
+    // Surprise belongs to the fight that just ended.
+    useCharacterStore.getState().dispatch({ kind: "set-surprised", surprised: false });
     // Close the character-world SOLO encounter through the kernel's own
     // end-encounter boundary (fail-closed no-op when none is running).
     endSoloWorldEncounter();
@@ -381,6 +384,27 @@ export function ThisTurnTracker({
   // live meter. The reaction coin carves back to live in `waiting` only (RAW off-turn
   // reactions), driven by `data-phase` in folio.css.
   const endTurnInert = phase === "waiting" || phase === "gathering";
+
+  // Surprise (Disadvantage on Initiative): offered by the roll while it is still to
+  // be made, and shown whenever it is lit so it can be tapped off.
+  const surprised = isSurprised({ activeFeatures });
+  const showSurprise =
+    !readonly && (surprised || (!initLocked && initShownRoll === null));
+  function toggleSurprise(): void {
+    const next = !surprised;
+    registerUndoableToast(
+      { message: t(next ? "combat.surpriseOnToast" : "combat.surpriseOffToast") },
+      () => {
+        const store = useCharacterStore.getState();
+        if (!store.dispatch({ kind: "set-surprised", surprised: next })) return null;
+        return () =>
+          useCharacterStore
+            .getState()
+            .dispatch({ kind: "set-surprised", surprised: !next });
+      },
+      { turnScoped: false }
+    );
+  }
 
   // EXTRA TURNS — solo only: a shared encounter steps the second turn through its own
   // turn order (the DM's list shows it), so the sheet just follows the pointer there.
@@ -657,6 +681,20 @@ export function ThisTurnTracker({
             urgent={inEncounter && !initLocked && initShownRoll === null}
             onCommit={(roll) => rollInitiative(roll === null ? "" : String(roll))}
           />
+          {showSurprise && (
+            <button
+              type="button"
+              className="status-badge sb-toggle"
+              data-kind={surprised ? "active" : undefined}
+              aria-pressed={surprised}
+              onClick={toggleSurprise}
+              title={t("combat.surpriseHint")}
+            >
+              <span className="sb-label">
+                {grantSourceLabel(SURPRISE_STATE.activeKey, locale)}
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="econ" role="group" aria-label={t("combat.economy")}>

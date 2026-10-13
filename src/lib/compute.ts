@@ -2623,8 +2623,8 @@ export function hasInitiativeAdvantage(
  * an initiative-`disadvantage-on` by RAW cancellation (the same rule as
  * `netRollState`, inlined here to avoid the compute↔condition-effects import
  * cycle). No dice — the sheet renders the word as a corner mark. Surprise (SRD:
- * Disadvantage on Initiative) rides the `"disadvantage"` leg: it is not a
- * modeled grant, so the player pins it by hand.
+ * Disadvantage on Initiative) is the one-tap `surprised` state by the turn
+ * meter's roll (`surprise-state.ts`), an initiative `disadvantage-on` grant.
  */
 export function initiativeRollState(
   aggregate: Pick<AggregatedGrants, "advantages" | "disadvantages">,

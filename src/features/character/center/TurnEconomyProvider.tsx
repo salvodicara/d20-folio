@@ -659,6 +659,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             duration: 4000,
           });
         }
+        // Surprise belongs to the fight that just ended.
+        useCharacterStore
+          .getState()
+          .dispatch({ kind: "set-surprised", surprised: false });
         return;
       }
       // A turn start inside the fight.
