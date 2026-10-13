@@ -526,16 +526,21 @@ export function HpEditPopover({
                 />
                 {fallOpen && (
                   <>
-                    <Input
-                      type="number"
-                      min="0"
-                      inputMode="decimal"
-                      className="sm w-16"
-                      value={fallDistance}
-                      onChange={(e) => setFallDistance(e.target.value)}
-                      placeholder={fallUnit}
-                      aria-label={t("combat.fallDistanceAria", { unit: fallUnit })}
-                    />
+                    {/* The field + its unit ("9 m" / "30 ft") ride one fixed-width
+                        line, so the unit never wraps away from the number. */}
+                    <span className="flex w-24 items-center gap-1">
+                      <Input
+                        type="number"
+                        min="0"
+                        inputMode="decimal"
+                        className="sm"
+                        value={fallDistance}
+                        onChange={(e) => setFallDistance(e.target.value)}
+                        placeholder="—"
+                        aria-label={t("combat.fallDistanceAria", { unit: fallUnit })}
+                      />
+                      <span className="text-xs text-text-secondary">{fallUnit}</span>
+                    </span>
                     <span
                       className="font-mono text-xs font-semibold tabular-nums text-text-primary"
                       aria-live="polite"
