@@ -457,21 +457,21 @@
     "material": "Three nut shells"
   },
   "conjure-animals": {
-    "description": "You conjure nature spirits that appear as a Large pack of spectral animals in a 15-foot Emanation originating from a point you choose within range. Each creature in that area when the spirits appear must make a Dexterity saving throw, taking 3d10 Slashing damage on a failed save or half as much on a successful one. As a Bonus Action on subsequent turns, you can move the Emanation up to 30 feet, and each creature that enters the area for the first time on a turn or ends its turn there must repeat the save.",
+    "description": "You conjure nature spirits that appear as a Large pack of spectral, intangible animals in an unoccupied space you can see within range. The pack lasts for the duration, and you choose the spirits' animal form, such as wolves, serpents, or birds.\n\nYou have Advantage on Strength saving throws while you're within 5 feet of the pack, and when you move on your turn, you can also move the pack up to 30 feet to an unoccupied space you can see.\n\nWhenever the pack moves within 10 feet of a creature you can see and whenever a creature you can see enters a space within 10 feet of the pack or ends its turn there, you can force that creature to make a Dexterity saving throw. On a failed save, the creature takes 3d10 Slashing damage. A creature makes this save only once per turn.",
     "duration": "Concentration, up to 10 minutes",
-    "higherLevels": "When you cast this spell using a spell slot of 4th level or higher, the damage increases by 1d10 for each slot level above 3rd.",
+    "higherLevels": "The damage increases by 1d10 for each spell slot level above 3.",
     "name": "Conjure Animals",
     "range": "60 feet"
   },
   "conjure-celestial": {
-    "description": "You conjure a spirit from the Upper Planes that manifests as a pillar of light in a 10-foot-radius, 40-foot-high Cylinder centered on a point within range. For each creature you can see in the Cylinder, choose which light shines on it: Healing Light (the target regains Hit Points equal to 4d12 plus your spellcasting ability modifier) or Searing Light (the target makes a Dexterity saving throw, taking 6d12 Radiant damage on a failed save or half as much on a success).",
+    "description": "You conjure a spirit from the Upper Planes, which manifests as a pillar of light in a 10-foot-radius, 40-foot-high Cylinder centered on a point within range. For each creature you can see in the Cylinder, choose which of these lights shines on it:\n\nHealing Light. The target regains Hit Points equal to 4d12 plus your spellcasting ability modifier.\n\nSearing Light. The target makes a Dexterity saving throw, taking 6d12 Radiant damage on a failed save or half as much damage on a successful one.\n\nUntil the spell ends, Bright Light fills the Cylinder, and when you move on your turn, you can also move the Cylinder up to 30 feet.\n\nWhenever the Cylinder moves into the space of a creature you can see and whenever a creature you can see enters the Cylinder or ends its turn there, you can bathe it in one of the lights. A creature can be affected by this spell only once per turn.",
     "duration": "Concentration, up to 10 minutes",
-    "higherLevels": "The healing and the damage increase by 1d12 for each spell slot level above 7.",
+    "higherLevels": "The healing and damage increase by 1d12 for each spell slot level above 7.",
     "name": "Conjure Celestial",
     "range": "90 feet"
   },
   "conjure-elemental": {
-    "description": "You conjure a Large, intangible spirit from the Elemental Planes in an unoccupied space within range. Choose the spirit's element, which sets its damage type: air (Lightning), earth (Thunder), fire (Fire), or water (Cold). Whenever a creature you can see enters the spirit's space or starts its turn within 5 feet of it, and the spirit has no creature Restrained, you can force that creature to make a Dexterity saving throw. On a failed save, the target takes 8d8 damage of the spirit's type and has the Restrained condition until the spell ends; on a success it takes half damage.",
+    "description": "You conjure a Large, intangible spirit from the Elemental Planes that appears in an unoccupied space within range. Choose the spirit's element, which determines its damage type: air (Lightning), earth (Thunder), fire (Fire), or water (Cold). The spirit lasts for the duration.\n\nWhenever a creature you can see enters the spirit's space or starts its turn within 5 feet of the spirit, you can force that creature to make a Dexterity saving throw if the spirit has no creature Restrained. On failed save, the target takes 8d8 damage of the spirit's type, and the target has the Restrained condition until the spell ends. At the start of each of its turns, the Restrained target repeats the save. On a failed save, the target takes 4d8 damage of the spirit's type. On a successful save, the target isn't Restrained by the spirit.",
     "duration": "Concentration, up to 10 minutes",
     "higherLevels": "The damage increases by 1d8 for each spell slot level above 5.",
     "name": "Conjure Elemental",
@@ -485,16 +485,16 @@
     "range": "60 feet"
   },
   "conjure-minor-elementals": {
-    "description": "You conjure elemental spirits that swirl around you in a 15-foot emanation for the duration. Until the spell ends, any attack you make deals an extra 2d8 damage of a type you choose when you cast the spell: Cold, Fire, Lightning, or Thunder.",
+    "description": "You conjure spirits from the Elemental Planes that flit around you in a 15-foot Emanation for the duration. Until the spell ends, any attack you make deals an extra 2d8 damage when you hit a creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your choice when you make the attack).\n\nIn addition, the ground in the Emanation is Difficult Terrain for your enemies.",
     "duration": "Concentration, up to 10 minutes",
-    "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the extra damage increases by 2d8 for each slot level above 4th.",
+    "higherLevels": "The damage increases by 1d8 for each spell slot level above 4.",
     "name": "Conjure Minor Elementals",
     "range": "Self (15-foot emanation)"
   },
   "conjure-woodland-beings": {
-    "description": "You conjure nature spirits that flit around you in a 10-foot emanation for the duration. Whenever the emanation enters the space of a creature you can see and whenever a creature you can see enters the emanation or ends its turn there, you can force that creature to make a Wisdom saving throw. The creature takes 5d8 Force damage on a failed save or half as much on a successful one. A creature makes this save only once per turn.",
+    "description": "You conjure nature spirits that flit around you in a 10-foot Emanation for the duration. Whenever the Emanation enters the space of a creature you can see and whenever a creature you can see enters the Emanation or ends its turn there, you can force that creature to make a Wisdom saving throw. The creature takes 5d8 Force damage on a failed save or half as much damage on a successful one. A creature makes this save only once per turn.\n\nIn addition, you can take the Disengage action as a Bonus Action for the spell's duration.",
     "duration": "Concentration, up to 10 minutes",
-    "higherLevels": "When you cast this spell using a spell slot of 5th level or higher, the damage increases by 1d8 for each slot level above 4th.",
+    "higherLevels": "The damage increases by 1d8 for each spell slot level above 4.",
     "name": "Conjure Woodland Beings",
     "range": "Self (10-foot emanation)"
   },

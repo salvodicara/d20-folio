@@ -1047,7 +1047,10 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     saveAbility: "WIS",
     area: true,
     damageOnSave: "half",
-    recurrence: "bonus-action-move",
+    // SRD 5.2.1: an Emanation around the caster — creatures save when it enters
+    // their space or they enter it / end their turn there (no Bonus Action move).
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {

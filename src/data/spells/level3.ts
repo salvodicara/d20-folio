@@ -110,8 +110,10 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDicePerUpcast: "1d10",
     saveAbility: "DEX",
     area: true,
-    damageOnSave: "half",
-    recurrence: "bonus-action-move",
+    // SRD 5.2.1: the pack moves when the caster moves (no Bonus Action), and a
+    // creature takes 3d10 only "On a failed save" — no damage on a success.
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
