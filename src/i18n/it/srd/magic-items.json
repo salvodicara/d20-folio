@@ -453,6 +453,9 @@
     "description": "Questa gemma ha 3 cariche. Con un'azione Magia, puoi spendere 1 carica. Per i 10 minuti successivi, hai Vista Pura fino a 36 metri quando scruti attraverso la gemma. La gemma recupera 1d3 cariche spese ogni giorno all'alba.",
     "name": "Gemma della Visione"
   },
+  "gem-of-seeing.grants.0": {
+    "label": "Vista Pura"
+  },
   "giant-slayer": {
     "description": "+1 ai tiri per colpire e danni. Infligge 2d6 danni extra ai giganti. Al colpo, un gigante deve superare un tiro salvezza su Forza CD 15 o cadere prono.",
     "name": "Ammazzagiganti"

@@ -592,8 +592,33 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: true,
-    // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [
+      {
+        kind: "counter",
+        id: "charges",
+        unit: "charges",
+        capacity: { kind: "fixed", amount: 3 },
+        initial: { kind: "full" },
+        recoveries: [
+          {
+            trigger: { kind: "dawn" },
+            amount: { kind: "entered-roll", roll: { dice: 1, sides: 3 } },
+          },
+        ],
+      },
+    ],
+    // A Magic action spends 1 charge and lights 10 minutes of Truesight 120 ft on
+    // the Senses rail. The 1d3 dawn refill is entered by the player (real dice).
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "gem-of-seeing",
+        activation: { action: "action", resourceCost: { resourceId: "charges" } },
+        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
+        grants: [{ type: "truesight", range: 120 }],
+      },
+    ],
     source: "SRD",
   },
   {
