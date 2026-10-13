@@ -27,6 +27,7 @@ import { formatModifier } from "@/lib/utils";
 import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { GatedSlot } from "@/lib/condition-effects";
+import type { ConditionSense } from "@/types/condition";
 import {
   clampExhaustion,
   exhaustionPenalty,
@@ -677,6 +678,17 @@ export type TurnLimiterVM =
   /** Auto-fail STR/DEX saves (Paralyzed/Stunned/Unconscious/…). `abilities`
    *  is a STABLE ordered id list (STR before DEX); the edge localizes each. */
   | { kind: "autoFailSaves"; abilities: ReadonlyArray<AbilityCode>; causeId: string }
+  /** Ability checks that need a lost sense auto-fail (Blinded → sight, Deafened →
+   *  hearing). `senses` is a STABLE ordered id list; the edge localizes each. */
+  | {
+      kind: "autoFailSenseChecks";
+      senses: ReadonlyArray<ConditionSense>;
+      causeId: string;
+    }
+  /** You can't attack or harm the condition's source (Charmed — the charmer). */
+  | { kind: "cantHarmSource"; causeId: string }
+  /** The source has Advantage on social checks against you (Charmed). */
+  | { kind: "sourceSocialAdvantage"; causeId: string }
   /**
    * The Exhaustion penalties, RESOLVED (SRD "Exhaustion"): `d20Penalty` is the
    * magnitude subtracted from every D20 Test (2 × level) and `speedPenaltyFt`
@@ -776,6 +788,24 @@ export function composeTurnLimiters(args: {
     const order: ReadonlyArray<AbilityCode> = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
     const abilities = order.filter((a) => effects.autoFailSaves.has(a));
     if (causeId) limiters.push({ kind: "autoFailSaves", abilities, causeId });
+  }
+
+  // 3b. Ability checks that need a lost sense auto-fail (Blinded / Deafened).
+  if (effects.autoFailSenseChecks.size > 0) {
+    const causeId = causeFor((e) => e.autoFailSenseChecks.size > 0);
+    const order: ReadonlyArray<ConditionSense> = ["sight", "hearing"];
+    const senses = order.filter((sense) => effects.autoFailSenseChecks.has(sense));
+    if (causeId) limiters.push({ kind: "autoFailSenseChecks", senses, causeId });
+  }
+
+  // 3c. The charmer: you can't harm it, and it has the social edge on you.
+  if (effects.cantHarmSource) {
+    const causeId = causeFor((e) => e.cantHarmSource);
+    if (causeId) limiters.push({ kind: "cantHarmSource", causeId });
+  }
+  if (effects.sourceSocialAdvantage) {
+    const causeId = causeFor((e) => e.sourceSocialAdvantage);
+    if (causeId) limiters.push({ kind: "sourceSocialAdvantage", causeId });
   }
 
   // 4. Exhaustion — −2 × level to all d20 Tests AND −5 ft × level Speed (2024).

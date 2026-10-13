@@ -29,9 +29,11 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowDownToLine,
   Ban,
+  EarOff,
   EyeOff,
   Ghost,
   Hand,
+  Heart,
   Hourglass,
   Link,
   Moon,
@@ -63,15 +65,15 @@ import {
  * Speed 0 / auto-fail saves), so this map deliberately covers ONLY the limiter-
  * causing conditions plus the `exhaustion` badge glyph.
  *
- * Omitted on purpose (their `CONDITION_GATES` entry carries no self-side turn
- * limiter, so no badge is ever composed for them today — eager-icon weight the
- * bundle budget must not pay for): `charmed`, `deafened`, and `invisible`
- * (Invisible grants self-side ADVANTAGE, not a limiter). SEAM: if any of these ever
+ * Omitted on purpose: `invisible` (Invisible grants self-side ADVANTAGE, not a
+ * limiter — eager-icon weight the bundle budget must not pay for). SEAM: if it ever
  * gains a self-side limiter (or the ledge starts badging positive statuses), add its
- * id + glyph back here (charmed → Heart, deafened → EarOff, invisible → Eye).
+ * id + glyph here (invisible → Eye).
  */
 const CONDITION_ICONS: Record<string, LucideIcon> = {
   blinded: EyeOff,
+  charmed: Heart,
+  deafened: EarOff,
   exhaustion: Hourglass,
   frightened: Ghost,
   grappled: Hand,
@@ -137,6 +139,14 @@ export function StatusLedge({
         });
       case "spellSlotLimit":
         return t("combat.limiterSpellSlotLimit", { n: l.count });
+      case "autoFailSenseChecks":
+        return t("combat.limiterAutoFailSenseChecks", {
+          senses: l.senses.map((sense) => t(`combat.sense_${sense}`)).join(", "),
+        });
+      case "cantHarmSource":
+        return t("combat.limiterCantHarmSource");
+      case "sourceSocialAdvantage":
+        return t("combat.limiterSourceSocialAdvantage");
     }
   };
 
