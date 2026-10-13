@@ -15,7 +15,11 @@ async function bootWithDragonTurtle(page: Page): Promise<void> {
   await seedLang(page, "it");
   await page.addInitScript(() => window.localStorage.setItem("d20-dev-encounter", "1"));
   await page.goto("/campaigns/mock-1");
-  await expect(page.getByText(/coralino/i).first()).toBeVisible({ timeout: 60_000 });
+  // Ready when the DM's "Aggiungi mostro" shows. A bare /coralino/ text match can
+  // land on the phone's hidden turn pip ("Turno di Coralino…") first.
+  await expect(
+    page.getByRole("button", { name: /aggiungi mostro/i }).first()
+  ).toBeVisible({ timeout: 60_000 });
 
   await page
     .getByRole("button", { name: /aggiungi mostro/i })
@@ -43,6 +47,7 @@ for (const leg of [
   test(`the DM's fire damage on a fire-resistant monster is halved (${leg.name})`, async ({
     page,
   }) => {
+    test.setTimeout(120_000);
     if (leg.viewport) await page.setViewportSize(leg.viewport);
     await bootWithDragonTurtle(page);
 
