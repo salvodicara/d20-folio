@@ -896,26 +896,29 @@ export function ThisTurnTracker({
           <span className="conc-banner-text">
             {t("combat.wishNote", { level: WISH_DUPLICATE_MAX_LEVEL })}
           </span>
-          <button
-            type="button"
-            className="conc-banner-keep"
-            onClick={() => {
-              setWishHandled(wishId);
-              duplicateWithWish();
-            }}
-          >
-            {t("combat.wishDuplicate")}
-          </button>
-          {!wishStressed && (
+          {/* One pair: stacked full width on the phone, inline on desktop. */}
+          <div className="flex shrink-0 gap-2 max-[720px]:w-full max-[720px]:flex-col">
             <button
               type="button"
-              className="conc-banner-drop"
-              title={t("combat.wishStressHint")}
-              onClick={lightWishStress}
+              className="conc-banner-keep max-[720px]:!w-full max-[720px]:!basis-auto max-[720px]:!text-center"
+              onClick={() => {
+                setWishHandled(wishId);
+                duplicateWithWish();
+              }}
             >
-              {grantSourceLabel(WISH_STRESS_STATE.activeKey, locale)}
+              {t("combat.wishDuplicate")}
             </button>
-          )}
+            {!wishStressed && (
+              <button
+                type="button"
+                className="conc-banner-drop max-[720px]:!w-full max-[720px]:!basis-auto max-[720px]:!text-center"
+                title={t("combat.wishStressHint")}
+                onClick={lightWishStress}
+              >
+                {grantSourceLabel(WISH_STRESS_STATE.activeKey, locale)}
+              </button>
+            )}
+          </div>
         </div>
       )}
       {askTimeStopTurns && (
