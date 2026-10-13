@@ -702,6 +702,9 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    // SRD 5.2.1: "You touch a willing creature" + "one additional creature for
+    // each spell slot level above 1".
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -912,6 +915,9 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    // SRD 5.2.1: "One creature" + "one additional creature for each spell slot
+    // level above 1".
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     conditionApplication: {
       options: ["prone", "incapacitated"],
       on: "failed-save",

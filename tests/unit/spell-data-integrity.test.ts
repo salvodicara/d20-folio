@@ -768,7 +768,10 @@ describe("spell-data integrity", () => {
           srd("spell", spell.id, "description", "en")
         )
     );
-    expect(splitCantrips.length).toBeGreaterThan(0);
+    // SRD 5.2.1 Acid Splash is a 5-foot-radius Sphere, no longer the 2014
+    // "one creature, or two within 5 feet" split — it is an area spell now.
+    expect(getSpellById("acid-splash")).toMatchObject({ area: true });
+    expect(getSpellById("acid-splash")?.targeting).toBeUndefined();
     for (const spell of splitCantrips) {
       expect(spell.targeting, spell.id).toEqual({
         affinity: "enemy",
@@ -933,9 +936,13 @@ describe("spell-data integrity", () => {
   });
 
   it("models every catalogued damaging save-for-half spell as structured data", () => {
+    // Storm of Vengeance's primary 2d6 Thunder has no half; its "half as much"
+    // belongs to the Turn 3 bolts, which its mechanicsProgram already halves.
+    const HALF_ELSEWHERE = new Set(["storm-of-vengeance"]);
     const missing = spells
       .filter(
         (spell) =>
+          !HALF_ELSEWHERE.has(spell.id) &&
           spell.damageDice !== undefined &&
           spell.saveAbility !== undefined &&
           /half (?:as much|the damage)/i.test(

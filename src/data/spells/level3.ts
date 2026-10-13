@@ -629,6 +629,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    // SRD 5.2.1: "A willing creature you touch" + one additional creature for
+    // each spell slot level above 3.
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -651,6 +654,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "5d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "DEX",
+    // SRD 5.2.1 Explosive Rune: "on a failed save or half as much damage on a
+    // successful one".
+    damageOnSave: "half",
     source: "SRD",
   },
   {

@@ -10,9 +10,15 @@ type SpellText = { description: string; higherLevels?: string };
 const en = enSpells as unknown as Record<string, SpellText>;
 const it_ = itSpells as unknown as Record<string, SpellText>;
 
+function text(catalogue: Record<string, SpellText>, id: string): SpellText {
+  const entry = catalogue[id];
+  if (!entry) throw new Error(`no text for ${id}`);
+  return entry;
+}
+
 describe("Conjure family text (SRD 5.2.1)", () => {
   it("Conjure Animals: a spectral pack that moves with you, 3d10 Slashing on a failed save only", () => {
-    const e = en["conjure-animals"];
+    const e = text(en, "conjure-animals");
     expect(e.description).toContain(
       "You conjure nature spirits that appear as a Large pack of spectral, intangible animals in an unoccupied space you can see within range."
     );
@@ -26,7 +32,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
     expect(e.higherLevels).toBe(
       "The damage increases by 1d10 for each spell slot level above 3."
     );
-    const i = it_["conjure-animals"];
+    const i = text(it_, "conjure-animals");
     expect(i.description).toContain(
       "L'incantatore evoca degli spiriti della natura che appaiono come un branco Grande di animali spettrali e intangibili"
     );
@@ -39,7 +45,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
   });
 
   it("Conjure Celestial: Healing Light and Searing Light, and a Cylinder that moves", () => {
-    const e = en["conjure-celestial"];
+    const e = text(en, "conjure-celestial");
     expect(e.description).toContain(
       "Healing Light. The target regains Hit Points equal to 4d12 plus your spellcasting ability modifier."
     );
@@ -50,7 +56,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
     expect(e.higherLevels).toBe(
       "The healing and damage increase by 1d12 for each spell slot level above 7."
     );
-    const i = it_["conjure-celestial"];
+    const i = text(it_, "conjure-celestial");
     expect(i.description).toContain("Luce curatrice. Il bersaglio recupera");
     expect(i.description).toContain(
       "Luce ustionante. Il bersaglio effettua un tiro salvezza su Destrezza"
@@ -61,7 +67,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
   });
 
   it("Conjure Elemental: no damage on a successful save; the Restrained target takes 4d8 on a failed repeat", () => {
-    const e = en["conjure-elemental"];
+    const e = text(en, "conjure-elemental");
     expect(e.description).toContain(
       "On failed save, the target takes 8d8 damage of the spirit's type, and the target has the Restrained condition until the spell ends."
     );
@@ -72,7 +78,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
     expect(e.higherLevels).toBe(
       "The damage increases by 1d8 for each spell slot level above 5."
     );
-    const i = it_["conjure-elemental"];
+    const i = text(it_, "conjure-elemental");
     expect(i.description).toContain(
       "il bersaglio subisce 4d8 danni del tipo determinato dallo spirito"
     );
@@ -83,7 +89,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
   });
 
   it("Conjure Minor Elementals: 2d8 Acid, Cold, Fire, or Lightning against creatures in the Emanation", () => {
-    const e = en["conjure-minor-elementals"];
+    const e = text(en, "conjure-minor-elementals");
     expect(e.description).toContain(
       "any attack you make deals an extra 2d8 damage when you hit a creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your choice when you make the attack)."
     );
@@ -94,7 +100,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
     expect(e.higherLevels).toBe(
       "The damage increases by 1d8 for each spell slot level above 4."
     );
-    const i = it_["conjure-minor-elementals"];
+    const i = text(it_, "conjure-minor-elementals");
     expect(i.description).toContain(
       "I danni inflitti sono da acido, freddo, fuoco o fulmine"
     );
@@ -104,7 +110,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
   });
 
   it("Conjure Woodland Beings: 5d8 Force in the Emanation, and Disengage as a Bonus Action", () => {
-    const e = en["conjure-woodland-beings"];
+    const e = text(en, "conjure-woodland-beings");
     expect(e.description).toContain(
       "The creature takes 5d8 Force damage on a failed save or half as much damage on a successful one."
     );
@@ -114,7 +120,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
     expect(e.higherLevels).toBe(
       "The damage increases by 1d8 for each spell slot level above 4."
     );
-    const i = it_["conjure-woodland-beings"];
+    const i = text(it_, "conjure-woodland-beings");
     expect(i.description).toContain("l'azione di Disimpegno come azione bonus");
     expect(i.higherLevels).toBe(
       "I danni aumentano di 1d8 per ogni slot di livello superiore al 4°."
@@ -122,7 +128,7 @@ describe("Conjure family text (SRD 5.2.1)", () => {
   });
 
   it("Animate Objects (IT): the official third-person text", () => {
-    const i = it_["animate-objects"];
+    const i = text(it_, "animate-objects");
     expect(i.description).toContain("Gli oggetti si animano su ordine dell'incantatore.");
     expect(i.description).toContain("a patto che si trovi entro 150 metri da sé");
     expect(i.higherLevels).toBe(

@@ -425,7 +425,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
-    targeting: { affinity: "ally", maxTargets: 1 },
+    // SRD 5.2.1: one additional creature for each spell slot level above 4.
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — magic can't Paralyze/Restrain the target and
       // it gains a Swim Speed equal to its Speed (the from-magic-only caveat
