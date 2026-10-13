@@ -197,10 +197,28 @@ describe("spell-data integrity", () => {
       // 2024 reworks that added a save where the data had none.
       "inflict-wounds": "CON",
       counterspell: "CON",
+      // SRD 5.2.1: "Each creature in that area makes a Strength saving throw."
+      "evards-black-tentacles": "STR",
     };
     for (const [id, ability] of Object.entries(expected)) {
       expect(getSpellById(id)?.saveAbility, id).toBe(ability);
     }
+  });
+
+  it("follows the SRD 5.2.1 text where the 2014 data differed", () => {
+    // "taking 6d10 Force damage on a failed save"
+    expect(getSpellById("blade-barrier")).toMatchObject({ damageType: "force" });
+    expect(srd("spell", "blade-barrier", "description", "en")).toContain(
+      "6d10 Force damage"
+    );
+    // "taking 4d8 Bludgeoning damage on a failed save"
+    expect(getSpellById("wind-wall")).toMatchObject({ damageDice: "4d8" });
+    expect(srd("spell", "wind-wall", "description", "en")).toContain(
+      "4d8 Bludgeoning damage"
+    );
+    // You and up to eight willing creatures: no save to banish an unwilling one.
+    expect(getSpellById("plane-shift")?.saveAbility).toBeUndefined();
+    expect(srd("spell", "plane-shift", "description", "en")).not.toMatch(/saving throw/);
   });
 
   it("S13 — the Fireball-class burst spells carry `area` (the AoE save-for-half signal)", () => {

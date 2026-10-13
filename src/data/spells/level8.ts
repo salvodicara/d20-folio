@@ -40,6 +40,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       s: true,
       m: true,
       costGp: 1000,
+      consumed: true,
     },
     concentration: false,
     instantaneous: true,

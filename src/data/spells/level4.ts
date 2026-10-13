@@ -1069,7 +1069,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: true,
     damageType: "bludgeoning",
     damageDice: "3d6",
-    saveAbility: "DEX",
+    saveAbility: "STR",
     area: true,
     conditionApplication: {
       options: ["restrained"],

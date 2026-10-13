@@ -801,7 +801,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: true,
     damageType: "bludgeoning",
-    damageDice: "3d8",
+    damageDice: "4d8",
     saveAbility: "STR",
     area: true,
     damageOnSave: "half",
