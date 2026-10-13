@@ -886,7 +886,7 @@ export function ThisTurnTracker({
         </div>
       )}
       {showWish && (
-        <div
+        <PromptedBanner
           className="conc-banner conc-banner-prompt"
           role="status"
           data-testid="wish-follow-up"
@@ -918,7 +918,7 @@ export function ThisTurnTracker({
               </button>
             )}
           </div>
-        </div>
+        </PromptedBanner>
       )}
       {askTimeStopTurns && (
         <div className="conc-banner" role="status" data-testid="time-stop-turns">
@@ -1168,4 +1168,14 @@ function PromptedInput(props: ComponentProps<typeof Input>) {
     field.focus({ preventScroll: true });
   }, []);
   return <Input ref={ref} {...props} />;
+}
+
+/** A banner the turn meter raises right after a tap elsewhere (Wish's follow-up,
+ *  asked after the cast from its card): it comes into view as it appears. */
+function PromptedBanner(props: ComponentProps<"div">) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: "center" });
+  }, []);
+  return <div ref={ref} {...props} />;
 }
