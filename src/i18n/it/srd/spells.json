@@ -28,7 +28,7 @@
   "alter-self": {
     "description": "L'incantatore altera la propria forma fisica scegliendo tra le opzioni seguenti. Gli effetti permangono per la sua durata, durante la quale l'incantatore può effettuare un'azione di Magia per sostituire l'opzione scelta con una diversa.\n\nAdattamento acquatico. L'incantatore sviluppa le branchie e una membrana tra le dita. Inoltre, può respirare sott'acqua e ottenere una velocità di nuoto pari alla sua velocità.\n\nArmi naturali. L'incantatore sviluppa artigli (taglienti), zanne (perforanti), corna (perforanti) o zoccoli (contundenti). Quando usa il suo colpo senz'armi per infliggere danni con l'arma naturale creata, infligge 1d6 danni (del tipo indicato tra parentesi) invece di infliggere i danni normali del colpo senz'armi, usando il modificatore di caratteristica da incantatore per i tiri per colpire e per i tiri per i danni anziché quello di Forza.\n\nCambiare aspetto. L'incantatore altera il suo aspetto: decide come apparire e definisce altezza, peso, lineamenti facciali, tono della voce, lunghezza dei capelli, carnagione e altri tratti distintivi. Può scegliere di assomigliare a un membro di un'altra specie, ma le sue statistiche non subiscono modifiche. Non può apparire come una creatura di taglia diversa e la sua forma base rimane la stessa; per esempio, se è bipede, non può usare l'incantesimo per diventare quadrupede. Per la durata dell'incantesimo, può effettuare un'azione di Magia per cambiare di nuovo il suo aspetto.",
     "duration": "Concentrazione, fino a 1 ora",
-    "name": "Alterare Sé Stesso",
+    "name": "Alterare Se Stesso",
     "range": "Sé stessi"
   },
   "animal-friendship": {
@@ -61,7 +61,7 @@
     "description": "L'incantatore sceglie una pila di ossa o un cadavere umanoide di taglia Media o Piccola entro gittata, animandolo come creatura non morta. Il bersaglio si trasforma in uno scheletro se l'incantatore sceglie la pila di ossa, o in uno zombi se l'incantatore sceglie un cadavere (vedi \"Mostri\" per le schede delle statistiche).\n\nA ogni suo turno, l'incantatore può effettuare un'azione bonus per comandare mentalmente qualsiasi creatura creata con questo incantesimo, a patto che si trovi entro 18 metri da lui (se controlla varie creature, l'incantatore può comandarne più di una allo stesso momento, impartendo lo stesso comando a ciascuna di loro). L'incantatore decide quale azione effettuerà la creatura e dove si muoverà nel suo turno successivo, oppure può impartirle un comando generale, come restare a guardia di una stanza o un di corridoio. Se invece non impartisce alcun comando, la creatura effettua l'azione Schivata e si sposta solo per evitare di subire danni. Una volta ricevuto un ordine, la creatura continua a seguirlo finché non ha portato a termine il compito.\n\nLa creatura rimane sotto il controllo dell'incantatore per 24 ore, passate le quali smette di obbedire a qualsiasi comando ulteriore. Per mantenere il controllo sulla creatura per altre 24 ore, l'incantatore deve lanciare di nuovo questo incantesimo su di essa prima che l'attuale periodo di 24 ore termini. Questo uso dell'incantesimo gli permette di ristabilire il controllo su un massimo di quattro creature da lui animate tramite questo incantesimo, anziché animarne una nuova.",
     "duration": "Istantanea",
     "higherLevels": "L'incantatore anima due creature non morte aggiuntive o ristabilisce il controllo su di esse per ogni slot incantesimo di livello superiore al 3°. Ognuna delle creature deve provenire da un diverso cadavere o mucchio d'ossa.",
-    "name": "Animare i Morti",
+    "name": "Animare Morti",
     "range": "3 metri"
   },
   "animate-dead.components": {
@@ -104,13 +104,13 @@
   "antilife-shell": {
     "description": "Un'aura si estende dall'incantatore in un'emanazione di 3 metri e permane per la durata dell'incantesimo, impedendo a tutte le creature che non siano non morti e costrutti di attraversarla o protendersi oltre essa. Una creatura influenzata può lanciare incantesimi o effettuare attacchi utilizzando armi a distanza o con portata attraverso la barriera.\n\nSe l'incantatore si muove in modo che una creatura influenzata sia costretta ad attraversare la barriera, l'incantesimo termina.",
     "duration": "Concentrazione, fino a 1 ora",
-    "name": "Guscio Antivita",
+    "name": "Guscio Anti-Vita",
     "range": "Sé stessi (raggio di 3 metri)"
   },
   "antimagic-field": {
     "description": "Un'aura di anti-magia circonda l'incantatore in un'emanazione di 3 metri. Nessuno può lanciare incantesimi, compiere azioni di Magia o creare altri effetti magici all'interno dell'aura, e tali azioni non possono colpire o influenzare in alcun modo nulla al suo interno. Le proprietà degli oggetti magici non funzionano all'interno dell'aura o su qualsiasi cosa al suo interno.\n\nLe aree di effetto create da incantesimi o da altre magie non possono estendersi all'interno dell'aura e nessuno può teletrasportarsi all'interno o all'esterno di essa o utilizzare il viaggio planare. I portali si chiudono temporaneamente quando si trovano all'interno dell'aura.\n\nGli incantesimi già in corso, tranne quelli lanciati da manufatti o divinità, sono soppressi all'interno dell'area. Mentre un effetto è soppresso non funziona, ma il tempo che trascorre in questo stato conta ai fini della sua durata.\n\nDissolvi magie non ha alcun effetto sull'aura, e le aure create da più incantesimi campo anti-magia non si annullano a vicenda.",
     "duration": "Concentrazione, fino a 1 ora",
-    "name": "Campo Antimagia",
+    "name": "Campo Anti-Magia",
     "range": "Sé stessi (sfera di 3 metri di raggio)"
   },
   "antimagic-field.components": {
@@ -501,7 +501,7 @@
   "contact-other-plane": {
     "description": "L'incantatore contatta mentalmente un semidio, lo spirito di un sapiente defunto da tempo o qualche altra entità saggia appartenente a un altro piano. Contattare questa intelligenza ultraterrena può sconvolgere la sua mente: quando l'incantatore lancia questo incantesimo, deve effettuare un tiro salvezza su Intelligenza con CD 15. In caso di successo, l'incantatore può porre all'entità un massimo di cinque domande prima del termine dell'incantesimo. Il GM risponde a ogni domanda con una parola, come per esempio \"sì\", \"no\", \"forse\", \"mai\", \"irrilevante\" o \"ignoto\" (se l'entità non conosce la risposta alla domanda). Nel caso in cui una risposta di una parola sola possa rivelarsi fuorviante, il GM può fornire come risposta una breve frase.\n\nIn caso di fallimento, l'incantatore subisce 6d6 danni psichici ed è incapacitato finché non completa un riposo lungo. Un incantesimo ristorare superiore fa svanire questo effetto.",
     "duration": "1 minuto",
-    "name": "Contattare Altro Piano",
+    "name": "Contattare Altri Piani",
     "range": "Sé stessi"
   },
   "contagion": {
@@ -690,7 +690,7 @@
   "disguise-self": {
     "description": "L'incantatore (compresi i suoi abiti, armatura, armi e altri oggetti personali presenti sulla sua persona) assume un aspetto diverso fino al termine dell'incantesimo. Può apparire 30 centimetri più alto o più basso e apparire più grasso o più magro, adottando una forma che usi la stessa disposizione basilare degli arti. Entro questi limiti, la natura dell'illusione dipende da lui.\n\nI cambiamenti apportati da questo incantesimo non passano il vaglio di un'ispezione fisica. Per esempio, se l'incantatore usa questo incantesimo per aggiungere un cappello al suo abbigliamento, gli oggetti attraverserebbero il cappello e chiunque lo toccasse non sentirebbe nulla.\n\nPer capire che l'incantatore è camuffato, una creatura può usare la sua azione di Studio per ispezionarne l'aspetto, superando una prova di Intelligenza (Indagare) contro la CD del tiro salvezza sull'incantesimo.",
     "duration": "1 ora",
-    "name": "Camuffare Sé Stessi",
+    "name": "Camuffare Se Stesso",
     "range": "Se stessi"
   },
   "disintegrate": {
@@ -765,7 +765,7 @@
     "description": "Una creatura entro gittata e che l'incantatore è in grado di vedere deve superare un tiro salvezza su Saggezza, altrimenti diventa affascinato per la durata dell'incantesimo. Il bersaglio dispone di vantaggio al tiro salvezza se l'incantatore o i suoi alleati stanno combattendo contro di essa. Ogni volta che il bersaglio subisce danni, ripete il tiro salvezza; se lo supera, l'effetto svanisce.\n\nL'incantatore ha un legame telepatico con il bersaglio affascinato mentre i due si trovano sullo stesso piano di esistenza. Nel proprio turno, l'incantatore può utilizzare questo legame per impartire comandi al bersaglio (nessuna azione richiesta), come ad esempio \"attacca quella creatura\", \"spostati lì\", o \"recupera quell'oggetto\". Il bersaglio fa del suo meglio per obbedire nel suo turno. Se porta a termine un ordine e non riceve ulteriori istruzioni dall'incantatore, agisce e si muove a suo piacimento, concentrandosi sulla propria incolumità.\n\nL'incantatore può comandare al bersaglio di effettuare una reazione, ma per farlo dovrà utilizzare la propria reazione.",
     "duration": "Concentrazione, fino a 1 ora",
     "higherLevels": "La concentrazione dell'incantatore può durare più a lungo usando uno slot incantesimo di 9° livello (fino a 8 ore).",
-    "name": "Dominare Mostro",
+    "name": "Dominare Mostri",
     "range": "18 metri"
   },
   "dominate-person": {
@@ -2032,19 +2032,19 @@
   "power-word-heal": {
     "description": "Un'ondata di energia curativa investe una creatura entro gittata che l'incantatore è in grado di vedere. Il bersaglio recupera tutti i suoi punti ferita. Se la creatura è affascinata, avvelenata, paralizzata, spaventata o stordita, questa condizione termina. Se la creatura è prona, può usare la sua reazione per rialzarsi.",
     "duration": "Istantanea",
-    "name": "Parola del Potere: Guarire",
+    "name": "Parola del Potere Guarire",
     "range": "18 metri"
   },
   "power-word-kill": {
     "description": "L'incantatore costringe una creatura entro gittata che egli è in grado di vedere a morire. Se il bersaglio possiede 100 punti ferita o meno, muore. Altrimenti, subisce 12d12 danni psichici.",
     "duration": "Istantanea",
-    "name": "Parola del Potere: Uccidere",
+    "name": "Parola del Potere Uccidere",
     "range": "18 metri"
   },
   "power-word-stun": {
     "description": "L'incantatore sconvolge la mente di una creatura situata entro gittata che egli è in grado di vedere. Se il bersaglio possiede 150 punti ferita o meno, è stordito. Altrimenti, la sua velocità è pari a 0 fino all'inizio del turno successivo dell'incantatore.\n\nIl bersaglio stordito effettua un tiro salvezza su Costituzione alla fine di ogni suo turno e, se lo supera, pone fine alla condizione.",
     "duration": "Istantanea",
-    "name": "Parola del Potere: Stordire",
+    "name": "Parola del Potere Stordire",
     "range": "18 metri"
   },
   "prayer-of-healing": {
@@ -2115,7 +2115,7 @@
   "protection-from-poison": {
     "description": "L'incantatore tocca una creatura e pone fine alla condizione avvelenato che la affligge. Per la durata dell'incantesimo, il bersaglio dispone di vantaggio ai tiri salvezza eseguiti per evitare o terminare la condizione avvelenato, ed è resistente ai danni da veleno.",
     "duration": "1 ora",
-    "name": "Protezione dal Veleno",
+    "name": "Protezione dai Veleni",
     "range": "Contatto"
   },
   "purify-food-and-drink": {
@@ -3009,7 +3009,7 @@
     "description": "Ridurre: la taglia diminuisce di una categoria (da Media a Piccola, per esempio); gli attacchi con armi ridotte o colpi senz'armi infliggono 1d4 danni in meno se vanno a segno (minimo 1)"
   },
   "alter-self.grants.0": {
-    "label": "Alterare Sé Stesso"
+    "label": "Alterare Se Stesso"
   },
   "alter-self.grants.0.grants.0": {
     "label": "Forma"

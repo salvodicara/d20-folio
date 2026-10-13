@@ -1646,6 +1646,9 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       v: true,
       s: true,
       m: true,
+      // "2 copper pieces, which the spell consumes" — priced in gp, so 2 cp = 0.02.
+      costGp: 0.02,
+      consumed: true,
     },
     concentration: false,
     source: "SRD",

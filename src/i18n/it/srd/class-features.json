@@ -220,7 +220,7 @@
     "name": "Ispirazione Superiore"
   },
   "bard-words-of-creation": {
-    "description": "Hai padroneggiato due delle Parole della Creazione: le parole della vita e della morte. Hai quindi sempre preparati gli incantesimi Parola del Potere: Guarire e Parola del Potere: Uccidere. Quando lanci uno dei due incantesimi, puoi prendere di mira una seconda creatura se si trova entro 3 metri dal primo bersaglio.",
+    "description": "Hai padroneggiato due delle Parole della Creazione: le parole della vita e della morte. Hai quindi sempre preparati gli incantesimi Parola del Potere Guarire e Parola del Potere Uccidere. Quando lanci uno dei due incantesimi, puoi prendere di mira una seconda creatura se si trova entro 3 metri dal primo bersaglio.",
     "name": "Parole della Creazione"
   },
   "cleric-blessed-strikes": {
@@ -1134,7 +1134,7 @@
     "name": "Resilienza Draconica"
   },
   "sorcerer-draconic-sorcery-spells": {
-    "description": "Quando raggiungi un livello da Stregone indicato nella tabella degli Incantesimi Draconici, da quel momento hai sempre preparati gli incantesimi elencati. Livello da Stregone 3: Alterare Sé Stesso, Globo Cromatico, Comando, Soffio del Drago. Livello 5: Paura, Volare. Livello 7: Occhio Arcano, Charme sui Mostri. Livello 9: Conoscenza delle Leggende, Richiama Drago.",
+    "description": "Quando raggiungi un livello da Stregone indicato nella tabella degli Incantesimi Draconici, da quel momento hai sempre preparati gli incantesimi elencati. Livello da Stregone 3: Alterare Se Stesso, Globo Cromatico, Comando, Soffio del Drago. Livello 5: Paura, Volare. Livello 7: Occhio Arcano, Charme sui Mostri. Livello 9: Conoscenza delle Leggende, Richiama Drago.",
     "name": "Incantesimi Draconici"
   },
   "sorcerer-draconic-sorcery-elemental-affinity": {
@@ -1220,7 +1220,7 @@
     "name": "Aumento dei Punteggi di Caratteristica"
   },
   "warlock-contact-patron": {
-    "description": "Hai sempre preparato l'incantesimo Contattare Altro Piano. Puoi lanciarlo senza consumare uno slot incantesimo per contattare il tuo patrono e superi automaticamente il tiro salvezza dell'incantesimo. Una volta lanciato in questo modo, non puoi rifarlo fino a un Riposo Lungo.",
+    "description": "Hai sempre preparato l'incantesimo Contattare Altri Piani. Puoi lanciarlo senza consumare uno slot incantesimo per contattare il tuo patrono e superi automaticamente il tiro salvezza dell'incantesimo. Una volta lanciato in questo modo, non puoi rifarlo fino a un Riposo Lungo.",
     "name": "Contattare il Patrono"
   },
   "warlock-eldritch-invocations": {

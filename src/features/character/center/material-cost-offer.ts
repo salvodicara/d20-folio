@@ -1,5 +1,5 @@
 /**
- * The note that follows a cast whose material component has a gp cost: a consumed
+ * The note that follows a cast whose material component has a coin cost: a consumed
  * component offers "−300 mo" from the purse in one tap (undoable, logged), a kept one
  * is only a reminder. Rides the toast lane, so it shows on whichever tab cast it.
  */
@@ -8,6 +8,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { coinPrice } from "@/lib/coin-price";
 import {
   castMaterialCost,
   goldSpendDelta,
@@ -28,7 +29,12 @@ export function offerMaterialCost(
   const cost = castMaterialCost(spellId);
   const currency = useCharacterStore.getState().character?.session.currency;
   if (!cost || !currency) return null;
-  const params = { spell: grantSourceLabel(cost.spellId, locale), gp: cost.gp };
+  const { amount, coin } = coinPrice(cost.gp);
+  const params = {
+    spell: grantSourceLabel(cost.spellId, locale),
+    amount,
+    coin: t(`equipment.currencyAbbr.${coin}`),
+  };
   const canPay = cost.consumed && goldSpendDelta(currency, cost.gp) !== null;
   return useToastStore.getState().showToast({
     message: t(

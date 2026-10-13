@@ -302,8 +302,10 @@ describe("spell-data integrity", () => {
   it("RA-23 — every gp-priced material component carries structured costGp/consumed (equivalence lock)", () => {
     // Derive the expected facts INDEPENDENTLY from the shipped EN Components prose
     // (the SRD source of truth) so this catches arithmetic/typo/omission, not just
-    // a re-pin: costGp = the first gp figure named, consumed = a "consume" clause.
+    // a re-pin: costGp = the first gp figure named (or "N copper pieces" as a fraction
+    // of gold, Gentle Repose's 2 cp = 0.02), consumed = a "consume" clause.
     const GP = /([\d,]+)\s*\+?\s*gp/i; // first gp figure
+    const CP = /(\d+) copper pieces/i;
     for (const s of spells) {
       // SRD spells only — the pack spells' priced-material fill + a pack-side
       // equivalence lock are a tracked FOLLOW-UP (AUTOMATION_BACKLOG.md → RA-23
@@ -312,8 +314,10 @@ describe("spell-data integrity", () => {
       if (s.source !== "SRD") continue;
       const prose = srd("spell", `${s.id}.components`, "material", "en");
       const digits = GP.exec(prose)?.[1];
-      if (digits != null) {
-        const expected = Number(digits.replace(/,/g, ""));
+      const copper = CP.exec(prose)?.[1];
+      if (digits != null || copper != null) {
+        const expected =
+          digits != null ? Number(digits.replace(/,/g, "")) : Number(copper) / 100;
         expect(s.components.costGp, `${s.id} costGp`).toBe(expected);
         expect(s.components.m, `${s.id} priced ⇒ m`).toBe(true);
         expect(s.components.consumed ?? false, `${s.id} consumed`).toBe(
@@ -330,7 +334,9 @@ describe("spell-data integrity", () => {
     for (const s of spells) {
       if (s.components.costGp != null) {
         expect(
-          Number.isInteger(s.components.costGp) && s.components.costGp > 0,
+          // whole copper pieces: a gp price, or a fraction of one (2 cp = 0.02)
+          Number.isInteger(Number((s.components.costGp * 100).toFixed(6))) &&
+            s.components.costGp > 0,
           s.id
         ).toBe(true);
       }
