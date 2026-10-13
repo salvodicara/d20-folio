@@ -23,7 +23,7 @@
     "takeShortRest": "Fai Riposo Breve",
     "takeLongRest": "Fai Riposo Lungo",
     "exhaustionReduced": "Ridotto di 1 livello",
-    "inspirationGained": "Ottenuta (Pieno di Risorse)",
+    "inspirationGained": "Ottenuta (Intraprendente)",
     "shortRestDesc": "Minimo 1 ora. Spendi dadi vita per curarti. Alcuni privilegi si ricaricano.",
     "shortRestHealPerDie": "{{die}} {{conMod}} PF per dado",
     "longRestDesc": "8 ore. Ripristina PF, slot incantesimo e privilegi da Riposo Lungo. Riduce indebolimento.",

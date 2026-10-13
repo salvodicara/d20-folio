@@ -36,7 +36,7 @@ test.describe("extra turns", () => {
       await expect(roundNum(page)).toHaveText("1");
       const offer = page.getByTestId("extra-turn-offer");
       const second = offer.getByRole("button", {
-        name: "Secondo turno (Riflessi del Furfante)",
+        name: "Secondo turno (Riflessi da Furfante)",
       });
       await expect(second).toBeVisible();
       // Spend the Bonus Action on Cunning Action: Dash, so the refresh is visible
@@ -125,7 +125,7 @@ test.describe("extra turns", () => {
         .first()
         .click({ timeout: 90_000 });
       const second = page.locator(".encounter-turn-order > li").filter({
-        hasText: "Secondo turno (Riflessi del Furfante)",
+        hasText: "Secondo turno (Riflessi da Furfante)",
       });
       await expect(second).toHaveCount(1);
       const names = await page
