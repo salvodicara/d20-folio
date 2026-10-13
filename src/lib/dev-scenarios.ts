@@ -601,6 +601,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Ring of X-ray Vision: the Magic action lights X-ray Vision 30 ft on the Senses rail with a 10-round countdown.",
   },
+  "demon-armor": {
+    // Demon Armor worn and attuned: its clawed gauntlets make the Unarmed Strike
+    // 1d8 Slashing + STR. Visit `/characters/scn-demon-armor?tab=play`.
+    name: "Korrag of the Iron Claw",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    equipment: [{ srdId: "demon-armor", equipped: true, attuned: true }],
+    exercises:
+      "Demon Armor: the Unarmed Strike reads 1d8+3 Slashing (the armor's claws) with +1 AC from the armor.",
+  },
   "gem-of-seeing": {
     // A Gem of Seeing held and attuned: its Magic action spends 1 of 3 charges and
     // lights 10 minutes of Truesight 120 ft. Visit `/characters/scn-gem-of-seeing`.
