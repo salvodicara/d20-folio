@@ -20,6 +20,7 @@ import { applyAdversaryDamageParts } from "@/features/campaigns/encounter-world-
 import { monsterConditionImmunities } from "@/features/campaigns/encounter-view";
 import { MonsterCard } from "@/features/campaigns/party-encounter";
 import { ConditionEditor } from "@/features/character/molecules/ConditionEditor";
+import { conditionOptions } from "@/lib/views/tracker-view";
 import type { MonsterStatBlock } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
@@ -210,31 +211,45 @@ describe(
       expect(IMMUNITY_SETS.length).toBeGreaterThan(0);
     });
 
-    it.each(IMMUNITY_SETS)("%s: %j are disabled options", (_id, immune) => {
-      const onToggle = vi.fn();
+    it.each(IMMUNITY_SETS)("%s: %j are not offered", (_id, immune) => {
       render(
         <ConditionEditor
           conditions={[]}
           immunities={new Set(immune)}
+          onToggle={vi.fn()}
+        />
+      );
+      fireEvent.click(screen.getByRole("button", { name: /add condition/i }));
+      const offered = screen
+        .getAllByRole("option")
+        .map((option) => option.getAttribute("data-condition"));
+      for (const id of immune) expect(offered).not.toContain(id);
+      // Every other condition is still offered, and none of them is greyed out.
+      expect(offered).toHaveLength(conditionOptions("en").length - immune.length);
+      for (const option of screen.getAllByRole("option")) {
+        expect(option).toHaveProperty("disabled", false);
+        expect(option.getAttribute("title")).toBeNull();
+      }
+    });
+
+    it("an immune condition already on the monster stays removable from the picker", () => {
+      const onToggle = vi.fn();
+      render(
+        <ConditionEditor
+          conditions={["poisoned"]}
+          immunities={new Set(["poisoned"])}
           onToggle={onToggle}
         />
       );
       fireEvent.click(screen.getByRole("button", { name: /add condition/i }));
-      const options = screen.getAllByRole("option");
-      for (const option of options) {
-        const id = option.getAttribute("data-condition");
-        if (id && immune.includes(id)) {
-          expect(option).toHaveProperty("disabled", true);
-          expect(option.getAttribute("title")).toBe(i18n.t("character.conditionImmune"));
-          fireEvent.click(option);
-        } else {
-          expect(option).toHaveProperty("disabled", false);
-        }
-      }
-      expect(onToggle).not.toHaveBeenCalled();
-      expect(options.filter((o) => (o as HTMLButtonElement).disabled)).toHaveLength(
-        immune.length
+      const poisoned = must(
+        screen
+          .getAllByRole("option")
+          .find((o) => o.getAttribute("data-condition") === "poisoned"),
+        "poisoned option"
       );
+      fireEvent.click(poisoned);
+      expect(onToggle).toHaveBeenCalledWith("poisoned");
     });
 
     it("the monster card wires the monster's immunities into its condition editor", () => {
@@ -263,15 +278,11 @@ describe(
         )
       );
       fireEvent.click(screen.getByRole("button", { name: /add condition/i }));
-      const poisoned = must(
-        screen
-          .getAllByRole("option")
-          .find((o) => o.getAttribute("data-condition") === "poisoned"),
-        "poisoned option"
-      );
-      expect(poisoned).toHaveProperty("disabled", true);
-      fireEvent.click(poisoned);
-      expect(apply).not.toHaveBeenCalled();
+      const offered = screen
+        .getAllByRole("option")
+        .map((o) => o.getAttribute("data-condition"));
+      expect(offered).not.toContain("poisoned");
+      expect(offered.length).toBeGreaterThan(0);
     });
   }
 );

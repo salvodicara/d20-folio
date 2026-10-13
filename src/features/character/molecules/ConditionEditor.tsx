@@ -51,8 +51,8 @@ export function ConditionEditor({
   onToggleStatus,
 }: {
   conditions: string[];
-  /** Condition ids the creature is immune to: offered as disabled options with
-   *  an "Immune" tooltip, never added. */
+  /** Condition ids the creature is immune to: never offered in the picker
+   *  (the stat block already lists the immunity). */
   immunities?: ReadonlySet<string>;
   onToggle: (conditionId: string) => void;
   /** When set, an empty list is announced to assistive tech via a visually-hidden
@@ -158,9 +158,10 @@ export function ConditionEditor({
             className="max-h-[calc(var(--radix-popover-content-available-height)-4rem)] overflow-y-auto"
           >
             {conditionOptions(locale).map((c) => {
-              // An immune creature cannot gain the condition (an already-active
-              // one stays removable from its chip and from here).
-              const immune = !active.has(c.id) && (immunities?.has(c.id) ?? false);
+              // The Picker Doctrine: a condition the creature is immune to is not
+              // a choice, so it is not offered (an already-active one stays, so
+              // it can still be removed from here as well as from its chip).
+              if (!active.has(c.id) && immunities?.has(c.id)) return null;
               return (
                 <button
                   key={c.id}
@@ -169,8 +170,6 @@ export function ConditionEditor({
                   data-condition={c.id}
                   aria-selected={active.has(c.id)}
                   className={cn("co-pick-item", active.has(c.id) && "active")}
-                  disabled={immune}
-                  title={immune ? t("character.conditionImmune") : undefined}
                   onClick={() => onToggle(c.id)}
                 >
                   {c.label}

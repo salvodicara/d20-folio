@@ -78,7 +78,6 @@
     "failedCreate": "Failed to create character",
     "noConditions": "No conditions",
     "addCondition": "Add condition",
-    "conditionImmune": "Immune to this condition",
     "fadingPenaltyOption": "{{name}} (−{{n}} to d20 Tests)",
     "fadingPenaltyChip": "−{{n}} to d20 Tests",
     "fadingPenaltyHint": "{{name}}: a penalty to attack rolls, saving throws and ability checks; drops by 1 each Long Rest",

@@ -1,8 +1,10 @@
 /**
- * monster-damage-defenses — the DM damages a fire-resistant monster from its HP
- * popover in REAL Chromium (dev-bypass, the seeded `mock-1` encounter, Italian,
- * dark): the popover offers the monster's defended types as chips, picking
- * "Fuoco" previews 10 → 5 · Resistenza, and Danno books 5. Desktop + phone.
+ * monster-damage-defenses — the DM's monster defenses in REAL Chromium (dev-bypass,
+ * the seeded `mock-1` encounter, Italian, dark), desktop + phone:
+ *   • damaging a fire-resistant monster: the HP popover offers the monster's
+ *     defended types as chips, "Fuoco" previews 10 → 5 · Resistenza, Danno books 5;
+ *   • the condition picker of a monster immune to Poisoned/Exhaustion (Zombi) does
+ *     not offer those conditions at all (the Picker Doctrine: hidden, not greyed).
  */
 
 import { test, expect, type Page } from "@playwright/test";
@@ -10,7 +12,8 @@ import { seedUI, seedLang } from "./surfaces";
 
 const dialog = (page: Page) => page.getByRole("dialog");
 
-async function bootWithDragonTurtle(page: Page): Promise<void> {
+/** Boot the dev encounter as its DM (IT, dark) and add one bestiary monster. */
+async function bootWithMonster(page: Page, search: string, pick: RegExp): Promise<void> {
   await seedUI(page, "dark", "play");
   await seedLang(page, "it");
   await page.addInitScript(() => window.localStorage.setItem("d20-dev-encounter", "1"));
@@ -28,11 +31,8 @@ async function bootWithDragonTurtle(page: Page): Promise<void> {
   await expect(dialog(page)).toBeVisible();
   await dialog(page)
     .getByPlaceholder(/cerca mostri/i)
-    .fill("testuggine dragona");
-  await dialog(page)
-    .getByRole("button", { name: /testuggine dragona/i })
-    .first()
-    .click();
+    .fill(search);
+  await dialog(page).getByRole("button", { name: pick }).first().click();
   await dialog(page)
     .getByRole("button", { name: /aggiungi mostro/i })
     .click();
@@ -49,7 +49,7 @@ for (const leg of [
   }) => {
     test.setTimeout(120_000);
     if (leg.viewport) await page.setViewportSize(leg.viewport);
-    await bootWithDragonTurtle(page);
+    await bootWithMonster(page, "testuggine dragona", /testuggine dragona/i);
 
     const hp = page.getByRole("button", { name: /punti ferita di testuggine dragona/i });
     await hp.scrollIntoViewIfNeeded();
@@ -65,5 +65,28 @@ for (const leg of [
     await popover.getByRole("button", { name: /^danno$/i }).click();
     await expect(hp).toContainText("351");
     await page.screenshot({ path: test.info().outputPath(`applied-${leg.name}.png`) });
+  });
+
+  test(`a monster's immune conditions are not offered by its condition picker (${leg.name})`, async ({
+    page,
+  }) => {
+    if (leg.viewport) await page.setViewportSize(leg.viewport);
+    await bootWithMonster(page, "zombi", /^zombi$/i);
+
+    const card = page.locator('li[data-combatant-id^="monster-"]').filter({
+      has: page.getByRole("button", { name: /^zombi$/i }),
+    });
+    await card.getByRole("button", { name: /^zombi$/i }).click();
+    const add = card.getByRole("button", { name: /aggiungi condizione/i });
+    await add.scrollIntoViewIfNeeded();
+    await add.click();
+    const picker = page.getByRole("listbox", { name: /aggiungi condizione/i });
+    await expect(picker).toBeVisible();
+    // Zombi: immune to Poisoned and Exhaustion — neither is offered; the rest are.
+    await expect(picker.locator('[data-condition="poisoned"]')).toHaveCount(0);
+    await expect(picker.locator('[data-condition="exhaustion"]')).toHaveCount(0);
+    await expect(picker.locator('[data-condition="prone"]')).toBeVisible();
+    await expect(picker.locator("[role=option]:disabled")).toHaveCount(0);
+    await page.screenshot({ path: test.info().outputPath(`conditions-${leg.name}.png`) });
   });
 }
