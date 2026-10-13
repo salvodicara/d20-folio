@@ -30,6 +30,7 @@ import type {
   HealTerm,
   ReactionTrigger,
   SpellRecurrence,
+  WeaponMastery,
 } from "@/data/types";
 import type { CostSpec } from "@/lib/cost-engine";
 import type { StatusEnd, StatusLifetime } from "@/lib/status-lifetime";
@@ -111,6 +112,8 @@ export interface ActivityCost {
   economyCategory?: ActionEconomyCategory;
   /** A hard cap on uses per turn. */
   maxUsesPerTurn?: number;
+  /** The ammunition each use expends (one piece: Arrows for a Longbow). */
+  ammunition?: string;
 }
 
 /** What must already be true for the activity to be offered. */
@@ -182,6 +185,8 @@ export interface ActivityAttack {
   /** Absent: the table decides (a spell-attack follow-up). */
   mode?: "melee" | "ranged" | "melee-or-ranged";
   bonus: AttackBasis;
+  /** The weapon's Mastery property; its effect is a rule the table applies. */
+  mastery?: WeaponMastery;
 }
 
 /** A saving throw the targets make. */
@@ -271,6 +276,8 @@ export type ActivityEffect =
         vsCreatureTypes?: ReadonlyArray<CreatureType>;
         /** The same total may be applied as healing instead (Divine Spark). */
         orHeal?: true;
+        /** The die when the weapon is held in two hands (Versatile). */
+        twoHanded?: ActivityDice;
       })
   | (EffectBase & {
       kind: "heal";

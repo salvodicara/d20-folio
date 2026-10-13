@@ -25,10 +25,18 @@ export function translateWeapon(
             ? { rangeFt: { near: range.thrown.nearFt, far: range.thrown.farFt } }
             : {}),
         };
+  // "Versatile (1d10)": the die when the weapon is held in two hands.
+  const versatile = properties.find((property) => /\bversatile\b/i.test(property));
+  const twoHandedDie = versatile
+    ? /Versatile\s*\(([^)]+)\)/i.exec(versatile)?.[1]
+    : undefined;
   const activity: Activity = {
     id: `weapon:${weapon.id}`,
     source: { kind: "weapon", weaponId: weapon.id },
-    cost: { economy: "action" },
+    cost: {
+      economy: "action",
+      ...(weapon.ammunitionId ? { ammunition: weapon.ammunitionId } : {}),
+    },
     target,
     attack: {
       mode: ranged
@@ -37,35 +45,24 @@ export function translateWeapon(
           ? "melee-or-ranged"
           : "melee",
       bonus: { kind: "weapon", weapon: weapon.id },
+      ...(weapon.mastery ? { mastery: weapon.mastery } : {}),
     },
     effects: [
       {
         kind: "damage",
         dice: { dice: damage.die, plus: [{ kind: "attack-mod" }] },
         types: [damage.type],
+        ...(twoHandedDie
+          ? { twoHanded: { dice: twoHandedDie, plus: [{ kind: "attack-mod" as const }] } }
+          : {}),
       },
     ],
   };
   const gaps: ActivityGap[] = [];
-  if (weapon.mastery) {
-    gaps.push({
-      field: "mastery",
-      reason:
-        "a Weapon Mastery property (its effect is a rule the table applies, not an effect here yet)",
-    });
-  }
-  const versatile = properties.find((property) => /\bversatile\b/i.test(property));
-  if (versatile) {
+  if (versatile && !twoHandedDie) {
     gaps.push({
       field: "properties.versatile",
-      reason: "the two-handed die is an alternative damage the Activity cannot hold yet",
-    });
-  }
-  if (weapon.ammunitionId) {
-    gaps.push({
-      field: "ammunitionId",
-      reason:
-        "the ammunition each attack uses is spent by the inventory, not declared as a cost yet",
+      reason: "a Versatile property without a printed two-handed die",
     });
   }
   return { activity, gaps };
