@@ -486,8 +486,8 @@ export function ThisTurnTracker({
   // dice — golden rule 21) through the SAME store healing seam the manual HP
   // control uses (`applyHealing` clamps to effective max + logs the structured
   // `hp-heal` event), with an undoable heal toast (mirrors `useHpControls.
-  // applyHeal`: snapshot prevHP → onUndo restores via the log-free `setHP`, so
-  // undoing leaves no spurious second event). Override-first: the HP control stays
+  // applyHeal`: the store's own undo restores the prior slice and drops the heal's
+  // log lines, so an undone regen leaves no trace in the log). Override-first: the HP control stays
   // editable; this is just the one-tap shortcut so the player needn't re-type it.
   function applyRegen(amount: number) {
     // On the session undo stack (the reversal contract; Pattern B — the message
@@ -495,12 +495,12 @@ export function ThisTurnTracker({
     // no entry, no toast, for a heal that didn't happen.
     const cs = useCharacterStore.getState();
     const prevHP = cs.character?.session.hp.current ?? 0;
-    cs.applyHealing(amount);
-    const nextHP = cs.character?.session.hp.current ?? prevHP;
-    if (nextHP === prevHP) return;
+    const undo = cs.applyHealing(amount);
+    if (!undo) return;
+    const nextHP = useCharacterStore.getState().character?.session.hp.current ?? prevHP;
     registerUndoableResult(
       { message: t("combat.hpHealToast", { val: amount, prev: prevHP, next: nextHP }) },
-      () => useCharacterStore.getState().setHP(prevHP),
+      undo,
       () => applyRegen(amount)
     );
   }
@@ -513,14 +513,12 @@ export function ThisTurnTracker({
     // On the session undo stack (Pattern B — the message reads the max-wins
     // result). With equal-or-higher temp HP already up, nothing changed — no
     // entry, no toast.
-    const cs = useCharacterStore.getState();
-    const prevTemp = cs.character?.session.hp.temp ?? 0;
-    cs.gainTempHp(amount);
-    const nextTemp = cs.character?.session.hp.temp ?? prevTemp;
-    if (nextTemp === prevTemp) return;
+    const undo = useCharacterStore.getState().gainTempHp(amount);
+    if (!undo) return;
+    const nextTemp = useCharacterStore.getState().character?.session.hp.temp ?? amount;
     registerUndoableResult(
       { message: t("combat.tempHpToast", { val: nextTemp }) },
-      () => useCharacterStore.getState().setTempHP(prevTemp),
+      undo,
       () => applyTurnStartTempHp(amount)
     );
   }
