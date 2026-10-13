@@ -51,7 +51,7 @@
     "otherReactionName": "Other reaction",
     "otherReactionGloss": "For a reaction not on this list, resolved at the table.",
     "markReactionUsed": "Mark used",
-    "readiedSpellToast": "{{name}} readied — release it with your Reaction",
+    "readiedSpellToast": "Spell readied: {{name}}. Release it with your Reaction",
     "readiedSpellReleasedToast": "{{name}} released",
     "readiedSpellLostToast": "Readied spell lost: {{name}}",
     "readiedSpellName": "Readied: {{name}}",
