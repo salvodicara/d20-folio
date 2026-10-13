@@ -201,22 +201,17 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     ).toBe(true);
   });
 
-  it("#13 — morning-light translucency: the light panel material consumes panel-light at the light --panel-alpha", () => {
-    // The light sibling of dark's candlelit T3: light defines its own gentler
-    // --panel-alpha and the light .folio-panel sandwich lays the owner-P8 cream
-    // grain under the ivory gradient at that alpha.
+  it("#13 — panels are plain slabs: no grain under the surface, a hairline edge (owner 2026-10-13)", () => {
     expect(
-      /\[data-theme="light"\][^{]*\{[^}]*--panel-alpha: 0\.9[0-9]/.test(indexCss),
-      "MISSING: a light-theme --panel-alpha (the morning-light translucency value)."
+      /\.folio-panel \{[^}]*linear-gradient\(180deg, var\(--bg-surface-2\), var\(--bg-surface-1\)\)[^}]*border: 1px solid var\(--border-soft\)/.test(
+        css
+      ),
+      "MISSING: the plain folio-panel slab (surface gradient + hairline)."
     ).toBe(true);
-    const sandwich =
-      /\[data-theme="light"\] \.folio-panel::before \{[^}]*opacity: var\(--panel-alpha\)[^}]*var\(--asset-panel-light\)/;
     expect(
-      sandwich.test(css),
-      "MISSING: `[data-theme=light] .folio-panel::before` rendering the panel-light " +
-        "sandwich at var(--panel-alpha) — the light material story (owner P8) regresses " +
-        "to a flat opaque gradient without it."
-    ).toBe(true);
+      /\.folio-panel::before/.test(css),
+      "A folio-panel ::before material layer is back — the vision's panels carry no grain."
+    ).toBe(false);
   });
 
   it("#14 — the light field is warm vellum, with ivory surfaces above it (owner 2026-10-13)", () => {

@@ -119,8 +119,8 @@
   --radius-sm: 0;
   --radius-md: 2px;
   --radius-lg: 4px;
-  --radius-xl: 8px;
-  --radius-2xl: 12px;
+  --radius-xl: 4px;
+  --radius-2xl: 6px;
   --radius-full: 4px; /* chips @ 4px facet — the ONLY true pill is the §21 switch track (999px) */
   --radius-pill: 999px; /* reserved: switch track only */
 
@@ -208,15 +208,10 @@
   --asset-parchment: url("/assets/textures/parchment.webp");
   --parchment-strength: 0.5;
 
-  /* BG3-identity panel/tome materials (DESIGN.md §13) — owner-generated,
-     seam-blended tileable WebPs, one per theme. `panel-leather` is the near-black
-     leather grain the dark `.folio-panel` lays under its surface gradient;
-     `panel-light` (owner P8) is its pale cream bookbinding sibling under the
-     light panel the same way; `vellum-dark` is a candlelit dark vellum (graded
+  /* Tome material (DESIGN.md §13) — owner-generated, seam-blended tileable WebP:
+     `vellum-dark` is a candlelit dark vellum (graded
      into the #241c12–#3a2d21 band) that IS the dark `.cmp-tome` surface (light's
      tome leaf is `parchment.webp` above). */
-  --asset-panel-leather: url("/assets/textures/panel-leather.webp");
-  --asset-panel-light: url("/assets/textures/panel-light.webp");
   --asset-vellum-dark: url("/assets/textures/vellum-dark.webp");
 
   /* The engraved brand crest (DESIGN.md §13 — owner-generated Fable batch-1 P6):
@@ -271,6 +266,7 @@
    § 01 Palette · DARK theme (default)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
+  --panel-highlight: rgb(255 232 186 / 0.05);
   --bg-page: #0a0806;
   --bg-surface-1: #15110d;
   --bg-surface-2: #1c1711;
@@ -660,6 +656,7 @@
    § 01 Palette · LIGHT theme (aged vellum — designed, not adapted)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
+  --panel-highlight: rgb(255 255 255 / 0.8);
   --page-tone: #faf0cb;
   /* Aged-vellum field, DEEPENED so raised surfaces have headroom to lift. The
      prior page (#efe5c8) sat only ~4 L* below surface-1, so every card read flat
@@ -1266,7 +1263,7 @@
   --radius-sm: 0px;
   --radius-md: 2px;
   --radius-lg: 4px;
-  --radius-xl: 8px;
+  --radius-xl: 4px;
 
   /* Breakpoint — the rail-drop threshold as a NAMED Tailwind variant (`rail:` /
      `max-rail:`), bridging the canonical --bp-rail width (1180px, above) into
