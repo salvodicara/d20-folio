@@ -2,6 +2,8 @@ import i18next from "i18next";
 import { describe, expect, it } from "vitest";
 
 import enChronicle from "@/i18n/en/ui/combatChronicle.json";
+import enCombatLog from "@/i18n/en/ui/combatLog.json";
+import itCombatLog from "@/i18n/it/ui/combatLog.json";
 import en from "@/i18n/en/ui/sessionReport.json";
 import itChronicle from "@/i18n/it/ui/combatChronicle.json";
 import it_ from "@/i18n/it/ui/sessionReport.json";
@@ -204,5 +206,58 @@ describe("renderSessionReport", () => {
     expect(text).toContain("- Ana: Spada lunga → Goblin: critico, 14");
     expect(text).toContain("- Ana usa Spada lunga su Goblin Chief — mancato");
     expect(text).toMatch(/- Ana usa Spada lunga\n|- Ana usa Spada lunga$/);
+  });
+});
+
+describe("localizePlayEvent: a monster's stat change", () => {
+  async function translator(lng: "en" | "it") {
+    const i18n = i18next.createInstance();
+    await i18n.init({
+      lng,
+      resources: {
+        en: { translation: { ...en, ...enChronicle, ...enCombatLog } },
+        it: { translation: { ...it_, ...itChronicle, ...itCombatLog } },
+      },
+      interpolation: { escapeValue: false },
+    });
+    return (k: string, a?: Record<string, unknown>) => i18n.t(k, a);
+  }
+  const who = (id: string | undefined) => (id === "monster-1" ? "Goblin" : "?");
+
+  it("reads Goblin: AC 15 → 13 / Goblin: CA 15 → 13", async () => {
+    const event: PlayEvent = {
+      kind: "stat-change",
+      stat: "ac",
+      from: 15,
+      to: 13,
+      target: "monster-1",
+    };
+    expect(localizePlayEvent(event, await translator("en"), who, names)).toBe(
+      "Goblin: AC 15 → 13"
+    );
+    expect(localizePlayEvent(event, await translator("it"), who, names)).toBe(
+      "Goblin: CA 15 → 13"
+    );
+  });
+
+  it("a kind or stat from a newer app version reads as a neutral line, never blank", async () => {
+    const t = await translator("en");
+    const newer = {
+      kind: "from-the-future",
+      target: "monster-1",
+    } as unknown as PlayEvent;
+    const newerStat = {
+      kind: "stat-change",
+      stat: "flight",
+      from: 1,
+      to: 2,
+      target: "monster-1",
+    } as unknown as PlayEvent;
+    expect(localizePlayEvent(newer, t, who, names)).toBe(
+      "An entry from a newer version of the app"
+    );
+    expect(localizePlayEvent(newerStat, t, who, names)).toBe(
+      "An entry from a newer version of the app"
+    );
   });
 });

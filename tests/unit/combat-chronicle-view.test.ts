@@ -56,6 +56,13 @@ const SAMPLES: Record<
     target: "pc-mara",
     actor: "pc-cat",
   },
+  "stat-change": {
+    kind: "stat-change",
+    stat: "ac",
+    from: 15,
+    to: 13,
+    target: "monster-1",
+  },
   "death-save": { kind: "death-save", outcome: "success", actor: "pc-mara" },
   rest: { kind: "rest", rest: "short", actor: "pc-mara" },
   note: { kind: "note", text: "The bridge collapses." },

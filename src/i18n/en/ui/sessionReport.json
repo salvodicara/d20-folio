@@ -23,6 +23,7 @@
     "tempHp": "{{target}} gains {{amount}} temporary HP",
     "maxHpReduced": "{{target}}'s Hit Point maximum is reduced by {{reduction}}",
     "maxHpRestored": "{{target}}'s Hit Point maximum returns to normal",
+    "statChange": { "ac": "{{target}}: AC {{from}} → {{to}}" },
     "conditionGain": "{{target}} gains {{condition}}",
     "conditionLoss": "{{target}} is no longer {{condition}}",
     "concentrationStart": "{{actor}} concentrates on {{spell}}",

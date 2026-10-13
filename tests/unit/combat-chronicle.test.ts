@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   inferOutcome,
   recordCondition,
+  recordMonsterAc,
   recordMonsterDamage,
   recordMonsterHp,
   undoConditionEvent,
@@ -122,5 +123,30 @@ describe("scalar monster combat chronicle", () => {
     const firstDown = recordMonsterDamage(two, "monster-1", 99);
     expect(inferOutcome(firstDown)).toBe("ended");
     expect(inferOutcome(recordMonsterDamage(firstDown, "monster-2", 99))).toBe("victory");
+  });
+});
+
+describe("the DM's monster AC change is a chronicle beat", () => {
+  it("sets the AC and records Goblin 15 → 13 (Slow), once", () => {
+    const slowed = recordMonsterAc(fight(), "monster-1", 13);
+    expect(monster(slowed).ac).toBe(13);
+    expect(slowed.events).toEqual([
+      {
+        id: "0",
+        round: 2,
+        kind: "stat-change",
+        targetId: "monster-1",
+        stat: "ac",
+        from: 15,
+        to: 13,
+      },
+    ]);
+  });
+
+  it("an unchanged or rejected AC records nothing", () => {
+    const state = fight();
+    expect(recordMonsterAc(state, "monster-1", 15)).toBe(state);
+    expect(recordMonsterAc(state, "monster-1", Number.NaN)).toBe(state);
+    expect(recordMonsterAc(state, "monster-9", 12)).toBe(state);
   });
 });

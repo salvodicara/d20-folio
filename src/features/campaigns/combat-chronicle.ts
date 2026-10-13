@@ -24,6 +24,7 @@ import {
   setHp,
   applyHp,
   isDown,
+  setMonsterAc,
   setMonsterCondition,
   setMonsterTempHp,
 } from "@/features/campaigns/encounter";
@@ -192,6 +193,32 @@ export function recordPcHp(
     out = appendEvent(out, { kind: "down", targetId: args.targetId });
   }
   return out;
+}
+
+function findMonster(state: EncounterState, id: string): EncounterMonster | undefined {
+  return state.combatants.find(
+    (c): c is EncounterMonster => c.kind === "monster" && c.id === id
+  );
+}
+
+/** Set a MONSTER's AC ({@link setMonsterAc}) and record the change as a
+ *  `stat-change` beat ("Goblin: AC 15 → 13"); a no-op edit records nothing. */
+export function recordMonsterAc(
+  state: EncounterState,
+  monsterId: string,
+  ac: number
+): EncounterState {
+  const before = findMonster(state, monsterId);
+  const next = setMonsterAc(state, monsterId, ac);
+  const after = findMonster(next, monsterId);
+  if (next === state || !before || !after) return state;
+  return appendEvent(next, {
+    kind: "stat-change",
+    targetId: monsterId,
+    stat: "ac",
+    from: before.ac,
+    to: after.ac,
+  });
 }
 
 /** Record a condition gain (`added`) or loss on a combatant. `engineActionId` links

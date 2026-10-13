@@ -16,6 +16,7 @@
 
 import type { ActionType } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
+import type { ChangeableStat } from "@/types/combat-chronicle";
 import type { ConcentrationRef } from "@/types/ids";
 
 /** A creature at the table: `pc-<uid>` or `monster-<n>` (the encounter's ids). */
@@ -85,6 +86,14 @@ export type PlayEvent =
       target: CombatantId;
       actor?: CombatantId;
       source?: LocText;
+    }
+  | {
+      /** The DM changed a monster's stat in place: "Goblin: AC 15 → 13". */
+      kind: "stat-change";
+      stat: ChangeableStat;
+      from: number;
+      to: number;
+      target: CombatantId;
     }
   | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
   | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }

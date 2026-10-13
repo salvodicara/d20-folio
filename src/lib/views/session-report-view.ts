@@ -23,6 +23,8 @@ export interface SessionReportNames {
 
 /** The results the report can say; another stored value is left out of the line. */
 const OUTCOMES = new Set(["hit", "miss", "critical", "saved", "failed"]);
+/** The stats this version can name; a newer app's stat reads as an unknown line. */
+const KNOWN_STATS: ReadonlySet<string> = new Set(["ac"]);
 
 export function localizePlayEvent(
   event: PlayEvent,
@@ -122,6 +124,14 @@ export function localizePlayEvent(
           }),
         })
       );
+    case "stat-change":
+      // A stat this version doesn't know (a newer app's) degrades like an unknown kind.
+      if (!KNOWN_STATS.has(event.stat)) break;
+      return t(`sessionReport.statChange.${event.stat}`, {
+        target: who(event.target),
+        from: event.from,
+        to: event.to,
+      });
     case "death-save":
       return t(`sessionReport.deathSave.${event.outcome}`, { actor: who(event.actor) });
     case "rest":
@@ -133,6 +143,8 @@ export function localizePlayEvent(
     case "round-start":
       return null;
   }
+  // A kind (or stat) written by a newer app version: a neutral line, never a blank row.
+  return t("combatLog.unknownEvent");
 }
 
 /** Render the report as markdown under `title` (e.g. the session's date). */
