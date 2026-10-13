@@ -147,6 +147,10 @@ export interface EncounterMonster extends EncounterCombatantBase {
   srdId?: string;
   /** Armor Class (informational; the DM may edit). */
   ac: number;
+  /** The DM's walking-speed override in feet (e.g. after the Slow weapon mastery).
+   *  Absent = the stat block's printed walking speed; a whole number in
+   *  `[0, MONSTER_SPEED_MAX_FT]` (`@/lib/monster-speed`). */
+  speed?: number;
   /** Typed initiative (no dice — the DM enters it); `null` = not yet entered. */
   initiative: number | null;
   /** Active conditions as stable condition IDS (never localized names). */

@@ -307,6 +307,44 @@ describe("MonsterCard — the DM edits a monster's AC in place", () => {
   });
 });
 
+describe("MonsterCard — walking speed (stat block, or the DM's override)", () => {
+  it("shows the stat block's speed (SRD Goblin Warrior: 30 ft)", async () => {
+    render(<MonsterCard campaignId="camp-test" monster={goblinWithSrd()} isCurrent />);
+    // The stat block arrives through the lazy bestiary chunk (a cold corpus import).
+    expect(
+      await screen.findByLabelText("Speed: 30 ft", {}, { timeout: 10000 })
+    ).toBeTruthy();
+  });
+
+  it("an override replaces the stat block's speed (Slow: 20 ft)", async () => {
+    render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={{ ...goblinWithSrd(), speed: 20 }}
+        isCurrent
+      />
+    );
+    expect(await screen.findByLabelText("Speed: 20 ft")).toBeTruthy();
+    expect(screen.queryByLabelText("Speed: 30 ft")).toBeNull();
+  });
+
+  it("a hand-typed monster shows its override, and no speed at all without one", async () => {
+    const { srdId: _srdId, ...handTyped } = goblinWithSrd();
+    void _srdId;
+    const { unmount } = render(
+      <MonsterCard
+        campaignId="camp-test"
+        monster={{ ...handTyped, speed: 25 }}
+        isCurrent
+      />
+    );
+    expect(await screen.findByLabelText("Speed: 25 ft")).toBeTruthy();
+    unmount();
+    render(<MonsterCard campaignId="camp-test" monster={handTyped} isCurrent />);
+    expect(screen.queryByLabelText(/^Speed:/)).toBeNull();
+  });
+});
+
 describe("MonsterCard — init-chip null relaxation once turns begin (§D.3)", () => {
   it("initLocked + a NULL initiative keeps the chip EDITABLE (a fresh reinforcement)", () => {
     render(

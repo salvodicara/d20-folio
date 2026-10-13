@@ -98,6 +98,7 @@ import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Select } from "@/components/shared/Select";
 import { cn, fmtXp, formatCr, formatSpeed, localeDistance } from "@/lib/utils";
 import { CR_VALUES, xpForCr } from "@/lib/monster";
+import { monsterWalkingSpeedFt } from "@/lib/monster-speed";
 import { ensureSrdKind } from "@/i18n";
 import { useLocale } from "@/hooks/useLocale";
 import { conditionChips, conditionOptions } from "@/lib/views/tracker-view";
@@ -180,6 +181,12 @@ const EncounterStatblockModal = lazy(() =>
 // bestiary chunk (the chips read the corpus; no catalogue strings, so no SRD gate).
 const EncounterTraitChips = lazy(() =>
   import("./encounter-trait-chips").then((m) => ({ default: m.EncounterTraitChips }))
+);
+
+// A bestiary monster's printed walking speed — a FOURTH lazy door onto the same
+// bestiary chunk, opened only when the card has no DM speed override to show.
+const MonsterStatBlockWalk = lazy(() =>
+  import("./encounter-monster-speed").then((m) => ({ default: m.MonsterStatBlockWalk }))
 );
 
 /** A reducer applied to the live encounter — present for the DM, absent (read-only)
@@ -1768,6 +1775,17 @@ export function MonsterCard({
           showExact={showExactHp}
         />
       )}
+      {monster.speed === undefined && monster.srdId ? (
+        <Suspense fallback={null}>
+          <MonsterStatBlockWalk srdId={monster.srdId}>
+            {(walkFt) => (
+              <MonsterSpeedStat feet={monsterWalkingSpeedFt(undefined, walkFt)} />
+            )}
+          </MonsterStatBlockWalk>
+        </Suspense>
+      ) : (
+        <MonsterSpeedStat feet={monsterWalkingSpeedFt(monster.speed, undefined)} />
+      )}
     </div>
   );
 
@@ -2213,6 +2231,29 @@ function MonsterInitChip({
  * is the trigger and the edit box floats, so editing never reflows the card. Players
  * never receive it (the caller renders a static StatBadge without `apply`).
  */
+/** A monster's walking speed chip — the same Speed badge a PC card shows. Nothing
+ *  when the speed is unknown (a hand-typed monster with no override). */
+function MonsterSpeedStat({ feet }: { feet: number | null }) {
+  const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  if (feet === null) return null;
+  const text = formatSpeed(feet, locale);
+  return (
+    <StatBadge
+      density="chip"
+      icon={Footprints}
+      acronym={
+        <GlossaryTip term="speed" rubric={t("character.vitals.speed")}>
+          {t("character.vitals.spd")}
+        </GlossaryTip>
+      }
+      fullLabel={t("character.vitals.speed")}
+      value={text}
+      valueText={text}
+    />
+  );
+}
+
 function MonsterAcChip({
   value,
   ariaLabel,

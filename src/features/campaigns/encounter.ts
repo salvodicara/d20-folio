@@ -38,6 +38,7 @@ import {
   markExtraTurn,
   type StoredExtraTurn,
 } from "@/lib/play/extra-turns";
+import { isMonsterSpeedFt } from "@/lib/monster-speed";
 import type { PortraitCrop } from "@/types/character";
 import type { CombatDefenseSnapshot } from "@/types/campaign";
 
@@ -82,6 +83,7 @@ const MONSTER_COMBATANT_KEYS = new Set([
   "name",
   "srdId",
   "ac",
+  "speed",
   "initiative",
   "conditions",
   "hp",
@@ -164,6 +166,7 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
     (value.hidden !== undefined && typeof value.hidden !== "boolean") ||
     (value.side !== undefined && value.side !== "ally" && value.side !== "enemy") ||
     (value.srdId !== undefined && !nonEmptyString(value.srdId)) ||
+    (value.speed !== undefined && !isMonsterSpeedFt(value.speed)) ||
     (value.revealed !== undefined && typeof value.revealed !== "boolean") ||
     (value.notes !== undefined && !nonEmptyString(value.notes)) ||
     (value.xp !== undefined && !safeInteger(value.xp)) ||
