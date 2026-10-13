@@ -662,10 +662,11 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             duration: 4000,
           });
         }
-        // Surprise belongs to the fight that just ended.
+        // Surprise, Underwater and Mounted belong to the fight that just ended.
         useCharacterStore
           .getState()
           .dispatch({ kind: "set-surprised", surprised: false });
+        useCharacterStore.getState().dispatch({ kind: "end-fight-situations" });
         return;
       }
       // A turn start inside the fight.

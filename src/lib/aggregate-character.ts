@@ -24,6 +24,7 @@
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
 import { resolveCoverStateSources } from "@/lib/cover-states";
 import { resolveWishStressStateSources } from "@/lib/wish-state";
+import { resolveSituationalStateSources } from "@/lib/situational-states";
 import { resolveSurpriseStateSources } from "@/lib/surprise-state";
 import { resolvePotionStateSources } from "@/lib/potion-states";
 import { resolveFadingPenaltySources } from "@/lib/play/fading-penalties";
@@ -137,6 +138,8 @@ export function aggregateCharacterGrants(
       ...resolveBaseActionStateSources(activeKeys),
       // A lit cover level (Half / Three-Quarters) holds until it ends.
       ...resolveCoverStateSources(activeKeys),
+      // A lit situation (Underwater's Fire Resistance) holds until it ends.
+      ...resolveSituationalStateSources(activeKeys),
       // A lit Surprise puts Disadvantage on the Initiative roll until the fight ends.
       ...resolveSurpriseStateSources(activeKeys),
       // Wish Stress holds until a Long Rest.

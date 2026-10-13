@@ -7,6 +7,7 @@
  */
 import type { CoverStateLevel } from "@/lib/cover-states";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
+import type { SituationId } from "@/lib/situational-states";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import {
   dismissFamiliar,
@@ -26,6 +27,7 @@ import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
 import { setActiveSpellCastLevel, setActiveState } from "./states";
+import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
 import { setWishStress } from "./wish";
 import {
@@ -64,6 +66,13 @@ export type SheetEvent =
   | { kind: "set-surprised"; surprised: boolean }
   | { kind: "adjust-currency"; delta: CurrencyDelta }
   | { kind: "set-wish-stress"; stressed: boolean }
+  | {
+      kind: "set-situation";
+      situation: SituationId;
+      lit: boolean;
+      until: SituationUntil | undefined;
+    }
+  | { kind: "end-fight-situations" }
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
@@ -130,6 +139,10 @@ export function applySheetEvent(
       return withSession(adjustCurrency(doc.session, event.delta));
     case "set-wish-stress":
       return withSession(setWishStress(doc, event.stressed));
+    case "set-situation":
+      return withSession(setSituation(doc, event.situation, event.lit, event.until));
+    case "end-fight-situations":
+      return withSession(endFightSituations(doc));
     case "drop-beast-form":
       return dropBeastForm(doc);
     case "set-readied-spell":

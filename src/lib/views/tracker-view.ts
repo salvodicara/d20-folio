@@ -33,6 +33,12 @@ import type {
 } from "@/lib/smart-tracker";
 import { resolveTrackers } from "@/lib/smart-tracker";
 import { coverReference, coverStateName, type CoverStateLevel } from "@/lib/cover-states";
+import {
+  SITUATIONAL_STATES,
+  situationalStateName,
+  type SituationId,
+  type SituationLasts,
+} from "@/lib/situational-states";
 import { surpriseStateName } from "@/lib/surprise-state";
 import { wishStressStateName } from "@/lib/wish-state";
 import type { CharacterDoc } from "@/types/character";
@@ -497,7 +503,10 @@ export interface AuraVM {
 export function grantSourceLabel(sourceId: string, locale: Locale): string {
   const cover = coverStateName(sourceId);
   if (cover) return cover[locale];
-  const state = surpriseStateName(sourceId) ?? wishStressStateName(sourceId);
+  const state =
+    surpriseStateName(sourceId) ??
+    wishStressStateName(sourceId) ??
+    situationalStateName(sourceId);
   if (state) return state[locale];
   // Race-trait session ids carry the `race:<raceId>:<trait.id>` shape — resolve
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a
@@ -521,6 +530,29 @@ export function coverText(
 ): { name: string; summary: string } {
   const row = coverReference(level);
   return { name: row?.name[locale] ?? level, summary: row?.summary[locale] ?? "" };
+}
+
+/** One situational attack chip, localized: its name, its SRD sentences (the
+ * chip hint) and the rule lines it shows while lit. */
+export interface SituationChipVM {
+  id: SituationId;
+  activeKey: string;
+  lasts: SituationLasts;
+  name: string;
+  summary: string;
+  notes: { id: string; text: string }[];
+}
+
+/** The situational attack chips in table order (`situational-states.ts`). */
+export function situationChipsView(locale: Locale): SituationChipVM[] {
+  return SITUATIONAL_STATES.map((state) => ({
+    id: state.id,
+    activeKey: state.grant.activeKey,
+    lasts: state.lasts,
+    name: state.label[locale],
+    summary: state.reference.map((line) => line.summary[locale]).join(" "),
+    notes: state.notes.map((note) => ({ id: note.id, text: note.summary[locale] })),
+  }));
 }
 
 /** Localized name for a `race:<raceId>:<trait.id>` trait session id (or null). */

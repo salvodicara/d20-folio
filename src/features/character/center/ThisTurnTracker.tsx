@@ -328,8 +328,9 @@ export function ThisTurnTracker({
     });
     if (!ok) return;
     useCombatStore.getState().endCombat();
-    // Surprise belongs to the fight that just ended.
+    // Surprise, Underwater and Mounted belong to the fight that just ended.
     useCharacterStore.getState().dispatch({ kind: "set-surprised", surprised: false });
+    useCharacterStore.getState().dispatch({ kind: "end-fight-situations" });
     // Close the character-world SOLO encounter through the kernel's own
     // end-encounter boundary (fail-closed no-op when none is running).
     endSoloWorldEncounter();

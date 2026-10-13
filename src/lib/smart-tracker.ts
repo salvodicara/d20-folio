@@ -328,6 +328,9 @@ export interface ActionSummary {
   /** How a successful attack reaches its target. This is a deterministic trigger
    * fact for reactive effects; geometry and a thrown-weapon override stay at the table. */
   attackMode?: "melee" | "ranged";
+  /** A melee weapon with the Thrown property: its attack can also be a ranged one.
+   * Set by the presenter from the weapon's range; situational attack rules read it. */
+  throwable?: true;
   /** Flat bonus that applies to exactly one damage roll of this cast. Kept separate
    * for multi-instance spells so the resolver cannot multiply it across darts/rays. */
   oneRollDamageBonus?: number;

@@ -70,6 +70,7 @@ import { spells } from "@/data/spells";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
 import { SENSE_KINDS, SPEED_KINDS, ADVANTAGE_MODES } from "@/lib/views/sheet-view";
 import { ATTACK_CLAUSE_SCOPES, AURA_AFFECTS } from "@/lib/grants";
+import { SITUATIONAL_ATTACK_SCOPES } from "@/lib/situational-states";
 import { MANEUVER_SLOTS } from "@/data/maneuvers";
 import { REPORT_TYPES, REPORT_SEVERITIES } from "@/features/report/types";
 import { ALL_TOOL_CHOICE_KINDS } from "@/data/background-equipment";
@@ -267,11 +268,13 @@ const FAMILIES: readonly Family[] = [
     // gloss) and the marked/cursed-target damage riders (`ActionRiders`). `"all"`
     // never reaches a key: it is the blanket scope that nets into the verdict.
     label: "combat.attackScope_${scope}",
-    source: "ATTACK_CLAUSE_SCOPES (@/lib/grants)",
+    source:
+      "ATTACK_CLAUSE_SCOPES (@/lib/grants) + SITUATIONAL_ATTACK_SCOPES (@/lib/situational-states)",
     keys: () =>
-      ATTACK_CLAUSE_SCOPES.filter((s) => s !== "all").map(
-        (s) => `combat.attackScope_${s}`
-      ),
+      [
+        ...ATTACK_CLAUSE_SCOPES.filter((s) => s !== "all"),
+        ...SITUATIONAL_ATTACK_SCOPES,
+      ].map((s) => `combat.attackScope_${s}`),
   },
 
   // ── equipment.* (category plural + currency abbr) ──────────────────────────

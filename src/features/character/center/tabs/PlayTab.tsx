@@ -77,11 +77,16 @@ import {
   deriveAdvantageChips,
   deriveAttackRollView,
   NO_ATTACK_ROLL,
+  type AdvantageChip,
   type AttackRollView,
   type RollState,
   type ResolvedActionSource,
 } from "@/lib/views/sheet-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
+import { deriveCharacter } from "@/lib/views/derive-character";
+import { litSituations } from "@/lib/situational-states";
+import { attackCardFacts, situationalAttackChips } from "@/lib/play/situations";
+import { SituationChips } from "../SituationChips";
 import { useToastStore } from "@/stores/toastStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
@@ -454,8 +459,8 @@ export function PlayTab() {
   // conditions' self-side clauses (`resolveConditionEffects`, e.g. Frightened →
   // Disadvantage on attacks). Display of engine truth — no new modifier math.
   // One character-level value applied to every attack-roll card's gloss.
-  const attackRoll = useMemo<AttackRollView>(() => {
-    if (!character) return NO_ATTACK_ROLL;
+  const baseAttackChips = useMemo<AdvantageChip[]>(() => {
+    if (!character) return [];
     const aggregate = aggregateCharacterGrants(character.character, character.session);
     const cond = resolveConditionEffects(effectiveSessionConditions(character.session));
     // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
@@ -484,8 +489,37 @@ export function PlayTab() {
     // scoped one is netted against that verdict and stated with its scope instead
     // (`combatGloss`), because the sheet models no enemies and cannot know whether
     // it applies to this swing.
-    return deriveAttackRollView(attackChips);
+    return attackChips;
   }, [character, round, nextAttackAdvantage]);
+  const attackRoll = useMemo(
+    () => (character ? deriveAttackRollView(baseAttackChips) : NO_ATTACK_ROLL),
+    [character, baseAttackChips]
+  );
+  // The lit situations (Unseen Target, Long Range, Underwater, …) reach each card by
+  // its own attack kind, so a card's verdict is netted per card.
+  const situations = useMemo(
+    () => (character ? litSituations(character.session) : []),
+    [character]
+  );
+  const hasSwimSpeed = useMemo(
+    () =>
+      !!character &&
+      situations.includes("underwater") &&
+      deriveCharacter(character).speeds.some((s) => s.kind === "swim" && s.rangeFt > 0),
+    [character, situations]
+  );
+  const attackRollFor = useCallback(
+    (action: ResolvedAction): AttackRollView =>
+      situations.length === 0
+        ? attackRoll
+        : deriveAttackRollView([
+            ...baseAttackChips,
+            ...situationalAttackChips(situations, attackCardFacts(action), {
+              hasSwimSpeed,
+            }),
+          ]),
+    [situations, attackRoll, baseAttackChips, hasSwimSpeed]
+  );
 
   // BG3 grammar (owner ruling 2026-07-10) — Extra Attack's "attacks remaining"
   // carries NO standing text ANYWHERE: while swings remain, every attack-capable
@@ -1074,6 +1108,10 @@ export function PlayTab() {
         />
       </div>
 
+      {/* What the table sees this turn (Unseen Target, Long Range, Underwater, …):
+          a lit chip nets into every attack card's verdict below. */}
+      {!sheetReadonly && <SituationChips />}
+
       {/* ── Pinned ──────────────────────────────────────────────────
           Promoted across types; honors the active filter + search (D13) — hidden
           when nothing pinned matches the chosen type, and narrowed to that type
@@ -1094,7 +1132,7 @@ export function PlayTab() {
                 attackCount={attackCountFor(action)}
                 attackOccupant={attackOccupantFor(action)}
                 slotData={slotPipsFor(action)}
-                attackRoll={attackRoll}
+                attackRoll={attackRollFor(action)}
                 higherLevelsFor={higherLevelsFor}
                 onSpendRider={spendRider}
                 depletedTrackers={depletedTrackers}
@@ -1132,7 +1170,7 @@ export function PlayTab() {
               attackCountFor={attackCountFor}
               attackOccupantFor={attackOccupantFor}
               slotPipsFor={slotPipsFor}
-              attackRoll={attackRoll}
+              attackRollFor={attackRollFor}
               higherLevelsFor={higherLevelsFor}
               onSpendRider={spendRider}
               depletedTrackers={depletedTrackers}
@@ -1157,7 +1195,7 @@ export function PlayTab() {
               attackCountFor={attackCountFor}
               attackOccupantFor={attackOccupantFor}
               slotPipsFor={slotPipsFor}
-              attackRoll={attackRoll}
+              attackRollFor={attackRollFor}
               higherLevelsFor={higherLevelsFor}
               onSpendRider={spendRider}
               depletedTrackers={depletedTrackers}
@@ -1206,7 +1244,7 @@ export function PlayTab() {
                   committed={action.source !== "spell" && reactionUsedId === action.id}
                   blockedReason={blockedReasonFor_(action, false)}
                   slotData={slotPipsFor(action)}
-                  attackRoll={attackRoll}
+                  attackRoll={attackRollFor(action)}
                   higherLevelsFor={higherLevelsFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
@@ -1247,7 +1285,7 @@ export function PlayTab() {
                   attackCount={attackCountFor(action)}
                   attackOccupant={attackOccupantFor(action)}
                   slotData={slotPipsFor(action)}
-                  attackRoll={attackRoll}
+                  attackRoll={attackRollFor(action)}
                   higherLevelsFor={higherLevelsFor}
                   onSpendRider={spendRider}
                   depletedTrackers={depletedTrackers}
@@ -1427,7 +1465,7 @@ function ActionGroup({
   attackCountFor,
   attackOccupantFor,
   slotPipsFor,
-  attackRoll,
+  attackRollFor,
   higherLevelsFor,
   onSpendRider,
   depletedTrackers,
@@ -1447,7 +1485,7 @@ function ActionGroup({
   attackCountFor: (action: ResolvedAction) => string | null;
   attackOccupantFor: (action: ResolvedAction) => boolean;
   slotPipsFor: (action: ResolvedAction) => SlotPips | undefined;
-  attackRoll: AttackRollView;
+  attackRollFor: (action: ResolvedAction) => AttackRollView;
   higherLevelsFor: (action: ResolvedAction) => string | null;
   onSpendRider: (action: ResolvedAction, rider: RiderVM) => void;
   depletedTrackers: ReadonlySet<string>;
@@ -1476,7 +1514,7 @@ function ActionGroup({
             attackCount={attackCountFor(action)}
             attackOccupant={attackOccupantFor(action)}
             slotData={slotPipsFor(action)}
-            attackRoll={attackRoll}
+            attackRoll={attackRollFor(action)}
             higherLevelsFor={higherLevelsFor}
             onSpendRider={onSpendRider}
             depletedTrackers={depletedTrackers}

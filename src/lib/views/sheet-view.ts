@@ -22,6 +22,7 @@ import type {
   NonWalkingSpeed,
 } from "@/lib/grants";
 import type { DamageDefenses } from "@/lib/damage-intake";
+import type { SituationalAttackScope } from "@/lib/situational-states";
 import type { AbilityCode, ConditionId, DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { SRD_LANGUAGE_IDS } from "@/lib/feat-language-choices";
@@ -732,9 +733,11 @@ export interface AdvantageChip {
    * PS-J — for an ATTACK chip narrower than "every attack roll you can make right
    * now": the {@link AttackClauseScope} the combat card STATES ("Adv. vs marked
    * target") instead of asserting a blanket verdict. Absent = blanket, and only a
-   * blanket chip may net into the card's Adv./Disadv. gloss.
+   * blanket chip may net into the card's Adv./Disadv. gloss. A situational chip
+   * (`situationalAttackChips`) may instead name the card's own attack kind it
+   * reaches ("if thrown"), already resolved for that card.
    */
-  scope?: AttackClauseScope;
+  scope?: AttackClauseScope | SituationalAttackScope;
 }
 
 /**
@@ -807,7 +810,9 @@ export interface AttackRollView {
 export type RollState = "advantage" | "disadvantage" | "none";
 
 /** Every scope except the blanket one (`"all"` never reaches a chip). */
-export type NarrowAttackScope = Exclude<AttackClauseScope, "all">;
+export type NarrowAttackScope =
+  | Exclude<AttackClauseScope, "all">
+  | SituationalAttackScope;
 
 /** No advantage, no disadvantage, nothing scoped — the cards' resting state. */
 export const NO_ATTACK_ROLL: AttackRollView = { state: "none", scoped: [] };

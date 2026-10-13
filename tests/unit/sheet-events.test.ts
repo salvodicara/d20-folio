@@ -28,6 +28,7 @@ import * as pins from "@/lib/play/pins";
 import * as ready from "@/lib/play/ready";
 import * as rests from "@/lib/play/rests";
 import * as states from "@/lib/play/states";
+import * as situations from "@/lib/play/situations";
 import * as surprise from "@/lib/play/surprise";
 import * as vitals from "@/lib/play/vitals";
 import * as wish from "@/lib/play/wish";
@@ -137,6 +138,22 @@ const CASES: {
   "set-wish-stress": [
     { kind: "set-wish-stress", stressed: true },
     () => at(wish.setWishStress(doc, true)),
+  ],
+  "set-situation": [
+    {
+      kind: "set-situation",
+      situation: "long-range",
+      lit: true,
+      until: { round: 3, phase: "turn-end" },
+    },
+    () =>
+      at(
+        situations.setSituation(doc, "long-range", true, { round: 3, phase: "turn-end" })
+      ),
+  ],
+  "end-fight-situations": [
+    { kind: "end-fight-situations" },
+    () => at(situations.endFightSituations(doc)),
   ],
   "drop-beast-form": [{ kind: "drop-beast-form" }, () => forms.dropBeastForm(doc)],
   "set-readied-spell": [

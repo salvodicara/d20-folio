@@ -328,6 +328,9 @@ function localizeSummary(
     ...rest,
     ...(extraDamage?.length ? { extraDamage } : {}),
     ...(weaponRange && !rest.attackMode ? { attackMode: weaponRange.kind } : {}),
+    ...(weaponRange?.kind === "melee" && weaponRange.thrown
+      ? { throwable: true as const }
+      : {}),
     ...(healingChip ? { healing: healingChip } : {}),
     ...(healingBreakdown ? { healingBreakdown } : {}),
     ...(healApply ? { healApply } : {}),
