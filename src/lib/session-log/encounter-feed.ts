@@ -3,8 +3,8 @@
  * with auto-attribution applied at read time. Pure: nothing here writes, so every device
  * derives the same feed from the same log.
  *
- * Auto-attribution: a player's declared action that landed (`hit`, `failed`, `saved`)
- * on a creature claims that creature's unattributed damage in the same round, one drop
+ * Auto-attribution: a player's declared action that landed (`hit`, `critical`, `failed`,
+ * `saved`) on a creature claims that creature's unattributed damage in the same round, one drop
  * per declared target, in log order. The amount is always the recorded one. When more
  * than one player could own a drop the line is marked uncertain and still asks "Who
  * struck?". A claimed declaration folds into the damage line; an unclaimed one (a miss,
@@ -40,7 +40,7 @@ const MARKERS = new Set<PlayEvent["kind"]>([
   "round-start",
   "encounter-end",
 ]);
-const LANDED = new Set(["hit", "failed", "saved"]);
+const LANDED = new Set(["hit", "critical", "failed", "saved"]);
 
 // The damage, heal and temp-hp variant (one member of the union shares the three kinds).
 type Damage = Extract<PlayEvent, { amount: number }>;

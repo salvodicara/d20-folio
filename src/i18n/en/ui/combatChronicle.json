@@ -3,6 +3,7 @@
     "damage": "{{target}} takes {{amount}}",
     "damageBy": "{{attacker}} hits {{target}} for {{amount}}",
     "damageByAction": "{{attacker}} uses {{action}} on {{target}}: {{amount}} damage",
+    "damageByActionOutcome": "{{attacker}}: {{action}} → {{target}}: {{outcome}}, {{amount}} damage",
     "missBy": "{{attacker}} misses {{target}}",
     "missByAction": "{{attacker}} uses {{action}} on {{target}}: missed",
     "uncertain": "Uncertain: more than one attacker could have landed this hit",

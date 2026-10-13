@@ -134,6 +134,32 @@ describe("effect-given — the follow-up line on another creature", () => {
   });
 });
 
+describe("an attack's declared result", () => {
+  it("the damage line says it: Goblin: critical, 14 damage", () => {
+    expect(
+      localize({
+        kind: "effect-given",
+        effect: "damage",
+        target: "monster-1",
+        targetName: "Goblin",
+        amount: 14,
+        outcome: "critical",
+      })
+    ).toBe(
+      'combatLog.givenAttackDamage {"target":"Goblin","outcome":"sessionReport.outcome.critical","amount":14}'
+    );
+  });
+
+  it("the attack's own line carries it; an unknown value is left out", () => {
+    const use = { ...SAMPLES["action-use"], outcome: "miss" } as CombatEvent;
+    expect(localize(use)).toMatch(
+      /^combatLog\.withOutcome .*"outcome":"sessionReport\.outcome\.miss"/
+    );
+    const odd = { ...SAMPLES["action-use"], outcome: "fumble" } as unknown as CombatEvent;
+    expect(localize(odd)).toMatch(/^combatLog\.actionUse /);
+  });
+});
+
 describe("on-cast regains — what a cast gave back", () => {
   it("names the refilled feature and the amount, or the slot level", () => {
     expect(localize(SAMPLES["tracker-regain"])).toMatch(

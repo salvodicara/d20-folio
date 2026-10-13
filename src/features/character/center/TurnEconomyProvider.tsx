@@ -57,7 +57,7 @@ import {
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
 import { DamageTray } from "@/features/character/center/DamageTray";
-import { damageTrayPlan } from "@/lib/play/damage-tray";
+import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
@@ -755,7 +755,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     action: ResolvedAction,
     trackerAmount?: number,
     attackOf?: { n: number; total: number },
-    targets: ReadonlyArray<string> = []
+    targets: ReadonlyArray<string> = [],
+    occurrenceId?: string
   ): () => void {
     action = withSelfRecipient(action, targets, selfCombatantId());
     const cs = useCharacterStore.getState();
@@ -862,7 +863,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       ...(attackOf ? { attackOf } : {}),
       ...(targets.length > 0 ? { targets: [...targets] } : {}),
     });
-    offerFollowUps(action, targets, loggedId);
+    offerFollowUps(action, targets, loggedId, occurrenceId);
     return () => {
       const c2 = useCharacterStore.getState();
       if (c2.readonly || c2.character?.id !== characterId) return;
@@ -901,7 +902,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   function offerFollowUps(
     action: ResolvedAction,
     targets: ReadonlyArray<string>,
-    castLogId: string | null
+    castLogId: string | null,
+    occurrenceId?: string
   ): void {
     const characterId = useCharacterStore.getState().character?.id;
     if (!characterId) return;
@@ -912,8 +914,21 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       actionName: action.name,
       source: action.nameLoc,
       castLogId,
+      actionId: action.id,
+      ...(occurrenceId ? { occurrenceId } : {}),
       plan,
     });
+  }
+
+  /** An attack at picked targets gets its turn occurrence now, so the Hit / Miss /
+   *  Critical the tray records afterwards binds to this exact use. */
+  function attackOccurrenceId(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>
+  ): string | undefined {
+    const turnKey = currentTurnKey();
+    if (!turnKey || targets.length === 0 || !rollsToHit(action)) return undefined;
+    return useCombatStore.getState().allocateOutcomeOccurrenceId(turnKey, action.id);
   }
 
   // Display record for the economy slot.
@@ -1062,7 +1077,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             action,
             undefined,
             { n, total },
-            applyResolution?.targets
+            applyResolution?.targets,
+            outcomeOccurrenceId
           );
           const groupEntry: SelectedAction = {
             id: "attack-group",
@@ -1178,7 +1194,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             action,
             trackerAmount,
             undefined,
-            applyResolution?.targets
+            applyResolution?.targets,
+            outcomeOccurrenceId
           );
           const revertPaymentBoundary =
             restoreSlotCast || (resourceCommit && itemResourceCommands)
@@ -2749,8 +2766,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         onConfirm={(targets) => {
           const request = targetRequest;
           setTargetRequest(null);
-          if (request && canUseCharacter(request.characterId))
-            request.commit(() => undefined, { action: request.action, targets });
+          if (!request || !canUseCharacter(request.characterId)) return;
+          const outcomeOccurrenceId = attackOccurrenceId(request.action, targets);
+          request.commit(() => undefined, {
+            action: request.action,
+            targets,
+            ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
+          });
         }}
         onCancel={() => setTargetRequest(null)}
       />

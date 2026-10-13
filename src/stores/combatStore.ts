@@ -295,6 +295,14 @@ interface CombatState {
   /** Allocate a replayable occurrence id and advance the persisted turn cursor. */
   allocateOutcomeOccurrenceId: (turnKey: string, actionId: string) => string;
   /**
+   * Add the facts reviewed AFTER a use committed (the damage tray's Hit / Miss /
+   * Critical): only receipts whose occurrence a live entry of this turn owns, the
+   * same rule the persisted codec keeps. Returns the ids actually added.
+   */
+  recordOutcomes: (outcomes: ReadonlyArray<CombatOutcomeReceipt>) => string[];
+  /** Take receipts back by id (undoing the tray's apply). */
+  withdrawOutcomes: (ids: ReadonlyArray<string>) => void;
+  /**
    * Commit an action into its economy slot (B6 — APPENDS to the slot's list).
    * Budgeted slots (action/bonus) append only while a slot remains free
    * (`length < budget`); the free slot is uncapped. A re-commit of the SAME id is
@@ -591,6 +599,36 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     });
     set({ outcomeOrdinal: allocated.nextOrdinal });
     return allocated.id;
+  },
+
+  recordOutcomes: (outcomes) => {
+    if (sheetReadonly() || outcomes.length === 0) return [];
+    const state = get();
+    const owners = new Map<string, string>();
+    for (const entry of Object.values(state.selected).flat())
+      if (entry.outcomeOccurrenceId) owners.set(entry.outcomeOccurrenceId, entry.id);
+    for (const swing of state.attackSwings)
+      if (swing.outcomeOccurrenceId)
+        owners.set(swing.outcomeOccurrenceId, swing.actionId);
+    if (state.reactionUsedId && state.reactionOutcomeOccurrenceId)
+      owners.set(state.reactionOutcomeOccurrenceId, state.reactionUsedId);
+    const seen = new Set(state.outcomeReceipts.map(({ id }) => id));
+    const added = outcomes.filter((outcome) => {
+      if (owners.get(outcome.occurrenceId) !== outcome.actionId || seen.has(outcome.id))
+        return false;
+      seen.add(outcome.id);
+      return true;
+    });
+    if (added.length > 0) set({ outcomeReceipts: [...state.outcomeReceipts, ...added] });
+    return added.map(({ id }) => id);
+  },
+
+  withdrawOutcomes: (ids) => {
+    if (ids.length === 0) return;
+    const drop = new Set(ids);
+    set((state) => ({
+      outcomeReceipts: state.outcomeReceipts.filter(({ id }) => !drop.has(id)),
+    }));
   },
 
   selectAction: (action, outcomes) => {

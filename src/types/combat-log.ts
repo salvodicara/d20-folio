@@ -39,6 +39,10 @@ import type { LocText } from "@/lib/loc-text";
  */
 export type LogSlot = ActionType;
 
+/** What the attacker declared for one attack roll against one target (the table
+ *  rolled it; the app never does). A critical hit doubles the damage dice. */
+export type AttackOutcome = "hit" | "miss" | "critical";
+
 /**
  * One structured combat-log event. Each variant carries ONLY ids/tokens + numbers
  * (and the documented free-text action/spell labels) — never a pre-localized
@@ -65,6 +69,8 @@ export type CombatEvent =
       /** Who the action was aimed at, when the player says (`pc-<uid>` / `monster-<n>`).
        *  Optional by design: often completed after the tap, or never. */
       targets?: string[];
+      /** The attack's declared result, when the damage tray said one for every target. */
+      outcome?: AttackOutcome;
     }
   /** A reaction was used (always the reaction slot → red). */
   | {
@@ -73,6 +79,8 @@ export type CombatEvent =
       effect: ActionEffect;
       /** Who the reaction was aimed at, when the player says (see `action-use`). */
       targets?: string[];
+      /** The attack's declared result (see `action-use`). */
+      outcome?: AttackOutcome;
     }
   /**
    * An on-hit RIDER was spent on an attack (Psi Warrior Psionic Strike → a
@@ -123,6 +131,8 @@ export type CombatEvent =
       amount?: number;
       conditionId?: string;
       source?: LocText;
+      /** The attack roll's result against this target ("critical, 14 damage"). */
+      outcome?: AttackOutcome;
     }
   /** A condition was lost / removed. */
   | { kind: "condition-loss"; conditionId: string }

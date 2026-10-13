@@ -148,4 +148,61 @@ describe("renderSessionReport", () => {
       expect(line((k, a) => i18n.t(k, a))).toBe(expected);
     }
   });
+
+  it("an attack's damage says its roll: Spada lunga → Goblin: critico, 14", async () => {
+    const strike: LogItem[] = [
+      ev("dm", {
+        kind: "encounter-start",
+        encounterId: "9",
+        names: { "monster-1": "Goblin", "monster-2": "Goblin Chief" },
+      }),
+      ev("dm", { kind: "round-start", round: 1 }),
+      ev("ana", {
+        kind: "action",
+        actor: "pc-ana",
+        source: { custom: "Spada lunga" },
+        targets: ["monster-1"],
+        outcome: "critical",
+      }),
+      ev("ana", {
+        kind: "damage",
+        amount: 14,
+        actor: "pc-ana",
+        target: "monster-1",
+        source: { custom: "Spada lunga" },
+        provenance: "manual",
+        outcome: "critical",
+      }),
+      ev("ana", {
+        kind: "action",
+        actor: "pc-ana",
+        source: { custom: "Spada lunga" },
+        targets: ["monster-2"],
+        outcome: "miss",
+      }),
+      // A value this reader does not know is left out, never printed raw.
+      ev("ana", {
+        kind: "action",
+        actor: "pc-ana",
+        source: { custom: "Spada lunga" },
+        outcome: "fumble" as "hit",
+      }),
+    ];
+    const i18n = i18next.createInstance();
+    await i18n.init({
+      lng: "it",
+      resources: { it: { translation: { ...it_, ...itChronicle } } },
+      interpolation: { escapeValue: false },
+    });
+    const text = renderSessionReport(
+      buildReport(foldSession(strike, { dmUid: "dm" })),
+      "S",
+      (k, a) => i18n.t(k, a),
+      names
+    );
+    expect(text).toContain("- Ana usa Spada lunga su Goblin — critico");
+    expect(text).toContain("- Ana: Spada lunga → Goblin: critico, 14");
+    expect(text).toContain("- Ana usa Spada lunga su Goblin Chief — mancato");
+    expect(text).toMatch(/- Ana usa Spada lunga\n|- Ana usa Spada lunga$/);
+  });
 });

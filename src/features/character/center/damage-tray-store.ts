@@ -13,8 +13,13 @@ export interface DamageTrayOffer {
   /** The used action's display name and its stable reference for the log source. */
   actionName: string;
   source: LocText;
-  /** The use's own log line: its undo withdraws the tray. */
+  /** The use's own log line: its undo withdraws the tray; Apply writes the
+   *  attack's shared result onto it. */
   castLogId: string | null;
+  /** The used action's id and its turn occurrence, which the attack's outcome
+   *  receipts bind to (absent when the use sits outside the turn's economy). */
+  actionId: string;
+  occurrenceId?: string;
   plan: DamageTrayPlan;
 }
 

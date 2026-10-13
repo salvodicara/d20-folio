@@ -22,6 +22,8 @@
     "slotRegain": "Regained a level {{level}} spell slot",
     "givenHeal": "Healed {{target}} {{amount}} HP",
     "givenDamage": "{{target}} took {{amount}} damage",
+    "givenAttackDamage": "{{target}}: {{outcome}}, {{amount}} damage",
+    "withOutcome": "{{line}}: {{outcome}}",
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
     "givenCondition": "{{target}} failed the save: {{condition}}",
     "unknownEvent": "An entry from a newer version of the app"

@@ -81,6 +81,18 @@ describe("localizeFeedEvent", () => {
         source: { custom: "Longsword" },
       })
     ).toContain("combatChronicle.damageByAction");
+    expect(
+      line({
+        kind: "damage",
+        amount: 14,
+        target: "monster-1",
+        actor: "pc-mara",
+        source: { custom: "Longsword" },
+        outcome: "critical",
+      })
+    ).toContain(
+      'combatChronicle.damageByActionOutcome {"attacker":"«pc-mara»","target":"«monster-1»","amount":14,"action":"Longsword","outcome":"sessionReport.outcome.critical"}'
+    );
   });
 
   it("shows the HP readout only when the caller passes it", () => {

@@ -22,6 +22,8 @@
     "slotRegain": "Recuperato uno slot incantesimo di livello {{level}}",
     "givenHeal": "Curati {{amount}} PF a {{target}}",
     "givenDamage": "{{target}} ha subito {{amount}} danni",
+    "givenAttackDamage": "{{target}}: {{outcome}}, {{amount}} danni",
+    "withOutcome": "{{line}}: {{outcome}}",
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",
     "givenCondition": "{{target}} ha fallito il TS: {{condition}}",
     "unknownEvent": "Voce registrata da una versione più nuova dell'app"

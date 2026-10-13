@@ -36,7 +36,7 @@ const declare = (
   id: string,
   uid: string,
   targets: string[],
-  outcome: "hit" | "miss" = "hit"
+  outcome: "hit" | "miss" | "critical" = "hit"
 ) =>
   item(id, uid, {
     kind: "action",
@@ -92,6 +92,21 @@ describe("encounterFeed — auto-attribution (a view, never stored)", () => {
     expect(line && needsAttribution(line)).toBe(false);
     // The log itself is untouched: the line still records no attacker.
     expect(line?.logged).toEqual({ kind: "damage", amount: 8, target: "monster-1" });
+  });
+
+  it("a declared critical hit claims the drop like a hit; a miss never does", () => {
+    const [crit] = feed(
+      round(2),
+      declare("a", "mara", ["monster-1"], "critical"),
+      dmg("d", "monster-1")
+    );
+    expect(crit).toMatchObject({ id: "d", auto: true, event: { actor: "pc-mara" } });
+    const missed = feed(
+      round(2),
+      declare("a", "mara", ["monster-1"], "miss"),
+      dmg("d", "monster-1")
+    );
+    expect(missed.map((l) => l.id)).toEqual(["a", "d"]);
   });
 
   it("only pairs within the same round — another round stays pending", () => {

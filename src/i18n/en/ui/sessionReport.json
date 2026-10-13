@@ -11,9 +11,11 @@
     "outcome": {
       "hit": "hit",
       "miss": "miss",
+      "critical": "critical",
       "saved": "saved",
       "failed": "failed the save"
     },
+    "attackDamage": "{{actor}}: {{source}} → {{target}}: {{outcome}}, {{amount}}",
     "damage": "{{target}} takes {{amount}} damage",
     "damageBy": "{{actor}} deals {{amount}} damage to {{target}}",
     "heal": "{{target}} regains {{amount}} HP",

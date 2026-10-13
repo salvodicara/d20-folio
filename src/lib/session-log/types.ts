@@ -34,7 +34,9 @@ export type PlayEvent =
       source?: LocText;
       slot?: ActionType;
       targets?: CombatantId[];
-      outcome?: "hit" | "miss" | "saved" | "failed";
+      /** One result for every target ("critical" = a critical hit). Readers ignore a
+       *  value they do not know. */
+      outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
     }
   | {
       kind: "damage" | "heal" | "temp-hp";
@@ -43,6 +45,8 @@ export type PlayEvent =
       actor?: CombatantId;
       source?: LocText;
       provenance?: RollProvenance;
+      /** The attack roll that dealt this damage: "Longsword → Goblin: critical, 14". */
+      outcome?: "hit" | "miss" | "critical";
       /** "Who struck?" answered with "no one": the attacker is deliberately unknown. */
       unattributed?: true;
     }

@@ -139,6 +139,9 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
   }
 }
 
+/** The attack results a line can say; another stored value is left out. */
+const ATTACK_RESULTS = new Set(["hit", "miss", "critical"]);
+
 /**
  * Localize a `CombatEvent` to its display LINE. Pure: `t` + the condition-name
  * resolver are injected, so this is unit-testable with trivial fakes and carries
@@ -154,19 +157,32 @@ export function localizeCombatEvent(
   resolveActionRef: ResolveActionRef,
   resolveRiderRef: ResolveRiderRef
 ): string {
+  // The attack's declared result, appended to its line ("Used Longsword — critical").
+  const withOutcome = (line: string, outcome: string | undefined): string =>
+    outcome && ATTACK_RESULTS.has(outcome)
+      ? t("combatLog.withOutcome", {
+          line,
+          outcome: t(`sessionReport.outcome.${outcome}`),
+        })
+      : line;
   switch (event.kind) {
     case "action-use":
       // ATTACK-PIPS — an Extra-Attack swing appends its count ("… — attack 2 of 2").
-      if (event.attackOf) {
-        return t("combatLog.actionUseAttackOf", {
-          name: resolveActionRef(event.action),
-          n: event.attackOf.n,
-          total: event.attackOf.total,
-        });
-      }
-      return t("combatLog.actionUse", { name: resolveActionRef(event.action) });
+      return withOutcome(
+        event.attackOf
+          ? t("combatLog.actionUseAttackOf", {
+              name: resolveActionRef(event.action),
+              n: event.attackOf.n,
+              total: event.attackOf.total,
+            })
+          : t("combatLog.actionUse", { name: resolveActionRef(event.action) }),
+        event.outcome
+      );
     case "reaction-use":
-      return t("combatLog.actionUse", { name: resolveActionRef(event.action) });
+      return withOutcome(
+        t("combatLog.actionUse", { name: resolveActionRef(event.action) }),
+        event.outcome
+      );
     case "rider-use":
       return t("combatLog.riderUse", {
         rider: resolveRiderRef(event.rider),
@@ -250,14 +266,20 @@ export function localizeCombatEvent(
             target: event.targetName,
             condition: resolveConditionName(event.conditionId ?? ""),
           })
-        : t(
-            event.effect === "heal"
-              ? "combatLog.givenHeal"
-              : event.effect === "damage"
-                ? "combatLog.givenDamage"
-                : "combatLog.givenTempHp",
-            { target: event.targetName, amount: event.amount ?? 0 }
-          );
+        : event.effect === "damage" && event.outcome && ATTACK_RESULTS.has(event.outcome)
+          ? t("combatLog.givenAttackDamage", {
+              target: event.targetName,
+              outcome: t(`sessionReport.outcome.${event.outcome}`),
+              amount: event.amount ?? 0,
+            })
+          : t(
+              event.effect === "heal"
+                ? "combatLog.givenHeal"
+                : event.effect === "damage"
+                  ? "combatLog.givenDamage"
+                  : "combatLog.givenTempHp",
+              { target: event.targetName, amount: event.amount ?? 0 }
+            );
     case "legacy":
       return event.text;
   }
