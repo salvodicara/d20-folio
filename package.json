@@ -40,7 +40,7 @@
     "visual:review": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; playwright test --config=playwright.visual.config.ts tests/visual/curated.spec.ts \"$@\"' --",
     "visual:motion": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; playwright test --config=playwright.visual.config.ts tests/visual/motion.spec.ts \"$@\"' --",
     "qa:perf": "node scripts/qa/perf-probe.ts",
-    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-d20folio 'pnpm exec vitest run --config vitest.rules.config.ts'",
+    "test:rules": "firebase emulators:exec --only auth,firestore,storage --project demo-d20folio 'pnpm exec vitest run --config vitest.rules.config.ts'",
     "typecheck": "tsc -b",
     "changeset": "changeset",
     "changeset:status": "changeset status",

@@ -34,9 +34,16 @@ const UPDATING_SNAPSHOTS = process.argv.some(
     arg === "--update-snapshots=all" ||
     arg === "--update-snapshots=changed"
 );
+// Lanes that only run when their variable is set. Kept out of the default run, not
+// merely skipped inside it: Playwright shards by test count, so a skipped test still
+// takes a shard's slot (the 1,068-test bug sweep left shards 1–3 with nothing to run
+// and pushed the rest to the 30-minute job limit).
 const OFF_LANES = [
   ...(process.env.POLISH_SHOT_DIR ? [] : [/_polish-shots\.spec\.ts/]),
   ...(process.env.VISUAL || UPDATING_SNAPSHOTS ? [] : [/visual-full\.spec\.ts/]),
+  ...(process.env.BUG_SWEEP_DIR ? [] : [/_bug-sweep\.spec\.ts/]),
+  ...(process.env.SCENARIO_SHOT_DIR ? [] : [/_scenario-shots\.spec\.ts/]),
+  ...(process.env.SHOT_DIR ? [] : [/_identity-shots\.spec\.ts/]),
 ];
 // Boot the SW server unless the run is explicitly filtered to non-SW projects only.
 const NEEDS_SW_SERVER =
