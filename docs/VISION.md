@@ -7,7 +7,9 @@ Concordata con il proprietario. Ogni fase si dettaglia con `grill-with-docs`, po
 
 Scheda digitale, compagno di sessione e memoria del gioco per due gruppi che giocano al tavolo o su
 Owlbear e altri VTT. Folio non sostituisce il VTT (mappe, token, video): fa scheda, combattimento,
-campagna e resoconto. Prodotto per noi, non commerciale. Dadi veri, l'app non tira.
+campagna e resoconto. Dal 16/10/2026 è un prodotto per tutti, a partire dai principianti: pubblico,
+target e prezzo sono in [strategy/2026-10-16-product-brief.md](strategy/2026-10-16-product-brief.md).
+Per ora dadi veri: l'app non tira.
 
 **Obiettivo d'esperienza:** giocare senza pensare ai calcoli né prendere appunti, senza perdere la
 libertà del tavolo (homebrew, override). Il DM si diverte come gli altri: la traccia di tutto si
