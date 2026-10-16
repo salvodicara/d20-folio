@@ -14,7 +14,7 @@
  * HEALTH panel, never here.
  */
 
-import { useMemo, useState, useRef, lazy, Suspense } from "react";
+import { useMemo, useState, useRef, lazy, Suspense, type ReactNode } from "react";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Plus, Minus, X, Skull, Sparkles } from "lucide-react";
@@ -1045,7 +1045,12 @@ export function ResourceRail() {
               shownResistances.length > 0 ||
               sourceResistances.length > 0) && (
               <DefenseRow
-                label={t("abilities.resistancesLabel")}
+                label={
+                  <GlossaryTip
+                    term="resistance"
+                    rubric={t("abilities.resistancesLabel")}
+                  />
+                }
                 value={[
                   ...(allDamageResistance ? [t("character.damageAll")] : []),
                   ...shownResistances.map(dmgLabel),
@@ -1062,7 +1067,9 @@ export function ResourceRail() {
             )}
             {defViews.immunity.effective.length > 0 && (
               <DefenseRow
-                label={t("abilities.immunitiesLabel")}
+                label={
+                  <GlossaryTip term="immunity" rubric={t("abilities.immunitiesLabel")} />
+                }
                 value={damageImmunities.map(dmgLabel).join(", ")}
                 chips={
                   isEdit ? buildOverrideAddedChips("immunity") : sessionChips("immunity")
@@ -1071,7 +1078,12 @@ export function ResourceRail() {
             )}
             {defViews.vulnerability.effective.length > 0 && (
               <DefenseRow
-                label={t("abilities.vulnerabilitiesLabel")}
+                label={
+                  <GlossaryTip
+                    term="vulnerability"
+                    rubric={t("abilities.vulnerabilitiesLabel")}
+                  />
+                }
                 value={vulnerabilities.map(dmgLabel).join(", ")}
                 chips={
                   isEdit
@@ -1164,7 +1176,11 @@ export function ResourceRail() {
             {advChips.map((c, i) => (
               <DefenseRow
                 key={`${c.sourceId}-${c.mode}-${i}`}
-                label={t(`abilities.${c.mode}`)}
+                label={
+                  <GlossaryTip term={c.mode} rubric={t(`common.${c.mode}`)}>
+                    {t(`abilities.${c.mode}`)}
+                  </GlossaryTip>
+                }
                 // A while-active-gated clause (Rage's STR advantage, Reckless
                 // Attack) reads "… · active" — the SAME `combat.whileActiveNote`
                 // suffix the weapon-damage breakdown shows.
@@ -1192,7 +1208,11 @@ export function ResourceRail() {
             {incomingAttackNotes.map((n, i) => (
               <DefenseRow
                 key={`${n.sourceId}-incoming-${i}`}
-                label={t("abilities.disadvantage")}
+                label={
+                  <GlossaryTip term="disadvantage" rubric={t("common.disadvantage")}>
+                    {t("abilities.disadvantage")}
+                  </GlossaryTip>
+                }
                 value={
                   n.whileActive
                     ? `${n.description} · ${t("combat.whileActiveNote")}`
@@ -1206,7 +1226,11 @@ export function ResourceRail() {
             {incomingDefenseNotes.map((n, i) => (
               <DefenseRow
                 key={`${n.sourceId}-incoming-def-${i}`}
-                label={t("abilities.advantage")}
+                label={
+                  <GlossaryTip term="advantage" rubric={t("common.advantage")}>
+                    {t("abilities.advantage")}
+                  </GlossaryTip>
+                }
                 value={
                   n.whileActive
                     ? `${n.description} · ${t("combat.whileActiveNote")}`
@@ -1439,7 +1463,8 @@ function DefenseRow({
   value,
   chips,
 }: {
-  label: string;
+  /** The row's name; a core combat term's name is its glossary tip. */
+  label: ReactNode;
   value: string;
   chips?: DefenseChipVM[];
 }) {

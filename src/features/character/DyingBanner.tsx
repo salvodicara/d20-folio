@@ -35,6 +35,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Heart, HeartCrack, ShieldPlus, Skull } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
@@ -177,7 +178,7 @@ export function DyingBanner() {
           </span>
           {rollMode && (
             <span className="rounded-sm border border-border-subtle px-1.5 py-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-secondary">
-              {t(`combat.rollMode.${rollMode}`)}
+              <GlossaryTip term={rollMode} rubric={t(`combat.rollMode.${rollMode}`)} />
             </span>
           )}
           <EnteredD20Faces
