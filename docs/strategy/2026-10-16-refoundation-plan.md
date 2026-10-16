@@ -8,6 +8,14 @@ shape: [target architecture](2026-10-16-target-architecture.md).
 
 - **Shippable on its own.** Each phase ends on `main`, live, with the app working throughout. No
   phase waits for a later one; that was the v2 mistake.
+- **No feature is lost (owner 2026-10-16).** Guided creation, level-up, automation, homebrew, share
+  links, campaign tools: every phase keeps them and improves them. Only stale docs and dead code are
+  deleted. Two things prove parity on every phase:
+  - the end-to-end journeys (create, level up, fight, rest, campaign session) stay green;
+  - the `SURFACES.md` inventory of 170 surfaces and its guard (#236) still pass.
+
+  A redesigned screen keeps every action of the screen it replaces.
+
 - **Live data stays safe.** Any change to stored data goes snapshot → dry-run → idempotent apply →
   verify. The agent does the snapshot and the dry-run; **each apply to live data needs the owner's
   yes**. The schema never downgrades, and old documents keep reading until a migration has run.
