@@ -59,12 +59,10 @@ import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
-import { useTurnState } from "@/features/character/center/turn-state";
 import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { formatModifier, localeDistance } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
 import {
   canCastSpellWithSlots,
@@ -74,10 +72,8 @@ import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   attackScopeReachesCard,
-  deriveAdvantageChips,
   deriveAttackRollView,
   NO_ATTACK_ROLL,
-  type AdvantageChip,
   type AttackRollView,
   type RollState,
   type ResolvedActionSource,
@@ -87,6 +83,7 @@ import { deriveCharacter } from "@/lib/views/derive-character";
 import { litSituations } from "@/lib/situational-states";
 import { attackCardFacts, situationalAttackChips } from "@/lib/play/situations";
 import { SituationChips } from "../SituationChips";
+import { useAttackRollView, useBaseAttackChips } from "../use-attack-roll";
 import { useToastStore } from "@/stores/toastStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
@@ -102,7 +99,6 @@ import {
   resolveTrackers,
   resolveCunningStrikeOptions,
   resolveReplaceAttackWithCast,
-  armorDisadvantageClauses,
   resolveActiveStateBlocker,
   type ResolvedAction,
 } from "@/lib/smart-tracker";
@@ -351,9 +347,6 @@ export function PlayTab() {
   );
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
-  // The sheet's round: the DM's encounter round in a shared fight, else the solo one.
-  const { round } = useTurnState();
-  const nextAttackAdvantage = useCombatStore((s) => s.nextAttackAdvantage);
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
   const togglePinnedAction = useCharacterStore((s) => s.togglePinnedAction);
   // The shared turn-economy owner: commit / undo (one source of the per-slot
@@ -461,48 +454,9 @@ export function PlayTab() {
 
   const dispatchAction = commitAction;
 
-  // Inline-modifier state — the engine-derived advantage / disadvantage on the
-  // character's ATTACK rolls right now, netted (RAW): grant clauses
-  // (`deriveAdvantageChips` over the aggregate) merged with the active
-  // conditions' self-side clauses (`resolveConditionEffects`, e.g. Frightened →
-  // Disadvantage on attacks). Display of engine truth — no new modifier math.
-  // One character-level value applied to every attack-roll card's gloss.
-  const baseAttackChips = useMemo<AdvantageChip[]>(() => {
-    if (!character) return [];
-    const aggregate = aggregateCharacterGrants(character.character, character.session);
-    const cond = resolveConditionEffects(effectiveSessionConditions(character.session));
-    // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
-    // STR/DEX attacks (+ checks/saves); merged like the condition clauses so it
-    // nets into the attack-roll state alongside Frightened/Poisoned/etc.
-    const armorDis = armorDisadvantageClauses(character);
-    const attackChips = deriveAdvantageChips(aggregate, {
-      advantages: cond.advantages,
-      disadvantages: [...cond.disadvantages, ...armorDis],
-    })
-      .filter((c) => c.rollType === "attack")
-      // FRONTIER-S3 — a `round1` clause (Assassinate's first-round attack
-      // advantage) applies ONLY in combat round 1, then auto-clears from round 2+.
-      // A permanent clause has no `round1` flag and always applies.
-      .filter((c) => !c.round1 || round === 1);
-    if (nextAttackAdvantage) {
-      attackChips.push({
-        sourceId: "turn-next-attack-advantage",
-        mode: "advantage",
-        rollType: "attack",
-        vs: "next-attack",
-        description: { lit: { en: "Next attack", it: "Prossimo attacco" } },
-      });
-    }
-    // PS-J — ONLY a blanket clause (no `scope`) may become the card's verdict; a
-    // scoped one is netted against that verdict and stated with its scope instead
-    // (`combatGloss`), because the sheet models no enemies and cannot know whether
-    // it applies to this swing.
-    return attackChips;
-  }, [character, round, nextAttackAdvantage]);
-  const attackRoll = useMemo(
-    () => (character ? deriveAttackRollView(baseAttackChips) : NO_ATTACK_ROLL),
-    [character, baseAttackChips]
-  );
+  // The netted attack-roll state, shared with the status row (use-attack-roll.ts).
+  const baseAttackChips = useBaseAttackChips();
+  const attackRoll = useAttackRollView(baseAttackChips);
   // The lit situations (Unseen Target, Long Range, Underwater, …) reach each card by
   // its own attack kind, so a card's verdict is netted per card.
   const situations = useMemo(
