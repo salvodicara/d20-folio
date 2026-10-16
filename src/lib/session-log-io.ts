@@ -3,6 +3,10 @@
  * holds `{ schema: 1, log: LogItem[], lastAt }`. Appends use `arrayUnion` inside a merge
  * write, which works offline, creates the document on the first gesture and gives every
  * client the same order. The rules allow exactly one own item per write.
+ *
+ * Phase 3b (docs/architecture/session-log-per-event.md): readers also accept one
+ * document per item under `{sessionId}/items/{itemId}`, read in server order
+ * (`serverAt`) after the head's array. Writers still append to the array.
  */
 
 import {
@@ -14,8 +18,11 @@ import {
   onSnapshot,
   orderBy,
   query,
+  serverTimestamp,
   setDoc,
+  Timestamp,
   type Firestore,
+  type QuerySnapshot,
 } from "firebase/firestore";
 
 import type { LogItem, SessionHead, SessionLogStore } from "@/lib/session-log";
@@ -32,11 +39,36 @@ function isLogItem(value: unknown): value is LogItem {
   return item.type === "retract" && typeof item.target === "string";
 }
 
+/** The document a per-event item is stored as: the item, stamped with the server's time. */
+export function perEventItemDoc(item: LogItem): Record<string, unknown> {
+  return { ...item, serverAt: serverTimestamp() };
+}
+
+/** The head's array items, in their order. */
+function arrayItems(log: unknown): LogItem[] {
+  return Array.isArray(log) ? log.filter(isLogItem) : [];
+}
+
+/** The per-event items in server order, then by id. A write still pending on this
+ *  device counts at its estimated server time, so it shows at once. */
+function perEventItems(snap: QuerySnapshot): LogItem[] {
+  return snap.docs
+    .map((d) => {
+      const { serverAt, ...item } = d.data({ serverTimestamps: "estimate" });
+      const ms = serverAt instanceof Timestamp ? serverAt.toMillis() : Number.MAX_VALUE;
+      return { id: d.id, ms, item: item };
+    })
+    .sort((a, b) => a.ms - b.ms || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map((entry) => entry.item)
+    .filter(isLogItem);
+}
+
 export function createFirestoreSessionLogStore(
   db: Firestore,
   campaignId: string
 ): SessionLogStore {
   const logs = collection(db, "campaigns", campaignId, "sessionLogs");
+  const items = (sessionId: string) => collection(logs, sessionId, "items");
   return {
     async latest(): Promise<SessionHead | null> {
       const snap = await getDocs(query(logs, orderBy("lastAt", "desc"), limit(1)));
@@ -45,14 +77,16 @@ export function createFirestoreSessionLogStore(
     },
     async recent(count) {
       const snap = await getDocs(query(logs, orderBy("lastAt", "desc"), limit(count)));
-      return snap.docs.map((d) => {
-        const log: unknown = d.data().log;
-        return {
+      return Promise.all(
+        snap.docs.map(async (d) => ({
           id: d.id,
           lastAt: Number(d.data().lastAt),
-          items: Array.isArray(log) ? log.filter(isLogItem) : [],
-        };
-      });
+          items: [
+            ...arrayItems(d.data().log),
+            ...perEventItems(await getDocs(items(d.id))),
+          ],
+        }))
+      );
     },
     async append(sessionId, item) {
       await setDoc(
@@ -62,14 +96,32 @@ export function createFirestoreSessionLogStore(
       );
     },
     subscribe(sessionId, onItems, onError) {
-      return onSnapshot(
+      // Two listeners, one log: emit once both have answered, then on every change.
+      let head: LogItem[] | null = null;
+      let perEvent: LogItem[] | null = null;
+      const emit = () => {
+        if (head && perEvent) onItems([...head, ...perEvent]);
+      };
+      const stopHead = onSnapshot(
         doc(logs, sessionId),
         (snap) => {
-          const log: unknown = snap.data()?.log;
-          onItems(Array.isArray(log) ? log.filter(isLogItem) : []);
+          head = arrayItems(snap.data()?.log);
+          emit();
         },
         (error) => onError?.(error)
       );
+      const stopItems = onSnapshot(
+        items(sessionId),
+        (snap) => {
+          perEvent = perEventItems(snap);
+          emit();
+        },
+        (error) => onError?.(error)
+      );
+      return () => {
+        stopHead();
+        stopItems();
+      };
     },
   };
 }
