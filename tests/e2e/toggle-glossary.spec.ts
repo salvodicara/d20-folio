@@ -68,9 +68,14 @@ for (const [size, viewport] of Object.entries(SIZES)) {
       timeout: 45_000,
     });
     await freezeMotion(page);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(
-      viewport.width
-    );
+    // No horizontal overflow: content wider than the visible area is positive. On
+    // Linux CI the classic vertical scrollbar makes a page that fits report a
+    // negative difference, so only a positive one is an overflow.
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      )
+    ).toBeLessThanOrEqual(0);
 
     // Movement meter: the mark rides right after ×2, and the economy row keeps its
     // tokens on one line wherever it did before (390+ wide).

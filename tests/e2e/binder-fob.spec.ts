@@ -52,7 +52,7 @@ async function loadCockpit(page: Page, theme: Theme = "dark"): Promise<void> {
 async function castHealingWord(page: Page): Promise<void> {
   await page.getByRole("button", { name: /Expand: Healing Word/i }).click();
   const detail = page.getByRole("region", { name: /Healing Word/i });
-  await detail.getByRole("button", { name: /cast/i }).first().click();
+  await detail.getByRole("button", { name: /^cast/i }).first().click();
   const modal = page.getByRole("dialog");
   await modal.getByRole("button", { name: /Level 1 slot \(base\)/i }).click();
   // The damage tray follows a heal cast; skipping it leaves the cast logged.
