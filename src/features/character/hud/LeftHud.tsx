@@ -46,6 +46,7 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { localeDistance } from "@/lib/utils";
 import { retroactiveConHpMax } from "@/lib/character-infer";
 import { RailSection } from "../RailSection";
+import { ResourceRail } from "../molecules/ResourceRail";
 import { patchCharacter } from "../patch-character";
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData } from "@/types/character";
@@ -613,6 +614,9 @@ export function LeftHud() {
           </div>
         </div>
       </RailSection>
+      {/* What you look up rather than spend (owner 2026-10-16): defenses,
+          advantages, passives and proficiencies sit under the senses. */}
+      <ResourceRail part="reference" />
     </div>
   );
 }

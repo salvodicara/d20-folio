@@ -148,7 +148,14 @@ const SummonedMonstersPanel = lazy(() =>
   ]).then(([m]) => ({ default: m.SummonedMonstersPanel }))
 );
 
-export function ResourceRail() {
+/**
+ * The rail renders in two places (owner 2026-10-16, one home per kind of fact):
+ * `play` — what you SPEND while playing (slots, trackers, companions, inspiration,
+ * notes), the right column; `reference` — what you LOOK UP (defenses, advantages,
+ * passives, proficiencies), under the senses in the left column. One derivation
+ * feeds both.
+ */
+export function ResourceRail({ part = "play" }: { part?: "play" | "reference" } = {}) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
@@ -508,6 +515,329 @@ export function ResourceRail() {
     aggregate,
     locale
   );
+
+  if (part === "reference") {
+    return (
+      <>
+        {/* ── Defenses — damage resist / immune / vulnerable + condition immunities.
+            Override-aware (#68): play mode shows the effective rows; edit mode opens
+            the add/remove chip editors so a player can pin or drop any of them. ── */}
+        <RailSection rubric={t("character.hud.defenses")}>
+          {/* AX exposure audit — `choice-resistance` slots (Boon of Energy
+            Resistance, Reborn Strange Endurance) are RE-SELECTABLE picks with
+            NO previous UI. One chip row per slot; tapping toggles a pick within
+            the slot's cap (an over-cap tap is ignored — constrained input). */}
+          {aggregate.choiceResistances.length > 0 && (
+            <div className="mb-2 flex flex-col gap-2">
+              {aggregate.choiceResistances.map((cr) => (
+                <ChoiceResistancePicker key={cr.choiceKey} slot={cr} locale={locale} />
+              ))}
+            </div>
+          )}
+          {/* ONE layout for both play and edit modes — compact, same single-button
+            add flow (owner: "Add defenses in the right rail, in edit mode, should
+            be the same as in play mode (single button). It's more compact.").
+
+            The ONLY semantic difference is the write target (golden rule 3):
+            - PLAY: the compact Add button → session overlay (a potion, a spell)
+            - EDIT: the same compact Add button → permanent build override map
+
+            In EDIT mode, explicitly-added overrides also surface as removable chips
+            (build overrides don't auto-clear on rest, so the user needs a ×).
+            The compact layout replaces the old four-panel bulky editor. */}
+          {hasDefenses || isEdit ? (
+            <div className="flex flex-col gap-1 text-sm">
+              {(defViews.resistance.effective.length > 0 ||
+                allDamageResistance ||
+                shownResistances.length > 0 ||
+                sourceResistances.length > 0) && (
+                <DefenseRow
+                  label={
+                    <GlossaryTip
+                      term="resistance"
+                      rubric={t("abilities.resistancesLabel")}
+                    />
+                  }
+                  value={[
+                    ...(allDamageResistance ? [t("character.damageAll")] : []),
+                    ...shownResistances.map(dmgLabel),
+                    // Damage-SOURCE resistances (Abjurer Spell Resistance, Shield
+                    // of Missile Attraction) — orthogonal to the element list.
+                    ...sourceResistances.map((src) => t(`character.damageSource_${src}`)),
+                  ].join(", ")}
+                  chips={
+                    isEdit
+                      ? buildOverrideAddedChips("resistance")
+                      : sessionChips("resistance")
+                  }
+                />
+              )}
+              {defViews.immunity.effective.length > 0 && (
+                <DefenseRow
+                  label={
+                    <GlossaryTip
+                      term="immunity"
+                      rubric={t("abilities.immunitiesLabel")}
+                    />
+                  }
+                  value={damageImmunities.map(dmgLabel).join(", ")}
+                  chips={
+                    isEdit
+                      ? buildOverrideAddedChips("immunity")
+                      : sessionChips("immunity")
+                  }
+                />
+              )}
+              {defViews.vulnerability.effective.length > 0 && (
+                <DefenseRow
+                  label={
+                    <GlossaryTip
+                      term="vulnerability"
+                      rubric={t("abilities.vulnerabilitiesLabel")}
+                    />
+                  }
+                  value={vulnerabilities.map(dmgLabel).join(", ")}
+                  chips={
+                    isEdit
+                      ? buildOverrideAddedChips("vulnerability")
+                      : sessionChips("vulnerability")
+                  }
+                />
+              )}
+              {defViews.conditionImmunity.effective.length > 0 && (
+                <DefenseRow
+                  label={t("abilities.conditionImmunitiesLabel")}
+                  value={conditionImmunities
+                    .map((c) => conditionLabel(c, locale))
+                    .join(", ")}
+                  chips={
+                    isEdit
+                      ? buildOverrideAddedChips("conditionImmunity")
+                      : sessionChips("conditionImmunity")
+                  }
+                />
+              )}
+              {/* Flat damage reduction (Heavy Armor Master) — a self-side reminder,
+                shown only while the condition (Heavy armor worn) holds. */}
+              {flatReductions.map((r) => (
+                <DefenseRow
+                  key={r.sourceId}
+                  label={t("abilities.damageReductionLabel")}
+                  value={
+                    t("character.flatDamageReduction", {
+                      types: r.damageTypes.map(dmgLabel).join("/"),
+                      amount: r.amount,
+                    }) +
+                    (r.requiresHeavyArmor
+                      ? ` (${t("character.flatDamageReductionInHeavyArmor")})`
+                      : "")
+                  }
+                />
+              ))}
+              {/* Self-side defensive reminder lines (Warding Bond, Death Ward,
+                Mirror Image) — while-active prose under the neutral "Defense"
+                label (the damage-reduction label stays on the numeric
+                flat-reduction rows above); "· active" mirrors the advantage chips. */}
+              {defenseNoteVMs.map((n, i) => (
+                <DefenseRow
+                  key={`${n.sourceId}-defnote-${i}`}
+                  label={t("abilities.defenseLabel")}
+                  value={
+                    n.whileActive
+                      ? `${n.description} · ${t("combat.whileActiveNote")}`
+                      : n.description
+                  }
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="m-0 text-sm text-text-secondary">
+              {t("character.placeholder.noDefenses")}
+            </p>
+          )}
+          {/* The compact "Add defense" affordance — shared between play and edit modes.
+            In play: adds to the session overlay (a transient potion / spell / curse).
+            In edit: adds to the permanent build override map (persists on the sheet). */}
+          <AddDefensePicker
+            defViews={defViews}
+            locale={locale}
+            onAdd={
+              isEdit
+                ? (kind, id) =>
+                    setMembership(
+                      DEFENSE_OVERRIDE_FIELD[kind],
+                      DEFENSE_COMPUTED[kind],
+                      id,
+                      true
+                    )
+                : undefined
+            }
+          />
+        </RailSection>
+
+        {/* ── Advantages — durable advantage / disadvantage on saves / checks /
+          initiative from features & species. Read-only (engine-derived); the
+          attack-roll ones live inline on the action cards, so they're filtered out
+          above. Hidden entirely when the character has none. ── */}
+        {(advChips.length > 0 ||
+          aggregate.rollDieAdjustments.length > 0 ||
+          incomingAttackNotes.length > 0 ||
+          incomingDefenseNotes.length > 0) && (
+          <RailSection rubric={t("abilities.advantages")}>
+            <div className="flex flex-col gap-1 text-sm">
+              {advChips.map((c, i) => (
+                <DefenseRow
+                  key={`${c.sourceId}-${c.mode}-${i}`}
+                  label={
+                    <GlossaryTip term={c.mode} rubric={t(`common.${c.mode}`)}>
+                      {t(`abilities.${c.mode}`)}
+                    </GlossaryTip>
+                  }
+                  // A while-active-gated clause (Rage's STR advantage, Reckless
+                  // Attack) reads "… · active" — the SAME `combat.whileActiveNote`
+                  // suffix the weapon-damage breakdown shows.
+                  value={
+                    c.whileActive
+                      ? `${c.description} · ${t("combat.whileActiveNote")}`
+                      : c.description
+                  }
+                />
+              ))}
+              {aggregate.rollDieAdjustments.map((adjustment, index) => (
+                <DefenseRow
+                  key={`${adjustment.sourceId}-roll-adjustment-${index}`}
+                  label={t(`combat.resolveRoll_${adjustment.rollType}`)}
+                  value={t("combat.resolveNextRollAdjustment", {
+                    roll: t(`combat.resolveRoll_${adjustment.rollType}`),
+                    sign: adjustment.operation === "add" ? "+" : "−",
+                    dice: adjustment.dice,
+                  })}
+                />
+              ))}
+              {/* SELF-side combat downsides (Reckless Attack): framed as a Disadv.
+                — your OWN defenses worsen while it's declared. The "· active"
+                suffix mirrors the advantage chips above. */}
+              {incomingAttackNotes.map((n, i) => (
+                <DefenseRow
+                  key={`${n.sourceId}-incoming-${i}`}
+                  label={
+                    <GlossaryTip term="disadvantage" rubric={t("common.disadvantage")}>
+                      {t("abilities.disadvantage")}
+                    </GlossaryTip>
+                  }
+                  value={
+                    n.whileActive
+                      ? `${n.description} · ${t("combat.whileActiveNote")}`
+                      : n.description
+                  }
+                />
+              ))}
+              {/* SELF-side combat BENEFITS (Blur): framed as an Advantage — your
+                OWN defenses improve while it's up. The "· active" suffix mirrors
+                the chips above. */}
+              {incomingDefenseNotes.map((n, i) => (
+                <DefenseRow
+                  key={`${n.sourceId}-incoming-def-${i}`}
+                  label={
+                    <GlossaryTip term="advantage" rubric={t("common.advantage")}>
+                      {t("abilities.advantage")}
+                    </GlossaryTip>
+                  }
+                  value={
+                    n.whileActive
+                      ? `${n.description} · ${t("combat.whileActiveNote")}`
+                      : n.description
+                  }
+                />
+              ))}
+            </div>
+          </RailSection>
+        )}
+
+        {/* ── Passives — durable roll FLOORS (Rogue Reliable Talent: treat a d20 ≤9
+          as 10 on proficient checks). Read-only engine-derived notes; hidden when
+          the character has none. ── */}
+        {aggregate.rollFloors.length > 0 && (
+          <RailSection rubric={t("character.hud.passives")}>
+            <div className="flex flex-col gap-1 text-sm">
+              {rollFloorVMs(aggregate.rollFloors, locale).map((f, i) => (
+                <p key={`${f.sourceId}-${i}`} className="text-text-primary">
+                  {f.description}
+                  {/* A while-active-gated floor (Starry Form, Trance of Order) reads
+                    "… · active" — the SAME `combat.whileActiveNote` suffix the
+                    weapon-damage breakdown shows. */}
+                  {f.whileActive && (
+                    <span className="text-accent-text">
+                      {" "}
+                      · {t("combat.whileActiveNote")}
+                    </span>
+                  )}
+                </p>
+              ))}
+            </div>
+          </RailSection>
+        )}
+
+        {/* ── Proficiencies — armor / weapons (override-aware #68) + tools / languages.
+          Tools & languages are character-data arrays (edited under Lore), so they
+          stay read-only here. ── */}
+        <RailSection rubric={t("character.hud.proficiencies")}>
+          {isEdit ? (
+            <div className="flex flex-col gap-3">
+              {renderSet(
+                "armorProficiencyOverrides",
+                t("abilities.armorProfs"),
+                armorProfs,
+                classData?.armorProficiencies ?? [],
+                armorProfOptions,
+                profLabel,
+                t("character.override.addArmorProf")
+              )}
+              {renderSet(
+                "weaponProficiencyOverrides",
+                t("abilities.weaponProfs"),
+                weaponProfs,
+                classData?.weaponProficiencies ?? [],
+                weaponProfOptions,
+                profLabel,
+                t("character.override.addWeaponProf")
+              )}
+              {(tools || languages) && (
+                <div className="flex flex-col gap-1 text-sm">
+                  {tools && <DefenseRow label={t("abilities.toolProfs")} value={tools} />}
+                  {languages && (
+                    <DefenseRow label={t("abilities.languages")} value={languages} />
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1 text-sm">
+              {armorProfs.length > 0 && (
+                <DefenseRow
+                  label={t("abilities.armorProfs")}
+                  value={armorProfs.map(profLabel).join(", ")}
+                />
+              )}
+              {weaponProfs.length > 0 && (
+                <DefenseRow
+                  label={t("abilities.weaponProfs")}
+                  value={
+                    weaponProfs.map(profLabel).join(", ") +
+                    (showMastery ? ` · ${t("abilities.weaponMastery")}` : "")
+                  }
+                />
+              )}
+              {tools && <DefenseRow label={t("abilities.toolProfs")} value={tools} />}
+              {languages && (
+                <DefenseRow label={t("abilities.languages")} value={languages} />
+              )}
+            </div>
+          )}
+        </RailSection>
+      </>
+    );
+  }
 
   return (
     <div className="folio-panel flex flex-col gap-6 p-4">
@@ -875,318 +1205,6 @@ export function ResourceRail() {
             )}
           </div>
         </div>
-      </RailSection>
-
-      {/* ── Defenses — damage resist / immune / vulnerable + condition immunities.
-          Override-aware (#68): play mode shows the effective rows; edit mode opens
-          the add/remove chip editors so a player can pin or drop any of them. ── */}
-      <RailSection rubric={t("character.hud.defenses")}>
-        {/* AX exposure audit — `choice-resistance` slots (Boon of Energy
-            Resistance, Reborn Strange Endurance) are RE-SELECTABLE picks with
-            NO previous UI. One chip row per slot; tapping toggles a pick within
-            the slot's cap (an over-cap tap is ignored — constrained input). */}
-        {aggregate.choiceResistances.length > 0 && (
-          <div className="mb-2 flex flex-col gap-2">
-            {aggregate.choiceResistances.map((cr) => (
-              <ChoiceResistancePicker key={cr.choiceKey} slot={cr} locale={locale} />
-            ))}
-          </div>
-        )}
-        {/* ONE layout for both play and edit modes — compact, same single-button
-            add flow (owner: "Add defenses in the right rail, in edit mode, should
-            be the same as in play mode (single button). It's more compact.").
-
-            The ONLY semantic difference is the write target (golden rule 3):
-            - PLAY: the compact Add button → session overlay (a potion, a spell)
-            - EDIT: the same compact Add button → permanent build override map
-
-            In EDIT mode, explicitly-added overrides also surface as removable chips
-            (build overrides don't auto-clear on rest, so the user needs a ×).
-            The compact layout replaces the old four-panel bulky editor. */}
-        {hasDefenses || isEdit ? (
-          <div className="flex flex-col gap-1 text-sm">
-            {(defViews.resistance.effective.length > 0 ||
-              allDamageResistance ||
-              shownResistances.length > 0 ||
-              sourceResistances.length > 0) && (
-              <DefenseRow
-                label={
-                  <GlossaryTip
-                    term="resistance"
-                    rubric={t("abilities.resistancesLabel")}
-                  />
-                }
-                value={[
-                  ...(allDamageResistance ? [t("character.damageAll")] : []),
-                  ...shownResistances.map(dmgLabel),
-                  // Damage-SOURCE resistances (Abjurer Spell Resistance, Shield
-                  // of Missile Attraction) — orthogonal to the element list.
-                  ...sourceResistances.map((src) => t(`character.damageSource_${src}`)),
-                ].join(", ")}
-                chips={
-                  isEdit
-                    ? buildOverrideAddedChips("resistance")
-                    : sessionChips("resistance")
-                }
-              />
-            )}
-            {defViews.immunity.effective.length > 0 && (
-              <DefenseRow
-                label={
-                  <GlossaryTip term="immunity" rubric={t("abilities.immunitiesLabel")} />
-                }
-                value={damageImmunities.map(dmgLabel).join(", ")}
-                chips={
-                  isEdit ? buildOverrideAddedChips("immunity") : sessionChips("immunity")
-                }
-              />
-            )}
-            {defViews.vulnerability.effective.length > 0 && (
-              <DefenseRow
-                label={
-                  <GlossaryTip
-                    term="vulnerability"
-                    rubric={t("abilities.vulnerabilitiesLabel")}
-                  />
-                }
-                value={vulnerabilities.map(dmgLabel).join(", ")}
-                chips={
-                  isEdit
-                    ? buildOverrideAddedChips("vulnerability")
-                    : sessionChips("vulnerability")
-                }
-              />
-            )}
-            {defViews.conditionImmunity.effective.length > 0 && (
-              <DefenseRow
-                label={t("abilities.conditionImmunitiesLabel")}
-                value={conditionImmunities
-                  .map((c) => conditionLabel(c, locale))
-                  .join(", ")}
-                chips={
-                  isEdit
-                    ? buildOverrideAddedChips("conditionImmunity")
-                    : sessionChips("conditionImmunity")
-                }
-              />
-            )}
-            {/* Flat damage reduction (Heavy Armor Master) — a self-side reminder,
-                shown only while the condition (Heavy armor worn) holds. */}
-            {flatReductions.map((r) => (
-              <DefenseRow
-                key={r.sourceId}
-                label={t("abilities.damageReductionLabel")}
-                value={
-                  t("character.flatDamageReduction", {
-                    types: r.damageTypes.map(dmgLabel).join("/"),
-                    amount: r.amount,
-                  }) +
-                  (r.requiresHeavyArmor
-                    ? ` (${t("character.flatDamageReductionInHeavyArmor")})`
-                    : "")
-                }
-              />
-            ))}
-            {/* Self-side defensive reminder lines (Warding Bond, Death Ward,
-                Mirror Image) — while-active prose under the neutral "Defense"
-                label (the damage-reduction label stays on the numeric
-                flat-reduction rows above); "· active" mirrors the advantage chips. */}
-            {defenseNoteVMs.map((n, i) => (
-              <DefenseRow
-                key={`${n.sourceId}-defnote-${i}`}
-                label={t("abilities.defenseLabel")}
-                value={
-                  n.whileActive
-                    ? `${n.description} · ${t("combat.whileActiveNote")}`
-                    : n.description
-                }
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="m-0 text-sm text-text-secondary">
-            {t("character.placeholder.noDefenses")}
-          </p>
-        )}
-        {/* The compact "Add defense" affordance — shared between play and edit modes.
-            In play: adds to the session overlay (a transient potion / spell / curse).
-            In edit: adds to the permanent build override map (persists on the sheet). */}
-        <AddDefensePicker
-          defViews={defViews}
-          locale={locale}
-          onAdd={
-            isEdit
-              ? (kind, id) =>
-                  setMembership(
-                    DEFENSE_OVERRIDE_FIELD[kind],
-                    DEFENSE_COMPUTED[kind],
-                    id,
-                    true
-                  )
-              : undefined
-          }
-        />
-      </RailSection>
-
-      {/* ── Advantages — durable advantage / disadvantage on saves / checks /
-          initiative from features & species. Read-only (engine-derived); the
-          attack-roll ones live inline on the action cards, so they're filtered out
-          above. Hidden entirely when the character has none. ── */}
-      {(advChips.length > 0 ||
-        aggregate.rollDieAdjustments.length > 0 ||
-        incomingAttackNotes.length > 0 ||
-        incomingDefenseNotes.length > 0) && (
-        <RailSection rubric={t("abilities.advantages")}>
-          <div className="flex flex-col gap-1 text-sm">
-            {advChips.map((c, i) => (
-              <DefenseRow
-                key={`${c.sourceId}-${c.mode}-${i}`}
-                label={
-                  <GlossaryTip term={c.mode} rubric={t(`common.${c.mode}`)}>
-                    {t(`abilities.${c.mode}`)}
-                  </GlossaryTip>
-                }
-                // A while-active-gated clause (Rage's STR advantage, Reckless
-                // Attack) reads "… · active" — the SAME `combat.whileActiveNote`
-                // suffix the weapon-damage breakdown shows.
-                value={
-                  c.whileActive
-                    ? `${c.description} · ${t("combat.whileActiveNote")}`
-                    : c.description
-                }
-              />
-            ))}
-            {aggregate.rollDieAdjustments.map((adjustment, index) => (
-              <DefenseRow
-                key={`${adjustment.sourceId}-roll-adjustment-${index}`}
-                label={t(`combat.resolveRoll_${adjustment.rollType}`)}
-                value={t("combat.resolveNextRollAdjustment", {
-                  roll: t(`combat.resolveRoll_${adjustment.rollType}`),
-                  sign: adjustment.operation === "add" ? "+" : "−",
-                  dice: adjustment.dice,
-                })}
-              />
-            ))}
-            {/* SELF-side combat downsides (Reckless Attack): framed as a Disadv.
-                — your OWN defenses worsen while it's declared. The "· active"
-                suffix mirrors the advantage chips above. */}
-            {incomingAttackNotes.map((n, i) => (
-              <DefenseRow
-                key={`${n.sourceId}-incoming-${i}`}
-                label={
-                  <GlossaryTip term="disadvantage" rubric={t("common.disadvantage")}>
-                    {t("abilities.disadvantage")}
-                  </GlossaryTip>
-                }
-                value={
-                  n.whileActive
-                    ? `${n.description} · ${t("combat.whileActiveNote")}`
-                    : n.description
-                }
-              />
-            ))}
-            {/* SELF-side combat BENEFITS (Blur): framed as an Advantage — your
-                OWN defenses improve while it's up. The "· active" suffix mirrors
-                the chips above. */}
-            {incomingDefenseNotes.map((n, i) => (
-              <DefenseRow
-                key={`${n.sourceId}-incoming-def-${i}`}
-                label={
-                  <GlossaryTip term="advantage" rubric={t("common.advantage")}>
-                    {t("abilities.advantage")}
-                  </GlossaryTip>
-                }
-                value={
-                  n.whileActive
-                    ? `${n.description} · ${t("combat.whileActiveNote")}`
-                    : n.description
-                }
-              />
-            ))}
-          </div>
-        </RailSection>
-      )}
-
-      {/* ── Passives — durable roll FLOORS (Rogue Reliable Talent: treat a d20 ≤9
-          as 10 on proficient checks). Read-only engine-derived notes; hidden when
-          the character has none. ── */}
-      {aggregate.rollFloors.length > 0 && (
-        <RailSection rubric={t("character.hud.passives")}>
-          <div className="flex flex-col gap-1 text-sm">
-            {rollFloorVMs(aggregate.rollFloors, locale).map((f, i) => (
-              <p key={`${f.sourceId}-${i}`} className="text-text-primary">
-                {f.description}
-                {/* A while-active-gated floor (Starry Form, Trance of Order) reads
-                    "… · active" — the SAME `combat.whileActiveNote` suffix the
-                    weapon-damage breakdown shows. */}
-                {f.whileActive && (
-                  <span className="text-accent-text">
-                    {" "}
-                    · {t("combat.whileActiveNote")}
-                  </span>
-                )}
-              </p>
-            ))}
-          </div>
-        </RailSection>
-      )}
-
-      {/* ── Proficiencies — armor / weapons (override-aware #68) + tools / languages.
-          Tools & languages are character-data arrays (edited under Lore), so they
-          stay read-only here. ── */}
-      <RailSection rubric={t("character.hud.proficiencies")}>
-        {isEdit ? (
-          <div className="flex flex-col gap-3">
-            {renderSet(
-              "armorProficiencyOverrides",
-              t("abilities.armorProfs"),
-              armorProfs,
-              classData?.armorProficiencies ?? [],
-              armorProfOptions,
-              profLabel,
-              t("character.override.addArmorProf")
-            )}
-            {renderSet(
-              "weaponProficiencyOverrides",
-              t("abilities.weaponProfs"),
-              weaponProfs,
-              classData?.weaponProficiencies ?? [],
-              weaponProfOptions,
-              profLabel,
-              t("character.override.addWeaponProf")
-            )}
-            {(tools || languages) && (
-              <div className="flex flex-col gap-1 text-sm">
-                {tools && <DefenseRow label={t("abilities.toolProfs")} value={tools} />}
-                {languages && (
-                  <DefenseRow label={t("abilities.languages")} value={languages} />
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-1 text-sm">
-            {armorProfs.length > 0 && (
-              <DefenseRow
-                label={t("abilities.armorProfs")}
-                value={armorProfs.map(profLabel).join(", ")}
-              />
-            )}
-            {weaponProfs.length > 0 && (
-              <DefenseRow
-                label={t("abilities.weaponProfs")}
-                value={
-                  weaponProfs.map(profLabel).join(", ") +
-                  (showMastery ? ` · ${t("abilities.weaponMastery")}` : "")
-                }
-              />
-            )}
-            {tools && <DefenseRow label={t("abilities.toolProfs")} value={tools} />}
-            {languages && (
-              <DefenseRow label={t("abilities.languages")} value={languages} />
-            )}
-          </div>
-        )}
       </RailSection>
 
       {/* ── Combat notes (item c) — the rail "post-it" for non-automatable
