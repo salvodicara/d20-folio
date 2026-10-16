@@ -65,7 +65,7 @@ test("spells out of combat: a ritual spends no slot, a slotted cast spends one",
 
   const detect = page.getByRole("region", { name: "Detect Magic", exact: true });
   await page.getByRole("button", { name: "Expand: Detect Magic" }).click();
-  await detect.getByRole("button", { name: "Ritual" }).click();
+  await detect.getByRole("button", { name: "Ritual", exact: true }).click();
   await confirmIfAsked(page);
   await expect(page.getByText("Cast Detect Magic as ritual (no slot)")).toBeVisible();
   expect((await saved(page)).slot1).toBe(before.slot1);
