@@ -28,6 +28,7 @@
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
+import type { TFunction } from "i18next";
 import { ChevronRight } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -50,7 +51,46 @@ export interface BreakdownTipProps {
   flavor?: "value" | "damage" | "heal";
   /** Verdict-chip outcome colour key — forwarded as `data-o` (combat chips). */
   outcome?: string;
+  /** The value's short name ("AC"), written under the total in the equation view. */
+  name?: string;
   className?: string;
+}
+
+/** One term of the equation view: the operator before it and its number. */
+interface EquationTerm {
+  op: "+" | "−" | null;
+  figure: string;
+  label: string;
+}
+
+/**
+ * Direction B (owner 2026-10-16): a short, purely numeric breakdown reads as an
+ * EQUATION — "16 Chain Mail + 2 Shield = 18 AC" — the way a beginner sums it on
+ * paper. Anything richer (dice, a rule's why, a replaced die, a note, more than
+ * four parts, a non-numeric total) keeps the receipt list. Returns null when the
+ * equation would not be faithful.
+ */
+function equationTerms(
+  lines: ReadonlyArray<BreakdownLine>,
+  total: ReactNode,
+  t: TFunction
+): EquationTerm[] | null {
+  if (lines.length < 2 || lines.length > 4) return null;
+  if (typeof total !== "string" && typeof total !== "number") return null;
+  const terms: EquationTerm[] = [];
+  for (const [i, line] of lines.entries()) {
+    if (line.why || line.fromValue || line.note) return null;
+    const match = /^([+−-]?)\s*(\d+)$/.exec(line.value.trim());
+    if (!match) return null;
+    const negative = match[1] === "−" || match[1] === "-";
+    if (i === 0 && negative) return null;
+    terms.push({
+      op: i === 0 ? null : negative ? "−" : "+",
+      figure: match[2] ?? "",
+      label: renderBreakdownLineLabel(line, t),
+    });
+  }
+  return terms;
 }
 
 const RUBRIC_KEY: Record<NonNullable<BreakdownTipProps["flavor"]>, string> = {
@@ -64,6 +104,7 @@ export function BreakdownTip({
   lines,
   flavor = "value",
   outcome,
+  name,
   className,
 }: BreakdownTipProps) {
   const { t } = useTranslation();
@@ -72,6 +113,7 @@ export function BreakdownTip({
   // the popover never grows into a wall of prose.
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const rubric = t(RUBRIC_KEY[flavor]);
+  const equation = equationTerms(lines, label, t);
   const renderNote = (note: BreakdownNote): ReactNode => (
     <span className="text-accent-text">
       {" "}
@@ -107,63 +149,93 @@ export function BreakdownTip({
         {/* translate="no": the breakdown IS a formula decomposition ("+3 STR ·
             +2 Shield") — stat abbreviations and signed modifiers a machine
             translator would mangle. Translation stays allowed app-wide. */}
-        <div className="flex min-w-36 flex-col gap-1" translate="no">
-          {lines.map((line, i) => {
-            const label = renderBreakdownLineLabel(line, t);
-            const open = openIndex === i;
-            const whyId = `${baseId}-why-${i}`;
-            return (
-              <div key={i} className="flex flex-col gap-1">
-                <div className="flex items-baseline justify-between gap-4 text-sm">
-                  <span className="text-text-secondary">
-                    {line.why ? (
-                      <button
-                        type="button"
-                        className="cause-toggle"
-                        aria-expanded={open}
-                        // Only while OPEN: `aria-controls` pointing at an element
-                        // that isn't in the DOM is an invalid attribute value (axe
-                        // `aria-valid-attr-value`), and the a11y bar is zero.
-                        aria-controls={open ? whyId : undefined}
-                        onClick={() => setOpenIndex(open ? null : i)}
-                      >
-                        {label}
-                        <Icon
-                          as={ChevronRight}
-                          size="xs"
-                          decorative
-                          className={cn("transition-transform", open && "rotate-90")}
-                        />
-                      </button>
-                    ) : (
-                      label
-                    )}
-                    {line.note && renderNote(line.note)}
+        {equation ? (
+          <div className="bd-eq" translate="no">
+            {equation.map((term, i) => (
+              <span key={i} className="bd-eq-group">
+                {term.op ? (
+                  <span className="bd-eq-op" aria-hidden>
+                    {term.op}
                   </span>
-                  <span className="font-mono font-semibold text-text-primary">
-                    {/* A die a rule REPLACED shows muted before the effective one
+                ) : null}
+                <span className="bd-eq-term">
+                  <b>
+                    {term.op === "−" ? <span className="sr-only">−</span> : null}
+                    {term.figure}
+                  </b>
+                  <span>{term.label}</span>
+                </span>
+              </span>
+            ))}
+            <span className="bd-eq-group">
+              <span className="bd-eq-op" aria-hidden>
+                =
+              </span>
+              <span className="bd-eq-term bd-eq-total">
+                <b>{label}</b>
+                {name ? <span>{name}</span> : null}
+              </span>
+            </span>
+          </div>
+        ) : (
+          <div className="flex min-w-36 flex-col gap-1" translate="no">
+            {lines.map((line, i) => {
+              const label = renderBreakdownLineLabel(line, t);
+              const open = openIndex === i;
+              const whyId = `${baseId}-why-${i}`;
+              return (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex items-baseline justify-between gap-4 text-sm">
+                    <span className="text-text-secondary">
+                      {line.why ? (
+                        <button
+                          type="button"
+                          className="cause-toggle"
+                          aria-expanded={open}
+                          // Only while OPEN: `aria-controls` pointing at an element
+                          // that isn't in the DOM is an invalid attribute value (axe
+                          // `aria-valid-attr-value`), and the a11y bar is zero.
+                          aria-controls={open ? whyId : undefined}
+                          onClick={() => setOpenIndex(open ? null : i)}
+                        >
+                          {label}
+                          <Icon
+                            as={ChevronRight}
+                            size="xs"
+                            decorative
+                            className={cn("transition-transform", open && "rotate-90")}
+                          />
+                        </button>
+                      ) : (
+                        label
+                      )}
+                      {line.note && renderNote(line.note)}
+                    </span>
+                    <span className="font-mono font-semibold text-text-primary">
+                      {/* A die a rule REPLACED shows muted before the effective one
                         (`1d4 → 1d6`) — the substitution becomes visible instead of
                         silently swallowing the weapon's printed die. */}
-                    {line.fromValue ? (
-                      <>
-                        <span className="font-normal text-text-secondary opacity-65">
-                          {line.fromValue}
-                        </span>
-                        <span className="px-1 font-normal text-text-muted">→</span>
-                      </>
-                    ) : null}
-                    {line.value}
-                  </span>
-                </div>
-                {/* `mt-1.5` clears the toggle's outward-padded hit area: without
+                      {line.fromValue ? (
+                        <>
+                          <span className="font-normal text-text-secondary opacity-65">
+                            {line.fromValue}
+                          </span>
+                          <span className="px-1 font-normal text-text-muted">→</span>
+                        </>
+                      ) : null}
+                      {line.value}
+                    </span>
+                  </div>
+                  {/* `mt-1.5` clears the toggle's outward-padded hit area: without
                     it the open row's focus ring paints over the first prose line. */}
-                {line.why && open ? (
-                  <WhyProse id={whyId} why={line.why} className="mt-1.5" />
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
+                  {line.why && open ? (
+                    <WhyProse id={whyId} why={line.why} className="mt-1.5" />
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

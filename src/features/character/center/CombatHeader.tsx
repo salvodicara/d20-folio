@@ -592,6 +592,7 @@ export function CombatHeader() {
                 <BreakdownTip
                   label={String(acValue)}
                   lines={acBreakdown}
+                  name={t("character.vitals.ac")}
                   className="v-num-tip"
                 />
               ) : (
@@ -669,6 +670,7 @@ export function CombatHeader() {
                 <BreakdownTip
                   label={fmtMod(initValue)}
                   lines={initBreakdown}
+                  name={t("character.vitals.init")}
                   className="v-num-tip"
                 />
               ) : (
