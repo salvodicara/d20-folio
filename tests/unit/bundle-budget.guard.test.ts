@@ -491,7 +491,12 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // (DamageTrayPanel, encounter-monster-actions, combat-chronicle-view, BeastFormPicker;
 // CharacterCockpit −11.9, CampaignHubPage −4.7) plus the post-release rules batches
 // (cockpit-engine +6.1). Measured 9800.67 KiB / 343; +~29 KiB headroom.
-const PRECACHE_CEILING_KIB = 9830;
+// 2026-10-16 (structural trim, LOWERED 9830 → 9260): the PWA plugin listed the four
+// PNG launch icons twice (its own icon inclusion on top of `globPatterns`), and the
+// bug report's html2canvas library (~220 KiB) moved to a CacheFirst runtime route,
+// like the PDF export. Composed build with pack f1ff69a7 after the breakdown batch:
+// 9805.4 → 9221.4 KiB, 343 → 337 entries; +~39 KiB headroom for the rules glossary.
+const PRECACHE_CEILING_KIB = 9260;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
@@ -679,6 +684,22 @@ describe("bundle budget — eager entry + precache ceilings (P3)", () => {
       );
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("the precache lists every file once", () => {
+    if (!haveDist) return;
+    const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
+    const urls = [...sw.matchAll(/\burl:\s*"([^"]+)"/g)].map((m) => m[1]);
+    const twice = urls.filter((u, i) => urls.indexOf(u) !== i);
+    expect(twice, "a file is listed twice in the precache manifest").toEqual([]);
+  });
+
+  it("keeps the bug-report screenshot library out of the precache, cached on first use", () => {
+    if (!haveDist) return;
+    const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
+    const urls = [...sw.matchAll(/\burl:\s*"([^"]+)"/g)].map((m) => m[1] ?? "");
+    expect(urls.filter((u) => u.includes("html2canvas"))).toEqual([]);
+    expect(sw, "html2canvas needs a runtime-cache route").toMatch(/html2canvas/);
   });
 
   it("PWA precache total is within the ceiling", () => {
