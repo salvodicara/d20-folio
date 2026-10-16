@@ -24,7 +24,15 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { validateArcaneRecoveryPlan } from "@/lib/arcane-recovery";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -170,6 +178,7 @@ import { advanceSoloWorldTurn } from "./solo-world-turn";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
+import { SELF_FORM_SPELL_IDS } from "@/lib/polymorph";
 import {
   advanceGlobalCombat,
   syncPipToStatus,
@@ -234,6 +243,14 @@ function expireReadiedHold(round: number): { spell: string; restore: () => void 
     },
   };
 }
+
+// The self-transformation form picker a Polymorph-family cast opens; a lazy leaf,
+// so the cockpit pays for it only when such a spell is cast.
+const TransformFormPicker = lazy(() =>
+  import("./tabs/spells/TransformFormPicker").then((m) => ({
+    default: m.TransformFormPicker,
+  }))
+);
 
 export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -467,6 +484,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // D4 — Cleric Divine Intervention: tapping the 1/LR action opens a guided picker
   // over the Cleric spell list ≤ 5th (the engine-resolved pool); choosing a spell
   // casts it without a slot and debits the 1/LR tracker (immediate-commit-with-undo).
+  // A cast of Polymorph, True Polymorph, Shapechange or Animal Shapes opens its form
+  // picker (the one the Spells tab's Transform opens). Skippable; spends nothing.
+  const [formPickerSpellId, setFormPickerSpellId] = useState<string | null>(null);
+
   const [freeCastFromListRequest, setFreeCastFromListRequest] = useState<{
     characterId: string;
     pool: FreeCastFromListPool;
@@ -1347,6 +1368,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               .setReadiedSpell(readiedHold(currentRound(), loggedId || null))
           : null;
         if (!readies) offerFollowUps(action, targets, loggedId);
+        const picksForm =
+          !readies &&
+          !execution.ritual &&
+          !!action.spellId &&
+          SELF_FORM_SPELL_IDS.includes(action.spellId);
+        if (picksForm) setFormPickerSpellId(action.spellId ?? null);
         // A priced material component: "−300 mo" when consumed, else a reminder.
         const materialToastId = execution.withoutComponents
           ? null
@@ -1360,6 +1387,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           )
             return false;
           if (materialToastId) useToastStore.getState().dismissToast(materialToastId);
+          if (picksForm) setFormPickerSpellId(null);
           undoHold?.();
           undoRegains();
           activation.restore();
@@ -2858,6 +2886,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         }}
         onCancel={() => setTargetRequest(null)}
       />
+
+      {formPickerSpellId !== null && (
+        <Suspense fallback={null}>
+          <TransformFormPicker
+            spellId={formPickerSpellId}
+            onClose={() => setFormPickerSpellId(null)}
+          />
+        </Suspense>
+      )}
 
       {/* The damage tray right after the use: one rolled total, one row per target. */}
       <DamageTray />
