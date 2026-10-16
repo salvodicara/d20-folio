@@ -136,7 +136,11 @@ There are six parallel records. The same hit can land in four of them.
   - Its `world` is still the store of record for vitals, conditions, concentration, rest and DM
     adversary damage.
 - **Undo is three mechanisms:** snapshot, hand-written inverse closure, and journal generation flip.
-  It is forbidden in campaigns. Chronicle undo deletes the line.
+  It is forbidden in campaigns. Chronicle undo deletes the line. Since 2026-10-16 the sheet's stack survives a DM's or another
+  player's write to the vitals: entries remember which vitals changed and refuse to overwrite them.
+  It still lives in memory only: a reload empties it, and after a reload History/snapshots are the
+  way back. Undo that survives a reload is an input to the re-foundation: an event-sourced log
+  would make it natural (owner 2026-10-16).
 
 ### 5. Views: fine shape, wrong inputs
 

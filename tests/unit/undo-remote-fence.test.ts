@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import { combatTrioDiffers } from "@/lib/combat-state";
+import { combatTrioDiffers, combatTrioRootsChanged } from "@/lib/combat-state";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CombatState } from "@/types/combat-state";
 
@@ -62,6 +62,55 @@ describe("combatTrioDiffers — the remote-fence comparison", () => {
         { ...combat, heroicInspiration: true }
       )
     ).toBe(true);
+  });
+});
+
+describe("combatTrioRootsChanged — which remotely writable vitals a server update changed", () => {
+  it("names nothing for a server confirm", () => {
+    expect(combatTrioRootsChanged(liveTrio, combat)).toEqual([]);
+  });
+
+  it("names each changed vital by the field the guard compares", () => {
+    expect(
+      combatTrioRootsChanged({ ...liveTrio, hp: { current: 10, temp: 0 } }, combat)
+    ).toEqual(["hp"]);
+    expect(
+      combatTrioRootsChanged({ ...liveTrio, hp: { current: 17, temp: 5 } }, combat)
+    ).toEqual(["hp"]);
+    expect(combatTrioRootsChanged({ ...liveTrio, deathFail: 2 }, combat)).toEqual([
+      "deathSaves",
+    ]);
+    expect(combatTrioRootsChanged({ ...liveTrio, conditions: [] }, combat)).toEqual([
+      "conditions",
+    ]);
+    expect(
+      combatTrioRootsChanged({ ...liveTrio, bardicInspirationDie: "d6" }, combat)
+    ).toEqual(["bardicInspirationDie"]);
+    expect(
+      combatTrioRootsChanged(
+        { ...liveTrio, inspiration: false },
+        { ...combat, heroicInspiration: true }
+      )
+    ).toEqual(["heroicInspiration"]);
+    expect(
+      combatTrioRootsChanged(
+        { ...liveTrio, hp: { current: 1, temp: 0 }, conditions: [] },
+        combat
+      )
+    ).toEqual(["hp", "conditions"]);
+  });
+
+  it("agrees with combatTrioDiffers on whether anything changed", () => {
+    const variants = [
+      liveTrio,
+      { ...liveTrio, hp: { current: 10, temp: 0 } },
+      { ...liveTrio, deathSucc: 1 },
+      { ...liveTrio, conditions: ["prone"] },
+    ];
+    for (const live of variants)
+      expect(combatTrioRootsChanged(live, combat).length > 0).toBe(
+        combatTrioDiffers(live, combat)
+      );
   });
 });
 
