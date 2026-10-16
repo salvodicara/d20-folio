@@ -801,6 +801,25 @@ export function effectiveProficiencyBonus(
 }
 
 /**
+ * The Proficiency Bonus as one "by character level" line whose tap explains the
+ * table in plain words (re-foundation phase 2: every number explained). A hand-set
+ * bonus has no composition to explain, so it has no breakdown (as a hand-set AC).
+ */
+export function proficiencyBonusBreakdown(
+  level: number,
+  override?: number | null
+): RawBreakdownPart[] | null {
+  if (override != null) return null;
+  const bonus = proficiencyBonus(level);
+  return [
+    termPart("breakdown.proficiency.byLevel", bonus, undefined, {
+      term: "breakdown.why.proficiencyByLevel",
+      params: { level, bonus },
+    }),
+  ];
+}
+
+/**
  * Calculate spell save DC.
  * Formula: 8 + proficiency bonus + spellcasting ability modifier
  */
