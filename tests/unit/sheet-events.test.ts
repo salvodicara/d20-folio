@@ -20,6 +20,7 @@ import {
 } from "@/lib/play/sheet-events";
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
+import * as damage from "@/lib/play/damage";
 import * as cover from "@/lib/play/cover";
 import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
@@ -72,6 +73,15 @@ const CASES: {
 } = {
   "set-hp": [{ kind: "set-hp", current: 4 }, () => at(vitals.setHp(doc, 4))],
   "set-temp-hp": [{ kind: "set-temp-hp", temp: 5 }, () => at(vitals.setTempHp(doc, 5))],
+  "take-damage": [
+    { kind: "take-damage", amount: 7, crit: true },
+    () => at(damage.takeDamage(doc, 7, { crit: true })?.session),
+  ],
+  heal: [{ kind: "heal", amount: 3 }, () => at(vitals.healBy(doc, 3))],
+  "gain-temp-hp": [
+    { kind: "gain-temp-hp", amount: 6 },
+    () => at(vitals.gainTempHp(doc, 6)),
+  ],
   "set-hp-max-reduction": [
     { kind: "set-hp-max-reduction", total: 6 },
     () => at(vitals.setHpMaxReduction(doc, 6)),

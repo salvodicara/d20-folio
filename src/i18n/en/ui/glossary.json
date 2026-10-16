@@ -2,9 +2,21 @@
   "glossary": {
     "whatIs": "Learn about {{term}}",
     "name": {
+      "areaOfEffect": "Area of Effect",
+      "cone": "Cone",
+      "cube": "Cube",
+      "cylinder": "Cylinder",
       "deathSavingThrow": "Death Saving Throw",
+      "difficultTerrain": "Difficult Terrain",
+      "emanation": "Emanation",
+      "line": "Line",
+      "somatic": "Somatic",
+      "sphere": "Sphere",
+      "surprise": "Surprise",
       "temporaryHitPoints": "Temporary Hit Points",
-      "unarmedStrike": "Unarmed Strike"
+      "unarmedStrike": "Unarmed Strike",
+      "upcasting": "Higher-Level Spell Slot",
+      "verbal": "Verbal"
     },
     "term": {
       "abilityScores": "The six scores that define your hero, from 3 (feeble) to 20 (legendary). What matters most is the modifier in front: you add it to nearly every roll you make.",
@@ -98,7 +110,27 @@
       "vulnerability": "Vulnerability to a damage type doubles the damage you take of that type. Like Resistance, more than one source still doubles it only once.",
       "immunity": "Immunity to a damage type means that damage does nothing to you. Immunity to a condition means it can't be applied to you at all.",
       "reaction": "A Reaction is a special action you take in response to a trigger, even on someone else's turn, like an Opportunity Attack. You get one per round; it comes back at the start of your turn.",
-      "bonusAction": "A Bonus Action is a quick extra action you can take on your turn, but only when a feature, spell, or other ability says it uses one. You get at most one per turn, and you choose when to take it."
+      "bonusAction": "A Bonus Action is a quick extra action you can take on your turn, but only when a feature, spell, or other ability says it uses one. You get at most one per turn, and you choose when to take it.",
+      "castingTime": "Casting Time: how long casting takes. Most spells take an action; some take a Bonus Action or a Reaction, and longer ones take minutes or hours.",
+      "range": "Range: how far away the target, or the point the spell starts from, can be. Self means it starts from you; Touch means you must touch the target.",
+      "duration": "Duration: how long the effect lasts. An instantaneous spell happens and ends at once; a Concentration spell ends early if your Concentration breaks.",
+      "areaOfEffect": "Area of Effect: the spell fills a shape that starts from a point and affects every creature inside, not just one target.",
+      "cone": "Cone: an Area of Effect that spreads out from you in the direction you choose; at each point it is as wide as it is far from you.",
+      "cube": "Cube: a box-shaped Area of Effect, each side as long as the size given. One of its faces touches the point it starts from.",
+      "cylinder": "Cylinder: a column-shaped Area of Effect of the radius and height given, starting from the centre of its top or bottom circle.",
+      "emanation": "Emanation: an Area of Effect that spreads out in every direction from you, or the creature or object it comes from, and moves with it.",
+      "line": "Line: an Area of Effect that runs straight out from you, as long as the size given and usually 5 feet wide.",
+      "sphere": "Sphere: an Area of Effect that spreads out in every direction from a point, filling a ball of the radius given.",
+      "upcasting": "Higher-Level Spell Slot: cast a spell with a slot above its level and it grows stronger as shown here. A cantrip instead grows as you gain character levels.",
+      "verbal": "Verbal: you must speak magic words aloud to cast it, so you can't while you are unable to speak.",
+      "somatic": "Somatic: you must make gestures with a free hand to cast it.",
+      "material": "Material: an item the spell needs. A component pouch or Spellcasting Focus can stand in for it, unless the spell gives it a cost or consumes it; then you need the real item.",
+      "spellSave": "Saving Throw: each target rolls to resist the spell against your save DC. On a success it usually takes half damage or avoids the effect, as the spell says.",
+      "reactionSpell": "Reaction: you cast it with your Reaction when its trigger happens, even on another creature's turn. You then have no Reaction until your turn starts.",
+      "bonusActionSpell": "Bonus Action: casting it takes your Bonus Action, not your action. You can expend only one spell slot per turn, so another spell that turn, like a cantrip, can't use one.",
+      "criticalHit": "Critical Hit: when you roll a 20 on the d20 for an attack roll, you hit no matter the target's AC, and the hit is a Critical Hit. Roll all of the attack's damage dice twice and add them together, then add your modifiers once as normal.",
+      "difficultTerrain": "Difficult Terrain: every foot you move through it costs 1 extra foot, so it uses up your Speed twice as fast. Think rubble, heavy snow, thick undergrowth, waist-deep water, or the space of a creature that isn't your ally.",
+      "surprise": "Surprise: if you are caught unaware when combat starts, say by an ambush, you have Disadvantage on your Initiative roll. That's all it does: once your turn comes, you act normally."
     }
   }
 }

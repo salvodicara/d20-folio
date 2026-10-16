@@ -172,6 +172,42 @@ describe("Sessions", () => {
     expect(await screen.findByRole("button", { name: /^copy$/i })).toBeInTheDocument();
   });
 
+  it("copies the session's notes and its automatic report together, ready for an AI", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    listMock.mockResolvedValue([
+      {
+        ...session("s1", "Session 1"),
+        date: new Date(2026, 9, 8, 21),
+        notes: "Mara owes Ben 5 gp.",
+      },
+    ]);
+    logStore.recent.mockResolvedValue([
+      {
+        id: "2026-10-08",
+        lastAt: 1,
+        items: [
+          {
+            id: "a",
+            by: "u",
+            at: 1,
+            type: "event",
+            event: { kind: "rest", rest: "short" },
+          },
+        ],
+      },
+    ]);
+    render(<Sessions campaignId="c1" openLatest />);
+    fireEvent.click(await screen.findByRole("button", { name: /automatic report/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /^copy$/i }));
+    const copied = String(writeText.mock.calls[0]?.[0]);
+    expect(copied).toContain("## Session notes\n\nMara owes Ben 5 gp.");
+    expect(copied.indexOf("Mara owes Ben")).toBeLessThan(copied.indexOf("short rest"));
+  });
+
   it("CAMPAIGN-NOTES-UX — bounds the list to the latest 5 sessions behind View all", async () => {
     // Newest first (the io contract): Sessions 7…1. At a glance only the latest
     // 5 show; the archive sits behind "View all (7)" and folds back.

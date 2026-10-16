@@ -41,6 +41,8 @@ import {
   setMemberCharacter,
 } from "@/features/campaigns/campaign-io";
 import { buildMemberSnapshot } from "@/features/campaigns/member-snapshot";
+import { canonicalJsonEquals } from "@/lib/character-snapshot-reconciler";
+import { stripUndefined } from "@/lib/strip-undefined";
 
 /**
  * Resolves, lazily and once, the campaign ids a given (owner, character) pair is
@@ -51,6 +53,10 @@ import { buildMemberSnapshot } from "@/features/campaigns/member-snapshot";
  */
 export interface AttachedCampaignTracker {
   ensure: () => Promise<string[]>;
+  /** The party card this campaign last held (read or written), if known. */
+  card: (campaignId: string) => unknown;
+  /** Record the card a campaign now holds; `undefined` forgets it (a failed write). */
+  setCard: (campaignId: string, card: unknown) => void;
 }
 
 /** Build a tracker for `(uid, charId)`. Memoizes the in-flight + resolved read so
@@ -61,16 +67,24 @@ export function createAttachedCampaignTracker(
 ): AttachedCampaignTracker {
   let campaignIds: string[] | null = null;
   let resolving: Promise<string[]> | null = null;
+  const cards = new Map<string, unknown>();
 
   return {
+    card: (campaignId) => cards.get(campaignId),
+    setCard(campaignId, card) {
+      if (card === undefined) cards.delete(campaignId);
+      else cards.set(campaignId, card);
+    },
     ensure(): Promise<string[]> {
       if (campaignIds) return Promise.resolve(campaignIds);
       if (!resolving) {
         resolving = listSharedCampaigns(uid)
           .then((campaigns) => {
-            const ids = campaigns
-              .filter((c) => c.memberDetails[uid]?.characterId === charId)
-              .map((c) => c.id);
+            const attached = campaigns.filter(
+              (c) => c.memberDetails[uid]?.characterId === charId
+            );
+            for (const c of attached) cards.set(c.id, c.memberDetails[uid]?.character);
+            const ids = attached.map((c) => c.id);
             campaignIds = ids;
             return ids;
           })
@@ -91,6 +105,12 @@ export function createAttachedCampaignTracker(
  * it is attached to. Fire-and-forget — resolves quietly even when every write
  * fails (offline) so it can never affect the character save. A no-op when the
  * character is attached nowhere.
+ *
+ * Only a CHANGED card is written. Most saves (End Turn's recoveries and timers, an
+ * HP tick) leave name, classes, AC, max HP and portrait alone, and an identical
+ * write still bumps the campaign doc: it made a concurrent campaign transaction
+ * (End Turn's `advanceEncounterTurn`) fail its precondition and retry after a
+ * backoff of a second or more, and woke every member's listener for nothing.
  */
 export async function refreshAttachedSheets(
   tracker: AttachedCampaignTracker,
@@ -100,7 +120,18 @@ export async function refreshAttachedSheets(
   const campaignIds = await tracker.ensure();
   if (campaignIds.length === 0) return;
   const snapshot: MemberCharacterSnapshot = buildMemberSnapshot(doc);
+  const card = stripUndefined(snapshot);
   await Promise.allSettled(
-    campaignIds.map((campId) => setMemberCharacter(campId, uid, doc.id, snapshot))
+    campaignIds
+      .filter((campId) => !canonicalJsonEquals(tracker.card(campId), card))
+      .map(async (campId) => {
+        tracker.setCard(campId, card);
+        try {
+          await setMemberCharacter(campId, uid, doc.id, snapshot);
+        } catch (error) {
+          tracker.setCard(campId, undefined);
+          throw error;
+        }
+      })
   );
 }
