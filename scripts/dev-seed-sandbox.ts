@@ -15,7 +15,9 @@ import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
+
+import { sandboxCharacterDocuments } from "./lib/sandbox-character.ts";
 
 const PROJECT_ID = env.GCLOUD_PROJECT ?? env.GOOGLE_CLOUD_PROJECT ?? "";
 const CAMPAIGN_ID = "SANDBOX";
@@ -147,16 +149,26 @@ async function run(): Promise<void> {
       lastActiveAt: now,
       settings: { language: "en", theme: "dark" },
     });
-    await db.doc(`users/${player.uid}/characters/${player.characterId}`).set({
-      ...player.envelope,
-      portraitUrl: null,
-      portraitCrop: null,
-      shared: false,
-      status: "active",
-      attachedCampaignId: CAMPAIGN_ID,
-      createdAt: now,
-      updatedAt: now,
-    });
+    // The live ADR-0009 shape (parent + `combat/state` child), planned by the parent
+    // cutover migration itself, so the app opens the seeded players like real ones.
+    const { parent, child } = sandboxCharacterDocuments(
+      player.uid,
+      player.characterId,
+      player.envelope as unknown as Record<string, unknown>,
+      {
+        portraitUrl: null,
+        portraitCrop: null,
+        shared: false,
+        status: "active",
+        attachedCampaignId: CAMPAIGN_ID,
+        createdAt: now,
+        updatedAt: now,
+      },
+      Timestamp.now()
+    );
+    const characterPath = `users/${player.uid}/characters/${player.characterId}`;
+    await db.doc(characterPath).set(parent);
+    await db.doc(`${characterPath}/combat/state`).set(child);
   }
 
   const memberDetails: Record<string, unknown> = {
