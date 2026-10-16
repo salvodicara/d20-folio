@@ -1708,7 +1708,8 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
   // reads too (golden rule 6) — so a `dawn` pool (a magic item's daily charges)
   // shows the SAME Long-Rest badge here as on the Features tab, never a blank.
   const recovery = trackerRecoveryBadgeBucket(tracker.recovery);
-  // D4 — localize the recovery badge: EN SR/LR, IT RB/RL (Riposo Breve / Riposo Lungo).
+  // The recovery badge in full words ("Short rest" / "Riposo breve"), never
+  // SR/RB: a beginner cannot decode the abbreviation (owner 2026-10-16).
   const recoveryLabel =
     recovery === "long"
       ? t("features.recoverLongBadge")

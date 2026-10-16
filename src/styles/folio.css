@@ -3627,8 +3627,9 @@ button.pr-dot.lg::before {
    AC / Init / Speed / PB instead of reading as a raw-Tailwind tile. As a popover
    trigger it gets the interactive hover the static vitals don't. */
 .vital-hp {
-  min-width: 5.25rem;
-  gap: 4px;
+  /* Direction B: hit points are the hero figure of the band. */
+  min-width: 8.5rem;
+  gap: 6px;
   cursor: pointer;
   transition:
     border-color var(--m-fast) var(--ease-standard),
@@ -3644,24 +3645,24 @@ button.pr-dot.lg::before {
   gap: 3px;
   font-family: var(--font-engraved);
   font-weight: 700;
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
   line-height: 1;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 .vital-hp .vhp-sep {
-  font-size: 12px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-secondary);
 }
 .vital-hp .vhp-temp {
-  font-size: 11px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--semantic-info);
 }
 .vital-hp .hp-bar {
   width: 100%;
-  height: 5px;
+  height: 8px;
 }
 /* Dying (0 HP): the SAME vital footprint (zero layout shift) re-skinned to the
    danger hue — the markable death saves + quick-heal still live in the DyingBanner. */
@@ -9664,11 +9665,13 @@ button.create-need:focus-visible .create-need-chev {
      boxed folder tab. The active one is lit from below: a gilt underline that
      lands on the panel's top edge (the shell's -2px seat) and a soft glow. */
   height: 36px;
-  padding: 0 10px;
+  /* Cinzel is a wide face: the five cockpit tabs fit the centre column in
+     Italian at 1440 with this padding and tracking (no scroll, no cut word). */
+  padding: 0 8px;
   font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--text-muted);
   border-bottom: 2px solid transparent;
