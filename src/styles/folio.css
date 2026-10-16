@@ -16272,7 +16272,6 @@ button.econ-tok-filter:active .econ-disc {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  margin-top: var(--sp-3);
 }
 .char-status-row .status-ledge {
   padding-top: 0;

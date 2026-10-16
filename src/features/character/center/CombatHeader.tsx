@@ -388,7 +388,7 @@ export function CombatHeader() {
           anyway. Never shrink the identity; let the deck wrap. The `max-w` cap
           keeps a genuinely long name wrapping inside the header instead of
           overflowing it. */}
-      <div className="flex items-center gap-3.5 md:max-w-[65%] md:grow md:shrink-0">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-3 md:max-w-[65%] md:grow md:shrink-0">
         {isEdit ? (
           // D21 — edit mode: the seal is the portrait editor (add when empty, or a
           // Re-crop / Upload / Remove menu when set). Reuses usePortraitCrop +
@@ -519,9 +519,6 @@ export function CombatHeader() {
             </p>
           )}
           <HeaderXp experience={charData.experience} level={level} editable={!readonly} />
-          {/* Every state the character is in, once (owner 2026-10-16): under the
-              name, on every tab and on the phone. */}
-          <CharacterStatusRow />
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The
               in-combat session controls (live round, roll-to-total initiative, the
               your-turn cue + the shared turn-advance via End Turn) belong WITH the
@@ -529,6 +526,11 @@ export function CombatHeader() {
               (ThisTurnTracker), never in the identity band (golden rule 6 — controls
               live with what they change). A source-level guard pins this so the
               clutter can't creep back. */}
+        </div>
+        {/* Every state the character is in, once (owner 2026-10-16): under the
+            name on a laptop, full width under the portrait on a phone. */}
+        <div className="col-span-2 min-w-0 md:col-span-1 md:col-start-2">
+          <CharacterStatusRow />
         </div>
       </div>
 
