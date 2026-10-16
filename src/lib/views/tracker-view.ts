@@ -48,6 +48,7 @@ import {
   type LightLevel,
 } from "@/lib/light-states";
 import { VISION_REFERENCE } from "@/data/combat-variants";
+import { baseActionStateName } from "@/lib/base-action-states";
 import { wishStressStateName } from "@/lib/wish-state";
 import type { CharacterDoc } from "@/types/character";
 import type { ActivatableGroup } from "@/lib/grants";
@@ -513,6 +514,7 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
   if (cover) return cover[locale];
   const state =
     surpriseStateName(sourceId) ??
+    baseActionStateName(sourceId) ??
     wishStressStateName(sourceId) ??
     situationalStateName(sourceId) ??
     lightStateName(sourceId);

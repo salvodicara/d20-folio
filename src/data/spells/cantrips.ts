@@ -14,7 +14,8 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     damageType: "acid",
     damageDice: "1d6",
     saveAbility: "DEX",
-    targeting: { affinity: "enemy", maxTargets: 2, sharedAmount: true },
+    // SRD 5.2.1: the bubble explodes in a 5-foot-radius Sphere.
+    area: true,
     source: "SRD",
   },
   {

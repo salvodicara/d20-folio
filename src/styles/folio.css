@@ -5146,11 +5146,11 @@ button.trk-pip:active {
 }
 /* The light lit-pip ember lives with the other light gold-glow parity recipes in
    the OWN-15 block below (one source of truth for the struck tracker jewel). */
+/* No gap: "<b>7</b>/7 charges" is one run; a flex gap split it into "7 /7". */
 .trk-pool {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-family: var(--font-numeric);
   font-size: 11px;
   font-weight: 700;
@@ -8746,12 +8746,14 @@ button.create-need:focus-visible .create-need-chev {
   text-transform: uppercase;
   color: var(--accent-text);
 }
+/* A label names what the row does, so it wraps instead of being cut (a 360px
+   phone in Italian cut "Segnala un problema o un'idea"). */
 .menu-item .palette-label {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: var(--leading-snug);
 }
 .menu-item .palette-sub {
   flex: none;
@@ -12020,10 +12022,18 @@ button.uc-chevron::before {
    (chips included) opens the card. They carry no title tooltip, so nothing is
    lost. (The rider cluster keeps `title`/aria on its wrapper for AT, which is
    not a pointer affordance.) */
+.uc-verdict-cluster,
 .uc-verdict,
 .uc-rider-cluster,
 .uc-rider-pill {
   pointer-events: none;
+}
+/* …the WRAPPER too: with only the chip passive, the cluster box itself caught the
+   tap above the row overlay and nothing happened (bug sweep 2026-10-13). A chip
+   that carries a breakdown (an evaluated heal formula) is a real button and keeps
+   its own tap. */
+.uc-verdict-cluster button.uc-verdict {
+  pointer-events: auto;
 }
 /* The collapsed-face on-hit RIDER cluster (#87 rider-render) — the bonus-damage
    chips that sit immediately after the base-damage verdict, grouped so they read
@@ -21722,6 +21732,24 @@ body:has(.fob) .toast-region {
 .signet.signet-left {
   right: auto;
   left: 16px;
+}
+/* Lanes, not layers (the fob's rule, on the phone): while the Signet is up the
+   toast lane runs BESIDE its coin column (46px coin + a gap), so a stack of toasts
+   can never rise over the coin (bug report 2026-10-16: a cast plus its
+   material-cost offer covered the tools). */
+@media (max-width: 720px) {
+  body:has(.signet) .toast-region {
+    left: var(--sp-4);
+    right: calc(16px + 46px + var(--sp-3));
+    transform: none;
+    width: auto;
+    max-width: none;
+    align-items: stretch;
+  }
+  body:has(.signet.signet-left) .toast-region {
+    left: calc(16px + 46px + var(--sp-3));
+    right: var(--sp-4);
+  }
 }
 .signet-chain {
   display: flex;

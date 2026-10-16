@@ -7,6 +7,7 @@
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
+import type { BiText } from "@/data/types";
 
 type TurnBoundaryWhileActive = Extract<Grant, { type: "while-active" }> & {
   duration: { kind: "turn-boundary"; phase: "turn-start" | "turn-end"; turns: number };
@@ -63,4 +64,9 @@ export function resolveBaseActionStateSources(
   return BASE_ACTION_STATES.filter((state) => activeKeys.has(state.grant.activeKey)).map(
     (state) => ({ id: state.actionId, grants: [state.grant] })
   );
+}
+
+/** The bilingual name behind a base-action state key, for log lines and labels. */
+export function baseActionStateName(key: string): BiText | undefined {
+  return BASE_ACTION_STATES.find((state) => state.grant.activeKey === key)?.grant.label;
 }

@@ -2,6 +2,8 @@
  * Pure play transitions for the character's active states (Rage, Bless lit on
  * yourself, a potion's timer): the character in, the next session out.
  */
+import { getSpellById } from "@/data/spells";
+import type { Grant } from "@/lib/grants";
 import { potionStateGrant, potionTimerKey } from "@/lib/potion-states";
 import {
   potionDurationRounds,
@@ -141,5 +143,44 @@ export function restoreStateKey(
     activeFeatures: wasActive ? [...active, key] : active,
     effectTimers: put(session.effectTimers, prior.effectTimers),
     effectBoundaries: put(session.effectBoundaries, prior.effectBoundaries),
+  };
+}
+
+/** Every option choice (`choice-grant-bundle` key) nested in these grants. */
+function choiceBundleKeys(grants: ReadonlyArray<Grant>): string[] {
+  return grants.flatMap((g) => {
+    if (g.type === "choice-grant-bundle") return [g.bundleKey];
+    return g.type === "while-active" ? choiceBundleKeys(g.grants) : [];
+  });
+}
+
+/**
+ * The option choices a spell's standing state carries (Enlarge or Reduce, an Alter
+ * Self form, Fire Shield's warm or chill). Each cast picks anew, so lighting the
+ * state by a cast clears them and the rail asks again, as on the first cast.
+ */
+export function castStateChoiceKeys(spellId: string, activeKey: string): string[] {
+  return (getSpellById(spellId)?.grants ?? []).flatMap((g) =>
+    g.type === "while-active" && g.activeKey === activeKey
+      ? choiceBundleKeys(g.grants)
+      : []
+  );
+}
+
+/** Set (an option id) or clear (null) option choices, or null when none changes. */
+export function setBundleChoices(
+  doc: CharacterDoc,
+  choices: Readonly<Record<string, string | null>>
+): SessionState | null {
+  const prior = doc.session.grantBundleChoices ?? {};
+  const merged: Record<string, string | null> = { ...prior, ...choices };
+  const next = Object.fromEntries(
+    Object.entries(merged).filter((entry): entry is [string, string] => entry[1] !== null)
+  );
+  const keys = new Set([...Object.keys(prior), ...Object.keys(next)]);
+  if ([...keys].every((key) => prior[key] === next[key])) return null;
+  return {
+    ...doc.session,
+    grantBundleChoices: Object.keys(next).length > 0 ? next : undefined,
   };
 }

@@ -107,6 +107,7 @@ export function combatEventToPlayEvent(
         kind: "status",
         sourceId: event.penaltyId,
         started: event.amount > 0,
+        ...(event.amount > 0 ? { amount: event.amount } : {}),
         actor: me,
       };
     case "effect-expired":

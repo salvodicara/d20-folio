@@ -75,6 +75,8 @@ export type PlayEvent =
       /** The feature, spell or item whose lasting effect started or ran out. */
       sourceId: string;
       started: boolean;
+      /** A D20 Test penalty's amount where it now stands (Raise Dead: 3 after a rest). */
+      amount?: number;
       actor?: CombatantId;
     }
   | { kind: "down"; target: CombatantId }
