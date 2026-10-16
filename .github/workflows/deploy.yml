@@ -29,6 +29,11 @@ on:
         description: "Content-pack commit to compose (full SHA). Empty = the pack commit Verify composed."
         required: false
         default: ""
+      runtime_pack:
+        description: "Ship the public build without the private pack; allowlisted accounts download it (owner's yes, after the claims are granted)."
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -166,10 +171,23 @@ jobs:
           for name in VITE_FIREBASE_API_KEY VITE_FIREBASE_MESSAGING_SENDER_ID VITE_FIREBASE_APP_ID VITE_APPCHECK_SITE_KEY; do
             test -n "${!name:-}" || { echo "::error::Missing required repository secret: $name"; exit 1; }
           done
+      # The runtime pack (docs/ARCHITECTURE.md → the content-pack seam): the public
+      # build carries no private content; the pack goes to protected Storage and
+      # only accounts with the `pack` claim download it after sign-in.
+      - name: Emit the runtime pack
+        if: inputs.runtime_pack
+        run: |
+          set -euo pipefail
+          node --import ./scripts/alias-loader.mjs scripts/pack/emit-pack.ts .pack-out "$VITE_FIREBASE_STORAGE_BUCKET"
+          echo "VITE_CONTENT_PACK=runtime" >> "$GITHUB_ENV"
+          echo "VITE_PACK_VERSION=$(cat .pack-out/version.txt)" >> "$GITHUB_ENV"
       - name: Build
         run: pnpm build
       - name: Bundle budget
         run: pnpm test:budget
+      - name: Require a public build with no private content
+        if: inputs.runtime_pack
+        run: node scripts/pack/check-public-bundle.ts dist .pack-out
 
       # Authenticate only after building, so the short-lived credentials file can
       # never enter dist/. The existing secret is a service-account JSON key;
@@ -243,6 +261,15 @@ jobs:
             }
             sleep 10
           done
+
+      # Runtime pack: the claim rule and the pack files land BEFORE the client that
+      # reads them, so no allowlisted player ever meets a missing pack.
+      - name: Deploy the Storage rules (runtime pack)
+        if: inputs.runtime_pack
+        run: firebase deploy --only storage --project d20-folio --non-interactive
+      - name: Upload the runtime pack
+        if: inputs.runtime_pack
+        run: node scripts/pack/upload-pack.ts .pack-out "$VITE_FIREBASE_STORAGE_BUCKET" --apply
 
       - name: Deploy Hosting and security rules
         run: firebase deploy --only hosting,firestore:rules,storage --project d20-folio --non-interactive
