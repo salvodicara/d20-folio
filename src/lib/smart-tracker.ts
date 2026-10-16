@@ -1575,6 +1575,11 @@ export function resolveTrackerTotal(
   character: CharacterDoc,
   scalingLevel?: number
 ): number {
+  return resolveTrackerExpr(formula, trackerExprCtx(character, scalingLevel));
+}
+
+/** The level, Proficiency Bonus and modifiers a tracker formula reads. */
+function trackerExprCtx(character: CharacterDoc, scalingLevel?: number): TrackerExprCtx {
   const { character: charData } = character;
   const characterLevel = totalLevel(charData);
   const level = scalingLevel ?? characterLevel;
@@ -1591,7 +1596,134 @@ export function resolveTrackerTotal(
     WIS: abilityModifier(scores.WIS),
     CHA: abilityModifier(scores.CHA),
   };
-  return resolveTrackerExpr(formula, { level, pb, abilityMap });
+  return { level, pb, abilityMap };
+}
+
+/**
+ * The parts of a tracker total (how many uses a resource has), for the "where does
+ * this number come from?" tip (re-foundation phase 2). It mirrors
+ * `resolveTrackerExpr` term by term: an ability modifier (raised to the minimum of 1
+ * with the reason on tap), the Proficiency Bonus, the level, a fixed count, a
+ * multiplier or division explained on tap, and a sum's terms one by one with the
+ * minimum of 1 the whole sum gets. `breakdownTotal(parts)` equals
+ * `resolveTrackerTotal` with the same arguments; the guard pins it.
+ */
+export function trackerTotalBreakdown(
+  formula: string,
+  character: CharacterDoc,
+  scalingLevel?: number
+): RawBreakdownPart[] {
+  return trackerExprParts(formula, trackerExprCtx(character, scalingLevel));
+}
+
+const MIN_ONE_WHY = { term: "breakdown.why.trackerMinimumOne" } as const;
+
+/** A bare term's label and raw value ("level", "PB", an ability code, a number). */
+function trackerTermPart(
+  term: string,
+  value: number,
+  ctx: TrackerExprCtx
+): RawBreakdownPart {
+  if (term in ctx.abilityMap) return abilityPart(term as AbilityCode, value);
+  if (term === "PB") return termPart("character.proficiencyBonus", value);
+  if (term === "level") return termPart("common.level", value);
+  return termPart("breakdown.tracker.fixed", value);
+}
+
+function trackerRawTerm(term: string, ctx: TrackerExprCtx): number {
+  if (term === "level") return ctx.level;
+  if (term === "PB") return ctx.pb;
+  if (term in ctx.abilityMap) return ctx.abilityMap[term] ?? 0;
+  return parseInt(term, 10) || 0;
+}
+
+function trackerExprParts(formula: string, ctx: TrackerExprCtx): RawBreakdownPart[] {
+  const total = resolveTrackerExpr(formula, ctx);
+  const num = parseInt(formula, 10);
+  if (!isNaN(num) && formula === String(num))
+    return [termPart("breakdown.tracker.fixed", num)];
+  if (formula in ctx.abilityMap) {
+    const mod = ctx.abilityMap[formula] ?? 0;
+    return [
+      mod < 1
+        ? abilityPart(formula as AbilityCode, 1, undefined, MIN_ONE_WHY)
+        : abilityPart(formula as AbilityCode, mod),
+    ];
+  }
+  if (formula === "PB" || formula === "level") {
+    return [trackerTermPart(formula, trackerRawTerm(formula, ctx), ctx)];
+  }
+  const maxMatch = formula.match(/^max\(([^,()]+),([^,()]+)\)$/);
+  if (maxMatch) {
+    const left = (maxMatch[1] ?? "0").trim();
+    const right = (maxMatch[2] ?? "0").trim();
+    const winner =
+      resolveTrackerExpr(left, ctx) >= resolveTrackerExpr(right, ctx) ? left : right;
+    return trackerExprParts(winner, ctx);
+  }
+  const roundMatch = formula.match(/^(floor|ceil)\((.+)\/(\d+)\)$/);
+  if (roundMatch) {
+    const inner = roundMatch[2] ?? "0";
+    return [
+      termPart(
+        inner === "level" ? "common.level" : "breakdown.tracker.fixed",
+        total,
+        undefined,
+        {
+          term: `breakdown.why.trackerDivided.${roundMatch[1] === "ceil" ? "up" : "down"}`,
+          params: {
+            value: resolveTrackerExpr(inner, ctx),
+            divisor: parseInt(roundMatch[3] ?? "1", 10) || 1,
+          },
+        }
+      ),
+    ];
+  }
+  const mulMatch = formula.match(/^(\w+)\*(\d+)$/);
+  if (mulMatch) {
+    const term = mulMatch[1] ?? "";
+    const factor = parseInt(mulMatch[2] ?? "1", 10);
+    const part = trackerTermPart(term, total, ctx);
+    return [
+      {
+        ...part,
+        why: {
+          term: "breakdown.why.trackerTimes",
+          params: { value: trackerRawTerm(term, ctx), factor },
+        },
+      },
+    ];
+  }
+  const sumMatch = formula.match(/^(.+)([+-])(\w+)$/);
+  if (sumMatch) {
+    const left = trackerExprParts(sumMatch[1] ?? "0", ctx);
+    const sign = sumMatch[2] === "-" ? -1 : 1;
+    const term = sumMatch[3] ?? "";
+    const parts = [...left, trackerTermPart(term, sign * trackerRawTerm(term, ctx), ctx)];
+    const sum = breakdownTotal(parts);
+    if (total > sum)
+      parts.push(
+        termPart("breakdown.tracker.minimum", total - sum, undefined, MIN_ONE_WHY)
+      );
+    return parts;
+  }
+  const divMatch = formula.match(/^(\w+)\/(\d+)$/);
+  if (divMatch) {
+    const term = divMatch[1] ?? "";
+    return [
+      {
+        ...trackerTermPart(term, total, ctx),
+        why: {
+          term: "breakdown.why.trackerDivided.down",
+          params: {
+            value: trackerRawTerm(term, ctx),
+            divisor: parseInt(divMatch[2] ?? "1", 10) || 1,
+          },
+        },
+      },
+    ];
+  }
+  return [termPart("breakdown.tracker.fixed", total)];
 }
 
 /**
