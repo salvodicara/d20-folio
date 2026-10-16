@@ -483,7 +483,6 @@ export function EndEncounterDialog({
       open
       onClose={onCancel}
       title={t("combatChronicle.endTitle")}
-      rubric={t("combatChronicle.feedTitle")}
       backDismiss={false}
       compact
     >
