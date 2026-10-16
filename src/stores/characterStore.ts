@@ -24,6 +24,11 @@ import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { changeConcentration } from "@/lib/play/concentration";
 import { applySheetEvent, type SheetEvent } from "@/lib/play/sheet-events";
 import {
+  createPlayLogShadow,
+  type PlayLogShadow,
+  type ShadowStats,
+} from "@/lib/play/play-log-shadow";
+import {
   amendLogEntry as amendLogEntryEvent,
   appendLogEntry,
   removeLogEntry as removeLogEntryById,
@@ -1015,6 +1020,42 @@ let playLogSink: PlayLogSink | null = null;
 
 export function setPlayLogSink(sink: PlayLogSink | null): void {
   playLogSink = sink;
+}
+
+/**
+ * Shadow mode for the play log (phase 3a step 2, docs/architecture/play-log.md): in
+ * development only, every dispatched sheet event is recorded in the character's
+ * shadow log and checked for parity with the live character. It changes nothing the
+ * player sees; a mismatch is a console warning to investigate.
+ */
+const playLogShadows = new Map<string, PlayLogShadow>();
+
+function shadowRecord(
+  before: CharacterDoc,
+  event: SheetEvent,
+  after: CharacterDoc
+): string | null {
+  if (!import.meta.env.DEV) return null;
+  let shadow = playLogShadows.get(before.id);
+  if (!shadow) {
+    shadow = createPlayLogShadow("owner");
+    playLogShadows.set(before.id, shadow);
+  }
+  const { id, parity } = shadow.record(before, event, after);
+  if (!parity) console.warn(`[play-log shadow] parity mismatch after ${event.kind}`);
+  return id;
+}
+
+function shadowUndo(restored: CharacterDoc, shadowId: string | null): void {
+  if (!shadowId) return;
+  const shadow = playLogShadows.get(restored.id);
+  if (shadow && !shadow.undo(shadowId, restored).parity)
+    console.warn("[play-log shadow] parity mismatch after an undo");
+}
+
+/** The shadow log's counters for a character (development only; null when none). */
+export function playLogShadowStats(characterId: string): ShadowStats | null {
+  return playLogShadows.get(characterId)?.stats() ?? null;
 }
 
 function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
@@ -3106,7 +3147,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const next = applySheetEvent(character, event);
     if (!next) return null;
     set({ character: next });
-    return () => set({ character });
+    const shadowId = shadowRecord(character, event, next);
+    return () => {
+      set({ character });
+      shadowUndo(character, shadowId);
+    };
   },
 
   setCompanionHp: (featureId, current) => {
