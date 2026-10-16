@@ -68,6 +68,7 @@ import { cn } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
 import { fallDamageDice } from "@/lib/play/fall";
 import { hpState } from "./hp-tier";
+import { usesMetric } from "@/lib/locale";
 
 /**
  * S5 — the Bloodied marker: a compact vermilion droplet that sits inside an HP
@@ -227,7 +228,7 @@ export function HpEditPopover({
   const [fallDistance, setFallDistance] = useState("");
   const [fallTotal, setFallTotal] = useState("");
   const [fallProne, setFallProne] = useState(true);
-  const fallUnit = locale === "it" ? "m" : "ft";
+  const fallUnit = usesMetric(locale) ? "m" : "ft";
   const fallDice = fallDamageDice(Number(fallDistance.replace(",", ".")), fallUnit);
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");

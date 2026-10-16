@@ -12,6 +12,7 @@ import {
   type LanguageChoiceSlot,
 } from "@/lib/feat-language-choices";
 import { localizeSrd } from "@/i18n/resolver";
+import { asLocale } from "@/lib/locale";
 
 interface Props {
   slots: ReadonlyArray<LanguageChoiceSlot>;
@@ -44,7 +45,7 @@ function LanguageSlotPicker({
   onChange: (ids: string[]) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "it" ? "it" : "en";
+  const locale = asLocale(i18n.language);
 
   // IDS only from the engine; the LABEL is resolved by id here (presenter layer),
   // so a tongue reads its canonical localized name and a new language is JUST JSON.

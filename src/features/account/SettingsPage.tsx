@@ -36,6 +36,7 @@ import { Icon } from "@/components/ui/icon";
 import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useLocale } from "@/hooks/useLocale";
+import { LOCALES, type Locale } from "@/lib/locale";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { signOut } from "@/lib/auth";
@@ -124,14 +125,14 @@ export function SettingsPage() {
               name={t("settings.language")}
               help={t("settings.languageHelp")}
               control={
-                <Segmented<"en" | "it">
+                <Segmented<Locale>
                   aria-label={t("settings.language")}
                   value={language}
                   onChange={setLanguage}
-                  options={[
-                    { value: "en", label: "EN" },
-                    { value: "it", label: "IT" },
-                  ]}
+                  options={LOCALES.map((code) => ({
+                    value: code,
+                    label: code.toUpperCase(),
+                  }))}
                 />
               }
             />

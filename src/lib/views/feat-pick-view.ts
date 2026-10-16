@@ -22,6 +22,7 @@ import { proseCorpus } from "@/lib/search";
 import { localizeSrd } from "@/i18n/resolver";
 import { abilityLabel } from "@/lib/views/level-up-view";
 import type { Locale } from "@/lib/locale";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 /** One render-ready feat entry for the wizard F morphing list. */
 export interface FeatPickVM {
@@ -96,7 +97,9 @@ export function featPickVM(feat: SrdFeatData, locale: Locale): FeatPickVM {
     get searchDesc() {
       searchDesc ??= proseCorpus(
         description,
-        locale === "en" ? undefined : localizeSrd("feat", feat.id, "description", "en")
+        locale === SOURCE_LOCALE
+          ? undefined
+          : localizeSrd("feat", feat.id, "description", "en")
       );
       return searchDesc;
     },
