@@ -29,7 +29,15 @@ function isLogItem(value: unknown): value is LogItem {
   const hasEvent = typeof item.event === "object" && item.event !== null;
   if (item.type === "event") return hasEvent;
   if (item.type === "correct") return hasEvent && typeof item.target === "string";
-  return item.type === "retract" && typeof item.target === "string";
+  if (item.type === "move")
+    return (
+      typeof item.target === "string" &&
+      (item.after === null || typeof item.after === "string")
+    );
+  return (
+    (item.type === "retract" || item.type === "hide" || item.type === "show") &&
+    typeof item.target === "string"
+  );
 }
 
 export function createFirestoreSessionLogStore(

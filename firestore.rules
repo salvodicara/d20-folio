@@ -903,6 +903,7 @@ service cloud.firestore {
     }
 
     // The session log (src/lib/session-log): one append-only document per play session.
+    // The narrative overrides (hide, show, move a line) are appended items like corrections.
     // Members append exactly one item at a time, stamped with their own uid; the history
     // already written never changes, so a correction is itself an appended item. Who may
     // correct which line is decided by the deterministic fold, not here (ADR-0005: rules
@@ -920,7 +921,7 @@ service cloud.firestore {
       }
       function ownItem(item) {
         return item.by == request.auth.uid
-          && item.type in ['event', 'correct', 'retract']
+          && item.type in ['event', 'correct', 'retract', 'hide', 'show', 'move']
           && item.id is string;
       }
       function validLog() {
