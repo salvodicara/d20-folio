@@ -403,7 +403,7 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
   atomic-design / numbered-HTML-previews / `ui-restyle`-branch cadence is superseded.
 
 ```text
-1. Read docs/PRODUCT_CONSTITUTION.md (supreme UX law) + DESIGN.md (the design system of record).
+1. Read PRODUCT.md + docs/GOLDEN_RULES.md (the UX law) + DESIGN.md (the design system of record).
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).

@@ -1,68 +1,46 @@
 # Product
 
-## Production recovery — owner decision, 2026-09-21
-
-> **Owner, 2026-10-08:** a spell that establishes a state on its caster (Shield, Hunter's Mark,
-> Divine Favor) lights that state on Cast, with its countdown, and undo clears it — from the
-> spellbook and the reaction button alike. Spells that may target someone else (Mage Armor,
-> Bless) wait for the optional target detail. Damage and healing still resolve at the table.
-
-Folio's production sheet returns to resource tracking while d20 Studio carries the
-new product work. Casting spends the selected slot or free-cast resource; targets,
-dice, healing, damage and other consequences are resolved at the table. Spellbook
-and Play shortcuts share this behavior. Concentration, source/level choices, manual
-health controls and undo remain. Initiative and turn tools support play without
-blocking spell resource tracking. Manual damage applies immediately without a
-reaction prompt. Consumables spend one item, and undo restores only that unit.
-Pending resource choices belong to the character that opened them. Preserve current stored characters; no full
-rollback, schema downgrade or automatic deployment is authorized.
-
-On 2026-09-22 the owner also requested a clearer short rest: distinguish Hit Dice
-to spend from the physical dice total, show Constitution separately, preview the
-resulting HP and allow a rest without healing. Prefer concise controls to more
-instructions; retain current resource recovery and saved data.
-
 ## Register
 
 product
 
 ## Users
 
-D&D 2024 players, from first-timers to veterans, creating, managing, and playing characters
-digitally — bilingual (EN + IT), offline-first PWA. Desktop and mobile expose the complete product:
-desktop optimizes simultaneous context, encounter management and dense preparation; mobile
-optimizes one-handed play, fast table input, reading and between-session review. Neither is a
-reduced edition of the other. Beginner-friendly (no manual required) yet expert-capable (hints
-ignorable). Friends of the owner are live users with real characters — this is not a hypothetical
-audience.
+Beginners everywhere, Italian and international: players in their first campaigns and first-time
+DMs, at a real table or next to Owlbear and other VTTs (product brief, 2026-10-16). Expert-capable:
+hints are ignorable and every value can be overridden. Multilingual by design (EN + IT today), offline-first PWA.
+Desktop and mobile expose the complete product: desktop optimizes simultaneous context, encounter
+management and preparation; mobile optimizes one-handed play, fast table input, reading and
+between-session review. Neither is a reduced edition of the other. The owner's two groups are live
+users with real characters.
 
 ## Product Purpose
 
-A character manager that auto-computes every D&D 2024 rule while always allowing a manual override,
-so players trust it over paper. Success = a player runs an entire character lifecycle (create, level
-up, play a combat, manage a campaign) without leaving the app, and it feels premium enough to prefer
-over a physical sheet. The app is both a live tabletop companion (action economy, HP, resources,
-initiative/round tracking are first-class) and a D&D knowledge/discovery tool (search, character
-understanding, progression paths) — both goals equally important. The app never rolls dice; players
-roll physical dice, the app only logs and associates rolls with actions. DM tools are an optional
-force-multiplier, never a requirement — the app owns the character/campaign-tied data layer and
-complements (never replaces) a virtual tabletop like Owlbear Rodeo.
+"Roll your own dice: Folio does the maths, explains every number and writes the session report."
+(IT: «Tira i tuoi dadi: Folio fa i conti, ti spiega ogni numero e scrive il resoconto della
+sessione.») The engine computes every D&D 2024 rule it models, always with a manual override; the
+player declares with one tap; every number opens into its sources; the session log becomes a
+deterministic report. Folio never rolls dice and is never a VTT. Success = a beginner runs a whole
+character lifecycle and a session without leaving the app, and understands why each number is what
+it is. Decisions behind this: `docs/strategy/2026-10-16-product-brief.md`.
 
 ## Brand Personality
 
-**Tactical Codex:** magical, premium, confident, alive. The product feels like a first-class fantasy
-game companion built for use at a real table: distinctive at a glance, calm under pressure, rich
-where identity or consequence matters, and quiet where the user is reading or deciding. Dark
-graphite, warm ivory, restrained antique gold, semantic pigments, original portraits and precise
-tactical iconography form the current working direction. The name describes a product quality and
-interaction grammar, not a theme that every surface must decorate literally.
+**Direction B, "BG3 fantasy ricco"** (owner, 2026-10-16; approved as a direction, each screen still
+needs the owner's yes): magical, premium, confident, legible. Dark stone, gold leaf, engraved Cinzel
+capitals for titles, names, label capitals and big figures; Alegreya for every reading line, never
+below 14px. One gold-leaf lit action per screen (End Turn on Play). One colour per action type:
+Action ember, Bonus teal, Reaction violet, Movement green. The inset bronze/gold frame is the only
+panel ornament; no painting behind text; a round portrait medallion; every number opens its
+breakdown on tap. Legibility for beginners comes before ornament. The visual system of record is
+`DESIGN.md`.
 
 Voice is clear and confident, plain-language for beginners, never jargon-gatekeeping, with no
 marketing filler in task copy. Publicly observable interaction patterns from **D&D Beyond**
-(character-sheet information architecture and density), **Roll20** (physical-table input and inline
-editing), and **Baldur's Gate 3** (interaction confidence, action presentation and craft ceiling) are
-benchmarks, not assets or proprietary internals to copy. D20 Folio's imagery, components and domain
-architecture remain original. Visual fantasy must never reduce usability during a real session.
+(character-sheet information architecture and density), **Foundry dnd5e** and **Roll20**
+(physical-table input and inline editing) and **Baldur's Gate 3** (interaction confidence, action
+presentation and craft ceiling) are benchmarks, never assets to copy. Folio's imagery, components
+and domain architecture stay original.
 
 ## Anti-references
 

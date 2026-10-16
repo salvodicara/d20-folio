@@ -2864,8 +2864,8 @@ nesting one inside a dismissable region is now safe by construction rather than 
 
 ### Public share links — private aggregate + sanitized derived projection
 
-A player shares a CHARACTER (never a campaign — see the deliberate non-goal in
-`docs/POSITIONING.md`) by flipping the private character metadata field `shared`. That flag is the
+A player shares a CHARACTER (never a campaign — see the product brief,
+`docs/strategy/2026-10-16-product-brief.md`) by flipping the private character metadata field `shared`. That flag is the
 publication decision; the anonymously readable object is the closed
 `users/{uid}/characters/{charId}/public/sheet` projection, never the private parent. The projection is
 a disposable read model, atomically rebuilt or deleted with every parent publication change; the
@@ -3559,7 +3559,7 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 3. **Override-first.** Every derived value auto-computes from grants AND is manually overridable
    (`overrides` on the character / `trackerOverrides` on the feature ref) — no "automation lock."
 4. **Docs are the system of record.** This file + `CLAUDE.md` + `docs/MECHANICS.md` +
-   `docs/PRODUCT_CONSTITUTION.md` are written for both human + AI agents; the pre-commit hook enforces
+   the product brief are written for both human + AI agents; the pre-commit hook enforces
    docs co-update with code.
 
 ---
