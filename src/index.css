@@ -368,8 +368,10 @@
      composite-floor guard (verdict-ink-contrast) reads it. */
   --app-bg-art-opacity: 0.85;
   --hero-art-shade-top: rgb(12 10 8 / 0.15);
-  --hero-art-shade-mid: rgb(12 10 8 / 0.45);
-  --hero-art-shade-end: rgb(12 10 8 / 0.7);
+  /* The scene stays vivid across the header band, then darkens behind the
+     content so loose rubrics and lines read on calm stone. */
+  --hero-art-shade-mid: rgb(12 10 8 / 0.6);
+  --hero-art-shade-end: rgb(12 10 8 / 0.86);
 
   --text-primary: #ece2cc;
   /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
@@ -1459,8 +1461,9 @@ body::after {
     linear-gradient(
       180deg,
       var(--hero-art-shade-top) 0%,
-      var(--hero-art-shade-mid) 55%,
-      var(--hero-art-shade-end) 100%
+      var(--hero-art-shade-top) 28%,
+      var(--hero-art-shade-mid) 48%,
+      var(--hero-art-shade-end) 70%
     ),
     var(--app-bg-art, var(--asset-hero-study));
   background-size: cover;

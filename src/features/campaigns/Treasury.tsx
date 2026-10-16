@@ -230,11 +230,11 @@ export function Treasury() {
 
         {mode === null ? (
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={() => openForm("add")}>
+            <Button variant="secondary" size="sm" onClick={() => openForm("add")}>
               <Icon as={Plus} size="sm" decorative />
               {t("campaignHub.addCoins")}
             </Button>
-            <Button variant="secondary" onClick={() => openForm("take")}>
+            <Button variant="secondary" size="sm" onClick={() => openForm("take")}>
               <Icon as={Minus} size="sm" decorative />
               {t("campaignHub.takeCoins")}
             </Button>
