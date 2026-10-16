@@ -65,7 +65,7 @@ test.describe("Spells Page", () => {
 
     // The Cast CTA lives in the disclosed card region (named for the spell).
     const detail = page.getByRole("region", { name: /Healing Word/i });
-    const castButton = detail.getByRole("button", { name: /cast/i }).first();
+    const castButton = detail.getByRole("button", { name: /^cast/i }).first();
     await expect(castButton).toBeVisible();
     await castButton.click();
     const dialog = page.getByRole("dialog");

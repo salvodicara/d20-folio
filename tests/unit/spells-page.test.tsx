@@ -526,7 +526,7 @@ describe("SpellsTab", () => {
     const card = spell.closest(".uc") as HTMLElement;
     const chevron = card.querySelector(".uc-chevron") as HTMLElement;
     fireEvent.click(chevron);
-    const ritualBtn = within(card).queryByRole("button", { name: /Ritual/i });
+    const ritualBtn = within(card).queryByRole("button", { name: /^Ritual$/i });
     if (!ritualBtn) return;
     const before =
       useCharacterStore.getState().character?.session.spellSlots["1"]?.used ?? 0;

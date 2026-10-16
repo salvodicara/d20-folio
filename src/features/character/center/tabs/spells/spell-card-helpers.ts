@@ -24,6 +24,8 @@ import { coinPrice } from "@/lib/coin-price";
 import { chipText } from "@/lib/views/combat-action-view";
 import type { CustomSpell } from "@/types/character";
 import type { SpellCardVM } from "@/lib/views/spells-view";
+import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
+import { rangeAreaTerm, type SpellTermId } from "@/components/shared/spell-glossary";
 import type {
   VerdictOutcome,
   UniversalCardSlot,
@@ -182,7 +184,21 @@ export interface SpellFact {
   value: string;
   /** Icon-anchored stat row (the typed-document reading spread). */
   icon: ComponentType<SVGProps<SVGSVGElement>>;
+  /** Beginner glossary term the label explains. */
+  term?: GlossaryTermId;
+  /** Runs of the value that explain a term ("V" → Verbal, "Bonus Action"). */
+  tips?: { text: string; term: SpellTermId }[];
 }
+
+const COMPONENT_TERM = {
+  V: { term: "verbal" },
+  S: { term: "somatic" },
+  M: { term: "material" },
+} as const;
+const CAST_TERM = {
+  bonus: { term: "bonusActionSpell" },
+  reaction: { term: "reactionSpell" },
+} as const;
 
 /** The localized facts-grid rows (labels via `t`, SRD values off the VM). */
 export function buildFacts(vm: SpellCardVM, t: TFunction): SpellFact[] {
@@ -195,25 +211,60 @@ export function buildFacts(vm: SpellCardVM, t: TFunction): SpellFact[] {
       .join(", ") + (vm.facts.material ? ` (${vm.facts.material})` : "");
   const saveAbility = vm.kind === "srd" ? vm.activity?.save?.ability : undefined;
   const attackType = vm.kind === "srd" ? vm.activity?.attack : undefined;
+  const slot = spellCardSlot(vm);
+  const castTerm = slot === "bonus" || slot === "reaction" ? CAST_TERM[slot].term : null;
+  const area = rangeAreaTerm(vm.facts.range);
+  const letters = (["V", "S", "M"] as const).filter(
+    (l) => components?.[l.toLowerCase() as "v" | "s" | "m"]
+  );
   const rows: (SpellFact | null)[] = [
-    { label: t("spells.castingTime"), value: castLabel, icon: Clock3 },
+    {
+      label: t("spells.castingTime"),
+      value: castLabel,
+      icon: Clock3,
+      term: "castingTime",
+      tips: castTerm ? [{ text: castLabel, term: castTerm }] : undefined,
+    },
     vm.facts.range
-      ? { label: t("spells.range"), value: vm.facts.range, icon: Ruler }
+      ? {
+          label: t("spells.range"),
+          value: vm.facts.range,
+          icon: Ruler,
+          term: "range",
+          tips: area ? [{ text: vm.facts.range, term: area }] : undefined,
+        }
       : null,
     saveAbility && vm.saveDC != null
       ? {
           label: t("spells.save"),
           value: `${t(`abilities.${saveAbility}_short`)} · ${t("stats.dc")} ${vm.saveDC}`,
           icon: Shield,
+          term: "spellSave",
         }
       : null,
     attackType && vm.attackBonus != null
-      ? { label: t("spells.spellAttack"), value: fmtMod(vm.attackBonus), icon: Crosshair }
+      ? {
+          label: t("spells.spellAttack"),
+          value: fmtMod(vm.attackBonus),
+          icon: Crosshair,
+          term: "spellAttack",
+        }
       : null,
     vm.facts.duration
-      ? { label: t("spells.duration"), value: vm.facts.duration, icon: Hourglass }
+      ? {
+          label: t("spells.duration"),
+          value: vm.facts.duration,
+          icon: Hourglass,
+          term: "duration",
+        }
       : null,
-    { label: t("spells.components"), value: componentsValue, icon: Hand },
+    {
+      label: t("spells.components"),
+      value: componentsValue,
+      icon: Hand,
+      term: "components",
+      tips: letters.map((l) => ({ text: l, term: COMPONENT_TERM[l].term })),
+    },
   ];
   return rows.filter((f): f is SpellFact => f != null && f.value !== "");
 }

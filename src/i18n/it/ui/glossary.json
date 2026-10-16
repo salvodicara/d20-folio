@@ -93,7 +93,24 @@
       "vulnerability": "Vulnerabilità a un tipo di danno: subisci il doppio dei danni di quel tipo. Come per la Resistenza, più fonti lo raddoppiano comunque una volta sola.",
       "immunity": "Immunità a un tipo di danno: quei danni non ti fanno nulla. Immunità a una condizione: quella condizione non può esserti applicata.",
       "reaction": "La Reazione è un'azione speciale che fai in risposta a un evento, anche durante il turno di qualcun altro, come un Attacco di Opportunità. Ne hai una per round; torna disponibile all'inizio del tuo turno.",
-      "bonusAction": "L'Azione Bonus è un'azione extra e veloce che puoi fare nel tuo turno, ma solo se un privilegio, un incantesimo o un'altra capacità dice che la usa. Ne hai al massimo una per turno e scegli tu quando farla."
+      "bonusAction": "L'Azione Bonus è un'azione extra e veloce che puoi fare nel tuo turno, ma solo se un privilegio, un incantesimo o un'altra capacità dice che la usa. Ne hai al massimo una per turno e scegli tu quando farla.",
+      "castingTime": "Tempo di Lancio: quanto richiede lanciarlo. Quasi tutti gli incantesimi richiedono un'azione; alcuni un'Azione Bonus o una Reazione, quelli più lunghi minuti o ore.",
+      "range": "Gittata: quanto lontano possono trovarsi il bersaglio o il punto da cui parte l'incantesimo. Sé stessi indica che parte da te; Contatto che devi toccare il bersaglio.",
+      "duration": "Durata: quanto dura l'effetto. Un incantesimo istantaneo avviene e finisce subito; uno a Concentrazione finisce prima se la tua Concentrazione si interrompe.",
+      "areaOfEffect": "Area d'Effetto: l'incantesimo riempie una forma che parte da un punto e colpisce ogni creatura al suo interno, non un solo bersaglio.",
+      "cone": "Cono: un'Area d'Effetto che si allarga da te nella direzione che scegli; in ogni punto è larga quanto dista da te.",
+      "cube": "Cubo: un'Area d'Effetto a forma di scatola, con ogni lato lungo quanto indicato. Una sua faccia tocca il punto da cui parte.",
+      "cylinder": "Cilindro: un'Area d'Effetto a colonna con il raggio e l'altezza indicati, che parte dal centro del cerchio in cima o alla base.",
+      "emanation": "Emanazione: un'Area d'Effetto che si estende in ogni direzione da te, o dalla creatura o dall'oggetto da cui parte, e si sposta con esso.",
+      "line": "Linea: un'Area d'Effetto che parte da te in linea retta, lunga quanto indicato e di solito larga 1,5 metri.",
+      "sphere": "Sfera: un'Area d'Effetto che si estende in ogni direzione da un punto, formando una palla del raggio indicato.",
+      "upcasting": "Slot Incantesimo di Livello Superiore: se lanci un incantesimo con uno slot sopra il suo livello, diventa più potente come indicato qui. Un trucchetto invece cresce con il tuo livello da personaggio.",
+      "verbal": "Verbale: devi pronunciare parole magiche ad alta voce per lanciarlo, quindi non puoi se non riesci a parlare.",
+      "somatic": "Somatica: devi gesticolare con una mano libera per lanciarlo.",
+      "material": "Materiale: un oggetto richiesto dall'incantesimo. Una borsa per componenti o un Focus da Incantatore possono sostituirlo, a meno che abbia un costo o venga consumato: allora serve l'oggetto vero.",
+      "spellSave": "Tiro Salvezza: ogni bersaglio tira per resistere all'incantesimo contro la tua CD. Se riesce, di solito subisce metà dei danni o evita l'effetto, come indica l'incantesimo.",
+      "reactionSpell": "Reazione: lo lanci con la tua Reazione quando avviene il suo innesco, anche nel turno di un'altra creatura. Poi non hai Reazioni fino all'inizio del tuo turno.",
+      "bonusActionSpell": "Azione Bonus: lanciarlo usa la tua Azione Bonus, non la tua azione. Puoi spendere un solo slot incantesimo per turno: un altro incantesimo nello stesso turno, come un trucchetto, non può usarne uno."
     }
   }
 }
