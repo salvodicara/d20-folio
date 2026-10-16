@@ -6148,25 +6148,8 @@ button.trk-pip:active {
      sits at its composed framing; the one-shot brand-intro + ambient loops carry
      the "alive" register instead. */
 }
-/* Daylight sibling login (light) — the plate is now the DAWN grimoire (P11): the
-   same altar and book as dark's candlelit night, at first light, the pages still
-   faintly glowing. It is deliberately dawn-dim (the magic persists into morning),
-   so the light login keeps the on-art bright-ink register — but the scrim no
-   longer has to fake a night scene: a WARM UMBER morning wash (not the old
-   near-black slab that impersonated the dark theme) seats the gilt lockup +
-   bright copy over the plate's own calm centre and fades out so the waking
-   chamber reads at the edges. Light-only — dark is untouched. */
-[data-theme="light"] .login-splash {
-  background:
-    radial-gradient(
-      ellipse 74% 82% at 50% 44%,
-      rgba(42, 30, 12, 0.72) 0%,
-      rgba(46, 33, 13, 0.5) 40%,
-      rgba(50, 36, 14, 0.14) 72%,
-      transparent 90%
-    ),
-    var(--asset-login) center / cover no-repeat;
-}
+/* Light: the daylight sanctum, washed to vellum behind the lockup exactly as dark
+   washes to stone (the shared rules above use --bg-page), so the dark ink reads. */
 /* OWN-36 — DESKTOP composition (≥1024px): honour login.webp's OWN framing. The
    swapped hero (2026-07-07) is a RIGHT-weighted scene — the glowing illuminated
    spellbook sits on the RIGHT with deliberate dark NEGATIVE SPACE on the LEFT
@@ -6194,22 +6177,6 @@ button.trk-pip:active {
         color-mix(in oklab, var(--bg-page) 86%, transparent) 30%,
         color-mix(in oklab, var(--bg-page) 40%, transparent) 48%,
         transparent 62%
-      ),
-      var(--asset-login) center / cover no-repeat;
-  }
-  /* Dawn sibling, desktop: P11 composes exactly like dark's plate — book right of
-     centre, the LEFT THIRD painted calm and dim for the sign-in column — so the
-     left wash only has to STEADY that void for the bright-ink copy, not blacken
-     it: a warm umber dawn-shadow that fades out before the glowing book, keeping
-     the tome the bright cinematic hero (never washed). */
-  [data-theme="light"] .login-splash {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(40, 29, 12, 0.82) 0%,
-        rgba(44, 32, 13, 0.62) 28%,
-        rgba(48, 35, 14, 0.24) 50%,
-        transparent 66%
       ),
       var(--asset-login) center / cover no-repeat;
   }

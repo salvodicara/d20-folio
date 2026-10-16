@@ -853,6 +853,12 @@
      shared painter below. Opacity provides detail; luminance separation comes
      from the theme filter, not from washing the art into the page field. */
   /* Light: the daylight scene, a soft vellum veil only behind the content. */
+  /* Words on the daylight scene: dark ink with a soft vellum halo. */
+  --hero-ink: #2a1d0c;
+  --hero-ink-soft: #3d2f12;
+  --hero-shade: rgb(250 244 230 / 0.6);
+  --hero-shade-strong: rgb(250 244 230 / 0.85);
+  --hero-text-shadow: 0 0 14px rgb(250 244 230 / 0.95), 0 0 3px rgb(250 244 230 / 0.9);
   --hero-art-shade-top: rgb(239 231 214 / 0);
   --hero-art-shade-mid: rgb(239 231 214 / 0.55);
   --hero-art-shade-end: rgb(239 231 214 / 0.9);
