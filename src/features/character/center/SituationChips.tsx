@@ -7,6 +7,8 @@
  * chip shows the rule line the sheet cannot apply for you.
  */
 import { useTranslation } from "react-i18next";
+import { ChevronDown } from "lucide-react";
+import { Icon } from "@/components/ui/icon";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -57,90 +59,98 @@ export function SituationChips() {
       ? chip.note.text
       : t(chip.note.key, { range: localeDistance(darkvisionFt, locale) });
 
-  return (
-    <div className="mb-4">
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        role="group"
-        aria-label={t("combat.situations")}
-      >
-        <span className="mr-1 text-[0.7rem] italic text-text-secondary" aria-hidden>
-          {t("combat.situations")}
-        </span>
-        {chips.map((chip) => (
-          <button
-            key={chip.id}
-            type="button"
-            className="status-badge sb-toggle"
-            data-kind={chip.on ? "active" : undefined}
-            aria-pressed={chip.on}
-            title={t(hintKey(chip), {
-              summary: chip.summary,
-            })}
-            onClick={() =>
-              registerUndoableToast(
-                {
-                  message: t(toastKey(chip), { name: chip.name }),
-                },
-                () => commitSituation(chip.id, !chip.on),
-                { turnScoped: true }
-              )
-            }
-          >
-            <span className="sb-label">{chip.name}</span>
-          </button>
-        ))}
-        {lightChips.map((chip) => {
-          const on = lit === chip.level;
-          return (
-            <button
-              key={chip.level}
-              type="button"
-              className="status-badge sb-toggle"
-              data-kind={on ? "active" : undefined}
-              aria-pressed={on}
-              title={t(
-                on ? "combat.situationLitHintFight" : "combat.situationOffHintFight",
-                {
-                  summary: lightNote(chip),
-                }
-              )}
-              onClick={() =>
-                registerUndoableToast(
-                  {
-                    message: on
-                      ? t("combat.situationOffToast", { name: chip.name })
-                      : t("combat.situationOnToastFight", { name: chip.name }),
-                  },
-                  () => commitLight(on ? null : chip.level),
-                  { turnScoped: true }
-                )
-              }
-            >
-              <span className="sb-label">{chip.name}</span>
-            </button>
-          );
+  const litNames = [
+    ...chips.filter((chip) => chip.on).map((chip) => chip.name),
+    ...(litChip ? [litChip.name] : []),
+  ];
+  const situationButton = (chip: (typeof chips)[number]) => (
+    <button
+      key={chip.id}
+      type="button"
+      className="status-badge sb-toggle"
+      data-kind={chip.on ? "active" : undefined}
+      aria-pressed={chip.on}
+      title={t(hintKey(chip), {
+        summary: chip.summary,
+      })}
+      onClick={() =>
+        registerUndoableToast(
+          {
+            message: t(toastKey(chip), { name: chip.name }),
+          },
+          () => commitSituation(chip.id, !chip.on),
+          { turnScoped: true }
+        )
+      }
+    >
+      <span className="sb-label">{chip.name}</span>
+    </button>
+  );
+  const lightButton = (chip: LightChipVM) => {
+    const on = lit === chip.level;
+    return (
+      <button
+        key={chip.level}
+        type="button"
+        className="status-badge sb-toggle"
+        data-kind={on ? "active" : undefined}
+        aria-pressed={on}
+        title={t(on ? "combat.situationLitHintFight" : "combat.situationOffHintFight", {
+          summary: lightNote(chip),
         })}
-      </div>
-      {litChip && (
-        <p className="mt-1.5 text-xs text-text-secondary">
-          <span className="font-medium text-text-primary">{litChip.name}:</span>{" "}
-          {lightNote(litChip)}
-        </p>
-      )}
+        onClick={() =>
+          registerUndoableToast(
+            {
+              message: on
+                ? t("combat.situationOffToast", { name: chip.name })
+                : t("combat.situationOnToastFight", { name: chip.name }),
+            },
+            () => commitLight(on ? null : chip.level),
+            { turnScoped: true }
+          )
+        }
+      >
+        <span className="sb-label">{chip.name}</span>
+      </button>
+    );
+  };
+
+  // Progressive disclosure (owner 2026-10-16: beginners first). The special
+  // situations sit behind one closed row; once opened, each reads as a switch with
+  // what it does in plain words. What is lit stays in view while the row is shut.
+  return (
+    <details className="situations mb-4">
+      <summary className="situations-head">
+        <span>{t("combat.situationsSpecial")}</span>
+        {litNames.length > 0 && (
+          <span className="situations-lit">{litNames.join(" · ")}</span>
+        )}
+        <Icon as={ChevronDown} size="sm" decorative className="situations-chevron" />
+      </summary>
+      <ul className="situations-list" aria-label={t("combat.situations")}>
+        {chips.map((chip) => (
+          <li key={chip.id} className="situations-row">
+            {situationButton(chip)}
+            <span className="situations-what">{chip.summary}</span>
+          </li>
+        ))}
+        {lightChips.map((chip) => (
+          <li key={chip.level} className="situations-row">
+            {lightButton(chip)}
+            <span className="situations-what">{lightNote(chip)}</span>
+          </li>
+        ))}
+      </ul>
       {chips
         .filter((chip) => chip.on)
         .flatMap((chip) =>
           chip.notes.map((note) => (
-            <p
-              key={`${chip.id}-${note.id}`}
-              className="mt-1.5 text-xs text-text-secondary"
-            >
+            <p key={`${chip.id}-${note.id}`} className="situations-note">
               <span className="font-medium text-text-primary">{chip.name}:</span>{" "}
               {note.text}
             </p>
           ))
         )}
-    </div>
+    </details>
   );
 }

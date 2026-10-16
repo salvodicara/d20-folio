@@ -213,6 +213,7 @@
     "wishStressOnToast": "Wish Stress until your next Long Rest",
     "wishStressCastToast": "{{used}}. Wish Stress: take {{n}}d10 Necrotic damage, which can't be reduced.",
     "situations": "Situation",
+    "situationsSpecial": "Special situations",
     "lightDarkvisionDim": "Darkvision {{range}}: within that range you see Dim Light as Bright Light, so nothing changes.",
     "lightDarkvisionDark": "Darkvision {{range}}: within that range Darkness is Dim Light for you: Disadvantage on Wisdom (Perception) checks to see, and passive Perception −5.",
     "situationOffHint": "{{summary}} Tap to apply it until the end of your turn.",

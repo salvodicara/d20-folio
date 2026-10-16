@@ -1240,8 +1240,21 @@ export function PlayTab() {
       {activeFilter !== "reaction" &&
         activeFilter !== "pinned" &&
         filteredBase.length > 0 && (
-          <>
-            <SectionHeader tight data-econ="action" title={t("combat.baseActions")} />
+          // Progressive disclosure (owner 2026-10-16): the universal actions every
+          // creature has (Dash, Help, Hide…) wait behind one closed row, so a
+          // beginner first sees what THEIR character can do. A search opens it.
+          <details
+            className="base-actions"
+            open={search.trim() !== "" || activeFilter === "action" ? true : undefined}
+          >
+            <summary className="base-actions-head">
+              <SectionHeader
+                tight
+                data-econ="action"
+                title={t("combat.baseActions")}
+                meta={String(filteredBase.length)}
+              />
+            </summary>
             <div className="uc-stack">
               {sortedBase.map((action) => (
                 <CombatActionCard
@@ -1267,7 +1280,7 @@ export function PlayTab() {
                 />
               ))}
             </div>
-          </>
+          </details>
         )}
 
       {/* ── Empty state — one honest message when the filter surfaces nothing ── */}
