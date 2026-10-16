@@ -1,13 +1,11 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Admin is DATA-DRIVEN — the SAME `/users/{uid}.role == "admin"` field the
-    // client gate (`useIsAdmin`) and `firestore.rules` (`isAdmin()`) read, via
-    // the cross-service Firestore lookup, so no uid is ever hardcoded here and
-    // the three gates can't drift.
+    // Admin is the Auth custom claim `role: "admin"` that `onUserRoleWritten`
+    // mirrors from the user doc (functions/src/role-claims.ts), the same claim
+    // `firestore.rules` reads: no cross-service lookup, no hardcoded uid.
     function isAdmin() {
-      return request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.get("role", "") == "admin";
+      return request.auth != null && request.auth.token.get("role", "") == "admin";
     }
 
     match /users/{uid}/portraits/{fileName} {

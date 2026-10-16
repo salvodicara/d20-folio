@@ -2,16 +2,16 @@
 /**
  * Storage security-rules tests — the data-driven admin override.
  *
- * EMULATOR-DEPENDENT (Firestore + Storage — the Storage rules resolve the admin
- * role via the cross-service `firestore.get()` on `/users/{uid}`), run via:
+ * EMULATOR-DEPENDENT (Firestore + Storage; the admin role is the token's
+ * `role: "admin"` custom claim), run via:
  *
  *     pnpm test:rules
- *       → firebase emulators:exec --only firestore,storage \
+ *       → firebase emulators:exec --only auth,firestore,storage \
  *           'pnpm exec vitest run --config vitest.rules.config.ts'
  *
  * Enforced matrix (`bug-reports/{uid}/{file}`): owner read/create · peer denied ·
- * `role:"admin"` user-doc grants read + delete (no hardcoded uid) · a plain user
- * (no role field) is NOT admin · owner cannot delete.
+ * the `role:"admin"` claim grants read + delete (no hardcoded uid) · a token
+ * without it is NOT admin · owner cannot delete.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -26,9 +26,18 @@ import { doc, setDoc } from "firebase/firestore";
 import { deleteObject, getBytes, ref, uploadBytes } from "firebase/storage";
 
 const PROJECT_ID = "demo-d20folio";
-// Admin is DATA-DRIVEN: an ordinary test uid whose seeded `/users` doc carries
-// role:"admin" — the rules never name a uid.
+// Admin is DATA-DRIVEN: an ordinary test uid whose token carries the role:"admin"
+// claim — the rules never name a uid.
 const ADMIN_UID = "admin-user";
+
+/** Roles are Auth custom claims (Phase 5, functions/src/role-claims.ts): the rules read
+ *  the token, never the user doc. These uids sign in with what their doc grants. */
+const CLAIMS: Readonly<Record<string, Record<string, unknown>>> = {
+  [ADMIN_UID]: { role: "admin" },
+};
+const authed = (uid: string, claims = CLAIMS[uid]) =>
+  testEnv.authenticatedContext(uid, claims);
+
 const REPORTER_UID = "reporter";
 const PEER_UID = "peer";
 
@@ -69,7 +78,7 @@ beforeEach(async () => {
 
 describe("storage rules — bug-report screenshots (data-driven admin)", () => {
   it("the owner can upload an image screenshot to their own path", async () => {
-    const storage = testEnv.authenticatedContext(REPORTER_UID).storage();
+    const storage = authed(REPORTER_UID).storage();
     await assertSucceeds(
       uploadBytes(ref(storage, `bug-reports/${REPORTER_UID}/new.png`), PNG_BYTES, {
         contentType: "image/png",
@@ -78,35 +87,32 @@ describe("storage rules — bug-report screenshots (data-driven admin)", () => {
   });
 
   it("the owner can read their own screenshot", async () => {
-    const storage = testEnv.authenticatedContext(REPORTER_UID).storage();
+    const storage = authed(REPORTER_UID).storage();
     await assertSucceeds(getBytes(ref(storage, SHOT_PATH)));
   });
 
   it("a peer (no admin role) cannot read someone else's screenshot", async () => {
-    const storage = testEnv.authenticatedContext(PEER_UID).storage();
+    const storage = authed(PEER_UID).storage();
     await assertFails(getBytes(ref(storage, SHOT_PATH)));
   });
 
   it('a user whose doc carries role:"admin" can read any screenshot', async () => {
-    const storage = testEnv.authenticatedContext(ADMIN_UID).storage();
+    const storage = authed(ADMIN_UID).storage();
     await assertSucceeds(getBytes(ref(storage, SHOT_PATH)));
   });
 
   it('a user whose doc carries role:"admin" can delete any screenshot', async () => {
-    const storage = testEnv.authenticatedContext(ADMIN_UID).storage();
+    const storage = authed(ADMIN_UID).storage();
     await assertSucceeds(deleteObject(ref(storage, SHOT_PATH)));
   });
 
   it("the owner cannot delete their own screenshot (admin-only)", async () => {
-    const storage = testEnv.authenticatedContext(REPORTER_UID).storage();
+    const storage = authed(REPORTER_UID).storage();
     await assertFails(deleteObject(ref(storage, SHOT_PATH)));
   });
 
-  it("revoking the role revokes admin access (no hardcoded uid anywhere)", async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), "users", ADMIN_UID), { status: "active" });
-    });
-    const storage = testEnv.authenticatedContext(ADMIN_UID).storage();
+  it("a token without the admin claim is not admin, whatever the doc says", async () => {
+    const storage = authed(ADMIN_UID, {}).storage();
     await assertFails(getBytes(ref(storage, SHOT_PATH)));
   });
 });
@@ -120,7 +126,7 @@ describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.
   const MONSTER_ART_PATH = `users/${REPORTER_UID}/portraits/monster-goblin.jpeg`;
 
   it("the owner can upload their own monster art (owner-scoped write)", async () => {
-    const storage = testEnv.authenticatedContext(REPORTER_UID).storage();
+    const storage = authed(REPORTER_UID).storage();
     await assertSucceeds(
       uploadBytes(ref(storage, MONSTER_ART_PATH), PNG_BYTES, {
         contentType: "image/jpeg",
@@ -129,7 +135,7 @@ describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.
   });
 
   it("a non-owner CANNOT upload into another user's portraits path", async () => {
-    const storage = testEnv.authenticatedContext(PEER_UID).storage();
+    const storage = authed(PEER_UID).storage();
     await assertFails(
       uploadBytes(ref(storage, MONSTER_ART_PATH), PNG_BYTES, {
         contentType: "image/jpeg",
@@ -143,7 +149,7 @@ describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.
         contentType: "image/jpeg",
       });
     });
-    const storage = testEnv.authenticatedContext(PEER_UID).storage();
+    const storage = authed(PEER_UID).storage();
     await assertSucceeds(getBytes(ref(storage, MONSTER_ART_PATH)));
   });
 
@@ -163,9 +169,9 @@ describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.
         contentType: "image/jpeg",
       });
     });
-    const peer = testEnv.authenticatedContext(PEER_UID).storage();
+    const peer = authed(PEER_UID).storage();
     await assertFails(deleteObject(ref(peer, MONSTER_ART_PATH)));
-    const owner = testEnv.authenticatedContext(REPORTER_UID).storage();
+    const owner = authed(REPORTER_UID).storage();
     await assertSucceeds(deleteObject(ref(owner, MONSTER_ART_PATH)));
   });
 });
