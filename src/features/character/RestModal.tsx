@@ -39,6 +39,7 @@ import { restThroughWorld } from "./rest-world-boundary";
 import { canCharacterRest } from "@/lib/character-status";
 import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
+import { sessionAfterLongRestReduction } from "@/lib/play/rests";
 import {
   getShortRestExhaustionRecovery,
   gainsHeroicInspirationOnLongRest,
@@ -143,6 +144,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   // matching the store's `longRest`/`applyHealing` clamp, so the summary readout +
   // the short-rest cap agree with the real max (rule 6).
   const hpMax = effectiveMaxHp(charData, session);
+  // A Long Rest ends a Hit Point maximum reduction first, so it promises and
+  // reports the maximum it restores, not the reduced one.
+  const longRestHpMax = effectiveMaxHp(charData, sessionAfterLongRestReduction(session));
   // B8 — short-rest healing adds the CURRENT (effective) CON modifier, so an
   // Amulet of Health (CON→19) raises the preview. The REAL heal engine resolves
   // against effective CON (smart-tracker `combatAbilityScores`); the preview must
@@ -280,8 +284,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     setSummary({
       type: "long",
       hpBefore,
-      hpAfter: hpMax,
-      hpMax,
+      hpAfter: longRestHpMax,
+      hpMax: longRestHpMax,
       hitDiceUsed: hitDiceRestored,
       slotsRestored: totalSlotsSpent,
       trackersRestored: totalTrackersSpent,
@@ -565,7 +569,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           <ul className="rest-confirm-list">
             <li>
               <Heart className="h-4 w-4 text-accent-text" />
-              {t("rest.longRestHpItem", { max: hpMax })}
+              {t("rest.longRestHpItem", { max: longRestHpMax })}
             </li>
             <li>
               <Dice5 className="h-4 w-4 text-accent-text" />
@@ -750,7 +754,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           <ul className="rest-card-list">
             <li>
               <Heart className="h-3.5 w-3.5" />
-              {t("rest.longRestHpItem", { max: hpMax })}
+              {t("rest.longRestHpItem", { max: longRestHpMax })}
             </li>
             <li>
               <Dice5 className="h-3.5 w-3.5" />
