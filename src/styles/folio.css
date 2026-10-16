@@ -15796,6 +15796,13 @@ button.econ-tok-filter:active .econ-disc {
   );
   transition: width var(--m-fast) var(--ease-settle);
 }
+[data-theme="light"] .move-fill {
+  background: linear-gradient(
+    90deg,
+    var(--at-move),
+    color-mix(in oklab, var(--at-move) 55%, white)
+  );
+}
 /* The leading-edge glow — a small warm dot riding the fill's right edge (hidden while
    no movement remains, so a 0-width fill never leaves a stray dot at the start). */
 .move-fill::after {

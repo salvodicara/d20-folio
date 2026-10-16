@@ -144,6 +144,21 @@ components:
 
 # Design System: d20 Folio
 
+**Direction B, "BG3 fantasy ricco" (owner, 2026-10-16; supersedes anything below it contradicts):**
+
+- Dark stone slabs (`--bg-surface-1…3`) with the inset frame `--panel-frame`: a bronze rim, a
+  sliver of stone, a faint gold hairline. The frame is the only panel ornament; the binding
+  corners and the seat-line knot are retired.
+- One lit action per screen, a slab of gold leaf (`--lit-*`): End Turn on Play.
+- Type: Cinzel for titles, names, label capitals and big figures (`--font-title`,
+  `--font-engraved`); Alegreya for every line with words in it, never below 14px for reading
+  (`--text-read`); Source Serif 4 (`--font-numeric`) stays for figures inside sentences.
+- One colour per action type: Action ember, Bonus Action teal, Reaction violet, Movement green
+  (`--at-action`, `--at-bonus`, `--at-reaction`, `--at-move`), on the turn tiles, the action
+  rows' medallions and CTAs, and the group rubrics.
+- Portrait: a round medallion inside a double gold ring. Every number opens its breakdown on
+  tap; a short numeric one reads as an equation ("16 Chain Mail + 2 Shield = 18 AC").
+
 **Owner coherence rulings (2026-10-09 → 2026-10-12, design-coherence session):**
 
 - A follow-up choice never lives in a toast. A target pick is a skippable intermediate step
@@ -1893,20 +1908,8 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   registers wear it (Constitution §4.16):
   the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
   (`.folio-panel.gilt-frame::after` — cockpit identity), and dialog HEAD BANDS (`.modal-head::after`, scaled to 32px — the bound-cover ruling, owner 2026-08-01: the fittings frame the head like the page mastheads frame theirs; the modal body stays clean and rounds at its foot, `0 0 radius-lg radius-lg`).
-  The owner-approved current+B+BG3 refinement (2026-08-04) preserves the silhouette and registration
-  but strikes it with a restrained warm gold→bronze ramp (never selection silver), so the existing
-  pennacchio gains material depth without becoming a new ornament. Mechanism: the binding-corner spandrel silhouette (CC0-derived,
-  `public/assets/ornaments/corner-*.svg`) rendered as four CSS mask layers painted with the
-  shared warm gold→bronze ramp, on an overlay pseudo at `inset: -1px` — the tile origin
-  is the fitting's outer-rule outer edge, so its rules lie pixel-coincident on the host's
-  1px border; hosts keep SQUARE corners beneath the fitting (a rounded line would curve out
-  from under it). One definition; every hero frame (framed mastheads, gilt bands, dialogs)
-  consumes it.
-- **Hero-seat weave (owner-approved 2026-08-04).** Top-level framed mastheads and dialog head bands
-  seat the already-ratified CC0 centre-loop ricalco on the lower frame rule: 72×25px for mastheads,
-  56×20px for dialogs. This is B's open negative space translated through BG3's quiet line grammar,
-  not a second separator. The cockpit identity band keeps only the shared binding corners because
-  its dense live-stat deck already occupies the seat's visual field. Ordinary sections remain nodeless.
+  _Retired by direction B (2026-10-16): the corner fittings and the hero-seat weave are gone;
+  the inset `--panel-frame` is the frame._
 
 ### Surface hierarchy (never skip the ramp)
 
