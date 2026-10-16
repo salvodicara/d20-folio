@@ -113,7 +113,7 @@ const STANDING_SPELLS = [
   {
     id: "spider-climb",
     recipient: "selected",
-    targeting: { affinity: "ally", maxTargets: 1 },
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
   },
   {
     id: "warding-bond",
@@ -146,7 +146,7 @@ const STANDING_SPELLS = [
   {
     id: "freedom-of-movement",
     recipient: "selected",
-    targeting: { affinity: "ally", maxTargets: 1 },
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
   },
   {
     id: "stoneskin",

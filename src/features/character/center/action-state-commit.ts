@@ -21,6 +21,7 @@ import {
   situationalState,
   type SituationId,
 } from "@/lib/situational-states";
+import { castStateChoiceKeys } from "@/lib/play/states";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { concentrationStatusKeys } from "@/lib/status";
 
@@ -83,6 +84,25 @@ export function activateActionState(
     ? store.refreshTrackersOnActivation(key)
     : null;
   if (action.source === "spell") store.setActiveSpellCastLevel(key, castLevel);
+  // Each cast picks its option anew (Enlarge or Reduce): a new cast, even over a
+  // still-lit state, clears the remembered choice so the rail asks again. The same
+  // cast keeps its pick across re-renders and reloads; undo puts the prior one back.
+  const choiceKeys =
+    action.source === "spell" && action.spellId
+      ? castStateChoiceKeys(action.spellId, key)
+      : [];
+  const priorChoices = Object.fromEntries(
+    choiceKeys.map((bundleKey) => [
+      bundleKey,
+      store.character?.session.grantBundleChoices?.[bundleKey] ?? null,
+    ])
+  );
+  if (choiceKeys.length > 0) {
+    store.dispatch({
+      kind: "set-bundle-choices",
+      choices: Object.fromEntries(choiceKeys.map((bundleKey) => [bundleKey, null])),
+    });
+  }
   // An activated state can declaratively forbid Concentration (2024 Rage).
   // End the held spell through the ONE concentration seam so its standing chips
   // retract and the combat log remains truthful. The surrounding action undo
@@ -122,6 +142,9 @@ export function activateActionState(
       restoreBoundary?.();
       if (activated) current.setActiveFeature(key, false);
       if (action.source === "spell") current.setActiveSpellCastLevel(key, previousLevel);
+      if (choiceKeys.length > 0) {
+        current.dispatch({ kind: "set-bundle-choices", choices: priorChoices });
+      }
       restoreActivationTrackers?.();
       if (canRestoreConcentration) {
         current.setConcentration(previousConcentration, {

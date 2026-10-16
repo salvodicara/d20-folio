@@ -40,6 +40,7 @@ import {
   type SituationLasts,
 } from "@/lib/situational-states";
 import { surpriseStateName } from "@/lib/surprise-state";
+import { baseActionStateName } from "@/lib/base-action-states";
 import { wishStressStateName } from "@/lib/wish-state";
 import type { CharacterDoc } from "@/types/character";
 import type { ActivatableGroup } from "@/lib/grants";
@@ -505,6 +506,7 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
   if (cover) return cover[locale];
   const state =
     surpriseStateName(sourceId) ??
+    baseActionStateName(sourceId) ??
     wishStressStateName(sourceId) ??
     situationalStateName(sourceId);
   if (state) return state[locale];

@@ -21,7 +21,7 @@
  * Play-tab cards, which share the store), never the Left/Right HUD.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Swords, Zap, RefreshCw, ArrowRight, Flag } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
@@ -500,8 +500,8 @@ export function ThisTurnTracker({
   // dice — golden rule 21) through the SAME store healing seam the manual HP
   // control uses (`applyHealing` clamps to effective max + logs the structured
   // `hp-heal` event), with an undoable heal toast (mirrors `useHpControls.
-  // applyHeal`: snapshot prevHP → onUndo restores via the log-free `setHP`, so
-  // undoing leaves no spurious second event). Override-first: the HP control stays
+  // applyHeal`: the store's own undo restores the prior slice and drops the heal's
+  // log lines, so an undone regen leaves no trace in the log). Override-first: the HP control stays
   // editable; this is just the one-tap shortcut so the player needn't re-type it.
   function applyRegen(amount: number) {
     // On the session undo stack (the reversal contract; Pattern B — the message
@@ -509,12 +509,12 @@ export function ThisTurnTracker({
     // no entry, no toast, for a heal that didn't happen.
     const cs = useCharacterStore.getState();
     const prevHP = cs.character?.session.hp.current ?? 0;
-    cs.applyHealing(amount);
-    const nextHP = cs.character?.session.hp.current ?? prevHP;
-    if (nextHP === prevHP) return;
+    const undo = cs.applyHealing(amount);
+    if (!undo) return;
+    const nextHP = useCharacterStore.getState().character?.session.hp.current ?? prevHP;
     registerUndoableResult(
       { message: t("combat.hpHealToast", { val: amount, prev: prevHP, next: nextHP }) },
-      () => useCharacterStore.getState().setHP(prevHP),
+      undo,
       () => applyRegen(amount)
     );
   }
@@ -527,14 +527,12 @@ export function ThisTurnTracker({
     // On the session undo stack (Pattern B — the message reads the max-wins
     // result). With equal-or-higher temp HP already up, nothing changed — no
     // entry, no toast.
-    const cs = useCharacterStore.getState();
-    const prevTemp = cs.character?.session.hp.temp ?? 0;
-    cs.gainTempHp(amount);
-    const nextTemp = cs.character?.session.hp.temp ?? prevTemp;
-    if (nextTemp === prevTemp) return;
+    const undo = useCharacterStore.getState().gainTempHp(amount);
+    if (!undo) return;
+    const nextTemp = useCharacterStore.getState().character?.session.hp.temp ?? amount;
     registerUndoableResult(
       { message: t("combat.tempHpToast", { val: nextTemp }) },
-      () => useCharacterStore.getState().setTempHP(prevTemp),
+      undo,
       () => applyTurnStartTempHp(amount)
     );
   }
@@ -906,7 +904,7 @@ export function ThisTurnTracker({
         </div>
       )}
       {showWish && (
-        <div
+        <PromptedBanner
           className="conc-banner conc-banner-prompt"
           role="status"
           data-testid="wish-follow-up"
@@ -938,7 +936,7 @@ export function ThisTurnTracker({
               </button>
             )}
           </div>
-        </div>
+        </PromptedBanner>
       )}
       {askTimeStopTurns && (
         <div className="conc-banner" role="status" data-testid="time-stop-turns">
@@ -952,7 +950,7 @@ export function ThisTurnTracker({
             <span className="whitespace-nowrap text-[0.7rem] uppercase tracking-[0.12em] text-text-muted">
               {t("combat.extraTurnsLabel")}
             </span>
-            <Input
+            <PromptedInput
               type="number"
               min={TIME_STOP_MIN_TURNS}
               max={TIME_STOP_MAX_TURNS}
@@ -1172,4 +1170,30 @@ function EconToken({
       </span>
     </button>
   );
+}
+
+/**
+ * A field the turn meter asks for right after a tap elsewhere (Time Stop's turn
+ * count, asked after the cast from its card): it comes into view and takes focus
+ * as it appears, so on a phone it is never left above the screen.
+ */
+function PromptedInput(props: ComponentProps<typeof Input>) {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const field = ref.current;
+    if (!field) return;
+    field.scrollIntoView({ block: "center" });
+    field.focus({ preventScroll: true });
+  }, []);
+  return <Input ref={ref} {...props} />;
+}
+
+/** A banner the turn meter raises right after a tap elsewhere (Wish's follow-up,
+ *  asked after the cast from its card): it comes into view as it appears. */
+function PromptedBanner(props: ComponentProps<"div">) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollIntoView({ block: "center" });
+  }, []);
+  return <div ref={ref} {...props} />;
 }

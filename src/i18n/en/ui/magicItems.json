@@ -36,6 +36,8 @@
     "resourceRecovery": "Resource recovery",
     "resourceNeedsRoll": "Roll required",
     "resourceUnavailable": "Resource unavailable",
+    "resourceNeedsAttunement": "Needs attunement",
+    "resourceNotEquipped": "Not equipped",
     "useResource": "Use {{resource}}",
     "resourceSpentToast": "Used {{name}} ({{remaining}}/{{capacity}} {{unit}} left)",
     "tableClock": "Table clock",

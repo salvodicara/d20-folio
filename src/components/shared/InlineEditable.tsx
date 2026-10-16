@@ -78,6 +78,12 @@ interface NumberProps extends BaseProps {
   format?: (value: number) => string;
   computedValue?: number | null;
   onReset?: () => void;
+  /**
+   * The field is OPTIONAL: a commit that trims to "" calls this instead of being
+   * ignored, so the owner can return the value to unset (e.g. header XP back to
+   * milestone levelling). Without it an empty commit keeps the prior value.
+   */
+  onClear?: () => void;
 }
 
 interface SelectOption {
@@ -144,6 +150,7 @@ function InlineNumber({
   format,
   computedValue,
   onReset,
+  onClear,
   editable,
   className,
   valueClassName,
@@ -175,12 +182,16 @@ function InlineNumber({
 
   const commit = useCallback(() => {
     setEditing(false);
+    if (onClear && localValue.trim() === "") {
+      onClear();
+      return;
+    }
     const num = parseFloat(localValue);
     if (isNaN(num)) return;
     // ONE shared commit-time validator (#30) — range-clamp via clampNumber.
     const clamped = clampNumber(num, min ?? -999, max ?? 9999);
     if (clamped !== value) onChange(clamped);
-  }, [localValue, min, max, value, onChange]);
+  }, [localValue, min, max, value, onChange, onClear]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

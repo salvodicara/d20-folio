@@ -60,6 +60,22 @@ export interface ItemResourceVM {
   disabled: boolean;
   /** Presentational affordance only; the command provider rechecks live state. */
   canSpend: boolean;
+  /**
+   * Why a live counter cannot be spent yet, when the player can fix it from the
+   * inventory: attune first (the slower step), then equip. Null otherwise.
+   */
+  spendBlock: ItemResourceSpendBlock | null;
+}
+
+export type ItemResourceSpendBlock = "needs-attunement" | "not-equipped";
+
+/** Display key for a spend block, localized only at the React edge. */
+export function itemResourceSpendBlockTranslationKey(
+  block: ItemResourceSpendBlock
+): "magicItems.resourceNeedsAttunement" | "magicItems.resourceNotEquipped" {
+  return block === "needs-attunement"
+    ? "magicItems.resourceNeedsAttunement"
+    : "magicItems.resourceNotEquipped";
 }
 
 export interface ItemResourceViewResult {
@@ -165,6 +181,14 @@ export function buildItemResourceViewModels(
       const isLive =
         resource.itemState === undefined || resource.itemState.disposition === "magical";
       const enabled = resource.state?.disabled !== true;
+      const spendBlock: ItemResourceSpendBlock | null =
+        owner === null || !isLive || !enabled
+          ? null
+          : !attunementSatisfied(owner)
+            ? "needs-attunement"
+            : owner.equipped !== true
+              ? "not-equipped"
+              : null;
 
       return {
         identity: makeItemResourceIdentity(
@@ -188,6 +212,7 @@ export function buildItemResourceViewModels(
           isLive &&
           enabled &&
           current !== 0,
+        spendBlock,
       };
     }),
   };

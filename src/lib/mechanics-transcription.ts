@@ -624,7 +624,7 @@ export function transcribeSpell(spell: Readonly<SrdSpellData>): SpellTranscripti
     }
   }
   // Damage always rides the attack when one exists; a combined save gates only
-  // the condition rider, never the damage (Ray of Sickness).
+  // the condition rider, never the damage.
   const gatedByAttack = hasAttack;
 
   // Classification — once per mechanic, phase-independent. A deferred spell

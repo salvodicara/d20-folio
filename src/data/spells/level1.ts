@@ -91,6 +91,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       v: true,
       s: true,
       m: true,
+      costGp: 5,
     },
     concentration: true,
     targeting: { affinity: "ally", maxTargets: 3, maxTargetsPerUpcast: 1 },
@@ -702,6 +703,9 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    // SRD 5.2.1: "You touch a willing creature" + "one additional creature for
+    // each spell slot level above 1".
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -788,6 +792,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       v: true,
       s: true,
       m: true,
+      costGp: 25,
+      consumed: true,
     },
     concentration: true,
     source: "SRD",
@@ -912,6 +918,9 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     saveAbility: "WIS",
+    // SRD 5.2.1: "One creature" + "one additional creature for each spell slot
+    // level above 1".
+    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     conditionApplication: {
       options: ["prone", "incapacitated"],
       on: "failed-save",
@@ -1466,10 +1475,11 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
     attackType: "ranged",
-    saveAbility: "CON",
+    // SRD 5.2.1: "On a hit, the target takes 2d8 Poison damage and has the
+    // Poisoned condition until the end of your next turn." No saving throw.
     conditionApplication: {
       options: ["poisoned"],
-      on: "failed-save",
+      on: "hit",
       lifetime: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
     },
     source: "SRD",

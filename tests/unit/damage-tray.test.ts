@@ -419,3 +419,32 @@ describe("previewHp", () => {
     expect(previewHp("temp-hp", 9, hp).temp).toBe(9);
   });
 });
+
+describe("one total per target when each target took its own share", () => {
+  // Magic Missile's darts, Scorching Ray's rays: the spell's own data says it makes
+  // several separate instances, not one area roll.
+  const split = catalogue.filter((a) => {
+    const spec = combatResolutionSpec(a);
+    return spec.hasDamage && !spec.area && (a.summary.instances ?? 1) > 1;
+  });
+  const areas = catalogue.filter(
+    (a) => combatResolutionSpec(a).hasDamage && combatResolutionSpec(a).area
+  );
+
+  it("the catalogue holds both shapes", () => {
+    expect(split.map((a) => a.spellId)).toContain("magic-missile");
+    expect(areas.map((a) => a.spellId)).toContain("fireball");
+  });
+
+  it("split across two targets, every row asks its own total", () => {
+    for (const a of split) expect(plan(a, FOES.slice(0, 2)).perTarget, a.id).toBe(true);
+  });
+
+  it("all on one target, the one shared total is enough", () => {
+    for (const a of split) expect(plan(a, [FOE]).perTarget, a.id).toBeUndefined();
+  });
+
+  it("an area deals one roll to everyone in it: one shared total", () => {
+    for (const a of areas) expect(plan(a, FOES).perTarget, a.id).toBeUndefined();
+  });
+});

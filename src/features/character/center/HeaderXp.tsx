@@ -4,7 +4,8 @@
  *
  * XP is optional — a milestone table never sets it, so the line is absent from the
  * sheet until the owner adds a total in edit mode. Once set it stays editable in
- * play too (golden rule 7: XP lands at the table, after a fight). It never levels
+ * play too (golden rule 7: XP lands at the table, after a fight), and clearing the
+ * field returns the table to milestone levelling. It never levels
  * the character: reaching the threshold only says so, beside the Level-Up chip.
  */
 
@@ -13,6 +14,7 @@ import { InlineEditable } from "@/components/shared/InlineEditable";
 import { useLocale } from "@/hooks/useLocale";
 import { xpProgress } from "@/lib/experience";
 import { fmtXp } from "@/lib/utils";
+import { useCharacterStore } from "@/stores/characterStore";
 import { patchCharacter } from "../patch-character";
 
 /** Upper bound of the editor — well past level 20's 355,000. */
@@ -26,8 +28,10 @@ export function HeaderXpStart() {
   const { t } = useTranslation();
   return (
     // A zero-height inline box: the field shows on the line but never makes the
-    // line taller, so the masthead keeps its exact height.
-    <span className="tr-numeric ml-2 inline-block h-0 overflow-visible align-top">
+    // line taller, so the masthead keeps its exact height. Its width already holds
+    // the field's hover/focus frame: revealing the frame must not push the box onto
+    // the next line, or a phone tap's hover moves the field out from under the tap.
+    <span className="tr-numeric ml-2 inline-block h-0 min-w-[3.5rem] overflow-visible align-top whitespace-nowrap">
       <InlineEditable
         type="number"
         editable
@@ -43,6 +47,19 @@ export function HeaderXpStart() {
       {t("common.xp")}
     </span>
   );
+}
+
+/**
+ * Back to milestone levelling: the key is REMOVED (unset, not 0), so the line
+ * disappears and the stored build carries no `experience` (the codec omits it and
+ * the parent write replaces the whole `build` map).
+ */
+function clearXp(): void {
+  const state = useCharacterStore.getState();
+  if (state.readonly || !state.character) return;
+  const { experience: _experience, ...character } = state.character.character;
+  void _experience;
+  state.setCharacter({ ...state.character, character });
 }
 
 /** The XP line once a total is set: the same row in play and edit mode. */
@@ -72,6 +89,7 @@ export function HeaderXp({
           max={XP_MAX}
           format={(v) => fmtXp(v, locale)}
           onChange={(v) => patchCharacter({ experience: Math.round(v) })}
+          onClear={clearXp}
           ariaLabel={t("character.xpAria")}
         />{" "}
         {next === null

@@ -181,6 +181,9 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
       fireEvent.click(book as HTMLElement);
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toHaveTextContent(/Mending/);
+      // A READ view: it never carries the add-modals' "Add" eyebrow (bug sweep
+      // 2026-10-16: the detail of an already-picked spell read "AGGIUNGI").
+      expect(dialog.querySelector(".modal-rubric")).toBeNull();
     },
     SUITE_TIMEOUT
   );
