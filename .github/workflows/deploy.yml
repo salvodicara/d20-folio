@@ -226,7 +226,9 @@ jobs:
       - name: Require every Function healthy on Node 24
         run: |
           set -euo pipefail
-          expected='deleteUser ogImage ogShell onBudgetAlert onBugReportCreated onUserCreated'
+          # The set the built source exports (scripts/functions-expected.mjs): adding
+          # or removing a Function never needs this list edited by hand.
+          expected="$(node scripts/functions-expected.mjs)"
           for attempt in $(seq 1 12); do
             active="$(firebase functions:list --project d20-folio --json \
               | jq -r '.result[] | select(.region == "europe-west1" and .runtime == "nodejs24" and .state == "ACTIVE") | .id' \
