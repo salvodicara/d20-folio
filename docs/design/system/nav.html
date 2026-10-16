@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Navigazione</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      .board {
+        padding: 40px;
+        display: grid;
+        gap: 48px;
+      }
+      .board h1 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 40px;
+      }
+      .cap {
+        margin: 0 0 12px;
+        font-size: 17px;
+        color: var(--text-2);
+      }
+      .cap b {
+        color: var(--gold-bright);
+        font-family: var(--font-title);
+        font-size: 22px;
+        margin-right: 6px;
+      }
+      .laptops {
+        display: grid;
+        gap: 14px;
+      }
+      .laptops .top {
+        position: static;
+        border: 1px solid var(--line);
+        border-radius: var(--r-2);
+      }
+      .phones {
+        display: grid;
+        grid-template-columns: repeat(5, 390px);
+        gap: 32px;
+      }
+      .phone {
+        position: relative;
+        width: 390px;
+        height: 640px;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 1px solid var(--frame);
+        background: var(--bg-glow), var(--bg);
+        box-shadow: var(--shadow);
+      }
+      .phone .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--scrim);
+      }
+      .phone .drawer {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 300px;
+      }
+      .pad {
+        padding: 12px;
+        display: grid;
+        gap: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <h1>Navigazione: le stesse regole su ogni schermata</h1>
+
+      <section>
+        <p class="cap">
+          <b>Laptop</b>la stessa barra in alto ovunque, come il sito di D&amp;D Beyond.
+          Cambia solo la sezione accesa.
+        </p>
+        <div class="laptops">
+          <header class="top">
+            <a class="brand" href="#"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+                <path d="M12 7l-5.2 9h10.4z" /></svg
+              >Folio</a
+            >
+            <nav class="nav">
+              <a href="#" aria-current="page">Personaggi</a><a href="#">Campagne</a
+              ><a href="#">Compendio</a>
+            </nav>
+            <span class="grow"></span>
+            <span class="session"
+              ><span class="session__dot"></span>La Cripta di Vetro ·
+              <b>esplorazione</b></span
+            >
+            <span class="lrow__img" style="width: 36px; height: 36px"
+              ><span style="font-size: 15px">M</span></span
+            >
+          </header>
+          <header class="top">
+            <a class="brand" href="#"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+                <path d="M12 7l-5.2 9h10.4z" /></svg
+              >Folio</a
+            >
+            <nav class="nav">
+              <a href="#">Personaggi</a><a href="#" aria-current="page">Campagne</a
+              ><a href="#">Compendio</a>
+            </nav>
+            <span class="grow"></span>
+            <span class="session"
+              ><span class="session__dot"></span>La Cripta di Vetro ·
+              <b>esplorazione</b></span
+            >
+            <span class="lrow__img" style="width: 36px; height: 36px"
+              ><span style="font-size: 15px">M</span></span
+            >
+          </header>
+          <header class="top">
+            <a class="brand" href="#"
+              ><svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+                <path d="M12 7l-5.2 9h10.4z" /></svg
+              >Folio</a
+            >
+            <nav class="nav">
+              <a href="#">Personaggi</a><a href="#">Campagne</a
+              ><a href="#" aria-current="page">Compendio</a>
+            </nav>
+            <span class="grow"></span>
+            <span class="session"
+              ><span class="session__dot"></span>La Cripta di Vetro ·
+              <b>esplorazione</b></span
+            >
+            <span class="lrow__img" style="width: 36px; height: 36px"
+              ><span style="font-size: 15px">M</span></span
+            >
+          </header>
+        </div>
+      </section>
+
+      <section>
+        <p class="cap">
+          <b>Telefono</b>come l'app di D&amp;D Beyond: titolo sempre al centro. A sinistra
+          il menu sulle pagine principali, la freccia indietro su tutte le altre. A destra
+          al massimo un comando.
+        </p>
+        <div class="phones">
+          <div>
+            <p class="cap">Il menu</p>
+            <div class="phone">
+              <div class="pbar">
+                <span></span><span class="pbar__title"><b>Personaggi</b></span
+                ><span></span>
+              </div>
+              <div class="scrim"></div>
+              <nav class="drawer" aria-label="Menu">
+                <div class="drawer__brand">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="26"
+                    height="26"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                    style="color: var(--gold)"
+                  >
+                    <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+                    <path d="M12 7l-5.2 9h10.4z" /></svg
+                  >Folio
+                </div>
+                <a href="#" aria-current="page"
+                  ><i data-lucide="users" class="i"></i>Personaggi</a
+                >
+                <a href="#"><i data-lucide="castle" class="i"></i>Campagne</a>
+                <a href="#"><i data-lucide="book-open" class="i"></i>Compendio</a>
+                <hr />
+                <a href="#"><i data-lucide="settings" class="i"></i>Impostazioni</a>
+                <a href="#"><i data-lucide="circle-help" class="i"></i>Guida</a>
+                <a href="#"><i data-lucide="log-out" class="i"></i>Esci</a>
+              </nav>
+            </div>
+          </div>
+
+          <div>
+            <p class="cap">Pagina principale</p>
+            <div class="phone">
+              <div class="pbar">
+                <button class="menumark" aria-label="Menu">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+                    <path d="M12 7l-5.2 9h10.4z" />
+                  </svg>
+                </button>
+                <span class="pbar__title"><b>Personaggi</b></span>
+                <button class="btn btn--quiet btn--icon" aria-label="Nuovo personaggio">
+                  <i data-lucide="plus" class="i"></i>
+                </button>
+              </div>
+              <div class="lrow">
+                <span class="lrow__img"
+                  ><img src="img/portrait-selene.webp" alt="" /></span
+                ><span
+                  ><span class="lrow__title">Selene Varga</span><br /><span
+                    class="lrow__meta"
+                    >Chierica 5 · Umana · La Cripta di Vetro</span
+                  ></span
+                ><i
+                  data-lucide="chevron-right"
+                  class="i"
+                  style="color: var(--text-3)"
+                ></i>
+              </div>
+              <div class="lrow">
+                <span class="lrow__img"><span>B</span></span
+                ><span
+                  ><span class="lrow__title">Brann Pietrascura</span><br /><span
+                    class="lrow__meta"
+                    >Guerriero 5 · Nano</span
+                  ></span
+                ><i
+                  data-lucide="chevron-right"
+                  class="i"
+                  style="color: var(--text-3)"
+                ></i>
+              </div>
+              <div class="lrow">
+                <span class="lrow__img"><span>K</span></span
+                ><span
+                  ><span class="lrow__title">Kaela</span><br /><span class="lrow__meta"
+                    >Ladra 4 · Elfa</span
+                  ></span
+                ><i
+                  data-lucide="chevron-right"
+                  class="i"
+                  style="color: var(--text-3)"
+                ></i>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p class="cap">Dentro: la scheda</p>
+            <div class="phone">
+              <div class="pbar">
+                <button class="btn btn--quiet btn--icon" aria-label="Indietro">
+                  <i data-lucide="chevron-left" class="i"></i>
+                </button>
+                <span class="pbar__title"
+                  ><b>Selene Varga</b><span>Chierica 5 · Umana</span></span
+                >
+                <button class="btn btn--quiet btn--icon" aria-label="Altro">
+                  <i data-lucide="more-vertical" class="i"></i>
+                </button>
+              </div>
+              <div class="pad">
+                <button class="switcher">
+                  <i data-lucide="swords" class="i"></i>Gioco<i
+                    data-lucide="chevrons-up-down"
+                    class="i switcher__chev"
+                  ></i>
+                </button>
+                <p class="meta" style="margin: 0">
+                  Le sezioni della scheda si scelgono da qui, come in D&amp;D Beyond.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p class="cap">Dentro: la campagna</p>
+            <div class="phone">
+              <div class="pbar">
+                <button class="btn btn--quiet btn--icon" aria-label="Indietro">
+                  <i data-lucide="chevron-left" class="i"></i>
+                </button>
+                <span class="pbar__title"
+                  ><b>La Cripta di Vetro</b><span>Sessione 7</span></span
+                >
+                <button class="btn btn--quiet btn--icon" aria-label="Altro">
+                  <i data-lucide="more-vertical" class="i"></i>
+                </button>
+              </div>
+              <div class="ptabs" role="tablist">
+                <button class="ptab" role="tab" aria-selected="true">Resoconto</button>
+                <button class="ptab" role="tab" aria-selected="false">Gruppo</button>
+                <button class="ptab" role="tab" aria-selected="false">Scontro</button>
+              </div>
+              <div class="pad">
+                <div class="log">
+                  <div class="log__sec">
+                    <div class="log__head">
+                      <span class="label">Esplorazione</span
+                      ><span class="log__time">21:05</span>
+                    </div>
+                    <p class="log__entry">
+                      <span class="shape shape--action"></span
+                      ><span
+                        ><b>Selene</b> lancia Individuazione del magico come
+                        rituale.</span
+                      >
+                    </p>
+                    <p class="log__entry">
+                      <span class="shape shape--action"></span
+                      ><span><b>Selene</b> lancia Guida su Tib: <b>+1d4</b>.</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p class="cap">Pagina principale: compendio</p>
+            <div class="phone">
+              <div class="pbar">
+                <button class="menumark" aria-label="Menu">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+                    <path d="M12 7l-5.2 9h10.4z" />
+                  </svg>
+                </button>
+                <span class="pbar__title"><b>Compendio</b></span>
+                <button class="btn btn--quiet btn--icon" aria-label="Cerca">
+                  <i data-lucide="search" class="i"></i>
+                </button>
+              </div>
+              <div class="pad">
+                <button class="switcher">
+                  <i data-lucide="book-open" class="i"></i>Incantesimi<i
+                    data-lucide="chevrons-up-down"
+                    class="i switcher__chev"
+                  ></i>
+                </button>
+              </div>
+              <div class="lrow">
+                <span class="lrow__img lrow__img--sq"
+                  ><img src="img/icon-sacred-flame.webp" alt="" /></span
+                ><span
+                  ><span class="lrow__title">Fiamma sacra</span><br /><span
+                    class="lrow__meta"
+                    >Trucchetto · Evocazione · 18 m</span
+                  ></span
+                ><i
+                  data-lucide="chevron-right"
+                  class="i"
+                  style="color: var(--text-3)"
+                ></i>
+              </div>
+              <div class="lrow">
+                <span class="lrow__img lrow__img--sq"
+                  ><img src="img/icon-bless.webp" alt="" /></span
+                ><span
+                  ><span class="lrow__title">Benedizione</span><br /><span
+                    class="lrow__meta"
+                    >1° livello · Ammaliamento · 9 m</span
+                  ></span
+                ><i
+                  data-lucide="chevron-right"
+                  class="i"
+                  style="color: var(--text-3)"
+                ></i>
+              </div>
+              <div class="lrow">
+                <span class="lrow__img lrow__img--sq"
+                  ><img src="img/icon-cure-wounds.webp" alt="" /></span
+                ><span
+                  ><span class="lrow__title">Cura ferite</span><br /><span
+                    class="lrow__meta"
+                    >1° livello · Abiurazione · contatto</span
+                  ></span
+                ><i
+                  data-lucide="chevron-right"
+                  class="i"
+                  style="color: var(--text-3)"
+                ></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

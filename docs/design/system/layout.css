@@ -224,6 +224,9 @@
 .hudbar .endturn {
   margin: -26px 0 -26px 0;
 }
+.mode-explore .hudbar {
+  padding: 10px 10px 10px 24px;
+}
 
 @media (max-width: 1240px) {
   .play {
@@ -409,13 +412,6 @@
 }
 
 @media (max-width: 760px) {
-  .endturn--idle .endturn__inner {
-    font-size: 13px;
-  }
-  .endturn--idle .endturn__inner .i {
-    width: 18px;
-    height: 18px;
-  }
   .hud__note {
     font-size: 14px;
   }
