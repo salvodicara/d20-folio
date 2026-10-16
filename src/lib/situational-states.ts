@@ -14,9 +14,9 @@ import {
   UNDERWATER_COMBAT_REFERENCE,
   type CombatVariantNote,
 } from "@/data/combat-variants";
-import type { LocaleText } from "@/data/types";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
+import { srdText, type LocText } from "@/lib/loc-text";
 
 export const SITUATION_IDS = [
   "unseen-target",
@@ -62,14 +62,19 @@ export type SituationLasts = "turn" | "fight";
 export interface SituationalState {
   id: SituationId;
   lasts: SituationLasts;
-  /** The chip's name (also its grant's label). */
-  label: LocaleText;
+  /** The chip's name (also its toggle's label). */
+  label: LocText;
   /** The SRD lines this state stands for: its chip hint, in order. */
   reference: ReadonlyArray<CombatVariantNote>;
   /** The lines the sheet cannot apply, shown beside the chips while it is lit. */
   notes: ReadonlyArray<CombatVariantNote>;
   attack: ReadonlyArray<SituationalAttackRule>;
   grant: Extract<Grant, { type: "while-active" }>;
+}
+
+/** A reference line's heading, from the `rule` catalogue. */
+function nameOf(note: CombatVariantNote): LocText {
+  return srdText("rule", note.key, "name");
 }
 
 function line(table: ReadonlyArray<CombatVariantNote>, id: string): CombatVariantNote {
@@ -86,7 +91,7 @@ export function situationKey(id: SituationId): string {
 function state(
   id: SituationId,
   lasts: SituationLasts,
-  label: LocaleText,
+  label: LocText,
   reference: ReadonlyArray<CombatVariantNote>,
   notes: ReadonlyArray<CombatVariantNote>,
   attack: ReadonlyArray<SituationalAttackRule>,
@@ -102,7 +107,6 @@ function state(
     grant: {
       type: "while-active",
       activeKey: situationKey(id),
-      label,
       // A turn fact ends at the end of the owner's turn (the current one when it
       // is theirs); a fight fact has no turn edge.
       ...(lasts === "turn"
@@ -128,7 +132,7 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
   state(
     "unseen-target",
     "turn",
-    unseenTarget.name,
+    nameOf(unseenTarget),
     [unseenTarget],
     [],
     [{ mode: "disadvantage", kinds: BOTH }]
@@ -136,7 +140,7 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
   state(
     "unseen-attacker",
     "turn",
-    unseenAttacker.name,
+    nameOf(unseenAttacker),
     [unseenAttacker],
     [],
     [{ mode: "advantage", kinds: BOTH }]
@@ -144,7 +148,7 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
   state(
     "ranged-in-melee",
     "turn",
-    rangedInMelee.name,
+    nameOf(rangedInMelee),
     [rangedInMelee],
     [],
     [{ mode: "disadvantage", kinds: ["ranged"] }]
@@ -152,7 +156,7 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
   state(
     "long-range",
     "turn",
-    longRange.name,
+    nameOf(longRange),
     [longRange],
     [],
     [{ mode: "disadvantage", kinds: ["ranged"], weaponOnly: true }]
@@ -160,7 +164,7 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
   state(
     "underwater",
     "fight",
-    { en: "Underwater", it: "Sott'acqua" },
+    srdText("rule", "situation.underwater", "name"),
     [underwaterMelee, underwaterRanged, underwaterFire],
     [underwaterRanged],
     [
@@ -178,7 +182,7 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
   state(
     "mounted",
     "fight",
-    { en: "Mounted", it: "In sella" },
+    srdText("rule", "situation.mounted", "name"),
     [controlledMount],
     [controlledMount],
     []
@@ -191,6 +195,7 @@ export function resolveSituationalStateSources(
 ): GrantSource[] {
   return SITUATIONAL_STATES.filter((s) => activeKeys.has(s.grant.activeKey)).map((s) => ({
     id: s.grant.activeKey,
+    label: s.label,
     grants: [s.grant],
   }));
 }
@@ -209,8 +214,8 @@ export function situationalState(id: SituationId): SituationalState | undefined 
   return SITUATIONAL_STATES.find((s) => s.id === id);
 }
 
-/** The bilingual name behind a situation key, for log lines and labels. */
-export function situationalStateName(key: string): LocaleText | undefined {
+/** The name behind a situation key, for log lines and labels. */
+export function situationalStateName(key: string): LocText | undefined {
   return SITUATIONAL_STATES.find((s) => s.grant.activeKey === key)?.label;
 }
 

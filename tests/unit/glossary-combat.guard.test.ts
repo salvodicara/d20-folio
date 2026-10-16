@@ -14,7 +14,8 @@
  */
 import { describe, it, expect } from "vitest";
 import { COMBAT_GLOSSARY, type CombatTermId } from "@/components/shared/combat-glossary";
-import { COVER_REFERENCE } from "@/data/cover";
+import { COVER_REFERENCE, coverKey } from "@/data/cover";
+import { srdBi } from "@tests/_harness/loc";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 import { RULE_TERMS, missingOfficialTerms } from "@tests/unit/__helpers__/glossary-terms";
@@ -53,7 +54,9 @@ describe("beginner glossary: core combat terms", () => {
   });
 
   it("names each cover level as the cover table does", () => {
-    const byId = Object.fromEntries(COVER_REFERENCE.map((c) => [c.id, c.name]));
+    const byId = Object.fromEntries(
+      COVER_REFERENCE.map((c) => [c.id, srdBi("rule", coverKey(c.id), "name")])
+    );
     expect(COMBAT_GLOSSARY.halfCover).toEqual(byId.half);
     expect(COMBAT_GLOSSARY.threeQuartersCover).toEqual(byId["three-quarters"]);
     expect(COMBAT_GLOSSARY.totalCover).toEqual(byId.total);

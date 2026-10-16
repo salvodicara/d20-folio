@@ -32,7 +32,8 @@ import type {
   ResolvedTracker,
 } from "@/lib/smart-tracker";
 import { resolveTrackers } from "@/lib/smart-tracker";
-import { coverReference, coverStateName, type CoverStateLevel } from "@/lib/cover-states";
+import { coverStateName, type CoverStateLevel } from "@/lib/cover-states";
+import { coverKey } from "@/data/cover";
 import {
   SITUATIONAL_STATES,
   situationalStateName,
@@ -509,14 +510,15 @@ export interface AuraVM {
  * start-of-turn regen/temp-HP note (one helper, rule 6).
  */
 export function grantSourceLabel(sourceId: string, locale: Locale): string {
-  const cover = coverStateName(sourceId);
-  if (cover) return cover[locale];
+  const named =
+    coverStateName(sourceId) ??
+    situationalStateName(sourceId) ??
+    lightStateName(sourceId);
+  if (named) return localizeText(named, locale);
   const state =
     surpriseStateName(sourceId) ??
     baseActionStateName(sourceId) ??
-    wishStressStateName(sourceId) ??
-    situationalStateName(sourceId) ??
-    lightStateName(sourceId);
+    wishStressStateName(sourceId);
   if (state) return state[locale];
   // Race-trait session ids carry the `race:<raceId>:<trait.id>` shape — resolve
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a
@@ -538,8 +540,11 @@ export function coverText(
   level: CoverStateLevel,
   locale: Locale
 ): { name: string; summary: string } {
-  const row = coverReference(level);
-  return { name: row?.name[locale] ?? level, summary: row?.summary[locale] ?? "" };
+  const key = coverKey(level);
+  return {
+    name: localizeSrd("rule", key, "name", locale),
+    summary: localizeSrd("rule", key, "summary", locale),
+  };
 }
 
 /** One situational attack chip, localized: its name, its SRD sentences (the
@@ -553,15 +558,23 @@ export interface SituationChipVM {
   notes: { id: string; text: string }[];
 }
 
+/** One reference line's sentence, from the `rule` catalogue. */
+function ruleSummary(key: string, locale: Locale): string {
+  return localizeSrd("rule", key, "summary", locale);
+}
+
 /** The situational attack chips in table order (`situational-states.ts`). */
 export function situationChipsView(locale: Locale): SituationChipVM[] {
   return SITUATIONAL_STATES.map((state) => ({
     id: state.id,
     activeKey: state.grant.activeKey,
     lasts: state.lasts,
-    name: state.label[locale],
-    summary: state.reference.map((line) => line.summary[locale]).join(" "),
-    notes: state.notes.map((note) => ({ id: note.id, text: note.summary[locale] })),
+    name: localizeText(state.label, locale),
+    summary: state.reference.map((line) => ruleSummary(line.key, locale)).join(" "),
+    notes: state.notes.map((note) => ({
+      id: note.id,
+      text: ruleSummary(note.key, locale),
+    })),
   }));
 }
 
@@ -577,11 +590,13 @@ export interface LightChipVM {
 
 /** The light chips for a hero with this Darkvision range (feet). */
 export function lightChipsView(locale: Locale, darkvisionFt: number): LightChipVM[] {
-  const reference = (id: string): string =>
-    VISION_REFERENCE.find((note) => note.id === id)?.summary[locale] ?? "";
+  const reference = (id: string): string => {
+    const note = VISION_REFERENCE.find((line) => line.id === id);
+    return note ? ruleSummary(note.key, locale) : "";
+  };
   return LIGHT_LEVELS.map((level) => ({
     level,
-    name: lightLevelName(level)[locale],
+    name: localizeText(lightLevelName(level), locale),
     note:
       darkvisionFt <= 0
         ? { text: reference(level === "dim" ? "dim-light" : "darkness") }

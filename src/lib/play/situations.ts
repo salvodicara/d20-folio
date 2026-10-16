@@ -11,7 +11,6 @@ import {
   type SituationId,
   type SituationalAttackScope,
 } from "@/lib/situational-states";
-import { litText } from "@/lib/loc-text";
 import type { LocText } from "@/lib/loc-text";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { setActiveState } from "./states";
@@ -145,7 +144,7 @@ export function situationalAttackChips(
         mode,
         rollType: "attack",
         vs: "attack",
-        description: litText(situation.label),
+        description: situation.label,
         ...(scope ? { scope } : {}),
       });
     }

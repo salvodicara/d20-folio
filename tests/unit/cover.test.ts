@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { COVER_REFERENCE } from "@/data/cover";
+import { COVER_REFERENCE, coverKey } from "@/data/cover";
+import { LOCALES } from "@/lib/locale";
+import { srd } from "@tests/_harness/loc";
 
 /** M8 — Authoritative-values guard for the Cover reference data. */
 describe("COVER_REFERENCE (M8)", () => {
@@ -25,12 +27,10 @@ describe("COVER_REFERENCE (M8)", () => {
     expect(total?.dexSaveBonus).toBeNull();
   });
 
-  it("every entry has a bilingual name + summary", () => {
+  it.each(LOCALES)("every level has its name and summary in %s", (locale) => {
     for (const c of COVER_REFERENCE) {
-      expect(c.name.en).toBeTruthy();
-      expect(c.name.it).toBeTruthy();
-      expect(c.summary.en).toBeTruthy();
-      expect(c.summary.it).toBeTruthy();
+      expect(srd("rule", coverKey(c.id), "name", locale), c.id).toBeTruthy();
+      expect(srd("rule", coverKey(c.id), "summary", locale), c.id).toBeTruthy();
     }
   });
 });

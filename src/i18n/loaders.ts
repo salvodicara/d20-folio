@@ -73,6 +73,7 @@ export const SRD_FILE: Record<SrdKind, string> = {
   proficiency: "proficiencies",
   "weapon-property": "weapon-properties",
   beasts: "beasts",
+  rule: "rules",
   monster: "monsters",
 };
 

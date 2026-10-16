@@ -1,5 +1,16 @@
 import { describe, it, expect } from "vitest";
-import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
+import {
+  TRAVEL_PACE_REFERENCE,
+  travelPaceKey,
+  type TravelPaceId,
+} from "@/data/travel-pace";
+import { LOCALES, type Locale } from "@/lib/locale";
+import { srd } from "@tests/_harness/loc";
+
+/** A pace's catalogue field in a locale (`""` when it has none). */
+function paceText(id: TravelPaceId, field: "name" | "effect", locale: Locale): string {
+  return srd("rule", travelPaceKey(id), field, locale);
+}
 
 /** RA-29 — Authoritative-values guard for the Travel Pace reference data. */
 describe("TRAVEL_PACE_REFERENCE (RA-29)", () => {
@@ -19,7 +30,7 @@ describe("TRAVEL_PACE_REFERENCE (RA-29)", () => {
     expect(p?.perMinuteFt).toBe(300);
     expect(p?.perHourMiles).toBe(3);
     expect(p?.perDayMiles).toBe(24);
-    expect(p?.effect).toBeNull();
+    for (const locale of LOCALES) expect(paceText("normal", "effect", locale)).toBe("");
   });
 
   it("Slow = 200 ft/min · 2 mph · 18 mi/day", () => {
@@ -31,24 +42,24 @@ describe("TRAVEL_PACE_REFERENCE (RA-29)", () => {
 
   // REGRESSION (post-sweep h3) — the Fast pace's penalty shipped with an ASCII
   // hyphen ("-5") where every other number on the sheet uses the true minus sign.
-  it("writes its penalty with the app's true minus sign, both locales", () => {
-    const fast = TRAVEL_PACE_REFERENCE.find((x) => x.id === "fast");
-    expect(fast?.effect?.en).toContain("\u22125");
-    expect(fast?.effect?.it).toContain("\u22125");
-    for (const p of TRAVEL_PACE_REFERENCE) {
-      expect(p.effect?.en ?? "").not.toMatch(/-\d/);
-      expect(p.effect?.it ?? "").not.toMatch(/-\d/);
-    }
-  });
-
-  it("every entry has a bilingual name; every effect (when present) is bilingual", () => {
-    for (const p of TRAVEL_PACE_REFERENCE) {
-      expect(p.name.en).toBeTruthy();
-      expect(p.name.it).toBeTruthy();
-      if (p.effect) {
-        expect(p.effect.en).toBeTruthy();
-        expect(p.effect.it).toBeTruthy();
+  it.each(LOCALES)(
+    "writes its penalty with the app's true minus sign in %s",
+    (locale) => {
+      expect(paceText("fast", "effect", locale)).toContain("−5");
+      for (const p of TRAVEL_PACE_REFERENCE) {
+        expect(paceText(p.id, "effect", locale)).not.toMatch(/-\d/);
       }
     }
-  });
+  );
+
+  it.each(LOCALES)(
+    "every pace has its name in %s; Fast and Slow their effect",
+    (locale) => {
+      for (const p of TRAVEL_PACE_REFERENCE) {
+        expect(paceText(p.id, "name", locale), p.id).toBeTruthy();
+      }
+      expect(paceText("fast", "effect", locale)).toBeTruthy();
+      expect(paceText("slow", "effect", locale)).toBeTruthy();
+    }
+  );
 });

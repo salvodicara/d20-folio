@@ -45,6 +45,14 @@ import { litText } from "@/lib/loc-text";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
+import { srdText } from "@/lib/loc-text";
+import type { CombatVariantNote } from "@/data/combat-variants";
+import { loc, srd } from "@tests/_harness/loc";
+
+/** A reference line's English sentence, from the `rule` catalogue. */
+function summaryEn(note: CombatVariantNote): string {
+  return srd("rule", note.key, "summary", "en");
+}
 
 const UNTIL = { round: 3, phase: "turn-end" as const };
 const NO_SWIM = { hasSwimSpeed: false };
@@ -105,17 +113,17 @@ describe("the situations follow their SRD sentences", () => {
     "%s: its chip carries the table's name and its rule the sentence's mode",
     (id, line) => {
       const state = must(SITUATIONAL_STATES.find((s) => s.id === id));
-      expect(state.label).toEqual(line.name);
+      expect(state.label).toEqual(srdText("rule", line.key, "name"));
       expect(state.reference).toEqual([line]);
       expect(state.attack.map((rule) => rule.mode)).toEqual([
-        sentenceMode(line.summary.en),
+        sentenceMode(summaryEn(line)),
       ]);
       // A sentence about range narrows it to ranged attacks; "weapon" to weapons.
       const rule = must(state.attack[0]);
       expect(rule.kinds).toEqual(
-        /\branged?\b/i.test(line.summary.en) ? ["ranged"] : ["melee", "ranged"]
+        /\branged?\b/i.test(summaryEn(line)) ? ["ranged"] : ["melee", "ranged"]
       );
-      expect(rule.weaponOnly ?? false).toBe(/\bweapon\b/i.test(line.summary.en));
+      expect(rule.weaponOnly ?? false).toBe(/\bweapon\b/i.test(summaryEn(line)));
     }
   );
 
@@ -129,16 +137,16 @@ describe("the situations follow their SRD sentences", () => {
     );
     const meleeRule = must(state.attack.find((rule) => rule.kinds.includes("melee")));
     const rangedRule = must(state.attack.find((rule) => rule.kinds.includes("ranged")));
-    expect(meleeRule.mode).toBe(sentenceMode(melee.summary.en));
+    expect(meleeRule.mode).toBe(sentenceMode(summaryEn(melee)));
     expect(meleeRule.unlessSwimSpeed ?? false).toBe(
-      melee.summary.en.includes("Swim Speed")
+      summaryEn(melee).includes("Swim Speed")
     );
     expect(meleeRule.unlessDamageType).toBe(
-      /unless the weapon deals (\w+) damage/.exec(melee.summary.en)?.[1]?.toLowerCase()
+      /unless the weapon deals (\w+) damage/.exec(summaryEn(melee))?.[1]?.toLowerCase()
     );
-    expect(meleeRule.weaponOnly ?? false).toBe(/\bweapon\b/.test(melee.summary.en));
-    expect(rangedRule.mode).toBe(sentenceMode(ranged.summary.en));
-    expect(rangedRule.weaponOnly ?? false).toBe(/\bweapon\b/.test(ranged.summary.en));
+    expect(meleeRule.weaponOnly ?? false).toBe(/\bweapon\b/.test(summaryEn(melee)));
+    expect(rangedRule.mode).toBe(sentenceMode(summaryEn(ranged)));
+    expect(rangedRule.weaponOnly ?? false).toBe(/\bweapon\b/.test(summaryEn(ranged)));
     // The auto-miss beyond normal range is the table's call: a note, not a number.
     expect(state.notes).toContain(ranged);
     expect(state.grant.grants).toEqual([
@@ -286,7 +294,7 @@ describe("lighting a situation", () => {
       const chip = aggregate.activatableGroups.find((group) => group.key === key);
       expect(chip?.active).toBe(true);
       expect(grantSourceLabel(key, "it")).toBe(
-        must(SITUATIONAL_STATES.find((s) => s.id === id)).label.it
+        loc(must(SITUATIONAL_STATES.find((s) => s.id === id)).label, "it")
       );
       const off = must(
         setSituation(withSession(MOCK_CHARACTER, session), id, false, undefined)

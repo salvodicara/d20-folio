@@ -190,6 +190,12 @@ export interface GrantSource {
    * via `ref` (R6+R3 SLICE 7c/7d), so they omit it. Not read by the evaluator.
    */
   name?: LocaleText;
+  /**
+   * The name of a runtime source's toggle, as a text reference (the cover, light
+   * and situation states name theirs from the `rule` catalogue). It labels the
+   * source's `while-active` grant when that grant carries no inline `label`.
+   */
+  label?: LocText;
   grants?: ReadonlyArray<Grant>;
   /**
    * The source's stable i18n-catalogue reference `{ kind, key }` (R6+R3 SLICE
@@ -2349,6 +2355,10 @@ export function evaluateGrants(
   const rules: Rule[] = [];
   /** The source of `rules[i]` (filled by `applyGrant`; a hole for a source-less rule). */
   const ruleSources: Array<{ kind: SrdKind; key: string } | undefined> = [];
+  /** Runtime sources' toggle names ({@link GrantSource.label}), by source id. */
+  const sourceLabels = new Map(
+    sources.flatMap((src) => (src.label ? [[src.id, src.label] as const] : []))
+  );
 
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
@@ -3382,7 +3392,10 @@ export function evaluateGrants(
           key,
           ...(item ? { authoredKey: g.activeKey } : {}),
           sourceId,
-          label: grantField(gref, "label", g.label),
+          label:
+            g.label === undefined
+              ? (sourceLabels.get(sourceId) ?? grantField(gref, "label"))
+              : grantField(gref, "label", g.label),
           active,
         });
         if (active) {

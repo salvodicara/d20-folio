@@ -103,7 +103,6 @@ type FieldRule =
       program?: true;
       allowBackReferences?: true;
     }
-  | { kind: "manual-inline"; boundary: ManualAutomationBoundary }
   | { kind: "manual-reference"; boundary: ManualAutomationBoundary }
   | { kind: "object"; fields: Readonly<Record<string, FieldRule>> }
   | { kind: "array"; item: FieldRule };
@@ -421,23 +420,18 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
   }),
   "cover-rule": object({
     id: IGNORE,
-    name: IGNORE,
     acBonus: compiled("rule-reference"),
     dexSaveBonus: compiled("rule-reference"),
-    summary: { kind: "manual-inline", boundary: "open-adjudication" },
   }),
   "narrative-rule": object({
     id: IGNORE,
-    name: IGNORE,
-    summary: { kind: "manual-inline", boundary: "open-adjudication" },
+    key: IGNORE,
   }),
   "travel-rule": object({
     id: IGNORE,
-    name: IGNORE,
     perMinuteFt: compiled("rule-reference"),
     perHourMiles: compiled("rule-reference"),
     perDayMiles: compiled("rule-reference"),
-    effect: { kind: "manual-inline", boundary: "open-adjudication" },
   }),
   "catalogue-rule": object({ id: IGNORE }),
 };
@@ -602,36 +596,6 @@ function addCompiled(
   });
 }
 
-function inlinePresenter(
-  value: unknown,
-  path: string,
-  boundary: ManualAutomationBoundary,
-  state: BuildState,
-  entityKey: string
-): void {
-  if (value === null) return;
-  if (!isRecord(value)) {
-    state.errors.push(`manual inline field ${path} is not bilingual`);
-    return;
-  }
-  const keys = Object.keys(value).sort();
-  if (keys.join(",") !== [...LOCALES].sort().join(",")) {
-    state.errors.push(`manual inline field ${path} has unknown locale fields`);
-  }
-  const locales: Locale[] = LOCALES.filter((code) => {
-    const text = value[code];
-    return typeof text === "string" && text.trim().length > 0;
-  });
-  state.mechanicalPaths.push(path);
-  state.clauses.push({
-    disposition: "manual",
-    key: `manual:${path}`,
-    boundary,
-    consumedPaths: [path],
-    presenter: { key: `${entityKey}.${path}`, resolvedLocales: locales },
-  });
-}
-
 function applyRule(
   rule: FieldRule,
   value: unknown,
@@ -644,9 +608,6 @@ function applyRule(
       return;
     case "compiled":
       addCompiled(state, path, value, rule);
-      return;
-    case "manual-inline":
-      inlinePresenter(value, path, rule.boundary, state, input.entityKey);
       return;
     case "manual-reference": {
       const paths = leafPaths(value, path, state.errors, false);

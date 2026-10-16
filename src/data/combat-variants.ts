@@ -8,91 +8,38 @@
  * Values are authoritative and shouldn't drift — see
  * tests/unit/combat-variants.test.ts.
  *
+ * Each line's heading and one-line summary live in the `rule` SRD catalogue
+ * (`src/i18n/<locale>/srd/rules.json`) under its `key` (`<table>.<id>`).
+ *
  * Source: SRD 5.2.1 (CC-BY-4.0), "Mounted Combat" / "Underwater Combat" —
  * concise functional restatements, not verbatim prose.
  */
-
-import type { LocaleText } from "@/data/types";
 
 /** One rule line in a variant-combat quick-reference. */
 export interface CombatVariantNote {
   /** Stable id (kebab-case). */
   id: string;
-  /** Bilingual heading. */
-  name: LocaleText;
-  /** Bilingual one-line functional summary. */
-  summary: LocaleText;
+  /** Its `rule` catalogue key (`mounted.falling-off`): `name` and `summary`. */
+  key: string;
 }
 
-export const MOUNTED_COMBAT_REFERENCE: ReadonlyArray<CombatVariantNote> = [
-  {
-    id: "eligible-mount",
-    name: { en: "Eligible Mount", it: "Cavalcatura Idonea" },
-    summary: {
-      en: "A willing creature at least one size larger than you, with a suitable anatomy, can serve as a mount.",
-      it: "Una creatura consenziente di almeno una taglia più grande di te e con un'anatomia adatta può fungere da cavalcatura.",
-    },
-  },
-  {
-    id: "mount-dismount",
-    name: { en: "Mounting & Dismounting", it: "Salire e Scendere" },
-    summary: {
-      en: "During your move, mounting or dismounting a creature within 5 feet costs movement equal to half your Speed (round down).",
-      it: "Durante il tuo movimento, salire su o scendere da una creatura entro 1,5 metri costa movimento pari a metà della tua Velocità (arrotondata per difetto).",
-    },
-  },
-  {
-    id: "controlled-mount",
-    name: { en: "Controlled Mount", it: "Cavalcatura Controllata" },
-    summary: {
-      en: "A mount trained to accept a rider shares your Initiative and can take only the Dash, Disengage, or Dodge action.",
-      it: "Una cavalcatura addestrata ad accettare un cavaliere condivide la tua Iniziativa e può effettuare solo l'azione Scatto, Disimpegno o Schivata.",
-    },
-  },
-  {
-    id: "independent-mount",
-    name: { en: "Independent Mount", it: "Cavalcatura Indipendente" },
-    summary: {
-      en: "An untrained mount keeps its own place in Initiative and moves and acts on its own.",
-      it: "Una cavalcatura non addestrata mantiene il proprio posto nell'Iniziativa e si muove e agisce autonomamente.",
-    },
-  },
-  {
-    id: "falling-off",
-    name: { en: "Falling Off", it: "Cadere di Sella" },
-    summary: {
-      en: "If your mount is forced to move, or you or it is knocked Prone, succeed on a DC 10 Dexterity save or fall off Prone within 5 feet.",
-      it: "Se la tua cavalcatura è costretta a muoversi, o se tu o essa venite resi Proni, supera un tiro salvezza su Destrezza CD 10 o cadi di sella Prono entro 1,5 metri.",
-    },
-  },
-];
+function notes(table: string, ids: readonly string[]): ReadonlyArray<CombatVariantNote> {
+  return ids.map((id) => ({ id, key: `${table}.${id}` }));
+}
 
-export const UNDERWATER_COMBAT_REFERENCE: ReadonlyArray<CombatVariantNote> = [
-  {
-    id: "melee-underwater",
-    name: { en: "Melee Attacks", it: "Attacchi in Mischia" },
-    summary: {
-      en: "Without a Swim Speed, melee weapon attack rolls have Disadvantage unless the weapon deals Piercing damage.",
-      it: "Senza una Velocità di Nuoto, i tiri per colpire in mischia con un'arma hanno Svantaggio a meno che l'arma non infligga danni Perforanti.",
-    },
-  },
-  {
-    id: "ranged-underwater",
-    name: { en: "Ranged Attacks", it: "Attacchi a Distanza" },
-    summary: {
-      en: "A ranged weapon attack automatically misses a target beyond normal range, and has Disadvantage within normal range.",
-      it: "Un tiro per colpire a distanza con un'arma manca automaticamente un bersaglio oltre la gittata normale e ha Svantaggio entro la gittata normale.",
-    },
-  },
-  {
-    id: "fire-resistance",
-    name: { en: "Fire Resistance", it: "Resistenza al Fuoco" },
-    summary: {
-      en: "Anything underwater has Resistance to Fire damage.",
-      it: "Tutto ciò che si trova sott'acqua ha Resistenza ai danni da Fuoco.",
-    },
-  },
-];
+export const MOUNTED_COMBAT_REFERENCE = notes("mounted", [
+  "eligible-mount",
+  "mount-dismount",
+  "controlled-mount",
+  "independent-mount",
+  "falling-off",
+]);
+
+export const UNDERWATER_COMBAT_REFERENCE = notes("underwater", [
+  "melee-underwater",
+  "ranged-underwater",
+  "fire-resistance",
+]);
 
 /**
  * Situational attack-roll rules (SRD 5.2.1 "Unseen Attackers and Targets",
@@ -100,69 +47,16 @@ export const UNDERWATER_COMBAT_REFERENCE: ReadonlyArray<CombatVariantNote> = [
  * declares with one tap; the one-tap states (`src/lib/situational-states.ts`)
  * take their names and sentences from here.
  */
-export const ATTACK_SITUATION_REFERENCE: ReadonlyArray<CombatVariantNote> = [
-  {
-    id: "unseen-target",
-    name: { en: "Unseen Target", it: "Bersaglio non visto" },
-    summary: {
-      en: "When you attack a target you can't see, you have Disadvantage on the attack roll.",
-      it: "Quando attacchi un bersaglio che non puoi vedere, hai Svantaggio al tiro per colpire.",
-    },
-  },
-  {
-    id: "unseen-attacker",
-    name: { en: "Unseen Attacker", it: "Attaccante non visto" },
-    summary: {
-      en: "When a creature can't see you, you have Advantage on attack rolls against it.",
-      it: "Quando una creatura non può vederti, hai Vantaggio ai tiri per colpire contro di essa.",
-    },
-  },
-  {
-    id: "ranged-in-melee",
-    name: { en: "Ranged in Melee", it: "A distanza in mischia" },
-    summary: {
-      en: "A ranged attack roll has Disadvantage while you are within 5 feet of an enemy who can see you and isn't Incapacitated.",
-      it: "Un tiro per colpire a distanza ha Svantaggio se sei entro 1,5 metri da un nemico che può vederti e non è Incapacitato.",
-    },
-  },
-  {
-    id: "long-range",
-    name: { en: "Long Range", it: "Gittata lunga" },
-    summary: {
-      en: "A weapon attack roll against a target beyond normal range has Disadvantage; beyond long range it can't be made.",
-      it: "Un tiro per colpire con un'arma contro un bersaglio oltre la gittata normale ha Svantaggio; oltre la gittata lunga non si può fare.",
-    },
-  },
-];
+export const ATTACK_SITUATION_REFERENCE = notes("attack-situation", [
+  "unseen-target",
+  "unseen-attacker",
+  "ranged-in-melee",
+  "long-range",
+]);
 
 /**
  * Light and vision (SRD 5.2.1 rules glossary "Dim Light", "Darkness", "Lightly
  * Obscured", "Heavily Obscured", "Darkvision", "Passive Perception"): the one-tap
  * light chip (`src/lib/light-states.ts`) takes its names and sentences from here.
  */
-export const VISION_REFERENCE: ReadonlyArray<CombatVariantNote> = [
-  {
-    id: "dim-light",
-    name: { en: "Dim Light", it: "Luce Fioca" },
-    summary: {
-      en: "Dim Light is Lightly Obscured: Disadvantage on Wisdom (Perception) checks to see in it, and passive Perception −5.",
-      it: "La Luce Fioca è Leggermente Oscurata: Svantaggio alle prove di Saggezza (Percezione) per vedere al suo interno, e Percezione passiva −5.",
-    },
-  },
-  {
-    id: "darkness",
-    name: { en: "Darkness", it: "Oscurità" },
-    summary: {
-      en: "Darkness is Heavily Obscured: you have the Blinded condition when trying to see in it; you fail checks that need sight and your attack rolls have Disadvantage.",
-      it: "L'Oscurità è Pesantemente Oscurata: hai la condizione Accecato quando cerchi di vedere al suo interno; fallisci le prove che richiedono la vista e i tuoi tiri per colpire hanno Svantaggio.",
-    },
-  },
-  {
-    id: "darkvision",
-    name: { en: "Darkvision", it: "Scurovisione" },
-    summary: {
-      en: "Within its range you see in Dim Light as if it were Bright Light, and in Darkness as if it were Dim Light (in shades of gray).",
-      it: "Entro il suo raggio vedi in Luce Fioca come in Luce Intensa e nell'Oscurità come in Luce Fioca (in sfumature di grigio).",
-    },
-  },
-];
+export const VISION_REFERENCE = notes("vision", ["dim-light", "darkness", "darkvision"]);

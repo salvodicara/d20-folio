@@ -2,20 +2,28 @@
  * Cover as a one-tap state (SRD 5.2.1 "Cover": Half Cover +2 and Three-Quarters
  * Cover +5 to AC and Dexterity saving throws). The player lights the level the
  * table agreed on; it holds until the start of their next turn or until tapped
- * off. Built from `COVER_REFERENCE`, so the numbers live in one place. Total
- * Cover adds no number (it only stops targeting), so it has no state.
+ * off. Built from `COVER_REFERENCE`, so the numbers live in one place, and named
+ * from the `rule` catalogue under the same `cover.<level>` key. Total Cover adds
+ * no number (it only stops targeting), so it has no state.
  */
-import { COVER_REFERENCE, type CoverEffect, type CoverLevel } from "@/data/cover";
+import {
+  COVER_REFERENCE,
+  coverKey,
+  type CoverEffect,
+  type CoverLevel,
+} from "@/data/cover";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import type { LocaleText } from "@/data/types";
+import { srdText, type LocText } from "@/lib/loc-text";
 
 export type CoverStateLevel = Exclude<CoverLevel, "total">;
 
 export interface CoverState {
   level: CoverStateLevel;
-  /** The cover table's row: its name and one-line summary. */
+  /** The cover table's row (its words: the `rule` catalogue, under `coverKey`). */
   reference: CoverEffect;
+  /** The level's name: its toggle's label and its log lines'. */
+  name: LocText;
   grant: Extract<Grant, { type: "while-active" }>;
 }
 
@@ -32,10 +40,10 @@ export const COVER_STATES: ReadonlyArray<CoverState> = COVER_REFERENCE.flatMap(
       {
         level,
         reference: cover,
+        name: srdText("rule", coverKey(level), "name"),
         grant: {
           type: "while-active",
           activeKey: coverStateKey(level),
-          label: cover.name,
           duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
           grants: [
             { type: "ac-bonus", amount: cover.acBonus },
@@ -50,7 +58,7 @@ export const COVER_STATES: ReadonlyArray<CoverState> = COVER_REFERENCE.flatMap(
 /** The lit cover states as grant sources; an unlit level contributes nothing. */
 export function resolveCoverStateSources(activeKeys: ReadonlySet<string>): GrantSource[] {
   return COVER_STATES.filter((state) => activeKeys.has(state.grant.activeKey)).map(
-    (state) => ({ id: state.grant.activeKey, grants: [state.grant] })
+    (state) => ({ id: state.grant.activeKey, label: state.name, grants: [state.grant] })
   );
 }
 
@@ -64,13 +72,7 @@ export function litCoverLevel(session: {
   );
 }
 
-/** The cover table's row for a level. */
-export function coverReference(level: CoverStateLevel): CoverEffect | undefined {
-  return COVER_STATES.find((state) => state.level === level)?.reference;
-}
-
-/** The bilingual name behind a cover key, for log lines and labels. */
-export function coverStateName(key: string): LocaleText | undefined {
-  const label = COVER_STATES.find((state) => state.grant.activeKey === key)?.grant.label;
-  return label;
+/** The name behind a cover key, for log lines and labels. */
+export function coverStateName(key: string): LocText | undefined {
+  return COVER_STATES.find((state) => state.grant.activeKey === key)?.name;
 }

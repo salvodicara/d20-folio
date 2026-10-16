@@ -2,23 +2,21 @@
  * Beginner glossary: the core combat terms Play explains on their visible labels,
  * with their official SRD 5.2.1 names (EN / IT). The bodies live in
  * `glossary.term.<id>`; the wiring sites take a `CombatTermId`, and
- * glossary-combat.guard reads this table, so the two can't drift.
+ * glossary-combat.guard reads this table, so the two can't drift (it also holds
+ * the cover names to the `rule` catalogue's cover rows).
  *
  * Opportunity Attack is explained by its base action card (`base-opportunity-attack`).
  */
-import { COVER_REFERENCE, type CoverLevel } from "@/data/cover";
+import type { CoverLevel } from "@/data/cover";
 import type { LocaleText } from "@/data/types";
 import type { GlossaryTermId } from "./GlossaryTip";
-
-const coverName = (id: CoverLevel): LocaleText =>
-  COVER_REFERENCE.find((c) => c.id === id)?.name ?? { en: id, it: id };
 
 export const COMBAT_GLOSSARY = {
   advantage: { en: "Advantage", it: "Vantaggio" },
   disadvantage: { en: "Disadvantage", it: "Svantaggio" },
-  halfCover: coverName("half"),
-  threeQuartersCover: coverName("three-quarters"),
-  totalCover: coverName("total"),
+  halfCover: { en: "Half Cover", it: "Mezza Copertura" },
+  threeQuartersCover: { en: "Three-Quarters Cover", it: "Tre Quarti di Copertura" },
+  totalCover: { en: "Total Cover", it: "Copertura Totale" },
   bloodied: { en: "Bloodied", it: "Sanguinante" },
   temporaryHitPoints: { en: "Temporary Hit Points", it: "Punti Ferita Temporanei" },
   deathSavingThrow: { en: "Death Saving Throw", it: "Tiro Salvezza contro Morte" },
