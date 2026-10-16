@@ -65,6 +65,7 @@ const SAMPLES: Record<
   },
   "death-save": { kind: "death-save", outcome: "success", actor: "pc-mara" },
   rest: { kind: "rest", rest: "short", actor: "pc-mara" },
+  "time-passes": { kind: "time-passes", minutes: 10 },
   note: { kind: "note", text: "The bridge collapses." },
   status: { kind: "status", sourceId: "rage", started: false, actor: "pc-mara" },
 };

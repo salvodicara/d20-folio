@@ -6,6 +6,7 @@
  * form too (body restored, Beast Temp HP retracted).
  */
 import { revertBuildFromPrior } from "@/lib/polymorph";
+import { concentrationTimerKey } from "@/lib/spell-duration";
 import { concentrationStatusKeys, endStatuses } from "@/lib/status";
 import type { CharacterData, CharacterDoc } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
@@ -32,7 +33,11 @@ export function changeConcentration(
   // self-assume, which sets concentration before stamping the form).
   const retractForm = form !== undefined && prev === form.spellId && prev !== spell;
   const revertBuild = retractForm ? revertBuildFromPrior(form.prior) : undefined;
-  const droppedActiveKeys = prev && prev !== spell ? concentrationStatusKeys(prev) : [];
+  // The dropped spell's statuses end, and its own countdown with them.
+  const droppedActiveKeys =
+    prev && prev !== spell
+      ? [...concentrationStatusKeys(prev), concentrationTimerKey(prev)]
+      : [];
   const ended = endStatuses(session, droppedActiveKeys);
   return {
     doc: {

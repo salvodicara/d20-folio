@@ -147,6 +147,11 @@ import {
   featureNameLoc,
 } from "@/lib/srd-feature-lookup";
 import { spellIndex, spells } from "@/data/spells";
+import {
+  ROUNDS_PER_MINUTE,
+  concentrationBudgetRounds,
+  concentrationTimerKey,
+} from "@/lib/spell-duration";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
@@ -8208,6 +8213,14 @@ export function resolveActiveStatesEndingOnRest(
   if (rest === "long" && active.has(WISH_STRESS_STATE.activeKey)) {
     ended.add(WISH_STRESS_STATE.activeKey);
   }
+  // A held Concentration whose time left fits inside the rest lapses during it
+  // (Detect Magic, up to 10 minutes, ends on a Short Rest; Hex from a level 3 slot,
+  // 8 hours, outlasts it). Ending the key ends the Concentration (`endsConcentration`).
+  for (const timer of heldConcentrationTimer(character)) {
+    const left =
+      character.session.effectTimers?.[timer.activeKey]?.roundsLeft ?? timer.maxRounds;
+    if (left <= restMinutes * ROUNDS_PER_MINUTE) ended.add(timer.activeKey);
+  }
   return [...ended];
 }
 
@@ -8366,6 +8379,25 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
   return out;
 }
 
+/**
+ * The held Concentration's own countdown, armed like a timed state: a spell held with
+ * no state on you (Detect Magic, Bane on enemies) still lapses when its duration has
+ * passed. None for a custom spell or a duration the clock never ends.
+ */
+function heldConcentrationTimer(character: CharacterDoc): ActiveTimedEffect[] {
+  const { concentration, concentrationCastLevel } = character.session;
+  const maxRounds = concentrationBudgetRounds(concentration, concentrationCastLevel);
+  return maxRounds === null
+    ? []
+    : [
+        {
+          activeKey: concentrationTimerKey(concentration),
+          sourceId: concentration,
+          maxRounds,
+        },
+      ];
+}
+
 /** One state whose round timer reached 0 this End Turn — to drop + log. */
 export interface ExpiredTimedEffect {
   activeKey: string;
@@ -8393,7 +8425,9 @@ export interface ExpiredTimedEffect {
 export function advanceEffectTimers(
   character: CharacterDoc,
   /** The round being counted; a timer already counted for it is left as is. */
-  forRound?: number
+  forRound?: number,
+  /** How many rounds pass in this step: 1 at End Turn, 10 per minute out of combat. */
+  rounds = 1
 ): {
   timers: Record<string, { roundsLeft: number; tickedRound?: number }>;
   expired: ExpiredTimedEffect[];
@@ -8406,7 +8440,10 @@ export function advanceEffectTimers(
     return forRound !== undefined && ticked !== undefined && ticked >= forRound;
   };
   const stamp = forRound === undefined ? {} : { tickedRound: forRound };
-  const activeTimed = resolveActiveTimedEffects(character);
+  const activeTimed = [
+    ...resolveActiveTimedEffects(character),
+    ...heldConcentrationTimer(character),
+  ];
   const next: Record<string, { roundsLeft: number; tickedRound?: number }> = {};
   const expired: ExpiredTimedEffect[] = [];
   for (const eff of activeTimed) {
@@ -8417,7 +8454,7 @@ export function advanceEffectTimers(
     }
     // Arm a fresh state to its cap; otherwise decrement its existing countdown.
     const current = prev[eff.activeKey]?.roundsLeft ?? eff.maxRounds;
-    const roundsLeft = current - 1;
+    const roundsLeft = current - rounds;
     if (roundsLeft <= 0) {
       // Timer elapsed → drop the state + log the expiry (handled by the engine
       // consumer). No timer entry survives.
@@ -8442,7 +8479,7 @@ export function advanceEffectTimers(
       next[key] = timer;
       continue;
     }
-    const roundsLeft = timer.roundsLeft - 1;
+    const roundsLeft = timer.roundsLeft - rounds;
     if (roundsLeft <= 0) {
       expired.push({ activeKey: key, sourceId });
     } else {
