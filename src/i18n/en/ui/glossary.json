@@ -93,7 +93,10 @@
       "vulnerability": "Vulnerability to a damage type doubles the damage you take of that type. Like Resistance, more than one source still doubles it only once.",
       "immunity": "Immunity to a damage type means that damage does nothing to you. Immunity to a condition means it can't be applied to you at all.",
       "reaction": "A Reaction is a special action you take in response to a trigger, even on someone else's turn, like an Opportunity Attack. You get one per round; it comes back at the start of your turn.",
-      "bonusAction": "A Bonus Action is a quick extra action you can take on your turn, but only when a feature, spell, or other ability says it uses one. You get at most one per turn, and you choose when to take it."
+      "bonusAction": "A Bonus Action is a quick extra action you can take on your turn, but only when a feature, spell, or other ability says it uses one. You get at most one per turn, and you choose when to take it.",
+      "criticalHit": "Critical Hit: when you roll a 20 on the d20 for an attack roll, you hit no matter the target's AC, and the hit is a Critical Hit. Roll all of the attack's damage dice twice and add them together, then add your modifiers once as normal.",
+      "difficultTerrain": "Difficult Terrain: every foot you move through it costs 1 extra foot, so it uses up your Speed twice as fast. Think rubble, heavy snow, thick undergrowth, waist-deep water, or the space of a creature that isn't your ally.",
+      "surprise": "Surprise: if you are caught unaware when combat starts, say by an ambush, you have Disadvantage on your Initiative roll. That's all it does: once your turn comes, you act normally."
     }
   }
 }

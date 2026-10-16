@@ -42,6 +42,7 @@ import {
   Dices,
   Eye,
   Footprints,
+  Info,
   Moon,
   Shield,
   ShieldHalf,
@@ -66,6 +67,7 @@ import { InlineEditable } from "@/components/shared/InlineEditable";
 import { StatBadge } from "@/components/shared/StatBadge";
 import { BreakdownTip } from "@/components/shared/BreakdownTip";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
+import { COVER_TERM } from "@/components/shared/combat-glossary";
 import { Portrait } from "@/components/shared/Portrait";
 import { PortraitLightbox } from "@/components/shared/PortraitLightbox";
 import { PortraitCropModal } from "@/components/shared/PortraitCropModal";
@@ -568,23 +570,34 @@ export function CombatHeader() {
             }
             corner={
               sheetMode !== "edit" && !readonly ? (
-                <button
-                  type="button"
-                  className="v-adv-toggle v-cover"
-                  data-adv={cover ? "on" : "off"}
-                  data-set={cover ? "" : undefined}
-                  onClick={cycleCover}
-                  title={coverHint}
-                  aria-label={coverHint}
-                >
-                  {cover === "half" ? (
-                    <span aria-hidden>½</span>
-                  ) : cover === "three-quarters" ? (
-                    <span aria-hidden>¾</span>
-                  ) : (
-                    <Icon as={ShieldHalf} size="xs" decorative />
-                  )}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="v-adv-toggle v-cover"
+                    data-adv={cover ? "on" : "off"}
+                    data-set={cover ? "" : undefined}
+                    onClick={cycleCover}
+                    title={coverHint}
+                    aria-label={coverHint}
+                  >
+                    {cover === "half" ? (
+                      <span aria-hidden>½</span>
+                    ) : cover === "three-quarters" ? (
+                      <span aria-hidden>¾</span>
+                    ) : (
+                      <Icon as={ShieldHalf} size="xs" decorative />
+                    )}
+                  </button>
+                  {/* One mark for the cover cycle: the lit level, else the first
+                      tap's (Half). */}
+                  <GlossaryTip
+                    term={COVER_TERM[cover ?? "half"].term}
+                    rubric={coverName(cover ?? "half")}
+                    className="glossary-info v-cover-info"
+                  >
+                    <Icon as={Info} decorative />
+                  </GlossaryTip>
+                </>
               ) : null
             }
             value={

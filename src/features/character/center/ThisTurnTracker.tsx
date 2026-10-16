@@ -23,8 +23,10 @@
 
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import { Swords, Zap, RefreshCw, ArrowRight, Flag } from "lucide-react";
+import { Swords, Zap, RefreshCw, ArrowRight, Flag, Info } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { combatTermName } from "@/components/shared/combat-glossary";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useConfirmStore } from "@/stores/confirmStore";
@@ -726,18 +728,27 @@ export function ThisTurnTracker({
             onCommit={(roll) => rollInitiative(roll === null ? "" : String(roll))}
           />
           {showSurprise && (
-            <button
-              type="button"
-              className="status-badge sb-toggle"
-              data-kind={surprised ? "active" : undefined}
-              aria-pressed={surprised}
-              onClick={toggleSurprise}
-              title={t("combat.surpriseHint")}
-            >
-              <span className="sb-label">
-                {grantSourceLabel(SURPRISE_STATE.activeKey, locale)}
-              </span>
-            </button>
+            <span className="inline-flex items-center gap-0.5">
+              <button
+                type="button"
+                className="status-badge sb-toggle"
+                data-kind={surprised ? "active" : undefined}
+                aria-pressed={surprised}
+                onClick={toggleSurprise}
+                title={t("combat.surpriseHint")}
+              >
+                <span className="sb-label">
+                  {grantSourceLabel(SURPRISE_STATE.activeKey, locale)}
+                </span>
+              </button>
+              <GlossaryTip
+                term="surprise"
+                rubric={combatTermName("surprise", locale)}
+                className="glossary-info"
+              >
+                <Icon as={Info} decorative />
+              </GlossaryTip>
+            </span>
           )}
         </div>
 

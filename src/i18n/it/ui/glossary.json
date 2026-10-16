@@ -93,7 +93,10 @@
       "vulnerability": "Vulnerabilità a un tipo di danno: subisci il doppio dei danni di quel tipo. Come per la Resistenza, più fonti lo raddoppiano comunque una volta sola.",
       "immunity": "Immunità a un tipo di danno: quei danni non ti fanno nulla. Immunità a una condizione: quella condizione non può esserti applicata.",
       "reaction": "La Reazione è un'azione speciale che fai in risposta a un evento, anche durante il turno di qualcun altro, come un Attacco di Opportunità. Ne hai una per round; torna disponibile all'inizio del tuo turno.",
-      "bonusAction": "L'Azione Bonus è un'azione extra e veloce che puoi fare nel tuo turno, ma solo se un privilegio, un incantesimo o un'altra capacità dice che la usa. Ne hai al massimo una per turno e scegli tu quando farla."
+      "bonusAction": "L'Azione Bonus è un'azione extra e veloce che puoi fare nel tuo turno, ma solo se un privilegio, un incantesimo o un'altra capacità dice che la usa. Ne hai al massimo una per turno e scegli tu quando farla.",
+      "criticalHit": "Colpo Critico: quando ottieni 20 sul d20 di un tiro per colpire, colpisci a prescindere dalla CA del bersaglio e il colpo è un Colpo Critico. Tira due volte tutti i dadi di danno dell'attacco e sommali, poi aggiungi i modificatori una sola volta come al solito.",
+      "difficultTerrain": "Terreno Difficile: ogni metro che percorri al suo interno ti costa un metro in più, quindi consuma la tua Velocità il doppio più in fretta. Pensa a macerie, neve alta, sottobosco fitto, acqua alla vita o lo spazio di una creatura che non è tua alleata.",
+      "surprise": "Sorpresa: se vieni colto alla sprovvista quando inizia il combattimento, per esempio da un'imboscata, hai Svantaggio al tiro d'Iniziativa. Non fa altro: quando arriva il tuo turno agisci normalmente."
     }
   }
 }
