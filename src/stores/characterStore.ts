@@ -81,7 +81,7 @@ import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
-import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
+import { baseBundleKey, resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
 import { evaluateGrants } from "@/lib/grants";
@@ -2925,13 +2925,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const kept = charData.spells.filter(
       (s) => "custom" in s || !(s.alwaysPrepared === true && bundleIds.has(s.srdId))
     );
+    // A pick on a landed occurrence (an ally's Enlarge/Reduce) replaces the pick of
+    // any earlier occurrence of the same option, so stale picks never pile up.
+    const base = baseBundleKey(bundleKey);
+    const keptChoices = Object.entries(character.session.grantBundleChoices ?? {}).filter(
+      ([key]) => bundleKey === base || key === base || baseBundleKey(key) !== base
+    );
+    const choices = { ...Object.fromEntries(keptChoices), [bundleKey]: optionId };
     // 2. Inject the newly-selected option's spells (gated to the character's
     //    level). Other always-prepared spells already in `kept` are skipped by
     //    injectExpandedSpells' dedup.
-    const choices = {
-      ...(character.session.grantBundleChoices ?? {}),
-      [bundleKey]: optionId,
-    };
     const addEntries = getAlwaysPreparedFromGrants(sources, {
       level: totalLevel(charData),
       bundleChoices: new Map(Object.entries(choices)),
