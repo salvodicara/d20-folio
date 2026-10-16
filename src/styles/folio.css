@@ -16023,7 +16023,7 @@ button.econ-tok-filter:active .econ-disc {
      badge here is a tappable status token, not list metadata. */
   border-radius: 999px;
   font-family: var(--font-engraved);
-  font-size: 10px;
+  font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -16146,8 +16146,76 @@ button.econ-tok-filter:active .econ-disc {
 }
 .status-pop .sp-line {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: var(--text-read);
+  line-height: 1.4;
   color: var(--text-secondary);
+}
+/* The plain-words explanation leads the popover (the glossary line), then what it
+   does this turn as a short list, then the action that ends it. */
+.status-pop .sp-gloss {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-read);
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+.status-pop .sp-effects {
+  margin: 0;
+  padding: var(--sp-2) 0 0;
+  list-style: none;
+  display: grid;
+  gap: var(--sp-1);
+  border-top: 1px solid color-mix(in oklab, var(--accent-primary) 18%, transparent);
+  width: 100%;
+}
+.status-pop .sp-effects .sp-line::before {
+  content: "◆";
+  margin-right: var(--sp-2);
+  font-size: var(--text-micro);
+  vertical-align: 0.15em;
+  color: var(--accent-primary);
+}
+/* ── The character's status row (owner 2026-10-16) — every state once, under the
+   name in the identity band. The badges are the ledge's; here the row sits in the
+   band without the altar's hairline. ── */
+.char-status-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.char-status-row .status-ledge {
+  padding-top: 0;
+  border-top: 0;
+}
+.char-status-row .status-badge {
+  min-height: 32px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+.char-status-row .status-badge .sb-disc {
+  width: 24px;
+  height: 24px;
+}
+.char-status-row .co-add {
+  min-height: 32px;
+  border-radius: 999px;
+}
+.char-status-note {
+  margin: 0;
+  font-size: var(--text-read);
+  color: var(--semantic-danger);
+}
+/* The "+" menu: lit-able states above the conditions, separated by a hairline. */
+.status-add-extra {
+  display: grid;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  border-bottom: 1px solid color-mix(in oklab, var(--accent-primary) 18%, transparent);
+}
+.status-add-group {
+  display: grid;
 }
 .status-pop .sp-note {
   margin: 0;

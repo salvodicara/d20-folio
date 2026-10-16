@@ -1,6 +1,6 @@
 /**
- * Phase 2 step 1 — the concentration badge (turn meter) and the rail's
- * concentration pill show the rounds left on what Concentration holds, read
+ * Phase 2 step 1 — the concentration badge (now in the character's status row,
+ * owner 2026-10-16) shows the rounds left on what Concentration holds, read
  * through the status view. Bless lit on yourself counts down; Bless held only
  * for allies has no countdown on this sheet, so no number is shown.
  */
@@ -10,7 +10,7 @@ import { MemoryRouter } from "react-router";
 vi.mock("@/lib/firebase", () => ({}));
 import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
-import { ResourceRail } from "@/features/character/molecules/ResourceRail";
+import { CharacterStatusRow } from "@/features/character/molecules/CharacterStatusRow";
 import { buildDevScenario } from "@/lib/dev-scenarios";
 import { concentrationValue } from "@/lib/concentration";
 import { getSpellById } from "@/data/spells";
@@ -40,7 +40,8 @@ function mountMeter(): void {
   render(
     <MemoryRouter>
       <TurnEconomyProvider>
-        <ThisTurnTracker attackRollState="none" />
+        <CharacterStatusRow />
+        <ThisTurnTracker />
       </TurnEconomyProvider>
     </MemoryRouter>
   );
@@ -75,17 +76,5 @@ describe("concentration rounds", () => {
     concentrateOnBless(false);
     mountMeter();
     expect(badge().querySelector(".sb-count")).toBeNull();
-  });
-
-  it("the rail's concentration chip shows the same rounds", () => {
-    concentrateOnBless(true);
-    render(
-      <MemoryRouter>
-        <ResourceRail />
-      </MemoryRouter>
-    );
-    expect(
-      document.querySelector('[data-testid="activatable-bar"] .sb-count')?.textContent
-    ).toBe(String(blessRounds()));
   });
 });

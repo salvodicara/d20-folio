@@ -43,14 +43,11 @@ import {
 import { getEquipment } from "@/data/equipment";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { vitalConcentration, vitalExhaustion } from "@/lib/character-vitals";
+import { vitalExhaustion } from "@/lib/character-vitals";
 import { localeDistance } from "@/lib/utils";
-import { composeTurnLimiters } from "@/lib/views/combat-action-view";
 import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
 import { applyFirstRollTopUps } from "./initiative-top-up";
-import { StatusLedge } from "./StatusLedge";
-import { concentrationRoundsLeft, deriveStatuses } from "@/lib/status";
 import { useTurnEconomy } from "./useTurnEconomy";
 import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
@@ -83,7 +80,6 @@ export type EconFilterType = "action" | "bonus" | "reaction";
 export function ThisTurnTracker({
   activeFilter,
   onFilterByType,
-  attackRollState = "none",
 }: {
   /**
    * The Play-tab's active action filter (item e) — the SAME `filter` state the
@@ -97,15 +93,6 @@ export function ThisTurnTracker({
    * the toggle. Omitted = the tokens stay non-filtering (display only).
    */
   onFilterByType?: (type: EconFilterType) => void;
-  /**
-   * B3 — the netted attack-roll state (advantage/disadvantage/none) PlayTab
-   * already derives once (`attackRollState`, conditions + grant clauses netted
-   * RAW). Passed down (single source of truth — never re-derived here) so the
-   * "what's limiting you" summary surfaces an attack-disadvantage limiter only
-   * when the NET is disadvantage (an advantage source cancels it). Defaults to
-   * "none" for a standalone mount.
-   */
-  attackRollState?: "advantage" | "disadvantage" | "none";
 } = {}) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -156,8 +143,6 @@ export function ThisTurnTracker({
   const difficultTerrain = useCombatStore((s) => s.difficultTerrain);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
-  // RA-08 — slot-paid casts tracked by the hard one-slot-per-global-turn gate.
-  const spellSlotCastsThisTurn = useCombatStore((s) => s.spellSlotCastsThisTurn);
   // Exhaustion reads through the ONE vitals projection seam (session truth
   // reconciled against the persisted engine world).
   const exhaustion = useCharacterStore((s) =>
@@ -620,31 +605,6 @@ export function ThisTurnTracker({
       () => standUp()
     );
   }
-  // The FIRST active condition that breaks concentration — names the cause on the
-  // concentration banner note. (Speed-0's cause is NOT named on the movement
-  // slider: it is carried solely by the "what's limiting you this turn" banner —
-  // single source / DRY; the slider only shows a clean zeroed/locked readout.)
-  const concBlockedReason = conditionEffects.breaksConcentration
-    ? (conditions.find((id) => resolveConditionEffects([id]).breaksConcentration) ?? null)
-    : null;
-
-  // B3 — the turn's active limiters, composed from the SAME memoized condition
-  // resolver + the netted attackRollState (from PlayTab) + active exhaustion.
-  // Grouped into one badge per cause on the meter's STATUS LEDGE (StatusLedge —
-  // the BG3-style badge row); renders ONLY when ≥1 status is active (rule 19).
-  const limiters = composeTurnLimiters({
-    conditions,
-    attackRollState,
-    exhaustion,
-    spellSlotCasts: spellSlotCastsThisTurn,
-  });
-  // Concentration reads through the same vitals projection seam.
-  const concentration = vitalConcentration(character.session);
-  const concentrationRounds = concentration
-    ? concentrationRoundsLeft(deriveStatuses(character))
-    : undefined;
-  const hasStatuses = !!concentration || limiters.length > 0;
-
   // SR-only economy-token status: "Action: available" / "Action: spent on X".
   // `spentName === undefined` → available; "" → spent (no named action, e.g.
   // reaction); a string → spent on that action.
@@ -702,11 +662,7 @@ export function ThisTurnTracker({
           band flips to waiting IMMEDIATELY (optimistic status), dimming + inerting the economy
           and quieting End Turn on `--ease-settle` so the hand-off is unmistakable on the SHEET
           (the pip carries whose-turn; this makes the meter respond too). */}
-      <div
-        className="turn"
-        data-phase={inEncounter ? phase : undefined}
-        data-status={hasStatuses ? "" : undefined}
-      >
+      <div className="turn" data-phase={inEncounter ? phase : undefined}>
         <div className="round">
           <span className="r-lbl">{t("combat.round")}</span>
           <span className="r-ring tnum">
@@ -866,21 +822,6 @@ export function ThisTurnTracker({
             <Icon as={Flag} decorative />
             <span>{t("combat.endCombat")}</span>
           </button>
-        )}
-
-        {/* STATUS LEDGE — the BG3-style status-effect badge row, integrated as the
-            altar's bottom row (`data-status` opens the grid track): concentration
-            + one badge per limiting cause, each with an explain-on-demand popover
-            (the concentration badge carries the one-tap drop action). Replaces the
-            floating concentration + turn-limiter banners. */}
-        {hasStatuses && (
-          <StatusLedge
-            limiters={limiters}
-            concentration={concentration || null}
-            concentrationRounds={concentrationRounds}
-            concBlockedConditionId={concBlockedReason}
-            readonly={readonly}
-          />
         )}
       </div>
 

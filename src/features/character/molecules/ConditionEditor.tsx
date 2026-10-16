@@ -18,7 +18,7 @@
  * through the shared view-models at the render edge — never new keys.
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,6 +50,9 @@ export function ConditionEditor({
   immunities,
   statuses = [],
   onToggleStatus,
+  showChips = true,
+  addLabel,
+  extra,
 }: {
   conditions: string[];
   /** Condition ids the creature is immune to: never offered in the picker
@@ -69,6 +72,13 @@ export function ConditionEditor({
   /** Lasting statuses offered in the same picker, shown as chips while they run. */
   statuses?: ReadonlyArray<StatusOptionVM>;
   onToggleStatus?: (statusId: string) => void;
+  /** False when the active conditions render elsewhere (the character's status
+   *  row): only the add control remains. */
+  showChips?: boolean;
+  /** The add control's words (default "Add condition"). */
+  addLabel?: string;
+  /** More ways to light a state, shown above the conditions in the add menu. */
+  extra?: ReactNode;
 }) {
   const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
@@ -86,78 +96,81 @@ export function ConditionEditor({
       {conditions.length === 0 && emptyLabel && (
         <span className="sr-only">{emptyLabel}</span>
       )}
-      {conditionChips(conditions, locale).map((chip) => (
-        <span
-          key={chip.id}
-          className="co-chip"
-          style={{ ["--co" as string]: chip.color, ["--co-ink" as string]: chip.ink }}
-          title={
-            chip.impliedBy
-              ? t("character.impliedCondition", { source: chip.impliedBy })
-              : undefined
-          }
-        >
-          {hasGloss(chip.id) ? (
-            <GlossaryTip term={chip.id as GlossaryTermId} rubric={chip.label} />
-          ) : (
-            chip.label
-          )}
-          {/* RA-12 — the find-DC rides the Invisible chip (SRD "Hide": your check
-              total is the DC to find you); reuses the one `stats.dc` label. */}
-          {chip.id === "invisible" && hiddenDc != null
-            ? ` · ${t("stats.dc")} ${hiddenDc}`
-            : ""}
-          {/* An implied chip (Prone from Unconscious) has no ×: removing it
-              alone would change nothing while its source holds. */}
-          {!chip.impliedBy && (
-            <button
-              type="button"
-              className="co-x"
-              aria-label={`${t("common.remove")} ${chip.label}`}
-              onClick={() => onToggle(chip.id)}
-            >
-              <Icon as={X} size="sm" decorative />
-            </button>
-          )}
-        </span>
-      ))}
-      {statuses.map((status) =>
-        status.chip ? (
+      {showChips &&
+        conditionChips(conditions, locale).map((chip) => (
           <span
-            key={status.id}
+            key={chip.id}
             className="co-chip"
-            style={{
-              ["--co" as string]: condColor("exhaustion"),
-              ["--co-ink" as string]: condInkColor("exhaustion"),
-            }}
-            title={status.hint}
+            style={{ ["--co" as string]: chip.color, ["--co-ink" as string]: chip.ink }}
+            title={
+              chip.impliedBy
+                ? t("character.impliedCondition", { source: chip.impliedBy })
+                : undefined
+            }
           >
-            {status.chip}
-            {onToggleStatus && (
+            {hasGloss(chip.id) ? (
+              <GlossaryTip term={chip.id as GlossaryTermId} rubric={chip.label} />
+            ) : (
+              chip.label
+            )}
+            {/* RA-12 — the find-DC rides the Invisible chip (SRD "Hide": your check
+              total is the DC to find you); reuses the one `stats.dc` label. */}
+            {chip.id === "invisible" && hiddenDc != null
+              ? ` · ${t("stats.dc")} ${hiddenDc}`
+              : ""}
+            {/* An implied chip (Prone from Unconscious) has no ×: removing it
+              alone would change nothing while its source holds. */}
+            {!chip.impliedBy && (
               <button
                 type="button"
                 className="co-x"
-                aria-label={`${t("common.remove")} ${status.option}`}
-                onClick={() => onToggleStatus(status.id)}
+                aria-label={`${t("common.remove")} ${chip.label}`}
+                onClick={() => onToggle(chip.id)}
               >
                 <Icon as={X} size="sm" decorative />
               </button>
             )}
           </span>
-        ) : null
-      )}
+        ))}
+      {showChips &&
+        statuses.map((status) =>
+          status.chip ? (
+            <span
+              key={status.id}
+              className="co-chip"
+              style={{
+                ["--co" as string]: condColor("exhaustion"),
+                ["--co-ink" as string]: condInkColor("exhaustion"),
+              }}
+              title={status.hint}
+            >
+              {status.chip}
+              {onToggleStatus && (
+                <button
+                  type="button"
+                  className="co-x"
+                  aria-label={`${t("common.remove")} ${status.option}`}
+                  onClick={() => onToggleStatus(status.id)}
+                >
+                  <Icon as={X} size="sm" decorative />
+                </button>
+              )}
+            </span>
+          ) : null
+        )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button type="button" className="co-add">
             <Icon as={Plus} size="xs" decorative />
-            {t("character.addCondition")}
+            {addLabel ?? t("character.addCondition")}
           </button>
         </PopoverTrigger>
         <PopoverContent
-          rubric={t("character.addCondition")}
-          className="max-w-[15rem]"
+          rubric={addLabel ?? t("character.addCondition")}
+          className="max-w-[17rem]"
           collisionPadding={12}
         >
+          {extra}
           {/* Capped to the room Radix measured, so every option (the statuses come
               last) stays reachable when the list would run off the screen. */}
           <div

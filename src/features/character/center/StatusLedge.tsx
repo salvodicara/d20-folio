@@ -24,7 +24,7 @@
  * meter — a call to action must not hide behind a click.
  */
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowDownToLine,
@@ -46,6 +46,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import type { ConditionChipVM } from "@/lib/views/tracker-view";
 import { FocusMark } from "@/components/ui/folio-marks";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -85,12 +86,35 @@ const CONDITION_ICONS: Record<string, LucideIcon> = {
   unconscious: Moon,
 };
 
+/** A lit feature state (Rage, Bless on me) shown as a badge; its popover ends it. */
+export interface ActiveStateBadge {
+  key: string;
+  label: string;
+  roundsLeft?: number;
+}
+
+/** A lasting status (a fading D20 Test penalty) shown as a badge while it runs. */
+export interface LastingStatusBadge {
+  id: string;
+  label: string;
+  hint: string;
+}
+
 export function StatusLedge({
   limiters,
   concentration,
   concentrationRounds,
   concBlockedConditionId,
   readonly,
+  conditions = [],
+  onRemoveCondition,
+  hiddenDc,
+  exhaustionControl,
+  activeStates = [],
+  onEndActiveState,
+  lastingStatuses = [],
+  onEndLastingStatus,
+  addMenu,
 }: {
   /** The composed turn limiters (B3) — grouped into one badge per cause here. */
   limiters: TurnLimiterVM[];
@@ -103,11 +127,43 @@ export function StatusLedge({
   concBlockedConditionId: string | null;
   /** P10 glass case — a read-only viewer sees the badges, never the drop action. */
   readonly: boolean;
+  /** Direction B (owner 2026-10-16): EVERY active condition gets a badge, even one
+   *  that limits nothing this turn; its popover explains it and removes it. */
+  conditions?: ReadonlyArray<ConditionChipVM>;
+  onRemoveCondition?: (conditionId: string) => void;
+  /** RA-12 — the Hide action's find-DC, written in the Invisible popover. */
+  hiddenDc?: number;
+  /** The exhaustion stepper, shown inside the exhaustion badge's popover. */
+  exhaustionControl?: ReactNode;
+  /** Lit feature states (toggles that are ON). */
+  activeStates?: ReadonlyArray<ActiveStateBadge>;
+  onEndActiveState?: (key: string) => void;
+  lastingStatuses?: ReadonlyArray<LastingStatusBadge>;
+  onEndLastingStatus?: (id: string) => void;
+  /** The one "+" control that adds a condition or lights a state. */
+  addMenu?: ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
   const badges = composeStatusBadges(limiters);
-  if (!concentration && badges.length === 0) return null;
+  // A condition that limits nothing this turn still shows (the limiter grouping
+  // only sees the ones that do), so the row holds every state exactly once.
+  for (const chip of conditions) {
+    if (!badges.some((b) => b.kind === "condition" && b.conditionId === chip.id)) {
+      badges.push({ kind: "condition", conditionId: chip.id, limiters: [] });
+    }
+  }
+  const chipFor = (id: string) => conditions.find((c) => c.id === id);
+  const hasGloss = (id: string): boolean => i18n.exists(`glossary.term.${id}`);
+  if (
+    !concentration &&
+    badges.length === 0 &&
+    activeStates.length === 0 &&
+    lastingStatuses.length === 0 &&
+    !addMenu
+  ) {
+    return null;
+  }
 
   // One localized sentence per limiter — the popover's effect lines. The cause is
   // NOT restated here (it IS the badge/popover rubric); the sentences stay
@@ -283,15 +339,137 @@ export function StatusLedge({
               align="start"
               collisionPadding={12}
             >
-              {b.limiters.map((l, i) => (
-                <p key={i} className="sp-line">
-                  {limiterText(l)}
+              {b.kind === "condition" && hasGloss(b.conditionId) && (
+                <p className="sp-gloss">{t(`glossary.term.${b.conditionId}`)}</p>
+              )}
+              {b.kind === "exhaustion" && hasGloss("exhaustion") && (
+                <p className="sp-gloss">{t("glossary.term.exhaustion")}</p>
+              )}
+              {b.limiters.length > 0 && (
+                <ul className="sp-effects" aria-label={t("combat.statusEffects")}>
+                  {b.limiters.map((l, i) => (
+                    <li key={i} className="sp-line">
+                      {limiterText(l)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {b.kind === "condition" &&
+                b.conditionId === "invisible" &&
+                hiddenDc != null && (
+                  <p className="sp-line">
+                    {t("stats.dc")} {hiddenDc}
+                  </p>
+                )}
+              {b.kind === "condition" && chipFor(b.conditionId)?.impliedBy && (
+                <p className="sp-note">
+                  {t("character.impliedCondition", {
+                    source: chipFor(b.conditionId)?.impliedBy,
+                  })}
                 </p>
-              ))}
+              )}
+              {b.kind === "exhaustion" && exhaustionControl}
+              {b.kind === "condition" &&
+                !readonly &&
+                onRemoveCondition &&
+                chipFor(b.conditionId) &&
+                !chipFor(b.conditionId)?.impliedBy && (
+                  <button
+                    type="button"
+                    className="conc-banner-drop"
+                    onClick={() => onRemoveCondition(b.conditionId)}
+                  >
+                    {`${t("common.remove")} ${label}`}
+                  </button>
+                )}
             </PopoverContent>
           </Popover>
         );
       })}
+      {activeStates.map((state) => (
+        <Popover key={`state-${state.key}`}>
+          <PopoverTrigger asChild>
+            <button type="button" className="status-badge" data-kind="active">
+              <span className="sb-disc" aria-hidden>
+                <Icon as={Sparkles} decorative />
+              </span>
+              <span className="sb-label">{state.label}</span>
+              {state.roundsLeft !== undefined && (
+                <span className="sb-count">
+                  <span aria-hidden>{state.roundsLeft}</span>
+                  <span className="sr-only">
+                    {t("combat.effectTimerShort", { count: state.roundsLeft })}
+                  </span>
+                </span>
+              )}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            rubric={state.label}
+            className="status-pop"
+            side="bottom"
+            align="start"
+            collisionPadding={12}
+          >
+            <p className="sp-line">{t("character.activeFeaturesHint")}</p>
+            {state.roundsLeft !== undefined && (
+              <p className="sp-line">
+                {t("combat.effectTimerShort", { count: state.roundsLeft })}
+              </p>
+            )}
+            {!readonly && onEndActiveState && (
+              <button
+                type="button"
+                className="conc-banner-drop"
+                onClick={() => onEndActiveState(state.key)}
+              >
+                {`${t("common.remove")} ${state.label}`}
+              </button>
+            )}
+          </PopoverContent>
+        </Popover>
+      ))}
+      {lastingStatuses.map((status) => (
+        <Popover key={`lasting-${status.id}`}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="status-badge"
+              data-kind="condition"
+              style={
+                {
+                  "--co": condColor("exhaustion"),
+                  "--co-ink": condInkColor("exhaustion"),
+                } as CSSProperties
+              }
+            >
+              <span className="sb-disc" aria-hidden>
+                <Icon as={Hourglass} decorative />
+              </span>
+              <span className="sb-label">{status.label}</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            rubric={status.label}
+            className="status-pop"
+            side="bottom"
+            align="start"
+            collisionPadding={12}
+          >
+            <p className="sp-line">{status.hint}</p>
+            {!readonly && onEndLastingStatus && (
+              <button
+                type="button"
+                className="conc-banner-drop"
+                onClick={() => onEndLastingStatus(status.id)}
+              >
+                {`${t("common.remove")} ${status.label}`}
+              </button>
+            )}
+          </PopoverContent>
+        </Popover>
+      ))}
+      {!readonly && addMenu}
     </div>
   );
 }

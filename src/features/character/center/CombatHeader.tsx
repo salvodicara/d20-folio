@@ -84,6 +84,7 @@ import { nonEmptyString } from "@/lib/non-empty-string";
 import { localizeCharacterIdentity } from "@/lib/views/srd-i18n";
 import { HeaderHpControl } from "./HeaderHpControl";
 import { HoverTip } from "./HoverTip";
+import { CharacterStatusRow } from "../molecules/CharacterStatusRow";
 import { HeaderXp, HeaderXpStart } from "./HeaderXp";
 import { xpProgress } from "@/lib/experience";
 
@@ -518,6 +519,9 @@ export function CombatHeader() {
             </p>
           )}
           <HeaderXp experience={charData.experience} level={level} editable={!readonly} />
+          {/* Every state the character is in, once (owner 2026-10-16): under the
+              name, on every tab and on the phone. */}
+          <CharacterStatusRow />
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The
               in-combat session controls (live round, roll-to-total initiative, the
               your-turn cue + the shared turn-advance via End Turn) belong WITH the

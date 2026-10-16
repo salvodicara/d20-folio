@@ -1001,7 +1001,6 @@ export function PlayTab() {
           <ThisTurnTracker
             activeFilter={activeFilter}
             onFilterByType={(type) => setFilter(activeFilter === type ? "all" : type)}
-            attackRollState={attackRoll.state}
           />
           {/* NO separate encounter Prev/Next controls here (removed 2026-08-02): in an
             encounter the meter's gilded End Turn IS the shared advance (`turn-state`'s

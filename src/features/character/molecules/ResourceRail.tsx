@@ -17,9 +17,8 @@
 import { useMemo, useState, useRef, lazy, Suspense, type ReactNode } from "react";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
-import { Plus, Minus, X, Skull, Sparkles } from "lucide-react";
+import { Plus, Minus, X, Sparkles } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -27,7 +26,6 @@ import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import {
   type ResolvedTracker,
   getSpellSlotTrackerRecovery,
-  isBloodied,
   resolveAltRecovery,
   resolveSlotAltRecovery,
   resolveTrackers,
@@ -35,19 +33,11 @@ import {
 } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { effectsForTarget } from "@/lib/combat-effects";
-import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
-import { ConditionEditor } from "./ConditionEditor";
-import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
 // The rail's core vital reads (concentration, exhaustion, slot pips) go
 // through the ONE vitals projection seam (session truth reconciled against
 // the persisted engine world) — the second UI-read migration off the bridge.
-import {
-  vitalConcentration,
-  vitalExhaustion,
-  vitalSlotUsed,
-} from "@/lib/character-vitals";
+import { vitalSlotUsed } from "@/lib/character-vitals";
 import type { AggregatedGrants } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
@@ -62,10 +52,8 @@ import {
   type DefenseKindView,
 } from "@/lib/views/sheet-view";
 import {
-  activatableToggles,
   advantageChipVMs,
   auraVMs,
-  concentrationLabel,
   conditionLabel,
   conditionOptions,
   incomingAttackAdvantageVMs,
@@ -81,7 +69,6 @@ import { patchCharacter } from "../patch-character";
 import { OverrideChipSet, type OverrideChipOption } from "./OverrideChipSet";
 import {
   effectiveProficiencyBonus,
-  exhaustionPenalty,
   hasWeaponMastery,
   isHeavyArmorEquipped,
   aggregateAbilityScores,
@@ -107,8 +94,6 @@ import { RailNotes } from "./RailNotes";
 import { ResourceConversions } from "./ResourceConversions";
 import { TableClockControl } from "./TableClockControl";
 import { ItemResourceRailRow } from "./ItemResourceRailRow";
-import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
-import { ActivatableFeaturesBar } from "./ActivatableFeaturesBar";
 import {
   WEAPON_PROFICIENCY_CATEGORIES,
   WEAPON_PROFICIENCY_GROUPS,
@@ -122,12 +107,7 @@ import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
 import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
-import {
-  concentrationRoundsLeft,
-  concentrationStatusKeys,
-  deriveStatuses,
-  statusRoundCounts,
-} from "@/lib/status";
+import { deriveStatuses } from "@/lib/status";
 
 /** The six set-valued override maps on CharacterData (#68). */
 type SetOverrideField =
@@ -172,8 +152,6 @@ export function ResourceRail() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
-  const globalCombat = useGlobalCombat();
-  const showToast = useToastStore((s) => s.showToast);
   const sheetMode = useUIStore((s) => s.sheetMode);
   const isEdit = sheetMode === "edit";
   const isPlay = sheetMode === "play";
@@ -298,17 +276,6 @@ export function ResourceRail() {
     [statuses, locale, character]
   );
 
-  // REST-frequency variant bundles (re-chosen each rest per RAW) — the
-  // creation-frequency ones (lineages) are owned by the Bio tab.
-  const restBundles = useMemo(
-    () =>
-      aggregate ? aggregate.grantBundles.filter((b) => b.choiceFrequency === "rest") : [],
-    [aggregate]
-  );
-
-  const sheetCombat =
-    character && globalCombat?.characterId === character.id ? globalCombat : null;
-
   if (!character || !aggregate) return null;
 
   const { character: charData, session } = character;
@@ -318,12 +285,7 @@ export function ResourceRail() {
   // aura effect line, never the raw stored scores (rule 6).
   const effectiveScores = aggregateAbilityScores(charData.abilityScores, aggregate);
   const spellSlots = charData.spellSlots;
-  const concentration = vitalConcentration(session);
-  const concentrationRounds = concentration
-    ? concentrationRoundsLeft(statuses)
-    : undefined;
   const conditions = effectiveSessionConditions(session);
-  const exhaustion = vitalExhaustion(session);
   const inspiration = session.inspiration;
   // D37 — the Bardic Inspiration die the character is HOLDING (granted by an ally
   // Bard); "" when none. Distinct from the Bard's own give-out tracker.
@@ -331,35 +293,6 @@ export function ResourceRail() {
   const INSPIRATION_DICE = ["d6", "d8", "d10", "d12"] as const;
   const hasResources =
     spellSlots.length > 0 || trackers.length > 0 || itemResources.length > 0;
-
-  const toggleCondition = (id: string): void => {
-    const store = useCharacterStore.getState();
-    if (!conditions.includes(id)) {
-      store.addCondition(id);
-      return;
-    }
-    store.removeCondition(id);
-    if (!sheetCombat) return;
-    const effectIds = effectsForTarget(
-      sheetCombat.encounter.effectOps,
-      sheetCombat.myId
-    ).flatMap((effect) =>
-      effect.payload.kind === "condition" && effect.payload.conditionId === id
-        ? [effect.id]
-        : []
-    );
-    if (effectIds.length === 0) return;
-    void import("@/features/campaigns/campaign-io")
-      .then(async ({ revokePersistentCombatEffect }) => {
-        for (const effectId of effectIds) {
-          await revokePersistentCombatEffect(sheetCombat.campaignId, effectId);
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Combat condition override failed", error);
-        showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
-      });
-  };
 
   // Defenses (#68 override-first + PLAY-NO-EDIT session overlay): each kind's
   // PERMANENT set = (grant-computed ∪ added) \ removed via the build override
@@ -642,60 +575,6 @@ export function ResourceRail() {
           </p>
         )}
       </RailSection>
-
-      {/* ── Active Features — Rage / Bladesong / Innate Sorcery toggles (#29).
-          Built (`ActivatableFeaturesBar` + `toggleActiveFeature`) but never
-          mounted; surfaced here so its `while-active` grants can be flipped on/off
-          (the section hides for characters with none, e.g. the Bard mock). ── */}
-      {(aggregate.activatableGroups.length > 0 ||
-        restBundles.length > 0 ||
-        concentration) && (
-        <RailSection rubric={t("character.activeFeatures")}>
-          <div className="flex flex-col gap-2">
-            {(aggregate.activatableGroups.length > 0 || concentration) && (
-              <ActivatableFeaturesBar
-                // A held spell shows ONCE (owner 2026-10-09): its concentration chip
-                // stands for the state it lights on me, so that toggle is not repeated.
-                toggles={activatableToggles(
-                  aggregate.activatableGroups,
-                  locale,
-                  statusRoundCounts(statuses),
-                  // S5 — gate the Bloodied boon toggles (Desperate Resilience /
-                  // Furious Storm) on the SAME `isBloodied` predicate every surface
-                  // reads; an unmet gate hints (override-first, never hard-locks).
-                  isBloodied(character)
-                ).filter(
-                  (toggle) => !concentrationStatusKeys(concentration).includes(toggle.key)
-                )}
-                onToggle={(key) => useCharacterStore.getState().toggleActiveFeature(key)}
-                held={
-                  concentration
-                    ? {
-                        label: concentrationLabel(concentration, locale),
-                        roundsLeft: concentrationRounds,
-                        onEnd: () => useCharacterStore.getState().setConcentration(""),
-                      }
-                    : undefined
-                }
-              />
-            )}
-            {/* AX exposure audit — REST-frequency variant choosers (Starry Form
-                constellation, Circle of the Land terrain, Fire Shield warm/chill)
-                previously had NO play-surface affordance (only the level-up modal
-                mounted the selector). RAW re-picks them on a rest, so they live
-                with the Active Features toggles. Reuses the ONE selector. */}
-            {restBundles.length > 0 && (
-              <GrantBundleSelector
-                bundles={restBundles}
-                locale={locale}
-                onSelect={(key, optionId) =>
-                  useCharacterStore.getState().setGrantBundleChoice(key, optionId)
-                }
-              />
-            )}
-          </div>
-        </RailSection>
-      )}
 
       {/* ── Companions — the persistent, play-reachable surface for a
           feature-declared companion (Steel Defender / Eldritch Cannon / Beast
@@ -996,19 +875,6 @@ export function ResourceRail() {
             )}
           </div>
         </div>
-      </RailSection>
-
-      {/* ── Status — conditions + exhaustion (held states live under Active) ── */}
-      <RailSection rubric={t("character.hud.status")}>
-        {aggregate.healingBlocked && (
-          <p className="mb-2 text-sm text-danger">{t("combat.resolveHealingBlocked")}</p>
-        )}
-        <ConditionStrip
-          conditions={conditions}
-          hiddenDc={session.hiddenDc}
-          onToggle={toggleCondition}
-        />
-        <ExhaustionTrack value={exhaustion} />
       </RailSection>
 
       {/* ── Defenses — damage resist / immune / vulnerable + condition immunities.
@@ -1606,69 +1472,6 @@ function AddDefensePicker({
 }
 
 /**
- * D13 — Condition strip: the cockpit binding of the shared {@link ConditionEditor}
- * (active chips + an "Add condition" popover of the 15 SRD conditions). One toggle
- * routes the active character's store actions — `removeCondition` when the id is
- * already active, `addCondition` otherwise — so the cockpit and the in-hub
- * encounter card share ONE condition widget (golden rule 10). `locale` is read
- * inside the shared editor via `useLocale`, so this wrapper only forwards the ids.
- */
-function ConditionStrip({
-  conditions,
-  hiddenDc,
-  onToggle,
-}: {
-  conditions: string[];
-  /** RA-12 — the Hide action's find-DC, suffixed onto the Invisible chip. */
-  hiddenDc?: number;
-  onToggle: (conditionId: string) => void;
-}) {
-  const { t } = useTranslation();
-  const { language: locale } = useLocale();
-  const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
-  // A fading D20 Test penalty (Raise Dead) is lit from the same picker and shows
-  // as a chip counting down each Long Rest.
-  const statuses = Object.entries(FADING_PENALTIES).map(([id, def]) => {
-    const name = localizeSrd(def.ref.kind, def.ref.key, "name", locale);
-    const amount = fadingPenalties?.[id];
-    return {
-      id,
-      option: t("character.fadingPenaltyOption", { name, n: def.start }),
-      ...(amount ? { chip: t("character.fadingPenaltyChip", { n: amount }) } : {}),
-      hint: t("character.fadingPenaltyHint", { name }),
-    };
-  });
-  const toggleStatus = (id: string): void => {
-    const store = useCharacterStore.getState();
-    const running = store.character?.session.fadingPenalties?.[id] !== undefined;
-    const ref = FADING_PENALTIES[id]?.ref;
-    const name = ref ? localizeSrd(ref.kind, ref.key, "name", locale) : id;
-    registerUndoableToast(
-      {
-        message: running
-          ? t("combatLog.fadingPenaltyEnd", { name })
-          : t("character.fadingPenaltyStartToast", {
-              name,
-              n: FADING_PENALTIES[id]?.start ?? 0,
-            }),
-      },
-      () => (running ? store.endFadingPenalty(id) : store.startFadingPenalty(id)),
-      { turnScoped: false }
-    );
-  };
-  return (
-    <ConditionEditor
-      conditions={conditions}
-      hiddenDc={hiddenDc}
-      emptyLabel={t("character.noConditions")}
-      onToggle={onToggle}
-      statuses={statuses}
-      onToggleStatus={toggleStatus}
-    />
-  );
-}
-
-/**
  * A single spell-slot cell — level badge + the level-coloured gem pips. The pips
  * are the spend/restore affordance (override-first, golden rule 8): tap a filled
  * gem = spend that slot (with a 5 s undo toast), tap a spent socket = restore one.
@@ -2088,109 +1891,6 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
         >
           <Icon as={Sparkles} size="sm" decorative />
         </Button>
-      )}
-    </div>
-  );
-}
-
-/** Exhaustion 6-pip stepper (amber → crimson). Only shown when > 0. */
-function ExhaustionTrack({ value }: { value: number }) {
-  const { t } = useTranslation();
-  const setExhaustion = useCharacterStore((s) => s.setExhaustion);
-
-  // D34 — clicking a pip sets exhaustion to EXACTLY that level (raise or lower);
-  // clearing/decrementing is the explicit × button below, not the old
-  // unintuitive "re-click the last filled pip to step down" gesture. The store
-  // action is the ONE exhaustion mutation seam: it writes the persisted engine
-  // world first and degrades to the legacy session write fail-closed.
-  function setLevel(target: number) {
-    setExhaustion(target);
-  }
-
-  // #16 — ungate from 0: a fresh character has 0 exhaustion, but the early
-  // `return null` hid the ONLY entry point, so level 1 could never be added.
-  // At zero, show the same `.co-add` affordance the conditions use; clicking it
-  // marks level 1 and the full track appears.
-  if (value <= 0) {
-    return (
-      // N-G — share the `.co-add` recipe verbatim with the condition add button:
-      // no per-instance inline colour/opacity (the recipe rests at full opacity
-      // with AA-tuned `--text-muted` ink), so every rail add affordance reads
-      // identically. The stray `--text-secondary` override here was the lone
-      // outlier that made the exhaustion button look unlike the others.
-      <button type="button" className="co-add" onClick={() => setLevel(1)}>
-        <Icon as={Plus} size="xs" decorative />
-        {t("character.exhaustion")}
-      </button>
-    );
-  }
-  return (
-    <div className="co-ex">
-      <div className="co-ex-head">
-        <span className="co-ex-label">
-          {/* P2 — "Exhaustion" glosses its 2024 rules on demand. */}
-          <GlossaryTip term="exhaustion" rubric={t("character.exhaustion")} />
-        </span>
-        <span
-          className="co-ex-lvl"
-          style={{ ["--ex-current" as string]: `var(--ex-${value})` }}
-        >
-          {value}/6
-        </span>
-        {/* D34 — one-tap clear to level 0 (no more re-clicking the first segment). */}
-        <button
-          type="button"
-          className="co-ex-clear"
-          aria-label={t("character.exhaustionClear")}
-          title={t("character.exhaustionClear")}
-          onClick={() => setLevel(0)}
-        >
-          <Icon as={X} size="xs" decorative />
-        </button>
-      </div>
-      <div className="co-ex-track" role="group" aria-label={t("character.exhaustion")}>
-        {Array.from({ length: 6 }).map((_, i) => {
-          const lvl = i + 1;
-          const on = lvl <= value;
-          return (
-            <button
-              key={lvl}
-              type="button"
-              className="co-ex-pip"
-              data-lvl={lvl}
-              data-on={on}
-              aria-pressed={on}
-              aria-label={`${t("character.exhaustion")} ${lvl}`}
-              title={t("character.exhaustionSet", {
-                lvl,
-              })}
-              onClick={() => setLevel(lvl)}
-            >
-              {lvl}
-            </button>
-          );
-        })}
-      </div>
-      {value >= 6 ? (
-        // RA-21 — Exhaustion 6 IS death (SRD "Exhaustion"): read the SHARED
-        // "Dead" verdict the death-save track uses, so every fallen cause reads
-        // the one word. `isCharacterDead` folds level 6 into the roster tile too.
-        <div className="co-ex-eff co-ex-death">
-          <Icon as={Skull} size="sm" decorative />
-          <span>{t("character.deadLabel")}</span>
-        </div>
-      ) : (
-        value > 0 && (
-          // 2024: −2 to every d20 Test per exhaustion level (level 6 = death,
-          // handled above). Read off the ONE engine formula (`exhaustionPenalty`)
-          // the header bonuses and the turn-limiter banner also read — never a
-          // local restatement of the multiplier (golden rule 6).
-          <div className="co-ex-eff">
-            {t("character.exhaustionEffect", {
-              n: Math.abs(exhaustionPenalty(value)),
-            })}
-          </div>
-        )
       )}
     </div>
   );

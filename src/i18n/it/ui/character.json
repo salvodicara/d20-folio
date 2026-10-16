@@ -78,6 +78,7 @@
     "failedCreate": "Errore nella creazione del personaggio",
     "noConditions": "Nessuna condizione",
     "addCondition": "Aggiungi condizione",
+    "addState": "Aggiungi stato",
     "fadingPenaltyOption": "{{name}} (−{{n}} ai tiri d20)",
     "fadingPenaltyChip": "−{{n}} ai tiri d20",
     "fadingPenaltyHint": "{{name}}: penalità a tiri per colpire, tiri salvezza e prove; cala di 1 a ogni riposo lungo",

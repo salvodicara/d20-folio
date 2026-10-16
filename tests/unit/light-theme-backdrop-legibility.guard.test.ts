@@ -185,19 +185,19 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     }
   });
 
-  it("#12 — behind the page an image is ambient light only (owner 2026-10-13, the image rule)", () => {
-    // No painting behind text: the field defaults to no art, and a route that owns an
-    // image (the campaign hub) gets it back only blurred, in both themes.
+  it("#12 — the scene is atmosphere at the edges, never behind text (owner 2026-10-16)", () => {
+    // Direction B brought the room back ("not too bare") under the image rule: the
+    // painter is masked away from the centre, where the content and loose text sit.
     const painter =
-      /body::after \{[^}]*background-image: var\(--app-bg-art, none\)[^}]*filter: blur\(/;
+      /body::after \{[^}]*background-image: var\(--app-bg-art, var\(--asset-home-hero\)\)[^}]*mask-image: radial-gradient\(/;
     expect(
       painter.test(indexCss),
-      "MISSING: body::after defaulting to no art and blurring any route art — a sharp " +
+      "MISSING: body::after painting the room masked away from the centre — a " +
         "painting would sit behind the page's text again."
     ).toBe(true);
     expect(
-      /\[data-theme="light"\] body::after \{[^}]*filter: blur\(/.test(indexCss),
-      "MISSING: the light theme's blurred ambient grade."
+      /\[data-theme="light"\] body::after \{[^}]*filter: /.test(indexCss),
+      "MISSING: the light theme's softened ambient grade."
     ).toBe(true);
   });
 

@@ -22,6 +22,7 @@ import { MemoryRouter } from "react-router";
 // store + the persistent provider drive every assertion — no real write is made.
 vi.mock("@/lib/firebase", () => ({}));
 import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
+import { CharacterStatusRow } from "@/features/character/molecules/CharacterStatusRow";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
@@ -43,13 +44,21 @@ function load(mutate: (doc: CharacterDoc) => void = () => {}): void {
   useCharacterStore.setState({ character: doc, loading: false, error: null });
 }
 
+/**
+ * The turn meter plus the character's status row (owner 2026-10-16: the badges
+ * moved under the name). The attack-roll state is DERIVED (use-attack-roll); a
+ * "none" case lights a one-shot attack Advantage so a condition's Disadvantage
+ * nets out, exactly as an advantage source would at the table.
+ */
 function mountView(
   attackRollState: "advantage" | "disadvantage" | "none" = "none"
 ): ReturnType<typeof render> {
+  if (attackRollState === "none") useCombatStore.setState({ nextAttackAdvantage: true });
   return render(
     <MemoryRouter>
       <TurnEconomyProvider>
-        <ThisTurnTracker attackRollState={attackRollState} />
+        <CharacterStatusRow />
+        <ThisTurnTracker />
       </TurnEconomyProvider>
     </MemoryRouter>
   );
@@ -69,6 +78,7 @@ describe("ThisTurnTracker — condition projection (B1)", () => {
       movementUsedFt: 0,
       movementLocked: false,
       dashesThisTurn: 0,
+      nextAttackAdvantage: false,
     });
     useCharacterStore.setState({ character: null, loading: false, error: null });
   });
@@ -158,6 +168,7 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
       movementUsedFt: 0,
       movementLocked: false,
       dashesThisTurn: 0,
+      nextAttackAdvantage: false,
     });
     useCharacterStore.setState({ character: null, loading: false, error: null });
   });
@@ -191,9 +202,16 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
       doc.session.exhaustion = 1;
     });
     mount("disadvantage");
-    // The ledge is integrated into the turn altar (grid row via data-status).
-    expect(document.querySelector(".turn[data-status] .status-ledge")).not.toBeNull();
-    expect(limiterBadges()).toEqual(["Paralyzed", "Restrained", "Exhaustion 1"]);
+    // The badges live in the character's status row, no longer in the turn altar.
+    expect(document.querySelector(".char-status-row .status-ledge")).not.toBeNull();
+    expect(document.querySelector(".turn .status-ledge")).toBeNull();
+    // Incapacitated rides along as the condition Paralyzed implies (no × of its own).
+    expect(limiterBadges()).toEqual([
+      "Paralyzed",
+      "Restrained",
+      "Exhaustion 1",
+      "Incapacitated",
+    ]);
     // Paralyzed's popover: blocked economy leads, then auto-fail saves.
     let pop = openBadge(/Paralyzed/i);
     expect(pop.textContent).toMatch(/can't take/i);
@@ -210,7 +228,7 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
       doc.session.conditions = ["stunned"];
     });
     mount("none");
-    expect(limiterBadges()).toEqual(["Stunned"]);
+    expect(limiterBadges()).toEqual(["Stunned", "Incapacitated"]);
     const pop = openBadge(/Stunned/i);
     expect(pop.textContent).toMatch(/can't take/i);
     expect(pop.textContent).toMatch(/Action/);
@@ -232,18 +250,20 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
     const pop = openBadge(/Exhaustion 5/i);
     expect(pop.textContent).toMatch(/−10/);
     expect(pop.textContent).toMatch(/25 ft/);
-    expect(pop.textContent).not.toMatch(/−2\b/);
+    // (The plain-words glossary line explains the per-level −2; the penalty line
+    // itself is the resolved total.)
+    expect(pop.textContent).not.toMatch(/−2 to all d20/);
   });
 
-  it("a clean character (no conditions, no exhaustion, none roll-state) → no ledge at all (rule 19)", () => {
+  it("a clean character (no conditions, no exhaustion, none roll-state) → no badges, only the add control (rule 19)", () => {
     load((doc) => {
       doc.session.conditions = [];
       doc.session.exhaustion = 0;
       doc.session.concentration = "";
     });
     mount("none");
-    expect(document.querySelector(".status-ledge")).toBeNull();
-    expect(document.querySelector(".turn")?.hasAttribute("data-status")).toBe(false);
+    expect(document.querySelectorAll(".status-badge")).toHaveLength(0);
+    expect(document.querySelector(".char-status-row .co-add")).not.toBeNull();
   });
 
   it("the mock (Frightened) shows the attack-disadvantage badge only when netted to disadvantage", () => {
@@ -257,10 +277,12 @@ describe("ThisTurnTracker — the status ledge's limiter badges (B3)", () => {
     expect(pop.textContent).toMatch(/Disadvantage on attack rolls/i);
   });
 
-  it("Frightened netted to NONE → no limiter badge (advantage cancels the disadvantage)", () => {
+  it("Frightened netted to NONE → its badge stays, without the attack line (advantage cancels it)", () => {
     load();
     mount("none");
-    expect(limiterBadges()).toEqual([]);
+    expect(limiterBadges()).toEqual(["Frightened"]);
+    const pop = openBadge(/Frightened/i);
+    expect(pop.textContent).not.toMatch(/Disadvantage on attack rolls/i);
   });
 
   // RA-32 — Grappled's attack Disadvantage is RAW-scoped to targets OTHER than

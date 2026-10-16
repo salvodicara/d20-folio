@@ -429,7 +429,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "healing-blocked": {
     via: "healingBlocked",
-    consumer: "src/features/character/molecules/ResourceRail.tsx",
+    consumer: "src/features/character/molecules/CharacterStatusRow.tsx",
   },
   // Reckless Attack's SELF-side downside ("attacks against you have Advantage"):
   // surfaced as a framed Disadv. note in the rail's Advantages section.
@@ -495,11 +495,11 @@ const EXPOSURE: Record<string, Exposure> = {
   "choice-feat": { via: "choice-feat", consumer: "src/lib/feat-feat-choices.ts" },
   "while-active": {
     via: "activatableToggles",
-    consumer: "src/features/character/molecules/ResourceRail.tsx",
+    consumer: "src/features/character/molecules/CharacterStatusRow.tsx",
   },
   "choice-grant-bundle": {
     via: "GrantBundleSelector",
-    consumer: "src/features/character/molecules/ResourceRail.tsx",
+    consumer: "src/features/character/molecules/CharacterStatusRow.tsx",
   },
 
   // ── Ritual access (equivalent-path plumbing) ──
