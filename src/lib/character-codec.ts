@@ -90,6 +90,7 @@ import {
   asRaceId,
   backgroundIdByName,
   backgroundNameById,
+  ensureNamesFor,
 } from "@/data/srd-names";
 import { alignmentIdByLabel, asAlignmentId } from "@/lib/lore-utils";
 import { isExperiencePoints } from "@/lib/experience";
@@ -1424,6 +1425,27 @@ export const SCHEMA_2_REJECTED_REASON = "schema-2-unsupported" as const;
 export type ParsedEnvelope =
   | { ok: true; character: CharacterData; session: SessionState }
   | { ok: false; error: string; failure: CodecFailure };
+
+/**
+ * The async gate before a parse: an old build may store its race or background
+ * as a label in a language this session hasn't loaded ("Elfo" read in English).
+ * This waits for the name index to fetch the other locales' names when (and only
+ * when) a label needs them, so the sync parse resolves it to its id.
+ */
+export function ensureBuildNames(build: unknown): Promise<void> {
+  return ensureNamesFor(isRecord(build) ? [build.race, build.background] : []);
+}
+
+/** {@link ensureBuildNames} for an export file's text; never throws (the parse reports bad JSON). */
+export async function ensureExportNames(jsonString: string): Promise<void> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch {
+    return;
+  }
+  if (isRecord(parsed)) await ensureBuildNames(parsed.build);
+}
 
 /**
  * The codec CORE (Firestore-facing): parse an ALREADY-PARSED `build` + `state`

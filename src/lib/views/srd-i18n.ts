@@ -8,10 +8,11 @@
 
 import type { LocaleText, WeaponMastery } from "@/data/types";
 import {
-  CLASS_NAMES,
-  SUBCLASS_NAMES,
-  RACE_NAMES,
-  BACKGROUND_NAMES,
+  classNames,
+  subclassNames,
+  raceNames,
+  backgroundNames,
+  type NamedEntry,
 } from "@/data/srd-names";
 import { localeRangePair } from "@/lib/utils";
 import type { LocText } from "@/lib/loc-text";
@@ -94,31 +95,22 @@ export function resolveWhy(why: BreakdownWhy, locale: Locale): BreakdownWhyLine 
 // multi-megabyte SRD onto the roster. A guard test pins srd-names to the live data
 // so the names can't drift. (Weapon-property helpers below are pure string maps.)
 
-// English name → LocaleText (classes).
-const classNameMap = new Map<string, LocaleText>(
-  CLASS_NAMES.map((n) => [n.en.toLowerCase(), n])
-);
-
-// Races: id → LocaleText AND English name → LocaleText.
-const raceNameMap = new Map<string, LocaleText>();
-for (const { id, name } of RACE_NAMES) {
-  raceNameMap.set(id, name);
-  raceNameMap.set(name.en.toLowerCase(), name);
-}
-
-// Backgrounds: id → LocaleText AND English name → LocaleText.
-const backgroundNameMap = new Map<string, LocaleText>();
-for (const { id, name } of BACKGROUND_NAMES) {
-  backgroundNameMap.set(id, name);
-  backgroundNameMap.set(name.en.toLowerCase(), name);
-}
-
-// Subclasses: kebab-case id → LocaleText AND English name → LocaleText — so the roster /
-// sheets display "College of Lore" instead of the raw "college-of-lore" srdId.
-const subclassNameMap = new Map<string, LocaleText>();
-for (const { id, name } of SUBCLASS_NAMES) {
-  subclassNameMap.set(id.toLowerCase(), name);
-  subclassNameMap.set(name.en.toLowerCase(), name);
+// Each kind's lookup: id → LocaleText AND English name → LocaleText (so the roster /
+// sheets display "College of Lore" instead of the raw "college-of-lore" srdId).
+// Rebuilt when srd-names hands back a new entry list (another locale's names
+// arrived); otherwise the same Map serves every call.
+const nameMaps = new WeakMap<ReadonlyArray<NamedEntry>, Map<string, LocaleText>>();
+function nameMap(entries: ReadonlyArray<NamedEntry>): Map<string, LocaleText> {
+  let map = nameMaps.get(entries);
+  if (!map) {
+    map = new Map();
+    for (const { id, name } of entries) {
+      map.set(id.toLowerCase(), name);
+      map.set(name[SOURCE_LOCALE].toLowerCase(), name);
+    }
+    nameMaps.set(entries, map);
+  }
+  return map;
 }
 
 /**
@@ -126,7 +118,7 @@ for (const { id, name } of SUBCLASS_NAMES) {
  * Falls back to the original string if no match found.
  */
 export function localizeClassName(name: string, locale: Locale): string {
-  const text = classNameMap.get(name.toLowerCase());
+  const text = nameMap(classNames()).get(name.toLowerCase());
   return text?.[locale] ?? name;
 }
 
@@ -135,7 +127,7 @@ export function localizeClassName(name: string, locale: Locale): string {
  * Falls back to the original string if no match found.
  */
 export function localizeRaceName(nameOrId: string, locale: Locale): string {
-  const text = raceNameMap.get(nameOrId.toLowerCase());
+  const text = nameMap(raceNames()).get(nameOrId.toLowerCase());
   return text?.[locale] ?? nameOrId;
 }
 
@@ -165,7 +157,7 @@ export function localizeCharacterIdentity(
  * Falls back to the original string if no match found.
  */
 export function localizeBackgroundName(nameOrId: string, locale: Locale): string {
-  const text = backgroundNameMap.get(nameOrId.toLowerCase());
+  const text = nameMap(backgroundNames()).get(nameOrId.toLowerCase());
   return text?.[locale] ?? nameOrId;
 }
 
@@ -175,7 +167,7 @@ export function localizeBackgroundName(nameOrId: string, locale: Locale): string
  * so a raw srdId never leaks into the UI.
  */
 export function localizeSubclassName(nameOrId: string, locale: Locale): string {
-  const text = subclassNameMap.get(nameOrId.toLowerCase());
+  const text = nameMap(subclassNames()).get(nameOrId.toLowerCase());
   if (text) return text[locale];
   // Honest fallback: title-case the kebab-case id ("college-of-lore" → "College
   // Of Lore") so an unmapped homebrew/setting subclass still reads as a label.

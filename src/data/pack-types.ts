@@ -30,19 +30,6 @@ export type SrdCataloguePatch = Partial<Record<SrdKind, SrdCatalogue>>;
 export type PackSrdOverlay = Partial<Record<Locale, SrdCataloguePatch>>;
 
 /**
- * The pack's class / subclass / race / background catalogue additions in every
- * NON-EN locale (EN rides `packSrdEn`), bundled eagerly: the name index
- * (`src/i18n/srd-name-index.ts`) reads them so a stored label in any language
- * resolves to its id.
- */
-export type PackNameCatalogues = Partial<
-  Record<
-    Locale,
-    Partial<Record<"class" | "subclass" | "race" | "background", SrdCatalogue>>
-  >
->;
-
-/**
  * UI-chrome (`common` namespace) label patches, per locale, keyed
  * `<group> → <key> → label` — the same nested shape as the `ui/<group>.json`
  * shards. Used for the handful of engine-vocabulary labels whose composed

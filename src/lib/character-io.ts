@@ -13,7 +13,7 @@
  */
 
 import type { CharacterDoc } from "@/types/character";
-import { parseCharacter, serializeCharacter } from "./character-codec";
+import { ensureExportNames, parseCharacter, serializeCharacter } from "./character-codec";
 import { triggerDownload } from "./download";
 
 export {
@@ -197,6 +197,7 @@ export async function importCharacterFromFile(file: File) {
   }
   try {
     const text = await file.text();
+    await ensureExportNames(text);
     return parseCharacter(text);
   } catch {
     return { success: false as const, error: "Could not read file." };
@@ -234,5 +235,6 @@ export async function importCharactersFromZip(file: File) {
   if (jsons.length === 0) {
     return [{ success: false as const, error: "ZIP contains no character files." }];
   }
+  await Promise.all(jsons.map(ensureExportNames));
   return jsons.map((json) => parseCharacter(json));
 }

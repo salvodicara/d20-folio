@@ -14,10 +14,10 @@ import { classTables } from "@/data/classes";
 import { RACES_BY_ID } from "@/data/races";
 import { BACKGROUNDS_BY_ID } from "@/data/backgrounds";
 import {
-  CLASS_NAMES,
-  SUBCLASS_NAMES,
-  RACE_NAMES,
-  BACKGROUND_NAMES,
+  classNames,
+  subclassNames,
+  raceNames,
+  backgroundNames,
   resolveClassId,
   subclassIdByName,
   raceIdByName,
@@ -40,24 +40,24 @@ describe("srd-names stays in sync with the full SRD data", () => {
     const fromData = classTables.map((c) => named("class", c.id).name);
     const byEn = (a: readonly LocaleText[]) =>
       [...a].sort((x, y) => x.en.localeCompare(y.en));
-    expect(byEn(CLASS_NAMES)).toEqual(byEn(fromData));
+    expect(byEn(classNames().map((c) => c.name))).toEqual(byEn(fromData));
   });
 
   it("subclasses — every id named in every locale", () => {
     const fromData = classTables.flatMap((c) =>
       c.subclasses.map((s) => named("subclass", s.id))
     );
-    expect(sortById(SUBCLASS_NAMES)).toEqual(sortById(fromData));
+    expect(sortById(subclassNames())).toEqual(sortById(fromData));
   });
 
   it("races — every id named in every locale", () => {
     const fromData = [...RACES_BY_ID.keys()].map((id) => named("race", id));
-    expect(sortById(RACE_NAMES)).toEqual(sortById(fromData));
+    expect(sortById(raceNames())).toEqual(sortById(fromData));
   });
 
   it("backgrounds — every id named in every locale", () => {
     const fromData = [...BACKGROUNDS_BY_ID.keys()].map((id) => named("background", id));
-    expect(sortById(BACKGROUND_NAMES)).toEqual(sortById(fromData));
+    expect(sortById(backgroundNames())).toEqual(sortById(fromData));
   });
 
   it("a stored label in any locale resolves to its id", () => {

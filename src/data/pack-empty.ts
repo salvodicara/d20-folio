@@ -35,7 +35,6 @@ import type {
   PackFixtureLoaders,
   PackGrantExtensions,
   PackLazySrdLoader,
-  PackNameCatalogues,
   PackSrdLoader,
   PackSrdOverlay,
   PackUiOverlay,
@@ -65,9 +64,6 @@ export const packQuickbuildPresets: Readonly<Record<string, QuickbuildPreset>> =
 
 /** Typed additions to public grant sources (none without the content pack). */
 export const packGrantExtensions: PackGrantExtensions = {};
-
-/** Every locale's class/subclass/race/background name additions (none). */
-export const packNameCatalogues: PackNameCatalogues = {};
 
 /** EN SRD catalogue additions for pack entries (statically bundled, like EN). */
 export const packSrdEn: SrdCataloguePatch = {};

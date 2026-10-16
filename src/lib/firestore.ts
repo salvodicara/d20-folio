@@ -674,7 +674,7 @@ async function parseStoredCharacter(
   data: Record<string, unknown>
 ): Promise<CharacterDoc> {
   const meta = readDocMeta(id, data);
-  const { parseCharacterEnvelope, stampEffectiveAc } =
+  const { parseCharacterEnvelope, stampEffectiveAc, ensureBuildNames } =
     await import("@/lib/character-codec");
   const { normalizeSessionActionIds } =
     await import("@/lib/normalize-session-action-ids");
@@ -693,6 +693,7 @@ async function parseStoredCharacter(
   if (Object.keys(state).length > 0) {
     throw new TypeError("Invalid character document: parent-state-not-empty");
   }
+  await ensureBuildNames(build);
 
   const parsed = parseCharacterEnvelope(build, state);
   // A codec quarantine (`code:path`) must reach the subscription's `quarantine()`
@@ -970,7 +971,9 @@ export async function listCharacterSnapshots(
   // the SAME codec the main read uses (lazy SRD). A snapshot that FAILS to parse
   // (a corrupt/incomplete envelope — e.g. no valid name) is SKIPPED, never rendered
   // with an invented placeholder character (reject-at-boundary; non-nullability).
-  const { parseCharacterEnvelope } = await import("@/lib/character-codec");
+  const { parseCharacterEnvelope, ensureBuildNames } =
+    await import("@/lib/character-codec");
+  await Promise.all(snap.docs.map((d) => ensureBuildNames(d.data()["build"])));
   return snap.docs.flatMap((d) => {
     const data = d.data();
     const ts = data["createdAt"] as Timestamp | null;

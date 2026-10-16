@@ -27,7 +27,6 @@ const SOURCE: PackSource = {
     packSubclasses: {},
     packQuickbuildPresets: {},
     packGrantExtensions: {},
-    packNameCatalogues: {},
     packSrdEn: {},
     srdOverlay: {},
     uiOverlay: {},

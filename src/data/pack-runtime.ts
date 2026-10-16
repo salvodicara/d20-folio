@@ -38,7 +38,6 @@ export const packClassFeatures = pack.packClassFeatures;
 export const packSubclasses = pack.packSubclasses;
 export const packQuickbuildPresets = pack.packQuickbuildPresets;
 export const packGrantExtensions = pack.packGrantExtensions;
-export const packNameCatalogues = pack.packNameCatalogues;
 export const packSrdEn = pack.packSrdEn;
 export const srdOverlay = pack.srdOverlay;
 export const uiOverlay = pack.uiOverlay;
