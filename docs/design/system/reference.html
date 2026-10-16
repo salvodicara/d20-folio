@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — da chi copiamo</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+        display: grid;
+        gap: 24px;
+      }
+      .lead {
+        margin: 0;
+        color: var(--text-2);
+        max-width: 70ch;
+      }
+      .board {
+        display: grid;
+        gap: 10px;
+      }
+      .ref {
+        display: grid;
+        grid-template-columns: 200px 200px 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+        padding: 16px 20px;
+        background: var(--surface-1);
+        border: 1px solid var(--line);
+        border-radius: var(--r-3);
+        font-family: var(--font-ui);
+        font-size: 15px;
+      }
+      .ref--head {
+        background: none;
+        border-color: transparent;
+        padding-block: 0;
+      }
+      .ref__screen {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        font-weight: 800;
+        font-size: 16px;
+      }
+      .ref__screen .f-i {
+        color: var(--gold);
+      }
+      .ref__from {
+        font-weight: 700;
+        color: var(--text);
+      }
+      .ref__from small {
+        display: block;
+        font-weight: 500;
+        color: var(--text-3);
+        font-size: 13px;
+      }
+      .ref__take,
+      .ref__beat {
+        color: var(--text-2);
+        line-height: 1.45;
+      }
+      .ref__beat {
+        color: var(--text);
+      }
+      .ref__beat::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        transform: rotate(45deg);
+        background: var(--gold-fill);
+        margin-right: 8px;
+        vertical-align: 1px;
+      }
+      @media (max-width: 860px) {
+        .ref {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .ref--head {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 class="f-display">Da chi copiamo, e dove li battiamo</h1>
+      <p class="lead">
+        Per ogni schermata di Folio: il prodotto migliore che già lo fa, cosa prendiamo
+        (solo lo schema, mai immagini), e dove Folio deve essere più chiaro.
+      </p>
+      <div class="board">
+        <div class="ref ref--head">
+          <span class="f-label">Schermata</span><span class="f-label">Modello</span
+          ><span class="f-label">Prendiamo</span
+          ><span class="f-label">Più chiari così</span>
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="user-round" class="f-i"></i>Testata della scheda</span
+          >
+          <span class="ref__from">D&amp;D Beyond<small>scheda personaggio</small></span>
+          <span class="ref__take"
+            >PF, CA, iniziativa e velocità sempre in alto, uguali su ogni scheda.
+            Caratteristiche e tiri salvezza in colonna a sinistra.</span
+          >
+          <span class="ref__beat"
+            >Ogni numero si tocca e mostra da dove viene, con una frase semplice.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="swords" class="f-i"></i>Combattimento</span
+          >
+          <span class="ref__from">Baldur's Gate 3<small>barra delle azioni</small></span>
+          <span class="ref__take"
+            >Azione, Bonus, Reazione e Movimento sempre visibili; un colore per tipo; ciò
+            che è già usato si spegne; un solo grande «Fine turno».</span
+          >
+          <span class="ref__beat"
+            >Niente muro di icone: righe con nome e numeri. «Cosa ti conviene fare» dice
+            il perché.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="heart-crack" class="f-i"></i>Danni e cure</span
+          >
+          <span class="ref__from">Foundry dnd5e<small>vassoio dei danni</small></span>
+          <span class="ref__take"
+            >Un totale tirato, per ogni bersaglio nessuno · metà · pieni · doppi, poi
+            Applica o Salta.</span
+          >
+          <span class="ref__beat"
+            >Scrive il risultato in chiaro: «prima si tolgono i 5 PF temporanei, scendi a
+            29».</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="wand-sparkles" class="f-i"></i>Incantesimi</span
+          >
+          <span class="ref__from">D&amp;D Beyond<small>scheda Incantesimi</small></span>
+          <span class="ref__take"
+            >Lista per livello, slot come pallini accanto al livello, filtri, dettaglio
+            che si apre nella riga.</span
+          >
+          <span class="ref__beat"
+            >Le parole di regola sono sottolineate e spiegate; CD e attacco si aprono
+            nella somma.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="castle" class="f-i"></i>Campagna</span
+          >
+          <span class="ref__from"
+            >Kanka · World Anvil<small>wiki di campagna</small></span
+          >
+          <span class="ref__take"
+            >Una casa della campagna: gruppo, sessioni, PNG, luoghi, bottino, con una
+            barra laterale.</span
+          >
+          <span class="ref__beat"
+            >Il resoconto di sessione si scrive da solo; nessuno deve prendere
+            appunti.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="scroll-text" class="f-i"></i>Diario di sessione</span
+          >
+          <span class="ref__from"
+            >Roll20 · Foundry<small>registro della chat</small></span
+          >
+          <span class="ref__take"
+            >Cronologia per round, chi ha fatto cosa, numeri piccoli sotto la frase.</span
+          >
+          <span class="ref__beat"
+            >Note e azioni nello stesso filo, frasi intere in italiano, un tasto «Copia»
+            per l'AI.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="book-open" class="f-i"></i>Compendio</span
+          >
+          <span class="ref__from"
+            >D&amp;D Beyond · 5e.tools<small>ricerca regole</small></span
+          >
+          <span class="ref__take"
+            >Una ricerca sola per tutto, filtri a chip, scheda di dettaglio accanto alla
+            lista su laptop.</span
+          >
+          <span class="ref__beat"
+            >Ogni voce ha prima la versione semplice con un esempio, poi il testo
+            completo.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"
+            ><i data-lucide="sparkles" class="f-i"></i>Creazione e livello</span
+          >
+          <span class="ref__from">D&amp;D Beyond<small>creazione guidata</small></span>
+          <span class="ref__take"
+            >Passi numerati, scelte con anteprima, riepilogo finale prima di
+            salvare.</span
+          >
+          <span class="ref__beat"
+            >Prima leggi, poi scegli: ogni opzione spiega cosa cambia per te.</span
+          >
+        </div>
+        <div class="ref">
+          <span class="ref__screen"><i data-lucide="gem" class="f-i"></i>Rifinitura</span>
+          <span class="ref__from"
+            >Linear · Things 3 · Apple Fitness<small>app non di gioco</small></span
+          >
+          <span class="ref__take"
+            >Un solo sistema ovunque: stessi margini, comandi sempre nello stesso posto,
+            animazioni brevi, stati vuoti curati.</span
+          >
+          <span class="ref__beat"
+            >È questo che fa sembrare «professionale», non le decorazioni.</span
+          >
+        </div>
+      </div>
+      <p class="f-meta">
+        Nota: Demiplane ha il catalogo D&amp;D (D&amp;D Nexus) ma non una scheda propria:
+        rimanda a Roll20. Non è un modello per la scheda.
+      </p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Gioco</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+  </head>
+  <body class="has-turnbar">
+    <!-- Top bar: laptop shows the app nav; phone shows back + overflow -->
+    <header class="f-top">
+      <a
+        class="f-btn f-btn--icon f-btn--ghost only-phone"
+        href="#"
+        aria-label="Personaggi"
+        ><i data-lucide="chevron-left" class="f-i"></i
+      ></a>
+      <a class="f-brand only-laptop" href="#">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+          <path d="M12 7l-5.2 9h10.4z" />
+          <path
+            d="M12 2v5M3.3 7L12 7l8.7 0M3.3 7l3.5 9M20.7 7l-3.5 9M3.3 17h3.5M20.7 17h-3.5M12 22l-5.2-6M12 22l5.2-6"
+            opacity=".55"
+          />
+        </svg>
+        FOLIO
+      </a>
+      <nav class="f-nav only-laptop" aria-label="Principale">
+        <a href="#" aria-current="page"
+          ><i data-lucide="users" class="f-i f-i--sm"></i>Personaggi</a
+        >
+        <a href="#"><i data-lucide="castle" class="f-i f-i--sm"></i>Campagne</a>
+        <a href="#"><i data-lucide="book-open" class="f-i f-i--sm"></i>Compendio</a>
+      </nav>
+      <span class="grow"></span>
+      <span class="session">
+        <span class="session__dot"></span>
+        <span class="session__text"
+          ><b>Round 2</b
+          ><span class="only-laptop"> · La Cripta di Vetro, sessione 7</span></span
+        >
+      </span>
+      <button class="f-btn f-btn--icon f-btn--ghost only-phone" aria-label="Resoconto">
+        <i data-lucide="scroll-text" class="f-i"></i>
+      </button>
+      <button class="f-btn f-btn--icon f-btn--ghost" aria-label="Altro">
+        <i data-lucide="more-vertical" class="f-i"></i>
+      </button>
+    </header>
+
+    <main class="sheet">
+      <!-- Character header: identity + vitals, the same on every tab -->
+      <section class="hero f-panel f-panel--lit" aria-label="Selene Varga">
+        <div class="hero__id">
+          <div class="f-medal" style="--size: var(--medal)">
+            <div class="f-medal__img">S</div>
+          </div>
+          <div class="hero__name">
+            <h1 class="f-display">Selene Varga</h1>
+            <p class="f-meta">Chierica 5 · Dominio della Vita · Umana</p>
+          </div>
+        </div>
+
+        <div class="hero__status">
+          <button class="f-chip f-chip--buff">
+            <i data-lucide="sparkles" class="f-i f-i--sm"></i>Benedizione · 9 round
+          </button>
+          <button class="f-chip f-chip--cond">
+            <i data-lucide="eye-off" class="f-i f-i--sm"></i>Accecata
+          </button>
+        </div>
+
+        <div class="hero__vitals">
+          <div class="hp-block">
+            <div class="f-hp">
+              <div class="f-hp__top">
+                <span class="f-label">Punti ferita</span>
+                <span class="f-hp__temp">+5 temp.</span>
+              </div>
+              <div class="f-hp__top">
+                <button class="f-hp__now numbtn">31</button
+                ><span class="f-hp__max">/ 38</span>
+              </div>
+              <div class="f-bar">
+                <span class="f-bar__fill" style="width: 81.5%"></span
+                ><span class="f-bar__temp" style="left: 81.5%; width: 13%"></span>
+              </div>
+            </div>
+            <div class="hp-actions">
+              <button class="f-btn f-btn--sm">
+                <i data-lucide="minus" class="f-i f-i--sm" style="color: var(--hp)"></i
+                >Danni
+              </button>
+              <button class="f-btn f-btn--sm">
+                <i data-lucide="plus" class="f-i f-i--sm" style="color: var(--heal)"></i
+                >Cura
+              </button>
+            </div>
+          </div>
+          <div class="f-tiles tiles">
+            <div class="tile-wrap">
+              <button
+                class="f-tile"
+                aria-expanded="true"
+                data-toggle="bd-ac"
+                data-collapse-phone
+              >
+                <span class="f-label">CA</span><span class="f-tile__v">18</span>
+              </button>
+              <div
+                class="f-pop pop-under"
+                id="bd-ac"
+                role="dialog"
+                aria-label="Classe armatura"
+              >
+                <span class="f-pop__arrow"></span>
+                <div class="f-pop__head">
+                  <span class="f-pop__title">Classe armatura</span>
+                </div>
+                <dl class="f-bd">
+                  <div class="f-bd__row">
+                    <dt>Cotta di maglia</dt>
+                    <dd>16</dd>
+                  </div>
+                  <div class="f-bd__row">
+                    <dt>Scudo</dt>
+                    <dd>+2</dd>
+                  </div>
+                  <div class="f-bd__row is-off">
+                    <dt>Destrezza</dt>
+                    <dd>+1</dd>
+                  </div>
+                  <div class="f-bd__row f-bd__row--total">
+                    <dt>Totale</dt>
+                    <dd>18</dd>
+                  </div>
+                </dl>
+                <p class="f-pop__note">
+                  Con un'<button class="f-term">armatura pesante</button> la Destrezza non
+                  si somma.
+                </p>
+                <div class="f-pop__foot">
+                  <span class="f-meta">Il master dice altro?</span>
+                  <button class="f-btn f-btn--sm f-btn--ghost">
+                    <i data-lucide="pencil" class="f-i f-i--sm"></i>Cambia
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button class="f-tile">
+              <span class="f-label">Iniziativa</span><span class="f-tile__v">+1</span>
+            </button>
+            <button class="f-tile">
+              <span class="f-label">Velocità</span
+              ><span class="f-tile__v">9<small>m</small></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <nav class="f-tabs sheet-tabs" role="tablist" aria-label="Scheda">
+        <button class="f-tab" role="tab" aria-selected="true">
+          <i data-lucide="swords" class="f-i f-i--sm"></i>Gioco
+        </button>
+        <button class="f-tab" role="tab" aria-selected="false">
+          <i data-lucide="wand-sparkles" class="f-i f-i--sm"></i>Incantesimi
+        </button>
+        <button class="f-tab" role="tab" aria-selected="false">
+          <i data-lucide="sparkles" class="f-i f-i--sm"></i>Privilegi
+        </button>
+        <button class="f-tab" role="tab" aria-selected="false">
+          <i data-lucide="backpack" class="f-i f-i--sm"></i>Inventario
+        </button>
+        <button class="f-tab" role="tab" aria-selected="false">
+          <i data-lucide="feather" class="f-i f-i--sm"></i>Storia
+        </button>
+      </nav>
+
+      <div class="play">
+        <!-- LEFT: what you have -->
+        <aside class="play__side">
+          <section class="f-panel stack-3" aria-labelledby="res-h">
+            <h2 class="f-h" id="res-h">Risorse</h2>
+            <div>
+              <div class="f-res">
+                <span class="f-res__name">Slot di 1°</span>
+                <span class="f-pips"
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip is-spent" aria-label="Speso"></button
+                ></span>
+                <span class="f-res__count">3/4</span>
+              </div>
+              <div class="f-res">
+                <span class="f-res__name">Slot di 2°</span>
+                <span class="f-pips"
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip" aria-label="Libero"></button
+                ></span>
+                <span class="f-res__count">3/3</span>
+              </div>
+              <div class="f-res">
+                <span class="f-res__name">Slot di 3°</span>
+                <span class="f-pips"
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip" aria-label="Libero"></button
+                ></span>
+                <span class="f-res__count">2/2</span>
+              </div>
+              <div class="f-res">
+                <span class="f-res__name">Incanalare Divinità</span>
+                <span class="f-pips"
+                  ><button class="f-pip" aria-label="Libero"></button
+                  ><button class="f-pip is-spent" aria-label="Speso"></button
+                ></span>
+                <span class="f-res__count">1/2</span>
+              </div>
+            </div>
+            <button class="f-btn f-btn--sm f-btn--ghost" style="justify-self: start">
+              <i data-lucide="moon" class="f-i f-i--sm"></i>Riposa…
+            </button>
+          </section>
+
+          <section class="f-panel stack-3" aria-labelledby="ab-h">
+            <h2 class="f-h" id="ab-h">Caratteristiche</h2>
+            <div class="abil">
+              <button class="abil__c">
+                <span class="f-label">For</span><span class="abil__mod">+3</span
+                ><span class="abil__save">TS +3</span>
+              </button>
+              <button class="abil__c">
+                <span class="f-label">Des</span><span class="abil__mod">+1</span
+                ><span class="abil__save">TS +1</span>
+              </button>
+              <button class="abil__c">
+                <span class="f-label">Cos</span><span class="abil__mod">+2</span
+                ><span class="abil__save">TS +2</span>
+              </button>
+              <button class="abil__c">
+                <span class="f-label">Int</span><span class="abil__mod">+0</span
+                ><span class="abil__save">TS +0</span>
+              </button>
+              <button class="abil__c is-prof">
+                <span class="f-label">Sag</span><span class="abil__mod">+3</span
+                ><span class="abil__save">TS +6</span>
+              </button>
+              <button class="abil__c is-prof">
+                <span class="f-label">Car</span><span class="abil__mod">+1</span
+                ><span class="abil__save">TS +4</span>
+              </button>
+            </div>
+            <button class="fold" aria-expanded="false">
+              <span>Abilità</span
+              ><span class="f-meta">Intuizione +6 · Medicina +6 · Religione +3</span
+              ><i data-lucide="chevron-down" class="f-i f-i--sm"></i>
+            </button>
+          </section>
+        </aside>
+
+        <!-- CENTER: your turn -->
+        <section class="play__main" aria-labelledby="turn-h">
+          <h2 class="f-h" id="turn-h">
+            Il tuo turno <span class="f-h__aside">Round 2</span>
+          </h2>
+          <div class="f-econ">
+            <div class="f-econ__slot" style="--c: var(--type-action)">
+              <i data-lucide="swords" class="f-i"></i
+              ><span
+                ><span class="f-econ__name">Azione</span><br /><span class="f-econ__state"
+                  >Libera</span
+                ></span
+              >
+            </div>
+            <div class="f-econ__slot is-spent" style="--c: var(--type-bonus)">
+              <i data-lucide="zap" class="f-i"></i
+              ><span
+                ><span class="f-econ__name">Bonus</span><br /><span class="f-econ__state"
+                  >Usata</span
+                ></span
+              >
+            </div>
+            <div class="f-econ__slot" style="--c: var(--type-reaction)">
+              <i data-lucide="shield" class="f-i"></i
+              ><span
+                ><span class="f-econ__name">Reazione</span><br /><span
+                  class="f-econ__state"
+                  >Libera</span
+                ></span
+              >
+            </div>
+            <div class="f-econ__slot" style="--c: var(--type-move)">
+              <i data-lucide="footprints" class="f-i"></i
+              ><span
+                ><span class="f-econ__name">Movimento</span><br /><span
+                  class="f-econ__state"
+                  >9 m su 9</span
+                ></span
+              >
+            </div>
+          </div>
+
+          <!-- Combat playbook: generated, every step says why -->
+          <div class="guide">
+            <button
+              class="guide__head"
+              aria-expanded="true"
+              data-toggle="guide-body"
+              data-collapse-phone
+            >
+              <span class="guide__icon"><i data-lucide="compass" class="f-i"></i></span>
+              <span class="guide__title">Cosa ti conviene fare</span>
+              <span class="f-meta only-laptop">Generato dalle tue azioni</span>
+              <i data-lucide="chevron-up" class="f-i f-i--sm guide__chev"></i>
+            </button>
+            <ol class="guide__steps" id="guide-body">
+              <li style="--c: var(--type-move)">
+                <span><b>Muoviti</b> fino a 9 m, se ti serve avvicinarti.</span>
+              </li>
+              <li style="--c: var(--type-action)">
+                <span
+                  ><b>Fiamma sacra</b> sul nemico più vicino.
+                  <span class="why"
+                    >Perché: in media 9 danni contro i 6,5 della Mazza, e arriva fino a 18
+                    m.</span
+                  ></span
+                >
+              </li>
+              <li style="--c: var(--type-reaction)">
+                <span
+                  >Tieni la <b>reazione</b> per un
+                  <button class="f-term">attacco di opportunità</button> se un nemico
+                  scappa.</span
+                >
+              </li>
+            </ol>
+          </div>
+
+          <div class="filter-row">
+            <div class="f-seg" role="group" aria-label="Filtra per tipo">
+              <button class="f-seg__opt" aria-pressed="true">Tutto</button>
+              <button class="f-seg__opt" aria-pressed="false">
+                <span class="f-dot" style="--dot: var(--type-action)"></span>Azione
+              </button>
+              <button class="f-seg__opt" aria-pressed="false">
+                <span class="f-dot" style="--dot: var(--type-bonus)"></span>Bonus
+              </button>
+              <button class="f-seg__opt" aria-pressed="false">
+                <span class="f-dot" style="--dot: var(--type-reaction)"></span>Reazione
+              </button>
+            </div>
+            <button class="f-btn f-btn--sm f-btn--ghost only-laptop">
+              <i data-lucide="list" class="f-i f-i--sm"></i>Azioni di base
+            </button>
+          </div>
+
+          <div class="rows">
+            <div class="f-row f-row--action">
+              <span class="f-row__icon"><i data-lucide="hammer" class="f-i"></i></span>
+              <button class="f-row__main">
+                <span class="f-row__title">Mazza</span>
+                <span class="f-row__meta"
+                  ><b>Azione</b> · Mischia · 1,5 m<span class="only-phone">
+                    · <span class="num">+6 · 1d6+3</span></span
+                  ></span
+                >
+              </button>
+              <span class="f-row__side">
+                <span class="f-row__stats">
+                  <button class="f-stat">
+                    <span class="f-stat__v">+6</span
+                    ><span class="f-stat__k">per colpire</span>
+                  </button>
+                  <button class="f-stat">
+                    <span class="f-stat__v">1d6+3</span
+                    ><span class="f-stat__k">contundenti</span>
+                  </button>
+                </span>
+                <button class="f-btn f-btn--sm">Attacca</button>
+              </span>
+            </div>
+            <div class="f-row f-row--action">
+              <span class="f-row__icon"><i data-lucide="flame" class="f-i"></i></span>
+              <button class="f-row__main">
+                <span class="f-row__title">Fiamma sacra</span>
+                <span class="f-row__meta"
+                  ><b>Azione</b> · Trucchetto · 18 m<span class="only-phone">
+                    · <span class="num">CD 14 · 2d8</span></span
+                  ></span
+                >
+              </button>
+              <span class="f-row__side">
+                <span class="f-row__stats">
+                  <button class="f-stat">
+                    <span class="f-stat__v">CD 14</span
+                    ><span class="f-stat__k">TS Destrezza</span>
+                  </button>
+                  <button class="f-stat">
+                    <span class="f-stat__v">2d8</span
+                    ><span class="f-stat__k">radiosi</span>
+                  </button>
+                </span>
+                <button class="f-btn f-btn--sm">Lancia</button>
+              </span>
+            </div>
+            <div class="f-row f-row--action">
+              <span class="f-row__icon"><i data-lucide="sun" class="f-i"></i></span>
+              <button class="f-row__main">
+                <span class="f-row__title">Preservare la vita</span>
+                <span class="f-row__meta"
+                  ><b>Azione</b> · Incanalare Divinità, 1 su 2<span class="only-phone">
+                    · <span class="num">25 PF</span></span
+                  ></span
+                >
+              </button>
+              <span class="f-row__side">
+                <span class="f-row__stats"
+                  ><button class="f-stat">
+                    <span class="f-stat__v">25</span
+                    ><span class="f-stat__k">PF da dividere</span>
+                  </button></span
+                >
+                <button class="f-btn f-btn--sm">Usa</button>
+              </span>
+            </div>
+            <div class="f-row f-row--action">
+              <span class="f-row__icon"
+                ><i data-lucide="heart-pulse" class="f-i"></i
+              ></span>
+              <button class="f-row__main">
+                <span class="f-row__title">Cura ferite</span>
+                <span class="f-row__meta"
+                  ><b>Azione</b> · 1° livello · Contatto<span class="only-phone">
+                    · <span class="num">2d8+6</span></span
+                  ></span
+                >
+              </button>
+              <span class="f-row__side">
+                <span class="f-row__stats"
+                  ><button class="f-stat">
+                    <span class="f-stat__v">2d8+6</span
+                    ><span class="f-stat__k">PF curati</span>
+                  </button></span
+                >
+                <button class="f-btn f-btn--sm">Lancia</button>
+              </span>
+            </div>
+            <div class="f-row f-row--bonus is-spent">
+              <span class="f-row__icon"
+                ><i data-lucide="hand-heart" class="f-i"></i
+              ></span>
+              <button class="f-row__main">
+                <span class="f-row__title">Parola guaritrice</span>
+                <span class="f-row__meta f-row__status"
+                  ><i data-lucide="check" class="f-i f-i--sm"></i>Azione bonus già
+                  usata</span
+                >
+              </button>
+              <span class="f-row__side">
+                <span class="f-row__stats"
+                  ><span class="f-stat"
+                    ><span class="f-stat__v">2d4+6</span
+                    ><span class="f-stat__k">PF curati</span></span
+                  ></span
+                >
+                <button class="f-btn f-btn--sm" disabled>Lancia</button>
+              </span>
+            </div>
+            <div class="f-row f-row--reaction">
+              <span class="f-row__icon"><i data-lucide="shield" class="f-i"></i></span>
+              <button class="f-row__main">
+                <span class="f-row__title">Attacco di opportunità</span>
+                <span class="f-row__meta"
+                  ><b>Reazione</b> · Un nemico esce dalla tua portata</span
+                >
+              </button>
+              <span class="f-row__side"
+                ><button class="f-btn f-btn--sm">Usa</button></span
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: the session writes itself -->
+        <aside class="play__log f-panel only-laptop" aria-labelledby="log-h">
+          <div class="log-head">
+            <h2 class="f-h" id="log-h">Resoconto</h2>
+            <button class="f-btn f-btn--sm f-btn--ghost">
+              <i data-lucide="copy" class="f-i f-i--sm"></i>Copia
+            </button>
+          </div>
+          <div class="f-log">
+            <div class="f-log__round">
+              <span class="f-label">Round 1</span>
+              <p class="f-log__entry" style="--edge: var(--type-action)">
+                <span
+                  >Hai lanciato <b>Benedizione</b> con uno slot di 1° su te, Brann e
+                  Kaela.<span class="f-log__src">Concentrazione · 10 round</span></span
+                >
+              </p>
+              <p class="f-log__entry" style="--edge: var(--hp)">
+                <span>Il goblin ti ha colpito: <b>7 danni</b>. Da 38 a 31 PF.</span>
+              </p>
+              <p class="f-log__entry f-log__entry--note">
+                <span
+                  >Il goblin dice che il capo si nasconde nella cripta a nord.<span
+                    class="f-log__src"
+                    >Nota di Marco (DM)</span
+                  ></span
+                >
+              </p>
+            </div>
+            <div class="f-log__round">
+              <span class="f-label">Round 2</span>
+              <p class="f-log__entry" style="--edge: var(--type-bonus)">
+                <span
+                  ><b>Parola guaritrice</b> su Kaela: <b>+11 PF</b>.<span
+                    class="f-log__src"
+                    >5 dadi + 3 Saggezza + 3 Discepolo della Vita</span
+                  ></span
+                >
+              </p>
+            </div>
+          </div>
+          <label class="note-in">
+            <span class="f-sr">Aggiungi una nota</span>
+            <input class="f-input" placeholder="Scrivi una nota per il resoconto…" />
+          </label>
+        </aside>
+      </div>
+    </main>
+
+    <!-- Turn bar: the one lit action -->
+    <div class="turnbar">
+      <p class="turnbar__left">
+        <span class="only-laptop">Ti restano </span><b>Azione</b>, <b>Reazione</b>,
+        <b>9 m</b>
+      </p>
+      <button class="f-btn f-btn--primary">Fine turno</button>
+    </div>
+  </body>
+</html>

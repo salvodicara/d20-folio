@@ -1,0 +1,199 @@
+/*
+ * d20 Folio design system — tokens (prototype, 2026-10-16).
+ * Direction B "BG3 fantasy ricco", rebuilt from scratch for a professional finish.
+ * Dark is the default; light is a full sibling, never an afterthought.
+ * This file becomes the app's token layer during rollout; until then it only feeds
+ * the prototypes in this folder.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..800;1,400..600&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&family=Cinzel:wght@500..800&display=swap");
+
+:root {
+  /* ── Type families ───────────────────────────────────────────── */
+  --font-display: "Cinzel", Georgia, serif; /* names, page titles, big figures */
+  --font-ui:
+    "Alegreya Sans", "Segoe UI", system-ui, sans-serif; /* controls, labels, numbers */
+  --font-read: "Alegreya", Georgia, serif; /* every sentence a player reads */
+
+  /* ── Type scale (px) ─────────────────────────────────────────── */
+  --fs-hero: 44px; /* HP and other hero figures */
+  --fs-display: 30px; /* character name, laptop */
+  --fs-title: 22px; /* page and dialog titles */
+  --fs-heading: 15px; /* section headings, Cinzel caps */
+  --fs-figure: 26px; /* stat tile figures */
+  --fs-lg: 18px;
+  --fs-body: 16px; /* reading text, row titles */
+  --fs-ui: 15px; /* buttons, tabs, meta */
+  --fs-sm: 14px; /* secondary lines: the floor for sentences */
+  --fs-label: 13px; /* uppercase labels only, tracked */
+
+  /* ── Spacing (4px grid) ──────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ── Shape ───────────────────────────────────────────────────── */
+  --r-1: 4px; /* chips, pips, small tags */
+  --r-2: 8px; /* buttons, inputs, rows */
+  --r-3: 12px; /* panels, dialogs, sheets */
+  --r-full: 999px;
+  --touch: 44px;
+  --control-sm: 36px;
+
+  /* ── Motion ──────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms;
+  --t-med: 220ms;
+
+  /* ── Theme-independent pigments ──────────────────────────────── */
+  --gold-50: #f7e7bd;
+  --gold-200: #ecca7e;
+  --gold-400: #d6ae5c;
+  --gold-600: #a98034;
+  --gold-800: #6b4f1c;
+}
+
+/* ═══ DARK (default): night in the keep ═══════════════════════════ */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0d0b09;
+  --surface-1: #15120f; /* panels */
+  --surface-2: #1c1814; /* rows, raised cards */
+  --surface-3: #262019; /* hover, pressed */
+  --inset: #0a0807; /* wells: bars, segmented tracks */
+  --field: #0a0807; /* text inputs */
+  --scrim: rgb(5 4 3 / 0.72);
+
+  --line: #2f2920;
+  --line-2: #463c2d;
+  --line-gold: #74592b;
+
+  --text: #f2e9d8;
+  --text-2: #c4b8a2;
+  --text-3: #a09480;
+  --text-on-gold: #1b1307;
+
+  --gold: #dcb866; /* accent text and icons */
+  --gold-strong: #efcf86;
+  --gold-fill: linear-gradient(180deg, #efd08a 0%, #d2a752 52%, #ae8436 100%);
+  --gold-fill-hover: linear-gradient(180deg, #f6dc9d 0%, #dcb25e 52%, #b88d3c 100%);
+  --gold-glow: 0 0 0 1px rgb(239 207 134 / 0.35), 0 6px 22px -6px rgb(220 170 80 / 0.55);
+  --gold-hairline: linear-gradient(
+    90deg,
+    transparent,
+    rgb(220 184 102 / 0.7) 20%,
+    rgb(239 207 134 / 0.9) 50%,
+    rgb(220 184 102 / 0.7) 80%,
+    transparent
+  );
+
+  /* One colour per action type: edge, icon tile, filter dot. */
+  --type-action: #ea8a5c;
+  --type-bonus: #49c4b2;
+  --type-reaction: #ad8ced;
+  --type-move: #8bc964;
+  --type-free: #bdb198;
+  --type-action-tint: rgb(234 138 92 / 0.14);
+  --type-bonus-tint: rgb(73 196 178 / 0.14);
+  --type-reaction-tint: rgb(173 140 237 / 0.16);
+  --type-move-tint: rgb(139 201 100 / 0.14);
+  --type-free-tint: rgb(189 177 152 / 0.12);
+
+  --hp: #e2584c;
+  --hp-track: #2a1512;
+  --temp: #6fb6ec;
+  --heal: #72d095;
+  --danger: #ef7363;
+  --danger-tint: rgb(239 115 99 / 0.12);
+  --warn: #e9b44c;
+  --warn-tint: rgb(233 180 76 / 0.12);
+  --success: #7fcf95;
+  --success-tint: rgb(127 207 149 / 0.12);
+  --info: #7fb0ee;
+  --info-tint: rgb(127 176 238 / 0.13);
+
+  --focus: #f3d38c;
+  --shadow-1: 0 1px 0 rgb(255 236 200 / 0.04) inset;
+  --shadow-pop: 0 18px 48px -12px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.4);
+  --stone:
+    radial-gradient(1200px 600px at 20% -10%, rgb(220 170 90 / 0.07), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgb(120 90 50 / 0.06), transparent 60%);
+}
+
+/* ═══ LIGHT: the same keep at midday — a printed page, not parchment ═ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #ebe5d9;
+  --surface-1: #f8f4ec;
+  --surface-2: #fffcf6;
+  --surface-3: #f0e9dc;
+  --inset: #e6dfd2;
+  --field: #fffefb;
+  --scrim: rgb(40 30 15 / 0.42);
+
+  --line: #d8cebd;
+  --line-2: #bcae96;
+  --line-gold: #a8823f;
+
+  --text: #1d1811;
+  --text-2: #463d30;
+  --text-3: #62574a;
+  --text-on-gold: #1b1307;
+
+  --gold: #85601a;
+  --gold-strong: #6a4b10;
+  --gold-fill: linear-gradient(180deg, #ecca7e 0%, #d4a957 52%, #bd9142 100%);
+  --gold-fill-hover: linear-gradient(180deg, #f2d38c 0%, #dcb262 52%, #c69a49 100%);
+  --gold-glow: 0 0 0 1px rgb(150 110 40 / 0.45), 0 6px 18px -8px rgb(150 105 30 / 0.55);
+  --gold-hairline: linear-gradient(
+    90deg,
+    transparent,
+    rgb(168 130 63 / 0.6) 20%,
+    rgb(168 130 63 / 0.9) 50%,
+    rgb(168 130 63 / 0.6) 80%,
+    transparent
+  );
+
+  --type-action: #b4521f;
+  --type-bonus: #0e7a6b;
+  --type-reaction: #6a44b8;
+  --type-move: #3d7b1d;
+  --type-free: #6e624f;
+  --type-action-tint: rgb(180 82 31 / 0.1);
+  --type-bonus-tint: rgb(14 122 107 / 0.1);
+  --type-reaction-tint: rgb(106 68 184 / 0.1);
+  --type-move-tint: rgb(61 123 29 / 0.1);
+  --type-free-tint: rgb(110 98 79 / 0.1);
+
+  --hp: #c23a2e;
+  --hp-track: #ecd5cf;
+  --temp: #2a72b0;
+  --heal: #23804a;
+  --danger: #b5332a;
+  --danger-tint: rgb(181 51 42 / 0.09);
+  --warn: #8c5c00;
+  --warn-tint: rgb(190 130 10 / 0.12);
+  --success: #23804a;
+  --success-tint: rgb(35 128 74 / 0.1);
+  --info: #2a62a8;
+  --info-tint: rgb(42 98 168 / 0.1);
+
+  --focus: #7a560f;
+  --shadow-1: 0 1px 2px rgb(60 40 10 / 0.06);
+  --shadow-pop: 0 18px 44px -14px rgb(60 40 10 / 0.35), 0 2px 6px rgb(60 40 10 / 0.12);
+  --stone: radial-gradient(
+    1200px 600px at 20% -10%,
+    rgb(255 255 255 / 0.6),
+    transparent 60%
+  );
+}
