@@ -41,6 +41,22 @@ A reader older than the overrides drops `hide`, `show` and `move` items, so it s
 unedited. The rules accept them in the session array (members append only their own). When the
 per-item subcollection (#321) lands, its rule takes the same item types.
 
+## Session notes in the same timeline
+
+Owner workflow, 2026-10-16: during the game the DM writes free notes; afterwards the notes and
+the action log go together into an AI that writes the journal, read aloud next session. So notes
+are lines of the same log, not a separate document:
+
+- A note is a `note` event (`{ kind: "note", text, actor? }`, existing), appended when written.
+  It lands where the server receives it, between the actions of its round, and it can be corrected,
+  hidden or moved like any line. `foldSession` and `buildReport` need nothing new.
+- The copy is the one export: `renderSessionReport(sections, title, t, names, { notes })` writes
+  the session page's free text first (the notes kept on `campaigns/{id}/sessions/{id}.notes`,
+  which stay readable), then the round-by-round story, notes included (#332). Markdown, ready to
+  paste; there is no AI in the app.
+- For the UI (Phase 1): the note box writes `note` events through the recorder during play; the
+  page's text field remains for notes written after the game.
+
 ## Not yet
 
 - The writer: recorder helpers and the editor UI (Phase 1).
