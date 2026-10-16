@@ -51,6 +51,8 @@
  * boundaries and are never conflated with a rest.
  */
 
+import i18next from "i18next";
+
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { canCharacterRest } from "@/lib/character-status";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
@@ -92,8 +94,8 @@ import {
   resolveTrackers,
 } from "@/lib/smart-tracker";
 import { useAuthStore } from "@/stores/authStore";
-import { useCharacterStore } from "@/stores/characterStore";
-import { useUndoStore } from "@/stores/undoStore";
+import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
+import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 import type { JournalActionDraft } from "@/types/action-journal";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { ExhaustionLevel } from "@/types/condition";
@@ -517,6 +519,28 @@ export function restThroughWorld(
   kind: RestWorldKind,
   entered: RestWorldEntries = {}
 ): RestWorldOutcome {
+  // FENCE every older undo entry: the rest rewrites the whole resource baseline, so
+  // an earlier reverse-applier would restore a pre-rest slice over it. The rest then
+  // registers its OWN entry (golden rule 5, owner 2026-10-16), advertised by the
+  // standard 5 s toast, whose undo puts the whole character back as it was before.
+  useUndoStore.getState().clear();
+  let outcome: RestWorldOutcome = "legacy";
+  registerUndoableToast(
+    {
+      message: i18next.t(kind === "long" ? "combatLog.longRest" : "combatLog.shortRest"),
+    },
+    () => {
+      const seal = beginWholeStateUndo();
+      outcome = restOnce(kind, entered);
+      return seal?.() ?? null;
+    },
+    { turnScoped: false }
+  );
+  return outcome;
+}
+
+/** One rest, committed: the body `restThroughWorld` registers as undoable. */
+function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutcome {
   const store = useCharacterStore.getState();
   const before = store.character;
   const uid = useAuthStore.getState().user?.uid;
@@ -589,11 +613,10 @@ export function restThroughWorld(
   });
   const live = useCharacterStore.getState();
   // Events-as-data: a rest is a story beat; persist the whole resulting
-  // combat state; and FENCE the undo stack, since the rest rewrote the whole
-  // resource baseline (the same closing motions as the legacy rest).
+  // combat state. The undo fence and the rest's own undo entry live in
+  // `restThroughWorld`, around this body.
   live.logEvent({ kind: "rest", restKind: kind });
   for (const event of fades) live.logEvent(event);
   live.persistPlayState();
-  useUndoStore.getState().clear();
   return "engine";
 }

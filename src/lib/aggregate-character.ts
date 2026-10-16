@@ -28,7 +28,8 @@ import { resolveSituationalStateSources } from "@/lib/situational-states";
 import { resolveSurpriseStateSources } from "@/lib/surprise-state";
 import { resolvePotionStateSources } from "@/lib/potion-states";
 import { resolveFadingPenaltySources } from "@/lib/play/fading-penalties";
-import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
+import { evaluateGrants, type AggregatedGrants, type GrantSource } from "@/lib/grants";
+import { anyLightLit, resolveLightStateSources } from "@/lib/light-states";
 import {
   resolveAllGrantSources,
   resolveCombatEffectGrantSources,
@@ -130,44 +131,52 @@ export function aggregateCharacterGrants(
 ): AggregatedGrants {
   const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
   const activeKeys = aggregationActiveKeys(session);
-  return evaluateGrants(
-    [
-      ...resolveAllGrantSources(character, session.itemResources),
-      ...encounterSources,
-      // A lit Dodge (a base action's state) carries its rules until it ends.
-      ...resolveBaseActionStateSources(activeKeys),
-      // A lit cover level (Half / Three-Quarters) holds until it ends.
-      ...resolveCoverStateSources(activeKeys),
-      // A lit situation (Underwater's Fire Resistance) holds until it ends.
-      ...resolveSituationalStateSources(activeKeys),
-      // A lit Surprise puts Disadvantage on the Initiative roll until the fight ends.
-      ...resolveSurpriseStateSources(activeKeys),
-      // Wish Stress holds until a Long Rest.
-      ...resolveWishStressStateSources(activeKeys),
-      // A drunk potion's state (Flying's fly speed) holds while its countdown runs.
-      ...resolvePotionStateSources(activeKeys),
-      // A fading D20 Test penalty (Raise Dead) carries its flat penalties until it ends.
-      ...resolveFadingPenaltySources(session.fadingPenalties),
-    ],
-    activeKeys,
-    new Map(Object.entries(session.grantBundleChoices ?? {})),
-    {
-      level: totalLevel(character),
-      conditions: new Set(
-        effectiveSessionConditions({
-          conditions: session.conditions ?? [],
-          concentration: session.concentration ?? "",
-          concentrationConditions: session.concentrationConditions,
-          encounterEffects: session.encounterEffects,
-        })
-      ),
-      // The engine world's standing-fact projections: the exact Aid amount
-      // (cast level included) and Death Ward's single-use floor, both scoped
-      // to SELF-owned live standings (`world-standing-grants.ts`).
-      worldMaxHpDeltas: worldStandingMaxHpDeltas(session.world),
-      worldZeroHpFloors: worldStandingZeroHpFloors(session.world),
-    }
-  );
+  const evaluate = (lightSources: GrantSource[]): AggregatedGrants =>
+    evaluateGrants(
+      [
+        ...resolveAllGrantSources(character, session.itemResources),
+        ...encounterSources,
+        // A lit Dodge (a base action's state) carries its rules until it ends.
+        ...resolveBaseActionStateSources(activeKeys),
+        // A lit cover level (Half / Three-Quarters) holds until it ends.
+        ...resolveCoverStateSources(activeKeys),
+        // A lit situation (Underwater's Fire Resistance) holds until it ends.
+        ...resolveSituationalStateSources(activeKeys),
+        // A lit Surprise puts Disadvantage on the Initiative roll until the fight ends.
+        ...resolveSurpriseStateSources(activeKeys),
+        // Wish Stress holds until a Long Rest.
+        ...resolveWishStressStateSources(activeKeys),
+        // A drunk potion's state (Flying's fly speed) holds while its countdown runs.
+        ...resolvePotionStateSources(activeKeys),
+        // A fading D20 Test penalty (Raise Dead) carries its flat penalties until it ends.
+        ...resolveFadingPenaltySources(session.fadingPenalties),
+        ...lightSources,
+      ],
+      activeKeys,
+      new Map(Object.entries(session.grantBundleChoices ?? {})),
+      {
+        level: totalLevel(character),
+        conditions: new Set(
+          effectiveSessionConditions({
+            conditions: session.conditions ?? [],
+            concentration: session.concentration ?? "",
+            concentrationConditions: session.concentrationConditions,
+            encounterEffects: session.encounterEffects,
+          })
+        ),
+        // The engine world's standing-fact projections: the exact Aid amount
+        // (cast level included) and Death Ward's single-use floor, both scoped
+        // to SELF-owned live standings (`world-standing-grants.ts`).
+        worldMaxHpDeltas: worldStandingMaxHpDeltas(session.world),
+        worldZeroHpFloors: worldStandingZeroHpFloors(session.world),
+      }
+    );
+  const unlit = evaluate([]);
+  if (!anyLightLit(activeKeys)) return unlit;
+  // A lit light level's rules depend on the Darkvision the rest of the sheet grants
+  // (a hand-set range wins), so it joins in a second pass.
+  const darkvisionFt = character.senseRangeOverrides?.darkvision ?? unlit.darkvisionFt;
+  return evaluate(resolveLightStateSources(activeKeys, darkvisionFt));
 }
 
 /**

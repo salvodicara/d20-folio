@@ -133,6 +133,7 @@ vi.mock("@/lib/log-persistence", () => ({
 }));
 vi.mock("@/lib/mock", () => ({ MOCK_CHARACTER: {} }));
 
+import { useUndoStore } from "@/stores/undoStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useSaveStore } from "@/stores/saveStore";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
@@ -554,6 +555,44 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
       current: 5,
       temp: 0,
     });
+  });
+});
+
+describe("useCharacterSubscription — remote writes and the undo history", () => {
+  function registerOne(): void {
+    useUndoStore.getState().register({
+      label: { message: "older action" },
+      turnScoped: false,
+      undo: () => {},
+      redo: () => null,
+    });
+  }
+
+  it("keeps the history when a DM changes only HP, marking the entries", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    registerOne();
+
+    act(() => combatCb()(v1Combat({ hp: { current: 30, temp: 0 } })));
+
+    const past = useUndoStore.getState().past;
+    expect(past).toHaveLength(1);
+    expect(past[0]?.remoteTouched).toEqual(["hp"]);
+  });
+
+  it("drops the history when the owner's other device changed more than the vitals", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    registerOne();
+
+    const combat = v1Combat({ hp: { current: 30, temp: 0 } });
+    combat.playState = sessionToCombatState({
+      ...v1Doc().session,
+      notes: "written on the phone",
+    }).playState;
+    act(() => combatCb()(combat));
+
+    expect(useUndoStore.getState().past).toHaveLength(0);
   });
 });
 

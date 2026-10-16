@@ -83,14 +83,24 @@ export function translateMonsterEntry(
         }),
         // Half on a success with no printed clause: the damage is in the text,
         // its outcome is still a fact.
-        effects:
-          entry.damage && entry.damage.length > 0
+        effects: [
+          ...(entry.damage && entry.damage.length > 0
             ? entry.damage.map((clause) =>
                 damage(clause, entry.onSuccess === "half" ? "half" : undefined)
               )
             : entry.onSuccess === "half"
               ? [{ kind: "damage" as const, onSave: "half" as const }]
-              : [],
+              : []),
+          // The conditions the "Failure:" clause prints; their duration stays text.
+          ...(entry.conditions && entry.conditions.length > 0
+            ? [
+                {
+                  kind: "condition" as const,
+                  apply: { options: [...entry.conditions], on: "failed-save" as const },
+                },
+              ]
+            : []),
+        ],
       });
       break;
     case "spellcasting":

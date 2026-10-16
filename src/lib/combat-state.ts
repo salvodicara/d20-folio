@@ -65,6 +65,34 @@ export function combatTrioDiffers(
   );
 }
 
+/**
+ * Which of the remotely writable vitals a server update changed, named as the undo
+ * guard compares them. Empty exactly when `combatTrioDiffers` is false.
+ */
+export function combatTrioRootsChanged(
+  session: Parameters<typeof combatTrioDiffers>[0],
+  combat: CombatState
+): string[] {
+  const roots: string[] = [];
+  if (session.hp.current !== combat.hp.current || session.hp.temp !== combat.hp.temp)
+    roots.push("hp");
+  if (
+    session.deathSucc !== combat.deathSaves.successes ||
+    session.deathFail !== combat.deathSaves.failures
+  )
+    roots.push("deathSaves");
+  if (session.conditions.join(",") !== combat.conditions.join(","))
+    roots.push("conditions");
+  if ((session.bardicInspirationDie ?? "") !== (combat.bardicInspirationDie ?? ""))
+    roots.push("bardicInspirationDie");
+  if (
+    combat.heroicInspiration !== undefined &&
+    (session.inspiration ?? false) !== combat.heroicInspiration
+  )
+    roots.push("heroicInspiration");
+  return roots;
+}
+
 /** Cockpit initiative-roll STRING → canonical NUMBER (`""`/non-numeric ⇒ `null`). */
 export function initiativeToNumber(value: string): number | null {
   if (value.trim() === "") return null;

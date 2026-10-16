@@ -16,6 +16,8 @@ import {
   litCoverLevel,
   type CoverStateLevel,
 } from "@/lib/cover-states";
+import type { LightLevel } from "@/lib/light-states";
+import { litLightLevel } from "@/lib/light-states";
 import {
   situationKey,
   situationalState,
@@ -244,5 +246,17 @@ export function commitSituation(id: SituationId, lit: boolean): (() => void) | n
       lit: !lit,
       until: priorUntil,
     });
+  };
+}
+
+/** Set the light level on the open sheet (null clears it); returns the inverse, or
+ * null when nothing changed. */
+export function commitLight(level: LightLevel | null): (() => void) | null {
+  const store = useCharacterStore.getState();
+  const session = store.character?.session;
+  const prior = session ? litLightLevel(session) : null;
+  if (!store.dispatch({ kind: "set-light", level })) return null;
+  return () => {
+    useCharacterStore.getState().dispatch({ kind: "set-light", level: prior });
   };
 }

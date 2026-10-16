@@ -41,11 +41,12 @@ import type { ToastIntent } from "@/types/toast";
 
 /**
  * The stack depth cap. A full frantic combat turn (Action Surge + Extra Attack +
- * bonus + reaction + riders) is < 10 entries; 20 covers two turns of mis-taps plus
- * HP edits. Deeper history is increasingly likely to be fenced anyway and holds
- * stale closures over dead state. `future` is bounded by the same cap.
+ * bonus + reaction + riders) is < 10 entries; 50 keeps a whole fight's worth of the
+ * player's own actions undoable (owner 2026-10-16: every action stays undoable later
+ * too). Entries guard themselves against later changes, so a deep entry refuses
+ * rather than restore dead state. `future` is bounded by the same cap.
  */
-export const MAX_UNDO_DEPTH = 20;
+export const MAX_UNDO_DEPTH = 50;
 
 /**
  * Label model — mirrors the toast contract exactly (toasts-as-data): UI-layer
@@ -79,6 +80,13 @@ export interface UndoEntry {
   /** The reverse-applier (exactly today's closures). */
   undo: UndoApplier;
   /**
+   * The combat vitals another device (the DM, another player) changed since this
+   * entry was registered. Empty or absent means nothing remote touched it; when set,
+   * the undo runs through the guard, which refuses a reversal that would overwrite
+   * one of them.
+   */
+  remoteTouched?: readonly string[];
+  /**
    * Re-run the original execute. Returns the NEW reverse-applier, or `null` when
    * the re-execution legally bailed (budget full, no uses left) — then nothing is
    * pushed and the redo is a quiet no-op.
@@ -102,8 +110,27 @@ interface UndoState {
   setToastId: (entryId: string, toastId: string) => void;
   /** Encounter turn-start / encounter-end fence. */
   purgeTurnScoped: () => void;
-  /** Hard fence (rest, character switch, build edit, import, remote change…). */
+  /** Hard fence (rest, character switch, build edit, import, own-device change…). */
   clear: (characterId?: string | null) => void;
+  /**
+   * Another device changed these combat vitals: every entry on the stack remembers
+   * them (adding to any earlier remote write), so its undo can refuse to overwrite
+   * them instead of the whole history being dropped.
+   */
+  markRemoteTouched: (roots: readonly string[]) => void;
+}
+
+/**
+ * Runs an undo whose entry was touched remotely. Returns exactly `false` when the
+ * reversal would overwrite a remote change (it then restores everything it did);
+ * otherwise the undo's own result. Set by the character store, which owns the state.
+ */
+export type RemoteUndoGuard = (undo: UndoApplier, touched: readonly string[]) => unknown;
+
+let remoteUndoGuard: RemoteUndoGuard | null = null;
+
+export function setRemoteUndoGuard(guard: RemoteUndoGuard | null): void {
+  remoteUndoGuard = guard;
 }
 
 let nextId = 0;
@@ -149,7 +176,11 @@ export const useUndoStore = create<UndoState>()((set, get) => ({
     // A miss (evicted / fenced) is a silent no-op — a stale toast whose entry is
     // gone can never fire a dangling closure.
     if (!entry) return false;
-    if (entry.undo() === false) return false;
+    const result =
+      entry.remoteTouched?.length && remoteUndoGuard
+        ? remoteUndoGuard(entry.undo, entry.remoteTouched)
+        : entry.undo();
+    if (result === false) return false;
     dismissEntryToast(entry);
     set((s) => ({
       past: s.past.filter((e) => e.id !== entry.id),
@@ -203,6 +234,16 @@ export const useUndoStore = create<UndoState>()((set, get) => ({
       past: past.filter((e) => !e.turnScoped),
       future: future.filter((e) => !e.turnScoped),
     });
+  },
+
+  markRemoteTouched: (roots) => {
+    if (roots.length === 0) return;
+    set((s) => ({
+      past: s.past.map((e) => ({
+        ...e,
+        remoteTouched: [...new Set([...(e.remoteTouched ?? []), ...roots])],
+      })),
+    }));
   },
 
   clear: (characterId) => {

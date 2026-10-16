@@ -17,6 +17,7 @@
 
 import { baseActionState } from "@/lib/base-action-states";
 import { HELP_ACTION_ID } from "@/lib/play/help";
+import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
   POTION_TIMER_PREFIX,
   potionTimerKey,
@@ -589,6 +590,9 @@ export interface ActionSummary {
    * localization untouched. Omitted for actions with no flat-DC check.
    */
   skillCheck?: { dc: number; skill: string };
+  /** The skills a check action (Search, Study, Influence) lets the player pick for
+   *  the d20 they rolled; the DC is the DM's. */
+  checkSkills?: string[];
   /**
    * RA-13 — resolved Weapon-Mastery NUMBERS for this attack row (SRD "Mastery
    * Properties"): Topple's save DC (8 + the attack ability modifier + PB — a
@@ -729,6 +733,9 @@ export interface ResolvedAction {
   /** The use names a creature even with nothing to resolve (Help): the optional
    *  "On whom?" step tags the log line with the pick. */
   namesTarget?: true;
+  /** The check entered on the card for this use (Search, Study, Influence); its log
+   *  line carries the result. */
+  checkResult?: CheckResult;
   /** Active state this action explicitly maintains for the current round. */
   maintainsActiveKey?: string;
   economyCategory?: ActionEconomyCategory;
@@ -7472,6 +7479,8 @@ function resolveTemporaryHpActions(
     // A base action that puts its user in a state (Dodge) lights it on use; the
     // state ends by itself at its turn edge (`base-action-states.ts`).
     const state = baseActionState(ba.id)?.grant;
+    // Search, Study and Influence take the d20 the player rolled for one SRD skill.
+    const checkSkills = actionCheckSkills(ba.id);
     // The base action menu is an engine-authored bilingual table (not SRD data).
     actions.push({
       id: ba.id,
@@ -7515,6 +7524,7 @@ function resolveTemporaryHpActions(
               },
             }
           : {}),
+        ...(checkSkills ? { checkSkills } : {}),
       },
       // RA-18 — the Ready card teaches the readied-spell rule (SRD "Ready
       // [Action]"): a readied spell is cast NOW (the slot is spent) and held

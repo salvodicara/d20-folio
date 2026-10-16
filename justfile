@@ -75,8 +75,8 @@ build:
 
 # The bundle budget on the COMPOSED build, the one `deploy.yml` ships. CI's `build +
 # budget` job builds SRD-only, so the private pack's growth (its EN text rides the
-# eager closure) is only measured here and at deploy time. Needs `content-pack`
-# linked to the pack's origin/main.
+# eager closure) is measured here, in Verify's `budget (composed)` job and at deploy
+# time. Needs `content-pack` linked to the pack's origin/main.
 budget-pack:
     @test -e content-pack/index.ts || { echo "✗ content-pack is not linked: link the pack (its origin/main) first."; exit 1; }
     pnpm build

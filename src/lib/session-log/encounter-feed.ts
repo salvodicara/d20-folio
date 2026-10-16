@@ -9,6 +9,10 @@
  * than one player could own a drop the line is marked uncertain and still asks "Who
  * struck?". A claimed declaration folds into the damage line; an unclaimed one (a miss,
  * or a hit whose damage has not been booked yet) stays its own line.
+ *
+ * A drop that already names its attacker (the DM's monster tray books it so) folds that
+ * attacker's own declaration on the same target and round first, so the line says the
+ * result: "Goblin: Scimitar → Lyra: hit, 7".
  */
 
 import type { SessionEntry } from "./fold";
@@ -41,6 +45,8 @@ const MARKERS = new Set<PlayEvent["kind"]>([
   "encounter-end",
 ]);
 const LANDED = new Set(["hit", "critical", "failed", "saved"]);
+/** The results a damage line itself can say ("Goblin → Lyra: hit, 7"). */
+const ATTACK_RESULTS = new Set(["hit", "miss", "critical"]);
 
 // The damage, heal and temp-hp variant (one member of the union shares the three kinds).
 type Damage = Extract<PlayEvent, { amount: number }>;
@@ -52,6 +58,18 @@ function isPending(event: PlayEvent): event is Damage & { target: CombatantId } 
     event.target !== undefined &&
     event.actor === undefined &&
     event.unattributed !== true
+  );
+}
+
+/** Damage that already names its attacker and does not yet say the attack's result. */
+function isOwned(
+  event: PlayEvent
+): event is Damage & { target: CombatantId; actor: CombatantId } {
+  return (
+    event.kind === "damage" &&
+    event.target !== undefined &&
+    event.actor !== undefined &&
+    event.outcome === undefined
   );
 }
 
@@ -73,28 +91,54 @@ export function encounterFeed(
     (entry) => entry.encounterId === encounterId && !MARKERS.has(entry.event.kind)
   );
 
-  // Pair, per (target, round), the i-th pending drop with the i-th declaration that
-  // named that target, both in log order.
   const key = (target: string, round: number | undefined) => `${target}::${round ?? 0}`;
+  const push = (map: Map<string, SessionEntry[]>, k: string, entry: SessionEntry) =>
+    map.set(k, [...(map.get(k) ?? []), entry]);
+
+  // First, a drop that already names its attacker (the DM's monster tray) takes the
+  // result that same attacker declared on that target in that round: the i-th such
+  // drop with the i-th declaration, both in log order.
+  const owned = new Map<string, SessionEntry[]>();
+  const ownClaims = new Map<string, SessionEntry[]>();
+  for (const entry of scoped) {
+    const { event } = entry;
+    if (isOwned(event)) {
+      push(owned, `${event.actor}::${key(event.target, entry.round)}`, entry);
+    } else if (isClaim(event)) {
+      for (const target of new Set(event.targets))
+        push(ownClaims, `${event.actor}::${key(target, entry.round)}`, entry);
+    }
+  }
+  const results = new Map<string, Action["outcome"]>();
+  const consumed = new Set<string>();
+  for (const [k, hits] of owned) {
+    const declared = (ownClaims.get(k) ?? []).filter((d) => !consumed.has(d.id));
+    for (let i = 0; i < Math.min(hits.length, declared.length); i++) {
+      const drop = hits[i];
+      const claim = declared[i];
+      if (!drop || !claim || claim.event.kind !== "action") continue;
+      results.set(drop.id, claim.event.outcome);
+      consumed.add(claim.id);
+    }
+  }
+
+  // Then pair, per (target, round), the i-th pending drop with the i-th declaration
+  // that named that target and is still unclaimed, both in log order.
   const drops = new Map<string, SessionEntry[]>();
   const claims = new Map<string, SessionEntry[]>();
   for (const entry of scoped) {
     const { event } = entry;
     if (isPending(event)) {
-      const k = key(event.target, entry.round);
-      drops.set(k, [...(drops.get(k) ?? []), entry]);
-    } else if (isClaim(event)) {
-      for (const target of new Set(event.targets)) {
-        const k = key(target, entry.round);
-        claims.set(k, [...(claims.get(k) ?? []), entry]);
-      }
+      push(drops, key(event.target, entry.round), entry);
+    } else if (isClaim(event) && !consumed.has(entry.id)) {
+      for (const target of new Set(event.targets))
+        push(claims, key(target, entry.round), entry);
     }
   }
   const attributed = new Map<
     string,
     { claim: Action & { actor: string }; uncertain: boolean }
   >();
-  const consumed = new Set<string>();
   for (const [k, pending] of drops) {
     const declared = claims.get(k) ?? [];
     const actors = new Set(declared.map((d) => (d.event as Action).actor));
@@ -118,7 +162,16 @@ export function encounterFeed(
       logged: entry.event,
     };
     const match = attributed.get(entry.id);
-    if (match && entry.event.kind === "damage") {
+    const result = results.get(entry.id);
+    if (results.has(entry.id) && entry.event.kind === "damage") {
+      lines.push({
+        ...base,
+        event:
+          result && ATTACK_RESULTS.has(result)
+            ? { ...entry.event, outcome: result as "hit" | "miss" | "critical" }
+            : entry.event,
+      });
+    } else if (match && entry.event.kind === "damage") {
       const { claim, uncertain } = match;
       lines.push({
         ...base,

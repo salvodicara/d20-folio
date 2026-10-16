@@ -64,6 +64,38 @@ jobs:
       - name: Unit tests (composed — pack suites included)
         run: pnpm test
 
+  # The composed bundle budget. ci.yml measures the SRD-only build; only this job
+  # and deploy.yml measure what actually ships (app + pack). Without it, three
+  # release reviews in a row met an over-budget precache on deploy day, long after
+  # the PR that grew it (2026-10-13 and 2026-10-16).
+  budget:
+    name: budget (composed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Checkout the private content pack
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          repository: salvodicara/d20-folio-content
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+          path: .pack
+      - name: Compose the content pack
+        run: |
+          mv .pack/content-pack ./content-pack
+          rm -rf .pack
+          test -f content-pack/index.ts
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      # The same build command deploy.yml runs before its own budget gate.
+      - name: Build (composed)
+        run: pnpm build
+      - name: Bundle budget (composed)
+        run: pnpm test:budget
   e2e:
     name: e2e (shard ${{ matrix.shard }}/8)
     runs-on: ubuntu-latest

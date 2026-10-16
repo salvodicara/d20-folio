@@ -40,6 +40,14 @@ import {
   type SituationLasts,
 } from "@/lib/situational-states";
 import { surpriseStateName } from "@/lib/surprise-state";
+import {
+  LIGHT_LEVELS,
+  lightLevelName,
+  lightStateName,
+  sightUnder,
+  type LightLevel,
+} from "@/lib/light-states";
+import { VISION_REFERENCE } from "@/data/combat-variants";
 import { baseActionStateName } from "@/lib/base-action-states";
 import { wishStressStateName } from "@/lib/wish-state";
 import type { CharacterDoc } from "@/types/character";
@@ -508,7 +516,8 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
     surpriseStateName(sourceId) ??
     baseActionStateName(sourceId) ??
     wishStressStateName(sourceId) ??
-    situationalStateName(sourceId);
+    situationalStateName(sourceId) ??
+    lightStateName(sourceId);
   if (state) return state[locale];
   // Race-trait session ids carry the `race:<raceId>:<trait.id>` shape — resolve
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a
@@ -554,6 +563,35 @@ export function situationChipsView(locale: Locale): SituationChipVM[] {
     name: state.label[locale],
     summary: state.reference.map((line) => line.summary[locale]).join(" "),
     notes: state.notes.map((note) => ({ id: note.id, text: note.summary[locale] })),
+  }));
+}
+
+export interface LightChipVM {
+  level: LightLevel;
+  name: string;
+  /** What the level does to this hero: the SRD line, or, with Darkvision, the i18n
+   *  key the chip renders with the range. */
+  note:
+    | { text: string }
+    | { key: "combat.lightDarkvisionDim" | "combat.lightDarkvisionDark" };
+}
+
+/** The light chips for a hero with this Darkvision range (feet). */
+export function lightChipsView(locale: Locale, darkvisionFt: number): LightChipVM[] {
+  const reference = (id: string): string =>
+    VISION_REFERENCE.find((note) => note.id === id)?.summary[locale] ?? "";
+  return LIGHT_LEVELS.map((level) => ({
+    level,
+    name: lightLevelName(level)[locale],
+    note:
+      darkvisionFt <= 0
+        ? { text: reference(level === "dim" ? "dim-light" : "darkness") }
+        : {
+            key:
+              sightUnder(level, darkvisionFt) === null
+                ? ("combat.lightDarkvisionDim" as const)
+                : ("combat.lightDarkvisionDark" as const),
+          },
   }));
 }
 

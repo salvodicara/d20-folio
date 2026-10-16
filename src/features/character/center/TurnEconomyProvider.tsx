@@ -63,6 +63,7 @@ import {
   type TargetStep,
 } from "@/features/character/center/target-step";
 import { HELP_ACTION_ID, helpBenefit } from "@/lib/play/help";
+import { checkSucceeded, type CheckResult } from "@/lib/play/checks";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
 import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
@@ -888,6 +889,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       slot: action.type,
       ...(attackOf ? { attackOf } : {}),
       ...(targets.length > 0 ? { targets: [...targets] } : {}),
+      ...(action.checkResult ? { check: action.checkResult } : {}),
     });
     offerFollowUps(action, targets, loggedId, occurrenceId);
     return () => {
@@ -920,6 +922,21 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       c2.removeLogEntry(loggedId);
       useDamageTrayStore.getState().withdraw(loggedId);
     };
+  }
+
+  /** "Search: Perception 17 vs DC 15, success": the toast of a use with its check. */
+  function localizeCheckToast(name: string, check: CheckResult): string {
+    const skill = t(`skills.${check.skill}`);
+    const succeeded = checkSucceeded(check);
+    return succeeded === undefined
+      ? t("combat.checkToast", { name, skill, total: check.total })
+      : t("combat.checkDcToast", {
+          name,
+          skill,
+          total: check.total,
+          dc: check.dc,
+          verdict: t(succeeded ? "combatLog.checkSuccess" : "combatLog.checkFailure"),
+        });
   }
 
   /** Open the damage tray when the use has something to apply to its targets. */
@@ -1189,6 +1206,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       action.id === HELP_ACTION_ID
         ? helpBenefit(applyResolution?.targets ?? [], targetRoster().rows)
         : null;
+    const check = action.checkResult;
     const message = tempGain
       ? t("combat.useGainedTempHp", { name: action.name, amount: tempGain.amount })
       : helped
@@ -1198,7 +1216,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               name: helped.name,
             }
           )
-        : t("combat.actionUsedToast", { name: action.name });
+        : check
+          ? localizeCheckToast(action.name, check)
+          : t("combat.actionUsedToast", { name: action.name });
     // Register on the undo stack: `execute` deducts the cost + appends into the
     // slot, bailing (null) if the budget is already full (the card guard should
     // prevent this, but never trust the view — nothing spent then). Redo re-runs it.

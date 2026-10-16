@@ -134,3 +134,35 @@ export const ATTACK_SITUATION_REFERENCE: ReadonlyArray<CombatVariantNote> = [
     },
   },
 ];
+
+/**
+ * Light and vision (SRD 5.2.1 rules glossary "Dim Light", "Darkness", "Lightly
+ * Obscured", "Heavily Obscured", "Darkvision", "Passive Perception"): the one-tap
+ * light chip (`src/lib/light-states.ts`) takes its names and sentences from here.
+ */
+export const VISION_REFERENCE: ReadonlyArray<CombatVariantNote> = [
+  {
+    id: "dim-light",
+    name: { en: "Dim Light", it: "Luce Fioca" },
+    summary: {
+      en: "Dim Light is Lightly Obscured: Disadvantage on Wisdom (Perception) checks to see in it, and passive Perception −5.",
+      it: "La Luce Fioca è Leggermente Oscurata: Svantaggio alle prove di Saggezza (Percezione) per vedere al suo interno, e Percezione passiva −5.",
+    },
+  },
+  {
+    id: "darkness",
+    name: { en: "Darkness", it: "Oscurità" },
+    summary: {
+      en: "Darkness is Heavily Obscured: you have the Blinded condition when trying to see in it; you fail checks that need sight and your attack rolls have Disadvantage.",
+      it: "L'Oscurità è Pesantemente Oscurata: hai la condizione Accecato quando cerchi di vedere al suo interno; fallisci le prove che richiedono la vista e i tuoi tiri per colpire hanno Svantaggio.",
+    },
+  },
+  {
+    id: "darkvision",
+    name: { en: "Darkvision", it: "Scurovisione" },
+    summary: {
+      en: "Within its range you see in Dim Light as if it were Bright Light, and in Darkness as if it were Dim Light (in shades of gray).",
+      it: "Entro il suo raggio vedi in Luce Fioca come in Luce Intensa e nell'Oscurità come in Luce Fioca (in sfumature di grigio).",
+    },
+  },
+];

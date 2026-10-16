@@ -93,7 +93,11 @@ import {
   injectExpandedSpells,
 } from "@/lib/expanded-spells";
 import { useToastStore } from "@/stores/toastStore";
-import { registerUndoableToast, useUndoStore } from "@/stores/undoStore";
+import {
+  registerUndoableToast,
+  setRemoteUndoGuard,
+  useUndoStore,
+} from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import {
@@ -1021,6 +1025,82 @@ function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
     // The session log is a record beside the sheet; it never blocks play.
   }
 }
+
+/**
+ * Photograph the whole owner state before a multi-part commit (a rest). After the
+ * commit, `seal()` returns its causal undo: the exact prior state comes back only
+ * while the post-commit state is still current, and every log line the commit added
+ * is also taken back out of the campaign session log. `seal()` returns null when
+ * the commit changed nothing, so a refused commit gets no undo.
+ */
+export function beginWholeStateUndo(): (() => (() => boolean) | null) | null {
+  const get = useCharacterStore.getState;
+  const before = captureD20Command(get());
+  if (!before) return null;
+  return () => {
+    const after = captureD20Command(get());
+    if (!after || sameD20CommandSnapshot(before, after)) return null;
+    const restore = causalD20CommandUndo(before, after, get);
+    const characterId = after.character.id;
+    const kept = new Set(before.character.session.logEntries.map((entry) => entry.id));
+    const added = after.character.session.logEntries
+      .map((entry) => entry.id)
+      .filter((id) => !kept.has(id));
+    return () => {
+      if (!restore()) return false;
+      for (const id of added) notifyPlayLog((sink) => sink.removed(characterId, id));
+      return true;
+    };
+  };
+}
+
+/** The combat vitals another device may write (the campaign peer-write fields). */
+function remoteWritableVitals(state: CharacterState): Record<string, unknown> | null {
+  const session = state.character?.session;
+  if (!session) return null;
+  return {
+    hp: session.hp,
+    deathSaves: [session.deathSucc, session.deathFail],
+    conditions: session.conditions,
+    bardicInspirationDie: session.bardicInspirationDie ?? "",
+    heroicInspiration: session.inspiration,
+  };
+}
+
+/**
+ * Run an undo whose entry another device touched since it was registered. The undo
+ * runs; if it changed one of the vitals that were changed remotely, everything it
+ * did is put back (state, persistence, and the session-log lines it removed or
+ * added) and the undo reports a refusal, so a DM's later write is never overwritten.
+ */
+function guardedRemoteUndo(undo: () => unknown, touched: readonly string[]): unknown {
+  const get = useCharacterStore.getState;
+  const seal = beginWholeStateUndo();
+  const before = remoteWritableVitals(get());
+  const linesBefore = get().character?.session.logEntries ?? [];
+  const result = undo();
+  if (result === false) return false;
+  const after = remoteWritableVitals(get());
+  const overwrites = touched.some(
+    (root) => JSON.stringify(before?.[root]) !== JSON.stringify(after?.[root])
+  );
+  if (!overwrites) return result;
+  // The lines the undo took out: once it is put back they return, so the campaign
+  // session log hears them again.
+  const linesAfterUndo = new Set(
+    (get().character?.session.logEntries ?? []).map((entry) => entry.id)
+  );
+  const removedByUndo = linesBefore.filter((entry) => !linesAfterUndo.has(entry.id));
+  const putBack = seal?.();
+  const characterId = get().character?.id;
+  if (putBack && putBack() && characterId) {
+    for (const entry of removedByUndo)
+      notifyPlayLog((sink) => sink.added(characterId, entry));
+  }
+  return false;
+}
+
+setRemoteUndoGuard(guardedRemoteUndo);
 
 /** The live encounter round of a character in a DM-run fight, or null when it is not
  *  in one. Registered by the combat status store (`global-combat-context`). */

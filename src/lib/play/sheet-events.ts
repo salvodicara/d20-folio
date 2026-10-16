@@ -6,6 +6,7 @@
  * what happened at the table.
  */
 import type { CoverStateLevel } from "@/lib/cover-states";
+import type { LightLevel } from "@/lib/light-states";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { SituationId } from "@/lib/situational-states";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -20,6 +21,7 @@ import {
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
 import { setCover, type CoverUntil } from "./cover";
+import { setLight } from "./light";
 import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { dropBeastForm } from "./forms";
@@ -74,6 +76,7 @@ export type SheetEvent =
       until: SituationUntil | undefined;
     }
   | { kind: "end-fight-situations" }
+  | { kind: "set-light"; level: LightLevel | null }
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
@@ -146,6 +149,8 @@ export function applySheetEvent(
       return withSession(setSituation(doc, event.situation, event.lit, event.until));
     case "end-fight-situations":
       return withSession(endFightSituations(doc));
+    case "set-light":
+      return withSession(setLight(doc, event.level));
     case "drop-beast-form":
       return dropBeastForm(doc);
     case "set-readied-spell":

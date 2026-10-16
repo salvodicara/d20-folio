@@ -338,3 +338,82 @@ describe("noteDraft — a free-text line anyone at the table adds to the log", (
     );
   });
 });
+
+describe("encounterFeed — a monster's action on the DM's tray", () => {
+  // The DM's tray books the damage with its attacker (the chronicle beat carries
+  // it) and declares each target's result as an action line by the same creature.
+  const scimitar = { custom: "Scimitar" };
+  const struck = (id: string, target: string, amount: number) =>
+    item(id, DM, {
+      kind: "damage",
+      amount,
+      target,
+      actor: "monster-1",
+      source: scimitar,
+    });
+  const result = (
+    id: string,
+    targets: string[],
+    outcome: "hit" | "miss" | "critical" | "saved" | "failed",
+    actor = "monster-1"
+  ) => item(id, DM, { kind: "action", actor, source: scimitar, targets, outcome });
+
+  it("a hit folds into its attributed damage line: 'Goblin → Lyra: hit, 7'", () => {
+    const lines = feed(
+      round(1),
+      result("a", ["pc-lyra"], "hit"),
+      struck("d", "pc-lyra", 7)
+    );
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.event).toEqual({
+      kind: "damage",
+      amount: 7,
+      target: "pc-lyra",
+      actor: "monster-1",
+      source: scimitar,
+      outcome: "hit",
+    });
+    expect(lines[0] && needsAttribution(lines[0])).toBe(false);
+  });
+
+  it("each target keeps its own result; a miss stays its own line", () => {
+    const lines = feed(
+      round(1),
+      result("a1", ["pc-lyra"], "critical"),
+      result("a2", ["pc-bren"], "miss"),
+      struck("d1", "pc-lyra", 12)
+    );
+    expect(lines.map((line) => line.id)).toEqual(["a2", "d1"]);
+    expect(lines[1]?.event).toMatchObject({ outcome: "critical", amount: 12 });
+  });
+
+  it("a failed save folds without inventing an attack result", () => {
+    const lines = feed(
+      round(1),
+      result("a", ["pc-lyra"], "failed"),
+      struck("d", "pc-lyra", 59)
+    );
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.event).not.toHaveProperty("outcome");
+  });
+
+  it("another creature's declaration never claims the line", () => {
+    const lines = feed(
+      round(1),
+      result("a", ["pc-lyra"], "hit", "monster-2"),
+      struck("d", "pc-lyra", 7)
+    );
+    expect(lines.map((line) => line.id)).toEqual(["a", "d"]);
+  });
+
+  it("the monster's result never claims a different, unattributed drop", () => {
+    const lines = feed(
+      round(1),
+      result("a", ["pc-lyra"], "hit"),
+      dmg("manual", "pc-lyra", 3),
+      struck("d", "pc-lyra", 7)
+    );
+    expect(lines.map((line) => line.id)).toEqual(["manual", "d"]);
+    expect(lines[0] && needsAttribution(lines[0])).toBe(true);
+  });
+});

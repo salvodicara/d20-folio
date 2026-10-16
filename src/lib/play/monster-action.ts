@@ -1,0 +1,160 @@
+/**
+ * A monster's printed attack or save as one tap on the DM's encounter card (owner
+ * 2026-10-13): the stat block's entry becomes the same damage tray a player's use
+ * opens (`damage-tray.ts`), asking only what the print leaves to the table — the
+ * rolled total, and per target Hit · Miss · Critical or Saved.
+ *
+ * Pure: the entry is read through its Activity (`translateMonsterEntry`), the plan is
+ * the tray's own {@link DamageTrayPlan}, and Apply's per-target result is plain
+ * arithmetic over the rolled total. Prose entries (Multiattack, Spellcasting) stay
+ * text: the card shows Multiattack as a reference line.
+ */
+import type { AbilityCode, MonsterEntry, MonsterStatBlock } from "@/data/types";
+import {
+  translateMonsterEntry,
+  type Activity,
+  type ActivityEffect,
+  type MonsterSection,
+} from "@/lib/activities";
+import type { DamageType } from "@/types/damage";
+
+import {
+  rowAmount,
+  rowConditions,
+  type DamageTrayPlan,
+  type TrayRow,
+} from "./damage-tray";
+
+/** The stat-block sections a one-tap action comes from, most used first. */
+export const MONSTER_ACTION_SECTIONS: readonly MonsterSection[] = [
+  "actions",
+  "bonusActions",
+  "reactions",
+  "legendaryActions",
+  "traits",
+];
+
+/** One printed attack or save of a monster. */
+export interface MonsterAction {
+  section: MonsterSection;
+  entryId: string;
+  activity: Activity;
+  /** The printed to-hit bonus (an attack). */
+  toHit?: number;
+  /** The printed save (a save). */
+  save?: { ability: AbilityCode; dc: number };
+}
+
+type DamageEffect = Extract<ActivityEffect, { kind: "damage" }>;
+
+const damageEffects = (activity: Activity): DamageEffect[] =>
+  activity.effects.filter((effect): effect is DamageEffect => effect.kind === "damage");
+
+function fromEntry(
+  monsterId: string,
+  section: MonsterSection,
+  entry: MonsterEntry
+): MonsterAction | null {
+  if (entry.kind !== "attack" && entry.kind !== "save") return null;
+  const { activity } = translateMonsterEntry(monsterId, section, entry);
+  const bonus = activity.attack?.bonus;
+  const dc = activity.save?.dc;
+  return {
+    section,
+    entryId: entry.id,
+    activity,
+    ...(bonus?.kind === "printed" ? { toHit: bonus.value } : {}),
+    ...(activity.save && dc?.kind === "printed"
+      ? { save: { ability: activity.save.ability, dc: dc.value } }
+      : {}),
+  };
+}
+
+/** Every printed attack and save of the stat block, in section then print order. */
+export function monsterActions(block: MonsterStatBlock): MonsterAction[] {
+  return MONSTER_ACTION_SECTIONS.flatMap((section) =>
+    (block[section] ?? []).flatMap((entry) => {
+      const action = fromEntry(block.id, section, entry);
+      return action ? [action] : [];
+    })
+  );
+}
+
+/** The printed dice of each damage clause ("1d6+2"), print order. */
+export function monsterActionDice(action: MonsterAction): string[] {
+  return damageEffects(action.activity).flatMap((effect) =>
+    effect.dice?.dice ? [effect.dice.dice] : []
+  );
+}
+
+/** The damage types of each printed clause (a use-time choice lists every option). */
+export function monsterActionDamageTypes(action: MonsterAction): DamageType[][] {
+  return damageEffects(action.activity).flatMap((effect) =>
+    effect.dice?.dice ? [[...(effect.types ?? [])]] : []
+  );
+}
+
+/** The tray for this action at these targets. */
+export function monsterTrayPlan(
+  action: MonsterAction,
+  targets: ReadonlyArray<string>
+): DamageTrayPlan {
+  const damage = damageEffects(action.activity);
+  const types = new Set<DamageType>();
+  let concrete = damage.length > 0;
+  for (const effect of damage) {
+    if (!effect.dice) continue;
+    if (effect.choose || effect.types?.length !== 1) concrete = false;
+    for (const type of effect.types ?? []) types.add(type);
+  }
+  const [only] = types;
+  const conditions = action.activity.effects.flatMap((effect) =>
+    effect.kind === "condition" && effect.apply.on === "failed-save"
+      ? effect.apply.options
+      : []
+  );
+  return {
+    effect: damage.length > 0 ? "damage" : null,
+    ...(concrete && types.size === 1 && only ? { damageType: only } : {}),
+    ...(action.save
+      ? {
+          save: {
+            ability: action.save.ability,
+            dc: action.save.dc,
+            onSave: damage.some((effect) => effect.onSave === "half") ? "half" : "none",
+          },
+        }
+      : {}),
+    ...(conditions.length > 0
+      ? { conditions: { options: conditions, pickOne: false } }
+      : {}),
+    ...(action.toHit !== undefined ? { attack: { onMiss: "none" as const } } : {}),
+    targets: [...targets],
+  };
+}
+
+/** What one target's row lands: the amount, the conditions, and the result the log
+ *  says (Hit · Miss · Critical for an attack, saved or failed for a save). */
+export interface MonsterTrayLanding {
+  targetId: string;
+  amount: number;
+  conditions: string[];
+  outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
+}
+
+export function monsterTrayLandings(
+  plan: DamageTrayPlan,
+  rows: ReadonlyArray<TrayRow>,
+  total: number
+): MonsterTrayLanding[] {
+  return rows.map((row) => {
+    const outcome =
+      row.attack ?? (plan.save ? (row.saved ? "saved" : "failed") : undefined);
+    return {
+      targetId: row.targetId,
+      amount: plan.effect ? rowAmount(total, row, plan) : 0,
+      conditions: rowConditions(row),
+      ...(outcome ? { outcome } : {}),
+    };
+  });
+}
