@@ -61,7 +61,9 @@ disagreeing.
    `dispatch` in development: its undo appends an `undo` entry and the sheet becomes the fold,
    but only when the log reproduces the live sheet (the shadow's parity); otherwise it restores
    today's snapshot. The difference shows on an older action's undo: only that event goes,
-   later ones stay. Production keeps the snapshot until the owner turns it on. Undo survives a
-   reload only once the entries are stored (step 5).
-5. **Storage.** One Firestore document per entry, plus a periodic checkpoint for fast load.
-   It needs a migration, so snapshot → dry-run → apply, with the owner's yes.
+   later ones stay. Production keeps the snapshot until the owner turns it on. The log lives
+   in memory: undo does not survive a reload, by the owner's choice (2026-10-16).
+5. **Storage: not planned.** The owner chose to keep the play log in memory (2026-10-16).
+   For the record, the cost it would have had: one write per sheet action, at most doubling a
+   game day's writes. A prototype (one document per entry under the character, ordered by
+   `serverAt`, owner-only, append-only) is on the closed PR #339 if that ever changes.
