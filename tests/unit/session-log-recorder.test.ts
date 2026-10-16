@@ -25,6 +25,9 @@ function setup() {
     nextDay: () => {
       clock = new Date(2026, 9, 9, 20, 0);
     },
+    aMinuteLater: () => {
+      clock = new Date(clock.getTime() + 60_000);
+    },
   };
 }
 
@@ -75,5 +78,21 @@ describe("session recorder: narrative overrides", () => {
       corrected: true,
       event: { text: "Yesterday's line, fixed" },
     });
+  });
+});
+
+describe("a fix to an older session leaves tonight's session the latest", () => {
+  it("writing into a named older session does not make it the current one", async () => {
+    const { store, recorder, nextDay, aMinuteLater } = setup();
+    const dm = recorder(DM);
+    const line = await dm.record({ kind: "note", text: "Yesterday" });
+    nextDay();
+    await dm.record({ kind: "note", text: "Tonight" });
+    aMinuteLater();
+    await dm.hide(line, { sessionId: "2026-10-08" });
+    expect(await store.latest()).toMatchObject({ id: "2026-10-09" });
+    // The next gesture still lands tonight.
+    await dm.record({ kind: "note", text: "Later tonight" });
+    expect(store.items("2026-10-09")).toHaveLength(2);
   });
 });

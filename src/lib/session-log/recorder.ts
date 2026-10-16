@@ -14,7 +14,10 @@ export interface SessionLogStore {
   latest(): Promise<SessionHead | null>;
   /** The newest sessions first, with their items (a one-shot read). */
   recent(limit: number): Promise<Array<SessionHead & { items: LogItem[] }>>;
-  append(sessionId: string, item: LogItem): Promise<void>;
+  /** `touch: false` appends without moving the session's `lastAt`: a fix written into
+   *  an older session must not make it the latest, or tonight's gestures would land
+   *  there. */
+  append(sessionId: string, item: LogItem, options?: { touch?: boolean }): Promise<void>;
   subscribe(
     sessionId: string,
     onItems: (items: LogItem[]) => void,
@@ -79,10 +82,15 @@ export function createSessionRecorder(deps: {
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const append = async (draft: Draft, options?: ItemOptions): Promise<string> => {
     const at = now();
-    const sessionId = options?.sessionId ?? nextSessionId(await deps.store.latest(), at);
+    const named = options?.sessionId;
+    const sessionId = named ?? nextSessionId(await deps.store.latest(), at);
     const id = options?.id ?? newId();
     const item: LogItem = { ...draft, id, by: deps.uid, at: at.getTime() };
-    await deps.store.append(sessionId, item);
+    await deps.store.append(
+      sessionId,
+      item,
+      named === undefined ? undefined : { touch: false }
+    );
     return item.id;
   };
   return {
@@ -119,10 +127,10 @@ export function createMemorySessionLogStore(): SessionLogStore & {
       heads.sort((a, b) => b.lastAt - a.lastAt);
       return Promise.resolve(heads.slice(0, limit));
     },
-    append(sessionId, item) {
+    append(sessionId, item, options) {
       const log = logs.get(sessionId) ?? { items: [], lastAt: 0 };
       if (!log.items.some((existing) => existing.id === item.id)) log.items.push(item);
-      log.lastAt = Math.max(log.lastAt, item.at);
+      if (options?.touch !== false) log.lastAt = Math.max(log.lastAt, item.at);
       logs.set(sessionId, log);
       for (const listener of listeners.get(sessionId) ?? []) listener([...log.items]);
       return Promise.resolve();
