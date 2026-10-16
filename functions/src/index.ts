@@ -23,7 +23,7 @@
  * for the exact owner setup runbook.
  */
 
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
 import { defineSecret } from "firebase-functions/params";
@@ -51,6 +51,7 @@ import {
   type CampaignLike,
 } from "./delete-user-plan";
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
+import { syncRoleClaims } from "./role-claims";
 import {
   parseSharePath,
   parseOgImagePath,
@@ -223,6 +224,20 @@ export const onUserCreated = onDocumentCreated(
     }
   }
 );
+
+// ── Phase 5 — roles as Auth custom claims ───────────────────────────────────
+/**
+ * Mirror the user doc's `role` / `status` into the account's custom claims, which the
+ * security rules read instead of `get()`-ing this doc on every request. A write that
+ * changes neither (the sign-in `lastActiveAt` bump) costs nothing. See role-claims.ts.
+ */
+export const onUserRoleWritten = onDocumentWritten("users/{uid}", async (event) => {
+  const uid = event.params.uid;
+  const before = event.data?.before.exists ? event.data.before.data() : undefined;
+  const after = event.data?.after.exists ? event.data.after.data() : undefined;
+  const result = await syncRoleClaims(getAuth(), uid, before, after);
+  if (result !== "unchanged") logger.info("role claims synced", { uid, result });
+});
 
 // ── ADMIN — destructive account deletion (admin-godmode part b) ─────────────
 /**

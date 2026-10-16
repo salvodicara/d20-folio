@@ -8,7 +8,7 @@
  * EMULATOR-DEPENDENT — not part of the plain Vitest unit suite; it runs through
  *
  *     pnpm test:rules
- *       → firebase emulators:exec --only firestore,storage \
+ *       → firebase emulators:exec --only auth,firestore,storage \
  *           'pnpm exec vitest run --config vitest.rules.config.ts'
  *
  * which exports `FIRESTORE_EMULATOR_HOST`, so the Admin SDK needs no credential.
