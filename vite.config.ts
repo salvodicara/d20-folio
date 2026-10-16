@@ -13,7 +13,16 @@ import {
   packMonsterArtAliasTarget,
   packEnProseAliasTarget,
   packMonstersAliasTarget,
+  packRuntimeMode,
 } from "./scripts/content-pack-mode.ts";
+
+// The production build downloads the pack at runtime, so it must know which
+// version to ask for (`scripts/pack/emit-pack.ts` prints it).
+if (packRuntimeMode() && !/^[0-9a-f]{16}$/.test(process.env.VITE_PACK_VERSION ?? "")) {
+  throw new Error(
+    "VITE_CONTENT_PACK=runtime needs VITE_PACK_VERSION (the emitted pack's version)."
+  );
+}
 
 // i18n build-time LEAK-LOCK (`docs/ARCHITECTURE.md` → i18n-completeness lock 6): fail `vite build` RED on
 // ANY untranslated string. Runs the ONE shared detector set (`scripts/i18n/` —
@@ -161,7 +170,7 @@ export default defineConfig({
           "**/alegreya-cyrillic*",
           "**/alegreya-greek*",
           "**/alegreya-vietnamese*",
-          // PRE-GA item 3 (the first-load precache trim, `PROGRESS.md` → the
+          // PRE-GA item 3 (the first-load precache trim, the soft-launch charter → the
           // soft-launch charter): the 12 full-bleed scene/backdrop plates
           // (`public/assets/backgrounds/*.webp`, ~1.3 MiB combined, each
           // 76–176 KiB — home hero, login, campaign hall, compendium/roster/

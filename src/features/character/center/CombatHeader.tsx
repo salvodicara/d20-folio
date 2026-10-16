@@ -86,6 +86,7 @@ import { HeaderHpControl } from "./HeaderHpControl";
 import { HoverTip } from "./HoverTip";
 import { HeaderXp, HeaderXpStart } from "./HeaderXp";
 import { xpProgress } from "@/lib/experience";
+import { usesMetric } from "@/lib/locale";
 
 /** Folio modifier convention: U+2212 minus, explicit + for non-negatives. */
 function fmtMod(mod: number): string {
@@ -707,7 +708,7 @@ export function CombatHeader() {
                 value={speedEditValue}
                 computedValue={computedSpeedLocale}
                 min={0}
-                max={locale === "it" ? 99 : 300}
+                max={usesMetric(locale) ? 99 : 300}
                 format={() => formatSpeed(speedFt, locale)}
                 onChange={(v) =>
                   patchCharacter({

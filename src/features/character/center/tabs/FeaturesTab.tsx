@@ -567,9 +567,7 @@ export function FeaturesTab() {
       const source = feat
         ? t(`feats.category_${feat.category}`)
         : raceTrait
-          ? locale === "it"
-            ? "Tratto Razziale"
-            : "Racial Trait"
+          ? t("features.racialTrait")
           : classFeature?.subclass
             ? `${localizeSubclassName(classFeature.subclass, locale)} ${classFeature.level}`
             : `${localizeClassName(classFeature?.class ?? "?", locale)} ${classFeature?.level ?? "?"}`;

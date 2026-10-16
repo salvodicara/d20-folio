@@ -6,10 +6,13 @@ d20 Folio is a digital character sheet and session companion for the owner's two
 who play at the table or on Owlbear. **`main` is the product and is live**: friends play on it
 with real characters. Read before product work:
 
-- [docs/VISION.md](docs/VISION.md) — what Folio is becoming: the session log, minimal
-  declaration, the phased scope and the interaction decisions.
-- [docs/GOLDEN_RULES.md](docs/GOLDEN_RULES.md) — the owner's taste and the way of
-  working, approved 2026-10-08. The newest dated owner line wins.
+- [docs/strategy/2026-10-16-product-brief.md](docs/strategy/2026-10-16-product-brief.md) — who
+  Folio is for, the promise, licensing and money (owner, 2026-10-16); the
+  [re-foundation plan](docs/strategy/2026-10-16-refoundation-plan.md) sequences the work.
+- [docs/VISION.md](docs/VISION.md) — the session log, minimal declaration and the interaction
+  decisions.
+- [docs/GOLDEN_RULES.md](docs/GOLDEN_RULES.md) — the owner's taste and the way of working. The
+  newest dated owner line wins.
 
 The `v2` rewrite is archived (tag `archive/2026-10-08-v2`): a quarry for specific parts, recovered
 one at a time onto `main`, never a base to resume. Its docs describe that branch, not this one.
@@ -30,15 +33,17 @@ one at a time onto `main`, never a base to resume. Its docs describe that branch
 
 ## Owner-gated, always
 
-- Push to `main`, deploy (`just deploy`, `firebase deploy`, the deploy workflow) and release.
-- Live data: stored characters are never lost. Migrations go snapshot → dry-run → idempotent apply
-  → verify; applying to real data needs the owner's yes each time.
-- Licensing: SRD material is public; everything else lives in the private `content-pack/`. Run
-  `just ci-srd-only` when that boundary is touched; update the pack in the same change when a seam
-  it consumes moves.
+Each of these has a skill holding its steps; follow it.
+
+- Push to `main`, deploy and release: `deploy`, `release`.
+- Live data: stored characters are never lost. Snapshot → dry-run → owner's yes → idempotent apply →
+  verify, every time: `live-data-migration`.
+- Licensing: SRD material is public; everything else lives in the private `content-pack/` and
+  reaches players only through the `@pack` seam: `srd-boundary`.
 - Every user-visible string ships in English and Italian; store IDs, render labels.
 - Secrets never enter the repo, logs, docs or agent memory.
 
-The production-code docs (`docs/ARCHITECTURE.md`, `docs/MECHANICS.md`, `DESIGN.md`, `PRODUCT.md`)
-describe today's code but predate the 2026-10-08 direction; when they disagree with the two
-documents above, those win and the old doc gets fixed in the same change.
+The production-code docs (`docs/ARCHITECTURE.md`, `docs/MECHANICS.md`, `DESIGN.md`) describe
+today's code but predate the 2026-10 direction; when they disagree with the documents above, those
+win and the old doc gets fixed in the same change. `PRODUCT.md` is the design brief the `impeccable`
+skill reads; it follows the product brief.

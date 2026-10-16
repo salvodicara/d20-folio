@@ -19,6 +19,7 @@
  * Paths are POSIX, repo-root-relative (Vitest matches globs against these).
  */
 export const JSDOM_TS_TESTS: readonly string[] = [
+  "tests/unit/account-export.test.ts",
   "tests/unit/character-io.test.ts",
   "tests/unit/collect-debug-context.test.ts",
   "tests/unit/compendium-deeplink.test.ts",

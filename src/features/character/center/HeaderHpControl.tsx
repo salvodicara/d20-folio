@@ -245,6 +245,7 @@ export function HeaderHpControl() {
               <BloodiedMark
                 label={t("character.health.bloodied")}
                 hint={t("character.health.bloodiedHint")}
+                glossed
               />
             ) : null
           }

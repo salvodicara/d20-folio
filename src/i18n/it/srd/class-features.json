@@ -7,11 +7,11 @@
     "label": "Frenesia"
   },
   "barbarian-berserker-intimidating-presence": {
-    "description": "Come Azione Bonus, incuti terrore negli altri con la tua presenza minacciosa e la tua potenza primordiale. Ogni creatura a tua scelta in un'Emanazione di 30 piedi che origina da te deve superare un tiro salvezza su Saggezza (CD = 8 + il tuo modificatore di Forza + il tuo bonus di competenza) o subire la condizione Spaventato per 1 minuto. Alla fine di ogni turno della creatura Spaventata, essa ripete il tiro salvezza, terminando l'effetto su di sé con un successo. Una volta usata questa caratteristica, non puoi riusarla fino a un Riposo Lungo, a meno che tu non spenda un uso della tua Ira (nessuna azione richiesta) per ripristinarla.",
+    "description": "Come Azione Bonus, incuti terrore negli altri con la tua presenza minacciosa e la tua potenza primordiale. Ogni creatura a tua scelta in un'Emanazione di 9 metri che origina da te deve superare un tiro salvezza su Saggezza (CD = 8 + il tuo modificatore di Forza + il tuo bonus di competenza) o subire la condizione Spaventato per 1 minuto. Alla fine di ogni turno della creatura Spaventata, essa ripete il tiro salvezza, terminando l'effetto su di sé con un successo. Una volta usata questa caratteristica, non puoi riusarla fino a un Riposo Lungo, a meno che tu non spenda un uso della tua Ira (nessuna azione richiesta) per ripristinarla.",
     "name": "Presenza Intimidatoria"
   },
   "barbarian-berserker-intimidating-presence.mechanics.actions.0": {
-    "description": "Ogni nemico in un'Emanazione di 30 piedi fa un TS Saggezza (CD 8 + mod For + bonus di competenza) o è Spaventato per 1 min (ritira il TS alla fine di ogni suo turno).",
+    "description": "Ogni nemico in un'Emanazione di 9 metri fa un TS Saggezza (CD 8 + mod For + bonus di competenza) o è Spaventato per 1 min (ritira il TS alla fine di ogni suo turno).",
     "summary": "Nemici entro 9 m: TS Sag o Spaventati per 1 min"
   },
   "barbarian-berserker-mindless-rage": {
@@ -22,11 +22,11 @@
     "label": "Ira Incontenibile"
   },
   "barbarian-berserker-retaliation": {
-    "description": "Quando subisci danni da una creatura entro 5 piedi da te, puoi usare la tua reazione per effettuare un attacco con arma in mischia contro quella creatura.",
+    "description": "Quando subisci danni da una creatura entro 1,5 metri da te, puoi usare la tua reazione per effettuare un attacco con arma in mischia contro quella creatura.",
     "name": "Ritorsione"
   },
   "barbarian-berserker-retaliation.mechanics.actions.0": {
-    "description": "Effettua un attacco in mischia contro una creatura che ti ha danneggiato entro 5 piedi."
+    "description": "Effettua un attacco in mischia contro una creatura che ti ha danneggiato entro 1,5 metri."
   },
   "barbarian-brutal-strike": {
     "description": "Se usi Attacco Irruento, puoi rinunciare al Vantaggio su un tiro per colpire basato sulla Forza nel tuo turno. Se l'attacco scelto colpisce, il bersaglio subisce 1d10 danni extra e puoi causare un effetto: Colpo Possente (spingi di 4,5 m, poi muoviti fino a metà velocità verso il bersaglio) o Colpo al Tendine (riduci la velocità di 4,5 m fino all'inizio del tuo turno successivo).",
@@ -48,7 +48,7 @@
     "name": "Attacco Extra"
   },
   "barbarian-fast-movement": {
-    "description": "La tua velocità aumenta di 10 piedi mentre non indossi armatura pesante.",
+    "description": "La tua velocità aumenta di 3 metri mentre non indossi armatura pesante.",
     "name": "Movimento Veloce"
   },
   "barbarian-feral-instinct": {
@@ -379,7 +379,7 @@
     "label": "Tropicale"
   },
   "druid-land-lands-aid": {
-    "description": "Come Azione Magica, spendi un uso di Forma Selvatica e scegli un punto entro 60 piedi. In una Sfera di raggio 3 metri, ogni creatura a tua scelta effettua un tiro salvezza su Costituzione contro la tua CD degli incantesimi, subendo 2d6 danni Necrotici con un fallimento (metà con successo), e una creatura a tua scelta recupera 2d6 PF. Danni e cura aumentano a 3d6 al livello 10 da Druido e 4d6 al livello 14.",
+    "description": "Come Azione Magica, spendi un uso di Forma Selvatica e scegli un punto entro 18 metri. In una Sfera di raggio 3 metri, ogni creatura a tua scelta effettua un tiro salvezza su Costituzione contro la tua CD degli incantesimi, subendo 2d6 danni Necrotici con un fallimento (metà con successo), e una creatura a tua scelta recupera 2d6 PF. Danni e cura aumentano a 3d6 al livello 10 da Druido e 4d6 al livello 14.",
     "name": "Ausilio dalla Terra"
   },
   "druid-land-lands-aid.mechanics.actions.0": {
@@ -391,12 +391,12 @@
     "name": "Recupero Naturale"
   },
   "druid-land-natures-sanctuary": {
-    "description": "Come Azione Magica, spendi un uso di Forma Selvatica per evocare alberi e rampicanti spettrali in un Cubo di 4,5 metri entro 120 piedi per 1 minuto (termina se sei Incapacitato o muori). Tu e i tuoi alleati avete Copertura Parziale nell'area, e i tuoi alleati ottengono lì la Resistenza attuale della tua Interdizione della Natura. Come Azione Bonus, puoi spostare il Cubo fino a 18 metri.",
+    "description": "Come Azione Magica, spendi un uso di Forma Selvatica per evocare alberi e rampicanti spettrali in un Cubo di 4,5 metri entro 36 metri per 1 minuto (termina se sei Incapacitato o muori). Tu e i tuoi alleati avete Mezza Copertura nell'area, e i tuoi alleati ottengono lì la Resistenza attuale della tua Interdizione della Natura. Come Azione Bonus, puoi spostare il Cubo fino a 18 metri.",
     "name": "Rifugio della Natura"
   },
   "druid-land-natures-sanctuary.mechanics.actions.0": {
-    "description": "Azione Magica, spendi Forma Selvatica: Cubo di 4,5 m, Copertura Parziale + condividi la Resistenza della Interdizione della Natura con gli alleati.",
-    "summary": "Spendi Forma Selvatica: Cubo 4,5 m di Copertura Parziale"
+    "description": "Azione Magica, spendi Forma Selvatica: Cubo di 4,5 m, Mezza Copertura + condividi la Resistenza della Interdizione della Natura con gli alleati.",
+    "summary": "Spendi Forma Selvatica: Cubo 4,5 m di Mezza Copertura"
   },
   "druid-land-natures-ward": {
     "description": "Sei immune alla condizione Avvelenato e hai Resistenza a un tipo di danno legato alla tua attuale scelta di terra: Arida — Fuoco, Polare — Freddo, Temperata — Fulmine, Tropicale — Veleno.",
@@ -575,7 +575,7 @@
     "name": "Corpo e Mente"
   },
   "monk-deflect-attacks": {
-    "description": "Quando un tiro per colpire ti colpisce e i suoi danni includono danni Contundenti, Perforanti o Taglienti, puoi effettuare una Reazione per ridurre quei danni di 1d10 + il tuo modificatore di Destrezza + il tuo livello da Monaco. Se riduci il danno a 0, puoi spendere 1 Punto Concentrazione per ridirigere parte della forza dell'attacco: scegli una creatura entro 5 piedi (se l'attacco era in mischia) o entro 60 piedi e non dietro Copertura Totale (se era a distanza). Quella creatura effettua un tiro salvezza su Destrezza o subisce danni del tipo dell'attacco pari a due tiri del tuo dado Arti Marziali + il tuo modificatore di Destrezza.",
+    "description": "Quando un tiro per colpire ti colpisce e i suoi danni includono danni Contundenti, Perforanti o Taglienti, puoi effettuare una Reazione per ridurre quei danni di 1d10 + il tuo modificatore di Destrezza + il tuo livello da Monaco. Se riduci il danno a 0, puoi spendere 1 Punto Concentrazione per ridirigere parte della forza dell'attacco: scegli una creatura entro 1,5 metri (se l'attacco era in mischia) o entro 18 metri e non dietro Copertura Totale (se era a distanza). Quella creatura effettua un tiro salvezza su Destrezza o subisce danni del tipo dell'attacco pari a due tiri del tuo dado Arti Marziali + il tuo modificatore di Destrezza.",
     "name": "Devia Attacchi"
   },
   "monk-deflect-attacks.mechanics.actions.0": {
@@ -734,7 +734,7 @@
     "name": "Difesa Senza Armatura"
   },
   "monk-unarmored-movement": {
-    "description": "La tua velocità aumenta di 10 piedi mentre non indossi armatura né impugni uno scudo. Questo bonus aumenta con i livelli da Monaco: +15 piedi al 6°, +20 piedi al 10°, +25 piedi al 14° e +30 piedi al 18° livello.",
+    "description": "La tua velocità aumenta di 3 metri mentre non indossi armatura né impugni uno scudo. Questo bonus aumenta con i livelli da Monaco: +4,5 metri al 6°, +6 metri al 10°, +7,5 metri al 14° e +9 metri al 18° livello.",
     "name": "Movimento Senza Armatura"
   },
   "monk-unarmored-movement.mechanics.rider": {
@@ -805,7 +805,7 @@
     "summary": "Aggiungi Car agli attacchi di un'arma per 10 minuti"
   },
   "paladin-devotion-smite-of-protection": {
-    "description": "La tua punizione magica ora irradia energia protettiva. Ogni volta che lanci Punizione Divina, tu e i tuoi alleati ottenete Copertura Parziale mentre vi trovate nella tua Aura di Protezione. L'aura mantiene questo beneficio fino all'inizio del tuo turno successivo.",
+    "description": "La tua punizione magica ora irradia energia protettiva. Ogni volta che lanci Punizione Divina, tu e i tuoi alleati ottenete Mezza Copertura mentre vi trovate nella tua Aura di Protezione. L'aura mantiene questo beneficio fino all'inizio del tuo turno successivo.",
     "name": "Punizione Protettiva"
   },
   "paladin-divine-smite": {
@@ -1062,7 +1062,7 @@
     "name": "Mente Sfuggente"
   },
   "rogue-sneak-attack": {
-    "description": "Una volta per turno, puoi infliggere danni extra a una creatura che colpisci con un attacco se hai Vantaggio al tiro per colpire o se un altro nemico del bersaglio è entro 5 piedi. Il danno extra è un numero di d6 pari alla metà del tuo livello da Ladro (arrotondato per eccesso). L'attacco deve usare un'arma con Accurata o a Distanza.",
+    "description": "Una volta per turno, puoi infliggere danni extra a una creatura che colpisci con un attacco se hai Vantaggio al tiro per colpire o se un altro nemico del bersaglio è entro 1,5 metri. Il danno extra è un numero di d6 pari alla metà del tuo livello da Ladro (arrotondato per eccesso). L'attacco deve usare un'arma con Accurata o a Distanza.",
     "name": "Attacco Furtivo"
   },
   "rogue-steady-aim": {
@@ -1095,11 +1095,11 @@
     "name": "Lavoro al Secondo Piano"
   },
   "rogue-thief-supreme-sneak": {
-    "description": "Ottieni l'opzione di Colpo Astuto Attacco Furtivo (Costo: 1d6). Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te se concludi il turno dietro una Copertura per Tre Quarti o una Copertura Totale.",
+    "description": "Ottieni l'opzione di Colpo Astuto Attacco Furtivo (Costo: 1d6). Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te se concludi il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
     "name": "Furtività Suprema"
   },
   "rogue-thief-supreme-sneak.grants.stealth-attack": {
-    "description": "Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te, a patto che tu concluda il turno dietro una Copertura per Tre Quarti o Totale.",
+    "description": "Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te, a patto che tu concluda il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
     "name": "Attacco Furtivo"
   },
   "rogue-thief-use-magic-device": {

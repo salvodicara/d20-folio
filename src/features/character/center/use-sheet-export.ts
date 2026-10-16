@@ -15,6 +15,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
+import { asLocale } from "@/lib/locale";
 
 export function useSheetExport(): {
   exportPdf: () => Promise<void>;
@@ -57,7 +58,7 @@ export function useSheetExport(): {
     const name = doc.character.name;
     try {
       const { downloadCharacterPdf } = await import("@/lib/pdf/character-pdf-export");
-      const locale = i18n.language === "it" ? "it" : "en";
+      const locale = asLocale(i18n.language);
       const { portraitDropped } = await downloadCharacterPdf(doc, locale, (key, opts) =>
         t(key, opts)
       );

@@ -15,6 +15,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { proseCorpus } from "@/lib/search";
 import { castingTimeI18nKey } from "@/lib/utils";
 import type { Locale } from "@/lib/locale";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 /** One render-ready spell entry for the wizard F morphing list. */
 export interface SpellPickVM {
@@ -58,7 +59,9 @@ export function spellPickVM(spell: SrdSpellData, locale: Locale): SpellPickVM {
     get searchDesc() {
       searchDesc ??= proseCorpus(
         this.description,
-        locale === "en" ? undefined : localizeSrd("spell", spell.id, "description", "en")
+        locale === SOURCE_LOCALE
+          ? undefined
+          : localizeSrd("spell", spell.id, "description", "en")
       );
       return searchDesc;
     },

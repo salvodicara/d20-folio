@@ -33,6 +33,7 @@ import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { ALL_SKILLS } from "@/lib/skills";
 import { netRollState } from "@/lib/condition-effects";
 import { conditionDamageDefenseRules } from "@/lib/condition";
+import { SOURCE_LOCALE, type Locale } from "@/lib/locale";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
 
@@ -243,11 +244,11 @@ function effectiveTokens(
 }
 
 /** The localized LANGUAGE roster — every catalogue id → its EN anchor + active-locale label. */
-function localizedLanguageRoster(locale: "en" | "it"): LocalizedOption[] {
+function localizedLanguageRoster(locale: Locale): LocalizedOption[] {
   return SRD_LANGUAGE_IDS.map((id) => {
     const en = srdEn("language", id, "name") ?? id;
     const label =
-      locale === "en"
+      locale === SOURCE_LOCALE
         ? en
         : hasSrd("language", id, "name", "it")
           ? localizeSrd("language", id, "name", "it")
@@ -263,11 +264,11 @@ function localizedLanguageRoster(locale: "en" | "it"): LocalizedOption[] {
  * active-locale name (EN when IT has not loaded). So a tool chip reads the SAME
  * canonical name the inventory item does — identical by construction.
  */
-function localizedToolRoster(locale: "en" | "it"): LocalizedOption[] {
+function localizedToolRoster(locale: Locale): LocalizedOption[] {
   return SRD_TOOLS_2024.map((tool) => {
     const en = srdEn("equipment", tool.id, "name") ?? tool.id;
     const label =
-      locale === "en"
+      locale === SOURCE_LOCALE
         ? en
         : hasSrd("equipment", tool.id, "name", "it")
           ? localizeSrd("equipment", tool.id, "name", "it")
@@ -285,7 +286,7 @@ export function effectiveLanguageTokens(
   languageIds: ReadonlyArray<string>,
   customLanguages: ReadonlyArray<string>,
   aggregate: Pick<AggregatedGrants, "languages">,
-  locale: "en" | "it"
+  locale: Locale
 ): EffectiveProficiencyToken[] {
   return effectiveTokens(
     languageIds,
@@ -307,7 +308,7 @@ export function effectiveToolTokens(
   toolProficiencyIds: ReadonlyArray<string>,
   customToolProficiencies: ReadonlyArray<string>,
   aggregate: Pick<AggregatedGrants, "toolProficiencies">,
-  locale: "en" | "it"
+  locale: Locale
 ): EffectiveProficiencyToken[] {
   return effectiveTokens(
     toolProficiencyIds,
@@ -332,7 +333,7 @@ export function displayLanguages(
   languageIds: ReadonlyArray<string>,
   customLanguages: ReadonlyArray<string>,
   aggregate: Pick<AggregatedGrants, "languages">,
-  locale: "en" | "it"
+  locale: Locale
 ): string {
   return joinConcrete(
     effectiveLanguageTokens(languageIds, customLanguages, aggregate, locale)
@@ -345,7 +346,7 @@ export function displayToolProficiencies(
   toolProficiencyIds: ReadonlyArray<string>,
   customToolProficiencies: ReadonlyArray<string>,
   aggregate: Pick<AggregatedGrants, "toolProficiencies">,
-  locale: "en" | "it"
+  locale: Locale
 ): string {
   return joinConcrete(
     effectiveToolTokens(toolProficiencyIds, customToolProficiencies, aggregate, locale)

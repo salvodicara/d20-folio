@@ -19,6 +19,7 @@ import { join } from "node:path";
 import { srcFiles, readSrc } from "./__helpers__/src-files";
 import i18n from "@/i18n";
 import { SRD_CONDITIONS } from "@/data/conditions";
+import { BASE_ACTIONS } from "@/lib/smart-tracker";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
@@ -105,12 +106,16 @@ describe("glossary catalogue — completeness (table-driven)", () => {
       .filter((p) => !p.includes(i18nDir))
       .map((p) => readSrc(p))
       .join("\n");
-    // SRD condition ids are wired by id (ConditionEditor's chip passes its own
-    // id as the term); glossary-conditions.guard pins that set.
-    const conditionIds = new Set(SRD_CONDITIONS.map((c) => c.id));
+    // SRD condition and base action ids are wired by id (the condition chip and
+    // the base action card pass their own id as the term); the
+    // glossary-conditions and glossary-actions guards pin those sets.
+    const wiredById = new Set<string>([
+      ...SRD_CONDITIONS.map((c) => c.id),
+      ...BASE_ACTIONS.map((a) => a.id),
+    ]);
     const unused = TERM_IDS.filter(
       (id) =>
-        !conditionIds.has(id) &&
+        !wiredById.has(id) &&
         !corpus.includes(`term="${id}"`) &&
         !corpus.includes(`term: "${id}"`)
     );
