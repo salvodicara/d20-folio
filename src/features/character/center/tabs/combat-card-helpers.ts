@@ -45,6 +45,7 @@ export const BASE_ACTIONS_NO_CHIP: ReadonlySet<string> = new Set([
   "base-utilize", // "Utilize" / "Utilizza" — same root as "Utilize" / "Utilizzo" (RA-20)
   "base-grapple", // "Grapple" / "Afferra" — same root as "Grapple" / "Afferrare"
   "base-shove", // "Shove" / "Spingi" — same root as "Shove" / "Spingere"
+  "base-escape-grapple", // "Escape" / "Liberati" — the name itself
   "base-opportunity-attack", // "Strike" / "Colpisci" — synonym; section = reactions
 ]);
 

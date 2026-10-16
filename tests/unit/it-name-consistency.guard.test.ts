@@ -51,6 +51,8 @@ const EXPECTED_BASE_ACTION_IT: Record<string, string> = {
   "base-grapple": "Afferrare",
   "base-shove": "Spingere",
   "base-opportunity-attack": "Attacco di Opportunità",
+  // Not a named SRD action (the Unarmed Strike escape rule): the owner's imperative.
+  "base-escape-grapple": "Liberati",
 };
 
 /**

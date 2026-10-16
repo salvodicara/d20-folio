@@ -1323,6 +1323,8 @@ export const BASE_ACTIONS: ReadonlyArray<{
   trigger?: Record<Locale, string>;
   /** The action a second use this turn takes (see `ResolvedAction.repeatUseCosts`). */
   repeatUseCosts?: string;
+  /** The condition the action is offered under; absent = always on the board. */
+  whileCondition?: string;
 }> = [
   {
     id: "base-dash",
@@ -1465,6 +1467,18 @@ export const BASE_ACTIONS: ReadonlyArray<{
       en: "Unarmed Strike: Str/Dex save → push 5 ft or Prone",
       it: "Colpo Senz'armi: TS For/Des → 1,5 m o Prono",
     },
+  },
+  {
+    // 2024 "Unarmed Strike": a Grappled creature can use its action to make an
+    // Athletics or Acrobatics check against the escape DC (`play/escape-grapple`).
+    id: "base-escape-grapple",
+    name: { en: "Escape", it: "Liberati" },
+    type: "action",
+    effect: {
+      en: "Athletics/Acrobatics vs escape DC → free",
+      it: "Atletica/Acrobazia contro CD di fuga → libero",
+    },
+    whileCondition: "grappled",
   },
   {
     id: "base-opportunity-attack",
@@ -7447,8 +7461,11 @@ function resolveTemporaryHpActions(
     charData.proficiencyBonusOverride
   );
 
-  // 6. Universal base combat actions (always available, every character)
+  // 6. Universal base combat actions (every character; a condition-bound one,
+  //    Escape while Grappled, only under its condition)
+  const conditions = effectiveSessionConditions(session);
   for (const ba of BASE_ACTIONS) {
+    if (ba.whileCondition && !conditions.includes(ba.whileCondition)) continue;
     // RA-04 — Grapple/Shove carry the live Unarmed Strike save DC (STR-governed);
     // every other base action forces no save.
     const isUnarmedStrikeOption = ba.id === "base-grapple" || ba.id === "base-shove";

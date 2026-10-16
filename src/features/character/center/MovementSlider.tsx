@@ -37,7 +37,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { Lock } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
-import { localeDistance, speedFromLocaleValue, speedToLocaleValue } from "@/lib/utils";
+import {
+  cn,
+  localeDistance,
+  speedFromLocaleValue,
+  speedToLocaleValue,
+} from "@/lib/utils";
 import type { Locale } from "@/lib/locale";
 
 export interface MovementSliderProps {
@@ -57,6 +62,12 @@ export interface MovementSliderProps {
    * the "what's limiting you this turn" banner (single source / DRY).
    */
   speedZero?: boolean;
+  /**
+   * The ×2 Difficult Terrain toggle beside the readout: while on, the caller
+   * spends the feet the player marks at double cost. Omitted = no toggle.
+   */
+  difficultTerrain?: boolean;
+  onDifficultTerrainChange?: (on: boolean) => void;
 }
 
 /** Snap to the nearest 5-ft increment and clamp into [0, max]. */
@@ -71,6 +82,8 @@ export function MovementSlider({
   onChange,
   locale,
   speedZero,
+  difficultTerrain = false,
+  onDifficultTerrainChange,
 }: MovementSliderProps) {
   const { t } = useTranslation();
   // While the readout is focused, a local draft string lets the player clear /
@@ -137,7 +150,9 @@ export function MovementSlider({
     // IT uses a comma decimal separator, so allow digits + one comma/period.
     const cleaned = e.target.value.replace(/[^\d.,]/g, "");
     setDraft(cleaned);
-    commitField(cleaned);
+    // On difficult terrain each commit spends a move at double cost, so a typed
+    // value lands once, on blur, never keystroke by keystroke.
+    if (!difficultTerrain) commitField(cleaned);
   };
 
   const handleBlur = (e: FocusEvent<HTMLInputElement>): void => {
@@ -216,6 +231,23 @@ export function MovementSlider({
             onBlur={handleBlur}
           />{" "}
           / {localeDistance(speedFt, locale)}
+          {onDifficultTerrainChange && (
+            <button
+              type="button"
+              aria-pressed={difficultTerrain}
+              aria-label={t("combat.difficultTerrain")}
+              title={t("combat.difficultTerrainHint")}
+              onClick={() => onDifficultTerrainChange(!difficultTerrain)}
+              className={cn(
+                "ml-1 inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm border px-1 font-semibold transition-colors",
+                difficultTerrain
+                  ? "border-accent bg-accent/15 text-accent-text"
+                  : "border-border-medium text-text-muted hover:border-border-accent hover:text-text-primary"
+              )}
+            >
+              ×2
+            </button>
+          )}
         </span>
       )}
     </div>
