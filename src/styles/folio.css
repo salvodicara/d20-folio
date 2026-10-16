@@ -21733,6 +21733,24 @@ body:has(.fob) .toast-region {
   right: auto;
   left: 16px;
 }
+/* Lanes, not layers (the fob's rule, on the phone): while the Signet is up the
+   toast lane runs BESIDE its coin column (46px coin + a gap), so a stack of toasts
+   can never rise over the coin (bug report 2026-10-16: a cast plus its
+   material-cost offer covered the tools). */
+@media (max-width: 720px) {
+  body:has(.signet) .toast-region {
+    left: var(--sp-4);
+    right: calc(16px + 46px + var(--sp-3));
+    transform: none;
+    width: auto;
+    max-width: none;
+    align-items: stretch;
+  }
+  body:has(.signet.signet-left) .toast-region {
+    left: calc(16px + 46px + var(--sp-3));
+    right: var(--sp-4);
+  }
+}
 .signet-chain {
   display: flex;
   flex-direction: column;
