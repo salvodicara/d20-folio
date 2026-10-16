@@ -1,8 +1,9 @@
 # d20 Folio — product brief (2026-10-16)
 
-Owner decisions of 2026-10-16, taken in the strategy session. This brief supersedes the audience,
-positioning and business sections of `PRODUCT.md`, `docs/PRODUCT_CONSTITUTION.md` and
-`docs/POSITIONING.md`, and VISION's "per noi, non commerciale". `docs/VISION.md` keeps the
+Owner decisions of 2026-10-16, taken in the strategy session. This brief replaces
+`docs/PRODUCT_CONSTITUTION.md` and `docs/POSITIONING.md` (retired 2026-10-16, in git history) and
+VISION's "per noi, non commerciale"; `PRODUCT.md` is its design-facing summary for the `impeccable`
+skill. `docs/VISION.md` keeps the
 interaction decisions; `docs/GOLDEN_RULES.md` keeps taste and way of working. Evidence:
 [research and audit](2026-10-16-research-and-audit.md).
 
@@ -59,10 +60,19 @@ what the group declares.
   campaigns. Never a public catalogue.
 - **Bring your own pack:** a user can import a content file they have into their own account, never
   served to anyone else. Foundry and Fight Club 5e work the same way.
-- **The private `content-pack/`:** only for allowlisted accounts (the owner's groups). It is loaded
-  at runtime from protected storage, **never compiled into the public bundle**. Today it is compiled
-  in: `tsconfig.app.json` `@pack` aliases resolve to `content-pack/`. That is the first thing to
-  fix, because a public bundle carrying non-SRD text is what gets fan apps taken down.
+- **The private `content-pack/`:** for the owner's groups. The runtime pack is built and ready
+  (#296, #300): the public bundle can ship SRD-only while accounts with the `pack` claim download
+  the pack from protected storage. **Owner decision 2026-10-16: not switched on yet.** "For now I
+  wouldn't complicate things; make everything available to everyone." Until the switch, the live
+  bundle carries the non-SRD text (198 built files; any visitor can read it in the site's
+  JavaScript) and public share links show it to anyone. That is the legal exposure fan apps get
+  taken down for. It stays acceptable while Folio is a private group tool, and it **blocks the
+  public launch** (phase 5): the switch is a deploy with `runtime_pack=true` after the claims are
+  granted.
+- **Monster and item art is original.** Never scraped from the internet or copied from the books:
+  the SRD licenses stats and text, never art (owner, 2026-08-01).
+- **Sharing:** a character has a public read-only link; a campaign has no anonymous link, only the
+  invite.
 - **Names:** "D&D" and "Dungeons & Dragons" appear only as descriptive text ("for the 2024 rules of
   the world's greatest roleplaying game" style), never in the name or logo. Add the "unofficial,
   not endorsed by Wizards of the Coast" line. Nothing non-SRD sits behind a future payment.

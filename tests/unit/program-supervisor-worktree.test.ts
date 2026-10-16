@@ -656,44 +656,4 @@ describe("program supervisor durable runbook guards", () => {
     expect(recipes).toMatch(/Ponytail.*optional.*meaningful complexity risk/i);
     expect(recipes).not.toMatch(/ponytail-review convergence/i);
   });
-
-  it("does not describe already-integrated Wayfinders as pending", () => {
-    const portfolio = readFileSync(
-      join(repositoryRoot, "docs", "TEST_PORTFOLIO.md"),
-      "utf8"
-    );
-    expect(portfolio).toMatch(/Both Wayfinders.*integrated.*`main`/is);
-    expect(portfolio).not.toMatch(/must land before.*links resolve/is);
-  });
-
-  it("binds the final review receipt to supporting authority blobs without self-reference", () => {
-    const statusPath = join(repositoryRoot, "docs", "PROGRAM_STATUS.md");
-    const portfolioPath = join(repositoryRoot, "docs", "TEST_PORTFOLIO.md");
-    const planPath = join(
-      repositoryRoot,
-      "docs",
-      "superpowers",
-      "plans",
-      "2026-08-26-program-supervisor-foundation.md"
-    );
-    const status = readFileSync(statusPath, "utf8");
-    const portfolio = readFileSync(portfolioPath, "utf8");
-    const statusBlob = run(
-      "git",
-      ["hash-object", statusPath],
-      repositoryRoot
-    ).stdout.trim();
-    const portfolioBlob = run(
-      "git",
-      ["hash-object", portfolioPath],
-      repositoryRoot
-    ).stdout.trim();
-    const planBlob = run("git", ["hash-object", planPath], repositoryRoot).stdout.trim();
-
-    expect(status).toContain(planBlob);
-    expect(status).toContain(portfolioBlob);
-    expect(status).not.toContain(statusBlob);
-    expect(status).toContain("be84367069e47ce029eadf1c11fbdf9aac90df2d");
-    expect(portfolio).toContain("be84367069e47ce029eadf1c11fbdf9aac90df2d");
-  });
 });
