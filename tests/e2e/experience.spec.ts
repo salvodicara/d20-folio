@@ -4,7 +4,8 @@
  * Lyra Voss (Bard 9, no XP set) shows no XP line in play; edit mode offers the
  * empty field; a total is typed in place and reads "N / 64,000 XP" with a progress
  * pool; reaching level 10's threshold shows the ready cue and marks the Level-Up
- * chip, which still only navigates — nothing levels by itself. Italian dark shots
+ * chip, which still only navigates — nothing levels by itself. Clearing the field
+ * removes the line again (back to milestone levelling). Italian dark shots
  * (desktop + mobile) land in the test output dir.
  */
 
@@ -53,6 +54,19 @@ test.describe("Experience points", () => {
     await expect(page.locator(".lvl-chip")).toHaveAttribute("data-ready", "");
     // The cue never levels: still level 9, the chip still offers level 10.
     await expect(page.locator(".lvl-chip")).toHaveText(/level 10/i);
+
+    // Clearing the field returns the table to milestone levelling: the XP line
+    // disappears in play exactly like on a character that never set it.
+    await page.getByRole("button", { name: XP }).click();
+    const input = page.getByRole("spinbutton", { name: XP });
+    await input.fill("");
+    await input.press("Enter");
+    await expect(page.getByRole("button", { name: XP })).toHaveCount(0);
+    await expect(page.getByText("Ready to level up")).toHaveCount(0);
+    await expect(page.locator(".lvl-chip")).not.toHaveAttribute("data-ready", "");
+    // Edit mode offers the empty field again, as before any total was set.
+    await enterSheetEdit(page);
+    await expect(page.getByRole("button", { name: XP })).toHaveText("—");
   });
 
   for (const [device, size] of [
