@@ -110,7 +110,7 @@ describe("SituationalRules — Play-tab rules-reference surface", () => {
     const { container } = render(<SituationalRules />);
     const text = container.textContent;
     expect(text).toContain("Regole di Riferimento");
-    expect(text).toContain("Copertura Parziale");
+    expect(text).toContain("Mezza Copertura");
     expect(text).toContain("Combattimento in Sella");
     expect(text).toContain("Combattimento Subacqueo");
     // 400 ft → 120 m, 30 mi → 48 km via the D3 helpers.

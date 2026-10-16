@@ -111,7 +111,7 @@
     "name": "Borsa Divorante"
   },
   "bag-of-holding": {
-    "description": "Questa borsa ha uno spazio interno molto più grande delle dimensioni esterne (64 piedi cubi, 225 kg max). Recuperare un oggetto richiede un'Azione. Metterla in uno spazio extradimensionale distrugge entrambi.",
+    "description": "Questa borsa ha uno spazio interno molto più grande delle dimensioni esterne (circa 1,8 metri cubi, 225 kg max). Recuperare un oggetto richiede un'Azione. Metterla in uno spazio extradimensionale distrugge entrambi.",
     "name": "Borsa Conservante"
   },
   "bag-of-tricks": {
@@ -621,7 +621,7 @@
     "name": "Ruba Nove Vite"
   },
   "oathbow": {
-    "description": "Quando incocchi una freccia su quest'arco, esso sussurra in Elfico: “Rapida sconfitta ai miei nemici”. Quando usi quest'arma per effettuare un attacco a distanza, puoi pronunciare o segnalare a gesti le seguenti parole di comando: “Rapida morte a te che mi hai fatto torto”. Il bersaglio del tuo attacco diventa il tuo nemico giurato finché non muore o fino all'alba di 7 giorni dopo. Puoi avere un solo nemico giurato alla volta. Quando il tuo nemico giurato muore, puoi sceglierne uno nuovo dopo l'alba successiva. Quando effettui un tiro per colpire a distanza con quest'arma contro il tuo nemico giurato, hai Vantaggio al tiro. Inoltre, il tuo bersaglio non ottiene alcun beneficio da Mezza Copertura o Copertura per Tre Quarti, e tu non subisci alcuno Svantaggio dovuto alla gittata lunga. Se l'attacco colpisce, il tuo nemico giurato subisce 3d6 danni Perforanti aggiuntivi. Finché il tuo nemico giurato è in vita, hai Svantaggio ai tiri per colpire con tutte le altre armi.",
+    "description": "Quando incocchi una freccia su quest'arco, esso sussurra in Elfico: “Rapida sconfitta ai miei nemici”. Quando usi quest'arma per effettuare un attacco a distanza, puoi pronunciare o segnalare a gesti le seguenti parole di comando: “Rapida morte a te che mi hai fatto torto”. Il bersaglio del tuo attacco diventa il tuo nemico giurato finché non muore o fino all'alba di 7 giorni dopo. Puoi avere un solo nemico giurato alla volta. Quando il tuo nemico giurato muore, puoi sceglierne uno nuovo dopo l'alba successiva. Quando effettui un tiro per colpire a distanza con quest'arma contro il tuo nemico giurato, hai Vantaggio al tiro. Inoltre, il tuo bersaglio non ottiene alcun beneficio da Mezza Copertura o Tre Quarti di Copertura, e tu non subisci alcuno Svantaggio dovuto alla gittata lunga. Se l'attacco colpisce, il tuo nemico giurato subisce 3d6 danni Perforanti aggiuntivi. Finché il tuo nemico giurato è in vita, hai Svantaggio ai tiri per colpire con tutte le altre armi.",
     "name": "Arco del Giuramento"
   },
   "oil-of-etherealness": {
@@ -1246,17 +1246,17 @@
   },
   "wand-of-the-war-mage-1-2-or-3": {
     "attunementReq": "un incantatore",
-    "description": "Non comune (+1), Raro (+2) o Molto Raro (+3). Mentre impugni questa bacchetta, ottieni un bonus ai tiri per colpire degli incantesimi determinato dalla rarità della bacchetta. Inoltre, ignori la Copertura Parziale quando effettui un tiro per colpire con un incantesimo.",
+    "description": "Non comune (+1), Raro (+2) o Molto Raro (+3). Mentre impugni questa bacchetta, ottieni un bonus ai tiri per colpire degli incantesimi determinato dalla rarità della bacchetta. Inoltre, ignori la Mezza Copertura quando effettui un tiro per colpire con un incantesimo.",
     "name": "Bacchetta del Mago da Guerra +1, +2 o +3"
   },
   "wand-of-the-war-mage-plus-2": {
     "attunementReq": "un incantatore",
-    "description": "Mentre impugni questa bacchetta, ottieni un bonus di +2 ai tiri per colpire degli incantesimi. Inoltre, ignori la Copertura Parziale quando effettui un tiro per colpire con un incantesimo.",
+    "description": "Mentre impugni questa bacchetta, ottieni un bonus di +2 ai tiri per colpire degli incantesimi. Inoltre, ignori la Mezza Copertura quando effettui un tiro per colpire con un incantesimo.",
     "name": "Bacchetta del Mago da Guerra +2"
   },
   "wand-of-the-war-mage-plus-3": {
     "attunementReq": "un incantatore",
-    "description": "Mentre impugni questa bacchetta, ottieni un bonus di +3 ai tiri per colpire degli incantesimi. Inoltre, ignori la Copertura Parziale quando effettui un tiro per colpire con un incantesimo.",
+    "description": "Mentre impugni questa bacchetta, ottieni un bonus di +3 ai tiri per colpire degli incantesimi. Inoltre, ignori la Mezza Copertura quando effettui un tiro per colpire con un incantesimo.",
     "name": "Bacchetta del Mago da Guerra +3"
   },
   "wand-of-web": {
