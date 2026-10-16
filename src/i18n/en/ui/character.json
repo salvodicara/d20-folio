@@ -75,6 +75,8 @@
     "landChoiceHint": "Choose one option; you can re-choose each Long Rest. The selection sets your prepared Circle Spells and any related resistance.",
     "notFound": "Character not found",
     "notFoundBlurb": "This character doesn’t exist, or it’s no longer in your folio. It may have been deleted, or the link may be mistyped.",
+    "contentUnavailable": "Content not available",
+    "contentUnavailableBlurb": "This character uses content reserved for its group, which isn’t available to your account. Nothing has been changed.",
     "failedCreate": "Failed to create character",
     "noConditions": "No conditions",
     "addCondition": "Add condition",

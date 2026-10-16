@@ -75,6 +75,8 @@
     "landChoiceHint": "Scegli un'opzione; puoi riscegliere a ogni Riposo Lungo. La selezione imposta gli Incantesimi del Circolo preparati e l'eventuale resistenza correlata.",
     "notFound": "Personaggio non trovato",
     "notFoundBlurb": "Questo personaggio non esiste, oppure non è più nel tuo folio. Potrebbe essere stato eliminato, o il link potrebbe contenere un errore di battitura.",
+    "contentUnavailable": "Contenuto non disponibile",
+    "contentUnavailableBlurb": "Questo personaggio usa contenuti riservati al suo gruppo, che non sono disponibili per il tuo account. Non è stato modificato nulla.",
     "failedCreate": "Errore nella creazione del personaggio",
     "noConditions": "Nessuna condizione",
     "addCondition": "Aggiungi condizione",

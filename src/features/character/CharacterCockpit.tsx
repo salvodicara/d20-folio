@@ -26,7 +26,8 @@
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, Compass } from "lucide-react";
+import { ChevronDown, Compass, LockKeyhole } from "lucide-react";
+import { missingContent, packLoaded } from "@/data/missing-content";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useEditModeShortcut } from "@/hooks/useEditModeShortcut";
@@ -100,6 +101,13 @@ export function CockpitView() {
   useDocumentTitle(characterName);
 
   const hasCharacter = useCharacterStore((s) => s.character != null);
+  // Without the private pack, a character built with it would open stripped (and
+  // an edit could save the loss): it shows "content not available" instead. With
+  // the pack this is a constant `false`, so allowlisted accounts pay nothing.
+  const contentMissing = useCharacterStore(
+    (s) =>
+      !packLoaded && !!s.character && missingContent(s.character.character).length > 0
+  );
   // `/characters/:id` matches ANY id — a typo'd / deleted / unauthorized id is a
   // VALID route, so the path="*" 404 never fires. The subscription resolves it to
   // `{ character: null, loading: false }` (the store clears `error` on
@@ -185,6 +193,23 @@ export function CockpitView() {
           glyph={Compass}
           title={t("character.notFound")}
           blurb={t("character.notFoundBlurb")}
+          actions={
+            <Button size="lg" onClick={() => void navigate("/characters")}>
+              {t("notFound.back")}
+            </Button>
+          }
+        />
+      </main>
+    );
+  }
+
+  if (contentMissing) {
+    return (
+      <main id="main" className="wb mx-auto w-full max-w-7xl px-4 py-12">
+        <RunicEmptyState
+          glyph={LockKeyhole}
+          title={t("character.contentUnavailable")}
+          blurb={t("character.contentUnavailableBlurb")}
           actions={
             <Button size="lg" onClick={() => void navigate("/characters")}>
               {t("notFound.back")}
