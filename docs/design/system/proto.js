@@ -10,6 +10,8 @@
   ready(() => {
     const mode = params.get("mode");
     if (mode) document.body.className = "mode-" + mode;
+    const view = params.get("view");
+    if (view) document.body.className = "view-" + view;
     const tab = params.get("tab");
     if (tab) document.body.className = "tab-" + tab;
     const current = document.body.className.match(/tab-(\w+)/);

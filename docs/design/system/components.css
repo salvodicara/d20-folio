@@ -219,6 +219,15 @@ svg.i {
 a.btn {
   text-decoration: none;
 }
+.btn--danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+}
+.btn--danger:hover {
+  color: #fff;
+  background: var(--danger);
+  border-color: var(--danger);
+}
 .btn--quiet {
   background: transparent;
   border-color: transparent;
@@ -1588,4 +1597,153 @@ a.btn {
 }
 .jline__text b {
   color: var(--text);
+}
+
+/* ── Dialog (BG3's confirmation panel; bottom sheet on phones) ────── */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--scrim);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  z-index: 50;
+}
+.dialog {
+  width: min(480px, 100%);
+  display: grid;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+}
+.dialog h2 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 28px;
+  line-height: 1.1;
+  text-align: center;
+}
+.dialog p {
+  margin: 0;
+  color: var(--text-2);
+  text-align: center;
+}
+.dialog__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+.dialog__actions .btn {
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .scrim {
+    place-items: end stretch;
+    padding: 0;
+  }
+  .dialog {
+    width: 100%;
+    border-radius: var(--r-3) var(--r-3) 0 0;
+    padding-bottom: calc(var(--sp-6) + env(safe-area-inset-bottom));
+  }
+}
+
+/* ── Context menu (D&D Beyond's "…" menu) ─────────────────────────── */
+.menu {
+  width: 260px;
+  padding: var(--sp-2);
+  display: grid;
+}
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  border: 0;
+  border-radius: var(--r-1);
+  background: none;
+  color: var(--text);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.menu button .i {
+  color: var(--text-3);
+}
+.menu button:hover {
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+}
+.menu hr {
+  border: 0;
+  height: 1px;
+  background: var(--line);
+  margin: var(--sp-1) 0;
+}
+.menu .is-danger,
+.menu .is-danger .i {
+  color: var(--danger);
+}
+
+/* ── Toast with Undo (Gmail's snackbar) ───────────────────────────── */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
+  border-radius: var(--r-2);
+  border: 1px solid var(--frame-strong);
+  background: linear-gradient(180deg, #241d16, #15110d);
+  box-shadow: var(--shadow);
+  font-size: 15px;
+}
+.toast .btn {
+  min-height: 36px;
+}
+
+/* ── Banner: offline, errors (Google Docs' connection bar) ────────── */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-2);
+  border: 1px solid color-mix(in srgb, var(--cond) 55%, transparent);
+  background: color-mix(in srgb, var(--cond) 10%, var(--panel));
+  font-size: 15px;
+}
+.banner .i {
+  color: var(--cond);
+}
+.banner--danger {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+}
+.banner--danger .i {
+  color: var(--danger);
+}
+
+/* ── Empty state (D&D Beyond's "no characters yet") ───────────────── */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-8) var(--sp-5);
+  text-align: center;
+}
+.empty img {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid var(--frame-strong);
+  object-fit: cover;
+}
+.empty h3 {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: 26px;
+}
+.empty p {
+  margin: 0;
+  color: var(--text-2);
+  max-width: 40ch;
 }

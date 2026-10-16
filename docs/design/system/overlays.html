@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Finestre e messaggi</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      .board {
+        padding: 40px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 40px 32px;
+        align-items: start;
+      }
+      .cap {
+        margin: 0 0 12px;
+        font-size: 15px;
+        color: var(--text-2);
+      }
+      .cap b {
+        display: block;
+        font-family: var(--font-title);
+        font-size: 22px;
+        color: var(--gold-bright);
+      }
+      .stage {
+        position: relative;
+        min-height: 360px;
+        border-radius: var(--r-3);
+        border: 1px solid var(--line);
+        overflow: hidden;
+        background: var(--bg-glow), var(--bg);
+      }
+      .stage .scrim {
+        position: absolute;
+      }
+      .phone {
+        position: relative;
+        width: 390px;
+        height: 560px;
+        border-radius: 28px;
+        border: 1px solid var(--frame);
+        overflow: hidden;
+        background: var(--bg-glow), var(--bg);
+      }
+      .phone .scrim {
+        position: absolute;
+        place-items: end stretch;
+        padding: 0;
+      }
+      .phone .dialog {
+        width: 100%;
+        border-radius: var(--r-3) var(--r-3) 0 0;
+      }
+      .pad {
+        padding: 24px;
+        display: grid;
+        gap: 16px;
+        justify-items: start;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board">
+      <div>
+        <p class="cap">
+          <b>Conferma</b>Pannello di conferma di Baldur's Gate 3: titolo, una frase, due
+          pulsanti.
+        </p>
+        <div class="stage">
+          <div class="scrim">
+            <section class="frame frame--crest dialog" role="dialog" aria-labelledby="d1">
+              <span class="crest"></span><span class="frame__corner-tr"></span
+              ><span class="frame__corner-bl"></span>
+              <h2 id="d1">Finire lo scontro?</h2>
+              <p>Il resoconto tiene tutti e 3 i round. Turni e iniziativa si azzerano.</p>
+              <div class="dialog__actions">
+                <button class="btn">Annulla</button
+                ><button class="btn btn--lit">Fine scontro</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap">
+          <b>Azione irreversibile</b>Come GitHub: per eliminare devi riscrivere la tua
+          email.
+        </p>
+        <div class="stage">
+          <div class="scrim">
+            <section class="frame frame--crest dialog" role="dialog" aria-labelledby="d2">
+              <span class="crest"></span><span class="frame__corner-tr"></span
+              ><span class="frame__corner-bl"></span>
+              <h2 id="d2">Eliminare l'account?</h2>
+              <p>
+                Personaggi, campagne e resoconti spariscono per sempre. Prima puoi
+                scaricare tutto.
+              </p>
+              <div class="field" style="display: grid; gap: 6px">
+                <label
+                  for="cf"
+                  style="font-size: 14px; font-weight: 700; color: var(--text-2)"
+                  >Scrivi <b style="color: var(--text)">sara@esempio.it</b> per
+                  confermare</label
+                >
+                <input id="cf" class="input" value="sara@esempio.it" />
+              </div>
+              <div class="dialog__actions">
+                <button class="btn">Annulla</button
+                ><button class="btn btn--danger">Elimina per sempre</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap">
+          <b>Sul telefono</b>La stessa finestra sale dal basso, come nelle app di sistema.
+        </p>
+        <div class="phone">
+          <div class="scrim">
+            <section class="frame frame--crest dialog" role="dialog" aria-labelledby="d3">
+              <span class="crest"></span><span class="frame__corner-tr"></span
+              ><span class="frame__corner-bl"></span>
+              <h2 id="d3">Finire lo scontro?</h2>
+              <p>Il resoconto tiene tutti e 3 i round. Turni e iniziativa si azzerano.</p>
+              <div class="dialog__actions">
+                <button class="btn">Annulla</button
+                ><button class="btn btn--lit">Fine scontro</button>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap">
+          <b>Menu «…»</b>Il menu delle azioni di D&amp;D Beyond; l'azione pericolosa in
+          fondo, in rosso.
+        </p>
+        <nav class="frame menu" aria-label="Azioni sul personaggio">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <button><i data-lucide="share-2" class="i i--sm"></i>Condividi il link</button>
+          <button>
+            <i data-lucide="file-down" class="i i--sm"></i>Scarica la scheda (PDF)
+          </button>
+          <button><i data-lucide="copy" class="i i--sm"></i>Duplica</button>
+          <button>
+            <i data-lucide="history" class="i i--sm"></i>Versioni precedenti
+          </button>
+          <hr />
+          <button class="is-danger">
+            <i data-lucide="trash-2" class="i i--sm"></i>Elimina personaggio
+          </button>
+        </nav>
+      </div>
+
+      <div>
+        <p class="cap">
+          <b>Avvisi</b>«Annulla» come in Gmail; la barra della connessione come Google
+          Documenti.
+        </p>
+        <div class="pad" style="padding: 0">
+          <div class="toast" role="status">
+            <span><b>Mazza</b> registrata. Azione spesa.</span
+            ><button class="btn btn--quiet">
+              <i data-lucide="undo-2" class="i i--sm"></i>Annulla
+            </button>
+          </div>
+          <div class="banner" role="status">
+            <i data-lucide="wifi-off" class="i"></i
+            ><span>Sei offline. Puoi giocare: salvo appena torna la rete.</span>
+          </div>
+          <div class="banner banner--danger" role="alert">
+            <i data-lucide="circle-alert" class="i"></i
+            ><span
+              >Non riesco a salvare.
+              <a href="#" style="color: var(--text)">Riprova</a></span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="cap">
+          <b>Vuoto</b>Come D&amp;D Beyond: un'immagine, una frase, un pulsante.
+        </p>
+        <section class="frame empty">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <img src="img/class-fighter.webp" alt="" />
+          <h3>Nessun personaggio</h3>
+          <p>Crea il primo: Folio ti guida passo per passo e spiega ogni scelta.</p>
+          <button class="btn btn--lit">
+            <i data-lucide="plus" class="i i--sm"></i>Crea un personaggio
+          </button>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
