@@ -14593,7 +14593,7 @@ button.party-avatar-btn:focus-visible {
 }
 .campaign-hero-body {
   min-width: 0;
-  max-width: 46rem;
+  flex: 1;
 }
 .campaign-hero-title {
   margin: 0;
@@ -14623,45 +14623,35 @@ button.party-avatar-btn:focus-visible {
   align-items: center;
   gap: var(--sp-2);
 }
-.campaign-hero-actions {
-  position: absolute;
-  top: var(--sp-3);
-  right: var(--sp-3);
-}
 .campaign-art-control {
   position: relative;
 }
-.campaign-hero-gear {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-xl);
-  border: 1px solid color-mix(in oklab, var(--hero-ink) 20%, transparent);
-  background: var(--hero-shade);
+/* The image control rides the header row beside the meta line. */
+.campaign-hero-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3) var(--sp-5);
+  margin-top: var(--sp-2);
+}
+.campaign-hero-row .campaign-hero-meta {
+  margin: 0;
+}
+.campaign-hero-image-btn {
   color: var(--hero-ink);
-  transition:
-    background var(--m-fast) var(--ease-standard, ease-out),
-    color var(--m-fast) var(--ease-standard, ease-out);
-}
-.campaign-hero-gear:hover {
+  border-color: color-mix(in oklab, var(--hero-ink) 35%, transparent);
   background: var(--hero-shade-strong);
-  color: var(--gold-leaf-100);
+  backdrop-filter: blur(6px);
 }
-.campaign-hero-gear:focus-visible {
-  outline: 2px solid var(--gold-leaf-300);
-  outline-offset: 2px;
+.campaign-hero-image-btn:hover {
+  border-color: var(--accent-primary);
 }
 @media (max-width: 720px) {
   .campaign-hero {
     min-height: 164px;
     margin-bottom: var(--sp-5);
     padding: var(--sp-4);
-    padding-right: calc(var(--sp-4) + 44px);
-  }
-  .campaign-hero-actions {
-    top: var(--sp-2);
-    right: var(--sp-2);
   }
 }
 
@@ -16777,8 +16767,38 @@ button.econ-tok-filter:active .econ-disc {
     justify-self: center;
     text-align: center;
   }
+  /* Phone: the three action slots side by side, Movement a full-width bar beneath
+     them (BG3's movement bar), so no tile is squeezed and nothing leaves its frame. */
   .turn .econ {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--sp-2);
+  }
+  .turn .econ-tok[data-kind="move"] {
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "cap num"
+      "bar bar";
+    row-gap: var(--sp-1);
+    align-items: center;
+    justify-items: stretch;
+    column-gap: var(--sp-3);
+    padding: var(--sp-3) var(--sp-4);
+    text-align: left;
+  }
+  .turn .econ-tok[data-kind="move"] .move-bar {
+    grid-area: bar;
+    max-width: none;
+    height: 28px;
+  }
+  .turn .econ-tok[data-kind="move"] .econ-cap {
+    grid-area: cap;
+  }
+  .turn .econ-tok[data-kind="move"] .move-num {
+    grid-area: num;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
   .turn .endturn {
     width: 100%;

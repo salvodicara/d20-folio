@@ -10,8 +10,9 @@
 import { useRef, useState } from "react";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { useTranslation } from "react-i18next";
-import { Crop, ImagePlus, Settings, Trash2 } from "lucide-react";
+import { Crop, ImagePlus, Trash2 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { PortraitCropModal } from "@/components/shared/PortraitCropModal";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
@@ -46,25 +47,23 @@ export function CampaignArtControl() {
 
   return (
     <div className="campaign-art-control" ref={menuRef}>
-      <button
-        type="button"
-        className="campaign-hero-gear"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="campaign-hero-image-btn"
         onClick={() => setMenuOpen((v) => !v)}
         disabled={uploading}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        aria-label={t("campaignHub.settingsAria")}
-        title={t("campaignHub.settingsAria")}
       >
-        {uploading ? <Spinner size="sm" /> : <Icon as={Settings} decorative />}
-      </button>
+        {/* Direction B (owner 2026-10-16): a labelled control in the header row,
+            never a bare gear floating over the picture. */}
+        {uploading ? <Spinner size="sm" /> : <Icon as={ImagePlus} decorative />}
+        <span>{t("campaignHub.imageMenu")}</span>
+      </Button>
       {menuOpen && (
         <div className="settings-pop popover absolute top-full right-0 z-[300] mt-1.5 w-52">
-          <div
-            className="pop-body"
-            role="menu"
-            aria-label={t("campaignHub.settingsAria")}
-          >
+          <div className="pop-body" role="menu" aria-label={t("campaignHub.imageMenu")}>
             {bannerUrl ? (
               <>
                 <button

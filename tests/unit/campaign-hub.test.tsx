@@ -247,14 +247,13 @@ describe("CampaignHubPage", () => {
         .getByRole("heading", { name: "Gildenmoor", level: 1 })
         .closest(".campaign-hero")
     ).not.toBeNull();
-    expect(document.documentElement.hasAttribute("data-app-bg-ambient")).toBe(true);
   });
 
-  it("keeps the image actions behind the campaign settings gear", () => {
+  it("keeps the image actions behind the labelled campaign-image button", () => {
     renderHubAt("/campaigns/c1");
     act(() => onDataRef.fn?.(makeCampaign({ id: "c1" })));
     expect(screen.queryByRole("menuitem")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /campaign settings/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^campaign image$/i }));
     expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
       "Choose an image",
     ]);
@@ -262,7 +261,7 @@ describe("CampaignHubPage", () => {
     act(() =>
       onDataRef.fn?.(makeCampaign({ id: "c1", bannerUrl: "https://art.example/b.png" }))
     );
-    fireEvent.click(screen.getByRole("button", { name: /campaign settings/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^campaign image$/i }));
     expect(screen.getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
       "Re-crop image",
       "Change image",

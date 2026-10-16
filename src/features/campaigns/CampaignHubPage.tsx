@@ -67,10 +67,8 @@ import { PartySummary } from "@/features/campaigns/PartySummary";
 const CAMPAIGN_BACKDROP = "var(--asset-campaign-backdrop)";
 
 /**
- * Atmosphere under content (DESIGN.md §7 craft law 3): the hero band shows the art
- * sharp; behind the page the same art becomes AMBIENT light (blurred, see
- * `[data-app-bg-ambient]` in index.css), so a custom image tints the whole hub
- * without competing with it. Paint the campaign's art —
+ * Direction B (owner 2026-10-16): the campaign's art is the page's hero art, like
+ * every realm's scene, shaded and fading into the page. Paint the campaign's art —
  * the DM's custom banner when set, else the bundled backdrop — as the app's
  * existing viewport-fixed `--app-bg-art` layer for as long as the hub is mounted.
  * This REUSES the one global backdrop mechanism (`body::after` reads `--app-bg-art`
@@ -108,9 +106,8 @@ function useCampaignBackdrop(
       // glaze) so an arbitrary upload sits harmoniously under the chrome; the
       // bundled per-theme plates render native (no veil, full presence).
       if (bannerUrl) html.setAttribute("data-app-bg-custom", "");
-      // The art already fills the hero band, so behind the page it is ambient
-      // light only: the same image, blurred into a glow (`data-app-bg-ambient`).
-      html.setAttribute("data-app-bg-ambient", "");
+      // Direction B: the campaign's image IS the page's hero art, sharp, shaded
+      // and fading into the page like every realm's scene (no blurred copy).
       // Only a custom banner carries a crop; the default asset stays centred + unscaled.
       const position = bannerUrl ? cropToBackgroundPosition(bannerCrop) : null;
       if (position) {
@@ -128,7 +125,6 @@ function useCampaignBackdrop(
         root.removeProperty("--app-bg-art-position");
         root.removeProperty("--app-bg-art-scale");
         html.removeAttribute("data-app-bg-custom");
-        html.removeAttribute("data-app-bg-ambient");
       });
     };
   }, [bannerUrl, bannerCrop]);
@@ -171,12 +167,12 @@ function CampaignHero({
       />
       <div className="campaign-hero-body">
         <h1 className="campaign-hero-title">{title}</h1>
-        <p className="campaign-hero-meta">{meta}</p>
-      </div>
-      <div className="campaign-hero-actions">
-        <IsolatedSection>
-          <CampaignArtControl />
-        </IsolatedSection>
+        <div className="campaign-hero-row">
+          <p className="campaign-hero-meta">{meta}</p>
+          <IsolatedSection>
+            <CampaignArtControl />
+          </IsolatedSection>
+        </div>
       </div>
     </header>
   );
