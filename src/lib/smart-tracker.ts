@@ -16,6 +16,7 @@
  */
 
 import { baseActionState } from "@/lib/base-action-states";
+import { HELP_ACTION_ID } from "@/lib/play/help";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
   POTION_TIMER_PREFIX,
@@ -729,6 +730,9 @@ export interface ResolvedAction {
   /** A once-per-turn free action whose next use this turn takes another action:
    *  that action's id (a second object interaction is the Utilize action). */
   repeatUseCosts?: string;
+  /** The use names a creature even with nothing to resolve (Help): the optional
+   *  "On whom?" step tags the log line with the pick. */
+  namesTarget?: true;
   /** The check entered on the card for this use (Search, Study, Influence); its log
    *  line carries the result. */
   checkResult?: CheckResult;
@@ -7511,6 +7515,15 @@ function resolveTemporaryHpActions(
         // (Stealth) check (SRD 5.2.1 "Hide [Action]"); the card renders a
         // roll-entry whose success applies the Invisible condition.
         ...(ba.id === "base-hide" ? { skillCheck: { dc: 15, skill: "stealth" } } : {}),
+        ...(ba.id === HELP_ACTION_ID
+          ? {
+              targeting: {
+                affinity: "any" as const,
+                maxTargets: 1,
+                excludeSelf: true,
+              },
+            }
+          : {}),
         ...(checkSkills ? { checkSkills } : {}),
       },
       // RA-18 — the Ready card teaches the readied-spell rule (SRD "Ready
@@ -7520,6 +7533,11 @@ function resolveTemporaryHpActions(
       // spends the slot + engages Concentration on a concentration spell); this
       // note only bridges the two — no held-spell state is modeled.
       ...(ba.id === "base-ready" ? { description: uiText("combat.readySpellNote") } : {}),
+      // Help names one creature, never the helper (SRD "Help [Action]"): an ally
+      // (Assist an Ability Check) or an enemy within 5 feet (Assist an Attack Roll).
+      ...(ba.id === HELP_ACTION_ID
+        ? { description: uiText("combat.helpNote"), namesTarget: true as const }
+        : {}),
       ...(state
         ? {
             activatesKey: state.activeKey,

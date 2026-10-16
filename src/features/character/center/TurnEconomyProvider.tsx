@@ -62,6 +62,7 @@ import {
   withSelfRecipient,
   type TargetStep,
 } from "@/features/character/center/target-step";
+import { HELP_ACTION_ID, helpBenefit } from "@/lib/play/help";
 import { checkSucceeded, type CheckResult } from "@/lib/play/checks";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
@@ -1200,12 +1201,24 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // used" line. The gain is the resolved number (temp HP don't stack — what's
     // applied is max(prev, granted), but the toast reports the grant).
     const tempGain = (action.useEffects ?? [])[0];
+    // Help says what the pick gets: the ally's check, or the allies' attack on the enemy.
+    const helped =
+      action.id === HELP_ACTION_ID
+        ? helpBenefit(applyResolution?.targets ?? [], targetRoster().rows)
+        : null;
     const check = action.checkResult;
     const message = tempGain
       ? t("combat.useGainedTempHp", { name: action.name, amount: tempGain.amount })
-      : check
-        ? localizeCheckToast(action.name, check)
-        : t("combat.actionUsedToast", { name: action.name });
+      : helped
+        ? t(
+            helped.kind === "check" ? "combat.helpCheckToast" : "combat.helpAttackToast",
+            {
+              name: helped.name,
+            }
+          )
+        : check
+          ? localizeCheckToast(action.name, check)
+          : t("combat.actionUsedToast", { name: action.name });
     // Register on the undo stack: `execute` deducts the cost + appends into the
     // slot, bailing (null) if the budget is already full (the card guard should
     // prevent this, but never trust the view — nothing spent then). Redo re-runs it.

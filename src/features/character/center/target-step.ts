@@ -50,7 +50,8 @@ export function targetStepFor(
   action: ResolvedAction,
   roster: TargetRoster
 ): TargetStep | null {
-  if (!shouldResolveCombatAction(action)) return null;
+  // Help names a creature with nothing to resolve: the pick only tags the log line.
+  if (!shouldResolveCombatAction(action) && !action.namesTarget) return null;
   const spec = combatResolutionSpec(action);
   if (spec.targetAffinity === "self") return null;
   // An area with no declared "creatures of your choice" catches everyone in it:
