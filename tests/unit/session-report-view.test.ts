@@ -86,6 +86,8 @@ describe("renderSessionReport", () => {
       [
         "# Session 2026-10-08",
         "",
+        "Encounters: 1. Goblin — victory",
+        "",
         "## Scene 1",
         "- Ana takes 3 damage",
         "",
@@ -110,8 +112,9 @@ describe("renderSessionReport", () => {
     const text = renderSessionReport(report, "S", t, names, {
       notes: "  The party reached Phandalin.\nMara owes Ben 5 gp.  ",
     });
-    expect(text.split("\n").slice(0, 6)).toEqual([
-      "# S",
+    // The cast comes first (here: the fight's Goblin), then the notes.
+    expect(text.split("\n").slice(2, 8)).toEqual([
+      "sessionReport.castEncounters",
       "",
       "## Session notes",
       "",

@@ -7,7 +7,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { SessionLogDoc } from "@/types/campaign";
+import type { CampaignDoc, SessionLogDoc } from "@/types/campaign";
+import { useCampaignStore } from "@/features/campaigns/campaignStore";
 
 const { listMock, createMock, updateMock } = vi.hoisted(() => ({
   listMock: vi.fn(),
@@ -200,12 +201,30 @@ describe("Sessions", () => {
         ],
       },
     ]);
+    useCampaignStore.setState({
+      campaign: {
+        dmUid: "dm",
+        memberDetails: {
+          dm: { displayName: "DM", characterId: null, role: "dm" },
+          ana: {
+            displayName: "Ana",
+            characterId: "c-ana",
+            role: "player",
+            character: { name: "Ana", classes: [{ classId: "bard", level: 3 }] },
+          },
+        },
+      } as unknown as CampaignDoc,
+    });
     render(<Sessions campaignId="c1" openLatest />);
     fireEvent.click(await screen.findByRole("button", { name: /automatic report/i }));
     fireEvent.click(await screen.findByRole("button", { name: /^copy$/i }));
     const copied = String(writeText.mock.calls[0]?.[0]);
     expect(copied).toContain("## Session notes\n\nMara owes Ben 5 gp.");
     expect(copied.indexOf("Mara owes Ben")).toBeLessThan(copied.indexOf("short rest"));
+    // The cast leads: the party with class and level, before the notes.
+    expect(copied).toContain("Party: Ana (Bard 3)");
+    expect(copied.indexOf("Party:")).toBeLessThan(copied.indexOf("## Session notes"));
+    useCampaignStore.setState({ campaign: null });
   });
 
   it("CAMPAIGN-NOTES-UX — bounds the list to the latest 5 sessions behind View all", async () => {
