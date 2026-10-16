@@ -501,6 +501,7 @@
       },
       "total": "Totale tirato",
       "totalHint": "Quanto hai tirato al tavolo, es. 8+6+3",
+      "totalHintDice": "Tira {{dice}} al tavolo e scrivi il totale, es. 8+6+3",
       "rowTotal": "Totale tirato per {{name}}",
       "saved": "Salvato",
       "savedAria": "{{name}} ha superato il TS",

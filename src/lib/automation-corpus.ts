@@ -412,6 +412,7 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
     save: compiled("stat-block"),
     dc: compiled("stat-block"),
     onSuccess: compiled("stat-block"),
+    conditions: compiled("stat-block"),
     ability: compiled("stat-block"),
     atWill: compiled("stat-block"),
     perDay: compiled("stat-block"),

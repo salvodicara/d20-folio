@@ -2321,6 +2321,10 @@ export interface MonsterSaveEntry extends MonsterEntryBase {
   /** The printed "Success:" outcome for the damage: half, none, or a special
    *  prose outcome (text carries it). */
   onSuccess: "half" | "none" | "special";
+  /** The conditions a failed save imposes, as the "Failure:" clause prints them
+   *  ("the target has the Poisoned condition"), printed order. The text keeps the
+   *  duration and any later stage (corpus-guarded against the English print). */
+  conditions?: ReadonlyArray<ConditionId>;
 }
 
 /**

@@ -19,6 +19,7 @@ import { spells } from "@/data/spells";
 import type {
   BeastAttack,
   CompanionAttack,
+  ConditionId,
   MonsterEntry,
   SrdActionDef,
   SrdSpellData,
@@ -438,6 +439,16 @@ function actionMechanics(
   return clean(out as Partial<SrdActionDef>);
 }
 
+/** A save's failed-save conditions, or undefined when it imposes none. */
+function failedSaveConditions(activity: Activity): ConditionId[] | undefined {
+  const ids = activity.effects.flatMap((effect) =>
+    effect.kind === "condition" && effect.apply.on === "failed-save"
+      ? effect.apply.options
+      : []
+  );
+  return ids.length > 0 ? ids : undefined;
+}
+
 /** The old monster entry fields, read back from the Activity. */
 function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): MonsterEntry {
   const recharge = activity.cost.pay?.find((resource) => resource.kind === "recharge");
@@ -479,6 +490,7 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
           : damageEffects(activity).some((effect) => effect.onSave === "half")
             ? "half"
             : "none",
+        conditions: failedSaveConditions(activity),
       });
     default:
       // Spellcasting lists and prose entries keep only their identity and limits
