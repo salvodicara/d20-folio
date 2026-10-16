@@ -34,7 +34,8 @@
       "trackerDivided": {
         "up": "{{value}} ÷ {{divisor}}, arrotondato per eccesso.",
         "down": "{{value}} ÷ {{divisor}}, arrotondato per difetto."
-      }
+      },
+      "maneuverBestAbility": "La CD di una manovra usa il modificatore di Forza o di Destrezza, il più alto dei due."
     },
     "speed": {
       "multiplier": "Moltiplicatore di velocità",

@@ -34,7 +34,8 @@
       "trackerDivided": {
         "up": "{{value}} ÷ {{divisor}}, rounded up.",
         "down": "{{value}} ÷ {{divisor}}, rounded down."
-      }
+      },
+      "maneuverBestAbility": "A maneuver's DC uses your Strength or Dexterity modifier, whichever is higher."
     },
     "speed": {
       "multiplier": "Speed multiplier",
