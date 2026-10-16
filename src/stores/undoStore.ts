@@ -41,11 +41,12 @@ import type { ToastIntent } from "@/types/toast";
 
 /**
  * The stack depth cap. A full frantic combat turn (Action Surge + Extra Attack +
- * bonus + reaction + riders) is < 10 entries; 20 covers two turns of mis-taps plus
- * HP edits. Deeper history is increasingly likely to be fenced anyway and holds
- * stale closures over dead state. `future` is bounded by the same cap.
+ * bonus + reaction + riders) is < 10 entries; 50 keeps a whole fight's worth of the
+ * player's own actions undoable (owner 2026-10-16: every action stays undoable later
+ * too). Entries guard themselves against later changes, so a deep entry refuses
+ * rather than restore dead state. `future` is bounded by the same cap.
  */
-export const MAX_UNDO_DEPTH = 20;
+export const MAX_UNDO_DEPTH = 50;
 
 /**
  * Label model — mirrors the toast contract exactly (toasts-as-data): UI-layer

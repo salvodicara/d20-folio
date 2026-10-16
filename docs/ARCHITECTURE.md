@@ -898,7 +898,7 @@ Every undoable act already produces a hand-written **reverse-applier closure** (
 `applyCommitOps` return, `commitAction`'s return, the HP snapshot restore, the store's
 condition/concentration `onUndo`s). Historically that closure's only home was a 5 s toast, then it
 was thrown away. `src/stores/undoStore.ts` gives it a durable home: a per-character, in-memory,
-**LIFO undo stack** (depth `MAX_UNDO_DEPTH = 20`) with standard redo semantics. One source of truth
+**LIFO undo stack** (depth `MAX_UNDO_DEPTH = 50`) with standard redo semantics. One source of truth
 (golden rule 6) — the toast's Undo button, the ⌘Z/⌘⇧Z accelerators (`useUndoRedoShortcut`, route-scoped
 in `CockpitView`), and the sheet's on-page undo/redo controls (the Binder's Fob ⟲ ⟳ coins on
 desktop, the Signet's bloomed ⟲ ⟳ pair on mobile — one home per viewport,
