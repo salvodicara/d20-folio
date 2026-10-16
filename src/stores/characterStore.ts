@@ -1022,6 +1022,34 @@ function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
   }
 }
 
+/**
+ * Photograph the whole owner state before a multi-part commit (a rest). After the
+ * commit, `seal()` returns its causal undo: the exact prior state comes back only
+ * while the post-commit state is still current, and every log line the commit added
+ * is also taken back out of the campaign session log. `seal()` returns null when
+ * the commit changed nothing, so a refused commit gets no undo.
+ */
+export function beginWholeStateUndo(): (() => (() => boolean) | null) | null {
+  const get = useCharacterStore.getState;
+  const before = captureD20Command(get());
+  if (!before) return null;
+  return () => {
+    const after = captureD20Command(get());
+    if (!after || sameD20CommandSnapshot(before, after)) return null;
+    const restore = causalD20CommandUndo(before, after, get);
+    const characterId = after.character.id;
+    const kept = new Set(before.character.session.logEntries.map((entry) => entry.id));
+    const added = after.character.session.logEntries
+      .map((entry) => entry.id)
+      .filter((id) => !kept.has(id));
+    return () => {
+      if (!restore()) return false;
+      for (const id of added) notifyPlayLog((sink) => sink.removed(characterId, id));
+      return true;
+    };
+  };
+}
+
 /** The live encounter round of a character in a DM-run fight, or null when it is not
  *  in one. Registered by the combat status store (`global-combat-context`). */
 let encounterRoundOf: (characterId: string) => number | null = () => null;
