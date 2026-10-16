@@ -1,14 +1,11 @@
 /**
- * Passwordless sign-in by email link (`src/features/account/email-link-sign-in.ts`),
+ * Passwordless sign-in by email link (`src/platform/email-link-sign-in.ts`),
  * the second way in next to Google (Phase 5). The flow is Firebase's: send a link,
  * remember the address on this device, finish when the player comes back through
  * it; on another device they type the address again.
  */
 import { describe, expect, it, vi } from "vitest";
-import {
-  createEmailLinkSignIn,
-  type EmailLinkDeps,
-} from "@/features/account/email-link-sign-in";
+import { createEmailLinkSignIn, type EmailLinkDeps } from "@/platform/email-link-sign-in";
 
 function deps(overrides: Partial<EmailLinkDeps> = {}) {
   const stored = new Map<string, string>();

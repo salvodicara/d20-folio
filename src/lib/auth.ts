@@ -16,7 +16,7 @@ import { DEV_BYPASS_AUTH, DEV_BYPASS_PHOTO_URL } from "@/lib/dev-bypass";
 // DEV-ONLY (remove before release): act-as-member impersonation (the `?devActAs=<uid>`
 // emulator sandbox; see `dev-impersonate.ts` + `scripts/dev-seed-sandbox.ts`).
 import { devActAsUid } from "@/lib/dev-impersonate";
-import { createEmailLinkSignIn } from "@/features/account/email-link-sign-in";
+import { createEmailLinkSignIn } from "@/platform/email-link-sign-in";
 
 const googleProvider = new GoogleAuthProvider();
 const EMULATOR_SANDBOX =
