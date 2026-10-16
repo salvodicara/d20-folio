@@ -155,7 +155,7 @@ export default defineConfig({
           "**/alegreya-cyrillic*",
           "**/alegreya-greek*",
           "**/alegreya-vietnamese*",
-          // PRE-GA item 3 (the first-load precache trim, `PROGRESS.md` → the
+          // PRE-GA item 3 (the first-load precache trim, the soft-launch charter → the
           // soft-launch charter): the 12 full-bleed scene/backdrop plates
           // (`public/assets/backgrounds/*.webp`, ~1.3 MiB combined, each
           // 76–176 KiB — home hero, login, campaign hall, compendium/roster/

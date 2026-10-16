@@ -355,7 +355,7 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // `@pack/monsters` lazy sub-entry, never the eager barrel — "The content-pack seam"). Ceiling =
 // the measured 9503.94 +~11 KiB never-exact-fit headroom → 9515.
 //
-// 2026-08-02 (the first-load precache trim, pre-GA item 3 — `PROGRESS.md` → the soft-launch
+// 2026-08-02 (the first-load precache trim, pre-GA item 3 — the soft-launch charter → the soft-launch
 // charter): by this point main had drifted to 9481.90 KiB / 323 entries (the difficulty-calc
 // / encounter-budget waves grew several lazy chunks without a ceiling bump — this trim's
 // LOWER new ceiling below closes that drift too, not just banks the win). The 12 heavy

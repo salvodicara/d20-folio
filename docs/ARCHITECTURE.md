@@ -1151,7 +1151,7 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   entities — gated like the condition suite on attack/save spells — so a self-selected Death
   Ward / Aid / Heroism rides the caster's world end to end. What still keeps the ledger alive is
   exactly the CROSS-DOCUMENT carrier: a buff landing on ANOTHER member's document has no canonical
-  channel; the remaining residue is itemized in `docs/AUTOMATION_HANDOFF.md`'s deletion map.
+  channel; the remaining residue is itemized in the retired automation handoff's deletion map (in git history).
 
   A one-shot floor may be visible briefly as both a sheet `activeFeatures` key and its exact campaign
   occurrence. The damage kernel treats a shared `activeKey` as duplicate authority for one rule and returns
@@ -1160,7 +1160,7 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   reloads: self-target encounter damage still needs to route occurrence revocation and returned partner
   transfers through the shared transaction rather than relying only on that optimistic projection filter.
   Its inverse must restore the exact occurrence as well as HP/state; these orchestration seams are tracked
-  in `PROGRESS.md`.
+  in the retired `PROGRESS.md` log (in git history).
 
   Conditions carried by a source are occurrences, not mutations of the manual condition list.
   Encounter occurrences use the ledger's typed `condition` payload; solo play needs only
@@ -2141,7 +2141,7 @@ callbacks)` reports the outcome of the payload it settles — `onSend` (synchron
 
 ### Boot data-resilience — an empty result is authoritative only when SERVER-confirmed
 
-The invariant, learned from the 2026-07-09 **"Clear site data"** incident (`PROGRESS.md`): **a
+The invariant, learned from the 2026-07-09 **"Clear site data"** incident (the retired `PROGRESS.md` log (in git history)): **a
 negative/empty data answer that is only `fromCache` must never render as the authoritative "you have
 nothing" state.** Chrome's "Clear site data" wipes the Firestore IndexedDB cache while the SDK is still
 running; on reload the first list snapshot resolves from the now-EMPTY cache (`fromCache: true`, zero
@@ -2850,7 +2850,7 @@ the pencil via their one optional `libraryEdit` prop (`{ item, onSave }`), whose
 edit deliberately leaves the character's copies alone: an entry is a template and a sheet
 item is an independent copy of it, the one-way relationship the delete confirm already
 teaches. The add commit routes through `characterStore.setCharacter`, the same path the
-create forms use. Campaign SHARING of a library is the ladder's next rung (`PROGRESS.md`).
+create forms use. Campaign SHARING of a library is the ladder's next rung.
 
 ### Dismissable layers vs. portaled menus
 
@@ -3558,7 +3558,7 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
    every edge case. Extend, never branch.
 3. **Override-first.** Every derived value auto-computes from grants AND is manually overridable
    (`overrides` on the character / `trackerOverrides` on the feature ref) — no "automation lock."
-4. **Docs are the system of record.** This file + `CLAUDE.md` + `docs/MECHANICS.md` + `PROGRESS.md` +
+4. **Docs are the system of record.** This file + `CLAUDE.md` + `docs/MECHANICS.md` +
    `docs/PRODUCT_CONSTITUTION.md` are written for both human + AI agents; the pre-commit hook enforces
    docs co-update with code.
 

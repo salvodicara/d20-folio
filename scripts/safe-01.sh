@@ -29,7 +29,7 @@ TOPIC="budget-kill"                          # hard-coded in onBudgetAlert — k
 FUNCTION="onBudgetAlert"
 BUDGET_NAME="d20-folio £15 cap"
 BUDGET_NAME_LEGACY="d20-folio £1 cap"        # pre-soft-launch name — matched so re-arm RENAMES in place, never duplicates
-BUDGET_AMOUNT="15"                           # £15 — the soft-launch cap (owner-ratified 2026-08-02, PROGRESS.md charter R2); inherits the billing account currency (GBP)
+BUDGET_AMOUNT="15"                           # £15 — the soft-launch cap (owner-ratified 2026-08-02, the soft-launch charter R2); inherits the billing account currency (GBP)
 DETACH_ROLE="roles/billing.projectManager"  # project-scoped: DETACH-only, can never re-link
 
 DRY="${SAFE01_DRY_RUN:-}"
