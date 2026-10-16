@@ -390,11 +390,13 @@ export const deleteUser = onCall(async (request) => {
 // ── SAFE-01 — budget kill-switch (the zero-budget hard guarantee) ────────────
 /**
  * `onBudgetAlert` — the standard Google-documented spend kill-switch. The Cloud
- * Billing £1 budget publishes a JSON notification to the `budget-kill` Pub/Sub topic
- * on every threshold crossing; when the ACTUAL accumulated cost exceeds the budget
- * amount this DETACHES the billing account from the project
+ * Billing budget (`d20-folio £15 cap`, set by `scripts/safe-01.sh`; it also emails at
+ * £1 / £5 / £10 / £15) publishes a JSON notification to the `budget-kill` Pub/Sub
+ * topic on every threshold crossing; when the ACTUAL accumulated cost exceeds the
+ * budget amount this DETACHES the billing account from the project
  * (`updateProjectBillingInfo` with an empty `billingAccountName`), which forces all
- * billable usage to stop — spend can never run past ~£1.
+ * billable usage to stop — spend can never run past ~the budget. The amount lives
+ * in the budget, not here: `just safe-status` reads it.
  *
  * Guard rails (see `budget-kill.ts` for the pure decision + `docs/BUG_REPORTING.md`
  * for the setup + emergency-restore runbook):
