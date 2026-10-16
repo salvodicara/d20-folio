@@ -43,13 +43,16 @@ per-item subcollection (#321) lands, its rule takes the same item types.
 
 ## Play outside a fight: scenes
 
-Owner, 2026-10-16: exploration, rests, rituals and downtime are part of the story too. Lines
-outside a fight are recorded like any other (the sheet records whether or not an encounter runs),
-and the report groups them into numbered **scenes**, as a fight is grouped into rounds. A scene
-starts at the session's first line, at a `scene-start { title? }` line (a structural line like a
-round's start: never hidden or moved), after a rest and after a fight. Each scene carries the time
-of its first line (`startedAt`, display only). The export heads it `## Scena 2: Il ponte · 21:40`.
-Writing `scene-start` from the UI is Phase 1's (`recorder.record({ kind: "scene-start", title })`).
+Owner, 2026-10-16: exploration, rests, rituals and downtime are part of the story too, and scenes
+need **no input at the table**. Lines outside a fight are recorded like any other, and the report
+groups them into numbered scenes on its own: a scene starts at the session's first line, after a
+rest and after a fight. Each carries the time of its first line (`startedAt`, display only); an
+untitled one reads `## Scena 2 · 21:40`.
+
+Titles are optional. A `scene-start { title? }` line opens a titled scene where it stands (an
+optional "new scene" button), or, after the game from the narrative editor, a `scene-start`
+moved (`move`) to where an automatic scene begins titles it: `## Scena 2: La strada · 21:40`.
+Hiding it takes the title back. Unlike fight markers, a `scene-start` may be moved and hidden.
 
 ## Session notes in the same timeline
 

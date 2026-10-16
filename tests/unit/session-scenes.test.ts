@@ -181,3 +181,38 @@ describe("the cast list at the top of the copy", () => {
     );
   });
 });
+
+describe("scenes need no input at the table", () => {
+  it("an automatic scene can be titled afterwards: a scene-start moved to its start", () => {
+    const items = [
+      ev("n1", DM, { kind: "note", text: "Camp" }),
+      ev("r1", "ana", { kind: "rest", rest: "long", actor: "pc-ana" }),
+      ev("n2", DM, { kind: "note", text: "They ride north" }),
+      ev("n3", DM, { kind: "note", text: "A storm" }),
+      // After the game, from the narrative editor: a title for scene 2.
+      ev("t1", DM, { kind: "scene-start", title: "The road north" }),
+      {
+        id: "m1",
+        by: DM,
+        at: (clock += 60_000),
+        type: "move",
+        target: "t1",
+        after: "r1",
+      },
+    ] as LogItem[];
+    expect(shape(items)).toEqual([
+      { scene: 1, title: null, ids: ["n1", "r1"] },
+      { scene: 2, title: "The road north", ids: ["n2", "n3"] },
+    ]);
+  });
+
+  it("a title added afterwards can be taken back (hide), and the scenes stay as they were", () => {
+    const items = [
+      ev("n1", DM, { kind: "note", text: "Camp" }),
+      ev("t1", DM, { kind: "scene-start", title: "Oops" }),
+      ev("n2", DM, { kind: "note", text: "Later" }),
+      { id: "h1", by: DM, at: (clock += 60_000), type: "hide", target: "t1" },
+    ] as LogItem[];
+    expect(shape(items)).toEqual([{ scene: 1, title: null, ids: ["n1", "n2"] }]);
+  });
+});
