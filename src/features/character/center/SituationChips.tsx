@@ -127,7 +127,7 @@ export function SituationChips() {
         )}
         <Icon as={ChevronDown} size="sm" decorative className="situations-chevron" />
       </summary>
-      <ul className="situations-list" aria-label={t("combat.situations")}>
+      <ul className="situations-list" role="group" aria-label={t("combat.situations")}>
         {chips.map((chip) => (
           <li key={chip.id} className="situations-row">
             {situationButton(chip)}

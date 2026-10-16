@@ -96,6 +96,7 @@ import {
 } from "@/components/shared/UniversalCard";
 import { ActionLog } from "@/features/character/molecules/ActionLog";
 import {
+  BASE_ACTIONS,
   resolveTrackers,
   resolveCunningStrikeOptions,
   resolveReplaceAttackWithCast,
@@ -104,6 +105,11 @@ import {
 } from "@/lib/smart-tracker";
 
 import { uiText } from "@/lib/loc-text";
+
+/** Base actions that exist only under a condition (Escape while Grappled). */
+const CONDITION_BOUND_BASE: ReadonlySet<string> = new Set(
+  BASE_ACTIONS.filter((action) => action.whileCondition).map((action) => action.id)
+);
 import { localizeText } from "@/lib/views/srd-i18n";
 import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
 import { MasteryRiders } from "@/components/shared/MasteryRiders";
@@ -644,7 +650,15 @@ export function PlayTab() {
   // D8 — every direct list (single-type board, Base, Reactions, Pinned) routes
   // through the SAME `sortActions` comparator the ALL-board groups use.
   const sortedRegular = useMemo(() => sortActions(filteredRegular), [filteredRegular]);
-  const sortedBase = useMemo(() => sortActions(filteredBase), [filteredBase]);
+  // A base action bound to a condition (Escape while Grappled) is the situation
+  // talking: it stays in view while the universal ones wait behind their fold.
+  const [situationalBase, sortedBase] = useMemo(() => {
+    const sorted = sortActions(filteredBase);
+    return [
+      sorted.filter((action) => CONDITION_BOUND_BASE.has(action.id)),
+      sorted.filter((action) => !CONDITION_BOUND_BASE.has(action.id)),
+    ];
+  }, [filteredBase]);
   const sortedReactions = useMemo(
     () => sortActions(filteredReactions),
     [filteredReactions]
@@ -1236,10 +1250,41 @@ export function PlayTab() {
           </>
         )}
 
+      {/* ── A condition's own base action (Escape while Grappled) stays in view ── */}
+      {activeFilter !== "reaction" &&
+        activeFilter !== "pinned" &&
+        situationalBase.length > 0 && (
+          <div className="uc-stack mb-4">
+            {situationalBase.map((action) => (
+              <CombatActionCard
+                key={action.id}
+                action={action}
+                selected={isSelected(action)}
+                depleted={isDepletedAction(action)}
+                blockedReason={blockedReasonFor_(action, isDepletedAction(action))}
+                slotFull={slotFullFor(action)}
+                attackCount={attackCountFor(action)}
+                attackOccupant={attackOccupantFor(action)}
+                slotData={slotPipsFor(action)}
+                attackRoll={attackRollFor(action)}
+                higherLevelsFor={higherLevelsFor}
+                onSpendRider={spendRider}
+                depletedTrackers={depletedTrackers}
+                cunningStrike={cunningStrike}
+                skillCheckBonusFor={skillCheckBonusFor}
+                open={expandedId === action.id}
+                onOpenChange={(o) => setExpandedId(o ? action.id : null)}
+                onCommit={(checked) => dispatchAction(checked ?? action)}
+                onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
+              />
+            ))}
+          </div>
+        )}
+
       {/* ── Base Actions — universal SRD actions, under any non-reaction filter ── */}
       {activeFilter !== "reaction" &&
         activeFilter !== "pinned" &&
-        filteredBase.length > 0 && (
+        sortedBase.length > 0 && (
           // Progressive disclosure (owner 2026-10-16): the universal actions every
           // creature has (Dash, Help, Hide…) wait behind one closed row, so a
           // beginner first sees what THEIR character can do. A search opens it.
@@ -1252,7 +1297,7 @@ export function PlayTab() {
                 tight
                 data-econ="action"
                 title={t("combat.baseActions")}
-                meta={String(filteredBase.length)}
+                meta={String(sortedBase.length)}
               />
             </summary>
             <div className="uc-stack">

@@ -8,6 +8,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { openSituations } from "./sheet-steps";
 
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 90_000 });
@@ -40,6 +41,7 @@ const gloss = (page: Page, name: string) =>
 for (const size of ["desktop", "mobile"] as const) {
   test(`light without Darkvision (it, dark, ${size})`, async ({ page }) => {
     await openSheet(page, size, "scn-weapon-cards");
+    await openSituations(page);
     const situations = page.getByRole("group", { name: "Situazione" });
     const dim = situations.getByRole("button", { name: "Luce Fioca" });
     const dark = situations.getByRole("button", { name: "Oscurità" });
@@ -67,6 +69,7 @@ for (const size of ["desktop", "mobile"] as const) {
 
   test(`darkness with Darkvision (it, dark, ${size})`, async ({ page }) => {
     await openSheet(page, size, "scn-barbarian-extra-attack");
+    await openSituations(page);
     const situations = page.getByRole("group", { name: "Situazione" });
     await situations.getByRole("button", { name: "Oscurità" }).click();
     await expect(

@@ -48,13 +48,10 @@ for (const size of ["desktop", "mobile"] as const) {
       .getByRole("button", { name: /^Copertura Parziale:/ })
       .click();
     await expect(acTile.locator(".v-val")).toHaveText(String(before + 5));
-    if (size === "desktop") {
-      // The rail's active states (folded away on a phone) show the lit level too.
-      const chip = page
-        .getByTestId("activatable-bar")
-        .getByRole("button", { name: "Copertura Tre Quarti" });
-      await expect(chip).toHaveAttribute("aria-pressed", "true");
-    }
+    // The status row under the name shows the lit level too (on every viewport).
+    await expect(
+      page.locator(".char-status-row .status-badge", { hasText: "Copertura Tre Quarti" })
+    ).toBeVisible();
     await page.screenshot({ path: shotPath(`cover-three-quarters-${size}.png`) });
 
     await vitals(page)

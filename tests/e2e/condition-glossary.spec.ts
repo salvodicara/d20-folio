@@ -4,8 +4,9 @@
  * ("Mentre sei Prono sei a terra…"). The × beside it still removes the condition.
  * Before/after shots land under REVIEW_SHOTS when set, else in the test output dir.
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { addCondition } from "./sheet-steps";
 import itGlossary from "../../src/i18n/it/ui/glossary.json" with { type: "json" };
 
 test.describe.configure({ timeout: 90_000 });
@@ -13,21 +14,6 @@ test.describe.configure({ timeout: 90_000 });
 function shotPath(name: string): string {
   const dir = process.env.REVIEW_SHOTS;
   return dir ? `${dir}/${name}` : test.info().outputPath(name);
-}
-
-async function addCondition(page: Page, label: string) {
-  const add = page.getByRole("button", { name: /aggiungi condizione/i }).first();
-  if (!(await add.isVisible())) {
-    await page
-      .getByRole("button", { name: /^risorse$/i })
-      .first()
-      .click();
-  }
-  await add.click();
-  const listbox = page.getByRole("listbox", { name: /aggiungi condizione/i });
-  await listbox.getByRole("option", { name: label, exact: true }).click();
-  await page.keyboard.press("Escape");
-  await expect(listbox).toBeHidden();
 }
 
 for (const size of ["desktop", "mobile"] as const) {
@@ -42,20 +28,23 @@ for (const size of ["desktop", "mobile"] as const) {
     await freezeMotion(page);
     await addCondition(page, "Prono");
 
-    const tip = page.getByRole("button", { name: "Scopri cosa significa Prono" });
-    await tip.scrollIntoViewIfNeeded();
+    // The condition is a badge under the name; tapping it explains it in plain words.
+    const badge = page
+      .getByRole("group", { name: "Effetti attivi" })
+      .getByRole("button", { name: "Prono" });
+    await badge.scrollIntoViewIfNeeded();
     await page.screenshot({ path: shotPath(`condition-glossary-before-${size}.png`) });
 
-    await tip.click();
-    const pop = page.locator(".glossary-pop");
+    await badge.click();
+    const pop = page.locator(".status-pop", { hasText: itGlossary.glossary.term.prone });
     await expect(pop).toBeVisible();
     await expect(pop).toContainText("Prono");
-    await expect(pop).toContainText(itGlossary.glossary.term.prone);
     await page.screenshot({ path: shotPath(`condition-glossary-after-${size}.png`) });
 
-    // The chip's × is still its own control: the condition stays until it is used.
+    // Its popover also ends it: the condition stays until that is used.
+    await expect(pop.getByRole("button", { name: "Rimuovi Prono" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(pop).toBeHidden();
-    await expect(page.getByRole("button", { name: "Rimuovi Prono" })).toBeVisible();
+    await expect(badge).toBeVisible();
   });
 }

@@ -15,6 +15,7 @@
  */
 
 import { test, expect, type Page, type Locator } from "@playwright/test";
+import { addCondition, openBaseActions, stateBadge } from "./sheet-steps";
 
 /** The CONCENTRATION status badge on the turn altar's status ledge (the BG3-style
  *  badge row): the gold badge wearing the concentrated-on spell's name, a button
@@ -33,6 +34,8 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/characters/mock-1");
     await expect(page.getByText("Lyra Voss").first()).toBeVisible();
+    // The universal base actions (Dash, Dodge…) open on request (owner 2026-10-16).
+    await openBaseActions(page);
   });
 
   // ── Display (the legacy combat-page readouts, re-homed to the cockpit) ──────
@@ -82,11 +85,15 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await page.keyboard.press("Escape");
   });
 
-  test("the Resources rail shows active conditions and spell slots", async ({ page }) => {
-    // Frightened is active in the mock → a "Remove Frightened" control surfaces.
+  test("the status row shows active conditions; the Resources rail shows spell slots", async ({
+    page,
+  }) => {
+    // Frightened is active in the mock → its badge under the name ends it.
+    await stateBadge(page, /frightened/i).click();
     await expect(
-      page.getByRole("button", { name: /remove frightened/i }).first()
+      page.locator(".status-pop").getByRole("button", { name: /remove frightened/i })
     ).toBeVisible();
+    await page.keyboard.press("Escape");
     // Bard 9 has spell slots — each cell is an img with an availability label.
     await expect(
       page.getByRole("img", { name: /level-1 slots available/i }).first()
@@ -196,11 +203,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
   }) => {
     // Add Incapacitated via the Resources rail condition picker (the in-app
     // picker uses canonical lowercase ids, so the gate resolves).
-    await page
-      .getByRole("button", { name: /add condition/i })
-      .first()
-      .click();
-    await page.getByRole("option", { name: /^Incapacitated$/i }).click();
+    await addCondition(page, "Incapacitated");
 
     // Non-spell actions retain their condition gate; spells remain resource tracking.
     await page.getByRole("button", { name: "Use: Dash" }).click();

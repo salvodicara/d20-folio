@@ -8,6 +8,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { openSituations } from "./sheet-steps";
 
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 90_000 });
@@ -42,6 +43,7 @@ for (const size of ["desktop", "mobile"] as const) {
     page,
   }) => {
     await openSheet(page, size);
+    await openSituations(page);
     const situations = page.getByRole("group", { name: "Situazione" });
     const longRange = situations.getByRole("button", { name: "Gittata lunga" });
     const underwater = situations.getByRole("button", { name: "Sott'acqua" });

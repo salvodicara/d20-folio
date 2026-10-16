@@ -6,6 +6,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { openBaseActions } from "./sheet-steps";
 
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 90_000 });
@@ -29,6 +30,7 @@ async function openSheet(page: Page, size: "desktop" | "mobile") {
 for (const size of ["desktop", "mobile"] as const) {
   test(`Search: Perception 14 + bonus vs DC 15 (it, dark, ${size})`, async ({ page }) => {
     await openSheet(page, size);
+    await openBaseActions(page);
     const use = page.getByRole("button", { name: "Usa: Ricerca" });
     await use.scrollIntoViewIfNeeded();
     const card = page.locator("article.uc", { has: use }).first();

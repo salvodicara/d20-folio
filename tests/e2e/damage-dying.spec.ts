@@ -15,6 +15,7 @@
 
 import { test, expect, type Page } from "@playwright/test";
 import { seedUI, seedLang, readyByName } from "./surfaces";
+import { lightState } from "./sheet-steps";
 
 /** Open the header HP popover (works alive AND at 0 — the pill stays the editor). */
 async function openHp(page: Page): Promise<void> {
@@ -23,19 +24,6 @@ async function openHp(page: Page): Promise<void> {
     .first()
     .click();
   await page.getByRole("dialog", { name: /hit points/i }).waitFor();
-}
-
-/**
- * Reveal the Resources rail. On the phone cockpit (<1180px) the Right HUD —
- * which carries the Active Features (Rage) toggle bar — folds behind a collapsed
- * "Resources" disclosure; on desktop that toggle is `rail:hidden` and the rail is
- * always open, so this is a no-op there. Mirrors the sibling shot specs' idiom.
- */
-async function revealResourcesRail(page: Page): Promise<void> {
-  const disclosure = page.getByRole("button", { name: /^resources$/i }).first();
-  if (await disclosure.isVisible().catch(() => false)) {
-    await disclosure.click();
-  }
 }
 
 /** Type an amount + tap a verb inside the open HP popover. */
@@ -60,13 +48,9 @@ test.describe("RA-05 — defense-aware damage entry (raging Barbarian)", () => {
     // Phone cockpit folds the Right HUD (the Active Features bar) behind the
     // "Resources" disclosure — open it so the Rage toggle is reachable (no-op on
     // desktop, where the rail is always open).
-    await revealResourcesRail(page);
-    // Light Rage — its while-active B/P/S resistance is what the intake applies.
-    await page
-      .locator('[data-testid="activatable-bar"]')
-      .getByRole("button", { name: /rage/i })
-      .first()
-      .click();
+    // Light Rage from the status row's "+" — its while-active B/P/S resistance is
+    // what the intake applies.
+    await lightState(page, /rage/i);
   });
 
   test("typed slashing halves with the math shown; untyped passes verbatim", async ({
@@ -131,7 +115,7 @@ test.describe("RA-03/10/11 — crossing 0, dying, death saves (mock character)",
     // Unconscious auto-applied — the CONDITION CHIP renders on the sheet (scoped
     // to the chip recipe: the combat log also narrates the gain).
     await expect(
-      page.locator(".co-chip").filter({ hasText: /unconscious/i })
+      page.locator(".char-status-row .status-badge").filter({ hasText: /unconscious/i })
     ).toHaveCount(1);
 
     // ── Damage while at 0, CRIT (RA-03) ───────────────────────────────────
@@ -164,7 +148,7 @@ test.describe("RA-03/10/11 — crossing 0, dying, death saves (mock character)",
     await banner.getByRole("button", { name: /^apply$/i }).click();
     await expect(banner).not.toBeVisible();
     await expect(
-      page.locator(".co-chip").filter({ hasText: /unconscious/i })
+      page.locator(".char-status-row .status-badge").filter({ hasText: /unconscious/i })
     ).toHaveCount(0);
   });
 });

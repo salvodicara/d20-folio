@@ -6,6 +6,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { openBaseActions } from "./sheet-steps";
 
 async function overlaps(page: Page) {
   return page.evaluate(() => {
@@ -34,6 +35,7 @@ test("a toast on the attack list leaves the Signet clear (it)", async ({ page })
   await page.goto("/characters/mock-1?tab=play");
   await page.getByRole("button", { name: /^tutti$/i }).click({ timeout: 60_000 });
   await freezeMotion(page);
+  await openBaseActions(page);
   await page.getByRole("button", { name: "Usa: Scatto" }).click();
   await expect(page.locator(".toast")).toHaveCount(1);
   expect(await overlaps(page)).toEqual([]);

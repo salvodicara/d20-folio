@@ -7,6 +7,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { addCondition } from "./sheet-steps";
 
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 90_000 });
@@ -25,21 +26,6 @@ async function openSheet(page: Page, size: "desktop" | "mobile") {
     timeout: 45_000,
   });
   await freezeMotion(page);
-}
-
-async function addCondition(page: Page, label: string) {
-  const add = page.getByRole("button", { name: /aggiungi condizione/i }).first();
-  if (!(await add.isVisible())) {
-    await page
-      .getByRole("button", { name: /^risorse$/i })
-      .first()
-      .click();
-  }
-  await add.click();
-  const listbox = page.getByRole("listbox", { name: /aggiungi condizione/i });
-  await listbox.getByRole("option", { name: label, exact: true }).click();
-  await page.keyboard.press("Escape");
-  await expect(listbox).toBeHidden();
 }
 
 for (const size of ["desktop", "mobile"] as const) {
