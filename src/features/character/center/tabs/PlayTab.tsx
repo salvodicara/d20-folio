@@ -117,7 +117,7 @@ import {
   buildCunningStrikeOptions,
   type CunningStrikeVM,
 } from "@/lib/views/cunning-strike-view";
-import { GlossaryTip } from "@/components/shared/GlossaryTip";
+import { GlossaryTip, type GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { WeaponFacts } from "@/components/shared/WeaponFacts";
 import { ActionRiders, RiderSummary } from "@/components/shared/ActionRiders";
 import type { RiderVM } from "@/lib/views/rider-view";
@@ -1229,7 +1229,15 @@ export function PlayTab() {
             {/* Pure rubric — the turn-meter Reaction coin alone carries
               availability (a header chip duplicated it, owner order
               2026-07-10); the spent state also reads on every card's CTA. */}
-            <SectionHeader tight data-econ="reaction" title={t("combat.reactions")} />
+            <SectionHeader
+              tight
+              data-econ="reaction"
+              title={
+                <GlossaryTip term="reaction" rubric={t("combat.reaction")}>
+                  {t("combat.reactions")}
+                </GlossaryTip>
+              }
+            />
             <p className="mb-2 px-1 text-[0.7rem] italic text-text-secondary">
               {t("combat.reactionsNote")}
             </p>
@@ -1442,7 +1450,9 @@ function combatFacts(
     // Rolled Temporary HP as a labeled accordion fact (the gloss carries it too).
     summary.tempHpRoll
       ? {
-          label: t("combat.tempHpRollLabel"),
+          label: (
+            <GlossaryTip term="temporaryHitPoints" rubric={t("combat.tempHpRollLabel")} />
+          ),
           icon: ShieldPlus,
           value: t("combat.tempHpRoll", {
             dice: tempHpRollFormula(summary.tempHpRoll),
@@ -1503,11 +1513,20 @@ function ActionGroup({
   onCommit: (action: ResolvedAction) => void;
   onPin: (action: ResolvedAction) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="agroup" data-slot={slot}>
       <div className="ag-head">
         <span className="ag-diamond" aria-hidden />
-        <h3 className="ag-title">{title}</h3>
+        <h3 className="ag-title">
+          {slot === "bonus" ? (
+            <GlossaryTip term="bonusAction" rubric={t("features.slotBonus")}>
+              {title}
+            </GlossaryTip>
+          ) : (
+            title
+          )}
+        </h3>
         <span className="ag-rule" aria-hidden />
       </div>
       <div className="uc-stack">
@@ -1604,10 +1623,15 @@ function CombatActionCard({
   onCommit: (checked?: ResolvedAction) => void;
   onPin: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const masteriesThisTurn = useCombatStore((s) => s.masteriesThisTurn);
   const { language: locale } = useLocale();
   const kind = combatKind(action);
+  // Beginner glossary: a base action's id IS its glossary term id, so its name
+  // opens the plain-language line (glossary-actions.guard pins the set).
+  const nameTerm = i18n.exists(`glossary.term.${action.id}`)
+    ? (action.id as GlossaryTermId)
+    : undefined;
 
   // S9 — the item→multi-spell-pool cast card: it CASTS a
   // spell from the item's shared charge pool, so it reads with the spell "Cast"
@@ -1765,6 +1789,7 @@ function CombatActionCard({
         (action.source === "weapon" ? weaponSealIcon(action.weaponId) : undefined)
       }
       name={action.name}
+      nameTerm={nameTerm}
       slot={action.type}
       spellLevel={action.source === "spell" ? (action.spellLevel ?? 0) : undefined}
       cantripSealLabel={t("spells.cantripSeal")}

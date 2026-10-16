@@ -24,6 +24,7 @@ import { Plus, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icon } from "@/components/ui/icon";
 import { useReportEditorOpen } from "@/components/shared/card-editor-scope";
+import { GlossaryTip, type GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
 import { condColor, condInkColor } from "@/lib/condition-color";
@@ -69,9 +70,12 @@ export function ConditionEditor({
   statuses?: ReadonlyArray<StatusOptionVM>;
   onToggleStatus?: (statusId: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
   const active = new Set(conditions);
+  // Beginner glossary: an SRD condition id IS its glossary term id, so its
+  // plain-language line rides the chip (tap) and the picker row (hover gloss).
+  const hasGloss = (id: string): boolean => i18n.exists(`glossary.term.${id}`);
   // Controlled so a host combatant card learns when this PORTALED listbox is open and a
   // dismissing surface click only closes it, never ALSO toggling the card (no-op elsewhere).
   const [open, setOpen] = useState(false);
@@ -93,7 +97,11 @@ export function ConditionEditor({
               : undefined
           }
         >
-          {chip.label}
+          {hasGloss(chip.id) ? (
+            <GlossaryTip term={chip.id as GlossaryTermId} rubric={chip.label} />
+          ) : (
+            chip.label
+          )}
           {/* RA-12 — the find-DC rides the Invisible chip (SRD "Hide": your check
               total is the DC to find you); reuses the one `stats.dc` label. */}
           {chip.id === "invisible" && hiddenDc != null
@@ -169,6 +177,7 @@ export function ConditionEditor({
                   role="option"
                   data-condition={c.id}
                   aria-selected={active.has(c.id)}
+                  title={hasGloss(c.id) ? t(`glossary.term.${c.id}`) : undefined}
                   className={cn("co-pick-item", active.has(c.id) && "active")}
                   onClick={() => onToggle(c.id)}
                 >

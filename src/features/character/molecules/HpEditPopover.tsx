@@ -48,6 +48,7 @@
 
 import { useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Droplet, Plus, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Icon } from "@/components/ui/icon";
@@ -75,16 +76,26 @@ import { hpState } from "./hp-tier";
  * up). A pure derived band (NOT a condition); the `title` carries the plain-language
  * gloss. Lives here so BOTH HP surfaces (cockpit vital + encounter well) render the
  * SAME chip next to the readout — one source, never disagreeing with the bar.
+ * `glossed` (a static readout, never inside the HP button) makes the label the
+ * Bloodied glossary tip, which then carries the explanation instead of the title.
  */
-export function BloodiedMark({ label, hint }: { label: string; hint: string }) {
+export function BloodiedMark({
+  label,
+  hint,
+  glossed = false,
+}: {
+  label: string;
+  hint: string;
+  glossed?: boolean;
+}) {
   return (
     <span
       className="ml-1 inline-flex items-center gap-0.5 rounded-sm border border-error/40 bg-error/10 px-1 text-[length:var(--text-micro)] font-semibold uppercase tracking-[0.08em] text-error"
-      title={hint}
-      aria-label={label}
+      title={glossed ? undefined : hint}
+      aria-label={glossed ? undefined : label}
     >
       <Icon as={Droplet} size="xs" decorative />
-      {label}
+      {glossed ? <GlossaryTip term="bloodied" rubric={label} /> : label}
     </span>
   );
 }
@@ -407,7 +418,13 @@ export function HpEditPopover({
               )}
               {!hideTemp && temp > 0 && (
                 <span className="font-mono text-xs text-info">
-                  +{temp} {t("character.tempHpShort")}
+                  +{temp}{" "}
+                  <GlossaryTip
+                    term="temporaryHitPoints"
+                    rubric={t("combat.tempHpRollLabel")}
+                  >
+                    {t("character.tempHpShort")}
+                  </GlossaryTip>
                 </span>
               )}
             </span>

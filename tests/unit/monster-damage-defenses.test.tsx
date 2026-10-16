@@ -228,7 +228,9 @@ describe(
       expect(offered).toHaveLength(conditionOptions("en").length - immune.length);
       for (const option of screen.getAllByRole("option")) {
         expect(option).toHaveProperty("disabled", false);
-        expect(option.getAttribute("title")).toBeNull();
+        // The only gloss is the beginner line, never an immunity note.
+        const id = option.getAttribute("data-condition") ?? "";
+        expect(option.getAttribute("title")).toBe(i18n.t(`glossary.term.${id}`));
       }
     });
 

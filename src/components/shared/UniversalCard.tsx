@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { InlineMarkdown } from "@/components/shared/InlineMarkdown";
+import { GlossaryTip, type GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { useRulesTextHighlight } from "@/components/shared/highlightRulesText";
 import { MagicMark } from "@/components/ui/folio-marks";
 import { BreakdownTip } from "@/components/shared/BreakdownTip";
@@ -152,6 +153,11 @@ export interface UniversalCardProps {
   showSeal?: boolean;
   /** Serif lemma (the name). */
   name: string;
+  /**
+   * Beginner glossary term for the name: the name becomes a GlossaryTip, so a
+   * tap opens its plain-language line instead of expanding the card.
+   */
+  nameTerm?: GlossaryTermId;
   /** Action-economy slot for the left-border colour. Default "nothing". */
   slot?: UniversalCardSlot;
   /**
@@ -307,6 +313,7 @@ export function UniversalCard({
   sealIcon,
   showSeal = true,
   name,
+  nameTerm,
   slot = "nothing",
   spellLevel,
   cantripSealLabel = "CAN",
@@ -429,7 +436,9 @@ export function UniversalCard({
 
         {/* Name cell — lemma + magical/conc/ritual/qty marks */}
         <span className="uc-name-cell">
-          <span className="uc-name">{name}</span>
+          <span className="uc-name">
+            {nameTerm ? <GlossaryTip term={nameTerm} rubric={name} /> : name}
+          </span>
           {magical && (
             <span className="uc-mark-wrap" title={magicTitle} aria-hidden>
               <MagicMark />
