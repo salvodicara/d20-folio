@@ -29,6 +29,7 @@ import { rosterToast } from "./roster-toast";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { nonEmptyString } from "@/lib/non-empty-string";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { asLocale } from "@/lib/locale";
 
 export interface RosterActions {
   /** Download the character as a portable JSON file (no auth; works in bypass). */
@@ -96,7 +97,7 @@ export function useRosterActions(character: RosterCharacterDoc): RosterActions {
       // initial bundle. Export is a deliberate click, so the one-time fetch is
       // invisible. The active locale + bound `t` drive a fully-localized sheet.
       const { downloadCharacterPdf } = await import("@/lib/pdf/character-pdf-export");
-      const locale = i18n.language === "it" ? "it" : "en";
+      const locale = asLocale(i18n.language);
       const { portraitDropped } = await downloadCharacterPdf(full, locale, (key, opts) =>
         t(key, opts)
       );
