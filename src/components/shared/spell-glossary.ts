@@ -8,7 +8,7 @@
  *
  * Spellcasting Focus has no label of its own: the Material line names it.
  */
-import { LOCALES, type Locale } from "@/lib/locale";
+import type { Locale } from "@/lib/locale";
 import { uiText } from "@/lib/loc-text";
 import { localizeText } from "@/lib/views/srd-i18n";
 import type { GlossaryTermId } from "./GlossaryTip";
@@ -56,12 +56,14 @@ const word = (w: string): RegExp => new RegExp(`(?<!\\p{L})(?:${w})(?!\\p{L})`, 
 
 /**
  * The area term a localized range names: its shape ("Sé stessi (cono di 9 metri)"
- * → cone), else a bare radius → Area of Effect, else none.
+ * → cone), else a bare radius → Area of Effect, else none. `t` reads the shape
+ * names in the range's own locale.
  */
-export function rangeAreaTerm(range: string): SpellTermId | null {
-  const shape = SHAPES.find(({ term }) =>
-    LOCALES.some((l) => word(spellTermName(term, l)).test(range))
-  );
+export function rangeAreaTerm(
+  range: string,
+  t: (key: string) => string
+): SpellTermId | null {
+  const shape = SHAPES.find(({ term }) => word(t(SPELL_GLOSSARY[term])).test(range));
   if (shape) return shape.term;
   return word("radius|raggio").test(range) ? RADIUS.term : null;
 }
