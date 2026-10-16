@@ -115,7 +115,7 @@ describe("No-Truncation Rule — card/row names (DESIGN.md §3)", () => {
     // `minmax(0, max-content)` compromise is superseded: it let the CHIP clip;
     // now the wrapping name yields the space instead).
     expect(baseBody(".uc-head")).toMatch(
-      /grid-template-columns:\s*34px minmax\(0, 1fr\) max-content auto/
+      /grid-template-columns:\s*40px minmax\(0, 1fr\) max-content auto/
     );
   });
 });

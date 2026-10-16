@@ -97,8 +97,8 @@ export default defineConfig({
         short_name: "d20 Folio",
         description:
           "A modern D&D 2024 character sheet manager with SRD database, cloud sync, and party features.",
-        theme_color: "#0a0806",
-        background_color: "#0a0806",
+        theme_color: "#0c0a08",
+        background_color: "#0c0a08",
         display: "standalone",
         scope: "/",
         start_url: "/",

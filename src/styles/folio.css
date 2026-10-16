@@ -1005,7 +1005,7 @@ svg.icon[stroke],
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.12em;
@@ -1197,7 +1197,7 @@ svg.icon[stroke],
   width: 100%;
 }
 .spinner-caption {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-xs);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -1558,7 +1558,7 @@ svg.icon[stroke],
   gap: 4px;
 }
 .field-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
@@ -1958,7 +1958,7 @@ textarea.input::-webkit-resizer {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.1em;
@@ -2322,7 +2322,7 @@ button.pr-dot.lg::before {
   );
 }
 .pop-rubric {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -2445,6 +2445,50 @@ button.pr-dot.lg::before {
 .glossary-pop {
   max-width: min(300px, calc(100vw - 24px));
   z-index: var(--z-tooltip);
+}
+/* Direction B: a short numeric breakdown is an EQUATION ("16 Chain Mail + 2 Shield
+   = 18 AC"): engraved figures, the source named under each, the total in gold. */
+.bd-eq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  column-gap: var(--sp-3);
+  row-gap: var(--sp-3);
+}
+.bd-eq-group {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.bd-eq-term {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bd-eq-term b {
+  font-family: var(--font-engraved);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+}
+.bd-eq-term > span {
+  font-family: var(--font-body);
+  font-size: var(--text-read);
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+.bd-eq-op {
+  font-family: var(--font-engraved);
+  font-size: var(--text-lg);
+  line-height: 1.2;
+  color: var(--accent-primary);
+}
+.bd-eq-total b {
+  color: var(--accent-text);
+}
+.bd-eq-total > span {
+  color: var(--accent-primary);
 }
 .glossary-pop .pop-body {
   font-family: var(--font-body);
@@ -3189,7 +3233,7 @@ button.pr-dot.lg::before {
     var(--bg-page);
 }
 .es-eyebrow {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -3351,7 +3395,7 @@ button.pr-dot.lg::before {
   transition: none;
 }
 .nav-item span {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 10px; /* was 8.5px — below any readable floor for primary nav */
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -3622,19 +3666,19 @@ button.pr-dot.lg::before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 46px;
-  padding: 4px 8px;
-  /* COCKPIT-LUX — carved tile (gradient + emboss) instead of a flat surface-2
-     slab, so the hero-bar vitals share the wizard's carved-plaque material. */
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--bg-surface-3), var(--bg-surface-2));
-  box-shadow: var(--elev-resting);
+  justify-content: center;
+  min-width: 56px;
+  padding: 8px 12px;
+  /* Direction B: a framed stone tile, the figure engraved large. */
+  border: 0;
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  box-shadow: var(--panel-frame);
 }
 .vital .v-num {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--text-lg);
   line-height: 1;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -3645,15 +3689,15 @@ button.pr-dot.lg::before {
    premium register). The trigger is a `.glossary-term` button, so reset its
    inherited button chrome to the plain number. */
 .vital .v-num-tip {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--text-lg);
   line-height: 1;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
 .vital .v-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* was 8px */
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -3703,9 +3747,9 @@ button.pr-dot.lg::before {
   display: inline-flex;
   align-items: baseline;
   gap: 3px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--text-lg);
   line-height: 1;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -3854,7 +3898,7 @@ button.pr-dot.lg::before {
   color: var(--accent-text);
   font-size: 11px;
   letter-spacing: 0.09em;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   text-transform: uppercase;
   cursor: pointer;
   vertical-align: 1px;
@@ -3919,7 +3963,7 @@ button.pr-dot.lg::before {
   color: var(--text-secondary);
   font-size: 11px;
   letter-spacing: 0.06em;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   text-transform: uppercase;
   vertical-align: 1px;
   white-space: nowrap;
@@ -3945,7 +3989,7 @@ button.pr-dot.lg::before {
 
 /* The value wrapper (mirrors the legacy `.v-num` numerals; positioned by density). */
 .vital .v-val {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
   font-size: 15px;
   line-height: 1;
@@ -3963,7 +4007,7 @@ button.pr-dot.lg::before {
   flex-shrink: 0;
 }
 .vital .v-acr {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -4215,14 +4259,14 @@ button.pr-dot.lg::before {
   gap: 5px;
 }
 .deriv .d-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-secondary); /* AA at 9px; was the text-muted near-miss */
 }
 .deriv .d-val {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
   font-size: 12px;
   color: var(--accent-text);
@@ -4275,7 +4319,7 @@ button.pr-dot.lg::before {
   box-shadow: 0 0 5px color-mix(in oklab, var(--accent-text) 35%, transparent);
 }
 .rail-head h5 {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -4304,7 +4348,7 @@ button.pr-dot.lg::before {
   text-align: left;
 }
 .rail-notes-rubric {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -4437,14 +4481,14 @@ textarea.input.rail-notes-area {
   gap: 3px;
 }
 .hp-cur {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
   font-size: 18px;
   color: var(--hp-c, var(--semantic-success));
   font-variant-numeric: tabular-nums;
 }
 .hp-max {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 12px;
   color: var(--text-muted);
 }
@@ -5130,7 +5174,7 @@ button.trk-pip:active {
   gap: 6px;
   padding: 3px 9px;
   border-radius: var(--radius-md);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -5190,7 +5234,7 @@ button.trk-pip:active {
   align-items: center;
   gap: 5px;
   cursor: pointer;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -5265,7 +5309,7 @@ button.trk-pip:active {
   margin-bottom: 5px;
 }
 .co-ex-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -6469,7 +6513,7 @@ button.trk-pip:active {
 
 /* Branded mono eyebrow above the hero wordmark (welcome/login). */
 .brand-eyebrow {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   /* aligned to the welcome.html handoff voice: --text-2xs + --tracking-widest
      (was a hardcoded 0.22em / micro size — minor drift from the documented
      scale). */
@@ -6758,14 +6802,14 @@ button.trk-pip:active {
   gap: 1px;
 }
 .cast-stat .cs-num {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
   font-size: 18px;
   color: var(--accent-text);
   font-variant-numeric: tabular-nums;
 }
 .cast-stat .cs-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -6811,7 +6855,7 @@ button.trk-pip:active {
   box-shadow: var(--elev-recessed);
 }
 .cast-slots .slot-edit-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -7025,7 +7069,7 @@ button.trk-pip:active {
      more prominent than the old cramped micro rubric. */
   flex: 1;
   min-width: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 0.68rem;
   line-height: 1.5;
   font-weight: 700;
@@ -7037,7 +7081,7 @@ button.trk-pip:active {
   display: inline-block;
   vertical-align: middle;
   margin-left: 5px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -7090,7 +7134,7 @@ button.trk-pip:active {
   align-items: center;
   gap: var(--sp-2);
   margin-bottom: var(--sp-3);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -7219,7 +7263,7 @@ button.trk-pip:active {
   cursor: not-allowed;
 }
 .opt-badge {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -7291,7 +7335,7 @@ button.trk-pip:active {
 /* Prerequisite / caveat line — the deep-gold rubric voice (Gold-Text Rule: small
    gold text is always --accent-text, AA-safe on the carved surface in both themes). */
 .opt-cell-note {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -7462,7 +7506,7 @@ button.trk-pip:active {
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -7661,7 +7705,7 @@ button.trk-pip:active {
   align-items: center;
   gap: 7px;
   margin: 0 0 var(--sp-2);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -7724,7 +7768,7 @@ button.create-need:focus-visible {
 .review-ledger-k {
   flex-shrink: 0;
   min-width: 92px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -8134,7 +8178,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: 4px;
   margin-top: 3px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -8185,14 +8229,14 @@ button.create-need:focus-visible .create-need-chev {
   margin-bottom: 4px;
 }
 .ch-hp-label .hl-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-secondary);
 }
 .ch-hp-label .hl-num {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   font-weight: 700;
   color: var(--text-secondary);
@@ -8233,7 +8277,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .ch-stat .cst-lbl,
 .admin-stat .cst-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -8241,7 +8285,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .ch-stat .cst-val,
 .admin-stat .cst-val {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
@@ -8628,7 +8672,7 @@ button.create-need:focus-visible .create-need-chev {
 .palette-group {
   margin: 0 0 4px;
   padding: 0 var(--sp-3);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -8965,7 +9009,7 @@ button.create-need:focus-visible .create-need-chev {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-1);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -9069,7 +9113,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .cl-opt .cl-tag,
 .cl-opt .cl-rest {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -9089,7 +9133,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .cl-group-label {
   margin: 0 0 var(--sp-2);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -9236,7 +9280,7 @@ button.create-need:focus-visible .create-need-chev {
   color: color-mix(in oklab, var(--semantic-info) 78%, var(--text-primary));
 }
 .cl-pool-status .cl-pool-unit {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -9267,7 +9311,7 @@ button.create-need:focus-visible .create-need-chev {
   margin-bottom: var(--sp-2);
 }
 .cl-mm-title {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -9726,7 +9770,7 @@ button.create-need:focus-visible .create-need-chev {
      lands on the panel's top edge (the shell's -2px seat) and a soft glow. */
   height: 36px;
   padding: 0 10px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -9955,7 +9999,7 @@ button.create-need:focus-visible .create-need-chev {
   color: var(--text-primary);
 }
 .cmp-frontis-count {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -9990,7 +10034,7 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   gap: var(--sp-3);
   margin-bottom: var(--sp-2);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -10305,7 +10349,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .cmp-facet-label {
   grid-column: 1;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -10471,7 +10515,7 @@ button.create-need:focus-visible .create-need-chev {
    mono, but read-only (a span): a quiet tome-leaf tag, pigmented via `--vd`. */
 .cmp-verdict {
   flex-shrink: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -10695,7 +10739,7 @@ button.create-need:focus-visible .create-need-chev {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.07em;
@@ -11105,7 +11149,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .colophon-effective {
   margin: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -11243,7 +11287,7 @@ button.create-need:focus-visible .create-need-chev {
 .fchip {
   all: unset;
   cursor: pointer;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.08em;
@@ -11328,8 +11372,6 @@ button.create-need:focus-visible .create-need-chev {
      CTA button + any chip text on this card. */
   --at-c-vivid: var(--at-action-vivid);
   position: relative;
-  border-left: 3px solid var(--at-c-vivid);
-  transition: border-left-width var(--m-fast) var(--ease-settle);
 }
 .uc[data-slot="bonus"] {
   --at-c: var(--at-bonus);
@@ -11351,7 +11393,7 @@ button.create-need:focus-visible .create-need-chev {
      its text clipped on the LEFT edge ("…apacit." / "…ghtened"). max-content
      pins it to the chip's natural width; the name/gloss `minmax(0,1fr)` column
      absorbs all the squeeze instead. */
-  grid-template-columns: 34px minmax(0, 1fr) max-content auto;
+  grid-template-columns: 40px minmax(0, 1fr) max-content auto;
   align-items: center;
   column-gap: var(--sp-3);
   row-gap: 1px;
@@ -11367,7 +11409,7 @@ button.create-need:focus-visible .create-need-chev {
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--border-soft);
-  padding: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3);
   transition: background var(--m-fast) var(--ease-standard);
 }
 /* A labelled homogeneous ledger (the Features tab groups class/subclass/race/
@@ -11398,11 +11440,11 @@ button.uc-chevron {
   grid-column: 1;
   grid-row: 1/3;
   align-self: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-lg);
+  border-radius: 50%;
   flex-shrink: 0;
 }
 .uc-seal.lvl {
@@ -11423,14 +11465,26 @@ button.uc-chevron {
 .uc-seal.lvl.cantrip {
   font-size: 10px;
 }
+/* Direction B: a round enamel medallion. On an action row its ring takes the
+   row's action-type colour (ember · teal · violet), so the type reads at a glance
+   without a coloured bar. */
 .uc-seal.kind {
   color: var(--ic, var(--accent-primary-bright));
-  background: color-mix(in oklab, var(--ic, var(--accent-primary)) 12%, transparent);
-  border: 1px solid color-mix(in oklab, var(--ic, var(--accent-primary)) 38%, transparent);
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in oklab, var(--ic, var(--accent-primary)) 14%, var(--bg-surface-3)),
+    var(--bg-recessed) 80%
+  );
+  border: 0;
+  box-shadow:
+    0 0 0 1px
+      color-mix(in oklab, var(--at-c-vivid, var(--accent-primary)) 70%, transparent),
+    0 0 0 3px var(--bg-surface-1),
+    0 0 0 4px var(--accent-primary-deep);
 }
 .uc-seal.kind .icon {
-  width: 17px;
-  height: 17px;
+  width: 19px;
+  height: 19px;
 }
 .uc-seal.kind[data-kind="feature"] {
   --ic: var(--accent-primary-bright);
@@ -11491,10 +11545,12 @@ button.uc-chevron {
 }
 .uc-name {
   display: inline;
-  font-family: var(--font-display);
-  font-weight: 600;
+  /* Direction B: the name of the thing is engraved, like every title. */
+  font-family: var(--font-title);
+  font-weight: 700;
   font-size: var(--text-md);
-  line-height: 1.18;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 /* Inline-flow spacing for the marks after the name (replaces the old flex gap). */
@@ -12089,7 +12145,7 @@ button.uc-chevron::before {
   min-width: 0;
 }
 .uc-facts dt {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -12418,7 +12474,7 @@ button.uc-chevron::before {
 }
 .chronicle-rail-head {
   margin: 0 0 var(--sp-1);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -13016,7 +13072,7 @@ textarea.input.sess-notes-edit {
   flex-wrap: wrap;
 }
 .uc-tag {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -13042,7 +13098,7 @@ textarea.input.sess-notes-edit {
   all: unset;
   box-sizing: border-box;
   cursor: pointer;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -13097,7 +13153,7 @@ textarea.input.sess-notes-edit {
    so the card reads its can/cannot at a glance (BG3). Above the CTA in the
    right-aligned `.uc-cta` column. */
 .cc-reason {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -13405,7 +13461,7 @@ textarea.input.sess-notes-edit {
   box-shadow: var(--elev-raised), var(--illumination);
 }
 .sc-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -13457,7 +13513,7 @@ textarea.input.sess-notes-edit {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   /* 10px legibility floor (was 8px — below any readable floor for a state cue). */
   font-size: var(--text-micro);
   font-weight: 700;
@@ -13497,7 +13553,7 @@ textarea.input.sess-notes-edit {
    crimson tonal chip in the save line; informational only (the bonus still
    reads), token-driven (no hardcoded hex). */
 .sc-autofail {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -13605,7 +13661,7 @@ textarea.input.sess-notes-edit {
   box-shadow: var(--elev-floating);
 }
 .sc-base-head {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -13882,7 +13938,7 @@ button.tr-pip:active {
   gap: var(--sp-3);
 }
 .tr-spend-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -13976,7 +14032,7 @@ button.tr-pip:active {
 /* Eyebrow rubric for hero bands (the campaign hub banner). The roster dropped its
    framed hero in favour of the shared <PageHeader>, so this is the lone consumer. */
 .home-hero-eyebrow {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-widest);
   text-transform: uppercase;
@@ -14294,7 +14350,7 @@ button.party-avatar-btn:focus-visible {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-soft);
   background: var(--bg-surface-2);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -14531,11 +14587,9 @@ button.party-avatar-btn:focus-visible {
 .folio-panel {
   position: relative;
   background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-xl);
-  box-shadow:
-    inset 0 1px 0 var(--panel-highlight),
-    var(--elev-resting);
+  border: 0;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--panel-frame), var(--elev-resting);
 }
 
 /* ═══════════════════ THE ORNAMENT VOCABULARY (BG3 identity T5) ═══════════════════
@@ -14566,82 +14620,11 @@ button.party-avatar-btn:focus-visible {
   box-shadow: var(--elev-resting), var(--gilt-glow);
 }
 
-/* — THE BINDING CORNERS (global, owner-directed 2026-07-31: "dovunque c'è
-   quel bordo all'angolo, il pennacchio") — the corner fitting is the SILHOUETTE
-   of a human-engraved frame-corner spandrel (Openclipart #282416, CC0; vertex
-   knot removed by vector surgery; derivation + provenance in the study
-   library), mounted as a CSS MASK. The approved current+B+BG3 hybrid keeps that
-   silhouette intact and strikes it with a restrained warm gold→bronze ramp:
-   enough material variation to read as metal, never the cold silver reserved
-   for selected state. Tile origin = the outer rule's outer edge; inset -1px seats it
-   pixel-coincident ON the host's 1px border. Hosts keep SQUARE corners under
-   the fitting (geometric necessity: a rounded line would curve out from under
-   the straight fitting and read as a second line). */
+/* Direction B (owner 2026-10-16): the inset frame is the only ornament. The
+   corner fittings and the knot on the lower rule are retired. */
 .page-head.framed,
 .folio-panel.gilt-frame {
-  border-radius: 0;
-}
-.page-head.framed::before,
-.folio-panel.gilt-frame::after,
-.modal-head::after {
-  content: "";
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-  inset: -1px;
-  background: linear-gradient(
-    180deg,
-    var(--accent-primary-bright),
-    var(--metal-bronze) 52%,
-    var(--accent-primary)
-  );
-  opacity: 0.58;
-  mask-image:
-    url("/assets/ornaments/corner-tl.svg"), url("/assets/ornaments/corner-tr.svg"),
-    url("/assets/ornaments/corner-bl.svg"), url("/assets/ornaments/corner-br.svg");
-  mask-position:
-    left top,
-    right top,
-    left bottom,
-    right bottom;
-  mask-size: 48px 48px;
-  mask-repeat: no-repeat;
-}
-[data-theme="light"] .page-head.framed::before,
-[data-theme="light"] .folio-panel.gilt-frame::after,
-[data-theme="light"] .modal-head::after {
-  opacity: 0.54;
-}
-/* The dialog head wears the fittings SCALED to its band (owner: "pennacchi
-   scalati, proporzionati" — the masthead's 48px would overwhelm the head). */
-.modal-head::after {
-  mask-size: 32px 32px;
-}
-
-/* The approved B influence: the already-ratified CC0 centre-loop ricalco
-   (`--wb-knot`, §16.3) now seats ON the lower rule of top-level mastheads and
-   dialog heads. One small weave, never a second separator and never repeated
-   inside ordinary panels. It deliberately reuses the existing traced asset —
-   no new SVG and no parallel ornament vocabulary. */
-.page-head.framed::after,
-.modal-head::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  left: 50%;
-  bottom: -9px;
-  width: 72px;
-  height: 25px;
-  pointer-events: none;
-  transform: translateX(-50%);
-  background: var(--wb-knot) center / contain no-repeat;
-  opacity: 0.62;
-}
-.modal-head::before {
-  bottom: -7px;
-  width: 56px;
-  height: 20px;
-  opacity: 0.54;
+  border-radius: var(--radius-2xl);
 }
 
 /* Engraved ceremonial titling (same push): the Cinzel register reads STRUCK into
@@ -14754,6 +14737,38 @@ button.party-avatar-btn:focus-visible {
     inset 0 -2px 5px color-mix(in oklab, black 22%, transparent),
     var(--elev-raised);
   overflow: hidden;
+}
+/* Direction B (owner 2026-10-16): in the identity band the seal is a MEDALLION —
+   a round portrait inside a double gold ring. */
+.folio-panel.gilt-frame .seal {
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 35%,
+    var(--bg-surface-3),
+    var(--bg-recessed) 75%
+  );
+  box-shadow:
+    0 0 0 2px var(--accent-primary-deep),
+    0 0 0 5px var(--bg-surface-1),
+    0 0 0 6px var(--accent-primary),
+    var(--elev-raised);
+  font-family: var(--font-title);
+  font-size: var(--text-xl);
+  color: var(--accent-text);
+}
+@media (max-width: 720px) {
+  .folio-panel.gilt-frame .seal {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}
+.folio-panel.gilt-frame h1 {
+  color: var(--accent-text);
+  letter-spacing: 0.04em;
 }
 /* D47 full-pass — the identity seal glows gold in light, so the struck medallion
    reads as a lit gold jewel on the cream chrome (matching dark's gleam). */
@@ -14900,7 +14915,7 @@ button:focus-visible > .seal .seal-edit-veil--hover {
    after it (cue + socket / die segments) hugs the right edge. */
 .insp-term {
   margin-right: auto;
-  font: 600 var(--text-2xs) / 1.3 var(--font-numeric);
+  font: 600 var(--text-2xs) / 1.3 var(--font-engraved);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   color: var(--text-secondary);
@@ -15110,7 +15125,7 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   justify-content: center;
   gap: 3px;
   min-height: var(--touch-min);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -15197,53 +15212,51 @@ button:focus-visible > .seal .seal-edit-veil--hover {
    ════════════════════════════════════════════════════════════════════════════ */
 .turn {
   display: grid;
-  /* Two tiers: a HEADER row (round · initiative · End Turn) and a full-width ECONOMY
-     strip beneath it. The economy used to share the header row, where the constrained
-     cockpit-center width forced its four tokens into a ragged 2×2; on its own row they
-     line up as one clean horizontal strip. The initiative column stays a FIXED track
-     (not `auto`) so typing a roll ("—" → "20 +3 = 23") can't shove the header sideways.
-     End Turn spans both rows on the right, so the primary commit stays prominent. */
-  grid-template-columns: auto 8rem 1fr auto;
+  /* Direction B (owner 2026-10-16): three tiers. Round and initiative on top; the
+     four economy tiles (Action · Bonus Action · Reaction · Movement) as one row;
+     then a foot with End Combat, what the turn still holds in words, and the gold
+     End Turn slab, the one lit action. The initiative track is fixed so typing a
+     roll never shoves the row. */
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   grid-template-areas:
-    "round init      .         endturn"
-    "econ  econ      econ      endturn"
-    "endcombat endcombat endcombat .";
+    "round init .    endcombat"
+    "econ  econ econ econ"
+    "left  left left endturn";
   column-gap: var(--sp-4);
-  row-gap: var(--sp-3);
+  row-gap: var(--sp-4);
   align-items: center;
-  padding: var(--sp-3) var(--sp-4);
+  padding: 0 0 var(--sp-5);
   margin-bottom: var(--sp-5);
-  /* COCKPIT-LUX — the turn meter is the combat ALTAR: the wiz-hero surface
-     treatment at meter scale (a candlelit gold ember rising from the top-left
-     over the carved gradient + a gilt-tinted edge), so the heart of combat
-     carries the same ceremony as the wizard's hero altar. The action-type
-     SEMANTIC hues stay on the tokens — the frame alone is gold. */
-  background:
-    radial-gradient(
-      ellipse at 14% 0%,
-      color-mix(in oklab, var(--accent-primary) 11%, transparent),
-      transparent 55%
-    ),
-    linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 30%, var(--border-medium));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--elev-raised);
+  /* It sits inside the framed tab body, so it wears no frame of its own: the
+     tiles carry the frame, a fading gold hairline closes the band. */
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent-primary-deep), transparent) 1;
 }
 /* STATUS LEDGE — when ≥1 status is active (`data-status`), the altar grows a
    full-width bottom row for the badge ledge. The track exists only then, so a
    clean band never pays the empty row's gap (golden rule 19). */
 .turn[data-status] {
   grid-template-areas:
-    "round init      .         endturn"
-    "econ  econ      econ      endturn"
-    "endcombat endcombat endcombat ."
+    "round  init   .      endcombat"
+    "econ   econ   econ   econ"
+    "left   left   left   endturn"
     "status status status status";
+}
+.turn .turn-left {
+  grid-area: left;
+  justify-self: end;
+  margin: 0;
+  text-align: right;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--text-secondary);
+  text-wrap: balance;
 }
 /* Light: the gilt edge GLOWS (the hub gilt-frame aura) — vellum can't halo, so
    the aura is the designed light answer to dark's ember. */
-[data-theme="light"] .turn {
-  box-shadow: var(--elev-raised), var(--gilt-glow-sm);
-}
+
 /* Light round socket: a warm gold well (designed tint, not the gray slate
    recess adapted onto vellum). */
 [data-theme="light"] .turn .r-ring {
@@ -15299,7 +15312,7 @@ button:focus-visible > .seal .seal-edit-veil--hover {
 }
 .turn .end-combat {
   grid-area: endcombat;
-  justify-self: start;
+  justify-self: end;
 }
 .turn .round {
   display: flex;
@@ -15308,7 +15321,7 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   gap: 3px;
 }
 .turn .r-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro); /* 10px legibility floor (was 8px) */
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -15331,7 +15344,7 @@ button:focus-visible > .seal .seal-edit-veil--hover {
     0 0 10px color-mix(in oklab, var(--accent-glow) 22%, transparent);
   display: grid;
   place-items: center;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
   font-size: 15px;
   color: var(--accent-text);
@@ -15370,242 +15383,171 @@ button:focus-visible > .seal .seal-edit-veil--hover {
   justify-content: center;
 }
 .econ {
-  display: flex;
-  align-items: center;
-  justify-content: space-evenly;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--sp-3);
-  flex-wrap: wrap;
 }
+/* Direction B (owner 2026-10-16): each economy slot is a framed stone TILE — an
+   enamelled coin in the slot's own colour (action ember · bonus teal · reaction
+   violet · movement green), the slot's name, and its state in words underneath
+   ("Available", or the action that spent it). The rows are fixed so a tile's
+   height never changes with its state. */
 .econ-tok {
   --ec: var(--at-action);
-  /* GRAPHIC counterpart for glows/halos (light's deep AA hues don't glow). */
   --ec-vivid: var(--at-action-vivid);
-  /* CHAMPLEVÉ sigil (owner pick, 2026-07-03): the hue is poured into the ENGRAVED icon —
-     `--sigil-ink` is the hue's LIGHT ramp step (the glassy enamel), `--sigil-glow` the base
-     hue (the whisper halo + the icon's glassy bloom). Per kind below. */
-  --sigil-ink: var(--verdigris-100);
-  --sigil-glow: var(--at-action);
-  /* Fixed rows — control · caption · detail — so a token's HEIGHT never changes with
-     its state. The 40px control row holds the 40px disc OR the shorter movement bar,
-     both centred, so every caption lines up. The detail row is ALWAYS reserved (even
-     when empty), so a spent-action name appearing below Action/Bonus can't push the
-     discs around. Pure-UI stability; the data model is untouched. */
   display: grid;
-  grid-template-rows: 40px auto 1rem;
-  align-items: center;
+  grid-template-rows: 48px auto auto;
+  align-content: start;
   justify-items: center;
-  gap: 4px;
-  min-width: 62px;
+  gap: 6px;
+  min-width: 0;
+  padding: var(--sp-4) var(--sp-2) var(--sp-3);
+  text-align: center;
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  box-shadow: var(--panel-frame);
+  transition:
+    box-shadow var(--m-fast) var(--ease-settle),
+    background var(--m-fast) var(--ease-settle);
 }
 .econ-tok[data-kind="bonus"] {
   --ec: var(--at-bonus);
   --ec-vivid: var(--at-bonus-vivid);
-  --sigil-ink: var(--lapis-100);
-  --sigil-glow: var(--at-bonus);
 }
 .econ-tok[data-kind="reaction"] {
   --ec: var(--at-reaction);
   --ec-vivid: var(--at-reaction-vivid);
-  --sigil-ink: var(--vermilion-100);
-  --sigil-glow: var(--at-reaction);
 }
 .econ-tok[data-kind="move"] {
-  --ec: var(--text-secondary);
-  --ec-vivid: var(--text-secondary);
-  min-width: 96px;
+  --ec: var(--at-move);
+  --ec-vivid: var(--at-move);
 }
-/* ── Champlevé economy coins (owner pick, 2026-07-03) — the AZIONE / BONUS / REAZIONE
-   tokens are coined bronze discs: a reeded milled edge (::before) and the lucide sigil
-   with the slot's hue POURED into the engraving (champlevé). No inlay ring — the hue
-   lives entirely in the sigil: the icon is struck in the hue's LIGHT ramp step
-   (`--sigil-ink`) with a dark setting edge + a glassy hue bloom, and the available coin
-   carries a whisper halo of the base hue. AVAILABLE = struck bronze; SPENT re-strikes it
-   tarnished dark with a dark sunk icon + no hue (below). Same `.econ-disc` footprint — a
-   pure re-skin; the band layout + the icon/count-badge markup are unchanged. The
-   coin-metal hexes live HERE (recipe-local; no literal hex reaches the TSX). */
+/* The coin: a dark enamel well inside a double gold ring, the slot's sigil
+   poured in its colour. SPENT, the ring dulls to bronze and the sigil goes dark. */
 .econ-disc {
-  --coin-hi: #d9b87c;
-  --coin-mid: #a8845a;
-  --coin-lo: #6b5138;
-  --coin-edge: #4a3826;
-  --coin-tarnish-hi: #55483a;
-  --coin-tarnish-mid: #3a3128;
-  --coin-tarnish-lo: #262019;
-  --coin-tarnish-edge: #1a1510;
-  --coin-sigil-spent: #171310;
-  /* The lit-socket AURA of the slot hue (teal/blue/red) around an AVAILABLE coin.
-     Var-ised so light can re-tune it: dark's `--sigil-glow` (the base `--at-*` hue)
-     is already bright, but on LIGHT `--at-*` resolves to a DEEP AA-fill that cannot
-     bloom on cream — so the coin shipped as a FLAT disc (no socket aura). Light
-     overrides this (below) to the BRIGHT `--ec-vivid` hue as a saturation + soft
-     tinted shadow (DESIGN §10 light-glow grammar), so the coin sits in its lit
-     socket in both themes. */
-  --coin-halo: 0 0 9px color-mix(in srgb, var(--sigil-glow) 40%, transparent);
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   position: relative;
-  isolation: isolate;
-  color: var(--sigil-ink);
-  /* AVAILABLE coin body — struck bronze radial + a milled rim (bright inner sheen
-     over a dark edge, dropped shadow) + a WHISPER HALO of the slot hue. The spent state
-     re-strikes it tarnished (its own box-shadow, halo dropped). */
+  color: var(--ec);
   background: radial-gradient(
-    circle at 34% 28%,
-    var(--coin-hi),
-    var(--coin-mid) 42%,
-    var(--coin-lo) 74%,
-    var(--coin-edge) 100%
+    circle at 50% 30%,
+    color-mix(in oklab, var(--ec) 16%, var(--bg-surface-3)),
+    var(--bg-recessed) 78%
   );
   box-shadow:
-    inset 0 0 0 1.5px rgba(61, 47, 18, 0.9),
-    inset 0 0 0 3px rgba(243, 223, 174, 0.25),
-    0 2px 5px rgba(0, 0, 0, 0.6),
-    var(--coin-halo);
-  /* The commit settles between struck ↔ tarnished: the radial swap hard-cuts (CSS
-     can't tween gradients), but the rim/inlay shadows + the sigil emboss transition
-     on the settle ease, so open↔spent reads as a deliberate, reversible strike. */
+    0 0 0 1px var(--accent-primary),
+    0 0 0 3px var(--bg-recessed),
+    0 0 0 4px var(--accent-primary-deep),
+    0 0 18px -4px color-mix(in oklab, var(--ec) 55%, transparent);
   transition:
     transform var(--m-fast) var(--ease-settle),
     box-shadow var(--m-fast) var(--ease-settle),
-    background var(--m-fast) var(--ease-settle),
-    filter var(--m-fast) var(--ease-settle),
     color var(--m-fast) var(--ease-settle);
-}
-/* Reeded edge — a fine milled rim masked to the coin's outer annulus. */
-.econ-disc::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: repeating-conic-gradient(rgba(0, 0, 0, 0.35) 0 2deg, transparent 2deg 7deg);
-  -webkit-mask: radial-gradient(farthest-side, transparent 82%, #000 84%);
-  mask: radial-gradient(farthest-side, transparent 82%, #000 84%);
-  pointer-events: none;
-  z-index: 1;
 }
 .econ-disc .icon,
 .econ-disc svg {
-  width: 18px;
-  height: 18px;
-  position: relative;
-  z-index: 2;
-  /* CHAMPLEVÉ sigil — the hue's LIGHT step (via `color: var(--sigil-ink)`) poured into the
-     engraving: a dark setting edge (the first drop-shadow carries the definition against the
-     gold body) + a glassy bloom of the base hue (the second). */
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.75))
-    drop-shadow(0 0 3px var(--sigil-glow));
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--ec) 55%, transparent));
 }
-/* LIGHT — the available coin's lit-socket aura, re-tuned for cream (light-craft
-   audit). The base halo routes `--sigil-glow` (the deep `--at-*` AA-fill in light),
-   which reads as a muddy smear on parchment, so light coins shipped as flat discs.
-   Swap the aura to the BRIGHT `--ec-vivid` hue expressed as a saturation + soft
-   tinted shadow (a broader, warmer teal/blue/red bloom + a tighter tinted ring),
-   so the coin sits in a glowing socket on cream exactly as it does on dark. */
 [data-theme="light"] .econ-disc {
-  --coin-halo:
-    0 0 0 1px color-mix(in srgb, var(--ec-vivid) 30%, transparent),
-    0 0 11px color-mix(in srgb, var(--ec-vivid) 52%, transparent),
-    0 3px 10px color-mix(in srgb, var(--ec-vivid) 30%, transparent);
-}
-/* B6 — the multi-action count badge ("1/2") on a budgeted disc when an active
-   Action Surge / Haste raises the slot's budget above 1. A small carved pill
-   pinned to the disc's lower-right corner; absent at budget 1 (the badge only
-   renders when it informs). Reads on both the bright OPEN gem and the recessed
-   SPENT void via a contrasting dark chip with a gold hairline. */
-.econ-count {
-  position: absolute;
-  right: -3px;
-  bottom: -3px;
-  min-width: 17px;
-  height: 16px;
-  padding: 0 3px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  font-size: var(--text-micro);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  color: var(--text-inverse);
-  background: color-mix(in oklab, var(--ec) 78%, black);
-  border: 1px solid color-mix(in oklab, var(--ec) 60%, white);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
-  /* Above the coin's reeded/inlay pseudos (z-index 1) + sigil (z-index 2). */
-  z-index: 3;
-}
-/* SPENT — the coin tarnishes: the bronze body re-strikes to a cold dark radial (its own
-   box-shadow, so the whisper halo is dropped), the milled rim loses its bright sheen, the
-   sigil goes dark + hueless (a faint lower bevel over a deeper upper shadow, no hue bloom). */
-.econ-tok[data-state="spent"] .econ-disc {
-  color: var(--coin-sigil-spent);
   background: radial-gradient(
-    circle at 34% 28%,
-    var(--coin-tarnish-hi),
-    var(--coin-tarnish-mid) 46%,
-    var(--coin-tarnish-lo) 78%,
-    var(--coin-tarnish-edge) 100%
+    circle at 50% 30%,
+    color-mix(in oklab, var(--ec-vivid) 14%, var(--bg-surface-1)),
+    var(--bg-surface-2) 80%
   );
   box-shadow:
-    inset 0 0 0 1.5px rgba(20, 15, 8, 0.9),
-    inset 0 2px 5px rgba(0, 0, 0, 0.75);
+    0 0 0 1px var(--accent-primary-bright),
+    0 0 0 3px var(--bg-surface-1),
+    0 0 0 4px var(--accent-primary-deep),
+    0 3px 10px color-mix(in srgb, var(--ec-vivid) 28%, transparent);
+}
+/* B6 — the multi-action count badge ("1/2") on a budgeted coin (Action Surge,
+   Haste); absent at budget 1. */
+.econ-count {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 4px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-inverse);
+  background: var(--ec);
+  box-shadow:
+    0 0 0 1px var(--bg-recessed),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.econ-tok[data-state="spent"] {
+  background: color-mix(in oklab, var(--bg-recessed) 60%, var(--bg-surface-1));
+}
+.econ-tok[data-state="spent"] .econ-disc {
+  color: var(--text-muted);
+  background: var(--bg-recessed);
+  box-shadow:
+    0 0 0 1px var(--panel-rim),
+    0 0 0 3px var(--bg-recessed),
+    0 0 0 4px var(--border-medium);
 }
 .econ-tok[data-state="spent"] .econ-disc .icon,
 .econ-tok[data-state="spent"] .econ-disc svg {
-  filter: drop-shadow(0 -1px 0 rgba(255, 246, 214, 0.1))
-    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8));
-}
-/* Spent label — the muted, dimmed register (matches the tarnished coin below it). */
-.econ-tok[data-state="spent"] .econ-cap {
-  color: color-mix(in oklab, var(--text-muted) 78%, #000);
-}
-/* Light: the count badge's hue (`--ec`) leans vivid so it reads on vellum (light's deep
-   `--at-*` inks read dull at badge scale); the coin metal + champlevé sigil are
-   theme-agnostic. */
-[data-theme="light"] .econ-tok[data-kind="action"][data-state="open"] .econ-disc {
-  --ec: var(--at-action-vivid);
-}
-[data-theme="light"] .econ-tok[data-kind="bonus"][data-state="open"] .econ-disc {
-  --ec: var(--at-bonus-vivid);
-}
-[data-theme="light"] .econ-tok[data-kind="reaction"][data-state="open"] .econ-disc {
-  --ec: var(--at-reaction-vivid);
+  filter: none;
 }
 .econ-cap {
-  font-family: var(--font-numeric);
-  font-size: var(--text-micro);
+  font-family: var(--font-engraved);
+  font-size: var(--text-xs);
+  font-weight: 700;
   letter-spacing: 0.06em;
+  line-height: 1.15;
   text-transform: uppercase;
+  color: var(--text-primary);
+  text-wrap: balance;
+}
+.econ-tok[data-state="spent"] .econ-cap {
   color: var(--text-muted);
-  white-space: nowrap;
 }
-.econ-tok[data-state="open"] .econ-cap {
-  color: var(--ec);
+/* The state in words: Alegreya, wrapping, never cut. */
+.econ-state {
+  font-family: var(--font-body);
+  font-size: var(--text-read);
+  line-height: 1.25;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
-/* Item e — the token is the board FILTER trigger. On Action/Bonus the WHOLE token
-   (disc + caption) is one button (`.econ-tok-filter`) — the coloured disc is the
-   perceived button, so the hit area must cover it (owner-reported dead circle,
-   2026-06-11). The button is a bare reset over the same `.econ-tok` grid: same
-   visuals, full-token target (the grid already clears the 44px touch floor).
-   Hover/active reuse the interactive-disc idiom (lift / press) so the circle
-   visibly responds; keyboard focus keeps the global gold focus-visible ring. */
+.econ-tok[data-state="spent"] .econ-state {
+  font-style: italic;
+  color: var(--text-muted);
+}
+/* Item e — the whole tile is ONE button: an open tile filters the action board to
+   its type, a spent tile re-arms the slot (the coloured coin is the perceived
+   button, so the hit area covers the whole tile). */
 button.econ-tok-filter {
-  background: none;
   border: 0;
-  padding: 0;
   margin: 0;
   font: inherit;
   color: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
+button.econ-tok-filter:hover {
+  box-shadow:
+    var(--panel-frame),
+    inset 0 0 0 1px color-mix(in oklab, var(--ec) 40%, transparent);
+}
 button.econ-tok-filter:hover .econ-disc {
   transform: translateY(-1px);
 }
 button.econ-tok-filter:active .econ-disc {
-  transform: scale(0.92);
+  transform: scale(0.94);
 }
 
 /* ─────────────────────── ON-HIT RIDER STRIP (#87 rider-render) ───────────────────────
@@ -15622,7 +15564,7 @@ button.econ-tok-filter:active .econ-disc {
   margin-top: var(--sp-3);
 }
 .rider-strip-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -15676,7 +15618,7 @@ button.econ-tok-filter:active .econ-disc {
   border-color: color-mix(in oklab, var(--accent-primary) 42%, transparent);
 }
 .rider-spend-cue {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -15703,7 +15645,7 @@ button.econ-tok-filter:active .econ-disc {
   margin-top: var(--sp-3);
 }
 .heal-roll-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -15711,84 +15653,22 @@ button.econ-tok-filter:active .econ-disc {
   flex: 1 1 100%;
 }
 
-/* The caption carries the filter chrome: no chrome at rest (reads as the same
-   caption), a faint pill on hover/focus, and a carved cartouche in the token's
-   action-type colour while its filter is active (`aria-pressed`, below). The
-   states are driven from the parent `.econ-tok-filter` button — the caption is
-   a span inside the one whole-token hit area. */
-.econ-cap-filter {
-  position: relative;
-  background: none;
-  border: 1px solid transparent;
-  padding: 1px 7px;
-  border-radius: 999px;
-  transition:
-    background var(--m-fast) var(--ease-standard),
-    border-color var(--m-fast) var(--ease-standard),
-    box-shadow var(--m-fast) var(--ease-standard),
-    color var(--m-fast) var(--ease-standard);
-}
-.econ-tok-filter:hover .econ-cap-filter,
-.econ-tok-filter:focus-visible .econ-cap-filter {
-  background: color-mix(in oklab, var(--ec, var(--text-secondary)) 16%, transparent);
-  color: var(--ec, var(--text-secondary));
-}
-/* ── ACTIVE FILTER — the "lit socket" treatment (owner: the old underline read
-   cheap). Two coherent moves in the token's OWN semantic hue:
-   1. the DISC gets a detached signet ring — a bg-gap + a fine --ec ring + a soft
-      halo — so the circle itself visibly holds the filter (works on open AND
-      spent discs; the spent void keeps reading spent inside its lit ring);
-   2. the CAPTION becomes a carved cartouche: a tonal pill with a full-colour
-      hairline border and a recessed inner shade, the wizard's carved-pill idiom
-      in the action-type colour (never monochrome gold — semantics are sacred). */
-.econ-tok-filter[aria-pressed="true"] .econ-disc {
+/* ACTIVE FILTER — the tile holds the filter: its frame lights in the slot's own
+   colour (never monochrome gold — the type colours carry meaning). */
+.econ-tok-filter[aria-pressed="true"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--ec) 12%, var(--bg-surface-2)),
+    var(--bg-surface-1)
+  );
   box-shadow:
-    0 0 0 2px var(--bg-surface-1),
-    0 0 0 3.5px color-mix(in oklab, var(--ec) 80%, transparent),
-    0 0 14px color-mix(in oklab, var(--ec) 45%, transparent);
+    inset 0 0 0 1px var(--ec),
+    inset 0 0 0 4px var(--bg-surface-1),
+    inset 0 0 0 5px color-mix(in oklab, var(--ec) 35%, transparent),
+    0 0 22px -8px color-mix(in oklab, var(--ec-vivid) 60%, transparent);
 }
-.econ-tok-filter[aria-pressed="true"][data-state="open"] .econ-disc {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    0 0 0 2px var(--bg-surface-1),
-    0 0 0 3.5px color-mix(in oklab, var(--ec) 80%, transparent),
-    0 0 16px color-mix(in oklab, var(--ec) 50%, transparent);
-}
-.econ-tok-filter[aria-pressed="true"] .econ-cap-filter {
+.econ-tok-filter[aria-pressed="true"] .econ-cap {
   color: var(--ec);
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--ec) 22%, transparent),
-    color-mix(in oklab, var(--ec) 12%, transparent)
-  );
-  border-color: color-mix(in oklab, var(--ec) 55%, transparent);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
-}
-/* Light: the carved pill is a DESIGNED tint (not an adapted shadow) — a fuller
-   18–22% wash with a full-colour border; the inner shade softens (vellum carves
-   shallower than slate) and the disc halo leans on the vivid hue so it reads
-   lit on cream. The caption ink keeps the deep AA --ec. */
-[data-theme="light"] .econ-tok-filter[aria-pressed="true"] .econ-disc {
-  box-shadow:
-    0 0 0 2px var(--bg-surface-1),
-    0 0 0 3.5px color-mix(in oklab, var(--ec) 85%, transparent),
-    0 0 12px color-mix(in oklab, var(--ec-vivid) 38%, transparent);
-}
-[data-theme="light"] .econ-tok-filter[aria-pressed="true"][data-state="open"] .econ-disc {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    0 0 0 2px var(--bg-surface-1),
-    0 0 0 3.5px color-mix(in oklab, var(--ec) 85%, transparent),
-    0 0 14px color-mix(in oklab, var(--ec-vivid) 42%, transparent);
-}
-[data-theme="light"] .econ-tok-filter[aria-pressed="true"] .econ-cap-filter {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--ec) 22%, transparent),
-    color-mix(in oklab, var(--ec) 14%, transparent)
-  );
-  border-color: color-mix(in oklab, var(--ec) 65%, transparent);
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
 }
 
 /* Item g — the Versatile-weapon wield-stance toggle inside the combat action
@@ -15801,7 +15681,7 @@ button.econ-tok-filter:active .econ-disc {
   flex-wrap: wrap;
 }
 .wield-stance-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -15851,10 +15731,12 @@ button.econ-tok-filter:active .econ-disc {
   box-shadow: 0 0 9px color-mix(in oklab, var(--ac-vivid) 60%, transparent);
 }
 .ag-title {
-  font-family: var(--font-display);
+  /* Direction B: the section rubric voice, in the group's action colour. */
+  font-family: var(--font-title);
   font-weight: 700;
-  font-style: italic;
-  font-size: var(--text-md);
+  font-size: var(--text-rubric);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--ac);
   margin: 0;
   white-space: nowrap;
@@ -15870,9 +15752,10 @@ button.econ-tok-filter:active .econ-disc {
 .move-bar {
   /* D31 — the BUTTON is a 24px-tall transparent tap target (WCAG 2.5.8); the visible
      14px channel is the inner `.move-bar-track`, so the compact meter looks identical
-     but is comfortable to tap on touch. */
-  width: 88px;
-  height: 24px;
+     but is comfortable to tap on touch. In the B tile it fills the tile's width. */
+  width: 100%;
+  max-width: 132px;
+  height: 48px;
   display: flex;
   align-items: center;
   padding: 0;
@@ -15905,7 +15788,12 @@ button.econ-tok-filter:active .econ-disc {
   bottom: 0;
   width: calc(var(--mv-rem, 0) / var(--mv-max, 1) * 100%);
   border-radius: 5px 2px 2px 5px;
-  background: linear-gradient(90deg, var(--gold-leaf-500), var(--gold-leaf-100));
+  /* Movement's own colour (direction B), like its tile's name. */
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--at-move) 70%, black),
+    var(--at-move)
+  );
   transition: width var(--m-fast) var(--ease-settle);
 }
 /* The leading-edge glow — a small warm dot riding the fill's right edge (hidden while
@@ -15938,12 +15826,26 @@ button.econ-tok-filter:active .econ-disc {
   );
 }
 .move-num {
-  font-family: var(--font-numeric);
-  font-size: var(--text-micro); /* 10px floor (was 9px) */
+  /* The movement tile's state line, in the same voice as the other tiles. */
+  font-family: var(--font-body);
+  font-size: var(--text-read);
   color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
   gap: 1px;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .move-num {
+    font-size: var(--text-xs);
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+  }
+  .uc-name {
+    font-size: var(--text-base);
+    letter-spacing: 0.01em;
+  }
 }
 /* ── Movement SLIDER (item d) — the carved channel IS the slider (one
    `role="slider"` control): click anywhere on it to set remaining to that point,
@@ -15996,8 +15898,7 @@ button.econ-tok-filter:active .econ-disc {
   width: 2.4em;
   min-width: 0;
   padding: 0 2px;
-  font-family: var(--font-numeric);
-  font-size: var(--text-micro);
+  font: inherit;
   text-align: right;
   color: var(--text-primary);
   background: transparent;
@@ -16017,15 +15918,18 @@ button.econ-tok-filter:active .econ-disc {
   position: relative;
   overflow: hidden;
   cursor: pointer;
-  font-family: var(--font-numeric);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  /* Direction B: the gold slab is the one lit action of the turn. */
+  font-family: var(--font-title);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 10px 20px;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 52px;
+  padding: 0 var(--sp-8);
   color: var(--lit-ink);
   border-radius: var(--radius-md);
   border: 1px solid var(--lit-edge);
@@ -16054,7 +15958,7 @@ button.econ-tok-filter:active .econ-disc {
   align-items: center;
   gap: 5px;
   padding: 5px 10px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -16145,7 +16049,7 @@ button.econ-tok-filter:active .econ-disc {
   cursor: pointer;
   flex-shrink: 0;
   max-width: 100%;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -16216,7 +16120,7 @@ button.econ-tok-filter:active .econ-disc {
      combat pip), distinct from the lapidary 4px facet of the passive chips: a
      badge here is a tappable status token, not list metadata. */
   border-radius: 999px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -16401,7 +16305,7 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--accent-text);
 }
 .beast-ref-meta {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -16421,7 +16325,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: 1px;
 }
 .beast-ref-grid dt {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -16477,7 +16381,7 @@ button.econ-tok-filter:active .econ-disc {
   color: var(--text-primary);
 }
 .beast-ref-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -16608,7 +16512,7 @@ button.econ-tok-filter:active .econ-disc {
   --at-c: var(--at-action);
   display: inline-flex;
   align-items: center;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -16664,51 +16568,60 @@ button.econ-tok-filter:active .econ-disc {
 @media (max-width: 720px) {
   .turn {
     grid-template-columns: auto 1fr;
-    /* Stack the tiers on phone: round+init, then the economy strip, then End Turn,
-       then End Combat — each full-width. Redefines the desktop areas for two columns. */
+    /* Phone: round+init, the four tiles, what is left, the full-width gold slab,
+       then End Combat. */
     grid-template-areas:
       "round init"
       "econ  econ"
+      "left  left"
       "endturn endturn"
       "endcombat endcombat";
-    gap: var(--sp-2);
+    gap: var(--sp-3);
+    padding: var(--sp-3);
   }
   .turn[data-status] {
     grid-template-areas:
       "round init"
       "econ  econ"
+      "left  left"
       "endturn endturn"
       "endcombat endcombat"
       "status status";
   }
+  .turn .turn-left {
+    justify-self: center;
+    text-align: center;
+  }
   .turn .econ {
-    justify-content: flex-start;
     gap: var(--sp-2);
   }
   .turn .endturn {
-    justify-content: center;
     width: 100%;
     box-sizing: border-box;
   }
   .econ-tok {
-    min-width: 0;
-    /* Match the 34px mobile disc so the control row stays snug. */
-    grid-template-rows: 34px auto 1rem;
-  }
-  .econ-tok[data-kind="move"] {
-    min-width: 0;
+    grid-template-rows: 40px auto auto;
+    padding: var(--sp-3) 2px var(--sp-2);
+    gap: 4px;
   }
   .econ-disc {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
   }
   .econ-disc .icon,
   .econ-disc svg {
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
+  }
+  .econ-cap {
+    font-size: var(--text-micro);
+    letter-spacing: 0.02em;
+  }
+  .econ-state {
+    font-size: var(--text-xs);
   }
   .move-bar {
-    width: 64px;
+    width: 100%;
   }
   /* Concentration banner — stack on phone. The single-row flex squeezed the
      flex:1 spell title into a tall broken column when the long IT drop label
@@ -17528,7 +17441,7 @@ button.econ-tok-filter:active .econ-disc {
 /* keyword chip — IF / YES / NO. Carved tonal facet, NOT a pill (lapidary). */
 .algo-kw {
   flex-shrink: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -17656,7 +17569,7 @@ button.econ-tok-filter:active .econ-disc {
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -17981,7 +17894,7 @@ button.econ-tok-filter:active .econ-disc {
     0 1px 0 rgba(0, 0, 0, 0.25);
 }
 .abil-tile-lbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -18029,7 +17942,7 @@ button.econ-tok-filter:active .econ-disc {
 .abil-score {
   min-width: 1.6rem;
   text-align: center;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-weight: 700;
   font-size: 1rem;
   color: var(--text-primary);
@@ -18047,7 +17960,7 @@ button.econ-tok-filter:active .econ-disc {
   font-variant-numeric: tabular-nums;
 }
 .abil-mod {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
@@ -18794,7 +18707,7 @@ button.econ-tok-filter:active .econ-disc {
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   color: var(--text-muted);
@@ -18847,7 +18760,7 @@ button.econ-tok-filter:active .econ-disc {
   );
 }
 .wiz-eyebrow {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -18896,7 +18809,7 @@ button.econ-tok-filter:active .econ-disc {
   box-sizing: border-box;
   cursor: pointer;
   padding: 7px 16px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -19203,7 +19116,7 @@ button.econ-tok-filter:active .econ-disc {
   min-width: 0; /* grid child: let the eyebrow/prose wrap instead of overflowing */
 }
 .wiz-hero-eyebrow {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -19245,7 +19158,7 @@ button.econ-tok-filter:active .econ-disc {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -19267,7 +19180,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: 6px;
 }
 .wiz-foot-note {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -19435,7 +19348,7 @@ button.econ-tok-filter:active .econ-disc {
   gap: 6px;
   margin-top: auto;
   padding-top: 4px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -19626,7 +19539,7 @@ button.econ-tok-filter:active .econ-disc {
 }
 
 .wiz-pager-cap {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -19792,7 +19705,7 @@ button.econ-tok-filter:active .econ-disc {
   grid-column: 1 / -1;
   margin: var(--sp-1) 0 0;
   color: var(--text-muted);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -19872,7 +19785,7 @@ button.econ-tok-filter:active .econ-disc {
   justify-content: space-between;
   gap: var(--sp-3);
   margin: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -20017,7 +19930,7 @@ button.econ-tok-filter:active .econ-disc {
 }
 /* The altar eyebrow — absent while collapsed, fades in as the header grows. */
 .wiz-row-eyebrow {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -20074,7 +19987,7 @@ button.econ-tok-filter:active .econ-disc {
    same facts at altar scale. */
 .wiz-col {
   flex: none;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -20460,7 +20373,7 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-summary-sub {
   margin: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -20497,7 +20410,7 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-review-k {
   flex: none;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -20626,7 +20539,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 }
 .wiz-equip-warn {
   margin-left: auto;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   text-transform: uppercase;
@@ -20662,7 +20575,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   color: var(--accent-text);
 }
 .wiz-equip-gold-unit {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -20742,7 +20655,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   gap: var(--sp-3);
 }
 .wiz-budget-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -20768,7 +20681,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -20802,7 +20715,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
     0 0 12px color-mix(in oklab, var(--accent-glow) 16%, transparent);
 }
 .wiz-abil-code {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -20897,7 +20810,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
     0 0 12px color-mix(in oklab, var(--accent-glow) 25%, transparent);
 }
 .wiz-asi-code {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -20936,7 +20849,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   color: var(--accent-text);
 }
 .wiz-abil-modlbl {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -21035,7 +20948,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
   align-items: center;
   gap: 8px;
   margin: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -21060,7 +20973,7 @@ button.wiz-review-jump:focus-visible .wiz-review-chev {
 }
 .wiz-done-gains {
   margin: 0;
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -21728,7 +21641,7 @@ body:has(.fob) .toast-region {
   margin: 0;
   padding-top: var(--sp-2);
   border-top: 1px solid color-mix(in oklab, var(--border-accent) 60%, transparent);
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-sm);
   font-weight: 600;
@@ -21813,12 +21726,8 @@ body:has(.fob) .toast-region {
   --wb-ink-gilt: var(--accent-text);
   --wb-plate: #171310;
   --wb-plate-deep: #100d08;
-  --wb-knot: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22395.4 25.1 1819.0 628.0%22%3E%3Cpath fill=%22%23b8923d%22 d=%22M 2120.60,412.37 C 2247.93,479.29 2193.43,657.96 2040.30,612.92 C 2033.50,585.72 1999.73,598.64 2014.07,617.77 C 2028.27,635.25 2085.70,640.06 2120.00,632.29 C 2274.05,599.86 2261.77,291.92 1915.81,341.34 L 1909.96,342.35 C 1914.41,355.72 1916.41,371.38 1916.41,384.32 C 1991.60,372.57 2075.43,388.35 2120.60,412.37 M 693.45,384.32 C 693.45,371.38 695.45,355.71 699.91,342.35 L 694.05,341.34 C 348.1,291.92 335.81,599.86 489.86,632.29 C 524.16,640.06 581.59,635.25 595.79,617.77 C 610.13,598.64 576.36,585.72 569.56,612.92 C 416.43,657.96 361.94,479.29 489.26,412.37 C 534.43,388.35 618.26,372.57 693.45,384.32 M 1304.93,653.03 C 1349.64,654.11 1402.50,642.59 1463.04,612.32 C 1605.08,540.09 1743.59,423.99 1888.37,389.77 C 1889.07,382.08 1887.84,360.95 1882.11,347.60 C 1702.47,385.82 1503.36,584.83 1348.44,614.34 C 1333.53,617.18 1318.99,619.18 1304.93,620.07 C 1290.88,619.18 1276.33,617.18 1261.42,614.34 C 1106.50,584.83 907.39,385.82 727.75,347.60 C 722.03,360.95 720.79,382.08 721.49,389.77 C 866.27,423.99 1004.78,540.09 1146.82,612.32 C 1207.36,642.59 1260.22,654.11 1304.93,653.03 M 1304.93,294.34 C 1327.20,293.41 1353.38,300.45 1370.63,308.05 C 1390.60,316.71 1408.62,328.52 1422.08,337.31 C 1379.46,379.93 1336.27,390.65 1304.93,384.50 C 1273.60,390.65 1230.40,379.93 1187.78,337.31 C 1201.24,328.52 1219.26,316.71 1239.23,308.05 C 1256.49,300.45 1282.66,293.41 1304.93,294.34 M 1304.93,55.28 C 1393.58,70.8 1472.33,135.92 1458.20,256.00 C 1453.34,296.11 1442.49,312.09 1435.00,322.58 L 1434.79,322.58 L 1433.58,324.19 C 1379.34,286.22 1336.35,273.78 1304.93,276.04 C 1273.51,273.78 1230.52,286.22 1176.28,324.19 L 1175.07,322.58 L 1174.86,322.58 C 1167.37,312.09 1156.52,296.11 1151.66,256.00 C 1137.54,135.92 1216.28,70.8 1304.93,55.28 M 1304.93,402.09 C 1312.09,403.02 1319.87,403.25 1328.26,402.68 C 1370.47,400.81 1407.18,377.03 1436.81,347.40 C 1457.92,361.99 1474.26,373.77 1494.11,387.95 C 1423.21,438.33 1359.07,464.90 1304.93,473.88 C 1250.79,464.90 1186.66,438.33 1115.75,387.95 C 1135.60,373.77 1151.94,361.99 1173.05,347.40 C 1202.68,377.03 1239.39,400.81 1281.60,402.68 C 1290.00,403.25 1297.77,403.02 1304.93,402.09 M 1304.93,506.24 C 1368.26,501.93 1444.26,474.71 1529.62,413.17 C 1568.64,440.18 1593.51,455.82 1617.60,470.27 L 1634.34,459.98 C 1627.72,455.97 1596.82,438.68 1544.76,402.28 C 2001.76,71.35 1969.67,601.24 1686.20,486.21 L 1668.04,497.31 C 1738.97,532.78 1835.78,527.97 1889.78,456.55 C 1929.76,404.58 1922.01,294.06 1809.07,263.06 C 1703.21,233.82 1596.32,315.93 1509.04,377.26 C 1475.60,353.43 1464.79,345.55 1448.92,334.48 C 1535.64,234.42 1492.38,76.08 1348.24,32.84 C 1334.26,28.87 1319.72,26.32 1304.93,25.10 C 1290.14,26.32 1275.60,28.87 1261.63,32.84 C 1117.48,76.08 1074.22,234.42 1160.94,334.48 C 1145.07,345.55 1134.26,353.43 1100.82,377.26 C 1013.54,315.93 906.65,233.82 800.79,263.06 C 687.85,294.06 680.10,404.58 720.08,456.55 C 774.08,527.97 870.89,532.77 941.82,497.31 L 923.66,486.21 C 640.19,601.25 608.11,71.35 1065.10,402.28 C 1013.04,438.68 982.15,455.97 975.52,459.98 L 992.27,470.27 C 1016.35,455.82 1041.22,440.18 1080.24,413.17 C 1165.60,474.71 1241.61,501.93 1304.93,506.24%22/%3E%3C/svg%3E");
-  --wb-knot-ink: var(--wb-line-500);
 }
 [data-theme="light"] .wb {
-  --wb-knot: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%22395.4 25.1 1819.0 628.0%22%3E%3Cpath fill=%22%238a6d2f%22 d=%22M 2120.60,412.37 C 2247.93,479.29 2193.43,657.96 2040.30,612.92 C 2033.50,585.72 1999.73,598.64 2014.07,617.77 C 2028.27,635.25 2085.70,640.06 2120.00,632.29 C 2274.05,599.86 2261.77,291.92 1915.81,341.34 L 1909.96,342.35 C 1914.41,355.72 1916.41,371.38 1916.41,384.32 C 1991.60,372.57 2075.43,388.35 2120.60,412.37 M 693.45,384.32 C 693.45,371.38 695.45,355.71 699.91,342.35 L 694.05,341.34 C 348.1,291.92 335.81,599.86 489.86,632.29 C 524.16,640.06 581.59,635.25 595.79,617.77 C 610.13,598.64 576.36,585.72 569.56,612.92 C 416.43,657.96 361.94,479.29 489.26,412.37 C 534.43,388.35 618.26,372.57 693.45,384.32 M 1304.93,653.03 C 1349.64,654.11 1402.50,642.59 1463.04,612.32 C 1605.08,540.09 1743.59,423.99 1888.37,389.77 C 1889.07,382.08 1887.84,360.95 1882.11,347.60 C 1702.47,385.82 1503.36,584.83 1348.44,614.34 C 1333.53,617.18 1318.99,619.18 1304.93,620.07 C 1290.88,619.18 1276.33,617.18 1261.42,614.34 C 1106.50,584.83 907.39,385.82 727.75,347.60 C 722.03,360.95 720.79,382.08 721.49,389.77 C 866.27,423.99 1004.78,540.09 1146.82,612.32 C 1207.36,642.59 1260.22,654.11 1304.93,653.03 M 1304.93,294.34 C 1327.20,293.41 1353.38,300.45 1370.63,308.05 C 1390.60,316.71 1408.62,328.52 1422.08,337.31 C 1379.46,379.93 1336.27,390.65 1304.93,384.50 C 1273.60,390.65 1230.40,379.93 1187.78,337.31 C 1201.24,328.52 1219.26,316.71 1239.23,308.05 C 1256.49,300.45 1282.66,293.41 1304.93,294.34 M 1304.93,55.28 C 1393.58,70.8 1472.33,135.92 1458.20,256.00 C 1453.34,296.11 1442.49,312.09 1435.00,322.58 L 1434.79,322.58 L 1433.58,324.19 C 1379.34,286.22 1336.35,273.78 1304.93,276.04 C 1273.51,273.78 1230.52,286.22 1176.28,324.19 L 1175.07,322.58 L 1174.86,322.58 C 1167.37,312.09 1156.52,296.11 1151.66,256.00 C 1137.54,135.92 1216.28,70.8 1304.93,55.28 M 1304.93,402.09 C 1312.09,403.02 1319.87,403.25 1328.26,402.68 C 1370.47,400.81 1407.18,377.03 1436.81,347.40 C 1457.92,361.99 1474.26,373.77 1494.11,387.95 C 1423.21,438.33 1359.07,464.90 1304.93,473.88 C 1250.79,464.90 1186.66,438.33 1115.75,387.95 C 1135.60,373.77 1151.94,361.99 1173.05,347.40 C 1202.68,377.03 1239.39,400.81 1281.60,402.68 C 1290.00,403.25 1297.77,403.02 1304.93,402.09 M 1304.93,506.24 C 1368.26,501.93 1444.26,474.71 1529.62,413.17 C 1568.64,440.18 1593.51,455.82 1617.60,470.27 L 1634.34,459.98 C 1627.72,455.97 1596.82,438.68 1544.76,402.28 C 2001.76,71.35 1969.67,601.24 1686.20,486.21 L 1668.04,497.31 C 1738.97,532.78 1835.78,527.97 1889.78,456.55 C 1929.76,404.58 1922.01,294.06 1809.07,263.06 C 1703.21,233.82 1596.32,315.93 1509.04,377.26 C 1475.60,353.43 1464.79,345.55 1448.92,334.48 C 1535.64,234.42 1492.38,76.08 1348.24,32.84 C 1334.26,28.87 1319.72,26.32 1304.93,25.10 C 1290.14,26.32 1275.60,28.87 1261.63,32.84 C 1117.48,76.08 1074.22,234.42 1160.94,334.48 C 1145.07,345.55 1134.26,353.43 1100.82,377.26 C 1013.54,315.93 906.65,233.82 800.79,263.06 C 687.85,294.06 680.10,404.58 720.08,456.55 C 774.08,527.97 870.89,532.77 941.82,497.31 L 923.66,486.21 C 640.19,601.25 608.11,71.35 1065.10,402.28 C 1013.04,438.68 982.15,455.97 975.52,459.98 L 992.27,470.27 C 1016.35,455.82 1041.22,440.18 1080.24,413.17 C 1165.60,474.71 1241.61,501.93 1304.93,506.24%22/%3E%3C/svg%3E");
-  --wb-knot-ink: var(--wb-line-700);
 }
 
 /* §16.2 — the leather plate: near-black warm, ONE dome of light behind the
@@ -22180,7 +22089,7 @@ body:has(.fob) .toast-region {
   gap: var(--sp-3);
 }
 .spec-label {
-  font-family: var(--font-numeric);
+  font-family: var(--font-engraved);
   font-size: var(--text-2xs);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;

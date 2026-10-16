@@ -679,6 +679,21 @@ export function ThisTurnTracker({
   const actionSlotFull = selected.action.length >= budget.action;
   const actionState: "open" | "spent" = actionSlotFull ? "spent" : "open";
 
+  // What the turn still holds, in words, beside End Turn ("You still have Action,
+  // Reaction and 9 m"), so a beginner never ends a turn by accident.
+  const turnLeft = [
+    !actionSlotFull && t("combat.action"),
+    selected.bonus.length < budget.bonus && t("combat.bonusAction"),
+    !reactionUsed && t("combat.reaction"),
+    remainingMovementFt > 0 && localeDistance(remainingMovementFt, locale),
+  ].filter((part): part is string => !!part);
+  const turnLeftText =
+    turnLeft.length > 0
+      ? t("combat.turnLeft", {
+          list: new Intl.ListFormat(locale, { type: "conjunction" }).format(turnLeft),
+        })
+      : t("combat.turnLeftNone");
+
   return (
     <div>
       {/* ── Turn bar / action-economy meter (the heart of combat, §3.1) ──
@@ -768,7 +783,7 @@ export function ThisTurnTracker({
             kind="bonus"
             state={selected.bonus.length >= budget.bonus ? "spent" : "open"}
             icon={Zap}
-            caption={t("combat.bonus")}
+            caption={t("combat.bonusAction")}
             used={selected.bonus.length}
             total={budget.bonus}
             spentName={selected.bonus.map((a) => a.name).join(" · ") || null}
@@ -823,6 +838,9 @@ export function ThisTurnTracker({
           </span>
         </div>
 
+        {!inEncounter || phase === "my-turn" ? (
+          <p className="turn-left">{turnLeftText}</p>
+        ) : null}
         <button
           className="endturn"
           onClick={handleEndTurn}
@@ -1128,7 +1146,16 @@ function EconToken({
   // cramped per-token line — that line truncated long IT names ("Scarica di Adre…")
   // and cluttered the strip. The disc's lit/voided state is the at-a-glance info; the
   // name reads on hover, and SR users get it from the status label below.
+  const { t } = useTranslation();
   const discTitle = state === "spent" && spentName ? spentName : undefined;
+  // The visible state line under the caption: "Available", the spent action's
+  // name (wrapping, never cut), or "1 of 2 used" while a budget is part-spent.
+  const stateText =
+    state === "spent"
+      ? spentName || t("combat.used")
+      : total != null && total > 1 && (used ?? 0) > 0
+        ? t("combat.econUsedCount", { used: used ?? 0, total })
+        : t("combat.econAvailable");
 
   // B6 — a "1/2" count badge appears ONLY when the slot's budget exceeds 1 (an
   // active Action Surge / Haste); a default single-slot token is visually
@@ -1165,6 +1192,9 @@ function EconToken({
         {countBadge}
       </span>
       <span className="econ-cap econ-cap-filter">{caption}</span>
+      <span className="econ-state" aria-hidden>
+        {stateText}
+      </span>
       <span id={statusId} className="sr-only">
         {statusLabel}
       </span>

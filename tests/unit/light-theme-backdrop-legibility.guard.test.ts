@@ -201,12 +201,12 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     ).toBe(true);
   });
 
-  it("#13 — panels are plain slabs: no grain under the surface, a hairline edge (owner 2026-10-13)", () => {
+  it("#13 — panels are plain slabs: no grain under the surface, the B inset frame (owner 2026-10-16)", () => {
     expect(
-      /\.folio-panel \{[^}]*linear-gradient\(180deg, var\(--bg-surface-2\), var\(--bg-surface-1\)\)[^}]*border: 1px solid var\(--border-soft\)/.test(
+      /\.folio-panel \{[^}]*linear-gradient\(180deg, var\(--bg-surface-2\), var\(--bg-surface-1\)\)[^}]*var\(--panel-frame\)/.test(
         css
       ),
-      "MISSING: the plain folio-panel slab (surface gradient + hairline)."
+      "MISSING: the plain folio-panel slab (surface gradient + the inset frame)."
     ).toBe(true);
     expect(
       /\.folio-panel::before/.test(css),

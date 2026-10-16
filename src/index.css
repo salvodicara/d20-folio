@@ -34,6 +34,10 @@
   --font-display: "Alegreya Variable", "Alegreya", "Georgia", serif;
   --font-body: "Alegreya Variable", "Alegreya", "Iowan Old Style", "Georgia", serif;
   --font-numeric: "Source Serif 4", "Georgia", serif;
+  /* Direction B (owner 2026-10-16): the ENGRAVED register. Label capitals and the
+     big figures (HP, AC, modifiers, the round) are cut in Cinzel like the titles;
+     any line with words in it stays in Alegreya or Source Serif. */
+  --font-engraved: "Cinzel Variable", "Cinzel", "Georgia", serif;
 
   /* The SELECTED-frame gradient (BG3 identity T5 — ornament metals): silver
      over bronze over silver. Theme-agnostic by construction — it derives from
@@ -60,6 +64,7 @@
   --text-2xs: 0.6875rem; /* 11px — marginalia / caption-mono */
   --text-xs: 0.75rem; /* 12px — caption */
   --text-sm: 0.8125rem; /* 13px — small */
+  --text-read: 0.875rem; /* 14px — the smallest READING line (direction B: beginners) */
   --text-base: 0.9375rem; /* 15px — body */
   --text-md: 1.0625rem; /* 17px — lede */
   --text-lg: 1.3125rem; /* 21px — card title */
@@ -270,21 +275,23 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="dark"] {
   /* The lit slab: the one primary action per screen (vision 1). */
-  --lit-slab: linear-gradient(180deg, #33271a, #1a140d);
-  --lit-ink: #f5da95;
-  --lit-edge: #c79d4a;
-  --lit-edge-hover: #e2bd6c;
+  /* Direction B (owner 2026-10-16): the one lit action is a slab of gold leaf. */
+  --lit-slab: linear-gradient(180deg, #f3dca2 0%, #d3ae64 45%, #a9813f 100%);
+  --lit-ink: #1e1407;
+  --lit-edge: #8a6a33;
+  --lit-edge-hover: #b08a45;
   --lit-shadow:
-    inset 0 1px 0 rgb(255 225 160 / 0.18), inset 0 0 16px rgb(212 172 77 / 0.2),
-    0 0 22px -8px rgb(226 186 100 / 0.7);
+    inset 0 1px 0 rgb(255 245 215 / 0.8), 0 0 0 1px #3b2c14,
+    0 10px 26px -6px rgb(233 196 120 / 0.45);
   --lit-shadow-hover:
-    inset 0 1px 0 rgb(255 225 160 / 0.24), inset 0 0 18px rgb(212 172 77 / 0.3),
-    0 0 28px -6px rgb(226 186 100 / 0.85);
+    inset 0 1px 0 rgb(255 245 215 / 0.9), 0 0 0 1px #3b2c14,
+    0 12px 32px -6px rgb(233 196 120 / 0.6);
   --panel-highlight: rgb(255 232 186 / 0.05);
-  --bg-page: #0a0806;
-  --bg-surface-1: #15110d;
-  --bg-surface-2: #1c1711;
-  --bg-surface-3: #261f17;
+  /* Direction B stone: three cuts of one warm-black rock. */
+  --bg-page: #0c0a08;
+  --bg-surface-1: #15120f;
+  --bg-surface-2: #1d1915;
+  --bg-surface-3: #2a241d;
   /* Warm-black rule (BG3 identity epic, 2026-07-02): every neutral dark
      surface is RED-BIASED (R > G > B) like BG3's shipped darks (#0b0908 family)
      — never neutral grey, never blue-cast. The prior #07050a was the one
@@ -337,14 +344,14 @@
      composite-floor guard reads the real value). */
   --app-bg-art-opacity: 0.4;
 
-  --text-primary: #f0e4cb;
+  --text-primary: #ece2cc;
   /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
      "special" text (#fff2b3 family): the register BETWEEN --text-primary and the
      gold --accent-text. For active/selected titles and the name of the thing you
      are reading — lit emphasis, not brand gold. 15.6:1 on surface-2 / 13.8:1 on
      surface-3 (trivially AA; the point is the distinct register). */
   --text-special: #fff2b3;
-  --text-secondary: #c4b89e;
+  --text-secondary: #b8a988;
   /* nudged lighter one step (#8b7e64 → #988b6e) so muted labels clear AA (4.5:1)
      even on the darkest --bg-surface-3 recessed cards (was ~3.9:1) without
      flattening the hierarchy below --text-secondary. */
@@ -357,6 +364,12 @@
 
   --border-soft: #2f2619;
   --border-medium: #413521;
+  /* The B panel frame (owner 2026-10-16): a bronze rim, a sliver of stone, then a
+     faint gold hairline, set INTO the slab so it never adds width. */
+  --panel-rim: #5c4827;
+  --panel-frame:
+    inset 0 0 0 1px var(--panel-rim), inset 0 0 0 4px var(--bg-surface-1),
+    inset 0 0 0 5px rgb(201 164 92 / 0.22);
   --border-strong: #645230;
   --border-accent: #6b562f;
 
@@ -432,9 +445,13 @@
   --edit-accent: var(--gold-leaf-300);
 
   /* § 09 Action-type slots + magic marker */
-  --at-action: var(--verdigris-300);
-  --at-bonus: var(--lapis-300);
-  --at-reaction: var(--vermilion-300);
+  /* One enamel per action type (direction B, owner 2026-10-16): action ember,
+     bonus teal, reaction violet, movement green, so a beginner tells them apart
+     at a glance on the coins, the filters and every action row. */
+  --at-action: #e59a5c;
+  --at-bonus: #4fc1b3;
+  --at-reaction: #ae95e8;
+  --at-move: #96c878;
   /* Free actions are NEUTRAL (no economy hue that would collide with action/bonus/
      reaction or magic). text-muted was too dark to carry the filled "Use" CTA — its
      ink text washed out; text-secondary is the readable neutral (dark ink on light tan
@@ -814,6 +831,10 @@
 
   --border-soft: #e3d8c2;
   --border-medium: #cbb894;
+  --panel-rim: #b69d6c;
+  --panel-frame:
+    inset 0 0 0 1px var(--panel-rim), inset 0 0 0 4px var(--bg-surface-1),
+    inset 0 0 0 5px rgb(122 95 36 / 0.22);
   --border-strong: #a89064;
   --border-accent: #614a1d;
 
@@ -900,9 +921,10 @@
   --edit-accent: var(--gold-leaf-900);
 
   /* § 09 Action-type slots + magic marker (light = deep variants, AA as TEXT) */
-  --at-action: var(--verdigris-700);
-  --at-bonus: var(--lapis-700);
-  --at-reaction: var(--vermilion-700);
+  --at-action: #9a4512;
+  --at-bonus: #156b62;
+  --at-reaction: #5e3fa6;
+  --at-move: #3d6d22;
   /* Readable neutral free/no-action colors (see the dark-theme note above). */
   --at-free: var(--text-secondary);
   --at-nothing: var(--text-secondary);
@@ -912,9 +934,9 @@
      reaction left borders and the group diamonds + rules — never as text, so
      the deep --at-* above still carries every label/chip/button at AA. In dark
      these equal the already-bright base (defined in :root). */
-  --at-action-vivid: #1f9d57;
-  --at-bonus-vivid: #2f6fd0;
-  --at-reaction-vivid: #e0392a;
+  --at-action-vivid: #e0782c;
+  --at-bonus-vivid: #1fa596;
+  --at-reaction-vivid: #8a5ee0;
   --at-free-vivid: #9298a8;
   --at-nothing-vivid: #9298a8;
   --at-magic-vivid: #9a4fd0;
