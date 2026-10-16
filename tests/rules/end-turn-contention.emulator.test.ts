@@ -18,7 +18,7 @@ import {
 } from "@firebase/rules-unit-testing";
 import { doc, getDoc, setDoc, type Firestore } from "firebase/firestore";
 
-const holder = vi.hoisted(() => ({ db: undefined }));
+const holder = vi.hoisted(() => ({ db: null as Firestore | null }));
 vi.mock("@/lib/firebase", () => ({
   get db() {
     return holder.db;
@@ -39,6 +39,12 @@ import { stripUndefined } from "@/lib/strip-undefined";
 import { makeCharacterDoc } from "../unit/_helpers";
 
 let testEnv: RulesTestEnvironment;
+
+/** The player's client the mocked `@/lib/firebase` hands to the app code. */
+function testDb(): Firestore {
+  if (!holder.db) throw new Error("no test client yet");
+  return holder.db;
+}
 
 const hero = { ...makeCharacterDoc({ classId: "bard", level: 3 }), id: "char-a" };
 
@@ -102,7 +108,7 @@ beforeEach(async () => {
       updatedAt: 1,
     });
   });
-  holder.db = testEnv.authenticatedContext("a").firestore() as unknown;
+  holder.db = testEnv.authenticatedContext("a").firestore() as unknown as Firestore;
 });
 
 interface StoredCampaign {
@@ -112,7 +118,7 @@ interface StoredCampaign {
 }
 
 const campaign = async () =>
-  (await getDoc(doc(holder.db as Firestore, "campaigns", "camp1"))).data() as
+  (await getDoc(doc(testDb(), "campaigns", "camp1"))).data() as
     | StoredCampaign
     | undefined;
 
@@ -131,7 +137,7 @@ describe("End Turn and the party card refresh", () => {
     } as typeof hero;
     await refreshAttachedSheets(tracker, "a", renamed);
     const written = await campaign();
-    expect(written?.memberDetails.a.character.name).toBe("Bo");
+    expect(written?.memberDetails.a?.character.name).toBe("Bo");
     const stamp = JSON.stringify(written?.updatedAt);
     await refreshAttachedSheets(tracker, "a", renamed);
     expect(JSON.stringify((await campaign())?.updatedAt)).toBe(stamp);
@@ -141,7 +147,7 @@ describe("End Turn and the party card refresh", () => {
     const tracker = createAttachedCampaignTracker("a", "char-a");
     await tracker.ensure();
     // Warm the client so the timing below measures the transaction, not setup.
-    await getDoc(doc(holder.db as Firestore, "campaigns", "camp1"));
+    await getDoc(doc(testDb(), "campaigns", "camp1"));
     const started = performance.now();
     await Promise.all([
       advanceEncounterTurn("camp1", "next", { uid: "a", isDm: false }, "pc-a"),
