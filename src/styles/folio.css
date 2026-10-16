@@ -14616,8 +14616,8 @@ button.party-avatar-btn:focus-visible {
    themes; the band's ink is therefore the fixed on-art ivory, never a theme token.
    Behind the page the same art is only ambient light (index.css). ── */
 .campaign-hero {
-  --hero-ink: #f6ead0;
-  --hero-ink-soft: #ded0b0;
+  --hero-ink: var(--art-ink);
+  --hero-ink-soft: var(--art-ink-soft);
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -14629,8 +14629,8 @@ button.party-avatar-btn:focus-visible {
   border: 1px solid color-mix(in oklab, var(--gold-leaf-500) 34%, transparent);
   border-radius: var(--radius-xl);
   /* Decode base: the default plate's own mean tone, never a flash of page colour. */
-  background: #16100a;
-  box-shadow: 0 22px 44px -28px rgb(0 0 0 / 0.85);
+  background: var(--art-decode);
+  box-shadow: var(--art-plate-shadow);
 }
 .campaign-hero-art {
   position: absolute;
@@ -14648,11 +14648,11 @@ button.party-avatar-btn:focus-visible {
   background:
     linear-gradient(
       to top,
-      rgb(10 7 5 / 0.88) 0%,
-      rgb(10 7 5 / 0.46) 48%,
-      rgb(10 7 5 / 0.06) 100%
+      rgb(var(--art-scrim-rgb) / 0.88) 0%,
+      rgb(var(--art-scrim-rgb) / 0.46) 48%,
+      rgb(var(--art-scrim-rgb) / 0.06) 100%
     ),
-    linear-gradient(to right, rgb(10 7 5 / 0.5), transparent 62%);
+    linear-gradient(to right, rgb(var(--art-scrim-rgb) / 0.5), transparent 62%);
 }
 .campaign-hero-body {
   min-width: 0;
@@ -14662,11 +14662,11 @@ button.party-avatar-btn:focus-visible {
   margin: 0;
   font-family: var(--font-title);
   font-weight: 600;
-  font-size: clamp(1.75rem, 1.15rem + 2.2vw, 2.875rem);
+  font-size: var(--text-hero-title);
   line-height: 1.08;
   letter-spacing: 0.01em;
   color: var(--hero-ink);
-  text-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
+  text-shadow: var(--art-title-shadow);
   text-wrap: balance;
 }
 .campaign-hero-title :where(button, input) {
@@ -14679,7 +14679,7 @@ button.party-avatar-btn:focus-visible {
   margin: var(--sp-2) 0 0;
   font-size: var(--text-sm);
   color: var(--hero-ink-soft);
-  text-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
+  text-shadow: var(--art-meta-shadow);
 }
 .campaign-hero-meta > span {
   display: inline-flex;
@@ -14700,15 +14700,15 @@ button.party-avatar-btn:focus-visible {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-xl);
-  border: 1px solid rgb(246 234 208 / 0.2);
-  background: rgb(10 7 5 / 0.52);
+  border: 1px solid var(--art-control-edge);
+  background: rgb(var(--art-scrim-rgb) / 0.52);
   color: var(--hero-ink);
   transition:
     background var(--m-fast) var(--ease-standard, ease-out),
     color var(--m-fast) var(--ease-standard, ease-out);
 }
 .campaign-hero-gear:hover {
-  background: rgb(10 7 5 / 0.74);
+  background: rgb(var(--art-scrim-rgb) / 0.74);
   color: var(--gold-leaf-100);
 }
 .campaign-hero-gear:focus-visible {

@@ -19,8 +19,25 @@ import { join, relative, sep } from "node:path";
 export type Kind = "color" | "font-size" | "radius" | "font-family";
 export type Counts = Record<string, number>;
 
-const RADIUS_OK = /^(var\(--[a-z0-9-]+\)|0|0px|50%|999px|inherit|calc\(.*\))$/;
-const SIZE_OK = /^(var\(--[a-z0-9-]+\)|inherit|1em|100%|0|calc\(.*var\(--.*\))$/;
+const RADIUS_OK = /^(var\(--[a-z0-9-]+(,[^)]*)?\)|0|0px|50%|999px|inherit|calc\(.*\))$/;
+const SIZE_OK = /^(var\(--[a-z0-9-]+(,[^)]*)?\)|inherit|1em|100%|0|calc\(.*var\(--.*\))$/;
+
+/** Split a value on whitespace outside parentheses (`calc(a - b) 4px` → 2 parts). */
+function splitTopLevel(value: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let cur = "";
+  for (const ch of value) {
+    if (ch === "(") depth++;
+    if (ch === ")") depth--;
+    if (/\s/.test(ch) && depth === 0) {
+      if (cur) parts.push(cur);
+      cur = "";
+    } else cur += ch;
+  }
+  if (cur) parts.push(cur);
+  return parts;
+}
 
 function add(counts: Counts, key: string): void {
   counts[key] = (counts[key] ?? 0) + 1;
@@ -44,12 +61,17 @@ export function scanCss(css: string, file: string, out: Record<Kind, Counts>): v
     if (prop === "font-size" && !SIZE_OK.test(value))
       add(out["font-size"], `${file} ${value}`);
     if (prop === "border-radius") {
-      for (const part of value.split(/\s+/)) {
+      for (const part of splitTopLevel(value)) {
         if (!RADIUS_OK.test(part)) add(out.radius, `${file} ${part}`);
       }
     }
-    for (const c of value.matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/g))
+    for (const c of value.matchAll(
+      /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/g
+    )) {
+      // `rgb(var(--art-scrim-rgb) / 0.5)` is a token colour at an alpha, not a hand value.
+      if (/^(rgba?|hsla?)\(\s*var\(--/.test(c[0])) continue;
       add(out.color, `${file} ${c[0].replace(/\s+/g, " ")}`);
+    }
   }
 }
 

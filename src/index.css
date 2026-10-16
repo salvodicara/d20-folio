@@ -18,6 +18,18 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
+  /* ON-ART set (vision 1): type and scrims laid over a picture (the campaign hero
+     band). Theme-independent on purpose: the scrim under them is always dark, so
+     the ink is always the ivory, whatever the upload. */
+  --art-ink: #f6ead0;
+  --art-ink-soft: #ded0b0;
+  --art-scrim-rgb: 10 7 5;
+  --art-decode: #16100a;
+  --art-title-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
+  --art-meta-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
+  --art-plate-shadow: 0 22px 44px -28px rgb(0 0 0 / 0.85);
+  --art-control-edge: rgb(246 234 208 / 0.2);
+  --text-hero-title: clamp(1.75rem, 1.15rem + 2.2vw, 2.875rem);
   /* ── § 02 Typography — The Gilded Plate (owner-ratified 2026-07-02) ─────
      Four registers, three faces:
        --font-title   Cinzel — the CEREMONIAL titling register (caps-only face:
