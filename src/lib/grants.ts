@@ -45,6 +45,7 @@ import {
   type AcBonusCondition,
   type MoveMode,
   type Rule,
+  type RuleOrigin,
   type RuleTarget,
   type RuleValues,
 } from "@/lib/rules";
@@ -1337,6 +1338,12 @@ export interface AggregatedGrants {
    * `(base + speedBonusFt)` by this BEFORE subtracting flat exhaustion / armor
    * penalties.
    */
+  /**
+   * Every passive rule this aggregate folded, with the catalogue entry it came from:
+   * the input a breakdown needs to NAME who contributed to a rule-folded number
+   * (`ruleParts`). `values` is exactly `foldRules(ruleOrigins.map((o) => o.rule))`.
+   */
+  ruleOrigins: ReadonlyArray<RuleOrigin>;
   speedMultiplier: number;
   /**
    * Walking-Speed FLOOR in feet (Boots of Striding and Springing → 30). Default
@@ -2082,6 +2089,7 @@ export function emptyAggregate(): AggregatedGrants {
     flySpeed: null,
     swimSpeed: null,
     climbSpeed: null,
+    ruleOrigins: [],
     speedMultiplier: 1,
     speedFloorFt: 0,
     speedCapFt: null,
@@ -2339,6 +2347,8 @@ export function evaluateGrants(
 ): AggregatedGrants {
   // Passive effects already migrated to the generic rules grammar (`lib/rules`).
   const rules: Rule[] = [];
+  /** The source of `rules[i]` (filled by `applyGrant`; a hole for a source-less rule). */
+  const ruleSources: Array<{ kind: SrdKind; key: string } | undefined> = [];
 
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
@@ -2491,6 +2501,24 @@ export function evaluateGrants(
    * candidates) can be stamped with the toggle.
    */
   function applyGrant(
+    g: Grant,
+    sourceId: string,
+    gref: GrantRef,
+    sourceRef: { kind: SrdKind; key: string } | undefined,
+    activeKey?: string,
+    runtime?: GrantSource["runtime"],
+    item?: GrantSource["item"]
+  ): void {
+    // Every rule this grant (or a grant nested inside it) adds is attributed to its
+    // source; a nested call has already stamped its own, with the same inherited ref.
+    const from = rules.length;
+    applyGrantRules(g, sourceId, gref, sourceRef, activeKey, runtime, item);
+    for (let i = from; i < rules.length; i++) {
+      if (ruleSources[i] === undefined && sourceRef) ruleSources[i] = sourceRef;
+    }
+  }
+
+  function applyGrantRules(
     g: Grant,
     sourceId: string,
     gref: GrantRef,
@@ -3719,6 +3747,10 @@ export function evaluateGrants(
   }
 
   const values = foldRules(rules);
+  const ruleOrigins: RuleOrigin[] = rules.map((rule, i) => {
+    const source = ruleSources[i];
+    return source ? { rule, source } : { rule };
+  });
   return {
     // D6 — final darkvision = max BASE range (merge) + summed additive bonus
     // (Umbral Sight). With no base, the bonus still grants its own range (RAW:
@@ -3767,6 +3799,7 @@ export function evaluateGrants(
     flySpeed: nonWalkingSpeed(values, "fly"),
     swimSpeed: nonWalkingSpeed(values, "swim"),
     climbSpeed: nonWalkingSpeed(values, "climb"),
+    ruleOrigins,
     speedMultiplier: Math.max(1, ruleValue(values, "speed:multiplier") ?? 1),
     speedFloorFt: Math.max(0, ruleValue(values, "speed:floor") ?? 0),
     speedCapFt: ruleValue(values, "speed:cap"),

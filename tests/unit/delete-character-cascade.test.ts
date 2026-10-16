@@ -16,20 +16,32 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const order: string[] = [];
+// The mock functions are created ONCE and every mock factory returns these same
+// objects. The orchestrator reaches campaign-io through a dynamic `import()`, and
+// vitest can evaluate a module's mock factory a second time for it; with fresh
+// `vi.fn()`s in the factory, that second copy ignored the test's set-up and the
+// detach assertion failed about one run in twenty (composed CI, 2026-10-16).
+const { order, deleteCharacterMock, listSharedCampaignsMock, setMemberCharacterMock } =
+  vi.hoisted(() => {
+    const order: string[] = [];
+    return {
+      order,
+      deleteCharacterMock: vi.fn(() => {
+        order.push("deleteCharacter");
+        return Promise.resolve();
+      }),
+      listSharedCampaignsMock: vi.fn(() => Promise.resolve([])),
+      setMemberCharacterMock: vi.fn(() => {
+        order.push("detach");
+        return Promise.resolve();
+      }),
+    };
+  });
 
-vi.mock("@/lib/firestore", () => ({
-  deleteCharacter: vi.fn(() => {
-    order.push("deleteCharacter");
-    return Promise.resolve();
-  }),
-}));
+vi.mock("@/lib/firestore", () => ({ deleteCharacter: deleteCharacterMock }));
 vi.mock("@/features/campaigns/campaign-io", () => ({
-  listSharedCampaigns: vi.fn(() => Promise.resolve([])),
-  setMemberCharacter: vi.fn(() => {
-    order.push("detach");
-    return Promise.resolve();
-  }),
+  listSharedCampaigns: listSharedCampaignsMock,
+  setMemberCharacter: setMemberCharacterMock,
 }));
 
 import { deleteCharacterAndDetach } from "@/features/roster/delete-character";

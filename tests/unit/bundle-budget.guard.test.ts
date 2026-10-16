@@ -485,7 +485,13 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // `cockpit-engine` +80.4, from #244 restoring the official SRD 5.2.1 spell texts in
 // en/it srd/spells.json. Eager closure 726.6 → 750.4 KB gz, under its ceiling.
 // Measured 9763.68 KiB; +~26 KiB headroom.
-const PRECACHE_CEILING_KIB = 9790;
+// 2026-10-16 (first run of Verify's composed budget job, main ae61ee3a): raised
+// 9790 → 9830. A/B against the released 3f23ddc8 build (9763.7 KiB / 338): +37.0 KiB,
+// +5 entries. New lazy chunks split out of pages that shrank to match
+// (DamageTrayPanel, encounter-monster-actions, combat-chronicle-view, BeastFormPicker;
+// CharacterCockpit −11.9, CampaignHubPage −4.7) plus the post-release rules batches
+// (cockpit-engine +6.1). Measured 9800.67 KiB / 343; +~29 KiB headroom.
+const PRECACHE_CEILING_KIB = 9830;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
