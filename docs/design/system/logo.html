@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Logo</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <style>
+      main {
+        padding: 40px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 32px;
+      }
+      .opt {
+        display: grid;
+        gap: 20px;
+        justify-items: center;
+        text-align: center;
+      }
+      .opt h2 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 30px;
+        color: var(--gold-bright);
+      }
+      .opt p {
+        margin: 0;
+        color: var(--text-2);
+        max-width: 40ch;
+      }
+      .big {
+        width: 180px;
+        height: 180px;
+        color: var(--gold);
+      }
+      .lockup {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-family: var(--font-title);
+        font-weight: 700;
+        font-size: 34px;
+        color: var(--gold-bright);
+      }
+      .lockup svg {
+        width: 40px;
+        height: 40px;
+        color: var(--gold);
+      }
+      .sizes {
+        display: flex;
+        align-items: end;
+        gap: 18px;
+      }
+      .sizes svg {
+        color: var(--gold);
+      }
+      .appicon {
+        width: 88px;
+        height: 88px;
+        border-radius: 20px;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 50% 30%, #2a2018, #0d0a08 75%);
+        border: 1px solid #6a5130;
+        color: #e3c27e;
+      }
+      .appicon svg {
+        width: 58px;
+        height: 58px;
+      }
+      .label {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <defs>
+        <!-- A: the d20 refined: true icosahedron silhouette, front face and its six neighbours -->
+        <symbol
+          id="logo-a"
+          viewBox="0 0 48 48"
+          fill="none"
+          stroke="currentColor"
+          stroke-linejoin="round"
+        >
+          <path d="M24 3L42.2 13.5V34.5L24 45L5.8 34.5V13.5Z" stroke-width="2.2" />
+          <path d="M24 13L33.5 30H14.5Z" stroke-width="1.8" />
+          <path
+            d="M24 3V13M5.8 13.5L14.5 30M42.2 13.5L33.5 30M5.8 34.5L14.5 30M42.2 34.5L33.5 30M24 45L14.5 30M24 45L33.5 30M5.8 13.5L24 13L42.2 13.5"
+            stroke-width="1.2"
+            opacity=".65"
+          />
+        </symbol>
+        <!-- B: the d20 as a folio: the front face is an open book -->
+        <symbol
+          id="logo-b"
+          viewBox="0 0 48 48"
+          fill="none"
+          stroke="currentColor"
+          stroke-linejoin="round"
+          stroke-linecap="round"
+        >
+          <path d="M24 3L42.2 13.5V34.5L24 45L5.8 34.5V13.5Z" stroke-width="2.2" />
+          <path
+            d="M24 3V12M5.8 13.5L13 19M42.2 13.5L35 19M5.8 34.5L13 31M42.2 34.5L35 31M24 45V35"
+            stroke-width="1.2"
+            opacity=".65"
+          />
+          <path
+            d="M24 17.5C20.5 15.5 16.5 15 13 16V31C16.5 30 20.5 30.5 24 33C27.5 30.5 31.5 30 35 31V16C31.5 15 27.5 15.5 24 17.5Z"
+            stroke-width="1.8"
+          />
+          <path d="M24 17.5V33" stroke-width="1.4" />
+          <path
+            d="M16.5 21H20.5M16.5 24.5H20.5M27.5 21H31.5M27.5 24.5H31.5"
+            stroke-width="1"
+            opacity=".7"
+          />
+        </symbol>
+        <!-- C: monogram F on a notched shield: the frame's corner and the AC shield -->
+        <symbol
+          id="logo-c"
+          viewBox="0 0 48 48"
+          fill="none"
+          stroke="currentColor"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M13 4H35A5 5 0 0 0 40 9V27C40 36 33 42 24 45C15 42 8 36 8 27V9A5 5 0 0 0 13 4Z"
+            stroke-width="2.2"
+          />
+          <path
+            d="M14 9.5H34V27C34 33 29.5 37.5 24 39.5C18.5 37.5 14 33 14 27Z"
+            stroke-width="1"
+            opacity=".55"
+          />
+          <path
+            d="M19.5 15H29.5M19.5 15V34M19.5 23.5H27"
+            stroke-width="2.6"
+            stroke-linecap="square"
+          />
+        </symbol>
+      </defs>
+    </svg>
+    <main>
+      <section class="opt frame frame--crest">
+        <span class="crest"></span>
+        <h2>A · Il d20</h2>
+        <svg class="big"><use href="#logo-a" /></svg>
+        <p>
+          Il dado di D&amp;D, disegnato come un vero icosaedro. Chiaro e riconoscibile, ma
+          anche Roll20 usa un d20.
+        </p>
+        <span class="lockup"
+          ><svg><use href="#logo-a" /></svg>Folio</span
+        >
+        <div class="sizes">
+          <svg width="48" height="48"><use href="#logo-a" /></svg
+          ><svg width="32" height="32"><use href="#logo-a" /></svg
+          ><svg width="16" height="16"><use href="#logo-a" /></svg
+          ><span class="appicon"
+            ><svg><use href="#logo-a" /></svg
+          ></span>
+        </div>
+      </section>
+      <section class="opt frame frame--crest">
+        <span class="crest"></span>
+        <h2>B · Il dado-libro</h2>
+        <svg class="big"><use href="#logo-b" /></svg>
+        <p>
+          Il d20 con un libro aperto sulla faccia: «folio» è una pagina. Dice cosa fa
+          l'app: le regole e il resoconto.
+        </p>
+        <span class="lockup"
+          ><svg><use href="#logo-b" /></svg>Folio</span
+        >
+        <div class="sizes">
+          <svg width="48" height="48"><use href="#logo-b" /></svg
+          ><svg width="32" height="32"><use href="#logo-b" /></svg
+          ><svg width="16" height="16"><use href="#logo-b" /></svg
+          ><span class="appicon"
+            ><svg><use href="#logo-b" /></svg
+          ></span>
+        </div>
+      </section>
+      <section class="opt frame frame--crest">
+        <span class="crest"></span>
+        <h2>C · Lo stemma</h2>
+        <svg class="big"><use href="#logo-c" /></svg>
+        <p>
+          Una F sullo scudo, con gli stessi angoli intagliati dei riquadri. Elegante, ma
+          lega il logo alla lettera del nome.
+        </p>
+        <span class="lockup"
+          ><svg><use href="#logo-c" /></svg>Folio</span
+        >
+        <div class="sizes">
+          <svg width="48" height="48"><use href="#logo-c" /></svg
+          ><svg width="32" height="32"><use href="#logo-c" /></svg
+          ><svg width="16" height="16"><use href="#logo-c" /></svg
+          ><span class="appicon"
+            ><svg><use href="#logo-c" /></svg
+          ></span>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

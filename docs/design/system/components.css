@@ -71,55 +71,33 @@ svg.i {
   line-height: 1.35;
 }
 
-/* ── Frame: BG3's panel — bronze hairline, inner line, corner filigree ── */
+/* ── Frames: D&D Beyond's notched box border, BG3's bronze and gold ──
+ * The corner is part of the border (one drawn outline, 9-slice), never an ornament
+ * stuck on top, so it keeps its shape at any size. Three tiers by box size:
+ *  .frame          panels, dialogs, headers: concave notch, inner chamfered line, gold rivet
+ *  .frame--card    cards, menus, popovers: one line, chamfered corners
+ *  plain border    buttons, inputs, value plates: 1px line, small radius (as D&D Beyond)
+ */
 .frame {
   position: relative;
-  background: var(--panel);
-  border: 1px solid var(--frame);
-  border-radius: var(--r-2);
-  box-shadow:
-    inset 0 0 0 3px var(--panel),
-    inset 0 0 0 4px var(--frame-inner),
-    var(--shadow);
   padding: var(--sp-5);
+  background: none;
+  border: 1px solid transparent;
+  border-image: url("frames/panel.svg") 20 fill / 20px / 0 stretch;
+  filter: drop-shadow(0 14px 24px rgb(0 0 0 / 0.55));
 }
-.frame::before,
-.frame::after {
-  content: "";
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-  border-color: var(--frame-strong);
-  border-style: solid;
-}
-.frame::before {
-  top: 5px;
-  left: 5px;
-  border-width: 1px 0 0 1px;
-}
-.frame::after {
-  bottom: 5px;
-  right: 5px;
-  border-width: 0 1px 1px 0;
+.frame--card {
+  border-image: url("frames/card.svg") 10 fill / 10px / 0 stretch;
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 0.45));
 }
 .frame__corner-tr,
 .frame__corner-bl {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  pointer-events: none;
-  border: solid var(--frame-strong);
+  display: none;
 }
-.frame__corner-tr {
-  top: 5px;
-  right: 5px;
-  border-width: 1px 1px 0 0;
-}
-.frame__corner-bl {
-  bottom: 5px;
-  left: 5px;
-  border-width: 0 0 1px 1px;
+@media (max-width: 760px) {
+  .frame {
+    border-image-width: 16px;
+  }
 }
 /* Crest on the top edge (BG3's ornament over a panel title). */
 .frame--crest {
@@ -127,14 +105,14 @@ svg.i {
 }
 .crest {
   position: absolute;
-  top: -6px;
+  top: -5px;
   left: 50%;
   width: 11px;
   height: 11px;
   transform: translateX(-50%) rotate(45deg);
-  background: var(--panel);
+  background: #15110d;
   border: 1px solid var(--frame-strong);
-  box-shadow: 0 0 0 3px var(--panel);
+  box-shadow: 0 0 0 3px #15110d;
 }
 .crest::after {
   content: "";
