@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -91,7 +92,7 @@ function ConcentrationSavePrompt({
       <div className="concentration-save-roll flex flex-wrap items-center gap-2">
         {rollMode && (
           <span className="rounded-sm border border-border-subtle px-1.5 py-0.5 font-mono text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-secondary">
-            {t(`combat.rollMode.${rollMode}`)}
+            <GlossaryTip term={rollMode} rubric={t(`combat.rollMode.${rollMode}`)} />
           </span>
         )}
         <EnteredD20Faces

@@ -80,7 +80,20 @@
       "base-grapple": "Afferrare è un Colpo Senz'armi: con una mano libera prendi una creatura entro 1,5 metri che sia al massimo di una taglia più grande di te. Fa un tiro salvezza su Forza o Destrezza; se fallisce ha la condizione Afferrato.",
       "base-shove": "Spingere è un Colpo Senz'armi contro una creatura entro 1,5 metri che sia al massimo di una taglia più grande di te. Fa un tiro salvezza su Forza o Destrezza; se fallisce la allontani di 1,5 metri o le dai la condizione Prono.",
       "base-escape-grapple": "Liberati: mentre sei Afferrato usa la tua azione per una prova di Forza (Atletica) o Destrezza (Acrobazia) contro la CD di fuga. Se riesci sei libero.",
-      "base-opportunity-attack": "Attacco di Opportunità: quando un nemico che puoi vedere esce dalla tua portata, puoi usare la tua Reazione per fare un attacco in mischia contro di lui. Una creatura che usa l'azione Disimpegno lo evita."
+      "base-opportunity-attack": "Attacco di Opportunità: quando un nemico che puoi vedere esce dalla tua portata, puoi usare la tua Reazione per fare un attacco in mischia contro di lui. Una creatura che usa l'azione Disimpegno lo evita.",
+      "advantage": "Vantaggio: tiri due d20 invece di uno e tieni il risultato più alto. Se hai sia Vantaggio sia Svantaggio sullo stesso tiro si annullano e tiri un solo d20, a prescindere da quante fonti hai di ciascuno.",
+      "disadvantage": "Svantaggio: tiri due d20 invece di uno e tieni il risultato più basso. Vantaggio e Svantaggio sullo stesso tiro si annullano, quindi tiri un solo d20 come al solito.",
+      "halfCover": "Copertura Parziale: un ostacolo copre almeno metà del tuo corpo, come un muretto, un grosso mobile o un'altra creatura. Ottieni +2 alla CA e ai tiri salvezza su Destrezza contro attacchi ed effetti che arrivano dall'altra parte.",
+      "threeQuartersCover": "Copertura Tre Quarti: un ostacolo nasconde circa tre quarti del tuo corpo, come una grata o una feritoia. Ottieni +5 alla CA e ai tiri salvezza su Destrezza contro attacchi ed effetti che arrivano dall'altra parte.",
+      "totalCover": "Copertura Totale: un ostacolo ti nasconde del tutto. Non puoi essere il bersaglio diretto di un attacco o di un incantesimo, ma un effetto ad area può comunque raggiungerti se si estende oltre l'ostacolo.",
+      "bloodied": "Sanguinante: hai metà dei tuoi Punti Ferita massimi o meno. Non è una condizione e da solo non fa nulla, ma alcuni privilegi e mostri funzionano diversamente contro una creatura Sanguinante.",
+      "temporaryHitPoints": "I Punti Ferita Temporanei sono una riserva in più sopra quelli veri: i danni li consumano per primi. Non si sommano, quindi quando ne ottieni altri scegli quale quantità tenere. Le cure non li ripristinano e durano finché non si esauriscono o finché non completi un Riposo Lungo.",
+      "deathSavingThrow": "Tiro Salvezza contro Morte: a 0 Punti Ferita, all'inizio di ogni tuo turno tiri un d20. Con 10 o più è un successo, sotto è un fallimento. Tre successi e sei stabile; tre fallimenti e muori. Un 20 ti fa tornare con 1 Punto Ferita; un 1 conta come due fallimenti.",
+      "resistance": "Resistenza a un tipo di danno: subisci metà dei danni di quel tipo (arrotondata per difetto). Più fonti di Resistenza non si sommano: il danno si dimezza una volta sola.",
+      "vulnerability": "Vulnerabilità a un tipo di danno: subisci il doppio dei danni di quel tipo. Come per la Resistenza, più fonti lo raddoppiano comunque una volta sola.",
+      "immunity": "Immunità a un tipo di danno: quei danni non ti fanno nulla. Immunità a una condizione: quella condizione non può esserti applicata.",
+      "reaction": "La Reazione è un'azione speciale che fai in risposta a un evento, anche durante il turno di qualcun altro, come un Attacco di Opportunità. Ne hai una per round; torna disponibile all'inizio del tuo turno.",
+      "bonusAction": "L'Azione Bonus è un'azione extra e veloce che puoi fare nel tuo turno, ma solo se un privilegio, un incantesimo o un'altra capacità dice che la usa. Ne hai al massimo una per turno e scegli tu quando farla."
     }
   }
 }

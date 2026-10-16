@@ -1229,7 +1229,15 @@ export function PlayTab() {
             {/* Pure rubric — the turn-meter Reaction coin alone carries
               availability (a header chip duplicated it, owner order
               2026-07-10); the spent state also reads on every card's CTA. */}
-            <SectionHeader tight data-econ="reaction" title={t("combat.reactions")} />
+            <SectionHeader
+              tight
+              data-econ="reaction"
+              title={
+                <GlossaryTip term="reaction" rubric={t("combat.reaction")}>
+                  {t("combat.reactions")}
+                </GlossaryTip>
+              }
+            />
             <p className="mb-2 px-1 text-[0.7rem] italic text-text-secondary">
               {t("combat.reactionsNote")}
             </p>
@@ -1442,7 +1450,9 @@ function combatFacts(
     // Rolled Temporary HP as a labeled accordion fact (the gloss carries it too).
     summary.tempHpRoll
       ? {
-          label: t("combat.tempHpRollLabel"),
+          label: (
+            <GlossaryTip term="temporaryHitPoints" rubric={t("combat.tempHpRollLabel")} />
+          ),
           icon: ShieldPlus,
           value: t("combat.tempHpRoll", {
             dice: tempHpRollFormula(summary.tempHpRoll),
@@ -1503,11 +1513,20 @@ function ActionGroup({
   onCommit: (action: ResolvedAction) => void;
   onPin: (action: ResolvedAction) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <section className="agroup" data-slot={slot}>
       <div className="ag-head">
         <span className="ag-diamond" aria-hidden />
-        <h3 className="ag-title">{title}</h3>
+        <h3 className="ag-title">
+          {slot === "bonus" ? (
+            <GlossaryTip term="bonusAction" rubric={t("features.slotBonus")}>
+              {title}
+            </GlossaryTip>
+          ) : (
+            title
+          )}
+        </h3>
         <span className="ag-rule" aria-hidden />
       </div>
       <div className="uc-stack">

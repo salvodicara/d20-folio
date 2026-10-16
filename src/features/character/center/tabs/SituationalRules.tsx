@@ -14,6 +14,7 @@
  */
 
 import { useTranslation } from "react-i18next";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { useLocale } from "@/hooks/useLocale";
 import { localeDistance, localeMiles } from "@/lib/utils";
@@ -21,24 +22,39 @@ import {
   buildSituationalRulesView,
   type RuleLineVM,
 } from "@/lib/views/situational-rules-view";
+import { COVER_TERM, type CombatTermId } from "@/components/shared/combat-glossary";
 import { ReferenceSection } from "../ReferenceSection";
 import { PLAY_REF_ANCHOR, type PlayRefSection } from "../play-reference";
 
 /** This block is the persisted "rules" reference section (collapsed by default). */
 const SECTION: PlayRefSection = "rules";
 
-/** One reference topic (a heading + its name→summary rows). */
-function TopicCard({ title, rows }: { title: string; rows: readonly RuleLineVM[] }) {
+/** One reference topic (a heading + its name→summary rows). A row whose id has a
+ *  glossary term (the cover levels) names itself as its tip. */
+function TopicCard({
+  title,
+  rows,
+  terms,
+}: {
+  title: string;
+  rows: readonly RuleLineVM[];
+  terms?: Partial<Record<string, { term: CombatTermId }>>;
+}) {
   return (
     <InfoCard as="section" className="space-y-2">
       <h4 className="font-display text-sm font-semibold text-text-primary">{title}</h4>
       <dl className="space-y-1.5">
-        {rows.map((r) => (
-          <div key={r.id} className="text-sm">
-            <dt className="font-medium text-text-primary">{r.term}</dt>
-            <dd className="text-text-secondary">{r.desc}</dd>
-          </div>
-        ))}
+        {rows.map((r) => {
+          const gloss = terms?.[r.id];
+          return (
+            <div key={r.id} className="text-sm">
+              <dt className="font-medium text-text-primary">
+                {gloss ? <GlossaryTip term={gloss.term} rubric={r.term} /> : r.term}
+              </dt>
+              <dd className="text-text-secondary">{r.desc}</dd>
+            </div>
+          );
+        })}
       </dl>
     </InfoCard>
   );
@@ -61,7 +77,11 @@ export function SituationalRules() {
           card's height, leaving a large empty hole in the top-left cell (both
           themes). No masonry, no bespoke component — one alignment keyword. */}
       <div className="mt-3 grid items-start gap-3 sm:grid-cols-2">
-        <TopicCard title={t("combat.rulesReference.cover")} rows={view.cover} />
+        <TopicCard
+          title={t("combat.rulesReference.cover")}
+          rows={view.cover}
+          terms={COVER_TERM}
+        />
         <TopicCard title={t("combat.rulesReference.mounted")} rows={view.mounted} />
         <TopicCard title={t("combat.rulesReference.underwater")} rows={view.underwater} />
         <InfoCard as="section" className="space-y-2">

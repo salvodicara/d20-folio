@@ -80,7 +80,20 @@
       "base-grapple": "Grapple is an Unarmed Strike: with a free hand, grab a creature within 5 feet that is at most one size larger than you. It makes a Strength or Dexterity saving throw; if it fails, it has the Grappled condition.",
       "base-shove": "Shove is an Unarmed Strike against a creature within 5 feet that is at most one size larger than you. It makes a Strength or Dexterity saving throw; if it fails, you push it 5 feet away or give it the Prone condition.",
       "base-escape-grapple": "Escape: while Grappled, use your action for a Strength (Athletics) or Dexterity (Acrobatics) check against the escape DC. On a success you're free.",
-      "base-opportunity-attack": "Opportunity Attack: when an enemy you can see moves out of your reach, you can use your Reaction to make one melee attack against it. A creature that takes the Disengage action avoids it."
+      "base-opportunity-attack": "Opportunity Attack: when an enemy you can see moves out of your reach, you can use your Reaction to make one melee attack against it. A creature that takes the Disengage action avoids it.",
+      "advantage": "Advantage: roll two d20s instead of one and keep the higher. If you have both Advantage and Disadvantage on the same roll, they cancel out and you roll one d20, however many sources you have of each.",
+      "disadvantage": "Disadvantage: roll two d20s instead of one and keep the lower. Advantage and Disadvantage on the same roll cancel out, so you roll one d20 as usual.",
+      "halfCover": "Half Cover: an obstacle blocks at least half of you, like a low wall, a large piece of furniture, or another creature. You get +2 to AC and Dexterity saving throws against attacks and effects from the other side.",
+      "threeQuartersCover": "Three-Quarters Cover: an obstacle hides about three quarters of you, like a portcullis or an arrow slit. You get +5 to AC and Dexterity saving throws against attacks and effects from the other side.",
+      "totalCover": "Total Cover: an obstacle hides you completely. You can't be targeted directly by an attack or a spell, though an area effect can still reach you if it spreads around the obstacle.",
+      "bloodied": "Bloodied: you are at half your Hit Point maximum or less. It isn't a condition and does nothing by itself, but some features and monsters work differently against a Bloodied creature.",
+      "temporaryHitPoints": "Temporary Hit Points are a buffer on top of your real ones: damage takes them first. They don't add up, so when you gain more you choose which amount to keep. Healing can't restore them, and they last until used up or until you finish a Long Rest.",
+      "deathSavingThrow": "Death Saving Throw: at 0 Hit Points, at the start of each of your turns, roll a d20. 10 or higher is a success, lower is a failure. Three successes and you're stable; three failures and you die. A 20 brings you back with 1 Hit Point; a 1 counts as two failures.",
+      "resistance": "Resistance to a damage type halves the damage you take of that type (rounded down). Sources of Resistance don't add up: two of them still halve the damage only once.",
+      "vulnerability": "Vulnerability to a damage type doubles the damage you take of that type. Like Resistance, more than one source still doubles it only once.",
+      "immunity": "Immunity to a damage type means that damage does nothing to you. Immunity to a condition means it can't be applied to you at all.",
+      "reaction": "A Reaction is a special action you take in response to a trigger, even on someone else's turn, like an Opportunity Attack. You get one per round; it comes back at the start of your turn.",
+      "bonusAction": "A Bonus Action is a quick extra action you can take on your turn, but only when a feature, spell, or other ability says it uses one. You get at most one per turn, and you choose when to take it."
     }
   }
 }
