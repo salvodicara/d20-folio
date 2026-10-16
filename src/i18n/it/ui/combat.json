@@ -49,6 +49,8 @@
     "speedZeroShort": "Velocità 0",
     "movementSpend": "Spendi movimento",
     "movementRemainingField": "Movimento rimanente",
+    "difficultTerrain": "Terreno difficile: il movimento costa il doppio",
+    "difficultTerrainHint": "Terreno difficile: ogni metro di movimento ne costa uno in più. Si azzera a fine turno.",
     "filterMeterByType": "Filtra le azioni per {{type}}",
     "wieldStance": "Impugnatura",
     "oneHanded": "Una mano",
