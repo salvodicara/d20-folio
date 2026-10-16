@@ -203,7 +203,7 @@ and stack the two fields on phones. No fabricated/default roll or average previe
 > `src/styles/folio.css` — **on any disagreement between this prose and the CSS, the CSS is
 > authoritative.** This doc documents structure, usage rules, the craft discipline, and the identity
 > guard; it never re-derives values. Validate every UI surface against it; on conflict with the
-> Product Constitution (`docs/PRODUCT_CONSTITUTION.md`), stop and ask.
+> product rules (`PRODUCT.md` Design Principles, `docs/GOLDEN_RULES.md`), stop and ask.
 >
 > **Reader's map.** §1–6 = the target visual design system (north star, color, type, elevation,
 > components, do/don't). §7 = the per-surface craft laws. §8 = the coherence guard. §9 = motion.
@@ -1594,7 +1594,7 @@ persistent action into the document merely to beautify the capture.
 
 The ONE F-family picker for every in-wizard choice pool (`WizardPickList` in
 `src/features/wizard/pick-list.tsx`; its large-feat-pool sibling `feat-list.tsx`; spells in
-`spell-list.tsx`). It implements the Picker Doctrine (Constitution §2.7) as one recipe:
+`spell-list.tsx`). It implements the Picker Doctrine (PRODUCT.md, Design Principles 4) as one recipe:
 
 - **Level-up class fork:** advancing an owned class is the direct, always-visible path. RAW-legal
   new classes are a low-frequency branch behind one native “Explore multiclass options” disclosure;
@@ -1866,7 +1866,7 @@ wizard gallery's reading destination / chosen entry: altar-scale seal, eyebrow, 
 **carved cartouche** (the ability tile; the active economy token's caption) → **lit-socket** (the
 active economy filter: detached signet ring + halo in the token's own hue) → **gold-thread** (the
 asks-column separator). Each treatment is **earned by information** — it marks a decision the
-player is making or live state they must read — never spent on decoration (Constitution §4.16;
+player is making or live state they must read — never spent on decoration (GOLDEN_RULES taste 10;
 golden rule 19, docs/GOLDEN_RULES.md). Adding a premium register to a surface requires naming the information
 that earns it.
 
@@ -1905,11 +1905,11 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   hairline + mid-arm diamond are DELETED (they reached within ~14px of the title's cap height —
   frame and content ink must never share air). The two-tone strike carries the wow at the small
   size: a small jewel that reads as worked metal beats a large flat one. EXACTLY three earned
-  registers wear it (Constitution §4.16):
+  registers wore it (GOLDEN*RULES taste 10):
   the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
   (`.folio-panel.gilt-frame::after` — cockpit identity), and dialog HEAD BANDS (`.modal-head::after`, scaled to 32px — the bound-cover ruling, owner 2026-08-01: the fittings frame the head like the page mastheads frame theirs; the modal body stays clean and rounds at its foot, `0 0 radius-lg radius-lg`).
-  _Retired by direction B (2026-10-16): the corner fittings and the hero-seat weave are gone;
-  the inset `--panel-frame` is the frame._
+  \_Retired by direction B (2026-10-16): the corner fittings and the hero-seat weave are gone;
+  the inset `--panel-frame` is the frame.*
 
 ### Surface hierarchy (never skip the ramp)
 
@@ -2411,7 +2411,7 @@ editable **on intent** — never wrapped in standing edit boxes.
 - **Override-first throughout:** every derived value shows its computed value, is overridable in
   place, and offers reset-to-computed. An override-able value is not "done" until the default
   **auto-computes**. (This is the supreme product rule — derive by default, expose a manual override
-  everywhere; see the Product Constitution.)
+  everywhere; see PRODUCT.md, Design Principles 3.)
 - **Editing happens IN PLACE.** Never force users to a sub-page to edit a visible field. Use
   `InlineEditable` / `OverrideControl` everywhere a value is shown.
 - **The live-session recap is a durable living document, not a read/edit form.** Its content-sized
@@ -2633,7 +2633,7 @@ against every surface being designed or changed, alongside whichever `impeccable
 
 - At-a-glance common info visible immediately — no digging required for the things users need every
   time (HP, AC, action economy, current resources).
-- Detail on demand (progressive disclosure, Product Constitution §2.3): collapsed cards show summary;
+- Detail on demand (progressive disclosure, PRODUCT.md Design Principles 1): collapsed cards show summary;
   expanded cards show full detail. The same principle applies everywhere.
 - Never cluttered, never overwhelming — density is intentional, not maximal.
 - No information hidden behind unnecessary navigation.
@@ -2641,12 +2641,12 @@ against every surface being designed or changed, alongside whichever `impeccable
   move it behind progressive disclosure.
 - Premium registers (altar / cartouche / lit-socket / gold-thread / gilt frame) are earned by
   information — a decision being made or live state being read — never decoration (Product
-  Constitution §4.16; §5 above, "register ladder").
+  GOLDEN_RULES taste 10; §5 above, "register ladder").
 - No mid-string truncation of identity text (§3 above, the No-Truncation Rule).
 - Unbounded user prose/lists are bounded: `NoteClamp` for prose, latest-N + "View all" for lists —
   never an unboundedly growing surface, never a nested scrollbar.
 
-### 15.2 Pickers — the Picker Doctrine (Product Constitution §2.7)
+### 15.2 Pickers — the Picker Doctrine (PRODUCT.md Design Principles 4)
 
 - Read-then-choose: browsing never commits; an explicit act commits; release is an in-place undo on
   the same row. Fact options (nothing to read) commit directly on tap.
@@ -2665,8 +2665,8 @@ error string), and edit/active/selected.
 
 ### 15.4 Responsive — Desktop + Mobile
 
-Desktop and mobile expose the complete product through different compositions (Product Constitution
-§3). Desktop optimizes simultaneous context, encounter management and preparation through bounded
+Desktop and mobile expose the complete product through different compositions (PRODUCT.md
+Design Principles 5). Desktop optimizes simultaneous context, encounter management and preparation through bounded
 multi-column layouts; mobile optimizes one-handed table play, fast external input, reading and review
 through task-focused layers and deliberate disclosures. Neither is a reduced edition or a mechanical
 collapse of the other. An icon may remain optically 16–32px, but its interactive owner uses the
