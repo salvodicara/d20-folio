@@ -17,6 +17,7 @@ import type { TFunction } from "i18next";
 import type { ComponentType, SVGProps } from "react";
 import { Clock3, Ruler, Shield, Crosshair, Hourglass, Hand } from "lucide-react";
 import { castingTimeI18nKey, spellInstanceCount } from "@/lib/utils";
+import { coinPrice } from "@/lib/coin-price";
 import { chipText } from "@/lib/views/combat-action-view";
 import type { CustomSpell } from "@/types/character";
 import type { SpellCardVM } from "@/lib/views/spells-view";
@@ -206,12 +207,14 @@ export function buildFacts(vm: SpellCardVM, t: TFunction): SpellFact[] {
  * RA-23 — the costly/consumed material-component chip ("M: 300 gp, consumed"), or
  * null when the spell has no priced material component. Reads the STRUCTURED
  * `components.costGp`/`consumed` (never the prose); custom spells (`vm.data ===
- * null`) never match. The unit ("gp"/"mo") is baked into the localized string.
+ * null`) never match. The price is named in its own coin ("2 cp" / "2 mr").
  */
 export function buildMaterialCostTag(vm: SpellCardVM, t: TFunction): string | null {
   const comp = vm.data?.components;
   if (comp?.costGp == null) return null;
+  const { amount, coin } = coinPrice(comp.costGp);
   return t(comp.consumed ? "spells.materialCostConsumed" : "spells.materialCost", {
-    gp: comp.costGp,
+    amount,
+    coin: t(`equipment.currencyAbbr.${coin}`),
   });
 }

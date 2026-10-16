@@ -5,12 +5,13 @@
  * conditions, then Skip or Apply. Copied from Foundry VTT dnd5e's damage-application
  * tray. A bottom sheet on a phone, a centered dialog on wider screens (it renders the
  * `DialogContent`; the caller owns the `Dialog`). What Apply writes is the caller's:
- * the panel hands back the rows and the total.
+ * the panel hands back the rows and each row's total (one shared total, or one per row
+ * when the plan splits across targets: Magic Missile's darts on two goblins).
  *
  * `picker`, when given, sits above the rows ("On whom?" chips on the DM's tray); the
  * rows follow `targets`, keeping each target's choices while it stays picked.
  */
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -72,23 +73,37 @@ export function DamageTrayPanel({
   picker?: ReactNode;
   /** The line under the total; defaults to "what you rolled at the table". */
   totalHint?: string;
-  onApply: (rows: TrayRow[], total: number) => void;
+  /** `totals[i]` is row i's rolled total (the shared one unless the plan splits). */
+  onApply: (rows: TrayRow[], totals: number[]) => void;
   onSkip: () => void;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const [text, setText] = useState("");
   const [byId, setById] = useState<ReadonlyMap<string, TrayRow>>(() => new Map());
+  // Split instances (Magic Missile on two goblins): one typed total per target.
+  const [rowTexts, setRowTexts] = useState<ReadonlyMap<string, string>>(() => new Map());
   const fieldRef = useRef<HTMLInputElement>(null);
+  const firstRowFieldRef = useRef<HTMLInputElement>(null);
   const rows = targets.map(
     (target) => byId.get(target.id) ?? initialTrayRow(plan, target.id, target.defenses)
   );
+  const rowText = (id: string) => rowTexts.get(id) ?? "";
   const total = parseRolledTotal(text);
   const invalid = text.trim() !== "" && total === null;
+  const totals = plan.perTarget
+    ? targets.map((target) => parseRolledTotal(rowText(target.id)))
+    : targets.map(() => total);
   // A number is needed only while some row's amount depends on it (a tray of misses
-  // applies without one); a tray with no target yet has nothing to apply.
+  // applies without one); a tray with no target yet has nothing to apply. Split, a
+  // row left empty gets nothing, but a typo blocks.
   const canApply =
-    rows.length > 0 && (total !== null || rows.every((row) => !rowNeedsTotal(row, plan)));
+    rows.length > 0 &&
+    (plan.perTarget
+      ? targets.every(
+          (target, i) => rowText(target.id).trim() === "" || totals[i] !== null
+        ) && rows.some((row, i) => !rowNeedsTotal(row, plan) || totals[i] !== null)
+      : total !== null || rows.every((row) => !rowNeedsTotal(row, plan)));
 
   const update = (next: TrayRow) =>
     setById((current) => new Map(current).set(next.targetId, next));
@@ -97,7 +112,10 @@ export function DamageTrayPanel({
 
   const apply = () => {
     if (!canApply) return;
-    onApply(rows, total ?? 0);
+    onApply(
+      rows,
+      totals.map((value) => value ?? 0)
+    );
   };
 
   return (
@@ -110,12 +128,13 @@ export function DamageTrayPanel({
       closeLabel={t("common.close")}
       data-testid="damage-tray"
       onOpenAutoFocus={(event) => {
-        if (!fieldRef.current) return;
+        const field = fieldRef.current ?? firstRowFieldRef.current;
+        if (!field) return;
         event.preventDefault();
-        fieldRef.current.focus();
+        field.focus();
       }}
     >
-      {plan.effect !== null && (
+      {plan.effect !== null && !plan.perTarget && (
         <div className="flex flex-col gap-1 px-[var(--sp-6)] pt-[var(--sp-4)]">
           <label
             htmlFor="damage-tray-total"
@@ -164,9 +183,24 @@ export function DamageTrayPanel({
                 target={target}
                 row={row}
                 plan={plan}
-                total={total}
+                total={totals[index] ?? null}
                 locale={locale}
                 onChange={update}
+                {...(plan.perTarget && index === 0 ? { totalRef: firstRowFieldRef } : {})}
+                {...(plan.perTarget
+                  ? {
+                      field: {
+                        value: rowText(target.id),
+                        invalid:
+                          rowText(target.id).trim() !== "" && totals[index] === null,
+                        onChange: (value: string) =>
+                          setRowTexts((current) =>
+                            new Map(current).set(target.id, value)
+                          ),
+                        onEnter: apply,
+                      },
+                    }
+                  : {})}
               />
             );
           })}
@@ -185,6 +219,14 @@ export function DamageTrayPanel({
   );
 }
 
+/** A split tray's own rolled-total field on a row (Magic Missile's darts on it). */
+interface RowTotalField {
+  value: string;
+  invalid: boolean;
+  onChange: (value: string) => void;
+  onEnter: () => void;
+}
+
 function TrayTargetRow({
   target,
   row,
@@ -192,6 +234,8 @@ function TrayTargetRow({
   total,
   locale,
   onChange,
+  field,
+  totalRef,
 }: {
   target: TrayTarget;
   row: TrayRow;
@@ -199,6 +243,9 @@ function TrayTargetRow({
   total: number | null;
   locale: Locale;
   onChange: (row: TrayRow) => void;
+  field?: RowTotalField;
+  /** The first split row's field takes the tray's opening focus. */
+  totalRef?: Ref<HTMLInputElement>;
 }) {
   const { t } = useTranslation();
   const amount =
@@ -242,6 +289,25 @@ function TrayTargetRow({
           />
         </span>
       </div>
+
+      {field && (
+        <Input
+          ref={totalRef}
+          center
+          inputMode="tel"
+          autoComplete="off"
+          enterKeyHint="done"
+          placeholder="—"
+          aria-label={t("combat.damageTray.rowTotal", { name: target.name })}
+          title={t("combat.damageTray.totalHint")}
+          value={field.value}
+          error={field.invalid}
+          onChange={(event) => field.onChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") field.onEnter();
+          }}
+        />
+      )}
 
       {row.attack && (
         <div className="flex flex-wrap items-center gap-2">

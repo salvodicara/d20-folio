@@ -79,7 +79,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       v: true,
       s: true,
       m: true,
-      costGp: 500,
+      costGp: 5000,
     },
     concentration: false,
     saveAbility: "WIS",

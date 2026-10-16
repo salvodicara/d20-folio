@@ -601,6 +601,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Ring of X-ray Vision: the Magic action lights X-ray Vision 30 ft on the Senses rail with a 10-round countdown.",
   },
+  "demon-armor": {
+    // Demon Armor worn and attuned: its clawed gauntlets make the Unarmed Strike
+    // 1d8 Slashing + STR. Visit `/characters/scn-demon-armor?tab=play`.
+    name: "Korrag of the Iron Claw",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    equipment: [{ srdId: "demon-armor", equipped: true, attuned: true }],
+    exercises:
+      "Demon Armor: the Unarmed Strike reads 1d8+3 Slashing (the armor's claws) with +1 AC from the armor.",
+  },
   "gem-of-seeing": {
     // A Gem of Seeing held and attuned: its Magic action spends 1 of 3 charges and
     // lights 10 minutes of Truesight 120 ft. Visit `/characters/scn-gem-of-seeing`.
@@ -1423,6 +1436,32 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     spells: [{ srdId: "shapechange", prepared: true }],
     exercises:
       "Shapechange: the spell card's Transform opens a picker of every creature up to CR 18 that is not a Construct or an Undead; choosing one stamps its AC, speeds, STR/DEX/CON and Temporary HP, keeps INT/WIS/CHA, and a second Transform shifts form without new Temporary HP.",
+  },
+  // True Polymorph — a level-17 Wizard with True Polymorph prepared, untransformed.
+  // Visit `/characters/scn-true-polymorph-wizard?tab=spells`.
+  "true-polymorph-wizard": {
+    name: "Maelis Vantorre",
+    raceId: "human",
+    classId: "wizard",
+    level: 17,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 20, WIS: 12, CHA: 10 },
+    spells: [{ srdId: "true-polymorph", prepared: true }],
+    exercises:
+      "True Polymorph: Transform offers every bestiary creature up to CR 17, Constructs and Undead included; Myself replaces all six scores, AC and speeds and adds the form's HP as Temporary HP; Another creature shows the chosen stat block.",
+  },
+  // Animal Shapes — a level-15 Druid with Animal Shapes prepared, untransformed.
+  // Visit `/characters/scn-animal-shapes-druid?tab=spells`.
+  "animal-shapes-druid": {
+    name: "Brannoc Thornfield",
+    raceId: "human",
+    classId: "druid",
+    level: 15,
+    background: "sage",
+    abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 12, WIS: 20, CHA: 10 },
+    spells: [{ srdId: "animal-shapes", prepared: true }],
+    exercises:
+      "Animal Shapes on yourself: Transform offers only Large or smaller Beasts of CR 4 or lower; a form keeps INT/WIS/CHA, brings Temporary HP once, needs no Concentration, and a second Transform shifts form without new Temporary HP.",
   },
   // PRIM-resource-conversion `pact-slot` — Warlock Magical Cunning (L2). A Fiend
   // Warlock 5 starts with BOTH Pact-Magic slots (pool of 2, slot level 3)

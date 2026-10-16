@@ -2162,6 +2162,42 @@ function MonsterHpStat({
 }
 
 /**
+ * The draft of a DM chip editor (monster initiative, monster AC). Every way the popover
+ * closes commits the typed draft — Enter, blur, and an outside tap, whose close unmounts
+ * the input before it can blur — except Escape, which cancels. One commit per opening.
+ */
+function useChipDraft(seed: () => string, commitDraft: (draft: string) => void) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraftState] = useState("");
+  const draftRef = useRef("");
+  const settled = useRef(true);
+  const setDraft = (value: string): void => {
+    draftRef.current = value;
+    setDraftState(value);
+  };
+  return {
+    editing,
+    draft,
+    setDraft,
+    open: (): void => {
+      settled.current = false;
+      setDraft(seed());
+      setEditing(true);
+    },
+    commit: (): void => {
+      if (settled.current) return;
+      settled.current = true;
+      setEditing(false);
+      commitDraft(draftRef.current);
+    },
+    cancel: (): void => {
+      settled.current = true;
+      setEditing(false);
+    },
+  };
+}
+
+/**
  * MonsterInitChip — the DM's typed initiative as a `.vital vital-init` chip, so a
  * monster's initiative reads with the SAME vocabulary + leading-edge placement as a PC's
  * (CARD-3). No dice / no bonus — the DM enters the final value directly; `null` = blank.
@@ -2176,8 +2212,13 @@ function MonsterInitChip({
   onCommit: (value: number | null) => void;
 }) {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  // B05 — a single-leading-minus + finite guard (never `NaN`): a mid-string/trailing
+  // minus (`"5-"`, `"1-2"`) or a lone `"-"` can no longer corrupt the sort/gate/display.
+  const chip = useChipDraft(
+    () => (value === null ? "" : String(value)),
+    (draft) => onCommit(parseInitInput(draft))
+  );
+  const { editing, draft, setDraft } = chip;
   const inputRef = useRef<HTMLInputElement>(null);
   const acr = t("character.vitals.init");
   // Report the inline edit's open-state to the enclosing card so a click that dismisses
@@ -2189,17 +2230,6 @@ function MonsterInitChip({
     // viewport (a tap near the bottom on mobile) must never yank the page (B27).
     if (editing) inputRef.current?.focus({ preventScroll: true });
   }, [editing]);
-
-  function start(): void {
-    setDraft(value === null ? "" : String(value));
-    setEditing(true);
-  }
-  function commit(): void {
-    setEditing(false);
-    // B05 — a single-leading-minus + finite guard (never `NaN`): a mid-string/trailing
-    // minus (`"5-"`, `"1-2"`) or a lone `"-"` can no longer corrupt the sort/gate/display.
-    onCommit(parseInitInput(draft));
-  }
 
   // The floating typed-init edit box — the popover CONTENT, never placed in the card's
   // flow (mirrors the PC {@link InitVital} float: no in-place morph = no card reflow).
@@ -2213,12 +2243,12 @@ function MonsterInitChip({
           value={draft}
           onChange={(e) => setDraft(sanitizeInitInput(e.target.value))}
           onFocus={(e) => e.target.select()}
-          onBlur={commit}
+          onBlur={chip.commit}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              commit();
-            } else if (e.key === "Escape") setEditing(false);
+              chip.commit();
+            } else if (e.key === "Escape") chip.cancel();
           }}
           aria-label={ariaLabel}
           className="init-edit-input"
@@ -2233,7 +2263,7 @@ function MonsterInitChip({
   // below (the same fix as the PC InitVital). The resting chip stays IN FLOW as the trigger;
   // controlled by `editing` so a commit (Enter/blur) or dismissal (Escape/outside) closes it.
   return (
-    <Popover open={editing} onOpenChange={(open) => (open ? start() : setEditing(false))}>
+    <Popover open={editing} onOpenChange={(open) => (open ? chip.open() : chip.commit())}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -2251,7 +2281,7 @@ function MonsterInitChip({
           <InitBadge value={value ?? "—"} acronym={acr} icon={Dices} />
         </button>
       </PopoverTrigger>
-      <PopoverContent rubric={ariaLabel} align="start">
+      <PopoverContent rubric={ariaLabel} align="start" onEscapeKeyDown={chip.cancel}>
         <div className="party-vitals">{editBox}</div>
       </PopoverContent>
     </Popover>
@@ -2297,8 +2327,14 @@ function MonsterAcChip({
   onCommit: (value: number) => void;
 }) {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState("");
+  const chip = useChipDraft(
+    () => String(value),
+    (draft) => {
+      const next = parseInitInput(draft);
+      if (next !== null && next !== value) onCommit(next);
+    }
+  );
+  const { editing, draft, setDraft } = chip;
   const inputRef = useRef<HTMLInputElement>(null);
   const acr = t("character.vitals.ac");
   useReportEditorOpen(editing);
@@ -2307,20 +2343,8 @@ function MonsterAcChip({
     if (editing) inputRef.current?.focus({ preventScroll: true });
   }, [editing]);
 
-  function commit(): void {
-    setEditing(false);
-    const next = parseInitInput(draft);
-    if (next !== null && next !== value) onCommit(next);
-  }
-
   return (
-    <Popover
-      open={editing}
-      onOpenChange={(open) => {
-        if (open) setDraft(String(value));
-        setEditing(open);
-      }}
-    >
+    <Popover open={editing} onOpenChange={(open) => (open ? chip.open() : chip.commit())}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -2332,7 +2356,7 @@ function MonsterAcChip({
           <InitBadge value={value} acronym={acr} icon={Shield} />
         </button>
       </PopoverTrigger>
-      <PopoverContent rubric={ariaLabel} align="start">
+      <PopoverContent rubric={ariaLabel} align="start" onEscapeKeyDown={chip.cancel}>
         <div className="party-vitals">
           <span className="vital vital-init vital-init-edit" data-density="chip">
             <span className="vi-input">
@@ -2343,12 +2367,12 @@ function MonsterAcChip({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value.replace(/\D/g, "").slice(0, 2))}
                 onFocus={(e) => e.target.select()}
-                onBlur={commit}
+                onBlur={chip.commit}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    commit();
-                  } else if (e.key === "Escape") setEditing(false);
+                    chip.commit();
+                  } else if (e.key === "Escape") chip.cancel();
                 }}
                 aria-label={ariaLabel}
                 className="init-edit-input"

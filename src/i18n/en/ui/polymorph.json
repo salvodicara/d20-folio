@@ -15,10 +15,10 @@
     "traits": "Traits",
     "activeForm": "Polymorphed: {{name}}",
     "revert": "Revert form",
-    "shapechangeTitle": "Choose a Form",
-    "shapechangeHint": "Its body, your mind and Hit Points.",
+    "creatureTitle": "Choose a Form",
     "searchCreatures": "Search creatures",
     "noCreatureForms": "No forms are available at your level.",
-    "formOf": "{{spell}}: {{name}}"
+    "formOf": "{{spell}}: {{name}}",
+    "keepsMindHint": "Its body, your mind and Hit Points."
   }
 }

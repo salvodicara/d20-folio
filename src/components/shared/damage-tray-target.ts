@@ -51,10 +51,9 @@ export function trayRubric(plan: DamageTrayPlan, t: T, locale: Locale): string {
 function effectLabel(plan: DamageTrayPlan, t: T, locale: Locale): string {
   switch (plan.effect) {
     case "damage":
+      // Each language's own phrase: Italian "Danni Taglienti", "Danni da Fuoco".
       return plan.damageType
-        ? t("combat.damageTray.rubricDamage", {
-            type: t(`srd.damage_${plan.damageType}`),
-          })
+        ? t(`combat.damageTray.damageOf.${plan.damageType}`)
         : t("mechanics.cast.optionDamage");
     case "heal":
       return t("combat.heal");

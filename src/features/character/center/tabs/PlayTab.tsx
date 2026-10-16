@@ -1597,6 +1597,7 @@ function CombatActionCard({
   onPin: () => void;
 }) {
   const { t } = useTranslation();
+  const masteriesThisTurn = useCombatStore((s) => s.masteriesThisTurn);
   const { language: locale } = useLocale();
   const kind = combatKind(action);
 
@@ -1831,6 +1832,7 @@ function CombatActionCard({
           {action.masteryRiders && (
             <MasteryRiders
               riders={action.masteryRiders}
+              spent={masteriesThisTurn}
               onApply={(rider) =>
                 applyMasteryRider(action, rider, {
                   applied: t("combat.cunningStrikeAppliedToast", {

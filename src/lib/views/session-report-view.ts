@@ -101,10 +101,18 @@ export function localizePlayEvent(
         { actor: who(event.actor), spell: names.spell(event.spell) }
       );
     case "status":
-      return t(event.started ? "sessionReport.statusStart" : "sessionReport.statusEnd", {
-        actor: who(event.actor),
-        source: names.source?.(event.sourceId) ?? event.sourceId,
-      });
+      return t(
+        event.started && event.amount
+          ? "sessionReport.statusPenalty"
+          : event.started
+            ? "sessionReport.statusStart"
+            : "sessionReport.statusEnd",
+        {
+          actor: who(event.actor),
+          source: names.source?.(event.sourceId) ?? event.sourceId,
+          amount: event.amount ?? 0,
+        }
+      );
     case "down":
       return t("sessionReport.down", { target: who(event.target) });
     case "stabilized":

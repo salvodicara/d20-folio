@@ -30,6 +30,7 @@
     "concentrationEnd": "{{actor}} stops concentrating on {{spell}}",
     "statusStart": "{{actor}}'s {{source}} begins",
     "statusEnd": "{{actor}}'s {{source}} ends",
+    "statusPenalty": "{{actor}}'s {{source}}: −{{amount}} to d20 Tests",
     "down": "{{target}} drops to 0 HP",
     "stabilized": "{{target}} is stabilized",
     "resourceGrant": "{{actor}} gives {{target}} {{resource}}",

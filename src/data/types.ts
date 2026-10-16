@@ -949,8 +949,9 @@ export interface SrdSpellData {
    * for a Material (M) component with a GP price — the FIRST gp figure named in
    * the SRD Components line (the primary priced component; the compendium prose
    * carries the full breakdown) + whether the spell consumes it. Set together,
-   * only on `m: true` spells. Omitted when the material has no gp cost; never
-   * write `consumed: false` (lean data — absent means not consumed).
+   * only on `m: true` spells. A smaller coin is a fraction of gold (2 cp = 0.02);
+   * the price is shown and paid in its own coin. Omitted when the material has no
+   * coin cost; never write `consumed: false` (lean data — absent means not consumed).
    */
   components: {
     v: boolean;

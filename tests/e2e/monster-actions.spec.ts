@@ -73,9 +73,7 @@ for (const leg of [
 
       await scimitar.click(); // tap 1
       await expect(tray(page)).toBeVisible();
-      await expect(tray(page)).toContainText(
-        "Goblin · +4 per colpire · Danni da Tagliente"
-      );
+      await expect(tray(page)).toContainText("Goblin · +4 per colpire · Danni Taglienti");
       await expect(tray(page)).toContainText("Tira 1d6+2 al tavolo");
       const onWhom = tray(page).getByRole("group", { name: "Su chi?" });
       await onWhom.getByRole("button", { name: /catalion/i }).click(); // tap 2

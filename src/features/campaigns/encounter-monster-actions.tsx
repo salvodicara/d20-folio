@@ -219,7 +219,7 @@ function MonsterActionTray({
   return (
     <DamageTrayPanel
       title={title}
-      // "Goblin · +4 per colpire · Danni da Tagliente"; the dice go under the total.
+      // "Goblin · +4 per colpire · Danni Taglienti"; the dice go under the total.
       rubric={[
         monster.name,
         action.toHit !== undefined
@@ -256,7 +256,8 @@ function MonsterActionTray({
           ))}
         </div>
       }
-      onApply={(rows, total) => {
+      // A monster's plan never splits across targets: every row shares one total.
+      onApply={(rows, [total = 0]) => {
         applyMonsterAction({
           campaignId,
           monster,

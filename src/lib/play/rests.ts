@@ -3,7 +3,6 @@
  * The store ends Concentration first where the rest does (sleep), then applies these,
  * logs the rest, persists, and fences the undo stack.
  */
-import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
@@ -17,6 +16,7 @@ import {
   resolveTrackers,
 } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import type { CombatEvent } from "@/types/combat-log";
 
 /** A record without the given keys; undefined when nothing is left. */
 export function omitStateKeys<T>(
@@ -100,8 +100,6 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
     }
   }
   const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "long"));
-  // Wish Stress lasts until the caster finishes a Long Rest.
-  endedActiveKeys.add(WISH_STRESS_STATE.activeKey);
   return {
     ...character,
     character: { ...character.character, equipment: newEquipment },
@@ -214,4 +212,45 @@ export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
       bardicInspirationDie: "",
     },
   };
+}
+
+/** What a Long Rest fades: each fading penalty's step and a restored Hit Point maximum. */
+export interface LongRestFades {
+  penalties: Array<{ id: string; before: number; after: number }>;
+  maxHp: { before: number; after: number } | null;
+}
+
+/** What a Long Rest fades for this character, read before the rest. */
+export function longRestFades(character: CharacterDoc): LongRestFades {
+  const { session } = character;
+  const next = fadingPenaltiesAfterLongRest(session.fadingPenalties);
+  const penalties = Object.entries(session.fadingPenalties ?? {})
+    .filter(([, before]) => before > 0)
+    .map(([id, before]) => ({ id, before, after: next?.[id] ?? 0 }));
+  return {
+    penalties,
+    maxHp: session.hpMaxReduction
+      ? {
+          before: effectiveMaxHp(character.character, session),
+          after: effectiveMaxHp(
+            character.character,
+            sessionAfterLongRestReduction(session)
+          ),
+        }
+      : null,
+  };
+}
+
+/** Those fades as log lines of the existing kinds: where each penalty now stands, and
+ *  the maximum the reduction's end restores. */
+export function longRestFadeEvents(fades: LongRestFades): CombatEvent[] {
+  const events: CombatEvent[] = fades.penalties.map(({ id, after }) => ({
+    kind: "fading-penalty",
+    penaltyId: id,
+    amount: after,
+  }));
+  if (fades.maxHp) {
+    events.push({ kind: "hp-max-reduction", reduction: 0, max: fades.maxHp.after });
+  }
+  return events;
 }
