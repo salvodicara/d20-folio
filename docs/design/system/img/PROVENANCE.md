@@ -12,3 +12,6 @@
 - **Processing:** PNG 1024×1024 → WebP (portrait 480 px at q82, icons 128 px at q85).
 - **Use:** prototypes only. App delivery follows the hero-art rule: never precached, cached at
   runtime.
+- `campaign-war-room.webp` and `login-sanctum.webp`: crops of the hero-art series on branch
+  `design/b-play-combat` (`public/assets/backgrounds/HERO-ART.md` there records the same
+  provenance: owner's ChatGPT subscription via Codex, 2026-10-16, original subjects).

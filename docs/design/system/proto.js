@@ -10,6 +10,15 @@
   ready(() => {
     const mode = params.get("mode");
     if (mode) document.body.className = "mode-" + mode;
+    const tab = params.get("tab");
+    if (tab) document.body.className = "tab-" + tab;
+    const current = document.body.className.match(/tab-(\w+)/);
+    if (current)
+      document
+        .querySelectorAll("[data-tab]")
+        .forEach((t) =>
+          t.setAttribute("aria-selected", String(t.dataset.tab === current[1]))
+        );
     if (params.has("tip"))
       document.getElementById("tip-flame")?.removeAttribute("hidden");
     if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
