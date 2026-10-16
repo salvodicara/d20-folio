@@ -39,7 +39,7 @@ import {
   secondaryDamage,
   translateWeapon,
 } from "@/lib/activities";
-import { ruleConditional, ruleNumber, type RuleFact } from "@/lib/rules";
+import { ruleConditional, ruleNumber, ruleParts, type RuleFact } from "@/lib/rules";
 import { buildWeaponRange, type WeaponRangeSpec } from "@/lib/weapon-range";
 
 export { buildWeaponRange, type WeaponRangeSpec };
@@ -8460,6 +8460,93 @@ export function effectiveWalkingSpeedFt(
   // Speed still floors back up to `speedFloorFt`. Default 0 = no floor.
   const floored = Math.max(0, resolved, agg.speedFloorFt);
   return agg.speedCapFt === null ? floored : Math.min(floored, agg.speedCapFt);
+}
+
+/**
+ * The per-source parts of {@link effectiveWalkingSpeedFt}, for the "where does this
+ * number come from?" tip (re-foundation phase 2: every number explained). The same
+ * steps in the same order: the base, every feature or item that adds Speed (named
+ * by its catalogue entry), the multiplier, the heavy-armor penalty, Exhaustion, then
+ * a floor or cap. `breakdownTotal(parts)` equals `effectiveWalkingSpeedFt` with the
+ * same arguments; the guard test pins it across every dev scenario.
+ */
+export function effectiveWalkingSpeedBreakdown(
+  character: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined,
+  round?: number
+): RawBreakdownPart[] {
+  const { character: charData } = character;
+  const base = parseInt(charData.speed, 10);
+  const baseFt = Number.isNaN(base) ? 0 : base;
+  const agg = aggregateCharacterGrants(charData, character.session);
+  const facts: RuleFact[] = [];
+  if (
+    ruleConditional(agg.values, "speed:walk", "no-heavy-armor") > 0 &&
+    !(resolveSrd && isHeavyArmorEquipped(charData.equipment, resolveSrd))
+  ) {
+    facts.push("no-heavy-armor");
+  }
+  if (round === 1) facts.push("round-1");
+
+  const named = (
+    source: { kind: string; key: string } | undefined,
+    fallbackTerm: string,
+    value: number
+  ): RawBreakdownPart =>
+    source
+      ? locPart(srdText(source.kind as SrdKind, source.key, "name"), value)
+      : termPart(fallbackTerm, value);
+
+  const parts: RawBreakdownPart[] = [termPart("breakdown.base", baseFt)];
+  let running = baseFt;
+  for (const { source, value } of ruleParts(agg.ruleOrigins, "speed:walk", facts)) {
+    parts.push(named(source, "breakdown.featureBonus", value));
+    running += value;
+  }
+
+  const multiplied = Math.round(running * agg.speedMultiplier);
+  if (multiplied !== running) {
+    const source = ruleParts(agg.ruleOrigins, "speed:multiplier")[0]?.source;
+    parts.push(named(source, "breakdown.speed.multiplier", multiplied - running));
+  }
+
+  const armorPenaltyFt = resolveSrd
+    ? resolveArmorEffects(
+        charData.equipment,
+        resolveSrd,
+        combatAbilityScores(character).STR
+      ).speedPenaltyFt
+    : 0;
+  if (armorPenaltyFt !== 0)
+    parts.push(termPart("breakdown.speed.heavyArmor", -armorPenaltyFt));
+  const reduction = exhaustionSpeedReductionFt(character.session.exhaustion);
+  if (reduction !== 0) parts.push(termPart("character.exhaustion", -reduction));
+  const resolved = multiplied - armorPenaltyFt - reduction;
+
+  const floored = Math.max(0, resolved, agg.speedFloorFt);
+  if (floored !== resolved) {
+    const byFloor = agg.speedFloorFt > Math.max(0, resolved);
+    parts.push(
+      byFloor
+        ? named(
+            ruleParts(agg.ruleOrigins, "speed:floor")[0]?.source,
+            "breakdown.speed.floor",
+            floored - resolved
+          )
+        : termPart("breakdown.speed.minimum", floored - resolved)
+    );
+  }
+  const final = agg.speedCapFt === null ? floored : Math.min(floored, agg.speedCapFt);
+  if (final !== floored) {
+    parts.push(
+      named(
+        ruleParts(agg.ruleOrigins, "speed:cap")[0]?.source,
+        "breakdown.speed.cap",
+        final - floored
+      )
+    );
+  }
+  return parts;
 }
 
 /**

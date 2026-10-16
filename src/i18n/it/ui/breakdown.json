@@ -28,6 +28,13 @@
       "riderOnce": "Una volta per turno, quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
       "riderCost": "Quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}.",
       "riderOnceCost": "Una volta per turno, quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}."
+    },
+    "speed": {
+      "multiplier": "Moltiplicatore di velocità",
+      "heavyArmor": "Armatura pesante (Forza insufficiente)",
+      "minimum": "Minimo 0",
+      "floor": "Velocità minima",
+      "cap": "Limite di velocità"
     }
   }
 }
