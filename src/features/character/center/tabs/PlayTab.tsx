@@ -136,6 +136,7 @@ import {
   type CombatAction,
 } from "@/lib/views/combat-action-view";
 import { repeatUseCost } from "@/lib/play/object-interaction";
+import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
 import {
   ESCAPE_GRAPPLE_ACTION_ID,
   escapeGrappleSkill,
@@ -1147,7 +1148,7 @@ export function PlayTab() {
                 skillCheckBonusFor={skillCheckBonusFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                onCommit={() => dispatchAction(action)}
+                onCommit={(checked) => dispatchAction(checked ?? action)}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
@@ -1300,7 +1301,7 @@ export function PlayTab() {
                   skillCheckBonusFor={skillCheckBonusFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                  onCommit={() => dispatchAction(action)}
+                  onCommit={(checked) => dispatchAction(checked ?? action)}
                   onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
                 />
               ))}
@@ -1598,7 +1599,9 @@ function CombatActionCard({
   skillCheckBonusFor?: (skillId: string) => number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCommit: () => void;
+  /** Commit the card; a check entry (Search, Study, Influence) hands the action as
+   *  used with its entered check. */
+  onCommit: (checked?: ResolvedAction) => void;
   onPin: () => void;
 }) {
   const { t } = useTranslation();
@@ -1895,6 +1898,16 @@ function CombatActionCard({
               </p>
             </>
           )}
+          {/* Search, Study, Influence: pick the skill, enter the d20, optionally the
+              DC; Apply uses the action and logs the check with it. */}
+          {effectiveSummary.checkSkills && (
+            <ActionCheckEntry
+              skills={effectiveSummary.checkSkills}
+              bonusFor={(skill) => skillCheckBonusFor?.(skill) ?? 0}
+              disabled={cta.disabled}
+              onApply={(roll, dc) => onCommit(withCheckResult(action, roll, dc))}
+            />
+          )}
           {escapeSkill && (
             <>
               <EscapeCheckEntry
@@ -1986,6 +1999,98 @@ function HideCheckEntry({
 }
 
 /**
+ * The check roll-entry of Search, Study and Influence: pick the skill the DM called
+ * for (each chip shows its live bonus), optionally the DC (the SRD typical DCs), and
+ * enter the d20 face rolled at the table. Apply uses the action; the log line and
+ * the toast carry the total and, with a DC, success or failure. Same
+ * `.heal-roll-entry` register as the Hide entry.
+ */
+function ActionCheckEntry({
+  skills,
+  bonusFor,
+  disabled,
+  onApply,
+}: {
+  skills: ReadonlyArray<string>;
+  bonusFor: (skill: string) => number;
+  disabled: boolean;
+  onApply: (roll: { skill: string; face: number; bonus: number }, dc?: number) => void;
+}) {
+  const { t } = useTranslation();
+  const [skill, setSkill] = useState(skills[0] ?? "");
+  const [dc, setDc] = useState<number | undefined>(undefined);
+  const [face, setFace] = useState(10);
+  const bonus = bonusFor(skill);
+  return (
+    <div className="heal-roll-entry">
+      <span className="heal-roll-label">{t("combat.checkSkillLabel")}</span>
+      <div className="fchip-group" role="group" aria-label={t("combat.checkSkillLabel")}>
+        {skills.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className="fchip fchip-sm"
+            aria-pressed={id === skill}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSkill(id);
+            }}
+          >
+            {t(`skills.${id}`)} {formatModifier(bonusFor(id))}
+          </button>
+        ))}
+      </div>
+      <span className="heal-roll-label">{t("combat.checkDcLabel")}</span>
+      <div className="fchip-group" role="group" aria-label={t("combat.checkDcLabel")}>
+        {[undefined, ...TYPICAL_DCS].map((value) => (
+          <button
+            key={value ?? "none"}
+            type="button"
+            className="fchip fchip-sm"
+            aria-pressed={value === dc}
+            onClick={(e) => {
+              e.stopPropagation();
+              setDc(value);
+            }}
+          >
+            {value ?? t("abilities.none")}
+          </button>
+        ))}
+      </div>
+      <span className="heal-roll-label">
+        {t("combat.checkRollLabel", {
+          skill: t(`skills.${skill}`),
+          bonus: formatModifier(bonus),
+        })}
+      </span>
+      <NumberStepper
+        value={face}
+        onChange={setFace}
+        min={1}
+        max={20}
+        digits={2}
+        compact
+        ariaLabel={t("combat.checkRollField")}
+        decrementLabel={t("combat.healRollDec")}
+        incrementLabel={t("combat.healRollInc")}
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          onApply({ skill, face, bonus }, dc);
+          setFace(10);
+        }}
+      >
+        {t("combat.apply")}
+      </Button>
+    </div>
+  );
+}
+
+/**
  * The escape-a-grapple roll-entry: the HideCheckEntry recipe plus the escape DC,
  * which the DM states (the grappler's 8 + STR + PB, or a stat block's "escape DC").
  * It opens on DC 13, the commonest escape DC in the SRD stat blocks.
@@ -2005,7 +2110,7 @@ function EscapeCheckEntry({
   return (
     <div className="heal-roll-entry">
       <span className="heal-roll-label">
-        {t("combat.escapeRollLabel", { skill: skillLabel, bonus: formatModifier(bonus) })}
+        {t("combat.checkRollLabel", { skill: skillLabel, bonus: formatModifier(bonus) })}
       </span>
       <NumberStepper
         value={face}

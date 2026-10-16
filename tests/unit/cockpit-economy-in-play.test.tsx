@@ -631,10 +631,12 @@ describe("economy in the Play tab", () => {
     // Expand the Hide base action card → the roll-entry + end-conditions hint show.
     fireEvent.click(within(panel).getByText("Hide"));
     const field = within(panel).getByLabelText(/your d20 roll/i);
+    // The Hide entry's own Apply (Search, Study and Influence carry check entries too).
+    const hideEntry = field.closest(".heal-roll-entry") as HTMLElement;
 
     // A MISS (face 1): nothing applied — a plain notice, no undo entry.
     fireEvent.change(field, { target: { value: "1" } });
-    fireEvent.click(within(panel).getByRole("button", { name: /^apply$/i }));
+    fireEvent.click(within(hideEntry).getByRole("button", { name: /^apply$/i }));
     expect(useCharacterStore.getState().character?.session.conditions).not.toContain(
       "invisible"
     );
@@ -642,7 +644,7 @@ describe("economy in the Play tab", () => {
 
     // A HIT (face 20): Invisible + the remembered find-DC (20 + Stealth bonus)…
     fireEvent.change(field, { target: { value: "20" } });
-    fireEvent.click(within(panel).getByRole("button", { name: /^apply$/i }));
+    fireEvent.click(within(hideEntry).getByRole("button", { name: /^apply$/i }));
     const total = 20 + stealth.bonus;
     const session = useCharacterStore.getState().character?.session;
     expect(session?.conditions).toContain("invisible");
