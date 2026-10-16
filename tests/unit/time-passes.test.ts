@@ -88,6 +88,17 @@ describe("Bane (Concentration, up to 1 minute)", () => {
     expect(store().character?.session.concentration).toBe("");
   });
 
+  it("lit on yourself too, it ends once: its state's countdown already ends it", () => {
+    const doc = caster({ concentration: conc("bane") });
+    const session = setActiveState(doc, "spell-bane", true, 0);
+    if (!session) throw new Error("Bane did not light");
+    store().setCharacter({ ...doc, session });
+    for (let round = 1; round <= 9; round++) store().advanceEffectTimers(round);
+    const { expired } = store().advanceEffectTimers(10);
+    expect(expired.map((effect) => effect.activeKey)).toEqual(["spell-bane"]);
+    expect(store().character?.session.concentration).toBe("");
+  });
+
   it("ends when a minute passes", () => {
     const doc = caster({ concentration: conc("bane") });
     expect(minutes(doc, 1).session.concentration).toBe("");

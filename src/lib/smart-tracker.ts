@@ -8382,12 +8382,23 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
 /**
  * The held Concentration's own countdown, armed like a timed state: a spell held with
  * no state on you (Detect Magic, Bane on enemies) still lapses when its duration has
- * passed. None for a custom spell or a duration the clock never ends.
+ * passed. None for a custom spell or a duration the clock never ends, and none while
+ * a counting state the spell holds is lit (Bless on yourself): its countdown ends the
+ * Concentration already, with one expiry line.
  */
-function heldConcentrationTimer(character: CharacterDoc): ActiveTimedEffect[] {
+function heldConcentrationTimer(
+  character: CharacterDoc,
+  activeTimed: ReadonlyArray<ActiveTimedEffect> = resolveActiveTimedEffects(character)
+): ActiveTimedEffect[] {
   const { concentration, concentrationCastLevel } = character.session;
   const maxRounds = concentrationBudgetRounds(concentration, concentrationCastLevel);
-  return maxRounds === null
+  const heldKeys = new Set(
+    (spellIndex.get(concentration)?.grants ?? []).flatMap((grant) =>
+      grant.type === "while-active" ? [grant.activeKey] : []
+    )
+  );
+  const counted = activeTimed.some((effect) => heldKeys.has(effect.activeKey));
+  return maxRounds === null || counted
     ? []
     : [
         {
@@ -8440,10 +8451,8 @@ export function advanceEffectTimers(
     return forRound !== undefined && ticked !== undefined && ticked >= forRound;
   };
   const stamp = forRound === undefined ? {} : { tickedRound: forRound };
-  const activeTimed = [
-    ...resolveActiveTimedEffects(character),
-    ...heldConcentrationTimer(character),
-  ];
+  const stateTimed = resolveActiveTimedEffects(character);
+  const activeTimed = [...stateTimed, ...heldConcentrationTimer(character, stateTimed)];
   const next: Record<string, { roundsLeft: number; tickedRound?: number }> = {};
   const expired: ExpiredTimedEffect[] = [];
   for (const eff of activeTimed) {
