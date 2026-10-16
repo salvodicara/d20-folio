@@ -207,6 +207,18 @@ svg.i {
   cursor: not-allowed;
   box-shadow: none;
 }
+.btn--sm {
+  min-height: 34px;
+  padding: 0 var(--sp-3);
+  font-size: 14px;
+}
+.btn--sm .i {
+  width: 16px;
+  height: 16px;
+}
+a.btn {
+  text-decoration: none;
+}
 .btn--quiet {
   background: transparent;
   border-color: transparent;
@@ -409,10 +421,16 @@ svg.i {
   color: var(--gold);
   font-weight: 700;
 }
-.abil.is-prof .label::after {
-  content: " ★";
-  color: var(--gold);
-  letter-spacing: 0;
+.abil.is-prof .abil__s::before {
+  /* D&D Beyond marks a proficient saving throw with a filled dot */
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 4px;
+  border-radius: 50%;
+  background: var(--gold);
+  vertical-align: 2px;
 }
 
 /* ── HP bar: BG3's framed health bar ──────────────────────────────── */
@@ -760,7 +778,7 @@ svg.i {
   color: #f4fbff;
   font-family: var(--font-title);
   font-weight: 700;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.05;
   text-align: center;
   padding: 18%;
@@ -1198,19 +1216,6 @@ svg.i {
   cursor: pointer;
 }
 
-/* ── HUD outside combat ───────────────────────────────────────────── */
-.hud__note {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 15px;
-  color: var(--text-2);
-}
-.hud__note .i {
-  color: var(--t-move);
-}
-
 /* ── Navigation (one model for every screen) ─────────────────────────
  * Laptop: the same top bar everywhere (D&D Beyond's site bar): brand, the three
  *   sections, the live session, the account. Inside a page, its own tabs.
@@ -1353,6 +1358,8 @@ svg.i {
   border-bottom: 1px solid var(--line);
 }
 .lrow__img {
+  display: inline-block;
+  flex: none;
   width: 56px;
   height: 56px;
   border-radius: 50%;

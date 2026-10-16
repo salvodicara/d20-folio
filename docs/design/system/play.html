@@ -44,11 +44,6 @@
         <span class="top__cls">Chierica 5 · Umana</span>
       </div>
       <span class="grow only-laptop"></span>
-      <span class="session only-laptop"
-        ><span class="session__dot"></span>La Cripta di Vetro · sessione 7 ·
-        <b class="combat-only">scontro, round 2</b
-        ><b class="explore-only">esplorazione</b></span
-      >
       <span class="lrow__img only-laptop" style="width: 36px; height: 36px"
         ><span style="font-size: 15px">M</span></span
       >
@@ -74,6 +69,18 @@
           <p class="hero__cls only-laptop">
             Chierica 5 · Dominio della Vita · Umana · Accolita
           </p>
+          <!-- D&D Beyond's header buttons: Short Rest, Long Rest, Campaign -->
+          <div class="hero__btns only-laptop">
+            <button class="btn btn--sm">
+              <i data-lucide="flame-kindling" class="i i--sm"></i>Riposo breve
+            </button>
+            <button class="btn btn--sm">
+              <i data-lucide="moon" class="i i--sm"></i>Riposo lungo
+            </button>
+            <a class="btn btn--sm" href="#"
+              ><i data-lucide="castle" class="i i--sm"></i>La Cripta di Vetro</a
+            >
+          </div>
           <div class="hero__chips">
             <button class="chip chip--buff combat-only">
               <i data-lucide="sparkles" class="i i--sm"></i>Benedizione · 9 round
@@ -303,9 +310,6 @@
                 ><button class="gem gem--gold is-spent" aria-label="Speso"></button></span
               ><span class="res__count">3/5</span>
             </div>
-            <button class="btn btn--quiet" style="margin: 8px 0 0 -16px">
-              <i data-lucide="moon" class="i i--sm"></i>Riposa…
-            </button>
           </section>
 
           <section class="frame frame--crest only-laptop" aria-labelledby="sk-h">
@@ -329,10 +333,7 @@
         <section class="play__main frame frame--crest" aria-labelledby="act-h">
           <span class="crest"></span><span class="frame__corner-tr"></span
           ><span class="frame__corner-bl"></span>
-          <h2 class="ftitle" id="act-h">
-            Azioni <span class="ftitle__aside combat-only">· il tuo turno</span
-            ><span class="ftitle__aside explore-only">· fuori dal combattimento</span>
-          </h2>
+          <h2 class="ftitle" id="act-h">Azioni</h2>
 
           <div class="tip">
             <button
@@ -387,7 +388,11 @@
                 >
               </li>
               <li class="explore-only">
-                <span class="shape shape--move"></span
+                <i
+                  data-lucide="flame-kindling"
+                  class="i i--sm"
+                  style="color: var(--gold)"
+                ></i
                 ><span
                   >Sei a 31 su 38: un <b>riposo breve</b> ti porterebbe al massimo.</span
                 >
@@ -395,8 +400,10 @@
             </ol>
           </div>
 
+          <!-- D&D Beyond's Actions filter: All · Attack · Action · Bonus · Reaction · Other · Limited use -->
           <div class="pills" role="group" aria-label="Filtra">
             <button class="pill" aria-pressed="true">Tutto</button>
+            <button class="pill" aria-pressed="false">Attacchi</button>
             <button class="pill" aria-pressed="false">
               <span class="shape shape--action"></span>Azione
             </button>
@@ -406,9 +413,8 @@
             <button class="pill" aria-pressed="false">
               <span class="shape shape--reaction"></span>Reazione
             </button>
-            <button class="pill explore-only" aria-pressed="false">
-              <i data-lucide="hourglass" class="i i--sm"></i>Rituali
-            </button>
+            <button class="pill" aria-pressed="false">Altro</button>
+            <button class="pill" aria-pressed="false">Uso limitato</button>
           </div>
 
           <div class="atable">
@@ -416,39 +422,6 @@
               <span></span><span class="label">Nome</span
               ><span class="label">Gittata</span><span class="label">Colpire / CD</span
               ><span class="label">Effetto</span><span></span>
-            </div>
-
-            <div class="agroup explore-only">
-              <i data-lucide="hourglass" class="i i--sm" style="color: var(--gold)"></i
-              >Utili fuori dallo scontro
-            </div>
-            <div class="arow explore-only">
-              <span class="slot"><img src="img/icon-guidance.webp" alt="" /></span>
-              <button class="arow__name">
-                <span class="arow__title">Guida</span
-                ><span class="arow__meta"
-                  ><span class="shape shape--action"></span>Trucchetto · concentrazione, 1
-                  min</span
-                >
-              </button>
-              <span class="arow__range only-laptop">Contatto</span
-              ><span class="arow__dash only-laptop">—</span
-              ><button class="plate only-laptop">+1d4 <small>prova</small></button>
-              <button class="btn">Lancia</button>
-            </div>
-            <div class="arow explore-only">
-              <span class="slot"><img src="img/icon-detect-magic.webp" alt="" /></span>
-              <button class="arow__name">
-                <span class="arow__title">Individuazione del magico</span
-                ><span class="arow__meta"
-                  ><span class="shape shape--action"></span>1° livello · rituale, 10
-                  min</span
-                >
-              </button>
-              <span class="arow__range only-laptop">9 m</span
-              ><span class="arow__dash only-laptop">—</span
-              ><span class="arow__dash only-laptop">—</span>
-              <button class="btn">Rituale</button>
             </div>
 
             <div class="agroup">
@@ -539,6 +512,17 @@
               <button class="btn">Lancia</button>
             </div>
 
+            <div class="arow">
+              <span class="slot"><img src="img/icon-guidance.webp" alt="" /></span>
+              <button class="arow__name">
+                <span class="arow__title">Guida</span
+                ><span class="arow__meta">Trucchetto · concentrazione, 1 min</span>
+              </button>
+              <span class="arow__range only-laptop">Contatto</span
+              ><span class="arow__dash only-laptop">—</span
+              ><button class="plate only-laptop">+1d4 <small>prova</small></button>
+              <button class="btn">Lancia</button>
+            </div>
             <div class="agroup combat-only">
               <span class="shape shape--bonus is-spent"></span>Azioni bonus
               <span class="agroup__note">· già usata in questo turno</span>
@@ -592,6 +576,20 @@
               <button class="plate only-laptop">+6</button>
               <button class="plate only-laptop">1d6+3 <small>cont.</small></button>
               <button class="btn">Usa</button>
+            </div>
+            <div class="agroup">
+              Altro <span class="agroup__note">· tempi di lancio lunghi e rituali</span>
+            </div>
+            <div class="arow">
+              <span class="slot"><img src="img/icon-detect-magic.webp" alt="" /></span>
+              <button class="arow__name">
+                <span class="arow__title">Individuazione del magico</span
+                ><span class="arow__meta">1° livello · rituale, 10 min</span>
+              </button>
+              <span class="arow__range only-laptop">9 m</span
+              ><span class="arow__dash only-laptop">—</span
+              ><span class="arow__dash only-laptop">—</span>
+              <button class="btn">Rituale</button>
             </div>
           </div>
         </section>
@@ -695,8 +693,8 @@
       </div>
     </main>
 
-    <!-- HUD: BG3's resource row and round End Turn; outside combat, BG3's turn-based toggle -->
-    <div class="hudbar">
+    <!-- HUD, only in combat: BG3's turn resources and round End Turn. Outside combat no bar (BG3 real-time, D&D Beyond, Foundry). -->
+    <div class="hudbar combat-only">
       <div class="hud combat-only">
         <div class="econ" aria-label="Cosa ti resta in questo turno">
           <span class="econ__item"><span class="shape shape--action"></span>Azione</span>
@@ -710,14 +708,6 @@
         </div>
         <button class="endturn" aria-label="Fine turno">
           <span class="endturn__inner">Fine<br />turno</span>
-        </button>
-      </div>
-      <div class="hud explore-only">
-        <p class="hud__note">
-          <i data-lucide="footprints" class="i i--sm"></i>Fuori dal combattimento
-        </p>
-        <button class="btn btn--lit">
-          <i data-lucide="swords" class="i i--sm"></i>Inizia scontro
         </button>
       </div>
     </div>
