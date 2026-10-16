@@ -19,7 +19,7 @@
  * and tags the verdict "Custom". Memoized — the orchestrator passes a STABLE VM +
  * stable callbacks, so a search keystroke bails the still-visible rows.
  */
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,10 @@ import {
   UniversalCardHigher,
   UniversalCardFoot,
 } from "@/components/shared/UniversalCard";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
+import { spellTermName } from "@/components/shared/spell-glossary";
+import { useLocale } from "@/hooks/useLocale";
+import type { Locale } from "@/lib/locale";
 import type { SpellCardVM } from "@/lib/views/spells-view";
 import type { CustomSpell } from "@/types/character";
 import { SELF_FORM_SPELL_IDS } from "@/lib/polymorph";
@@ -44,7 +48,31 @@ import {
   buildMaterialCostTag,
   spellVerdictOutcome,
   spellCardSlot,
+  type SpellFact,
 } from "./spell-card-helpers";
+
+/** A facts row with its glossary tips: the label, and the runs its value names. */
+function glossFact({ label, value, icon, term, tips }: SpellFact, lang: Locale) {
+  const parts: ReactNode[] = [];
+  let at = 0;
+  for (const tip of tips ?? []) {
+    const i = value.indexOf(tip.text, at);
+    if (i < 0) continue;
+    if (i > at) parts.push(value.slice(at, i));
+    parts.push(
+      <GlossaryTip key={i} term={tip.term} rubric={spellTermName(tip.term, lang)}>
+        {tip.text}
+      </GlossaryTip>
+    );
+    at = i + tip.text.length;
+  }
+  if (at < value.length) parts.push(value.slice(at));
+  return {
+    label: term ? <GlossaryTip term={term} rubric={label} /> : label,
+    value: parts,
+    icon,
+  };
+}
 
 export interface SpellCardCallbacks {
   onToggle: (key: string, open: boolean) => void;
@@ -92,6 +120,7 @@ export const SpellCard = memo(function SpellCard({
   onUpdateComponent,
 }: SpellCardProps) {
   const { t } = useTranslation();
+  const { language } = useLocale();
   const isCustom = vm.kind === "custom";
   // S7 — a Polymorph / True Polymorph card carries a "Transform" affordance that
   // opens the Beast-form picker (self-swap or read-only reference card).
@@ -105,19 +134,29 @@ export const SpellCard = memo(function SpellCard({
   const gloss = buildGloss(vm, t);
   const verdict = buildVerdict(vm, t);
   const verdictOutcome = spellVerdictOutcome(vm);
-  const facts = buildFacts(vm, t);
+  const facts = buildFacts(vm, t).map((f) => glossFact(f, language));
 
   // Detail tags (material cost / ritual note / recurrence cadence / ability-override /
   // MASTERY / SIGNATURE / Custom).
-  const tags: string[] = [];
+  const tags: ReactNode[] = [];
   // RA-23 — a priced Material (M) component ("M: 300 gp, consumed"), leading the
   // tag row since it is a hard resource the cast spends. null for unpriced/custom.
   const materialTag = buildMaterialCostTag(vm, t);
-  if (materialTag) tags.push(materialTag);
+  if (materialTag)
+    tags.push(
+      <GlossaryTip term="material" rubric={spellTermName("material", language)}>
+        {materialTag}
+      </GlossaryTip>
+    );
   // RA-24 — the ritual-cast trade-off, paired with the Ritual affordance (SRD
   // "Ritual": +10 minutes, spends no slot). Gated on `vm.canRitual` so the note
   // shows exactly when the Ritual cast button does.
-  if (vm.canRitual) tags.push(t("spells.ritualNote"));
+  if (vm.canRitual)
+    tags.push(
+      <GlossaryTip term="ritual" rubric={t("spells.ritual")}>
+        {t("spells.ritualNote")}
+      </GlossaryTip>
+    );
   // G24 — a self-side cadence note for a spell whose damage RE-APPLIES (Moonbeam /
   // Spirit Guardians per-turn area save, Flaming Sphere bonus-action move, Call
   // Lightning re-fire). The token localizes to a short "when it recurs" chip.
@@ -231,7 +270,16 @@ export const SpellCard = memo(function SpellCard({
           <UniversalCardFacts facts={facts} />
           <UniversalCardDesc>{vm.description}</UniversalCardDesc>
           {vm.higherLevels && (
-            <UniversalCardHigher title={t("spells.atHigherLevels")}>
+            <UniversalCardHigher
+              title={
+                <GlossaryTip
+                  term="upcasting"
+                  rubric={spellTermName("upcasting", language)}
+                >
+                  {t("spells.atHigherLevels")}
+                </GlossaryTip>
+              }
+            >
               {vm.higherLevels}
             </UniversalCardHigher>
           )}

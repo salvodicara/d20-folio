@@ -104,6 +104,26 @@ describe("renderSessionReport", () => {
     );
   });
 
+  it("puts the session page's notes first, so one copy carries notes and log together", () => {
+    const report = buildReport(foldSession(log, { dmUid: "dm" }));
+    const t = (k: string) => (k === "sessionReport.notes" ? "Session notes" : k);
+    const text = renderSessionReport(report, "S", t, names, {
+      notes: "  The party reached Phandalin.\nMara owes Ben 5 gp.  ",
+    });
+    expect(text.split("\n").slice(0, 6)).toEqual([
+      "# S",
+      "",
+      "## Session notes",
+      "",
+      "The party reached Phandalin.",
+      "Mara owes Ben 5 gp.",
+    ]);
+    // Empty notes add nothing.
+    expect(renderSessionReport(report, "S", t, names, { notes: "  " })).toBe(
+      renderSessionReport(report, "S", t, names)
+    );
+  });
+
   it("renders the same log in Italian", async () => {
     const text = await render("it");
     expect(text).toContain("## Scontro 1 — vittoria");

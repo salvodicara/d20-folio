@@ -122,8 +122,15 @@ interface LogItemBase {
 }
 
 /** A gesture, a correction of an earlier gesture, or its retraction. Corrections are
- *  appended like everything else, so history is never rewritten. */
+ *  appended like everything else, so history is never rewritten.
+ *
+ *  The narrative overrides (owner, 2026-10-16) are items too: `hide` / `show` take a line
+ *  out of the narrative and bring it back, `move` places it after another line (`null`:
+ *  first). A reader older than them drops them, so it shows the narrative unedited. */
 export type LogItem =
   | (LogItemBase & { type: "event"; event: PlayEvent })
   | (LogItemBase & { type: "correct"; target: string; event: PlayEvent })
-  | (LogItemBase & { type: "retract"; target: string });
+  | (LogItemBase & { type: "retract"; target: string })
+  | (LogItemBase & { type: "hide"; target: string })
+  | (LogItemBase & { type: "show"; target: string })
+  | (LogItemBase & { type: "move"; target: string; after: string | null });

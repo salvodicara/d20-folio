@@ -4235,6 +4235,17 @@ button.pr-dot.lg::before {
   font-weight: 700;
   line-height: 1;
 }
+/* Its info mark sits right under the corner toggle, in a column the tile reserves
+   on its right so the mark never lands on the value or crosses the border. */
+.vital:has(> .v-cover-info) {
+  padding-right: 24px;
+}
+.glossary-term.glossary-info.v-cover-info {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  translate: 0 -50%;
+}
 /* When saved (ambient/expected state): muted neutral, barely visible — a
    passive signal like Google Drive's quiet cloud-check, not a status badge
    that fights for attention next to Level Up and Edit. */
@@ -16219,12 +16230,22 @@ button.econ-tok-filter:active .econ-disc {
   );
 }
 .move-num {
+  position: relative;
   font-family: var(--font-numeric);
   font-size: var(--text-micro); /* 10px floor (was 9px) */
   color: var(--text-secondary);
   display: inline-flex;
   align-items: center;
   gap: 1px;
+}
+/* The Difficult Terrain info mark hangs just past the ×2 toggle without widening
+   the movement token: one more inline 24px would wrap the turn meter's economy row
+   onto a second line on a 390px phone. Its icon still clears the card's padding. */
+.move-num .glossary-term.glossary-info {
+  position: absolute;
+  left: calc(100% - 3px);
+  top: 50%;
+  translate: 0 -50%;
 }
 /* ── Movement SLIDER (item d) — the carved channel IS the slider (one
    `role="slider"` control): click anywhere on it to set remaining to that point,

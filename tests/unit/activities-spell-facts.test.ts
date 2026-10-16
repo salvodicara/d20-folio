@@ -66,7 +66,10 @@ function cardFacts(helpers: typeof current, vm: SpellCardVM) {
     outcome: helpers.spellVerdictOutcome(vm),
     verdict: helpers.buildVerdict(vm, t),
     gloss: helpers.buildGloss(vm, t),
-    facts: helpers.buildFacts(vm, t),
+    // The glossary tips (term / tips) are new; the facts themselves must match.
+    facts: helpers
+      .buildFacts(vm, t)
+      .map(({ label, value, icon }) => ({ label, value, icon })),
     material: helpers.buildMaterialCostTag(vm, t),
   };
 }

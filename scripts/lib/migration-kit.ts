@@ -267,7 +267,8 @@ export interface BackupInputDocument {
   updateTime: Timestamp;
 }
 
-async function writePrivateFile(path: string, value: unknown): Promise<void> {
+/** Write JSON to a new file only its owner can read; refuses an existing file. */
+export async function writePrivateFile(path: string, value: unknown): Promise<void> {
   const handle = await open(path, "wx", 0o600);
   try {
     await handle.writeFile(`${JSON.stringify(value, null, 2)}\n`, "utf8");
@@ -277,28 +278,33 @@ async function writePrivateFile(path: string, value: unknown): Promise<void> {
   }
 }
 
+/** Create the backup directory: absolute, normalized, new, owner-only (0700). */
+export async function createFreshPrivateDirectory(directory: string): Promise<void> {
+  if (!isAbsolute(directory) || resolve(directory) !== directory) {
+    throw new Error("Backup directory must be an absolute normalized path");
+  }
+  try {
+    await lstat(directory);
+    throw new Error("Backup directory must be fresh (it already exists)");
+  } catch (error) {
+    if (!(isRecord(error) && error.code === "ENOENT")) throw error;
+  }
+  const parent = dirname(directory);
+  const resolvedParent = await realpath(parent);
+  const parentStat = await stat(resolvedParent);
+  if (!parentStat.isDirectory()) throw new Error("Backup parent is not a directory");
+  await access(resolvedParent, fsConstants.W_OK);
+  await mkdir(directory, { mode: 0o700 });
+  await chmod(directory, 0o700);
+}
+
 export async function writeBackupDirectory(args: {
   directory: string;
   migration: string;
   label: string;
   documents: readonly BackupInputDocument[];
 }): Promise<BackupManifest> {
-  if (!isAbsolute(args.directory) || resolve(args.directory) !== args.directory) {
-    throw new Error("Backup directory must be an absolute normalized path");
-  }
-  try {
-    await lstat(args.directory);
-    throw new Error("Backup directory must be fresh (it already exists)");
-  } catch (error) {
-    if (!(isRecord(error) && error.code === "ENOENT")) throw error;
-  }
-  const parent = dirname(args.directory);
-  const resolvedParent = await realpath(parent);
-  const parentStat = await stat(resolvedParent);
-  if (!parentStat.isDirectory()) throw new Error("Backup parent is not a directory");
-  await access(resolvedParent, fsConstants.W_OK);
-  await mkdir(args.directory, { mode: 0o700 });
-  await chmod(args.directory, 0o700);
+  await createFreshPrivateDirectory(args.directory);
 
   const entries: BackupManifestEntry[] = [];
   for (const [index, document] of [...args.documents]
