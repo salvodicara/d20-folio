@@ -160,9 +160,14 @@ export function renderSessionReport(
   sections: readonly ReportSection[],
   title: string,
   t: TranslateFn,
-  names: SessionReportNames
+  names: SessionReportNames,
+  /** The session page's free notes: they lead the copy, so the notes and the log reach
+   *  an AI summary together. Left out when blank. */
+  options: { notes?: string } = {}
 ): string {
   const out: string[] = [`# ${title}`];
+  const notes = options.notes?.trim();
+  if (notes) out.push("", `## ${t("sessionReport.notes")}`, "", notes);
   let encounters = 0;
   const lines = (
     entries: readonly SessionEntry[],

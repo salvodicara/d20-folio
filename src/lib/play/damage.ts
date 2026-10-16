@@ -23,11 +23,14 @@ export interface DamageTaken {
   consumedEffectIds: ReadonlySet<string>;
 }
 
+/** How an entered hit landed: a critical hit, or what kind of hit it was. */
+export type DamageOptions = Pick<PcDamageTransitionInput, "crit" | "hit">;
+
 /** One entered hit on the character, or null when it changes nothing. */
 export function takeDamage(
   doc: CharacterDoc,
   amount: number,
-  opts?: Pick<PcDamageTransitionInput, "crit" | "hit">
+  opts?: DamageOptions
 ): DamageTaken | null {
   const { current, temp } = doc.session.hp;
   const max = effectiveMaxHp(doc.character, doc.session);

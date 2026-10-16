@@ -110,7 +110,10 @@
       "material": "Material: an item the spell needs. A component pouch or Spellcasting Focus can stand in for it, unless the spell gives it a cost or consumes it; then you need the real item.",
       "spellSave": "Saving Throw: each target rolls to resist the spell against your save DC. On a success it usually takes half damage or avoids the effect, as the spell says.",
       "reactionSpell": "Reaction: you cast it with your Reaction when its trigger happens, even on another creature's turn. You then have no Reaction until your turn starts.",
-      "bonusActionSpell": "Bonus Action: casting it takes your Bonus Action, not your action. You can expend only one spell slot per turn, so another spell that turn, like a cantrip, can't use one."
+      "bonusActionSpell": "Bonus Action: casting it takes your Bonus Action, not your action. You can expend only one spell slot per turn, so another spell that turn, like a cantrip, can't use one.",
+      "criticalHit": "Critical Hit: when you roll a 20 on the d20 for an attack roll, you hit no matter the target's AC, and the hit is a Critical Hit. Roll all of the attack's damage dice twice and add them together, then add your modifiers once as normal.",
+      "difficultTerrain": "Difficult Terrain: every foot you move through it costs 1 extra foot, so it uses up your Speed twice as fast. Think rubble, heavy snow, thick undergrowth, waist-deep water, or the space of a creature that isn't your ally.",
+      "surprise": "Surprise: if you are caught unaware when combat starts, say by an ambush, you have Disadvantage on your Initiative roll. That's all it does: once your turn comes, you act normally."
     }
   }
 }

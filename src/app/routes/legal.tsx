@@ -194,6 +194,10 @@ export function LegalPage() {
                 <dd className="colophon-body">{t("legal.privacy.sharingD")}</dd>
               </div>
               <div className="colophon-clause">
+                <dt>{t("legal.privacy.errorsT")}</dt>
+                <dd className="colophon-body">{t("legal.privacy.errorsD")}</dd>
+              </div>
+              <div className="colophon-clause">
                 <dt>{t("legal.privacy.retentionT")}</dt>
                 <dd className="colophon-body">{t("legal.privacy.retentionD")}</dd>
               </div>

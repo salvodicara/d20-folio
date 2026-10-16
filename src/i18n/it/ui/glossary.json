@@ -110,7 +110,10 @@
       "material": "Materiale: un oggetto richiesto dall'incantesimo. Una borsa per componenti o un Focus da Incantatore possono sostituirlo, a meno che abbia un costo o venga consumato: allora serve l'oggetto vero.",
       "spellSave": "Tiro Salvezza: ogni bersaglio tira per resistere all'incantesimo contro la tua CD. Se riesce, di solito subisce metà dei danni o evita l'effetto, come indica l'incantesimo.",
       "reactionSpell": "Reazione: lo lanci con la tua Reazione quando avviene il suo innesco, anche nel turno di un'altra creatura. Poi non hai Reazioni fino all'inizio del tuo turno.",
-      "bonusActionSpell": "Azione Bonus: lanciarlo usa la tua Azione Bonus, non la tua azione. Puoi spendere un solo slot incantesimo per turno: un altro incantesimo nello stesso turno, come un trucchetto, non può usarne uno."
+      "bonusActionSpell": "Azione Bonus: lanciarlo usa la tua Azione Bonus, non la tua azione. Puoi spendere un solo slot incantesimo per turno: un altro incantesimo nello stesso turno, come un trucchetto, non può usarne uno.",
+      "criticalHit": "Colpo Critico: quando ottieni 20 sul d20 di un tiro per colpire, colpisci a prescindere dalla CA del bersaglio e il colpo è un Colpo Critico. Tira due volte tutti i dadi di danno dell'attacco e sommali, poi aggiungi i modificatori una sola volta come al solito.",
+      "difficultTerrain": "Terreno Difficile: ogni metro che percorri al suo interno ti costa un metro in più, quindi consuma la tua Velocità il doppio più in fretta. Pensa a macerie, neve alta, sottobosco fitto, acqua alla vita o lo spazio di una creatura che non è tua alleata.",
+      "surprise": "Sorpresa: se vieni colto alla sprovvista quando inizia il combattimento, per esempio da un'imboscata, hai Svantaggio al tiro d'Iniziativa. Non fa altro: quando arriva il tuo turno agisci normalmente."
     }
   }
 }
