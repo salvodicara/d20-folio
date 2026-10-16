@@ -541,7 +541,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         run: () => requestPlayRef("rules"),
         label: t("combat.rulesReference.cover"),
         icon: BookMarked,
-        terms: ["cover", "half cover", "three-quarters", "copertura", "riparo"],
+        terms: ["cover", "half", "three-quarters", "copertura", "riparo"],
       },
       {
         key: "ref:travel",
