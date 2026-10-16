@@ -6,6 +6,7 @@ import {
   recordMonsterAc,
   recordMonsterDamage,
   recordMonsterHp,
+  recordPcHp,
   undoConditionEvent,
   undoHpEvent,
 } from "@/features/campaigns/combat-chronicle";
@@ -94,6 +95,37 @@ describe("scalar monster combat chronicle", () => {
       max: 7,
     });
     expect(recordMonsterHp(healed, "monster-1", 6)).toBe(healed);
+  });
+
+  it("records a PC heal as the HP actually regained, not the amount asked for", () => {
+    const state = recordPcHp(fight(), {
+      targetId: "pc-1",
+      kind: "heal",
+      amount: 40,
+      preCurrent: 0,
+      postCurrent: 24,
+      max: 24,
+    });
+    expect(state.events?.at(-1)).toMatchObject({
+      kind: "hp-heal",
+      targetId: "pc-1",
+      amount: 24,
+      current: 24,
+      max: 24,
+    });
+  });
+
+  it("records nothing for a PC heal that lands no HP (already at max)", () => {
+    const state = fight();
+    const healed = recordPcHp(state, {
+      targetId: "pc-1",
+      kind: "heal",
+      amount: 5,
+      preCurrent: 24,
+      postCurrent: 24,
+      max: 24,
+    });
+    expect(healed).toBe(state);
   });
 
   it("records a down crossing once and removes it when damage is undone", () => {

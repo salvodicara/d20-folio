@@ -15,10 +15,10 @@
     "traits": "Tratti",
     "activeForm": "In metamorfosi: {{name}}",
     "revert": "Torna alla tua forma",
-    "shapechangeTitle": "Scegli una forma",
-    "shapechangeHint": "Corpo della forma, mente e PF tuoi.",
+    "creatureTitle": "Scegli una forma",
     "searchCreatures": "Cerca creature",
     "noCreatureForms": "Nessuna forma disponibile al tuo livello.",
-    "formOf": "{{spell}}: {{name}}"
+    "formOf": "{{spell}}: {{name}}",
+    "keepsMindHint": "Corpo della forma, mente e PF tuoi."
   }
 }

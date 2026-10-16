@@ -218,6 +218,7 @@ import {
   resolveArmorEffects,
 } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
 
@@ -7322,7 +7323,13 @@ function resolveWeaponActions(
       source: "weapon",
       spellLevel: null,
       concentration: false,
-      summary: resolveUnarmedAttackSummary(character, ctx, grantAgg),
+      // The whole character's grants (items and species too, like Flurry of
+      // Blows reads them): Demon Armor's claws upgrade this row as well.
+      summary: resolveUnarmedAttackSummary(
+        character,
+        ctx,
+        aggregateCharacterGrants(character.character, character.session)
+      ),
       costsSlot: false,
       pinned: !unpinnedSet.has(id),
       defaultPinned: true,
@@ -8036,6 +8043,10 @@ export function resolveActiveStatesEndingOnRest(
         ended.add(activeKey);
       }
     }
+  }
+  // Wish Stress lasts until the caster finishes a Long Rest (both rest paths).
+  if (rest === "long" && active.has(WISH_STRESS_STATE.activeKey)) {
+    ended.add(WISH_STRESS_STATE.activeKey);
   }
   return [...ended];
 }

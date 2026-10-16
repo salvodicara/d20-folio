@@ -75,11 +75,15 @@ export function assumeBeastForm(
 }
 
 /** Drop the active Beast form: restore the caster's own body and Temporary HP. Null
- *  without a form. */
-export function dropBeastForm(doc: CharacterDoc): CharacterDoc | null {
+ *  without a form. `tempHp` keeps what a form that ran out of its Temporary HP was
+ *  left with, instead of the caster's own pool. */
+export function dropBeastForm(doc: CharacterDoc, tempHp?: number): CharacterDoc | null {
   const form = doc.session.polymorphForm;
   if (!form) return null;
-  const { polymorphForm: _dropped, ...restSession } = withTemp(doc, form.prior.tempHp);
+  const { polymorphForm: _dropped, ...restSession } = withTemp(
+    doc,
+    tempHp ?? form.prior.tempHp
+  );
   void _dropped;
   return {
     ...doc,

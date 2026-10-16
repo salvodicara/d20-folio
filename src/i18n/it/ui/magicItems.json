@@ -36,6 +36,8 @@
     "resourceRecovery": "Recupero risorsa",
     "resourceNeedsRoll": "Tiro richiesto",
     "resourceUnavailable": "Risorsa non disponibile",
+    "resourceNeedsAttunement": "Da sintonizzare",
+    "resourceNotEquipped": "Da equipaggiare",
     "useResource": "Usa {{resource}}",
     "resourceSpentToast": "Uso di {{name}} ({{remaining}}/{{capacity}} {{unit}} disponibili)",
     "tableClock": "Tempo al tavolo",

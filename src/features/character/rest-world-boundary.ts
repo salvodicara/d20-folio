@@ -54,7 +54,11 @@
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { canCharacterRest } from "@/lib/character-status";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
-import { sessionAfterLongRestReduction } from "@/lib/play/rests";
+import {
+  longRestFadeEvents,
+  longRestFades,
+  sessionAfterLongRestReduction,
+} from "@/lib/play/rests";
 import { endsConcentration } from "@/lib/status";
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
@@ -543,6 +547,7 @@ export function restThroughWorld(
   }
   const doc = useCharacterStore.getState().character;
   if (!doc) return "legacy";
+  const fades = kind === "long" ? longRestFadeEvents(longRestFades(doc)) : [];
   const world = characterWorldState(
     doc,
     uid,
@@ -587,6 +592,7 @@ export function restThroughWorld(
   // combat state; and FENCE the undo stack, since the rest rewrote the whole
   // resource baseline (the same closing motions as the legacy rest).
   live.logEvent({ kind: "rest", restKind: kind });
+  for (const event of fades) live.logEvent(event);
   live.persistPlayState();
   useUndoStore.getState().clear();
   return "engine";

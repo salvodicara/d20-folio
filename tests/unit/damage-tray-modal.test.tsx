@@ -42,6 +42,7 @@ import {
   type PlayEvent,
 } from "@/lib/session-log";
 import { NO_DEFENSES } from "@/lib/damage-intake";
+import { defaultCombatState } from "@/lib/combat-state";
 import type { CharacterDoc } from "@/types/character";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { makeCharacterDoc } from "./_helpers";
@@ -342,6 +343,45 @@ describe("Fireball on three goblins", () => {
   });
 });
 
+describe("Magic Missile split across two goblins", () => {
+  beforeEach(() => {
+    setCharacter("wizard", 5, ["magic-missile"], [{ level: 1, total: 2 }]);
+    encounter([
+      { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+      monster("monster-1", "Goblin 1"),
+      monster("monster-2", "Goblin 2"),
+    ] as Rows);
+  });
+
+  it("each goblin takes the darts rolled for it, not the sum of all of them", async () => {
+    renderPlay();
+    cast("Magic Missile");
+    const picker = await screen.findByRole("dialog", { name: /on whom/i });
+    for (const name of ["Goblin 1", "Goblin 2"])
+      fireEvent.click(within(picker).getByRole("button", { name: new RegExp(name) }));
+    fireEvent.click(within(picker).getByRole("button", { name: /cast on 2/i }));
+
+    const dialog = await tray();
+    const first = within(row(dialog, "Goblin 1")).getByRole("textbox");
+    const second = within(row(dialog, "Goblin 2")).getByRole("textbox");
+    fireEvent.change(first, { target: { value: "4+3" } });
+    fireEvent.change(second, { target: { value: "2" } });
+    const previews = within(dialog)
+      .getAllByTestId("damage-tray-preview")
+      .map((el) => el.textContent);
+    expect(previews).toEqual(["−7", "−2"]);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: /^apply$/i }));
+    const given = live()
+      .session.logEntries.map((e) => e.event)
+      .filter((e) => e.kind === "effect-given");
+    expect(given).toEqual([
+      expect.objectContaining({ target: "monster-1", amount: 7, effect: "damage" }),
+      expect.objectContaining({ target: "monster-2", amount: 2, effect: "damage" }),
+    ]);
+  });
+});
+
 describe("Hold Person on a goblin", () => {
   beforeEach(() => {
     setCharacter("cleric", 3, ["hold-person"], [{ level: 2, total: 2 }]);
@@ -570,5 +610,55 @@ it("a heal on another PC writes their HP like the PC card, then logs it", async 
       target: "pc-aria-uid",
       amount: 7,
     })
+  );
+});
+
+it("Undo takes a heal on another PC back: their HP is written back and the line goes", async () => {
+  setCharacter("cleric", 3, ["healing-word"], [{ level: 1, total: 2 }]);
+  const before = defaultCombatState(24);
+  before.hp = { current: 10, temp: 0 };
+  const after = { ...before, hp: { current: 17, temp: 0 } };
+  writeCampaignCombatEffect.mockImplementation(() =>
+    Promise.resolve({ before, after } as never)
+  );
+  encounter([
+    { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+    {
+      id: "pc-aria-uid",
+      kind: "pc",
+      side: "ally",
+      name: "Aria",
+      memberUid: "aria-uid",
+      characterId: "aria-char",
+      maxHp: 24,
+      currentHp: 10,
+      tempHp: 0,
+    },
+  ] as Rows);
+  renderPlay();
+  cast("Healing Word");
+  const picker = await screen.findByRole("dialog", { name: /on whom/i });
+  fireEvent.click(within(picker).getByRole("button", { name: /aria/i }));
+  const dialog = await tray();
+  fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "7" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: /^apply$/i }));
+  const given = (e: { event: { kind: string } }) => e.event.kind === "effect-given";
+  await waitFor(() => expect(live().session.logEntries.some(given)).toBe(true));
+
+  act(() => {
+    useUndoStore.getState().undo();
+  });
+  await waitFor(() =>
+    expect(writeCampaignCombatEffect).toHaveBeenLastCalledWith(
+      "aria-uid",
+      "aria-char",
+      null,
+      24,
+      { kind: "revert", written: after, previous: before }
+    )
+  );
+  expect(live().session.logEntries.some(given)).toBe(false);
+  writeCampaignCombatEffect.mockImplementation(() =>
+    Promise.resolve({ before: {}, after: {} })
   );
 });

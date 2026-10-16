@@ -17,7 +17,12 @@
  * store ({@link import("@/stores/characterStore")}) drives it; the Beast NAMES
  * localize at the render edge through the `beasts` srd catalogue.
  */
-import type { BeastStatBlock } from "@/data/types";
+import {
+  CREATURE_SIZE_ORDER,
+  type BeastStatBlock,
+  type CreatureSize,
+  type CreatureType,
+} from "@/data/types";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { beastsByMaxCR, getBeast } from "@/data/beasts";
 import { totalLevel } from "@/lib/classes";
@@ -37,6 +42,15 @@ export interface SelfFormRule {
   reshift: boolean;
   /** The form ends when its Temporary Hit Points run out. */
   endsWithoutTempHp: boolean;
+  /** A fixed Challenge Rating cap in place of the caster's level (Animal Shapes: 4). */
+  crCap?: number;
+  /** The largest size a form may be (Animal Shapes: Large). */
+  sizeMax?: CreatureSize;
+  /** Creature types the bestiary pool never offers (Shapechange: Construct, Undead). */
+  excludedTypes?: ReadonlyArray<CreatureType>;
+  /** The spell only ever targets the caster (Shapechange): no reference card for
+   *  another creature in the picker. */
+  selfOnly?: boolean;
 }
 
 const POLYMORPH_RULE: SelfFormRule = {
@@ -49,7 +63,9 @@ const POLYMORPH_RULE: SelfFormRule = {
 /** Every spell that transforms the caster through the Transform flow, by id. */
 const SELF_FORM_RULES: Readonly<Record<string, SelfFormRule>> = {
   polymorph: POLYMORPH_RULE,
-  "true-polymorph": POLYMORPH_RULE,
+  // Creature into Creature: any kind of CR ≤ the target's CR or level; its stat
+  // block replaces yours (mind included), Temporary HP = the new form's HP.
+  "true-polymorph": { ...POLYMORPH_RULE, pool: "bestiary" },
   // You keep your INT, WIS, CHA, Hit Points and Hit Point Dice; Temporary HP come
   // from the first form only, and running out of them does not end the spell.
   shapechange: {
@@ -57,6 +73,19 @@ const SELF_FORM_RULES: Readonly<Record<string, SelfFormRule>> = {
     keepsMind: true,
     reshift: true,
     endsWithoutTempHp: false,
+    excludedTypes: ["construct", "undead"],
+    selfOnly: true,
+  },
+  // A Large or smaller Beast of CR 4 or lower; you keep your INT, WIS, CHA, Hit
+  // Points and Hit Point Dice; Temporary HP from the first form; it lasts until
+  // you have no Temporary HP, and you can transform again on later turns.
+  "animal-shapes": {
+    pool: "beasts",
+    keepsMind: true,
+    reshift: true,
+    endsWithoutTempHp: true,
+    crCap: 4,
+    sizeMax: "Large",
   },
 };
 
@@ -87,9 +116,15 @@ export function formAttackNameKey(
   form: NonNullable<ActiveForm>,
   nameKey: string
 ): string {
-  return form.statBlock
-    ? `${form.beastId}.actions.${nameKey.replace(/^attack\./, "")}`
-    : nameKey;
+  return form.statBlock ? bestiaryNameKey(form.beastId, nameKey) : nameKey;
+}
+
+/** A projected form's attack / trait key in the monster catalogue
+ *  (`attack.rend` → `adult-red-dragon.actions.rend`, `trait.x` → `<id>.traits.x`). */
+export function bestiaryNameKey(formId: string, nameKey: string): string {
+  return nameKey
+    .replace(/^attack\./, `${formId}.actions.`)
+    .replace(/^trait\./, `${formId}.traits.`);
 }
 
 /** The snapshot of the caster's OWN fields the applicator overwrites — restored on drop. */
@@ -98,12 +133,18 @@ export type PolymorphPrior = NonNullable<SessionState["polymorphForm"]>["prior"]
 /**
  * The Beast forms a caster may assume — RAW: Challenge Rating ≤ the caster's
  * (total) level. The picker reads this; the CR cap is the whole-character level
- * (the SELF case, where the caster IS the target). Sorted by CR then id.
+ * (the SELF case, where the caster IS the target). Sorted by CR then id. A spell
+ * with its own caps (`spellId`: Animal Shapes, CR 4 and Large) uses those instead.
  */
 export function resolvePolymorphForms(
-  character: CharacterDoc
+  character: CharacterDoc,
+  spellId = "polymorph"
 ): ReadonlyArray<BeastStatBlock> {
-  return beastsByMaxCR(totalLevel(character.character));
+  const { crCap, sizeMax } = selfFormRule(spellId);
+  const forms = beastsByMaxCR(crCap ?? totalLevel(character.character));
+  if (!sizeMax) return forms;
+  const max = CREATURE_SIZE_ORDER.indexOf(sizeMax);
+  return forms.filter((b) => CREATURE_SIZE_ORDER.indexOf(b.size) <= max);
 }
 
 /** Snapshot the caster's OWN AC / speed / score / temp-HP fields before a swap. */

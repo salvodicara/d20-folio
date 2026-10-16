@@ -1,8 +1,7 @@
 /**
- * D20 Test penalties that fade by one each Long Rest: Raise Dead (SRD 5.2.1) leaves
- * "a −4 penalty to all attack rolls, saving throws, and ability checks. Every time
- * the creature finishes a Long Rest, the penalty is reduced by 1 until it
- * disappears." The session stores the remaining amount per source; this module
+ * D20 Test penalties that fade by one each Long Rest: Raise Dead and Resurrection
+ * (SRD 5.2.1) leave "a −4 penalty to D20 Tests. Every time the target finishes a
+ * Long Rest, the penalty is reduced by 1 until it becomes 0." The session stores the remaining amount per source; this module
  * starts, ends and counts it down, and feeds it to the two seams the sheet's D20
  * Tests already read: the flat grants (save, check, initiative, spell attack) and
  * the attack resolver's to-hit penalty beside Exhaustion's.
@@ -23,6 +22,7 @@ export interface FadingPenaltyDef {
 /** Every source of a fading penalty, keyed by its catalogue id. */
 export const FADING_PENALTIES: Readonly<Record<string, FadingPenaltyDef>> = {
   "raise-dead": { start: 4, ref: { kind: "spell", key: "raise-dead" } },
+  resurrection: { start: 4, ref: { kind: "spell", key: "resurrection" } },
 };
 
 type FadingPenalties = SessionState["fadingPenalties"];

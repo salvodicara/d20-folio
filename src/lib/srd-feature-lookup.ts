@@ -6,13 +6,14 @@
  * indices have proven zero cross-collisions, so lookup order is irrelevant
  * (no id appears in more than one index).
  *
- * Leaf module by design: it imports only the three data indices and nothing
+ * Leaf module by design: it imports only the data indices and nothing
  * from the mechanics engine (smart-tracker / compute / grants), so any of
  * those can depend on it without risking a circular import.
  */
 import type { SrdClassFeatureData, SrdFeatData } from "@/data/types";
 import { classFeatureIndex } from "@/data/classes";
 import { FEATS_BY_ID } from "@/data/feats";
+import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
 import { raceFeatureIndex, raceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { SrdKind } from "@/i18n/srd-en";
 import { srdText, customText, litText, type LocText } from "@/lib/loc-text";
@@ -67,7 +68,12 @@ export function srdRefForFeatureSource(entry: SrdFeatureSource): {
 export function featureNameLoc(sourceId: string | undefined): LocText {
   if (!sourceId) return litText({ en: "Extra damage", it: "Danni extra" });
   const src = getSrdFeatureSource(sourceId);
-  if (!src) return customText(sourceId);
+  // An item (Demon Armor's claws) names itself from the magic-item catalogue.
+  if (!src) {
+    return MAGIC_ITEMS_BY_ID.has(sourceId)
+      ? srdText("magic-item", sourceId, "name")
+      : customText(sourceId);
+  }
   const ref = srdRefForFeatureSource(src);
   return srdText(ref.kind, ref.key, "name");
 }

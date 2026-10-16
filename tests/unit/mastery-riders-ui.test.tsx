@@ -120,6 +120,54 @@ describe("declaring a mastery rider", () => {
     expect(useCombatStore.getState().nextAttackAdvantage).toBe(false);
   });
 
+  it("Cleave declares once per turn: a second tap logs nothing, the next turn it is back", () => {
+    const doc = fighter(["greataxe"]);
+    useCharacterStore.setState({ character: doc, loading: false, error: null });
+    useCombatStore.getState().resetTurn();
+    const action = card(doc, "greataxe");
+    const cleave = action.masteryRiders?.find((rider) => rider.id === "cleave");
+    if (!cleave) throw new Error("no cleave");
+
+    act(() => applyMasteryRider(action, cleave, { applied: "ok", blocked: "no" }));
+    act(() => applyMasteryRider(action, cleave, { applied: "ok", blocked: "no" }));
+    expect(riderLogs()).toBe(1);
+
+    // The card says it is spent for this turn.
+    const { unmount } = render(
+      <MasteryRiders
+        riders={[cleave]}
+        spent={useCombatStore.getState().masteriesThisTurn}
+        onApply={() => undefined}
+      />
+    );
+    expect(screen.getByRole("button")).toBeDisabled();
+    unmount();
+
+    // Undo gives the turn's Cleave back.
+    act(() => {
+      useUndoStore.getState().undo();
+    });
+    expect(riderLogs()).toBe(0);
+    act(() => applyMasteryRider(action, cleave, { applied: "ok", blocked: "no" }));
+    expect(riderLogs()).toBe(1);
+
+    act(() => useCombatStore.getState().endTurn());
+    act(() => applyMasteryRider(action, cleave, { applied: "ok", blocked: "no" }));
+    expect(riderLogs()).toBe(2);
+  });
+
+  it("a per-hit mastery (Vex) can be declared on every hit of the turn", () => {
+    const doc = fighter(["shortsword"]);
+    useCharacterStore.setState({ character: doc, loading: false, error: null });
+    useCombatStore.getState().resetTurn();
+    const action = card(doc, "shortsword");
+    const vex = action.masteryRiders?.[0];
+    if (!vex) throw new Error("no vex");
+    act(() => applyMasteryRider(action, vex, { applied: "ok", blocked: "no" }));
+    act(() => applyMasteryRider(action, vex, { applied: "ok", blocked: "no" }));
+    expect(riderLogs()).toBe(2);
+  });
+
   it("the log names the mastery with its weapon in brackets; a resource keeps 'spent'", async () => {
     // The target is not known when the rider is declared, and "Topple on
     // Quarterstaff" reads as toppling the weapon: the weapon goes in brackets.

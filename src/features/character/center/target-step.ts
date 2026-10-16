@@ -53,7 +53,11 @@ export function targetStepFor(
   if (!shouldResolveCombatAction(action)) return null;
   const spec = combatResolutionSpec(action);
   if (spec.targetAffinity === "self") return null;
-  const wantsAllies = spec.targetAffinity !== "enemy";
+  // An area with no declared "creatures of your choice" catches everyone in it:
+  // allies and the caster are offered too, after the enemies.
+  const areaCatchesAll =
+    spec.area && spec.targetAffinity === "enemy" && !action.summary.targeting?.affinity;
+  const wantsAllies = spec.targetAffinity !== "enemy" || areaCatchesAll;
   const wantsEnemies = spec.targetAffinity !== "ally";
 
   const allies: TargetCandidate[] = [];

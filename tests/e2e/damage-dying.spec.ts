@@ -78,7 +78,7 @@ test.describe("RA-05 — defense-aware damage entry (raging Barbarian)", () => {
     const slashing = dialog.getByRole("button", { name: /^slashing$/i });
     await expect(slashing).toBeVisible();
 
-    // Live math: 12 slashing → 6 · Resisted.
+    // Live math: 12 slashing → 6 · Resistance.
     await dialog.getByRole("spinbutton", { name: /amount/i }).fill("12");
     await slashing.click();
     await expect(dialog.getByText(/12 → 6/)).toBeVisible();

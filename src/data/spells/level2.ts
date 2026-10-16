@@ -744,7 +744,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
-    targeting: { affinity: "ally", maxTargets: 1 },
+    // SRD 5.2.1: one additional creature for each spell slot level above 2.
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Climb Speed equal to walking for the duration.
       {
@@ -1645,6 +1646,9 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       v: true,
       s: true,
       m: true,
+      // "2 copper pieces, which the spell consumes" — priced in gp, so 2 cp = 0.02.
+      costGp: 0.02,
+      consumed: true,
     },
     concentration: false,
     source: "SRD",

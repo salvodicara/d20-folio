@@ -36,7 +36,7 @@ test.describe("extra turns", () => {
       await expect(roundNum(page)).toHaveText("1");
       const offer = page.getByTestId("extra-turn-offer");
       const second = offer.getByRole("button", {
-        name: "Secondo turno (Riflessi del Furfante)",
+        name: "Secondo turno (Riflessi da Furfante)",
       });
       await expect(second).toBeVisible();
       // Spend the Bonus Action on Cunning Action: Dash, so the refresh is visible
@@ -125,7 +125,7 @@ test.describe("extra turns", () => {
         .first()
         .click({ timeout: 90_000 });
       const second = page.locator(".encounter-turn-order > li").filter({
-        hasText: "Secondo turno (Riflessi del Furfante)",
+        hasText: "Secondo turno (Riflessi da Furfante)",
       });
       await expect(second).toHaveCount(1);
       const names = await page
@@ -156,4 +156,26 @@ test.describe("extra turns", () => {
       await expect(second).toHaveCount(0);
     });
   }
+
+  test("Time Stop on a phone: the turn-count field comes into view, focused", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openPlay(page, "scn-time-stop");
+    await page.getByRole("button", { name: /^tutti$/i }).click();
+    const cast = page.getByRole("button", { name: "Lancia: Fermare il Tempo" });
+    await cast.scrollIntoViewIfNeeded();
+    await cast.click();
+    const slot = page
+      .getByRole("dialog")
+      .getByRole("button", { name: /Slot di livello 9/ });
+    if (await slot.isVisible().catch(() => false)) await slot.click();
+    const field = page.getByTestId("time-stop-turns").getByRole("spinbutton");
+    await expect(field).toBeFocused();
+    await expect(field).toBeInViewport();
+    await shot(page, "time-stop-ask-phone");
+    await page.keyboard.type("2");
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("extra-turn-offer")).toBeVisible();
+  });
 });

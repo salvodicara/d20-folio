@@ -181,7 +181,7 @@ function partMath(
   if (p.immune) verdicts.push(t("combat.damageMathImmune"));
   if (p.flatReduction > 0)
     verdicts.push(t("combat.damageMathReduced", { n: p.flatReduction }));
-  if (p.resisted) verdicts.push(t("combat.damageMathResisted"));
+  if (p.resisted) verdicts.push(t("common.resistance"));
   if (p.doubled) verdicts.push(t("combat.damageMathVulnerable"));
   const arrow = `${p.amount} → ${p.net}`;
   return verdicts.length > 0 ? `${arrow} · ${verdicts.join(" · ")}` : arrow;

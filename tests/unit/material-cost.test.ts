@@ -23,6 +23,7 @@ import {
   materialCostLogEvent,
   negateCurrencyDelta,
 } from "@/lib/play/material-cost";
+import { coinPrice } from "@/lib/coin-price";
 import { applySheetEvent } from "@/lib/play/sheet-events";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
@@ -66,6 +67,14 @@ describe("the catalogue's costly material components", () => {
     }
   );
 
+  it("Gentle Repose consumes its 2 copper pieces (SRD 5.2.1)", () => {
+    expect(castMaterialCost("gentle-repose")).toEqual({
+      spellId: "gentle-repose",
+      gp: 0.02,
+      consumed: true,
+    });
+  });
+
   it("a custom or unknown spell has no cost", () => {
     expect(castMaterialCost(undefined)).toBeNull();
     expect(castMaterialCost("not-a-spell")).toBeNull();
@@ -91,6 +100,19 @@ describe("paying gold from the purse", () => {
 
   it("not enough gold and platinum: nothing to deduct in one tap", () => {
     expect(goldSpendDelta(purse({ gp: 50, pp: 2, ep: 900, sp: 900 }), 100)).toBeNull();
+  });
+
+  it("a copper price is paid in copper, breaking silver when the copper runs short", () => {
+    expect(goldSpendDelta(purse({ cp: 5, gp: 10 }), 0.02)).toEqual({ cp: -2 });
+    // 2 cp from 1 cp + 5 sp: 1 sp (10 cp) for the last 1 cp → 9 cp change.
+    expect(goldSpendDelta(purse({ cp: 1, sp: 5 }), 0.02)).toEqual({ cp: 8, sp: -1 });
+    expect(goldSpendDelta(purse({ gp: 10 }), 0.02)).toBeNull();
+  });
+
+  it("names a price in its own coin", () => {
+    expect(coinPrice(300)).toEqual({ amount: 300, coin: "gp" });
+    expect(coinPrice(0.02)).toEqual({ amount: 2, coin: "cp" });
+    expect(coinPrice(0.5)).toEqual({ amount: 5, coin: "sp" });
   });
 
   it("the undo puts back exactly what the tap took", () => {
@@ -119,5 +141,8 @@ describe("paying gold from the purse", () => {
       rider: { lit: { en: "300 gp", it: "300 mo" } },
       effect: "generic",
     });
+    expect(
+      materialCostLogEvent({ spellId: "gentle-repose", gp: 0.02, consumed: true })
+    ).toMatchObject({ rider: { lit: { en: "2 cp", it: "2 mr" } } });
   });
 });

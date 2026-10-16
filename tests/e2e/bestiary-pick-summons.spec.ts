@@ -49,7 +49,7 @@ test.describe("bestiary-pick summons", () => {
 
       const row = page.getByRole("button", { name: /^Planetar/ });
       await expect(row).toBeVisible();
-      await page.getByRole("button", { name: "−1 HP Planetar" }).click();
+      await page.getByRole("button", { name: "−1 PF Planetar" }).click();
       await row.scrollIntoViewIfNeeded();
       await shot(page, `rail-picked-${size}`);
 

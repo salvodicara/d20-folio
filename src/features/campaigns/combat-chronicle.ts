@@ -167,7 +167,10 @@ export function recordPcHp(
     tempAbsorbed?: number;
   }
 ): EncounterState {
-  if (args.amount <= 0) return state;
+  // A heal logs the HP that actually landed (the clamp at max eats the overheal), so the
+  // feed and the session totals never claim more than the PC regained.
+  const amount = args.kind === "heal" ? args.postCurrent - args.preCurrent : args.amount;
+  if (amount <= 0) return state;
   let out =
     args.kind === "damage"
       ? appendEvent(state, {
@@ -183,7 +186,7 @@ export function recordPcHp(
       : appendEvent(state, {
           kind: "hp-heal",
           targetId: args.targetId,
-          amount: args.amount,
+          amount,
           current: args.postCurrent,
           max: args.max,
           ...(args.actorId ? { actorId: args.actorId } : {}),

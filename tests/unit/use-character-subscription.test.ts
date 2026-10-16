@@ -419,7 +419,9 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
       useCharacterStore.getState().applyDamage(7);
     });
     await flushPlayWrite();
-    act(() => useCharacterStore.getState().applyHealing(3));
+    act(() => {
+      useCharacterStore.getState().applyHealing(3);
+    });
     await flushPlayWrite();
 
     expect(writeCombatStateMock).toHaveBeenCalledTimes(2);

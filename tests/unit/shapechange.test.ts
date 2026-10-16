@@ -12,7 +12,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { MONSTERS, getMonster } from "@/data/monsters";
 import { beastProjectionFromMonster } from "@/lib/beast-projection";
-import { resolveShapechangeForms } from "@/lib/shapechange";
+import { resolveBestiaryForms } from "@/lib/bestiary-forms";
+
+const resolveShapechangeForms = (level: number) =>
+  resolveBestiaryForms("shapechange", level);
 import {
   formStatBlock,
   polymorphPriorSnapshot,

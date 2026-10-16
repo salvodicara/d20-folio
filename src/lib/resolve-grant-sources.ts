@@ -300,6 +300,35 @@ export function resolveCombatEffectGrants(
     : group.grants;
 }
 
+/** Separates a choice's bundle key from the landed occurrence it belongs to. */
+const OCCURRENCE_CHOICE_SEPARATOR = "@";
+
+/**
+ * The bundle key of an option choice inside ONE landed occurrence (Enlarge/Reduce
+ * cast on you by an ally): the pick belongs to that cast only, so a new occurrence,
+ * or your own cast of the spell, asks again instead of reusing it.
+ */
+export function occurrenceBundleKey(bundleKey: string, effectId: string): string {
+  return `${bundleKey}${OCCURRENCE_CHOICE_SEPARATOR}${effectId}`;
+}
+
+/** The catalogue bundle key behind a choice key (itself when not occurrence-scoped). */
+export function baseBundleKey(choiceKey: string): string {
+  const at = choiceKey.indexOf(OCCURRENCE_CHOICE_SEPARATOR);
+  return at < 0 ? choiceKey : choiceKey.slice(0, at);
+}
+
+function scopeChoicesToOccurrence(
+  grants: ReadonlyArray<Grant>,
+  effectId: string
+): ReadonlyArray<Grant> {
+  return grants.map((grant) =>
+    grant.type === "choice-grant-bundle"
+      ? { ...grant, bundleKey: occurrenceBundleKey(grant.bundleKey, effectId) }
+      : grant
+  );
+}
+
 /**
  * Resolve campaign-owned target effects back to their catalogue grant group.
  * The registry stores only stable references, so a rules/data correction updates
@@ -327,7 +356,7 @@ export function resolveCombatEffectGrantSources(
       // grants directly instead of replaying the catalogue's `while-active`
       // wrapper: lighting that shared key would also activate a prepared copy
       // of the same spell on the recipient and apply the bonus twice.
-      grants,
+      grants: scopeChoicesToOccurrence(grants, effect.id),
       ref: { kind: "spell", key: spell.id },
       runtime: {
         ...(effect.source.castLevel !== undefined
