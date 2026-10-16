@@ -55,7 +55,9 @@ import {
   type RawBreakdownPart,
 } from "@/lib/value-breakdown";
 import { srdText } from "@/lib/loc-text";
+import { ruleParts, type RuleOrigin } from "@/lib/rules";
 import { getEquipment } from "@/data/equipment";
+import type { AbilityCode } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
@@ -222,6 +224,62 @@ export function computeCharacterAC(
     null,
     agg.conditionalAcBonus
   );
+}
+
+/** A part named by the catalogue entry a rule came from, or by an app term. */
+function sourcePart(
+  source: RuleOrigin["source"],
+  fallbackTerm: string,
+  value: number
+): RawBreakdownPart {
+  return source
+    ? locPart(
+        srdText(source.kind as Parameters<typeof srdText>[0], source.key, "name"),
+        value
+      )
+    : termPart(fallbackTerm, value);
+}
+
+/**
+ * The parts of one EFFECTIVE ability score (re-foundation phase 2: every number
+ * explained), in the order {@link aggregateAbilityScores} applies them: the stored
+ * base, then a floor ("becomes 19", Amulet of Health), then each additive item or
+ * feature bonus and the resulting-score cap that trims it ("+2, to a maximum of
+ * 20"). Each is named by the entry it came from. The stored base stays whole: the
+ * increases baked into it are not recorded reliably, so no split is invented.
+ * `breakdownTotal(parts)` equals the shown score; the guard pins it.
+ */
+export function abilityScoreBreakdown(
+  base: Record<AbilityCode, number>,
+  aggregate: AggregatedGrants,
+  ability: AbilityCode
+): RawBreakdownPart[] {
+  const origins = aggregate.ruleOrigins;
+  const parts: RawBreakdownPart[] = [termPart("breakdown.base", base[ability])];
+  let score = base[ability];
+  const floor = aggregate.abilityScoreFloors[ability];
+  if (floor != null && floor > score) {
+    const source = ruleParts(origins, `ability:floor:${ability}`)[0]?.source;
+    parts.push(sourcePart(source, "breakdown.ability.floor", floor - score));
+    score = floor;
+  }
+  const bonus = aggregate.itemAbilityScoreBonus[ability];
+  if (bonus) {
+    const named = ruleParts(origins, `ability:item-bonus:${ability}`);
+    if (named.reduce((sum, part) => sum + part.value, 0) === bonus) {
+      for (const { source, value } of named)
+        parts.push(sourcePart(source, "breakdown.featureBonus", value));
+    } else {
+      parts.push(termPart("breakdown.featureBonus", bonus));
+    }
+    score += bonus;
+    const cap = aggregate.itemAbilityScoreCap[ability];
+    if (cap != null && score > cap) {
+      const source = ruleParts(origins, `ability:item-cap:${ability}`)[0]?.source;
+      parts.push(sourcePart(source, "breakdown.ability.cap", cap - score));
+    }
+  }
+  return parts;
 }
 
 /**

@@ -259,10 +259,10 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
 1. **`CLAUDE.md` / `AGENTS.md`** — the short shared router, authority model, invariants, and tool
    routing.
 2. Read the **one document that owns the task's fact**: Architecture/Mechanics/Schema for engine or
-   data, Product Constitution/Design for UI, or the relevant operations runbook.
-3. **`PROGRESS.md`** only when roadmap or current status matters; verify claims against code,
-   config, git, and runtime evidence before acting.
-4. **`docs/AUTOMATION_COVERAGE.md`** for per-entity automation coverage.
+   data, the product brief (`docs/strategy/2026-10-16-product-brief.md`)/Design for UI, or the
+   relevant operations runbook. Verify claims against code, config, git, and runtime evidence
+   before acting.
+3. **`docs/AUTOMATION_COVERAGE.md`** for per-entity automation coverage.
    `docs/AUTOMATION_BACKLOG.md` is the closed audit record, not a default reading assignment.
 
 ### Claude Code and Codex parity
@@ -403,7 +403,7 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
   atomic-design / numbered-HTML-previews / `ui-restyle`-branch cadence is superseded.
 
 ```text
-1. Read docs/PRODUCT_CONSTITUTION.md (supreme UX law) + DESIGN.md (the design system of record).
+1. Read PRODUCT.md + docs/GOLDEN_RULES.md (the UX law) + DESIGN.md (the design system of record).
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).
@@ -623,7 +623,7 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
   the converged `HEAD:main` integration remains the only push that runs the full local gate
   (`docs/WORKTREES.md` — no PRs, never a bare push).
 - **Co-update docs.** A `.changeset/*.md` must be staged on every commit (the pre-commit hook
-  enforces it; it feeds `CHANGELOG.md` at release time). Keep `PROGRESS.md` current as you ship.
+  enforces it; it feeds `CHANGELOG.md` at release time).
 - **New surface → new screenshot.** Adding a page / form / wizard step / modal means adding its
   canonical census entry (`tests/e2e/surface-census/index.ts` or an owned fragment) plus the
   temporary `surfaces.ts` runtime adapter. The route-coverage guard

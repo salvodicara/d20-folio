@@ -169,3 +169,46 @@ describe("storage rules — shared monster art (users/{uid}/portraits/monster-*.
     await assertSucceeds(deleteObject(ref(owner, MONSTER_ART_PATH)));
   });
 });
+
+describe("storage rules — the private content pack (the `pack` claim)", () => {
+  const PACK_FILE = "content-pack/0123456789abcdef/core.json";
+  const JSON_BYTES = new TextEncoder().encode("{}");
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), PACK_FILE), JSON_BYTES, {
+        contentType: "application/json",
+      });
+    });
+  });
+
+  it("an allowlisted account reads the pack", async () => {
+    const storage = testEnv.authenticatedContext(PEER_UID, { pack: true }).storage();
+    await assertSucceeds(getBytes(ref(storage, PACK_FILE)));
+  });
+
+  it("a signed-in account without the claim cannot", async () => {
+    const storage = testEnv.authenticatedContext(PEER_UID).storage();
+    await assertFails(getBytes(ref(storage, PACK_FILE)));
+  });
+
+  it("an admin without the claim cannot either: access is the claim alone", async () => {
+    const storage = testEnv.authenticatedContext(ADMIN_UID).storage();
+    await assertFails(getBytes(ref(storage, PACK_FILE)));
+  });
+
+  it("a visitor cannot", async () => {
+    await assertFails(
+      getBytes(ref(testEnv.unauthenticatedContext().storage(), PACK_FILE))
+    );
+  });
+
+  it("nobody writes the pack from a client, claim or not", async () => {
+    const storage = testEnv.authenticatedContext(ADMIN_UID, { pack: true }).storage();
+    await assertFails(
+      uploadBytes(ref(storage, "content-pack/0123456789abcdef/x.json"), JSON_BYTES, {
+        contentType: "application/json",
+      })
+    );
+  });
+});

@@ -33,12 +33,24 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join, relative, resolve as resolvePath } from "node:path";
 
+import {
+  packAliasTarget,
+  packEnProseAliasTarget,
+  packItemArtAliasTarget,
+  packMonsterArtAliasTarget,
+  packMonstersAliasTarget,
+} from "./content-pack-mode.ts";
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = resolvePath(HERE, "..", "src");
-const PACK_ROOT = resolvePath(SRC, "..", "content-pack");
-/** The documented content-pack opt-out (`scripts/content-pack-mode.ts` — "the ONE
- *  place that decides"): presence + `VITE_CONTENT_PACK !== "0"`. */
-const PACK_DISABLED = process.env.VITE_CONTENT_PACK === "0";
+/** The `@pack` aliases, mirroring vite.config.ts. */
+const PACK_ALIASES = {
+  "@pack": packAliasTarget,
+  "@pack/monsters": packMonstersAliasTarget,
+  "@pack/monster-art": packMonsterArtAliasTarget,
+  "@pack/item-art": packItemArtAliasTarget,
+  "@pack/i18n-en-prose": packEnProseAliasTarget,
+};
 
 /** Append a `.ts`/`.tsx`/`index.ts` extension to an extension-less file path. */
 function withExt(abs) {
@@ -51,14 +63,10 @@ function withExt(abs) {
 }
 
 export async function resolve(specifier, context, next) {
-  // (0) the Vite "@pack" alias: the sibling pack when present, else the SRD-only stub.
-  if (specifier === "@pack" || specifier.startsWith("@pack/")) {
-    const sub = specifier === "@pack" ? "" : specifier.slice("@pack".length);
-    const packTarget = withExt(PACK_ROOT + (sub === "" ? "/index" : sub));
-    if (!PACK_DISABLED && existsSync(packTarget)) {
-      return next(pathToFileURL(packTarget).href, context);
-    }
-    return next(pathToFileURL(withExt(`${SRC}/data/pack-empty`)).href, context);
+  // (0) the Vite "@pack" aliases, resolved by the ONE mode switch
+  //     (`content-pack-mode.ts`) so a sub-entry lands where Vite puts it.
+  if (specifier in PACK_ALIASES) {
+    return next(pathToFileURL(PACK_ALIASES[specifier]()).href, context);
   }
   // (1) the Vite "@/" alias → <repo>/src/…
   if (specifier.startsWith("@/")) {

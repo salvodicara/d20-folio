@@ -595,7 +595,7 @@ projects → d20-folio → Actions (⋮) → Change billing**.
 
 ## App Check rollout runbook
 
-Pre-GA hardening (soft-launch blocking item, `PROGRESS.md` → "Soft launch — the
+Pre-GA hardening (soft-launch blocking item, the retired `PROGRESS.md` log (in git history) → "Soft launch — the
 community-beta charter"). Client scaffold ships gated OFF: `src/lib/firebase.ts` only
 calls `initializeAppCheck` when `VITE_APPCHECK_SITE_KEY` is a non-empty string, so an
 unset key is a no-op — zero new network calls.

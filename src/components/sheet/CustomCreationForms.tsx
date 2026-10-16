@@ -22,7 +22,6 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { FREE_TIER_LIMITS } from "@/lib/limits";
-import { useLocale } from "@/hooks/useLocale";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";
@@ -85,16 +84,13 @@ const SPELL_SCHOOLS: readonly SpellSchool[] = ALL_SPELL_SCHOOLS;
 
 export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps) {
   const { t } = useTranslation();
-  const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const seed = libraryEdit?.item;
   const [name, setName] = useState(seed?.name ?? "");
   const [level, setLevel] = useState(seed?.level ?? 1);
   const [school, setSchool] = useState<SpellSchool>(seed?.school ?? "evocation");
   const [castingTime, setCastingTime] = useState(seed?.castingTime ?? "action");
-  const [range, setRange] = useState(
-    seed?.range ?? (locale === "it" ? "18 metri" : "60 feet")
-  );
+  const [range, setRange] = useState(seed?.range ?? t("spells.defaultRange"));
   // D2 — seed the locale-correct default (was the hardcoded English "Instantaneous"
   // leaking into the IT form), mirroring the locale-aware `range` default above.
   const [duration, setDuration] = useState(seed?.duration ?? t("spells.instantaneous"));

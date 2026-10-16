@@ -28,6 +28,7 @@ import { X, Plus, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import type { EffectiveProficiencyToken } from "@/lib/views/sheet-view";
+import { asLocale } from "@/lib/locale";
 
 export interface SrdOption {
   id: string;
@@ -70,7 +71,7 @@ export function SrdTagPicker({
   placeholder,
 }: Props) {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "it" ? "it" : "en";
+  const locale = asLocale(i18n.language);
 
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);

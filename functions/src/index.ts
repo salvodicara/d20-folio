@@ -24,7 +24,7 @@
  * for the exact owner setup runbook.
  */
 
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
 import { onSchedule } from "firebase-functions/v2/scheduler";
@@ -51,9 +51,11 @@ import {
   planCampaignUpdate,
   coMemberAclTargets,
   emailMatches,
+  authorizeAccountDeletion,
   type CampaignLike,
 } from "./delete-user-plan";
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
+import { syncRoleClaims } from "./role-claims";
 import {
   parseSharePath,
   parseOgImagePath,
@@ -249,15 +251,30 @@ export const ownerDigest = onSchedule(
   }
 );
 
+// ── Phase 5 — roles as Auth custom claims ───────────────────────────────────
+/**
+ * Mirror the user doc's `role` / `status` into the account's custom claims, which the
+ * security rules read instead of `get()`-ing this doc on every request. A write that
+ * changes neither (the sign-in `lastActiveAt` bump) costs nothing. See role-claims.ts.
+ */
+export const onUserRoleWritten = onDocumentWritten("users/{uid}", async (event) => {
+  const uid = event.params.uid;
+  const before = event.data?.before.exists ? event.data.before.data() : undefined;
+  const after = event.data?.after.exists ? event.data.after.data() : undefined;
+  const result = await syncRoleClaims(getAuth(), uid, before, after);
+  if (result !== "unchanged") logger.info("role claims synced", { uid, result });
+});
+
 // ── ADMIN — destructive account deletion (admin-godmode part b) ─────────────
 /**
- * `deleteUser` — an ADMIN-ONLY callable that fully removes a target account and
- * every trace of it. Server-authoritative on TWO axes the client can never forge:
+ * `deleteUser` — the callable that fully removes an account and every trace of it:
+ * an admin removing another account, or (since 2026-10-16) a player erasing their
+ * own. Server-authoritative on TWO axes the client can never forge:
  *
- *   1. ADMIN GATE — the CALLER's authority is verified by READING their own
- *      `/users/{callerUid}` doc and checking `role == "admin"`. We never trust a
- *      client-supplied claim/flag; the same `role` field the rules' `isAdmin()`
- *      reads is the source of truth.
+ *   1. GATE — the CALLER's authority is verified server-side
+ *      (`authorizeAccountDeletion`): `role == "admin"` read from their own
+ *      `/users/{callerUid}` doc for another account, or caller == target for their
+ *      own. An admin cannot delete themselves (it would orphan the console).
  *   2. TYPED-CONFIRM — the payload carries the target's `email`; we RE-READ the
  *      target `/users` doc and assert the stored email matches before ANY delete, so
  *      a wrong/stale `uid` can never nuke a different account than the admin
@@ -272,36 +289,32 @@ export const ownerDigest = onSchedule(
  *      `memberDetails`, PROMOTE a remaining member if they were the DM (or delete the
  *      campaign if no members remain), AND remove them from every co-member's
  *      character `campaignReaders` / `dmReaders` ACL;
- *   d. delete the `/users/{uid}` doc;
- *   e. write the immutable `/admin_audit` record (who deleted whom, when, + counts);
- *   f. delete the Firebase Auth user (LAST — data before Auth).
+ *   d. delete their `diagnostics` and `bug_reports` docs and bug-report screenshots;
+ *   e. recursive-delete the `/users/{uid}` doc with its subcollections (library, …);
+ *   f. write the immutable `/admin_audit` record (who deleted whom, when, + counts;
+ *      no email for a self-service erasure);
+ *   g. delete the Firebase Auth user (LAST — data before Auth).
  */
 export const deleteUser = onCall(async (request) => {
   const db = getFirestore();
 
-  // ── 1. Admin gate — verify the CALLER, server-side (never trust the client) ──
+  // ── 1. Gate — verify the CALLER, server-side (never trust the client) ──────
+  // An admin may delete anyone but themselves; a player may delete only their own
+  // account (self-service erasure, 2026-10-16). The rule is `authorizeAccountDeletion`.
   const callerUid = request.auth?.uid;
-  if (!callerUid) {
-    throw new HttpsError("unauthenticated", "Sign-in required.");
-  }
-  const callerSnap = await db.collection("users").doc(callerUid).get();
-  if (callerSnap.get("role") !== "admin") {
-    throw new HttpsError("permission-denied", "Admin only.");
-  }
-
   const targetUid = String((request.data as { targetUid?: unknown })?.targetUid ?? "");
   const confirmEmail = String(
     (request.data as { targetEmail?: unknown })?.targetEmail ?? ""
   );
-  if (!targetUid || !confirmEmail) {
-    throw new HttpsError("invalid-argument", "targetUid and targetEmail are required.");
+  const callerIsAdmin = callerUid
+    ? (await db.collection("users").doc(callerUid).get()).get("role") === "admin"
+    : false;
+  const gate = authorizeAccountDeletion({ callerUid, callerIsAdmin, targetUid });
+  if (!gate.ok) {
+    throw new HttpsError(gate.code, `Account deletion refused: ${gate.code}.`);
   }
-  // An admin deleting THEMSELVES would orphan the console + their own auth mid-run.
-  if (targetUid === callerUid) {
-    throw new HttpsError(
-      "failed-precondition",
-      "An admin cannot delete their own account."
-    );
+  if (!confirmEmail) {
+    throw new HttpsError("invalid-argument", "targetEmail is required.");
   }
 
   // ── 2. Typed-confirm — re-read the target + assert the email matches ─────────
@@ -384,20 +397,39 @@ export const deleteUser = onCall(async (request) => {
     }
   }
 
-  // ── 3d. The user doc itself ──────────────────────────────────────────────────
-  await db.collection("users").doc(targetUid).delete();
+  // ── 3d. Everything else filed under the account ────────────────────────────
+  // Their automatic error reports and bug reports (Firestore + screenshots).
+  for (const [collection, field] of [
+    ["diagnostics", "uid"],
+    ["bug_reports", "reporterUid"],
+  ] as const) {
+    const owned = await db.collection(collection).where(field, "==", targetUid).get();
+    await Promise.all(owned.docs.map((doc) => db.recursiveDelete(doc.ref)));
+  }
+  try {
+    await getStorage()
+      .bucket()
+      .deleteFiles({ prefix: `bug-reports/${targetUid}/` });
+  } catch (err) {
+    logger.warn("deleteUser: bug-report screenshot purge failed (non-fatal)", err);
+  }
 
-  // ── 3e. Immutable audit record (who deleted whom, when, + cascade counts) ────
+  // ── 3e. The user doc itself, with every subcollection (library, …) ──────────
+  await db.recursiveDelete(db.collection("users").doc(targetUid));
+
+  // ── 3f. Immutable audit record (who deleted whom, when, + cascade counts) ────
+  // A player erasing their own account leaves no email behind; an admin removal
+  // keeps it (abuse handling).
   await db.collection("admin_audit").add({
-    action: "deleteUser",
+    action: gate.selfService ? "deleteOwnAccount" : "deleteUser",
     actorUid: callerUid,
     targetUid,
-    targetEmail: storedEmail ?? confirmEmail,
+    ...(gate.selfService ? {} : { targetEmail: storedEmail ?? confirmEmail }),
     counts,
     at: FieldValue.serverTimestamp(),
   });
 
-  // ── 3f. Auth user LAST (data before Auth) — idempotent on already-gone ───────
+  // ── 3g. Auth user LAST (data before Auth) — idempotent on already-gone ───────
   try {
     await getAuth().deleteUser(targetUid);
   } catch (err: unknown) {
@@ -415,11 +447,13 @@ export const deleteUser = onCall(async (request) => {
 // ── SAFE-01 — budget kill-switch (the zero-budget hard guarantee) ────────────
 /**
  * `onBudgetAlert` — the standard Google-documented spend kill-switch. The Cloud
- * Billing £1 budget publishes a JSON notification to the `budget-kill` Pub/Sub topic
- * on every threshold crossing; when the ACTUAL accumulated cost exceeds the budget
- * amount this DETACHES the billing account from the project
+ * Billing budget (`d20-folio £15 cap`, set by `scripts/safe-01.sh`; it also emails at
+ * £1 / £5 / £10 / £15) publishes a JSON notification to the `budget-kill` Pub/Sub
+ * topic on every threshold crossing; when the ACTUAL accumulated cost exceeds the
+ * budget amount this DETACHES the billing account from the project
  * (`updateProjectBillingInfo` with an empty `billingAccountName`), which forces all
- * billable usage to stop — spend can never run past ~£1.
+ * billable usage to stop — spend can never run past ~the budget. The amount lives
+ * in the budget, not here: `just safe-status` reads it.
  *
  * Guard rails (see `budget-kill.ts` for the pure decision + `docs/BUG_REPORTING.md`
  * for the setup + emergency-restore runbook):

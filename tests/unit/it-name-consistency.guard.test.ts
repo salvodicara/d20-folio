@@ -18,11 +18,16 @@ import {
   findRetiredNames,
   findRetiredInProse,
   findRetiredInUi,
+  loadLocaleStrings,
+  findFeetDistances,
+  findCoverDrift,
+  COVER_DEGREES_IT,
   PUBLIC_SRD_I18N,
   type AllowedCollision,
   type Ent,
 } from "./__helpers__/it-name-registry";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
+import { COVER_REFERENCE } from "@/data/cover";
 
 const ents = loadEntities([PUBLIC_SRD_I18N]);
 // The sub-keyed catalogue rows (grant / action / trait blurbs) — user-visible prose
@@ -211,5 +216,23 @@ describe("IT name consistency (public SRD)", () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  // Every Italian sentence, catalogue and chrome alike: what a beginner reads at the table.
+  const itStrings = loadLocaleStrings(PUBLIC_SRD_I18N);
+
+  it("measures distances in metres, never in feet", () => {
+    expect(itStrings.length).toBeGreaterThan(5000);
+    expect(findFeetDistances(itStrings)).toEqual([]);
+  });
+
+  it("names the degrees of cover only with the official IT SRD 5.2.1 terms", () => {
+    expect(findCoverDrift(itStrings)).toEqual([]);
+  });
+
+  it("titles the cover states with the official IT SRD 5.2.1 terms", () => {
+    expect(COVER_REFERENCE.map((c) => c.name.it.toLowerCase())).toEqual([
+      ...COVER_DEGREES_IT,
+    ]);
   });
 });

@@ -28,7 +28,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
-import { asLocale, type Locale } from "@/lib/locale";
+import { LOCALES, SOURCE_LOCALE, asLocale, type Locale } from "@/lib/locale";
 import {
   registerSrdCatalogues,
   hasSrdLocale,
@@ -153,8 +153,8 @@ async function bootstrap(): Promise<typeof i18n> {
       // Resources are added lazily per locale (see `ensureLocale`) — none eager.
       resources: {},
       partialBundledLanguages: true,
-      fallbackLng: isProd ? "en" : false,
-      supportedLngs: ["en", "it"],
+      fallbackLng: isProd ? SOURCE_LOCALE : false,
+      supportedLngs: [...LOCALES],
       defaultNS: "common",
       ns: ["common"],
       returnNull: false,
@@ -179,7 +179,7 @@ async function bootstrap(): Promise<typeof i18n> {
   // so prod `fallbackLng: "en"` resolves ui keys for real AND any EN canonical
   // chrome ref (`uiText` → `localizeText(..., "en")`) is resolvable in an IT
   // session. EN itself needs no second load (already done above).
-  if (asLocale(i18n.language) !== "en") {
+  if (asLocale(i18n.language) !== SOURCE_LOCALE) {
     await ensureLocale("en");
   }
   // The pack's English descriptions load in the background, not awaited: the first

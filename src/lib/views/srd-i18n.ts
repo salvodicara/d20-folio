@@ -18,6 +18,7 @@ import type { LocText } from "@/lib/loc-text";
 import type { BreakdownWhy, BreakdownWhyLine } from "@/lib/value-breakdown";
 import { hasSrd, localizeSrd, localizeCustom, type SrdKind } from "@/i18n/resolver";
 import i18n from "@/i18n";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 type Locale = keyof BiText;
 
@@ -229,7 +230,7 @@ export function localizeWeaponProperty(prop: string, locale: Locale): string {
   // EN data strings ARE the canonical display (the `weapon-property` catalogue's
   // EN entries equal them by construction — kept for EN↔IT parity + the leak-lock):
   // return verbatim, so the printed range keeps its bare "20/60" with no unit added.
-  if (locale === "en") return prop;
+  if (locale === SOURCE_LOCALE) return prop;
 
   // Simple (non-parameterized) property — slug to its token; if the catalogue
   // carries it, resolve the localized name from JSON. (Parameterized properties
@@ -282,7 +283,7 @@ export function localizeWeaponProperty(prop: string, locale: Locale): string {
  * Returns the string capitalized for display.
  */
 export function localizeWeaponCategory(category: string, locale: Locale): string {
-  if (locale === "en") {
+  if (locale === SOURCE_LOCALE) {
     return category.charAt(0).toUpperCase() + category.slice(1);
   }
   const map: Record<string, string> = { simple: "Semplice", martial: "Marziale" };

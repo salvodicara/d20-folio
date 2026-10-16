@@ -54,6 +54,7 @@
     "entries_other": "{{count}} voci",
     "copied": "Resoconto copiato",
     "automatic": "Resoconto automatico",
-    "addNotes": "Scrivi le note"
+    "addNotes": "Scrivi le note",
+    "notes": "Note della sessione"
   }
 }

@@ -49,7 +49,8 @@ export function createEncounterMirror(deps: {
       unsubscribe = deps.store.subscribe(
         sessionId,
         (items) => {
-          entries = foldSession(items, { dmUid: deps.dmUid });
+          // Hidden lines still happened: the mirror must not record them again.
+          entries = foldSession(items, { dmUid: deps.dmUid }, { includeHidden: true });
           written = loggedIds(items);
           flush();
         },

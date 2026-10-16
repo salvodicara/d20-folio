@@ -147,14 +147,12 @@ The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web
 
 ## Documentation
 
-| Doc                                                          | What                                                                    |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| [CLAUDE.md](CLAUDE.md)                                       | Agent briefing and single source of truth for contributors (start here) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                 | How the system works, from data to render                               |
-| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md)                 | Local dev and contribution flow                                         |
-| [DESIGN.md](DESIGN.md)                                       | The design system: tokens, type ramp, color, and rules                  |
-| [PROGRESS.md](PROGRESS.md)                                   | Living roadmap and phase status                                         |
-| [docs/PRODUCT_CONSTITUTION.md](docs/PRODUCT_CONSTITUTION.md) | Supreme product, UX, and design rules                                   |
+| Doc                                          | What                                                                    |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| [CLAUDE.md](CLAUDE.md)                       | Agent briefing and single source of truth for contributors (start here) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | How the system works, from data to render                               |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | Local dev and contribution flow                                         |
+| [DESIGN.md](DESIGN.md)                       | The design system: tokens, type ramp, color, and rules                  |
 
 ## Contributing
 

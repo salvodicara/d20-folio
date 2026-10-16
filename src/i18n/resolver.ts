@@ -38,6 +38,7 @@
 import type { Locale } from "@/lib/locale";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hasEnProse, requestEnProse, srdCatalogues, type SrdKind } from "./srd-en";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 /** Re-exported so existing `import { SrdKind } from "@/i18n/resolver"` sites stay. */
 export type { SrdKind } from "./srd-en";
@@ -79,7 +80,7 @@ export function localizeSrd(
     // The pack's English descriptions arrive lazily (`@pack/i18n-en-prose`): until
     // then a description is a quiet blank, the load is asked for, and the app
     // re-renders when it lands. Never a crash.
-    if (field === "description" && locale === "en" && !hasEnProse()) {
+    if (field === "description" && locale === SOURCE_LOCALE && !hasEnProse()) {
       diagnosticsLog("info", "srd.prose-not-loaded", { kind, key });
       requestEnProse();
       return "";

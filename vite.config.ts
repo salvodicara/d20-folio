@@ -13,7 +13,16 @@ import {
   packMonsterArtAliasTarget,
   packEnProseAliasTarget,
   packMonstersAliasTarget,
+  packRuntimeMode,
 } from "./scripts/content-pack-mode.ts";
+
+// The production build downloads the pack at runtime, so it must know which
+// version to ask for (`scripts/pack/emit-pack.ts` prints it).
+if (packRuntimeMode() && !/^[0-9a-f]{16}$/.test(process.env.VITE_PACK_VERSION ?? "")) {
+  throw new Error(
+    "VITE_CONTENT_PACK=runtime needs VITE_PACK_VERSION (the emitted pack's version)."
+  );
+}
 
 // i18n build-time LEAK-LOCK (`docs/ARCHITECTURE.md` → i18n-completeness lock 6): fail `vite build` RED on
 // ANY untranslated string. Runs the ONE shared detector set (`scripts/i18n/` —
@@ -91,7 +100,10 @@ export default defineConfig({
       // precache. Crawlers fetch them over the network; the app itself never renders
       // them, so precaching ~350 KiB of them would buy nothing and the precache
       // ceiling has ~11 KiB of headroom.
-      includeAssets: ["icons/*.png"],
+      // `globPatterns` below already precaches the PNG launch icons; the plugin's own
+      // icon inclusion (`includeAssets`, `includeManifestIcons`) listed the same four
+      // icons in the precache manifest a second time.
+      includeManifestIcons: false,
       manifest: {
         name: "d20 Folio",
         short_name: "d20 Folio",
@@ -144,6 +156,9 @@ export default defineConfig({
         // CacheFirst rule below), so offline export still works after one online use.
         globIgnores: [
           "**/character-pdf-*.js",
+          // The bug report's screenshot library (~220 KiB) is a rare action, never
+          // part of play: cached on first use instead (the CacheFirst rule below).
+          "**/html2canvas*.js",
           // PNG launch icons are the installed/offline artifacts. Keep the editable
           // SVG siblings hosted (and the scalable manifest fallback reachable) but
           // do not duplicate all four source plates in every app-shell precache.
@@ -155,7 +170,7 @@ export default defineConfig({
           "**/alegreya-cyrillic*",
           "**/alegreya-greek*",
           "**/alegreya-vietnamese*",
-          // PRE-GA item 3 (the first-load precache trim, `PROGRESS.md` → the
+          // PRE-GA item 3 (the first-load precache trim, the soft-launch charter → the
           // soft-launch charter): the 12 full-bleed scene/backdrop plates
           // (`public/assets/backgrounds/*.webp`, ~1.3 MiB combined, each
           // 76–176 KiB — home hero, login, campaign hall, compendium/roster/
@@ -234,6 +249,16 @@ export default defineConfig({
             options: {
               cacheName: "pdf-export-cache",
               expiration: { maxEntries: 6, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // the lazily-loaded bug-report screenshot library (excluded above)
+            urlPattern: /\/assets\/html2canvas.*\.js$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "report-screenshot-cache",
+              expiration: { maxEntries: 4, maxAgeSeconds: 60 * 60 * 24 * 90 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

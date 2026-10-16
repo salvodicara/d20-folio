@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Locale } from "@/lib/locale";
+import { intlTag, usesMetric, SOURCE_LOCALE } from "@/lib/locale";
 
 /**
  * Merge Tailwind classes with clsx and tailwind-merge.
@@ -48,7 +49,7 @@ export function formatCr(cr: number): string {
  * encounter budget readout, and the custom-monster CR-option labels (golden rule 6).
  */
 export function fmtXp(n: number, locale: Locale): string {
-  return n.toLocaleString(locale === "it" ? "it-IT" : "en-US");
+  return n.toLocaleString(intlTag(locale));
 }
 
 /**
@@ -188,7 +189,7 @@ export function scaleUpcastDice(
  * appears only once: "6/18 m" rather than "6 m/18 m".
  */
 export function localeDistance(ft: number, locale: string): string {
-  if (locale === "it") {
+  if (usesMetric(locale)) {
     const m = Math.round(ft * 0.3 * 10) / 10;
     const str = m % 1 === 0 ? String(m) : m.toFixed(1).replace(".", ",");
     return `${str} m`;
@@ -206,7 +207,7 @@ export function localeDistance(ft: number, locale: string): string {
  *   decimal with the Italian comma separator when not whole.
  */
 export function localeMiles(miles: number, locale: string): string {
-  if (locale === "it") {
+  if (usesMetric(locale)) {
     const km = Math.round(miles * 1.6 * 10) / 10;
     const str = km % 1 === 0 ? String(km) : km.toFixed(1).replace(".", ",");
     return `${str} km`;
@@ -223,7 +224,7 @@ export function localeMiles(miles: number, locale: string): string {
  * "Ammunition (Range X/Y; Type)" so the unit is not repeated per number.
  */
 export function localeRangePair(nearFt: number, farFt: number, locale: string): string {
-  if (locale === "it") {
+  if (usesMetric(locale)) {
     const fmt = (ft: number) => {
       const m = Math.round(ft * 0.3 * 10) / 10;
       return m % 1 === 0 ? String(m) : m.toFixed(1).replace(".", ",");
@@ -250,7 +251,7 @@ export function localeRangePair(nearFt: number, farFt: number, locale: string): 
  * Pass the locale-resolved string (e.g. `spell.range[locale]`).
  */
 export function formatRange(range: string, locale: string): string {
-  if (locale !== "en") return range;
+  if (locale !== SOURCE_LOCALE) return range;
   // Abbreviate a standalone trailing/leading "feet"/"foot" token to "ft" without
   // touching compound qualifiers like "(15-foot cube)" already hyphenated.
   return range.replace(/(\d)\s*(feet|foot)\b/gi, "$1 ft");
@@ -295,7 +296,7 @@ export function formatSpeed(
 export function speedToLocaleValue(speed: string | number, locale: string): string {
   const feet = typeof speed === "number" ? speed : parseInt(speed, 10);
   if (isNaN(feet)) return String(speed);
-  if (locale === "it") {
+  if (usesMetric(locale)) {
     const m = Math.round(feet * 0.3 * 10) / 10;
     return m % 1 === 0 ? String(m) : m.toFixed(1).replace(".", ",");
   }
@@ -311,7 +312,7 @@ export function speedFromLocaleValue(input: string, locale: string): string {
   const normalized = input.replace(",", ".");
   const num = parseFloat(normalized);
   if (isNaN(num)) return input;
-  if (locale === "it") {
+  if (usesMetric(locale)) {
     // Convert metres → feet (divide by 0.3), round to nearest 5
     const feet = Math.round(num / 0.3 / 5) * 5;
     return String(feet);
@@ -330,7 +331,7 @@ export function speedFromLocaleValue(input: string, locale: string): string {
  */
 export function formatWeight(lb: number, locale: string): string {
   if (!lb) return "";
-  if (locale === "it") {
+  if (usesMetric(locale)) {
     const kg = lb / 2;
     const str = kg % 1 === 0 ? String(kg) : kg.toFixed(1).replace(".", ",");
     return `${str} kg`;
