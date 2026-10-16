@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Compendio</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      /* 5e.tools: list on the left, the selected entry on the right */
+      .cmp {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 440px;
+        gap: var(--sp-5);
+        align-items: start;
+      }
+      .cmp__bar {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: var(--sp-3);
+        margin-bottom: var(--sp-3);
+      }
+      .cmp .pills {
+        margin-bottom: var(--sp-2);
+      }
+      .search {
+        position: relative;
+      }
+      .search .i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-3);
+      }
+      .search .input {
+        padding-left: 40px;
+      }
+      /* D&D Beyond's spell listing columns */
+      .stable__head,
+      .srow {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) 70px 90px 80px 90px;
+        gap: var(--sp-3);
+        align-items: center;
+      }
+      .stable__head {
+        padding: var(--sp-3) var(--sp-2) var(--sp-2);
+        border-bottom: 1px solid var(--line);
+      }
+      .srow {
+        padding: var(--sp-2);
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        font-size: 15px;
+      }
+      .srow:hover {
+        background: color-mix(in srgb, var(--gold) 6%, transparent);
+      }
+      .srow[aria-selected="true"] {
+        background: color-mix(in srgb, var(--gold) 12%, transparent);
+        box-shadow: inset 3px 0 0 var(--gold);
+      }
+      .srow .slot {
+        width: 44px;
+        height: 44px;
+      }
+      .srow__c {
+        color: var(--text-2);
+      }
+      .detail {
+        position: sticky;
+        top: 84px;
+        display: grid;
+        gap: var(--sp-4);
+      }
+      .detail .spellcard__text {
+        font-size: 16px;
+      }
+      .facts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--sp-2) var(--sp-4);
+        margin: 0;
+      }
+      .facts div {
+        display: grid;
+      }
+      .facts dd {
+        margin: 0;
+        font-weight: 700;
+      }
+      .simple {
+        padding: var(--sp-3) var(--sp-4);
+        border-radius: var(--r-2);
+        border: 1px solid var(--frame);
+        background: var(--well);
+      }
+      .simple p {
+        margin: 4px 0 0;
+      }
+      @media (max-width: 760px) {
+        .cmp {
+          grid-template-columns: 1fr;
+        }
+        .cmp > * {
+          min-width: 0;
+        }
+        .cmp__bar {
+          grid-template-columns: 1fr;
+        }
+        .detail {
+          display: none;
+        }
+        .stable__head {
+          display: none;
+        }
+        .srow {
+          grid-template-columns: 44px minmax(0, 1fr) auto;
+        }
+        .srow .srow__c {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <button class="menumark only-phone" aria-label="Menu">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+        >
+          <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+          <path d="M12 7l-5.2 9h10.4z" />
+        </svg>
+      </button>
+      <a class="brand only-laptop" href="#"
+        ><svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+          <path d="M12 7l-5.2 9h10.4z" /></svg
+        >Folio</a
+      >
+      <nav class="nav only-laptop" aria-label="Principale">
+        <a href="#">Personaggi</a><a href="#">Campagne</a
+        ><a href="#" aria-current="page">Compendio</a>
+      </nav>
+      <div class="top__who only-phone"><span class="top__name">Compendio</span></div>
+      <span class="grow only-laptop"></span>
+      <span class="lrow__img only-laptop" style="width: 36px; height: 36px"
+        ><span style="font-size: 15px">M</span></span
+      >
+      <button class="btn btn--quiet btn--icon only-phone" aria-label="Cerca">
+        <i data-lucide="search" class="i"></i>
+      </button>
+    </header>
+
+    <main class="sheet">
+      <div class="cmp">
+        <section class="frame">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="cmp__bar">
+            <button class="switcher">
+              <i data-lucide="book-open" class="i"></i>Incantesimi<i
+                data-lucide="chevrons-up-down"
+                class="i switcher__chev"
+              ></i>
+            </button>
+            <label class="search only-laptop"
+              ><i data-lucide="search" class="i i--sm"></i
+              ><input
+                class="input"
+                placeholder="Cerca un incantesimo…"
+                aria-label="Cerca"
+            /></label>
+          </div>
+          <div class="pills" role="group" aria-label="Filtri">
+            <button class="pill" aria-pressed="false">
+              Livello <i data-lucide="chevron-down" class="i i--sm"></i>
+            </button>
+            <button class="pill" aria-pressed="true">
+              Chierico <i data-lucide="x" class="i i--sm"></i>
+            </button>
+            <button class="pill" aria-pressed="false">
+              Scuola <i data-lucide="chevron-down" class="i i--sm"></i>
+            </button>
+            <button class="pill" aria-pressed="false">Rituale</button>
+            <button class="pill" aria-pressed="false">Concentrazione</button>
+          </div>
+          <div class="stable__head" aria-hidden="true">
+            <span></span><span class="label">Nome</span><span class="label">Livello</span
+            ><span class="label">Tempo</span><span class="label">Gittata</span
+            ><span class="label">Effetto</span>
+          </div>
+          <div role="listbox" aria-label="Incantesimi">
+            <div class="srow" role="option" aria-selected="false">
+              <span class="slot"><img src="img/icon-guidance.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Guida</span><br /><span class="lrow__meta"
+                  >Divinazione · concentrazione</span
+                ></span
+              ><span class="srow__c">Trucchetto</span><span class="srow__c">Azione</span
+              ><span class="srow__c">Contatto</span
+              ><span class="srow__c">+1d4 prova</span>
+            </div>
+            <div class="srow" role="option" aria-selected="false">
+              <span class="slot"><img src="img/icon-sacred-flame.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Fiamma sacra</span><br /><span
+                  class="lrow__meta"
+                  >Evocazione</span
+                ></span
+              ><span class="srow__c">Trucchetto</span><span class="srow__c">Azione</span
+              ><span class="srow__c">18 m</span><span class="srow__c">2d8 radiosi</span>
+            </div>
+            <div class="srow" role="option" aria-selected="true">
+              <span class="slot"><img src="img/icon-bless.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Benedizione</span><br /><span
+                  class="lrow__meta"
+                  >Ammaliamento · concentrazione</span
+                ></span
+              ><span class="srow__c">1°</span><span class="srow__c">Azione</span
+              ><span class="srow__c">9 m</span><span class="srow__c">+1d4</span>
+            </div>
+            <div class="srow" role="option" aria-selected="false">
+              <span class="slot"><img src="img/icon-cure-wounds.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Cura ferite</span><br /><span
+                  class="lrow__meta"
+                  >Abiurazione</span
+                ></span
+              ><span class="srow__c">1°</span><span class="srow__c">Azione</span
+              ><span class="srow__c">Contatto</span><span class="srow__c">2d8 PF</span>
+            </div>
+            <div class="srow" role="option" aria-selected="false">
+              <span class="slot"><img src="img/icon-detect-magic.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Individuazione del magico</span><br /><span
+                  class="lrow__meta"
+                  >Divinazione · rituale</span
+                ></span
+              ><span class="srow__c">1°</span><span class="srow__c">Azione</span
+              ><span class="srow__c">Sé, 9 m</span><span class="srow__c">—</span>
+            </div>
+            <div class="srow" role="option" aria-selected="false">
+              <span class="slot"><img src="img/icon-healing-word.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Parola guaritrice</span><br /><span
+                  class="lrow__meta"
+                  >Abiurazione</span
+                ></span
+              ><span class="srow__c">1°</span><span class="srow__c">Bonus</span
+              ><span class="srow__c">18 m</span><span class="srow__c">2d4 PF</span>
+            </div>
+            <div class="srow" role="option" aria-selected="false">
+              <span class="slot"><img src="img/icon-spiritual-weapon.webp" alt="" /></span
+              ><span
+                ><span class="lrow__title">Arma spirituale</span><br /><span
+                  class="lrow__meta"
+                  >Evocazione · concentrazione</span
+                ></span
+              ><span class="srow__c">2°</span><span class="srow__c">Bonus</span
+              ><span class="srow__c">18 m</span><span class="srow__c">1d8 forza</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- The selected entry: BG3's ability card, then the full rules text -->
+        <aside class="frame detail" aria-label="Benedizione">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="spellcard__head">
+            <span class="slot slot--lg"><img src="img/icon-bless.webp" alt="" /></span>
+            <div>
+              <p class="spellcard__title" style="margin: 0">Benedizione</p>
+              <p class="meta" style="margin: 0">
+                Incantesimo di 1° livello · Ammaliamento
+              </p>
+            </div>
+          </div>
+          <dl class="facts">
+            <div>
+              <dt class="label">Tempo di lancio</dt>
+              <dd>Azione</dd>
+            </div>
+            <div>
+              <dt class="label">Gittata</dt>
+              <dd>9 m</dd>
+            </div>
+            <div>
+              <dt class="label">Componenti</dt>
+              <dd>V, S, M</dd>
+            </div>
+            <div>
+              <dt class="label">Durata</dt>
+              <dd>Concentrazione, 1 minuto</dd>
+            </div>
+          </dl>
+          <div class="simple">
+            <span class="label">In breve</span>
+            <p>
+              Fino a tre creature aggiungono 1d4 ai tiri per colpire e ai tiri salvezza,
+              finché mantieni la <button class="term">concentrazione</button>.
+            </p>
+          </div>
+          <p class="spellcard__text">
+            Benedici fino a tre creature entro gittata. Ogni volta che un bersaglio fa un
+            tiro per colpire o un tiro salvezza prima della fine dell'incantesimo, tira
+            1d4 e aggiunge il risultato. Con uno slot di livello superiore al 1° puoi
+            scegliere una creatura in più per ogni livello.
+          </p>
+          <button class="btn btn--lit" style="justify-self: start">
+            <i data-lucide="plus" class="i i--sm"></i>Aggiungi a Selene
+          </button>
+        </aside>
+      </div>
+    </main>
+  </body>
+</html>
