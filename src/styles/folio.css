@@ -5146,11 +5146,11 @@ button.trk-pip:active {
 }
 /* The light lit-pip ember lives with the other light gold-glow parity recipes in
    the OWN-15 block below (one source of truth for the struck tracker jewel). */
+/* No gap: "<b>7</b>/7 charges" is one run; a flex gap split it into "7 /7". */
 .trk-pool {
   margin-left: auto;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-family: var(--font-numeric);
   font-size: 11px;
   font-weight: 700;
