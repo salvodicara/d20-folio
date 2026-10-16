@@ -959,9 +959,14 @@ service cloud.firestore {
             && item.id == itemId
             && item.at is number
             && item.serverAt == request.time
-            && item.keys().hasOnly(['id', 'by', 'at', 'type', 'event', 'target', 'serverAt'])
+            && item.keys().hasOnly(['id', 'by', 'at', 'type', 'event', 'target', 'after', 'serverAt'])
             && (item.type == 'event' || item.get('target', null) is string)
-            && (item.type == 'retract' || item.get('event', null) is map);
+            // A line or its correction carries the event; the overrides carry none.
+            && (!(item.type in ['event', 'correct']) || item.get('event', null) is map)
+            // Only a move names its anchor: another line's id, or null for first.
+            && (item.type == 'move'
+              ? ('after' in item && (item.after == null || item.after is string))
+              : !('after' in item));
         }
         allow read: if isAdmin() || logMember();
         allow create: if logMember() && validItem();
