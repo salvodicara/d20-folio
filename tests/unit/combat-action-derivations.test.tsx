@@ -357,7 +357,9 @@ describe("PlayTab action derivations", () => {
     // matched on textContent — the rules-text colour grammar lifts "1d8" into
     // its own token, so the sentence spans elements.
     expect(within(card).getByText("At Higher Levels")).toBeInTheDocument();
-    expect(card.textContent).toMatch(/the damage increases by 1d8 for each slot level/i);
+    expect(card.textContent).toMatch(
+      /the damage increases by 1d8 for each spell slot level/i
+    );
   });
 
   it("D9 — a cantrip shows NO 'At Higher Levels' section when expanded", () => {

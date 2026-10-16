@@ -123,6 +123,20 @@ describe("Ready a spell", () => {
     expect(live().session.readiedSpell?.expiresRound).toBe(2);
   }, 30_000);
 
+  it("the log says the spell was readied, then released, never used twice", async () => {
+    renderPlay();
+    await readyMagicMissile();
+    fireEvent.click(releaseButton() as HTMLElement);
+    const tray = screen.queryByTestId("damage-tray");
+    if (tray) fireEvent.click(within(tray).getByRole("button", { name: /^skip$/i }));
+    const lines = within(screen.getByRole("log"))
+      .getAllByText(/magic missile/i)
+      .map((line) => line.textContent);
+    expect(lines.filter((line) => /^used magic missile/i.test(line))).toHaveLength(0);
+    expect(lines.some((line) => /^readied magic missile/i.test(line))).toBe(true);
+    expect(lines.some((line) => /^released magic missile/i.test(line))).toBe(true);
+  }, 30_000);
+
   it("is lost at the start of your next turn, and undoing End Turn brings it back", async () => {
     renderPlay();
     await readyMagicMissile();

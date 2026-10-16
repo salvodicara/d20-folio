@@ -66,6 +66,19 @@ export function regenerationOffer(
   return fact.amount;
 }
 
+/**
+ * Whether the turn-start tap belongs on the card now: on the monster's own turn — or,
+ * for a regenerator that works at 0 HP (the Troll), all round while it is down, since
+ * the turn engine skips a monster at 0 HP and its turn would never start.
+ */
+export function regenerationDue(
+  monster: EncounterMonster,
+  fact: Extract<MonsterTraitFact, { kind: "regeneration" }>,
+  isCurrent: boolean
+): boolean {
+  return isCurrent || (monster.hp.current < 1 && !fact.needsHp);
+}
+
 /** True once this monster's regeneration is booked in the current round. */
 export function regeneratedThisRound(
   encounter: EncounterState,

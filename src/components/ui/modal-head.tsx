@@ -69,9 +69,8 @@ export function ModalHead({
             liv…" cut the one line that says what the dialog does). */}
         <RadixDialog.Title className="modal-title">{title}</RadixDialog.Title>
         {subtitle ? (
-          <p className="mt-0.5 truncate font-mono text-xs text-text-secondary">
-            {subtitle}
-          </p>
+          // Information (what to pick, what it costs): it wraps, never truncates.
+          <p className="mt-0.5 font-mono text-xs text-text-secondary">{subtitle}</p>
         ) : null}
       </div>
       {onClose ? (

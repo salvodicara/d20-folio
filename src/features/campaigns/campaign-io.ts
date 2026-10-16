@@ -904,7 +904,33 @@ export type CampaignCombatMutation =
   | { kind: "hp"; operation: { kind: "damage" | "heal"; amount: number } }
   | { kind: "condition"; operation: { kind: "add" | "remove"; conditionId: string } }
   | { kind: "temp-hp"; value: number }
-  | { kind: "death-save"; outcome: "success" | "failure" };
+  | { kind: "death-save"; outcome: "success" | "failure" }
+  /** Undo one earlier peer write: every root it changed that still reads as it wrote
+   *  goes back to what it was before. */
+  | { kind: "revert"; written: CombatState; previous: CombatState };
+
+/** The peer write's undo: each root the write changed (`previous` → `written`) and
+ *  that nobody has touched since returns to `previous`; a root changed since keeps
+ *  its newer value, so an undo never erases someone else's later write. */
+export function revertPeerEffect(
+  current: CombatState,
+  written: CombatState,
+  previous: CombatState
+): CombatState {
+  const back = <T>(now: T, wrote: T, was: T): T =>
+    !sameJson(wrote, was) && sameJson(now, wrote) ? was : now;
+  return {
+    ...current,
+    hp: back(current.hp, written.hp, previous.hp),
+    conditions: back(current.conditions, written.conditions, previous.conditions),
+    deathSaves: back(current.deathSaves, written.deathSaves, previous.deathSaves),
+    pendingConcentrationSaves: back(
+      current.pendingConcentrationSaves ?? [],
+      written.pendingConcentrationSaves ?? [],
+      previous.pendingConcentrationSaves ?? []
+    ),
+  };
+}
 
 function reduceCampaignCombatMutation(
   current: CombatState,
@@ -920,6 +946,9 @@ function reduceCampaignCombatMutation(
   }
   if (mutation.kind === "death-save") {
     return reduceDeathSave(current, mutation.outcome);
+  }
+  if (mutation.kind === "revert") {
+    return revertPeerEffect(current, mutation.written, mutation.previous);
   }
   if (
     mutation.operation.kind === "heal" &&

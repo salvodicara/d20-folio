@@ -48,7 +48,8 @@ interface ShellProps {
   subtitle?: string;
   /**
    * Mono uppercase eyebrow with a diamond prefix (the branded `.modal-rubric`).
-   * Defaults to the localized "Add" rubric when a `title` is shown.
+   * Defaults to the localized "Add" rubric when a `title` is shown; `null`
+   * shows none (read-only views).
    */
   rubric?: ReactNode;
   children: ReactNode;
@@ -129,7 +130,8 @@ export function ModalShell({
                 subtitle={subtitle}
                 // The add-modals always carry the branded rubric; default to the
                 // localized "Add" eyebrow when the caller doesn't pass one.
-                rubric={rubric ?? t("common.add")}
+                // `null` opts out (a read-only view is not an add-modal).
+                rubric={rubric === null ? undefined : (rubric ?? t("common.add"))}
                 closeLabel={t("common.close")}
               />
             )}

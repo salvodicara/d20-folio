@@ -29,6 +29,7 @@ import {
 import {
   REGENERATION_ACTION,
   applyRegeneration,
+  regenerationDue,
   regenerationOffer,
   regeneratedThisRound,
   traitFactLabel,
@@ -83,6 +84,24 @@ describe("regeneration offer", () => {
     expect(troll(down).hp.current).toBe(0);
     expect(regenerationOffer(troll(down), ONI)).toBeNull();
     expect(regenerationOffer(troll(down), TROLL)).toBe(15);
+  });
+});
+
+describe("when the regeneration is offered", () => {
+  it("a hurt regenerator is offered on its own turn only", () => {
+    const hurt = applyAdversaryDamage(fight(), CAMPAIGN_ID, "monster-1", 30);
+    expect(regenerationDue(troll(hurt), TROLL, true)).toBe(true);
+    expect(regenerationDue(troll(hurt), TROLL, false)).toBe(false);
+  });
+
+  it("a Troll at 0 HP never gets a turn, so its regeneration is offered all round", () => {
+    const down = applyAdversaryDamage(fight(), CAMPAIGN_ID, "monster-1", 94);
+    // The turn engine skips a monster at 0 HP: the Troll's turn never starts…
+    const stepped = advanceTurn(advanceTurn(down));
+    expect(stepped.currentCombatantId).not.toBe("monster-1");
+    // …so the one tap that keeps it alive stands outside its turn.
+    expect(regenerationDue(troll(down), TROLL, false)).toBe(true);
+    expect(regenerationDue(troll(down), ONI, false)).toBe(false);
   });
 });
 

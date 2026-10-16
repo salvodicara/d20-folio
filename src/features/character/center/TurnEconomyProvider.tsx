@@ -24,7 +24,15 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { validateArcaneRecoveryPlan } from "@/lib/arcane-recovery";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -170,6 +178,7 @@ import { advanceSoloWorldTurn } from "./solo-world-turn";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
+import { SELF_FORM_SPELL_IDS } from "@/lib/polymorph";
 import {
   advanceGlobalCombat,
   syncPipToStatus,
@@ -234,6 +243,14 @@ function expireReadiedHold(round: number): { spell: string; restore: () => void 
     },
   };
 }
+
+// The self-transformation form picker a Polymorph-family cast opens; a lazy leaf,
+// so the cockpit pays for it only when such a spell is cast.
+const TransformFormPicker = lazy(() =>
+  import("./tabs/spells/TransformFormPicker").then((m) => ({
+    default: m.TransformFormPicker,
+  }))
+);
 
 export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -467,6 +484,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // D4 — Cleric Divine Intervention: tapping the 1/LR action opens a guided picker
   // over the Cleric spell list ≤ 5th (the engine-resolved pool); choosing a spell
   // casts it without a slot and debits the 1/LR tracker (immediate-commit-with-undo).
+  // A cast of Polymorph, True Polymorph, Shapechange or Animal Shapes opens its form
+  // picker (the one the Spells tab's Transform opens). Skippable; spends nothing.
+  const [formPickerSpellId, setFormPickerSpellId] = useState<string | null>(null);
+
   const [freeCastFromListRequest, setFreeCastFromListRequest] = useState<{
     characterId: string;
     pool: FreeCastFromListPool;
@@ -770,10 +791,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     const cs = useCharacterStore.getState();
     const characterId = cs.character?.id;
     let restoreEquipment: (() => boolean) | null = null;
-    // USE-APPLIES — snapshot temp HP BEFORE applying this action's deterministic
-    // effects, so undo restores the exact prior pool (temp HP don't stack — we
-    // apply the higher of current/granted, then the reverse-applier sets it back).
-    const prevTempHp = cs.character?.session.hp.temp ?? 0;
     // A bare slot cost (no cast-option pool pick — a feature/custom-spell commit)
     // resolves its pool ONCE, so spend + undo target the SAME counter (B3).
     const bareSpend = bareActionSpend(
@@ -844,13 +861,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // Tree, Inspiring Leader). The engine already resolved each to a number; route
     // the apply through the store `gainTempHp` seam so the MAX-WINS rule lives in
     // ONE place (golden rule 6 — no fourth copy of `max(prev, granted)`). It logs
-    // a structured `temp-hp-gain` event (events-as-data); the undo below restores
-    // the exact prior pool. Override-first — the temp-HP field stays editable.
+    // a structured `temp-hp-gain` event (events-as-data); each grant's undo restores
+    // the exact prior pool and its log line. Override-first — the temp-HP field stays editable.
     // (Currently the register's only kind is `temp-hp`; the `kind` discriminant
     // is read when a second kind lands — for now every entry is a temp-HP grant.)
-    for (const eff of action.useEffects ?? []) {
-      cs.gainTempHp(eff.amount);
-    }
+    const undoUseEffects = (action.useEffects ?? [])
+      .map((eff) => cs.gainTempHp(eff.amount))
+      .filter((undo): undo is () => void => undo !== null);
     const undoTrackerTopUp = action.summary.trackerTopUp
       ? cs.topUpTracker(
           action.summary.trackerTopUp.trackerId,
@@ -896,11 +913,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       // OFF during the undo window (the cast's own auto-lit key is excluded).
       activation.restore();
       restoreConcentration(activation.activated);
-      // USE-APPLIES — restore the exact temp-HP pool the commit overwrote, so
-      // undoing the action reverts its applied effect too (not just the pip).
-      if ((action.useEffects ?? []).length > 0) {
-        c2.setTempHP(prevTempHp);
-      }
+      // USE-APPLIES — each temp-HP grant's own undo restores the pool it overwrote
+      // and drops its log line, newest first, so the undone action leaves no trace.
+      undoUseEffects.reverse().forEach((undo) => undo());
       c2.removeLogEntry(loggedId);
       useDamageTrayStore.getState().withdraw(loggedId);
     };
@@ -1341,6 +1356,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           effect: logTypeForAction(action),
           slot: castEconomySlot(action.type, metamagicIds),
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
+          ...(readies ? { readied: true as const } : {}),
         });
         const undoRegains = applyOnCastRegains(
           action.spellId,
@@ -1352,6 +1368,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               .setReadiedSpell(readiedHold(currentRound(), loggedId || null))
           : null;
         if (!readies) offerFollowUps(action, targets, loggedId);
+        const picksForm =
+          !readies &&
+          !execution.ritual &&
+          !!action.spellId &&
+          SELF_FORM_SPELL_IDS.includes(action.spellId);
+        if (picksForm) setFormPickerSpellId(action.spellId ?? null);
         // A priced material component: "−300 mo" when consumed, else a reminder.
         const materialToastId = execution.withoutComponents
           ? null
@@ -1365,6 +1387,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           )
             return false;
           if (materialToastId) useToastStore.getState().dismissToast(materialToastId);
+          if (picksForm) setFormPickerSpellId(null);
           undoHold?.();
           undoRegains();
           activation.restore();
@@ -2713,6 +2736,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           action: action.nameLoc,
           effect: logTypeForAction(action),
           ...(targets.length > 0 ? { targets } : {}),
+          released: true,
         });
         let restoreConcentration: (() => void) | undefined;
         const concentrationLogIds = releaseKeepsConcentration(live.character.session)
@@ -2862,6 +2886,15 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         }}
         onCancel={() => setTargetRequest(null)}
       />
+
+      {formPickerSpellId !== null && (
+        <Suspense fallback={null}>
+          <TransformFormPicker
+            spellId={formPickerSpellId}
+            onClose={() => setFormPickerSpellId(null)}
+          />
+        </Suspense>
+      )}
 
       {/* The damage tray right after the use: one rolled total, one row per target. */}
       <DamageTray />

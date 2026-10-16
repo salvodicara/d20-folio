@@ -1,5 +1,115 @@
 # Changelog
 
+## 0.25.0
+
+### Minor Changes
+
+- 75ab874: Alter Self lights a standing state under Concentration when cast, and the Active rail picks its option: Aquatic Adaptation (breathe underwater, swim at your Speed), Change Appearance, or Natural Weapons (the Unarmed Strike deals 1d6 Slashing, Piercing or Bludgeoning with your spellcasting modifier).
+- 50a2831: Animal Shapes transforms the caster through the Transform flow: a Large or smaller Beast of CR 4 or lower, keeping Intelligence, Wisdom, Charisma and Hit Points, with Temporary Hit Points from the first form, no Concentration, free shifts between forms, and an end when those Temporary Hit Points run out.
+- a7fabd5: An attack's damage tray says Colpito · Mancato · Critico per target, and the log reads "Goblin: critico, 14 danni".
+- 0a57575: Planar Ally, Planar Binding, Gate and Awaken let the player pick the creature from the bestiary (only the creatures the spell allows) and track it on the Companions rail.
+- 333b9b2: The session log can record what a player's action did to another creature (heal, damage, temp HP, a failed-save condition) with its source.
+- 373933e: Casting Bless, Mage Armor or Shield of Faith offers an optional "On whom?" row in the cast toast: Me lights the state on your sheet, an ally (in a shared encounter) is recorded as the target in the session report. Ignoring it is always fine.
+- b85c0a9: Charmed and Deafened show their rules on the turn meter's status ledge (no harming the charmer, its social Advantage, auto-failed hearing checks); Blinded also states its auto-failed sight checks.
+- d46567e: The Combat Chronicle is now read from the session log and every member of the campaign sees it. "Who struck?" and striking a line are recorded as corrections (history is never deleted); a player can answer "Who struck?" for a hit their own character took. Monster HP totals stay hidden from players unless the monster is revealed or an ally. Saving a fight to the Chronicle also puts the DM's note and the outcome in the session report.
+- 477f77d: Cover: one tap on the AC tile lights Half or Three-Quarters Cover (+2 / +5 AC and DEX saves) until the start of your next turn.
+- 333b9b2: After a spell or attack with targets, a damage tray (bottom sheet on phones) takes the rolled total once and applies it per target with ×0/½/1/2, Saved, resistances and failed-save conditions.
+- 8a3a95a: Dodge works: taking it lights a Dodge state until the start of your next turn, with Disadvantage on attacks against you and Advantage on Dexterity saves.
+- 540b603: Enlarge/Reduce lights on you or a picked ally for its Concentration minute, and the Active rail offers Enlarge or Reduce: Enlarge gives Advantage on Strength checks and saves and a +1d4 weapon rider; Reduce gives Disadvantage and notes the 1d4 less damage. The size change is a note under Defenses.
+- 8ba2d10: Optional experience points in the sheet header: progress to the next level and a "ready to level up" cue.
+- 8edb372: Extra turns: Thief's Reflexes takes a second turn in round 1 and Time Stop its turns in a row, without advancing the round; the DM's turn order shows the rogue's second turn at Initiative − 10.
+- dcab21d: Interact with an Object: a free base action, once per turn and logged; once used, the card says the next one takes the Utilize action.
+- 072573b: The Gem of Seeing has a Magic action that spends 1 of its 3 charges and shows Truesight 120 ft on the Senses rail for 10 minutes; it regains 1d3 charges at dawn.
+- fcc212a: Material components with a gp cost: after the cast, a consumed one offers a one-tap "−N gp" from the purse (undoable, logged); a kept one shows a reminder.
+- 4cebb27: A Hit Point maximum reduction (Harm, life drains) is entered from the HP popover, logged, and ends on a Long Rest.
+- 99fae0b: The DM can change a monster's Armor Class in place during an encounter.
+- 69ce1d6: The DM's in-place change to a monster's AC is written to the fight's chronicle and the session log ("Goblin: AC 15 → 13"); a log line from a newer app version reads as a neutral line instead of a blank row.
+- 10210f8: A monster's encounter card shows its walking speed: the stat block's, or the DM's override when one is stored.
+- 66ef4a5: The DM's monster card shows trait-fact chips and offers "Regenerate +N" at a regenerating monster's turn start.
+- 66ef4a5: Monster traits that change a number at the table (Magic Resistance, Pack Tactics, Regeneration, Sunlight Sensitivity, Siege Monster, damage absorption, Bloodied Fury) show as chips on the DM's monster card, and Regeneration offers a one-tap heal at the monster's turn start.
+- 0579df1: Animate Dead, Animate Objects and Create Undead field one Companions-rail row per creature, each with its own HP, counted from the spell text and adjustable.
+- a7d426e: Casting an Abjuration spell refills the Abjurer's Arcane Ward and a Divination spell gives the Diviner back a lower slot, logged and undone with the cast.
+- e690506: Anyone at the table can add a free-text note to the session log from the combat chronicle.
+- d079b48: Drinking a timed potion (Flying, Climbing, Water Breathing, Giant Strength, Resistance, Speed, Heroism, Invulnerability, Gaseous Form) applies its effect until its countdown ends.
+- a7d426e: After Ready, the spell you cast is held with Concentration and released with one tap of your Reaction; it is lost at the start of your next turn or when Concentration breaks.
+- 480dc44: Raise Dead's −4 to d20 Tests is lit from the condition picker, lowers every attack, save and check, and drops by 1 each Long Rest.
+- 297795b: Campaign Journal: automatic session reports — every session played is written round by round from the shared session log, ready to copy for an AI summary.
+- e25521a: Shapechange transforms the caster through the Transform flow: any creature up to their level that is not a Construct or an Undead, keeping their Intelligence, Wisdom, Charisma and Hit Points, with Temporary Hit Points from the first form and free shifts between forms while the spell lasts.
+- b60f2e2: Situation chips on the Play board: Unseen Target, Unseen Attacker, Ranged in Melee and Long Range net into each attack card until the end of your turn; Underwater and Mounted hold until tapped off or the fight ends.
+- dec1817: The concentration badge on the turn meter and the concentration pill in the rail show the rounds left on what Concentration holds (Bless lit on yourself, Hunter's Mark, Haste). Behind it, every active status is read through one status view.
+- a095902: Summon spells field their creature: Find Steed, Phantom Steed, Giant Insect, Summon Dragon and the Arcane Hand show their stat block on the Companions rail.
+- 4a1e0a9: Surprise: a one-tap "Surprised" chip by the turn meter's initiative roll puts Disadvantage on Initiative until the encounter ends.
+- a92c7b6: An optional "On whom?" step between choosing an action (and its slot) and committing it: allies and enemies of the running encounter, as many as the spell or action allows, skippable. Replaces the choice row that lived inside the Undo toast.
+- 22b9e6d: True Polymorph's Transform offers any creature from the bestiary up to the caster's level (Constructs and Undead included), not only Beasts: on yourself its whole stat block replaces yours with its Hit Points as Temporary Hit Points, and the reference card for another creature names its attacks and traits. The reference card's ability labels are localized.
+- 7ce6b4b: Weapon masteries ride the attack card as one-tap rows (Graze damage, Topple DC, Push, Sap, Slow, Vex advantage, Cleave), and Topple offers Prone in the damage tray.
+- 1ddc81d: Wish: after the cast, one tap duplicates any spell of level 8 or lower with no slot, or lights Wish Stress, which lasts until a Long Rest and states each later spell's Necrotic dice in its toast.
+- d5b02eb: The Ring of X-ray Vision has a Magic action that shows X-ray Vision 30 ft on the Senses rail for 1 minute.
+
+### Patch Changes
+
+- a58f048: A held spell shows once, under Active, in the same badge style as the turn ledge; Status keeps only conditions and exhaustion.
+- 0656304: Active toggles name the state ("Bless", "Benedizione") instead of claiming it is on ("Bless active") while off; five Italian toggles now match their spell names.
+- 7c6c3d2: An Active toggle that is off reads as an outline in both themes, never as a grey filled pill.
+- eca4b4b: Aura of Life grants Necrotic resistance instead of reading as Necrotic damage.
+- e097dce: Shadowy Form's toggle fits the rail, Peerless Aim's row carries its own name, and Superior Hunter's Prey drops a note that repeated its description.
+- 950704b: Underwater breathing shows on the sheet for Cloak of the Manta Ray, Necklace of Adaptation, Ring of Elemental Command (Water) and Gift of the Depths.
+- 2c12cbf: The More actions (⋯) button on a campaign card opens its menu again; the card's open target was covering it, so tapping it opened the campaign.
+- a452165: A card's foot action ("Unpin") no longer breaks onto two lines beside the weapon tags; it drops whole to the next line.
+- 9cbb720: Chronicle: undoing a line no longer lets the next line reuse an existing id.
+- 6eb3352: Concentration is a flag on the statuses it holds, and ending it ends them in one place. Ending a Polymorph form now ends its Concentration the same way as any other drop: the cast level clears and the session log records the end.
+- 0c39f4d: Concentration is written in full ("Concentrazione") in every card line and filter: Combat tab, Spellbook and Compendium.
+- cae9952: Petrified halves incoming damage, and implied conditions (Unconscious gives Prone and Incapacitated) join the effective set.
+- cae9952: The rail shows condition resistances under Defenses, and implied condition chips have no remove button.
+- abe2fc5: A condition the DM removed on the party card shows again when the player adds it back on the sheet.
+- fcba470: Bracers of Defense and the Defense fighting style add AC only in the armor state their rules require.
+- b3f7c4e: Conjure Fey reads the SRD 5.2.1 text in English and Italian: a Medium spirit from the Feywild whose melee spell attack deals 3d12 Psychic damage and frightens, instead of the 2014 summon.
+- 333b9b2: In the damage tray the segmented control is the multiplier: Salvato selects ½ (0 on no-effect-on-save spells, ¼ on a resistant target), and a hand-picked segment wins.
+- 539e7e1: Demon Armor's claws now upgrade the Unarmed Strike to 1d8 Slashing + Strength: an Unarmed Strike die written as "1d8" is read like "d8", and the Play board's Unarmed Strike reads item and species grants as well as feature and spell ones.
+- 4e71483: On touch screens a dialog's close × answers a finger anywhere in a 44px box; it looks the same.
+- 22c4bd2: In a fight, a quick second HP tap on a player card records the right numbers in the Combat Chronicle (the HP the save actually read), and a failed save no longer leaves a beat behind.
+- cd12494: In a DM-run fight, HP the DM changes on the party card are no longer undone when the player then spends a spell slot or a resource, gains temporary HP, records a death save or passes the turn.
+- b51d873: On a phone, the DM Tools member picker no longer slides under the Remove member / Make DM button; the button drops to its own line.
+- d90486b: The DM party table writes hero names in the party cards' style, so a long name no longer towers over the row on a phone.
+- 8a3a95a: The Dodge advantage line no longer repeats the rail's Adv. label.
+- e607d96: When the DM ends the encounter, states that last until the start of your next turn (Shield) end with it, with the usual "effect ended" notice, instead of lingering into solo play.
+- b7ab2a2: In a DM-run fight, first-round attack advantage (Assassinate) and the countdown of states lit during the fight follow the encounter round, not a solo round left over from before the fight.
+- 3fff163: Exhaustion set on the sheet (by the DM, or level 6 on a living character) no longer reverts to an older level when the character next spends a slot or tracker.
+- e097dce: Night Spirit, Combat Prowess and Indomitable Might now show their effect on the sheet.
+- 607e834: Each Giant Ancestry row carries its boon's name and chip, and the Cloak of Displacement line fits the rail.
+- 607e834: A Goliath's chosen Giant Ancestry boon now appears as an action row, spending the shared Proficiency Bonus per Long Rest uses.
+- e815d82: Magic-item charges: rolled counts read as their maximum, and a Long Rest only restores what each item says it regains.
+- 8563f68: Worn items' bonus to saving throws (Cloak and Ring of Protection, Luckstone, …) shows on the sheet's saves.
+- 9976e05: The level-up choices row is titled "Choices at this level" / "Scelte di questo livello": it also holds class choices like Divine Order, not only subclass ones.
+- 68c7095: The action log shows a neutral line for an entry written by a newer app version instead of breaking.
+- f54f972: Seventeen SRD magic weapons and staves now apply their printed +N to attack and damage when bound to a weapon.
+- a66b35c: On an attack card, a chosen weapon mastery shows once: its rider row, without a duplicate footer chip.
+- 2ed4555: A weapon mastery's log line reads "Topple (Quarterstaff)" instead of "Spent Topple on Quarterstaff", and the damage tray's Prone chip shows Topple's save ("Prone · CON save DC 14").
+- 27c1109: Quickened Spell logs the cast as a Bonus Action, Extended Spell doubles the armed countdown, and undoing a timed cast no longer leaves its countdown behind.
+- a6732a6: The DM damaging a monster can pick a damage type: its resistances, vulnerabilities and immunities apply, and immune conditions cannot be added.
+- 631b65a: A monster's condition picker no longer lists the conditions it is immune to (hidden, not greyed out).
+- f253e2c: Encounters can store spent monster limited uses (Recharge, N/Day, legendary actions); the legendary pool refills at the monster's turn. Reader-first: no screen writes it yet.
+- 1724f00: Monster rows show their XP on the right; the Challenge Rating stays on the seal instead of appearing twice.
+- 3a4968c: The short rest names a multiclass character's mixed Hit Dice ("Roll 2 Hit Dice (d10/d6)").
+- 3a4968c: Short rest accepts a multiclass character's real Hit Dice total (a Fighter 5 / Wizard 1 rolls d10s and a d6, not only d6s).
+- cdea61e: On a phone, spellbook, feature and inventory cards keep their dice chip on the name line: two rows instead of three.
+- f2cb4b0: The add-spell and add-feature dialogs name their catalogue tab "Spells" / "Features" instead of "SRD Database", like the item dialog.
+- f2cd6f2: Rolling initiative from the topbar pip regains the same resources a roll from the sheet does (Bard Superior Inspiration, Persistent Rage), with the usual undo.
+- 579f63c: Spell and feature cards on the Combat tab show their facts with the same small icons as weapon and Spellbook cards.
+- 6bdc823: Goliath Powerful Build doubles carrying capacity and push/drag/lift (count as one size larger).
+- 604b55a: A teammate's read-only sheet no longer shows a turn meter carrying the viewer's own round, initiative and action tokens.
+- b92f174: Short and Long Rest confirm with the same button, "Complete rest" / "Completa riposo"; the Long Rest no longer repeats "Take Long Rest" on its confirm step.
+- 581b86c: The Long Rest list shows a matching icon on every line (spell slots, resources, exhaustion, concentration) instead of a blank or a text glyph.
+- 3cf17db: The rest summary reads in Italian: "0 di 5" instead of "0 of 5", and "Riepilogo del riposo lungo" instead of "Riposo Lungo Riepilogo".
+- f80c312: Casting a spell whose state applies to the caster (Shield, Hunter's Mark, Divine Favor) lights that state with its countdown again, from the spellbook and the reaction button alike; undo clears it.
+- d46567e: A hidden (ambush) monster's name no longer reaches the shared session log until the DM reveals it.
+- f04e017: Shared encounters: round countdowns (Rage, one-minute spells) now count your turn even when the DM advances past it without your End Turn, once per round.
+- 932f45a: Tapping a spell-slot diamond on the rail acts on that diamond: tapping the last lit one used to restore a slot instead of spending it.
+- 1fe0cb5: The spell-slot pips beside a Cast button are read out in Italian too.
+- aa98ed2: The last texts under the 10px legibility floor (footer, "more" chip, auto-fail mark, economy counter, toast countdown) now read at 10px; a guard keeps it so.
+- 1ddc81d: A spell duplicated by Wish offers no material-component gold: Wish needs no components.
+- 607e834: Worn magic items now declare the static benefits their SRD text names (resistances, breathing, advantages, against-you notes, Demon Armor claws).
+- 5801d7e: Entering edit mode no longer reflows the sheet header: an unset XP field rides the identity line.
+
 ## 0.24.1
 
 Simpler play and more dependable character saves. Casting returns to resource

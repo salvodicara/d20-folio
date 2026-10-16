@@ -56,6 +56,8 @@ export interface MasteryRiderVM {
    * character's next attack roll. Absent → the tap only logs the declaration.
    */
   apply?: "next-attack-advantage";
+  /** Cleave: "no more than once per turn" (SRD 5.2.1); the others ride every hit. */
+  oncePerTurn?: true;
 }
 
 function isRiderId(id: string): id is MasteryRiderId {
@@ -95,6 +97,7 @@ export function buildMasteryRiders(
         ? { distance: localeDistance(MASTERY_DISTANCE_FT, locale) }
         : {}),
       ...(id === "vex" ? { apply: "next-attack-advantage" as const } : {}),
+      ...(id === "cleave" ? { oncePerTurn: true as const } : {}),
     }));
 }
 

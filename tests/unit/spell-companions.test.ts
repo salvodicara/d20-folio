@@ -21,13 +21,14 @@ const catalogues: Record<string, Catalogue> = { en, it: itSpells };
 /** The English text says the spell makes a creature (or object) with printed
  *  statistics: "uses the … stat block", or the Arcane Hand's "is an object that
  *  has AC". */
-const PRINTS_A_STAT_BLOCK = /\bstat block\b|\bis an object that has AC\b/i;
+const PRINTS_A_STAT_BLOCK = /\bstat blocks?\b|\bis an object that has AC\b/i;
 
 /** Spells whose text names a stat block for something that is NOT a summoned
  *  creature the caster fields. */
 const NOT_A_SUMMON: Readonly<Record<string, string>> = {
   polymorph: "the target turns into a Beast form (the beast-form corpus), no summon",
   "true-polymorph": "the target turns into another form, no summon",
+  shapechange: "the caster takes another creature's stat block, no summon",
 };
 
 const summonSpellIds = spells

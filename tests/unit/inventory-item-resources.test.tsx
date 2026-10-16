@@ -197,4 +197,17 @@ describe("Inventory typed physical-item resources", () => {
       within(articleFor(secondName)).getByRole("button", { name: "Use" })
     ).toBeEnabled();
   });
+
+  it("offers no dead Use on a stowed copy: its Equip toggle is the next step", () => {
+    const doc = character();
+    doc.character.equipment = [
+      { srdId: ITEM_ID, instanceId: COPY_A, equipped: false, quantity: 1 },
+    ];
+    useCharacterStore.setState({ character: doc });
+
+    renderInventory();
+    const card = articleFor(srd("magic-item", ITEM_ID, "name", "en"));
+    expect(within(card).queryByRole("button", { name: "Use" })).toBeNull();
+    expect(within(card).getByRole("button", { name: "Equip" })).toBeEnabled();
+  });
 });
