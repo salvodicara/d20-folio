@@ -7,7 +7,7 @@
  * Firestore emulator via its own config:
  *
  *     pnpm test:rules
- *       → firebase emulators:exec --only firestore,storage \
+ *       → firebase emulators:exec --only auth,firestore,storage \
  *           'pnpm exec vitest run --config vitest.rules.config.ts'
  *
  * Requires `firebase-tools` (the owner already has it for deploys) AND a Java
@@ -47,11 +47,19 @@ import {
 } from "firebase/firestore";
 
 const PROJECT_ID = "demo-d20folio";
-// Admin is DATA-DRIVEN (owner-ratified — CLAUDE.md → Firebase essentials): a uid is admin iff its user doc carries
-// role:"admin" — no hardcoded uid. So this is just an ordinary test uid that the
-// seed below grants the role to.
+// Admin is DATA-DRIVEN (owner-ratified): a uid is admin iff its token carries the
+// role:"admin" claim that its user doc grants — no hardcoded uid.
 const ADMIN_UID = "admin-user";
 const EMPTY_TREASURY = { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 };
+
+/** Roles are Auth custom claims (Phase 5, functions/src/role-claims.ts): the rules read
+ *  the token, never the user doc. These uids sign in with what their doc grants. */
+const CLAIMS: Readonly<Record<string, Record<string, unknown>>> = {
+  [ADMIN_UID]: { role: "admin" },
+  blocked: { status: "blocked" },
+};
+const authed = (uid: string, claims = CLAIMS[uid]) =>
+  testEnv.authenticatedContext(uid, claims);
 
 let testEnv: RulesTestEnvironment;
 
@@ -111,7 +119,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await testEnv.clearFirestore();
-  // Seed user docs (isNotBlocked() reads /users/{uid}.status) + a base campaign,
+  // Seed user docs (the record the claims mirror) + a base campaign,
   // bypassing rules.
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
@@ -126,17 +134,17 @@ beforeEach(async () => {
 });
 
 describe("firestore.rules — /users + the owner-ratified data-driven admin role", () => {
-  it("the read matrix: own doc only, unless the user doc itself grants role:admin", async () => {
-    // ADMIN_UID is privileged ONLY because its seeded doc carries role:"admin".
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+  it("the read matrix: own doc only, unless the token grants role:admin", async () => {
+    // ADMIN_UID is privileged ONLY because its token carries the role:"admin" claim.
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(getDoc(doc(admin, "users", "member"))); // read another's doc
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(getDoc(doc(db, "users", "member"))); // own doc OK
     await assertFails(getDoc(doc(db, "users", "outsider"))); // another's doc denied
   });
 
   it("a user CANNOT self-assign role:admin on create (self-promotion blocked)", async () => {
-    const db = testEnv.authenticatedContext("newbie").firestore();
+    const db = authed("newbie").firestore();
     await assertFails(
       setDoc(doc(db, "users", "newbie"), { status: "active", role: "admin" })
     );
@@ -150,7 +158,7 @@ describe("firestore.rules — /users + the owner-ratified data-driven admin role
   // telemetry bump in src/lib/auth.ts) — never `role` (escalation) and never
   // `status` (self-unblock). Admin keeps full update.
   it("a non-admin CAN bump ONLY their own lastActiveAt (the documented self-update path)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(db, "users", "member"), { lastActiveAt: Timestamp.now() })
     );
@@ -160,7 +168,7 @@ describe("firestore.rules — /users + the owner-ratified data-driven admin role
   });
 
   it("a non-admin can escalate NOTHING — not role, not status, not bundled", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(updateDoc(doc(db, "users", "member"), { role: "admin" }));
     // The escalation must stay denied even when smuggled alongside an allowed field.
     await assertFails(
@@ -176,12 +184,34 @@ describe("firestore.rules — /users + the owner-ratified data-driven admin role
       })
     );
     // A blocked user must not be able to flip themselves back to active.
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    const blocked = authed("blocked").firestore();
     await assertFails(updateDoc(doc(blocked, "users", "blocked"), { status: "active" }));
   });
 
+  it("admin and blocked come from the token claim, never from the user doc", async () => {
+    // The doc says admin, the token does not: no admin read.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "users", "doc-admin"), {
+        status: "active",
+        role: "admin",
+      });
+    });
+    await assertFails(getDoc(doc(authed("doc-admin").firestore(), "users", "member")));
+    // The token says admin, the doc does not: admin read.
+    await assertSucceeds(
+      getDoc(doc(authed("member", { role: "admin" }).firestore(), "users", "peer"))
+    );
+    // The token says blocked while the doc still says active: denied.
+    const blockedToken = authed("member", { status: "blocked" }).firestore();
+    await assertFails(getDoc(doc(blockedToken, "campaigns", "camp1")));
+    // Only the exact values count.
+    await assertFails(
+      getDoc(doc(authed("member", { role: "Admin" }).firestore(), "users", "peer"))
+    );
+  });
+
   it("an admin CAN update any user — block/unblock + grant role", async () => {
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(updateDoc(doc(admin, "users", "member"), { status: "blocked" }));
     await assertSucceeds(updateDoc(doc(admin, "users", "member"), { role: "admin" }));
   });
@@ -189,7 +219,7 @@ describe("firestore.rules — /users + the owner-ratified data-driven admin role
 
 describe("firestore.rules — /campaigns access", () => {
   it("a member can read and edit shared artifacts", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(getDoc(doc(db, "campaigns", "camp1")));
     await assertSucceeds(
       updateDoc(doc(db, "campaigns", "camp1"), {
@@ -199,7 +229,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("a non-member is denied read and write", async () => {
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     await assertFails(getDoc(doc(db, "campaigns", "camp1")));
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), { treasury: EMPTY_TREASURY })
@@ -207,7 +237,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("a member may opt only themselves out of encounter participation", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(member, "campaigns", "camp1"), {
         "encounterSkipped.member": true,
@@ -226,14 +256,14 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("encounter participation stays member-scoped; the DM may correct anyone", async () => {
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    const outsider = authed("outsider").firestore();
     await assertFails(
       updateDoc(doc(outsider, "campaigns", "camp1"), {
         "encounterSkipped.outsider": true,
       })
     );
 
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), {
         "encounterSkipped.member": true,
@@ -242,17 +272,17 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("a blocked user is denied", async () => {
-    const db = testEnv.authenticatedContext("blocked").firestore();
+    const db = authed("blocked").firestore();
     await assertFails(getDoc(doc(db, "campaigns", "camp1")));
   });
 
   it("the admin can read any campaign (override)", async () => {
-    const db = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const db = authed(ADMIN_UID).firestore();
     await assertSucceeds(getDoc(doc(db, "campaigns", "camp1")));
   });
 
   it("A13: create requires creator ∈ members AND createdBy == dmUid == self", async () => {
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     // Valid: outsider creates their own campaign.
     await assertSucceeds(
       setDoc(doc(db, "campaigns", "own"), campaignDoc(["outsider"], "outsider"))
@@ -278,7 +308,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("list is scoped to membership (array-contains self only)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       getDocs(
         query(collection(db, "campaigns"), where("members", "array-contains", "member"))
@@ -289,7 +319,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("member-mutation guard: a member cannot add or remove members", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), { members: ["dm", "member", "outsider"] })
     );
@@ -297,7 +327,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("the DM may manage the roster; only the DM may delete", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), {
         members: arrayUnion("outsider"),
@@ -308,13 +338,13 @@ describe("firestore.rules — /campaigns access", () => {
         },
       })
     );
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(deleteDoc(doc(member, "campaigns", "camp1")));
     await assertSucceeds(deleteDoc(doc(dm, "campaigns", "camp1")));
   });
 
   it("controlled self-join: a non-member adds only themselves", async () => {
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     await assertSucceeds(
       updateDoc(doc(db, "campaigns", "camp1"), {
         members: arrayUnion("outsider"),
@@ -328,7 +358,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("self-join cannot smuggle a treasury edit", async () => {
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), {
         members: arrayUnion("outsider"),
@@ -348,7 +378,7 @@ describe("firestore.rules — /campaigns access", () => {
   // entry (the A-edits-B vector). These pin both halves: a peer's entry is now
   // off-limits, while a member's OWN attach/detach stays allowed.
   it("a member CANNOT edit ANOTHER member's memberDetails entry (A-edits-B)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     // Leaf overwrite of the DM's characterId.
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), {
@@ -364,7 +394,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("a member MAY attach/detach their OWN character (own-entry self-edit still allowed)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(db, "campaigns", "camp1"), {
         "memberDetails.member.characterId": "char-1",
@@ -400,7 +430,7 @@ describe("firestore.rules — /campaigns access", () => {
         },
       });
     });
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(db, "campaigns", "camp1"), {
         members: arrayUnion("member"),
@@ -453,22 +483,22 @@ describe("firestore.rules — /campaigns access", () => {
   };
 
   it("the DM may write the encounter field", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(updateDoc(doc(dm, "campaigns", "camp1"), { encounter }));
   });
 
   it("the admin may write the encounter field (DM-tool override)", async () => {
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(updateDoc(doc(admin, "campaigns", "camp1"), { encounter }));
   });
 
   it("a non-DM member may NOT write the encounter field", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(updateDoc(doc(db, "campaigns", "camp1"), { encounter }));
   });
 
   it("a member's shared-artifact write still succeeds (encounter guard doesn't block it)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(db, "campaigns", "camp1"), {
         treasury: { pp: 0, gp: 7, ep: 0, sp: 0, cp: 0 },
@@ -490,7 +520,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("a member MAY advance the turn (writes only currentCombatantId + round)", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       await assertSucceeds(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.currentCombatantId": "pc-member",
@@ -500,7 +530,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("a member's advance may also flip a round-1 second turn (Thief's Reflexes)", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       await assertSucceeds(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.currentCombatantId": "pc-member",
@@ -517,7 +547,7 @@ describe("firestore.rules — /campaigns access", () => {
     // the combatants array (all outside the `turnFieldsOnlyChanged()` allow-set) —
     // alone or smuggled alongside a legitimate advance.
     it("a member may change NOTHING else on the encounter, alone or smuggled", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       const denied: ReadonlyArray<Record<string, unknown>> = [
         { "encounter.status": "ended" },
         { "encounter.order": ["monster-1", "pc-member"] },
@@ -550,7 +580,7 @@ describe("firestore.rules — /campaigns access", () => {
     // A malformed round makes every client's encounter parse throw (`safeInteger`),
     // breaking the fight for the whole table: a member may only write a round ≥ 1.
     it("a member may not write a malformed round", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       for (const round of [0, -1, 1.5, "2", null]) {
         await assertFails(
           updateDoc(doc(db, "campaigns", "camp1"), {
@@ -562,7 +592,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("a non-member is denied a turn-only write", async () => {
-      const db = testEnv.authenticatedContext("outsider").firestore();
+      const db = authed("outsider").firestore();
       await assertFails(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.currentCombatantId": "pc-member",
@@ -572,7 +602,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("the DM writes the WHOLE encounter, order included (structure unconstrained)", async () => {
-      const dm = testEnv.authenticatedContext("dm").firestore();
+      const dm = authed("dm").firestore();
       await assertSucceeds(
         updateDoc(doc(dm, "campaigns", "camp1"), {
           encounter: { ...encounter, round: 3, currentCombatantId: null },
@@ -586,7 +616,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("the admin may write the order (DM-tool override)", async () => {
-      const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+      const admin = authed(ADMIN_UID).firestore();
       await assertSucceeds(
         updateDoc(doc(admin, "campaigns", "camp1"), {
           "encounter.order": ["pc-member", "monster-1"],
@@ -647,7 +677,7 @@ describe("firestore.rules — /campaigns access", () => {
     };
 
     it("a member MAY apply damage, healing, a condition and the engine world", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       await assertSucceeds(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.combatants": damaged,
@@ -695,7 +725,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("a member MAY append a PC effect delivery but cannot remove one", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       const effect = {
         id: "1:0",
         targetId: "pc-member",
@@ -715,7 +745,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("the effect-op ledger is append-only: apply, revoke and a bounded batch land", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       await assertSucceeds(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.effectOps": [persistentApply],
@@ -789,7 +819,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("the ledger accepts every caster/feature-owned payload with bounded deltas", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       const aid = {
         ...persistentApply,
         effect: {
@@ -882,7 +912,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("a member CANNOT append a malformed, actor-spoofed or non-canonical application", async () => {
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       const denied = [
         { ...persistentApply, effect: { id: "missing-required-nested-fields" } },
         {
@@ -936,7 +966,7 @@ describe("firestore.rules — /campaigns access", () => {
           "encounter.effectOps": [first, second],
         });
       });
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       const third = {
         ...persistentApply,
         id: "apply:heroism:3",
@@ -965,7 +995,7 @@ describe("firestore.rules — /campaigns access", () => {
           "encounter.events": [appliedEvent, { ...appliedEvent, id: "1" }],
         });
       });
-      const db = testEnv.authenticatedContext("member").firestore();
+      const db = authed("member").firestore();
       const denied: ReadonlyArray<Record<string, unknown>> = [
         {
           "encounter.combatants": [
@@ -996,7 +1026,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("a non-member is denied a damage write", async () => {
-      const db = testEnv.authenticatedContext("outsider").firestore();
+      const db = authed("outsider").firestore();
       await assertFails(
         updateDoc(doc(db, "campaigns", "camp1"), {
           "encounter.combatants": damaged,
@@ -1006,7 +1036,7 @@ describe("firestore.rules — /campaigns access", () => {
     });
 
     it("the DM may still write the applied damage (unconstrained)", async () => {
-      const dm = testEnv.authenticatedContext("dm").firestore();
+      const dm = authed("dm").firestore();
       await assertSucceeds(
         updateDoc(doc(dm, "campaigns", "camp1"), {
           "encounter.combatants": damaged,
@@ -1021,7 +1051,7 @@ describe("firestore.rules — /campaigns access", () => {
   // DM/admin-only roster/tool writes; a regular member or a non-member may do
   // neither. A locked campaign additionally refuses the self-join path.
   it("the DM may remove a member (drop from members + delete their memberDetails entry)", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), {
         members: arrayRemove("member"),
@@ -1031,7 +1061,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("a regular member CANNOT remove another member", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), {
         members: arrayRemove("dm"),
@@ -1041,7 +1071,7 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("a non-member CANNOT remove a member", async () => {
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), {
         members: arrayRemove("member"),
@@ -1051,20 +1081,20 @@ describe("firestore.rules — /campaigns access", () => {
   });
 
   it("the DM (and the admin) may lock / re-open joins", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(updateDoc(doc(dm, "campaigns", "camp1"), { joinsLocked: true }));
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(
       updateDoc(doc(admin, "campaigns", "camp1"), { joinsLocked: false })
     );
   });
 
   it("a regular member and a non-member CANNOT flip joinsLocked", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(
       updateDoc(doc(member, "campaigns", "camp1"), { joinsLocked: true })
     );
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    const outsider = authed("outsider").firestore();
     await assertFails(
       updateDoc(doc(outsider, "campaigns", "camp1"), { joinsLocked: true })
     );
@@ -1076,7 +1106,7 @@ describe("firestore.rules — /campaigns access", () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await updateDoc(doc(ctx.firestore(), "campaigns", "camp1"), { joinsLocked: true });
     });
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     await assertFails(
       updateDoc(doc(db, "campaigns", "camp1"), {
         members: arrayUnion("outsider"),
@@ -1129,22 +1159,14 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     const attached = ["users", "member", "characters", "char-member"] as const;
     const unattached = ["users", "member", "characters", "char-private"] as const;
     for (const uid of ["member", ADMIN_UID, "peer", "dm"]) {
-      await assertSucceeds(
-        getDoc(doc(testEnv.authenticatedContext(uid).firestore(), ...attached))
-      );
+      await assertSucceeds(getDoc(doc(authed(uid).firestore(), ...attached)));
     }
     // An UNATTACHED char has no campaign pointer → owner/admin only.
-    await assertSucceeds(
-      getDoc(doc(testEnv.authenticatedContext("member").firestore(), ...unattached))
-    );
+    await assertSucceeds(getDoc(doc(authed("member").firestore(), ...unattached)));
     for (const uid of ["outsider", "peer", "dm"]) {
-      await assertFails(
-        getDoc(doc(testEnv.authenticatedContext(uid).firestore(), ...unattached))
-      );
+      await assertFails(getDoc(doc(authed(uid).firestore(), ...unattached)));
     }
-    await assertFails(
-      getDoc(doc(testEnv.authenticatedContext("outsider").firestore(), ...attached))
-    );
+    await assertFails(getDoc(doc(authed("outsider").firestore(), ...attached)));
     // A BLOCKED co-member is denied by the isNotBlocked gate.
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(
@@ -1152,22 +1174,14 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
         campaignDoc(["dm", "member", "blocked"])
       );
     });
-    await assertFails(
-      getDoc(doc(testEnv.authenticatedContext("blocked").firestore(), ...attached))
-    );
+    await assertFails(getDoc(doc(authed("blocked").firestore(), ...attached)));
   });
 
   it("a co-member and the DM may READ but never WRITE a peer's character", async () => {
     for (const uid of ["peer", "dm"]) {
       await assertFails(
         updateDoc(
-          doc(
-            testEnv.authenticatedContext(uid).firestore(),
-            "users",
-            "member",
-            "characters",
-            "char-member"
-          ),
+          doc(authed(uid).firestore(), "users", "member", "characters", "char-member"),
           { status: "dead" }
         )
       );
@@ -1175,7 +1189,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
   });
 
   it("a character is born at revision 0 with an EMPTY state", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     const character = { status: "active", build: {}, state: {}, cache: {} };
     await assertSucceeds(
       setDoc(doc(owner, "users", "member", "characters", "new-ok"), {
@@ -1200,7 +1214,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
   });
 
   it("a build write is compare-and-set: exactly revision + 1, stale and ahead denied", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     const ref = doc(owner, "users", "member", "characters", "char-member");
     await assertFails(updateDoc(ref, { build: { name: "Mara II" }, revision: 3 }));
     await assertFails(updateDoc(ref, { build: { name: "Mara II" }, revision: 5 }));
@@ -1211,7 +1225,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
   it("a metadata-only write may leave the generation alone OR advance it by exactly one", async () => {
     // A whole-document ceremony (sharing publish, snapshot restore) rewrites the parent
     // with values that often diff to nothing, yet legitimately advances the generation.
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     const ref = doc(owner, "users", "member", "characters", "char-member");
     await assertSucceeds(updateDoc(ref, { status: "retired" }));
     await assertSucceeds(updateDoc(ref, { status: "dead", revision: 4 }));
@@ -1231,24 +1245,18 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     });
     // The cured disease: with the stored-ACL model this revocation needed the OWNER's
     // client to recompute a reader list; now the very next request reads the live roster.
-    await assertFails(
-      getDoc(doc(testEnv.authenticatedContext("peer").firestore(), ...attached))
-    );
+    await assertFails(getDoc(doc(authed("peer").firestore(), ...attached)));
 
     // A DANGLING pointer (campaign deleted) fails CLOSED for peers; the owner keeps access.
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await deleteDoc(doc(ctx.firestore(), "campaigns", "campA"));
     });
-    await assertFails(
-      getDoc(doc(testEnv.authenticatedContext("dm").firestore(), ...attached))
-    );
-    await assertSucceeds(
-      getDoc(doc(testEnv.authenticatedContext("member").firestore(), ...attached))
-    );
+    await assertFails(getDoc(doc(authed("dm").firestore(), ...attached)));
+    await assertSucceeds(getDoc(doc(authed("member").firestore(), ...attached)));
   });
 
   it("the campaign DM may atomically remove a member and clear only that target's claim", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     const batch = writeBatch(dm);
     batch.update(doc(dm, "campaigns", "campA"), {
       members: arrayRemove("member"),
@@ -1270,13 +1278,13 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
         cache: {},
       });
     });
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     // Standalone: no roster transition proves it.
     await assertFails(
       updateDoc(doc(dm, ...parentPath), { attachedCampaignId: deleteField() })
     );
     // A non-DM member cannot drive the transition, batched or not.
-    const peer = testEnv.authenticatedContext("peer").firestore();
+    const peer = authed("peer").firestore();
     await assertFails(updateDoc(doc(peer, ...parentPath), { status: "retired" }));
     const peerBatch = writeBatch(peer);
     peerBatch.update(doc(peer, "campaigns", "campA"), {
@@ -1319,7 +1327,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
         cache: {},
       });
     });
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     // A character the roster never referenced may not ride the deletion.
     const wrongBatch = writeBatch(dm);
     wrongBatch.update(doc(dm, "users", "member", "characters", "other"), {
@@ -1328,7 +1336,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     wrongBatch.delete(doc(dm, "campaigns", "campA"));
     await assertFails(wrongBatch.commit());
 
-    const peer = testEnv.authenticatedContext("peer").firestore();
+    const peer = authed("peer").firestore();
     const peerBatch = writeBatch(peer);
     peerBatch.update(doc(peer, "users", "member", "characters", "char-member"), {
       attachedCampaignId: deleteField(),
@@ -1348,7 +1356,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
   });
 
   it("the owner may delete an unshared character", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     await assertSucceeds(
       deleteDoc(doc(owner, "users", "member", "characters", "char-private"))
     );
@@ -1540,7 +1548,7 @@ describe("firestore.rules — sanitized public character projection", () => {
   });
 
   it("owner projection writes admit no private key and no parent mismatch", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     for (const [key, value] of [
       ["attachedCampaignId", "campPublic"],
       ["inviteCode", "secret"],
@@ -1580,7 +1588,7 @@ describe("firestore.rules — sanitized public character projection", () => {
   });
 
   it("publishing requires one atomic parent + projection commit", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     await assertFails(
       updateDoc(doc(owner, ...PRIVATE_PARENT), {
         shared: true,
@@ -1630,7 +1638,7 @@ describe("firestore.rules — sanitized public character projection", () => {
   });
 
   it("public-relevant parent updates require the matching projection in the same commit", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     const nextBuild = { name: "Mara Updated", classes: [{ id: "rogue", level: 6 }] };
     const nextCache = { ac: 17, hpMax: 39, passivePerception: 15 };
     const parentPatch = {
@@ -1684,7 +1692,7 @@ describe("firestore.rules — sanitized public character projection", () => {
   });
 
   it("revoking and deleting each require one atomic parent + projection commit", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     await assertFails(updateDoc(doc(owner, ...SHARED_PARENT), { shared: false }));
     await assertFails(deleteDoc(doc(owner, ...PUBLIC_SHEET)));
     // A shared parent may not be deleted while its projection still exists: the delete
@@ -1710,7 +1718,7 @@ describe("firestore.rules — sanitized public character projection", () => {
   });
 
   it("a DM's attachment-only removal keeps an unchanged public projection valid", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     const batch = writeBatch(dm);
     batch.update(doc(dm, "campaigns", "campPublic"), {
       members: arrayRemove("member"),
@@ -1723,7 +1731,7 @@ describe("firestore.rules — sanitized public character projection", () => {
 
     const anon = testEnv.unauthenticatedContext().firestore();
     await assertSucceeds(getDoc(doc(anon, ...PUBLIC_SHEET)));
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     const parent = await assertSucceeds(getDoc(doc(owner, ...SHARED_PARENT)));
     expect(parent.data()).not.toHaveProperty("attachedCampaignId");
     expect(parent.data()?.updatedAt).toEqual(SOURCE_UPDATED_AT);
@@ -1811,12 +1819,10 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
 
   it("the read matrix: owner, admin and a current attached peer in; everyone else out", async () => {
     for (const uid of ["member", ADMIN_UID, "peer", "dm"]) {
-      await assertSucceeds(
-        getDoc(doc(testEnv.authenticatedContext(uid).firestore(), ...COMBAT_PATH))
-      );
+      await assertSucceeds(getDoc(doc(authed(uid).firestore(), ...COMBAT_PATH)));
     }
     for (const db of [
-      testEnv.authenticatedContext("outsider").firestore(),
+      authed("outsider").firestore(),
       testEnv.unauthenticatedContext().firestore(),
     ]) {
       await assertFails(getDoc(doc(db, ...COMBAT_PATH)));
@@ -1835,7 +1841,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
         },
       });
     });
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    const blocked = authed("blocked").firestore();
     await assertFails(getDoc(doc(blocked, ...COMBAT_PATH)));
     await assertFails(
       updateDoc(doc(blocked, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
@@ -1843,7 +1849,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
   });
 
   it("owner and admin own the whole document: additive fields in, obsolete metadata shed", async () => {
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     const ref = doc(owner, ...COMBAT_PATH);
     // The seeded fixture is exact and parser-canonical by construction.
     expect((await getDoc(ref)).data()).toEqual(combatState());
@@ -1868,7 +1874,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     const stored = await getDoc(ref);
     expect(stored.data()).not.toHaveProperty("actionRevision");
     expect(stored.data()).not.toHaveProperty("actionLifecycles");
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(
       updateDoc(doc(admin, ...COMBAT_PATH), {
         playState: { version: 1, state: { exhaustion: 5 } },
@@ -1883,7 +1889,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
         encounter: { epoch: 4 },
       });
     });
-    const peer = testEnv.authenticatedContext("peer").firestore();
+    const peer = authed("peer").firestore();
     const mutations: ReadonlyArray<Record<string, unknown>> = [
       { hp: { current: 8, temp: 1 } },
       { conditions: ["prone"] },
@@ -1905,7 +1911,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
   });
 
   it("a peer cannot touch an owner-private root, action metadata, or stamp a bare timestamp", async () => {
-    const peer = testEnv.authenticatedContext("peer").firestore();
+    const peer = authed("peer").firestore();
     const forbidden: ReadonlyArray<Record<string, unknown>> = [
       { playState: { version: 1, state: { exhaustion: 6 } } },
       { playState: deleteField() },
@@ -1945,7 +1951,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
   });
 
   it("a peer payload must keep the parseable core and every effect value canonical", async () => {
-    const peer = testEnv.authenticatedContext("peer").firestore();
+    const peer = authed("peer").firestore();
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await updateDoc(doc(ctx.firestore(), "campaigns", "campA"), {
         encounter: { epoch: 4 },
@@ -2004,14 +2010,9 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
       updatedAt: Timestamp.now(),
     };
     for (const uid of ["peer", "dm", "outsider"]) {
-      await assertFails(
-        setDoc(
-          doc(testEnv.authenticatedContext(uid).firestore(), ...COMBAT_PATH),
-          firstWrite
-        )
-      );
+      await assertFails(setDoc(doc(authed(uid).firestore(), ...COMBAT_PATH), firstWrite));
     }
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     await assertSucceeds(setDoc(doc(owner, ...COMBAT_PATH), combatState()));
   });
 
@@ -2034,7 +2035,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
         );
         await updateDoc(doc(db, "campaigns", "campA"), revocation);
       });
-      const peer = testEnv.authenticatedContext("peer").firestore();
+      const peer = authed("peer").firestore();
       await assertFails(getDoc(doc(peer, ...PARENT_PATH)));
       await assertFails(getDoc(doc(peer, ...COMBAT_PATH)));
       await assertFails(
@@ -2042,13 +2043,13 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
       );
     }
     // Reciprocal peer fencing never weakens the direct owner path.
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     await assertSucceeds(getDoc(doc(owner, ...PARENT_PATH)));
     await assertSucceeds(getDoc(doc(owner, ...COMBAT_PATH)));
   });
 
   it("the DM is effect-fenced too, and an UNATTACHED char has no cross-user grant", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(updateDoc(doc(dm, ...COMBAT_PATH), { conditions: ["prone"] }));
     await assertFails(
       updateDoc(doc(dm, ...COMBAT_PATH), {
@@ -2068,7 +2069,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     await assertFails(
       updateDoc(doc(dm, ...COMBAT_PATH), { hp: { current: 9, temp: 0 } })
     );
-    const owner = testEnv.authenticatedContext("member").firestore();
+    const owner = authed("member").firestore();
     await assertSucceeds(setDoc(doc(owner, ...COMBAT_PATH), combatState()));
   });
 });
@@ -2098,21 +2099,21 @@ describe("firestore.rules — encounterInit: the four-direction initiative matri
 
   it("the DM (and the admin) may set ANY member's initiative", async () => {
     // The owner's exact failing action: rolling for a player.
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), { "encounterInit.member": 14 })
     );
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), { "encounterInit.dm": 9 })
     );
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(
       updateDoc(doc(admin, "campaigns", "camp1"), { "encounterInit.member": 8 })
     );
   });
 
   it("a member may set / re-roll / clear their OWN initiative", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(member, "campaigns", "camp1"), { "encounterInit.member": 17 })
     );
@@ -2142,7 +2143,7 @@ describe("firestore.rules — encounterInit: the four-direction initiative matri
         "encounterInit.dm": 11,
       });
     });
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     for (const patch of [
       { "encounterInit.dm": 20 },
       { "encounterInit.member": 12, "encounterInit.dm": 20 },
@@ -2155,7 +2156,7 @@ describe("firestore.rules — encounterInit: the four-direction initiative matri
   });
 
   it("a NON-MEMBER and a BLOCKED member may not write any row", async () => {
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    const outsider = authed("outsider").firestore();
     await assertFails(
       updateDoc(doc(outsider, "campaigns", "camp1"), { "encounterInit.outsider": 15 })
     );
@@ -2169,14 +2170,14 @@ describe("firestore.rules — encounterInit: the four-direction initiative matri
         },
       });
     });
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    const blocked = authed("blocked").firestore();
     await assertFails(
       updateDoc(doc(blocked, "campaigns", "camp1"), { "encounterInit.blocked": 15 })
     );
   });
 
   it("the DM may START a fight with the atomic table reset (encounter + encounterInit: {})", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(dm, "campaigns", "camp1"), {
         encounter: {
@@ -2200,7 +2201,7 @@ describe("firestore.rules — encounterInit: the four-direction initiative matri
         "encounter.order": ["pc-member"],
       });
     });
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(
       updateDoc(doc(member, "campaigns", "camp1"), {
         treasury: { pp: 0, gp: 7, ep: 0, sp: 0, cp: 0 },
@@ -2217,13 +2218,13 @@ describe("firestore.rules — encounterInit: the four-direction initiative matri
 
 describe("firestore.rules — /campaigns subcollections", () => {
   it("a member can read/write a subcollection doc; a non-member cannot", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(
       setDoc(doc(member, "campaigns", "camp1", "chronicle", "main"), {
         text: "Session 1",
       })
     );
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    const outsider = authed("outsider").firestore();
     await assertFails(getDoc(doc(outsider, "campaigns", "camp1", "chronicle", "main")));
     await assertFails(
       setDoc(doc(outsider, "campaigns", "camp1", "chronicle", "main"), { text: "x" })
@@ -2251,7 +2252,7 @@ describe("firestore.rules — /campaigns notes (revealed) + dmNotes (hidden) gat
   });
 
   it("a member reads revealed notes and can never reach dmNotes, doc or LIST", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(getDoc(doc(member, ...revealed("r1"))));
     await assertSucceeds(getDocs(collection(member, "campaigns", "camp1", "notes")));
     // The crux: path-based gating denies the whole-collection list, so there is no
@@ -2264,24 +2265,24 @@ describe("firestore.rules — /campaigns notes (revealed) + dmNotes (hidden) gat
   });
 
   it("the DM and the admin CAN read, list and WRITE hidden notes", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(getDoc(doc(dm, ...hidden("h1"))));
     await assertSucceeds(getDocs(collection(dm, "campaigns", "camp1", "dmNotes")));
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(getDoc(doc(admin, ...hidden("h1"))));
     await assertSucceeds(getDocs(collection(admin, "campaigns", "camp1", "dmNotes")));
     await assertSucceeds(updateDoc(doc(admin, ...hidden("h1")), { pinned: true }));
   });
 
   it("a non-member and a blocked user are denied even a revealed note", async () => {
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    const outsider = authed("outsider").firestore();
     await assertFails(getDoc(doc(outsider, ...revealed("r1"))));
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    const blocked = authed("blocked").firestore();
     await assertFails(getDoc(doc(blocked, ...revealed("r1"))));
   });
 
   it("a member CAN create / edit / delete a revealed note", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(
       setDoc(doc(member, ...revealed("m1")), noteDoc({ createdBy: "member" }))
     );
@@ -2295,7 +2296,7 @@ describe("firestore.rules — /campaigns notes (revealed) + dmNotes (hidden) gat
   });
 
   it("a member CANNOT write dmNotes — cannot author a hidden note nor HIDE one", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     // Author straight-to-hidden → denied.
     await assertFails(
       setDoc(doc(member, ...hidden("m2")), noteDoc({ createdBy: "member" }))
@@ -2307,7 +2308,7 @@ describe("firestore.rules — /campaigns notes (revealed) + dmNotes (hidden) gat
   });
 
   it("the DM may hide (write dmNotes) and reveal (write notes) — the soft-reveal move", async () => {
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     // Hide: write the doc into dmNotes (+ the move deletes the notes copy).
     await assertSucceeds(setDoc(doc(dm, ...hidden("r1")), noteDoc()));
     await assertSucceeds(deleteDoc(doc(dm, ...revealed("r1"))));
@@ -2335,14 +2336,14 @@ function reportDoc(reporterUid: string, overrides: Record<string, unknown> = {})
 
 describe("firestore.rules — /bug_reports access (OWN-37)", () => {
   it("a signed-in user can create a well-formed report for themselves", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(setDoc(doc(db, "bug_reports", "r1"), reportDoc("member")));
   });
 
   it("rejects a blocked reporter, a spoofed uid, an empty title and a non-'new' status", async () => {
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    const blocked = authed("blocked").firestore();
     await assertFails(setDoc(doc(blocked, "bug_reports", "rb"), reportDoc("blocked")));
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(setDoc(doc(db, "bug_reports", "rs"), reportDoc("outsider")));
     await assertFails(
       setDoc(doc(db, "bug_reports", "rt"), reportDoc("member", { title: "" }))
@@ -2355,7 +2356,7 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
   it("rejects a client pre-setting the issue linkage (function-only write-back)", async () => {
     // A forged issueNumber could alias an unrelated CLOSED issue and get the
     // report wrongly purged by the inbox reconciliation — function-only fields.
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(
       setDoc(doc(db, "bug_reports", "ri"), reportDoc("member", { issueNumber: 1 }))
     );
@@ -2372,9 +2373,9 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "bug_reports", "r2"), reportDoc("member"));
     });
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(getDoc(doc(member, "bug_reports", "r2")));
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(getDoc(doc(admin, "bug_reports", "r2")));
   });
 
@@ -2382,11 +2383,11 @@ describe("firestore.rules — /bug_reports access (OWN-37)", () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "bug_reports", "r3"), reportDoc("member"));
     });
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(updateDoc(doc(member, "bug_reports", "r3"), { status: "opened" }));
     await assertFails(deleteDoc(doc(member, "bug_reports", "r3")));
     // The admin inbox reconciliation deletes a report once its issue closes.
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(deleteDoc(doc(admin, "bug_reports", "r3")));
   });
 });
@@ -2409,18 +2410,18 @@ function diagnosticDoc(uid: string, overrides: Record<string, unknown> = {}) {
 
 describe("firestore.rules — /diagnostics (ADR-0008 create-only reports)", () => {
   it("a signed-in user creates a well-formed report for themselves; a blocked user cannot", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertSucceeds(
       setDoc(doc(member, "diagnostics", "d1"), diagnosticDoc("member"))
     );
-    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    const blocked = authed("blocked").firestore();
     await assertFails(
       setDoc(doc(blocked, "diagnostics", "d2"), diagnosticDoc("blocked"))
     );
   });
 
   it("rejects a spoofed uid, a non-error level, an oversized message and unknown keys", async () => {
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(
       setDoc(doc(member, "diagnostics", "d3"), diagnosticDoc("outsider"))
     );
@@ -2442,11 +2443,11 @@ describe("firestore.rules — /diagnostics (ADR-0008 create-only reports)", () =
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "diagnostics", "d7"), diagnosticDoc("member"));
     });
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(getDoc(doc(member, "diagnostics", "d7")));
     await assertFails(updateDoc(doc(member, "diagnostics", "d7"), { message: "edited" }));
     await assertFails(deleteDoc(doc(member, "diagnostics", "d7")));
-    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    const admin = authed(ADMIN_UID).firestore();
     await assertSucceeds(getDoc(doc(admin, "diagnostics", "d7")));
     await assertFails(updateDoc(doc(admin, "diagnostics", "d7"), { message: "edited" }));
     await assertSucceeds(deleteDoc(doc(admin, "diagnostics", "d7")));
@@ -2476,7 +2477,7 @@ function libraryEntry(name: string) {
 
 describe("firestore.rules — the account-level homebrew library (users/{uid}/library)", () => {
   it("the OWNER can read and write their own library", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       setDoc(doc(db, "users", "member", "library", "index"), {
         entries: [libraryEntry("Ember Bolt")],
@@ -2486,7 +2487,7 @@ describe("firestore.rules — the account-level homebrew library (users/{uid}/li
   });
 
   it("an empty library (the first save's precursor) is a valid write", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       setDoc(doc(db, "users", "member", "library", "index"), { entries: [] })
     );
@@ -2498,7 +2499,7 @@ describe("firestore.rules — the account-level homebrew library (users/{uid}/li
         entries: [libraryEntry("Ember Bolt")],
       });
     });
-    const db = testEnv.authenticatedContext("outsider").firestore();
+    const db = authed("outsider").firestore();
     await assertFails(getDoc(doc(db, "users", "member", "library", "index")));
     await assertFails(
       setDoc(doc(db, "users", "member", "library", "index"), { entries: [] })
@@ -2506,7 +2507,7 @@ describe("firestore.rules — the account-level homebrew library (users/{uid}/li
   });
 
   it("a BLOCKED user is denied their OWN library (isNotBlocked gate)", async () => {
-    const db = testEnv.authenticatedContext("blocked").firestore();
+    const db = authed("blocked").firestore();
     await assertFails(getDoc(doc(db, "users", "blocked", "library", "index")));
     await assertFails(
       setDoc(doc(db, "users", "blocked", "library", "index"), { entries: [] })
@@ -2514,7 +2515,7 @@ describe("firestore.rules — the account-level homebrew library (users/{uid}/li
   });
 
   it("rejects an OVERSIZE list and a non-list `entries` (the free-tier cap)", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     // The cap mirrors FREE_TIER_LIMITS.libraryEntries (100): 100 passes, 101 fails.
     const atCap = Array.from({ length: 100 }, (_, i) => libraryEntry(`S${i}`));
     await assertSucceeds(
@@ -2554,14 +2555,14 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
     });
 
   it("a member opens a session with their own first item", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertSucceeds(
       setDoc(doc(db, ...logPath), { schema: 1, log: [item("i1", "member")], lastAt: 1 })
     );
   });
 
   it("a member may not open a session with someone else's item or extra fields", async () => {
-    const db = testEnv.authenticatedContext("member").firestore();
+    const db = authed("member").firestore();
     await assertFails(
       setDoc(doc(db, ...logPath), { schema: 1, log: [item("i1", "dm")], lastAt: 1 })
     );
@@ -2577,8 +2578,8 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
 
   it("two members append in turn and both read the same log", async () => {
     await seed();
-    const member = testEnv.authenticatedContext("member").firestore();
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const member = authed("member").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(
       updateDoc(doc(member, ...logPath), {
         log: arrayUnion(item("m1", "member")),
@@ -2601,7 +2602,7 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
 
   it("a player adds a free-text note in their own name, then strikes it", async () => {
     await seed();
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     const note = {
       type: "event",
       id: "n1",
@@ -2634,8 +2635,8 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
 
   it("nobody rewrites history: no shrink, no edit, no item in someone else's name", async () => {
     await seed();
-    const member = testEnv.authenticatedContext("member").firestore();
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const member = authed("member").firestore();
+    const dm = authed("dm").firestore();
     await assertFails(updateDoc(doc(member, ...logPath), { log: [], lastAt: 2 }));
     await assertFails(
       updateDoc(doc(dm, ...logPath), { log: [item("i1", "dm", "retract")], lastAt: 2 })
@@ -2653,7 +2654,7 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
 
   it("an outsider may neither read nor append; only the DM may delete", async () => {
     await seed();
-    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    const outsider = authed("outsider").firestore();
     await assertFails(getDoc(doc(outsider, ...logPath)));
     await assertFails(
       updateDoc(doc(outsider, ...logPath), {
@@ -2661,9 +2662,9 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
         lastAt: 2,
       })
     );
-    const member = testEnv.authenticatedContext("member").firestore();
+    const member = authed("member").firestore();
     await assertFails(deleteDoc(doc(member, ...logPath)));
-    const dm = testEnv.authenticatedContext("dm").firestore();
+    const dm = authed("dm").firestore();
     await assertSucceeds(deleteDoc(doc(dm, ...logPath)));
   });
 });

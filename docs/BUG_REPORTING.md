@@ -480,11 +480,14 @@ The switch fired and billing is detached (`just safe-status` prints **FIRED**).
 Recovery is **`just safe-restore`**. Do ONE thing by hand first, then run it:
 
 - **Ban the abusive users FIRST.** d20 Folio has a blocked-users mechanism: a user doc
-  with `status: "blocked"` is denied by `firestore.rules` / `storage.rules` (the
-  `isNotBlocked()` check — see `firestore.rules`), and the owner blocks accounts from
-  **`/admin`** (the signup email deep-links there). Block the offending UID(s) so they're
-  already denied the moment billing returns. If `/admin` is unreachable (functions down),
-  set `status: "blocked"` on the `/users/{uid}` doc directly in the Firestore console.
+  with `status: "blocked"` is mirrored by the `onUserRoleWritten` function into the
+  account's `status: "blocked"` token claim, which `firestore.rules` denies (the
+  `isNotBlocked()` check). The owner blocks accounts from **`/admin`** (the signup email
+  deep-links there). The block bites when the account's ID token refreshes (at most an
+  hour; its refresh tokens are revoked at once). If `/admin` is unreachable or the
+  functions are down, the doc alone does nothing: **disable the account** in the
+  Firebase console (Authentication → the user → Disable), which stops new tokens, and
+  also set `status: "blocked"` on the `/users/{uid}` doc so the claim follows.
   Find WHO via **Billing → Reports** (by service) + **Cloud Logging** once you're back in.
 
 Then:

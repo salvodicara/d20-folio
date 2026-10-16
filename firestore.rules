@@ -7,24 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Roles are Auth custom claims (Phase 5): the `/users/{uid}` doc is the record an
+    // admin edits, and the `onUserRoleWritten` function mirrors its `role` / `status`
+    // into the account's token (functions/src/role-claims.ts). The rules read the
+    // token, so no request pays a get() of the user doc. A claim takes effect when the
+    // client's ID token refreshes (at most an hour); a block also revokes the refresh
+    // tokens. Only the exact values count; a token without them is an ordinary player.
+
     // Helper: is the authenticated user not blocked?
-    // Uses get() — only call this on paths where the user doc is guaranteed to exist
-    // (i.e. after first sign-in completes). Do NOT use on the /users/{uid} path itself.
     function isNotBlocked() {
-      return isAuth()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status != "blocked";
+      return isAuth() && request.auth.token.get("status", "") != "blocked";
     }
 
-    // Helper: is the user an admin? DATA-DRIVEN — reads `role: "admin"` from the
-    // requester's own user doc (the SAME field the client's `useIsAdmin` reads), so
-    // client + rules can't drift and no uid is hardcoded. Granted out-of-band
-    // (Firestore console / an admin script); never settable by the client (update
-    // is admin-only, create forbids it — see below). Assumes the user doc exists
-    // (same precondition as isNotBlocked); `data.get("role", "")` treats a doc
-    // without the field as simply "not admin" rather than erroring.
+    // Helper: is the user an admin? Never settable by the client: the claim is
+    // written only by the function, from a doc field only an admin may change (update
+    // is admin-only, create forbids it — see below).
     function isAdmin() {
-      return isAuth()
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get("role", "") == "admin";
+      return isAuth() && request.auth.token.get("role", "") == "admin";
     }
 
     // The anonymous share surface is a SANITIZED, derived projection — never the
@@ -73,7 +72,7 @@ service cloud.firestore {
     }
 
     // Users collection
-    // - Read own doc: only auth required (no get() loop)
+    // - Read own doc: only auth required
     // - Create own doc: first sign-in bootstrap — but MUST NOT self-assign the
     //   admin role (that's the self-promotion vector; admin is granted out-of-band)
     // - Update: ADMIN (full — block/unblock, grant role) OR the owner's OWN
