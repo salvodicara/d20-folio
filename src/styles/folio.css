@@ -2387,7 +2387,8 @@ button.pr-dot.lg::before {
 }
 .glossary-pop .pop-body {
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  /* Beginners read these: never below the 14px reading floor (direction B). */
+  font-size: var(--text-read);
   line-height: 1.55;
   color: var(--text-primary);
   text-align: left;
