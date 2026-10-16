@@ -42,6 +42,7 @@ import {
   type PlayEvent,
 } from "@/lib/session-log";
 import { NO_DEFENSES } from "@/lib/damage-intake";
+import { defaultCombatState } from "@/lib/combat-state";
 import type { CharacterDoc } from "@/types/character";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { makeCharacterDoc } from "./_helpers";
@@ -609,5 +610,55 @@ it("a heal on another PC writes their HP like the PC card, then logs it", async 
       target: "pc-aria-uid",
       amount: 7,
     })
+  );
+});
+
+it("Undo takes a heal on another PC back: their HP is written back and the line goes", async () => {
+  setCharacter("cleric", 3, ["healing-word"], [{ level: 1, total: 2 }]);
+  const before = defaultCombatState(24);
+  before.hp = { current: 10, temp: 0 };
+  const after = { ...before, hp: { current: 17, temp: 0 } };
+  writeCampaignCombatEffect.mockImplementation(() =>
+    Promise.resolve({ before, after } as never)
+  );
+  encounter([
+    { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+    {
+      id: "pc-aria-uid",
+      kind: "pc",
+      side: "ally",
+      name: "Aria",
+      memberUid: "aria-uid",
+      characterId: "aria-char",
+      maxHp: 24,
+      currentHp: 10,
+      tempHp: 0,
+    },
+  ] as Rows);
+  renderPlay();
+  cast("Healing Word");
+  const picker = await screen.findByRole("dialog", { name: /on whom/i });
+  fireEvent.click(within(picker).getByRole("button", { name: /aria/i }));
+  const dialog = await tray();
+  fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "7" } });
+  fireEvent.click(within(dialog).getByRole("button", { name: /^apply$/i }));
+  const given = (e: { event: { kind: string } }) => e.event.kind === "effect-given";
+  await waitFor(() => expect(live().session.logEntries.some(given)).toBe(true));
+
+  act(() => {
+    useUndoStore.getState().undo();
+  });
+  await waitFor(() =>
+    expect(writeCampaignCombatEffect).toHaveBeenLastCalledWith(
+      "aria-uid",
+      "aria-char",
+      null,
+      24,
+      { kind: "revert", written: after, previous: before }
+    )
+  );
+  expect(live().session.logEntries.some(given)).toBe(false);
+  writeCampaignCombatEffect.mockImplementation(() =>
+    Promise.resolve({ before: {}, after: {} })
   );
 });
