@@ -2599,6 +2599,29 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
     ]);
   });
 
+  it("a member appends the narrative overrides: hide, show, move (own items only)", async () => {
+    await seed();
+    const member = testEnv.authenticatedContext("member").firestore();
+    for (const [n, extra] of [
+      ["hide", {}],
+      ["show", {}],
+      ["move", { after: null }],
+    ] as const) {
+      await assertSucceeds(
+        updateDoc(doc(member, ...logPath), {
+          log: arrayUnion({ ...item(`${n}1`, "member", n), ...extra }),
+          lastAt: 2,
+        })
+      );
+    }
+    await assertFails(
+      updateDoc(doc(member, ...logPath), {
+        log: arrayUnion(item("r1", "member", "rewrite")),
+        lastAt: 3,
+      })
+    );
+  });
+
   it("a player adds a free-text note in their own name, then strikes it", async () => {
     await seed();
     const member = testEnv.authenticatedContext("member").firestore();

@@ -24,6 +24,11 @@ import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { changeConcentration } from "@/lib/play/concentration";
 import { applySheetEvent, type SheetEvent } from "@/lib/play/sheet-events";
 import {
+  createPlayLogShadow,
+  type PlayLogShadow,
+  type ShadowStats,
+} from "@/lib/play/play-log-shadow";
+import {
   amendLogEntry as amendLogEntryEvent,
   appendLogEntry,
   removeLogEntry as removeLogEntryById,
@@ -1017,6 +1022,42 @@ export function setPlayLogSink(sink: PlayLogSink | null): void {
   playLogSink = sink;
 }
 
+/**
+ * Shadow mode for the play log (phase 3a step 2, docs/architecture/play-log.md): in
+ * development only, every dispatched sheet event is recorded in the character's
+ * shadow log and checked for parity with the live character. It changes nothing the
+ * player sees; a mismatch is a console warning to investigate.
+ */
+const playLogShadows = new Map<string, PlayLogShadow>();
+
+function shadowRecord(
+  before: CharacterDoc,
+  event: SheetEvent,
+  after: CharacterDoc
+): string | null {
+  if (!import.meta.env.DEV) return null;
+  let shadow = playLogShadows.get(before.id);
+  if (!shadow) {
+    shadow = createPlayLogShadow("owner");
+    playLogShadows.set(before.id, shadow);
+  }
+  const { id, parity } = shadow.record(before, event, after);
+  if (!parity) console.warn(`[play-log shadow] parity mismatch after ${event.kind}`);
+  return id;
+}
+
+function shadowUndo(restored: CharacterDoc, shadowId: string | null): void {
+  if (!shadowId) return;
+  const shadow = playLogShadows.get(restored.id);
+  if (shadow && !shadow.undo(shadowId, restored).parity)
+    console.warn("[play-log shadow] parity mismatch after an undo");
+}
+
+/** The shadow log's counters for a character (development only; null when none). */
+export function playLogShadowStats(characterId: string): ShadowStats | null {
+  return playLogShadows.get(characterId)?.stats() ?? null;
+}
+
 function notifyPlayLog(send: (sink: PlayLogSink) => void): void {
   if (!playLogSink) return;
   try {
@@ -1279,6 +1320,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
     const taken = takeDamage(character, amount, opts);
     if (!taken) return null;
+    const damaged = { ...character, session: taken.session };
+    // The hit as an intention in the play log's shadow (its undo is the command undo).
+    shadowRecord(character, { kind: "take-damage", amount, ...opts }, damaged);
     const { transition, consumedEffectIds } = taken;
     const current = character.session.hp.current;
     const nextLegacyEffects = get().combatLegacyActiveEffects.filter(
@@ -1320,7 +1364,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         // any legacy/stale queued prompts are therefore ineligible.
         combatPendingConcentrationSaves: [],
         encounterEffectProjection: nextEncounterEffectProjection,
-        character: { ...character, session: taken.session },
+        character: damaged,
       });
       logTransitionEvents();
       persistCombat(get);
@@ -1408,7 +1452,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     // A form no Concentration holds (Animal Shapes) ends here on its own, keeping
     // the depleted Temporary HP rather than restoring the caster's pool.
-    const damaged = { ...character, session: taken.session };
     const afterForm =
       formEnds && !formHeldByConcentration
         ? (dropBeastForm(damaged, newTemp) ?? damaged)
@@ -1453,12 +1496,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       deathFail,
       conditions: [...conditions],
     };
-    // Reuse setHP for the OPTIMISTIC in-memory update so the heal-from-0 death-save
-    // reset + Unconscious shed (RAW 2024) stay in ONE place — but `persist: false`,
-    // so we persist ONCE here (the whole resulting state). setHP never logs.
+    // The heal is an intention (`healBy`): it shares `setHp`'s heal-from-0 death-save
+    // reset + Unconscious shed (RAW 2024), and we persist ONCE below.
     const wasUnconsciousAtZero =
       prevCurrent === 0 && conditions.includes(UNCONSCIOUS_CONDITION_ID);
-    get().setHP(newCurrent, { persist: false });
+    if (!get().dispatch({ kind: "heal", amount })) return null;
     // Log the HP that landed, not the request: the clamp at max eats any overheal.
     const logIds = [
       get().logEvent({
@@ -1491,8 +1533,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return null;
     const prevTemp = character.session.hp.temp;
     const newTemp = Math.max(prevTemp, amount); // temp HP don't stack
-    if (newTemp === prevTemp) return null;
-    get().setTempHP(newTemp);
+    if (!get().dispatch({ kind: "gain-temp-hp", amount })) return null;
+    persistCombat(get);
     const logId = get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
     // Undo restores the prior pool through the log-free setter and drops this line.
     return () => {
@@ -3106,7 +3148,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const next = applySheetEvent(character, event);
     if (!next) return null;
     set({ character: next });
-    return () => set({ character });
+    const shadowId = shadowRecord(character, event, next);
+    return () => {
+      set({ character });
+      shadowUndo(character, shadowId);
+    };
   },
 
   setCompanionHp: (featureId, current) => {

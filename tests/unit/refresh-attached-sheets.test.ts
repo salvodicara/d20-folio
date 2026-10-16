@@ -124,4 +124,25 @@ describe("refreshAttachedSheets — the per-save fan-out", () => {
       refreshAttachedSheets(tracker, "u1", doc("c1"))
     ).resolves.toBeUndefined();
   });
+
+  it("skips a card the campaign already holds, and retries one whose write failed", async () => {
+    listMock.mockResolvedValueOnce([
+      {
+        id: "camp-a",
+        memberDetails: { u1: { characterId: "c1", character: { name: "Mara" } } },
+      },
+    ]);
+    const tracker = createAttachedCampaignTracker("u1", "c1");
+    await refreshAttachedSheets(tracker, "u1", doc("c1"));
+    expect(setMemberMock).not.toHaveBeenCalled();
+
+    buildSnapshotMock.mockReturnValue({ name: "Bo" });
+    setMemberMock.mockRejectedValueOnce(new Error("offline"));
+    await refreshAttachedSheets(tracker, "u1", doc("c1"));
+    await refreshAttachedSheets(tracker, "u1", doc("c1"));
+    await refreshAttachedSheets(tracker, "u1", doc("c1"));
+    // The failed write is forgotten, so the next save sends it again; then it is known.
+    expect(setMemberMock).toHaveBeenCalledTimes(2);
+    buildSnapshotMock.mockReturnValue({ name: "Mara" });
+  });
 });
