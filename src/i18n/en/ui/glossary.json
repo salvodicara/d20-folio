@@ -64,7 +64,23 @@
       "prone": "While Prone you're on the ground and can only crawl. Your attack rolls have Disadvantage; attackers within 5 feet have Advantage against you, those farther away Disadvantage. Standing up costs half your Speed.",
       "restrained": "While Restrained your Speed is 0. Your attack rolls and Dexterity saving throws have Disadvantage, and attack rolls against you have Advantage.",
       "stunned": "While Stunned you are Incapacitated: no actions, Bonus Actions, or Reactions. You fail Strength and Dexterity saving throws, and attack rolls against you have Advantage.",
-      "unconscious": "While Unconscious you are Incapacitated and Prone, you drop what you're holding, and you can't move, speak, or notice anything. You fail Strength and Dexterity saving throws, attack rolls against you have Advantage, and any hit from within 5 feet is a Critical Hit."
+      "unconscious": "While Unconscious you are Incapacitated and Prone, you drop what you're holding, and you can't move, speak, or notice anything. You fail Strength and Dexterity saving throws, attack rolls against you have Advantage, and any hit from within 5 feet is a Critical Hit.",
+      "base-dash": "Dash gives you extra movement this turn equal to your Speed, so you can usually move twice as far.",
+      "base-dodge": "Dodge: until the start of your next turn, attack rolls against you have Disadvantage and you have Advantage on Dexterity saving throws. You lose this if you become Incapacitated or your Speed drops to 0.",
+      "base-disengage": "Disengage: for the rest of this turn, moving away from enemies doesn't provoke any Opportunity Attack.",
+      "base-help": "Help gives an ally Advantage: on their next ability check with a skill or tool you're proficient in, or on their next attack roll against an enemy within 5 feet of you. It lasts until the start of your next turn.",
+      "base-hide": "Hide when enemies can't see you, behind solid cover or in thick darkness or fog: make a DC 15 Dexterity (Stealth) check. On a success you have the Invisible condition while you stay hidden.",
+      "base-influence": "Influence: try to change a creature's attitude by persuading, deceiving, intimidating, performing, or calming an animal. The DM picks the check and how hard it is; a creature already willing may simply agree.",
+      "base-magic": "Magic: cast a spell that takes an action, or use a magic item or special ability that needs the Magic action.",
+      "base-ready": "Ready lets you act later, on someone else's turn: choose something you can notice as the trigger and what you'll do, then use your Reaction when it happens.",
+      "base-search": "Search: look or sense for something hidden or unclear with a Wisdom check, such as Perception to spot a hidden creature or Insight to read someone's mood.",
+      "base-study": "Study: recall or work out what you know with an Intelligence check, such as Arcana about magic, History about the past, or Investigation to piece clues together.",
+      "base-utilize": "Utilize: use a nonmagical object that takes an action, like pulling a lever or lighting a lamp.",
+      "base-object-interaction": "Interact with an Object: once per turn you can handle one object for free while you move or act, like drawing a sword or opening a door. A second one in the same turn takes the Utilize action.",
+      "base-grapple": "Grapple is an Unarmed Strike: with a free hand, grab a creature within 5 feet that is at most one size larger than you. It makes a Strength or Dexterity saving throw; if it fails, it has the Grappled condition.",
+      "base-shove": "Shove is an Unarmed Strike against a creature within 5 feet that is at most one size larger than you. It makes a Strength or Dexterity saving throw; if it fails, you push it 5 feet away or give it the Prone condition.",
+      "base-escape-grapple": "Escape: while Grappled, use your action for a Strength (Athletics) or Dexterity (Acrobatics) check against the escape DC. On a success you're free.",
+      "base-opportunity-attack": "Opportunity Attack: when an enemy you can see moves out of your reach, you can use your Reaction to make one melee attack against it. A creature that takes the Disengage action avoids it."
     }
   }
 }

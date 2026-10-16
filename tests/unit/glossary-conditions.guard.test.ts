@@ -16,31 +16,12 @@ import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 import enConditions from "@/i18n/en/srd/conditions.json";
 import itConditions from "@/i18n/it/srd/conditions.json";
+import { RULE_TERMS, missingOfficialTerms } from "@tests/unit/__helpers__/glossary-terms";
 
 const EN_TERMS: Record<string, string | undefined> = enGlossary.glossary.term;
 const IT_TERMS: Record<string, string | undefined> = itGlossary.glossary.term;
 const EN_NAMES: Record<string, { name: string } | undefined> = enConditions;
 const IT_NAMES: Record<string, { name: string } | undefined> = itConditions;
-
-/** Official SRD 5.2.1 rule terms (EN → IT stem) the beginner lines may use. */
-const RULE_TERMS: ReadonlyArray<readonly [string, string]> = [
-  ["Advantage", "Vantaggio"],
-  ["Disadvantage", "Svantaggio"],
-  ["Speed", "Velocità"],
-  ["Bonus Action", "Azion"],
-  ["Reaction", "Reazion"],
-  ["Concentration", "Concentrazione"],
-  ["Critical Hit", "Colpo Critico"],
-  ["Initiative", "Iniziativa"],
-  ["Long Rest", "Riposo Lungo"],
-  ["Resistance", "Resistenza"],
-  ["Strength", "Forza"],
-  ["Dexterity", "Destrezza"],
-];
-
-/** Case-sensitive, word-start: "Advantage" never matches inside "Disadvantage". */
-const mentions = (text: string, term: string): boolean =>
-  new RegExp(`(?<!\\p{L})${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "u").test(text);
 
 const IDS = SRD_CONDITIONS.map((c) => c.id);
 
@@ -60,10 +41,7 @@ describe("beginner glossary: every SRD condition", () => {
       ...RULE_TERMS,
       ...IDS.map((c) => [EN_NAMES[c]?.name ?? c, IT_NAMES[c]?.name ?? c] as const),
     ];
-    const missing = pairs
-      .filter(([en]) => mentions(EN_TERMS[id] ?? "", en))
-      .filter(([, it]) => !mentions(IT_TERMS[id] ?? "", it))
-      .map(([en, it]) => `${en} → ${it}`);
+    const missing = missingOfficialTerms(EN_TERMS[id] ?? "", IT_TERMS[id] ?? "", pairs);
     expect(missing, `IT glossary.term.${id} misses official terms`).toEqual([]);
   });
 });

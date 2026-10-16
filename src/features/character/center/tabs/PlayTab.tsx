@@ -117,7 +117,7 @@ import {
   buildCunningStrikeOptions,
   type CunningStrikeVM,
 } from "@/lib/views/cunning-strike-view";
-import { GlossaryTip } from "@/components/shared/GlossaryTip";
+import { GlossaryTip, type GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { WeaponFacts } from "@/components/shared/WeaponFacts";
 import { ActionRiders, RiderSummary } from "@/components/shared/ActionRiders";
 import type { RiderVM } from "@/lib/views/rider-view";
@@ -1604,10 +1604,15 @@ function CombatActionCard({
   onCommit: (checked?: ResolvedAction) => void;
   onPin: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const masteriesThisTurn = useCombatStore((s) => s.masteriesThisTurn);
   const { language: locale } = useLocale();
   const kind = combatKind(action);
+  // Beginner glossary: a base action's id IS its glossary term id, so its name
+  // opens the plain-language line (glossary-actions.guard pins the set).
+  const nameTerm = i18n.exists(`glossary.term.${action.id}`)
+    ? (action.id as GlossaryTermId)
+    : undefined;
 
   // S9 — the item→multi-spell-pool cast card: it CASTS a
   // spell from the item's shared charge pool, so it reads with the spell "Cast"
@@ -1765,6 +1770,7 @@ function CombatActionCard({
         (action.source === "weapon" ? weaponSealIcon(action.weaponId) : undefined)
       }
       name={action.name}
+      nameTerm={nameTerm}
       slot={action.type}
       spellLevel={action.source === "spell" ? (action.spellLevel ?? 0) : undefined}
       cantripSealLabel={t("spells.cantripSeal")}

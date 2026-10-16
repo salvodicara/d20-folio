@@ -12007,12 +12007,13 @@ button.uc-chevron::before {
   }
 }
 
-/* Marks / verdict cluster / CTA layer above the row-stretch overlay so a `title`
+/* Marks / verdict cluster / CTA / a glossed name layer above the row-stretch overlay so a `title`
    tooltip + the CTA stay reachable. */
 .uc-mark-wrap,
 .uc-conc,
 .uc-verdict-cluster,
-.uc-cta {
+.uc-cta,
+.uc-name > .glossary-term {
   position: relative;
   z-index: 2;
 }
