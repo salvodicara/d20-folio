@@ -27,7 +27,8 @@
       "rider": "On a hit, this deals an extra {{dice}} {{type}} damage.",
       "riderOnce": "Once per turn when you hit, this deals an extra {{dice}} {{type}} damage.",
       "riderCost": "On a hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage.",
-      "riderOnceCost": "Once per turn when you hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage."
+      "riderOnceCost": "Once per turn when you hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage.",
+      "maneuverBestAbility": "A maneuver's DC uses your Strength or Dexterity modifier, whichever is higher."
     },
     "speed": {
       "multiplier": "Speed multiplier",
