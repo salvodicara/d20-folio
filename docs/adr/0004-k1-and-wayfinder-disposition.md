@@ -15,7 +15,7 @@ A1 (campaign topology simplification) → X1 (delete `session.world`). It contra
 Delete K1 (browser and functions bundle) in Phase 2. Retire S1 (owner ruling: no gameplay Cloud Functions). Keep the
 A1 direction — membership as data, no PC facts in encounters, rules as access policy — folded into ADR-0002/0005 and
 the migration plan. Mark the Wayfinder superseded by the target architecture; retire its program charters in
-`docs/PROGRAM_STATUS.md`.
+the retired `docs/PROGRAM_STATUS.md` (in git history).
 
 ## Alternatives Considered
 

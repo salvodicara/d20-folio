@@ -67,6 +67,12 @@ ci-srd-only:
     pnpm test:srd-only
     pnpm build:srd-only
 
+# The runtime content pack end to end on the emulators: an allowlisted account
+# sees every team sheet exactly as the bundled build does, offline after the first
+# load, and behind a loading notice while the download fails. Needs content-pack.
+e2e-pack:
+    bash scripts/pack/e2e-pack.sh
+
 # ─── Build ────────────────────────────────────────────────
 
 # Production build

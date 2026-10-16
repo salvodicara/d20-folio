@@ -11,6 +11,7 @@
     "components": "Components",
     "duration": "Duration",
     "instantaneous": "Instantaneous",
+    "defaultRange": "60 feet",
     "concentration": "Concentration",
     "ritual": "Ritual",
     "prepared": "Prepared",

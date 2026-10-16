@@ -110,6 +110,8 @@ vi.mock("@/lib/log-persistence", () => ({
 }));
 
 import { breadcrumbSnapshot, resetDiagnostics } from "@/lib/diagnostics";
+import { limit } from "firebase/firestore";
+import { FREE_TIER_LIMITS } from "@/lib/limits";
 import {
   createCharacter,
   createDebouncedSave,
@@ -564,6 +566,14 @@ describe("character parent persistence (v1: the child owns the play session)", (
           String(crumb.data?.message).includes("invalid-revision")
       )
     ).toBe(true);
+  });
+
+  it("bounds the roster read well above the character cap, so no saved character is hidden", () => {
+    vi.mocked(limit).mockClear();
+    subscribeToCharacters("u1", () => {});
+    expect(vi.mocked(limit)).toHaveBeenCalledTimes(1);
+    const [bound] = vi.mocked(limit).mock.calls[0] ?? [];
+    expect(bound).toBeGreaterThanOrEqual(FREE_TIER_LIMITS.characters * 5);
   });
 
   it("hydration fails closed on a missing child and on a child without playState", async () => {

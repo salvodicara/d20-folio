@@ -44,7 +44,7 @@ appears on a weapon row.
 > **This ledger is a CLOSED audit record (all 35 findings resolved; campaign closed 2026-07-24).**
 > Every RA entry is ticked — shipped, or a residual resolved by design (RA-31 self-side Cover toggle,
 > RA-35 Musician self-grant). Kept for provenance, not as a work queue: the forward frontier now lives
-> in `PROGRESS.md`. A full system-level audit of the D&D 2024 core play
+> in the retired `PROGRESS.md` log (in git history). A full system-level audit of the D&D 2024 core play
 > procedures (SRD 5.2.1 — the rules of PLAY, not per-entry SRD content; the per-entry
 > content-fidelity sweep is a separate later phase) judged every core-rules area on four axes:
 > **A modeled? · B correct vs the 2024 text? · C ideal interaction (the minimum-interaction
@@ -694,7 +694,7 @@ per-cast modal, EK War Magic note, familiar enhancements** — landed 2026-06-24
 
 The persistent companion surface SHIPPED (the Companions rail, the shared
 `CompanionStatBlockCard` + Beast Master variant picker, the full Find Familiar flow;
-see `PROGRESS.md` → "Companions/Extras" + `docs/AUTOMATION_COVERAGE.md`). The
+see the retired `PROGRESS.md` log (in git history) → "Companions/Extras" + `docs/AUTOMATION_COVERAGE.md`). The
 deliberately-deferred neighbours, each with its reason (YAGNI, not a gap):
 
 - **Summon Beast/Fey/etc. spell family (pack):** concentration-scoped temporary

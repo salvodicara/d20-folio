@@ -947,6 +947,26 @@ service cloud.firestore {
       allow create: if logMember() && validLog() && newLog();
       allow update: if logMember() && validLog() && appendedOne();
       allow delete: if isAdmin() || logDm();
+
+      // Phase 3b (docs/architecture/session-log-per-event.md): one document per item,
+      // under the item's own id, stamped with the server's time (the read order). The
+      // same append-only contract as the array: a member creates only an own item,
+      // nothing is ever updated, and only the DM or the admin deletes.
+      match /items/{itemId} {
+        function validItem() {
+          let item = request.resource.data;
+          return ownItem(item)
+            && item.id == itemId
+            && item.at is number
+            && item.serverAt == request.time
+            && item.keys().hasOnly(['id', 'by', 'at', 'type', 'event', 'target', 'serverAt'])
+            && (item.type == 'event' || item.get('target', null) is string)
+            && (item.type == 'retract' || item.get('event', null) is map);
+        }
+        allow read: if isAdmin() || logMember();
+        allow create: if logMember() && validItem();
+        allow delete: if isAdmin() || logDm();
+      }
     }
 
     // Bug / feature reports (OWN-37). A signed-in, non-blocked user CREATES a

@@ -14,7 +14,7 @@ vi.mock("@/lib/firebase", () => ({
 }));
 
 import { loadImage, readFileAsDataUrl } from "@/lib/image-crop";
-import { compressImage } from "@/lib/storage";
+import { compressImage, compressPortrait } from "@/lib/storage";
 import { cropToCssStyle } from "@/lib/portrait-crop";
 import type { PortraitCrop } from "@/types/character";
 
@@ -101,6 +101,38 @@ class FastLoadImage {
     setTimeout(() => this.onload?.(), 0);
   }
 }
+
+describe("compressPortrait", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  // Direction B's largest portrait is the lightbox, ~760 CSS px tall: 1600 px covers
+  // it at 2x (Phase 1, 2026-10-16). Campaign banners keep compressImage's 2000.
+  it("stores a new character portrait at 1600 px on the longest side", async () => {
+    class BigImage extends FastLoadImage {
+      override width = 4000;
+      override height = 3000;
+    }
+    vi.stubGlobal("Image", BigImage);
+    vi.stubGlobal("URL", { createObjectURL: vi.fn().mockReturnValue("blob:fake") });
+    const fakeBlob = new Blob(["jpeg"], { type: "image/jpeg" });
+    const mockCanvas = {
+      width: 0,
+      height: 0,
+      getContext: vi.fn(() => ({ drawImage: vi.fn() })),
+      toBlob: vi.fn((cb: (b: Blob | null) => void) => cb(fakeBlob)),
+    };
+    vi.spyOn(document, "createElement").mockReturnValue(
+      mockCanvas as unknown as HTMLCanvasElement
+    );
+
+    await compressPortrait(new File(["img"], "hero.png", { type: "image/png" }));
+    expect(mockCanvas.width).toBe(1600);
+    expect(mockCanvas.height).toBe(1200);
+  });
+});
 
 describe("compressImage", () => {
   afterEach(() => {

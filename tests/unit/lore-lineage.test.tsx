@@ -29,6 +29,7 @@ vi.mock("@/lib/storage", () => ({
   uploadPortrait: vi.fn(),
   deletePortrait: vi.fn(),
   compressImage: vi.fn(),
+  compressPortrait: vi.fn(),
 }));
 
 import { BioTab } from "@/features/character/center/tabs/BioTab";

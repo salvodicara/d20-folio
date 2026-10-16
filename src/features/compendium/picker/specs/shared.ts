@@ -8,6 +8,7 @@ import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import type { SrdKind } from "@/i18n/srd-en";
 import type { Locale } from "@/lib/locale";
 import type { TFn } from "../types";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 /** Localized class name for a bare class id ("bard" → "Bard"). */
 export function classLabel(cls: string, t: TFn): string {
@@ -55,7 +56,7 @@ export const ALL_CLASSES = [
  * which the palette crash proved is a white-screen (`compendium-spec-srd-coverage`
  * locks this). Each lookup is `hasSrd`-guarded so an entity lacking a description
  * field is simply skipped, never throwing. De-duplicated for an EN user (active
- * === "en"). The returned strings are spread into a spec's `searchText`.
+ * is the source locale). The returned strings are spread into a spec's `searchText`.
  */
 export function descriptionSearch(
   kind: SrdKind,
@@ -67,7 +68,7 @@ export function descriptionSearch(
   if (hasSrd(kind, id, field, locale)) out.push(localizeSrd(kind, id, field, locale));
   // EN copy too (always resident) — but skip the duplicate when the active locale
   // already IS English.
-  if (locale !== "en" && hasSrd(kind, id, field, "en")) {
+  if (locale !== SOURCE_LOCALE && hasSrd(kind, id, field, "en")) {
     out.push(localizeSrd(kind, id, field, "en"));
   }
   return out;
