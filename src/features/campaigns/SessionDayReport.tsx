@@ -28,10 +28,13 @@ const MARKERS = new Set(["encounter-start", "encounter-end", "round-start"]);
 export function SessionDayReport({
   log,
   date,
+  notes,
   onOpen,
 }: {
   log: SessionLog;
   date: Date;
+  /** The session page's notes: shown above on the page, and leading the copy. */
+  notes?: string;
   /** Called on open, so the caller can refresh the logs. */
   onOpen?: () => void;
 }) {
@@ -61,13 +64,13 @@ export function SessionDayReport({
     [log.items, campaign?.dmUid]
   );
   const lines = entries.filter((e) => !MARKERS.has(e.event.kind)).length;
-  const markdown = open
-    ? renderSessionReport(
-        buildReport(entries),
-        t("sessionReport.title", { date: date.toLocaleDateString(i18n.language) }),
-        t,
-        names
-      )
+  const title = t("sessionReport.title", {
+    date: date.toLocaleDateString(i18n.language),
+  });
+  const markdown = open ? renderSessionReport(buildReport(entries), title, t, names) : "";
+  // The copy carries the page's notes too: one paste gives an AI the whole evening.
+  const copied = open
+    ? renderSessionReport(buildReport(entries), title, t, names, { notes })
     : "";
 
   return (
@@ -92,7 +95,7 @@ export function SessionDayReport({
         <div className="sess-report">
           <ReportBody markdown={markdown} />
           <CopyButton
-            value={markdown}
+            value={copied}
             toastMessage={t("sessionReport.copied")}
             label={t("common.copy")}
             variant="ghost"
