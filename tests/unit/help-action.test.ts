@@ -65,7 +65,10 @@ describe("Help names who it helps", () => {
   });
 
   it("no other base action without a consequence asks for a target", () => {
-    const asking = BASE_ACTIONS.map((ba) => baseAction(ba.id))
+    // Situational base actions (Escape a Grapple shows only while Grappled) are
+    // absent from a plain sheet's rows.
+    const asking = BASE_ACTIONS.filter((ba) => rows.has(ba.id))
+      .map((ba) => baseAction(ba.id))
       .filter((action) => !shouldResolveCombatAction(action))
       .filter((action) => targetStepFor(action, FIGHT) !== null)
       .map((action) => action.id);
