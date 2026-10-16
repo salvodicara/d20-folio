@@ -57,7 +57,10 @@ are lines of the same log, not a separate document:
 - For the UI (Phase 1): the note box writes `note` events through the recorder during play; the
   page's text field remains for notes written after the game.
 
-## Not yet
+## The writer
 
-- The writer: recorder helpers and the editor UI (Phase 1).
-- A line's free text edit is a `correct` to a `note` event; the UI decides how to offer it.
+`createSessionRecorder` writes every item: `record` (a line, a `note` included), `correct`,
+`retract`, `hide`, `show` and `move(target, after)`. Each takes `{ sessionId }` to write into the
+session the line belongs to: the story is often fixed after the game, when a newer session exists,
+and an override written to another session changes nothing. Editing a note's text is a `correct`
+to a `note` event. The editor UI is Phase 1's.
