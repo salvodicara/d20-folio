@@ -56,7 +56,7 @@ function perEventItems(snap: QuerySnapshot): LogItem[] {
     .map((d) => {
       const { serverAt, ...item } = d.data({ serverTimestamps: "estimate" });
       const ms = serverAt instanceof Timestamp ? serverAt.toMillis() : Number.MAX_VALUE;
-      return { id: d.id, ms, item: item };
+      return { id: d.id, ms, item };
     })
     .sort((a, b) => a.ms - b.ms || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .map((entry) => entry.item)
