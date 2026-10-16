@@ -628,7 +628,6 @@ export function SpellsTab() {
       {view.spellCount === 0 ? (
         <RunicEmptyState
           glyph={FolioSpellIcon}
-          eyebrow={t("spells.spellbook")}
           title={t("spells.emptyTitle")}
           blurb={t("spells.emptyBlurb")}
           actions={

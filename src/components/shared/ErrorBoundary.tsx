@@ -66,7 +66,6 @@ export function ErrorFallback({
       <RunicEmptyState
         glyph={TriangleAlert}
         color="var(--semantic-danger)"
-        eyebrow={t("errorBoundary.eyebrow")}
         title={t("errorBoundary.title")}
         blurb={t("errorBoundary.message")}
         actions={

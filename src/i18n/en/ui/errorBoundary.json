@@ -1,6 +1,5 @@
 {
   "errorBoundary": {
-    "eyebrow": "Error",
     "title": "Something went wrong",
     "message": "An unexpected error occurred. Your saved data is safe; reload the app to continue.",
     "reload": "Reload app",

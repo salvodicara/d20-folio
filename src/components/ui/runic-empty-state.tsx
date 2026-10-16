@@ -2,8 +2,8 @@
  * RunicEmptyState — folio empty-state hero (§ .es + .runic).
  *
  * One component for the ~8 empty surfaces (no characters, empty spellbook, no
- * gear, no features, no algorithm, Phase-2 stubs…). A slow-rotating runic sigil
- * (two rings + gem markers) around a lucide glyph, an eyebrow, a serif title
+ * gear, no features, no algorithm, Phase-2 stubs…). A quiet seal around a lucide
+ * glyph, a serif title (no eyebrow above it, vision 1)
  * (with optional emphasised <em> via the `titleEmphasis` slot), a body blurb,
  * and an optional CTA row. Honest-blank friendly: render it when a list is empty
  * rather than an empty container.
@@ -23,7 +23,6 @@ export interface RunicEmptyStateProps {
    *  Locale-safe (matches the already-translated title). */
   titleEmphasis?: string;
   blurb?: ReactNode;
-  eyebrow?: ReactNode;
   /** CTA buttons / links. */
   actions?: ReactNode;
   /** Small footnote under the actions. */
@@ -56,7 +55,6 @@ export function RunicEmptyState({
   title,
   titleEmphasis,
   blurb,
-  eyebrow,
   actions,
   note,
   size = "md",
@@ -69,15 +67,10 @@ export function RunicEmptyState({
   return (
     <div className={cn("es", size === "sm" && "sm", className)} style={style}>
       <div className="runic">
-        <span className="runic-ring" aria-hidden="true" />
-        <span className="runic-ring inner" aria-hidden="true" />
-        <span className="runic-gem top" aria-hidden="true" />
-        <span className="runic-gem bot" aria-hidden="true" />
         <span className="runic-glyph">
           <Icon as={glyph} size="lg" decorative />
         </span>
       </div>
-      {eyebrow ? <span className="es-eyebrow">{eyebrow}</span> : null}
       <h2 className="es-title">{renderTitle(title, titleEmphasis)}</h2>
       {blurb ? <p className="es-blurb">{blurb}</p> : null}
       {actions ? <div className="es-cta-row">{actions}</div> : null}

@@ -47,7 +47,6 @@
     "shareText": "Unisciti alla mia campagna di D&D “{{name}}” su d20 Folio:",
     "joinLink": {
       "joining": "Accesso alla campagna…",
-      "invalidEyebrow": "Invito non valido",
       "invalidTitle": "Questo link d'invito non ha funzionato",
       "invalidBlurb": "La campagna potrebbe essere stata eliminata o il link potrebbe essere errato. Chiedi al tuo DM un nuovo link d'invito.",
       "backToCampaigns": "Torna alle campagne"

@@ -9,7 +9,6 @@
     "errorTitle": "Impossibile caricare i tuoi personaggi",
     "errorBlurb": "Qualcosa è andato storto nel raggiungere il tuo folio. Controlla la connessione: i tuoi personaggi sono al sicuro e ricompariranno appena tornerai online.",
     "emptyTitle": "Il tuo folio ti attende",
-    "emptyEyebrow": "Primi passi",
     "emptyBlurb": "Ancora nessun personaggio. Forgia il tuo primo avventuriero: il percorso guidato ti accompagna in ogni scelta, senza bisogno di manuali.",
     "emptyPath": "Il viaggio: {{steps}}. Ogni regola è calcolata per te.",
     "cardAria": "Apri {{label}}",

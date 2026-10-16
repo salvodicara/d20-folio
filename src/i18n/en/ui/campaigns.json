@@ -47,7 +47,6 @@
     "shareText": "Join my D&D campaign “{{name}}” on d20 Folio:",
     "joinLink": {
       "joining": "Joining campaign…",
-      "invalidEyebrow": "Invalid invite",
       "invalidTitle": "This invite link didn’t work",
       "invalidBlurb": "The campaign may have been deleted, or the link may be mistyped. Ask your DM for a fresh invite link.",
       "backToCampaigns": "Back to campaigns"

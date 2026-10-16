@@ -9,7 +9,6 @@
     "errorTitle": "Couldn't load your characters",
     "errorBlurb": "Something went wrong reaching your folio. Check your connection. Your characters are safe and will reappear once you're back online.",
     "emptyTitle": "Your folio awaits",
-    "emptyEyebrow": "First steps",
     "emptyBlurb": "No characters yet. Forge your first adventurer: the guided path walks you through every choice, no rulebook needed.",
     "emptyPath": "The journey: {{steps}}. Every rule is computed for you.",
     "cardAria": "Open {{label}}",

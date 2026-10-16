@@ -194,10 +194,8 @@
      own plates. Were a file ever missing the layer paints
      nothing and the gilt-gradient fallback baked into each consuming recipe
      shows instead.
-       --asset-home-hero          the app-wide backdrop (arcane study)
        --asset-login              the sign-in splash (glowing grimoire altar)
        --asset-campaign-backdrop  the campaign default (war-table hall) */
-  --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
   --asset-login: url("/assets/backgrounds/login.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
@@ -792,7 +790,6 @@
      daylight war table), pre-graded into the honey/amber band the deep-parchment
      field hosts. Per-theme loading falls out of the cascade: a light user's
      browser only ever fetches these three. */
-  --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
   --asset-login: url("/assets/backgrounds/login-light.webp");
   --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
 
@@ -1384,16 +1381,9 @@ body::before {
   pointer-events: none;
 }
 
-/* #36 — optional atmospheric background ART (D&D-Beyond / BG3 feel): a single
-   viewport-fixed painterly image behind the whole app, sitting ABOVE the vellum
-   pools (z:-1) and BELOW all content. Held at a low per-theme opacity so it reads
-   as a subdued, premium backdrop that fills the empty page voids without harming
-   legibility (opaque cards float over it; text lives on cards). FULLY GRACEFUL:
-   `--asset-home-hero` resolves to the shipped `home-hero.webp`; were it ever missing
-   the background-image simply paints nothing, so the opacity acts on an empty layer
-   and the vellum (::before) shows through unchanged. The image itself owns the
-   "moody, low-contrast, dark-edged backdrop" responsibility (see DESIGN.md). To
-   disable app-wide art, set `--app-bg-art: none` on `:root`. */
+/* The page's art layer: empty by default (owner 2026-10-13, never a painting behind
+   text). A route that owns an image sets `--app-bg-art`, and it shows here only as
+   ambient light (see the rule's own comment). */
 body::after {
   content: "";
   position: fixed;

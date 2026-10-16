@@ -165,12 +165,11 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     " "
   );
 
-  it("#11 — the light theme re-points ALL THREE scene-plate tokens to its daylight siblings", () => {
+  it("#11 — the light theme re-points both scene-plate tokens to its daylight siblings", () => {
     // The per-theme pair rides ONE token each (dark in :root, light re-points);
     // dropping any light value silently hands light users the night plate again
     // (and re-couples both themes to one download).
     for (const [token, file] of [
-      ["--asset-home-hero", "home-hero-light.webp"],
       ["--asset-login", "login-light.webp"],
       ["--asset-campaign-backdrop", "campaign-backdrop-light.webp"],
     ] as const) {

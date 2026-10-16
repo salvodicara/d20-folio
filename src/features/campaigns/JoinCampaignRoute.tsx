@@ -38,7 +38,6 @@ export function JoinCampaignRoute() {
         <RunicEmptyState
           className="on-art-scope"
           glyph={Compass}
-          eyebrow={t("campaigns.joinLink.invalidEyebrow")}
           title={t("campaigns.joinLink.invalidTitle")}
           blurb={t("campaigns.joinLink.invalidBlurb")}
           actions={

@@ -171,7 +171,6 @@ export function RosterPage() {
         <RunicEmptyState
           className="on-art-scope"
           glyph={Users}
-          eyebrow={t("roster.emptyEyebrow")}
           title={t("roster.emptyTitle")}
           titleEmphasis="folio"
           blurb={t("roster.emptyBlurb")}

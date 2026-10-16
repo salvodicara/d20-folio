@@ -15,13 +15,13 @@ vi.mock("react-router", async (orig) => ({
 }));
 
 describe("NotFoundPage", () => {
-  it("renders the 404 hero with its title and a back-to-characters CTA", () => {
+  it("renders the not-found title (no '404' kicker above it) and a back-to-characters CTA", () => {
     render(
       <MemoryRouter>
         <NotFoundPage />
       </MemoryRouter>
     );
-    expect(screen.getByText("404")).toBeInTheDocument();
+    expect(screen.queryByText("404")).toBeNull();
     expect(screen.getByText("This page is off the map")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /back to your characters/i })

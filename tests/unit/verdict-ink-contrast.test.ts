@@ -367,13 +367,14 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   // glows through them. The floor: text ink on the BRIGHTEST translucent-surface
   // tone, composited over the BRIGHTEST backdrop region, must still clear AA.
   //
-  // Worst-case backdrop sample (provenance): public/assets/backgrounds/
+  // Worst-case backdrop sample (provenance): the retired app-wide plate
   // home-hero.webp (1672×941) downscaled to 96px wide with sharp — each sample
   // ≈ a glyph-sized (~15px at 1440 render width) region — brightest region
   // rgb(190,128,49) (#be8031), a candelabra flame at ~(28%, 41%). The absolute
   // brightest RAW pixel is rgb(232,184,89), but a single flame pixel is
   // sub-glyph scale; the region sample is the honest text-background worst case.
-  // Re-derive with scratchpad sharp sampling if the asset is ever regenerated.
+  // Since the image rule (owner 2026-10-13) the only art behind a page is the
+  // campaign's, blurred and dimmer, so this sample stays a conservative bound.
   //
   // Panel-material ceiling: the .folio-panel sandwich tops out at --bg-surface-2
   // (the gradient's light end; the leather texture's brightest glyph-scale

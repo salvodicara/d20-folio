@@ -644,7 +644,6 @@ export function InventoryTab() {
       {ownedRows === 0 ? (
         <RunicEmptyState
           glyph={FolioInventoryIcon}
-          eyebrow={t("equipment.title")}
           title={t("equipment.emptyTitle")}
           blurb={t("equipment.emptyBlurb")}
           actions={

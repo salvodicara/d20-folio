@@ -219,7 +219,6 @@ export function SnapshotsModal({
             <RunicEmptyState
               size="sm"
               glyph={History}
-              eyebrow={t("snapshots.emptyEyebrow")}
               title={t("snapshots.emptyTitle")}
               blurb={t("snapshots.empty")}
             />

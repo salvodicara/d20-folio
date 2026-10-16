@@ -492,7 +492,6 @@ describe("RunicEmptyState", () => {
     render(
       <RunicEmptyState
         glyph={BookOpen}
-        eyebrow="Empty"
         title="Your folio awaits"
         blurb="Create a character to begin."
         actions={<Button>Create</Button>}
