@@ -159,6 +159,42 @@ export function localizePlayEvent(
 }
 
 /** Render the report as markdown under `title` (e.g. the session's date). */
+/**
+ * The cast at the top of the copy, so an AI reading it knows who is who: the party with
+ * class and level, then each fight's creatures (same names counted) and its outcome.
+ */
+function castLines(
+  sections: readonly ReportSection[],
+  t: TranslateFn,
+  party: readonly { name: string; classes: string }[]
+): string[] {
+  const lines: string[] = [];
+  if (party.length > 0) {
+    const list = party.map((m) => (m.classes ? `${m.name} (${m.classes})` : m.name));
+    lines.push(t("sessionReport.castParty", { list: list.join(", ") }));
+  }
+  const fights: string[] = [];
+  let n = 0;
+  for (const section of sections) {
+    if (section.kind !== "encounter") continue;
+    n += 1;
+    const counts = new Map<string, number>();
+    for (const name of Object.values(section.names))
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    if (counts.size === 0) continue;
+    const creatures = [...counts]
+      .map(([name, count]) => (count > 1 ? `${name} ×${count}` : name))
+      .join(", ");
+    const outcome = section.outcome
+      ? ` — ${t(`sessionReport.result.${section.outcome}`)}`
+      : "";
+    fights.push(`${n}. ${creatures}${outcome}`);
+  }
+  if (fights.length > 0)
+    lines.push(t("sessionReport.castEncounters", { list: fights.join("; ") }));
+  return lines;
+}
+
 export function renderSessionReport(
   sections: readonly ReportSection[],
   title: string,
@@ -166,9 +202,15 @@ export function renderSessionReport(
   names: SessionReportNames,
   /** The session page's free notes: they lead the copy, so the notes and the log reach
    *  an AI summary together. Left out when blank. */
-  options: { notes?: string } = {}
+  options: {
+    notes?: string;
+    /** The party as the copy names it: each member's character and classes ("Bard 3"). */
+    party?: readonly { name: string; classes: string }[];
+  } = {}
 ): string {
   const out: string[] = [`# ${title}`];
+  const cast = castLines(sections, t, options.party ?? []);
+  if (cast.length > 0) out.push("", ...cast);
   const notes = options.notes?.trim();
   if (notes) out.push("", `## ${t("sessionReport.notes")}`, "", notes);
   let encounters = 0;

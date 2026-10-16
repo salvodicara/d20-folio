@@ -2,6 +2,8 @@
   "sessionReport": {
     "title": "Sessione {{date}}",
     "scene": "Scena {{n}}",
+    "castParty": "Gruppo: {{list}}",
+    "castEncounters": "Scontri: {{list}}",
     "encounter": "Scontro {{n}}",
     "beforeRounds": "Prima del primo round",
     "somethingUsed": "qualcosa",

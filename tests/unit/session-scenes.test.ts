@@ -117,3 +117,67 @@ describe("scenes outside a fight", () => {
     ]);
   });
 });
+
+describe("the cast list at the top of the copy", () => {
+  const names: SessionReportNames = {
+    pc: () => undefined,
+    condition: (id) => id,
+    action: () => "?",
+    spell: (ref) => ref,
+  };
+  const t = (key: string, args?: Record<string, string | number>) =>
+    key === "sessionReport.castParty"
+      ? `Party: ${String(args?.list)}`
+      : key === "sessionReport.castEncounters"
+        ? `Encounters: ${String(args?.list)}`
+        : key === "sessionReport.result.victory"
+          ? "victory"
+          : key;
+
+  it("names the party, then each fight with its creatures counted and its outcome", () => {
+    const items = [
+      ev("e1", DM, {
+        kind: "encounter-start",
+        encounterId: "a",
+        names: {
+          "monster-1": "Goblin",
+          "monster-2": "Goblin",
+          "monster-3": "Goblin",
+          "monster-4": "Wolf",
+        },
+      }),
+      ev("e2", DM, { kind: "encounter-end", encounterId: "a", outcome: "victory" }),
+      ev("e3", DM, {
+        kind: "encounter-start",
+        encounterId: "b",
+        names: { "monster-5": "Ghoul" },
+      }),
+      ev("e4", DM, { kind: "encounter-end", encounterId: "b" }),
+    ];
+    const text = renderSessionReport(
+      buildReport(foldSession(items, { dmUid: DM })),
+      "S",
+      t,
+      names,
+      {
+        party: [
+          { name: "Ana", classes: "Bard 3" },
+          { name: "Ben", classes: "Paladin 2 / Warlock 1" },
+        ],
+      }
+    );
+    expect(text.split("\n").slice(0, 4)).toEqual([
+      "# S",
+      "",
+      "Party: Ana (Bard 3), Ben (Paladin 2 / Warlock 1)",
+      "Encounters: 1. Goblin ×3, Wolf — victory; 2. Ghoul",
+    ]);
+  });
+
+  it("leaves out what it does not know: no party, no fights, no list", () => {
+    const report = buildReport(foldSession(evening.slice(0, 2), { dmUid: DM }));
+    expect(renderSessionReport(report, "S", t, names, { party: [] })).toBe(
+      renderSessionReport(report, "S", t, names)
+    );
+  });
+});

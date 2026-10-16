@@ -13,7 +13,8 @@ import { Icon } from "@/components/ui/icon";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { SessionLog } from "@/features/campaigns/useSessionReports";
 import { buildReport, foldSession } from "@/lib/session-log";
-import { localizeText } from "@/lib/views/srd-i18n";
+import { localizeClassName, localizeText } from "@/lib/views/srd-i18n";
+import { snapshotClasses } from "@/features/campaigns/member-snapshot";
 import {
   renderSessionReport,
   type SessionReportNames,
@@ -69,6 +70,26 @@ export function SessionDayReport({
     }),
     [campaign?.memberDetails, language]
   );
+  // The party for the copy's cast line: each member's character, with class and level.
+  const party = useMemo(
+    () =>
+      Object.values(campaign?.memberDetails ?? {}).flatMap((member) =>
+        member.character
+          ? [
+              {
+                name: member.character.name,
+                classes: snapshotClasses(member.character)
+                  .map(
+                    (entry) =>
+                      `${localizeClassName(entry.classId, language)} ${entry.level}`
+                  )
+                  .join(" / "),
+              },
+            ]
+          : []
+      ),
+    [campaign?.memberDetails, language]
+  );
   const entries = useMemo(
     () => foldSession(log.items, { dmUid: campaign?.dmUid }),
     [log.items, campaign?.dmUid]
@@ -80,7 +101,7 @@ export function SessionDayReport({
   const markdown = open ? renderSessionReport(buildReport(entries), title, t, names) : "";
   // The copy carries the page's notes too: one paste gives an AI the whole evening.
   const copied = open
-    ? renderSessionReport(buildReport(entries), title, t, names, { notes })
+    ? renderSessionReport(buildReport(entries), title, t, names, { notes, party })
     : "";
 
   return (
