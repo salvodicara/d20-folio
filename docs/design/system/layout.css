@@ -407,3 +407,16 @@
     margin: -34px 0 -6px;
   }
 }
+
+@media (max-width: 760px) {
+  .endturn--idle .endturn__inner {
+    font-size: 13px;
+  }
+  .endturn--idle .endturn__inner .i {
+    width: 18px;
+    height: 18px;
+  }
+  .hud__note {
+    font-size: 14px;
+  }
+}

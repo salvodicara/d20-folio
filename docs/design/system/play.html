@@ -10,7 +10,8 @@
     <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
     <script src="proto.js"></script>
   </head>
-  <body>
+  <!-- ?mode=explore shows the same screen outside combat (BG3: real-time vs turn-based) -->
+  <body class="mode-combat">
     <header class="top">
       <a class="btn btn--quiet btn--icon only-phone" href="#" aria-label="Personaggi"
         ><i data-lucide="chevron-left" class="i"></i
@@ -45,7 +46,8 @@
       <span class="grow only-laptop"></span>
       <span class="session only-laptop"
         ><span class="session__dot"></span>La Cripta di Vetro · sessione 7 ·
-        <b>round 2</b></span
+        <b class="combat-only">scontro, round 2</b
+        ><b class="explore-only">esplorazione</b></span
       >
       <button class="btn btn--quiet btn--icon" aria-label="Altro">
         <i data-lucide="more-vertical" class="i"></i>
@@ -53,12 +55,14 @@
     </header>
 
     <main class="sheet">
-      <!-- Identity band: Foundry's dark header, D&D Beyond's order, BG3's medallion -->
-      <section class="band frame hero" aria-label="Selene Varga">
+      <!-- Identity band: Foundry's header, D&D Beyond's order, BG3's medallion -->
+      <section class="frame hero" aria-label="Selene Varga">
         <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
         <div class="hero__medal">
           <div class="medal">
-            <div class="medal__ring"><div class="medal__img">S</div></div>
+            <div class="medal__ring">
+              <div class="medal__img"><img src="img/portrait-selene.webp" alt="" /></div>
+            </div>
           </div>
         </div>
 
@@ -68,11 +72,14 @@
             Chierica 5 · Dominio della Vita · Umana · Accolita
           </p>
           <div class="hero__chips">
-            <button class="chip chip--buff">
+            <button class="chip chip--buff combat-only">
               <i data-lucide="sparkles" class="i i--sm"></i>Benedizione · 9 round
             </button>
-            <button class="chip chip--cond">
+            <button class="chip chip--cond combat-only">
               <i data-lucide="eye-off" class="i i--sm"></i>Accecata
+            </button>
+            <button class="chip chip--buff explore-only">
+              <i data-lucide="eye" class="i i--sm"></i>Individuazione del magico · 8 min
             </button>
             <button class="chip chip--add" aria-label="Aggiungi uno stato">
               <i data-lucide="plus" class="i i--sm"></i>Stato
@@ -196,14 +203,17 @@
           <div class="hp">
             <div class="hp__top">
               <span class="label">Punti ferita</span
-              ><span class="hp__temp">+5 temp.</span>
+              ><span class="hp__temp combat-only">+5 temp.</span>
             </div>
             <div class="hp__top">
               <button class="hp__now">31</button><span class="hp__max">/ 38</span>
             </div>
             <div class="hpbar">
               <span class="hpbar__fill" style="width: 81.5%"></span
-              ><span class="hpbar__temp" style="left: 81.5%; width: 13%"></span>
+              ><span
+                class="hpbar__temp combat-only"
+                style="left: 81.5%; width: 13%"
+              ></span>
             </div>
           </div>
           <div class="hp__actions">
@@ -317,7 +327,8 @@
           <span class="crest"></span><span class="frame__corner-tr"></span
           ><span class="frame__corner-bl"></span>
           <h2 class="ftitle" id="act-h">
-            Azioni <span class="ftitle__aside">· il tuo turno</span>
+            Azioni <span class="ftitle__aside combat-only">· il tuo turno</span
+            ><span class="ftitle__aside explore-only">· fuori dal combattimento</span>
           </h2>
 
           <div class="tip">
@@ -336,11 +347,11 @@
               ></i>
             </button>
             <ol class="tip__steps" id="tip-body">
-              <li>
+              <li class="combat-only">
                 <span class="shape shape--move"></span
                 ><span><b>Muoviti</b> fino a 9 m, se ti serve avvicinarti.</span>
               </li>
-              <li>
+              <li class="combat-only">
                 <span class="shape shape--action"></span
                 ><span
                   ><b>Fiamma sacra</b> sul nemico più vicino.<span class="why"
@@ -348,11 +359,34 @@
                   ></span
                 >
               </li>
-              <li>
+              <li class="combat-only">
                 <span class="shape shape--reaction"></span
                 ><span
                   >Tieni la reazione per un
                   <button class="term">attacco di opportunità</button>.</span
+                >
+              </li>
+              <li class="explore-only">
+                <span class="shape shape--action"></span
+                ><span
+                  ><b>Guida</b> su chi sta per fare una prova.<span class="why"
+                    >Aggiunge 1d4 al tiro, e non spende slot.</span
+                  ></span
+                >
+              </li>
+              <li class="explore-only">
+                <span class="shape shape--action"></span
+                ><span
+                  ><b>Individuazione del magico</b> come
+                  <button class="term">rituale</button>.<span class="why"
+                    >Ci mette 10 minuti in più, ma non spende uno slot.</span
+                  ></span
+                >
+              </li>
+              <li class="explore-only">
+                <span class="shape shape--move"></span
+                ><span
+                  >Sei a 31 su 38: un <b>riposo breve</b> ti porterebbe al massimo.</span
                 >
               </li>
             </ol>
@@ -369,6 +403,9 @@
             <button class="pill" aria-pressed="false">
               <span class="shape shape--reaction"></span>Reazione
             </button>
+            <button class="pill explore-only" aria-pressed="false">
+              <i data-lucide="hourglass" class="i i--sm"></i>Rituali
+            </button>
           </div>
 
           <div class="atable">
@@ -378,14 +415,45 @@
               ><span class="label">Effetto</span><span></span>
             </div>
 
+            <div class="agroup explore-only">
+              <i data-lucide="hourglass" class="i i--sm" style="color: var(--gold)"></i
+              >Utili fuori dallo scontro
+            </div>
+            <div class="arow explore-only">
+              <span class="slot"><img src="img/icon-guidance.webp" alt="" /></span>
+              <button class="arow__name">
+                <span class="arow__title">Guida</span
+                ><span class="arow__meta"
+                  ><span class="shape shape--action"></span>Trucchetto · concentrazione, 1
+                  min</span
+                >
+              </button>
+              <span class="arow__range only-laptop">Contatto</span
+              ><span class="arow__dash only-laptop">—</span
+              ><button class="plate only-laptop">+1d4 <small>prova</small></button>
+              <button class="btn">Lancia</button>
+            </div>
+            <div class="arow explore-only">
+              <span class="slot"><img src="img/icon-detect-magic.webp" alt="" /></span>
+              <button class="arow__name">
+                <span class="arow__title">Individuazione del magico</span
+                ><span class="arow__meta"
+                  ><span class="shape shape--action"></span>1° livello · rituale, 10
+                  min</span
+                >
+              </button>
+              <span class="arow__range only-laptop">9 m</span
+              ><span class="arow__dash only-laptop">—</span
+              ><span class="arow__dash only-laptop">—</span>
+              <button class="btn">Rituale</button>
+            </div>
+
             <div class="agroup">
               <span class="shape shape--action"></span>Azioni
               <span class="agroup__note">· 1 attacco per azione</span>
             </div>
             <div class="arow">
-              <span class="slot" style="--c: var(--t-action)"
-                ><i data-lucide="hammer" class="i"></i
-              ></span>
+              <span class="slot"><img src="img/icon-mace.webp" alt="" /></span>
               <button class="arow__name">
                 <span class="arow__title">Mazza</span
                 ><span class="arow__meta"
@@ -397,25 +465,50 @@
               <button class="plate only-laptop">1d6+3 <small>cont.</small></button>
               <button class="btn">Attacca</button>
             </div>
-            <div class="arow">
-              <span class="slot" style="--c: #f2b24a"
-                ><i data-lucide="flame" class="i"></i
-              ></span>
-              <button class="arow__name">
-                <span class="arow__title">Fiamma sacra</span
-                ><span class="arow__meta"
-                  >Trucchetto<span class="only-phone num"> · CD 14 · 2d8</span></span
-                >
-              </button>
-              <span class="arow__range only-laptop">18 m</span>
-              <button class="plate only-laptop">CD 14 <small>DES</small></button>
-              <button class="plate only-laptop">2d8 <small>rad.</small></button>
-              <button class="btn">Lancia</button>
+            <div class="arow-wrap">
+              <div class="arow">
+                <span class="slot"><img src="img/icon-sacred-flame.webp" alt="" /></span>
+                <button class="arow__name">
+                  <span class="arow__title">Fiamma sacra</span
+                  ><span class="arow__meta"
+                    >Trucchetto<span class="only-phone num"> · CD 14 · 2d8</span></span
+                  >
+                </button>
+                <span class="arow__range only-laptop">18 m</span>
+                <button class="plate only-laptop">CD 14 <small>DES</small></button>
+                <button class="plate only-laptop">2d8 <small>rad.</small></button>
+                <button class="btn">Lancia</button>
+              </div>
+              <!-- BG3's spell tooltip, shown on hover / long press -->
+              <div class="frame spellcard" id="tip-flame" hidden>
+                <span class="frame__corner-tr"></span
+                ><span class="frame__corner-bl"></span>
+                <div class="spellcard__head">
+                  <span class="slot slot--lg"
+                    ><img src="img/icon-sacred-flame.webp" alt=""
+                  /></span>
+                  <div>
+                    <p class="spellcard__title">Fiamma sacra</p>
+                    <p class="meta">Trucchetto · Evocazione</p>
+                  </div>
+                </div>
+                <p class="spellcard__dmg">
+                  <b>2d8</b> danni radiosi <span class="meta">· in media 9</span>
+                </p>
+                <p class="spellcard__text">
+                  Una fiamma scende su una creatura che vedi. Fa un
+                  <button class="term">tiro salvezza</button> di Destrezza contro la tua
+                  CD 14: se fallisce subisce i danni. La
+                  <button class="term">copertura</button> non la protegge.
+                </p>
+                <div class="spellcard__foot">
+                  <span><span class="shape shape--action"></span>Azione</span
+                  ><span>18 m</span><span>V, S</span>
+                </div>
+              </div>
             </div>
             <div class="arow">
-              <span class="slot" style="--c: #f5e08a"
-                ><i data-lucide="sun" class="i"></i
-              ></span>
+              <span class="slot"><img src="img/icon-preserve-life.webp" alt="" /></span>
               <button class="arow__name">
                 <span class="arow__title">Preservare la vita</span
                 ><span class="arow__meta"
@@ -424,52 +517,70 @@
                   ></span
                 >
               </button>
-              <span class="arow__range only-laptop">9 m</span>
-              <span class="arow__dash only-laptop">—</span>
+              <span class="arow__range only-laptop">9 m</span
+              ><span class="arow__dash only-laptop">—</span>
               <button class="plate only-laptop">25 <small>PF</small></button>
               <button class="btn">Usa</button>
             </div>
             <div class="arow">
-              <span class="slot" style="--c: #7fe0a0"
-                ><i data-lucide="heart-pulse" class="i"></i
-              ></span>
+              <span class="slot"><img src="img/icon-cure-wounds.webp" alt="" /></span>
               <button class="arow__name">
                 <span class="arow__title">Cura ferite</span
                 ><span class="arow__meta"
                   >1° livello<span class="only-phone num"> · 2d8+6</span></span
                 >
               </button>
-              <span class="arow__range only-laptop">Contatto</span>
-              <span class="arow__dash only-laptop">—</span>
+              <span class="arow__range only-laptop">Contatto</span
+              ><span class="arow__dash only-laptop">—</span>
               <button class="plate only-laptop">2d8+6 <small>PF</small></button>
               <button class="btn">Lancia</button>
             </div>
 
-            <div class="agroup">
+            <div class="agroup combat-only">
               <span class="shape shape--bonus is-spent"></span>Azioni bonus
               <span class="agroup__note">· già usata in questo turno</span>
             </div>
-            <div class="arow is-spent">
-              <span class="slot" style="--c: #7fe0a0"
-                ><i data-lucide="hand-heart" class="i"></i
-              ></span>
+            <div class="agroup explore-only">
+              <span class="shape shape--bonus"></span>Azioni bonus
+            </div>
+            <div class="arow is-spent-in-combat">
+              <span class="slot"><img src="img/icon-healing-word.webp" alt="" /></span>
               <button class="arow__name">
                 <span class="arow__title">Parola guaritrice</span
                 ><span class="arow__meta"
                   >1° livello<span class="only-phone num"> · 2d4+6</span></span
                 >
               </button>
-              <span class="arow__range only-laptop">18 m</span>
-              <span class="arow__dash only-laptop">—</span>
+              <span class="arow__range only-laptop">18 m</span
+              ><span class="arow__dash only-laptop">—</span>
               <span class="plate only-laptop">2d4+6 <small>PF</small></span>
-              <button class="btn" disabled>Lancia</button>
+              <button class="btn combat-only" disabled>Lancia</button
+              ><button class="btn explore-only">Lancia</button>
+            </div>
+            <div class="arow">
+              <span class="slot"
+                ><img src="img/icon-spiritual-weapon.webp" alt=""
+              /></span>
+              <button class="arow__name">
+                <span class="arow__title">Arma spirituale</span
+                ><span class="arow__meta"
+                  >2° livello · 1 minuto<span class="only-phone num">
+                    · +6 · 1d8+3</span
+                  ></span
+                >
+              </button>
+              <span class="arow__range only-laptop">18 m</span>
+              <button class="plate only-laptop">+6</button>
+              <button class="plate only-laptop">1d8+3 <small>forza</small></button>
+              <button class="btn combat-only" disabled>Lancia</button
+              ><button class="btn explore-only">Lancia</button>
             </div>
 
             <div class="agroup"><span class="shape shape--reaction"></span>Reazioni</div>
             <div class="arow">
-              <span class="slot" style="--c: var(--t-reaction)"
-                ><i data-lucide="shield" class="i"></i
-              ></span>
+              <span class="slot"
+                ><img src="img/icon-opportunity-attack.webp" alt=""
+              /></span>
               <button class="arow__name">
                 <span class="arow__title">Attacco di opportunità</span
                 ><span class="arow__meta">Quando un nemico esce dalla tua portata</span>
@@ -482,13 +593,43 @@
           </div>
         </section>
 
+        <!-- The log: one chronological record, exploration and combat (Roll20/Foundry chat log) -->
         <aside class="play__log frame frame--crest only-laptop" aria-labelledby="log-h">
           <span class="crest"></span><span class="frame__corner-tr"></span
           ><span class="frame__corner-bl"></span>
           <h2 class="ftitle" id="log-h">Resoconto</h2>
           <div class="log">
-            <div class="log__round">
-              <span class="label">Round 1</span>
+            <div class="log__sec">
+              <div class="log__head">
+                <span class="label">Esplorazione</span
+                ><span class="log__time">21:05</span>
+              </div>
+              <p class="log__entry log__entry--note">
+                <span class="log__dot log__dot--note"></span
+                ><span
+                  >Il gruppo entra nella cripta dal portone a est.<span class="log__src"
+                    >Nota di Marco, il master</span
+                  ></span
+                >
+              </p>
+              <p class="log__entry">
+                <span class="shape shape--action"></span
+                ><span
+                  >Hai lanciato <b>Individuazione del magico</b> come rituale: niente
+                  slot.<span class="log__src">10 minuti · concentrazione</span></span
+                >
+              </p>
+              <p class="log__entry">
+                <span class="shape shape--action"></span
+                ><span><b>Guida</b> su Tib per la prova di Furtività: <b>+1d4</b>.</span>
+              </p>
+            </div>
+            <div class="log__sec combat-only">
+              <div class="log__head">
+                <span class="label">Scontro con i goblin</span
+                ><span class="log__time">21:40</span>
+              </div>
+              <span class="log__round">Round 1</span>
               <p class="log__entry">
                 <span class="shape shape--action"></span
                 ><span
@@ -502,22 +643,38 @@
                 <span class="log__dot"></span
                 ><span>Il goblin ti ha colpito: <b>7 danni</b>, da 38 a 31.</span>
               </p>
-              <p class="log__entry log__entry--note">
-                <span class="log__dot log__dot--note"></span
-                ><span
-                  >Il goblin dice che il capo è nella cripta a nord.<span class="log__src"
-                    >Nota di Marco, il master</span
-                  ></span
-                >
-              </p>
-            </div>
-            <div class="log__round">
-              <span class="label">Round 2</span>
+              <span class="log__round">Round 2</span>
               <p class="log__entry">
                 <span class="shape shape--bonus"></span
                 ><span
                   ><b>Parola guaritrice</b> su Kaela: <b>+11 PF</b>.<span class="log__src"
                     >5 sui dadi + 3 Saggezza + 3 Discepolo della Vita</span
+                  ></span
+                >
+              </p>
+            </div>
+            <div class="log__sec explore-only">
+              <div class="log__head">
+                <span class="label">Scontro con i goblin</span
+                ><span class="log__time">21:40</span>
+              </div>
+              <button class="log__fold">
+                3 round · 4 goblin sconfitti · 12 righe<i
+                  data-lucide="chevron-down"
+                  class="i i--sm"
+                ></i>
+              </button>
+            </div>
+            <div class="log__sec explore-only">
+              <div class="log__head">
+                <span class="label">Esplorazione</span
+                ><span class="log__time">21:58</span>
+              </div>
+              <p class="log__entry">
+                <span class="log__dot log__dot--heal"></span
+                ><span
+                  >Riposo breve: 2 Dadi Vita, <b>+13 PF</b>.<span class="log__src"
+                    >9 sui dadi + 4 Costituzione</span
                   ></span
                 >
               </p>
@@ -535,9 +692,9 @@
       </div>
     </main>
 
-    <!-- HUD: BG3's resource row and round End Turn -->
-    <div class="hudbar band">
-      <div class="hud">
+    <!-- HUD: BG3's resource row and round End Turn; outside combat, BG3's turn-based toggle -->
+    <div class="hudbar">
+      <div class="hud combat-only">
         <div class="econ" aria-label="Cosa ti resta in questo turno">
           <span class="econ__item"><span class="shape shape--action"></span>Azione</span>
           <span class="econ__item is-spent"
@@ -550,6 +707,17 @@
         </div>
         <button class="endturn" aria-label="Fine turno">
           <span class="endturn__inner">Fine<br />turno</span>
+        </button>
+      </div>
+      <div class="hud explore-only">
+        <p class="hud__note">
+          <i data-lucide="footprints" class="i i--sm"></i>Fuori dal combattimento: le
+          azioni non consumano il turno.
+        </p>
+        <button class="endturn endturn--idle" aria-label="Inizia uno scontro">
+          <span class="endturn__inner"
+            ><i data-lucide="swords" class="i"></i>Scontro</span
+          >
         </button>
       </div>
     </div>

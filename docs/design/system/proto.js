@@ -1,8 +1,6 @@
-// Prototype helpers: theme from ?theme=light|dark, icons, simple toggles. Not app code.
+// Prototype helpers: ?mode=explore|combat, ?tip, ?closed, icons, simple toggles. Not app code.
 (function () {
   const params = new URLSearchParams(location.search);
-  const theme = params.get("theme");
-  if (theme) document.documentElement.dataset.theme = theme;
 
   function ready(fn) {
     if (document.readyState !== "loading") fn();
@@ -10,14 +8,12 @@
   }
 
   ready(() => {
+    const mode = params.get("mode");
+    if (mode) document.body.className = "mode-" + mode;
+    if (params.has("tip"))
+      document.getElementById("tip-flame")?.removeAttribute("hidden");
     if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
 
-    document.querySelectorAll("[data-theme-toggle]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        const root = document.documentElement;
-        root.dataset.theme = root.dataset.theme === "light" ? "dark" : "light";
-      })
-    );
     // aria-pressed groups (segmented filters)
     document.querySelectorAll(".pills").forEach((seg) =>
       seg.addEventListener("click", (e) => {

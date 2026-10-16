@@ -3,8 +3,7 @@
  * A synthesis of real products, not an invention:
  *  - Baldur's Gate 3: near-black panels, bronze-and-gold hairline frames with corner filigree,
  *    serif type, medallion portrait, a shape per action type, a round End Turn.
- *  - Foundry dnd5e: AC in a shield, initiative and speed on small plates, a dark header band
- *    that stays dark in the light theme.
+ *  - Foundry dnd5e: AC in a shield, initiative and speed on small plates, a header band.
  *  - D&D Beyond: header order (AC · initiative · portrait · HP), actions as a table with framed
  *    hit and damage values, one section switcher on phones.
  */
@@ -41,9 +40,8 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ═══ DARK — the default ═══════════════════════════════════════════ */
-:root,
-[data-theme="dark"] {
+/* ═══ One theme: dark (BG3 ships dark only; owner 2026-10-16: nobody uses light) ═══ */
+:root {
   color-scheme: dark;
   --bg: #0b0907;
   --bg-glow: radial-gradient(
@@ -68,13 +66,6 @@
   --text-2: #bcae93;
   --text-3: #9a8c73;
 
-  /* Band: the identity header. Dark in both themes (Foundry). */
-  --band: #120e0b;
-  --band-panel: #1c1712;
-  --band-text: #eee2ca;
-  --band-text-2: #bcae93;
-  --band-frame: #6a5130;
-
   /* Action types: BG3 shapes and colours */
   --t-action: #6cc04a; /* green circle */
   --t-bonus: #ee9a3c; /* orange triangle */
@@ -97,52 +88,4 @@
 
   --focus: #f0d391;
   --shadow: 0 16px 40px -12px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.45);
-}
-
-/* ═══ LIGHT — Foundry's daylight sheet: light paper body, dark band ═ */
-[data-theme="light"] {
-  color-scheme: light;
-  --bg: #e9e3d8;
-  --bg-glow: radial-gradient(
-    1400px 700px at 50% -20%,
-    rgb(255 255 255 / 0.7),
-    transparent 65%
-  );
-  --panel: #f7f3ec;
-  --panel-2: #fffdf8;
-  --panel-3: #efe8dc;
-  --well: #ebe5da;
-  --scrim: rgb(30 22 12 / 0.45);
-
-  --frame: #b79763;
-  --frame-inner: #e8dfcf;
-  --frame-strong: #8f6d33;
-  --gold: #855f1a;
-  --gold-bright: #6b4a0e;
-  --line: #ddd2bf;
-
-  --text: #1e1912;
-  --text-2: #4a4033;
-  --text-3: #66594a;
-
-  --t-action: #3d8a22;
-  --t-bonus: #b8630f;
-  --t-reaction: #8a3fb3;
-  --t-move: #8f7210;
-
-  --hp: #b8322a;
-  --hp-hi: #db5444;
-  --hp-track: #ead2cc;
-  --temp: #2a72b0;
-  --heal: #23804a;
-  --cond: #9a6500;
-  --buff: #2a62a8;
-  --danger: #b5332a;
-
-  --lit: #1f7ea3;
-  --lit-hi: #4cc0e6;
-  --lit-deep: #0f3a4b;
-
-  --focus: #7a560f;
-  --shadow: 0 16px 40px -14px rgb(60 40 10 / 0.35), 0 2px 6px rgb(60 40 10 / 0.12);
 }
