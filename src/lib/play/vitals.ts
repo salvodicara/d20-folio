@@ -10,7 +10,8 @@
  */
 import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
-import { clampHp, clampTemp } from "@/lib/combat-hp";
+import { applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
+import { isCharacterAlive } from "@/lib/character-status";
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { ExhaustionLevel } from "@/types/condition";
@@ -63,6 +64,24 @@ export function setHp(doc: CharacterDoc, current: number): SessionState {
         conditions: base.conditions.filter((c) => c !== UNCONSCIOUS_CONDITION_ID),
       }
     : base;
+}
+
+/**
+ * Heal by an amount, up to the effective maximum: the intention behind a heal, so a
+ * replayed log recomputes it from the current HP. Off 0 it resets the death saves and
+ * sheds Unconscious, as `setHp` does. Null on a fallen character or at full HP.
+ */
+export function healBy(doc: CharacterDoc, amount: number): SessionState | null {
+  if (!isCharacterAlive(doc.status, doc.session)) return null;
+  const max = effectiveMaxHp(doc.character, doc.session);
+  const current = applyHealing(doc.session.hp.current, amount, max);
+  return current === doc.session.hp.current ? null : setHp(doc, current);
+}
+
+/** Gain temporary HP: they never stack, so the larger pool stays. Null when unchanged. */
+export function gainTempHp(doc: CharacterDoc, amount: number): SessionState | null {
+  const temp = Math.max(doc.session.hp.temp, amount);
+  return temp === doc.session.hp.temp ? null : setTempHp(doc, temp);
 }
 
 /**

@@ -31,8 +31,12 @@ export interface PlayLogShadow {
   stats(): ShadowStats;
 }
 
-const same = (a: CharacterDoc, b: CharacterDoc): boolean =>
-  JSON.stringify(a) === JSON.stringify(b);
+/** The play state the log records: the session log's narrative lines are written
+ *  next to it by the store, and will be derived from the log, so they do not count. */
+const playState = (doc: CharacterDoc): string =>
+  JSON.stringify({ ...doc, session: { ...doc.session, logEntries: [] } });
+
+const same = (a: CharacterDoc, b: CharacterDoc): boolean => playState(a) === playState(b);
 
 export function createPlayLogShadow(
   actor: string,

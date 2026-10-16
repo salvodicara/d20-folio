@@ -54,4 +54,14 @@ describe("play log shadow in the store", () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("[play-log shadow]"));
     warn.mockRestore();
   });
+
+  it("damage, healing and temporary HP reach the log as intentions", () => {
+    const id = load();
+    store().applyDamage(5);
+    store().applyHealing(2);
+    store().gainTempHp(4);
+    expect(store().character?.session.hp).toEqual({ current: 27, temp: 4 });
+    // One checkpoint: none of the three wrote around the log.
+    expect(playLogShadowStats(id)).toEqual({ entries: 3, checkpoints: 1, mismatches: 0 });
+  });
 });

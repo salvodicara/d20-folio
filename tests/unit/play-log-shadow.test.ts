@@ -12,7 +12,13 @@ import { describe, expect, it } from "vitest";
 import { createPlayLogShadow } from "@/lib/play/play-log-shadow";
 import { applySheetEvent, type SheetEvent } from "@/lib/play/sheet-events";
 import { makeCharacterDoc } from "./_helpers";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, LogEntry } from "@/types/character";
+
+const NARRATIVE: LogEntry = {
+  id: "line-1",
+  ts: 0,
+  event: { kind: "hp-heal", amount: 2, current: 22, max: 40 },
+};
 
 function start(): CharacterDoc {
   return makeCharacterDoc(
@@ -96,5 +102,22 @@ describe("play log shadow", () => {
       doc = after;
     }
     expect(shadow.stats().entries).toBeLessThanOrEqual(3);
+  });
+
+  it("compares the play state, not the session log's narrative lines", () => {
+    const shadow = createPlayLogShadow("player");
+    const doc = start();
+    const a = apply(doc, { kind: "spend-slot", level: 1, pactMagic: false });
+    shadow.record(doc, { kind: "spend-slot", level: 1, pactMagic: false }, a);
+    // The store writes the table's narrative line next to the event, outside the log.
+    const narrated: CharacterDoc = {
+      ...a,
+      session: { ...a.session, logEntries: [...a.session.logEntries, NARRATIVE] },
+    };
+    const b = apply(narrated, { kind: "add-condition", condition: "prone" });
+    expect(
+      shadow.record(narrated, { kind: "add-condition", condition: "prone" }, b).parity
+    ).toBe(true);
+    expect(shadow.stats()).toMatchObject({ entries: 2, checkpoints: 1, mismatches: 0 });
   });
 });

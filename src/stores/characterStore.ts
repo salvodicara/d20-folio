@@ -1320,6 +1320,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
     const taken = takeDamage(character, amount, opts);
     if (!taken) return null;
+    const damaged = { ...character, session: taken.session };
+    // The hit as an intention in the play log's shadow (its undo is the command undo).
+    shadowRecord(character, { kind: "take-damage", amount, ...opts }, damaged);
     const { transition, consumedEffectIds } = taken;
     const current = character.session.hp.current;
     const nextLegacyEffects = get().combatLegacyActiveEffects.filter(
@@ -1361,7 +1364,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         // any legacy/stale queued prompts are therefore ineligible.
         combatPendingConcentrationSaves: [],
         encounterEffectProjection: nextEncounterEffectProjection,
-        character: { ...character, session: taken.session },
+        character: damaged,
       });
       logTransitionEvents();
       persistCombat(get);
@@ -1449,7 +1452,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     // A form no Concentration holds (Animal Shapes) ends here on its own, keeping
     // the depleted Temporary HP rather than restoring the caster's pool.
-    const damaged = { ...character, session: taken.session };
     const afterForm =
       formEnds && !formHeldByConcentration
         ? (dropBeastForm(damaged, newTemp) ?? damaged)
@@ -1494,12 +1496,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       deathFail,
       conditions: [...conditions],
     };
-    // Reuse setHP for the OPTIMISTIC in-memory update so the heal-from-0 death-save
-    // reset + Unconscious shed (RAW 2024) stay in ONE place — but `persist: false`,
-    // so we persist ONCE here (the whole resulting state). setHP never logs.
+    // The heal is an intention (`healBy`): it shares `setHp`'s heal-from-0 death-save
+    // reset + Unconscious shed (RAW 2024), and we persist ONCE below.
     const wasUnconsciousAtZero =
       prevCurrent === 0 && conditions.includes(UNCONSCIOUS_CONDITION_ID);
-    get().setHP(newCurrent, { persist: false });
+    if (!get().dispatch({ kind: "heal", amount })) return null;
     // Log the HP that landed, not the request: the clamp at max eats any overheal.
     const logIds = [
       get().logEvent({
@@ -1532,8 +1533,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return null;
     const prevTemp = character.session.hp.temp;
     const newTemp = Math.max(prevTemp, amount); // temp HP don't stack
-    if (newTemp === prevTemp) return null;
-    get().setTempHP(newTemp);
+    if (!get().dispatch({ kind: "gain-temp-hp", amount })) return null;
+    persistCombat(get);
     const logId = get().logEvent({ kind: "temp-hp-gain", amount: newTemp });
     // Undo restores the prior pool through the log-free setter and drops this line.
     return () => {

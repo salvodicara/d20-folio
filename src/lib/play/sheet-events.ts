@@ -24,6 +24,7 @@ import { setCover, type CoverUntil } from "./cover";
 import { setLight } from "./light";
 import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
+import { takeDamage, type DamageOptions } from "./damage";
 import { dropBeastForm } from "./forms";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
@@ -35,6 +36,8 @@ import { setWishStress } from "./wish";
 import {
   restoreSpellSlot,
   restoreTracker,
+  gainTempHp,
+  healBy,
   setDeathSaves,
   setExhaustion,
   setHp,
@@ -47,6 +50,9 @@ import {
 export type SheetEvent =
   | { kind: "set-hp"; current: number }
   | { kind: "set-temp-hp"; temp: number }
+  | ({ kind: "take-damage"; amount: number } & DamageOptions)
+  | { kind: "heal"; amount: number }
+  | { kind: "gain-temp-hp"; amount: number }
   | { kind: "set-hp-max-reduction"; total: number }
   | { kind: "spend-slot"; level: number; pactMagic: boolean }
   | { kind: "restore-slot"; level: number; pactMagic: boolean }
@@ -109,6 +115,12 @@ export function applySheetEvent(
       return withSession(setHp(doc, event.current));
     case "set-temp-hp":
       return withSession(setTempHp(doc, event.temp));
+    case "take-damage":
+      return withSession(takeDamage(doc, event.amount, event)?.session);
+    case "heal":
+      return withSession(healBy(doc, event.amount));
+    case "gain-temp-hp":
+      return withSession(gainTempHp(doc, event.amount));
     case "set-hp-max-reduction":
       return withSession(setHpMaxReduction(doc, event.total));
     case "spend-slot":
