@@ -226,7 +226,7 @@ jobs:
       - name: Require every Function healthy on Node 24
         run: |
           set -euo pipefail
-          expected='deleteUser ogImage ogShell onBudgetAlert onBugReportCreated onUserCreated'
+          expected='deleteUser diagnosticsDigest ogImage ogShell onBudgetAlert onBugReportCreated onUserCreated'
           for attempt in $(seq 1 12); do
             active="$(firebase functions:list --project d20-folio --json \
               | jq -r '.result[] | select(.region == "europe-west1" and .runtime == "nodejs24" and .state == "ACTIVE") | .id' \
