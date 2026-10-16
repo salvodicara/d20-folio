@@ -35,6 +35,10 @@
       "minimum": "Minimum 0",
       "floor": "Minimum Speed",
       "cap": "Speed limit"
+    },
+    "ability": {
+      "floor": "Minimum score",
+      "cap": "Maximum score"
     }
   }
 }

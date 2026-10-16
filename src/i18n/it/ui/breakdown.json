@@ -35,6 +35,10 @@
       "minimum": "Minimo 0",
       "floor": "Velocità minima",
       "cap": "Limite di velocità"
+    },
+    "ability": {
+      "floor": "Punteggio minimo",
+      "cap": "Punteggio massimo"
     }
   }
 }
