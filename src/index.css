@@ -210,8 +210,8 @@
        --asset-login              the sign-in splash (glowing grimoire altar)
        --asset-campaign-backdrop  the campaign default (war-table hall) */
   --asset-home-hero: var(--asset-hero-study);
-  --asset-login: url("/assets/backgrounds/sanctum-hero.webp");
-  --asset-campaign-backdrop: url("/assets/backgrounds/war-room-hero.webp");
+  --asset-login: var(--asset-hero-sanctum);
+  --asset-campaign-backdrop: var(--asset-hero-war-room);
   /* Direction B hero art (owner 2026-10-16): one generated series, the same keep seen
      from its rooms, painted for the top band of each realm and fading to the page.
      Provenance: public/assets/backgrounds/HERO-ART.md. */
@@ -720,6 +720,18 @@
    § 01 Palette · LIGHT theme (aged vellum — designed, not adapted)
    ═══════════════════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
+  /* Direction B daylight siblings of the hero series (HERO-ART.md): the same rooms at
+     midday, so the light theme is a coherent daylight keep, never a washed night. */
+  --asset-hero-study: url("/assets/backgrounds/study-hero-day.webp");
+  --asset-hero-study-phone: url("/assets/backgrounds/study-hero-day-phone.webp");
+  --asset-hero-war-room: url("/assets/backgrounds/war-room-hero-day.webp");
+  --asset-hero-war-room-phone: url("/assets/backgrounds/war-room-hero-day-phone.webp");
+  --asset-hero-library: url("/assets/backgrounds/library-hero-day.webp");
+  --asset-hero-library-phone: url("/assets/backgrounds/library-hero-day-phone.webp");
+  --asset-hero-armoury: url("/assets/backgrounds/armoury-hero-day.webp");
+  --asset-hero-armoury-phone: url("/assets/backgrounds/armoury-hero-day-phone.webp");
+  --asset-hero-sanctum: url("/assets/backgrounds/sanctum-hero-day.webp");
+  --asset-hero-sanctum-phone: url("/assets/backgrounds/sanctum-hero-day-phone.webp");
   /* On vellum the lit slab is an ink plate with gold letters; it sits, it does not glow. */
   --lit-slab: linear-gradient(180deg, #3a2c18, #1e160c);
   --lit-ink: #f6dd9c;
@@ -840,9 +852,9 @@
   /* The daylight scene is deliberately present, then graded into shade in the
      shared painter below. Opacity provides detail; luminance separation comes
      from the theme filter, not from washing the art into the page field. */
-  /* Light: the same scene washed toward vellum, so dark ink reads over it. */
-  --hero-art-shade-top: rgb(239 231 214 / 0.35);
-  --hero-art-shade-mid: rgb(239 231 214 / 0.7);
+  /* Light: the daylight scene, a soft vellum veil only behind the content. */
+  --hero-art-shade-top: rgb(239 231 214 / 0);
+  --hero-art-shade-mid: rgb(239 231 214 / 0.55);
   --hero-art-shade-end: rgb(239 231 214 / 0.9);
 
   /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit

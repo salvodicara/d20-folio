@@ -165,7 +165,7 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     " "
   );
 
-  it("#11 — every realm's hero art is one series, washed for light by its shade (owner 2026-10-16)", () => {
+  it("#11 — every realm's hero art is one series with daylight siblings for light (owner 2026-10-16)", () => {
     // Direction B: one generated series (HERO-ART.md); the light theme does not
     // download a sibling plate, it washes the same scene toward vellum.
     for (const [token, file] of [
@@ -179,7 +179,10 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
         `${token}: url("/assets/backgrounds/${file}")`
       );
     }
-    expect(indexCss).not.toMatch(/-light\.webp/);
+    // The light theme points each scene at its daylight sibling.
+    expect(indexCss).toMatch(
+      /\[data-theme="light"\][^{]*\{[^}]*--asset-hero-study: url\("\/assets\/backgrounds\/study-hero-day\.webp"\)/
+    );
   });
 
   it("#12 — each realm opens on its hero art, shaded and fading into the page (owner 2026-10-16)", () => {

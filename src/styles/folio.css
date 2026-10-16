@@ -9368,9 +9368,11 @@ button.create-need:focus-visible .create-need-chev {
 }
 .pick-name {
   display: block;
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 600;
+  /* Direction B: a thing's name is engraved, in a list as on its card. */
+  font-family: var(--font-title);
+  font-size: var(--text-base);
+  font-weight: 700;
+  letter-spacing: 0.02em;
   color: var(--text-primary);
   /* No-Truncation Rule (DESIGN.md §3): the row name WRAPS (balanced) instead of
      mid-string ellipsizing — the trailing verdict/badge keeps natural width and
@@ -9458,25 +9460,11 @@ button.create-need:focus-visible .create-need-chev {
    math is needed on top). The warm-dark gradient stays underneath as the graceful
    fallback, and the inset shadow keeps the worn-edge vignette. */
 [data-theme="dark"] .tome-leaf-surface {
-  --tome-leaf: var(--asset-vellum-dark);
-  background:
-    linear-gradient(180deg, var(--leaf-head, transparent) 0 48px, transparent 128px),
-    image-set(var(--tome-leaf) type("image/webp")),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--gold-leaf-900) 30%, var(--bg-surface-1)),
-      color-mix(in oklab, var(--gold-leaf-900) 26%, var(--bg-surface-1))
-    );
-  background-size: auto, cover, auto;
-  background-position:
-    0 0,
-    center,
-    0 0;
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-blend-mode: normal, normal, normal;
-  box-shadow:
-    var(--elev-raised),
-    inset 0 0 70px 24px color-mix(in oklab, #000 62%, var(--gold-leaf-900));
+  /* Direction B (owner 2026-10-16): the codex and the legal leaf are the same dark
+     stone as every panel, framed the same way; the vellum photo is retired here. */
+  border: 0;
+  background: linear-gradient(180deg, var(--bg-surface-2), var(--bg-surface-1));
+  box-shadow: var(--panel-frame), var(--elev-raised);
 }
 
 /* The PAGE HOSTS: normal folio panels — full border (the seat line IS this
@@ -9564,6 +9552,15 @@ button.create-need:focus-visible .create-need-chev {
      and the active tab's 2px drop over the panel border must stay inside
      the padding box or the scroller cuts it. */
   padding: 0 var(--sp-4) 2px;
+}
+/* The tab words can sit over a realm's hero art: they carry the hero shadow. */
+.cmp-ribbon [role="tab"],
+.wb .tabstrip [role="tab"] {
+  text-shadow: var(--hero-text-shadow);
+}
+[data-theme="light"] .cmp-ribbon [role="tab"],
+[data-theme="light"] .wb .tabstrip [role="tab"] {
+  text-shadow: none;
 }
 .cmp-ribbon::-webkit-scrollbar,
 .wb .tabstrip::-webkit-scrollbar {
@@ -10656,9 +10653,10 @@ button.create-need:focus-visible .create-need-chev {
 }
 /* The title WRAPS — a reading page never truncates its own headword. */
 .cmp-entry-name {
-  font-family: var(--font-display);
-  font-size: 1.45rem;
-  font-weight: 600;
+  font-family: var(--font-title);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: 0.03em;
   line-height: 1.12;
   color: var(--text-primary);
   margin: 0;
