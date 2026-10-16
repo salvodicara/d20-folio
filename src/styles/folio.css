@@ -11273,6 +11273,10 @@ button.create-need:focus-visible .create-need-chev {
      CTA button + any chip text on this card. */
   --at-c-vivid: var(--at-action-vivid);
   position: relative;
+  /* Owner 2026-10-16: the action type reads at a glance down the list — the left
+     edge in the type's colour (action ember · bonus teal · reaction violet). */
+  border-left: 3px solid var(--at-c-vivid);
+  transition: border-left-width var(--m-fast) var(--ease-settle);
 }
 .uc[data-slot="bonus"] {
   --at-c: var(--at-bonus);
