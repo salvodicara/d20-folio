@@ -615,7 +615,7 @@ function applyTray(
     message: t("combat.damageTray.appliedToast", { name: offer.actionName }),
   };
 
-  if (local.length > 0 || declares) {
+  if (local.length > 0 || declares || peers.length > 0) {
     registerUndoableToast(
       label,
       () => {
@@ -663,25 +663,30 @@ function applyTray(
               ...given,
             });
         }
+        // Another PC: their sheet is written through the campaign, and the write's
+        // own undo restores it (and drops its line) when the apply is taken back.
+        const peerUndos: Array<Promise<() => void>> = [];
+        for (const { target, amount, conditions, outcome } of peers) {
+          if (effect && amount > 0)
+            peerUndos.push(
+              givePeer(target, effect, amount, undefined, source, t, outcome)
+            );
+          for (const conditionId of conditions)
+            peerUndos.push(givePeer(target, "condition", 0, conditionId, source, t));
+        }
         return () => {
           for (const reverse of reversals.reverse()) reverse();
           // Every line this apply wrote (and any its reversal wrote) goes with it.
           const live = useCharacterStore.getState();
           for (const entry of live.character?.session.logEntries ?? [])
             if (!before.has(entry.id)) live.removeLogEntry(entry.id);
+          for (const undo of peerUndos.reverse()) void undo.then((run) => run());
         };
       },
       { turnScoped: false }
     );
   } else {
     useToastStore.getState().showToast({ ...label, duration: 4000 });
-  }
-
-  for (const { target, amount, conditions, outcome } of peers) {
-    if (effect && amount > 0)
-      givePeer(target, effect, amount, undefined, source, t, outcome);
-    for (const conditionId of conditions)
-      givePeer(target, "condition", 0, conditionId, source, t);
   }
 }
 
@@ -711,7 +716,8 @@ function applySelf(
   }
 }
 
-/** Another PC in the live encounter: the campaign PC card's peer write, then a line. */
+/** Another PC in the live encounter: the campaign PC card's peer write, then a line.
+ *  Resolves with its undo: the same peer write reverted, and its line removed. */
 function givePeer(
   target: TrayTarget,
   effect: TrayEffect | "condition",
@@ -720,7 +726,7 @@ function givePeer(
   source: LocText,
   t: T,
   outcome?: AttackOutcome
-): void {
+): Promise<() => void> {
   const row = target.row;
   const memberUid = row?.memberUid;
   const characterId = row?.characterId;
@@ -734,9 +740,15 @@ function givePeer(
       ...(effect === "condition" ? { conditionId } : { amount }),
       ...(outcome && effect === "damage" ? { outcome } : {}),
     });
+  const unlog = (ids: ReadonlySet<string>) => () => {
+    const live = useCharacterStore.getState();
+    for (const entry of live.character?.session.logEntries ?? [])
+      if (!ids.has(entry.id)) live.removeLogEntry(entry.id);
+  };
   if (!row || !memberUid || !characterId) {
+    const ids = logIds();
     log();
-    return;
+    return Promise.resolve(unlog(ids));
   }
   const mutation =
     effect === "condition"
@@ -753,15 +765,35 @@ function givePeer(
               amount,
             },
           };
-  void import("@/features/campaigns/campaign-io")
-    .then(({ writeCampaignCombatEffect }) =>
-      writeCampaignCombatEffect(memberUid, characterId, null, row.maxHp, mutation)
-    )
-    .then(log)
+  const failed = (error: unknown): void => {
+    console.error("Combat write failed", error);
+    useToastStore
+      .getState()
+      .showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
+  };
+  return import("@/features/campaigns/campaign-io")
+    .then(async ({ writeCampaignCombatEffect }) => {
+      const { before, after } = await writeCampaignCombatEffect(
+        memberUid,
+        characterId,
+        null,
+        row.maxHp,
+        mutation
+      );
+      const ids = logIds();
+      log();
+      const dropLine = unlog(ids);
+      return () => {
+        dropLine();
+        void writeCampaignCombatEffect(memberUid, characterId, null, row.maxHp, {
+          kind: "revert",
+          written: after,
+          previous: before,
+        }).catch(failed);
+      };
+    })
     .catch((error: unknown) => {
-      console.error("Combat write failed", error);
-      useToastStore
-        .getState()
-        .showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
+      failed(error);
+      return () => {};
     });
 }
