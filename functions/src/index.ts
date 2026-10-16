@@ -9,14 +9,10 @@
  *    campaign ids, no screenshot — identifying details stay in the Firestore doc
  *    (the admin inbox).
  *
- *  - onUserCreated (OWN-38): a Firestore `onCreate` on `/users/{uid}` emails the
- *    owner the new user's details + a deep-link to /admin so abuse can be blocked
- *    fast. Fails soft — it never throws in a way that retries forever.
- *
- *  - diagnosticsDigest (ADR-0008, owner 2026-10-16): every morning, one email to
- *    the owner grouping the automatic error reports written since the last digest
- *    (none when there are none). Counts and kinds only; account ids stay in the
- *    admin inbox.
+ *  - ownerDigest (owner 2026-10-16): every morning, ONE email to the owner with the
+ *    accounts created and the automatic error reports (ADR-0008) written since the
+ *    last digest; none when nothing is new. Sign-ups are listed so abuse can be
+ *    blocked from /admin; errors are counts and kinds only.
  *
  *  - onBudgetAlert (SAFE-01): a Pub/Sub trigger on the `budget-kill` topic that the
  *    Cloud Billing £1 budget publishes to. When ACTUAL cost exceeds the budget it
@@ -49,14 +45,8 @@ import {
   parseRepo,
   type ReportLike,
 } from "./issue-format";
-import {
-  formatSignupEmail,
-  resolveMailConfig,
-  type MailConfig,
-  type MailMessage,
-  type NewUserLike,
-} from "./signup-email";
-import { formatDiagnosticsDigest, type DigestReport } from "./diagnostics-digest";
+import { resolveMailConfig, type MailConfig, type MailMessage } from "./owner-mail";
+import { formatOwnerDigest, type DigestReport } from "./owner-digest";
 import {
   planCampaignUpdate,
   coMemberAclTargets,
@@ -196,65 +186,13 @@ function ownerMailConfig(): MailConfig | null {
   });
 }
 
-// ── OWN-38 — new user → owner notification email ────────────────────────────
-export const onUserCreated = onDocumentCreated(
-  {
-    document: "users/{uid}",
-    secrets: [MAIL_HOST, MAIL_USER, MAIL_PASS, MAIL_FROM, OWNER_EMAIL],
-  },
-  async (event) => {
-    const snap = event.data;
-    if (!snap) {
-      logger.warn("user create event had no snapshot");
-      return;
-    }
-    const data = snap.data() as {
-      email?: string;
-      displayName?: string;
-      createdAt?: { toDate?: () => Date };
-    };
-
-    // The OWNER_EMAIL secret is the ONLY source of the destination — no fallback.
-    // Fail LOUD but not forever — a missing mail config must not crash the trigger
-    // (which would retry on every new sign-up). Error-log and return.
-    const config = ownerMailConfig();
-    if (!config) {
-      logger.error(
-        "mail configuration incomplete (MAIL_USER / MAIL_PASS / OWNER_EMAIL secrets); signup email NOT sent"
-      );
-      return;
-    }
-
-    const createdAt =
-      typeof data.createdAt?.toDate === "function"
-        ? data.createdAt.toDate().toISOString()
-        : new Date().toISOString();
-
-    const newUser: NewUserLike = {
-      uid: event.params.uid,
-      email: data.email,
-      displayName: data.displayName,
-      createdAt,
-    };
-    const message = formatSignupEmail(newUser);
-
-    try {
-      await sendOwnerMail(config, message);
-      logger.info("sent signup notification email", { uid: event.params.uid });
-    } catch (err) {
-      // Fail soft — log, never re-throw (a thrown error would retry indefinitely).
-      logger.error("failed to send signup email (non-fatal)", err);
-    }
-  }
-);
-
-// ── ADR-0008 — the owner's daily digest of new automatic error reports ─────
+// ── The owner's daily digest: new sign-ups + new automatic error reports ───
 /** Where the digest remembers how far it has read (Admin SDK only; rules deny clients). */
-const DIGEST_MARKER = "ops/diagnosticsDigest";
-/** A day of reports is bounded by the client caps; this is a safety ceiling. */
-const DIGEST_MAX_REPORTS = 500;
+const DIGEST_MARKER = "ops/ownerDigest";
+/** A day's worth is far below this; it only bounds a runaway. */
+const DIGEST_MAX_DOCS = 500;
 
-export const diagnosticsDigest = onSchedule(
+export const ownerDigest = onSchedule(
   {
     schedule: "every day 08:00",
     timeZone: "Europe/Rome",
@@ -263,39 +201,53 @@ export const diagnosticsDigest = onSchedule(
   async () => {
     const db = getFirestore();
     const marker = db.doc(DIGEST_MARKER);
-    const lastAt =
-      ((await marker.get()).get("lastAt") as Timestamp | undefined) ??
+    const lastRunAt =
+      ((await marker.get()).get("lastRunAt") as Timestamp | undefined) ??
       Timestamp.fromMillis(0);
-    const snap = await db
-      .collection("diagnostics")
-      .where("createdAt", ">", lastAt)
-      .orderBy("createdAt")
-      .limit(DIGEST_MAX_REPORTS)
-      .get();
-    if (snap.empty) {
-      logger.info("diagnostics digest: nothing new");
-      return;
-    }
+    const now = Timestamp.now();
+    const since = (collection: string) =>
+      db
+        .collection(collection)
+        .where("createdAt", ">", lastRunAt)
+        .where("createdAt", "<=", now)
+        .orderBy("createdAt")
+        .limit(DIGEST_MAX_DOCS)
+        .get();
+    const [users, diagnostics] = await Promise.all([
+      since("users"),
+      since("diagnostics"),
+    ]);
 
-    const reports: DigestReport[] = snap.docs.map((doc) => ({
-      uid: String(doc.get("uid") ?? ""),
-      event: String(doc.get("event") ?? "unknown"),
-      message: String(doc.get("message") ?? ""),
-      createdAtMs: Number(doc.get("createdAtMs") ?? 0),
-    }));
-    const message = formatDiagnosticsDigest(reports);
-    const config = ownerMailConfig();
-    if (!message || !config) {
-      logger.error("diagnostics digest: mail configuration incomplete; digest NOT sent");
-      return;
+    const message = formatOwnerDigest({
+      signups: users.docs.map((doc) => ({
+        uid: doc.id,
+        email: doc.get("email") as string | undefined,
+        displayName: doc.get("displayName") as string | undefined,
+      })),
+      errors: diagnostics.docs.map(
+        (doc): DigestReport => ({
+          uid: String(doc.get("uid") ?? ""),
+          event: String(doc.get("event") ?? "unknown"),
+          message: String(doc.get("message") ?? ""),
+          createdAtMs: Number(doc.get("createdAtMs") ?? 0),
+        })
+      ),
+    });
+    if (message) {
+      const config = ownerMailConfig();
+      if (!config) {
+        logger.error("owner digest: mail configuration incomplete; digest NOT sent");
+        return;
+      }
+      // Send first, then advance the marker: a failed send repeats tomorrow, never skips.
+      await sendOwnerMail(config, message);
     }
-    // Send first, then advance the marker: a failed send repeats tomorrow, never skips.
-    await sendOwnerMail(config, message);
-    const newest = snap.docs[snap.docs.length - 1]?.get("createdAt") as
-      | Timestamp
-      | undefined;
-    await marker.set({ lastAt: newest ?? Timestamp.now() }, { merge: true });
-    logger.info("diagnostics digest sent", { reports: reports.length });
+    await marker.set({ lastRunAt: now }, { merge: true });
+    logger.info("owner digest", {
+      signups: users.size,
+      errors: diagnostics.size,
+      sent: !!message,
+    });
   }
 );
 
