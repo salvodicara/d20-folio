@@ -479,7 +479,13 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // with the frozen pack (5a0186a9) measured 9562.19 KiB / 338 entries: 152 merged PRs
 // of lazy rules/UI weight (+4 entries) that Verify never measures composed. No
 // duplicated corpus (en-prose is its own lazy chunk); +~13 KiB never-exact-fit headroom.
-const PRECACHE_CEILING_KIB = 9575;
+// 2026-10-16 (release gate, app 3f23ddc8 + pack f1ff69a7): raised 9575 → 9790. A/B
+// against the 2026-10-13 build (c464f51a + 5a0186a9, 9562.2 KiB) on the same 338
+// entries: +201.5 KiB, all in two chunks: `spells` +118.2 (lazy IT catalogue) and
+// `cockpit-engine` +80.4, from #244 restoring the official SRD 5.2.1 spell texts in
+// en/it srd/spells.json. Eager closure 726.6 → 750.4 KB gz, under its ceiling.
+// Measured 9763.68 KiB; +~26 KiB headroom.
+const PRECACHE_CEILING_KIB = 9790;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
