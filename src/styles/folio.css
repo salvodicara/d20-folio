@@ -508,71 +508,6 @@ svg.icon[stroke],
 [data-theme="light"] .on-art-scope .sec-title {
   text-shadow: var(--on-art-halo);
 }
-/* The plate is for the LOOSE treasury GP-total cartouche only — it must NOT reach a
-   card-bound `.badge.muted` (e.g. the party-encounter monster ×N token badge on
-   `.party-card`), which keeps its plain card-surface badge recipe. Same SURF
-   exclusion (minus `.badge`, so the chip isn't self-excluded) as the ink flip below. */
-[data-theme="light"]
-  .on-art-scope
-  .badge.muted:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *,
-    :where(
-      .opt-cell,
-      .info-card,
-      .choice-picker-card,
-      .party-card,
-      .rcard,
-      .lvl-pick,
-      .lvl-card,
-      .wiz-entry,
-      .wiz-card,
-      .wiz-hero,
-      .wiz-path,
-      .wiz-abil,
-      .wiz-budget,
-      .wiz-asi,
-      .wiz-fork-tab,
-      .wiz-kept,
-      .wiz-summary,
-      .wiz-equip-item,
-      .wiz-asi-tile,
-      .wiz-done,
-      .vital,
-      .input,
-      .seg,
-      [class*="bg-"]
-    )
-  ) {
-  background: color-mix(in oklab, #1a1206 60%, transparent);
-  border-color: color-mix(in oklab, var(--gold-leaf-300) 58%, transparent);
-  text-shadow: 0 1px 1px rgba(20, 13, 3, 0.5);
-}
 /* The section diamond is a graphic — bright gilt ONLY when loose on the backdrop;
    a diamond inside a card keeps its default gold (same exclusion as the text). */
 [data-theme="light"]
@@ -609,46 +544,6 @@ svg.icon[stroke],
   ) {
   background: var(--text-on-backdrop-title);
   box-shadow: 0 0 8px color-mix(in oklab, var(--text-on-backdrop-title) 55%, transparent);
-}
-/* Error/required ink loose on the backdrop (the wizard's required-field "*" and
-   inline error lines): the deep light-theme --semantic-danger ink vanishes on the
-   dark art exactly like the field text, so it takes the lifted on-backdrop danger
-   ink + the halo. Same surface exclusion — an error inside a card keeps the
-   standard danger ink. */
-[data-theme="light"]
-  .on-art-scope
-  .text-error:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
-  color: var(--text-on-backdrop-danger);
-  text-shadow: var(--on-art-halo);
 }
 /* Facet chips (`.fchip`) loose on the backdrop (the level-up boon's feat-category
    facets): the chip is an unfilled carved outline, so in light theme its dark ink

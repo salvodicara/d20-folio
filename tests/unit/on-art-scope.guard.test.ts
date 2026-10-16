@@ -118,15 +118,12 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
     ).toBe(true);
   });
 
-  it("`.text-error` loose in the scope takes the on-backdrop danger ink", () => {
-    const rule =
-      /\.on-art-scope\s*\.text-error:not\([^{]*\{[^}]*color:\s*var\(--text-on-backdrop-danger\)/;
-    expect(
-      rule.test(css),
-      "MISSING: `[data-theme=light] .on-art-scope .text-error:not(…surfaces…) " +
-        "{ color: var(--text-on-backdrop-danger) }`. Without it the wizard's required-field " +
-        "asterisk / inline errors are deep-vermilion-on-dark-art in light theme."
-    ).toBe(true);
+  it("`.text-error` loose in the scope keeps the standard danger ink on the light field (direction B)", () => {
+    // The lifted pale on-backdrop danger ink was for the old dark art; on the calm
+    // vellum field it read pink-on-cream (the inverted on-art-ink sweep found it).
+    expect(css).not.toMatch(
+      /\.on-art-scope\s*\.text-error:not\([^{]*\{[^}]*color:\s*var\(--text-on-backdrop-danger\)/
+    );
   });
 
   it("transparent loose chips/buttons flip — the DMPC attach button + `.badge.muted` take the parchment ink", () => {
@@ -144,21 +141,10 @@ describe("ON-ART-INK (owner 2026-06-12) — the canonical scope covers the recur
     ).toBe(true);
   });
 
-  it("the treasury GP-total plate flip (background/border/shadow) ALSO excludes card surfaces", () => {
-    // The plate rule adds the self-backed cartouche (dark plate + gilt border + tight
-    // shadow) SEPARATELY from the generic ink flip above — it must carry the SAME
-    // `.badge.muted:not(:where(<surfaces minus .badge>) …)` exclusion, or it leaks onto
-    // every card-bound `.badge.muted` (e.g. the party-encounter monster `×N` token
-    // badge on `.party-card`, which must keep its plain card-surface badge, not the
-    // dark plate meant only for the loose treasury cartouche).
-    const plateExcludesSurfaces =
-      /\.on-art-scope\s*\.badge\.muted:not\([^{]*\.party-card[^{]*\{[^}]*background:\s*color-mix\(in oklab, #1a1206/;
-    expect(
-      plateExcludesSurfaces.test(css),
-      "MISSING: the `.on-art-scope .badge.muted:not(:where(…surfaces…))` exclusion on the " +
-        "treasury plate rule. Without it the GP-total cartouche's dark plate + gilt border " +
-        "leaks onto the party-encounter monster ×N badge (a card-bound .badge.muted)."
-    ).toBe(true);
+  it("the loose GP-total chip wears no dark plate on the light field (direction B)", () => {
+    // Vision 1 put the light theme on a calm vellum field with dark on-backdrop
+    // ink, so the old dark cartouche plate made the chip dark-on-dark (axe).
+    expect(css).not.toMatch(/\.on-art-scope\s*\.badge\.muted:not\([^{]*\{[^}]*#1a1206/);
   });
 
   it("ONE halo token — the flips share `var(--on-art-halo)`, never a re-pasted shadow blob", () => {

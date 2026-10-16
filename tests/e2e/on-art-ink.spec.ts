@@ -1,6 +1,13 @@
 /**
  * E2E GUARD: on-art ink legibility — EVERY surface, light theme.
  *
+ * **Inverted 2026-10-16 (direction B, after vision 1's image rule).** No painting
+ * sits behind text any more: in light theme the raw field is the light vellum, so
+ * the defect is now the OPPOSITE of the one described below — LIGHT ink left on
+ * the light field (a leftover on-art flip, a gilt coin's pale numeral). Loose ink
+ * must be dark: relative luminance ≤ MAX_ON_FIELD_LUMINANCE. The history below
+ * explains the probe's surface detection, which is unchanged.
+ *
  * **The defect class this guard kills (owner, 2026-06-12):** the candlelit
  * backdrop art (`body::after`) is DARK in BOTH themes, but light theme's
  * standard ink is dark — so any text/control rendered DIRECTLY on the raw
@@ -72,9 +79,9 @@ interface Offender {
   luminance: number;
 }
 
-/** Inks below this relative luminance are unreadable on the dark art. The
- *  canonical on-art inks sit ≥ 0.65; standard light ink sits ≤ 0.25. */
-const MIN_ON_ART_LUMINANCE = 0.45;
+/** Inks above this relative luminance are unreadable on the light vellum field.
+ *  Standard light-theme ink sits ≤ 0.05; the old on-art cream sat ≈ 0.88. */
+const MAX_ON_FIELD_LUMINANCE = 0.25;
 
 /**
  * A gilt coin (count medallion or disclosure knob) on the backdrop must
@@ -104,7 +111,7 @@ async function probeOnArtInk(
   page: import("@playwright/test").Page
 ): Promise<ProbeResult> {
   return page.evaluate(
-    ({ MIN_LUM, MIN_DISC, COINS }) => {
+    ({ MAX_LUM, MIN_DISC, COINS }) => {
       // ── colour parsing via canvas (handles rgb/oklab/color-mix serializations) ──
       const canvas = document.createElement("canvas");
       canvas.width = canvas.height = 1;
@@ -228,7 +235,7 @@ async function probeOnArtInk(
         const [r, g, b, a] = rgba(cs.color);
         if (a < 0.1) continue; // invisible ink is not this defect class
         const lum = luminance(r, g, b);
-        if (lum < MIN_LUM) {
+        if (lum > MAX_LUM) {
           offenders.push({
             path: compactPath(el),
             text: textNode.data.trim().slice(0, 48),
@@ -264,7 +271,7 @@ async function probeOnArtInk(
         const [, , , discAlpha] = rgba(ccs.backgroundColor);
         if (discAlpha >= MIN_DISC) continue; // a genuinely opaque struck disc carries the ink
         const [cr, cg, cb] = rgba(ccs.color);
-        if (luminance(cr, cg, cb) >= MIN_LUM) continue; // a light ink survives on the dark art
+        if (luminance(cr, cg, cb) <= MAX_LUM) continue; // a dark ink reads on the light field
         coinOffenders.push({
           path: compactPath(coin),
           text: coin.textContent.trim().slice(0, 24) || "(glyph)",
@@ -275,12 +282,12 @@ async function probeOnArtInk(
 
       return { ink: offenders, coins: coinOffenders };
     },
-    { MIN_LUM: MIN_ON_ART_LUMINANCE, MIN_DISC: MIN_DISC_ALPHA, COINS: GILT_COINS }
+    { MAX_LUM: MAX_ON_FIELD_LUMINANCE, MIN_DISC: MIN_DISC_ALPHA, COINS: GILT_COINS }
   );
 }
 
 for (const surface of SURFACES) {
-  test(`on-art ink: ${surface.slug} [light] — no dark ink on the raw backdrop`, async ({
+  test(`on-art ink: ${surface.slug} [light] — no light ink on the raw field`, async ({
     page,
   }) => {
     await page.setViewportSize(DESKTOP);
@@ -296,29 +303,26 @@ for (const surface of SURFACES) {
     const summary = ink
       .map(
         (o) =>
-          `${o.path}\n  "${o.text}" — ${o.color} (luminance ${o.luminance} < ${MIN_ON_ART_LUMINANCE})`
+          `${o.path}\n  "${o.text}" — ${o.color} (luminance ${o.luminance} > ${MAX_ON_FIELD_LUMINANCE})`
       )
       .join("\n");
     expect(
       ink,
-      `Dark ink directly on the backdrop art in LIGHT theme (unreadable). ` +
-        `Fix via the canonical on-art treatment (.on-art-scope / .on-art / ` +
-        `.btn.ghost.on-art — DESIGN.md § On-art ink), never a one-off colour:\n${summary}`
+      `Light ink directly on the light field in LIGHT theme (unreadable). ` +
+        `A leftover on-art flip is the usual cause; the field takes the standard ink:\n${summary}`
     ).toEqual([]);
 
     const coinSummary = coins
       .map(
         (o) =>
-          `${o.path}\n  "${o.text}" — ${o.color} (disc alpha ${o.luminance} < ${MIN_DISC_ALPHA}, ink not light-legible)`
+          `${o.path}\n  "${o.text}" — ${o.color} (disc alpha ${o.luminance} < ${MIN_DISC_ALPHA}, ink not dark-legible)`
       )
       .join("\n");
     expect(
       coins,
-      `Gilt coin (count medallion / disclosure knob) on the backdrop art in LIGHT ` +
-        `theme whose translucent disc lets the dark art bleed through — the deep-gold ` +
-        `numeral reads BROWN/illegible. A premium gilt register must SELF-BACK (DESIGN ` +
-        `§10): strike it as an OPAQUE struck disc (opaque background-color base + sheen ` +
-        `+ the --accent-glow halo), never reliant on what is behind it:\n${coinSummary}`
+      `Gilt coin (count medallion / disclosure knob) on the light field in LIGHT ` +
+        `theme with a translucent disc and a pale numeral: strike it as an OPAQUE disc ` +
+        `or give it the field's dark ink:\n${coinSummary}`
     ).toEqual([]);
   });
 }

@@ -782,12 +782,6 @@
      outline axe credits as the backing). Body = warm white; titles = bright gilt. */
   --text-on-backdrop: var(--text-primary);
   --text-on-backdrop-title: var(--accent-text);
-  /* Error/required ink ON the backdrop: the field's --semantic-danger is the deep
-     vermilion-700 ink (vanishes on the dark art exactly like the field text). This
-     is its on-backdrop sibling — a lifted warm vermilion, bright enough to read on
-     the dark scene (relative luminance ≈ 0.49, above the on-art-ink guard's 0.45
-     floor) while still unmistakably "danger" next to the parchment body ink. */
-  --text-on-backdrop-danger: #f2a99c;
   /* The dark HALO every on-art ink pairs with — ONE token so the treatment can
      never drift between the `.on-art` leaf, the `.on-art-scope` flips, and the
      on-art control recipes. Re-struck for the DAYLIGHT plates (the sibling-plate
