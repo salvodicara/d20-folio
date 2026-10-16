@@ -3,6 +3,7 @@ import { BASE_ACTION_STATES } from "@/lib/base-action-states";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { resolveActions } from "@/lib/smart-tracker";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
 
 /**
  * A base combat action that puts its user in a state (2024 Dodge: until the
@@ -54,6 +55,14 @@ describe.each(BASE_ACTION_STATES.map((state) => [state.actionId, state]))(
         if (!("description" in inner) || !inner.description) continue;
         expect(inner.description.en).not.toMatch(/^(dis)?advantage\b/i);
         expect(inner.description.it).not.toMatch(/^(s)?vantaggio\b/i);
+      }
+    });
+
+    it("its log lines and chips name it in each language, never by its id", () => {
+      for (const locale of ["en", "it"] as const) {
+        expect(grantSourceLabel(state.grant.activeKey, locale)).toBe(
+          state.grant.label?.[locale]
+        );
       }
     });
 

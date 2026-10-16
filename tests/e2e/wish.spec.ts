@@ -51,7 +51,8 @@ for (const size of ["desktop", "mobile"] as const) {
     await cast(page, "Desiderio", /Slot di livello 9/);
     const followUp = page.getByTestId("wish-follow-up");
     await expect(followUp).toBeVisible();
-    await followUp.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    // Asked right after the cast from its card: it comes into view by itself.
+    await expect(followUp).toBeInViewport();
     await page.screenshot({ path: shotPath(`wish-follow-up-${size}.png`) });
 
     await followUp.getByRole("button", { name: "Duplica un incantesimo" }).click();

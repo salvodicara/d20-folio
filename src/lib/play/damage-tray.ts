@@ -53,6 +53,10 @@ export interface DamageTrayPlan {
    *  Miss or Critical. A miss deals nothing, half the total (Acid Arrow), or the
    *  Graze mastery's fixed damage. */
   attack?: { onMiss: "none" | "half"; graze?: number };
+  /** Each target took its own share of separate instances (Magic Missile's darts,
+   *  Scorching Ray's rays): every row has its own rolled total instead of one shared
+   *  total. Only when the instances are split across more than one target. */
+  perTarget?: true;
   targets: string[];
 }
 
@@ -106,8 +110,14 @@ export function damageTrayPlan(
   const halfOnMiss = parts.some(
     (part) => part.id === "primary" && part.damageOnMiss === "half"
   );
+  const planTargets = [
+    ...new Set([...items.map((item) => item.targetId), ...(attacks ? targets : [])]),
+  ];
+  const split =
+    effect !== null && !spec.area && (s.instances ?? 1) > 1 && planTargets.length > 1;
   return {
     effect,
+    ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(hasSave && (saveGovernsDamage || condition)
       ? {
@@ -140,9 +150,7 @@ export function damageTrayPlan(
           },
         }
       : {}),
-    targets: [
-      ...new Set([...items.map((item) => item.targetId), ...(attacks ? targets : [])]),
-    ],
+    targets: planTargets,
   };
 }
 

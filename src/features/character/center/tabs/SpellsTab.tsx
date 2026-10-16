@@ -17,7 +17,7 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
-import { primaryClassId, totalLevel } from "@/lib/classes";
+import { primaryClassId } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -35,13 +35,7 @@ import { WizardSpellChoices } from "./WizardSpellChoices";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { SpellAddModal } from "@/components/sheet/SpellAddModal";
-import { BeastFormPicker } from "@/components/sheet/BeastFormPicker";
-import {
-  formNameKind,
-  POLYMORPH_SPELL_IDS,
-  resolvePolymorphForms,
-  selfFormRule,
-} from "@/lib/polymorph";
+import { formNameKind } from "@/lib/polymorph";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { ensureSrdKind } from "@/i18n";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -49,7 +43,7 @@ import { deriveSpellSlots, applySlotMaxOverrides } from "@/lib/multiclass-slots"
 import { resolveSpellCastOptions } from "@/lib/views/spell-cast-sources";
 import { localizeSrd } from "@/i18n/resolver";
 import { buildSpellsViewModel, type SpellCardVM } from "@/lib/views/spells-view";
-import type { BeastStatBlock, SrdSpellData } from "@/data/types";
+import type { SrdSpellData } from "@/data/types";
 import type { SpellcastingConfig } from "@/types/character";
 import {
   SpellCastSummary,
@@ -57,6 +51,8 @@ import {
   SpellLevelFilter,
 } from "./spells/SpellCastSummary";
 import { SpellCard, type SpellCardCallbacks } from "./spells/SpellCard";
+import { TransformFormPicker } from "./spells/TransformFormPicker";
+import { transformFormLabel } from "./spells/transform-form-label";
 import { localizeActions, type CombatAction } from "@/lib/views/combat-action-view";
 import { useTurnEconomy } from "../useTurnEconomy";
 
@@ -70,19 +66,11 @@ const FamiliarFormPicker = lazy(() =>
   ]).then(([m]) => ({ default: m.FamiliarFormPicker }))
 );
 
-// The Shapechange picker reads the whole bestiary, so it rides a LAZY leaf too.
-const ShapechangeFormPicker = lazy(() =>
-  Promise.all([import("./spells/ShapechangeFormPicker"), ensureSrdKind("monster")]).then(
-    ([m]) => ({ default: m.ShapechangeFormPicker })
-  )
-);
-
 export function SpellsTab() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const { executeAction } = useTurnEconomy();
-  const assumePolymorphForm = useCharacterStore((s) => s.assumePolymorphForm);
   const dropPolymorphForm = useCharacterStore((s) => s.dropPolymorphForm);
 
   const [filterLevel, setFilterLevel] = useState<number | "all">("all");
@@ -374,30 +362,14 @@ export function SpellsTab() {
 
   // "Polymorphed: Brown Bear", or "Shapechange: Adult Red Dragon" for the others.
   const formLabel = useCallback(
-    (spellId: string, nameKind: "beasts" | "monster", formId: string) => {
-      const name = localizeSrd(nameKind, formId, "name", locale);
-      return POLYMORPH_SPELL_IDS.includes(spellId)
-        ? t("polymorph.activeForm", { name })
-        : t("polymorph.formOf", {
-            spell: localizeSrd("spell", spellId, "name", locale),
-            name,
-          });
-    },
+    (spellId: string, nameKind: "beasts" | "monster", formId: string) =>
+      transformFormLabel(
+        t,
+        spellId,
+        localizeSrd(nameKind, formId, "name", locale),
+        localizeSrd("spell", spellId, "name", locale)
+      ),
     [t, locale]
-  );
-
-  const handleAssumeForm = useCallback(
-    (form: BeastStatBlock) => {
-      const spellId = transformSpellId ?? "polymorph";
-      const bestiary = selfFormRule(spellId).pool === "bestiary";
-      const message = formLabel(spellId, bestiary ? "monster" : "beasts", form.id);
-      registerUndoableToast(
-        { message },
-        () => assumePolymorphForm(form.id, spellId, bestiary ? form : undefined),
-        { turnScoped: false }
-      );
-    },
-    [transformSpellId, assumePolymorphForm, formLabel]
   );
 
   const handleRevertForm = useCallback(() => {
@@ -539,25 +511,10 @@ export function SpellsTab() {
 
       <SpellAddModal open={spellModalOpen} onClose={() => setSpellModalOpen(false)} />
 
-      {transformSpellId !== null && selfFormRule(transformSpellId).pool === "bestiary" ? (
-        <Suspense fallback={null}>
-          <ShapechangeFormPicker
-            level={totalLevel(character.character)}
-            locale={locale}
-            onAssume={handleAssumeForm}
-            onClose={() => setTransformSpellId(null)}
-          />
-        </Suspense>
-      ) : (
-        <BeastFormPicker
-          open={transformSpellId !== null}
-          forms={resolvePolymorphForms(character, transformSpellId ?? "polymorph")}
-          keepsMind={selfFormRule(transformSpellId ?? "polymorph").keepsMind}
-          locale={locale}
-          onAssume={handleAssumeForm}
-          onClose={() => setTransformSpellId(null)}
-        />
-      )}
+      <TransformFormPicker
+        spellId={transformSpellId}
+        onClose={() => setTransformSpellId(null)}
+      />
 
       {familiarPickerOpen && (
         <Suspense fallback={null}>

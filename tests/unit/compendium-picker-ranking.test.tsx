@@ -47,7 +47,7 @@ afterEach(async () => {
 });
 
 describe("useCompendiumPicker — name-priority ranking (fb4)", () => {
-  it("IT 'pozione guarigione' ranks the NAME match (Pozione di Guarigione) FIRST, above a description-only hit (Pozione di Veleno)", async () => {
+  it("IT 'pozione guarigione' ranks the NAME match (Pozione di Guarigione) FIRST, above a description-only hit (Pozione Velenosa)", async () => {
     const ids = await rankedIds("it", "pozione guarigione");
     const healing = ids.indexOf(HEALING);
     const poison = ids.indexOf(POISON);

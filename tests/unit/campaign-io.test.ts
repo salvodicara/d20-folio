@@ -147,6 +147,7 @@ import {
   updateSession,
   listSessions,
   deleteCampaign,
+  revertPeerEffect,
 } from "@/features/campaigns/campaign-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { deleteCampaignBanner } from "@/lib/storage";
@@ -2054,5 +2055,32 @@ describe("campaign-io — joinChronicleText (pure)", () => {
   it("returns the chapter alone when the chronicle is empty", () => {
     expect(joinChronicleText("", "## New")).toBe("## New");
     expect(joinChronicleText("   \n ", "## New")).toBe("## New");
+  });
+});
+
+describe("revertPeerEffect — undoing one peer write", () => {
+  const state = (current: number, conditions: string[] = []) => ({
+    ...defaultCombatState(40),
+    hp: { current, temp: 0 },
+    conditions,
+  });
+
+  it("puts back what the write changed", () => {
+    const previous = state(30);
+    const written = state(10, ["prone"]);
+    expect(revertPeerEffect(written, written, previous)).toMatchObject({
+      hp: { current: 30, temp: 0 },
+      conditions: [],
+    });
+  });
+
+  it("keeps a root someone changed after the write", () => {
+    const previous = state(30);
+    const written = state(10, ["prone"]);
+    const later = state(4, ["prone"]);
+    expect(revertPeerEffect(later, written, previous)).toMatchObject({
+      hp: { current: 4, temp: 0 },
+      conditions: [],
+    });
   });
 });

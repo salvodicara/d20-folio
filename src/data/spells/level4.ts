@@ -425,7 +425,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
-    targeting: { affinity: "ally", maxTargets: 1 },
+    // SRD 5.2.1: one additional creature for each spell slot level above 4.
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — magic can't Paralyze/Restrain the target and
       // it gains a Swim Speed equal to its Speed (the from-magic-only caveat
@@ -1047,7 +1048,10 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     saveAbility: "WIS",
     area: true,
     damageOnSave: "half",
-    recurrence: "bonus-action-move",
+    // SRD 5.2.1: an Emanation around the caster — creatures save when it enters
+    // their space or they enter it / end their turn there (no Bonus Action move).
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -1065,7 +1069,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: true,
     damageType: "bludgeoning",
     damageDice: "3d6",
-    saveAbility: "DEX",
+    saveAbility: "STR",
     area: true,
     conditionApplication: {
       options: ["restrained"],

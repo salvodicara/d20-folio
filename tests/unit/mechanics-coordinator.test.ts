@@ -1934,11 +1934,11 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     expect(state.vitals.hitPoints.current).toBe(20 - 12);
   });
 
-  it("gates ray-of-sickness: damage on the hit, condition on the failed save", async () => {
+  it("gates ray-of-sickness: damage and Poisoned on the hit, no save (SRD 5.2.1)", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { state } = await runAttackCast({
-      // Attack 12+7=19 vs AC 15 → hit; only then CON save 3 vs DC 15 → failure.
-      attackFaces: [[12], [3]],
+      // Attack 12+7=19 vs AC 15 → hit; the hit alone poisons the target.
+      attackFaces: [[12]],
       bindings: {
         [TRANSCRIPTION_BINDINGS.attackBonus]: 7,
         [TRANSCRIPTION_BINDINGS.saveDc]: 15,
@@ -1948,7 +1948,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
       spellId: "ray-of-sickness",
       targetSlots: 1,
     });
-    // 2d8 at face 3 → 6 damage; the failed save poisons the target.
+    // 2d8 at face 3 → 6 damage; the hit poisons the target.
     expect(state.vitals.hitPoints.current).toBe(14);
     const conditions = Object.values(state.occurrences).filter(
       (occurrence) =>
@@ -2606,7 +2606,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
     });
   });
 
-  it("omits the ray-of-sickness save entirely when the attack misses", async () => {
+  it("ray-of-sickness: a miss deals no damage and poisons no one", async () => {
     const { TRANSCRIPTION_BINDINGS } = await import("@/lib/mechanics-transcription");
     const { demandedDamageTrails, state } = await runAttackCast({
       attackFaces: [[2]],
@@ -2619,7 +2619,7 @@ describe("runMechanicsCausalAction transcribed corpus", () => {
       spellId: "ray-of-sickness",
       targetSlots: 1,
     });
-    // Miss: no damage roll demanded, no save demanded, slot still spent.
+    // Miss: no damage roll demanded, no condition, slot still spent.
     expect(demandedDamageTrails).toEqual([]);
     expect(state.vitals.hitPoints.current).toBe(20);
     const conditions = Object.values(state.occurrences).filter(

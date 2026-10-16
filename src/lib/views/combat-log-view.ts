@@ -180,12 +180,16 @@ export function localizeCombatEvent(
               n: event.attackOf.n,
               total: event.attackOf.total,
             })
-          : t("combatLog.actionUse", { name: resolveActionRef(event.action) }),
+          : t(event.readied ? "combatLog.readiedSpell" : "combatLog.actionUse", {
+              name: resolveActionRef(event.action),
+            }),
         event.outcome
       );
     case "reaction-use":
       return withOutcome(
-        t("combatLog.actionUse", { name: resolveActionRef(event.action) }),
+        t(event.released ? "combatLog.releasedSpell" : "combatLog.actionUse", {
+          name: resolveActionRef(event.action),
+        }),
         event.outcome
       );
     case "rider-use":
