@@ -3440,7 +3440,9 @@ The four variants:
 - `lit` (`litText`) — an ENGINE-authored bilingual `LocaleText` constant → `text[locale]`. It freezes
   BOTH locales in code, so it is being retired: the base action menu now reads the `rule` catalogue
   (`action.<id>`) and the Unarmed Strike name and computed lines (`uiText(key, params)`) read `ui` keys.
-  It stays for rows stored before the move and the engine modules not yet migrated.
+  The one-tap states (`state.*`, Dodge under `action.dodge`, light under `vision.*`) give their grant
+  source a `rule` `ref`, so their clauses key positionally under it, and the condition and armor clauses
+  name their roll from `roll.*`. It stays for rows stored before the move and the engine modules not yet migrated.
 - `ui` (`uiText`) — a REF to a `common`/ui CHROME key (e.g. `combat.otherReactionName`), resolved at
   render via `i18n.getFixedT(locale)(key, params)`; optional scalar `params` fill a computed number or die
   (`combat.gainTempHp`, `{ amount }`). Unlike `lit` it stores ONLY the key (never a frozen

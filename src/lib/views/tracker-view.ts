@@ -513,13 +513,11 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
   const named =
     coverStateName(sourceId) ??
     situationalStateName(sourceId) ??
-    lightStateName(sourceId);
-  if (named) return localizeText(named, locale);
-  const state =
+    lightStateName(sourceId) ??
     surpriseStateName(sourceId) ??
     baseActionStateName(sourceId) ??
     wishStressStateName(sourceId);
-  if (state) return state[locale];
+  if (named) return localizeText(named, locale);
   // Race-trait session ids carry the `race:<raceId>:<trait.id>` shape — resolve
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a
   // race-trait source would surface its raw session id.
