@@ -50,6 +50,9 @@ disagreeing.
    `foldPlayLog`, with tests. No wiring.
 2. **Shadow mode.** The store appends an entry next to every write it already does. A dev-only
    check asserts `foldPlayLog(checkpoint, entries)` equals the live session. Parity first.
+   Done: `src/lib/play/play-log-shadow.ts`, wired into `characterStore.dispatch` in dev only.
+   A write outside `dispatch` starts a new checkpoint; a snapshot undo of an older event (it
+   also drops the later ones) warns as a mismatch, which is what step 4 fixes.
 3. **Intention events** for damage, healing and temporary HP, so undo replays correctly.
 4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries.
 5. **Storage.** One Firestore document per entry, plus a periodic checkpoint for fast load.
