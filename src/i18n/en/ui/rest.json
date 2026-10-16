@@ -24,6 +24,8 @@
     "takeLongRest": "Take Long Rest",
     "exhaustionReduced": "Reduced by 1 level",
     "inspirationGained": "Gained (Resourceful)",
+    "fadingPenalty": "{{name}} penalty",
+    "maxHpRestored": "Hit Point maximum restored",
     "shortRestDesc": "1 hour minimum. Spend hit dice to heal. Some features recharge.",
     "shortRestHealPerDie": "{{die}} {{conMod}} HP per die",
     "longRestDesc": "8 hours. Restore HP, spell slots, and Long Rest features. Reduce exhaustion.",

@@ -39,7 +39,14 @@ import { restThroughWorld } from "./rest-world-boundary";
 import { canCharacterRest } from "@/lib/character-status";
 import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
-import { sessionAfterLongRestReduction } from "@/lib/play/rests";
+import {
+  longRestFades,
+  sessionAfterLongRestReduction,
+  type LongRestFades,
+} from "@/lib/play/rests";
+import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
+import { localizeSrd } from "@/i18n/resolver";
+import { useLocale } from "@/hooks/useLocale";
 import {
   getShortRestExhaustionRecovery,
   gainsHeroicInspirationOnLongRest,
@@ -68,6 +75,13 @@ interface RestSummary {
   inspirationGained: boolean;
   /** Total typed item-resource units restored by this exact rest boundary. */
   itemResourceUnitsRecovered: number;
+  /** A Long Rest's fading penalty steps and restored Hit Point maximum. */
+  fades: LongRestFades | null;
+}
+
+/** "−4", or "0" once the penalty is gone. */
+function penaltyText(amount: number): string {
+  return amount > 0 ? `−${amount}` : "0";
 }
 
 /**
@@ -95,6 +109,7 @@ export function RestModal({ open, onClose }: { open: boolean; onClose: () => voi
 
 function RestFlow({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const setHP = useCharacterStore((s) => s.setHP);
   const updateSession = useCharacterStore((s) => s.updateSession);
@@ -247,6 +262,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       trackersRestored: 0,
       exhaustionReduced: exhaustionRemovedOnShort,
       inspirationGained: false,
+      fades: null,
       itemResourceUnitsRecovered: prepared.entries.reduce(
         (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
         0
@@ -270,6 +286,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     // already have it), so the line reads as a consequence of this rest.
     const inspirationGained =
       gainsHeroicInspirationOnLongRest(restCharacter) && !session.inspiration;
+    // Read before the rest: a fading penalty's step, a reduced maximum restored.
+    const fades = longRestFades(restCharacter);
 
     // CUTOVER — engine plans first (rest-completed evidence, until-long-rest
     // lifetime endings, concentration end requests, a lingering solo world
@@ -291,6 +309,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       trackersRestored: totalTrackersSpent,
       exhaustionReduced: hadExhaustion,
       inspirationGained,
+      fades,
       itemResourceUnitsRecovered: prepared.entries.reduce(
         (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
         0
@@ -403,6 +422,26 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   <SummaryRow
                     label={t("character.heroicInspiration")}
                     value={t("rest.inspirationGained")}
+                    highlight
+                  />
+                )}
+                {summary.fades?.penalties.map(({ id, before, after }) => {
+                  const ref = FADING_PENALTIES[id]?.ref;
+                  return (
+                    <SummaryRow
+                      key={id}
+                      label={t("rest.fadingPenalty", {
+                        name: ref ? localizeSrd(ref.kind, ref.key, "name", locale) : id,
+                      })}
+                      value={`${penaltyText(before)} → ${penaltyText(after)}`}
+                      highlight
+                    />
+                  );
+                })}
+                {summary.fades?.maxHp && (
+                  <SummaryRow
+                    label={t("rest.maxHpRestored")}
+                    value={`${summary.fades.maxHp.before} → ${summary.fades.maxHp.after}`}
                     highlight
                   />
                 )}

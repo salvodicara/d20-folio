@@ -29,7 +29,13 @@ import {
   removeLogEntry as removeLogEntryById,
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
-import { longRestCharacter, omitStateKeys, shortRestCharacter } from "@/lib/play/rests";
+import {
+  longRestCharacter,
+  longRestFadeEvents,
+  longRestFades,
+  omitStateKeys,
+  shortRestCharacter,
+} from "@/lib/play/rests";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   drinkPotion,
@@ -2528,11 +2534,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     }
     const { character } = get();
     if (!character) return;
+    const fades = longRestFadeEvents(longRestFades(character));
     set({ combatPendingConcentrationSaves: [], character: longRestCharacter(character) });
     // Events-as-data: a Long Rest is a story beat (the log survives the rest —
     // `logEntries` is untouched above). Logged AFTER the set so it lands on the
-    // post-rest character.
+    // post-rest character, with what it faded (a penalty step, a restored maximum).
     get().logEvent({ kind: "rest", restKind: "long" });
+    for (const event of fades) get().logEvent(event);
     // Wholesale trio replacement (HP → full, death saves → 0): persist the whole
     // resulting combat state (offline-safe, last-write-wins).
     persistCombat(get);
