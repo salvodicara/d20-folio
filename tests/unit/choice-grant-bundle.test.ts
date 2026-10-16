@@ -109,12 +109,12 @@ describe("choice-grant-bundle — choiceFrequency field", () => {
   it("forwards 'creation' when the grant declares it", () => {
     const LINEAGE: GrantSource = {
       id: "elf-lineage-trait",
-      name: { en: "Elven Lineage", it: "Stirpe Elfica" },
+      name: { en: "Elven Lineage", it: "Lignaggio Elfico" },
       grants: [
         {
           type: "choice-grant-bundle",
           bundleKey: "elf-lineage",
-          label: { en: "Elven Lineage", it: "Stirpe Elfica" },
+          label: { en: "Elven Lineage", it: "Lignaggio Elfico" },
           choiceFrequency: "creation",
           options: [
             {

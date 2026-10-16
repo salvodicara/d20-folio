@@ -15,11 +15,13 @@ import { masteryRiderLine, type MasteryRiderVM } from "@/lib/views/mastery-rider
 
 export interface MasteryRidersProps {
   riders: ReadonlyArray<MasteryRiderVM>;
+  /** The once-per-turn masteries already declared this turn (Cleave): shown spent. */
+  spent?: ReadonlyArray<string>;
   /** Declare a mastery rider (log + undo toast). Combat surface only. */
   onApply: (rider: MasteryRiderVM) => void;
 }
 
-export function MasteryRiders({ riders, onApply }: MasteryRidersProps) {
+export function MasteryRiders({ riders, spent = [], onApply }: MasteryRidersProps) {
   const { t } = useTranslation();
   if (riders.length === 0) return null;
 
@@ -29,12 +31,14 @@ export function MasteryRiders({ riders, onApply }: MasteryRidersProps) {
       <div className="rider-tokens">
         {riders.map((rider) => {
           const line = masteryRiderLine(rider, t);
+          const used = rider.oncePerTurn === true && spent.includes(rider.id);
           return (
             <button
               key={rider.id}
               type="button"
               className="rider-token rider-token-spend"
               data-mastery={rider.id}
+              disabled={used}
               onClick={(e) => {
                 e.stopPropagation();
                 onApply(rider);
@@ -43,7 +47,7 @@ export function MasteryRiders({ riders, onApply }: MasteryRidersProps) {
             >
               <span className="rider-note">{line}</span>
               <span className="rider-spend-cue" aria-hidden>
-                {t("combat.apply")}
+                {used ? t("combat.used") : t("combat.apply")}
               </span>
             </button>
           );

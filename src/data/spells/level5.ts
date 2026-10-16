@@ -42,11 +42,10 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     },
     concentration: false,
     instantaneous: true,
-    // A Huge or smaller Beast or plant of Intelligence 3 or less; an awakened
-    // plant becomes the bestiary's Awakened Shrub or Tree.
+    // A Beast or Plant of Intelligence 3 or less (SRD 5.2.1 sets no size cap);
+    // an awakened plant becomes the bestiary's Awakened Shrub or Tree.
     bestiaryPick: {
       types: ["beast", "plant"],
-      sizeMax: "Huge",
       intMax: 3,
       include: ["awakened-shrub", "awakened-tree"],
     },
@@ -105,9 +104,11 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageType: "lightning",
     damageChoice: ["lightning", "thunder", "fire", "cold"],
     damageDice: "8d8",
+    // SRD 5.2.1: "The damage increases by 1d8 for each spell slot level above 5";
+    // a successful save deals no damage.
+    damageDicePerUpcast: "1d8",
     saveAbility: "DEX",
     area: true,
-    damageOnSave: "half",
     conditionApplication: {
       options: ["restrained"],
       on: "failed-save",

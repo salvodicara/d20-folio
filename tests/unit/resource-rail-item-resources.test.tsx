@@ -225,6 +225,7 @@ describe("ResourceRail typed physical-item resources", () => {
       available: true,
       disabled: false,
       canSpend: true,
+      spendBlock: null,
     };
     const { container } = render(
       <ItemResourceRailRow
@@ -239,4 +240,36 @@ describe("ResourceRail typed physical-item resources", () => {
     expect(screen.getByText("at dusk")).toBeVisible();
     expect(container).not.toHaveTextContent("hidden-copy");
   });
+
+  it.each([
+    ["needs-attunement", "en", "Needs attunement"],
+    ["not-equipped", "en", "Not equipped"],
+    ["needs-attunement", "it", "Da sintonizzare"],
+    ["not-equipped", "it", "Da equipaggiare"],
+  ] as const)(
+    "hides the spend and names the reason when blocked by %s (%s)",
+    async (spendBlock, lang, reason) => {
+      await i18n.changeLanguage(lang);
+      const resource: ItemResourceVM = {
+        identity: makeItemResourceIdentity("wand-of-lightning-bolts", "w", "charges"),
+        labelKey: "equipment.charges",
+        unitKey: "units.charges",
+        current: 7,
+        capacity: 7,
+        recoveryTriggers: [{ kind: "dawn" }],
+        copyNumber: null,
+        available: true,
+        disabled: false,
+        canSpend: false,
+        spendBlock,
+      };
+      render(
+        <ItemResourceCommandProvider>
+          <ItemResourceRailRow resource={resource} itemLabel="Wand" interactive />
+        </ItemResourceCommandProvider>
+      );
+      expect(screen.getByText(reason)).toBeVisible();
+      expect(screen.queryByRole("button")).toBeNull();
+    }
+  );
 });

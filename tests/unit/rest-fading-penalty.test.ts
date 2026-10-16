@@ -38,9 +38,9 @@ import { deriveCharacter } from "@/lib/views/derive-character";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 
-/** "a −4 penalty to all attack rolls, …" + "the penalty is reduced by 1". */
+/** "a −4 penalty to D20 Tests" + "the penalty is reduced by 1". */
 const FADES =
-  /a [−-](\d+) penalty to all attack rolls, saving throws, and ability checks[^.]*\.[^.]*finishes a Long Rest, the penalty is reduced by 1/i;
+  /a [−-](\d+) penalty to D20 Tests[^.]*\.[^.]*finishes a Long Rest, the penalty is reduced by 1/i;
 
 function catalogueCases(): Array<{ spellId: string; amount: number }> {
   return Object.entries(spellsEn).flatMap(([spellId, value]) => {

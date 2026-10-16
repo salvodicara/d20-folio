@@ -110,8 +110,10 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDicePerUpcast: "1d10",
     saveAbility: "DEX",
     area: true,
-    damageOnSave: "half",
-    recurrence: "bonus-action-move",
+    // SRD 5.2.1: the pack moves when the caster moves (no Bonus Action), and a
+    // creature takes 3d10 only "On a failed save" — no damage on a success.
+    recurrence: "on-enter-or-end-turn",
+    resolveOnCast: false,
     source: "SRD",
   },
   {
@@ -627,6 +629,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    // SRD 5.2.1: "A willing creature you touch" + one additional creature for
+    // each spell slot level above 3.
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
   {
@@ -649,6 +654,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     damageDice: "5d8",
     damageDicePerUpcast: "1d8",
     saveAbility: "DEX",
+    // SRD 5.2.1 Explosive Rune: "on a failed save or half as much damage on a
+    // successful one".
+    damageOnSave: "half",
     source: "SRD",
   },
   {
@@ -793,7 +801,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: true,
     damageType: "bludgeoning",
-    damageDice: "3d8",
+    damageDice: "4d8",
     saveAbility: "STR",
     area: true,
     damageOnSave: "half",

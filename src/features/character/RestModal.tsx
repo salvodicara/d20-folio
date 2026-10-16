@@ -40,6 +40,14 @@ import { canCharacterRest } from "@/lib/character-status";
 import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
 import {
+  longRestFades,
+  sessionAfterLongRestReduction,
+  type LongRestFades,
+} from "@/lib/play/rests";
+import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
+import { localizeSrd } from "@/i18n/resolver";
+import { useLocale } from "@/hooks/useLocale";
+import {
   getShortRestExhaustionRecovery,
   gainsHeroicInspirationOnLongRest,
 } from "@/lib/smart-tracker";
@@ -67,6 +75,13 @@ interface RestSummary {
   inspirationGained: boolean;
   /** Total typed item-resource units restored by this exact rest boundary. */
   itemResourceUnitsRecovered: number;
+  /** A Long Rest's fading penalty steps and restored Hit Point maximum. */
+  fades: LongRestFades | null;
+}
+
+/** "−4", or "0" once the penalty is gone. */
+function penaltyText(amount: number): string {
+  return amount > 0 ? `−${amount}` : "0";
 }
 
 /**
@@ -94,6 +109,7 @@ export function RestModal({ open, onClose }: { open: boolean; onClose: () => voi
 
 function RestFlow({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const setHP = useCharacterStore((s) => s.setHP);
   const updateSession = useCharacterStore((s) => s.updateSession);
@@ -143,6 +159,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   // matching the store's `longRest`/`applyHealing` clamp, so the summary readout +
   // the short-rest cap agree with the real max (rule 6).
   const hpMax = effectiveMaxHp(charData, session);
+  // A Long Rest ends a Hit Point maximum reduction first, so it promises and
+  // reports the maximum it restores, not the reduced one.
+  const longRestHpMax = effectiveMaxHp(charData, sessionAfterLongRestReduction(session));
   // B8 — short-rest healing adds the CURRENT (effective) CON modifier, so an
   // Amulet of Health (CON→19) raises the preview. The REAL heal engine resolves
   // against effective CON (smart-tracker `combatAbilityScores`); the preview must
@@ -243,6 +262,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
       trackersRestored: 0,
       exhaustionReduced: exhaustionRemovedOnShort,
       inspirationGained: false,
+      fades: null,
       itemResourceUnitsRecovered: prepared.entries.reduce(
         (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
         0
@@ -266,6 +286,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     // already have it), so the line reads as a consequence of this rest.
     const inspirationGained =
       gainsHeroicInspirationOnLongRest(restCharacter) && !session.inspiration;
+    // Read before the rest: a fading penalty's step, a reduced maximum restored.
+    const fades = longRestFades(restCharacter);
 
     // CUTOVER — engine plans first (rest-completed evidence, until-long-rest
     // lifetime endings, concentration end requests, a lingering solo world
@@ -280,13 +302,14 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     setSummary({
       type: "long",
       hpBefore,
-      hpAfter: hpMax,
-      hpMax,
+      hpAfter: longRestHpMax,
+      hpMax: longRestHpMax,
       hitDiceUsed: hitDiceRestored,
       slotsRestored: totalSlotsSpent,
       trackersRestored: totalTrackersSpent,
       exhaustionReduced: hadExhaustion,
       inspirationGained,
+      fades,
       itemResourceUnitsRecovered: prepared.entries.reduce(
         (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
         0
@@ -399,6 +422,26 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   <SummaryRow
                     label={t("character.heroicInspiration")}
                     value={t("rest.inspirationGained")}
+                    highlight
+                  />
+                )}
+                {summary.fades?.penalties.map(({ id, before, after }) => {
+                  const ref = FADING_PENALTIES[id]?.ref;
+                  return (
+                    <SummaryRow
+                      key={id}
+                      label={t("rest.fadingPenalty", {
+                        name: ref ? localizeSrd(ref.kind, ref.key, "name", locale) : id,
+                      })}
+                      value={`${penaltyText(before)} → ${penaltyText(after)}`}
+                      highlight
+                    />
+                  );
+                })}
+                {summary.fades?.maxHp && (
+                  <SummaryRow
+                    label={t("rest.maxHpRestored")}
+                    value={`${summary.fades.maxHp.before} → ${summary.fades.maxHp.after}`}
                     highlight
                   />
                 )}
@@ -565,7 +608,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           <ul className="rest-confirm-list">
             <li>
               <Heart className="h-4 w-4 text-accent-text" />
-              {t("rest.longRestHpItem", { max: hpMax })}
+              {t("rest.longRestHpItem", { max: longRestHpMax })}
             </li>
             <li>
               <Dice5 className="h-4 w-4 text-accent-text" />
@@ -750,7 +793,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           <ul className="rest-card-list">
             <li>
               <Heart className="h-3.5 w-3.5" />
-              {t("rest.longRestHpItem", { max: hpMax })}
+              {t("rest.longRestHpItem", { max: longRestHpMax })}
             </li>
             <li>
               <Dice5 className="h-3.5 w-3.5" />

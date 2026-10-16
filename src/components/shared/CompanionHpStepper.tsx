@@ -9,6 +9,7 @@
  */
 
 import { Plus, Minus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Icon } from "@/components/ui/icon";
 import { IconButton } from "@/components/ui/icon-button";
 
@@ -27,13 +28,14 @@ export function CompanionHpStepper({
   max,
   onChange,
 }: CompanionHpStepperProps) {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-1 text-[0.68rem] text-text-secondary">
       {onChange && (
         <IconButton
           onClick={() => onChange(current - 1)}
           className="companion-hp-step hover:border-danger hover:text-danger"
-          aria-label={`−1 HP ${label}`}
+          aria-label={t("common.hpStepDown", { name: label })}
         >
           <Icon as={Minus} size="xs" decorative />
         </IconButton>
@@ -45,7 +47,7 @@ export function CompanionHpStepper({
         <IconButton
           onClick={() => onChange(Math.min(max, current + 1))}
           className="companion-hp-step hover:border-success hover:text-success"
-          aria-label={`+1 HP ${label}`}
+          aria-label={t("common.hpStepUp", { name: label })}
         >
           <Icon as={Plus} size="xs" decorative />
         </IconButton>

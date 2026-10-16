@@ -32,12 +32,12 @@ for (const size of ["desktop", "mobile"] as const) {
     await seedUI(page, "dark", "play");
     await page.goto("/characters/scn-alter-self-wizard?tab=spells");
     const chevron = page
-      .locator('.uc-chevron[aria-label$=": Alterare Sé Stesso"]')
+      .locator('.uc-chevron[aria-label$=": Alterare Se Stesso"]')
       .first();
     await chevron.waitFor({ timeout: 90_000 });
     await chevron.click();
     await page
-      .getByRole("region", { name: "Alterare Sé Stesso", exact: true })
+      .getByRole("region", { name: "Alterare Se Stesso", exact: true })
       .getByRole("button", { name: /^Lancia/ })
       .first()
       .click();

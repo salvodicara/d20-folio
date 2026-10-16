@@ -74,7 +74,7 @@ describe("heroic-inspiration-on-rest — Human Resourceful data", () => {
     expect(trait?.raceId).toBe("human");
     const key = trait ? raceTraitCatKey(trait) : "";
     expect(srd("race", key, "name", "en")).toBe("Resourceful");
-    expect(srd("race", key, "name", "it")).toBe("Pieno di Risorse");
+    expect(srd("race", key, "name", "it")).toBe("Intraprendente");
     expect(srd("race", key, "description", "en")).toMatch(
       /Heroic Inspiration .* Long Rest/
     );

@@ -219,6 +219,7 @@ import {
   resolveArmorEffects,
 } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
 
@@ -8035,6 +8036,10 @@ export function resolveActiveStatesEndingOnRest(
         ended.add(activeKey);
       }
     }
+  }
+  // Wish Stress lasts until the caster finishes a Long Rest (both rest paths).
+  if (rest === "long" && active.has(WISH_STRESS_STATE.activeKey)) {
+    ended.add(WISH_STRESS_STATE.activeKey);
   }
   return [...ended];
 }

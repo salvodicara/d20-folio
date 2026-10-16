@@ -116,13 +116,9 @@ describe("bestiary-pick summons — the catalogue", () => {
     expect(pool("gate")).toEqual(MONSTERS.map((m) => m.id));
   });
 
-  it("Awaken: a Huge or smaller Beast or plant of Intelligence 3 or less, or what an awakened plant becomes", () => {
+  it("Awaken: a Beast or Plant of Intelligence 3 or less (SRD 5.2.1 sets no size cap), or what an awakened plant becomes", () => {
     const rule = textRule("awaken");
-    expect(rule).toMatchObject({
-      types: ["beast", "plant"],
-      sizeMax: "Huge",
-      intMax: 3,
-    });
+    expect(rule).toEqual({ types: ["beast", "plant"], intMax: 3 });
     const awakened = MONSTERS.filter((m) =>
       /^Awakened /.test(monsterNames[m.id]?.name ?? "")
     ).map((m) => m.id);

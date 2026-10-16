@@ -17,6 +17,7 @@ import { useCampaignStore } from "./campaignStore";
 import {
   applyRegeneration,
   regeneratedThisRound,
+  regenerationDue,
   regenerationOffer,
   traitFactLabel,
 } from "./encounter-trait-facts";
@@ -48,7 +49,7 @@ export function EncounterTraitChips({
       fact.kind === "regeneration"
   );
   const offer =
-    regeneration && isCurrent && !regenerated
+    regeneration && regenerationDue(monster, regeneration, isCurrent) && !regenerated
       ? regenerationOffer(monster, regeneration)
       : null;
   const label = (fact: MonsterTraitFact) =>

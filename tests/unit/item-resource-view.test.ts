@@ -122,7 +122,43 @@ describe("typed item-resource presenter", () => {
       copyNumber: null,
       available: true,
       canSpend: false,
+      spendBlock: "not-equipped",
     });
+  });
+
+  it("names why an attunement item's spend is blocked: attunement first, then equipping", () => {
+    const doc = structuredClone(MOCK_CHARACTER);
+    const wand = "wand-of-lightning-bolts";
+    doc.character.equipment = [
+      { srdId: wand, instanceId: "fresh", equipped: false, attuned: false, quantity: 1 },
+      {
+        srdId: wand,
+        instanceId: "attuned-only",
+        equipped: false,
+        attuned: true,
+        quantity: 1,
+      },
+      {
+        srdId: wand,
+        instanceId: "held-only",
+        equipped: true,
+        attuned: false,
+        quantity: 1,
+      },
+      { srdId: wand, instanceId: "ready", equipped: true, attuned: true, quantity: 1 },
+    ];
+
+    expect(
+      buildItemResourceViewModels(doc).resources.map(({ canSpend, spendBlock }) => ({
+        canSpend,
+        spendBlock,
+      }))
+    ).toEqual([
+      { canSpend: false, spendBlock: "needs-attunement" },
+      { canSpend: false, spendBlock: "not-equipped" },
+      { canSpend: false, spendBlock: "needs-attunement" },
+      { canSpend: true, spendBlock: null },
+    ]);
   });
 
   it("keeps a disposed copy legible but marks it unavailable and unspendable", () => {
