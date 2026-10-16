@@ -106,3 +106,6 @@ artifacts/visual-review/
 .shots-mission-b/
 .shots-assets/
 .shots-wave2/
+
+# The runtime pack emitted by deploy.yml / emit-pack.ts (private content).
+/.pack-out
