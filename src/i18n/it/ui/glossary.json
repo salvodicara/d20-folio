@@ -21,7 +21,7 @@
       "concentration": "Alcuni incantesimi durano solo finché ti concentri. Puoi concentrarti su un solo incantesimo alla volta, e subire danni impone un tiro salvezza su Costituzione per mantenerlo attivo.",
       "ritual": "Un incantesimo lanciato come rituale richiede 10 minuti in più ma non consuma slot incantesimo.",
       "components": "Ciò che serve per lanciarlo: V indica parole magiche da pronunciare, S una mano libera per i gesti, M un materiale come un focus o una borsa per componenti.",
-      "exhaustion": "Livelli di profonda stanchezza. Ogni livello dà −2 a ogni tiro di d20 e riduce la tua Velocità di 1,5 metri; al livello 6 si muore. Un Riposo Lungo ne rimuove uno.",
+      "exhaustion": "L'Indebolimento si misura in livelli di profonda stanchezza. Ogni livello dà −2 a ogni tiro di d20 e riduce la tua Velocità di 1,5 metri; al livello 6 si muore. Un Riposo Lungo ne rimuove uno.",
       "pointBuy": "Un modo equo di assegnare i punteggi: ogni caratteristica parte da 8 e spendi 27 punti per aumentarle, fino a 15 prima dei bonus. I punteggi più alti costano più punti.",
       "feat": "Un talento speciale che dà al tuo personaggio una marcia in più oltre i privilegi di classe. I talenti d'origine vengono dal background; ai livelli successivi puoi prenderne uno al posto di un aumento di caratteristica.",
       "multiclass": "Prendere il prossimo livello in una classe diversa da quella attuale. Mantieni tutto ciò che hai già; i livelli di tutte le tue classi si sommano nel tuo totale.",
@@ -50,7 +50,21 @@
       "encounterDifficulty": "Quanto sarà probabilmente difficile questo scontro. Facile è una vittoria semplice, Media un vero combattimento, Difficile è pericoloso e Oltre Difficile è probabilmente letale. Il grado deriva dai PE totali dei mostri rispetto al budget del gruppo.",
       "challengeRating": "Il Grado di Sfida (GS) è il livello di potenza indicativo di un mostro. Scegline uno e l'app usa i suoi PE standard per pesare il mostro nel grado di difficoltà dello scontro. Lascialo vuoto per un PNG improvvisato al volo, che resta non conteggiato.",
       "attunement": "Alcuni oggetti magici funzionano solo dopo che ti sei legato a essi, la cosiddetta sintonia. Legarsi richiede un Riposo Breve; puoi essere in sintonia con tre oggetti alla volta e ogni oggetto in sintonia occupa uno di quei posti.",
-      "magicRarity": "La rarità indica quanto è potente e difficile da trovare un oggetto magico, da Comune fino a Non comune, Raro, Molto raro e Leggendario, fino all'Artefatto unico. Gli oggetti più rari sono più potenti e, nella maggior parte dei giochi, più difficili da ottenere."
+      "magicRarity": "La rarità indica quanto è potente e difficile da trovare un oggetto magico, da Comune fino a Non comune, Raro, Molto raro e Leggendario, fino all'Artefatto unico. Gli oggetti più rari sono più potenti e, nella maggior parte dei giochi, più difficili da ottenere.",
+      "blinded": "Mentre sei Accecato non vedi, quindi fallisci ogni prova che richiede la vista. I tuoi tiri per colpire hanno Svantaggio e quelli contro di te hanno Vantaggio.",
+      "charmed": "Mentre sei Affascinato non puoi attaccare chi ti ha affascinato né rivolgergli contro nulla di dannoso, e lui ha Vantaggio sulle prove per influenzarti socialmente.",
+      "deafened": "Mentre sei Assordato non senti, quindi fallisci ogni prova che richiede l'udito.",
+      "frightened": "Mentre sei Spaventato hai Svantaggio sulle prove e sui tiri per colpire finché vedi ciò che ti spaventa, e non puoi avvicinarti volontariamente.",
+      "grappled": "Mentre sei Afferrato la tua Velocità è 0 e hai Svantaggio sui tiri per colpire contro chiunque non sia chi ti tiene. Chi ti tiene può trascinarti con sé.",
+      "incapacitated": "Mentre sei Incapacitato non puoi compiere azioni, Azioni Bonus né Reazioni, non puoi parlare e la tua Concentrazione si interrompe.",
+      "invisible": "Mentre sei Invisibile gli altri non ti vedono: i tuoi tiri per colpire hanno Vantaggio e quelli contro di te Svantaggio, a meno che qualcuno riesca comunque a vederti. Tiri anche l'Iniziativa con Vantaggio.",
+      "paralyzed": "Mentre sei Paralizzato sei Incapacitato e non puoi muoverti né parlare. Fallisci i tiri salvezza su Forza e Destrezza, i tiri per colpire contro di te hanno Vantaggio e ogni colpo da entro 1,5 metri è un Colpo Critico.",
+      "petrified": "Mentre sei Pietrificato sei trasformato in pietra: Incapacitato, immobile, muto e ignaro di ciò che ti circonda. I tiri per colpire contro di te hanno Vantaggio, fallisci i tiri salvezza su Forza e Destrezza e hai Resistenza a tutti i danni.",
+      "poisoned": "Mentre sei Avvelenato hai Svantaggio sui tiri per colpire e sulle prove di caratteristica.",
+      "prone": "Mentre sei Prono sei a terra e puoi solo strisciare. I tuoi tiri per colpire hanno Svantaggio; chi ti attacca da entro 1,5 metri ha Vantaggio, chi è più lontano Svantaggio. Rialzarti costa metà della tua Velocità.",
+      "restrained": "Mentre sei Trattenuto la tua Velocità è 0. I tuoi tiri per colpire e i tiri salvezza su Destrezza hanno Svantaggio, e i tiri per colpire contro di te hanno Vantaggio.",
+      "stunned": "Mentre sei Stordito sei Incapacitato: niente azioni, Azioni Bonus né Reazioni. Fallisci i tiri salvezza su Forza e Destrezza e i tiri per colpire contro di te hanno Vantaggio.",
+      "unconscious": "Mentre sei Privo di Sensi sei Incapacitato e Prono, lasci cadere ciò che tieni e non puoi muoverti, parlare né accorgerti di nulla. Fallisci i tiri salvezza su Forza e Destrezza, i tiri per colpire contro di te hanno Vantaggio e ogni colpo da entro 1,5 metri è un Colpo Critico."
     }
   }
 }

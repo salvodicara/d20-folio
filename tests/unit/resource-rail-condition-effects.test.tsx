@@ -66,7 +66,8 @@ describe("ResourceRail — condition effects", () => {
         .getAllByTitle(new RegExp(`^From ${id}$`, "i"))
         .find((chip) => chip.textContent.toLowerCase().includes(implied));
       if (!impliedChip) throw new Error(`no implied ${implied} chip`);
-      expect(within(impliedChip).queryByRole("button")).toBeNull();
+      // Its name still explains it (glossary tip); only the remove × is gone.
+      expect(within(impliedChip).queryByRole("button", { name: /^Remove / })).toBeNull();
     }
   );
 });
