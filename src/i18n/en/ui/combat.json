@@ -410,7 +410,6 @@
     "itemPoolChargeCost": "{{n}} ch.",
     "itemPoolCastToast": "{{item}}: cast {{spell}} ({{charges}} charges)",
     "noDamageTakenToast": "No damage taken ({{raw}} → 0)",
-    "fallToggle": "Fall",
     "fallDistanceAria": "Distance fallen ({{unit}})",
     "fallDice": "{{n}}d6 bludgeoning",
     "fallNoDamage": "No damage",

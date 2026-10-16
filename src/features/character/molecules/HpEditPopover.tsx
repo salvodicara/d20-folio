@@ -520,7 +520,7 @@ export function HpEditPopover({
             <div className="flex flex-col gap-2 border-t border-border-subtle pt-2">
               <div className="flex flex-wrap items-center gap-2">
                 <ToggleChip
-                  label={t("combat.fallToggle")}
+                  label={t("combat.fallSource")}
                   pressed={fallOpen}
                   onToggle={() => setFallOpen((o) => !o)}
                 />

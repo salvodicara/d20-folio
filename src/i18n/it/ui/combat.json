@@ -410,7 +410,6 @@
     "itemPoolChargeCost": "{{n}} car.",
     "itemPoolCastToast": "{{item}}: {{spell}} lanciato ({{charges}} cariche)",
     "noDamageTakenToast": "Nessun danno subito ({{raw}} → 0)",
-    "fallToggle": "Caduta",
     "fallDistanceAria": "Distanza della caduta ({{unit}})",
     "fallDice": "{{n}}d6 contundenti",
     "fallNoDamage": "Nessun danno",
