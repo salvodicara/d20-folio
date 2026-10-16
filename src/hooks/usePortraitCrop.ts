@@ -37,7 +37,7 @@ import type { Area } from "react-easy-crop";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
-import { uploadPortrait, deletePortrait, compressImage } from "@/lib/storage";
+import { uploadPortrait, deletePortrait, compressPortrait } from "@/lib/storage";
 import { updateCharacter } from "@/lib/firestore";
 import { readFileAsDataUrl } from "@/lib/image-crop";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
@@ -80,7 +80,7 @@ export function usePortraitCrop() {
     if (!file) return;
     if (fileInputRef.current) fileInputRef.current.value = "";
     try {
-      const compressedBlob = await compressImage(file);
+      const compressedBlob = await compressPortrait(file);
       const dataUrl = await readFileAsDataUrl(
         new File([compressedBlob], file.name, { type: "image/jpeg" })
       );
