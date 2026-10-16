@@ -1,6 +1,11 @@
 {
   "glossary": {
     "whatIs": "Scopri cosa significa {{term}}",
+    "name": {
+      "deathSavingThrow": "Tiro Salvezza contro Morte",
+      "temporaryHitPoints": "Punti Ferita Temporanei",
+      "unarmedStrike": "Colpo Senz'armi"
+    },
     "term": {
       "abilityScores": "I sei punteggi che definiscono il tuo eroe, da 3 (gracile) a 20 (leggendario). Ciò che conta di più è il modificatore davanti: lo sommi a quasi ogni tiro che effettui.",
       "armorClass": "La Classe Armatura (CA) è quanto è difficile colpirti. Chi ti attacca tira un d20 e somma i suoi bonus: ti colpisce solo se il totale raggiunge o supera questo numero. Armature, scudi e Destrezza la aumentano.",

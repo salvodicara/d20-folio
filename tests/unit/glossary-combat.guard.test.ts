@@ -6,8 +6,9 @@
  * typed by (`CombatTermId`), never a hand list here:
  *  - every combat term has a `glossary.term.<id>` line in EN and IT;
  *  - each line names its own term under its official SRD 5.2.1 name, EN and IT
- *    ("Bonus Action" / "Azione Bonus"); a cover term's name is its cover row's in
- *    the `rule` catalogue;
+ *    ("Bonus Action" / "Azione Bonus"), read from the catalogue key the glossary
+ *    helper names for it; a cover term's name is its cover row's in the `rule`
+ *    catalogue;
  *  - every rule term or other combat term an EN line mentions appears in the IT
  *    line under its official Italian name (Disadvantage → Svantaggio);
  *  - (wiring: glossary-tip's no-dead-entry test pins a `term="<id>"` /
@@ -20,17 +21,23 @@ import {
   type CombatTermId,
 } from "@/components/shared/combat-glossary";
 import { COVER_REFERENCE, coverKey } from "@/data/cover";
-import type { LocaleText } from "@/data/types";
 import { srdBi } from "@tests/_harness/loc";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
-import { RULE_TERMS, missingOfficialTerms } from "@tests/unit/__helpers__/glossary-terms";
+import {
+  RULE_TERMS,
+  missingOfficialTerms,
+  officialPair,
+} from "@tests/unit/__helpers__/glossary-terms";
 
 const EN_TERMS: Record<string, string | undefined> = enGlossary.glossary.term;
 const IT_TERMS: Record<string, string | undefined> = itGlossary.glossary.term;
 
-const TERMS: ReadonlyArray<readonly [CombatTermId, LocaleText]> = [
-  ...(Object.entries(COMBAT_GLOSSARY) as [CombatTermId, LocaleText][]),
+const TERMS: ReadonlyArray<readonly [CombatTermId, { en: string; it: string }]> = [
+  ...COMBAT_GLOSSARY.map((id) => {
+    const [en, it] = officialPair(id);
+    return [id, { en, it }] as const;
+  }),
   ...COVER_REFERENCE.map(
     (c) => [COVER_TERM[c.id].term, srdBi("rule", coverKey(c.id), "name")] as const
   ),

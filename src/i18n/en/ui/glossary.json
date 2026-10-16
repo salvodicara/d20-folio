@@ -1,6 +1,11 @@
 {
   "glossary": {
     "whatIs": "Learn about {{term}}",
+    "name": {
+      "deathSavingThrow": "Death Saving Throw",
+      "temporaryHitPoints": "Temporary Hit Points",
+      "unarmedStrike": "Unarmed Strike"
+    },
     "term": {
       "abilityScores": "The six scores that define your hero, from 3 (feeble) to 20 (legendary). What matters most is the modifier in front: you add it to nearly every roll you make.",
       "armorClass": "Armor Class (AC) is how hard you are to hit. An attacker rolls a d20 and adds its bonuses; it hits only if the total meets or beats this number. Armor, shields, and Dexterity raise it.",
