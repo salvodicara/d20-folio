@@ -26,8 +26,10 @@ export function HeaderXpStart() {
   const { t } = useTranslation();
   return (
     // A zero-height inline box: the field shows on the line but never makes the
-    // line taller, so the masthead keeps its exact height.
-    <span className="tr-numeric ml-2 inline-block h-0 overflow-visible align-top">
+    // line taller, so the masthead keeps its exact height. Its width already holds
+    // the field's hover/focus frame: revealing the frame must not push the box onto
+    // the next line, or a phone tap's hover moves the field out from under the tap.
+    <span className="tr-numeric ml-2 inline-block h-0 min-w-[3.5rem] overflow-visible align-top whitespace-nowrap">
       <InlineEditable
         type="number"
         editable
