@@ -147,6 +147,8 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `dialog:features/report/ReportDialog`                              | Other      | todo   |
 | `empty:app/routes/not-found`                                       | Other      | todo   |
 | `empty:features/account/AdminPage`                                 | Other      | todo   |
+| `menu:app/routes/specimens`                                        | Other      | todo   |
+| `tabs:app/routes/specimens`                                        | Other      | todo   |
 | `loading:features/account/AdminSheetView`                          | Other      | todo   |
 | `route:*`                                                          | Other      | todo   |
 | `route:/admin`                                                     | Other      | todo   |
