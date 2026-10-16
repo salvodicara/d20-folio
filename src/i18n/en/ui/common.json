@@ -82,6 +82,7 @@
     "deleteTitle": "Delete {{name}}?",
     "editNamed": "Edit {{name}}",
     "share": "Share",
-    "skip": "Skip"
+    "skip": "Skip",
+    "resistance": "Resistance"
   }
 }

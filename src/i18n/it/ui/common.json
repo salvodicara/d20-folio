@@ -82,6 +82,7 @@
     "deleteTitle": "Eliminare {{name}}?",
     "editNamed": "Modifica {{name}}",
     "share": "Condividi",
-    "skip": "Salta"
+    "skip": "Salta",
+    "resistance": "Resistenza"
   }
 }
