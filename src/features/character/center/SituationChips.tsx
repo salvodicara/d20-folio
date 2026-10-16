@@ -10,9 +10,17 @@ import { useTranslation } from "react-i18next";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { situationChipsView } from "@/lib/views/tracker-view";
+import {
+  lightChipsView,
+  situationChipsView,
+  type LightChipVM,
+} from "@/lib/views/tracker-view";
 import type { SituationLasts } from "@/lib/situational-states";
-import { commitSituation } from "./action-state-commit";
+import { commitLight, commitSituation } from "./action-state-commit";
+import { useMemo } from "react";
+import { litLightLevel } from "@/lib/light-states";
+import { sheetDarkvisionFt } from "@/lib/play/light";
+import { localeDistance } from "@/lib/utils";
 
 /** The chip hint: a turn fact holds to the end of the turn, a fight fact (Underwater,
  * Mounted) until tapped off or the encounter ends. */
@@ -38,6 +46,16 @@ export function SituationChips() {
     ...chip,
     on: (activeFeatures ?? []).includes(chip.activeKey),
   }));
+  const doc = useCharacterStore((s) => s.character);
+  const darkvisionFt = useMemo(() => (doc ? sheetDarkvisionFt(doc) : 0), [doc]);
+  const lit = litLightLevel({ activeFeatures });
+  const lightChips = lightChipsView(locale, darkvisionFt);
+  const litChip = lightChips.find((chip) => chip.level === lit);
+  // What the lit level does to this hero: the SRD line, or what Darkvision makes of it.
+  const lightNote = (chip: LightChipVM): string =>
+    "text" in chip.note
+      ? chip.note.text
+      : t(chip.note.key, { range: localeDistance(darkvisionFt, locale) });
 
   return (
     <div className="mb-4">
@@ -72,7 +90,44 @@ export function SituationChips() {
             <span className="sb-label">{chip.name}</span>
           </button>
         ))}
+        {lightChips.map((chip) => {
+          const on = lit === chip.level;
+          return (
+            <button
+              key={chip.level}
+              type="button"
+              className="status-badge sb-toggle"
+              data-kind={on ? "active" : undefined}
+              aria-pressed={on}
+              title={t(
+                on ? "combat.situationLitHintFight" : "combat.situationOffHintFight",
+                {
+                  summary: lightNote(chip),
+                }
+              )}
+              onClick={() =>
+                registerUndoableToast(
+                  {
+                    message: on
+                      ? t("combat.situationOffToast", { name: chip.name })
+                      : t("combat.situationOnToastFight", { name: chip.name }),
+                  },
+                  () => commitLight(on ? null : chip.level),
+                  { turnScoped: true }
+                )
+              }
+            >
+              <span className="sb-label">{chip.name}</span>
+            </button>
+          );
+        })}
       </div>
+      {litChip && (
+        <p className="mt-1.5 text-xs text-text-secondary">
+          <span className="font-medium text-text-primary">{litChip.name}:</span>{" "}
+          {lightNote(litChip)}
+        </p>
+      )}
       {chips
         .filter((chip) => chip.on)
         .flatMap((chip) =>
