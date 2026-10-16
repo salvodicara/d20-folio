@@ -12,7 +12,8 @@
  *
  * Attacker-side effects ("attack rolls against you have Advantage") are NOT
  * modeled here — they belong to whoever attacks this creature, not its own
- * roll state. Exhaustion is a numeric stepper handled elsewhere, not a gate.
+ * roll state; the status ledge states them from `play/attacks-against`.
+ * Exhaustion is a numeric stepper handled elsewhere, not a gate.
  *
  * Pure module — no React/store/Firebase imports.
  */
