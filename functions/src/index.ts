@@ -13,6 +13,11 @@
  *    owner the new user's details + a deep-link to /admin so abuse can be blocked
  *    fast. Fails soft — it never throws in a way that retries forever.
  *
+ *  - diagnosticsDigest (ADR-0008, owner 2026-10-16): every morning, one email to
+ *    the owner grouping the automatic error reports written since the last digest
+ *    (none when there are none). Counts and kinds only; account ids stay in the
+ *    admin inbox.
+ *
  *  - onBudgetAlert (SAFE-01): a Pub/Sub trigger on the `budget-kill` topic that the
  *    Cloud Billing £1 budget publishes to. When ACTUAL cost exceeds the budget it
  *    DETACHES the billing account from the project (Google's documented "disable
@@ -26,6 +31,7 @@
 import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import { setGlobalOptions, logger } from "firebase-functions/v2";
 import { initializeApp } from "firebase-admin/app";
@@ -43,7 +49,14 @@ import {
   parseRepo,
   type ReportLike,
 } from "./issue-format";
-import { formatSignupEmail, resolveMailConfig, type NewUserLike } from "./signup-email";
+import {
+  formatSignupEmail,
+  resolveMailConfig,
+  type MailConfig,
+  type MailMessage,
+  type NewUserLike,
+} from "./signup-email";
+import { formatDiagnosticsDigest, type DigestReport } from "./diagnostics-digest";
 import {
   planCampaignUpdate,
   coMemberAclTargets,
@@ -156,6 +169,33 @@ export const onBugReportCreated = onDocumentCreated(
   }
 );
 
+/** One email to the owner over the configured SMTP account. */
+async function sendOwnerMail(config: MailConfig, message: MailMessage): Promise<void> {
+  const transport = nodemailer.createTransport({
+    host: config.host,
+    port: 465,
+    secure: true,
+    auth: { user: config.user, pass: config.pass },
+  });
+  await transport.sendMail({
+    from: config.from,
+    to: config.to,
+    subject: message.subject,
+    text: message.text,
+    html: message.html,
+  });
+}
+
+function ownerMailConfig(): MailConfig | null {
+  return resolveMailConfig({
+    host: MAIL_HOST.value(),
+    user: MAIL_USER.value(),
+    pass: MAIL_PASS.value(),
+    from: MAIL_FROM.value(),
+    to: OWNER_EMAIL.value(),
+  });
+}
+
 // ── OWN-38 — new user → owner notification email ────────────────────────────
 export const onUserCreated = onDocumentCreated(
   {
@@ -177,13 +217,7 @@ export const onUserCreated = onDocumentCreated(
     // The OWNER_EMAIL secret is the ONLY source of the destination — no fallback.
     // Fail LOUD but not forever — a missing mail config must not crash the trigger
     // (which would retry on every new sign-up). Error-log and return.
-    const config = resolveMailConfig({
-      host: MAIL_HOST.value(),
-      user: MAIL_USER.value(),
-      pass: MAIL_PASS.value(),
-      from: MAIL_FROM.value(),
-      to: OWNER_EMAIL.value(),
-    });
+    const config = ownerMailConfig();
     if (!config) {
       logger.error(
         "mail configuration incomplete (MAIL_USER / MAIL_PASS / OWNER_EMAIL secrets); signup email NOT sent"
@@ -205,24 +239,63 @@ export const onUserCreated = onDocumentCreated(
     const message = formatSignupEmail(newUser);
 
     try {
-      const transport = nodemailer.createTransport({
-        host: config.host,
-        port: 465,
-        secure: true,
-        auth: { user: config.user, pass: config.pass },
-      });
-      await transport.sendMail({
-        from: config.from,
-        to: config.to,
-        subject: message.subject,
-        text: message.text,
-        html: message.html,
-      });
+      await sendOwnerMail(config, message);
       logger.info("sent signup notification email", { uid: event.params.uid });
     } catch (err) {
       // Fail soft — log, never re-throw (a thrown error would retry indefinitely).
       logger.error("failed to send signup email (non-fatal)", err);
     }
+  }
+);
+
+// ── ADR-0008 — the owner's daily digest of new automatic error reports ─────
+/** Where the digest remembers how far it has read (Admin SDK only; rules deny clients). */
+const DIGEST_MARKER = "ops/diagnosticsDigest";
+/** A day of reports is bounded by the client caps; this is a safety ceiling. */
+const DIGEST_MAX_REPORTS = 500;
+
+export const diagnosticsDigest = onSchedule(
+  {
+    schedule: "every day 08:00",
+    timeZone: "Europe/Rome",
+    secrets: [MAIL_HOST, MAIL_USER, MAIL_PASS, MAIL_FROM, OWNER_EMAIL],
+  },
+  async () => {
+    const db = getFirestore();
+    const marker = db.doc(DIGEST_MARKER);
+    const lastAt =
+      ((await marker.get()).get("lastAt") as Timestamp | undefined) ??
+      Timestamp.fromMillis(0);
+    const snap = await db
+      .collection("diagnostics")
+      .where("createdAt", ">", lastAt)
+      .orderBy("createdAt")
+      .limit(DIGEST_MAX_REPORTS)
+      .get();
+    if (snap.empty) {
+      logger.info("diagnostics digest: nothing new");
+      return;
+    }
+
+    const reports: DigestReport[] = snap.docs.map((doc) => ({
+      uid: String(doc.get("uid") ?? ""),
+      event: String(doc.get("event") ?? "unknown"),
+      message: String(doc.get("message") ?? ""),
+      createdAtMs: Number(doc.get("createdAtMs") ?? 0),
+    }));
+    const message = formatDiagnosticsDigest(reports);
+    const config = ownerMailConfig();
+    if (!message || !config) {
+      logger.error("diagnostics digest: mail configuration incomplete; digest NOT sent");
+      return;
+    }
+    // Send first, then advance the marker: a failed send repeats tomorrow, never skips.
+    await sendOwnerMail(config, message);
+    const newest = snap.docs[snap.docs.length - 1]?.get("createdAt") as
+      | Timestamp
+      | undefined;
+    await marker.set({ lastAt: newest ?? Timestamp.now() }, { merge: true });
+    logger.info("diagnostics digest sent", { reports: reports.length });
   }
 );
 
