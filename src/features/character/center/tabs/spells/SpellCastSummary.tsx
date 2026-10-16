@@ -7,7 +7,7 @@
  * formatted at this edge (`fmtMod`, "x / y"); APP labels resolve via `t(...)`.
  */
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, Info, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
@@ -345,18 +345,27 @@ export function SpellLevelFilter({
         ))}
         {/* Honest blank: no concentration spells → no facet to offer. */}
         {concCount > 0 && (
-          <button
-            type="button"
-            className="fchip"
-            aria-pressed={concOnly}
-            aria-label={t("spells.filterConcentration")}
-            onClick={onToggleConc}
-          >
-            {t("combat.concentration")}
-            <span className="fc-count" aria-hidden>
-              {concCount}
-            </span>
-          </button>
+          <>
+            <button
+              type="button"
+              className="fchip"
+              aria-pressed={concOnly}
+              aria-label={t("spells.filterConcentration")}
+              onClick={onToggleConc}
+            >
+              {t("combat.concentration")}
+              <span className="fc-count" aria-hidden>
+                {concCount}
+              </span>
+            </button>
+            <GlossaryTip
+              term="concentration"
+              rubric={t("spells.concentration")}
+              className="glossary-info"
+            >
+              <Icon as={Info} decorative />
+            </GlossaryTip>
+          </>
         )}
       </div>
     </div>
