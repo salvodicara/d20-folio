@@ -115,6 +115,10 @@ const CASES: {
     { kind: "remove-condition", condition: "prone" },
     () => at(conditions.removeCondition(doc, "prone")?.session),
   ],
+  "set-bundle-choices": [
+    { kind: "set-bundle-choices", choices: { "spell-enlarge-reduce": "enlarge" } },
+    () => at(states.setBundleChoices(doc, { "spell-enlarge-reduce": "enlarge" })),
+  ],
   "set-active-state": [
     { kind: "set-active-state", key: "rage", isActive: false, litRound: 2 },
     () => at(states.setActiveState(doc, "rage", false, 2)),
