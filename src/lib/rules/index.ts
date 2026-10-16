@@ -417,3 +417,49 @@ export function foldRules(rules: readonly Rule[]): RuleValues {
   // Flags keep grant order (first occurrence), so projections stay stable.
   return { numbers, terms, flags: [...flags] };
 }
+
+/** A rule with the catalogue entry it came from (absent for a source with no ref). */
+export interface RuleOrigin {
+  readonly rule: Rule;
+  readonly source?: { readonly kind: string; readonly key: string };
+}
+
+/**
+ * The per-source contributions to a target's {@link ruleNumber}, for a breakdown
+ * that names who gave what. It mirrors {@link foldRules} for that one target: in an
+ * `add` bucket every rule contributes its value; in a `max`/`min` bucket only the
+ * winning rule does (the first one, on a tie). So the values sum to
+ * `ruleNumber(foldRules(rules), target, facts)` by construction. Ability terms are
+ * not included (the fold keeps them apart too). Zero contributions are dropped.
+ */
+export function ruleParts(
+  origins: readonly RuleOrigin[],
+  target: RuleTarget,
+  facts: readonly RuleFact[] = []
+): Array<{ source?: RuleOrigin["source"]; value: number }> {
+  const keys = new Set([keyOf(target), ...facts.map((fact) => keyOf(target, fact))]);
+  type Pick = { source?: RuleOrigin["source"]; value: number };
+  const buckets = new Map<string, Pick[]>();
+  for (const { rule, source } of origins) {
+    if (rule.op === "flag" || typeof rule.value !== "number") continue;
+    const key = keyOf(rule.target, rule.when);
+    if (!keys.has(key)) continue;
+    const id = `${key}|${rule.stack ?? rule.op}`;
+    const pick: Pick = { ...(source ? { source } : {}), value: rule.value };
+    const picks = buckets.get(id) ?? [];
+    if (rule.op === "add") picks.push(pick);
+    else {
+      const best = picks[0];
+      const better =
+        best === undefined ||
+        (rule.op === "max" ? rule.value > best.value : rule.value < best.value);
+      if (better) picks.splice(0, picks.length, pick);
+    }
+    buckets.set(id, picks);
+  }
+  const parts: Pick[] = [];
+  for (const picks of buckets.values()) {
+    for (const pick of picks) if (pick.value !== 0) parts.push(pick);
+  }
+  return parts;
+}

@@ -27,7 +27,33 @@
       "rider": "Quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
       "riderOnce": "Una volta per turno, quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
       "riderCost": "Quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}.",
-      "riderOnceCost": "Una volta per turno, quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}."
+      "riderOnceCost": "Una volta per turno, quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}.",
+      "proficiencyByLevel": "Al livello {{level}} il tuo bonus di competenza è +{{bonus}}. Parte da +2 e cresce di 1 ogni quattro livelli, fino a +6 al livello 17.",
+      "trackerMinimumOne": "Questa risorsa dà sempre almeno 1 uso, anche quando il modificatore è più basso.",
+      "trackerTimes": "{{value}} × {{factor}}.",
+      "trackerDivided": {
+        "up": "{{value}} ÷ {{divisor}}, arrotondato per eccesso.",
+        "down": "{{value}} ÷ {{divisor}}, arrotondato per difetto."
+      },
+      "maneuverBestAbility": "La CD di una manovra usa il modificatore di Forza o di Destrezza, il più alto dei due."
+    },
+    "speed": {
+      "multiplier": "Moltiplicatore di velocità",
+      "heavyArmor": "Armatura pesante (Forza insufficiente)",
+      "minimum": "Minimo 0",
+      "floor": "Velocità minima",
+      "cap": "Limite di velocità"
+    },
+    "ability": {
+      "floor": "Punteggio minimo",
+      "cap": "Punteggio massimo"
+    },
+    "proficiency": {
+      "byLevel": "Per livello del personaggio"
+    },
+    "tracker": {
+      "fixed": "Stabilito dal privilegio",
+      "minimum": "Minimo 1"
     }
   }
 }

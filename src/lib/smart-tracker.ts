@@ -40,7 +40,7 @@ import {
   secondaryDamage,
   translateWeapon,
 } from "@/lib/activities";
-import { ruleConditional, ruleNumber, type RuleFact } from "@/lib/rules";
+import { ruleConditional, ruleNumber, ruleParts, type RuleFact } from "@/lib/rules";
 import { buildWeaponRange, type WeaponRangeSpec } from "@/lib/weapon-range";
 
 export { buildWeaponRange, type WeaponRangeSpec };
@@ -1575,6 +1575,11 @@ export function resolveTrackerTotal(
   character: CharacterDoc,
   scalingLevel?: number
 ): number {
+  return resolveTrackerExpr(formula, trackerExprCtx(character, scalingLevel));
+}
+
+/** The level, Proficiency Bonus and modifiers a tracker formula reads. */
+function trackerExprCtx(character: CharacterDoc, scalingLevel?: number): TrackerExprCtx {
   const { character: charData } = character;
   const characterLevel = totalLevel(charData);
   const level = scalingLevel ?? characterLevel;
@@ -1591,7 +1596,134 @@ export function resolveTrackerTotal(
     WIS: abilityModifier(scores.WIS),
     CHA: abilityModifier(scores.CHA),
   };
-  return resolveTrackerExpr(formula, { level, pb, abilityMap });
+  return { level, pb, abilityMap };
+}
+
+/**
+ * The parts of a tracker total (how many uses a resource has), for the "where does
+ * this number come from?" tip (re-foundation phase 2). It mirrors
+ * `resolveTrackerExpr` term by term: an ability modifier (raised to the minimum of 1
+ * with the reason on tap), the Proficiency Bonus, the level, a fixed count, a
+ * multiplier or division explained on tap, and a sum's terms one by one with the
+ * minimum of 1 the whole sum gets. `breakdownTotal(parts)` equals
+ * `resolveTrackerTotal` with the same arguments; the guard pins it.
+ */
+export function trackerTotalBreakdown(
+  formula: string,
+  character: CharacterDoc,
+  scalingLevel?: number
+): RawBreakdownPart[] {
+  return trackerExprParts(formula, trackerExprCtx(character, scalingLevel));
+}
+
+const MIN_ONE_WHY = { term: "breakdown.why.trackerMinimumOne" } as const;
+
+/** A bare term's label and raw value ("level", "PB", an ability code, a number). */
+function trackerTermPart(
+  term: string,
+  value: number,
+  ctx: TrackerExprCtx
+): RawBreakdownPart {
+  if (term in ctx.abilityMap) return abilityPart(term as AbilityCode, value);
+  if (term === "PB") return termPart("character.proficiencyBonus", value);
+  if (term === "level") return termPart("common.level", value);
+  return termPart("breakdown.tracker.fixed", value);
+}
+
+function trackerRawTerm(term: string, ctx: TrackerExprCtx): number {
+  if (term === "level") return ctx.level;
+  if (term === "PB") return ctx.pb;
+  if (term in ctx.abilityMap) return ctx.abilityMap[term] ?? 0;
+  return parseInt(term, 10) || 0;
+}
+
+function trackerExprParts(formula: string, ctx: TrackerExprCtx): RawBreakdownPart[] {
+  const total = resolveTrackerExpr(formula, ctx);
+  const num = parseInt(formula, 10);
+  if (!isNaN(num) && formula === String(num))
+    return [termPart("breakdown.tracker.fixed", num)];
+  if (formula in ctx.abilityMap) {
+    const mod = ctx.abilityMap[formula] ?? 0;
+    return [
+      mod < 1
+        ? abilityPart(formula as AbilityCode, 1, undefined, MIN_ONE_WHY)
+        : abilityPart(formula as AbilityCode, mod),
+    ];
+  }
+  if (formula === "PB" || formula === "level") {
+    return [trackerTermPart(formula, trackerRawTerm(formula, ctx), ctx)];
+  }
+  const maxMatch = formula.match(/^max\(([^,()]+),([^,()]+)\)$/);
+  if (maxMatch) {
+    const left = (maxMatch[1] ?? "0").trim();
+    const right = (maxMatch[2] ?? "0").trim();
+    const winner =
+      resolveTrackerExpr(left, ctx) >= resolveTrackerExpr(right, ctx) ? left : right;
+    return trackerExprParts(winner, ctx);
+  }
+  const roundMatch = formula.match(/^(floor|ceil)\((.+)\/(\d+)\)$/);
+  if (roundMatch) {
+    const inner = roundMatch[2] ?? "0";
+    return [
+      termPart(
+        inner === "level" ? "common.level" : "breakdown.tracker.fixed",
+        total,
+        undefined,
+        {
+          term: `breakdown.why.trackerDivided.${roundMatch[1] === "ceil" ? "up" : "down"}`,
+          params: {
+            value: resolveTrackerExpr(inner, ctx),
+            divisor: parseInt(roundMatch[3] ?? "1", 10) || 1,
+          },
+        }
+      ),
+    ];
+  }
+  const mulMatch = formula.match(/^(\w+)\*(\d+)$/);
+  if (mulMatch) {
+    const term = mulMatch[1] ?? "";
+    const factor = parseInt(mulMatch[2] ?? "1", 10);
+    const part = trackerTermPart(term, total, ctx);
+    return [
+      {
+        ...part,
+        why: {
+          term: "breakdown.why.trackerTimes",
+          params: { value: trackerRawTerm(term, ctx), factor },
+        },
+      },
+    ];
+  }
+  const sumMatch = formula.match(/^(.+)([+-])(\w+)$/);
+  if (sumMatch) {
+    const left = trackerExprParts(sumMatch[1] ?? "0", ctx);
+    const sign = sumMatch[2] === "-" ? -1 : 1;
+    const term = sumMatch[3] ?? "";
+    const parts = [...left, trackerTermPart(term, sign * trackerRawTerm(term, ctx), ctx)];
+    const sum = breakdownTotal(parts);
+    if (total > sum)
+      parts.push(
+        termPart("breakdown.tracker.minimum", total - sum, undefined, MIN_ONE_WHY)
+      );
+    return parts;
+  }
+  const divMatch = formula.match(/^(\w+)\/(\d+)$/);
+  if (divMatch) {
+    const term = divMatch[1] ?? "";
+    return [
+      {
+        ...trackerTermPart(term, total, ctx),
+        why: {
+          term: "breakdown.why.trackerDivided.down",
+          params: {
+            value: trackerRawTerm(term, ctx),
+            divisor: parseInt(divMatch[2] ?? "1", 10) || 1,
+          },
+        },
+      },
+    ];
+  }
+  return [termPart("breakdown.tracker.fixed", total)];
 }
 
 /**
@@ -8478,6 +8610,93 @@ export function effectiveWalkingSpeedFt(
   // Speed still floors back up to `speedFloorFt`. Default 0 = no floor.
   const floored = Math.max(0, resolved, agg.speedFloorFt);
   return agg.speedCapFt === null ? floored : Math.min(floored, agg.speedCapFt);
+}
+
+/**
+ * The per-source parts of {@link effectiveWalkingSpeedFt}, for the "where does this
+ * number come from?" tip (re-foundation phase 2: every number explained). The same
+ * steps in the same order: the base, every feature or item that adds Speed (named
+ * by its catalogue entry), the multiplier, the heavy-armor penalty, Exhaustion, then
+ * a floor or cap. `breakdownTotal(parts)` equals `effectiveWalkingSpeedFt` with the
+ * same arguments; the guard test pins it across every dev scenario.
+ */
+export function effectiveWalkingSpeedBreakdown(
+  character: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined,
+  round?: number
+): RawBreakdownPart[] {
+  const { character: charData } = character;
+  const base = parseInt(charData.speed, 10);
+  const baseFt = Number.isNaN(base) ? 0 : base;
+  const agg = aggregateCharacterGrants(charData, character.session);
+  const facts: RuleFact[] = [];
+  if (
+    ruleConditional(agg.values, "speed:walk", "no-heavy-armor") > 0 &&
+    !(resolveSrd && isHeavyArmorEquipped(charData.equipment, resolveSrd))
+  ) {
+    facts.push("no-heavy-armor");
+  }
+  if (round === 1) facts.push("round-1");
+
+  const named = (
+    source: { kind: string; key: string } | undefined,
+    fallbackTerm: string,
+    value: number
+  ): RawBreakdownPart =>
+    source
+      ? locPart(srdText(source.kind as SrdKind, source.key, "name"), value)
+      : termPart(fallbackTerm, value);
+
+  const parts: RawBreakdownPart[] = [termPart("breakdown.base", baseFt)];
+  let running = baseFt;
+  for (const { source, value } of ruleParts(agg.ruleOrigins, "speed:walk", facts)) {
+    parts.push(named(source, "breakdown.featureBonus", value));
+    running += value;
+  }
+
+  const multiplied = Math.round(running * agg.speedMultiplier);
+  if (multiplied !== running) {
+    const source = ruleParts(agg.ruleOrigins, "speed:multiplier")[0]?.source;
+    parts.push(named(source, "breakdown.speed.multiplier", multiplied - running));
+  }
+
+  const armorPenaltyFt = resolveSrd
+    ? resolveArmorEffects(
+        charData.equipment,
+        resolveSrd,
+        combatAbilityScores(character).STR
+      ).speedPenaltyFt
+    : 0;
+  if (armorPenaltyFt !== 0)
+    parts.push(termPart("breakdown.speed.heavyArmor", -armorPenaltyFt));
+  const reduction = exhaustionSpeedReductionFt(character.session.exhaustion);
+  if (reduction !== 0) parts.push(termPart("character.exhaustion", -reduction));
+  const resolved = multiplied - armorPenaltyFt - reduction;
+
+  const floored = Math.max(0, resolved, agg.speedFloorFt);
+  if (floored !== resolved) {
+    const byFloor = agg.speedFloorFt > Math.max(0, resolved);
+    parts.push(
+      byFloor
+        ? named(
+            ruleParts(agg.ruleOrigins, "speed:floor")[0]?.source,
+            "breakdown.speed.floor",
+            floored - resolved
+          )
+        : termPart("breakdown.speed.minimum", floored - resolved)
+    );
+  }
+  const final = agg.speedCapFt === null ? floored : Math.min(floored, agg.speedCapFt);
+  if (final !== floored) {
+    parts.push(
+      named(
+        ruleParts(agg.ruleOrigins, "speed:cap")[0]?.source,
+        "breakdown.speed.cap",
+        final - floored
+      )
+    );
+  }
+  return parts;
 }
 
 /**
