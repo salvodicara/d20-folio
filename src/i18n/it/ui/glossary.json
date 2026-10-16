@@ -64,7 +64,23 @@
       "prone": "Mentre sei Prono sei a terra e puoi solo strisciare. I tuoi tiri per colpire hanno Svantaggio; chi ti attacca da entro 1,5 metri ha Vantaggio, chi è più lontano Svantaggio. Rialzarti costa metà della tua Velocità.",
       "restrained": "Mentre sei Trattenuto la tua Velocità è 0. I tuoi tiri per colpire e i tiri salvezza su Destrezza hanno Svantaggio, e i tiri per colpire contro di te hanno Vantaggio.",
       "stunned": "Mentre sei Stordito sei Incapacitato: niente azioni, Azioni Bonus né Reazioni. Fallisci i tiri salvezza su Forza e Destrezza e i tiri per colpire contro di te hanno Vantaggio.",
-      "unconscious": "Mentre sei Privo di Sensi sei Incapacitato e Prono, lasci cadere ciò che tieni e non puoi muoverti, parlare né accorgerti di nulla. Fallisci i tiri salvezza su Forza e Destrezza, i tiri per colpire contro di te hanno Vantaggio e ogni colpo da entro 1,5 metri è un Colpo Critico."
+      "unconscious": "Mentre sei Privo di Sensi sei Incapacitato e Prono, lasci cadere ciò che tieni e non puoi muoverti, parlare né accorgerti di nulla. Fallisci i tiri salvezza su Forza e Destrezza, i tiri per colpire contro di te hanno Vantaggio e ogni colpo da entro 1,5 metri è un Colpo Critico.",
+      "base-dash": "Lo Scatto ti dà, per questo turno, movimento extra pari alla tua Velocità: di solito ti muovi il doppio.",
+      "base-dodge": "Schivata: fino all'inizio del tuo prossimo turno i tiri per colpire contro di te hanno Svantaggio e tu hai Vantaggio ai tiri salvezza su Destrezza. La perdi se diventi Incapacitato o la tua Velocità scende a 0.",
+      "base-disengage": "Disimpegno: per il resto del turno, allontanarti dai nemici non provoca alcun Attacco di Opportunità.",
+      "base-help": "Aiuto: un alleato ha Vantaggio alla sua prossima prova con un'abilità o uno strumento in cui sei competente, oppure al suo prossimo tiro per colpire contro un nemico entro 1,5 metri da te. Dura fino all'inizio del tuo prossimo turno.",
+      "base-hide": "Nascondersi funziona quando i nemici non ti vedono, dietro una copertura solida o nel buio fitto o nella nebbia: fai una prova di Destrezza (Furtività) CD 15. Se riesci hai la condizione Invisibile finché resti nascosto.",
+      "base-influence": "Influenza: provi a cambiare l'atteggiamento di una creatura convincendola, ingannandola, intimidendola, esibendoti o calmando un animale. Il DM sceglie la prova e quanto è difficile; una creatura già ben disposta può semplicemente accettare.",
+      "base-magic": "Magia: lanci un incantesimo che richiede un'azione, oppure usi un oggetto magico o una capacità speciale che richiede l'azione Magia.",
+      "base-ready": "Prepararsi ti fa agire più tardi, nel turno di qualcun altro: scegli come innesco qualcosa che puoi notare e cosa farai, poi usa la tua Reazione quando accade.",
+      "base-search": "Ricerca: cerchi o percepisci qualcosa di nascosto o poco chiaro con una prova di Saggezza, per esempio Percezione per notare una creatura nascosta o Intuizione per capire l'umore di qualcuno.",
+      "base-study": "Studio: ricordi o deduci ciò che sai con una prova di Intelligenza, per esempio Arcano sulla magia, Storia sul passato o Indagare per mettere insieme gli indizi.",
+      "base-utilize": "Utilizzo: usi un oggetto non magico che richiede un'azione, come tirare una leva o accendere una lampada.",
+      "base-object-interaction": "Interagisci con un oggetto: una volta per turno puoi maneggiare un oggetto gratis mentre ti muovi o agisci, come estrarre una spada o aprire una porta. Un secondo oggetto nello stesso turno richiede l'azione Utilizzo.",
+      "base-grapple": "Afferrare è un Colpo Senz'armi: con una mano libera prendi una creatura entro 1,5 metri che sia al massimo di una taglia più grande di te. Fa un tiro salvezza su Forza o Destrezza; se fallisce ha la condizione Afferrato.",
+      "base-shove": "Spingere è un Colpo Senz'armi contro una creatura entro 1,5 metri che sia al massimo di una taglia più grande di te. Fa un tiro salvezza su Forza o Destrezza; se fallisce la allontani di 1,5 metri o le dai la condizione Prono.",
+      "base-escape-grapple": "Liberati: mentre sei Afferrato usa la tua azione per una prova di Forza (Atletica) o Destrezza (Acrobazia) contro la CD di fuga. Se riesci sei libero.",
+      "base-opportunity-attack": "Attacco di Opportunità: quando un nemico che puoi vedere esce dalla tua portata, puoi usare la tua Reazione per fare un attacco in mischia contro di lui. Una creatura che usa l'azione Disimpegno lo evita."
     }
   }
 }

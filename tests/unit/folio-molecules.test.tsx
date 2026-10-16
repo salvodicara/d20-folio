@@ -260,6 +260,32 @@ describe("UniversalCard", () => {
     expect(container.querySelector(".sp-lbl")).toHaveTextContent("L3");
   });
 
+  it("combat-CTA mode: a glossed name opens its plain-language line, not the card", () => {
+    const onCommit = vi.fn();
+    render(
+      <UniversalCard
+        kind="feature"
+        name="Dodge"
+        nameTerm="base-dodge"
+        slot="action"
+        mode="combat-CTA"
+        ctaLabel="Use"
+        onCommit={onCommit}
+      >
+        <UniversalCardDesc>Detail</UniversalCardDesc>
+      </UniversalCard>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Learn about Dodge" }));
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      i18n.t("glossary.term.base-dodge")
+    );
+    // The open popover hides the page from AT, so the toggle is found hidden.
+    expect(
+      screen.getByRole("button", { name: "Details: Dodge", hidden: true })
+    ).toHaveAttribute("aria-expanded", "false");
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it("combat-CTA mode: disables the CTA when the economy is spent", () => {
     render(
       <UniversalCard
