@@ -26,7 +26,7 @@ import { dropBeastForm } from "./forms";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
-import { setActiveSpellCastLevel, setActiveState } from "./states";
+import { setActiveSpellCastLevel, setActiveState, setBundleChoices } from "./states";
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
 import { setWishStress } from "./wish";
@@ -58,6 +58,7 @@ export type SheetEvent =
   | { kind: "remove-condition"; condition: string }
   | { kind: "set-active-state"; key: string; isActive: boolean; litRound: number }
   | { kind: "set-active-cast-level"; key: string; level: number | undefined }
+  | { kind: "set-bundle-choices"; choices: Readonly<Record<string, string | null>> }
   | {
       kind: "set-cover";
       level: CoverStateLevel | null;
@@ -131,6 +132,8 @@ export function applySheetEvent(
       return withSession(setActiveState(doc, event.key, event.isActive, event.litRound));
     case "set-active-cast-level":
       return withSession(setActiveSpellCastLevel(doc, event.key, event.level));
+    case "set-bundle-choices":
+      return withSession(setBundleChoices(doc, event.choices));
     case "set-cover":
       return withSession(setCover(doc, event.level, event.until));
     case "set-surprised":
