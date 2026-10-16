@@ -64,6 +64,7 @@ const MARKER_KINDS = new Set<PlayEvent["kind"]>([
   "encounter-start",
   "round-start",
   "encounter-end",
+  "scene-start",
 ]);
 
 export function foldSession(

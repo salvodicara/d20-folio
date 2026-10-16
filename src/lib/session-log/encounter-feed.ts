@@ -43,6 +43,7 @@ const MARKERS = new Set<PlayEvent["kind"]>([
   "encounter-start",
   "round-start",
   "encounter-end",
+  "scene-start",
 ]);
 const LANDED = new Set(["hit", "critical", "failed", "saved"]);
 /** The results a damage line itself can say ("Goblin → Lyra: hit, 7"). */

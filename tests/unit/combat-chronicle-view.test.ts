@@ -32,7 +32,10 @@ const line = (event: PlayEvent, hp?: { current: number; max: number }): string =
 
 /** One sample per kind the feed can show (markers never reach it). */
 const SAMPLES: Record<
-  Exclude<PlayEventKind, "encounter-start" | "encounter-end" | "round-start">,
+  Exclude<
+    PlayEventKind,
+    "encounter-start" | "encounter-end" | "round-start" | "scene-start"
+  >,
   PlayEvent
 > = {
   action: { kind: "action", actor: "pc-mara", targets: ["monster-1"], outcome: "hit" },

@@ -22,7 +22,12 @@ import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
 
-const MARKERS = new Set(["encounter-start", "encounter-end", "round-start"]);
+const MARKERS = new Set([
+  "encounter-start",
+  "encounter-end",
+  "round-start",
+  "scene-start",
+]);
 
 /** The automatic report of one logged sitting, behind a quiet disclosure. */
 export function SessionDayReport({
@@ -56,6 +61,11 @@ export function SessionDayReport({
       action: (text) => localizeText(text, language),
       spell: (ref) => concentrationLabel(ref, language),
       source: (id) => grantSourceLabel(id, language),
+      time: (at) =>
+        new Date(at).toLocaleTimeString(language, {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
     }),
     [campaign?.memberDetails, language]
   );

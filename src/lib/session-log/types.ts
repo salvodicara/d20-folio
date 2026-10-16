@@ -108,6 +108,8 @@ export type PlayEvent =
     }
   | { kind: "encounter-end"; encounterId: string; outcome?: "victory" | "ended" }
   | { kind: "round-start"; round: number }
+  /** A new scene outside a fight (exploration, a ritual, downtime), optionally titled. */
+  | { kind: "scene-start"; title?: string }
   | { kind: "note"; text: string; actor?: CombatantId };
 
 export type PlayEventKind = PlayEvent["kind"];

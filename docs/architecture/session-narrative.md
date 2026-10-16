@@ -41,6 +41,16 @@ A reader older than the overrides drops `hide`, `show` and `move` items, so it s
 unedited. The rules accept them in the session array (members append only their own). When the
 per-item subcollection (#321) lands, its rule takes the same item types.
 
+## Play outside a fight: scenes
+
+Owner, 2026-10-16: exploration, rests, rituals and downtime are part of the story too. Lines
+outside a fight are recorded like any other (the sheet records whether or not an encounter runs),
+and the report groups them into numbered **scenes**, as a fight is grouped into rounds. A scene
+starts at the session's first line, at a `scene-start { title? }` line (a structural line like a
+round's start: never hidden or moved), after a rest and after a fight. Each scene carries the time
+of its first line (`startedAt`, display only). The export heads it `## Scena 2: Il ponte · 21:40`.
+Writing `scene-start` from the UI is Phase 1's (`recorder.record({ kind: "scene-start", title })`).
+
 ## Session notes in the same timeline
 
 Owner workflow, 2026-10-16: during the game the DM writes free notes; afterwards the notes and
