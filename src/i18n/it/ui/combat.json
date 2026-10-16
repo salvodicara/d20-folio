@@ -433,7 +433,6 @@
     "addDamagePart": "Aggiungi altro",
     "removeDamagePart": "Rimuovi danni {{label}}",
     "damageMathImmune": "Immunità",
-    "damageMathResisted": "Resistenza",
     "damageMathVulnerable": "Vulnerabilità",
     "damageMathReduced": "riduzione −{{n}}",
     "damageTotalPreview": "Totale: {{raw}} → {{net}}",

@@ -156,7 +156,7 @@ describe(
       });
       const group = screen.getByRole("group", { name: /damage type/i });
       fireEvent.click(within(group).getByRole("button", { name: "Fire" }));
-      expect(screen.getByText("10 → 5 · Resisted")).toBeTruthy();
+      expect(screen.getByText("10 → 5 · Resistance")).toBeTruthy();
       fireEvent.click(screen.getByRole("button", { name: /^Damage$/ }));
       expect(monsterOf(encounter).hp.current).toBe(95);
       expect(encounter.events?.[0]).toMatchObject({ kind: "hp-damage", amount: 5 });
