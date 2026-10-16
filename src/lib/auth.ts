@@ -224,6 +224,14 @@ export function initAuthListener(): () => void {
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     const store = useAuthStore.getState();
 
+    // The production build reads the private pack once, for the account it
+    // booted with; a sign-in or sign-out that changes access reloads the app.
+    if (import.meta.env.VITE_CONTENT_PACK === "runtime") {
+      void import("@/platform/pack-firebase").then(({ packFollowsAccount }) =>
+        packFollowsAccount(user?.uid ?? null)
+      );
+    }
+
     if (user) {
       // DEV-ONLY (remove before release): act-as-member impersonation. When
       // `?devActAs=<uid>` is set in a DEV build, present the auth store AS that member
