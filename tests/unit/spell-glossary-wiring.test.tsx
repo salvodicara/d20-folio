@@ -126,16 +126,17 @@ describe("beginner glossary on the spell cards", () => {
 
 describe("rangeAreaTerm", () => {
   it.each([
-    ["Self (15-foot cone)", "cone"],
-    ["Sé stessi (cono di 4,5 metri)", "cone"],
-    ["Self (10-foot-radius sphere)", "sphere"],
-    ["Sé stessi (emanazione di 3 metri)", "emanation"],
-    ["Self (60-foot line)", "line"],
-    ["Self (30-foot radius)", "areaOfEffect"],
-    ["Sé stessi (raggio di 9 metri)", "areaOfEffect"],
-    ["60 feet", null],
-    ["Unlimited", null],
-  ])("%s → %s", (range, term) => {
-    expect(rangeAreaTerm(range)).toBe(term);
+    ["Self (15-foot cone)", "en", "cone"],
+    ["Sé stessi (cono di 4,5 metri)", "it", "cone"],
+    ["Self (10-foot-radius sphere)", "en", "sphere"],
+    ["Sé stessi (emanazione di 3 metri)", "it", "emanation"],
+    ["Self (60-foot line)", "en", "line"],
+    ["Self (30-foot radius)", "en", "areaOfEffect"],
+    ["Sé stessi (raggio di 9 metri)", "it", "areaOfEffect"],
+    ["60 feet", "en", null],
+    ["Unlimited", "en", null],
+  ] as const)("%s (%s) → %s", async (range, locale, term) => {
+    await i18n.loadLanguages(locale);
+    expect(rangeAreaTerm(range, i18n.getFixedT(locale))).toBe(term);
   });
 });

@@ -213,7 +213,7 @@ export function buildFacts(vm: SpellCardVM, t: TFunction): SpellFact[] {
   const attackType = vm.kind === "srd" ? vm.activity?.attack : undefined;
   const slot = spellCardSlot(vm);
   const castTerm = slot === "bonus" || slot === "reaction" ? CAST_TERM[slot].term : null;
-  const area = rangeAreaTerm(vm.facts.range);
+  const area = rangeAreaTerm(vm.facts.range, t);
   const letters = (["V", "S", "M"] as const).filter(
     (l) => components?.[l.toLowerCase() as "v" | "s" | "m"]
   );
