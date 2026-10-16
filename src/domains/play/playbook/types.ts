@@ -19,6 +19,19 @@ export const ECONOMY_SLOTS: ReadonlyArray<EconomySlot> = [
   "reaction",
 ];
 
+/**
+ * Where the playbook is read. `combat` follows the action economy turn by turn;
+ * `exploration` (rituals, rests, downtime) has none: every step is `anytime`, no
+ * reaction waits for a trigger and the plan lists everything that applies now.
+ */
+export type PlaybookMode = "combat" | "exploration";
+
+/** A step's slot: an economy slot in combat, `anytime` out of combat. */
+export type PlaybookSlot = EconomySlot | "anytime";
+
+/** Every slot in display order. */
+export const PLAYBOOK_SLOTS: ReadonlyArray<PlaybookSlot> = [...ECONOMY_SLOTS, "anytime"];
+
 /** The generator rule that produced a step. Each rule has one fixed priority. */
 export type PlaybookRuleId =
   | "position"
@@ -34,13 +47,21 @@ export type PlaybookRuleId =
   | "hide-when-possible"
   | "dash-when-far"
   | "reaction-defense"
-  | "opportunity-attack";
+  | "opportunity-attack"
+  // Exploration only.
+  | "recover-hp"
+  | "ritual-no-slot"
+  | "exploration-check"
+  | "utility-cantrip"
+  | "short-rest-recovery";
 
 /** When a step applies. `always` is the usual turn; every other kind is an "if". */
 export type PlaybookTrigger =
   | { kind: "always" }
   | { kind: "fight-start" }
   | { kind: "self-bloodied" }
+  /** Below the Hit Point maximum (exploration: heal before moving on). */
+  | { kind: "self-hurt" }
   | { kind: "ally-down" }
   | { kind: "enemies-grouped"; min: number }
   | { kind: "tough-foe" }
@@ -81,7 +102,14 @@ export type PlaybookWhyKey =
   | "no-uses-left"
   | "no-slot-left"
   | "cannot-act"
-  | "player-pinned";
+  | "player-pinned"
+  // Exploration only.
+  | "ritual-no-slot"
+  | "exploration-check"
+  | "cheapest-first"
+  | "uses-item"
+  | "recovers-on-short-rest"
+  | "hit-dice-heal";
 
 /** Where a reason comes from: a feature, spell or weapon id, or a core rule id. */
 export type PlaybookSource =
@@ -101,7 +129,9 @@ export interface PlaybookWhy {
 /** The resource an option spends. Absent: free to use. */
 export type PlaybookSpend =
   | { kind: "slot"; level: number }
-  | { kind: "tracker"; trackerId: string; amount: number; recovery?: Recovery };
+  | { kind: "tracker"; trackerId: string; amount: number; recovery?: Recovery }
+  /** One consumable from the pack (a Potion of Healing). */
+  | { kind: "item"; itemId: string };
 
 /** A turn-wide rule the planner enforces across slots. */
 export type PlaybookLimit = "one-concentration" | "one-slot-spell";
@@ -124,9 +154,9 @@ export type PlaybookStatus = "ready" | "spent" | "blocked";
 export interface PlaybookStep {
   /** Stable id: `<slot>:<rule>`. Overrides key on it. */
   id: string;
-  slot: EconomySlot;
+  slot: PlaybookSlot;
   rule: PlaybookRuleId;
-  /** Options best first. Empty only for the movement step. */
+  /** Options best first. Empty only for the movement and Short Rest steps. */
   options: ReadonlyArray<PlaybookOption>;
   when: PlaybookTrigger;
   /** The trigger read against the context: unknown when the context is silent. */
@@ -141,9 +171,13 @@ export interface PlaybookStep {
 
 /** What the table knows right now. Every field optional: absent means unknown. */
 export interface PlaybookContext {
+  /** Absent: combat. */
+  mode?: PlaybookMode;
   round?: number;
   /** Overrides the HP-derived Bloodied read. */
   selfBloodied?: boolean;
+  /** Overrides the HP-derived "below the maximum" read. */
+  selfHurt?: boolean;
   allyDown?: boolean;
   /** Enemies close enough together for one area spell. */
   enemiesGrouped?: number;
@@ -166,14 +200,15 @@ export interface PlaybookOverrides {
 
 export type PlanSkipReason = "slot-taken" | PlaybookLimit;
 
-/** One concrete turn for the given context. */
+/** One concrete turn for the context; out of combat, everything that applies now. */
 export interface PlaybookPlan {
-  picks: ReadonlyArray<{ slot: EconomySlot; stepId: string; actionId?: string }>;
+  picks: ReadonlyArray<{ slot: PlaybookSlot; stepId: string; actionId?: string }>;
   skipped: ReadonlyArray<{ stepId: string; reason: PlanSkipReason }>;
 }
 
 export interface Playbook {
   version: 1;
+  mode: PlaybookMode;
   steps: ReadonlyArray<PlaybookStep>;
   /** Step ids the player hid, kept so the view can offer to show them again. */
   hidden: ReadonlyArray<string>;
