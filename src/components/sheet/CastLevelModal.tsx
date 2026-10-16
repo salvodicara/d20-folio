@@ -18,6 +18,9 @@ import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { spellLevelVar } from "@/components/shared/folio-colors";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
+import { spellTermName } from "@/components/shared/spell-glossary";
+import { useLocale } from "@/hooks/useLocale";
 import { CastSlotOptionRow } from "@/components/sheet/CastSlotOptionRow";
 import {
   damageAtSlotLevel,
@@ -107,6 +110,7 @@ export interface CastLevelModalProps {
 
 export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalProps) {
   const { t } = useTranslation();
+  const { language } = useLocale();
   const recoveryLabel = (recovery: CastRecoveryCadence): string => {
     if (recovery.kind === "tracker") {
       return t(recovery.rest === "long" ? "combat.perLongRest" : "combat.perShortRest");
@@ -324,7 +328,15 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
 
             {request.higherLevels && (
               <p className="cl-higher">
-                <strong>{t("spells.higherLevels")}: </strong>
+                <strong>
+                  <GlossaryTip
+                    term="upcasting"
+                    rubric={spellTermName("upcasting", language)}
+                  >
+                    {t("spells.higherLevels")}
+                  </GlossaryTip>
+                  :{" "}
+                </strong>
                 {request.higherLevels}
               </p>
             )}

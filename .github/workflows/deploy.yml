@@ -238,8 +238,11 @@ jobs:
 
       # Functions go first. They are backwards-compatible with the currently live
       # client, so a later Hosting failure leaves the old UI on a compatible backend.
+      # --force lets the deploy delete a Function removed from source (a
+      # non-interactive run otherwise refuses); the health check below pins the
+      # exact set that must remain.
       - name: Deploy Cloud Functions
-        run: firebase deploy --only functions --project d20-folio --non-interactive
+        run: firebase deploy --only functions --project d20-folio --non-interactive --force
 
       - name: Require every Function healthy on Node 24
         run: |

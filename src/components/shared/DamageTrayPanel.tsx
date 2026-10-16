@@ -13,9 +13,11 @@
  */
 import { useRef, useState, type ReactNode, type Ref } from "react";
 import { useTranslation } from "react-i18next";
+import { Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DialogBody, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/segmented";
 import type { hpBand } from "@/features/character/molecules/hp-tier";
@@ -44,6 +46,8 @@ import {
 import { conditionLabel } from "@/lib/views/tracker-view";
 
 import { trayRubric, type TrayTarget } from "./damage-tray-target";
+import { combatTermName } from "./combat-glossary";
+import { GlossaryTip } from "./GlossaryTip";
 
 const MULTIPLIER_LABEL: Record<TrayMultiplier, string> = {
   "0": "0",
@@ -322,6 +326,13 @@ function TrayTargetRow({
             }
             aria-label={t("combat.damageTray.outcomeGroup", { name: target.name })}
           />
+          <GlossaryTip
+            term="criticalHit"
+            rubric={combatTermName("criticalHit", locale)}
+            className="glossary-info"
+          >
+            <Icon as={Info} decorative />
+          </GlossaryTip>
           {row.attack === "critical" && plan.effect === "damage" && (
             <span className="text-xs text-text-muted" data-testid="damage-tray-crit-hint">
               {t("combat.damageTray.critHint")}

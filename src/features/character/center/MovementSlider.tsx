@@ -35,8 +35,10 @@ import {
   type MouseEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Lock } from "lucide-react";
+import { Info, Lock } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
+import { combatTermName } from "@/components/shared/combat-glossary";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import {
   cn,
   localeDistance,
@@ -232,21 +234,30 @@ export function MovementSlider({
           />{" "}
           / {localeDistance(speedFt, locale)}
           {onDifficultTerrainChange && (
-            <button
-              type="button"
-              aria-pressed={difficultTerrain}
-              aria-label={t("combat.difficultTerrain")}
-              title={t("combat.difficultTerrainHint")}
-              onClick={() => onDifficultTerrainChange(!difficultTerrain)}
-              className={cn(
-                "ml-1 inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm border px-1 font-semibold transition-colors",
-                difficultTerrain
-                  ? "border-accent bg-accent/15 text-accent-text"
-                  : "border-border-medium text-text-muted hover:border-border-accent hover:text-text-primary"
-              )}
-            >
-              ×2
-            </button>
+            <>
+              <button
+                type="button"
+                aria-pressed={difficultTerrain}
+                aria-label={t("combat.difficultTerrain")}
+                title={t("combat.difficultTerrainHint")}
+                onClick={() => onDifficultTerrainChange(!difficultTerrain)}
+                className={cn(
+                  "ml-1 inline-flex min-h-6 min-w-6 items-center justify-center rounded-sm border px-1 font-semibold transition-colors",
+                  difficultTerrain
+                    ? "border-accent bg-accent/15 text-accent-text"
+                    : "border-border-medium text-text-muted hover:border-border-accent hover:text-text-primary"
+                )}
+              >
+                ×2
+              </button>
+              <GlossaryTip
+                term="difficultTerrain"
+                rubric={combatTermName("difficultTerrain", locale)}
+                className="glossary-info"
+              >
+                <Icon as={Info} decorative />
+              </GlossaryTip>
+            </>
           )}
         </span>
       )}

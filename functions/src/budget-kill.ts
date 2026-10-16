@@ -6,7 +6,7 @@
  * project's current billing state, detach the billing account via the Cloud Billing
  * API); these helpers hold the branchy, safety-relevant DECISION so it can be
  * unit-tested WITHOUT any Google Cloud call (mirroring how `issue-format.ts` /
- * `signup-email.ts` / `delete-user-plan.ts` keep their logic pure). No Firebase / no
+ * `owner-digest.ts` / `delete-user-plan.ts` keep their logic pure). No Firebase / no
  * Cloud imports.
  *
  * The doctrine (Google's documented "disable billing to stop usage" pattern): a
