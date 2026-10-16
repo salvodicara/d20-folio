@@ -36,7 +36,7 @@ import {
 } from "@/lib/character-snapshot-reconciler";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
-import { combatTrioDiffers, sessionToCombatState } from "@/lib/combat-state";
+import { combatTrioRootsChanged, sessionToCombatState } from "@/lib/combat-state";
 import { loadLogFromIDB } from "@/lib/log-persistence";
 import { diagnosticsLog, setDiagnosticsContext } from "@/lib/diagnostics";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
@@ -585,19 +585,27 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     };
     republishRef.current = publishResolvedPair;
 
-    // REMOTE-CHANGE FENCE (§5.4) — whether an incoming combat snapshot materially
-    // differs from the OPEN character's live trio (the state a snapshot-leg undo
-    // restores). Compared against the current store so an identical server confirm of
-    // our OWN edit is a no-op. The comparison is the pure exported `combatTrioDiffers`.
-    const combatMateriallyDiffers = (combat: CombatState | null): boolean => {
+    // REMOTE-CHANGE FENCE (§5.4) — what an incoming combat snapshot changed against
+    // the OPEN character's live state. Compared against the current store so an
+    // identical server confirm of our OWN edit is a no-op. "vitals" names the
+    // remotely writable vitals a DM or another player changed (the peer-write fields);
+    // "everything" means more than those changed (the owner's own other device).
+    const remoteCombatChange = (
+      combat: CombatState | null
+    ):
+      | { kind: "none" }
+      | { kind: "vitals"; roots: string[] }
+      | { kind: "everything" } => {
       const cur = useCharacterStore.getState().character;
-      if (!cur || cur.id !== characterId || !combat) return false;
-      if (combatTrioDiffers(cur.session, combat)) return true;
-      if (!combat.playState) return true;
-      return (
+      if (!cur || cur.id !== characterId || !combat) return { kind: "none" };
+      const roots = combatTrioRootsChanged(cur.session, combat);
+      if (
+        !combat.playState ||
         JSON.stringify(canonicalJson(sessionToPlayStateV1(cur.session))) !==
-        JSON.stringify(canonicalJson(combat.playState))
-      );
+          JSON.stringify(canonicalJson(combat.playState))
+      )
+        return { kind: "everything" };
+      return roots.length > 0 ? { kind: "vitals", roots } : { kind: "none" };
     };
 
     const unsubscribe = subscribeToCharacter(
@@ -628,15 +636,18 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           quarantine("Invalid character document: missing-combat-state");
           return;
         }
-        // REMOTE-CHANGE FENCE (§5.4): a SERVER-originated combat update (another
-        // device / god-mode) that materially differs from the live trio drops the
-        // own-sheet undo stack — a snapshot-leg reverse-applier would otherwise clobber
-        // the remote writer (single-writer subdoc, no CAS). Our OWN optimistic echo
-        // carries `hasPendingWrites`, so it never trips this; an identical server
-        // confirm has no material diff. A character SWITCH is fenced separately by the
-        // hydrate effect — this is only the same-character server update.
-        if (!meta.hasPendingWrites && combatMateriallyDiffers(combat)) {
-          useUndoStore.getState().clear();
+        // REMOTE-CHANGE FENCE (§5.4): a SERVER-originated combat update. When a DM or
+        // another player changed only the remotely writable vitals, the history stays
+        // (owner 2026-10-16): every entry remembers which vitals changed, and its undo
+        // refuses rather than overwrite them. When more changed (the owner's own other
+        // device), the stack is dropped as before. Our OWN optimistic echo carries
+        // `hasPendingWrites`, so it never trips this. A character SWITCH is fenced
+        // separately by the hydrate effect; this is only the same-character update.
+        if (!meta.hasPendingWrites) {
+          const change = remoteCombatChange(combat);
+          if (change.kind === "everything") useUndoStore.getState().clear();
+          else if (change.kind === "vitals")
+            useUndoStore.getState().markRemoteTouched(change.roots);
         }
         reconciler.receiveChild(combat, meta);
         publishResolvedPair();
