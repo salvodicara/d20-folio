@@ -1,7 +1,10 @@
 import {
   GoogleAuthProvider,
+  isSignInWithEmailLink,
   onAuthStateChanged,
+  sendSignInLinkToEmail,
   signInWithEmailAndPassword,
+  signInWithEmailLink,
   signInWithPopup,
   signOut as firebaseSignOut,
   type User,
@@ -13,6 +16,7 @@ import { DEV_BYPASS_AUTH, DEV_BYPASS_PHOTO_URL } from "@/lib/dev-bypass";
 // DEV-ONLY (remove before release): act-as-member impersonation (the `?devActAs=<uid>`
 // emulator sandbox; see `dev-impersonate.ts` + `scripts/dev-seed-sandbox.ts`).
 import { devActAsUid } from "@/lib/dev-impersonate";
+import { createEmailLinkSignIn } from "@/features/account/email-link-sign-in";
 
 const googleProvider = new GoogleAuthProvider();
 const EMULATOR_SANDBOX =
@@ -41,6 +45,44 @@ export async function signIn(): Promise<void> {
     store.setLoading(false);
   }
 }
+
+/**
+ * Passwordless sign-in by email link (`email-link-sign-in.ts`): `sendLink(email)`
+ * from the login form, `completeFromUrl(location.href)` when the player returns.
+ * Needs the "Email link" provider enabled in the Firebase console.
+ */
+export const emailLinkSignIn = createEmailLinkSignIn({
+  origin: window.location.origin,
+  send: (email, settings) => sendSignInLinkToEmail(auth, email, settings),
+  isSignInLink: (href) => isSignInWithEmailLink(auth, href),
+  complete: async (email, href) => {
+    const result = await signInWithEmailLink(auth, email, href);
+    await ensureUserDocument(result.user);
+  },
+  storage: {
+    get: (key) => {
+      try {
+        return localStorage.getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set: (key, value) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // Private mode: the player types the address again when they return.
+      }
+    },
+    remove: (key) => {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // Nothing stored to remove.
+      }
+    },
+  },
+});
 
 /**
  * Sign out the current user.
