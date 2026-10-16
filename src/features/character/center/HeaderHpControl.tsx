@@ -109,6 +109,7 @@ export function HeaderHpControl() {
     atZero,
     dead,
     handleApplyDamage,
+    applyFall,
     applyHeal,
     applyTemp,
     clearTemp,
@@ -188,6 +189,7 @@ export function HeaderHpControl() {
         max={max}
         temp={temp}
         onDamage={handleApplyDamage}
+        onFall={applyFall}
         onHeal={applyHeal}
         onTemp={applyTemp}
         onClearTemp={clearTemp}
@@ -262,6 +264,7 @@ export function HeaderHpControl() {
       max={max}
       temp={temp}
       onDamage={handleApplyDamage}
+      onFall={applyFall}
       onHeal={applyHeal}
       onTemp={applyTemp}
       onClearTemp={clearTemp}
