@@ -367,6 +367,10 @@
   /* The B panel frame (owner 2026-10-16): a bronze rim, a sliver of stone, then a
      faint gold hairline, set INTO the slab so it never adds width. */
   --panel-rim: #5c4827;
+  /* The medallion ring every character portrait wears (direction B). */
+  --medallion-ring:
+    0 0 0 2px var(--accent-primary-deep), 0 0 0 4px var(--bg-surface-1),
+    0 0 0 5px var(--accent-primary);
   --panel-frame:
     inset 0 0 0 1px var(--panel-rim), inset 0 0 0 4px var(--bg-surface-1),
     inset 0 0 0 5px rgb(201 164 92 / 0.22);
@@ -826,6 +830,9 @@
   --border-soft: #e3d8c2;
   --border-medium: #cbb894;
   --panel-rim: #b69d6c;
+  --medallion-ring:
+    0 0 0 2px var(--accent-primary-bright), 0 0 0 4px var(--bg-surface-1),
+    0 0 0 5px var(--accent-primary);
   --panel-frame:
     inset 0 0 0 1px var(--panel-rim), inset 0 0 0 4px var(--bg-surface-1),
     inset 0 0 0 5px rgb(122 95 36 / 0.22);

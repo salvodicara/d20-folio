@@ -7941,7 +7941,8 @@ button.create-need:focus-visible .create-need-chev {
 .ch-portrait {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-lg);
+  /* Direction B: every character portrait is a round medallion. */
+  border-radius: 50%;
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -7960,10 +7961,9 @@ button.create-need:focus-visible .create-need-chev {
       transparent 70%
     ),
     var(--portrait-well);
-  border: 1px solid var(--accent-primary-deep);
-  box-shadow:
-    0 0 0 1px var(--border-soft),
-    inset 0 1px 0 rgba(245, 230, 180, 0.12);
+  border: 0;
+  margin: 5px;
+  box-shadow: var(--medallion-ring);
 }
 /* Per-class roster placeholder tints (folio_design home.html) — the class's
    domain pigment over the neutral well. CharacterCard sets data-class. */
@@ -8037,7 +8037,9 @@ button.create-need:focus-visible .create-need-chev {
 }
 .ch-name {
   margin: 0;
-  font-family: var(--font-display);
+  /* Direction B: names are engraved. */
+  font-family: var(--font-title);
+  letter-spacing: 0.03em;
   font-weight: 700;
   font-size: var(--text-lg);
   line-height: 1.12;
@@ -12166,14 +12168,12 @@ button.uc-chevron::before {
   top: var(--topbar-h);
   z-index: var(--z-sticky);
   margin: var(--sp-4) 0 var(--sp-6);
-  padding: 3px;
+  padding: 5px;
   overflow: hidden;
-  border: 1px solid color-mix(in oklab, var(--accent-primary) 32%, var(--border-medium));
-  border-radius: var(--radius-lg);
-  background: color-mix(in oklab, var(--bg-surface-2) 92%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in oklab, var(--text-primary) 7%, transparent),
-    var(--elev-raised);
+  border: 0;
+  border-radius: var(--radius-2xl);
+  background: color-mix(in oklab, var(--bg-surface-2) 94%, transparent);
+  box-shadow: var(--panel-frame), var(--elev-raised);
   backdrop-filter: blur(12px) saturate(1.08);
 }
 .campaign-workspace {
@@ -12196,9 +12196,12 @@ button.uc-chevron::before {
   padding: 0 var(--sp-3);
   border-radius: calc(var(--radius-lg) - 3px);
   color: var(--text-secondary);
-  font-family: var(--font-display);
-  font-size: var(--text-sm);
+  /* Direction B: the campaign's sections speak the sheet tabs' engraved voice. */
+  font-family: var(--font-engraved);
+  font-size: var(--text-xs);
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   white-space: nowrap;
   text-decoration: none;
   transition:
@@ -14043,8 +14046,10 @@ button.tr-pip:active {
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-md);
-  font-family: var(--font-display);
+  border-radius: 50%;
+  box-shadow: var(--medallion-ring);
+  margin: 5px;
+  font-family: var(--font-title);
   font-weight: 700;
   font-size: 18px;
   color: var(--accent-text);
@@ -14086,9 +14091,10 @@ button.party-avatar-btn:focus-visible {
 .party-id-hero {
   display: block;
   min-width: 0;
-  font-family: var(--font-display);
+  font-family: var(--font-title);
   font-size: 1.0625rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   line-height: 1.2;
   white-space: normal;
   text-wrap: balance;
@@ -14635,6 +14641,13 @@ button.party-avatar-btn:focus-visible {
     inset 0 -2px 5px color-mix(in oklab, black 22%, transparent),
     var(--elev-raised);
   overflow: hidden;
+}
+/* The party's portraits wear the same medallion ring (the seal rule above would
+   otherwise square them off). */
+.seal.party-avatar {
+  border: 0;
+  border-radius: 50%;
+  box-shadow: var(--medallion-ring);
 }
 /* Direction B (owner 2026-10-16): in the identity band the seal is a MEDALLION —
    a round portrait inside a double gold ring. */
