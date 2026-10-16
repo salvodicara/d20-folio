@@ -21,7 +21,7 @@
       "concentration": "Some spells last only while you concentrate. You can concentrate on one spell at a time, and taking damage forces a Constitution saving throw to keep it going.",
       "ritual": "A spell cast as a ritual takes 10 extra minutes but does not spend a spell slot.",
       "components": "What casting requires: V means speaking magic words, S a free hand for gestures, M a material such as a focus or a component pouch.",
-      "exhaustion": "Levels of deep fatigue. Each level gives −2 to every d20 roll and slows you by 5 feet; at level 6 you die. A Long Rest removes one level.",
+      "exhaustion": "Exhaustion comes in levels of deep fatigue. Each level gives −2 to every d20 roll and slows you by 5 feet; at level 6 you die. A Long Rest removes one level.",
       "pointBuy": "A fair way to assign scores: every ability starts at 8 and you spend 27 points to raise them, up to 15 before bonuses. Higher scores cost more points.",
       "feat": "A special talent that gives your character an edge beyond class features. Origin feats come from your background; at later levels you can take one instead of an ability boost.",
       "multiclass": "Taking your next level in a different class instead of your current one. You keep everything you already have; the levels of all your classes add up to your total.",
@@ -50,7 +50,21 @@
       "encounterDifficulty": "How hard this fight is likely to be. Low is an easy win, Moderate a real fight, High is dangerous, and Over High is likely deadly. The grade comes from the monsters' total XP measured against your party's budget.",
       "challengeRating": "Challenge Rating (CR) is a monster's rough power level. Pick one and the app uses its standard XP to weigh this monster into the encounter's difficulty grade. Leave it blank for a quick improvised NPC that stays uncounted.",
       "attunement": "Some magic items only work once you bond with them, called attunement. Bonding takes a Short Rest; you can be attuned to three items at a time, and each attuned item fills one of those slots.",
-      "magicRarity": "Rarity rates how powerful and hard to find a magic item is, from Common up through Uncommon, Rare, Very Rare, and Legendary, to the one-of-a-kind Artifact. Rarer items are stronger and, in most games, harder to come by."
+      "magicRarity": "Rarity rates how powerful and hard to find a magic item is, from Common up through Uncommon, Rare, Very Rare, and Legendary, to the one-of-a-kind Artifact. Rarer items are stronger and, in most games, harder to come by.",
+      "blinded": "While Blinded you can't see, so any check that needs sight fails. Your attack rolls have Disadvantage, and attack rolls against you have Advantage.",
+      "charmed": "While Charmed you can't attack the one who charmed you or aim anything harmful at them, and they have Advantage on checks to sway you socially.",
+      "deafened": "While Deafened you can't hear, so any check that needs hearing fails.",
+      "frightened": "While Frightened you have Disadvantage on checks and attack rolls as long as you can see what scares you, and you can't choose to move closer to it.",
+      "grappled": "While Grappled your Speed is 0, and you have Disadvantage on attack rolls against anyone except the one holding you. They can drag you along as they move.",
+      "incapacitated": "While Incapacitated you can't take actions, Bonus Actions, or Reactions, you can't speak, and your Concentration breaks.",
+      "invisible": "While Invisible others can't see you: your attack rolls have Advantage and attack rolls against you have Disadvantage, unless something can see you anyway. You also roll Initiative with Advantage.",
+      "paralyzed": "While Paralyzed you are Incapacitated and can't move or speak. You fail Strength and Dexterity saving throws, attack rolls against you have Advantage, and any hit from within 5 feet is a Critical Hit.",
+      "petrified": "While Petrified you are turned to stone: Incapacitated, unable to move or speak, and unaware of your surroundings. Attack rolls against you have Advantage, you fail Strength and Dexterity saving throws, and you have Resistance to all damage.",
+      "poisoned": "While Poisoned you have Disadvantage on attack rolls and ability checks.",
+      "prone": "While Prone you're on the ground and can only crawl. Your attack rolls have Disadvantage; attackers within 5 feet have Advantage against you, those farther away Disadvantage. Standing up costs half your Speed.",
+      "restrained": "While Restrained your Speed is 0. Your attack rolls and Dexterity saving throws have Disadvantage, and attack rolls against you have Advantage.",
+      "stunned": "While Stunned you are Incapacitated: no actions, Bonus Actions, or Reactions. You fail Strength and Dexterity saving throws, and attack rolls against you have Advantage.",
+      "unconscious": "While Unconscious you are Incapacitated and Prone, you drop what you're holding, and you can't move, speak, or notice anything. You fail Strength and Dexterity saving throws, attack rolls against you have Advantage, and any hit from within 5 feet is a Critical Hit."
     }
   }
 }

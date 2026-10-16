@@ -18,6 +18,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { join } from "node:path";
 import { srcFiles, readSrc } from "./__helpers__/src-files";
 import i18n from "@/i18n";
+import { SRD_CONDITIONS } from "@/data/conditions";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
@@ -104,8 +105,14 @@ describe("glossary catalogue — completeness (table-driven)", () => {
       .filter((p) => !p.includes(i18nDir))
       .map((p) => readSrc(p))
       .join("\n");
+    // SRD condition ids are wired by id (ConditionEditor's chip passes its own
+    // id as the term); glossary-conditions.guard pins that set.
+    const conditionIds = new Set(SRD_CONDITIONS.map((c) => c.id));
     const unused = TERM_IDS.filter(
-      (id) => !corpus.includes(`term="${id}"`) && !corpus.includes(`term: "${id}"`)
+      (id) =>
+        !conditionIds.has(id) &&
+        !corpus.includes(`term="${id}"`) &&
+        !corpus.includes(`term: "${id}"`)
     );
     expect(
       unused,
