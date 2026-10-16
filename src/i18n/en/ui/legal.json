@@ -48,7 +48,7 @@
       "useT": "What we use it for",
       "useD": "To provide the service you asked for: storing your characters, syncing them across your devices, and running the campaign features you join (legal basis: performance of a contract). Abuse prevention and account blocking rest on our legitimate interest in keeping the service safe.",
       "whereT": "Where it lives",
-      "whereD": "On Google Firebase (Firestore, Cloud Storage, Authentication), region europe-west1 (Belgium). Google acts as our processor under its Data Processing Terms, with EU Standard Contractual Clauses where transfers apply.",
+      "whereD": "Your characters, campaigns and files are stored on Google Firebase (Firestore, Cloud Storage) in region europe-west1 (Belgium). Sign-in runs on Firebase Authentication, a global Google service that processes your account details (name, email address, avatar) in the United States. Google acts as our processor under its Data Processing Terms, with EU Standard Contractual Clauses where transfers apply.",
       "sharingT": "What is shared, and with whom",
       "sharingD": "Only what you choose to share with other players: joining a campaign shows your shared characters and notes to that table, and a share link you enable makes a character readable by anyone with the URL until you revoke it. Two operational flows reach outside services: sending an in-app bug report opens an issue on our GitHub tracker (so include only what you're comfortable posting there), and your first sign-in sends the site owner a short new-user notice by email. We never sell your data or hand it to advertisers.",
       "errorsT": "Automatic error reports",
