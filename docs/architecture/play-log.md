@@ -57,6 +57,11 @@ disagreeing.
    Done: `take-damage`, `heal` and `gain-temp-hp` in `sheet-events.ts`. The store's heal and
    temp HP dispatch them; its damage records its hit in the shadow (the command undo stays).
    Parity ignores the session log's narrative lines, which the store writes next to them.
-4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries.
+4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries. Done for
+   `dispatch` in development: its undo appends an `undo` entry and the sheet becomes the fold,
+   but only when the log reproduces the live sheet (the shadow's parity); otherwise it restores
+   today's snapshot. The difference shows on an older action's undo: only that event goes,
+   later ones stay. Production keeps the snapshot until the owner turns it on. Undo survives a
+   reload only once the entries are stored (step 5).
 5. **Storage.** One Firestore document per entry, plus a periodic checkpoint for fast load.
    It needs a migration, so snapshot → dry-run → apply, with the owner's yes.
