@@ -47,8 +47,9 @@ engine and rules sessions' current work. Phase 5 must be complete before phase 6
 - **Gates that rerun the same checks.** Each check lives in one place: the pre-commit hook for format
   and changeset, CI for everything else. A slow, nightly lane runs mutation tests on the rules core.
 
+**Decided (owner delegated, 2026-10-16):** keep the staging Firebase project. It costs nothing, and
+per-PR Hosting previews run there, never on production data.
+
 ## Open decisions (asked one at a time)
 
-1. Staging Firebase project. Recommendation: **keep it**. Hosting preview channels share production
-   data, so per-PR previews belong on staging. It costs nothing on the free plan.
-2. Final name (phase 6).
+1. Final name (phase 6).
