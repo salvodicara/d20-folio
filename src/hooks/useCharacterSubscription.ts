@@ -390,7 +390,15 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         });
         return cleanup;
       }
-      activate({ ...MOCK_CHARACTER, id }, MOCK_COMBAT_ROUND);
+      // `d20-dev-portrait` (dev-bypass only): a URL the mock hero wears as its portrait,
+      // so the sheet's portrait frontispiece can be checked without an upload.
+      const devPortrait = window.localStorage.getItem("d20-dev-portrait");
+      activate(
+        devPortrait
+          ? { ...MOCK_CHARACTER, id, portraitUrl: devPortrait }
+          : { ...MOCK_CHARACTER, id },
+        MOCK_COMBAT_ROUND
+      );
       return cleanup;
     }
 

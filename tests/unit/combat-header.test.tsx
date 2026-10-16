@@ -66,6 +66,36 @@ afterEach(async () => {
   if (i18n.language !== "en") await i18n.changeLanguage("en");
 });
 
+describe("CombatHeader — the portrait frontispiece (vision 1, owner 2026-10-13)", () => {
+  function loadWithPortrait(url: string | null): void {
+    useCharacterStore.setState({
+      character: { ...structuredClone(MOCK_CHARACTER), portraitUrl: url },
+      loading: false,
+      error: null,
+    });
+  }
+  const header = (c: HTMLElement) => c.querySelector("header");
+
+  it("a sheet with a portrait opens on it: the header becomes the frontispiece", () => {
+    loadWithPortrait("https://art.example/lyra.png");
+    const { container } = renderHeader();
+    expect(header(container)).toHaveAttribute("data-frontispiece");
+    // Still the lightbox button.
+    expect(screen.getByRole("button", { name: /view portrait/i })).toBeInTheDocument();
+  });
+
+  it("no portrait, or editing, keeps the small seal", () => {
+    loadWithPortrait(null);
+    const { container, unmount } = renderHeader();
+    expect(header(container)).not.toHaveAttribute("data-frontispiece");
+    unmount();
+    loadWithPortrait("https://art.example/lyra.png");
+    useUIStore.setState({ sheetMode: "edit" });
+    const edit = renderHeader();
+    expect(header(edit.container)).not.toHaveAttribute("data-frontispiece");
+  });
+});
+
 describe("CombatHeader — edit-mode gating", () => {
   it("renders the name + vitals as read-only text in play mode (no edit controls)", () => {
     load();

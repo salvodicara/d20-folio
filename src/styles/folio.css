@@ -22162,3 +22162,51 @@ body:has(.fob) .toast-region {
 .spec-toast {
   position: static;
 }
+
+/* ── The character's frontispiece (vision 1, owner 2026-10-13): when the sheet has a
+   portrait, the header seal grows into the art panel at the header's left edge and
+   fades into the plate; the name and vitals sit beside it. It stays the lightbox
+   button. On a phone the portrait crowns the header and the name sits on its fade. */
+header[data-frontispiece] {
+  --frontis-w: 15rem;
+  min-height: 11rem;
+  padding-left: calc(var(--frontis-w) + var(--sp-2));
+  overflow: hidden;
+}
+header[data-frontispiece] .seal {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--frontis-w);
+  height: auto;
+  border: 0;
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+  box-shadow: none;
+  background: var(--bg-surface-1);
+  -webkit-mask-image: linear-gradient(90deg, #000 55%, transparent);
+  mask-image: linear-gradient(90deg, #000 55%, transparent);
+}
+header[data-frontispiece] .seal::before,
+header[data-frontispiece] .seal::after {
+  display: none;
+}
+header[data-frontispiece] h1 {
+  font-size: var(--text-2xl);
+}
+@media (max-width: 767px) {
+  header[data-frontispiece] {
+    --frontis-h: 11rem;
+    padding-left: var(--sp-5);
+    padding-top: calc(var(--frontis-h) - var(--sp-8));
+  }
+  header[data-frontispiece] .seal {
+    inset: 0 0 auto 0;
+    width: auto;
+    height: var(--frontis-h);
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    -webkit-mask-image: linear-gradient(180deg, #000 50%, transparent);
+    mask-image: linear-gradient(180deg, #000 50%, transparent);
+  }
+  header[data-frontispiece] h1 {
+    font-size: var(--text-xl);
+  }
+}

@@ -366,7 +366,12 @@ export function CombatHeader() {
   ) : null;
 
   return (
-    <header className="relative folio-panel gilt-frame mb-6 flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
+    <header
+      className="relative folio-panel gilt-frame mb-6 flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between"
+      // Vision 1 (owner 2026-10-13): the portrait IS the frontispiece. With one set (and
+      // not editing) the seal grows into the header's art panel; still the lightbox button.
+      data-frontispiece={canViewPortrait ? "" : undefined}
+    >
       {/* `md:grow` + the name block's `grow` below (auto basis, so tight-width
           wrap competition with the actions cluster is unchanged): the identity
           block must take the header's FREE space, never shrink-to-fit around the

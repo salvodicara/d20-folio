@@ -33,6 +33,8 @@ export function scanCss(css: string, file: string, out: Record<Kind, Counts>): v
     const prop = m[2] ?? "";
     const value = (m[3] ?? "").trim();
     if (prop.startsWith("--")) continue; // a token definition is the system itself
+    // A mask paints no colour, only alpha: its `#000` is coverage, not a design colour.
+    if (/^(-webkit-)?mask/.test(prop)) continue;
     if (
       prop === "font-family" &&
       !/^var\(--font-[a-z-]+\)$/.test(value) &&

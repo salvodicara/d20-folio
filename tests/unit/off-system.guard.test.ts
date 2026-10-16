@@ -37,7 +37,7 @@ describe("off-system guard", () => {
       "font-family": {},
     };
     scanCss(
-      `.a { color: #123456; font-size: 13px; border-radius: 6px var(--radius-md); font-family: Arial; --tok: #fff; }`,
+      `.a { color: #123456; font-size: 13px; border-radius: 6px var(--radius-md); font-family: Arial; --tok: #fff; mask-image: linear-gradient(#000, transparent); }`,
       "x.css",
       out
     );
