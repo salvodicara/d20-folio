@@ -871,9 +871,9 @@ describe("LevelUpWizard — manual HP roll is constrained to the die", () => {
     expect(screen.getByRole("spinbutton", { name: /Manual Roll/i })).toHaveValue("7");
   });
 
-  it("the eyebrow separator is nbsp-glued, so a wrap never orphans a leading '·'", () => {
+  it("the context line separator is nbsp-glued, so a wrap never orphans a leading '·'", () => {
     renderWizard();
-    const eyebrow = document.querySelector(".wiz-eyebrow");
+    const eyebrow = document.querySelector(".wiz-context");
     const text = eyebrow?.textContent ?? "";
     expect(text).toContain("·");
     // A regular space NEVER precedes the "·" (that is what would let a wrap push a

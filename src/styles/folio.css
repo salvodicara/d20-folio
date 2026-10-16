@@ -18821,20 +18821,22 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 20%, transparent)
   );
 }
-.wiz-eyebrow {
+.wiz-context {
   font-family: var(--font-engraved);
-  font-size: var(--text-micro);
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
   margin: 0;
 }
 .wiz-title {
-  font-family: var(--font-display);
+  /* Direction B: every page title is engraved, the wizard's steps too. */
+  font-family: var(--font-title);
   font-size: 2rem;
-  font-weight: 600;
-  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
   color: var(--text-primary);
   margin: 0;
 }

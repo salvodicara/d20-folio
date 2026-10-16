@@ -1,6 +1,6 @@
 /**
  * Wizard F chrome — the owner-approved B step chrome, shared VERBATIM by both
- * wizards (creation + level-up): progress ORBS, the centered chapter eyebrow /
+ * wizards (creation + level-up): progress ORBS, the centered chapter context line /
  * title / hint, an optional FORK row (boon kind, spell-slot tabs), the docked
  * Quick-start/Guided PATH plaques, and the footer NAV.
  *
@@ -60,7 +60,7 @@ export function WizardFrame({
 export function WizardChrome({
   steps,
   current,
-  eyebrow,
+  context,
   title,
   hint,
   fork,
@@ -70,7 +70,8 @@ export function WizardChrome({
 }: {
   steps: ReadonlyArray<WizardStepDef>;
   current: number;
-  eyebrow: string;
+  /** Who is being built / advanced, under the title. */
+  context: string;
   title: string;
   /** The two-line teaching hint. May carry inline `GlossaryTip` slots (P2) via
    *  `<Trans>`, so a D&D term inside the rubric glosses itself on demand. */
@@ -137,8 +138,10 @@ export function WizardChrome({
           })}
         </span>
       </div>
-      <p className="wiz-eyebrow on-art">{eyebrow}</p>
       <h2 className="wiz-title on-art">{title}</h2>
+      {/* Vision 1: the step's title leads; who you are building (and, in level-up,
+          the level range and HP taken) reads as a context line beneath it. */}
+      <p className="wiz-context on-art">{context}</p>
       <p className="wiz-hint on-art">{hint}</p>
       {fork != null && <div className="wiz-fork-slot">{fork}</div>}
     </header>
