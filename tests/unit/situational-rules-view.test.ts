@@ -23,7 +23,7 @@ describe("buildSituationalRulesView (Rules-reference presenter)", () => {
 
   it("localizes every topic into IT", () => {
     const v = buildSituationalRulesView("it");
-    expect(v.cover.map((r) => r.term)).toContain("Copertura Parziale");
+    expect(v.cover.map((r) => r.term)).toContain("Mezza Copertura");
     expect(v.mounted.map((r) => r.term)).toContain("Cadere di Sella");
     expect(v.underwater.map((r) => r.term)).toContain("Resistenza al Fuoco");
     expect(v.travel.find((p) => p.id === "fast")?.name).toBe("Veloce");

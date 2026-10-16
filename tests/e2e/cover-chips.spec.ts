@@ -40,25 +40,25 @@ for (const size of ["desktop", "mobile"] as const) {
     await vitals(page)
       .getByRole("button", { name: /^Copertura: nessuna/ })
       .click();
-    await expect(page.getByText("Copertura Parziale fino all'inizio")).toBeVisible();
+    await expect(page.getByText("Mezza Copertura fino all'inizio")).toBeVisible();
     await expect(acTile.locator(".v-val")).toHaveText(String(before + 2));
     await page.screenshot({ path: shotPath(`cover-half-${size}.png`) });
 
     await vitals(page)
-      .getByRole("button", { name: /^Copertura Parziale:/ })
+      .getByRole("button", { name: /^Mezza Copertura:/ })
       .click();
     await expect(acTile.locator(".v-val")).toHaveText(String(before + 5));
     if (size === "desktop") {
       // The rail's active states (folded away on a phone) show the lit level too.
       const chip = page
         .getByTestId("activatable-bar")
-        .getByRole("button", { name: "Copertura Tre Quarti" });
+        .getByRole("button", { name: "Tre Quarti di Copertura" });
       await expect(chip).toHaveAttribute("aria-pressed", "true");
     }
     await page.screenshot({ path: shotPath(`cover-three-quarters-${size}.png`) });
 
     await vitals(page)
-      .getByRole("button", { name: /^Copertura Tre Quarti:/ })
+      .getByRole("button", { name: /^Tre Quarti di Copertura:/ })
       .click();
     await expect(acTile.locator(".v-val")).toHaveText(String(before));
   });
