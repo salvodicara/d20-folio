@@ -28,7 +28,13 @@
       "riderOnce": "Once per turn when you hit, this deals an extra {{dice}} {{type}} damage.",
       "riderCost": "On a hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage.",
       "riderOnceCost": "Once per turn when you hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage.",
-      "proficiencyByLevel": "At character level {{level}} your Proficiency Bonus is +{{bonus}}. It starts at +2 and grows by 1 every four levels, up to +6 at level 17."
+      "proficiencyByLevel": "At character level {{level}} your Proficiency Bonus is +{{bonus}}. It starts at +2 and grows by 1 every four levels, up to +6 at level 17.",
+      "trackerMinimumOne": "This resource always gives at least 1 use, even when the modifier is lower.",
+      "trackerTimes": "{{value}} × {{factor}}.",
+      "trackerDivided": {
+        "up": "{{value}} ÷ {{divisor}}, rounded up.",
+        "down": "{{value}} ÷ {{divisor}}, rounded down."
+      }
     },
     "speed": {
       "multiplier": "Speed multiplier",
@@ -43,6 +49,10 @@
     },
     "proficiency": {
       "byLevel": "By character level"
+    },
+    "tracker": {
+      "fixed": "Set by the feature",
+      "minimum": "Minimum 1"
     }
   }
 }
