@@ -54,6 +54,9 @@ disagreeing.
    A write outside `dispatch` starts a new checkpoint; a snapshot undo of an older event (it
    also drops the later ones) warns as a mismatch, which is what step 4 fixes.
 3. **Intention events** for damage, healing and temporary HP, so undo replays correctly.
+   Done: `take-damage`, `heal` and `gain-temp-hp` in `sheet-events.ts`. The store's heal and
+   temp HP dispatch them; its damage records its hit in the shadow (the command undo stays).
+   Parity ignores the session log's narrative lines, which the store writes next to them.
 4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries.
 5. **Storage.** One Firestore document per entry, plus a periodic checkpoint for fast load.
    It needs a migration, so snapshot → dry-run → apply, with the owner's yes.
