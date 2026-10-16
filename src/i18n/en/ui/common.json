@@ -77,6 +77,8 @@
     "download": "Download",
     "decrease": "Decrease",
     "increase": "Increase",
+    "hpStepDown": "−1 HP {{name}}",
+    "hpStepUp": "+1 HP {{name}}",
     "accountSettings": "Account & settings",
     "searchMissHint": "Try a different search term.",
     "deleteTitle": "Delete {{name}}?",
