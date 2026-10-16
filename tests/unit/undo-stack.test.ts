@@ -185,6 +185,19 @@ describe("undoStore — depth eviction (case 5)", () => {
   });
 });
 
+describe("undoStore — how far back a player can go (owner 2026-10-16)", () => {
+  it("keeps the last 50 actions undoable, one by one", () => {
+    const r = makeResource(100);
+    for (let i = 0; i < 50; i++) {
+      registerUndoable(label(`e${i}`), () => r.spend(1), { turnScoped: false });
+    }
+    expect(r.state.value).toBe(50);
+    for (let i = 0; i < 50; i++) expect(u().undo()).toBe(true);
+    expect(r.state.value).toBe(100);
+    expect(u().undo()).toBe(false);
+  });
+});
+
 describe("undoStore — contextual mid-stack splice (case 6)", () => {
   it("undo(id) of an independent entry leaves the top undoable", () => {
     const a = makeResource(2);
