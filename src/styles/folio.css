@@ -18836,11 +18836,11 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 20%, transparent)
   );
 }
-.wiz-eyebrow {
+.wiz-context {
   font-family: var(--font-numeric);
-  font-size: var(--text-micro);
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
   margin: 0;

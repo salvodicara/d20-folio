@@ -1365,7 +1365,7 @@ export function CreationWizard() {
   ]
     .filter(Boolean)
     .join(" ");
-  const guidedEyebrow = identityBits
+  const guidedContext = identityBits
     ? `${t("create.title")} · ${identityBits}`
     : t("create.title");
 
@@ -1700,7 +1700,7 @@ export function CreationWizard() {
           <WizardChrome
             steps={[]}
             current={0}
-            eyebrow={t("create.quickStart")}
+            context={t("create.quickStart")}
             title={t("create.title")}
             hint={t("wizard.quickGloss")}
           />
@@ -2055,7 +2055,7 @@ export function CreationWizard() {
           <WizardChrome
             steps={stepDefs}
             current={currentStepIndex}
-            eyebrow={guidedEyebrow}
+            context={guidedContext}
             title={stepTitle}
             hint={stepHint}
             onStepClick={(i) => setGuidedStep(activeGuidedSteps[i] ?? "class")}

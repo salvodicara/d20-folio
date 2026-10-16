@@ -912,7 +912,7 @@ export function LevelUpWizard() {
         <WizardChrome
           steps={[]}
           current={0}
-          eyebrow={t("levelUp.title")}
+          context={t("levelUp.title")}
           title={charData.name}
           hint={t("levelUp.noChanges")}
         />
@@ -1290,7 +1290,7 @@ export function LevelUpWizard() {
   // separator always stays glued to the end of its preceding token: a wrap can
   // only fall AFTER a "·", never before it, so no wrapped line ever starts with a
   // stray "·" (the IT-mobile eyebrow orphan).
-  const eyebrow = [
+  const context = [
     t("levelUp.title"),
     charData.name,
     t("levelUp.levelRange", { from: currentLevel, to: newLevel }),
@@ -1467,7 +1467,7 @@ export function LevelUpWizard() {
       <WizardChrome
         steps={steps}
         current={stepIndex}
-        eyebrow={eyebrow}
+        context={context}
         title={title}
         hint={hint}
         fork={boonFork}
