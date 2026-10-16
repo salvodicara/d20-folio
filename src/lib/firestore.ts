@@ -580,6 +580,12 @@ export function subscribeToCharacter(
  * TRUNCATED export/clone. The type system now forbids passing a projection to the
  * codec, and this is the seam that supplies the real character instead.
  */
+/** The ids of every character the user owns (the account export reads each in full). */
+export async function listCharacterIds(uid: string): Promise<string[]> {
+  if (DEV_BYPASS_AUTH) return [];
+  return (await getDocs(charsCol(uid))).docs.map((d) => d.id);
+}
+
 export async function getFullCharacter(
   uid: string,
   charId: string
