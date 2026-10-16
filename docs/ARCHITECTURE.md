@@ -91,6 +91,20 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
     `VITE_CONTENT_PACK` ≠ `0`; else the typed-empty stub `src/data/pack-empty.ts`. The shared export
     contract is `src/data/pack-types.ts`; each mode's typecheck pins its own resolution
     (`pnpm typecheck` / `pnpm typecheck:srd-only` → `tsconfig.srd-only.json`).
+- **The runtime pack — what production ships** (`VITE_CONTENT_PACK=runtime`, 2026-10-16). The
+  production build bundles NO private content: every `@pack` alias resolves to
+  `src/data/pack-runtime.ts` (prose: `pack-runtime-prose.ts`), which waits with a top-level
+  `await` for the signed-in account's pack before any data module evaluates. Accounts with the
+  `pack` auth claim download it from Storage `content-pack/<version>/` (readable only with the
+  claim, `storage.rules`); everyone else gets the empty pack. `scripts/pack/emit-pack.ts` writes
+  the files (`src/data/pack-wire.ts`: `core.json`, `en-prose.json`, `srd-<locale>.json`,
+  `lazy-<kind>-<locale>.json`; portraits behind content-hash download tokens), `upload-pack.ts`
+  uploads them, `check-public-bundle.ts` proves a build carries none of it, and
+  `pack-access.ts` lists and grants the claim (live-data step: owner's yes). The client
+  (`src/platform/pack-source.ts`) is cache-first and offline after the first load; for an
+  allowlisted account a failed download retries behind a "loading content" notice, never a
+  stripped pack. `just e2e-pack` proves it on the emulators. Dev and tests keep composing
+  `content-pack/` directly.
 - **`@pack/monsters` — the lazy bestiary-data sub-entry** (`packMonstersAliasTarget()`; pack mode →
   `content-pack/data/monsters/index.ts` — the barrel over the eight alphabetical tranche files
   `a-b.ts … t-z.ts`, mirroring the public `src/data/monsters/` split for parallel-safe authoring;
