@@ -15,6 +15,7 @@
  * Owns its own `<main id="main">` landmark (AppShell renders no <main>).
  */
 
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -42,6 +43,8 @@ const ROSTER_FILTER_THRESHOLD = 6;
 
 export function RosterPage() {
   const { t } = useTranslation();
+  // Direction B hero art: the keep's study opens the roster (owner 2026-10-16).
+  useRealmBackdrop("var(--asset-hero-study)");
   useDocumentTitle(t("nav.characters"));
   const navigate = useNavigate();
   const { characters, loading, error, hpReady } = useCharacters();

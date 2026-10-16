@@ -6,6 +6,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { openBaseActions } from "./sheet-steps";
 
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 90_000 });
@@ -31,6 +32,7 @@ const NAME = "Interagisci con un oggetto";
 for (const size of ["desktop", "mobile"] as const) {
   test(`free object interaction, once per turn (it, dark, ${size})`, async ({ page }) => {
     await openSheet(page, size);
+    await openBaseActions(page);
     const use = page.getByRole("button", { name: `Usa: ${NAME}` });
     await use.scrollIntoViewIfNeeded();
     await expect(use).toBeEnabled();

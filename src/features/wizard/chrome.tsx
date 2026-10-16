@@ -13,6 +13,7 @@
  * the first card — the chrome→content rhythm must be IDENTICAL on every step,
  * so nothing below the hint is reserved).
  */
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import type { ComponentType, ReactNode, SVGProps } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,8 @@ export function WizardFrame({
   /** The footer navigation row. */
   nav?: ReactNode;
 }) {
+  // Direction B hero art: the keep's armoury opens creation and level-up alike.
+  useRealmBackdrop("var(--asset-hero-armoury)");
   return (
     <div className="wb wiz on-art-scope">
       {paths}

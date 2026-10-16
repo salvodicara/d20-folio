@@ -174,6 +174,13 @@
      routes through one of these two tokens — never a literal black alpha. ── */
   --scrim-dim: rgba(0, 0, 0, 0.46);
   --scrim-heavy: rgba(0, 0, 0, 0.75);
+  /* Ink and scrims for words that sit on hero art (direction B): one recipe for the
+     page band, the campaign title, and the controls over the image. */
+  --hero-ink: #f6ead0;
+  --hero-ink-soft: #ded0b0;
+  --hero-shade: rgb(10 7 5 / 0.5);
+  --hero-shade-strong: rgb(10 7 5 / 0.8);
+  --hero-text-shadow: 0 2px 16px rgb(0 0 0 / 0.65);
 
   /* ── Layout — global chrome heights (additive; T3/C5). The sticky topbar is
      56px; banners that pin beneath it offset by this token instead of a magic
@@ -202,9 +209,17 @@
        --asset-home-hero          the app-wide backdrop (arcane study)
        --asset-login              the sign-in splash (glowing grimoire altar)
        --asset-campaign-backdrop  the campaign default (war-table hall) */
-  --asset-home-hero: url("/assets/backgrounds/home-hero.webp");
-  --asset-login: url("/assets/backgrounds/login.webp");
-  --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop.webp");
+  --asset-home-hero: var(--asset-hero-study);
+  --asset-login: url("/assets/backgrounds/sanctum-hero.webp");
+  --asset-campaign-backdrop: url("/assets/backgrounds/war-room-hero.webp");
+  /* Direction B hero art (owner 2026-10-16): one generated series, the same keep seen
+     from its rooms, painted for the top band of each realm and fading to the page.
+     Provenance: public/assets/backgrounds/HERO-ART.md. */
+  --asset-hero-study: url("/assets/backgrounds/study-hero.webp");
+  --asset-hero-war-room: url("/assets/backgrounds/war-room-hero.webp");
+  --asset-hero-library: url("/assets/backgrounds/library-hero.webp");
+  --asset-hero-armoury: url("/assets/backgrounds/armoury-hero.webp");
+  --asset-hero-sanctum: url("/assets/backgrounds/sanctum-hero.webp");
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
      (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
      the `.cmp-tome` recipe covers the tome with it. Light theme shows the warm vellum
@@ -338,11 +353,16 @@
      0.88 (fine, but no headroom win) on the cockpit panels. The light theme
      defines its own gentler value (morning-light translucency — see the light
      block). */
-  --panel-alpha: 0.9;
+  --panel-alpha: 0.95;
   /* The candlelit backdrop's presence in dark (was the body::after 0.55
      fallback; now explicit — mirrors the light block's token — so the
      composite-floor guard reads the real value). */
-  --app-bg-art-opacity: 0.6;
+  /* The art's strength under its lightest shade (1 − the top shade's alpha): the
+     composite-floor guard (verdict-ink-contrast) reads it. */
+  --app-bg-art-opacity: 0.85;
+  --hero-art-shade-top: rgb(12 10 8 / 0.15);
+  --hero-art-shade-mid: rgb(12 10 8 / 0.45);
+  --hero-art-shade-end: rgb(12 10 8 / 0.7);
 
   --text-primary: #ece2cc;
   /* The SPECIAL emphasis tier (BG3 identity epic, 2026-07-02) — BG3's warm-cream
@@ -807,14 +827,14 @@
      daylight war table), pre-graded into the honey/amber band the deep-parchment
      field hosts. Per-theme loading falls out of the cascade: a light user's
      browser only ever fetches these three. */
-  --asset-home-hero: url("/assets/backgrounds/home-hero-light.webp");
-  --asset-login: url("/assets/backgrounds/login-light.webp");
-  --asset-campaign-backdrop: url("/assets/backgrounds/campaign-backdrop-light.webp");
 
   /* The daylight scene is deliberately present, then graded into shade in the
      shared painter below. Opacity provides detail; luminance separation comes
      from the theme filter, not from washing the art into the page field. */
-  --app-bg-art-opacity: 0.28;
+  /* Light: the same scene washed toward vellum, so dark ink reads over it. */
+  --hero-art-shade-top: rgb(239 231 214 / 0.35);
+  --hero-art-shade-mid: rgb(239 231 214 / 0.7);
+  --hero-art-shade-end: rgb(239 231 214 / 0.9);
 
   /* MORNING-LIGHT TRANSLUCENCY — the daylight sibling of dark's candlelit
      translucency (T3): the same page-level surfaces (the `.folio-panel`
@@ -1420,37 +1440,38 @@ body::before {
 body::after {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: 0 0 auto 0;
   z-index: -1;
-  /* Direction B (owner 2026-10-16: "not too bare"): the scene comes back as
-     ATMOSPHERE at the edges of the room, BG3-menu style. It is the app-wide study
-     unless a route owns an image (the campaign hub's own art); softened, dimmed,
-     and masked away from the centre where the content column and any loose text
-     sit, so a painting is never behind words. Panels stay opaque stone. */
-  background-image: var(--app-bg-art, var(--asset-home-hero));
+  /* Direction B (owner 2026-10-16, after the edge-only room was rejected): each realm
+     opens on its own HERO ART across the top of the page, the way the best game sites
+     do, and it fades into the stone field as the page scrolls on. A soft shade keeps
+     any words that sit straight on the art legible; panels stay opaque stone. The
+     campaign hub points --app-bg-art at the campaign's own image. */
+  height: 80vh;
+  background-image:
+    linear-gradient(
+      180deg,
+      var(--hero-art-shade-top) 0%,
+      var(--hero-art-shade-mid) 55%,
+      var(--hero-art-shade-end) 100%
+    ),
+    var(--app-bg-art, var(--asset-hero-study));
   background-size: cover;
   background-position: var(--app-bg-art-position, center top);
   background-repeat: no-repeat;
-  opacity: var(--app-bg-art-opacity, 0.6);
-  filter: blur(2px) saturate(0.9) brightness(0.85);
   transform-origin: var(--app-bg-art-position, center top);
-  transform: scale(calc(var(--app-bg-art-scale, 1) * 1.03));
-  -webkit-mask-image: radial-gradient(
-    ellipse 70% 85% at 50% 40%,
-    rgb(0 0 0 / 0.08) 30%,
-    rgb(0 0 0 / 0.6) 65%,
-    #000 100%
-  );
-  mask-image: radial-gradient(
-    ellipse 70% 85% at 50% 40%,
-    rgb(0 0 0 / 0.08) 30%,
-    rgb(0 0 0 / 0.6) 65%,
-    #000 100%
-  );
+  transform: scale(var(--app-bg-art-scale, 1));
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
   pointer-events: none;
 }
-[data-theme="light"] body::after {
-  filter: blur(2px) saturate(0.75) sepia(0.2);
+@media (max-width: 720px) {
+  /* Phone: the same scene, cropped to its subject, over the top of the screen. */
+  body::after {
+    height: 62vh;
+    background-size: auto 100%;
+    background-position: var(--app-bg-art-position, 62% top);
+  }
 }
 /* AMBIENT campaign art (owner 2026-10-13). On the campaign hub the art is shown
    sharp in the hero band, so behind the page it only lends its light: the same

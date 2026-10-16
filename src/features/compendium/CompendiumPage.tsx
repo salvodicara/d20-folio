@@ -24,6 +24,7 @@
  * this shows the full SRD. No Firebase.
  */
 
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -46,6 +47,8 @@ import type { PickerCtx } from "./picker";
 
 export function CompendiumPage() {
   const { t } = useTranslation();
+  // Direction B hero art: the keep's library opens the compendium.
+  useRealmBackdrop("var(--asset-hero-library)");
   // The active content type lives in the URL (`?type=spell|maneuver|…`) so a
   // compendium view is deep-linkable, bookmarkable, and back-button friendly —
   // matching the cockpit's `?tab=` pattern. An unknown / missing type falls back

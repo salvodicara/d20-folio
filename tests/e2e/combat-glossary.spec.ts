@@ -54,9 +54,10 @@ for (const size of ["desktop", "mobile"] as const) {
     const advantage = page.getByRole("button", {
       name: "Scopri cosa significa Vantaggio",
     });
+    // Advantages are a fact you look up: on a phone they sit in the Stats drawer.
     if (!(await advantage.first().isVisible())) {
       await page
-        .getByRole("button", { name: /^risorse$/i })
+        .getByRole("button", { name: /^statistiche$/i })
         .first()
         .click();
     }

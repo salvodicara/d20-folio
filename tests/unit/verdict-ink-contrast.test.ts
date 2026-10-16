@@ -368,20 +368,14 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
   // tone, composited over the BRIGHTEST backdrop region, must still clear AA.
   //
   // Worst-case backdrop sample (provenance): public/assets/backgrounds/
-  // home-hero.webp (1672×941) downscaled to 96px wide with sharp — each sample
-  // ≈ a glyph-sized (~15px at 1440 render width) region — brightest region
-  // rgb(190,128,49) (#be8031), a candelabra flame at ~(28%, 41%). The absolute
-  // brightest RAW pixel is rgb(232,184,89), but a single flame pixel is
-  // sub-glyph scale; the region sample is the honest text-background worst case.
-  // Re-derive with scratchpad sharp sampling if the asset is ever regenerated.
+  // study-hero.webp (the direction-B hero art, 1915×821) box-downscaled to 96px
+  // wide — each sample ≈ a glyph-sized region — brightest region rgb(204,226,241)
+  // (#cce2f1), the moon at ~(74%, 7%). Re-derive if the asset is regenerated.
   //
-  // Panel-material ceiling: the .folio-panel sandwich tops out at --bg-surface-2
-  // (the gradient's light end; the leather texture's brightest glyph-scale
-  // region is rgb(29,21,12) — at/below surface-2 — and sits under a 62% veil).
-  // The framed page-head's brightest stop is mix(accent 13%, surface-1); it
-  // carries only title/hint ink, so its guarded ink is --text-secondary
-  // (text-muted is not used on the framed band).
-  const WORST_ART_REGION = "#be8031";
+  // Panel-material ceiling: the .folio-panel slab tops out at --bg-surface-2; the
+  // framed page-head's brightest stop is mix(accent 13%, surface-1); it carries
+  // only title/hint ink, so its guarded ink is --text-secondary.
+  const WORST_ART_REGION = "#cce2f1";
   const AA_FLOOR = 4.5;
 
   const block = themeBlock("dark");

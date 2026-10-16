@@ -57,7 +57,8 @@ for (const size of ["desktop", "mobile"] as const) {
 
     await followUp.getByRole("button", { name: "Duplica un incantesimo" }).click();
     const picker = page.getByRole("dialog");
-    await expect(picker.getByText("Scegli un incantesimo da lanciare")).toBeVisible();
+    // The dialog opens on its own title (vision 1); the list carries the instruction.
+    await expect(picker.getByLabel("Scegli un incantesimo da lanciare")).toBeVisible();
     // Level 8 is offered, level 9 is not.
     await picker.getByRole("searchbox").fill("Terremoto");
     await expect(picker.getByRole("listitem")).toHaveCount(1);

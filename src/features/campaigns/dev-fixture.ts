@@ -375,13 +375,13 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
     ...(typeof window !== "undefined" &&
     window.localStorage.getItem("d20-dev-banner-zoom") === "1"
       ? {
-          bannerUrl: "/assets/backgrounds/login.webp",
+          bannerUrl: "/assets/backgrounds/sanctum-hero.webp",
           bannerCrop: { x: 40, y: 20, width: 20, height: 11.25 },
         }
       : typeof window !== "undefined" &&
           window.localStorage.getItem("d20-dev-banner") === "1"
         ? {
-            bannerUrl: "/assets/backgrounds/login.webp",
+            bannerUrl: "/assets/backgrounds/sanctum-hero.webp",
             bannerCrop: { x: 38, y: 8, width: 56, height: 31.5 },
           }
         : {}),

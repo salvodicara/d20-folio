@@ -8,6 +8,7 @@
  * filtered defensively regardless. Owns its own `<main id="main">`.
  */
 
+import { useRealmBackdrop } from "@/hooks/useRealmBackdrop";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
@@ -41,6 +42,8 @@ import { JoinCampaignModal } from "@/features/campaigns/JoinCampaignModal";
 
 export function CampaignsListPage() {
   const { t } = useTranslation();
+  // Direction B hero art: the keep's war room opens the campaigns list.
+  useRealmBackdrop("var(--asset-hero-war-room)");
   useDocumentTitle(t("nav.campaigns"));
   const navigate = useNavigate();
   const uid = useAuthStore((s) => s.user?.uid);

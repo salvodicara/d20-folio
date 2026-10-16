@@ -35,15 +35,12 @@ for (const size of ["desktop", "mobile"] as const) {
     await page.keyboard.press("Escape");
 
     // Raise Dead's fading penalty, from the conditions picker.
-    if (size === "mobile") {
-      await page.getByRole("button", { name: "Risorse" }).first().click();
-    }
-    await page.getByRole("button", { name: "Aggiungi condizione" }).first().click();
+    // Lasting statuses are lit from the status row's "+" under the name.
+    await page.getByRole("button", { name: "Aggiungi stato" }).first().click();
     await page
       .getByRole("option", { name: /Rianimare Morti \(−4 ai tiri d20\)/ })
       .click();
     await page.keyboard.press("Escape");
-    if (size === "mobile") await page.keyboard.press("Escape");
 
     await page
       .getByRole("button", { name: /^riposo$/i })

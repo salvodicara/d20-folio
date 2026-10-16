@@ -165,39 +165,35 @@ describe("light-theme backdrop legibility + layout guards (Img #3/#4/#5/#6)", ()
     " "
   );
 
-  it("#11 — the light theme re-points ALL THREE scene-plate tokens to its daylight siblings", () => {
-    // The per-theme pair rides ONE token each (dark in :root, light re-points);
-    // dropping any light value silently hands light users the night plate again
-    // (and re-couples both themes to one download).
+  it("#11 — every realm's hero art is one series, washed for light by its shade (owner 2026-10-16)", () => {
+    // Direction B: one generated series (HERO-ART.md); the light theme does not
+    // download a sibling plate, it washes the same scene toward vellum.
     for (const [token, file] of [
-      ["--asset-home-hero", "home-hero-light.webp"],
-      ["--asset-login", "login-light.webp"],
-      ["--asset-campaign-backdrop", "campaign-backdrop-light.webp"],
+      ["--asset-hero-study", "study-hero.webp"],
+      ["--asset-hero-war-room", "war-room-hero.webp"],
+      ["--asset-hero-library", "library-hero.webp"],
+      ["--asset-hero-armoury", "armoury-hero.webp"],
+      ["--asset-hero-sanctum", "sanctum-hero.webp"],
     ] as const) {
-      const light = new RegExp(
-        `\\[data-theme="light"\\][^{]*\\{[^}]*${token}: url\\("/assets/backgrounds/${file}"\\)`
+      expect(indexCss, `${token} → ${file}`).toContain(
+        `${token}: url("/assets/backgrounds/${file}")`
       );
-      expect(
-        light.test(indexCss),
-        `MISSING: the light theme block must re-point ${token} to ${file} — without it ` +
-          "light borrows the dark night plate and the sibling-plates direction regresses."
-      ).toBe(true);
     }
+    expect(indexCss).not.toMatch(/-light\.webp/);
   });
 
-  it("#12 — the scene is atmosphere at the edges, never behind text (owner 2026-10-16)", () => {
-    // Direction B brought the room back ("not too bare") under the image rule: the
-    // painter is masked away from the centre, where the content and loose text sit.
+  it("#12 — each realm opens on its hero art, shaded and fading into the page (owner 2026-10-16)", () => {
+    // The hero band: the realm's art (default the study) under a shade, masked so it
+    // fades out down the page; panels stay opaque stone over it.
     const painter =
-      /body::after \{[^}]*background-image: var\(--app-bg-art, var\(--asset-home-hero\)\)[^}]*mask-image: radial-gradient\(/;
+      /body::after \{[^}]*var\(--app-bg-art, var\(--asset-hero-study\)\)[^}]*mask-image: linear-gradient\(to bottom/;
     expect(
       painter.test(indexCss),
-      "MISSING: body::after painting the room masked away from the centre — a " +
-        "painting would sit behind the page's text again."
+      "MISSING: body::after painting the realm's hero art with its shade and downward fade."
     ).toBe(true);
     expect(
-      /\[data-theme="light"\] body::after \{[^}]*filter: /.test(indexCss),
-      "MISSING: the light theme's softened ambient grade."
+      /\[data-theme="light"\][^{]*\{[^}]*--hero-art-shade-end:/.test(indexCss),
+      "MISSING: the light theme's vellum wash over the hero art."
     ).toBe(true);
   });
 

@@ -173,8 +173,8 @@
     "src/styles/folio.css 2px": 7,
     "src/styles/folio.css 3px": 4,
     "src/styles/folio.css var(--radius-xs,": 2,
-    "src/styles/folio.css 3px)": 5,
-    "src/styles/folio.css -": 3,
+    "src/styles/folio.css 3px)": 4,
+    "src/styles/folio.css -": 2,
     "src/styles/folio.css 6px": 1,
     "src/styles/folio.css 5px": 2
   }

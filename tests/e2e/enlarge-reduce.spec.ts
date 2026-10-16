@@ -45,16 +45,13 @@ for (const size of ["desktop", "mobile"] as const) {
     page,
   }) => {
     await castOnSelf(page, size);
-    // The phone keeps the Active rail behind the Resources drawer.
-    const rail = page.getByRole("button", { name: /^Risorse$/ });
-    if (size === "mobile") await rail.click();
+    // The choice sits in view in the status row under the name (owner 2026-10-16).
     const enlarge = page.getByRole("button", { name: /^Ingrandire$/ }).first();
     await enlarge.scrollIntoViewIfNeeded();
     await enlarge.click();
     await page.screenshot({ path: shotPath(`enlarge-chosen-${size}.png`) });
 
     // Enlarge: the Dagger card gains the +1d4 rider chip.
-    if (size === "mobile") await rail.click();
     await page
       .getByRole("tab", { name: /Combattimento/ })
       .first()
@@ -69,11 +66,9 @@ for (const size of ["desktop", "mobile"] as const) {
     });
 
     // Reduce: the rider goes away.
-    if (size === "mobile") await rail.click();
     const reduce = page.getByRole("button", { name: /^Ridurre$/ }).first();
     await reduce.scrollIntoViewIfNeeded();
     await reduce.click();
-    if (size === "mobile") await rail.click();
     await expect(dagger.getByText(/^\+1d4$/)).toHaveCount(0);
     await page.screenshot({ path: shotPath(`reduce-${size}.png`), fullPage: true });
   });

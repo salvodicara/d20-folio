@@ -17,6 +17,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 
 | Surface                                                            | Group      | Status |
 | ------------------------------------------------------------------ | ---------- | ------ |
+| `menu:features/campaigns/CampaignArtControl`                       | Campaign   | todo   |
 | `dialog:features/campaigns/CreateCampaignModal`                    | Campaign   | todo   |
 | `dialog:features/campaigns/encounter-bestiary`                     | Campaign   | todo   |
 | `dialog:features/campaigns/JoinCampaignModal`                      | Campaign   | todo   |

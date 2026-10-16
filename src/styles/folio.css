@@ -2296,6 +2296,12 @@ button.pr-dot.lg::before {
 .glossary-term {
   cursor: help;
 }
+/* A glossed NAME (a base action's card title) keeps the tap slop vertical only: the
+   sideways slop overflowed the name cell on a phone and read as a clipped name. */
+.uc-name-cell .glossary-term {
+  padding-inline: 0;
+  margin-inline: 0;
+}
 /* `.cause-toggle` — the §2.7.3 filtered-absence DISCLOSURE toggle (the level-up
    multiclass fork's "Details"): the SAME inherit-everything dotted trigger
    chrome as the glossary term (one recipe, shared selectors above), but a
@@ -14567,9 +14573,10 @@ button.party-avatar-btn:focus-visible {
    scrim is always dark, bottom-left, so the title reads over ANY upload in both
    themes; the band's ink is therefore the fixed on-art ivory, never a theme token.
    Behind the page the same art is only ambient light (index.css). ── */
+/* Direction B: the campaign's image is the PAGE's hero art (body::after, set by the
+   hub through --app-bg-art), so the band carries no second copy: it is the title
+   and the image controls, standing over the art with a soft shade. */
 .campaign-hero {
-  --hero-ink: #f6ead0;
-  --hero-ink-soft: #ded0b0;
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -14578,33 +14585,11 @@ button.party-avatar-btn:focus-visible {
   min-height: clamp(176px, 15vw + 40px, 248px);
   margin-bottom: var(--sp-6);
   padding: var(--sp-6) var(--sp-8);
-  border: 1px solid color-mix(in oklab, var(--gold-leaf-500) 34%, transparent);
-  border-radius: var(--radius-xl);
-  /* Decode base: the default plate's own mean tone, never a flash of page colour. */
-  background: #16100a;
-  box-shadow: 0 22px 44px -28px rgb(0 0 0 / 0.85);
+  border: 0;
+  background: transparent;
 }
 .campaign-hero-art {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background-size: cover;
-  background-position: center 42%;
-  background-repeat: no-repeat;
-}
-.campaign-hero::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(
-      to top,
-      rgb(10 7 5 / 0.88) 0%,
-      rgb(10 7 5 / 0.46) 48%,
-      rgb(10 7 5 / 0.06) 100%
-    ),
-    linear-gradient(to right, rgb(10 7 5 / 0.5), transparent 62%);
+  display: none;
 }
 .campaign-hero-body {
   min-width: 0;
@@ -14614,11 +14599,11 @@ button.party-avatar-btn:focus-visible {
   margin: 0;
   font-family: var(--font-title);
   font-weight: 600;
-  font-size: clamp(1.75rem, 1.15rem + 2.2vw, 2.875rem);
+  font-size: var(--text-2xl);
   line-height: 1.08;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.03em;
   color: var(--hero-ink);
-  text-shadow: 0 2px 18px rgb(0 0 0 / 0.6);
+  text-shadow: var(--hero-text-shadow);
   text-wrap: balance;
 }
 .campaign-hero-title :where(button, input) {
@@ -14631,7 +14616,7 @@ button.party-avatar-btn:focus-visible {
   margin: var(--sp-2) 0 0;
   font-size: var(--text-sm);
   color: var(--hero-ink-soft);
-  text-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
+  text-shadow: var(--hero-text-shadow);
 }
 .campaign-hero-meta > span {
   display: inline-flex;
@@ -14652,15 +14637,15 @@ button.party-avatar-btn:focus-visible {
   width: 40px;
   height: 40px;
   border-radius: var(--radius-xl);
-  border: 1px solid rgb(246 234 208 / 0.2);
-  background: rgb(10 7 5 / 0.52);
+  border: 1px solid color-mix(in oklab, var(--hero-ink) 20%, transparent);
+  background: var(--hero-shade);
   color: var(--hero-ink);
   transition:
     background var(--m-fast) var(--ease-standard, ease-out),
     color var(--m-fast) var(--ease-standard, ease-out);
 }
 .campaign-hero-gear:hover {
-  background: rgb(10 7 5 / 0.74);
+  background: var(--hero-shade-strong);
   color: var(--gold-leaf-100);
 }
 .campaign-hero-gear:focus-visible {

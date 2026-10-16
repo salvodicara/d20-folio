@@ -163,7 +163,7 @@ export function CharacterStatusRow() {
 
   const offToggles = toggles.filter((toggle) => !toggle.active);
   const addExtra =
-    offToggles.length > 0 || exhaustion <= 0 || restBundles.length > 0 ? (
+    offToggles.length > 0 || exhaustion <= 0 ? (
       <div className="status-add-extra">
         {offToggles.length > 0 && (
           <div
@@ -191,15 +191,6 @@ export function CharacterStatusRow() {
           </div>
         )}
         {exhaustion <= 0 && <ExhaustionTrack value={0} />}
-        {restBundles.length > 0 && (
-          <GrantBundleSelector
-            bundles={restBundles}
-            locale={locale}
-            onSelect={(key, optionId) =>
-              useCharacterStore.getState().setGrantBundleChoice(key, optionId)
-            }
-          />
-        )}
       </div>
     ) : undefined;
 
@@ -244,6 +235,17 @@ export function CharacterStatusRow() {
           />
         }
       />
+      {/* A lit state's variant (Enlarge or Reduce, a Starry Form constellation) is a
+          choice the player makes now, so it stays in view under the badges. */}
+      {restBundles.length > 0 && (
+        <GrantBundleSelector
+          bundles={restBundles}
+          locale={locale}
+          onSelect={(key, optionId) =>
+            useCharacterStore.getState().setGrantBundleChoice(key, optionId)
+          }
+        />
+      )}
     </div>
   );
 }
