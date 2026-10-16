@@ -28,6 +28,13 @@
       "riderOnce": "Once per turn when you hit, this deals an extra {{dice}} {{type}} damage.",
       "riderCost": "On a hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage.",
       "riderOnceCost": "Once per turn when you hit, you can spend a use of {{tracker}} to deal an extra {{dice}} {{type}} damage."
+    },
+    "speed": {
+      "multiplier": "Speed multiplier",
+      "heavyArmor": "Heavy armor (Strength too low)",
+      "minimum": "Minimum 0",
+      "floor": "Minimum Speed",
+      "cap": "Speed limit"
     }
   }
 }
