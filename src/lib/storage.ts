@@ -36,8 +36,12 @@ const IMAGE_UPLOAD_META = {
   contentType: "image/jpeg",
   cacheControl: "public, max-age=31536000, immutable",
 } as const;
-/** Longest side (px) above which an image is downsampled before upload. */
+/** Longest side (px) above which an image is downsampled before upload. Campaign
+ *  banners keep it: in direction B they are the page backdrop on up to ~2560 px. */
 const ORIGINAL_MAX_PX = 2000;
+/** A character portrait's longest side. Its largest display is the lightbox (~760 CSS
+ *  px tall), so 1600 covers it at 2x (Phase 1, 2026-10-16). Existing uploads stay. */
+const PORTRAIT_MAX_PX = 1600;
 const ORIGINAL_QUALITY = 0.85;
 
 // ─── Image compression ────────────────────────────────────────────────────────
@@ -97,6 +101,11 @@ export async function compressImage(
   });
 }
 
+/** {@link compressImage} at the character-portrait size. */
+export function compressPortrait(file: Blob): Promise<Blob> {
+  return compressImage(file, PORTRAIT_MAX_PX);
+}
+
 // ─── Upload helpers ───────────────────────────────────────────────────────────
 
 /**
@@ -146,7 +155,7 @@ export async function uploadPortraitFromBase64(
   const rawBlob = new Blob([bytes], { type: mime });
 
   // Compress to JPEG (same as normal upload flow: max 2000px, 0.85 quality)
-  const compressed = await compressImage(rawBlob);
+  const compressed = await compressPortrait(rawBlob);
 
   if (compressed.size > MAX_FILE_SIZE) {
     throw new Error("Portrait is too large (max 5MB)");
