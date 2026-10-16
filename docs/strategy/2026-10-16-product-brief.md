@@ -67,6 +67,22 @@ what the group declares.
   the world's greatest roleplaying game" style), never in the name or logo. Add the "unofficial,
   not endorsed by Wizards of the Coast" line. Nothing non-SRD sits behind a future payment.
 
+## Money (owner 2026-10-16)
+
+**Spend nothing now.** The kill-switch stays at zero spend. The app costs £0 at today's usage and
+about $2–5 a month at 1,000 users. **Folio should earn rather than cost.**
+
+Revenue routes, roughly in order of fit:
+
+1. **Donations.** Ko-fi or Patreon: no consent banner, nothing in the way of play.
+2. **Affiliate links and sponsors.** Dice, books, Italian game shops, placed in the guide and on the
+   landing page, never mid-combat.
+3. **A small supporter plan.** Around €1.50/month for extras, never for non-SRD content.
+4. **Display ads.** Only on non-play pages. Personalised ads need a consent banner under the
+   Garante rules, and they earn only about €1–2 per 1,000 views.
+
+Nothing ships until the product is professional and has users.
+
 ## Non-goals
 
 - A VTT: maps, tokens, fog, video.
