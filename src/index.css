@@ -921,9 +921,9 @@
   --edit-accent: var(--gold-leaf-900);
 
   /* § 09 Action-type slots + magic marker (light = deep variants, AA as TEXT) */
-  --at-action: #9a4512;
-  --at-bonus: #156b62;
-  --at-reaction: #5e3fa6;
+  --at-action: #8a3c0e;
+  --at-bonus: #11625a;
+  --at-reaction: #563a9a;
   --at-move: #3d6d22;
   /* Readable neutral free/no-action colors (see the dark-theme note above). */
   --at-free: var(--text-secondary);
