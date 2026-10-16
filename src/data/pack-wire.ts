@@ -43,11 +43,7 @@ export const CORE_KEYS = [
   "packSubclasses",
   "packQuickbuildPresets",
   "packGrantExtensions",
-
-  "packClassNames",
-  "packSubclassNames",
-  "packRaceNames",
-  "packBackgroundNames",
+  "packNameCatalogues",
   "packSrdEn",
   "srdOverlay",
   "uiOverlay",

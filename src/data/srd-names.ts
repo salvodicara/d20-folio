@@ -1,27 +1,23 @@
 /**
- * SRD display NAMES — the SRD-free localization source.
+ * SRD display NAMES — the SRD-free name index.
  *
- * Character records store class/race/background/subclass as English strings or
- * kebab-case ids. Resolving those to localized labels needs ONLY the name LocaleText,
- * not the multi-megabyte class/spell/background data. This tiny module holds those
- * names so a glance (the roster card, the identity line) can localize WITHOUT
- * pulling the SRD: importing the full `@/data/classes` / `races` / `backgrounds`
- * for a name used to drag `srd-classes` + `srd-content` (~350 KB gzip) onto the
- * landing page.
+ * Character records store class/race/background/subclass as ids (older ones as
+ * EN or IT labels). Resolving those, and naming them on a glance (the roster
+ * card, the identity line), needs ONLY the names, not the multi-megabyte
+ * class/spell/background data: importing the full `@/data/classes` / `races` /
+ * `backgrounds` for a name used to drag `srd-classes` + `srd-content` (~350 KB
+ * gzip) onto the landing page.
  *
- * Single source is preserved by `tests/unit/srd-names-sync.guard.test.ts`, which
- * imports the full SRD data and fails if any name here drifts from it — so this
- * stays exact (and IT translations can never silently diverge).
+ * The names are the catalogues' own (`src/i18n/<locale>/srd/{classes,subclasses,
+ * races,backgrounds}.json`, plus the content pack's), read through the eager name
+ * index (`@/i18n/srd-name-index`), so every language is a catalogue and none is
+ * spelled here. `tests/unit/srd-names-sync.guard.test.ts` pins the index to the
+ * full SRD data (no entry missing or extra).
  */
 import type { LocaleText } from "@/data/types";
 import type { RaceId } from "@/types/ids";
-import { mergePack } from "@/lib/pack-merge";
-import {
-  packBackgroundNames,
-  packClassNames,
-  packRaceNames,
-  packSubclassNames,
-} from "@pack";
+import { LOCALES, SOURCE_LOCALE } from "@/lib/locale";
+import { srdNameCatalogue, type NameKind } from "@/i18n/srd-name-index";
 
 /** A localized id→name entry (the data is keyed by stable kebab-case id). */
 export interface NamedEntry {
@@ -30,21 +26,58 @@ export interface NamedEntry {
 }
 
 /**
+ * Every entry of a name kind: the ids are the source catalogue's top-level keys
+ * that carry a `name` (nested keys such as `elf.traits.…` are trait rows), named
+ * in every locale (a locale missing a name falls back to the source one).
+ */
+function namedEntries(kind: NameKind): NamedEntry[] {
+  const source = srdNameCatalogue(SOURCE_LOCALE, kind);
+  return Object.entries(source)
+    .filter(([id, fields]) => !id.includes(".") && typeof fields.name === "string")
+    .map(([id, fields]) => ({
+      id,
+      name: Object.fromEntries(
+        LOCALES.map((locale) => {
+          const name = srdNameCatalogue(locale, kind)[id]?.name;
+          return [locale, typeof name === "string" ? name : fields.name];
+        })
+      ) as LocaleText,
+    }));
+}
+
+/** Does an entry's id, or its name in any language, equal `lower`? */
+function matches(entry: NamedEntry, lower: string): boolean {
+  return (
+    entry.id.toLowerCase() === lower ||
+    Object.values(entry.name).some((name) => name.toLowerCase() === lower)
+  );
+}
+
+const CLASS_ENTRIES: ReadonlyArray<NamedEntry> = namedEntries("class");
+
+/** Class display names — public SRD + content pack. */
+export const CLASS_NAMES: ReadonlyArray<LocaleText> = CLASS_ENTRIES.map((c) => c.name);
+
+/** Subclass display names — public SRD + content pack. */
+export const SUBCLASS_NAMES: ReadonlyArray<NamedEntry> = namedEntries("subclass");
+
+/** Species display names — public SRD + content pack. */
+export const RACE_NAMES: ReadonlyArray<NamedEntry> = namedEntries("race");
+
+/** Background display names — public SRD + content pack. */
+export const BACKGROUND_NAMES: ReadonlyArray<NamedEntry> = namedEntries("background");
+
+/**
  * Resolve a stable class id from a (possibly IT-localized) class string — the
  * SRD-free equivalent of `@/data/classes` `getCharacterClassId`, for eager
  * callers (the persistence-layer sanitizer) that must not pull the class data.
- * Class ids ARE `name.en` lower-cased, so a direct id match or an EN/IT name
- * match both resolve; unknown input falls back to its lower-case form.
+ * An id or a name in any language resolves; unknown input falls back to its
+ * lower-case form.
  */
 export function resolveClassId(className: string): string {
   if (typeof className !== "string" || !className) return "";
   const lower = className.toLowerCase();
-  for (const n of CLASS_NAMES) {
-    if (n.en.toLowerCase() === lower || n.it.toLowerCase() === lower) {
-      return n.en.toLowerCase();
-    }
-  }
-  return lower;
+  return CLASS_ENTRIES.find((c) => matches(c, lower))?.id ?? lower;
 }
 
 /**
@@ -57,17 +90,16 @@ export function resolveClassId(className: string): string {
 export function classNameById(classId: string): string {
   if (typeof classId !== "string" || !classId) return "";
   const lower = classId.toLowerCase();
-  for (const n of CLASS_NAMES) {
-    if (n.en.toLowerCase() === lower) return n.en;
-  }
-  return "";
+  return CLASS_ENTRIES.find((c) => c.id === lower)?.name[SOURCE_LOCALE] ?? "";
 }
 
 /** The EN subclass display name for a subclassId, or `""` if unknown. */
 export function subclassNameById(subclassId: string): string {
   if (typeof subclassId !== "string" || !subclassId) return "";
   const lower = subclassId.toLowerCase();
-  return SUBCLASS_NAMES.find((e) => e.id.toLowerCase() === lower)?.name.en ?? "";
+  return (
+    SUBCLASS_NAMES.find((e) => e.id.toLowerCase() === lower)?.name[SOURCE_LOCALE] ?? ""
+  );
 }
 
 /**
@@ -81,35 +113,20 @@ export function subclassNameById(subclassId: string): string {
 export function subclassIdByName(nameOrId: string): string {
   if (typeof nameOrId !== "string" || !nameOrId) return "";
   const lower = nameOrId.toLowerCase();
-  const match = SUBCLASS_NAMES.find(
-    (e) =>
-      e.id.toLowerCase() === lower ||
-      e.name.en.toLowerCase() === lower ||
-      e.name.it.toLowerCase() === lower
-  );
-  return match?.id ?? "";
+  return SUBCLASS_NAMES.find((e) => matches(e, lower))?.id ?? "";
 }
 
 /**
  * The stable RACE id for a (possibly IT-localized) race string — `"Elf"`/`"Elfo"`
  * → `"elf"`, and an already-id input (`"lorwyn-changeling"`) passes through. The
- * race equivalent of {@link resolveClassId}: scans {@link RACE_NAMES} for an id /
- * EN / IT match and returns the canonical `id`. Unknown (homebrew) input falls
- * back to its lower-cased form so the value still round-trips. SRD-free.
+ * race equivalent of {@link resolveClassId}: scans {@link RACE_NAMES} for an id or
+ * a name in any language and returns the canonical `id`. Unknown (homebrew) input
+ * falls back to its lower-cased form so the value still round-trips. SRD-free.
  */
 export function raceIdByName(raceName: string): string {
   if (typeof raceName !== "string" || !raceName) return "";
   const lower = raceName.toLowerCase();
-  for (const r of RACE_NAMES) {
-    if (
-      r.id.toLowerCase() === lower ||
-      r.name.en.toLowerCase() === lower ||
-      r.name.it.toLowerCase() === lower
-    ) {
-      return r.id;
-    }
-  }
-  return lower;
+  return RACE_NAMES.find((r) => matches(r, lower))?.id ?? lower;
 }
 
 /**
@@ -132,16 +149,7 @@ export function asRaceId(id: string): RaceId {
 export function backgroundIdByName(background: string): string {
   if (typeof background !== "string" || !background) return "";
   const lower = background.toLowerCase();
-  for (const b of BACKGROUND_NAMES) {
-    if (
-      b.id.toLowerCase() === lower ||
-      b.name.en.toLowerCase() === lower ||
-      b.name.it.toLowerCase() === lower
-    ) {
-      return b.id;
-    }
-  }
-  return lower;
+  return BACKGROUND_NAMES.find((b) => matches(b, lower))?.id ?? lower;
 }
 
 /**
@@ -151,101 +159,7 @@ export function backgroundIdByName(background: string): string {
 export function backgroundNameById(backgroundId: string): string {
   if (typeof backgroundId !== "string" || !backgroundId) return "";
   const lower = backgroundId.toLowerCase();
-  return BACKGROUND_NAMES.find((b) => b.id.toLowerCase() === lower)?.name.en ?? "";
+  return (
+    BACKGROUND_NAMES.find((b) => b.id.toLowerCase() === lower)?.name[SOURCE_LOCALE] ?? ""
+  );
 }
-
-const PUBLIC_CLASS_NAMES: ReadonlyArray<LocaleText> = [
-  { en: "Barbarian", it: "Barbaro" },
-  { en: "Bard", it: "Bardo" },
-  { en: "Cleric", it: "Chierico" },
-  { en: "Druid", it: "Druido" },
-  { en: "Fighter", it: "Guerriero" },
-  { en: "Monk", it: "Monaco" },
-  { en: "Paladin", it: "Paladino" },
-  { en: "Ranger", it: "Ranger" },
-  { en: "Rogue", it: "Ladro" },
-  { en: "Sorcerer", it: "Stregone" },
-  { en: "Warlock", it: "Warlock" },
-  { en: "Wizard", it: "Mago" },
-];
-
-/** Class display names — public SRD + content pack. */
-export const CLASS_NAMES: ReadonlyArray<LocaleText> = [
-  ...PUBLIC_CLASS_NAMES,
-  ...packClassNames,
-];
-
-const PUBLIC_SUBCLASS_NAMES: ReadonlyArray<NamedEntry> = [
-  {
-    id: "berserker",
-    name: { en: "Path of the Berserker", it: "Cammino del Berserker" },
-  },
-  {
-    id: "college-of-lore",
-    name: { en: "College of Lore", it: "Collegio della Sapienza" },
-  },
-  { id: "life-domain", name: { en: "Life Domain", it: "Dominio della Vita" } },
-  {
-    id: "circle-of-the-land",
-    name: { en: "Circle of the Land", it: "Circolo della Terra" },
-  },
-  { id: "champion", name: { en: "Champion", it: "Campione" } },
-  {
-    id: "open-hand",
-    name: { en: "Warrior of the Open Hand", it: "Guerriero della Mano Aperta" },
-  },
-  {
-    id: "oath-of-devotion",
-    name: { en: "Oath of Devotion", it: "Giuramento di Devozione" },
-  },
-  { id: "hunter", name: { en: "Hunter", it: "Cacciatore" } },
-  { id: "thief", name: { en: "Thief", it: "Furfante" } },
-  {
-    id: "draconic-sorcery",
-    name: { en: "Draconic Sorcery", it: "Stregoneria Draconica" },
-  },
-  { id: "fiend-patron", name: { en: "Fiend Patron", it: "Patrono Immondo" } },
-  // Official IT SRD 5.2.1: "Invocatore" — the Evocation school is "Invocazione"
-  // in the IT vocabulary ("Evocazione" is Conjuration).
-  { id: "evoker", name: { en: "Evoker", it: "Invocatore" } },
-];
-
-/** Subclass display names — public SRD + content pack. */
-export const SUBCLASS_NAMES: ReadonlyArray<NamedEntry> = mergePack(
-  "subclass-name",
-  PUBLIC_SUBCLASS_NAMES,
-  packSubclassNames
-);
-
-const PUBLIC_RACE_NAMES: ReadonlyArray<NamedEntry> = [
-  { id: "human", name: { en: "Human", it: "Umano" } },
-  { id: "elf", name: { en: "Elf", it: "Elfo" } },
-  { id: "dwarf", name: { en: "Dwarf", it: "Nano" } },
-  { id: "halfling", name: { en: "Halfling", it: "Halfling" } },
-  { id: "orc", name: { en: "Orc", it: "Orco" } },
-  { id: "gnome", name: { en: "Gnome", it: "Gnomo" } },
-  { id: "tiefling", name: { en: "Tiefling", it: "Tiefling" } },
-  { id: "goliath", name: { en: "Goliath", it: "Goliath" } },
-  { id: "dragonborn", name: { en: "Dragonborn", it: "Dragonide" } },
-];
-
-/** Species display names — public SRD + content pack. */
-export const RACE_NAMES: ReadonlyArray<NamedEntry> = mergePack(
-  "race-name",
-  PUBLIC_RACE_NAMES,
-  packRaceNames
-);
-
-const PUBLIC_BACKGROUND_NAMES: ReadonlyArray<NamedEntry> = [
-  { id: "acolyte", name: { en: "Acolyte", it: "Accolito" } },
-  { id: "criminal", name: { en: "Criminal", it: "Criminale" } },
-  { id: "sage", name: { en: "Sage", it: "Sapiente" } },
-  { id: "soldier", name: { en: "Soldier", it: "Soldato" } },
-];
-
-/** Background display names — public SRD + content pack. */
-export const BACKGROUND_NAMES: ReadonlyArray<NamedEntry> = mergePack(
-  "background-name",
-  PUBLIC_BACKGROUND_NAMES,
-  packBackgroundNames
-);

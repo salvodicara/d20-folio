@@ -18,7 +18,6 @@
 import type {
   BackgroundEquipmentOption,
   BeastStatBlock,
-  LocaleText,
   MonsterStatBlock,
   SrdBackgroundData,
   SrdClassFeatureData,
@@ -31,12 +30,12 @@ import type {
 } from "@/data/types";
 import type { SrdManeuver } from "@/data/maneuvers";
 import type { QuickbuildPreset } from "@/data/quickbuild";
-import type { NamedEntry } from "@/data/srd-names";
 import type { ScenarioSpec } from "@/lib/dev-scenarios";
 import type {
   PackFixtureLoaders,
   PackGrantExtensions,
   PackLazySrdLoader,
+  PackNameCatalogues,
   PackSrdLoader,
   PackSrdOverlay,
   PackUiOverlay,
@@ -67,10 +66,8 @@ export const packQuickbuildPresets: Readonly<Record<string, QuickbuildPreset>> =
 /** Typed additions to public grant sources (none without the content pack). */
 export const packGrantExtensions: PackGrantExtensions = {};
 
-export const packClassNames: readonly LocaleText[] = [];
-export const packSubclassNames: readonly NamedEntry[] = [];
-export const packRaceNames: readonly NamedEntry[] = [];
-export const packBackgroundNames: readonly NamedEntry[] = [];
+/** Every locale's class/subclass/race/background name additions (none). */
+export const packNameCatalogues: PackNameCatalogues = {};
 
 /** EN SRD catalogue additions for pack entries (statically bundled, like EN). */
 export const packSrdEn: SrdCataloguePatch = {};
