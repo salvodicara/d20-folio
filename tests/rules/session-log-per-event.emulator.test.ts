@@ -182,6 +182,20 @@ describe("firestore.rules: sessionLogs/{sessionId}/items/{itemId}", () => {
     );
   });
 
+  it("accepts the narrative overrides as items: hide, show, move", async () => {
+    for (const item of [
+      { id: "h", by: "ana", at: 1, type: "hide", target: "a" },
+      { id: "s", by: "ana", at: 1, type: "show", target: "a" },
+      { id: "m", by: "ana", at: 1, type: "move", target: "a", after: null },
+      { id: "m2", by: "ana", at: 1, type: "move", target: "a", after: "b" },
+    ] as LogItem[]) {
+      await assertSucceeds(write("ana", item));
+    }
+    await assertFails(
+      write("ana", { id: "x", by: "ana", at: 1, type: "hide" } as unknown as LogItem)
+    );
+  });
+
   it("refuses an outsider and a blocked member", async () => {
     await assertFails(write("out", event("a", "out", 3)));
     await assertFails(write("banned", event("a", "banned", 3)));
