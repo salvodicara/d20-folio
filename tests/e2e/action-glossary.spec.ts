@@ -6,6 +6,7 @@
  */
 import { test, expect } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { openBaseActions } from "./sheet-steps";
 import itGlossary from "../../src/i18n/it/ui/glossary.json" with { type: "json" };
 
 test.describe.configure({ timeout: 90_000 });
@@ -25,6 +26,7 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(allChip).toBeVisible({ timeout: 45_000 });
     await allChip.click();
     await freezeMotion(page);
+    await openBaseActions(page);
 
     const tip = page.getByRole("button", { name: "Scopri cosa significa Schivata" });
     await tip.scrollIntoViewIfNeeded();
