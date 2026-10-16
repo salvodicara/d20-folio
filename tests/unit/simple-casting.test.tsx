@@ -44,6 +44,8 @@ async function skipTargetStep(): Promise<void> {
 }
 
 beforeEach(() => {
+  // A fight is on (round 2): the per-turn gates hold. Outside one the economy only logs.
+  useCharacterStore.setState({ combatRound: 2 });
   useCombatStore.getState().endCombat();
   useUndoStore.getState().clear(null);
   useUIStore.setState({ sheetMode: "play" });

@@ -54,6 +54,8 @@ function resourceReaction(): ResolvedAction {
 }
 
 beforeEach(() => {
+  // A fight is on (round 2): the per-turn gates hold. Outside one the economy only logs.
+  useCharacterStore.setState({ combatRound: 2 });
   selectAction = null;
   const character = makeCharacterDoc({
     classId: "fighter",

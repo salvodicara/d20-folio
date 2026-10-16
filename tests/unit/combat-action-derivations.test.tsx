@@ -129,6 +129,8 @@ function ctaButton(name: string): HTMLButtonElement {
 
 describe("PlayTab action derivations", () => {
   beforeEach(() => {
+    // A fight is on (round 2): the per-turn gates hold. Outside one the economy only logs.
+    useCharacterStore.setState({ combatRound: 2 });
     useCharacterStore.setState({ character: null, loading: false, error: null });
     useUIStore.setState({ sheetMode: "play" });
     useToastStore.setState({ toasts: [], timers: {} });
@@ -502,6 +504,8 @@ describe("PlayTab action derivations", () => {
 //    board group header, not on a segmented coin ring. ────────────────────────────
 describe("PlayTab Extra Attack (card-borne attacks-remaining)", () => {
   beforeEach(() => {
+    // A fight is on (round 2): the per-turn gates hold. Outside one the economy only logs.
+    useCharacterStore.setState({ combatRound: 2 });
     useCharacterStore.setState({ character: null, loading: false, error: null });
     useUIStore.setState({ sheetMode: "play" });
     useToastStore.setState({ toasts: [], timers: {} });

@@ -93,6 +93,17 @@ export async function freezeMotion(page: Page): Promise<void> {
   }
 }
 
+/** Start a solo fight on the open Play tab by typing an Initiative roll in the turn
+ *  band. Outside a fight the turn economy only logs (owner decision 2026-10-16), so a
+ *  test of the per-turn gates starts one first. Locale-free (the field reads "d20"). */
+export async function startSoloFight(page: Page, roll = "12"): Promise<void> {
+  await page.locator(".turn .init button.vital-init").click();
+  const field = page.getByRole("textbox", { name: /d20/ });
+  await field.fill(roll);
+  await field.press("Enter");
+  await expect(field).toHaveCount(0);
+}
+
 /**
  * Best-effort PRE-CAPTURE settle for the review harness (NOT a gate): let the
  * in-viewport images finish DECODING and give the page one short post-networkidle
