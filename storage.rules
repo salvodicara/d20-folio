@@ -33,6 +33,15 @@ service firebase.storage {
       allow delete: if request.auth != null;
     }
 
+    // The private content pack (docs/ARCHITECTURE.md → the content-pack seam).
+    // Readable only with the `pack` auth claim, granted per account by the owner
+    // (`scripts/pack/pack-access.ts`); written only by the deploy (Admin SDK).
+    // Portraits under `art/` are `<img>` sources, served by unguessable download
+    // tokens listed only inside the protected `core.json`.
+    match /content-pack/{path=**} {
+      allow read: if request.auth != null && request.auth.token.pack == true;
+    }
+
     // Bug-report screenshots (OWN-37). The owner of the report uploads its own
     // screenshot to a uid-scoped path; only the admin may read them (the Cloud
     // Function resolves a signed URL via the Admin SDK, bypassing these rules).

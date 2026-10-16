@@ -8,7 +8,7 @@ di automatizzare tutte le regole è abbandonato.
 Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main` (3282839a);
 `@v2` = su `origin/v2` (2158b7f6); `@pre` = la versione lunga prima della semplificazione
 (aa46a09e^); un altro `@sha` indica il commit che ha introdotto la regola. `COST §` =
-`docs/PRODUCT_CONSTITUTION.md` su main. `PROD` = `PRODUCT.md` su main. `DEC aaaa-mm-gg` =
+`docs/PRODUCT_CONSTITUTION.md` su main a 6976cc77 (ritirato il 16/10/2026, resta nella storia git). `PROD` = `PRODUCT.md` su main. `DEC aaaa-mm-gg` =
 `docs/program/DECISIONS.md` su v2. `I-nnn` = decisioni dell'intervista di d20-studio.
 
 ## Gusto e prodotto

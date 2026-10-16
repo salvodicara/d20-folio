@@ -39,6 +39,7 @@ import { listMetamagicOptions } from "@/lib/metamagic-pick";
 import { eligibleInvocations } from "@/lib/invocation-pick";
 import { eligibleManeuvers } from "@/lib/maneuver-pick";
 import type { CustomFeature, SrdFeatureRef } from "@/types/character";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 /**
  * The minimal shape this presenter localizes — anything carrying engine-emitted
@@ -132,7 +133,7 @@ function descSearchCorpus(
 ): string {
   return proseCorpus(
     meta,
-    locale === "en" ? undefined : localizeSrd(kind, id, "description", "en")
+    locale === SOURCE_LOCALE ? undefined : localizeSrd(kind, id, "description", "en")
   );
 }
 

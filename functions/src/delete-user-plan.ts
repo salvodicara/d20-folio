@@ -104,3 +104,38 @@ export function emailMatches(
   const b = norm(confirmEmail);
   return a.length > 0 && a === b;
 }
+
+/**
+ * Who may delete which account. An admin may delete anyone but themselves (their
+ * own deletion would orphan the console mid-run); since 2026-10-16 every player
+ * may delete their own account without asking (GDPR erasure, Phase 5). Codes are
+ * the `HttpsError` codes the callable throws.
+ */
+export type DeletionAuthorization =
+  | { ok: true; selfService: boolean }
+  | {
+      ok: false;
+      code:
+        | "unauthenticated"
+        | "invalid-argument"
+        | "permission-denied"
+        | "failed-precondition";
+    };
+
+export function authorizeAccountDeletion(input: {
+  callerUid: string | undefined;
+  callerIsAdmin: boolean;
+  targetUid: string;
+}): DeletionAuthorization {
+  const { callerUid, callerIsAdmin, targetUid } = input;
+  if (!callerUid) return { ok: false, code: "unauthenticated" };
+  if (!targetUid) return { ok: false, code: "invalid-argument" };
+  if (targetUid === callerUid) {
+    return callerIsAdmin
+      ? { ok: false, code: "failed-precondition" }
+      : { ok: true, selfService: true };
+  }
+  return callerIsAdmin
+    ? { ok: true, selfService: false }
+    : { ok: false, code: "permission-denied" };
+}

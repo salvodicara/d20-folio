@@ -1,8 +1,8 @@
 name: CI
 
 # The SRD-only ambient gate: every push to main and every pull request runs
-# typecheck + lint, the unit suite, the production build, and independent Functions lint/test/build
-# jobs — as PARALLEL jobs so the wall clock is the slowest lane (the unit suite), not the sum.
+# typecheck + lint, the unit suite, the production build, the security rules against the
+# Firebase emulators, and independent Functions lint/test/build jobs — as PARALLEL jobs so the wall clock is the slowest lane (the unit suite), not the sum.
 #
 # SRD-only by construction: the public tree has no `content-pack/`, and the
 # `@pack` alias resolves by directory PRESENCE (scripts/content-pack-mode.ts;
@@ -120,3 +120,34 @@ jobs:
       # so it runs after the build, in this same job.
       - name: Bundle budget
         run: pnpm test:budget
+
+  # firestore.rules and storage.rules against the real emulators (`pnpm test:rules`,
+  # vitest.rules.config.ts): the access matrix, the migration kit's apply path and the
+  # session-log adapter. A rule change cannot land unchecked. The emulators are JVM
+  # processes, so this lane needs Java; their downloaded JARs are cached.
+  rules:
+    name: rules (emulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: "temurin"
+          java-version: "21"
+      - run: pnpm install --frozen-lockfile
+      # The same pin the deploy uses (deploy.yml).
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools@15.28.1
+      - name: Cache emulator JARs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-15.28.1
+      - name: Rules tests
+        run: pnpm test:rules

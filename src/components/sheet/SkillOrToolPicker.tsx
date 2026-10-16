@@ -19,6 +19,7 @@ import {
   type SkillOrToolPicks,
   type SkillOrToolSlot,
 } from "@/lib/feat-skill-tool-choices";
+import { asLocale } from "@/lib/locale";
 
 interface Props {
   slots: ReadonlyArray<SkillOrToolSlot>;
@@ -56,7 +57,7 @@ function SkillOrToolSlotPicker({
   onChange: (ids: string[]) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "it" ? "it" : "en";
+  const locale = asLocale(i18n.language);
   const skillGroup = t("abilities.skills");
   const toolGroup = t("equipment.tools");
 

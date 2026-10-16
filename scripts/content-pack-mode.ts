@@ -1,7 +1,12 @@
 /**
  * Content-pack build-mode switch — the ONE place that decides whether the
- * `@pack` alias resolves to the private content pack (`content-pack/index.ts`)
- * or to the typed-empty stub (`src/data/pack-empty.ts`).
+ * `@pack` alias resolves to the private content pack (`content-pack/index.ts`),
+ * to the typed-empty stub (`src/data/pack-empty.ts`), or to the runtime pack
+ * (`src/data/pack-runtime.ts`).
+ *
+ * `VITE_CONTENT_PACK=runtime` is the production build: it bundles no private
+ * content, and allowlisted accounts download the pack after sign-in (the JSON
+ * that `scripts/pack/emit-pack.ts` writes, version `VITE_PACK_VERSION`).
  *
  * The rule is presence + opt-out: the pack is enabled iff `content-pack/index.ts`
  * exists AND `VITE_CONTENT_PACK` is not `"0"`. The public repo snapshot simply
@@ -65,14 +70,31 @@ export const CONTENT_PACK_ITEM_ART_ENTRY = path.join(
   "item-art.ts"
 );
 
+/** The runtime pack: served from downloaded JSON (`VITE_CONTENT_PACK=runtime`). */
+export const PACK_RUNTIME_ENTRY = path.join(ROOT, "src", "data", "pack-runtime.ts");
+
+/** The runtime pack's lazy English prose (`@pack/i18n-en-prose` in runtime mode). */
+export const PACK_RUNTIME_PROSE_ENTRY = path.join(
+  ROOT,
+  "src",
+  "data",
+  "pack-runtime-prose.ts"
+);
+
+/** True when this build bundles no pack and downloads it at runtime instead. */
+export function packRuntimeMode(): boolean {
+  return process.env.VITE_CONTENT_PACK === "runtime";
+}
+
 /** True when this build/test run composes the private content pack in. */
 export function contentPackEnabled(): boolean {
-  if (process.env.VITE_CONTENT_PACK === "0") return false;
+  if (process.env.VITE_CONTENT_PACK === "0" || packRuntimeMode()) return false;
   return existsSync(CONTENT_PACK_ENTRY);
 }
 
 /** The module the `@pack` alias resolves to for this run. */
 export function packAliasTarget(): string {
+  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
   return contentPackEnabled() ? CONTENT_PACK_ENTRY : PACK_EMPTY_ENTRY;
 }
 
@@ -94,6 +116,7 @@ export function packAliasTarget(): string {
  * be listed BEFORE `@pack` or `@pack` swallows it.
  */
 export function packMonstersAliasTarget(): string {
+  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
   return contentPackEnabled() ? CONTENT_PACK_MONSTERS_ENTRY : PACK_EMPTY_ENTRY;
 }
 
@@ -104,6 +127,7 @@ export function packMonstersAliasTarget(): string {
  * split has no such file, and its descriptions stay in the eager `packSrdEn`.
  */
 export function packEnProseAliasTarget(): string {
+  if (packRuntimeMode()) return PACK_RUNTIME_PROSE_ENTRY;
   return contentPackEnabled() && existsSync(CONTENT_PACK_EN_PROSE_ENTRY)
     ? CONTENT_PACK_EN_PROSE_ENTRY
     : PACK_EMPTY_ENTRY;
@@ -111,11 +135,13 @@ export function packEnProseAliasTarget(): string {
 
 /** The module the `@pack/monster-art` alias resolves to for this run. */
 export function packMonsterArtAliasTarget(): string {
+  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
   return contentPackEnabled() ? CONTENT_PACK_MONSTER_ART_ENTRY : PACK_EMPTY_ENTRY;
 }
 
 /** The module the `@pack/item-art` alias resolves to for this run. */
 export function packItemArtAliasTarget(): string {
+  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
   return contentPackEnabled() ? CONTENT_PACK_ITEM_ART_ENTRY : PACK_EMPTY_ENTRY;
 }
 
