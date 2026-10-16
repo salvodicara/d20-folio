@@ -110,3 +110,8 @@ arrivare al tavolo prima di aprire la successiva.
   riga facoltativa del bersaglio.
 - **Mostri:** scontri preparati prima dal catalogo, mostri aggiunti al volo (anche solo nome e PF)
   e mostri homebrew, tutti supportati.
+- **Dal 21–22/9 (prima in PRODUCT.md, ancora validi):** i danni inseriti a mano si applicano
+  subito, senza chiedere reazioni; un consumabile ne spende uno e annulla ripristina solo quello;
+  le scelte di risorsa in sospeso appartengono al personaggio che le ha aperte. Riposo breve: i
+  Dadi Vita da spendere separati dal totale dei dadi fisici, Costituzione mostrata a parte,
+  anteprima dei PF risultanti, e si può riposare anche senza curarsi.

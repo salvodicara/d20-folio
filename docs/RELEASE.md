@@ -88,7 +88,7 @@ changes (the deployed pre-P1 client strips `instanceId`s on autosave), re-apply 
 deterministic ids — then deploy, then delete both scripts in the next commit.
 
 Before deploying a SHA that reads a new persisted shape, run the migration(s) listed under
-"Pending migrations" in `docs/PROGRAM_STATUS.md` with `--check` green against production; a deploy
+the pending migrations with `--check` green against production; a deploy
 with a pending migration is refused. Both prepared migrations are read-only in `--check`; each needs
 `GOOGLE_APPLICATION_CREDENTIALS` pointing at a `d20-folio` service-account key.
 

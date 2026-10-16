@@ -12,6 +12,7 @@ import { ModalStage } from "@/components/ui/modal-head";
 import { CompendiumDetailBody } from "@/features/compendium/picker/detail";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CompendiumPickerSpec } from "@/features/compendium/picker/types";
+import { asLocale } from "@/lib/locale";
 
 // The entry's display strings come from `spec.getName`/`spec.detail` (catalogue),
 // so this modal never reads the entry's own text — `T` carries only a stable id.
@@ -26,7 +27,7 @@ export function PickerDetailModal<T extends { id: string }>({
   onClose: () => void;
 }) {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "it" ? "it" : "en";
+  const locale = asLocale(i18n.language);
   const character = useCharacterStore((s) => s.character);
   return (
     <ModalShell

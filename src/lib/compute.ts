@@ -801,6 +801,25 @@ export function effectiveProficiencyBonus(
 }
 
 /**
+ * The Proficiency Bonus as one "by character level" line whose tap explains the
+ * table in plain words (re-foundation phase 2: every number explained). A hand-set
+ * bonus has no composition to explain, so it has no breakdown (as a hand-set AC).
+ */
+export function proficiencyBonusBreakdown(
+  level: number,
+  override?: number | null
+): RawBreakdownPart[] | null {
+  if (override != null) return null;
+  const bonus = proficiencyBonus(level);
+  return [
+    termPart("breakdown.proficiency.byLevel", bonus, undefined, {
+      term: "breakdown.why.proficiencyByLevel",
+      params: { level, bonus },
+    }),
+  ];
+}
+
+/**
  * Calculate spell save DC.
  * Formula: 8 + proficiency bonus + spellcasting ability modifier
  */
@@ -2252,6 +2271,24 @@ export function featureSaveDc(
 }
 
 /**
+ * The lines of a feature's save DC for the breakdown tip (re-foundation phase 2):
+ * 8, the Proficiency Bonus and the governing ability, the same lines the spell
+ * save DC uses. `breakdownTotal` equals {@link featureSaveDc}; the guard pins it.
+ */
+export function featureSaveDcBreakdown(
+  level: number,
+  ability: AbilityCode,
+  abilityScore: number,
+  pbOverride?: number | null
+): RawBreakdownPart[] {
+  return [
+    termPart("breakdown.base", 8),
+    termPart("character.proficiencyBonus", effectiveProficiencyBonus(level, pbOverride)),
+    abilityPart(ability, abilityModifier(abilityScore)),
+  ];
+}
+
+/**
  * Average value of a die expressed as `"dN"` or `"NdM"` (`"d6"` → 3.5, `"2d6"`
  * → 7). Used to pick the better of two competing Unarmed-Strike upgrades. A
  * malformed string yields 0 so a typo never beats a real die. Pure, no RNG.
@@ -2538,6 +2575,27 @@ export function maneuverSaveDc(
 ): number {
   const bestMod = Math.max(abilityModifier(strScore), abilityModifier(dexScore));
   return 8 + effectiveProficiencyBonus(level, pbOverride) + bestMod;
+}
+
+/**
+ * The lines of a maneuver's save DC: 8, the Proficiency Bonus and the better of
+ * Strength and Dexterity, with the reason on tap. `breakdownTotal` equals
+ * {@link maneuverSaveDc}; the guard pins it.
+ */
+export function maneuverSaveDcBreakdown(
+  strScore: number,
+  dexScore: number,
+  level: number,
+  pbOverride?: number | null
+): RawBreakdownPart[] {
+  const str = abilityModifier(strScore);
+  const dex = abilityModifier(dexScore);
+  const [ability, mod]: [AbilityCode, number] = dex > str ? ["DEX", dex] : ["STR", str];
+  return [
+    termPart("breakdown.base", 8),
+    termPart("character.proficiencyBonus", effectiveProficiencyBonus(level, pbOverride)),
+    abilityPart(ability, mod, undefined, { term: "breakdown.why.maneuverBestAbility" }),
+  ];
 }
 
 /**

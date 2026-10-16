@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  authorizeAccountDeletion,
   planCampaignUpdate,
   coMemberAclTargets,
   emailMatches,
@@ -82,5 +83,52 @@ describe("emailMatches — typed-confirm guard", () => {
     expect(emailMatches("", "")).toBe(false);
     expect(emailMatches(undefined, "x@y.com")).toBe(false);
     expect(emailMatches("x@y.com", null)).toBe(false);
+  });
+});
+
+describe("authorizeAccountDeletion — who may delete which account", () => {
+  it("lets an admin delete another account", () => {
+    expect(
+      authorizeAccountDeletion({
+        callerUid: "admin",
+        callerIsAdmin: true,
+        targetUid: "u1",
+      })
+    ).toEqual({ ok: true, selfService: false });
+  });
+
+  it("lets a player delete their own account (self-service, owner 2026-10-16)", () => {
+    expect(
+      authorizeAccountDeletion({ callerUid: "u1", callerIsAdmin: false, targetUid: "u1" })
+    ).toEqual({ ok: true, selfService: true });
+  });
+
+  it("refuses a player deleting someone else", () => {
+    expect(
+      authorizeAccountDeletion({ callerUid: "u1", callerIsAdmin: false, targetUid: "u2" })
+    ).toEqual({ ok: false, code: "permission-denied" });
+  });
+
+  it("refuses an admin deleting their own account (it would orphan the console)", () => {
+    expect(
+      authorizeAccountDeletion({
+        callerUid: "admin",
+        callerIsAdmin: true,
+        targetUid: "admin",
+      })
+    ).toEqual({ ok: false, code: "failed-precondition" });
+  });
+
+  it("refuses a signed-out caller and an empty target", () => {
+    expect(
+      authorizeAccountDeletion({
+        callerUid: undefined,
+        callerIsAdmin: false,
+        targetUid: "u1",
+      })
+    ).toEqual({ ok: false, code: "unauthenticated" });
+    expect(
+      authorizeAccountDeletion({ callerUid: "u1", callerIsAdmin: false, targetUid: "" })
+    ).toEqual({ ok: false, code: "invalid-argument" });
   });
 });

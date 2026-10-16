@@ -16,6 +16,7 @@
 
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Heart, Skull, Sparkles } from "lucide-react";
 // Heart/Skull stay: they anchor the success/failure pip rows below.
 import { useCharacterStore } from "@/stores/characterStore";
@@ -80,7 +81,7 @@ export function DeathSaves() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <span className="font-mono text-[length:var(--text-micro)] font-bold uppercase tracking-[0.12em] text-text-secondary">
-        {t("deathSaves.title")}
+        <GlossaryTip term="deathSavingThrow" rubric={t("deathSaves.title")} />
       </span>
 
       <PipRow

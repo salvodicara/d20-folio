@@ -13,6 +13,10 @@ export interface SessionEntry {
   corrections: number;
   encounterId?: string;
   round?: number;
+  /** Taken out of the narrative by a `hide` (only present with `includeHidden`). */
+  hidden?: true;
+  /** Placed by a `move`, not where it was recorded. */
+  moved?: true;
 }
 
 export interface SessionAuthority {
@@ -55,11 +59,21 @@ function isOwnAttribution(by: string, line: PlayEvent, next: PlayEvent): boolean
  * apply — a duplicate id, a correction of an unknown line, a player touching someone
  * else's line — are ignored rather than thrown, because the log is shared input.
  */
+/** The lines that give the story its shape: never hidden, never moved. */
+const MARKER_KINDS = new Set<PlayEvent["kind"]>([
+  "encounter-start",
+  "round-start",
+  "encounter-end",
+]);
+
 export function foldSession(
   items: readonly LogItem[],
-  authority: SessionAuthority
+  authority: SessionAuthority,
+  options: { includeHidden?: boolean } = {}
 ): SessionEntry[] {
   const seen = new Set<string>();
+  const hidden = new Set<string>();
+  const moves: { target: string; after: string | null }[] = [];
   const lines = new Map<
     string,
     { by: string; at: number; event: PlayEvent; corrected: boolean; corrections: number }
@@ -84,7 +98,12 @@ export function foldSession(
       item.by === authority.dmUid ||
       (item.type === "correct" && isOwnAttribution(item.by, line.event, item.event));
     if (!entitled) continue;
-    if (item.type === "retract") lines.delete(item.target);
+    if (item.type === "hide" || item.type === "show" || item.type === "move") {
+      if (MARKER_KINDS.has(line.event.kind)) continue;
+      if (item.type === "hide") hidden.add(item.target);
+      else if (item.type === "show") hidden.delete(item.target);
+      else moves.push({ target: item.target, after: item.after });
+    } else if (item.type === "retract") lines.delete(item.target);
     else
       lines.set(item.target, {
         ...line,
@@ -94,10 +113,24 @@ export function foldSession(
       });
   }
 
+  // Moves apply in log order onto the recorded order; one whose anchor is gone (or is
+  // the line itself) changes nothing. Encounter and round then follow the position.
+  const order = [...lines.keys()];
+  const moved = new Set<string>();
+  for (const { target, after } of moves) {
+    if (!lines.has(target) || after === target) continue;
+    if (after !== null && !lines.has(after)) continue;
+    order.splice(order.indexOf(target), 1);
+    order.splice(after === null ? 0 : order.indexOf(after) + 1, 0, target);
+    moved.add(target);
+  }
+
   let encounterId: string | undefined;
   let round: number | undefined;
   const entries: SessionEntry[] = [];
-  for (const [id, line] of lines) {
+  for (const id of order) {
+    const line = lines.get(id);
+    if (line === undefined) continue;
     const { event } = line;
     if (event.kind === "encounter-start") {
       encounterId = event.encounterId;
@@ -105,12 +138,16 @@ export function foldSession(
     } else if (event.kind === "round-start") {
       round = event.round;
     }
-    entries.push({
-      id,
-      ...line,
-      ...(encounterId === undefined ? {} : { encounterId }),
-      ...(round === undefined ? {} : { round }),
-    });
+    if (!hidden.has(id) || options.includeHidden) {
+      entries.push({
+        id,
+        ...line,
+        ...(encounterId === undefined ? {} : { encounterId }),
+        ...(round === undefined ? {} : { round }),
+        ...(hidden.has(id) ? { hidden: true as const } : {}),
+        ...(moved.has(id) ? { moved: true as const } : {}),
+      });
+    }
     if (event.kind === "encounter-end") {
       encounterId = undefined;
       round = undefined;

@@ -355,7 +355,7 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // `@pack/monsters` lazy sub-entry, never the eager barrel — "The content-pack seam"). Ceiling =
 // the measured 9503.94 +~11 KiB never-exact-fit headroom → 9515.
 //
-// 2026-08-02 (the first-load precache trim, pre-GA item 3 — `PROGRESS.md` → the soft-launch
+// 2026-08-02 (the first-load precache trim, pre-GA item 3 — the soft-launch charter → the soft-launch
 // charter): by this point main had drifted to 9481.90 KiB / 323 entries (the difficulty-calc
 // / encounter-budget waves grew several lazy chunks without a ceiling bump — this trim's
 // LOWER new ceiling below closes that drift too, not just banks the win). The 12 heavy
@@ -491,7 +491,27 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // (DamageTrayPanel, encounter-monster-actions, combat-chronicle-view, BeastFormPicker;
 // CharacterCockpit −11.9, CampaignHubPage −4.7) plus the post-release rules batches
 // (cockpit-engine +6.1). Measured 9800.67 KiB / 343; +~29 KiB headroom.
-const PRECACHE_CEILING_KIB = 9830;
+// 2026-10-16 (structural trim, LOWERED 9830 → 9260): the PWA plugin listed the four
+// PNG launch icons twice (its own icon inclusion on top of `globPatterns`), and the
+// bug report's html2canvas library (~220 KiB) moved to a CacheFirst runtime route,
+// like the PDF export. Composed build with pack f1ff69a7 after the breakdown batch:
+// 9805.4 → 9221.4 KiB, 343 → 337 entries; +~39 KiB headroom for the rules glossary.
+// 2026-10-16 (CONTENT HEADROOM POLICY, raised 9260 → 9500): the precache now carries
+// DELIBERATE headroom for content instead of a never-exact-fit sliver, because content
+// keeps arriving (every glossary term, rule text and name ships in English AND
+// Italian) and a 16 KiB margin blocked every glossary PR. The policy:
+//   • Content and i18n growth (data, locale JSON, rules text) may use the headroom
+//     without a raise.
+//   • CODE growth does not: the eager ceilings above (ENTRY_CEILING_KB,
+//     EAGER_CEILING_KB, the new-eager-chunk ratchet) stay tight and are the code
+//     guard; a feature that grows the precache by code trims first (or splits lazy).
+//   • When the headroom runs low (< ~50 KiB), look for a trim before raising; a raise
+//     re-measures composed and records the A/B here, as above.
+// Measured on main 6b639b8a + pack 674fbc80: 9244 KiB / 336 entries, eager 815.5 KB
+// gz (JS 734.5 + CSS 81.0), entry 59.8. A/B against the deployed 9bb9a60c + f1ff69a7
+// (9770 KiB / 340, eager JS 731.1): precache −526 KiB (the trim, −580, plus ~54 KiB of
+// content), eager JS only +3.4 KB gz, so code is not the part that grows.
+const PRECACHE_CEILING_KIB = 9500;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**
@@ -679,6 +699,22 @@ describe("bundle budget — eager entry + precache ceilings (P3)", () => {
       );
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("the precache lists every file once", () => {
+    if (!haveDist) return;
+    const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
+    const urls = [...sw.matchAll(/\burl:\s*"([^"]+)"/g)].map((m) => m[1]);
+    const twice = urls.filter((u, i) => urls.indexOf(u) !== i);
+    expect(twice, "a file is listed twice in the precache manifest").toEqual([]);
+  });
+
+  it("keeps the bug-report screenshot library out of the precache, cached on first use", () => {
+    if (!haveDist) return;
+    const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
+    const urls = [...sw.matchAll(/\burl:\s*"([^"]+)"/g)].map((m) => m[1] ?? "");
+    expect(urls.filter((u) => u.includes("html2canvas"))).toEqual([]);
+    expect(sw, "html2canvas needs a runtime-cache route").toMatch(/html2canvas/);
   });
 
   it("PWA precache total is within the ceiling", () => {

@@ -874,3 +874,72 @@ export function findRetiredInProse(
         }
   return hits;
 }
+
+/**
+ * Every string in every JSON shard under `<root>/<locale>/` (catalogues, their per-tranche
+ * fragments and the chrome alike), tagged with its shard. Feeds the whole-corpus wording checks
+ * below, which care about every sentence a player can read, not about entity names.
+ */
+export function loadLocaleStrings(root: string, locale = "it"): UiString[] {
+  const out: UiString[] = [];
+  const walk = (dir: string, rel: string): void => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const path = resolve(dir, entry.name);
+      if (entry.isDirectory()) walk(path, rel + "/" + entry.name);
+      else if (entry.name.endsWith(".json")) {
+        const values: string[] = [];
+        allStrings(JSON.parse(readFileSync(path, "utf8")), values);
+        for (const value of values) out.push({ file: rel + "/" + entry.name, value });
+      }
+    }
+  };
+  walk(resolve(root, locale), locale);
+  return out;
+}
+
+/**
+ * Italian strings that measure a distance in feet ("entro 30 piedi"). The Italian app measures in
+ * metres like the official IT SRD 5.2.1 (5 ft = 1,5 metri), so a number followed by "piedi" is an
+ * unconverted English figure, and it can sit beside a converted one in the same sentence ("un Cubo
+ * di 4,5 metri entro 120 piedi"). "in piedi" (standing) has no number and is never flagged.
+ */
+export function findFeetDistances(strings: ReadonlyArray<UiString>): string[] {
+  const re = /\d[\d.,]*\s*pied[ei](?!\p{L})/giu;
+  const hits: string[] = [];
+  for (const s of strings)
+    for (const m of s.value.matchAll(re)) hits.push(s.file + ': "' + m[0] + '"');
+  return hits;
+}
+
+/**
+ * The three degrees of cover as the official IT SRD 5.2.1 prints them (the "Copertura" table and
+ * glossary entry): "mezza copertura", "tre quarti di copertura", "copertura totale".
+ */
+export const COVER_DEGREES_IT = [
+  "mezza copertura",
+  "tre quarti di copertura",
+  "copertura totale",
+] as const;
+
+/**
+ * Every cover-degree phrase in the strings, in any word order ("Mezza Copertura", "Copertura
+ * Parziale", "Copertura per Tre Quarti", "tre quarti di copertura"), whose lowercased form is not
+ * one of {@link COVER_DEGREES_IT}. Letter case is free (the app titles a named state, the SRD prose
+ * prints it lowercase); the words are not.
+ */
+export function findCoverDrift(strings: ReadonlyArray<UiString>): string[] {
+  const degree = "(?:mezza|parziale|tre\\s+quarti|totale|completa|piena)";
+  const re = new RegExp(
+    `(?<!\\p{L})(?:${degree}\\s+(?:di\\s+)?copertura|copertura\\s+(?:(?:per|di|a)\\s+)?${degree})(?!\\p{L})`,
+    "giu"
+  );
+  const official = new Set<string>(COVER_DEGREES_IT);
+  const hits: string[] = [];
+  for (const s of strings)
+    for (const m of s.value.matchAll(re)) {
+      const phrase = m[0].toLowerCase().replace(/\s+/g, " ");
+      if (!official.has(phrase)) hits.push(s.file + ': "' + m[0] + '"');
+    }
+  return hits;
+}

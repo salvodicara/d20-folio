@@ -54,6 +54,7 @@
     "entries_other": "{{count}} entries",
     "copied": "Report copied",
     "automatic": "Automatic report",
-    "addNotes": "Write notes"
+    "addNotes": "Write notes",
+    "notes": "Session notes"
   }
 }

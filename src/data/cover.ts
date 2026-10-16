@@ -33,7 +33,7 @@ export interface CoverEffect {
 export const COVER_REFERENCE: ReadonlyArray<CoverEffect> = [
   {
     id: "half",
-    name: { en: "Half Cover", it: "Copertura Parziale" },
+    name: { en: "Half Cover", it: "Mezza Copertura" },
     acBonus: 2,
     dexSaveBonus: 2,
     summary: {
@@ -43,7 +43,7 @@ export const COVER_REFERENCE: ReadonlyArray<CoverEffect> = [
   },
   {
     id: "three-quarters",
-    name: { en: "Three-Quarters Cover", it: "Copertura Tre Quarti" },
+    name: { en: "Three-Quarters Cover", it: "Tre Quarti di Copertura" },
     acBonus: 5,
     dexSaveBonus: 5,
     summary: {

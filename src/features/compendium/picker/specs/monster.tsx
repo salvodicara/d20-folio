@@ -33,6 +33,7 @@ import type {
 import type { Locale } from "@/lib/locale";
 import { defineFilter, type CompendiumPickerSpec } from "../types";
 import { nameCorpus } from "./shared";
+import { SOURCE_LOCALE } from "@/lib/locale";
 
 /** The five browse CR bands (inclusive). Labels are locale-invariant numerals. */
 const CR_BANDS: ReadonlyArray<{ id: string; range: [number, number]; label: string }> = [
@@ -78,7 +79,7 @@ function monsterProse(m: MonsterStatBlock, locale: Locale): string[] {
     ["reactions", m.reactions],
     ["legendaryActions", m.legendaryActions],
   ];
-  const locales: Locale[] = locale === "en" ? ["en"] : [locale, "en"];
+  const locales: Locale[] = locale === SOURCE_LOCALE ? ["en"] : [locale, "en"];
   for (const [section, entries] of sections) {
     for (const entry of entries ?? []) {
       const key = srdKey(m.id, section, entry.id);

@@ -19,7 +19,7 @@
  * `DEV_BYPASS_AUTH` makes every read/write/listener a no-op (mirrors `firestore.ts`),
  * so dev runs on the store's optimistic in-memory list alone.
  */
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { stripUndefined } from "@/lib/strip-undefined";
@@ -62,6 +62,17 @@ export function subscribeLibrary(
     },
     (err) => onError?.(err)
   );
+}
+
+/** One read of the library (the account export). Rejects on a malformed document. */
+export async function readLibrary(uid: string): Promise<LibraryEntry[]> {
+  if (DEV_BYPASS_AUTH) return [];
+  const snap = await getDoc(libraryRef(uid));
+  const parsed = parseLibraryEntries(snap.exists() ? snap.data() : {});
+  if (!parsed.ok) {
+    throw new TypeError(`Invalid library document: ${parsed.failure.code}`);
+  }
+  return parsed.entries;
 }
 
 /**

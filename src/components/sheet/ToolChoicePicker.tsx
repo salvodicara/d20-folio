@@ -11,6 +11,7 @@ import { toolSealIcon } from "@/components/shared/item-icons";
 import { srdOptionParts } from "@/components/shared/srd-option";
 import { SRD_TOOLS_2024 } from "@/lib/feat-skill-tool-choices";
 import type { ToolChoicePicks, ToolChoiceSlot } from "@/lib/feat-tool-choices";
+import { asLocale } from "@/lib/locale";
 
 interface Props {
   slots: ReadonlyArray<ToolChoiceSlot>;
@@ -43,7 +44,7 @@ function ToolSlotPicker({
   onChange: (ids: string[]) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const locale = i18n.language === "it" ? "it" : "en";
+  const locale = asLocale(i18n.language);
 
   // Constrain the offered pool to the grant's options[] list. Names resolve from
   // the SRD equipment catalogue by id (#107), the single source the inventory +

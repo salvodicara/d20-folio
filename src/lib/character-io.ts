@@ -131,8 +131,21 @@ export async function downloadCharacterJSON(
 export async function buildCharactersZip(
   docs: readonly CharacterDoc[]
 ): Promise<{ bytes: Uint8Array; portraitsDropped: number }> {
+  const { files, portraitsDropped } = await buildCharacterFiles(docs);
+  const { zipSync } = await import("fflate");
+  return { bytes: zipSync(files, { level: 6 }), portraitsDropped };
+}
+
+/**
+ * Each character's portable file, named uniquely (`-2`, `-3`… on a clash), ready to
+ * zip — shared by the roster's bulk export and the whole-account export.
+ */
+export async function buildCharacterFiles(
+  docs: readonly CharacterDoc[],
+  folder = ""
+): Promise<{ files: Record<string, Uint8Array>; portraitsDropped: number }> {
   const exports = await Promise.all(docs.map((d) => buildCharacterExport(d)));
-  const { zipSync, strToU8 } = await import("fflate");
+  const { strToU8 } = await import("fflate");
   const used = new Map<string, number>();
   const files: Record<string, Uint8Array> = {};
   let portraitsDropped = 0;
@@ -144,9 +157,9 @@ export async function buildCharactersZip(
       seen === 1
         ? filename
         : filename.replace(/\.d20-folio\.json$/, `-${seen}.d20-folio.json`);
-    files[name] = strToU8(json);
+    files[folder + name] = strToU8(json);
   }
-  return { bytes: zipSync(files, { level: 6 }), portraitsDropped };
+  return { files, portraitsDropped };
 }
 
 /**

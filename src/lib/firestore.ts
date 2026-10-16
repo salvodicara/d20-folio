@@ -467,12 +467,19 @@ export async function deleteCharacter(uid: string, charId: string): Promise<void
  * a parent the metadata reader quarantines) is skipped and logged as
  * `roster.quarantine`, never allowed to fail the whole list.
  */
+/**
+ * The roster listener's read bound: five times the character cap, so it never hides a
+ * saved character (accounts that predate the cap included) while a runaway collection
+ * can never turn one listener into an unbounded read bill.
+ */
+const ROSTER_READ_LIMIT = FREE_TIER_LIMITS.characters * 5;
+
 export function subscribeToCharacters(
   uid: string,
   callback: (docs: RosterCharacterDoc[], fromCache: boolean) => void,
   onError?: (err: Error) => void
 ): () => void {
-  const q = query(charsCol(uid), orderBy("updatedAt", "desc"));
+  const q = query(charsCol(uid), orderBy("updatedAt", "desc"), limit(ROSTER_READ_LIMIT));
   return onSnapshot(
     q,
     { includeMetadataChanges: true },
@@ -580,6 +587,12 @@ export function subscribeToCharacter(
  * TRUNCATED export/clone. The type system now forbids passing a projection to the
  * codec, and this is the seam that supplies the real character instead.
  */
+/** The ids of every character the user owns (the account export reads each in full). */
+export async function listCharacterIds(uid: string): Promise<string[]> {
+  if (DEV_BYPASS_AUTH) return [];
+  return (await getDocs(charsCol(uid))).docs.map((d) => d.id);
+}
+
 export async function getFullCharacter(
   uid: string,
   charId: string

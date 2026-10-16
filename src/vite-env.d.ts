@@ -8,6 +8,10 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
   readonly VITE_FIREBASE_APP_ID: string;
   readonly VITE_USE_EMULATORS: string;
+  /** `runtime` in the production build: the pack is downloaded, not bundled. */
+  readonly VITE_CONTENT_PACK?: string;
+  /** The runtime pack's content hash (its Storage folder), set by the deploy. */
+  readonly VITE_PACK_VERSION?: string;
   /** "owner/repo" issue-tracker override (defaults in `src/lib/github-issue-state.ts`). */
   readonly VITE_GITHUB_REPO?: string;
   /**
