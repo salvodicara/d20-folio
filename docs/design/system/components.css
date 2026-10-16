@@ -1,1532 +1,1099 @@
 /*
- * d20 Folio design system — components (prototype, 2026-10-16).
- * Every class here is one reusable pattern; screens compose them and add nothing bespoke.
+ * d20 Folio design system — components (prototype v2, 2026-10-16).
+ * Each block names the real product element it copies.
  */
 
-/* ── Base ─────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
-html {
-  -webkit-text-size-adjust: 100%;
-}
 body {
   margin: 0;
-  background: var(--bg);
-  background-image: var(--stone);
+  background: var(--bg-glow), var(--bg);
   background-attachment: fixed;
   color: var(--text);
-  font-family: var(--font-read);
+  font-family: var(--font-text);
   font-size: var(--fs-body);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
+  line-height: 1.45;
   font-variant-numeric: lining-nums;
+  -webkit-font-smoothing: antialiased;
 }
 ::selection {
   background: color-mix(in srgb, var(--gold) 35%, transparent);
-  color: var(--text);
 }
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-  border-radius: var(--r-1);
-}
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-2) transparent;
 }
 input,
 textarea {
   caret-color: var(--gold);
 }
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--frame) transparent;
+}
 button,
-input,
-select,
-textarea {
+input {
   font: inherit;
   color: inherit;
 }
-.f-ui {
-  font-family: var(--font-ui);
+svg.i {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.6;
+  flex: none;
 }
-.f-num {
-  font-family: var(--font-ui);
-  font-variant-numeric: lining-nums tabular-nums;
+.i--sm {
+  width: 16px !important;
+  height: 16px !important;
 }
-.f-sr {
+.sr {
   position: absolute;
   width: 1px;
   height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
-  white-space: nowrap;
 }
-svg.f-i {
-  width: 20px;
-  height: 20px;
-  stroke-width: 1.75;
-  flex: none;
-}
-.f-i--sm {
-  width: 16px !important;
-  height: 16px !important;
-}
-.f-i--lg {
-  width: 24px !important;
-  height: 24px !important;
-}
-
-/* ── Type ─────────────────────────────────────────────────────── */
-.f-display {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-display);
-  line-height: 1.1;
-  letter-spacing: 0.01em;
-  margin: 0;
-  text-wrap: balance;
-}
-.f-title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-title);
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  margin: 0;
-}
-/* Section heading: Cinzel caps with a hairline running to the edge. */
-.f-h {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-heading);
-  letter-spacing: 0.09em;
-  color: var(--text-2);
-  text-transform: uppercase;
-  line-height: 1.2;
-}
-.f-h::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(90deg, var(--line-2), transparent);
-}
-.f-h__aside {
-  order: 3;
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--text-3);
-}
-.f-label {
-  font-family: var(--font-ui);
+.label {
+  font-family: var(--font-label);
   font-size: var(--fs-label);
   font-weight: 700;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-3);
   line-height: 1.2;
 }
-.f-meta {
-  font-family: var(--font-ui);
+.meta {
   font-size: var(--fs-sm);
   color: var(--text-2);
   line-height: 1.35;
 }
-.f-prose {
-  font-family: var(--font-read);
-  font-size: var(--fs-body);
-  line-height: 1.55;
+
+/* The dark band keeps the night palette in the light theme (Foundry's header). */
+.band {
+  --text: var(--band-text);
+  --text-2: var(--band-text-2);
+  --text-3: #9a8c73;
+  --panel: #15110d;
+  --panel-2: #1c1712;
+  --panel-3: #251e17;
+  --well: #0d0a08;
+  --frame: var(--band-frame);
+  --frame-inner: #2c2318;
+  --frame-strong: #a8834a;
+  --gold: #d4af66;
+  --gold-bright: #f0d391;
+  --line: #2a2219;
+  --hp: #c83a2e;
+  --hp-hi: #ee6a55;
+  --hp-track: #2a1310;
+  --temp: #5fb3e6;
+  --heal: #6fcf8a;
+  --cond: #e2a84a;
+  --buff: #7fb2f0;
+  --t-action: #6cc04a;
+  --t-bonus: #ee9a3c;
+  --t-reaction: #c27be6;
+  --t-move: #e2c24e;
+  --focus: #f0d391;
   color: var(--text);
-  max-width: 68ch;
-}
-.f-prose p {
-  margin: 0 0 var(--sp-3);
 }
 
-/* ── Panels ───────────────────────────────────────────────────── */
-.f-panel {
-  background: var(--surface-1);
-  border: 1px solid var(--line);
-  border-radius: var(--r-3);
-  box-shadow: var(--shadow-1);
-  padding: var(--sp-4);
-}
-/* The one lit frame: hero header, dialogs. A gold hairline across the top. */
-.f-panel--lit {
+/* ── Frame: BG3's panel — bronze hairline, inner line, corner filigree ── */
+.frame {
   position: relative;
-  border-color: var(--line-2);
+  background: var(--panel);
+  border: 1px solid var(--frame);
+  border-radius: var(--r-2);
+  box-shadow:
+    inset 0 0 0 3px var(--panel),
+    inset 0 0 0 4px var(--frame-inner),
+    var(--shadow);
+  padding: var(--sp-5);
 }
-.f-panel--lit::before {
+.frame::before,
+.frame::after {
   content: "";
   position: absolute;
-  inset: -1px var(--sp-6) auto;
-  height: 1px;
-  background: var(--gold-hairline);
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border-color: var(--frame-strong);
+  border-style: solid;
 }
-.f-divider {
+.frame::before {
+  top: 5px;
+  left: 5px;
+  border-width: 1px 0 0 1px;
+}
+.frame::after {
+  bottom: 5px;
+  right: 5px;
+  border-width: 0 1px 1px 0;
+}
+.frame__corner-tr,
+.frame__corner-bl {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  border: solid var(--frame-strong);
+}
+.frame__corner-tr {
+  top: 5px;
+  right: 5px;
+  border-width: 1px 1px 0 0;
+}
+.frame__corner-bl {
+  bottom: 5px;
+  left: 5px;
+  border-width: 0 0 1px 1px;
+}
+/* Crest on the top edge (BG3's ornament over a panel title). */
+.frame--crest {
+  padding-top: var(--sp-6);
+}
+.crest {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 11px;
+  height: 11px;
+  transform: translateX(-50%) rotate(45deg);
+  background: var(--panel);
+  border: 1px solid var(--frame-strong);
+  box-shadow: 0 0 0 3px var(--panel);
+}
+.crest::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: var(--gold);
+}
+/* Panel title: centred serif between ornamental rules (BG3 "Cantrips"). */
+.ftitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: 0 0 var(--sp-4);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--text);
+  justify-content: center;
+  text-align: center;
+}
+.ftitle::before,
+.ftitle::after {
+  content: "";
+  flex: 1;
+  max-width: 120px;
   height: 1px;
-  background: var(--line);
-  border: 0;
-  margin: var(--sp-4) 0;
+  background: linear-gradient(90deg, transparent, var(--frame-strong));
+}
+.ftitle::after {
+  background: linear-gradient(270deg, transparent, var(--frame-strong));
+}
+.ftitle__aside {
+  font-family: var(--font-text);
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  color: var(--text-3);
 }
 
-/* ── Buttons ──────────────────────────────────────────────────── */
-.f-btn {
-  --btn-h: var(--touch);
+/* ── Buttons: BG3's dark capsule with a bronze rim ───────────────── */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--sp-2);
-  min-height: var(--btn-h);
+  min-height: 40px;
   padding: 0 var(--sp-4);
   border-radius: var(--r-2);
-  border: 1px solid var(--line-2);
-  background: var(--surface-3);
+  border: 1px solid var(--frame);
+  background: linear-gradient(180deg, var(--panel-3), var(--panel-2));
+  box-shadow: inset 0 1px 0 rgb(255 240 210 / 0.06);
   color: var(--text);
-  font-family: var(--font-ui);
-  font-size: var(--fs-ui);
+  font-family: var(--font-text);
+  font-size: 15px;
   font-weight: 700;
-  line-height: 1;
   cursor: pointer;
   white-space: nowrap;
-  text-decoration: none;
   transition:
-    background var(--t-fast) var(--ease-out),
-    border-color var(--t-fast) var(--ease-out),
-    transform var(--t-fast) var(--ease-out);
+    border-color 120ms,
+    color 120ms;
 }
-.f-btn:hover {
-  border-color: var(--line-gold);
-  background: color-mix(in srgb, var(--surface-3) 80%, var(--gold) 8%);
+.btn:hover {
+  border-color: var(--gold);
+  color: var(--gold-bright);
 }
-.f-btn:active {
-  transform: translateY(1px);
-}
-.f-btn:disabled,
-.f-btn[aria-disabled="true"] {
-  cursor: not-allowed;
-  opacity: 1;
+.btn:disabled {
   background: transparent;
   border-color: var(--line);
   color: var(--text-3);
-  transform: none;
+  cursor: not-allowed;
+  box-shadow: none;
 }
-.f-btn--sm {
-  --btn-h: var(--control-sm);
-  padding: 0 var(--sp-3);
-  font-size: var(--fs-sm);
-}
-/* The lit action: one per screen. */
-.f-btn--primary {
-  background: var(--gold-fill);
-  border-color: transparent;
-  color: var(--text-on-gold);
-  font-family: var(--font-display);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  box-shadow: var(--gold-glow);
-  padding: 0 var(--sp-6);
-}
-.f-btn--primary:hover {
-  background: var(--gold-fill-hover);
-  border-color: transparent;
-}
-.f-btn--ghost {
+.btn--quiet {
   background: transparent;
   border-color: transparent;
+  box-shadow: none;
   color: var(--gold);
 }
-.f-btn--ghost:hover {
-  background: color-mix(in srgb, var(--gold) 10%, transparent);
-  border-color: transparent;
+.btn--quiet:hover {
+  border-color: var(--frame);
 }
-.f-btn--danger {
-  background: transparent;
-  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
-  color: var(--danger);
-}
-.f-btn--danger:hover {
-  background: var(--danger-tint);
-  border-color: var(--danger);
-}
-.f-btn--icon {
-  width: var(--btn-h);
-  padding: 0;
-}
-.f-btn--block {
-  width: 100%;
-}
-.f-btn.is-loading {
-  color: transparent;
-  position: relative;
-  pointer-events: none;
-}
-.f-btn.is-loading::after {
-  content: "";
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--text-3);
-  border-top-color: var(--gold);
-  animation: f-spin 0.8s linear infinite;
-}
-@keyframes f-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ── Tabs (underline) ─────────────────────────────────────────── */
-.f-tabs {
-  display: flex;
-  gap: var(--sp-1);
-  border-bottom: 1px solid var(--line);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.f-tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-height: var(--touch);
-  padding: 0 var(--sp-4);
-  background: none;
-  border: 0;
-  color: var(--text-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-ui);
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.f-tab:hover {
-  color: var(--text);
-}
-.f-tab[aria-selected="true"] {
-  color: var(--gold-strong);
-}
-.f-tab[aria-selected="true"]::after {
-  content: "";
-  position: absolute;
-  left: var(--sp-3);
-  right: var(--sp-3);
-  bottom: -1px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--gold);
-}
-.f-tab__count {
-  font-size: var(--fs-label);
-  color: var(--text-3);
-  font-weight: 500;
-}
-
-/* ── Segmented filter ─────────────────────────────────────────── */
-.f-seg {
-  display: inline-flex;
-  padding: 3px;
-  gap: 2px;
-  background: var(--inset);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  max-width: 100%;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.f-seg__opt {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 36px;
-  padding: 0 var(--sp-3);
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.f-seg__opt:hover {
-  color: var(--text);
-}
-.f-seg__opt[aria-pressed="true"] {
-  background: var(--surface-3);
-  color: var(--text);
-  box-shadow:
-    0 0 0 1px var(--line-2),
-    0 1px 2px rgb(0 0 0 / 0.25);
-}
-.f-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--dot, var(--text-3));
-  flex: none;
-}
-
-/* ── Form fields ──────────────────────────────────────────────── */
-.f-field {
-  display: grid;
-  gap: 6px;
-}
-.f-field__label {
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--text-2);
-}
-.f-field__help {
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  color: var(--text-3);
-}
-.f-field__error {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  color: var(--danger);
-}
-.f-input {
-  width: 100%;
-  min-height: var(--touch);
-  padding: 0 var(--sp-3);
-  background: var(--field);
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-body);
-  color: var(--text);
-  transition: border-color var(--t-fast);
-}
-.f-input::placeholder {
-  color: var(--text-3);
-}
-.f-input:hover {
-  border-color: var(--line-gold);
-}
-.f-input:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 22%, transparent);
-}
-.f-input[aria-invalid="true"] {
-  border-color: var(--danger);
-}
-.f-input:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-textarea.f-input {
-  padding: var(--sp-3);
-  min-height: 96px;
-  line-height: 1.5;
-  font-family: var(--font-read);
-  resize: vertical;
-}
-.f-search {
-  position: relative;
-}
-.f-search .f-i {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-3);
-  pointer-events: none;
-}
-.f-search .f-input {
-  padding-left: 40px;
-}
-/* Number stepper: the big tap targets for HP and counts. */
-.f-stepper {
-  display: inline-flex;
-  justify-self: start;
-  align-items: stretch;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-2);
-  background: var(--field);
-  overflow: hidden;
-}
-.f-stepper button {
-  width: var(--touch);
-  border: 0;
-  background: transparent;
-  color: var(--text-2);
-  cursor: pointer;
-  display: grid;
-  place-items: center;
-}
-.f-stepper button:hover {
-  background: var(--surface-3);
-  color: var(--text);
-}
-.f-stepper input {
-  width: 64px;
-  border: 0;
-  border-inline: 1px solid var(--line);
-  background: transparent;
-  text-align: center;
-  font-family: var(--font-ui);
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums lining-nums;
-  min-height: var(--touch);
-}
-.f-stepper input:focus {
-  outline: none;
-  background: var(--surface-2);
-}
-/* Switch */
-.f-switch {
-  display: inline-flex;
-  background: none;
-  border: 0;
-  padding: 0;
-  text-align: left;
-  color: var(--text);
-  align-items: center;
-  gap: var(--sp-3);
-  cursor: pointer;
-  font-family: var(--font-ui);
-  font-size: var(--fs-ui);
-  min-height: var(--touch);
-}
-.f-switch__track {
-  position: relative;
+.btn--icon {
   width: 40px;
-  height: 24px;
-  border-radius: 999px;
-  background: var(--inset);
-  border: 1px solid var(--line-2);
-  transition: background var(--t-fast);
-  flex: none;
-}
-.f-switch__track::after {
-  content: "";
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--text-3);
-  transition:
-    transform var(--t-med) var(--ease-out),
-    background var(--t-fast);
-}
-.f-switch[aria-checked="true"] .f-switch__track {
-  background: color-mix(in srgb, var(--gold) 30%, var(--inset));
-  border-color: var(--line-gold);
-}
-.f-switch[aria-checked="true"] .f-switch__track::after {
-  transform: translateX(16px);
-  background: var(--gold-strong);
-}
-/* Choice card: radio/checkbox with a description (creation, rests). */
-.f-choice {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: var(--sp-1) var(--sp-3);
-  align-items: start;
-  padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  background: var(--surface-2);
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-}
-.f-choice:hover {
-  border-color: var(--line-2);
-}
-.f-choice[aria-checked="true"] {
-  border-color: var(--line-gold);
-  background: color-mix(in srgb, var(--surface-2) 88%, var(--gold) 8%);
-}
-.f-choice__mark {
-  width: 20px;
-  height: 20px;
-  margin-top: 2px;
-  border-radius: 50%;
-  border: 1.5px solid var(--line-2);
-  display: grid;
-  place-items: center;
-}
-.f-choice[aria-checked="true"] .f-choice__mark {
-  border-color: var(--gold);
-}
-.f-choice[aria-checked="true"] .f-choice__mark::after {
-  content: "";
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--gold);
-}
-.f-choice__title {
-  font-family: var(--font-ui);
-  font-weight: 700;
-  font-size: var(--fs-body);
-}
-.f-choice__desc {
-  grid-column: 2;
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-  font-family: var(--font-read);
-}
-
-/* ── Action row: the heart of Play. Type colour on the left edge. ─ */
-.f-row {
-  --edge: var(--type-free);
-  --tint: var(--type-free-tint);
-  position: relative;
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-3) var(--sp-3) calc(var(--sp-3) + 3px);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  transition:
-    border-color var(--t-fast),
-    background var(--t-fast);
-}
-.f-row::before {
-  content: "";
-  position: absolute;
-  left: -1px;
-  top: -1px;
-  bottom: -1px;
-  width: 3px;
-  border-radius: var(--r-2) 0 0 var(--r-2);
-  background: var(--edge);
-}
-.f-row:hover {
-  border-color: var(--line-2);
-}
-.f-row--action {
-  --edge: var(--type-action);
-  --tint: var(--type-action-tint);
-}
-.f-row--bonus {
-  --edge: var(--type-bonus);
-  --tint: var(--type-bonus-tint);
-}
-.f-row--reaction {
-  --edge: var(--type-reaction);
-  --tint: var(--type-reaction-tint);
-}
-.f-row--move {
-  --edge: var(--type-move);
-  --tint: var(--type-move-tint);
-}
-.f-row__icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--r-2);
-  display: grid;
-  place-items: center;
-  background: var(--tint);
-  color: var(--edge);
-}
-.f-row__main {
-  min-width: 0;
-  background: none;
-  border: 0;
   padding: 0;
-  text-align: left;
-  cursor: pointer;
-  color: inherit;
 }
-.f-row__title {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-body);
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--text);
-}
-.f-row__meta {
-  margin-top: 2px;
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-  line-height: 1.35;
-}
-.f-row__meta b {
-  font-weight: 700;
-  color: var(--edge);
-}
-.f-row__side {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-}
-.f-row__stats {
-  display: flex;
-  gap: var(--sp-4);
-}
-.f-stat {
-  display: grid;
-  justify-items: end;
-  gap: 1px;
-  background: none;
-  border: 0;
-  padding: 2px 4px;
-  margin: -2px -4px;
-  border-radius: var(--r-1);
-  cursor: pointer;
-  color: inherit;
-}
-.f-stat:hover .f-stat__v {
-  color: var(--gold-strong);
-}
-.f-stat__v {
-  font-family: var(--font-ui);
-  font-variant-numeric: tabular-nums lining-nums;
-  font-weight: 800;
-  font-size: var(--fs-lg);
-  line-height: 1.1;
-  color: var(--text);
-  border-bottom: 1px dotted var(--line-2);
-}
-.f-stat__k {
-  font-family: var(--font-ui);
-  font-size: var(--fs-label);
-  color: var(--text-3);
-  white-space: nowrap;
-}
-.f-row.is-spent {
-  background: transparent;
-}
-.f-row.is-spent::before {
-  opacity: 0.35;
-}
-.f-row.is-spent .f-row__icon {
-  opacity: 0.5;
-}
-.f-row.is-spent .f-row__title {
-  color: var(--text-2);
-}
-.f-row__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-style: normal;
-  color: var(--text-3);
-}
-.f-row.is-open {
-  border-color: var(--line-2);
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-.f-row__detail {
-  margin-top: -1px;
-  padding: var(--sp-3) var(--sp-4) var(--sp-4)
-    calc(var(--sp-4) + 3px + 44px + var(--sp-3) - var(--sp-1));
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  border-top: 1px dashed var(--line);
-  border-radius: 0 0 var(--r-2) var(--r-2);
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-}
-
-/* ── Chips and tags ───────────────────────────────────────────── */
-.f-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 var(--sp-3);
-  border-radius: var(--r-full);
-  border: 1px solid var(--line-2);
-  background: var(--surface-2);
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-}
-.f-chip--cond {
-  border-color: color-mix(in srgb, var(--warn) 50%, transparent);
-  background: var(--warn-tint);
-  color: var(--text);
-}
-.f-chip--cond .f-i {
-  color: var(--warn);
-}
-.f-chip--buff {
-  border-color: color-mix(in srgb, var(--info) 50%, transparent);
-  background: var(--info-tint);
-}
-.f-chip--buff .f-i {
-  color: var(--info);
-}
-.f-chip__x {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  margin-right: -6px;
-  border-radius: 50%;
-  border: 0;
-  background: transparent;
-  color: var(--text-3);
-  cursor: pointer;
-}
-.f-chip__x:hover {
-  background: var(--surface-3);
-  color: var(--text);
-}
-.f-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: var(--r-1);
-  background: var(--surface-3);
-  font-family: var(--font-ui);
-  font-size: var(--fs-label);
-  font-weight: 700;
-  color: var(--text-2);
-  white-space: nowrap;
-}
-.f-tag--gold {
-  background: color-mix(in srgb, var(--gold) 16%, transparent);
-  color: var(--gold-strong);
-}
-
-/* ── Resource pips (spell slots, charges) ─────────────────────── */
-.f-pips {
-  display: inline-flex;
-  gap: 5px;
-  align-items: center;
-}
-.f-pip {
-  width: 14px;
-  height: 14px;
-  padding: 0;
-  transform: rotate(45deg);
-  border-radius: 2px;
-  border: 1.5px solid var(--gold);
-  background: var(--gold-fill);
-  cursor: pointer;
-}
-.f-pip.is-spent {
-  background: transparent;
-  border-color: var(--line-2);
-}
-.f-res {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: var(--sp-3);
-  min-height: 40px;
-}
-.f-res__name {
-  font-family: var(--font-ui);
-  font-size: var(--fs-ui);
-  font-weight: 700;
-}
-.f-res__count {
-  font-family: var(--font-ui);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-  min-width: 3ch;
-  text-align: right;
-}
-
-/* ── Stat tiles and HP ────────────────────────────────────────── */
-.f-tiles {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--sp-2);
-}
-.f-tile {
-  display: grid;
-  gap: 2px;
-  justify-items: start;
-  padding: var(--sp-3);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: var(--r-2);
-  cursor: pointer;
-  color: inherit;
-  text-align: left;
-}
-.f-tile:hover {
-  border-color: var(--line-gold);
-}
-.f-tile[aria-expanded="true"] {
-  border-color: var(--gold);
-  box-shadow: 0 0 0 1px var(--gold);
-}
-.f-tile__v {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-figure);
-  line-height: 1.05;
-}
-.f-tile__v small {
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--text-2);
-  margin-left: 2px;
-}
-.f-hp {
-  display: grid;
-  gap: var(--sp-2);
-}
-.f-hp__top {
-  display: flex;
-  align-items: baseline;
-  gap: var(--sp-2);
-}
-.f-hp__now {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-hero);
-  line-height: 1;
-}
-.f-hp__max {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: var(--fs-lg);
-  color: var(--text-2);
-}
-.f-hp__temp {
-  margin-left: auto;
-  font-family: var(--font-ui);
-  font-weight: 800;
-  font-size: var(--fs-sm);
-  color: var(--temp);
-}
-.f-bar {
-  position: relative;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--hp-track);
-  overflow: hidden;
-  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35);
-}
-.f-bar__fill {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 999px;
+/* BG3 "Proceed": the teal-blue lit capsule */
+.btn--lit {
+  border-color: var(--frame-strong);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--hp) 80%, white 20%),
-    var(--hp)
+    color-mix(in srgb, var(--lit) 85%, white 10%),
+    var(--lit-deep)
   );
+  color: #f4fbff;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.25),
+    0 0 18px -4px color-mix(in srgb, var(--lit-hi) 70%, transparent);
 }
-.f-bar__temp {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  background: var(--temp);
-  opacity: 0.9;
+.btn--lit:hover {
+  color: #fff;
 }
 
-/* ── Turn economy ─────────────────────────────────────────────── */
-.f-econ {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--sp-2);
-}
-.f-econ__slot {
-  --c: var(--type-free);
+/* ── Tabs: BG3's top capsules (Inventory · Spellbook · Character Sheet) ─ */
+.tabs {
   display: flex;
+  gap: var(--sp-2);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.tab {
+  display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
-  min-height: 48px;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-2);
-  border: 1px solid color-mix(in srgb, var(--c) 45%, var(--line));
-  background: color-mix(in srgb, var(--c) 10%, var(--surface-2));
-  font-family: var(--font-ui);
-  min-width: 0;
-}
-.f-econ__slot .f-i {
-  color: var(--c);
-}
-.f-econ__name {
-  font-size: var(--fs-sm);
-  font-weight: 800;
-  line-height: 1.15;
-}
-.f-econ__state {
-  font-size: var(--fs-label);
+  min-height: 40px;
+  padding: 0 var(--sp-5);
+  border-radius: 999px;
+  border: 1px solid var(--frame);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
   color: var(--text-2);
-  line-height: 1.2;
+  font-family: var(--font-text);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
 }
-.f-econ__slot.is-spent {
-  background: transparent;
-  border-style: dashed;
-  border-color: var(--line-2);
+.tab:hover {
+  color: var(--text);
+  border-color: var(--frame-strong);
 }
-.f-econ__slot.is-spent .f-i,
-.f-econ__slot.is-spent .f-econ__name {
-  color: var(--text-3);
+.tab[aria-selected="true"] {
+  color: #f4fbff;
+  border-color: var(--gold);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--lit) 75%, white 5%),
+    var(--lit-deep)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 0 14px -4px color-mix(in srgb, var(--lit-hi) 60%, transparent);
 }
 
-/* ── Medallion (portrait) ─────────────────────────────────────── */
-.f-medal {
-  --size: 72px;
-  width: var(--size);
-  height: var(--size);
-  border-radius: 50%;
-  padding: 3px;
-  background: conic-gradient(
-    from 200deg,
-    var(--gold-600),
-    var(--gold-200),
-    var(--gold-600),
-    var(--gold-400),
-    var(--gold-600)
-  );
+/* ── Badges: AC shield and hex plates (Foundry + D&D Beyond) ──────── */
+.badge {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text);
+}
+.badge__shape {
+  position: relative;
+  width: 58px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+}
+.badge__shape svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.badge__shape svg .outer {
+  fill: var(--panel-2);
+  stroke: var(--frame-strong);
+  stroke-width: 1.5;
+}
+.badge__shape svg .inner {
+  fill: none;
+  stroke: var(--frame);
+  stroke-width: 1;
+}
+.badge__v {
+  position: relative;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  margin-top: -4px;
+}
+.badge__v small {
+  font-family: var(--font-text);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-2);
+}
+.badge--hex .badge__shape {
+  width: 58px;
+  height: 58px;
+}
+.badge--hex .badge__v {
+  margin-top: 0;
+  font-size: 24px;
+}
+.badge[aria-expanded="true"] .badge__shape svg .outer {
+  stroke: var(--gold-bright);
+  stroke-width: 2;
+}
+
+/* ── Medallion portrait (BG3) with the HP plate under it (BG3 "25/25") ─ */
+.medal {
+  position: relative;
+  width: var(--medal, 112px);
+  height: var(--medal, 112px);
   flex: none;
 }
-.f-medal__img {
+.medal__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  padding: 3px;
+  background: conic-gradient(from 210deg, #7a5a28, #f0d391, #9c7636, #e3c27e, #7a5a28);
+  box-shadow: 0 6px 20px -6px rgb(0 0 0 / 0.8);
+}
+.medal__img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  border: 2px solid var(--bg);
-  background: radial-gradient(circle at 50% 35%, #5a4630, #231a10 70%);
+  border: 3px solid #0b0907;
+  background:
+    radial-gradient(circle at 50% 30%, rgb(255 210 150 / 0.25), transparent 55%),
+    radial-gradient(circle at 50% 70%, #4a3018, #160e08 75%);
   display: grid;
   place-items: center;
-  font-family: var(--font-display);
-  font-weight: 700;
-  color: var(--gold-200);
-  font-size: calc(var(--size) * 0.38);
   overflow: hidden;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: calc(var(--medal, 112px) * 0.42);
+  color: #f0d391;
 }
-.f-medal__img img {
+.medal__img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* ── Popover: breakdown and glossary ──────────────────────────── */
-.f-pop {
-  position: relative;
-  width: min(340px, calc(100vw - 32px));
-  padding: var(--sp-4);
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-3);
-  box-shadow: var(--shadow-pop);
-  font-family: var(--font-ui);
+/* ── Ability row: BG3 "STR DEX CON INT WIS CHA", no boxes ─────────── */
+.abils {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(44px, 1fr));
+  gap: var(--sp-1);
 }
-.f-pop__arrow {
-  position: absolute;
-  top: -7px;
-  left: 28px;
-  width: 12px;
-  height: 12px;
-  background: var(--surface-2);
-  border-left: 1px solid var(--line-2);
-  border-top: 1px solid var(--line-2);
-  transform: rotate(45deg);
+.abil {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: var(--sp-1) 0;
+  border: 0;
+  border-radius: var(--r-2);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
 }
-.f-pop__head {
+.abil:hover {
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+}
+.abil__v {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1.05;
+}
+.abil__s {
+  font-size: 13px;
+  color: var(--text-3);
+}
+.abil.is-prof .abil__s {
+  color: var(--gold);
+  font-weight: 700;
+}
+.abil.is-prof .label::after {
+  content: " ★";
+  color: var(--gold);
+  letter-spacing: 0;
+}
+
+/* ── HP bar: BG3's framed health bar ──────────────────────────────── */
+.hp {
+  display: grid;
+  gap: 6px;
+}
+.hp__top {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-3);
+  gap: var(--sp-2);
 }
-.f-pop__title {
-  font-family: var(--font-display);
+.hp__now {
+  font-family: var(--font-title);
   font-weight: 700;
-  font-size: var(--fs-lg);
+  font-size: 40px;
+  line-height: 0.9;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text);
 }
-.f-bd {
-  display: grid;
-  gap: 0;
-  margin: 0;
-}
-.f-bd__row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  gap: var(--sp-3);
-  padding: 7px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: var(--fs-ui);
-}
-.f-bd__row dt {
+.hp__max {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 22px;
   color: var(--text-2);
 }
-.f-bd__row dd {
+.hp__temp {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--temp);
+}
+.hpbar {
+  position: relative;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--hp-track);
+  border: 1px solid var(--frame-strong);
+  box-shadow:
+    0 0 0 2px var(--panel),
+    0 0 0 3px var(--frame-inner);
+  overflow: hidden;
+}
+.hpbar__fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(
+    180deg,
+    var(--hp-hi),
+    var(--hp) 60%,
+    color-mix(in srgb, var(--hp) 70%, black)
+  );
+}
+.hpbar__temp {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--temp) 80%, white),
+    var(--temp)
+  );
+}
+
+/* ── Chips: conditions and active effects ─────────────────────────── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--frame);
+  background: var(--panel-2);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip--cond {
+  border-color: color-mix(in srgb, var(--cond) 60%, transparent);
+}
+.chip--cond .i {
+  color: var(--cond);
+}
+.chip--buff {
+  border-color: color-mix(in srgb, var(--buff) 60%, transparent);
+}
+.chip--buff .i {
+  color: var(--buff);
+}
+.chip--add {
+  border-style: dashed;
+  color: var(--text-2);
+}
+
+/* ── Shapes per action type (BG3): circle, triangle, diamond, bar ── */
+.shape {
+  --c: var(--text-3);
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background: var(--c);
+}
+.shape--action {
+  --c: var(--t-action);
+  border-radius: 50%;
+}
+.shape--bonus {
+  --c: var(--t-bonus);
+  clip-path: polygon(50% 4%, 98% 94%, 2% 94%);
+}
+.shape--reaction {
+  --c: var(--t-reaction);
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.shape--move {
+  --c: var(--t-move);
+  width: 18px;
+  height: 8px;
+  border-radius: 4px;
+}
+.shape.is-spent {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--c);
+  opacity: 0.6;
+}
+.shape--bonus.is-spent {
+  background: color-mix(in srgb, var(--c) 30%, transparent);
+  box-shadow: none;
+}
+
+/* ── Actions table: D&D Beyond's Actions list, BG3 slot icons ─────── */
+.atable {
+  display: grid;
+  gap: 0;
+}
+.atable__head,
+.arow {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 72px 70px 96px 92px;
+  align-items: center;
+  column-gap: var(--sp-3);
+}
+.atable__head {
+  padding: 0 var(--sp-2) var(--sp-2);
+  border-bottom: 1px solid var(--line);
+}
+.atable__head .label:nth-child(n + 3) {
+  text-align: center;
+}
+.agroup {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-2) var(--sp-2);
+  font-family: var(--font-label);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.agroup__note {
+  font-family: var(--font-text);
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+  color: var(--text-3);
+}
+.arow {
+  padding: var(--sp-2);
+  border-radius: var(--r-2);
+  border-bottom: 1px solid var(--line);
+}
+.arow:hover {
+  background: color-mix(in srgb, var(--gold) 6%, transparent);
+}
+/* BG3 hotbar slot */
+.slot {
+  --c: var(--gold);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-1);
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      color-mix(in srgb, var(--c) 28%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #221b14, #0f0c09);
+  border: 1px solid var(--frame);
+  box-shadow: inset 0 0 0 2px #0b0907;
+  color: color-mix(in srgb, var(--c) 80%, white 20%);
+}
+.slot svg.i {
+  width: 24px;
+  height: 24px;
+}
+.arow__name {
+  min-width: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.arow__title {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+}
+.arow__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.arow__meta .shape {
+  width: 10px;
+  height: 10px;
+}
+.arow__meta .shape--move {
+  width: 14px;
+  height: 6px;
+}
+.arow__range {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+/* D&D Beyond's framed value: +6, 1d6+3 */
+.plate {
+  justify-self: center;
+  display: inline-grid;
+  place-items: center;
+  min-width: 52px;
+  min-height: 34px;
+  padding: 0 8px;
+  border-radius: var(--r-1);
+  border: 1px solid var(--frame);
+  background: var(--well);
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.plate:hover {
+  border-color: var(--gold);
+}
+.plate small {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+}
+.arow .btn {
+  justify-self: end;
+  min-height: 36px;
+  min-width: 84px;
+  font-size: 14px;
+}
+.arow.is-spent .slot {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+.arow.is-spent .arow__title,
+.arow.is-spent .plate {
+  color: var(--text-3);
+}
+.arow__dash {
+  justify-self: center;
+  color: var(--text-3);
+}
+
+/* ── HUD: BG3's resource row + round End Turn ─────────────────────── */
+.hud {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+}
+.econ {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.econ__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+.econ__item.is-spent {
+  color: var(--text-3);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.endturn {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: conic-gradient(from 200deg, #6e5226, #f0d391, #8f6b30, #e0bd76, #6e5226);
+  box-shadow: 0 10px 28px -8px rgb(0 0 0 / 0.8);
+  flex: none;
+}
+.endturn__inner {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(
+    circle at 50% 35%,
+    color-mix(in srgb, var(--lit-hi) 55%, var(--lit)),
+    var(--lit-deep) 78%
+  );
+  box-shadow:
+    inset 0 0 0 2px #0b0907,
+    inset 0 0 0 5px color-mix(in srgb, var(--lit-hi) 80%, transparent),
+    inset 0 0 22px rgb(0 0 0 / 0.55),
+    0 0 26px -2px color-mix(in srgb, var(--lit-hi) 60%, transparent);
+  color: #f4fbff;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+.endturn:hover .endturn__inner {
+  filter: brightness(1.12);
+}
+
+/* ── Popover: the number explained ────────────────────────────────── */
+.pop {
+  width: min(340px, calc(100vw - 32px));
+  padding: var(--sp-5);
+  background: var(--panel-2);
+  font-size: 15px;
+}
+.pop__title {
+  margin: 0 0 var(--sp-3);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.1;
+}
+.bd {
+  margin: 0;
+  display: grid;
+}
+.bd > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: 6px 0;
+  border-bottom: 1px dotted var(--frame);
+}
+.bd dt {
+  color: var(--text-2);
+}
+.bd dd {
   margin: 0;
   font-weight: 800;
-  font-variant-numeric: tabular-nums lining-nums;
 }
-.f-bd__row--total {
+.bd .off dt,
+.bd .off dd {
+  color: var(--text-3);
+  text-decoration: line-through;
+  font-weight: 400;
+}
+.bd .total {
   border-bottom: 0;
-  border-top: 1px solid var(--line-2);
-  margin-top: -1px;
   padding-top: var(--sp-2);
 }
-.f-bd__row--total dt {
+.bd .total dt {
   color: var(--text);
   font-weight: 800;
 }
-.f-bd__row--total dd {
-  font-family: var(--font-display);
-  font-size: var(--fs-title);
-  color: var(--gold-strong);
+.bd .total dd {
+  font-family: var(--font-title);
+  font-size: 28px;
+  line-height: 1;
+  color: var(--gold-bright);
 }
-.f-bd__row.is-off dt,
-.f-bd__row.is-off dd {
-  color: var(--text-3);
-  text-decoration: line-through;
-  font-weight: 500;
-}
-.f-pop__note {
+.pop__note {
   margin: var(--sp-3) 0 0;
-  font-family: var(--font-read);
-  font-size: var(--fs-sm);
-  line-height: 1.45;
   color: var(--text-2);
+  font-size: var(--fs-sm);
 }
-.f-pop__foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--sp-3);
-  padding-top: var(--sp-3);
-  border-top: 1px solid var(--line);
-}
-/* A rule term with a plain explanation behind it. */
-.f-term {
+.term {
   background: none;
   border: 0;
   padding: 0;
   font: inherit;
   color: inherit;
   cursor: help;
-  text-decoration: underline dotted;
-  text-decoration-color: var(--gold);
+  text-decoration: underline dotted var(--gold);
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
 }
-.f-gloss__kind {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--gold);
-  font-size: var(--fs-label);
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-.f-gloss__body {
-  margin: var(--sp-2) 0 0;
-  font-family: var(--font-read);
-  font-size: var(--fs-body);
-  line-height: 1.5;
-}
-.f-gloss__eg {
-  margin: var(--sp-3) 0 0;
-  padding: var(--sp-2) var(--sp-3);
+
+/* ── Tip: the generated playbook, folded ──────────────────────────── */
+.tip {
+  border: 1px solid var(--frame);
   border-radius: var(--r-2);
-  background: var(--inset);
-  font-family: var(--font-read);
+  background: color-mix(in srgb, var(--panel-2) 70%, transparent);
+}
+.tip__head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-4);
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+.tip__head .i {
+  color: var(--gold);
+}
+.tip__title {
+  flex: 1;
+  font-weight: 700;
+}
+.tip__steps {
+  margin: 0;
+  padding: 0 var(--sp-4) var(--sp-4) calc(var(--sp-4) + 32px);
+  display: grid;
+  gap: var(--sp-2);
+  list-style: none;
+}
+.tip__steps[hidden] {
+  display: none;
+}
+.tip__steps li {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: baseline;
+}
+.tip__steps li .shape {
+  transform: translateY(1px);
+}
+.tip__steps li .shape--reaction {
+  transform: rotate(45deg);
+}
+.why {
+  display: block;
   font-size: var(--fs-sm);
   color: var(--text-2);
 }
 
-/* ── Dialog (laptop: centred) and sheet (phone: from the bottom) ── */
-.f-dialog {
-  width: min(520px, 100%);
-  background: var(--surface-1);
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-3);
-  box-shadow: var(--shadow-pop);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  max-height: 100%;
-}
-.f-dialog::before {
-  content: "";
-  position: absolute;
-  inset: -1px var(--sp-8) auto;
-  height: 1px;
-  background: var(--gold-hairline);
-}
-.f-dialog__head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--sp-3);
-  padding: var(--sp-5) var(--sp-5) var(--sp-3);
-}
-.f-dialog__head .f-title {
-  flex: 1;
-}
-.f-dialog__sub {
-  margin: 4px 0 0;
-  font-family: var(--font-ui);
-  font-size: var(--fs-sm);
-  color: var(--text-2);
-}
-.f-dialog__body {
-  padding: var(--sp-2) var(--sp-5) var(--sp-5);
-  overflow: auto;
+/* ── Session log ──────────────────────────────────────────────────── */
+.log {
   display: grid;
   gap: var(--sp-4);
 }
-.f-dialog__foot {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--sp-2);
-  padding: var(--sp-4) var(--sp-5);
-  border-top: 1px solid var(--line);
-  background: color-mix(in srgb, var(--surface-1) 70%, var(--inset));
-  border-radius: 0 0 var(--r-3) var(--r-3);
-}
-.f-dialog--sheet {
-  width: 100%;
-  border-radius: var(--r-3) var(--r-3) 0 0;
-  border-bottom: 0;
-}
-.f-dialog--sheet .f-dialog__foot {
-  border-radius: 0;
-}
-.f-dialog--sheet .f-dialog__foot .f-btn {
-  flex: 1;
-}
-.f-grabber {
-  width: 40px;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--line-2);
-  margin: var(--sp-2) auto 0;
-}
-
-/* ── Menu ─────────────────────────────────────────────────────── */
-.f-menu {
-  min-width: 232px;
-  width: max-content;
-  padding: var(--sp-1);
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-2);
-  box-shadow: var(--shadow-pop);
-  font-family: var(--font-ui);
-}
-.f-menu__item {
-  display: flex;
-  align-items: center;
+.log__round {
+  display: grid;
   gap: var(--sp-3);
-  width: 100%;
-  min-height: 40px;
-  padding: 0 var(--sp-3);
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
+}
+.log__entry {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: var(--sp-2);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.log__entry .shape {
+  margin-top: 5px;
+  width: 10px;
+  height: 10px;
+}
+.log__entry .shape--reaction {
+  width: 9px;
+  height: 9px;
+  margin: 6px 0 0 1px;
+}
+.log__entry b {
   color: var(--text);
-  font-size: var(--fs-ui);
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
 }
-.f-menu__item .f-i {
-  color: var(--text-2);
-}
-.f-menu__item:hover,
-.f-menu__item:focus-visible {
-  background: var(--surface-3);
-  outline: none;
-}
-.f-menu__item kbd {
-  margin-left: auto;
-  font-family: var(--font-ui);
-  font-size: var(--fs-label);
+.log__src {
+  display: block;
+  font-size: 13px;
   color: var(--text-3);
 }
-.f-menu__item--danger,
-.f-menu__item--danger .f-i {
-  color: var(--danger);
+.log__entry--note {
+  font-style: italic;
+  color: var(--text-2);
 }
-.f-menu__sep {
-  height: 1px;
-  margin: var(--sp-1) 0;
-  background: var(--line);
+.log__dot {
+  width: 8px;
+  height: 8px;
+  margin: 7px 0 0 1px;
+  border-radius: 50%;
+  background: var(--hp);
+}
+.log__dot--note {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--text-3);
+}
+.input {
+  width: 100%;
+  min-height: var(--touch);
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-2);
+  border: 1px solid var(--frame);
+  background: var(--well);
+  color: var(--text);
+  font-family: var(--font-text);
+  font-size: 15px;
+}
+.input::placeholder {
+  color: var(--text-3);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--gold);
 }
 
-/* ── Toast and banners ────────────────────────────────────────── */
-.f-toast {
+/* ── Phone section switcher (D&D Beyond's "Actions ▾" bar) ────────── */
+.switcher {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
   gap: var(--sp-3);
-  min-height: 52px;
-  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-4);
-  background: var(--surface-3);
-  border: 1px solid var(--line-2);
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--sp-4);
   border-radius: var(--r-2);
-  box-shadow: var(--shadow-pop);
-  font-family: var(--font-ui);
-  font-size: var(--fs-ui);
-  max-width: 480px;
+  border: 1px solid var(--frame);
+  background: linear-gradient(180deg, var(--panel-3), var(--panel-2));
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text);
 }
-.f-toast .f-i {
-  color: var(--success);
+.switcher .i:first-child {
+  color: var(--gold);
 }
-.f-toast__text {
-  flex: 1;
+.switcher__chev {
+  margin-left: auto;
+  color: var(--text-3);
 }
-.f-toast__text b {
-  font-weight: 800;
-}
-.f-banner {
-  --c: var(--info);
-  display: flex;
-  gap: var(--sp-3);
-  align-items: flex-start;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-2);
-  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
-  background: color-mix(in srgb, var(--c) 10%, var(--surface-1));
-  font-family: var(--font-ui);
-  font-size: var(--fs-ui);
-}
-.f-banner > .f-i {
-  color: var(--c);
-  margin-top: 1px;
-}
-.f-banner__body {
-  flex: 1;
-  display: grid;
-  gap: 2px;
-}
-.f-banner__title {
-  font-weight: 800;
-}
-.f-banner__text {
-  color: var(--text-2);
-  font-size: var(--fs-sm);
-}
-.f-banner__actions {
+
+/* ── Filter pills ─────────────────────────────────────────────────── */
+.pills {
   display: flex;
   gap: var(--sp-2);
   flex-wrap: wrap;
-  margin-top: var(--sp-2);
 }
-.f-banner--danger {
-  --c: var(--danger);
-}
-.f-banner--warn {
-  --c: var(--warn);
-}
-.f-banner--success {
-  --c: var(--success);
-}
-
-/* ── Empty, error, loading ────────────────────────────────────── */
-.f-empty {
-  display: grid;
-  justify-items: center;
-  text-align: center;
-  gap: var(--sp-2);
-  padding: var(--sp-10) var(--sp-6);
-  border: 1px dashed var(--line-2);
-  border-radius: var(--r-3);
-}
-.f-empty__icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--surface-2);
-  border: 1px solid var(--line-2);
-  color: var(--gold);
-  margin-bottom: var(--sp-2);
-}
-.f-empty__title {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: var(--fs-lg);
-  margin: 0;
-}
-.f-empty__text {
-  margin: 0 0 var(--sp-3);
-  font-size: var(--fs-ui);
-  color: var(--text-2);
-  max-width: 40ch;
-}
-.f-skel {
-  border-radius: var(--r-1);
-  background: linear-gradient(
-    90deg,
-    var(--surface-2),
-    var(--surface-3),
-    var(--surface-2)
-  );
-  background-size: 200% 100%;
-  animation: f-shimmer 1.4s ease-in-out infinite;
-}
-@keyframes f-shimmer {
-  from {
-    background-position: 100% 0;
-  }
-  to {
-    background-position: -100% 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ── App shell ────────────────────────────────────────────────── */
-.f-top {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  height: 60px;
-  padding: 0 var(--sp-6);
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line);
-}
-.f-brand {
+.pill {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 19px;
-  letter-spacing: 0.12em;
-  color: var(--gold-strong);
-  text-decoration: none;
-}
-.f-brand svg {
-  width: 26px;
-  height: 26px;
-}
-.f-nav {
-  display: flex;
-  gap: var(--sp-1);
-}
-.f-nav a {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
-  min-height: 40px;
+  gap: 7px;
+  min-height: 34px;
   padding: 0 var(--sp-3);
-  border-radius: var(--r-2);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
   color: var(--text-2);
-  font-family: var(--font-ui);
+  font-size: 14px;
   font-weight: 700;
-  font-size: var(--fs-ui);
-  text-decoration: none;
+  cursor: pointer;
 }
-.f-nav a:hover {
+.pill .shape {
+  width: 10px;
+  height: 10px;
+}
+.pill .shape--reaction {
+  width: 9px;
+  height: 9px;
+}
+.pill[aria-pressed="true"] {
+  border-color: var(--gold);
   color: var(--text);
-  background: var(--surface-2);
-}
-.f-nav a[aria-current="page"] {
-  color: var(--text);
-  background: var(--surface-2);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.f-nav a[aria-current="page"] .f-i {
-  color: var(--gold);
-}
-/* Phone bottom navigation */
-.f-bnav {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  padding: 6px var(--sp-2) calc(6px + env(safe-area-inset-bottom));
-  background: color-mix(in srgb, var(--surface-1) 94%, transparent);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid var(--line);
-}
-.f-bnav a {
-  display: grid;
-  justify-items: center;
-  gap: 2px;
-  padding: 6px 0;
-  color: var(--text-3);
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
-}
-.f-bnav a[aria-current="page"] {
-  color: var(--gold-strong);
+  background: color-mix(in srgb, var(--gold) 12%, transparent);
 }
 
-/* ── Session log (narrative) ──────────────────────────────────── */
-.f-log {
+/* ── Resources: BG3-style slot gems ───────────────────────────────── */
+.res {
   display: grid;
-  gap: var(--sp-4);
-}
-.f-log__round {
-  display: grid;
-  gap: var(--sp-2);
-}
-.f-log__entry {
-  display: grid;
-  grid-template-columns: 4px 1fr;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   gap: var(--sp-3);
-  font-family: var(--font-read);
-  font-size: var(--fs-ui);
-  line-height: 1.45;
+  align-items: center;
+  min-height: 36px;
 }
-.f-log__entry::before {
-  content: "";
-  border-radius: 2px;
-  background: var(--edge, var(--line-2));
-}
-.f-log__entry b {
+.res__name {
   font-weight: 700;
-  color: var(--text);
+  font-size: 15px;
 }
-.f-log__src {
-  display: block;
-  margin-top: 2px;
-  font-family: var(--font-ui);
-  font-size: var(--fs-label);
-  color: var(--text-3);
+.gems {
+  display: inline-flex;
+  gap: 5px;
 }
-.f-log__entry--note {
-  font-style: italic;
+.gem {
+  width: 13px;
+  height: 13px;
+  padding: 0;
+  transform: rotate(45deg);
+  border: 1px solid #f0d391;
+  background: linear-gradient(135deg, #b98cf0, #6a3bb0);
+  box-shadow: 0 0 6px -1px rgb(180 130 240 / 0.7);
+  cursor: pointer;
+}
+.gem--gold {
+  background: linear-gradient(135deg, #f0d391, #a8803a);
+  box-shadow: 0 0 6px -1px rgb(240 200 120 / 0.6);
+}
+.gem.is-spent {
+  background: transparent;
+  border-color: var(--frame);
+  box-shadow: none;
+}
+.res__count {
+  min-width: 3ch;
+  text-align: right;
+  font-size: 14px;
   color: var(--text-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
 }

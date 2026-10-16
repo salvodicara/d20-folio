@@ -19,12 +19,12 @@
       })
     );
     // aria-pressed groups (segmented filters)
-    document.querySelectorAll(".f-seg").forEach((seg) =>
+    document.querySelectorAll(".pills").forEach((seg) =>
       seg.addEventListener("click", (e) => {
-        const opt = e.target.closest(".f-seg__opt");
+        const opt = e.target.closest(".pill");
         if (!opt) return;
         seg
-          .querySelectorAll(".f-seg__opt")
+          .querySelectorAll(".pill")
           .forEach((o) => o.setAttribute("aria-pressed", String(o === opt)));
       })
     );
@@ -40,17 +40,17 @@
         )
       );
     // tabs
-    document.querySelectorAll(".f-tabs").forEach((tabs) =>
+    document.querySelectorAll(".tabs").forEach((tabs) =>
       tabs.addEventListener("click", (e) => {
-        const tab = e.target.closest(".f-tab");
+        const tab = e.target.closest(".tab");
         if (!tab) return;
         tabs
-          .querySelectorAll(".f-tab")
+          .querySelectorAll(".tab")
           .forEach((t) => t.setAttribute("aria-selected", String(t === tab)));
       })
     );
     // phones start with these folds closed
-    if (matchMedia("(max-width: 760px)").matches)
+    if (matchMedia("(max-width: 760px)").matches || params.has("closed"))
       document.querySelectorAll("[data-collapse-phone]").forEach((btn) => {
         const t = document.getElementById(btn.dataset.toggle);
         if (t) t.hidden = true;
