@@ -425,6 +425,26 @@ service cloud.firestore {
       allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
     }
 
+    // The play log (src/lib/play/play-log-io.ts, phase 3a step 5): one document per
+    // entry, stamped with the server's time (the read order). Owner-only like the
+    // snapshots; append-only (no update); the owner may delete, to compact behind a
+    // checkpoint. The app's writer is off until the owner turns it on.
+    match /users/{uid}/characters/{charId}/playLog/{entryId} {
+      function validEntry() {
+        let entry = request.resource.data;
+        return entry.id == entryId
+          && entry.actor == request.auth.uid
+          && entry.serverAt == request.time
+          && entry.keys().hasOnly(['id', 'actor', 'event', 'undo', 'redo', 'correct', 'serverAt'])
+          && (entry.get('event', null) is map
+            || entry.get('undo', null) is string
+            || entry.get('redo', null) is string);
+      }
+      allow read: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
+      allow create: if isNotBlocked() && request.auth.uid == uid && validEntry();
+      allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
+    }
+
     // Character snapshots
     match /users/{uid}/characters/{charId}/snapshots/{snapId} {
       allow read, write: if isNotBlocked() && request.auth.uid == uid;

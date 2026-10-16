@@ -60,3 +60,11 @@ disagreeing.
 4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries.
 5. **Storage.** One Firestore document per entry, plus a periodic checkpoint for fast load.
    It needs a migration, so snapshot → dry-run → apply, with the owner's yes.
+   Built, writer OFF (owner decision 2026-10-16): `src/lib/play/play-log-io.ts` stores
+   `users/{uid}/characters/{charId}/playLog/{entryId}` (owner-only, append-only, ordered by
+   `serverAt`; `seq` is assigned on read). `PLAY_LOG_WRITER_ENABLED` stays `false` until the
+   cost is measured: every entry is one write per sheet action, and each such action already
+   writes the play state at least once, so the log at most doubles a game day's writes. The
+   measure is the Firebase console's daily document writes on a game day. The writer goes on
+   only if that number, doubled, stays well inside the free tier (20,000 writes a day). Then:
+   the checkpoint document, the writer, loading the log on open, and the `lit` conversion.
