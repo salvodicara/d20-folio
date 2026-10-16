@@ -10,7 +10,7 @@ interaction decisions; `docs/GOLDEN_RULES.md` keeps taste and way of working. Ev
 
 | #   | Decision                                                                                                                                                                                                                                                                                                                                       |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **User:** beginners everywhere, Italian and international. Multilingual by design: more languages later. Every value is explained with a breakdown, more clearly than D&D Beyond.                                                                                                                                                              |
+| 1   | **User:** beginners everywhere, Italian and international: players in their first campaigns and first-time DMs. Multilingual by design: more languages later. Every value is explained with a breakdown, more clearly than D&D Beyond.                                                                                                         |
 | 2   | **Promise:** "Roll your own dice: Folio does the maths, explains every number and writes the session report." (IT: «Tira i tuoi dadi: Folio fa i conti, ti spiega ogni numero e scrive il resoconto della sessione.»)                                                                                                                          |
 | 3   | **Never:** a VTT (maps, tokens, video); AI inside the app. **Not yet:** digital dice. Input-only today; the architecture must make adding them later easy.                                                                                                                                                                                     |
 | 3b  | **All 2024 rules supported, without legal risk.** See _Content and licensing_.                                                                                                                                                                                                                                                                 |
@@ -18,6 +18,17 @@ interaction decisions; `docs/GOLDEN_RULES.md` keeps taste and way of working. Ev
 | 5   | **Account required.** No guest mode. Sign-up is one tap: Google or a passwordless email link. Demos are videos plus an illustrated guide.                                                                                                                                                                                                      |
 | 6   | **Name:** "d20 Folio" is the working name; the owner is lukewarm on "Folio". A second, collision-checked "d20 + word" round comes before the public launch. Name and logo live in one swappable place.                                                                                                                                         |
 | 7   | **Look:** redone completely, beautiful on phone and laptop. **Direction B, "BG3 fantasy ricco"**: dark stone, gold leaf, engraved Cinzel capitals, Alegreya reading text. It was chosen over a modern-game look and a light one, shown on the same Play screen. Legibility for beginners comes before ornament. "The devil is in the details." |
+
+## How we build features (owner 2026-10-16)
+
+Don't reinvent. For each feature:
+
+1. First look at how D&D Beyond, Foundry dnd5e, Roll20 and Owlbear already solve it, and copy the
+   established pattern.
+2. Then beat it on Folio's three axes: clarity, simplicity, and explaining everything.
+
+The measure is a player in their first campaign, or a DM running their first one (GOLDEN_RULES,
+taste #1).
 
 ## Positioning
 
