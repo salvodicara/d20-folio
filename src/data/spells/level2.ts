@@ -16,6 +16,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 8 },
     targeting: { affinity: "ally", maxTargets: 3 },
     grants: [
       // +5 HP maximum and current for the duration, plus 5 for every slot level
@@ -47,6 +48,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     // One option at a time while you concentrate (a Magic action swaps it):
     // Aquatic Adaptation breathes underwater and swims at your Speed; Change
     // Appearance is narrative; Natural Weapons make your Unarmed Strike 1d6
@@ -105,6 +107,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     source: "SRD",
   },
   {
@@ -121,6 +124,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       costGp: 25,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -137,6 +141,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — "an Armor Class of 17 if its AC is lower":
@@ -160,6 +165,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     conditionApplication: {
       options: ["blinded", "deafened"],
@@ -179,6 +185,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     // 2024 (spell:blur): "any creature has Disadvantage on attack rolls against
     // you." Modeled as a `while-active` (auto-lit on cast via S1, cleared on
     // concentration drop) `incoming-attack-disadvantage` clause — a SELF-side
@@ -204,6 +211,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "CHA",
     source: "SRD",
   },
@@ -220,6 +228,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     source: "SRD",
   },
   {
@@ -235,6 +244,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 8 },
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Darkvision 150 ft for the duration (2024).
@@ -261,6 +271,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     source: "SRD",
   },
@@ -277,6 +288,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     source: "SRD",
   },
@@ -293,6 +305,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
@@ -349,6 +362,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     companion: OTHERWORLDLY_STEED,
     source: "SRD",
@@ -366,6 +380,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     damageType: "fire",
     damageDice: "3d6",
     damageDicePerUpcast: "1d6",
@@ -385,6 +400,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "fire",
     damageDice: "2d6",
     damageDicePerUpcast: "1d6",
@@ -410,6 +426,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "STR",
     source: "SRD",
   },
@@ -426,6 +443,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "fire",
     damageDice: "2d8",
     damageDicePerUpcast: "1d8",
@@ -447,6 +465,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     conditionApplication: {
@@ -477,6 +496,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     conditionApplication: {
       options: ["invisible"],
       on: "automatic",
@@ -506,6 +526,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -518,6 +539,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     conditionRemoval: {
       options: ["blinded", "deafened", "paralyzed", "poisoned"],
@@ -538,6 +560,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     saveAbility: "CON",
     source: "SRD",
   },
@@ -550,6 +573,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -561,6 +585,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "minutes", amount: 1 },
     // 2024 (spell:mirror-image): three duplicates; "Each time a creature hits you
     // with an attack roll during the spell's duration, roll a d6 for each of your
     // remaining duplicates. If any of the d6s rolls a 3 or higher, one of the
@@ -589,6 +614,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -605,6 +631,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "radiant",
     damageDice: "2d10",
     damageDicePerUpcast: "1d10",
@@ -630,6 +657,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -641,6 +669,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     healDice: "2d8",
     // 2024: the five targets regain 2d8; upcasting adds 1d8 per slot above 2.
@@ -659,6 +688,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "fire",
     damageDice: "2d6",
@@ -682,6 +712,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -697,6 +728,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "thunder",
     damageDice: "3d8",
@@ -715,6 +747,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: true,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     conditionApplication: {
       options: ["deafened"],
       on: "automatic",
@@ -744,6 +777,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     // SRD 5.2.1: one additional creature for each spell slot level above 2.
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     grants: [
@@ -889,6 +923,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     damageType: "piercing",
     damageDice: "2d4",
     resolveOnCast: false,
@@ -903,6 +938,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "force",
     damageDice: "1d8",
     damageDicePerUpcast: "1d8",
@@ -923,6 +959,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 8 },
     effectTag: "control",
     saveAbility: "WIS",
     source: "SRD",
@@ -941,6 +978,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       costGp: 50,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     targeting: { affinity: "ally", excludeSelf: true, maxTargets: 1 },
     // 2024 (spell:warding-bond): "You touch ANOTHER creature… While the target is
     // within 60 feet of you, it gains a +1 bonus to AC and saving throws, and it
@@ -981,6 +1019,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     saveAbility: "DEX",
     area: true,
     conditionApplication: {
@@ -1013,6 +1052,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 24 },
     saveAbility: "CHA",
     source: "SRD",
   },
@@ -1031,6 +1071,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     source: "SRD",
   },
   {
@@ -1601,6 +1642,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     // The caster picks ONE element when imbuing the creature (not all at once).
     damageChoice: ["acid", "cold", "fire", "lightning", "poison"],
     damageDice: "3d6",
@@ -1619,6 +1661,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     area: true,
     source: "SRD",
@@ -1632,6 +1675,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -1651,6 +1695,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "days", amount: 10 },
     source: "SRD",
   },
   {
@@ -1666,6 +1711,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     source: "SRD",
   },
   {
@@ -1683,6 +1729,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     source: "SRD",
   },
   {
@@ -2069,6 +2116,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "acid",
     damageDice: "4d4",
@@ -2086,6 +2134,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     // 2024 (spell:mind-spike): S only — the Verbal component is not present.
     components: { v: false, s: true, m: false },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     damageType: "psychic",
     damageDice: "3d8",
     damageDicePerUpcast: "1d8",
@@ -2106,6 +2155,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 24 },
     source: "SRD",
   },
   {
@@ -2293,6 +2343,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "psychic",
     damageDice: "2d8",
     saveAbility: "INT",
@@ -2308,6 +2359,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     attackType: "ranged",
     source: "SRD",
@@ -2325,6 +2377,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -2336,6 +2389,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "radiant",
     damageDice: "2d6",
     damageDicePerUpcast: "1d6",
@@ -2353,6 +2407,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "minutes", amount: 10 },
     saveAbility: "CHA",
     source: "SRD",
   },
@@ -2369,6 +2424,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -2381,6 +2437,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     conditionRemoval: { options: ["poisoned"], max: 1 },
     targeting: { affinity: "ally", maxTargets: 1 },
     source: "SRD",

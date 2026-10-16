@@ -148,6 +148,7 @@ const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
   components: compiled("cast-profile"),
   concentration: compiled("cast-profile"),
   instantaneous: compiled("cast-profile"),
+  duration: compiled("cast-profile"),
   conditionRemoval: compiled("action"),
   conditionApplication: compiled("action"),
   targeting: compiled("action"),

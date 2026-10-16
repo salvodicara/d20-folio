@@ -11,6 +11,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "hours", amount: 24 },
     source: "SRD",
   },
   {
@@ -26,6 +27,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -43,6 +45,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -59,6 +62,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 8 },
     source: "SRD",
   },
   {
@@ -70,6 +74,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     saveAbility: "WIS",
     conditionApplication: {
       options: ["charmed"],
@@ -99,6 +104,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "DEX",
     area: true,
     conditionApplication: {
@@ -129,6 +135,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "psychic",
     damageDice: "10d12",
@@ -151,6 +158,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       costGp: 1000,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     source: "SRD",
   },
@@ -163,6 +171,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     source: "SRD",
   },
   {
@@ -174,6 +183,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "hours", amount: 24 },
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Immunity to Psychic damage and the Charmed
@@ -200,6 +210,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     conditionApplication: {
       options: ["stunned"],
@@ -222,6 +233,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "days", amount: 10 },
     saveAbility: "WIS",
     source: "SRD",
   },
@@ -235,6 +247,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     // 2024 (spell:demiplane): S only — the Verbal component is not present.
     components: { v: false, s: true, m: false },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -246,6 +259,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -257,6 +271,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "fire",
     damageDice: "10d8",
     saveAbility: "DEX",
@@ -278,6 +293,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "radiant",
     damageDice: "12d6",
@@ -300,6 +316,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "rounds", amount: 6 },
     damageType: "bludgeoning",
     damageDice: "6d10",
     saveAbility: "STR",

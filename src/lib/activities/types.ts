@@ -30,6 +30,7 @@ import type {
   HealTerm,
   MonsterTraitFact,
   ReactionTrigger,
+  SpellDuration,
   SpellRecurrence,
   WeaponMastery,
 } from "@/data/types";
@@ -369,6 +370,8 @@ export interface Activity {
   concentration?: true;
   /** Over as soon as it resolves. */
   instantaneous?: true;
+  /** How long a spell lasts on the clock (its time budget out of combat). */
+  duration?: SpellDuration;
   /** A successful save by a recurring target ends it on that target (the save
    *  may be a follow-up's, as with Searing Smite's burn). */
   endsOnSave?: true;
