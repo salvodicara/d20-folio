@@ -120,4 +120,32 @@ describe("play log shadow", () => {
     ).toBe(true);
     expect(shadow.stats()).toMatchObject({ entries: 2, checkpoints: 1, mismatches: 0 });
   });
+
+  it("undoes through the log when it reproduces the live sheet: only that event goes", () => {
+    const shadow = createPlayLogShadow("player");
+    const doc = start();
+    const slot = { kind: "spend-slot", level: 1, pactMagic: false } satisfies SheetEvent;
+    const a = apply(doc, slot);
+    const { id } = shadow.record(doc, slot, a);
+    const temp = { kind: "set-temp-hp", temp: 5 } satisfies SheetEvent;
+    const b = apply(a, temp);
+    shadow.record(a, temp, b);
+    // Undoing the OLDER event: the slot comes back, the later temp HP stay.
+    expect(shadow.undoFrom(b, id)).toEqual(apply(doc, temp));
+    expect(shadow.stats()).toMatchObject({ entries: 3, mismatches: 0 });
+  });
+
+  it("declines (null, nothing recorded) when the live sheet moved outside the log", () => {
+    const shadow = createPlayLogShadow("player");
+    const doc = start();
+    const slot = { kind: "spend-slot", level: 1, pactMagic: false } satisfies SheetEvent;
+    const a = apply(doc, slot);
+    const { id } = shadow.record(doc, slot, a);
+    const outside: CharacterDoc = {
+      ...a,
+      session: { ...a.session, hp: { ...a.session.hp, current: 3 } },
+    };
+    expect(shadow.undoFrom(outside, id)).toBeNull();
+    expect(shadow.stats().entries).toBe(1);
+  });
 });

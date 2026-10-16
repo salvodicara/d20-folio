@@ -1053,6 +1053,14 @@ function shadowUndo(restored: CharacterDoc, shadowId: string | null): void {
     console.warn("[play-log shadow] parity mismatch after an undo");
 }
 
+function shadowUndoFrom(
+  live: CharacterDoc | null,
+  shadowId: string | null
+): CharacterDoc | null {
+  if (!live || !shadowId) return null;
+  return playLogShadows.get(live.id)?.undoFrom(live, shadowId) ?? null;
+}
+
 /** The shadow log's counters for a character (development only; null when none). */
 export function playLogShadowStats(characterId: string): ShadowStats | null {
   return playLogShadows.get(characterId)?.stats() ?? null;
@@ -3150,8 +3158,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     set({ character: next });
     const shadowId = shadowRecord(character, event, next);
     return () => {
-      set({ character });
-      shadowUndo(character, shadowId);
+      // Through the log when it reproduces the live sheet (development, phase 3a
+      // step 4): only this event goes and every later one stays. Otherwise today's
+      // snapshot of the sheet before it.
+      const viaLog = shadowUndoFrom(get().character, shadowId);
+      set({ character: viaLog ?? character });
+      if (!viaLog) shadowUndo(character, shadowId);
     };
   },
 
