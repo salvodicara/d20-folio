@@ -283,9 +283,12 @@ describe("EndEncounterDialog — the editable end entry", () => {
 
   it("is headed as the fight's chronicle, never the add-modals' \"Add\"", () => {
     dialog();
-    const modal = screen.getByRole("dialog");
-    const rubric = must(modal.querySelector(".modal-rubric"), "no rubric");
-    expect(rubric).toHaveTextContent("Chronicle of the fight");
+    // Vision 1 (owner 2026-10-13): dialogs open on their title alone, and this one
+    // names the chronicle itself; no "Add" kicker can appear above it.
+    const modal = screen.getByRole("dialog", {
+      name: "Save this fight to the Chronicle",
+    });
+    expect(modal.querySelector(".modal-rubric")).toBeNull();
   });
 
   it("hands back the chapter, the note and the outcome", () => {
