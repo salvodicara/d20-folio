@@ -8,6 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { useItemResourceSpend } from "@/features/character/useItemResourceSpend";
 import {
   itemResourceRecoveryTranslationKey,
+  itemResourceSpendBlockTranslationKey,
   type ItemResourceVM,
 } from "@/lib/views/item-resource-view";
 
@@ -73,6 +74,11 @@ export function ItemResourceRailRow({
       {unavailable && (
         <span className="trk-die">{t("magicItems.resourceUnavailable")}</span>
       )}
+      {!unavailable && resource.spendBlock && (
+        <span className="trk-die">
+          {t(itemResourceSpendBlockTranslationKey(resource.spendBlock))}
+        </span>
+      )}
       <span className="trk-rec" data-r={recoveryStyle}>
         {recoveryLabel}
       </span>
@@ -85,7 +91,7 @@ export function ItemResourceRailRow({
           </>
         )}
       </span>
-      {interactive && !unavailable && (
+      {interactive && !unavailable && !resource.spendBlock && (
         <div className="trk-ctrl">
           <Button
             variant="neutral"
