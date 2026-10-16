@@ -204,11 +204,7 @@ describe("wizard pager cluster (fb3 mobile navigation)", () => {
   });
 
   it("phones lift the cluster above the realm nav and swap to the SHORT caption (no ellipsis)", () => {
-    // The phone block that carries the pager (not merely the last 767px block in the file).
-    const sub767 =
-      css
-        .split("@media (max-width: 767px)")
-        .find((block) => /\.wiz-pager \{/.test(block)) ?? "";
+    const sub767 = css.split("@media (max-width: 767px)").at(-1) ?? "";
     expect(sub767).toMatch(/\.wiz-pager \{[^}]*var\(--m-nav-h\)/);
     expect(sub767).toMatch(/\.cap-short/);
   });
