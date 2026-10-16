@@ -27,8 +27,13 @@ import {
   type Ent,
 } from "./__helpers__/it-name-registry";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
+import { baseActionKey } from "@/lib/base-action-states";
 import { COVER_REFERENCE, coverKey } from "@/data/cover";
 import { srd } from "@tests/_harness/loc";
+
+/** A base action's IT name, as its card shows it. */
+const baseActionNameIt = (id: string): string =>
+  srd("rule", baseActionKey(id), "name", "it");
 
 const ents = loadEntities([PUBLIC_SRD_I18N]);
 // The sub-keyed catalogue rows (grant / action / trait blurbs) — user-visible prose
@@ -122,8 +127,8 @@ describe("IT name consistency (public SRD)", () => {
     for (const [id, expected] of Object.entries(EXPECTED_BASE_ACTION_IT)) {
       const action = BASE_ACTIONS.find((a) => a.id === id);
       if (!action) drift.push(`${id} missing from BASE_ACTIONS`);
-      else if (action.name.it !== expected)
-        drift.push(`${id}: "${action.name.it}" ≠ official "${expected}"`);
+      else if (baseActionNameIt(id) !== expected)
+        drift.push(`${id}: "${baseActionNameIt(id)}" ≠ official "${expected}"`);
     }
     // Every BASE_ACTIONS entry must be pinned (a new action must be added to the map above).
     const unpinned = BASE_ACTIONS.filter((a) => !(a.id in EXPECTED_BASE_ACTION_IT)).map(

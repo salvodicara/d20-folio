@@ -3,11 +3,25 @@
  * [Action]": until the start of your next turn, attack rolls against you have
  * Disadvantage and you make Dexterity saving throws with Advantage). Taking the
  * action lights the state; it ends by itself at the declared turn edge. Like
- * `BASE_ACTIONS`, an engine-authored bilingual table, not catalogue data.
+ * `BASE_ACTIONS`, an engine table; the base actions' words key under {@link baseActionKey}.
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
 import type { LocaleText } from "@/data/types";
+import { srdText, type LocText } from "@/lib/loc-text";
+
+/** A base action's `rule` catalogue key (`base-dash` → `action.dash`). */
+export function baseActionKey(id: string): string {
+  return `action.${id.replace(/^base-/, "")}`;
+}
+
+/** A base action's catalogue text: its `name`, `effect` or `trigger`. */
+export function baseActionText(
+  id: string,
+  field: "name" | "effect" | "trigger"
+): LocText {
+  return srdText("rule", baseActionKey(id), field);
+}
 
 type TurnBoundaryWhileActive = Extract<Grant, { type: "while-active" }> & {
   duration: { kind: "turn-boundary"; phase: "turn-start" | "turn-end"; turns: number };

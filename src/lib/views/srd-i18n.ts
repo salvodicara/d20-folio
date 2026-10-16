@@ -59,7 +59,7 @@ export function localizeText(text: LocText, locale: Locale): string {
     return localizeSrd(text.srd.kind, text.srd.key, text.srd.field, locale);
   }
   if ("custom" in text) return localizeCustom(text.custom);
-  if ("ui" in text) return i18n.getFixedT(locale)(text.ui);
+  if ("ui" in text) return i18n.getFixedT(locale)(text.ui, text.params);
   return text.lit[locale];
 }
 
