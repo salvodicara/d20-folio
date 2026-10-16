@@ -220,6 +220,13 @@
   --asset-hero-library: url("/assets/backgrounds/library-hero.webp");
   --asset-hero-armoury: url("/assets/backgrounds/armoury-hero.webp");
   --asset-hero-sanctum: url("/assets/backgrounds/sanctum-hero.webp");
+  /* Phone cuts (700×900, the subject kept): a phone downloads ~40 KiB, not the
+     wide plate. Every scene stays out of the precache (vite.config "scene-art"). */
+  --asset-hero-study-phone: url("/assets/backgrounds/study-hero-phone.webp");
+  --asset-hero-war-room-phone: url("/assets/backgrounds/war-room-hero-phone.webp");
+  --asset-hero-library-phone: url("/assets/backgrounds/library-hero-phone.webp");
+  --asset-hero-armoury-phone: url("/assets/backgrounds/armoury-hero-phone.webp");
+  --asset-hero-sanctum-phone: url("/assets/backgrounds/sanctum-hero-phone.webp");
   /* Compendium "ancient tome" parchment (DESIGN.md #5). A real aged-scroll WebP
      (OWN-23 — owner-supplied, cropped off its table + watermark) IS the surface now:
      the `.cmp-tome` recipe covers the tome with it. Light theme shows the warm vellum
@@ -1469,8 +1476,15 @@ body::after {
   /* Phone: the same scene, cropped to its subject, over the top of the screen. */
   body::after {
     height: 62vh;
-    background-size: auto 100%;
-    background-position: var(--app-bg-art-position, 62% top);
+    background-image:
+      linear-gradient(
+        180deg,
+        var(--hero-art-shade-top) 0%,
+        var(--hero-art-shade-mid) 55%,
+        var(--hero-art-shade-end) 100%
+      ),
+      var(--app-bg-art-phone, var(--app-bg-art, var(--asset-hero-study-phone)));
+    background-position: var(--app-bg-art-position, center top);
   }
 }
 /* AMBIENT campaign art (owner 2026-10-13). On the campaign hub the art is shown

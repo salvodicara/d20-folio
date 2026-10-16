@@ -43,7 +43,7 @@ import { JoinCampaignModal } from "@/features/campaigns/JoinCampaignModal";
 export function CampaignsListPage() {
   const { t } = useTranslation();
   // Direction B hero art: the keep's war room opens the campaigns list.
-  useRealmBackdrop("var(--asset-hero-war-room)");
+  useRealmBackdrop("var(--asset-hero-war-room)", "var(--asset-hero-war-room-phone)");
   useDocumentTitle(t("nav.campaigns"));
   const navigate = useNavigate();
   const uid = useAuthStore((s) => s.user?.uid);

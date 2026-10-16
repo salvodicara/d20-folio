@@ -18,17 +18,20 @@
 import { useEffect } from "react";
 import { transitionBackdrop } from "@/lib/backdrop-transition";
 
-/** Point `--app-bg-art` at `art` while mounted; restore the default on unmount. */
-export function useRealmBackdrop(art: string): void {
+/** Point `--app-bg-art` (and its phone cut) at a realm's scene while mounted;
+ *  restore the default on unmount. */
+export function useRealmBackdrop(art: string, phoneArt?: string): void {
   useEffect(() => {
     const root = document.documentElement.style;
     transitionBackdrop(() => {
       root.setProperty("--app-bg-art", art);
+      if (phoneArt) root.setProperty("--app-bg-art-phone", phoneArt);
     });
     return () => {
       transitionBackdrop(() => {
         root.removeProperty("--app-bg-art");
+        root.removeProperty("--app-bg-art-phone");
       });
     };
-  }, [art]);
+  }, [art, phoneArt]);
 }

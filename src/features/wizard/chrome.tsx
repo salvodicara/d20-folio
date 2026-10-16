@@ -48,7 +48,7 @@ export function WizardFrame({
   nav?: ReactNode;
 }) {
   // Direction B hero art: the keep's armoury opens creation and level-up alike.
-  useRealmBackdrop("var(--asset-hero-armoury)");
+  useRealmBackdrop("var(--asset-hero-armoury)", "var(--asset-hero-armoury-phone)");
   return (
     <div className="wb wiz on-art-scope">
       {paths}

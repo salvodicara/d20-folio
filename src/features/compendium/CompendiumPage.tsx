@@ -48,7 +48,7 @@ import type { PickerCtx } from "./picker";
 export function CompendiumPage() {
   const { t } = useTranslation();
   // Direction B hero art: the keep's library opens the compendium.
-  useRealmBackdrop("var(--asset-hero-library)");
+  useRealmBackdrop("var(--asset-hero-library)", "var(--asset-hero-library-phone)");
   // The active content type lives in the URL (`?type=spell|maneuver|…`) so a
   // compendium view is deep-linkable, bookmarkable, and back-button friendly —
   // matching the cockpit's `?tab=` pattern. An unknown / missing type falls back

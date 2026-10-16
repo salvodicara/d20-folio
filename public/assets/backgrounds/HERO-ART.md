@@ -18,4 +18,7 @@ one keep, painted as a single series.
   was generated first and passed as the style reference for the other four.
 - **Rights:** OpenAI's terms assign the output to the user; the owner holds
   these images for use in d20 Folio. No third-party asset is included.
-- **Processing:** PNG 1916×821 → WebP quality 82.
+- **Processing:** PNG 1916×821 → WebP quality 82 (wide), plus a 700×900 phone cut
+  (`*-hero-phone.webp`, WebP quality 78, subject kept) for viewports ≤720px.
+- **Delivery:** never precached; the service worker caches each scene on first
+  view (`scene-art` CacheFirst, vite.config.ts), and a realm only requests its own.
