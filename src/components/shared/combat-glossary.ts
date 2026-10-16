@@ -7,10 +7,10 @@
  * Opportunity Attack is explained by its base action card (`base-opportunity-attack`).
  */
 import { COVER_REFERENCE, type CoverLevel } from "@/data/cover";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import type { GlossaryTermId } from "./GlossaryTip";
 
-const coverName = (id: CoverLevel): BiText =>
+const coverName = (id: CoverLevel): LocaleText =>
   COVER_REFERENCE.find((c) => c.id === id)?.name ?? { en: id, it: id };
 
 export const COMBAT_GLOSSARY = {
@@ -27,7 +27,7 @@ export const COMBAT_GLOSSARY = {
   immunity: { en: "Immunity", it: "Immunità" },
   reaction: { en: "Reaction", it: "Reazione" },
   bonusAction: { en: "Bonus Action", it: "Azione Bonus" },
-} as const satisfies Partial<Record<GlossaryTermId, BiText>>;
+} as const satisfies Partial<Record<GlossaryTermId, LocaleText>>;
 
 export type CombatTermId = keyof typeof COMBAT_GLOSSARY;
 

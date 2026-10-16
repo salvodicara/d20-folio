@@ -8,7 +8,7 @@
  * description, and (in edit mode) the full custom-weapon + override fields.
  *
  * SRD CONTENT (name / description / chips) arrives PRE-LOCALIZED on the VM —
- * this component reads ZERO BiText / `[locale]`. The only `t(...)` here
+ * this component reads ZERO LocaleText / `[locale]`. The only `t(...)` here
  * resolves APP strings + raw-number formatting.
  *
  * Memoized — the orchestrator passes a STABLE VM + stable callbacks, so a search

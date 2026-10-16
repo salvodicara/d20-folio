@@ -15,7 +15,7 @@
  * restatements, not verbatim prose.
  */
 
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 
 export type TravelPaceId = "fast" | "normal" | "slow";
 
@@ -23,7 +23,7 @@ export interface TravelPace {
   /** Stable id (kebab-case). */
   id: TravelPaceId;
   /** Bilingual pace name. */
-  name: BiText;
+  name: LocaleText;
   /** Feet covered per minute at this pace. */
   perMinuteFt: number;
   /** Miles covered per hour at this pace. */
@@ -31,7 +31,7 @@ export interface TravelPace {
   /** Miles covered per (8-hour) day at this pace. */
   perDayMiles: number;
   /** Bilingual one-line special effect, or null when the pace has none. */
-  effect: BiText | null;
+  effect: LocaleText | null;
 }
 
 export const TRAVEL_PACE_REFERENCE: ReadonlyArray<TravelPace> = [

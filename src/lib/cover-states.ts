@@ -8,7 +8,7 @@
 import { COVER_REFERENCE, type CoverEffect, type CoverLevel } from "@/data/cover";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 
 export type CoverStateLevel = Exclude<CoverLevel, "total">;
 
@@ -70,7 +70,7 @@ export function coverReference(level: CoverStateLevel): CoverEffect | undefined 
 }
 
 /** The bilingual name behind a cover key, for log lines and labels. */
-export function coverStateName(key: string): BiText | undefined {
+export function coverStateName(key: string): LocaleText | undefined {
   const label = COVER_STATES.find((state) => state.grant.activeKey === key)?.grant.label;
   return label;
 }

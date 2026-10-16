@@ -8,7 +8,7 @@
  * the cast CTAs.
  *
  * SRD CONTENT (name / range / duration / description / higher-levels / effect
- * word) arrives PRE-LOCALIZED on the VM — this component reads ZERO BiText /
+ * word) arrives PRE-LOCALIZED on the VM — this component reads ZERO LocaleText /
  * `[locale]`. The only `t(...)` here resolves APP strings (school / casting-time
  * labels, verdict words, facts labels, prep hints) + raw-number formatting, via
  * the pure {@link ./spell-card-helpers} (the presenter↔edge split,

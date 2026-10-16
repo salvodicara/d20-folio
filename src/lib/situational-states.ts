@@ -14,7 +14,7 @@ import {
   UNDERWATER_COMBAT_REFERENCE,
   type CombatVariantNote,
 } from "@/data/combat-variants";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
 
@@ -63,7 +63,7 @@ export interface SituationalState {
   id: SituationId;
   lasts: SituationLasts;
   /** The chip's name (also its grant's label). */
-  label: BiText;
+  label: LocaleText;
   /** The SRD lines this state stands for: its chip hint, in order. */
   reference: ReadonlyArray<CombatVariantNote>;
   /** The lines the sheet cannot apply, shown beside the chips while it is lit. */
@@ -86,7 +86,7 @@ export function situationKey(id: SituationId): string {
 function state(
   id: SituationId,
   lasts: SituationLasts,
-  label: BiText,
+  label: LocaleText,
   reference: ReadonlyArray<CombatVariantNote>,
   notes: ReadonlyArray<CombatVariantNote>,
   attack: ReadonlyArray<SituationalAttackRule>,
@@ -210,7 +210,7 @@ export function situationalState(id: SituationId): SituationalState | undefined 
 }
 
 /** The bilingual name behind a situation key, for log lines and labels. */
-export function situationalStateName(key: string): BiText | undefined {
+export function situationalStateName(key: string): LocaleText | undefined {
   return SITUATIONAL_STATES.find((s) => s.grant.activeKey === key)?.label;
 }
 

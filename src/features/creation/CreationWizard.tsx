@@ -7,7 +7,7 @@
  * Firestore), and it reads every SRD/locale-dependent string from the
  * `lib/views/creation-view` presenter (golden rules 5 + 7). The per-step
  * presentational components live under `features/creation/steps/`. The wizard
- * makes ZERO direct `[locale]` / BiText reads.
+ * makes ZERO direct `[locale]` / LocaleText reads.
  *
  * Two paths, ONE build (switching between them keeps every pick):
  * - Quick Start (default): the whole character on one page, arriving PREFILLED
@@ -165,6 +165,7 @@ import {
 import { SkillsPickerSection } from "./steps/pickers";
 import { ClassGallery, ClassPlaques } from "./steps/ClassGallery";
 import { QuickChapter } from "./steps/QuickChapter";
+import type { Locale } from "@/lib/locale";
 
 // ─── Starting equipment → character ──────────────────────────────────────────
 
@@ -2383,7 +2384,7 @@ export function CreationWizard() {
 }
 
 /** The background's granted origin-feat label (the plaque eyebrow). */
-function featLabelForBackground(bgId: string, locale: "en" | "it"): string {
+function featLabelForBackground(bgId: string, locale: Locale): string {
   const slug = SRD_BACKGROUNDS.find((b) => b.id === bgId)?.feat ?? "";
   return slug && FEATS_BY_ID.has(slug) ? featName(slug, locale) : "";
 }

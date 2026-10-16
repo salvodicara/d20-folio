@@ -21,11 +21,12 @@
  * maneuvers · spell mastery · signature spells · new feature cards · spell-swap
  * summary). Each VM carries its STABLE id (the picker binds to + emits THIS) plus
  * the localized label / gloss resolved HERE through {@link localizeSrd} keyed by
- * the id — so the surface survives the upcoming `src/data/**` BiText strip and
+ * the id — so the surface survives the upcoming `src/data/**` LocaleText strip and
  * makes ZERO direct `[locale]` reads (golden rules 5 + 7, docs/ARCHITECTURE.md
  * §1.3 + §3.3). Raw NUMBERS (costs, picks-needed, HP, slot counts) stay raw; the
  * UI formats them at the edge via `t`.
  */
+import type { LocaleText } from "@/data/types";
 import { getClassTable, getFeaturesAtLevel, classFeatureIndex } from "@/data/classes";
 import { getExpandedSpellsThroughLevel } from "@/lib/expanded-spells";
 import type { Locale } from "@/lib/locale";
@@ -252,8 +253,8 @@ export function subclassReveal(
 
 /** The six ability codes, in canonical order. */
 const ABILITY_CODES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
-/** ASI ability-tile labels (app abbreviations, not SRD BiText). */
-const ABILITY_LABELS: Record<string, BiTextLite> = {
+/** ASI ability-tile labels (app abbreviations, not SRD LocaleText). */
+const ABILITY_LABELS: Record<string, LocaleText> = {
   STR: { en: "STR", it: "FOR" },
   DEX: { en: "DEX", it: "DES" },
   CON: { en: "CON", it: "COS" },
@@ -261,10 +262,6 @@ const ABILITY_LABELS: Record<string, BiTextLite> = {
   WIS: { en: "WIS", it: "SAG" },
   CHA: { en: "CHA", it: "CAR" },
 };
-interface BiTextLite {
-  en: string;
-  it: string;
-}
 
 /** The localized abbreviation for an ability code (the ASI tiles). */
 export function abilityLabel(code: string, locale: Locale): string {

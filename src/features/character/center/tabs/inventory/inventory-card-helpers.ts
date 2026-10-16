@@ -4,7 +4,7 @@
  * ({@link import("@/lib/views/inventory-view").WeaponRowVM} /
  * {@link import("@/lib/views/inventory-view").ItemRowVM}); these helpers only turn
  * RAW numbers + ids into the APP-localized display strings (damage formula, to-hit,
- * verdict outcome, damage-type words) via the passed `t`. No BiText / `[locale]`
+ * verdict outcome, damage-type words) via the passed `t`. No LocaleText / `[locale]`
  * reads — that all happened in the presenter.
  */
 import type { TFunction } from "i18next";

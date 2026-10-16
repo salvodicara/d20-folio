@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { buildSituationalRulesView } from "@/lib/views/situational-rules-view";
 
-/** The rule-5 presenter that folds the inline-BiText reference tables into localized strings. */
+/** The rule-5 presenter that folds the inline-LocaleText reference tables into localized strings. */
 describe("buildSituationalRulesView (Rules-reference presenter)", () => {
   it("localizes every topic into EN plain strings; travel numbers stay raw", () => {
     const v = buildSituationalRulesView("en");

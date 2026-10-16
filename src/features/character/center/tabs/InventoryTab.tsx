@@ -7,7 +7,7 @@
  * charge / use / currency, immediate-commit with a 5 s undo where applicable), and
  * renders the presentational section components — `WeaponCard`, `ArmorCard`,
  * `GearCard`, the currency ledger. SRD content is pre-localized on the VM, so THIS
- * file makes ZERO direct `[locale]`/BiText reads (docs/ARCHITECTURE.md;
+ * file makes ZERO direct `[locale]`/LocaleText reads (docs/ARCHITECTURE.md;
  * golden rules 5 + 7).
  *
  * (folio §5.8 — the inventory card-page.)

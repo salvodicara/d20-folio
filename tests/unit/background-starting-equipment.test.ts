@@ -97,7 +97,7 @@ describe("Background.startingEquipment — data integrity (aggregation)", () => 
         for (const item of opt.items) {
           const hasSrd = item.srdId !== undefined;
           const isToolChoice = item.fromToolChoice === true;
-          // Exactly one of the two variants is set — the name-only / inline-BiText
+          // Exactly one of the two variants is set — the name-only / inline-LocaleText
           // form no longer exists (the escape hatch is deleted at the type level).
           expect([hasSrd, isToolChoice].filter(Boolean).length, bg.id).toBe(1);
         }

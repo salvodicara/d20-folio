@@ -46,7 +46,7 @@ const UI_DIRS = ["features", "app", "components", "hooks"] as const;
 const UI_ROOTS = UI_DIRS.map((d) => join(SRC, d));
 
 // The presenter sub-layers. They live under `lib/` but are NOT engine-core: they
-// may localize/format (take a `locale` + a bound `t`, read a `BiText`, call the
+// may localize/format (take a `locale` + a bound `t`, read a `LocaleText`, call the
 // unit formatters). Engine-core = the engine dirs MINUS these directories.
 //   - `lib/views/**` — the canonical (locale, engine-output) → view-model seam.
 //   - `lib/pdf/**`   — the character-sheet PDF presenter (the export analog of a
@@ -255,7 +255,7 @@ describe("lib/tools.ts is dependency-light — never imports @/i18n (bundle-chun
 // ════════════════════════════════════════════════════════════════════════════
 //
 // The destination (docs/ARCHITECTURE.md): engine-core reads NO active locale
-// — a `BiText` is carried as DATA (`{ en, it }`) and resolved to a string ONLY in
+// — a `LocaleText` is carried as DATA (`{ en, it }`) and resolved to a string ONLY in
 // `lib/views/` or a UI hook. The unambiguous tell of a locale READ is a DYNAMIC
 // `[locale]` index (`x[locale]`, `x.name[locale]`) — it picks the active
 // language. (A static `.en` read is canonical-SRD-FACT access, not localization —
@@ -314,7 +314,7 @@ describe("R6 — engine-core reads no active locale (the [locale]-index HARD PIN
     );
     expect(
       offenders,
-      `These engine modules were de-localized in SLICE 6 and must emit BiText/ids ` +
+      `These engine modules were de-localized in SLICE 6 and must emit LocaleText/ids ` +
         `only — a dynamic [locale] read regressed the contract. Carry the data and ` +
         `localize in lib/views/ (docs/ARCHITECTURE.md).`
     ).toEqual([]);
@@ -326,7 +326,7 @@ describe("R6 — engine-core reads no active locale (the [locale]-index HARD PIN
     expect(
       unexpected,
       `An engine-core [locale] read appeared. Engine-core reads NO active locale ` +
-        `(SLICE 7 closed the frontier — the allowlist is empty): carry BiText as data ` +
+        `(SLICE 7 closed the frontier — the allowlist is empty): carry LocaleText as data ` +
         `+ localize in lib/views/ or a UI hook (docs/ARCHITECTURE.md).`
     ).toEqual([]);
   });

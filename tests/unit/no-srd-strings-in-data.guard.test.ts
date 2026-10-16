@@ -4,7 +4,7 @@
  * After THE STRIP the catalogues (`src/i18n/{en,it}/srd/<kind>.json`) are the
  * single source of SRD text; `src/data/**` is ids + mechanics ONLY. This guard
  * fails if any translatable string literal reappears in the data layer:
- *   - a `BiText` leaf — an object literal with BOTH `en` and `it` string
+ *   - a `LocaleText` leaf — an object literal with BOTH `en` and `it` string
  *     properties (the exact shape the strip removed), OR
  *   - an `en:` / `it:` property whose value is a natural-language string
  *     (multi-word, or containing a space + a letter) — the codemod's signature.
@@ -12,7 +12,7 @@
  * Whitelisted files keep inline strings by design (documented bypasses):
  *   - `srd-names.ts` — a lightweight name index the eager persistence layer reads
  *     without pulling the SRD catalogues.
- *   - `types.ts` — the `BiText` interface declaration itself (no string VALUES).
+ *   - `types.ts` — the `LocaleText` interface declaration itself (no string VALUES).
  *   - `cover.ts` — a self-contained Cover quick-reference table that is NOT an
  *     id-keyed SRD entity rendered through the catalogue seam (no per-character
  *     mechanic; only a static reference). Documented bypass.
@@ -26,9 +26,9 @@
  *     Documented bypass — same rationale as `cover.ts`.
  *
  * NOTE: `background-equipment.ts` was REMOVED from this whitelist (2026-06-13)
- * when its `flavour(en,it)` inline-BiText escape hatch was deleted — every former
+ * when its `flavour(en,it)` inline-LocaleText escape hatch was deleted — every former
  * "flavour" pack item is now a real SRD catalogue id, so the file carries ids
- * ONLY and this guard now enforces no-BiText there too (the hatch cannot return).
+ * ONLY and this guard now enforces no-LocaleText there too (the hatch cannot return).
  *
  * AST-driven (TS compiler API), so it can't be spelled around by formatting.
  */
@@ -63,7 +63,7 @@ function offenders(file: string): string[] {
   }
 
   const visit = (node: ts.Node): void => {
-    // (1) A BiText leaf — object literal with BOTH `en` and `it` string props.
+    // (1) A LocaleText leaf — object literal with BOTH `en` and `it` string props.
     if (ts.isObjectLiteralExpression(node)) {
       const props = new Map<string, ts.Expression>();
       for (const p of node.properties) {
@@ -78,7 +78,7 @@ function offenders(file: string): string[] {
       const isStr = (e?: ts.Expression): boolean =>
         e != null && (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e));
       if (isStr(en) && isStr(it)) {
-        found.push(`L${lineOf(node)}: BiText leaf { en, it }`);
+        found.push(`L${lineOf(node)}: LocaleText leaf { en, it }`);
       }
     }
     // (2) An `en:`/`it:` property assigned a natural-language string literal.
@@ -105,7 +105,7 @@ describe("§7 guard — no SRD display strings in src/data/**", () => {
   // data corpus grew ~+1,000 lines (feats.ts etc.) in a data sweep; measured
   // at risk of the 5 s default under V8 coverage + parallel load. 30 s gives
   // 4–5× headroom and grows with the SRD corpus.
-  it("every data file (outside the documented bypasses) is free of BiText / NL strings", () => {
+  it("every data file (outside the documented bypasses) is free of LocaleText / NL strings", () => {
     const violations: Record<string, string[]> = {};
     for (const file of srcFiles({ under: DATA_DIR, exts: [".ts"] })) {
       const base = relative(DATA_DIR, file);

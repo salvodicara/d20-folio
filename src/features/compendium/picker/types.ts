@@ -17,7 +17,9 @@ import type { useTranslation } from "react-i18next";
 import type { CharacterDoc } from "@/types/character";
 import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
 
-export type Locale = "en" | "it";
+import type { Locale } from "@/lib/locale";
+
+export type { Locale };
 
 /** The translator type, derived from the hook (no direct i18next type import). */
 export type TFn = ReturnType<typeof useTranslation>["t"];

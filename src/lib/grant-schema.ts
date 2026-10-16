@@ -24,8 +24,17 @@ import {
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
+import { LOCALES, type Locale } from "@/lib/locale";
 
 const RESOURCE_SPEC_SCHEMA = customSchema<"resource-spec", ResourceSpec>("resource-spec");
+
+/** Inline text in every registered language (`LocaleText`): one field per locale. */
+const LOCALE_TEXT_SCHEMA = objectSchema(
+  Object.fromEntries(LOCALES.map((locale) => [locale, stringSchema])) as Record<
+    Locale,
+    typeof stringSchema
+  >
+);
 
 /**
  * The one physical-payment pointer a grant on a MAGIC ITEM may carry: the id of
@@ -262,10 +271,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("choice-resistance"),
     },
     {
-      label: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      label: LOCALE_TEXT_SCHEMA,
     }
   ),
   speed: objectSchema(
@@ -1626,10 +1632,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         vs: stringSchema,
       },
       {
-        description: objectSchema({
-          en: stringSchema,
-          it: stringSchema,
-        }),
+        description: LOCALE_TEXT_SCHEMA,
         round1: booleanSchema,
         suppressedByConditions: arraySchema(
           unionSchema([
@@ -1670,10 +1673,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         vs: stringSchema,
       },
       {
-        description: objectSchema({
-          en: stringSchema,
-          it: stringSchema,
-        }),
+        description: LOCALE_TEXT_SCHEMA,
         round1: booleanSchema,
         suppressedByConditions: arraySchema(
           unionSchema([
@@ -1710,10 +1710,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       },
       {
         consume: unionSchema([literalSchema("next"), literalSchema("each")]),
-        description: objectSchema({
-          en: stringSchema,
-          it: stringSchema,
-        }),
+        description: LOCALE_TEXT_SCHEMA,
       }
     ),
     objectSchema(
@@ -1735,10 +1732,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       },
       {
         consume: unionSchema([literalSchema("next"), literalSchema("each")]),
-        description: objectSchema({
-          en: stringSchema,
-          it: stringSchema,
-        }),
+        description: LOCALE_TEXT_SCHEMA,
       }
     ),
   ]),
@@ -1773,10 +1767,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("roll-floor"),
     },
     {
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
     }
   ),
   "roll-die-adjustment": objectSchema({
@@ -1795,10 +1786,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("incoming-attack-advantage"),
     },
     {
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
     }
   ),
   "incoming-attack-disadvantage": objectSchema(
@@ -1806,10 +1794,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("incoming-attack-disadvantage"),
     },
     {
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
     }
   ),
   "defense-note": objectSchema(
@@ -1817,10 +1802,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("defense-note"),
     },
     {
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
     }
   ),
   /**
@@ -1928,10 +1910,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           turns: numberSchema,
         }),
       ]),
-      label: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      label: LOCALE_TEXT_SCHEMA,
       minLevel: numberSchema,
       recipient: unionSchema([literalSchema("caster"), literalSchema("selected")]),
       targetScope: unionSchema([literalSchema("marked"), literalSchema("cursed")]),
@@ -1952,10 +1931,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
             id: stringSchema,
           },
           {
-            label: objectSchema({
-              en: stringSchema,
-              it: stringSchema,
-            }),
+            label: LOCALE_TEXT_SCHEMA,
           }
         )
       ),
@@ -1963,10 +1939,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     },
     {
       choiceFrequency: unionSchema([literalSchema("creation"), literalSchema("rest")]),
-      label: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      label: LOCALE_TEXT_SCHEMA,
     }
   ),
   "granted-action": objectSchema(
@@ -1990,15 +1963,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           amount: numberSchema,
         }
       ),
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
       id: stringSchema,
-      name: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      name: LOCALE_TEXT_SCHEMA,
       saveAbility: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),
@@ -2007,10 +1974,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("WIS"),
         literalSchema("CHA"),
       ]),
-      trigger: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      trigger: LOCALE_TEXT_SCHEMA,
     }
   ),
   "manifested-weapon": objectSchema(
@@ -2035,10 +1999,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           ]),
         },
         {
-          name: objectSchema({
-            en: stringSchema,
-            it: stringSchema,
-          }),
+          name: LOCALE_TEXT_SCHEMA,
         }
       ),
       mastery: unionSchema([
@@ -2052,10 +2013,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("Vex"),
       ]),
       masteryIsFree: booleanSchema,
-      name: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      name: LOCALE_TEXT_SCHEMA,
       proficient: booleanSchema,
     }
   ),
@@ -2079,10 +2037,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("CHA"),
       ]),
       damageDieByLevel: recordSchema("number", stringSchema),
-      name: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      name: LOCALE_TEXT_SCHEMA,
       oncePerTurnExtra: objectSchema({
         damageType: DAMAGE_TYPE_SCHEMA,
         dice: stringSchema,
@@ -2114,10 +2069,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("pact-weapon"),
     },
     {
-      name: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      name: LOCALE_TEXT_SCHEMA,
     }
   ),
   /**
@@ -2139,10 +2091,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       damageTypeChoices: arraySchema(DAMAGE_TYPE_SCHEMA),
       /** Lets you expend a Hit Die to heal on the hit (Lifedrinker). */
       healFromHitDie: booleanSchema,
-      name: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      name: LOCALE_TEXT_SCHEMA,
       /** Secondary Prone effect on the target (Eldritch Smite). */
       prone: literalSchema("huge-or-smaller"),
       /** Base die PLUS one die per slot level (Eldritch Smite). */
@@ -2197,14 +2146,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("stunned"),
         literalSchema("unconscious"),
       ]),
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
-      name: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
+      name: LOCALE_TEXT_SCHEMA,
       save: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),
@@ -2227,10 +2170,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("reaction"),
         literalSchema("free"),
       ]),
-      trigger: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      trigger: LOCALE_TEXT_SCHEMA,
     }
   ),
   /**
@@ -2321,10 +2261,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("aura"),
     },
     {
-      description: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      description: LOCALE_TEXT_SCHEMA,
       radiusByLevel: recordSchema("number", numberSchema),
     }
   ),
@@ -2341,10 +2278,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     },
     {
       appliesToFeature: stringSchema,
-      effect: objectSchema({
-        en: stringSchema,
-        it: stringSchema,
-      }),
+      effect: LOCALE_TEXT_SCHEMA,
     }
   ),
   /**

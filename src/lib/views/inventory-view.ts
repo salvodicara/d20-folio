@@ -12,7 +12,7 @@
  *    flags, per-unit + total weight).
  *  - Localizes every SRD content string HERE via {@link localizeSrd} keyed by the
  *    stable item id (kind `"equipment"` for weapons/gear/armor, `"magic-item"` for
- *    magic items) — so when the BiText on `src/data/**` is later stripped, this
+ *    magic items) — so when the LocaleText on `src/data/**` is later stripped, this
  *    surface keeps rendering. Custom (homebrew) items carry their own single-locale
  *    text and bypass the resolver via {@link localizeCustom}.
  *  - Resolves the cross-cutting summaries: attunement (bonded / cap / shown-when),

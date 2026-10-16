@@ -13,7 +13,7 @@
  * the effect can curve around the cover (e.g. some AoEs).
  */
 
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 
 export type CoverLevel = "half" | "three-quarters" | "total";
 
@@ -21,13 +21,13 @@ export interface CoverEffect {
   /** Stable id (kebab-case) */
   id: CoverLevel;
   /** Bilingual cover-level name */
-  name: BiText;
+  name: LocaleText;
   /** AC bonus to the target (or null for total cover) */
   acBonus: number | null;
   /** DEX-save bonus to the target (or null for total cover) */
   dexSaveBonus: number | null;
   /** Bilingual one-line summary */
-  summary: BiText;
+  summary: LocaleText;
 }
 
 export const COVER_REFERENCE: ReadonlyArray<CoverEffect> = [

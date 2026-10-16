@@ -4,7 +4,7 @@
  * R6+R3 SLICE 5 — the §3.3 display seam for the combat / play surface. The
  * components that render the Play tab (`PlayTab`, `ThisTurnTracker`,
  * `ResourceRail`, `ActivatableFeaturesBar`, `CombatHeader`) used to read the
- * active locale directly and resolve `BiText`/SRD strings inline — condition
+ * active locale directly and resolve `LocaleText`/SRD strings inline — condition
  * names, advantage descriptions, the concentration label, the activatable-toggle
  * labels, the per-action "At Higher Levels" upcast copy. This module owns ALL of
  * those resolutions so every surface receives ready-to-render strings and makes
@@ -21,10 +21,10 @@
  * Everything here is a pure function (no React, no Firebase). Localisation of the
  * `t(...)`-keyed UI chrome (rubrics, CTAs, placeholders) stays at the call site —
  * this presenter resolves only the DATA-derived strings (SRD content + grant
- * `BiText` + raw session strings).
+ * `LocaleText` + raw session strings).
  */
 
-import type { BiText, Recovery, TrackerUnit } from "@/data/types";
+import type { Recovery, TrackerUnit } from "@/data/types";
 import type {
   RawResolvedAction,
   RawResolvedTracker,
@@ -71,13 +71,12 @@ import { condColor, condInkColor } from "@/lib/condition-color";
 import { impliedConditionSources } from "@/lib/condition";
 import { combatHigherLevels } from "@/lib/views/combat-action-view";
 import { statusRoundsLeft, type Status } from "@/lib/status";
+import type { Locale } from "@/lib/locale";
 export {
   conversionOptionVMs,
   type ConversionCtx,
   type ConversionOptionVM,
 } from "@/lib/mechanics-command";
-
-type Locale = keyof BiText;
 
 // ─── Resource trackers ──────────────────────────────────────────────────────
 

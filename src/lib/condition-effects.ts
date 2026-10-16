@@ -17,7 +17,12 @@
  *
  * Pure module — no React/store/Firebase imports.
  */
-import type { AbilityCode, BiText, ConditionId, SrdEquipmentData } from "@/data/types";
+import type {
+  AbilityCode,
+  LocaleText,
+  ConditionId,
+  SrdEquipmentData,
+} from "@/data/types";
 import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
 import type { AdvantageClause, AggregatedGrants } from "@/lib/grants";
@@ -51,13 +56,13 @@ export interface ConditionGate {
   advantages?: ReadonlyArray<{
     rollType: AdvantageClause["rollType"];
     vs: string;
-    description: BiText;
+    description: LocaleText;
   }>;
   /** Self-side disadvantage the condition imposes. */
   disadvantages?: ReadonlyArray<{
     rollType: AdvantageClause["rollType"];
     vs: string;
-    description: BiText;
+    description: LocaleText;
   }>;
 }
 
@@ -261,15 +266,15 @@ export function resolveConditionEffects(
 // ════════════════════════════════════════════════════════════════════════════
 
 /** Engine-authored roll descriptors for the unproficient-armor disadvantage. */
-const UNPROFICIENT_ARMOR_STR_DEX_CHECKS: BiText = {
+const UNPROFICIENT_ARMOR_STR_DEX_CHECKS: LocaleText = {
   en: "Strength + Dexterity ability checks",
   it: "Prove di Forza e Destrezza",
 };
-const UNPROFICIENT_ARMOR_STR_DEX_SAVES: BiText = {
+const UNPROFICIENT_ARMOR_STR_DEX_SAVES: LocaleText = {
   en: "Strength + Dexterity saving throws",
   it: "Tiri salvezza su Forza e Destrezza",
 };
-const UNPROFICIENT_ARMOR_ATTACKS: BiText = {
+const UNPROFICIENT_ARMOR_ATTACKS: LocaleText = {
   en: "Attack rolls (wearing armor you lack proficiency with)",
   it: "Tiri per colpire (indossando armatura senza competenza)",
 };

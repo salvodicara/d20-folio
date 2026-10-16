@@ -1,16 +1,16 @@
 /**
  * Presenter (rule 5 — `lib/views` is the ONLY layer that localizes) for the
- * Play-tab "Rules Reference" panel. Folds the pure inline-BiText reference tables
+ * Play-tab "Rules Reference" panel. Folds the pure inline-LocaleText reference tables
  * (Cover = M8, Mounted/Underwater = RA-30, Travel Pace = RA-29) into a
  * locale-resolved view-model of plain strings, so `SituationalRules` renders
- * without ever touching BiText.
+ * without ever touching LocaleText.
  *
  * Travel-pace distances stay raw numbers here; the view formats them through the
  * D3 helpers (localeDistance / localeMiles) with the per-min/hr/day UI labels.
  */
 
 import type { Locale } from "@/lib/locale";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import { COVER_REFERENCE } from "@/data/cover";
 import {
   MOUNTED_COMBAT_REFERENCE,
@@ -42,9 +42,13 @@ export interface SituationalRulesView {
   travel: TravelPaceVM[];
 }
 
-/** Fold the four inline-BiText reference tables into localized plain strings. */
+/** Fold the four inline-LocaleText reference tables into localized plain strings. */
 export function buildSituationalRulesView(locale: Locale): SituationalRulesView {
-  const line = (n: { id: string; name: BiText; summary: BiText }): RuleLineVM => ({
+  const line = (n: {
+    id: string;
+    name: LocaleText;
+    summary: LocaleText;
+  }): RuleLineVM => ({
     id: n.id,
     term: n.name[locale],
     desc: n.summary[locale],

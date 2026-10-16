@@ -219,7 +219,7 @@ export function CombatHeader() {
 
   const name = charData.name;
   // Shared srd-i18n source of truth: "Elfo · Bardo 9" in IT (species + class are
-  // stored as English strings/slugs and resolve via the SRD BiText maps).
+  // stored as English strings/slugs and resolve via the SRD LocaleText maps).
   const identity = localizeCharacterIdentity(charData, locale);
 
   const level = totalLevel(charData);

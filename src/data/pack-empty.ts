@@ -18,7 +18,7 @@
 import type {
   BackgroundEquipmentOption,
   BeastStatBlock,
-  BiText,
+  LocaleText,
   MonsterStatBlock,
   SrdBackgroundData,
   SrdClassFeatureData,
@@ -67,7 +67,7 @@ export const packQuickbuildPresets: Readonly<Record<string, QuickbuildPreset>> =
 /** Typed additions to public grant sources (none without the content pack). */
 export const packGrantExtensions: PackGrantExtensions = {};
 
-export const packClassNames: readonly BiText[] = [];
+export const packClassNames: readonly LocaleText[] = [];
 export const packSubclassNames: readonly NamedEntry[] = [];
 export const packRaceNames: readonly NamedEntry[] = [];
 export const packBackgroundNames: readonly NamedEntry[] = [];

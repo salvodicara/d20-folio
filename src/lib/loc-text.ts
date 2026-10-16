@@ -1,6 +1,6 @@
 /**
  * `LocText` — a stable, localizable text REFERENCE the engine emits in place of
- * a materialized `BiText` (R6+R3 SLICE 7c, docs/ARCHITECTURE.md).
+ * a materialized `LocaleText` (R6+R3 SLICE 7c, docs/ARCHITECTURE.md).
  *
  * ## Why this exists
  *
@@ -8,7 +8,7 @@
  * live in `src/i18n/<locale>/srd/<file>.json`, resolved at the presenter edge by
  * `localizeSrd`. The Grant engine (`grants.ts` aggregate + `smart-tracker.ts`
  * resolved actions/trackers) therefore can NO LONGER carry a `name`/`description`/
- * `label`/`trigger` as `BiText` data — it has no IT to materialize, and it must
+ * `label`/`trigger` as `LocaleText` data — it has no IT to materialize, and it must
  * never read the active locale (engine-core ↛ i18n; §1.1).
  *
  * Instead every such carrier field holds a `LocText`: a self-describing pointer
@@ -24,7 +24,7 @@
  *  - `custom` — a USER-authored single string (a homebrew feature/spell/weapon
  *    name or description). Not SRD: it carries its own text and the view shows it
  *    verbatim via `localizeCustom` (the documented resolver bypass).
- *  - `lit` — an ENGINE literal `BiText` that is NOT `src/data/**` SRD content and
+ *  - `lit` — an ENGINE literal `LocaleText` that is NOT `src/data/**` SRD content and
  *    NOT user text: the small set of engine-authored bilingual constants the
  *    smart-tracker emits (Unarmed Strike, the "(off-hand)" suffix, the base
  *    action-menu labels). These legitimately stay bilingual in code — they are
@@ -40,13 +40,13 @@
  * ## Contract
  *  - PURE: this module is the TYPE + three tiny constructors. No React, Zustand,
  *    Firebase, i18next, or active locale. It imports `SrdKind` from the
- *    whitelisted `@/i18n/srd-en` (locale-independent) and `BiText` from the data
+ *    whitelisted `@/i18n/srd-en` (locale-independent) and `LocaleText` from the data
  *    types — engine-core may import both.
  *  - The RESOLVER ({@link localizeText}) lives in `lib/views/` because it reads
  *    the active locale and calls `localizeSrd`; the engine never resolves a
  *    `LocText` itself.
  */
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import type { SrdKind } from "@/i18n/srd-en";
 
 /**
@@ -56,7 +56,7 @@ import type { SrdKind } from "@/i18n/srd-en";
 export type LocText =
   | { srd: { kind: SrdKind; key: string; field: string } }
   | { custom: string }
-  | { lit: BiText }
+  | { lit: LocaleText }
   | { ui: string };
 
 /** Construct an SRD-catalogue `LocText` from a `(kind, key, field)`. */
@@ -70,7 +70,7 @@ export function customText(text: string): LocText {
 }
 
 /** Construct a `LocText` from an ENGINE-authored bilingual literal. */
-export function litText(text: BiText): LocText {
+export function litText(text: LocaleText): LocText {
   return { lit: text };
 }
 

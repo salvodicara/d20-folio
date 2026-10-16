@@ -12,16 +12,16 @@
  * concise functional restatements, not verbatim prose.
  */
 
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 
 /** One rule line in a variant-combat quick-reference. */
 export interface CombatVariantNote {
   /** Stable id (kebab-case). */
   id: string;
   /** Bilingual heading. */
-  name: BiText;
+  name: LocaleText;
   /** Bilingual one-line functional summary. */
-  summary: BiText;
+  summary: LocaleText;
 }
 
 export const MOUNTED_COMBAT_REFERENCE: ReadonlyArray<CombatVariantNote> = [

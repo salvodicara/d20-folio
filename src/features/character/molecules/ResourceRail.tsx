@@ -128,6 +128,7 @@ import {
   deriveStatuses,
   statusRoundCounts,
 } from "@/lib/status";
+import type { Locale } from "@/lib/locale";
 
 /** The six set-valued override maps on CharacterData (#68). */
 type SetOverrideField =
@@ -1343,7 +1344,7 @@ function auraEffectLine(
   aura: AuraVM,
   scores: Readonly<Record<AbilityCode, number>>,
   t: TFunction,
-  locale: "en" | "it"
+  locale: Locale
 ): string {
   const affects = t(`character.auraAffects_${aura.affects}`);
   const e = aura.effect;
@@ -1402,7 +1403,7 @@ function ChoiceResistancePicker({
   locale,
 }: {
   slot: AggregatedGrants["choiceResistances"][number];
-  locale: "en" | "it";
+  locale: Locale;
 }) {
   const { t } = useTranslation();
   const picked = slot.selected;
@@ -1521,7 +1522,7 @@ function AddDefensePicker({
   onAdd,
 }: {
   defViews: Record<SessionDefenseKind, DefenseKindView>;
-  locale: "en" | "it";
+  locale: Locale;
   /** Override the write target. When absent, adds to the session overlay. */
   onAdd?: (kind: SessionDefenseKind, id: string) => void;
 }) {

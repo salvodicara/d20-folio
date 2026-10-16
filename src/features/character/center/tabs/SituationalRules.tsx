@@ -4,7 +4,7 @@
  * table (Cover, Mounted Combat, Underwater Combat, Travel Pace). Pure reference —
  * no per-character mechanic, no Grant, no dice. It renders a pre-localized
  * view-model from the presenter (`buildSituationalRulesView`, the rule-5 edge that
- * folds the inline-BiText reference tables); this component never touches BiText.
+ * folds the inline-LocaleText reference tables); this component never touches LocaleText.
  * It is the render surface those tables were authored for — they shipped data-only
  * (guard-tested), and this closes the "display-only, i.e. VISIBLE" ledger promise
  * for all four in one place.

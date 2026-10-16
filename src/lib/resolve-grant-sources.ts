@@ -96,7 +96,7 @@ export function resolveGrantSourcesForManeuvers(
       // description are NOT keyed under a positional `.grants.<seg>` path, so the
       // grant carries no localizable text — DORMANT: `grantedActions` has no UI
       // consumer; the maneuver picker localizes off the `maneuver` catalogue
-      // (`localizeSrd("maneuver", id, …)`) directly. The trigger BiText is the one
+      // (`localizeSrd("maneuver", id, …)`) directly. The trigger LocaleText is the one
       // engine-authored literal that stays inline.
       grants: [
         {

@@ -19,6 +19,7 @@ import {
   type AutomationHandler,
   type ManualAutomationBoundary,
 } from "@/lib/automation-compiler";
+import { LOCALES, type Locale } from "@/lib/locale";
 
 export const AUTOMATION_CORPUS_SCHEMAS = [
   "spell",
@@ -55,7 +56,7 @@ export interface AutomationCorpusPresenter {
 
 export interface AutomationCorpusManualPresenter {
   key: string;
-  resolvedLocales: ReadonlyArray<"en" | "it">;
+  resolvedLocales: ReadonlyArray<Locale>;
 }
 
 export interface AutomationCorpusEntity {
@@ -614,19 +615,13 @@ function inlinePresenter(
     return;
   }
   const keys = Object.keys(value).sort();
-  if (keys.join(",") !== "en,it") {
+  if (keys.join(",") !== [...LOCALES].sort().join(",")) {
     state.errors.push(`manual inline field ${path} has unknown locale fields`);
   }
-  const locales: Array<"en" | "it"> = [];
-  for (const [key, text] of Object.entries(value)) {
-    if (
-      (key === "en" || key === "it") &&
-      typeof text === "string" &&
-      text.trim().length > 0
-    ) {
-      locales.push(key);
-    }
-  }
+  const locales: Locale[] = LOCALES.filter((code) => {
+    const text = value[code];
+    return typeof text === "string" && text.trim().length > 0;
+  });
   state.mechanicalPaths.push(path);
   state.clauses.push({
     disposition: "manual",
@@ -785,7 +780,7 @@ function addCataloguePresenter(
       consumedPaths: [mechanicalPath],
       presenter: {
         key: `${presenter.keyPrefix}.${path}`,
-        resolvedLocales: ["en", "it"],
+        resolvedLocales: [...LOCALES],
       },
     });
   }

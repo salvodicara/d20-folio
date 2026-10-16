@@ -9,6 +9,7 @@
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
+import type { Locale } from "@/lib/locale";
 
 export const AUTOMATION_HANDLERS = [
   "mechanics-program",
@@ -61,7 +62,7 @@ export interface ManualAutomationClause {
    * stores no localized prose, but refuses an EN- or IT-incomplete boundary. */
   presenter: {
     key: string;
-    resolvedLocales: ReadonlyArray<"en" | "it">;
+    resolvedLocales: ReadonlyArray<Locale>;
   };
 }
 

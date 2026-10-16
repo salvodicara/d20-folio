@@ -34,8 +34,7 @@ import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
 import type { GlobalCombat } from "@/features/campaigns/global-combat-context";
 import { canonicalJson } from "@/lib/canonical-fingerprint";
 import { localizeText } from "@/lib/views/srd-i18n";
-
-type Locale = "en" | "it";
+import type { Locale } from "@/lib/locale";
 
 export type TurnContextSync = "turn-start" | "encounter-ended" | null;
 

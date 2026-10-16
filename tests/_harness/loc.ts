@@ -27,7 +27,7 @@ export function srd(kind: SrdKind, key: string, field: string, locale: Locale): 
   return hasSrd(kind, key, field, locale) ? localizeSrd(kind, key, field, locale) : "";
 }
 
-/** A `{ en, it }` BiText reconstructed from the catalogue — for `toEqual` checks. */
+/** A `{ en, it }` LocaleText reconstructed from the catalogue — for `toEqual` checks. */
 export function srdBi(
   kind: SrdKind,
   key: string,

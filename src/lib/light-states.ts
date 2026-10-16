@@ -8,7 +8,7 @@
  * until tapped off or the encounter ends. The sentences live in `VISION_REFERENCE`.
  */
 import { VISION_REFERENCE } from "@/data/combat-variants";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
 
@@ -23,13 +23,13 @@ export function lightStateKey(level: LightLevel): string {
   return `light-${level}`;
 }
 
-function referenceName(id: string): BiText {
+function referenceName(id: string): LocaleText {
   const row = VISION_REFERENCE.find((note) => note.id === id);
   if (!row) throw new Error(`light-states: missing reference line "${id}"`);
   return row.name;
 }
 
-const LABELS: Record<LightLevel, BiText> = {
+const LABELS: Record<LightLevel, LocaleText> = {
   dim: referenceName("dim-light"),
   darkness: referenceName("darkness"),
 };
@@ -110,11 +110,11 @@ export function resolveLightStateSources(
 }
 
 /** The bilingual name behind a light key, for log lines and labels. */
-export function lightStateName(key: string): BiText | undefined {
+export function lightStateName(key: string): LocaleText | undefined {
   const level = LIGHT_LEVELS.find((l) => lightStateKey(l) === key);
   return level ? LABELS[level] : undefined;
 }
 
-export function lightLevelName(level: LightLevel): BiText {
+export function lightLevelName(level: LightLevel): LocaleText {
   return LABELS[level];
 }

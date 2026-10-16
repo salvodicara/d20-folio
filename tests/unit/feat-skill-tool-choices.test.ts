@@ -237,7 +237,7 @@ describe("SRD_TOOLS_2024 catalog", () => {
     expect(SRD_TOOLS_2024.length).toBeGreaterThan(20);
     for (const tool of SRD_TOOLS_2024) {
       expect(tool.id).toMatch(/^[a-z][a-z0-9-]*$/);
-      // No BiText on the catalogue entry — the name lives ONCE in equipment.json,
+      // No LocaleText on the catalogue entry — the name lives ONCE in equipment.json,
       // keyed by this id, and resolves in both locales.
       expect(tool).not.toHaveProperty("name");
       expect(srd("equipment", tool.id, "name", "en")).toBeTruthy();
