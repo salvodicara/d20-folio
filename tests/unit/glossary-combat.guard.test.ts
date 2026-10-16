@@ -50,7 +50,7 @@ const PAIRS: ReadonlyArray<readonly [string, string]> = [
 
 describe("beginner glossary: core combat terms", () => {
   it("covers the combat terms a beginner meets in Play", () => {
-    expect(TERMS.length).toBeGreaterThanOrEqual(13);
+    expect(TERMS.length).toBeGreaterThanOrEqual(16);
   });
 
   it.each(TERMS)("'%s' has a plain-language line in EN and IT", (id) => {

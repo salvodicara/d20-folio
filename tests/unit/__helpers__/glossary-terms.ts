@@ -25,6 +25,8 @@ export const OFFICIAL_NAME_KEY = {
   speed: "character.speed",
   concentration: "spells.concentration",
   criticalHit: "abilities.critRange",
+  difficultTerrain: "glossary.name.difficultTerrain",
+  surprise: "glossary.name.surprise",
   initiative: "monster.initiative",
   longRest: "rest.longRest",
   strength: "abilities.STR",
@@ -39,18 +41,20 @@ export type OfficialTerm = keyof typeof OFFICIAL_NAME_KEY;
 
 const UI = { en: mergedUi("en"), it: mergedUi("it") };
 
-/** A term's official name in `locale`, read from its catalogue key. */
-export function officialName(term: OfficialTerm, locale: "en" | "it"): string {
+/** The ui string at `key` in `locale`. */
+export function uiName(key: string, locale: "en" | "it"): string {
   let node: Json | string | unknown[] | undefined = UI[locale];
-  for (const part of OFFICIAL_NAME_KEY[term].split(".")) {
+  for (const part of key.split(".")) {
     node =
       node && typeof node === "object" && !Array.isArray(node) ? node[part] : undefined;
   }
-  if (typeof node !== "string") {
-    throw new Error(`no ${locale} name at ${OFFICIAL_NAME_KEY[term]} for "${term}"`);
-  }
+  if (typeof node !== "string") throw new Error(`no ${locale} name at ${key}`);
   return node;
 }
+
+/** A term's official name in `locale`, read from its catalogue key. */
+export const officialName = (term: OfficialTerm, locale: "en" | "it"): string =>
+  uiName(OFFICIAL_NAME_KEY[term], locale);
 
 /** A term's official `[EN, IT]` names. */
 export const officialPair = (term: OfficialTerm): readonly [string, string] => [

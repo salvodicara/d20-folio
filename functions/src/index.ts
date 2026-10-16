@@ -9,9 +9,10 @@
  *    campaign ids, no screenshot — identifying details stay in the Firestore doc
  *    (the admin inbox).
  *
- *  - onUserCreated (OWN-38): a Firestore `onCreate` on `/users/{uid}` emails the
- *    owner the new user's details + a deep-link to /admin so abuse can be blocked
- *    fast. Fails soft — it never throws in a way that retries forever.
+ *  - ownerDigest (owner 2026-10-16): every morning, ONE email to the owner with the
+ *    accounts created and the automatic error reports (ADR-0008) written since the
+ *    last digest; none when nothing is new. Sign-ups are listed so abuse can be
+ *    blocked from /admin; errors are counts and kinds only.
  *
  *  - onBudgetAlert (SAFE-01): a Pub/Sub trigger on the `budget-kill` topic that the
  *    Cloud Billing £1 budget publishes to. When ACTUAL cost exceeds the budget it
@@ -23,9 +24,10 @@
  * for the exact owner setup runbook.
  */
 
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
 import { onMessagePublished } from "firebase-functions/v2/pubsub";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import { defineSecret } from "firebase-functions/params";
 import { setGlobalOptions, logger } from "firebase-functions/v2";
 import { initializeApp } from "firebase-admin/app";
@@ -43,7 +45,8 @@ import {
   parseRepo,
   type ReportLike,
 } from "./issue-format";
-import { formatSignupEmail, resolveMailConfig, type NewUserLike } from "./signup-email";
+import { resolveMailConfig, type MailConfig, type MailMessage } from "./owner-mail";
+import { formatOwnerDigest, type DigestReport } from "./owner-digest";
 import {
   planCampaignUpdate,
   coMemberAclTargets,
@@ -52,6 +55,7 @@ import {
   type CampaignLike,
 } from "./delete-user-plan";
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
+import { syncRoleClaims } from "./role-claims";
 import {
   parseSharePath,
   parseOgImagePath,
@@ -155,75 +159,111 @@ export const onBugReportCreated = onDocumentCreated(
   }
 );
 
-// ── OWN-38 — new user → owner notification email ────────────────────────────
-export const onUserCreated = onDocumentCreated(
+/** One email to the owner over the configured SMTP account. */
+async function sendOwnerMail(config: MailConfig, message: MailMessage): Promise<void> {
+  const transport = nodemailer.createTransport({
+    host: config.host,
+    port: 465,
+    secure: true,
+    auth: { user: config.user, pass: config.pass },
+  });
+  await transport.sendMail({
+    from: config.from,
+    to: config.to,
+    subject: message.subject,
+    text: message.text,
+    html: message.html,
+  });
+}
+
+function ownerMailConfig(): MailConfig | null {
+  return resolveMailConfig({
+    host: MAIL_HOST.value(),
+    user: MAIL_USER.value(),
+    pass: MAIL_PASS.value(),
+    from: MAIL_FROM.value(),
+    to: OWNER_EMAIL.value(),
+  });
+}
+
+// ── The owner's daily digest: new sign-ups + new automatic error reports ───
+/** Where the digest remembers how far it has read (Admin SDK only; rules deny clients). */
+const DIGEST_MARKER = "ops/ownerDigest";
+/** A day's worth is far below this; it only bounds a runaway. */
+const DIGEST_MAX_DOCS = 500;
+
+export const ownerDigest = onSchedule(
   {
-    document: "users/{uid}",
+    schedule: "every day 08:00",
+    timeZone: "Europe/Rome",
     secrets: [MAIL_HOST, MAIL_USER, MAIL_PASS, MAIL_FROM, OWNER_EMAIL],
   },
-  async (event) => {
-    const snap = event.data;
-    if (!snap) {
-      logger.warn("user create event had no snapshot");
-      return;
-    }
-    const data = snap.data() as {
-      email?: string;
-      displayName?: string;
-      createdAt?: { toDate?: () => Date };
-    };
+  async () => {
+    const db = getFirestore();
+    const marker = db.doc(DIGEST_MARKER);
+    const lastRunAt =
+      ((await marker.get()).get("lastRunAt") as Timestamp | undefined) ??
+      Timestamp.fromMillis(0);
+    const now = Timestamp.now();
+    const since = (collection: string) =>
+      db
+        .collection(collection)
+        .where("createdAt", ">", lastRunAt)
+        .where("createdAt", "<=", now)
+        .orderBy("createdAt")
+        .limit(DIGEST_MAX_DOCS)
+        .get();
+    const [users, diagnostics] = await Promise.all([
+      since("users"),
+      since("diagnostics"),
+    ]);
 
-    // The OWNER_EMAIL secret is the ONLY source of the destination — no fallback.
-    // Fail LOUD but not forever — a missing mail config must not crash the trigger
-    // (which would retry on every new sign-up). Error-log and return.
-    const config = resolveMailConfig({
-      host: MAIL_HOST.value(),
-      user: MAIL_USER.value(),
-      pass: MAIL_PASS.value(),
-      from: MAIL_FROM.value(),
-      to: OWNER_EMAIL.value(),
+    const message = formatOwnerDigest({
+      signups: users.docs.map((doc) => ({
+        uid: doc.id,
+        email: doc.get("email") as string | undefined,
+        displayName: doc.get("displayName") as string | undefined,
+      })),
+      errors: diagnostics.docs.map(
+        (doc): DigestReport => ({
+          uid: String(doc.get("uid") ?? ""),
+          event: String(doc.get("event") ?? "unknown"),
+          message: String(doc.get("message") ?? ""),
+          createdAtMs: Number(doc.get("createdAtMs") ?? 0),
+        })
+      ),
     });
-    if (!config) {
-      logger.error(
-        "mail configuration incomplete (MAIL_USER / MAIL_PASS / OWNER_EMAIL secrets); signup email NOT sent"
-      );
-      return;
+    if (message) {
+      const config = ownerMailConfig();
+      if (!config) {
+        logger.error("owner digest: mail configuration incomplete; digest NOT sent");
+        return;
+      }
+      // Send first, then advance the marker: a failed send repeats tomorrow, never skips.
+      await sendOwnerMail(config, message);
     }
-
-    const createdAt =
-      typeof data.createdAt?.toDate === "function"
-        ? data.createdAt.toDate().toISOString()
-        : new Date().toISOString();
-
-    const newUser: NewUserLike = {
-      uid: event.params.uid,
-      email: data.email,
-      displayName: data.displayName,
-      createdAt,
-    };
-    const message = formatSignupEmail(newUser);
-
-    try {
-      const transport = nodemailer.createTransport({
-        host: config.host,
-        port: 465,
-        secure: true,
-        auth: { user: config.user, pass: config.pass },
-      });
-      await transport.sendMail({
-        from: config.from,
-        to: config.to,
-        subject: message.subject,
-        text: message.text,
-        html: message.html,
-      });
-      logger.info("sent signup notification email", { uid: event.params.uid });
-    } catch (err) {
-      // Fail soft — log, never re-throw (a thrown error would retry indefinitely).
-      logger.error("failed to send signup email (non-fatal)", err);
-    }
+    await marker.set({ lastRunAt: now }, { merge: true });
+    logger.info("owner digest", {
+      signups: users.size,
+      errors: diagnostics.size,
+      sent: !!message,
+    });
   }
 );
+
+// ── Phase 5 — roles as Auth custom claims ───────────────────────────────────
+/**
+ * Mirror the user doc's `role` / `status` into the account's custom claims, which the
+ * security rules read instead of `get()`-ing this doc on every request. A write that
+ * changes neither (the sign-in `lastActiveAt` bump) costs nothing. See role-claims.ts.
+ */
+export const onUserRoleWritten = onDocumentWritten("users/{uid}", async (event) => {
+  const uid = event.params.uid;
+  const before = event.data?.before.exists ? event.data.before.data() : undefined;
+  const after = event.data?.after.exists ? event.data.after.data() : undefined;
+  const result = await syncRoleClaims(getAuth(), uid, before, after);
+  if (result !== "unchanged") logger.info("role claims synced", { uid, result });
+});
 
 // ── ADMIN — destructive account deletion (admin-godmode part b) ─────────────
 /**

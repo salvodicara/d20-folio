@@ -496,7 +496,22 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // bug report's html2canvas library (~220 KiB) moved to a CacheFirst runtime route,
 // like the PDF export. Composed build with pack f1ff69a7 after the breakdown batch:
 // 9805.4 → 9221.4 KiB, 343 → 337 entries; +~39 KiB headroom for the rules glossary.
-const PRECACHE_CEILING_KIB = 9260;
+// 2026-10-16 (CONTENT HEADROOM POLICY, raised 9260 → 9500): the precache now carries
+// DELIBERATE headroom for content instead of a never-exact-fit sliver, because content
+// keeps arriving (every glossary term, rule text and name ships in English AND
+// Italian) and a 16 KiB margin blocked every glossary PR. The policy:
+//   • Content and i18n growth (data, locale JSON, rules text) may use the headroom
+//     without a raise.
+//   • CODE growth does not: the eager ceilings above (ENTRY_CEILING_KB,
+//     EAGER_CEILING_KB, the new-eager-chunk ratchet) stay tight and are the code
+//     guard; a feature that grows the precache by code trims first (or splits lazy).
+//   • When the headroom runs low (< ~50 KiB), look for a trim before raising; a raise
+//     re-measures composed and records the A/B here, as above.
+// Measured on main 6b639b8a + pack 674fbc80: 9244 KiB / 336 entries, eager 815.5 KB
+// gz (JS 734.5 + CSS 81.0), entry 59.8. A/B against the deployed 9bb9a60c + f1ff69a7
+// (9770 KiB / 340, eager JS 731.1): precache −526 KiB (the trim, −580, plus ~54 KiB of
+// content), eager JS only +3.4 KB gz, so code is not the part that grows.
+const PRECACHE_CEILING_KIB = 9500;
 const NEW_EAGER_CHUNK_LIMIT_KB = 50; // gz; a new eager chunk above this needs an allowlist entry
 
 /**

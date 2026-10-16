@@ -101,6 +101,7 @@ describe("LegalPage colophon", () => {
       p.useT,
       p.whereT,
       p.sharingT,
+      p.errorsT,
       p.retentionT,
       p.rightsT,
       p.childrenT,

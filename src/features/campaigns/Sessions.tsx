@@ -473,6 +473,7 @@ export function Sessions({
                     key={log.id}
                     log={log}
                     date={s.date}
+                    notes={s.notes}
                     onOpen={reports.reload}
                   />
                 ))}
