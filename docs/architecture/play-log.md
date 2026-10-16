@@ -29,6 +29,15 @@ composes correctly. An absolute one (`set-hp current: 14`) does not, because it 
 was given. So the hot paths move to intention events as they are wired: `take-damage { amount }`,
 `heal { amount }` and `gain-temp-hp`. The absolute kinds stay for corrections and manual edits.
 
+## Language-neutral entries
+
+Entries store ids and params, never translated text: a source is a `LocText` of kind `srd`,
+`ui` or `custom` (what a player typed), localized at render. `{ lit: { en, it } }` is not
+written by new entries. The `lit` text already stored (turn-economy actions in `combat/state`,
+Chronicle entries, e.g. monster action names) converts to ids in the same owner-gated migration
+as step 5 (snapshot → dry-run → idempotent apply → verify), not in a separate one; readers keep
+accepting it until then.
+
 ## Relation to the session log
 
 The session log (`src/lib/session-log/`) is the table's narrative for the report. It stays. A
