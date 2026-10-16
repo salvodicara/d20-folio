@@ -34,9 +34,9 @@ was given. So the hot paths move to intention events as they are wired: `take-da
 Entries store ids and params, never translated text: a source is a `LocText` of kind `srd`,
 `ui` or `custom` (what a player typed), localized at render. `{ lit: { en, it } }` is not
 written by new entries. The `lit` text already stored (turn-economy actions in `combat/state`,
-Chronicle entries, e.g. monster action names) converts to ids in the same owner-gated migration
-as step 5 (snapshot → dry-run → idempotent apply → verify), not in a separate one; readers keep
-accepting it until then.
+Chronicle entries, e.g. monster action names) stays readable: readers keep accepting it. With
+the log in memory there is no storage migration to fold its conversion into, so converting it is a
+separate owner-gated migration (snapshot → dry-run → idempotent apply → verify), only if ever wanted.
 
 ## Relation to the session log
 
