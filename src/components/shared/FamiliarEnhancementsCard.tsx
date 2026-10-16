@@ -64,7 +64,7 @@ export function FamiliarEnhancementsCard({
   }
   if (view.reactionResistance) {
     rows.push({
-      label: t("familiar.reactionResistance"),
+      label: t("common.resistance"),
       value: t("familiar.reactionResistanceValue"),
     });
   }

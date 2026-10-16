@@ -281,6 +281,13 @@ describe("EndEncounterDialog — the editable end entry", () => {
     expect(modal.querySelector(":scope > .modal-foot")).toBeTruthy();
   });
 
+  it("is headed as the fight's chronicle, never the add-modals' \"Add\"", () => {
+    dialog();
+    const modal = screen.getByRole("dialog");
+    const rubric = must(modal.querySelector(".modal-rubric"), "no rubric");
+    expect(rubric).toHaveTextContent("Chronicle of the fight");
+  });
+
   it("hands back the chapter, the note and the outcome", () => {
     const { onSave } = dialog();
     fireEvent.change(screen.getByPlaceholderText(/What happened/), {

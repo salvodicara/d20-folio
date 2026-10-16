@@ -86,4 +86,39 @@ for (const leg of [
       path: test.info().outputPath(`troll-regenerated-${leg.name}.png`),
     });
   });
+
+  test(`a Troll dropped to 0 HP can still regenerate, though its turn is skipped (${leg.name})`, async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    if (leg.viewport) await page.setViewportSize(leg.viewport);
+    await bootWithTroll(page);
+
+    const card = page.locator("li.combatant-card", {
+      has: page.getByRole("button", { name: /punti ferita di troll/i }),
+    });
+    const hp = card.getByRole("button", { name: /punti ferita di troll/i });
+    await hp.scrollIntoViewIfNeeded();
+    await hp.click();
+    const popover = page.getByRole("dialog", { name: /punti ferita di troll/i });
+    await popover.getByLabel(/quantità di danni/i).fill("94");
+    await popover.getByRole("button", { name: /^danno$/i }).click();
+    await expect(hp).toContainText("0");
+
+    // A monster at 0 HP never gets the turn pointer, so the tap stands on its card.
+    const regenerate = card.getByRole("button", { name: "Rigenera +15" });
+    await expect(regenerate).toBeVisible();
+    await card.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: test.info().outputPath(`troll-down-${leg.name}.png`) });
+    await regenerate.click();
+    await expect(hp).toContainText("15");
+    await expect(regenerate).toHaveCount(0);
+
+    // Back on its feet, the Troll takes its turn again.
+    const next = page.getByRole("button", { name: /turno successivo/i }).first();
+    for (let i = 0; i < 12 && (await card.getAttribute("aria-current")) !== "true"; i++) {
+      await next.click();
+    }
+    await expect(card).toHaveAttribute("aria-current", "true");
+  });
 }

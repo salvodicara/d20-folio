@@ -39,23 +39,27 @@ export function itemResourceCardFragment({
         icon: RefreshCw,
       },
     ]),
+    // A copy that still needs attunement or equipping shows no dead Use: the
+    // card's own Attune / Equip toggles beside it are the next step.
     controls:
       isPlay &&
-      availableResources.map((resource) => {
-        const resourceLabel = t(resource.labelKey);
-        return (
-          <ChargeUse
-            key={resource.identity.key}
-            current={resource.current}
-            max={resource.capacity}
-            disabled={!resource.canSpend}
-            uninitializedLabel={t("magicItems.resourceNeedsRoll")}
-            onUse={() => onSpend(resource)}
-            chargesLabel={resourceLabel}
-            useLabel={t("common.use")}
-            useTitle={t("magicItems.useResource", { resource: resourceLabel })}
-          />
-        );
-      }),
+      availableResources
+        .filter((resource) => resource.spendBlock === null)
+        .map((resource) => {
+          const resourceLabel = t(resource.labelKey);
+          return (
+            <ChargeUse
+              key={resource.identity.key}
+              current={resource.current}
+              max={resource.capacity}
+              disabled={!resource.canSpend}
+              uninitializedLabel={t("magicItems.resourceNeedsRoll")}
+              onUse={() => onSpend(resource)}
+              chargesLabel={resourceLabel}
+              useLabel={t("common.use")}
+              useTitle={t("magicItems.useResource", { resource: resourceLabel })}
+            />
+          );
+        }),
   };
 }

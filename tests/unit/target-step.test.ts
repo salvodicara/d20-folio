@@ -116,3 +116,30 @@ describe("targetStepFor", () => {
     expect(checked).toBeGreaterThan(100);
   });
 });
+
+describe("targetStepFor — an area catches everyone in it", () => {
+  // An area spell that does not say "creatures of your choice" (no declared
+  // affinity) hits every creature in it, friends and the caster included: Fireball
+  // on a melee scrum must be able to name the ally standing next to the goblin.
+  const areaSpells = spells.filter((spell) => {
+    const row = rows.get(`spell-${spell.id}`);
+    if (!row || !targetStepFor(row, FIGHT)) return false;
+    return (
+      combatResolutionSpec(row).area && row.summary.targeting?.affinity === undefined
+    );
+  });
+
+  it("finds area spells in the catalogue", () => {
+    expect(areaSpells.map((spell) => spell.id)).toContain("fireball");
+  });
+
+  it.each(areaSpells.map((spell) => [spell.id]))(
+    "%s offers enemies, allies and me",
+    (id) => {
+      const offered = ids(spellAction(id), FIGHT) ?? [];
+      expect(offered).toEqual(expect.arrayContaining(["m-gob1", "pc-bren", "pc-me"]));
+      // Enemies still come first: they are the usual targets.
+      expect(offered[0]).toBe("m-gob1");
+    }
+  );
+});

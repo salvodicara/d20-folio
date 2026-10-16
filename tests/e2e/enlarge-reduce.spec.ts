@@ -2,7 +2,8 @@
  * Enlarge/Reduce in play, Italian, dark theme, desktop and phone: casting it on
  * yourself lights the concentration state; the Active rail then offers Enlarge
  * or Reduce. Enlarge adds a +1d4 rider to weapon and Unarmed Strike attacks;
- * Reduce takes it away (its 1d4-less damage is a note). Review shots land under
+ * Reduce takes it away (its 1d4-less damage is a note). The pick holds for that
+ * cast across a reload; a new cast asks again. Review shots land under
  * REVIEW_SHOTS when set, else in the test output dir.
  */
 import { test, expect, type Page } from "@playwright/test";
@@ -20,10 +21,14 @@ async function castOnSelf(page: Page, size: "desktop" | "mobile") {
   await seedLang(page, "it");
   await seedUI(page, "dark", "play");
   await page.goto("/characters/scn-enlarge-reduce?tab=spells");
+  await castAgain(page);
+}
+
+async function castAgain(page: Page) {
   const expand = page.getByRole("button", { name: /^Espandi: Ingrandire\/Ridurre/ });
   await expect(expand).toBeVisible({ timeout: 45_000 });
   await freezeMotion(page);
-  await expand.click();
+  if ((await expand.getAttribute("aria-expanded")) !== "true") await expand.click();
   await page
     .getByRole("region", { name: "Ingrandire/Ridurre", exact: true })
     .getByRole("button", { name: /^Lancia/ })
@@ -73,3 +78,22 @@ for (const size of ["desktop", "mobile"] as const) {
     await page.screenshot({ path: shotPath(`reduce-${size}.png`), fullPage: true });
   });
 }
+
+test("each new cast asks Enlarge or Reduce again; the same cast keeps its pick", async ({
+  page,
+}) => {
+  await castOnSelf(page, "desktop");
+  const enlarge = page.getByRole("button", { name: /^Ingrandire$/ }).first();
+  const reduce = page.getByRole("button", { name: /^Ridurre$/ }).first();
+  await enlarge.click();
+  await expect(enlarge).toHaveAttribute("aria-pressed", "true");
+
+  // The same active cast keeps its choice across a reload.
+  await page.reload();
+  await expect(enlarge).toHaveAttribute("aria-pressed", "true", { timeout: 45_000 });
+
+  // A new cast starts with no option chosen: the rail asks again.
+  await castAgain(page);
+  await expect(enlarge).toHaveAttribute("aria-pressed", "false");
+  await expect(reduce).toHaveAttribute("aria-pressed", "false");
+});

@@ -5,6 +5,7 @@ import { RestModal } from "@/features/character/RestModal";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import i18n from "@/i18n";
 
 const store = () => useCharacterStore.getState();
 const addDie = () =>
@@ -167,5 +168,33 @@ describe("RestModal — multiclass Hit Point Dice", () => {
     expect(confirm()).toBeEnabled();
     enterRoll("21");
     expect(confirm()).toBeDisabled();
+  });
+
+  it("one mixed die reads singular, in both languages", async () => {
+    const doc = seed();
+    doc.character.classes = [
+      { classId: "fighter", level: 5 },
+      { classId: "wizard", level: 1 },
+    ];
+    doc.character.hitDieType = 6;
+    doc.character.hitDiceTotalOverride = null;
+    doc.session.hitDice = { used: 0 };
+    useCharacterStore.setState({ character: doc, readonly: false });
+    openRest();
+    addDie();
+    expect(rollField()).toHaveAccessibleDescription(
+      "Roll 1 Hit Die (d10/d6) · without Constitution"
+    );
+    try {
+      await i18n.changeLanguage("it");
+      expect(i18n.t("rest.hitDiceMixed", { count: 1, sizes: "d10/d6" })).toBe(
+        "1 Dado Vita (d10/d6)"
+      );
+      expect(i18n.t("rest.hitDiceMixed", { count: 2, sizes: "d10/d6" })).toBe(
+        "2 Dadi Vita (d10/d6)"
+      );
+    } finally {
+      await i18n.changeLanguage("en");
+    }
   });
 });

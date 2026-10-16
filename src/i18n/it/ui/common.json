@@ -77,11 +77,14 @@
     "download": "Scarica",
     "decrease": "Diminuisci",
     "increase": "Aumenta",
+    "hpStepDown": "−1 PF {{name}}",
+    "hpStepUp": "+1 PF {{name}}",
     "accountSettings": "Account e impostazioni",
     "searchMissHint": "Prova con un altro termine di ricerca.",
     "deleteTitle": "Eliminare {{name}}?",
     "editNamed": "Modifica {{name}}",
     "share": "Condividi",
-    "skip": "Salta"
+    "skip": "Salta",
+    "resistance": "Resistenza"
   }
 }

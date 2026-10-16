@@ -51,10 +51,12 @@ function vmFor(id: string): SpellCardVM {
   };
 }
 
-/** A faithful-enough `t` for the two material-cost keys (EN copy). */
-const t = ((key: string, opts?: { gp?: number }) => {
-  if (key === "spells.materialCost") return `M: ${opts?.gp} gp`;
-  if (key === "spells.materialCostConsumed") return `M: ${opts?.gp} gp, consumed`;
+/** A faithful-enough `t` for the two material-cost keys + the coin abbreviations (EN copy). */
+const t = ((key: string, opts?: { amount?: number; coin?: string }) => {
+  if (key === "spells.materialCost") return `M: ${opts?.amount} ${opts?.coin}`;
+  if (key === "spells.materialCostConsumed")
+    return `M: ${opts?.amount} ${opts?.coin}, consumed`;
+  if (key.startsWith("equipment.currencyAbbr.")) return key.split(".").pop();
   return key;
 }) as unknown as TFunction;
 
@@ -67,6 +69,11 @@ describe("buildMaterialCostTag (RA-23)", () => {
   it("shows a priced-but-not-consumed material without the 'consumed' clause", () => {
     expect(buildMaterialCostTag(vmFor("chromatic-orb"), t)).toBe("M: 50 gp");
     expect(buildMaterialCostTag(vmFor("augury"), t)).toBe("M: 25 gp");
+  });
+
+  it("prices a copper component in copper, never as a fraction of gold (Gentle Repose)", () => {
+    // SRD 5.2.1: "2 copper pieces, which the spell consumes".
+    expect(buildMaterialCostTag(vmFor("gentle-repose"), t)).toBe("M: 2 cp, consumed");
   });
 
   it("returns null for a spell with no priced material (Fireball)", () => {

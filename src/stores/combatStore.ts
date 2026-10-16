@@ -223,6 +223,8 @@ interface CombatState {
   damageTakenThisRound: boolean;
   /** A turn effect waiting to grant Advantage to the next attack roll. */
   nextAttackAdvantage: boolean;
+  /** The once-per-turn Weapon Masteries declared this turn (Cleave). */
+  masteriesThisTurn: string[];
   /** A turn effect has set Speed to 0 until this turn ends. */
   movementLocked: boolean;
   /** Thief's Reflexes' second turn was taken this combat (only round 1 offers it). */
@@ -251,6 +253,9 @@ interface CombatState {
   /** Record that the character took damage this round (HP went down). */
   noteDamageTaken: () => void;
   /** Arm/consume exact next-attack Advantage; both return an undo inverse. */
+  /** Declare a once-per-turn mastery (Cleave); null when it was already declared
+   *  this turn. Returns its undo. */
+  markMasteryUsed: (id: string) => (() => void) | null;
   grantNextAttackAdvantage: () => () => void;
   consumeNextAttackAdvantage: () => (() => void) | null;
   /** Lock movement for the current turn and return its exact inverse. */
@@ -419,6 +424,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   spellSlotCastTurnKey: null,
   damageTakenThisRound: false,
   nextAttackAdvantage: false,
+  masteriesThisTurn: [],
   movementLocked: false,
   reflexesTaken: false,
   timeStopTurns: null,
@@ -462,6 +468,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     };
   },
   noteDamageTaken: () => set({ damageTakenThisRound: true }),
+  markMasteryUsed: (id) => {
+    if (sheetReadonly() || get().masteriesThisTurn.includes(id)) return null;
+    set((s) => ({ masteriesThisTurn: [...s.masteriesThisTurn, id] }));
+    return () =>
+      set((s) => ({ masteriesThisTurn: s.masteriesThisTurn.filter((m) => m !== id) }));
+  },
   grantNextAttackAdvantage: () => {
     if (sheetReadonly()) return () => {};
     const previous = get().nextAttackAdvantage;
@@ -770,6 +782,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
+      masteriesThisTurn: [],
       movementLocked: false,
     }),
 
@@ -792,6 +805,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
       nextAttackAdvantage: false,
+      masteriesThisTurn: [],
       movementLocked: false,
       reflexesTaken: false,
       timeStopTurns: null,
@@ -856,6 +870,7 @@ export function freshTurn(): Pick<
   | "spellSlotCastsThisTurn"
   | "spellSlotCastTurnKey"
   | "nextAttackAdvantage"
+  | "masteriesThisTurn"
   | "movementLocked"
 > {
   return {
@@ -879,6 +894,7 @@ export function freshTurn(): Pick<
     spellSlotCastsThisTurn: 0,
     spellSlotCastTurnKey: null,
     nextAttackAdvantage: false,
+    masteriesThisTurn: [],
     movementLocked: false,
   };
 }
