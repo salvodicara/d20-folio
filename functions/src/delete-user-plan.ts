@@ -5,7 +5,7 @@
  * The Cloud Function (`index.ts`) does the IO (read caller role, query campaigns,
  * recursive-delete, Storage purge, Auth delete, audit write); these helpers hold the
  * branchy, security-relevant DECISIONS so they can be unit-tested WITHOUT the
- * emulator (mirroring how `issue-format.ts` / `signup-email.ts` keep their logic
+ * emulator (mirroring how `issue-format.ts` / `owner-digest.ts` keep their logic
  * pure). No Firebase imports.
  */
 

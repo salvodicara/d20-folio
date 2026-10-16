@@ -1,4 +1,4 @@
-# Cloud Functions runbook — reporting · signup email · billing kill-switch · link previews
+# Cloud Functions runbook — reporting · daily digest · billing kill-switch · link previews
 
 The Cloud Functions (`functions/`, 2nd-gen, `europe-west1`) wire the app to the
 maintainer and hard-guarantee the zero-budget promise:
@@ -7,8 +7,10 @@ maintainer and hard-guarantee the zero-budget promise:
   GitHub issue on the configured tracker (the `GITHUB_REPO` secret, default
   `salvodicara/d20-folio`). The tracker is PUBLIC, so the issue body is
   **privacy-stripped** (see [What reaches the public issue](#what-reaches-the-public-issue)).
-- **OWN-38** — every **new user registration** emails the owner so abuse can be
-  blocked fast from `/admin`.
+- **ownerDigest** (owner 2026-10-16, replaces the per-signup email of OWN-38) —
+  every morning at 08:00 Europe/Rome, ONE email to the owner listing the new
+  registrations (block abuse from `/admin`) and the new automatic error reports
+  (ADR-0008), grouped and counted. Nothing new, no email.
 - **SAFE-01** — the **billing kill-switch**: a Pub/Sub trigger the £15 Cloud Billing
   budget publishes to; on actual cost overrun it DETACHES billing from the project so
   spend can never run past ~£15 (the soft-launch cap, owner 2026-08-02; £1 until then). Runbook in [its own section](#safe-01--billing-kill-switch-the-zero-budget-hard-guarantee).
@@ -107,12 +109,12 @@ discoverable when sought, never chrome during play.
 ┌──────────────┐   first sign-in creates /users/{uid}   ┌─────────────────────────┐
 │  Client PWA  │ ─────────────────────────────────────▶ │  Firestore /users/{uid} │
 └──────────────┘                                         └───────────┬─────────────┘
-                                                                     │ onCreate
+                                                                     │ daily 08:00
                                                                      ▼
                                               ┌──────────────────────────────────┐
-                                              │ onUserCreated (Functions v2)      │
-                                              │  • nodemailer → owner email       │
-                                              │  • uid/email/name + /admin link   │
+                                              │ ownerDigest (Functions v2)        │
+                                              │  • new users + new diagnostics    │
+                                              │  • nodemailer → ONE owner email   │
                                               └──────────────────────────────────┘
 ```
 
@@ -310,13 +312,14 @@ firebase emulators:start --only functions,firestore,storage,auth
   `severity`, `reporterUid`. With real secrets piped in (`firebase emulators:exec`
   - `--import`/env), the function opens a real issue; without them it logs an
     error and sets `status:"error"` (safe).
-- Trigger **OWN-38**: create a `users/{uid}` doc — the function attempts the
-  email and logs the result.
+- **ownerDigest**: `firebase functions:shell`, then `ownerDigest()` — it reads
+  the users and diagnostics created since `ops/ownerDigest.lastRunAt` and logs
+  what it would send.
 
 > Secrets are **not** available in the emulator by default. To exercise the live
 > paths locally, export them as env vars for the emulator process, e.g.
 > `GITHUB_TOKEN=… firebase emulators:exec --only functions "<your test>"`. The
-> pure formatters (`issue-format.ts`, `signup-email.ts`) are unit-tested without
+> pure formatters (`issue-format.ts`, `owner-digest.ts`) are unit-tested without
 > any secret: `npm --prefix functions test`.
 
 ---
@@ -463,7 +466,7 @@ Detaching billing returns eligible Firebase usage to the Spark posture and termi
 that require Blaze. Concretely for d20 Folio:
 
 - **Cloud Functions** stop — including `onBudgetAlert` itself (so it cannot re-detach;
-  it doesn't need to), the bug-report and signup-email triggers, and `deleteUser`.
+  it doesn't need to), the bug-report trigger and the daily digest, and `deleteUser`.
 - **Firebase Hosting / Firestore** may continue within their Spark quotas; this can leave the shell
   apparently healthy while server workflows are already broken. Never use Hosting 200 as the health
   verdict for the whole app.
@@ -482,7 +485,7 @@ Recovery is **`just safe-restore`**. Do ONE thing by hand first, then run it:
 - **Ban the abusive users FIRST.** d20 Folio has a blocked-users mechanism: a user doc
   with `status: "blocked"` is denied by `firestore.rules` / `storage.rules` (the
   `isNotBlocked()` check — see `firestore.rules`), and the owner blocks accounts from
-  **`/admin`** (the signup email deep-links there). Block the offending UID(s) so they're
+  **`/admin`** (the daily digest deep-links there). Block the offending UID(s) so they're
   already denied the moment billing returns. If `/admin` is unreachable (functions down),
   set `status: "blocked"` on the `/users/{uid}` doc directly in the Firestore console.
   Find WHO via **Billing → Reports** (by service) + **Cloud Logging** once you're back in.
