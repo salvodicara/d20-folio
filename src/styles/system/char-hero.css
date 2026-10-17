@@ -1,0 +1,211 @@
+/*
+ * Character header (design system 2026-10, docs/design/system/play.html).
+ * Copied from: D&D Beyond (header order AC · initiative · speed · HP, the rest button),
+ * Foundry dnd5e (AC in a shield, stat plates), Baldur's Gate 3 (medallion portrait,
+ * bronze frame with notched corners). Replaces folio.css's header rules for `.char-hero`.
+ */
+
+.char-hero {
+  padding: var(--sp-5) var(--sp-8);
+  background: none;
+  border: 1px solid transparent;
+  border-image: url("../../assets/frames/panel.svg") 20 fill / 20px / 0 stretch;
+  filter: drop-shadow(0 14px 24px var(--sys-shadow));
+}
+
+/* ── Medallion portrait (BG3) ─────────────────────────────────────── */
+.char-hero .seal {
+  width: var(--sys-medal);
+  height: var(--sys-medal);
+  padding: 3px;
+  border: 0;
+  border-radius: var(--sys-r-full);
+  background: var(--sys-gold-ring);
+  box-shadow: 0 6px 20px -6px var(--sys-shadow);
+}
+.char-hero .seal > * {
+  border-radius: var(--sys-r-full);
+  border: 3px solid var(--sys-bg);
+  overflow: hidden;
+}
+.char-hero .seal-edit-veil {
+  border-radius: var(--sys-r-full);
+}
+
+/* ── Name and identity ────────────────────────────────────────────── */
+.char-hero h1 {
+  font-family: var(--font-name);
+  font-size: var(--sys-fs-name);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+.char-hero h1 .font-title {
+  font-family: inherit;
+}
+.char-hero .hero-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.rest-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 2.25rem;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--sys-frame);
+  border-radius: var(--sys-r-2);
+  background: linear-gradient(180deg, var(--sys-panel-3), var(--sys-panel-2));
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+.rest-btn:hover {
+  border-color: var(--sys-gold);
+  color: var(--sys-gold-bright);
+}
+
+/* ── Vitals: AC in a shield, the rest on hex plates (Foundry, D&D Beyond) ── */
+.char-hero .hdr-vitals {
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+.char-hero .vital.v-shield,
+.char-hero .vital.v-hex {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: var(--sp-1);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.char-hero .vital.v-shield::before,
+.char-hero .vital.v-shield::after,
+.char-hero .vital.v-hex::before,
+.char-hero .vital.v-hex::after {
+  content: none;
+}
+.char-hero .v-shield .v-val,
+.char-hero .v-hex .v-val {
+  display: grid;
+  place-items: center;
+  width: 3.875rem;
+  height: 3.875rem;
+  background: url("../../assets/frames/hex.svg") center / contain no-repeat;
+  font-family: var(--font-name);
+  font-size: var(--sys-fs-plate);
+  white-space: nowrap;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.char-hero .v-shield .v-val {
+  height: 4rem;
+  padding-bottom: 0.375rem;
+  background-image: url("../../assets/frames/shield.svg");
+  font-size: var(--sys-fs-shield);
+}
+.char-hero .v-shield .v-ico,
+.char-hero .v-hex .v-ico {
+  display: none;
+}
+.char-hero .v-shield .v-lbl,
+.char-hero .v-hex .v-lbl {
+  font-family: var(--font-label);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+
+/* AC's cover toggle and its info mark sit on the shield's shoulders */
+.char-hero .vital.v-shield:has(> .v-cover-info) {
+  padding-right: 0;
+}
+.char-hero .v-shield .v-adv-toggle {
+  top: -4px;
+  right: -6px;
+}
+.char-hero .v-shield .glossary-term.glossary-info.v-cover-info {
+  top: auto;
+  bottom: 1.25rem;
+  right: -6px;
+  translate: none;
+}
+
+/* ── Hit points: D&D Beyond's HP block, BG3's framed bar ──────────── */
+.char-hero .vital-hp {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-2);
+  width: 15rem;
+  min-width: 0;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--sys-frame);
+  border-radius: var(--sys-r-2);
+  background: var(--sys-panel-2);
+  box-shadow: none;
+  text-align: left;
+}
+.char-hero .vital-hp:hover {
+  border-color: var(--sys-gold);
+  box-shadow: none;
+}
+.char-hero .vital-hp .v-lbl {
+  order: -1;
+  font-family: var(--font-label);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+}
+.char-hero .vital-hp .v-ico {
+  display: none;
+}
+.char-hero .vital-hp .vhp-val {
+  font-family: var(--font-name);
+  font-size: var(--sys-fs-hp);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.char-hero .vital-hp .vhp-sep {
+  font-family: var(--font-name);
+  font-size: var(--sys-fs-hp-max);
+}
+.char-hero .vital-hp .vhp-temp {
+  margin-left: auto;
+  align-self: center;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+.char-hero .vital-hp .hp-bar {
+  height: 10px;
+  border: 1px solid var(--sys-frame-strong);
+  border-radius: var(--sys-r-1);
+}
+
+@media (max-width: 767px) {
+  .char-hero .hdr-vitals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-items: center;
+    width: 100%;
+  }
+  .char-hero .vital-hp {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-self: stretch;
+  }
+  .char-hero {
+    --sys-medal: 4rem;
+    --sys-fs-name: 1.625rem;
+    padding: var(--sp-4);
+    border-image-width: 16px;
+  }
+}

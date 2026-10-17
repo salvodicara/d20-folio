@@ -28,6 +28,9 @@ importers:
       '@fontsource-variable/cinzel':
         specifier: ^5.2.8
         version: 5.2.8
+      '@fontsource/cormorant-garamond':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/source-serif-4':
         specifier: ^5.2.9
         version: 5.2.9
@@ -1151,6 +1154,9 @@ packages:
 
   '@fontsource-variable/cinzel@5.2.8':
     resolution: {integrity: sha512-62ddfR79tYNWxIZJPlyFGBusbnONbPL6d163mT/jZOGV4vV8so6Z3buRM5epqtiA6qcVVeF8OZijJJGeLABGJg==}
+
+  '@fontsource/cormorant-garamond@5.3.0':
+    resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
 
   '@fontsource/source-serif-4@5.2.9':
     resolution: {integrity: sha512-er/Pym9emsEVJNf947umJ4kXarXfsiN6CN7kTYinefKRaHLwiquiiHOZvKvxWgkV8JMCf3pV3g0NcsPFpVCH9w==}
@@ -6100,6 +6106,8 @@ snapshots:
   '@fontsource-variable/alegreya@5.2.8': {}
 
   '@fontsource-variable/cinzel@5.2.8': {}
+
+  '@fontsource/cormorant-garamond@5.3.0': {}
 
   '@fontsource/source-serif-4@5.2.9': {}
 

@@ -345,24 +345,19 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
     ).not.toBeInTheDocument();
   });
 
-  it("Rest is a glyph-only moon medallion trailing the HP tile (opens the Rest modal)", () => {
+  it("Rest is a labelled button under the identity, as in D&D Beyond's header", () => {
     load();
     const { container } = renderHeader();
-    const medal = container.querySelector<HTMLButtonElement>(".rest-medal");
-    expect(medal).not.toBeNull();
-    // Glyph-only: the accessible name is the verb, but NO standing text renders —
-    // this is what keeps the vitals row locale-stable (see the pinned test below).
-    expect(medal).toHaveAccessibleName("Rest");
-    expect(medal?.textContent).toBe("");
-    // The hover label is the app's BRANDED folio tooltip (see the fine-pointer test
-    // below), never a native browser `title` (owner: "the usual discreet tooltip").
-    expect(medal).not.toHaveAttribute("title");
-    // It trails HP as a same-row SIBLING in the vitals deck (data leads, its
-    // control follows) — the exact placement on desktop AND phones (one rule
-    // across breakpoints), so there is no wrapper: the coin is a direct child of
-    // `.hdr-vitals` whose previous sibling is the HP tile.
-    expect(medal?.parentElement?.classList.contains("hdr-vitals")).toBe(true);
-    expect(medal?.previousElementSibling?.classList.contains("vital-hp")).toBe(true);
+    const rest = container.querySelector<HTMLButtonElement>(".rest-btn");
+    expect(rest).not.toBeNull();
+    // The verb is visible (owner 2026-10-16 design: copied from D&D Beyond's
+    // header rest buttons), so it is the accessible name too.
+    expect(rest).toHaveAccessibleName("Rest");
+    expect(rest).toHaveTextContent("Rest");
+    expect(rest).not.toHaveAttribute("title");
+    // It sits with the identity, never in the vitals row.
+    expect(rest?.closest(".hdr-vitals")).toBeNull();
+    expect(rest?.parentElement?.classList.contains("hero-btns")).toBe(true);
   });
 
   it("Level Up is pure availability ceremony — the lineage chip ALONE (no portrait gem)", () => {
@@ -393,7 +388,7 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
   it("names Rest + Level-Up via the branded tooltip label (localized, no native title) — EN", () => {
     load();
     const { container } = renderHeader();
-    const medal = container.querySelector<HTMLButtonElement>(".rest-medal");
+    const medal = container.querySelector<HTMLButtonElement>(".rest-btn");
     const chip = container.querySelector<HTMLButtonElement>(".lvl-chip");
     expect(medal).toHaveAccessibleName("Rest");
     expect(chip).toHaveAccessibleName("Level up to level 10");
@@ -407,7 +402,7 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
     });
     load();
     const { container } = renderHeader();
-    const medal = container.querySelector<HTMLButtonElement>(".rest-medal");
+    const medal = container.querySelector<HTMLButtonElement>(".rest-btn");
     const chip = container.querySelector<HTMLButtonElement>(".lvl-chip");
     // The localized keys (character.rest / character.levelUpChipAria) drive the
     // accessible name the tooltip mirrors — proving the label is i18n-fed, not hardcoded.
@@ -427,8 +422,8 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
     expect(container.querySelector(".seal.lvl-ready")).toBeNull();
     expect(container.querySelector(".seal-lvl")).toBeNull();
     expect(container.querySelector(".lvl-chip")).toBeNull();
-    // Rest is available at every level, so the medallion survives.
-    expect(container.querySelector(".rest-medal")).not.toBeNull();
+    // Rest is available at every level, so its button survives.
+    expect(container.querySelector(".rest-btn")).not.toBeNull();
   });
 
   // THE PINNED locale-stability test (round-3 acceptance): the vitals row must be
@@ -436,7 +431,7 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
   // CAUSE of that stability — the row carries NO locale-varying text (the Rest
   // verb, the one thing that differed, now lives in the branded hover tooltip + aria
   // on a glyph-only coin). The real pixel-geometry pin lives in tests/e2e/living-sheet.spec.ts.
-  it("PINNED — the vitals row carries no locale-varying text (glyph-only Rest)", async () => {
+  it("PINNED — the vitals row carries no locale-varying text", async () => {
     const structure = (container: HTMLElement): string[] => {
       const vitals = container.querySelector(".hdr-vitals");
       return [...(vitals?.children ?? [])].map((el) => el.className);
@@ -445,7 +440,7 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
     load();
     const en = renderHeader();
     const enStructure = structure(en.container);
-    const enMedalText = en.container.querySelector(".rest-medal")?.textContent;
+    expect(en.container.querySelector(".hdr-vitals .rest-btn")).toBeNull();
     en.unmount();
 
     await act(async () => {
@@ -454,14 +449,10 @@ describe("CombatHeader — the Living Sheet (Rest medallion + Level-Up ceremony)
     load();
     const it = renderHeader();
     const itStructure = structure(it.container);
-    const itMedalText = it.container.querySelector(".rest-medal")?.textContent;
     it.unmount();
 
     // Same child boxes, same order, same classes → same geometry by construction.
     expect(itStructure).toEqual(enStructure);
-    // And the coin renders zero text in BOTH locales — the invariant that makes it so.
-    expect(enMedalText).toBe("");
-    expect(itMedalText).toBe("");
   });
 });
 
@@ -504,7 +495,7 @@ describe("CombatHeader — read-only mode (T4: DM views a member's sheet)", () =
     // (which lives in the fob family anyway), the Rest medallion, and the whole
     // Level-Up ceremony (seal gem + chip).
     expect(screen.queryByRole("button", { name: /^edit$/i })).not.toBeInTheDocument();
-    expect(container.querySelector(".rest-medal")).toBeNull();
+    expect(container.querySelector(".rest-btn")).toBeNull();
     expect(container.querySelector(".seal.lvl-ready")).toBeNull();
     expect(container.querySelector(".seal-lvl")).toBeNull();
     expect(container.querySelector(".lvl-chip")).toBeNull();
@@ -592,7 +583,7 @@ describe("CombatHeader — the masthead is pure identity + vitals (management li
     // Identity + vitals + the Living-Sheet ceremony still render.
     expect(screen.getByText("Lyra Voss")).toBeInTheDocument();
     expect(screen.getByText("AC")).toBeInTheDocument();
-    expect(container.querySelector(".rest-medal")).not.toBeNull();
+    expect(container.querySelector(".rest-btn")).not.toBeNull();
   });
 });
 
