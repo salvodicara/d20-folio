@@ -41,6 +41,19 @@ A reader older than the overrides drops `hide`, `show` and `move` items, so it s
 unedited. The rules accept them in the session array (members append only their own). When the
 per-item subcollection (#321) lands, its rule takes the same item types.
 
+## Play outside a fight: scenes
+
+Owner, 2026-10-16: exploration, rests, rituals and downtime are part of the story too, and scenes
+need **no input at the table**. Lines outside a fight are recorded like any other, and the report
+groups them into numbered scenes on its own: a scene starts at the session's first line, after a
+rest and after a fight. Each carries the time of its first line (`startedAt`, display only); an
+untitled one reads `## Scena 2 · 21:40`.
+
+Titles are optional. A `scene-start { title? }` line opens a titled scene where it stands (an
+optional "new scene" button), or, after the game from the narrative editor, a `scene-start`
+moved (`move`) to where an automatic scene begins titles it: `## Scena 2: La strada · 21:40`.
+Hiding it takes the title back. Unlike fight markers, a `scene-start` may be moved and hidden.
+
 ## Session notes in the same timeline
 
 Owner workflow, 2026-10-16: during the game the DM writes free notes; afterwards the notes and

@@ -59,7 +59,9 @@ function isOwnAttribution(by: string, line: PlayEvent, next: PlayEvent): boolean
  * apply — a duplicate id, a correction of an unknown line, a player touching someone
  * else's line — are ignored rather than thrown, because the log is shared input.
  */
-/** The lines that give the story its shape: never hidden, never moved. */
+/** The lines that give a fight its shape: never hidden, never moved. A `scene-start` is
+ *  not one of them: titling a scene after the game is a `scene-start` moved to where the
+ *  scene begins, and hiding it takes the title (and its break) back. */
 const MARKER_KINDS = new Set<PlayEvent["kind"]>([
   "encounter-start",
   "round-start",

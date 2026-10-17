@@ -86,7 +86,7 @@ describe("renderSessionReport", () => {
       [
         "# Session 2026-10-08",
         "",
-        "## Outside combat",
+        "## Scene 1",
         "- Ana takes 3 damage",
         "",
         "## Encounter 1 — victory",
@@ -97,7 +97,7 @@ describe("renderSessionReport", () => {
         "- Goblin drops to 0 HP",
         "- Ana concentrates on Bless",
         "",
-        "## Outside combat",
+        "## Scene 2",
         "- Someone takes 14 damage",
         "- Ana takes a short rest",
       ].join("\n")

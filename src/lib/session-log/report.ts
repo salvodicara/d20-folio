@@ -9,7 +9,15 @@ export interface ReportRound {
 /** The deterministic chronicle of a session: play outside fights, and each encounter
  *  round by round. Markers (start, end, new round) shape the sections and are not lines. */
 export type ReportSection =
-  | { kind: "outside"; entries: SessionEntry[] }
+  | {
+      kind: "outside";
+      /** Numbered through the session: play outside fights is grouped into scenes. */
+      scene: number;
+      title?: string;
+      /** When its first line was recorded (the device's clock: display only). */
+      startedAt: number;
+      entries: SessionEntry[];
+    }
   | {
       kind: "encounter";
       encounterId: string;
@@ -22,9 +30,19 @@ export type ReportSection =
 export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
   const sections: ReportSection[] = [];
   const current = (): ReportSection | undefined => sections[sections.length - 1];
+  // Outside fights, a scene starts at the first line, after an explicit `scene-start`
+  // (whose title it takes), after a rest and after a fight.
+  let scenes = 0;
+  let newScene = true;
+  let title: string | undefined;
 
   for (const entry of entries) {
     const { event } = entry;
+    if (event.kind === "scene-start") {
+      newScene = true;
+      title = event.title?.trim() || undefined;
+      continue;
+    }
     if (event.kind === "encounter-start") {
       sections.push({
         kind: "encounter",
@@ -38,6 +56,7 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
     const section = current();
     if (event.kind === "encounter-end") {
       if (section?.kind === "encounter" && event.outcome) section.outcome = event.outcome;
+      newScene = true;
       continue;
     }
     if (entry.encounterId !== undefined && section?.kind === "encounter") {
@@ -45,11 +64,23 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
       const last = section.rounds[section.rounds.length - 1];
       if (last?.round === round) last.entries.push(entry);
       else section.rounds.push({ round, entries: [entry] });
-    } else if (section?.kind === "outside") {
+      continue;
+    }
+    if (section?.kind === "outside" && !newScene) {
       section.entries.push(entry);
     } else {
-      sections.push({ kind: "outside", entries: [entry] });
+      scenes += 1;
+      sections.push({
+        kind: "outside",
+        scene: scenes,
+        ...(title === undefined ? {} : { title }),
+        startedAt: entry.at,
+        entries: [entry],
+      });
+      newScene = false;
+      title = undefined;
     }
+    if (event.kind === "rest") newScene = true;
   }
   return sections;
 }

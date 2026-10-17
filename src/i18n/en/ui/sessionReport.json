@@ -1,7 +1,7 @@
 {
   "sessionReport": {
     "title": "Session {{date}}",
-    "outside": "Outside combat",
+    "scene": "Scene {{n}}",
     "encounter": "Encounter {{n}}",
     "beforeRounds": "Before the first round",
     "somethingUsed": "something",
