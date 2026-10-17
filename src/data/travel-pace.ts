@@ -11,55 +11,33 @@
  * consumer localizes them via the D3 helpers (feet through localeDistance, miles
  * through localeMiles); this data stays unit-canonical.
  *
+ * Each pace's name and its special effect (when it has one) live in the `rule`
+ * SRD catalogue (`src/i18n/<locale>/srd/rules.json`) under {@link travelPaceKey}.
+ *
  * Source: SRD 5.2.1 (CC-BY-4.0), "Travel Pace" table — concise functional
  * restatements, not verbatim prose.
  */
-
-import type { BiText } from "@/data/types";
 
 export type TravelPaceId = "fast" | "normal" | "slow";
 
 export interface TravelPace {
   /** Stable id (kebab-case). */
   id: TravelPaceId;
-  /** Bilingual pace name. */
-  name: BiText;
   /** Feet covered per minute at this pace. */
   perMinuteFt: number;
   /** Miles covered per hour at this pace. */
   perHourMiles: number;
   /** Miles covered per (8-hour) day at this pace. */
   perDayMiles: number;
-  /** Bilingual one-line special effect, or null when the pace has none. */
-  effect: BiText | null;
+}
+
+/** The `rule` catalogue key of a pace (`travel-pace.fast`): `name`, and `effect` if any. */
+export function travelPaceKey(id: TravelPaceId): string {
+  return `travel-pace.${id}`;
 }
 
 export const TRAVEL_PACE_REFERENCE: ReadonlyArray<TravelPace> = [
-  {
-    id: "fast",
-    name: { en: "Fast", it: "Veloce" },
-    perMinuteFt: 400,
-    perHourMiles: 4,
-    perDayMiles: 30,
-    effect: {
-      en: "−5 penalty to passive Perception.",
-      it: "−5 alla Percezione passiva.",
-    },
-  },
-  {
-    id: "normal",
-    name: { en: "Normal", it: "Normale" },
-    perMinuteFt: 300,
-    perHourMiles: 3,
-    perDayMiles: 24,
-    effect: null,
-  },
-  {
-    id: "slow",
-    name: { en: "Slow", it: "Lenta" },
-    perMinuteFt: 200,
-    perHourMiles: 2,
-    perDayMiles: 18,
-    effect: { en: "Can move stealthily.", it: "Può muoversi furtivamente." },
-  },
+  { id: "fast", perMinuteFt: 400, perHourMiles: 4, perDayMiles: 30 },
+  { id: "normal", perMinuteFt: 300, perHourMiles: 3, perDayMiles: 24 },
+  { id: "slow", perMinuteFt: 200, perHourMiles: 2, perDayMiles: 18 },
 ];

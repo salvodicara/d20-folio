@@ -352,13 +352,15 @@ export async function parsePublicCharacterProjection(
   const storedCache = parseCache(raw.cache);
   if (storedCache === null) throw new TypeError("Invalid public character cache");
 
-  const [{ SCHEMA_VERSION, parseCharacterEnvelope }, aggregate] = await Promise.all([
-    import("@/lib/character-codec"),
-    import("@/lib/aggregate-character"),
-  ]);
+  const [{ SCHEMA_VERSION, parseCharacterEnvelope, ensureBuildNames }, aggregate] =
+    await Promise.all([
+      import("@/lib/character-codec"),
+      import("@/lib/aggregate-character"),
+    ]);
   if (raw.schema !== SCHEMA_VERSION) {
     throw new TypeError("Unsupported public character source schema");
   }
+  await ensureBuildNames(raw.build);
   const parsed = parseCharacterEnvelope(raw.build, {});
   if (!parsed.ok) throw new TypeError(`Invalid public character: ${parsed.error}`);
   const max = aggregate.effectiveMaxHp(parsed.character, parsed.session);

@@ -8,8 +8,13 @@
  * the view). No dice are rolled and no expected-value maths beyond a dice
  * average is used, so a beginner can follow every recommendation by hand.
  */
+import { getSpellById } from "@/data/spells";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { getClasses } from "@/lib/classes";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { vitalSlotUsed } from "@/lib/character-vitals";
+import { hitDicePool } from "@/lib/play/hit-dice";
+import { canRitualCast } from "@/lib/ritual";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import {
   attacksPerActionForCharacter,
@@ -22,10 +27,10 @@ import {
 import type { ReactionTrigger } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { applyOverrides } from "./apply-overrides";
-import { planTurn } from "./plan-turn";
+import { planExploration, planTurn } from "./plan-turn";
 import {
-  type EconomySlot,
   type Playbook,
+  type PlaybookSlot,
   type PlaybookContext,
   type PlaybookLimit,
   type PlaybookOption,
@@ -56,6 +61,12 @@ export const RULE_PRIORITY: Readonly<Record<PlaybookRuleId, number>> = {
   "reaction-defense": 400,
   "opportunity-attack": 300,
   position: 100,
+  // Exploration.
+  "recover-hp": 800,
+  "ritual-no-slot": 600,
+  "exploration-check": 500,
+  "utility-cantrip": 400,
+  "short-rest-recovery": 300,
 };
 export const BONUS_SLOT_BONUS = 50;
 
@@ -90,17 +101,26 @@ interface Facts {
 
 interface Draft {
   rule: PlaybookRuleId;
-  slot: EconomySlot;
+  slot: PlaybookSlot;
   actions: ReadonlyArray<RawResolvedAction>;
   when: PlaybookTrigger;
   why: PlaybookWhy[];
+  /** Kept with no actions: a reminder, not a choice (movement, Short Rest). */
+  reminder?: true;
+  /** Cast as rituals: no slot, no one-slot-spell limit. */
+  ritual?: true;
 }
 
+/**
+ * The playbook for this character. `context.mode: "exploration"` reads it out of
+ * combat (see {@link draftExplorationSteps}); absent, it is the combat turn.
+ */
 export function buildCombatPlaybook(
   character: CharacterDoc,
   context: PlaybookContext = {},
   overrides: PlaybookOverrides = {}
 ): Playbook {
+  const mode = context.mode ?? "combat";
   const actions = resolveActions(character);
   const facts: Facts = {
     doc: character,
@@ -112,17 +132,21 @@ export function buildCombatPlaybook(
     ),
   };
 
-  const drafts = draftSteps(actions, facts);
+  const drafts =
+    mode === "exploration"
+      ? draftExplorationSteps(actions, resolveActions(character, "spellbook"), facts)
+      : draftSteps(actions, facts);
   const steps = drafts
-    .filter((d) => d.slot === "movement" || d.actions.length > 0)
+    .filter((d) => d.reminder || d.actions.length > 0)
     .map((d) => finishStep(d, facts));
 
   const { kept, hidden } = applyOverrides(steps, overrides);
   return {
     version: 1,
+    mode,
     steps: kept,
     hidden,
-    plan: planTurn(kept),
+    plan: mode === "exploration" ? planExploration(kept) : planTurn(kept),
     authored: character.character.combatAlgorithm,
   };
 }
@@ -138,6 +162,7 @@ function draftSteps(actions: ReadonlyArray<RawResolvedAction>, facts: Facts): Dr
     rule: "position",
     slot: "movement",
     actions: [],
+    reminder: true,
     when: { kind: "always" },
     why: [{ key: ranged ? "keep-range" : "move-to-melee", source: rule("movement") }],
   });
@@ -385,13 +410,192 @@ function defaultAttack(
   };
 }
 
+// ── Exploration rules ─────────────────────────────────────────────────────────
+
+/** The SRD core actions that are ability checks out of combat, in display order. */
+const EXPLORATION_CHECKS = ["search", "study", "influence", "hide"] as const;
+
+/** Minutes a ritual adds to the casting time (SRD 5.2.1 "Ritual"). */
+const RITUAL_EXTRA_MINUTES = 10;
+
+/**
+ * Out of combat there is no turn: no movement, no slots per turn, no reactions
+ * held for a trigger. What is worth doing between fights: heal (what a Short Rest
+ * gives back first), cast rituals for no slot, make the checks, use the utility
+ * cantrips, and know what a Short Rest would recover.
+ */
+function draftExplorationSteps(
+  actions: ReadonlyArray<RawResolvedAction>,
+  spellbook: ReadonlyArray<RawResolvedAction>,
+  facts: Facts
+): Draft[] {
+  const usable = actions.filter((a) => a.type !== "reaction");
+
+  const heals = byHealCost(
+    usable.filter(
+      (a) =>
+        a.summary.heal !== undefined ||
+        a.summary.healing !== undefined ||
+        a.summary.poolSpendEffect === "healing"
+    )
+  );
+  const item = heals.find((a) => a.costEquipment);
+  const hpDraft: Draft = {
+    rule: "recover-hp",
+    slot: "anytime",
+    actions: heals,
+    when: { kind: "self-hurt" },
+    why: [
+      { key: "cheapest-first" },
+      ...trackerWhy(heals, facts),
+      ...slotWhy(heals),
+      ...(item?.costEquipment
+        ? [{ key: "uses-item" as const, params: { itemId: item.costEquipment } }]
+        : []),
+    ],
+  };
+
+  const rituals = byCheapest(ritualActions(spellbook, facts.doc));
+  const ritualDraft: Draft = {
+    rule: "ritual-no-slot",
+    slot: "anytime",
+    actions: rituals,
+    ritual: true,
+    when: { kind: "always" },
+    why: [
+      {
+        key: "ritual-no-slot",
+        params: { minutes: RITUAL_EXTRA_MINUTES },
+        source: spellSource(rituals),
+      },
+      ...concentrationWhy(rituals),
+    ],
+  };
+
+  const checks = EXPLORATION_CHECKS.flatMap((check) =>
+    usable.filter((a) => a.id === `base-${check}`)
+  );
+  const checkDraft: Draft = {
+    rule: "exploration-check",
+    slot: "anytime",
+    actions: checks,
+    when: { kind: "always" },
+    why: checks.map((a) => {
+      const check = a.id.slice("base-".length);
+      return { key: "exploration-check", params: { check }, source: rule(check) };
+    }),
+  };
+
+  const cantrips = usable.filter(
+    (a) =>
+      a.source === "spell" &&
+      a.spellLevel === 0 &&
+      a.summary.damage === undefined &&
+      a.summary.heal === undefined &&
+      a.summary.healing === undefined
+  );
+  const cantripDraft: Draft = {
+    rule: "utility-cantrip",
+    slot: "anytime",
+    actions: cantrips,
+    when: { kind: "always" },
+    why: [{ key: "cantrip-no-cost", source: spellSource(cantrips) }],
+  };
+
+  return [hpDraft, ritualDraft, checkDraft, cantripDraft, shortRestDraft(facts)];
+}
+
+/**
+ * Heals ordered by what is cheapest to get back: feature uses (they come back on
+ * a rest), then spell slots from the lowest, then consumables (gone for good).
+ */
+function byHealCost(list: ReadonlyArray<RawResolvedAction>): RawResolvedAction[] {
+  const rank = (a: RawResolvedAction): number => {
+    if (a.costsSlot) return 1 + (a.slotLevel ?? a.spellLevel ?? 1) / 10;
+    if (a.costEquipment) return 2;
+    return 0;
+  };
+  return list
+    .map((a, index) => ({ a, index, r: rank(a) }))
+    .sort((x, y) => x.r - y.r || x.index - y.index)
+    .map((x) => x.a);
+}
+
+/**
+ * The levelled ritual spells this character may cast as rituals: prepared, or
+ * any in a Wizard's spellbook (Ritual Adept). A spell granted outside the spell
+ * list (a lineage's Detect Magic) is always prepared.
+ */
+function ritualActions(
+  spellbook: ReadonlyArray<RawResolvedAction>,
+  doc: CharacterDoc
+): RawResolvedAction[] {
+  // Ritual Adept is the only class rule canRitualCast reads.
+  const classId = getClasses(doc.character).some((c) => c.classId === "wizard")
+    ? "wizard"
+    : "";
+  const seen = new Set<string>();
+  return spellbook.filter((a) => {
+    if (a.source !== "spell" || !a.spellId || a.summary.recurringUse) return false;
+    if (seen.has(a.spellId)) return false;
+    const spell = getSpellById(a.spellId);
+    if (!spell) return false;
+    const ref = doc.character.spells.find((s) => "srdId" in s && s.srdId === a.spellId);
+    const isPrepared =
+      !ref ||
+      ref.prepared === true ||
+      ("alwaysPrepared" in ref && ref.alwaysPrepared === true);
+    if (!canRitualCast({ spell, classId, isPrepared })) return false;
+    seen.add(a.spellId);
+    return true;
+  });
+}
+
+/** What a Short Rest would give back: spent Short Rest uses and Hit Point Dice. */
+function shortRestDraft(facts: Facts): Draft {
+  const why: PlaybookWhy[] = [];
+  for (const tracker of facts.trackers.values()) {
+    if (tracker.recovery !== "short-rest" || tracker.used <= 0) continue;
+    why.push({
+      key: "recovers-on-short-rest",
+      params: { used: tracker.used, total: tracker.total },
+      source: { kind: "feature", id: tracker.id },
+    });
+  }
+  const total = hitDicePool(facts.doc.character).reduce((n, e) => n + e.count, 0);
+  const left = Math.max(0, total - facts.doc.session.hitDice.used);
+  if (selfHurt(facts) && left > 0) {
+    why.push({
+      key: "hit-dice-heal",
+      params: { left, total },
+      source: rule("hit-point-dice"),
+    });
+  }
+  return {
+    rule: "short-rest-recovery",
+    slot: "anytime",
+    actions: [],
+    ...(why.length > 0 ? { reminder: true as const } : {}),
+    when: { kind: "always" },
+    why,
+  };
+}
+
+function selfHurt(facts: Facts): boolean {
+  if (facts.context.selfHurt !== undefined) return facts.context.selfHurt;
+  const { doc } = facts;
+  return doc.session.hp.current < effectiveMaxHp(doc.character, doc.session);
+}
+
 // ── Status, options, triggers ─────────────────────────────────────────────────
 
 function finishStep(draft: Draft, facts: Facts): PlaybookStep {
   const why = [...draft.why];
-  const options: PlaybookOption[] = draft.actions.map((a) => toOption(a, facts));
+  const options: PlaybookOption[] = draft.actions.map((a) =>
+    toOption(a, facts, draft.ritual === true)
+  );
   let status: PlaybookStep["status"] = "ready";
-  if (draft.slot !== "movement" && facts.incapacitated) {
+  if (draft.actions.length > 0 && facts.incapacitated) {
     status = "blocked";
     why.push({ key: "cannot-act", params: { condition: "incapacitated" } });
     for (const o of options) o.available = false;
@@ -428,13 +632,16 @@ function finishStep(draft: Draft, facts: Facts): PlaybookStep {
   };
 }
 
-function toOption(a: RawResolvedAction, facts: Facts): PlaybookOption {
+/** An action as an option. Cast as a `ritual` it spends nothing and takes no slot. */
+function toOption(a: RawResolvedAction, facts: Facts, ritual = false): PlaybookOption {
   const limits: PlaybookLimit[] = [];
   if (a.concentration) limits.push("one-concentration");
-  if (a.source === "spell" && a.costsSlot) limits.push("one-slot-spell");
+  if (a.source === "spell" && a.costsSlot && !ritual) limits.push("one-slot-spell");
   let available = !(a.concentration && facts.concentratingOn !== "");
   let spend: PlaybookOption["spend"];
-  if (a.costsSlot) {
+  if (ritual) {
+    // No slot and no source: the ritual's cost is ten more minutes.
+  } else if (a.costsSlot) {
     const level = a.slotLevel ?? a.spellLevel ?? 1;
     spend = { kind: "slot", level };
     available &&= hasSlot(facts.doc, level);
@@ -448,6 +655,8 @@ function toOption(a: RawResolvedAction, facts: Facts): PlaybookOption {
       ...(tracker ? { recovery: tracker.recovery } : {}),
     };
     if (tracker) available &&= tracker.total - tracker.used >= amount;
+  } else if (a.costEquipment) {
+    spend = { kind: "item", itemId: a.costEquipment };
   }
   return {
     actionId: a.id,
@@ -467,6 +676,8 @@ function triggerApplies(when: PlaybookTrigger, facts: Facts): boolean | "unknown
       return c.round === undefined ? "unknown" : c.round === 1;
     case "self-bloodied":
       return c.selfBloodied ?? isBloodied(facts.doc);
+    case "self-hurt":
+      return selfHurt(facts);
     case "ally-down":
       return known(c.allyDown);
     case "enemies-grouped":

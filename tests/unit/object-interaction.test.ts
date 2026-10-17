@@ -40,8 +40,8 @@ describe("once-free base actions", () => {
       expect(base.type).toBe("free");
       const cost = BASE_ACTIONS.find((a) => a.id === base.repeatUseCosts);
       expect(cost?.type).toBe("action");
-      expect(baseActionName(base.repeatUseCosts ?? "", "it")).toBe(cost?.name.it);
-      expect(baseActionName(base.repeatUseCosts ?? "", "en")).toBe(cost?.name.en);
+      expect(baseActionName(base.repeatUseCosts ?? "", "it")).toBe("Utilizzo");
+      expect(baseActionName(base.repeatUseCosts ?? "", "en")).toBe("Utilize");
     }
   );
 

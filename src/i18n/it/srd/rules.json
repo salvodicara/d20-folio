@@ -1,0 +1,195 @@
+{
+  "cover.half": {
+    "name": "Mezza Copertura",
+    "summary": "+2 alla CA e +2 ai tiri salvezza su Destrezza."
+  },
+  "cover.three-quarters": {
+    "name": "Tre Quarti di Copertura",
+    "summary": "+5 alla CA e +5 ai tiri salvezza su Destrezza."
+  },
+  "cover.total": {
+    "name": "Copertura Totale",
+    "summary": "Non può essere bersaglio diretto di un attacco o incantesimo mirato."
+  },
+  "travel-pace.fast": {
+    "name": "Veloce",
+    "effect": "−5 alla Percezione passiva."
+  },
+  "travel-pace.normal": {
+    "name": "Normale"
+  },
+  "travel-pace.slow": {
+    "name": "Lenta",
+    "effect": "Può muoversi furtivamente."
+  },
+  "mounted.eligible-mount": {
+    "name": "Cavalcatura Idonea",
+    "summary": "Una creatura consenziente di almeno una taglia più grande di te e con un'anatomia adatta può fungere da cavalcatura."
+  },
+  "mounted.mount-dismount": {
+    "name": "Salire e Scendere",
+    "summary": "Durante il tuo movimento, salire su o scendere da una creatura entro 1,5 metri costa movimento pari a metà della tua Velocità (arrotondata per difetto)."
+  },
+  "mounted.controlled-mount": {
+    "name": "Cavalcatura Controllata",
+    "summary": "Una cavalcatura addestrata ad accettare un cavaliere condivide la tua Iniziativa e può effettuare solo l'azione Scatto, Disimpegno o Schivata."
+  },
+  "mounted.independent-mount": {
+    "name": "Cavalcatura Indipendente",
+    "summary": "Una cavalcatura non addestrata mantiene il proprio posto nell'Iniziativa e si muove e agisce autonomamente."
+  },
+  "mounted.falling-off": {
+    "name": "Cadere di Sella",
+    "summary": "Se la tua cavalcatura è costretta a muoversi, o se tu o essa venite resi Proni, supera un tiro salvezza su Destrezza CD 10 o cadi di sella Prono entro 1,5 metri."
+  },
+  "underwater.melee-underwater": {
+    "name": "Attacchi in Mischia",
+    "summary": "Senza una Velocità di Nuoto, i tiri per colpire in mischia con un'arma hanno Svantaggio a meno che l'arma non infligga danni Perforanti."
+  },
+  "underwater.ranged-underwater": {
+    "name": "Attacchi a Distanza",
+    "summary": "Un tiro per colpire a distanza con un'arma manca automaticamente un bersaglio oltre la gittata normale e ha Svantaggio entro la gittata normale."
+  },
+  "underwater.fire-resistance": {
+    "name": "Resistenza al Fuoco",
+    "summary": "Tutto ciò che si trova sott'acqua ha Resistenza ai danni da Fuoco."
+  },
+  "attack-situation.unseen-target": {
+    "name": "Bersaglio non visto",
+    "summary": "Quando attacchi un bersaglio che non puoi vedere, hai Svantaggio al tiro per colpire."
+  },
+  "attack-situation.unseen-attacker": {
+    "name": "Attaccante non visto",
+    "summary": "Quando una creatura non può vederti, hai Vantaggio ai tiri per colpire contro di essa."
+  },
+  "attack-situation.ranged-in-melee": {
+    "name": "A distanza in mischia",
+    "summary": "Un tiro per colpire a distanza ha Svantaggio se sei entro 1,5 metri da un nemico che può vederti e non è Incapacitato."
+  },
+  "attack-situation.long-range": {
+    "name": "Gittata lunga",
+    "summary": "Un tiro per colpire con un'arma contro un bersaglio oltre la gittata normale ha Svantaggio; oltre la gittata lunga non si può fare."
+  },
+  "vision.dim-light": {
+    "name": "Luce Fioca",
+    "summary": "La Luce Fioca è Leggermente Oscurata: Svantaggio alle prove di Saggezza (Percezione) per vedere al suo interno, e Percezione passiva −5."
+  },
+  "vision.darkness": {
+    "name": "Oscurità",
+    "summary": "L'Oscurità è Pesantemente Oscurata: hai la condizione Accecato quando cerchi di vedere al suo interno; fallisci le prove che richiedono la vista e i tuoi tiri per colpire hanno Svantaggio."
+  },
+  "vision.darkvision": {
+    "name": "Scurovisione",
+    "summary": "Entro il suo raggio vedi in Luce Fioca come in Luce Intensa e nell'Oscurità come in Luce Fioca (in sfumature di grigio)."
+  },
+  "situation.underwater": {
+    "name": "Sott'acqua"
+  },
+  "situation.mounted": {
+    "name": "In sella"
+  },
+  "action.dash": {
+    "name": "Scatto",
+    "effect": "Raddoppia il movimento"
+  },
+  "action.dodge": {
+    "name": "Schivata",
+    "effect": "Attacchi su di te in svantaggio"
+  },
+  "action.disengage": {
+    "name": "Disimpegno",
+    "effect": "Mov. non provoca AA"
+  },
+  "action.help": {
+    "name": "Aiuto",
+    "effect": "Alleato ottiene Vantaggio"
+  },
+  "action.hide": {
+    "name": "Nascondersi",
+    "effect": "Prova Furtività CD 15 → Invisibile"
+  },
+  "action.influence": {
+    "name": "Influenza",
+    "effect": "Prova Car/Sag per influenzare l'atteggiamento"
+  },
+  "action.magic": {
+    "name": "Magia",
+    "effect": "Lancia un incantesimo o usa oggetto/capacità magica"
+  },
+  "action.ready": {
+    "name": "Prepararsi",
+    "effect": "Imposta innesco → reazione"
+  },
+  "action.search": {
+    "name": "Ricerca",
+    "effect": "Prova Sag: Intuizione/Medicina/Percezione/Sopravvivenza"
+  },
+  "action.study": {
+    "name": "Studio",
+    "effect": "Prova Int: Arcano/Storia/Indagare/Natura/Religione"
+  },
+  "action.utilize": {
+    "name": "Utilizzo",
+    "effect": "Usa un oggetto non magico che richiede un'azione"
+  },
+  "action.object-interaction": {
+    "name": "Interagisci con un oggetto",
+    "effect": "Estrai, riponi o apri un oggetto a turno"
+  },
+  "action.grapple": {
+    "name": "Afferrare",
+    "effect": "Colpo Senz'armi: TS For/Des o Afferrato"
+  },
+  "action.shove": {
+    "name": "Spingere",
+    "effect": "Colpo Senz'armi: TS For/Des → 1,5 m o Prono"
+  },
+  "action.escape-grapple": {
+    "name": "Liberati",
+    "effect": "Atletica/Acrobazia contro CD di fuga → libero"
+  },
+  "action.opportunity-attack": {
+    "name": "Attacco di Opportunità",
+    "effect": "Nemico lascia portata senza Disimpegnarsi",
+    "trigger": "nemico lascia portata"
+  },
+  "roll.attacks": {
+    "name": "Tiri per colpire"
+  },
+  "roll.ability-checks": {
+    "name": "Prove di caratteristica"
+  },
+  "roll.dex-saves": {
+    "name": "Tiri salvezza su Destrezza"
+  },
+  "roll.str-dex-checks": {
+    "name": "Prove di Forza e Destrezza"
+  },
+  "roll.str-dex-saves": {
+    "name": "Tiri salvezza su Forza e Destrezza"
+  },
+  "roll.attacks-unproficient-armor": {
+    "name": "Tiri per colpire (indossando armatura senza competenza)"
+  },
+  "action.dodge.grants.0.grants.0": {
+    "description": "Gli attacchi contro di te hanno Svantaggio (Schivata)"
+  },
+  "action.dodge.grants.0.grants.1": {
+    "description": "Tiri salvezza su Destrezza (Schivata)"
+  },
+  "state.surprised": {
+    "name": "Sorpreso"
+  },
+  "state.surprised.grants.0.grants.0": {
+    "description": "Tiro d'Iniziativa (Sorpreso)"
+  },
+  "state.wish-stress": {
+    "name": "Stress di Desiderio"
+  },
+  "vision.dim-light.grants.0.grants.0": {
+    "description": "Prove di Saggezza (Percezione) per vedere (Leggermente Oscurato)"
+  },
+  "vision.darkness.grants.0.grants.0": {
+    "description": "Tiri per colpire (Accecato per la vista: Oscurità)"
+  }
+}

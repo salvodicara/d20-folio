@@ -46,7 +46,7 @@ const UI_DIRS = ["features", "app", "components", "hooks"] as const;
 const UI_ROOTS = UI_DIRS.map((d) => join(SRC, d));
 
 // The presenter sub-layers. They live under `lib/` but are NOT engine-core: they
-// may localize/format (take a `locale` + a bound `t`, read a `BiText`, call the
+// may localize/format (take a `locale` + a bound `t`, read a `LocaleText`, call the
 // unit formatters). Engine-core = the engine dirs MINUS these directories.
 //   - `lib/views/**` — the canonical (locale, engine-output) → view-model seam.
 //   - `lib/pdf/**`   — the character-sheet PDF presenter (the export analog of a
@@ -74,6 +74,12 @@ const SRD_EN_MODULE = join(SRC, "i18n", "srd-en.ts");
 // Whitelisted on the same narrow grounds; the resolver stays UI/views-only.
 const SRD_KEY_MODULE = join(SRC, "i18n", "srd-key.ts");
 
+// The eager SRD name index (class/subclass/race/background names of EVERY locale):
+// the read seam (`data/srd-names.ts`) recognises a stored label in any language.
+// Like `srd-en.ts` it is locale-INDEPENDENT (it returns all languages, never the
+// active one), so engine-core reading it never branches on the user's language.
+const SRD_NAME_INDEX_MODULE = join(SRC, "i18n", "srd-name-index.ts");
+
 /** Is `absPath` inside a presenter sub-layer (`lib/views/` or `lib/pdf/`)? Those
  *  files MAY localize and MAY import the engine + other presenters. */
 function isUnderViews(absPath: string): boolean {
@@ -88,9 +94,14 @@ function isUnderViews(absPath: string): boolean {
 /** Does an import spec resolve to i18n infra (`@/i18n`, `i18next`, `react-i18next`)? */
 function isI18nImport(spec: string, resolved: string | null): boolean {
   if (spec === "i18next" || spec === "react-i18next") return true;
-  // The canonical-EN-facts accessor + the pure key-path helper are the
-  // whitelisted exemptions (see above) — both locale-independent, no strings.
-  if (resolved === SRD_EN_MODULE || resolved === SRD_KEY_MODULE) return false;
+  // The canonical-EN-facts accessor, the pure key-path helper and the name index
+  // are the whitelisted exemptions (see above), all locale-independent.
+  if (
+    resolved === SRD_EN_MODULE ||
+    resolved === SRD_KEY_MODULE ||
+    resolved === SRD_NAME_INDEX_MODULE
+  )
+    return false;
   if (resolved && (resolved === I18N_ROOT || resolved.startsWith(I18N_ROOT + "/")))
     return true;
   return false;
@@ -255,7 +266,7 @@ describe("lib/tools.ts is dependency-light — never imports @/i18n (bundle-chun
 // ════════════════════════════════════════════════════════════════════════════
 //
 // The destination (docs/ARCHITECTURE.md): engine-core reads NO active locale
-// — a `BiText` is carried as DATA (`{ en, it }`) and resolved to a string ONLY in
+// — a `LocaleText` is carried as DATA (`{ en, it }`) and resolved to a string ONLY in
 // `lib/views/` or a UI hook. The unambiguous tell of a locale READ is a DYNAMIC
 // `[locale]` index (`x[locale]`, `x.name[locale]`) — it picks the active
 // language. (A static `.en` read is canonical-SRD-FACT access, not localization —
@@ -314,7 +325,7 @@ describe("R6 — engine-core reads no active locale (the [locale]-index HARD PIN
     );
     expect(
       offenders,
-      `These engine modules were de-localized in SLICE 6 and must emit BiText/ids ` +
+      `These engine modules were de-localized in SLICE 6 and must emit LocaleText/ids ` +
         `only — a dynamic [locale] read regressed the contract. Carry the data and ` +
         `localize in lib/views/ (docs/ARCHITECTURE.md).`
     ).toEqual([]);
@@ -326,7 +337,7 @@ describe("R6 — engine-core reads no active locale (the [locale]-index HARD PIN
     expect(
       unexpected,
       `An engine-core [locale] read appeared. Engine-core reads NO active locale ` +
-        `(SLICE 7 closed the frontier — the allowlist is empty): carry BiText as data ` +
+        `(SLICE 7 closed the frontier — the allowlist is empty): carry LocaleText as data ` +
         `+ localize in lib/views/ or a UI hook (docs/ARCHITECTURE.md).`
     ).toEqual([]);
   });

@@ -10,7 +10,6 @@
  *
  * Pure-ish: reads the character + session, evaluates grants. No store writes.
  */
-import type { BiText } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import {
   buildCastOptions,
@@ -43,6 +42,7 @@ import { spellIndex } from "@/data/spells";
 import { FEATS_BY_ID } from "@/data/feats";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { resolveCastSourceOverridesForLevel } from "@/lib/cast-source-profile";
+import type { Locale } from "@/lib/locale";
 
 /** The Sorcery-Point pool tracker every Sorcerer Metamagic use debits. */
 const SORCERY_POINT_TRACKER_ID = "sorcerer-font-of-magic";
@@ -86,7 +86,7 @@ export function canCastSpellWithSlots(character: CharacterDoc, spellId: string):
 export function freeCastSourcesForSpell(
   character: CharacterDoc,
   spellId: string,
-  locale: keyof BiText,
+  locale: Locale,
   signatureLabel: string
 ): FreeCastSource[] {
   const grantSources = resolveAllGrantSources(
@@ -231,7 +231,7 @@ export function freeCastSourcesForSpell(
 export function atWillCastSourcesForSpell(
   character: CharacterDoc,
   spellId: string,
-  locale: keyof BiText
+  locale: Locale
 ): MasterySource[] {
   const grantSources = resolveAllGrantSources(
     character.character,
@@ -300,7 +300,7 @@ export function scopedSlotEligibleSpellIds(
 export function scopedSlotSourcesForSpell(
   character: CharacterDoc,
   spellId: string,
-  locale: keyof BiText
+  locale: Locale
 ): ScopedSlotSource[] {
   const grantSources = resolveAllGrantSources(
     character.character,
@@ -342,7 +342,7 @@ export function resolveSpellCastOptions(
   spellId: string,
   baseLevel: number,
   atBaseLevel: boolean,
-  locale: keyof BiText,
+  locale: Locale,
   labels: CastBadgeLabels
 ): CastLevelOption[] {
   if (isSpellcastingBlocked(character)) return [];

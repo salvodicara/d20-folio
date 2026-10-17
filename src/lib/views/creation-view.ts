@@ -3,13 +3,13 @@
  * wizard's per-step inputs (selected ids + the active locale) into render-ready
  * view-models (docs/ARCHITECTURE.md). The CreationWizard orchestrator
  * + its `steps/` subcomponents read these VMs; they make ZERO direct
- * `[locale]` / BiText reads.
+ * `[locale]` / LocaleText reads.
  *
  * ## What it does
  *  - Builds the three static option lists — class / race / background — each with
  *    its localized label, the EN search anchor, and the meta line, localized HERE
  *    via {@link localizeSrd} keyed by the stable id (kind `"class"` / `"race"` /
- *    `"background"`) so the surface survives the upcoming `src/data/**` BiText
+ *    `"background"`) so the surface survives the upcoming `src/data/**` LocaleText
  *    strip (golden rules 5 + 7).
  *  - Resolves the selection-dependent VMs: subclass options for the chosen class
  *    (kind `"subclass"`), the chosen race's lineage bundles + trait-name preview,
@@ -307,7 +307,7 @@ export function lineageBundleVMs(raceId: string, locale: Locale): LineageBundleV
   for (const trait of race.traits) {
     // The trait's catalogue ref — the bundle/option labels localize off it
     // positionally (the same path the engine derives), so we never read the
-    // stripped grant `label` BiText.
+    // stripped grant `label` LocaleText.
     const src: GrantSource = {
       id: trait.id,
       grants: trait.grants ?? [],
@@ -340,7 +340,7 @@ export function lineageBundleVMs(raceId: string, locale: Locale): LineageBundleV
  * Resolve ONE package item line ({@link BackgroundEquipmentItem}) into one or
  * more localized {@link StartingItemVM}s. Every explicit `srdId` entry localizes
  * via the catalogue (the SAME id→`localizeSrd` seam as the rest of the inventory
- * — there is no name-only / inline-BiText form); a `fromToolChoice` marker expands
+ * — there is no name-only / inline-LocaleText form); a `fromToolChoice` marker expands
  * (via the shared {@link expandToolChoiceItem} core) to the chosen tool line(s) —
  * or a single PLACEHOLDER line before a pick. A leftover quantity-suffix id
  * (`"arrows-20"`) is still tolerated as a transitional safety net even though

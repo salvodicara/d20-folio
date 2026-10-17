@@ -251,7 +251,7 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
       // are free-form ENGLISH (105 distinct tokens, no IT) and leaked untranslated into
       // the IT detail; they're also redundant with the fully-bilingual description that
       // already carries the same mechanical facts. Only structured engine facts above
-      // surface as meta rows; re-add the rest only as a bilingual `BiText[]` if needed.
+      // surface as meta rows; re-add the rest only as a bilingual `LocaleText[]` if needed.
     };
   },
 

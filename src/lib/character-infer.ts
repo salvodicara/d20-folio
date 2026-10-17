@@ -38,7 +38,7 @@ type HitDie = CharacterData["hitDieType"];
 // The EN display name of a class/subclass id ("store by id, derive the label")
 // lives in the SRD-FREE `@/data/srd-names` (`classNameById` / `subclassNameById`),
 // whose name table is pinned to the live data. The old `inferClassName` /
-// `inferSubclassName` here read the class table's `name.en` BiText (moved into the
+// `inferSubclassName` here read the class table's `name.en` LocaleText (moved into the
 // i18n catalogues by R3) and were unused — removed in R6+R3 SLICE 7b.
 
 /**

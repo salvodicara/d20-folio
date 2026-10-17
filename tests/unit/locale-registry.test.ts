@@ -5,7 +5,7 @@
  */
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { LOCALES, LOCALE_REGISTRY, asLocale, intlTag, usesMetric } from "@/lib/locale";
 
@@ -37,15 +37,13 @@ describe("locale registry", () => {
   });
 
   it("no source file decides a language by comparing with a hard-coded code", () => {
-    const hits = execFileSync(
+    // `git grep` exits 1 when nothing matches: no hits is the passing case.
+    const grep = spawnSync(
       "git",
       ["grep", "-nE", `(===|!==) ?"(it|en)"|"(it|en)" ?(===|!==)`, "--", "src"],
       { cwd: ROOT, encoding: "utf8" }
-    )
-      .split("\n")
-      .filter(Boolean)
-      // BiText object keys in rules data: the rules session's language-neutral work.
-      .filter((line) => !line.startsWith("src/lib/automation-corpus.ts:"));
-    expect(hits).toEqual([]);
+    );
+    expect(grep.status === 0 || grep.status === 1).toBe(true);
+    expect(grep.stdout.split("\n").filter(Boolean)).toEqual([]);
   });
 });

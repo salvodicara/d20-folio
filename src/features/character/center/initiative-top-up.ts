@@ -4,12 +4,12 @@
  * by every place the player rolls: the cockpit turn band and the topbar pip.
  */
 import type { TFunction } from "i18next";
-import type { BiText } from "@/data/types";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore, wireUndoToast } from "@/stores/undoStore";
+import type { Locale } from "@/lib/locale";
 
-export function applyFirstRollTopUps(t: TFunction, locale: keyof BiText): void {
+export function applyFirstRollTopUps(t: TFunction, locale: Locale): void {
   const { sourceIds, restore } = useCharacterStore
     .getState()
     .applyInitiativeTrackerTopUps();

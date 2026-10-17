@@ -529,6 +529,8 @@
       },
       "outcomeGroup": "Attack result on {{name}}",
       "critHint": "dice doubled"
-    }
+    },
+    "unarmedUnburdenedDie": "{{die}} if not holding a weapon or Shield",
+    "gainTempHp": "Gain {{amount}} temporary HP"
   }
 }

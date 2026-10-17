@@ -3,7 +3,7 @@
  * race trait) MUST resolve to a real catalogue entry for EVERY trait, in BOTH
  * locales, with NO `name.en` read. This is what lets the Features tab localize a
  * race trait via `localizeSrd("race", raceTraitCatKey(entry), …)` instead of the
- * soon-to-be-stripped `trait.name.en`/`description[locale]` BiText.
+ * soon-to-be-stripped `trait.name.en`/`description[locale]` LocaleText.
  */
 import { describe, it, expect } from "vitest";
 import { raceFeatureEntries, raceTraitCatKey } from "@/data/races";
