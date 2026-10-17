@@ -38,7 +38,7 @@ export interface ToolOption {
  * `en` = the always-loaded EN anchor (the FACT the grants carry + the EN-token
  * match); `it` = the catalogue's IT name WHEN that catalogue is loaded (so a token
  * stored in Italian re-localizes regardless of the active UI locale, like the old
- * static BiText), falling back to EN when IT has not loaded. Consumers display
+ * static LocaleText), falling back to EN when IT has not loaded. Consumers display
  * `name[locale]` and match against both, so the proficiency picker, the
  * skill-or-tool picker, the tool-choice picker AND the Bio tag picker read the SAME
  * canonical name the inventory item does — by construction, no drift. The

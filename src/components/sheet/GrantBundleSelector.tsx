@@ -11,13 +11,13 @@
  * Long Rest per RAW). Functional (unstyled) — restyled from the design branch.
  */
 import { useTranslation } from "react-i18next";
-import type { BiText } from "@/data/types";
 import type { GrantBundle } from "@/lib/grants";
 import { localizeText } from "@/lib/views/srd-i18n";
+import type { Locale } from "@/lib/locale";
 
 interface GrantBundleSelectorProps {
   bundles: ReadonlyArray<GrantBundle>;
-  locale: keyof BiText;
+  locale: Locale;
   onSelect: (bundleKey: string, optionId: string) => void;
 }
 

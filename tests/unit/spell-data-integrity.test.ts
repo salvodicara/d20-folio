@@ -25,6 +25,7 @@ import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
 import type { SrdSpellData } from "@/data/types";
 import { activityFromSpell } from "@/lib/activities";
+import { parseSpellDurationText } from "../../scripts/spells/spell-duration-text";
 
 function conditionLifetimeGaps(entries: readonly SrdSpellData[]): string[] {
   return entries.flatMap((spell) => {
@@ -935,6 +936,26 @@ describe("spell-data integrity", () => {
       getSpellById("hypnotic-pattern")?.concentration,
       "hypnotic-pattern concentration"
     ).toBe(true);
+  });
+
+  // The structured duration is the clock fact time and rests expire spells by; it must
+  // say what the printed EN duration says, for every shipped spell (pack included).
+  it("every spell's structured `duration` matches its printed EN duration", () => {
+    const mismatches = spells.flatMap((s) => {
+      const parsed = parseSpellDurationText(srd("spell", s.id, "duration", "en"));
+      const agrees =
+        JSON.stringify(s.duration) === JSON.stringify(parsed.duration) &&
+        (!parsed.concentration || s.concentration);
+      return agrees ? [] : [`${s.id}: ${JSON.stringify(s.duration)}`];
+    });
+    expect(mismatches).toEqual([]);
+    expect(getSpellById("bane")?.duration).toEqual({ kind: "minutes", amount: 1 });
+    expect(getSpellById("detect-magic")?.duration).toEqual({
+      kind: "minutes",
+      amount: 10,
+    });
+    expect(getSpellById("mage-armor")?.duration).toEqual({ kind: "hours", amount: 8 });
+    expect(getSpellById("fireball")?.duration).toEqual({ kind: "instantaneous" });
   });
 
   it("places every spell in the level file matching its `level` field", () => {

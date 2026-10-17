@@ -16,6 +16,8 @@
     "deathSaveFailure": "Tiro salvezza contro morte fallito ({{successes}} ✓ / {{failures}} ✗)",
     "shortRest": "Fatto un Riposo Breve",
     "longRest": "Fatto un Riposo Lungo",
+    "timePasses_one": "Passa {{count}} minuto",
+    "timePasses_other": "Passano {{count}} minuti",
     "riderUse": "{{rider}} speso su {{name}}",
     "masteryUse": "{{rider}} ({{name}})",
     "effectExpired": "{{name}}: durata esaurita",

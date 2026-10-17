@@ -475,7 +475,7 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       mirrors the shipped `COVER_REFERENCE` exactly — pure authoritative SRD reference data (fast
       400 ft·4 mi·30 mi, normal 300·3·24, slow 200·2·18, assuming an 8-hour day; fast = -5 passive
       Perception, slow = may move stealthily), no per-character mechanic and no Grant. Display-only:
-      like `cover.ts` it carries inline bilingual `BiText` behind a documented
+      like `cover.ts` it carries inline bilingual `LocaleText` behind a documented
       `no-srd-strings-in-data` whitelist bypass (same rationale). RENDERED on-demand in the Play
       tab's "Rules Reference" panel (`SituationalRules`, collapsed by default — blooms on a header
       click since W9) — distances localize via `localeDistance` (feet) +
@@ -487,7 +487,7 @@ isRanged, effectiveScores)` helper derives the SRD rule (Heavy + relevant EFFECT
       **SHIPPED W6 (2026-07-24):** `src/data/combat-variants.ts` exports `MOUNTED_COMBAT_REFERENCE`
       (5 lines: eligible mount, mount/dismount = ½ Speed round-down, controlled vs independent, DC 10
       DEX falling-off) + `UNDERWATER_COMBAT_REFERENCE` (3 lines: melee Disadvantage unless Piercing,
-      ranged auto-miss beyond range + Disadvantage within, Fire Resistance) as inline-`BiText`
+      ranged auto-miss beyond range + Disadvantage within, Fire Resistance) as inline-`LocaleText`
       reference data — the `cover.ts` recipe, whitelisted in `no-srd-strings-in-data.guard`. The
       2024 SRD facts (Piercing-not-the-2014-weapon-list; all ranged Disadvantaged) are pinned by
       `tests/unit/combat-variants.test.ts`. RENDERED on-demand in the Play tab's "Rules Reference"

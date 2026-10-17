@@ -19,7 +19,7 @@ import type {
   AbilityCode,
   ActionEconomyCategory,
   ActionType,
-  BiText,
+  LocaleText,
   ClassId,
   ConditionId,
   CreatureType,
@@ -189,13 +189,19 @@ export interface GrantSource {
    * carry no catalogue `ref`. SRD sources localize their name off the catalogue
    * via `ref` (R6+R3 SLICE 7c/7d), so they omit it. Not read by the evaluator.
    */
-  name?: BiText;
+  name?: LocaleText;
+  /**
+   * The name of a runtime source's toggle, as a text reference (the cover, light
+   * and situation states name theirs from the `rule` catalogue). It labels the
+   * source's `while-active` grant when that grant carries no inline `label`.
+   */
+  label?: LocText;
   grants?: ReadonlyArray<Grant>;
   /**
    * The source's stable i18n-catalogue reference `{ kind, key }` (R6+R3 SLICE
    * 7c). The evaluator extends `ref.key` with each grant's `.grants.<seg>` path
    * (see {@link srdGrantSegment}) to key that grant's localizable strings, so the
-   * aggregate carries a {@link LocText} `srd` ref instead of materialized BiText.
+   * aggregate carries a {@link LocText} `srd` ref instead of materialized LocaleText.
    * Omitted for sources whose grants carry no localizable strings, or for
    * runtime-built sources that supply their own `lit`/`custom` text; the
    * evaluator then falls back to an engine literal. SRD feature/equipment/
@@ -784,23 +790,23 @@ export function parseChoiceResistanceValue(
  * 7c): the source's `{ kind, key }` extended with this grant's `.grants.<seg>`
  * path. `undefined` for sources with no catalogue ref (synthetic/test sources, or
  * runtime sources that supply their own literal text) — the evaluator then falls
- * back to {@link litText} over the grant's inline BiText, preserving behaviour.
+ * back to {@link litText} over the grant's inline LocaleText, preserving behaviour.
  */
 type GrantRef = { kind: SrdKind; key: string } | undefined;
 
 /**
  * Build a {@link LocText} for ONE field of a grant: an `srd` catalogue reference
  * when the grant carries a `ref` (a real SRD source), else an engine literal over
- * the grant's inline `BiText` (synthetic/test sources). The `srd` path NEVER
- * reads the BiText, so the data strip deleted it from real SRD sources; the
+ * the grant's inline `LocaleText` (synthetic/test sources). The `srd` path NEVER
+ * reads the LocaleText, so the data strip deleted it from real SRD sources; the
  * inline `lit` survives ONLY on synthetic/runtime grants (so it's optional).
  */
-export function grantField(ref: GrantRef, field: string, lit?: BiText): LocText {
-  return ref ? srdText(ref.kind, ref.key, field) : litText(lit ?? EMPTY_BITEXT);
+export function grantField(ref: GrantRef, field: string, lit?: LocaleText): LocText {
+  return ref ? srdText(ref.kind, ref.key, field) : litText(lit ?? EMPTY_LOCALE_TEXT);
 }
 
-/** Fallback BiText for a synthetic grant that carries neither a `ref` nor inline text. */
-const EMPTY_BITEXT: BiText = { en: "", it: "" };
+/** Fallback LocaleText for a synthetic grant that carries neither a `ref` nor inline text. */
+const EMPTY_LOCALE_TEXT: LocaleText = { en: "", it: "" };
 
 /**
  * PS-J — the `scope` slice an adv/dis clause carries into the aggregate: present
@@ -837,21 +843,21 @@ export function bundleOptionRef(parent: GrantRef, optionId: string): GrantRef {
 /**
  * The canonical ENGLISH value of a grant field — a FACT (not display): the
  * catalogue EN via `srdEn` when the grant carries a `ref`, else the inline
- * BiText's `.en`. Used where the engine needs the English name as a token
+ * LocaleText's `.en`. Used where the engine needs the English name as a token
  * (weapon-proficiency match, prone-note label) that survives the data strip.
  */
-export function grantFieldEn(ref: GrantRef, field: string, lit?: BiText): string {
+export function grantFieldEn(ref: GrantRef, field: string, lit?: LocaleText): string {
   return (ref ? srdEn(ref.kind, ref.key, field) : undefined) ?? lit?.en ?? "";
 }
 
 /**
  * Whether an OPTIONAL grant field is present — true when the catalogue carries it
- * (the grant has a `ref` and `srdEn(field)` resolves) OR an inline `lit` BiText is
+ * (the grant has a `ref` and `srdEn(field)` resolves) OR an inline `lit` LocaleText is
  * supplied (synthetic/runtime grant). The presence gate survives the data strip:
  * a `granted-action`'s `description`/`trigger` is emitted whenever the catalogue
- * has it, not only when the (now-stripped) inline BiText exists.
+ * has it, not only when the (now-stripped) inline LocaleText exists.
  */
-export function hasGrantField(ref: GrantRef, field: string, lit?: BiText): boolean {
+export function hasGrantField(ref: GrantRef, field: string, lit?: LocaleText): boolean {
   return Boolean((ref ? srdEn(ref.kind, ref.key, field) : undefined) ?? lit);
 }
 
@@ -2349,6 +2355,10 @@ export function evaluateGrants(
   const rules: Rule[] = [];
   /** The source of `rules[i]` (filled by `applyGrant`; a hole for a source-less rule). */
   const ruleSources: Array<{ kind: SrdKind; key: string } | undefined> = [];
+  /** Runtime sources' toggle names ({@link GrantSource.label}), by source id. */
+  const sourceLabels = new Map(
+    sources.flatMap((src) => (src.label ? [[src.id, src.label] as const] : []))
+  );
 
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
@@ -3382,7 +3392,10 @@ export function evaluateGrants(
           key,
           ...(item ? { authoredKey: g.activeKey } : {}),
           sourceId,
-          label: grantField(gref, "label", g.label),
+          label:
+            g.label === undefined
+              ? (sourceLabels.get(sourceId) ?? grantField(gref, "label"))
+              : grantField(gref, "label", g.label),
           active,
         });
         if (active) {

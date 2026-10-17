@@ -20,6 +20,7 @@ import type { CharacterDoc, SessionState } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import { getSpellById } from "@/data/spells";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
+import { concentrationTimerKey } from "@/lib/spell-duration";
 import {
   resolveGrantActiveKey,
   whileActiveDurationAtCastLevel,
@@ -207,13 +208,17 @@ export function concentrationStatusKeys(ref: StoredConcentration): string[] {
 }
 
 /** Whether ending these statuses ends the held Concentration: one of them is a
- *  status Concentration holds (Bless's countdown ran out, Shield's turn edge). */
+ *  status Concentration holds (Bless's countdown ran out, Shield's turn edge), or
+ *  the Concentration's own countdown (Detect Magic's 10 minutes passed). */
 export function endsConcentration(
   concentration: StoredConcentration,
   endedKeys: Iterable<string>
 ): boolean {
   if (concentration === "") return false;
-  const held = new Set(concentrationStatusKeys(concentration));
+  const held = new Set([
+    ...concentrationStatusKeys(concentration),
+    concentrationTimerKey(concentration),
+  ]);
   for (const key of endedKeys) if (held.has(key)) return true;
   return false;
 }

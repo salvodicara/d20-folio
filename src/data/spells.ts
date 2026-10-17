@@ -59,7 +59,7 @@ export function getSpellsBySchool(school: SrdSpellData["school"]): SrdSpellData[
 }
 
 // `searchSpells` (name-substring search) was unused and read the spell
-// `name.en`/`name.it` BiText that R3 moved into the i18n catalogues — removed in
+// `name.en`/`name.it` LocaleText that R3 moved into the i18n catalogues — removed in
 // R6+R3 SLICE 7b. The live spell pickers search via `localizeSrd`-resolved labels
 // in the view layer, not over the data.
 

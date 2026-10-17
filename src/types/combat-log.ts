@@ -160,6 +160,8 @@ export type CombatEvent =
     }
   /** A rest was taken. */
   | { kind: "rest"; restKind: "short" | "long" }
+  /** Minutes passed outside the turn order ("10 minutes pass"). */
+  | { kind: "time-passes"; minutes: number }
   /**
    * A turn ended → a new round started (`round` = the new round number). With
    * `extraTurn`, the turn ended and an EXTRA turn started in the SAME round

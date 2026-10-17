@@ -13,10 +13,10 @@
 import { describe, it, expect } from "vitest";
 import { emptyAggregate, evaluateGrants } from "@/lib/grants";
 import type { Grant } from "@/lib/grants";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import { loc } from "../_harness/loc";
 
-const NAME: BiText = { en: "Test Feat", it: "Talento Test" };
+const NAME: LocaleText = { en: "Test Feat", it: "Talento Test" };
 const src = (id: string, grants: ReadonlyArray<Grant>) => ({
   id,
   name: NAME,

@@ -80,6 +80,7 @@ import enLanguages from "./en/srd/languages.json";
 import enProficiencies from "./en/srd/proficiencies.json";
 import enWeaponProperties from "./en/srd/weapon-properties.json";
 import enBeasts from "./en/srd/beasts.json";
+import enRules from "./en/srd/rules.json";
 
 import type { Locale } from "@/lib/locale";
 import { mergeCatalogue } from "@/lib/pack-merge";
@@ -108,7 +109,8 @@ export type EagerSrdKind =
   | "language"
   | "proficiency"
   | "weapon-property"
-  | "beasts";
+  | "beasts"
+  | "rule";
 
 /**
  * Kinds with ZERO engine consumers — DISPLAY-only reference data loaded on demand
@@ -152,6 +154,7 @@ export const SRD_KINDS: readonly EagerSrdKind[] = [
   "proficiency",
   "weapon-property",
   "beasts",
+  "rule",
 ];
 
 /** The LAZY SRD catalogue kinds (loaded on demand, display-only). */
@@ -185,6 +188,7 @@ const PUBLIC_EN: SrdCatalogueSet = {
   proficiency: enProficiencies,
   "weapon-property": enWeaponProperties,
   beasts: enBeasts,
+  rule: enRules,
 };
 
 const EN: SrdCatalogueSet = Object.fromEntries(

@@ -9,7 +9,7 @@ import {
   UNDERWATER_COMBAT_REFERENCE,
 } from "@/data/combat-variants";
 import { SRD_CONDITIONS } from "@/data/conditions";
-import { COVER_REFERENCE } from "@/data/cover";
+import { COVER_REFERENCE, coverKey } from "@/data/cover";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_FEATS } from "@/data/feats";
 import { SRD_INVOCATIONS } from "@/data/invocations";
@@ -18,7 +18,7 @@ import { SRD_MANEUVERS } from "@/data/maneuvers";
 import { SRD_METAMAGIC } from "@/data/metamagic";
 import { SRD_RACES } from "@/data/races";
 import { spells } from "@/data/spells";
-import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
+import { TRAVEL_PACE_REFERENCE, travelPaceKey } from "@/data/travel-pace";
 import type { MonsterEntry, MonsterStatBlock } from "@/data/types";
 import { loadLazySrdKind, loadSrdCatalogues } from "@/i18n/loaders";
 import {
@@ -65,6 +65,7 @@ const AUDITED_CATALOGUES: readonly CatalogueKind[] = [
   "proficiency",
   "weapon-property",
   "beasts",
+  "rule",
   "monster",
 ];
 
@@ -405,16 +406,27 @@ export async function buildCurrentAutomationCorpus(): Promise<AutomationCorpusEn
   }
 
   entities.push(
-    ...COVER_REFERENCE.map((rule) => entity(`cover-rule:${rule.id}`, "cover-rule", rule)),
+    ...COVER_REFERENCE.map((rule) =>
+      entity(`cover-rule:${rule.id}`, "cover-rule", rule, [
+        presenterForKey(claims, "rule", coverKey(rule.id)),
+      ])
+    ),
     ...MOUNTED_COMBAT_REFERENCE.map((rule) =>
-      entity(`mounted-rule:${rule.id}`, "narrative-rule", rule)
+      entity(`mounted-rule:${rule.id}`, "narrative-rule", rule, [
+        presenterForKey(claims, "rule", rule.key),
+      ])
     ),
     ...UNDERWATER_COMBAT_REFERENCE.map((rule) =>
-      entity(`underwater-rule:${rule.id}`, "narrative-rule", rule)
+      entity(`underwater-rule:${rule.id}`, "narrative-rule", rule, [
+        presenterForKey(claims, "rule", rule.key),
+      ])
     ),
     ...TRAVEL_PACE_REFERENCE.map((rule) =>
-      entity(`travel-rule:${rule.id}`, "travel-rule", rule)
+      entity(`travel-rule:${rule.id}`, "travel-rule", rule, [
+        presenterForKey(claims, "rule", travelPaceKey(rule.id)),
+      ])
     ),
+    ...unclaimedCatalogueRuleEntities(claims, "rule"),
     ...unclaimedCatalogueRuleEntities(claims, "equipment"),
     ...catalogueRuleEntities(claims, "weapon-mastery"),
     ...catalogueRuleEntities(claims, "language"),

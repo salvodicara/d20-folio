@@ -9,7 +9,7 @@
  *    and groups it by level.
  *  - Localizes every SRD content string HERE via {@link localizeSrd} keyed by the
  *    stable spell id (name / range / duration / description / higherLevels /
- *    effectWord / material) — so when the BiText on `src/data/**` is later
+ *    effectWord / material) — so when the LocaleText on `src/data/**` is later
  *    stripped, this surface keeps rendering. Custom (homebrew) spells carry their
  *    own single-locale text and bypass the resolver via {@link localizeCustom}.
  *  - Resolves the full per-spell cast STATE (prepared / always-prepared / cantrip
@@ -137,7 +137,7 @@ export interface SpellCardVM {
   name: string;
   /** Canonical EN name — the accent-insensitive search anchor (SRD only; custom
    *  spells repeat their single-locale name). Lets the surface filter without a
-   *  BiText read. */
+   *  LocaleText read. */
   searchEn: string;
   description: string;
   /** Localized "At Higher Levels", or null when the spell has none. */
@@ -183,7 +183,7 @@ export interface SpellCardVM {
  * The localized grant-SOURCE display-name lookup (`sourceId → localized name`)
  * for free-cast attribution in the cast toast/modal (Fey-Touched, Magic Initiate,
  * a heritage-feat spell). The sources span feats / class features /
- * subclass / species traits — the engine emits them with a `BiText` name (still
+ * subclass / species traits — the engine emits them with a `LocaleText` name (still
  * in place pre-strip), so this is the SEAM that resolves them for the locale,
  * keeping the surface free of any direct `[locale]` read. Returns a Map so the
  * caller looks up by stable `sourceId` and falls back to the id when unknown.

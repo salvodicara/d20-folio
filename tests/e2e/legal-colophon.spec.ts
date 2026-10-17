@@ -16,6 +16,7 @@
 
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, seedUI, seedLang } from "./surfaces";
+import type { Locale } from "@/lib/locale";
 
 // The exact CC-BY-4.0 attribution statements, verbatim from WotC's PDFs
 // (SRD_CC_v5.2.1.pdf / SRD_CC_v5.1.pdf and the official Italian editions
@@ -36,7 +37,7 @@ const STATEMENTS = {
 async function gotoLegal(
   page: Page,
   viewport: { width: number; height: number },
-  lang: "en" | "it" = "en"
+  lang: Locale = "en"
 ) {
   await seedUI(page, "dark", "play");
   await seedLang(page, lang);

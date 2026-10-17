@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { BASE_ACTION_STATES } from "@/lib/base-action-states";
+import { BASE_ACTION_STATES, baseActionText } from "@/lib/base-action-states";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { resolveActions } from "@/lib/smart-tracker";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { localizeText } from "@/lib/views/srd-i18n";
+import type { Locale } from "@/lib/locale";
 
 /**
  * A base combat action that puts its user in a state (2024 Dodge: until the
@@ -16,6 +18,19 @@ const doc = (activeFeatures: string[]) => {
   const next = structuredClone(MOCK_CHARACTER);
   next.session.activeFeatures = activeFeatures;
   return next;
+};
+
+/** The rail lines a lit state adds, in `locale`. */
+const railLines = (actionId: string, activeKey: string, locale: Locale): string[] => {
+  const on = doc([activeKey]);
+  const aggregate = aggregateCharacterGrants(on.character, on.session);
+  return [
+    ...aggregate.advantages,
+    ...aggregate.disadvantages,
+    ...aggregate.incomingAttackDisadvantages,
+  ]
+    .filter((clause) => clause.sourceId === actionId)
+    .map((clause) => localizeText(clause.description, locale));
 };
 
 describe.each(BASE_ACTION_STATES.map((state) => [state.actionId, state]))(
@@ -51,18 +66,18 @@ describe.each(BASE_ACTION_STATES.map((state) => [state.actionId, state]))(
     });
 
     it("its rail lines never repeat the Adv./Disadv. label the rail prefixes", () => {
-      for (const inner of state.grant.grants) {
-        if (!("description" in inner) || !inner.description) continue;
-        expect(inner.description.en).not.toMatch(/^(dis)?advantage\b/i);
-        expect(inner.description.it).not.toMatch(/^(s)?vantaggio\b/i);
-      }
+      const en = railLines(actionId, state.grant.activeKey, "en");
+      const it = railLines(actionId, state.grant.activeKey, "it");
+      expect(en).toHaveLength(state.grant.grants.length);
+      for (const line of en) expect(line).not.toMatch(/^(dis)?advantage\b/i);
+      for (const line of it) expect(line).not.toMatch(/^(s)?vantaggio\b/i);
     });
 
     it("its log lines and chips name it in each language, never by its id", () => {
       for (const locale of ["en", "it"] as const) {
-        expect(grantSourceLabel(state.grant.activeKey, locale)).toBe(
-          state.grant.label?.[locale]
-        );
+        const name = localizeText(baseActionText(actionId, "name"), locale);
+        expect(grantSourceLabel(state.grant.activeKey, locale)).toBe(name);
+        expect(name).not.toBe(actionId);
       }
     });
 
@@ -78,4 +93,21 @@ describe.each(BASE_ACTION_STATES.map((state) => [state.actionId, state]))(
 
 it("Dodge is in the table", () => {
   expect(BASE_ACTION_STATES.map((state) => state.actionId)).toContain("base-dodge");
+});
+
+it("Dodge names itself and its rules in both languages", () => {
+  expect(grantSourceLabel("base-dodge", "en")).toBe("Dodge");
+  expect(grantSourceLabel("base-dodge", "it")).toBe("Schivata");
+  expect(railLines("base-dodge", "base-dodge", "en")).toEqual(
+    expect.arrayContaining([
+      "Attacks against you have Disadvantage (Dodge)",
+      "Dexterity saving throws (Dodge)",
+    ])
+  );
+  expect(railLines("base-dodge", "base-dodge", "it")).toEqual(
+    expect.arrayContaining([
+      "Gli attacchi contro di te hanno Svantaggio (Schivata)",
+      "Tiri salvezza su Destrezza (Schivata)",
+    ])
+  );
 });

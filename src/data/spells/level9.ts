@@ -17,6 +17,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     source: "SRD",
   },
   {
@@ -32,6 +33,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 8 },
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Advantage on D20 Tests for the duration
@@ -64,6 +66,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       costGp: 5000,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     // Any creature named through the portal.
     bestiaryPick: {},
     source: "SRD",
@@ -82,6 +85,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       costGp: 5000,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     saveAbility: "WIS",
     source: "SRD",
   },
@@ -94,6 +98,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     healDice: "700",
     effectTag: "heal",
@@ -111,6 +116,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     // 2024 (spell:meteor-swarm): 20d6 Fire + 20d6 Bludgeoning on a DEX save (40d6
     // total). No upcast scaling (a 9th-level spell).
@@ -131,6 +137,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -1430,6 +1437,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "minutes", amount: 10 },
     // Five damaging layers (red/orange/yellow/green/blue); indigo & violet are
     // condition layers. Passing through deals each layer's type — simultaneous.
     damageTypes: ["fire", "acid", "lightning", "poison", "cold"],
@@ -1451,6 +1459,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       costGp: 1500,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     source: "SRD",
   },
   {
@@ -1462,6 +1471,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -1480,6 +1490,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -1930,6 +1941,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     // The storm cycles through five elements over its rounds: Thunder (round 1),
     // Acid (2), Lightning (3), Bludgeoning (4), Cold (5-10) — all simultaneous.
     damageTypes: ["thunder", "acid", "lightning", "bludgeoning", "cold"],
@@ -1950,6 +1962,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 1 },
     saveAbility: "WIS",
     source: "SRD",
   },
@@ -2248,6 +2261,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "psychic",
     damageDice: "10d10",
     saveAbility: "WIS",
@@ -2277,6 +2291,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -2289,6 +2304,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     effectTag: "heal",
     healingMode: "full",

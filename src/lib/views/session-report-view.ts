@@ -144,6 +144,9 @@ export function localizePlayEvent(
       return t(`sessionReport.deathSave.${event.outcome}`, { actor: who(event.actor) });
     case "rest":
       return t(`sessionReport.rest.${event.rest}`, { actor: who(event.actor) });
+    case "time-passes":
+      // The same unit as the sheet's log line (golden rule 6).
+      return t("combatLog.timePasses", { count: event.minutes });
     case "note":
       return event.actor ? `${who(event.actor)}: ${event.text}` : event.text;
     case "encounter-start":

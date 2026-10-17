@@ -19,6 +19,7 @@ import {
   type AutomationHandler,
   type ManualAutomationBoundary,
 } from "@/lib/automation-compiler";
+import { LOCALES, type Locale } from "@/lib/locale";
 
 export const AUTOMATION_CORPUS_SCHEMAS = [
   "spell",
@@ -55,7 +56,7 @@ export interface AutomationCorpusPresenter {
 
 export interface AutomationCorpusManualPresenter {
   key: string;
-  resolvedLocales: ReadonlyArray<"en" | "it">;
+  resolvedLocales: ReadonlyArray<Locale>;
 }
 
 export interface AutomationCorpusEntity {
@@ -102,7 +103,6 @@ type FieldRule =
       program?: true;
       allowBackReferences?: true;
     }
-  | { kind: "manual-inline"; boundary: ManualAutomationBoundary }
   | { kind: "manual-reference"; boundary: ManualAutomationBoundary }
   | { kind: "object"; fields: Readonly<Record<string, FieldRule>> }
   | { kind: "array"; item: FieldRule };
@@ -148,6 +148,7 @@ const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
   components: compiled("cast-profile"),
   concentration: compiled("cast-profile"),
   instantaneous: compiled("cast-profile"),
+  duration: compiled("cast-profile"),
   conditionRemoval: compiled("action"),
   conditionApplication: compiled("action"),
   targeting: compiled("action"),
@@ -420,23 +421,18 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
   }),
   "cover-rule": object({
     id: IGNORE,
-    name: IGNORE,
     acBonus: compiled("rule-reference"),
     dexSaveBonus: compiled("rule-reference"),
-    summary: { kind: "manual-inline", boundary: "open-adjudication" },
   }),
   "narrative-rule": object({
     id: IGNORE,
-    name: IGNORE,
-    summary: { kind: "manual-inline", boundary: "open-adjudication" },
+    key: IGNORE,
   }),
   "travel-rule": object({
     id: IGNORE,
-    name: IGNORE,
     perMinuteFt: compiled("rule-reference"),
     perHourMiles: compiled("rule-reference"),
     perDayMiles: compiled("rule-reference"),
-    effect: { kind: "manual-inline", boundary: "open-adjudication" },
   }),
   "catalogue-rule": object({ id: IGNORE }),
 };
@@ -601,42 +597,6 @@ function addCompiled(
   });
 }
 
-function inlinePresenter(
-  value: unknown,
-  path: string,
-  boundary: ManualAutomationBoundary,
-  state: BuildState,
-  entityKey: string
-): void {
-  if (value === null) return;
-  if (!isRecord(value)) {
-    state.errors.push(`manual inline field ${path} is not bilingual`);
-    return;
-  }
-  const keys = Object.keys(value).sort();
-  if (keys.join(",") !== "en,it") {
-    state.errors.push(`manual inline field ${path} has unknown locale fields`);
-  }
-  const locales: Array<"en" | "it"> = [];
-  for (const [key, text] of Object.entries(value)) {
-    if (
-      (key === "en" || key === "it") &&
-      typeof text === "string" &&
-      text.trim().length > 0
-    ) {
-      locales.push(key);
-    }
-  }
-  state.mechanicalPaths.push(path);
-  state.clauses.push({
-    disposition: "manual",
-    key: `manual:${path}`,
-    boundary,
-    consumedPaths: [path],
-    presenter: { key: `${entityKey}.${path}`, resolvedLocales: locales },
-  });
-}
-
 function applyRule(
   rule: FieldRule,
   value: unknown,
@@ -649,9 +609,6 @@ function applyRule(
       return;
     case "compiled":
       addCompiled(state, path, value, rule);
-      return;
-    case "manual-inline":
-      inlinePresenter(value, path, rule.boundary, state, input.entityKey);
       return;
     case "manual-reference": {
       const paths = leafPaths(value, path, state.errors, false);
@@ -785,7 +742,7 @@ function addCataloguePresenter(
       consumedPaths: [mechanicalPath],
       presenter: {
         key: `${presenter.keyPrefix}.${path}`,
-        resolvedLocales: ["en", "it"],
+        resolvedLocales: [...LOCALES],
       },
     });
   }

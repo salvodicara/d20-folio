@@ -116,6 +116,7 @@ import {
   type PickerCtx,
 } from "@/features/compendium/picker";
 import { incompleteFreeCastChoiceFeatIds } from "@/lib/feature-choice-repair";
+import type { Locale } from "@/lib/locale";
 
 /**
  * Build the "More" detail renderers for a spec-driven re-pick group — reusing the
@@ -144,7 +145,7 @@ function specDetailRenderers<T extends { id: string }>(
     detailTitleFor: (id) => {
       const e = byId.get(id);
       // The localized title comes from the spec's `getName` (catalogue-resolved),
-      // so the re-pick "More" header never reads the entry's BiText.
+      // so the re-pick "More" header never reads the entry's LocaleText.
       return e ? spec.getName(e, ctx) : id;
     },
   };
@@ -556,7 +557,7 @@ export function FeaturesTab() {
       // absent, so the throwing resolver never fires.
       const featKind = classFeature ? "class-feature" : feat ? "feat" : "race";
       const featKey = raceTrait ? raceTraitCatKey(raceTrait) : ref.srdId;
-      const featText = (field: string, loc: "en" | "it"): string =>
+      const featText = (field: string, loc: Locale): string =>
         srd && hasSrd(featKind, featKey, field, loc)
           ? localizeSrd(featKind, featKey, field, loc)
           : ref.srdId;

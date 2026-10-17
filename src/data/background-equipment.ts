@@ -19,7 +19,7 @@
  *     LOCALIZES through the id→`localizeSrd` seam. EVERY explicit pack member uses
  *     this form — the craft tools, gaming sets, kits, named gear, AND every former
  *     "flavour" item (each is a real 2024 adventuring-gear row now). There is NO
- *     inline-BiText escape hatch: an EN-baked custom string can never reach the IT
+ *     inline-LocaleText escape hatch: an EN-baked custom string can never reach the IT
  *     inventory. A parametric count ("Parchment (10 sheets)") is `quantity`, never
  *     a baked string; a decorative annotation ("Book (prayers)") is dropped (the
  *     `book` row, localized "Libro"/"Book").
@@ -48,7 +48,7 @@ import { packBackgroundEquipment } from "@pack";
  * A resolvable SRD item line — the ONLY explicit item form a package carries
  * (besides the structural `fromToolChoice` marker). Every pack member is a real
  * SRD catalogue id, so it resolves to a LOCALIZED row through the same
- * id→`localizeSrd` seam as every other item — there is NO inline-BiText "flavour"
+ * id→`localizeSrd` seam as every other item — there is NO inline-LocaleText "flavour"
  * bypass any more (the escape hatch is deleted; a parametric count is `quantity`).
  */
 function srd(srdId: string, quantity = 1): BackgroundEquipmentItem {

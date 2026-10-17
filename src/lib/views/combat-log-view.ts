@@ -114,6 +114,7 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
     case "death-save":
       return resolveLogStyle("death-save");
     case "rest":
+    case "time-passes":
       return resolveLogStyle("rest");
     case "turn-end":
       return resolveLogStyle("turn-end");
@@ -267,6 +268,8 @@ export function localizeCombatEvent(
       );
     case "rest":
       return t(event.restKind === "long" ? "combatLog.longRest" : "combatLog.shortRest");
+    case "time-passes":
+      return t("combatLog.timePasses", { count: event.minutes });
     case "turn-end":
       if (event.extraTurn) {
         // An extra turn in the same round — the extra-turn control's own key.

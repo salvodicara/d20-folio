@@ -6,7 +6,14 @@
  * REVIEW_SHOTS when set, else in the test output dir.
  */
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import {
+  DESKTOP,
+  MOBILE,
+  freezeMotion,
+  seedLang,
+  seedUI,
+  startSoloFight,
+} from "./surfaces";
 
 // Cold dev-server compiles under parallel workers can exceed the default 30 s.
 test.describe.configure({ timeout: 90_000 });
@@ -29,6 +36,8 @@ async function openChampion(page: Page, size: "desktop" | "mobile") {
   await expect(allChip).toBeVisible({ timeout: 45_000 });
   await allChip.click();
   await freezeMotion(page);
+  // The per-turn gates hold inside a fight; outside one the economy only logs.
+  await startSoloFight(page);
 }
 
 /** Swing the Longsword at one creature and return the tray it opens. */

@@ -16,6 +16,7 @@ import {
   negateCurrencyDelta,
   type MaterialCost,
 } from "@/lib/play/material-cost";
+import type { Locale } from "@/lib/locale";
 
 const OFFER_MS = 10_000;
 
@@ -24,7 +25,7 @@ const OFFER_MS = 10_000;
 export function offerMaterialCost(
   spellId: string | undefined,
   t: TFunction,
-  locale: "en" | "it"
+  locale: Locale
 ): string | null {
   const cost = castMaterialCost(spellId);
   const currency = useCharacterStore.getState().character?.session.currency;

@@ -3,7 +3,7 @@
  * they survive regeneration; an override naming nothing that exists is ignored.
  * Also the one place steps get their final order: slot, then priority, then id.
  */
-import { ECONOMY_SLOTS, type PlaybookOverrides, type PlaybookStep } from "./types";
+import { PLAYBOOK_SLOTS, type PlaybookOverrides, type PlaybookStep } from "./types";
 
 /** Added to a pinned step's priority, so pins lead their slot and the plan. */
 export const PIN_BONUS = 1000;
@@ -39,7 +39,7 @@ export function applyOverrides(
     })
     .sort(
       (x, y) =>
-        ECONOMY_SLOTS.indexOf(x.slot) - ECONOMY_SLOTS.indexOf(y.slot) ||
+        PLAYBOOK_SLOTS.indexOf(x.slot) - PLAYBOOK_SLOTS.indexOf(y.slot) ||
         y.priority - x.priority ||
         (x.id < y.id ? -1 : x.id > y.id ? 1 : 0)
     );

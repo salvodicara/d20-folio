@@ -7,7 +7,7 @@
  * the description, and the play-time Use / charge / attune controls + edit fields
  * (including the custom tracking-mode checkbox hierarchy).
  *
- * SRD CONTENT arrives PRE-LOCALIZED on the VM — ZERO BiText / `[locale]` reads; the
+ * SRD CONTENT arrives PRE-LOCALIZED on the VM — ZERO LocaleText / `[locale]` reads; the
  * only `t(...)` formats APP strings + raw numbers. Memoized (stable VM + callbacks).
  */
 import { memo } from "react";

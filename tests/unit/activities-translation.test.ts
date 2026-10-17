@@ -155,6 +155,7 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
     },
     concentration: activity.concentration === true,
     instantaneous: activity.instantaneous,
+    duration: activity.duration,
     targeting:
       target?.affinity !== undefined
         ? {

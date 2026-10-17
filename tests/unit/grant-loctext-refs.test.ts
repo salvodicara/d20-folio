@@ -1,10 +1,10 @@
 /**
- * R6+R3 SLICE 7c — the Grant-engine BiText-carrier conversion guard.
+ * R6+R3 SLICE 7c — the Grant-engine LocaleText-carrier conversion guard.
  *
  * After 7c the Grant aggregate carries every localizable string (granted-action
  * name/description/trigger, manifested/pact-weapon names, cunning-strike,
  * advantage/roll-floor descriptions, while-active / choice-grant-bundle labels)
- * as a {@link LocText} REF instead of a materialized `BiText` — the engine emits
+ * as a {@link LocText} REF instead of a materialized `LocaleText` — the engine emits
  * a `{ srd: { kind, key, field } }` pointer the view resolves via `localizeSrd`.
  *
  * This guard runs the evaluator over EVERY grant-bearing SRD source (class
@@ -14,7 +14,7 @@
  * (`srdGrantSegment`) reproduces the EXACT catalogue key the codemod wrote. If it
  * ever drifts, `localizeSrd` throws (dev/test) and this fails. This is the proof
  * that the data strip is PURE for grant-internal strings: the engine never reads
- * the soon-deleted `src/data/**` BiText — it resolves from the catalogue.
+ * the soon-deleted `src/data/**` LocaleText — it resolves from the catalogue.
  */
 import { describe, expect, it } from "vitest";
 import { evaluateGrants, type GrantSource } from "@/lib/grants";

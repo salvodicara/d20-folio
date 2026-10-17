@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { User } from "firebase/auth";
+import type { Locale } from "@/lib/locale";
 
 export interface UserProfile {
   uid: string;
@@ -19,7 +20,7 @@ export interface UserProfile {
   createdAt: Date;
   lastActiveAt: Date;
   settings: {
-    language: "en" | "it";
+    language: Locale;
     theme: "dark" | "light" | "system";
   };
 }
