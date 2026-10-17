@@ -1,17 +1,17 @@
 /**
- * §7 GUARD — no BiText `[locale]` indexing / `.en`·`.it` reads outside the
+ * §7 GUARD — no LocaleText `[locale]` indexing / `.en`·`.it` reads outside the
  * presenter layer (R6+R3 SLICE 7d).
  *
  * The engine (`src/lib` outside `lib/views`, `src/stores`, `src/data`,
  * `src/types`) and the UI (`src/features`, `src/components`, `src/hooks`,
- * `src/app`) must NOT localize SRD text by hand: no `<expr>[locale]` BiText
+ * `src/app`) must NOT localize SRD text by hand: no `<expr>[locale]` LocaleText
  * indexing and no `.en` / `.it` member reads. Localization happens ONLY in
  * `src/lib/views/**` (the presenter edge, via `localizeText`/`localizeSrd`) and
  * `src/i18n/**` (the resolver). This is what the strip makes enforceable — SRD
- * entity BiText no longer exists in the data, so a `.en`/`[locale]` read can only
+ * entity LocaleText no longer exists in the data, so a `.en`/`[locale]` read can only
  * be the engine reaching past the catalogue seam.
  *
- * WHITELIST — files that legitimately read INLINE BiText (the documented
+ * WHITELIST — files that legitimately read INLINE LocaleText (the documented
  * language/tool/skill ROSTERS that stay inline, the generic SRD-token resolver,
  * the synthetic-grant `nameEn` fact, and a couple of local bilingual-literal
  * maps). New reads outside this set fail the guard.
@@ -27,7 +27,7 @@ import { SRC_ROOT as SRC, srcFiles, readSrc } from "./__helpers__/src-files";
 // resolver edge — skipped wholesale.
 const ALLOWED_DIRS = [join("lib", "views"), join("i18n")];
 
-// Files that legitimately read inline-roster / local-literal BiText.
+// Files that legitimately read inline-roster / local-literal LocaleText.
 const WHITELIST = new Set(
   [
     // language / tool / skill rosters (kept inline by design — 7b).
@@ -40,7 +40,7 @@ const WHITELIST = new Set(
     // synthetic-grant `nameEn` fact (engine literal, not catalogue) — `g.name.en`.
     "lib/grants.ts",
     // engine-authored bilingual trigger-PHRASE tables (`p.en`/`p.it`) folded into
-    // an engine `litText` — local literals, NOT SRD-catalogue BiText.
+    // an engine `litText` — local literals, NOT SRD-catalogue LocaleText.
     "lib/smart-tracker.ts",
     // a local bilingual-literal label map (`labels[cat][locale]`), not SRD data.
     "features/character/center/tabs/FeaturesTab.tsx",
@@ -82,17 +82,17 @@ function offenders(file: string): string[] {
   return found;
 }
 
-describe("§7 guard — no BiText indexing outside the presenter edge", () => {
+describe("§7 guard — no LocaleText indexing outside the presenter edge", () => {
   // Explicit timeout: whole-src AST walk (TypeScript compiler API) over every
   // .ts/.tsx under src/. Measured ~6.4 s under V8 coverage + parallel load;
   // grows with the SRD corpus. 30 s gives 4–5× headroom for CI contention.
-  it("no engine/UI file localizes SRD BiText by hand (only lib/views + i18n + rosters)", () => {
+  it("no engine/UI file localizes SRD LocaleText by hand (only lib/views + i18n + rosters)", () => {
     const violations: Record<string, string[]> = {};
     for (const file of srcFiles({ exts: [".ts", ".tsx"] })) {
       const rel = relative(SRC, file);
       if (ALLOWED_DIRS.some((d) => rel.startsWith(d + sep) || rel === d)) continue;
       if (rel.endsWith(".test.ts") || rel.endsWith(".test.tsx")) continue;
-      // Only the engine + UI layers are gated (data/types declare BiText literals
+      // Only the engine + UI layers are gated (data/types declare LocaleText literals
       // covered by the sibling `no-srd-strings-in-data` guard).
       if (rel.startsWith("data" + sep) || rel.startsWith("types" + sep)) continue;
       if (WHITELIST.has(rel)) continue;

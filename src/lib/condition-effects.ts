@@ -17,13 +17,13 @@
  *
  * Pure module — no React/store/Firebase imports.
  */
-import type { AbilityCode, BiText, ConditionId, SrdEquipmentData } from "@/data/types";
+import type { AbilityCode, ConditionId, SrdEquipmentData } from "@/data/types";
 import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
 import type { AdvantageClause, AggregatedGrants } from "@/lib/grants";
 import type { ConditionSense } from "@/types/condition";
 import { isArmorProficient } from "@/lib/compute";
-import { litText } from "@/lib/loc-text";
+import { srdText, type LocText } from "@/lib/loc-text";
 
 /** Combat economy slots a condition can forbid. */
 export type GatedSlot = "action" | "bonus" | "reaction";
@@ -51,18 +51,23 @@ export interface ConditionGate {
   advantages?: ReadonlyArray<{
     rollType: AdvantageClause["rollType"];
     vs: string;
-    description: BiText;
+    description: LocText;
   }>;
   /** Self-side disadvantage the condition imposes. */
   disadvantages?: ReadonlyArray<{
     rollType: AdvantageClause["rollType"];
     vs: string;
-    description: BiText;
+    description: LocText;
   }>;
 }
 
-const ATTACKS = { en: "Attack rolls", it: "Tiri per colpire" };
-const ABILITY_CHECKS = { en: "Ability checks", it: "Prove di caratteristica" };
+/** A roll descriptor's name in the `rule` catalogue (`roll.<id>`). */
+function rollName(id: string): LocText {
+  return srdText("rule", `roll.${id}`, "name");
+}
+
+const ATTACKS = rollName("attacks");
+const ABILITY_CHECKS = rollName("ability-checks");
 
 /** The Incapacitated family all forbid every action type + break Concentration. */
 const INCAPACITATED_SLOTS: ReadonlyArray<GatedSlot> = ["action", "bonus", "reaction"];
@@ -134,7 +139,7 @@ export const CONDITION_GATES: Readonly<Partial<Record<ConditionId, ConditionGate
       {
         rollType: "save",
         vs: "restrained-dex",
-        description: { en: "Dexterity saving throws", it: "Tiri salvezza su Destrezza" },
+        description: rollName("dex-saves"),
       },
     ],
   },
@@ -224,8 +229,7 @@ export function resolveConditionEffects(
         sourceId: id,
         rollType: a.rollType,
         vs: a.vs,
-        // Engine-authored condition-rule blurb (not SRD data) → an engine literal.
-        description: litText(a.description),
+        description: a.description,
       });
     }
     for (const d of gate.disadvantages ?? []) {
@@ -233,7 +237,7 @@ export function resolveConditionEffects(
         sourceId: id,
         rollType: d.rollType,
         vs: d.vs,
-        description: litText(d.description),
+        description: d.description,
       });
     }
   }
@@ -261,18 +265,9 @@ export function resolveConditionEffects(
 // ════════════════════════════════════════════════════════════════════════════
 
 /** Engine-authored roll descriptors for the unproficient-armor disadvantage. */
-const UNPROFICIENT_ARMOR_STR_DEX_CHECKS: BiText = {
-  en: "Strength + Dexterity ability checks",
-  it: "Prove di Forza e Destrezza",
-};
-const UNPROFICIENT_ARMOR_STR_DEX_SAVES: BiText = {
-  en: "Strength + Dexterity saving throws",
-  it: "Tiri salvezza su Forza e Destrezza",
-};
-const UNPROFICIENT_ARMOR_ATTACKS: BiText = {
-  en: "Attack rolls (wearing armor you lack proficiency with)",
-  it: "Tiri per colpire (indossando armatura senza competenza)",
-};
+const UNPROFICIENT_ARMOR_STR_DEX_CHECKS = rollName("str-dex-checks");
+const UNPROFICIENT_ARMOR_STR_DEX_SAVES = rollName("str-dex-saves");
+const UNPROFICIENT_ARMOR_ATTACKS = rollName("attacks-unproficient-armor");
 
 /** The resolved self-side footprint of currently worn armor. */
 export interface ResolvedArmorEffects {
@@ -356,13 +351,13 @@ export function resolveArmorEffects(
       sourceId: "unproficient-armor",
       rollType: "check",
       vs: "unproficient-armor",
-      description: litText(UNPROFICIENT_ARMOR_STR_DEX_CHECKS),
+      description: UNPROFICIENT_ARMOR_STR_DEX_CHECKS,
     },
     {
       sourceId: "unproficient-armor",
       rollType: "save",
       vs: "unproficient-armor",
-      description: litText(UNPROFICIENT_ARMOR_STR_DEX_SAVES),
+      description: UNPROFICIENT_ARMOR_STR_DEX_SAVES,
     },
     {
       sourceId: "unproficient-armor",
@@ -373,7 +368,7 @@ export function resolveArmorEffects(
       // Disadvantage their Fire Bolt does not have.
       scope: "strDex",
       vs: "unproficient-armor",
-      description: litText(UNPROFICIENT_ARMOR_ATTACKS),
+      description: UNPROFICIENT_ARMOR_ATTACKS,
     },
   ];
   return { speedPenaltyFt, unproficientArmorEquipped: true, disadvantages };

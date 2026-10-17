@@ -11,7 +11,7 @@
  * Everything is pure (no React, no i18n). Localisation of the *labels* —
  * damage-type / condition / sense names, advantage descriptions — happens at
  * the call site via `t(...)`; these helpers only return stable ids/codes plus
- * the bilingual `BiText` descriptions that already live on the grants.
+ * the bilingual `LocaleText` descriptions that already live on the grants.
  */
 
 import { ruleNumber, SENSE_KINDS } from "@/lib/rules";

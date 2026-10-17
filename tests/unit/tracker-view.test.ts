@@ -4,7 +4,7 @@
  *
  * Pins the §3.3 display contract the Play tab depends on: every play-surface
  * view-model the presenter owns resolves to ready-to-render strings in BOTH
- * locales, with ZERO BiText left for the surface to read — action upcast copy,
+ * locales, with ZERO LocaleText left for the surface to read — action upcast copy,
  * the concentration label, condition chips/options, advantage + roll-floor
  * notes, and the deduped activatable-feature toggles. Fast-lane: pure, no React,
  * no Firebase. Table-driven across EN + IT; exercised over the Champion

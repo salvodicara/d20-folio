@@ -74,6 +74,8 @@ import enWeaponProperties from "@/i18n/en/srd/weapon-properties.json";
 import itWeaponProperties from "@/i18n/it/srd/weapon-properties.json";
 import enBeasts from "@/i18n/en/srd/beasts.json";
 import itBeasts from "@/i18n/it/srd/beasts.json";
+import enRules from "@/i18n/en/srd/rules.json";
+import itRules from "@/i18n/it/srd/rules.json";
 // The lazy display-only bestiary catalogue (the lazy SRD-kind tier). Statically
 // imported HERE for parity only — the app loads it lazily via `ensureSrdKind`.
 import enMonsters from "@/i18n/en/srd/monsters.json";
@@ -195,6 +197,7 @@ const SRD_CATALOGUES: { file: string; en: Json; it: Json }[] = [
   { file: "proficiencies", en: enProficiencies, it: itProficiencies },
   { file: "weapon-properties", en: enWeaponProperties, it: itWeaponProperties },
   { file: "beasts", en: enBeasts, it: itBeasts },
+  { file: "rules", en: enRules, it: itRules },
   { file: "monsters", en: enMonsters, it: itMonsters },
 ];
 

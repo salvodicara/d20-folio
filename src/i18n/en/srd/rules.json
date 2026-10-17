@@ -1,0 +1,195 @@
+{
+  "cover.half": {
+    "name": "Half Cover",
+    "summary": "+2 AC and +2 Dexterity saving throws."
+  },
+  "cover.three-quarters": {
+    "name": "Three-Quarters Cover",
+    "summary": "+5 AC and +5 Dexterity saving throws."
+  },
+  "cover.total": {
+    "name": "Total Cover",
+    "summary": "Can't be targeted directly by an attack or targeted spell."
+  },
+  "travel-pace.fast": {
+    "name": "Fast",
+    "effect": "−5 penalty to passive Perception."
+  },
+  "travel-pace.normal": {
+    "name": "Normal"
+  },
+  "travel-pace.slow": {
+    "name": "Slow",
+    "effect": "Can move stealthily."
+  },
+  "mounted.eligible-mount": {
+    "name": "Eligible Mount",
+    "summary": "A willing creature at least one size larger than you, with a suitable anatomy, can serve as a mount."
+  },
+  "mounted.mount-dismount": {
+    "name": "Mounting & Dismounting",
+    "summary": "During your move, mounting or dismounting a creature within 5 feet costs movement equal to half your Speed (round down)."
+  },
+  "mounted.controlled-mount": {
+    "name": "Controlled Mount",
+    "summary": "A mount trained to accept a rider shares your Initiative and can take only the Dash, Disengage, or Dodge action."
+  },
+  "mounted.independent-mount": {
+    "name": "Independent Mount",
+    "summary": "An untrained mount keeps its own place in Initiative and moves and acts on its own."
+  },
+  "mounted.falling-off": {
+    "name": "Falling Off",
+    "summary": "If your mount is forced to move, or you or it is knocked Prone, succeed on a DC 10 Dexterity save or fall off Prone within 5 feet."
+  },
+  "underwater.melee-underwater": {
+    "name": "Melee Attacks",
+    "summary": "Without a Swim Speed, melee weapon attack rolls have Disadvantage unless the weapon deals Piercing damage."
+  },
+  "underwater.ranged-underwater": {
+    "name": "Ranged Attacks",
+    "summary": "A ranged weapon attack automatically misses a target beyond normal range, and has Disadvantage within normal range."
+  },
+  "underwater.fire-resistance": {
+    "name": "Fire Resistance",
+    "summary": "Anything underwater has Resistance to Fire damage."
+  },
+  "attack-situation.unseen-target": {
+    "name": "Unseen Target",
+    "summary": "When you attack a target you can't see, you have Disadvantage on the attack roll."
+  },
+  "attack-situation.unseen-attacker": {
+    "name": "Unseen Attacker",
+    "summary": "When a creature can't see you, you have Advantage on attack rolls against it."
+  },
+  "attack-situation.ranged-in-melee": {
+    "name": "Ranged in Melee",
+    "summary": "A ranged attack roll has Disadvantage while you are within 5 feet of an enemy who can see you and isn't Incapacitated."
+  },
+  "attack-situation.long-range": {
+    "name": "Long Range",
+    "summary": "A weapon attack roll against a target beyond normal range has Disadvantage; beyond long range it can't be made."
+  },
+  "vision.dim-light": {
+    "name": "Dim Light",
+    "summary": "Dim Light is Lightly Obscured: Disadvantage on Wisdom (Perception) checks to see in it, and passive Perception −5."
+  },
+  "vision.darkness": {
+    "name": "Darkness",
+    "summary": "Darkness is Heavily Obscured: you have the Blinded condition when trying to see in it; you fail checks that need sight and your attack rolls have Disadvantage."
+  },
+  "vision.darkvision": {
+    "name": "Darkvision",
+    "summary": "Within its range you see in Dim Light as if it were Bright Light, and in Darkness as if it were Dim Light (in shades of gray)."
+  },
+  "situation.underwater": {
+    "name": "Underwater"
+  },
+  "situation.mounted": {
+    "name": "Mounted"
+  },
+  "action.dash": {
+    "name": "Dash",
+    "effect": "Double movement speed"
+  },
+  "action.dodge": {
+    "name": "Dodge",
+    "effect": "Attacks vs you have Disadvantage"
+  },
+  "action.disengage": {
+    "name": "Disengage",
+    "effect": "Movement doesn't provoke OA"
+  },
+  "action.help": {
+    "name": "Help",
+    "effect": "Ally gains Advantage on next attack or check"
+  },
+  "action.hide": {
+    "name": "Hide",
+    "effect": "DC 15 Stealth check → Invisible"
+  },
+  "action.influence": {
+    "name": "Influence",
+    "effect": "Cha/Wis check to sway a creature's attitude"
+  },
+  "action.magic": {
+    "name": "Magic",
+    "effect": "Cast a spell or use a magic item or feature"
+  },
+  "action.ready": {
+    "name": "Ready",
+    "effect": "Set trigger → reaction"
+  },
+  "action.search": {
+    "name": "Search",
+    "effect": "Wis check: Insight/Medicine/Perception/Survival"
+  },
+  "action.study": {
+    "name": "Study",
+    "effect": "Int check: Arcana/History/Investigation/Nature/Religion"
+  },
+  "action.utilize": {
+    "name": "Utilize",
+    "effect": "Use a nonmagical object needing an action"
+  },
+  "action.object-interaction": {
+    "name": "Interact with an Object",
+    "effect": "Draw, stow or open one object per turn"
+  },
+  "action.grapple": {
+    "name": "Grapple",
+    "effect": "Unarmed Strike: Str/Dex save or Grappled"
+  },
+  "action.shove": {
+    "name": "Shove",
+    "effect": "Unarmed Strike: Str/Dex save → push 5 ft or Prone"
+  },
+  "action.escape-grapple": {
+    "name": "Escape",
+    "effect": "Athletics/Acrobatics vs escape DC → free"
+  },
+  "action.opportunity-attack": {
+    "name": "Opportunity Attack",
+    "effect": "Enemy leaves melee reach without Disengaging",
+    "trigger": "enemy leaves reach"
+  },
+  "roll.attacks": {
+    "name": "Attack rolls"
+  },
+  "roll.ability-checks": {
+    "name": "Ability checks"
+  },
+  "roll.dex-saves": {
+    "name": "Dexterity saving throws"
+  },
+  "roll.str-dex-checks": {
+    "name": "Strength + Dexterity ability checks"
+  },
+  "roll.str-dex-saves": {
+    "name": "Strength + Dexterity saving throws"
+  },
+  "roll.attacks-unproficient-armor": {
+    "name": "Attack rolls (wearing armor you lack proficiency with)"
+  },
+  "action.dodge.grants.0.grants.0": {
+    "description": "Attacks against you have Disadvantage (Dodge)"
+  },
+  "action.dodge.grants.0.grants.1": {
+    "description": "Dexterity saving throws (Dodge)"
+  },
+  "state.surprised": {
+    "name": "Surprised"
+  },
+  "state.surprised.grants.0.grants.0": {
+    "description": "Initiative roll (Surprised)"
+  },
+  "state.wish-stress": {
+    "name": "Wish Stress"
+  },
+  "vision.dim-light.grants.0.grants.0": {
+    "description": "Wisdom (Perception) checks to see (Lightly Obscured)"
+  },
+  "vision.darkness.grants.0.grants.0": {
+    "description": "Attack rolls (Blinded for sight: Darkness)"
+  }
+}

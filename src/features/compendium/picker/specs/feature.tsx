@@ -64,7 +64,7 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
   // EN is the static facts seed, the active locale is loaded by the i18n bootstrap).
   // The NON-active locale's SRD shard is lazy-loaded per locale (SLICE 8) and may
   // not be resident, so resolving it here would throw. (Subclass names come from the
-  // static srd-names BiText map — not a lazy shard — so both locales are safe there.)
+  // static srd-names LocaleText map — not a lazy shard — so both locales are safe there.)
   nameText: (f, { locale }) => [
     ...nameCorpus("class-feature", f.id, featureText(f, "name", locale)),
     // …so a feature is findable by its (localized) subclass too, not just the slug.

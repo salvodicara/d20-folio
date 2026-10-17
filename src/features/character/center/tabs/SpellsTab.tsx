@@ -7,7 +7,7 @@
  * cast to the cockpit's canonical transaction, and renders the presentational section
  * components — the brass cast-summary strip, the prepared-over-limit banner, the
  * level filters, and one `SpellCard` per spell grouped by level. SRD content is
- * pre-localized on the VM, so THIS file makes ZERO direct `[locale]`/BiText reads
+ * pre-localized on the VM, so THIS file makes ZERO direct `[locale]`/LocaleText reads
  * (docs/ARCHITECTURE.md; golden rules 5 + 7).
  *
  * (folio §5.7 — the canonical card-page reference.)

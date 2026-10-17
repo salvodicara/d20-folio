@@ -7,7 +7,7 @@
  * not discovered at runtime (the `concentrationValue(id, "Hypnotic Pattern")` class).
  *
  * Scope: the RUNTIME path — `src/**` EXCEPT `src/i18n/**` (the strings live there), the
- * SRD data-authoring layer `src/data/**` (incl. the sync-guarded `srd-names.ts` BiText
+ * SRD data-authoring layer `src/data/**` (incl. the sync-guarded `srd-names.ts` LocaleText
  * source), and `*.test.*`. Only MULTI-WORD names are flagged: single common words that
  * are also SRD names ("Fly", "Aid", "Light", "Shield", "Bless") have too many legitimate
  * uses to flag without false positives — the multi-word constraint keeps it precise.

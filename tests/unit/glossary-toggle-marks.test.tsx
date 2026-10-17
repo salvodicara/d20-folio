@@ -20,18 +20,19 @@ import { MovementSlider } from "@/features/character/center/MovementSlider";
 import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { CombatHeader } from "@/features/character/center/CombatHeader";
-import { COMBAT_GLOSSARY } from "@/components/shared/combat-glossary";
-import { COVER_REFERENCE } from "@/data/cover";
+import { combatTermName } from "@/components/shared/combat-glossary";
+import { coverKey } from "@/data/cover";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { srdBi } from "@tests/_harness/loc";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 
 const EN = enGlossary.glossary.term;
-const coverName = (id: string) => COVER_REFERENCE.find((c) => c.id === id)?.name;
+const coverName = (id: "half") => srdBi("rule", coverKey(id), "name");
 
 /** The info mark right after `toggle` opens `line` under `rubric`. */
 function markAfter(toggle: HTMLElement, rubric: string, line: string): void {
@@ -79,7 +80,7 @@ describe("info marks after toggles explain their term", () => {
       </Dialog>
     );
     const group = screen.getByRole("group", { name: "Attack result on Goblin" });
-    markAfter(group, COMBAT_GLOSSARY.criticalHit.en, EN.criticalHit);
+    markAfter(group, combatTermName("criticalHit", "en"), EN.criticalHit);
   });
 
   it("the movement meter's ×2 explains Difficult Terrain", () => {
@@ -93,7 +94,7 @@ describe("info marks after toggles explain their term", () => {
       />
     );
     const toggle = screen.getByRole("button", { name: /^difficult terrain/i });
-    markAfter(toggle, COMBAT_GLOSSARY.difficultTerrain.en, EN.difficultTerrain);
+    markAfter(toggle, combatTermName("difficultTerrain", "en"), EN.difficultTerrain);
   });
 
   it("the Surprised chip by the initiative explains Surprise", () => {
@@ -108,7 +109,7 @@ describe("info marks after toggles explain their term", () => {
     );
     const init = container.querySelector(".turn .init") as HTMLElement;
     const chip = within(init).getByRole("button", { name: "Surprised" });
-    markAfter(chip, COMBAT_GLOSSARY.surprise.en, EN.surprise);
+    markAfter(chip, combatTermName("surprise", "en"), EN.surprise);
   });
 
   it("the AC tile's cover toggle explains Half Cover, the first tap's level", () => {
@@ -120,7 +121,7 @@ describe("info marks after toggles explain their term", () => {
     );
     const vitals = screen.getByRole("group", { name: "Vital statistics" });
     const toggle = within(vitals).getByRole("button", { name: /^cover: none/i });
-    markAfter(toggle, coverName("half")?.en ?? "", EN.halfCover);
+    markAfter(toggle, coverName("half").en, EN.halfCover);
   });
 
   it("speaks Italian with the official names", async () => {

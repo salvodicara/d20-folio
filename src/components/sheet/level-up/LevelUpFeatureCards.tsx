@@ -4,7 +4,7 @@
  * FEATURES, and the PROFICIENCY BONUS bump. Every string is resolved through the
  * level-up presenter (`featureCardsFromChange` for the cards; `levelUpChangeArgs`
  * for the engine-emitted-id interpolation), so this surface makes ZERO direct
- * `[locale]`/BiText reads (R6+R3 slice 4).
+ * `[locale]`/LocaleText reads (R6+R3 slice 4).
  */
 
 import { useState } from "react";

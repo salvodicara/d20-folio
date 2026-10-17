@@ -11,6 +11,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     damageType: "force",
     damageDice: "6d10",
     saveAbility: "DEX",
@@ -33,6 +34,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "lightning",
     damageDice: "10d8",
@@ -61,6 +63,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 500,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "necrotic",
     // RAW (2024): 8d8 Necrotic, +2d8 per slot level above 6th.
@@ -80,6 +83,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     source: "SRD",
   },
   {
@@ -96,6 +100,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 150,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     // Ghouls (3; 4 at level 7, 5 at 8, 6 at 9); from level 8 Ghasts or Wights (2;
     // 3 at 9); at level 9 Mummies (2).
@@ -122,6 +127,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "force",
     damageDice: "10d6+40",
@@ -138,6 +144,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     conditionApplication: {
       options: ["unconscious", "frightened", "poisoned"],
@@ -170,6 +177,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 100,
     },
     concentration: true,
+    duration: { kind: "days", amount: 1 },
     source: "SRD",
   },
   {
@@ -185,6 +193,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     source: "SRD",
   },
   {
@@ -196,6 +205,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "necrotic",
     damageDice: "14d6",
@@ -212,6 +222,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     healDice: "70",
     effectTag: "heal",
@@ -233,6 +244,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -249,6 +261,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 24 },
     saveAbility: "WIS",
     targeting: { affinity: "enemy", maxTargets: 12 },
     source: "SRD",
@@ -266,6 +279,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "hours", amount: 2 },
     source: "SRD",
   },
   {
@@ -277,6 +291,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     source: "SRD",
   },
@@ -289,6 +304,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     // A Celestial, an Elemental or a Fiend, of any Challenge Rating.
     bestiaryPick: { types: ["celestial", "elemental", "fiend"] },
@@ -307,6 +323,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     damageType: "radiant",
     damageDice: "6d8",
     saveAbility: "CON",
@@ -343,6 +360,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       consumed: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 1 },
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
       // PROSE-SWEPT 2026-06-10 — Truesight 120 ft for the duration.
@@ -369,6 +387,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     damageType: "cold",
     damageDice: "10d6",
     damageDicePerUpcast: "2d6", // RAW: appearance damage +2d6 per slot above 6
@@ -391,6 +410,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 1500,
     },
     concentration: false,
+    duration: { kind: "days", amount: 10 },
     source: "SRD",
   },
   {
@@ -407,6 +427,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 1000,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     source: "SRD",
   },
   {
@@ -422,6 +443,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     conditionApplication: {
       options: ["restrained"],
@@ -452,6 +474,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 1000,
     },
     concentration: false,
+    duration: { kind: "days", amount: 1 },
     source: "SRD",
   },
   {
@@ -468,6 +491,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 10,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 24 },
     source: "SRD",
   },
   {
@@ -484,6 +508,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 500,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     saveAbility: "CHA",
     source: "SRD",
   },
@@ -500,6 +525,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     damageType: "cold",
     damageDice: "10d6",
@@ -523,6 +549,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       costGp: 25,
     },
     concentration: false,
+    duration: { kind: "until-dispelled" },
     source: "SRD",
   },
   {
@@ -534,6 +561,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: true, m: false },
     concentration: false,
+    duration: { kind: "minutes", amount: 1 },
     source: "SRD",
   },
   {
@@ -549,6 +577,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: false,
+    duration: { kind: "hours", amount: 8 },
     source: "SRD",
   },
   {
@@ -560,6 +589,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     ritual: false,
     components: { v: true, s: false, m: false },
     concentration: false,
+    duration: { kind: "instantaneous" },
     instantaneous: true,
     source: "SRD",
   },
@@ -576,6 +606,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
       m: true,
     },
     concentration: true,
+    duration: { kind: "minutes", amount: 10 },
     damageType: "piercing",
     damageDice: "7d8",
     damageDicePerUpcast: "1d8",

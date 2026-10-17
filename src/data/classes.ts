@@ -119,7 +119,7 @@ export function getSubclassFeatures(
 }
 
 // `searchFeatures` (name-substring search over class features) was unused and
-// read the class-feature `name.en`/`name.it` BiText that R3 moved into the i18n
+// read the class-feature `name.en`/`name.it` LocaleText that R3 moved into the i18n
 // catalogues — removed in R6+R3 SLICE 7b. A feature search, if needed, belongs in
 // a view that resolves names via `localizeSrd`.
 

@@ -15,7 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
-import { baseActionState } from "@/lib/base-action-states";
+import { baseActionState, baseActionText } from "@/lib/base-action-states";
 import { HELP_ACTION_ID } from "@/lib/play/help";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
@@ -56,7 +56,6 @@ import type {
   DiceCount,
   HealTerm,
   Recovery,
-  BiText,
   TrackerSpec,
   SrdClassFeatureData,
   SrdFeatData,
@@ -147,6 +146,11 @@ import {
   featureNameLoc,
 } from "@/lib/srd-feature-lookup";
 import { spellIndex, spells } from "@/data/spells";
+import {
+  ROUNDS_PER_MINUTE,
+  concentrationBudgetRounds,
+  concentrationTimerKey,
+} from "@/lib/spell-duration";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { getEquipment } from "@/data/equipment";
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
@@ -204,7 +208,7 @@ import {
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
-import { srdText, customText, litText, uiText } from "@/lib/loc-text";
+import { srdText, customText, uiText } from "@/lib/loc-text";
 import type {
   BreakdownLine,
   BreakdownWhy,
@@ -224,8 +228,7 @@ import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
 
-/** Supported locale keys matching BiText */
-type Locale = keyof BiText;
+/** Supported locale keys matching LocaleText */
 
 // ============================================================
 // Types
@@ -233,7 +236,7 @@ type Locale = keyof BiText;
 
 /**
  * A resolved resource tracker as the ENGINE emits it — locale-FREE. `label` and
- * `description` are carried as `BiText` DATA (never read by locale here);
+ * `description` are carried as `LocaleText` DATA (never read by locale here);
  * `lib/views/tracker-view.localizeTrackers` resolves them into the display
  * `ResolvedTracker` at the presenter edge (docs/ARCHITECTURE.md). Every other
  * field is identical between the raw and display shapes.
@@ -851,7 +854,7 @@ export interface ResolvedAction {
 /**
  * The engine-emitted (locale-FREE) action summary. Identical to
  * {@link ActionSummary} EXCEPT the fields that used to carry a localized string
- * are carried as DATA: `range`/`duration`/`effect`/`trigger` as `BiText`,
+ * are carried as DATA: `range`/`duration`/`effect`/`trigger` as `LocaleText`,
  * weapon range as a structured {@link WeaponRangeSpec}, plus the RAW weapon
  * facts (`properties` / `weaponCategory` / `weaponMastery`) the presenter
  * turns into the unified weapon facts block. Every numeric / token / formula
@@ -1319,15 +1322,16 @@ export function equipmentQuantityOf(
  * Actions every character can take regardless of class or equipment.
  * Injected at the end of resolveActions() so they always appear in the
  * combat panel. defaultPinned = false — players pin the ones they want.
+ * Their words (name, effect line, trigger) live in the `rule` catalogue under
+ * `baseActionKey` (`base-action-states.ts`).
  */
 // Exported for the subtitle-budget guard: every base-action effect/trigger is a
 // collapsed-card line and must fit `EFFECT_LINE_BUDGET` in both locales.
 export const BASE_ACTIONS: ReadonlyArray<{
   id: string;
-  name: Record<Locale, string>;
   type: ActionType;
-  effect: Record<Locale, string>;
-  trigger?: Record<Locale, string>;
+  /** The card carries a reaction trigger line (the catalogue's `trigger`). */
+  hasTrigger?: true;
   /** The action a second use this turn takes (see `ResolvedAction.repeatUseCosts`). */
   repeatUseCosts?: string;
   /** The condition the action is offered under; absent = always on the board. */
@@ -1335,33 +1339,19 @@ export const BASE_ACTIONS: ReadonlyArray<{
 }> = [
   {
     id: "base-dash",
-    name: { en: "Dash", it: "Scatto" },
     type: "action",
-    effect: { en: "Double movement speed", it: "Raddoppia il movimento" },
   },
   {
     id: "base-dodge",
-    name: { en: "Dodge", it: "Schivata" },
     type: "action",
-    effect: {
-      en: "Attacks vs you have Disadvantage",
-      it: "Attacchi su di te in svantaggio",
-    },
   },
   {
     id: "base-disengage",
-    name: { en: "Disengage", it: "Disimpegno" },
     type: "action",
-    effect: { en: "Movement doesn't provoke OA", it: "Mov. non provoca AA" },
   },
   {
     id: "base-help",
-    name: { en: "Help", it: "Aiuto" },
     type: "action",
-    effect: {
-      en: "Ally gains Advantage on next attack or check",
-      it: "Alleato ottiene Vantaggio",
-    },
   },
   {
     // RA-12 — the 2024 Hide action: a DC 15 Dexterity (Stealth) check; on a
@@ -1369,41 +1359,24 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // condition apply are stamped per-character in the resolver via
     // `skillCheck`), not a bare freeform "Stealth check".
     id: "base-hide",
-    name: { en: "Hide", it: "Nascondersi" },
     type: "action",
-    effect: {
-      en: "DC 15 Stealth check → Invisible",
-      it: "Prova Furtività CD 15 → Invisibile",
-    },
   },
   {
     // RA-20 — 2024 Influence action: a Charisma or Wisdom check (Deception/
     // Intimidation/Performance/Persuasion, or Animal Handling) to sway a
     // creature's attitude. The DM sets the ability + DC (override-first).
     id: "base-influence",
-    name: { en: "Influence", it: "Influenza" },
     type: "action",
-    effect: {
-      en: "Cha/Wis check to sway a creature's attitude",
-      it: "Prova Car/Sag per influenzare l'atteggiamento",
-    },
   },
   {
     // RA-20 — 2024 Magic action: cast a spell, or use a magic item or a special
     // ability that requires the Magic action.
     id: "base-magic",
-    name: { en: "Magic", it: "Magia" },
     type: "action",
-    effect: {
-      en: "Cast a spell or use a magic item or feature",
-      it: "Lancia un incantesimo o usa oggetto/capacità magica",
-    },
   },
   {
     id: "base-ready",
-    name: { en: "Ready", it: "Prepararsi" },
     type: "action",
-    effect: { en: "Set trigger → reaction", it: "Imposta innesco → reazione" },
   },
   {
     // RA-20 — 2024 Search is a Wisdom action (Insight/Medicine/Perception/
@@ -1411,46 +1384,26 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // it moved to `base-study`. Which skill applies is the DM's call — no
     // structured DC (override-first, no dice).
     id: "base-search",
-    name: { en: "Search", it: "Ricerca" },
     type: "action",
-    effect: {
-      en: "Wis check: Insight/Medicine/Perception/Survival",
-      it: "Prova Sag: Intuizione/Medicina/Percezione/Sopravvivenza",
-    },
   },
   {
     // RA-20 — 2024 Study action: an Intelligence check (Arcana/History/
     // Investigation/Nature/Religion) to recall or work out lore.
     id: "base-study",
-    name: { en: "Study", it: "Studio" },
     type: "action",
-    effect: {
-      en: "Int check: Arcana/History/Investigation/Nature/Religion",
-      it: "Prova Int: Arcano/Storia/Indagare/Natura/Religione",
-    },
   },
   {
     // RA-20 — 2024 Utilize action: use a nonmagical object that needs an action
     // (pull a lever, pour a flask).
     id: "base-utilize",
-    name: { en: "Utilize", it: "Utilizzo" },
     type: "action",
-    effect: {
-      en: "Use a nonmagical object needing an action",
-      it: "Usa un oggetto non magico che richiede un'azione",
-    },
   },
   {
     // 2024 "Interacting with Things": one object interaction (draw or stow a
     // weapon, open a door) is free during your move or action, once per turn; a
     // second one in the same turn takes the Utilize action.
     id: "base-object-interaction",
-    name: { en: "Interact with an Object", it: "Interagisci con un oggetto" },
     type: "free",
-    effect: {
-      en: "Draw, stow or open one object per turn",
-      it: "Estrai, riponi o apri un oggetto a turno",
-    },
     repeatUseCosts: "base-utilize",
   },
   {
@@ -1458,46 +1411,29 @@ export const BASE_ACTIONS: ReadonlyArray<{
     // Dexterity save vs 8 + STR + PB (the concrete DC is stamped per-character in
     // the resolver via `unarmedStrikeSaveDc`), NOT the 2014 STR contest.
     id: "base-grapple",
-    name: { en: "Grapple", it: "Afferrare" },
     type: "action",
-    effect: {
-      en: "Unarmed Strike: Str/Dex save or Grappled",
-      it: "Colpo Senz'armi: TS For/Des o Afferrato",
-    },
   },
   {
     // RA-04 — 2024 Unarmed Strike option (save vs 8 + STR + PB), not a contest.
     id: "base-shove",
-    name: { en: "Shove", it: "Spingere" },
     type: "action",
-    effect: {
-      en: "Unarmed Strike: Str/Dex save → push 5 ft or Prone",
-      it: "Colpo Senz'armi: TS For/Des → 1,5 m o Prono",
-    },
   },
   {
     // 2024 "Unarmed Strike": a Grappled creature can use its action to make an
     // Athletics or Acrobatics check against the escape DC (`play/escape-grapple`).
     id: "base-escape-grapple",
-    name: { en: "Escape", it: "Liberati" },
     type: "action",
-    effect: {
-      en: "Athletics/Acrobatics vs escape DC → free",
-      it: "Atletica/Acrobazia contro CD di fuga → libero",
-    },
     whileCondition: "grappled",
   },
   {
     id: "base-opportunity-attack",
-    name: { en: "Opportunity Attack", it: "Attacco di Opportunità" },
     type: "reaction",
-    effect: {
-      en: "Enemy leaves melee reach without Disengaging",
-      it: "Nemico lascia portata senza Disimpegnarsi",
-    },
-    trigger: { en: "enemy leaves reach", it: "nemico lascia portata" },
+    hasTrigger: true,
   },
 ] as const;
+
+/** The Unarmed Strike's name, shared with the glossary's term. */
+const UNARMED_STRIKE_NAME: LocText = uiText("glossary.name.unarmedStrike");
 
 // ============================================================
 // Resolution Functions
@@ -4060,8 +3996,7 @@ export function resolveUnarmedFightingAttack(
   const attackBonus = abilityMod + ctx.pb + ctx.exPenalty;
   const damage = appendAbilityModToDice(baseDie, abilityMod);
   const id = "unarmed-strike";
-  // Engine-authored bilingual literal (not SRD data).
-  const name: LocText = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
+  const name: LocText = UNARMED_STRIKE_NAME;
   // G25 — self-contained riders that ride this Unarmed Strike (Zealot Divine
   // Fury), via the SAME shared resolver as the carried-weapon + Monk rows
   // (golden rule 6): "melee-weapon" rides an Unarmed Strike, "weapon" does not.
@@ -4098,10 +4033,7 @@ export function resolveUnarmedFightingAttack(
     damageType,
     // Melee 5 ft reach — structured; the view formats it.
     weaponRange: { kind: "melee", reachFt: 5 },
-    effect: litText({
-      en: `${unburdenedDie} if not holding a weapon or Shield`,
-      it: `${unburdenedDie} se non impugni armi o Scudo`,
-    }),
+    effect: uiText("combat.unarmedUnburdenedDie", { die: unburdenedDie }),
     ...(extraDamage.length > 0 ? { extraDamage } : {}),
   };
   return {
@@ -5049,7 +4981,7 @@ function resolveUnarmedAttackSummary(
     ctx.abilityScores
   );
   const { reachBonusFt } = resolveMeleeReachBonus(aggregate.weaponReachBonuses, false);
-  const name = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
+  const name = UNARMED_STRIKE_NAME;
   const damageBreakdown = buildUnarmedDamageBreakdown(
     profile,
     name,
@@ -5308,7 +5240,7 @@ function resolveFeatureActions(
           const id = `custom-${featureRef.instanceId}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
-          // the BiText contract holds.
+          // the LocaleText contract holds.
           const summary: RawActionSummary = {};
           // Custom user text (no translation) — emit the full string; the
           // presenter's budget gate OMITS (never slices) a line that doesn't
@@ -7458,7 +7390,7 @@ function resolveWeaponActions(
   //     Skipped when 4b already produced an Unarmed Strike row (Unarmed Fighting).
   if (!actions.some((a) => a.id === "unarmed-strike")) {
     const id = "unarmed-strike";
-    const unarmedName = litText({ en: "Unarmed Strike", it: "Colpo Senz'armi" });
+    const unarmedName = UNARMED_STRIKE_NAME;
     actions.push({
       id,
       name: unarmedName,
@@ -7514,7 +7446,7 @@ function resolveWeaponActions(
     const equipmentKey = isCustomItem ? `custom-${itemRef.instanceId}` : itemRef.srdId;
 
     // A healing potion shows its heal verdict; any other potion (Giant Strength,
-    // Fire Breath, …) shows a short effect from its SRD description (BiText data).
+    // Fire Breath, …) shows a short effect from its SRD description (LocaleText data).
     const summary: RawActionSummary = { uses: { current: qty, total: qty } };
     if (potionFormula) {
       summary.healing = potionFormula;
@@ -7613,17 +7545,16 @@ function resolveTemporaryHpActions(
     const state = baseActionState(ba.id)?.grant;
     // Search, Study and Influence take the d20 the player rolled for one SRD skill.
     const checkSkills = actionCheckSkills(ba.id);
-    // The base action menu is an engine-authored bilingual table (not SRD data).
     actions.push({
       id: ba.id,
-      name: litText(ba.name),
+      name: baseActionText(ba.id, "name"),
       type: ba.type,
       source: "feature",
       spellLevel: null,
       concentration: false,
       summary: {
-        effect: litText(ba.effect),
-        ...(ba.trigger ? { trigger: litText(ba.trigger) } : {}),
+        effect: baseActionText(ba.id, "effect"),
+        ...(ba.hasTrigger ? { trigger: baseActionText(ba.id, "trigger") } : {}),
         ...(isUnarmedStrikeOption ? { saveDC: unarmedStrikeDc, saveAbility: "STR" } : {}),
         ...(ba.id === "base-grapple"
           ? {
@@ -7745,10 +7676,7 @@ function resolveTemporaryHpActions(
         : srdFeature
           ? featLoc(srdFeature, "name")
           : customText(thp.sourceId);
-    const effect: LocText = litText({
-      en: `Gain ${amount} temporary HP`,
-      it: `Ottieni ${amount} PF temporanei`,
-    });
+    const effect: LocText = uiText("combat.gainTempHp", { amount });
     const id = `temphp-${thp.sourceId}`;
     actions.push({
       id,
@@ -8208,6 +8136,14 @@ export function resolveActiveStatesEndingOnRest(
   if (rest === "long" && active.has(WISH_STRESS_STATE.activeKey)) {
     ended.add(WISH_STRESS_STATE.activeKey);
   }
+  // A held Concentration whose time left fits inside the rest lapses during it
+  // (Detect Magic, up to 10 minutes, ends on a Short Rest; Hex from a level 3 slot,
+  // 8 hours, outlasts it). Ending the key ends the Concentration (`endsConcentration`).
+  for (const timer of heldConcentrationTimer(character)) {
+    const left =
+      character.session.effectTimers?.[timer.activeKey]?.roundsLeft ?? timer.maxRounds;
+    if (left <= restMinutes * ROUNDS_PER_MINUTE) ended.add(timer.activeKey);
+  }
   return [...ended];
 }
 
@@ -8366,6 +8302,36 @@ export function resolveActiveTimedEffects(character: CharacterDoc): ActiveTimedE
   return out;
 }
 
+/**
+ * The held Concentration's own countdown, armed like a timed state: a spell held with
+ * no state on you (Detect Magic, Bane on enemies) still lapses when its duration has
+ * passed. None for a custom spell or a duration the clock never ends, and none while
+ * a counting state the spell holds is lit (Bless on yourself): its countdown ends the
+ * Concentration already, with one expiry line.
+ */
+function heldConcentrationTimer(
+  character: CharacterDoc,
+  activeTimed: ReadonlyArray<ActiveTimedEffect> = resolveActiveTimedEffects(character)
+): ActiveTimedEffect[] {
+  const { concentration, concentrationCastLevel } = character.session;
+  const maxRounds = concentrationBudgetRounds(concentration, concentrationCastLevel);
+  const heldKeys = new Set(
+    (spellIndex.get(concentration)?.grants ?? []).flatMap((grant) =>
+      grant.type === "while-active" ? [grant.activeKey] : []
+    )
+  );
+  const counted = activeTimed.some((effect) => heldKeys.has(effect.activeKey));
+  return maxRounds === null || counted
+    ? []
+    : [
+        {
+          activeKey: concentrationTimerKey(concentration),
+          sourceId: concentration,
+          maxRounds,
+        },
+      ];
+}
+
 /** One state whose round timer reached 0 this End Turn — to drop + log. */
 export interface ExpiredTimedEffect {
   activeKey: string;
@@ -8393,7 +8359,9 @@ export interface ExpiredTimedEffect {
 export function advanceEffectTimers(
   character: CharacterDoc,
   /** The round being counted; a timer already counted for it is left as is. */
-  forRound?: number
+  forRound?: number,
+  /** How many rounds pass in this step: 1 at End Turn, 10 per minute out of combat. */
+  rounds = 1
 ): {
   timers: Record<string, { roundsLeft: number; tickedRound?: number }>;
   expired: ExpiredTimedEffect[];
@@ -8406,7 +8374,8 @@ export function advanceEffectTimers(
     return forRound !== undefined && ticked !== undefined && ticked >= forRound;
   };
   const stamp = forRound === undefined ? {} : { tickedRound: forRound };
-  const activeTimed = resolveActiveTimedEffects(character);
+  const stateTimed = resolveActiveTimedEffects(character);
+  const activeTimed = [...stateTimed, ...heldConcentrationTimer(character, stateTimed)];
   const next: Record<string, { roundsLeft: number; tickedRound?: number }> = {};
   const expired: ExpiredTimedEffect[] = [];
   for (const eff of activeTimed) {
@@ -8417,7 +8386,7 @@ export function advanceEffectTimers(
     }
     // Arm a fresh state to its cap; otherwise decrement its existing countdown.
     const current = prev[eff.activeKey]?.roundsLeft ?? eff.maxRounds;
-    const roundsLeft = current - 1;
+    const roundsLeft = current - rounds;
     if (roundsLeft <= 0) {
       // Timer elapsed → drop the state + log the expiry (handled by the engine
       // consumer). No timer entry survives.
@@ -8442,7 +8411,7 @@ export function advanceEffectTimers(
       next[key] = timer;
       continue;
     }
-    const roundsLeft = timer.roundsLeft - 1;
+    const roundsLeft = timer.roundsLeft - rounds;
     if (roundsLeft <= 0) {
       expired.push({ activeKey: key, sourceId });
     } else {

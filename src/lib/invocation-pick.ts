@@ -106,7 +106,7 @@ export function requiredInvocationIds(prereq: string): string[] {
 /**
  * All 28 SRD 2024 Eldritch Invocations, sorted by their canonical EN name (a
  * stable, locale-independent order; the EN name comes from the i18n catalogue via
- * `srdEn`, not a stripped data BiText).
+ * `srdEn`, not a stripped data LocaleText).
  */
 export function listInvocations(): SrdEldritchInvocation[] {
   return [...SRD_INVOCATIONS].sort((a, b) =>

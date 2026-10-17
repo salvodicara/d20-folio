@@ -12,8 +12,8 @@ import {
   asRaceId,
   backgroundIdByName,
   backgroundNameById,
-  RACE_NAMES,
-  BACKGROUND_NAMES,
+  raceNames,
+  backgroundNames,
 } from "@/data/srd-names";
 import { ALIGNMENTS, alignmentIdByLabel, asAlignmentId } from "@/lib/lore-utils";
 
@@ -27,7 +27,7 @@ describe("race id resolvers", () => {
   });
 
   it("resolves every standard race EN name + id to the canonical id", () => {
-    for (const r of RACE_NAMES) {
+    for (const r of raceNames()) {
       expect(raceIdByName(r.name.en)).toBe(r.id);
       expect(raceIdByName(r.id)).toBe(r.id); // id passthrough is idempotent
     }
@@ -52,7 +52,7 @@ describe("background id resolvers", () => {
   });
 
   it("round-trips every standard background id ⇄ EN label", () => {
-    for (const b of BACKGROUND_NAMES) {
+    for (const b of backgroundNames()) {
       expect(backgroundNameById(b.id)).toBe(b.name.en);
       expect(backgroundIdByName(b.name.en)).toBe(b.id);
       expect(backgroundIdByName(backgroundNameById(b.id))).toBe(b.id);

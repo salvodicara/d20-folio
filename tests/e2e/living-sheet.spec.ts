@@ -22,6 +22,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { MOBILE, seedUI, seedLang, freezeMotion } from "./surfaces";
 import { waitForStableLayout } from "./ready";
+import type { Locale } from "@/lib/locale";
 
 type Rect = { x: number; y: number; w: number; h: number };
 
@@ -59,7 +60,7 @@ async function vitalsGeometry(page: Page): Promise<{
   });
 }
 
-async function loadCockpit(page: Page, locale: "en" | "it"): Promise<void> {
+async function loadCockpit(page: Page, locale: Locale): Promise<void> {
   await seedUI(page, "dark", "play");
   await seedLang(page, locale);
   await page.goto("/characters/mock-1", { waitUntil: "domcontentloaded" });

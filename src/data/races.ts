@@ -964,7 +964,7 @@ export interface RaceFeatureEntry {
 /**
  * Generate a canonical ID for a race trait: `"${raceId}-${trait.id}"`. The trait's
  * own `id` is its stable `slug(name.en)` (the catalogue-key segment), so this reads
- * NO BiText and survives the data strip unchanged.
+ * NO LocaleText and survives the data strip unchanged.
  */
 function traitId(raceId: string, trait: SrdRaceTrait): string {
   return `${raceId}-${trait.id}`;
@@ -1010,7 +1010,7 @@ export function raceTraitCatKey(entry: { id: string; raceId: string }): string {
 /**
  * The STABLE catalogue key for a RAW `SrdRaceTrait` (one straight off
  * `race.traits`) — `"<raceId>.traits.<trait.id>"`. The trait's `id` IS the
- * catalogue-key segment (its `slug(name.en)`), so this reads NO BiText; the
+ * catalogue-key segment (its `slug(name.en)`), so this reads NO LocaleText; the
  * engine's race loops use it to localize a trait's `name`/`description`/nested-
  * action strings off the catalogue (R6+R3 SLICE 7c/7d).
  */

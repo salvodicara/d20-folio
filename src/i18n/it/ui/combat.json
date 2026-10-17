@@ -529,6 +529,8 @@
       },
       "outcomeGroup": "Esito dell'attacco su {{name}}",
       "critHint": "dadi raddoppiati"
-    }
+    },
+    "unarmedUnburdenedDie": "{{die}} se non impugni armi o Scudo",
+    "gainTempHp": "Ottieni {{amount}} PF temporanei"
   }
 }

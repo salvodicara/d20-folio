@@ -32,6 +32,7 @@ import { longRestCharacter, shortRestCharacter } from "./rests";
 import { setActiveSpellCastLevel, setActiveState, setBundleChoices } from "./states";
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
+import { passTime } from "./time";
 import { setWishStress } from "./wish";
 import {
   restoreSpellSlot,
@@ -99,7 +100,18 @@ export type SheetEvent =
   | { kind: "dismiss-familiar" }
   | { kind: "toggle-pin"; actionId: string; defaultPinned: boolean }
   | { kind: "long-rest" }
-  | { kind: "short-rest" };
+  | { kind: "short-rest" }
+  /**
+   * Minutes pass outside the turn order: what runs out ends (`passTime`).
+   * To the first dispatcher: when `timePassEndsConcentration(doc, minutes)`, an
+   * engine-held Concentration must end through the store teardown too. Never
+   * `setConcentration("")` and then rely on `dispatch`'s own undo: its snapshot is
+   * already past the teardown, so Undo would lose the Concentration. Wrap both steps
+   * in one whole-state undo, as the rests do (`beginWholeStateUndo`, #283):
+   * `seal = beginWholeStateUndo(); teardown; dispatch(event); undo = seal?.()`.
+   * Pinned in tests/unit/time-passes.test.ts.
+   */
+  | { kind: "time-passes"; minutes: number };
 
 export type SheetEventKind = SheetEvent["kind"];
 
@@ -193,5 +205,7 @@ export function applySheetEvent(
       return longRestCharacter(doc);
     case "short-rest":
       return shortRestCharacter(doc);
+    case "time-passes":
+      return passTime(doc, event.minutes);
   }
 }

@@ -99,6 +99,8 @@ export type PlayEvent =
     }
   | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
   | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }
+  /** Minutes pass outside the turn order; what runs out in them ends. */
+  | { kind: "time-passes"; minutes: number; actor?: CombatantId }
   | {
       kind: "encounter-start";
       encounterId: string;

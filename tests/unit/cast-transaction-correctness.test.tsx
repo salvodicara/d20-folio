@@ -131,7 +131,7 @@ beforeEach(() => {
     readonly: false,
     loading: false,
     error: null,
-    combatRound: 1,
+    combatRound: 2,
     combatTurnEconomy: undefined,
     combatPersistence: null,
   });

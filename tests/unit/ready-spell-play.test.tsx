@@ -91,6 +91,9 @@ beforeEach(() => {
     spells: [{ srdId: "magic-missile", prepared: true }],
     spellSlots: [{ level: 1, total: 4 }],
   });
+  // A fight is on (Initiative rolled): the per-turn gates hold. Outside one the
+  // economy only logs.
+  doc.session.initiative = "12";
   useCharacterStore.setState({ character: doc, readonly: false, loading: false });
 });
 

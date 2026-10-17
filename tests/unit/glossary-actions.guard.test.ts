@@ -11,11 +11,18 @@
  */
 import { describe, it, expect } from "vitest";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
+import { baseActionKey } from "@/lib/base-action-states";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
 import enConditions from "@/i18n/en/srd/conditions.json";
 import itConditions from "@/i18n/it/srd/conditions.json";
 import { RULE_TERMS, missingOfficialTerms } from "@tests/unit/__helpers__/glossary-terms";
+import { srd } from "@tests/_harness/loc";
+import type { Locale } from "@/lib/locale";
+
+/** A base action's name, as its card shows it. */
+const actionName = (id: string, locale: Locale): string =>
+  srd("rule", baseActionKey(id), "name", locale);
 
 const EN_TERMS: Record<string, string | undefined> = enGlossary.glossary.term;
 const IT_TERMS: Record<string, string | undefined> = itGlossary.glossary.term;
@@ -24,7 +31,7 @@ const CONDITION_IDS = Object.keys(enConditions) as (keyof typeof enConditions)[]
 const PAIRS: ReadonlyArray<readonly [string, string]> = [
   ...RULE_TERMS,
   ...CONDITION_IDS.map((c) => [enConditions[c].name, itConditions[c].name] as const),
-  ...BASE_ACTIONS.map((a) => [a.name.en, a.name.it] as const),
+  ...BASE_ACTIONS.map((a) => [actionName(a.id, "en"), actionName(a.id, "it")] as const),
 ];
 
 const ACTIONS = BASE_ACTIONS.map((a) => [a.id, a] as const);
@@ -36,8 +43,8 @@ describe("beginner glossary: every base action", () => {
   });
 
   it.each(ACTIONS)("'%s' names itself as its card does", (id, action) => {
-    expect(EN_TERMS[id] ?? "").toContain(action.name.en);
-    expect(IT_TERMS[id] ?? "").toContain(action.name.it);
+    expect(EN_TERMS[id] ?? "").toContain(actionName(action.id, "en"));
+    expect(IT_TERMS[id] ?? "").toContain(actionName(action.id, "it"));
   });
 
   it.each(ACTIONS)("'%s' uses the official IT name for every term it names", (id) => {

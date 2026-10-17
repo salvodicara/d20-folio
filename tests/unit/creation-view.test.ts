@@ -3,7 +3,7 @@
  *
  * Pins the contract the CreationWizard orchestrator + its `steps/` subcomponents
  * depend on: localized, render-ready option lists (class / race / background /
- * subclass / lineage) and the trait/equipment/tip VMs, with ZERO BiText left for
+ * subclass / lineage) and the trait/equipment/tip VMs, with ZERO LocaleText left for
  * the surface to read. Covers BOTH locales, the stable-id identity (golden rule
  * 12), and the FACT that every SRD key in the catalogue resolves (a missing key
  * throws in dev/test). Fast-lane: pure, no React, no Firebase.

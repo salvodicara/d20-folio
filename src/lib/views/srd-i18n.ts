@@ -3,15 +3,16 @@
  *
  * Provides localized name lookups for character data stored as English names/IDs.
  * Character records store class/race/background as English strings.
- * This module resolves them back to BiText for locale-aware display.
+ * This module resolves them back to LocaleText for locale-aware display.
  */
 
-import type { BiText, WeaponMastery } from "@/data/types";
+import type { LocaleText, WeaponMastery } from "@/data/types";
 import {
-  CLASS_NAMES,
-  SUBCLASS_NAMES,
-  RACE_NAMES,
-  BACKGROUND_NAMES,
+  classNames,
+  subclassNames,
+  raceNames,
+  backgroundNames,
+  type NamedEntry,
 } from "@/data/srd-names";
 import { localeRangePair } from "@/lib/utils";
 import type { LocText } from "@/lib/loc-text";
@@ -19,8 +20,7 @@ import type { BreakdownWhy, BreakdownWhyLine } from "@/lib/value-breakdown";
 import { hasSrd, localizeSrd, localizeCustom, type SrdKind } from "@/i18n/resolver";
 import i18n from "@/i18n";
 import { SOURCE_LOCALE } from "@/lib/locale";
-
-type Locale = keyof BiText;
+import type { Locale } from "@/lib/locale";
 
 /**
  * Resolve an engine-emitted {@link LocText} to one display string at the
@@ -44,10 +44,10 @@ type Locale = keyof BiText;
  * when the source carries one (every SRD source does), else its inline `name`
  * (synthetic/runtime sources), else its stable id as a last resort. The single
  * presenter-edge resolver for "what is this grant source called", so spell-cast /
- * free-cast / spells-view rows never read the (stripped) source BiText.
+ * free-cast / spells-view rows never read the (stripped) source LocaleText.
  */
 export function grantSourceName(
-  source: { id: string; name?: BiText; ref?: { kind: SrdKind; key: string } },
+  source: { id: string; name?: LocaleText; ref?: { kind: SrdKind; key: string } },
   locale: Locale
 ): string {
   if (source.ref) return localizeSrd(source.ref.kind, source.ref.key, "name", locale);
@@ -59,7 +59,7 @@ export function localizeText(text: LocText, locale: Locale): string {
     return localizeSrd(text.srd.kind, text.srd.key, text.srd.field, locale);
   }
   if ("custom" in text) return localizeCustom(text.custom);
-  if ("ui" in text) return i18n.getFixedT(locale)(text.ui);
+  if ("ui" in text) return i18n.getFixedT(locale)(text.ui, text.params);
   return text.lit[locale];
 }
 
@@ -95,31 +95,22 @@ export function resolveWhy(why: BreakdownWhy, locale: Locale): BreakdownWhyLine 
 // multi-megabyte SRD onto the roster. A guard test pins srd-names to the live data
 // so the names can't drift. (Weapon-property helpers below are pure string maps.)
 
-// English name → BiText (classes).
-const classNameMap = new Map<string, BiText>(
-  CLASS_NAMES.map((n) => [n.en.toLowerCase(), n])
-);
-
-// Races: id → BiText AND English name → BiText.
-const raceNameMap = new Map<string, BiText>();
-for (const { id, name } of RACE_NAMES) {
-  raceNameMap.set(id, name);
-  raceNameMap.set(name.en.toLowerCase(), name);
-}
-
-// Backgrounds: id → BiText AND English name → BiText.
-const backgroundNameMap = new Map<string, BiText>();
-for (const { id, name } of BACKGROUND_NAMES) {
-  backgroundNameMap.set(id, name);
-  backgroundNameMap.set(name.en.toLowerCase(), name);
-}
-
-// Subclasses: kebab-case id → BiText AND English name → BiText — so the roster /
-// sheets display "College of Lore" instead of the raw "college-of-lore" srdId.
-const subclassNameMap = new Map<string, BiText>();
-for (const { id, name } of SUBCLASS_NAMES) {
-  subclassNameMap.set(id.toLowerCase(), name);
-  subclassNameMap.set(name.en.toLowerCase(), name);
+// Each kind's lookup: id → LocaleText AND English name → LocaleText (so the roster /
+// sheets display "College of Lore" instead of the raw "college-of-lore" srdId).
+// Rebuilt when srd-names hands back a new entry list (another locale's names
+// arrived); otherwise the same Map serves every call.
+const nameMaps = new WeakMap<ReadonlyArray<NamedEntry>, Map<string, LocaleText>>();
+function nameMap(entries: ReadonlyArray<NamedEntry>): Map<string, LocaleText> {
+  let map = nameMaps.get(entries);
+  if (!map) {
+    map = new Map();
+    for (const { id, name } of entries) {
+      map.set(id.toLowerCase(), name);
+      map.set(name[SOURCE_LOCALE].toLowerCase(), name);
+    }
+    nameMaps.set(entries, map);
+  }
+  return map;
 }
 
 /**
@@ -127,8 +118,8 @@ for (const { id, name } of SUBCLASS_NAMES) {
  * Falls back to the original string if no match found.
  */
 export function localizeClassName(name: string, locale: Locale): string {
-  const biText = classNameMap.get(name.toLowerCase());
-  return biText?.[locale] ?? name;
+  const text = nameMap(classNames()).get(name.toLowerCase());
+  return text?.[locale] ?? name;
 }
 
 /**
@@ -136,8 +127,8 @@ export function localizeClassName(name: string, locale: Locale): string {
  * Falls back to the original string if no match found.
  */
 export function localizeRaceName(nameOrId: string, locale: Locale): string {
-  const biText = raceNameMap.get(nameOrId.toLowerCase());
-  return biText?.[locale] ?? nameOrId;
+  const text = nameMap(raceNames()).get(nameOrId.toLowerCase());
+  return text?.[locale] ?? nameOrId;
 }
 
 /**
@@ -166,8 +157,8 @@ export function localizeCharacterIdentity(
  * Falls back to the original string if no match found.
  */
 export function localizeBackgroundName(nameOrId: string, locale: Locale): string {
-  const biText = backgroundNameMap.get(nameOrId.toLowerCase());
-  return biText?.[locale] ?? nameOrId;
+  const text = nameMap(backgroundNames()).get(nameOrId.toLowerCase());
+  return text?.[locale] ?? nameOrId;
 }
 
 /**
@@ -176,8 +167,8 @@ export function localizeBackgroundName(nameOrId: string, locale: Locale): string
  * so a raw srdId never leaks into the UI.
  */
 export function localizeSubclassName(nameOrId: string, locale: Locale): string {
-  const biText = subclassNameMap.get(nameOrId.toLowerCase());
-  if (biText) return biText[locale];
+  const text = nameMap(subclassNames()).get(nameOrId.toLowerCase());
+  if (text) return text[locale];
   // Honest fallback: title-case the kebab-case id ("college-of-lore" → "College
   // Of Lore") so an unmapped homebrew/setting subclass still reads as a label.
   return nameOrId

@@ -124,7 +124,9 @@ import { castEconomySlot, withMetamagicDuration } from "@/lib/play/metamagic";
 import { activateActionState, applyActionConcentration } from "./action-state-commit";
 import {
   asRitualAction,
+  encounterRunning,
   executionFor,
+  spendsOncePerTurnUse,
   TURN_EXECUTION,
   type ActionExecution,
 } from "@/lib/play/cast-execution";
@@ -368,11 +370,35 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     return combat.spellSlotCastTurnKey === key ? combat.spellSlotCastsThisTurn : 0;
   }
 
+  /** Whether a fight is on for the open sheet; outside one the economy only logs. */
+  function inEncounter(): boolean {
+    const combat = useCombatStore.getState();
+    return encounterRunning({
+      sharedEncounter:
+        sheetEncounter(
+          useCombatStatusStore.getState().status,
+          useCharacterStore.getState().character?.id ?? null
+        ) !== null,
+      soloRound: combat.round,
+      soloInitiative: combat.initiative,
+    });
+  }
+
+  /** The recovery cadence of a live tracker (`"per-turn"` for Sneak Attack). */
+  function trackerRecovery(trackerId: string): string | undefined {
+    const live = useCharacterStore.getState().character;
+    return live
+      ? resolveTrackers(live).find((entry) => entry.id === trackerId)?.recovery
+      : undefined;
+  }
+
   function spellSlotExpenditureAvailable(): boolean {
-    return spellSlotExpenditureCount() < 1;
+    return !inEncounter() || spellSlotExpenditureCount() < 1;
   }
 
   function commitSpellSlotExpenditure(): (() => boolean) | null {
+    // Outside a fight there is no turn to hold the one-slot-per-turn count.
+    if (!inEncounter()) return () => true;
     const key = currentTurnKey();
     return key ? useCombatStore.getState().commitSpellSlotCast(key) : null;
   }
@@ -1853,8 +1879,10 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       : null;
     // A spent reaction DISABLES every reaction CTA ("Used" — the CTA grammar),
     // so this is unreachable from the UI — a silent defensive bail ("never
-    // trust the view"), not a redundant "already used" toast.
-    if (useCombatStore.getState().reactionUsed) return;
+    // trust the view"), not a redundant "already used" toast. Outside a fight the
+    // reaction is only logged: it never spends, so it never waits for End Turn.
+    const fight = inEncounter();
+    if (fight && useCombatStore.getState().reactionUsed) return;
     if (!(await confirmConcentrationBreak(action))) return;
     if (expendsSpellSlot && !spellSlotExpenditureAvailable()) {
       showSpellSlotExpenditureLimit();
@@ -1908,6 +1936,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               : true;
           };
           if (
+            fight &&
             !markReactionUsed(action.id, outcomeOccurrenceId, applyResolution?.outcomes)
           ) {
             revertPaymentBoundary();
@@ -1961,7 +1990,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             () => {
               undoRegains();
               // Only undo reaction status — selections are unaffected (resetReaction).
-              resetReaction();
+              if (fight) resetReaction();
               // Restore EXACTLY what was deducted (the same amount).
               refundSpends(spends);
               // SURGICAL concentration restore (mirrors `commitCastOption`'s reverse).
@@ -1971,12 +2000,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             },
             applyResolution,
             () => {
-              if (useCombatStore.getState().reactionUsedId !== action.id) return false;
+              if (fight && useCombatStore.getState().reactionUsedId !== action.id)
+                return false;
               return revertPaymentBoundary();
             }
           );
         },
-        { turnScoped: true }
+        { turnScoped: fight }
       ) === null
     )
       return;
@@ -2005,6 +2035,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // bail reason travels out on a holder object (a captured `let` would be narrowed
     // to its initial value by the closure-blind flow analysis).
     const bail: { message: string | null } = { message: null };
+    const fight = inEncounter();
     if (
       registerUndoableToast(
         { message },
@@ -2012,7 +2043,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (!guardLifeState()) return null;
           const cs = useCharacterStore.getState();
           let undoDebit: () => void;
-          if (spend.kind === "tracker") {
+          if (
+            spend.kind === "tracker" &&
+            !spendsOncePerTurnUse(trackerRecovery(spend.trackerId), fight)
+          ) {
+            // A once-per-turn use outside a fight: logged, not spent.
+            undoDebit = () => {};
+          } else if (spend.kind === "tracker") {
             const trackerId = spend.trackerId;
             if (!liveTrackerAffordable(trackerId, 1)) {
               bail.message = t("combat.noUsesRemaining");
@@ -2048,7 +2085,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             useCharacterStore.getState().removeLogEntry(loggedId);
           };
         },
-        { turnScoped: true }
+        { turnScoped: fight }
       ) === null
     ) {
       if (bail.message) showToast({ message: bail.message, duration: 2000 });
@@ -2067,6 +2104,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       option: option.name,
       name: action.name,
     });
+    // Outside a fight the once-per-turn use is only logged, never spent.
+    const fight = inEncounter();
+    const spends = spendsOncePerTurnUse(trackerRecovery(SNEAK_ATTACK_TRACKER_ID), fight);
     if (
       registerUndoableToast(
         { message },
@@ -2074,8 +2114,8 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           if (!guardLifeState()) return null;
           const cs = useCharacterStore.getState();
           // The once-per-turn use is the ONLY bail reason — a depleted tracker.
-          if (!liveTrackerAffordable(SNEAK_ATTACK_TRACKER_ID, 1)) return null;
-          cs.useTracker(SNEAK_ATTACK_TRACKER_ID, 1);
+          if (spends && !liveTrackerAffordable(SNEAK_ATTACK_TRACKER_ID, 1)) return null;
+          if (spends) cs.useTracker(SNEAK_ATTACK_TRACKER_ID, 1);
           const loggedId = cs.logEvent({
             kind: "rider-use",
             action: action.nameLoc,
@@ -2083,11 +2123,12 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
             effect: "damage",
           });
           return () => {
-            useCharacterStore.getState().restoreTracker(SNEAK_ATTACK_TRACKER_ID, 1);
+            if (spends)
+              useCharacterStore.getState().restoreTracker(SNEAK_ATTACK_TRACKER_ID, 1);
             useCharacterStore.getState().removeLogEntry(loggedId);
           };
         },
-        { turnScoped: true }
+        { turnScoped: fight }
       ) === null
     ) {
       showToast({ message: t("combat.noUsesRemaining"), duration: 2000 });
@@ -2702,7 +2743,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
-    const execution = executionFor(action, intent?.ritual === true);
+    const execution = executionFor(action, intent?.ritual === true, inEncounter());
     if (!execution) return;
     const executable = execution.ritual ? asRitualAction(action) : action;
     prepareResolution(

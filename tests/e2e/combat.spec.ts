@@ -15,6 +15,7 @@
  */
 
 import { test, expect, type Page, type Locator } from "@playwright/test";
+import { startSoloFight } from "./surfaces";
 
 /** The CONCENTRATION status badge on the turn altar's status ledge (the BG3-style
  *  badge row): the gold badge wearing the concentrated-on spell's name, a button
@@ -253,6 +254,8 @@ test.describe("Combat live-play loop (cockpit)", () => {
   }) => {
     await page.goto("/characters/scn-barbarian-extra-attack?tab=play");
     await expect(page.getByText("Vokka, Berserker").first()).toBeVisible();
+    // The per-turn gates hold inside a fight; outside one the economy only logs.
+    await startSoloFight(page);
 
     const actionToken = page.locator('.econ-tok[data-kind="action"]');
     const greataxe = page.getByRole("button", { name: /^(Attack|Used): Greataxe/ });

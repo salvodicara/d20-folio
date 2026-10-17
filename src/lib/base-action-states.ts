@@ -3,11 +3,25 @@
  * [Action]": until the start of your next turn, attack rolls against you have
  * Disadvantage and you make Dexterity saving throws with Advantage). Taking the
  * action lights the state; it ends by itself at the declared turn edge. Like
- * `BASE_ACTIONS`, an engine-authored bilingual table, not catalogue data.
+ * `BASE_ACTIONS`, its words live in the `rule` catalogue under the action's key:
+ * the state is named as the action, and its clauses key under its grants.
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import type { BiText } from "@/data/types";
+import { srdText, type LocText } from "@/lib/loc-text";
+
+/** A base action's `rule` catalogue key (`base-dash` → `action.dash`). */
+export function baseActionKey(id: string): string {
+  return `action.${id.replace(/^base-/, "")}`;
+}
+
+/** A base action's catalogue text: its `name`, `effect` or `trigger`. */
+export function baseActionText(
+  id: string,
+  field: "name" | "effect" | "trigger"
+): LocText {
+  return srdText("rule", baseActionKey(id), field);
+}
 
 type TurnBoundaryWhileActive = Extract<Grant, { type: "while-active" }> & {
   duration: { kind: "turn-boundary"; phase: "turn-start" | "turn-end"; turns: number };
@@ -25,25 +39,10 @@ export const BASE_ACTION_STATES: ReadonlyArray<BaseActionState> = [
     grant: {
       type: "while-active",
       activeKey: "base-dodge",
-      label: { en: "Dodge", it: "Schivata" },
       duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
       grants: [
-        {
-          type: "incoming-attack-disadvantage",
-          description: {
-            en: "Attacks against you have Disadvantage (Dodge)",
-            it: "Gli attacchi contro di te hanno Svantaggio (Schivata)",
-          },
-        },
-        {
-          type: "advantage-on",
-          rollType: "save",
-          vs: "dex",
-          description: {
-            en: "Dexterity saving throws (Dodge)",
-            it: "Tiri salvezza su Destrezza (Schivata)",
-          },
-        },
+        { type: "incoming-attack-disadvantage" },
+        { type: "advantage-on", rollType: "save", vs: "dex" },
       ],
     },
   },
@@ -62,11 +61,17 @@ export function resolveBaseActionStateSources(
   activeKeys: ReadonlySet<string>
 ): GrantSource[] {
   return BASE_ACTION_STATES.filter((state) => activeKeys.has(state.grant.activeKey)).map(
-    (state) => ({ id: state.actionId, grants: [state.grant] })
+    (state) => ({
+      id: state.actionId,
+      ref: { kind: "rule", key: baseActionKey(state.actionId) },
+      label: baseActionText(state.actionId, "name"),
+      grants: [state.grant],
+    })
   );
 }
 
-/** The bilingual name behind a base-action state key, for log lines and labels. */
-export function baseActionStateName(key: string): BiText | undefined {
-  return BASE_ACTION_STATES.find((state) => state.grant.activeKey === key)?.grant.label;
+/** The name behind a base-action state key, for log lines and labels. */
+export function baseActionStateName(key: string): LocText | undefined {
+  const state = BASE_ACTION_STATES.find((s) => s.grant.activeKey === key);
+  return state ? baseActionText(state.actionId, "name") : undefined;
 }
