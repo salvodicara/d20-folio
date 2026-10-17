@@ -115,3 +115,113 @@ export function itemTradeLogEvent(
 ): CombatEvent {
   return { kind: "item-trade", trade, item: srdText("equipment", itemId, "name"), cp };
 }
+
+type ItemList = "weapons" | "equipment";
+type ItemRef = CharacterDoc["character"][ItemList][number];
+
+/** One sale: the sheet after it, and what the undo needs to put back. */
+export interface Sale {
+  doc: CharacterDoc;
+  list: ItemList;
+  idx: number;
+  itemId: string;
+  cp: number;
+  delta: CurrencyDelta;
+  /** The row as it was before the sale. */
+  ref: ItemRef;
+  /** True when the sale took the last one and the row left the sheet. */
+  removed: boolean;
+  /** The removed copy's counters (`session.itemResources`), to restore on undo. */
+  resources?: NonNullable<CharacterDoc["session"]["itemResources"]>[string];
+}
+
+function moveCoins(currency: Currency, delta: CurrencyDelta, sign: 1 | -1): Currency {
+  const next = { ...currency };
+  for (const [coin, amount] of Object.entries(delta)) {
+    const key = coin as CurrencyUnit;
+    next[key] = Math.max(0, next[key] + sign * amount);
+  }
+  return next;
+}
+
+const withList = (doc: CharacterDoc, list: ItemList, refs: ItemRef[]): CharacterDoc => ({
+  ...doc,
+  character: { ...doc.character, [list]: refs },
+});
+
+/**
+ * Sell ONE of the row at `idx` (one piece of a stack, the last one drops the row) at
+ * half its catalogue price; null for homebrew, a catalogue item without a list price
+ * (magic items) or a sale worth less than a copper.
+ */
+export function sellOne(
+  doc: CharacterDoc,
+  list: ItemList,
+  idx: number,
+  lookup: (id: string) => SrdEquipmentData | undefined
+): Sale | null {
+  const ref = doc.character[list][idx];
+  if (!ref || "custom" in ref) return null;
+  const entry = lookup(ref.srdId);
+  const cp = entry ? salePriceCp(entry) : 0;
+  const delta = saleDelta(cp);
+  if (!delta) return null;
+  const quantity = ref.quantity ?? 1;
+  const removed = quantity <= 1;
+  const refs = [...doc.character[list]] as ItemRef[];
+  if (removed) refs.splice(idx, 1);
+  else refs[idx] = { ...ref, quantity: quantity - 1 };
+  const instanceId = "instanceId" in ref ? ref.instanceId : undefined;
+  const resources =
+    removed && instanceId ? doc.session.itemResources?.[instanceId] : undefined;
+  const itemResources = resources
+    ? Object.fromEntries(
+        Object.entries(doc.session.itemResources ?? {}).filter(
+          ([id]) => id !== instanceId
+        )
+      )
+    : doc.session.itemResources;
+  const next = withList(doc, list, refs);
+  return {
+    doc: {
+      ...next,
+      session: {
+        ...next.session,
+        currency: moveCoins(doc.session.currency, delta, 1),
+        ...(itemResources ? { itemResources } : {}),
+      },
+    },
+    list,
+    idx,
+    itemId: ref.srdId,
+    cp,
+    delta,
+    ref,
+    removed,
+    ...(resources ? { resources } : {}),
+  };
+}
+
+/** Undo a {@link sellOne} on the sheet as it is now: the item back, the coins out. */
+export function unsellOne(doc: CharacterDoc, sale: Sale): CharacterDoc {
+  const refs = [...doc.character[sale.list]] as ItemRef[];
+  if (sale.removed) refs.splice(Math.min(sale.idx, refs.length), 0, sale.ref);
+  else {
+    const current = refs[sale.idx];
+    if (current) refs[sale.idx] = { ...current, quantity: (current.quantity ?? 0) + 1 };
+  }
+  const instanceId = "instanceId" in sale.ref ? sale.ref.instanceId : undefined;
+  const next = withList(doc, sale.list, refs);
+  return {
+    ...next,
+    session: {
+      ...next.session,
+      currency: moveCoins(doc.session.currency, sale.delta, -1),
+      ...(sale.resources && instanceId
+        ? {
+            itemResources: { ...doc.session.itemResources, [instanceId]: sale.resources },
+          }
+        : {}),
+    },
+  };
+}

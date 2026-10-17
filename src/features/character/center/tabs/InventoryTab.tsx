@@ -51,6 +51,10 @@ import { ArmorCard } from "./inventory/ArmorCard";
 import { GearCard } from "./inventory/GearCard";
 import { inventoryItemDisplayName } from "./inventory/inventory-card-helpers";
 import { useItemResourceSpend } from "@/features/character/useItemResourceSpend";
+import { sellItem } from "@/features/character/center/purchase-offer";
+import { sheetInEncounter } from "@/features/character/center/sheet-in-encounter";
+import { armorChange } from "@/lib/play/armor-donning";
+import { useToastStore } from "@/stores/toastStore";
 
 type CurrencyKey = "gp" | "sp" | "cp" | "pp" | "ep";
 // Order = highest→lowest denomination, ep last. The displayed abbreviation is
@@ -341,6 +345,16 @@ export function InventoryTab() {
     [t]
   );
 
+  // Selling one at half price (SRD): undoable, logged (`purchase-offer`).
+  const handleSellWeapon = useCallback(
+    (weapon: WeaponRowVM) => sellItem("weapons", weapon.idx, weapon.name, t),
+    [t]
+  );
+  const handleSellEquipment = useCallback(
+    (item: ItemRowVM) => sellItem("equipment", item.idx, item.name, t),
+    [t]
+  );
+
   const updateWeaponField = useCallback(
     (idx: number, field: string, value: ItemFieldValue) => {
       const store = useCharacterStore.getState();
@@ -467,35 +481,58 @@ export function InventoryTab() {
     });
   }, []);
 
-  const toggleEquip = useCallback((idx: number) => {
-    const store = useCharacterStore.getState();
-    const char = store.character;
-    if (!char) return;
-    const equipCopy = [...char.character.equipment];
-    const ref = equipCopy[idx];
-    if (!ref) return;
-    equipCopy[idx] = { ...ref, equipped: !(ref.equipped ?? false) };
-    const effectiveEquipment = effectiveEquipmentForItemResources(
-      equipCopy,
-      char.session.itemResources
-    );
-    const newAC = computeAC(
-      effectiveEquipment,
-      char.character.abilityScores,
-      getEquipment,
-      char.character.features
-    );
-    const nextCharacter = {
-      ...char,
-      character: { ...char.character, equipment: equipCopy, ac: newAC },
-    };
-    store.setCharacter(nextCharacter);
-    if (isHeavyArmorEquipped(effectiveEquipment, getEquipment)) {
-      for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
-        store.setActiveFeature(key, false);
+  const toggleEquip = useCallback(
+    (idx: number) => {
+      const store = useCharacterStore.getState();
+      const char = store.character;
+      if (!char) return;
+      const equipCopy = [...char.character.equipment];
+      const ref = equipCopy[idx];
+      if (!ref) return;
+      const equipping = !(ref.equipped ?? false);
+      equipCopy[idx] = { ...ref, equipped: equipping };
+      const effectiveEquipment = effectiveEquipmentForItemResources(
+        equipCopy,
+        char.session.itemResources
+      );
+      const newAC = computeAC(
+        effectiveEquipment,
+        char.character.abilityScores,
+        getEquipment,
+        char.character.features
+      );
+      const nextCharacter = {
+        ...char,
+        character: { ...char.character, equipment: equipCopy, ac: newAC },
+      };
+      store.setCharacter(nextCharacter);
+      if (isHeavyArmorEquipped(effectiveEquipment, getEquipment)) {
+        for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
+          store.setActiveFeature(key, false);
+        }
       }
-    }
-  }, []);
+      // SRD don / doff time as the reason line; in a fight, say it is no one-action
+      // change. Never blocks: the toggle above already applied (override everywhere).
+      const change = armorChange(
+        "custom" in ref ? ref.armorCategory : getEquipment(ref.srdId)?.armorCategory,
+        equipping,
+        sheetInEncounter()
+      );
+      const row = view?.armor.find((r) => r.idx === idx);
+      if (change && row) {
+        const time =
+          change.time === "utilize"
+            ? t("equipment.armorTimeUtilize")
+            : t("equipment.armorTimeMinutes", { count: change.time });
+        const key = `equipment.${change.verb}${change.tooSlowForFight ? "Fight" : ""}Toast`;
+        useToastStore.getState().showToast({
+          message: t(key, { name: row.name, time }),
+          duration: 6_000,
+        });
+      }
+    },
+    [t, view]
+  );
 
   const updateCurrency = useCallback((key: CurrencyKey, value: number) => {
     const store = useCharacterStore.getState();
@@ -580,6 +617,7 @@ export function InventoryTab() {
                 enchantOptions={view.enchantOptions}
                 onToggle={onToggle}
                 onDelete={handleDeleteWeapon}
+                onSell={handleSellWeapon}
                 onUpdateField={updateWeaponField}
               />
             ))}
@@ -602,6 +640,7 @@ export function InventoryTab() {
                 locale={locale}
                 onToggle={(_, open) => onToggle(item.rowId, open)}
                 onDelete={handleDeleteEquipment}
+                onSell={handleSellEquipment}
                 onUpdateField={updateEquipmentField}
                 onToggleEquip={toggleEquip}
                 onToggleAttune={toggleAttunement}
@@ -628,6 +667,7 @@ export function InventoryTab() {
                 locale={locale}
                 onToggle={(_, open) => onToggle(item.rowId, open)}
                 onDelete={handleDeleteEquipment}
+                onSell={handleSellEquipment}
                 onUpdateField={updateEquipmentField}
                 onUse={handleUseItem}
                 onToggleEquip={toggleEquip}

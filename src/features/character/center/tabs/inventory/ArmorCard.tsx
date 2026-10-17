@@ -9,7 +9,7 @@
  */
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Trash2, Sparkles, Check, Shield, Zap, Weight, Coins } from "lucide-react";
+import { Trash2, Sparkles, Check, Shield, Zap, Weight, Coins, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
@@ -25,6 +25,7 @@ import type { Locale } from "@/lib/locale";
 import type { ItemRowVM } from "@/lib/views/inventory-view";
 import type { ItemResourceVM } from "@/lib/views/item-resource-view";
 import { QuantityEditor } from "./QuantityEditor";
+import { SellButton } from "./SellButton";
 import { ChargeUse } from "./ChargeUse";
 import { itemSeal } from "./item-seal";
 import type { ItemFieldValue } from "./WeaponCard";
@@ -34,6 +35,8 @@ import { itemResourceCardFragment } from "./item-resource-card-fragment";
 export interface ArmorCardCallbacks {
   onToggle: (id: string, open: boolean) => void;
   onDelete: (vm: ItemRowVM) => void;
+  /** Sell one at half its list price (priced catalogue rows only). */
+  onSell?: (vm: ItemRowVM) => void;
   onUpdateField: (idx: number, field: string, value: ItemFieldValue) => void;
   onToggleEquip: (idx: number) => void;
   onToggleAttune: (idx: number) => void;
@@ -57,6 +60,7 @@ export const ArmorCard = memo(function ArmorCard({
   locale,
   onToggle,
   onDelete,
+  onSell,
   onUpdateField,
   onToggleEquip,
   onToggleAttune,
@@ -104,6 +108,17 @@ export const ArmorCard = memo(function ArmorCard({
   const facts = [
     acValue
       ? { label: t("equipment.ac"), value: acValue, icon: Shield }
+      : { label: "", value: undefined },
+    // SRD don / doff time: equipping is never blocked, the time is said here.
+    vm.donDoff
+      ? {
+          label: t("equipment.donDoff"),
+          value:
+            vm.donDoff.don === "utilize"
+              ? t("equipment.donDoffUtilize")
+              : t("equipment.donDoffMinutes", vm.donDoff),
+          icon: Clock,
+        }
       : { label: "", value: undefined },
     vm.charges
       ? {
@@ -231,6 +246,7 @@ export const ArmorCard = memo(function ArmorCard({
           />
         </div>
       )}
+      {onSell && <SellButton cp={vm.saleCp} onSell={() => onSell(vm)} />}
       {isPlay && vm.notes && <p className="uc-note">{vm.notes}</p>}
     </UniversalCard>
   );

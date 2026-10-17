@@ -15,6 +15,8 @@ import {
   purseCp,
   saleDelta,
   salePriceCp,
+  sellOne,
+  unsellOne,
 } from "@/lib/play/purchase";
 import { adjustCurrency } from "@/lib/play/material-cost";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -178,5 +180,77 @@ describe("the coins a price names, and its log line", () => {
       item: { srd: { kind: "equipment", key: "chain-mail", field: "name" } },
       cp: 7500,
     });
+  });
+});
+
+describe("selling one item off the sheet", () => {
+  const doc = (
+    equipment: CharacterDoc["character"]["equipment"],
+    weapons: CharacterDoc["character"]["weapons"] = []
+  ): CharacterDoc => ({
+    ...MOCK_CHARACTER,
+    character: { ...MOCK_CHARACTER.character, equipment, weapons },
+    session: { ...MOCK_CHARACTER.session, currency: purse({ gp: 1 }), itemResources: {} },
+  });
+
+  it("drops the last one and adds half its price to the purse", () => {
+    const sale = sellOne(
+      doc([{ srdId: "chain-mail", equipped: true }]),
+      "equipment",
+      0,
+      getEquipment
+    );
+    if (!sale) throw new Error("no sale");
+    expect(sale.itemId).toBe("chain-mail");
+    expect(sale.cp).toBe(salePriceCp(item("chain-mail")));
+    expect(sale.doc.character.equipment).toEqual([]);
+    // 1 gp + 37 gp 5 sp.
+    expect(sale.doc.session.currency).toEqual(purse({ gp: 38, sp: 5 }));
+  });
+
+  it("takes one piece off a stack and leaves the rest", () => {
+    // A Longsword lists 15 gp: one sells for 7 gp 5 sp.
+    const sale = sellOne(
+      doc([], [{ srdId: "longsword", quantity: 2 }]),
+      "weapons",
+      0,
+      getEquipment
+    );
+    expect(sale?.doc.character.weapons).toEqual([{ srdId: "longsword", quantity: 1 }]);
+    expect(sale?.doc.session.currency).toEqual(purse({ gp: 8, sp: 5 }));
+  });
+
+  it("undoing the sale puts back the item, its counters and the coins", () => {
+    const start = doc([
+      { srdId: "rope", quantity: 1 },
+      { srdId: "chain-mail", equipped: true, instanceId: "chain-1" },
+    ]);
+    const counters = { itemId: "chain-mail", instanceId: "chain-1" } as never;
+    start.session.itemResources = { "chain-1": counters };
+    const sale = sellOne(start, "equipment", 1, getEquipment);
+    if (!sale) throw new Error("no sale");
+    expect(sale.doc.session.itemResources).toEqual({});
+    const back = unsellOne(sale.doc, sale);
+    expect(back.character.equipment).toEqual(start.character.equipment);
+    expect(back.session.currency).toEqual(start.session.currency);
+    expect(back.session.itemResources).toEqual(start.session.itemResources);
+  });
+
+  it("does not sell a homebrew item, an unpriced magic item, or a worthless one", () => {
+    expect(
+      sellOne(
+        doc([{ custom: true, name: "Lucky stone", instanceId: "stone-1" }]),
+        "equipment",
+        0,
+        getEquipment
+      )
+    ).toBeNull();
+    expect(
+      sellOne(doc([{ srdId: "bag-of-holding" }]), "equipment", 0, getEquipment)
+    ).toBeNull();
+    // A Torch lists 1 cp: half of it is no coin at all.
+    expect(
+      sellOne(doc([{ srdId: "torch", quantity: 4 }]), "equipment", 0, getEquipment)
+    ).toBeNull();
   });
 });

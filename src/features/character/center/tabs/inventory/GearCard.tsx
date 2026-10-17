@@ -30,6 +30,7 @@ import type { Locale } from "@/lib/locale";
 import type { ItemRowVM } from "@/lib/views/inventory-view";
 import type { ItemResourceVM } from "@/lib/views/item-resource-view";
 import { QuantityEditor } from "./QuantityEditor";
+import { SellButton } from "./SellButton";
 import { ChargeUse } from "./ChargeUse";
 import { itemSeal } from "./item-seal";
 import type { ItemFieldValue } from "./WeaponCard";
@@ -39,6 +40,8 @@ import { itemResourceCardFragment } from "./item-resource-card-fragment";
 export interface GearCardCallbacks {
   onToggle: (id: string, open: boolean) => void;
   onDelete: (vm: ItemRowVM) => void;
+  /** Sell one at half its list price (priced catalogue rows only). */
+  onSell?: (vm: ItemRowVM) => void;
   onUpdateField: (idx: number, field: string, value: ItemFieldValue) => void;
   onUse: (vm: ItemRowVM) => void;
   onToggleEquip: (idx: number) => void;
@@ -63,6 +66,7 @@ export const GearCard = memo(function GearCard({
   locale,
   onToggle,
   onDelete,
+  onSell,
   onUpdateField,
   onUse,
   onToggleEquip,
@@ -358,6 +362,7 @@ export const GearCard = memo(function GearCard({
           />
         </div>
       )}
+      {onSell && <SellButton cp={vm.saleCp} onSell={() => onSell(vm)} />}
       {isPlay && vm.notes && <p className="uc-note">{vm.notes}</p>}
     </UniversalCard>
   );

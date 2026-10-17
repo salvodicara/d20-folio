@@ -10,7 +10,7 @@
  *   <PickerRow leading={…} name={…} meta={…} trailing={…} />     // folio .pick-row
  */
 import type { ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { Coins, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Icon } from "@/components/ui/icon";
@@ -151,12 +151,15 @@ export function PickerDetailFooter({
   onBack,
   addLabel,
   quantity,
+  buy,
 }: {
   alreadyAdded: boolean;
   onAdd: () => void;
   /** When provided, renders a secondary Back button beside Add. */
   onBack?: () => void;
   addLabel?: ReactNode;
+  /** A priced item's one-tap purchase (add + pay); disabled with its reason. */
+  buy?: { label: ReactNode; blockedReason?: string; onBuy: () => void };
   /** D55 — omit for a type with no quantity concept (spells, features, feats). */
   quantity?: {
     value: number;
@@ -202,6 +205,24 @@ export function PickerDetailFooter({
           </Button>
         )}
       </div>
+      {buy && !alreadyAdded && (
+        <div className="mt-2">
+          <Button
+            variant="secondary"
+            block
+            disabled={!!buy.blockedReason}
+            onClick={buy.onBuy}
+          >
+            <Icon as={Coins} size="sm" decorative />
+            {buy.label}
+          </Button>
+          {buy.blockedReason && (
+            <p className="mt-1 text-center text-xs text-text-secondary">
+              {buy.blockedReason}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
