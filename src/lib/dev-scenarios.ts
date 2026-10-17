@@ -140,6 +140,8 @@ export interface ScenarioSpec {
    * S8 start-of-turn regen banner, death-save states). Clamped to [0, max].
    */
   sessionHpCurrent?: number;
+  /** Starting coins (default: the mock's purse) — for the buy / sell surfaces. */
+  currency?: SessionState["currency"];
   /**
    * Active session CONDITIONS to start with (SRD condition ids, e.g.
    * `["stunned"]`) — seeds `session.conditions`. For the condition-projection
@@ -356,6 +358,7 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     activeFeatures: spec.activeFeatures ?? [],
     grantBundleChoices: { ...(spec.grantBundleChoices ?? {}) },
     logEntries: [],
+    ...(spec.currency ? { currency: { ...spec.currency } } : {}),
     // An at-rest Find Familiar summon (Companions rail + statblock modal).
     ...(spec.sessionFamiliar
       ? {
@@ -540,6 +543,22 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     ],
     exercises:
       "Priced material components: casting Revivify offers '−300 gp' from the purse (a diamond the spell consumes; undoable, logged as 'Spent 300 gp on Revivify'); casting Augury only reminds of its 25 gp tokens (kept).",
+  },
+  purchase: {
+    name: "Bram, Market Day",
+    raceId: "human",
+    classId: "fighter",
+    level: 3,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 10, CHA: 10 },
+    weapons: [{ srdId: "longsword", quantity: 1 }],
+    equipment: [
+      { srdId: "leather-armor", equipped: true },
+      { srdId: "shield", equipped: false },
+    ],
+    currency: { pp: 3, gp: 50, ep: 0, sp: 0, cp: 0 },
+    exercises:
+      "Coins on purchase: adding Chain Mail (75 gp) from the catalogue offers 'Pay 75 gp'; paying spends the 50 gp and breaks the 3 pp (5 gp back), undoable and logged. The Longsword sells for half (7 gp 5 sp). Armor rows show their don / doff time; equipping says it.",
   },
   "bg3-projection": {
     // The BG3 can/cannot projection — the condition surfaces. A Cleric 5
