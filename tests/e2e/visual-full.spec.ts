@@ -1,11 +1,11 @@
 /**
- * E2E: Comprehensive visual regression — EVERY surface × {dark,light} ×
- * {desktop,mobile} × {en,it}.
+ * E2E: Comprehensive visual regression — EVERY surface × {desktop,mobile} ×
+ * {en,it} (the app is dark only, owner 2026-10-16).
  *
  * This is the sole baseline suite: it asserts a pixel baseline
  * for the COMPLETE user-facing surface inventory — every page, sheet tab + edit
  * variant, create-wizard step, modal/popover/drawer, and HP-driven scenario
- * state — in both themes, both default viewports, and both locales. It reuses
+ * state — in both default viewports and both locales. It reuses
  * the SAME surface model as the polish harness (`./surfaces.ts`), so the two can
  * never drift: one place declares a surface, both suites cover it.
  *
@@ -15,15 +15,14 @@
  * `--update-snapshots`, or with `VISUAL=1`. Without the flag every test skips:
  * the navigate-only "crash smoke" it used to run duplicated the a11y + i18n
  * sweeps, which drive the same SURFACES manifest (with prepare) across both
- * themes, both locales, and both viewports (2026-08-05 test audit).
+ * locales and both viewports (2026-08-05 test audit).
  *
  * ── Variant matrix ───────────────────────────────────────────────────────────
- * Per the task brief, the asserted matrix per surface is the CROSS of
- * {dark,light} × {desktop,mobile} × {en,it} — i.e. these eight variant keys:
- *   en/it × dark/light × desktop/mobile.
+ * The asserted matrix per surface is the CROSS of {desktop,mobile} × {en,it},
+ * dark theme — i.e. the four VARIANTS keys.
  * For surfaces with a restricted `variants` allowlist (overlays / wizard steps /
  * the tablet-band HP states — whose trigger only exists at certain breakpoints),
- * we intersect the eight with that allowlist so we never try to screenshot a
+ * we intersect the four with that allowlist so we never try to screenshot a
  * control that isn't present (e.g. the header HP popover only exists in the
  * 721–1180 tablet band, so those surfaces assert on the tablet pair instead).
  *
@@ -47,73 +46,14 @@ import {
 } from "./surfaces";
 import { shouldAssertSnapshots } from "./visual-gate";
 
-/**
- * The comprehensive asserted matrix: {dark,light} × {desktop,mobile} × {en,it}.
- * These are the eight default-set variant keys (the tablet pair is reserved for
- * the interactive-HP surfaces and is added back per-surface via the allowlist
- * intersection below).
- */
-const FULL_MATRIX = new Set([
-  "en-dark-desktop",
-  "en-light-desktop",
-  "en-dark-mobile",
-  // light-mobile + dark-desktop complete the EN cross …
-  "en-light-mobile",
-  "en-dark-desktop",
-  // … and the IT cross.
-  "it-dark-desktop",
-  "it-light-desktop",
-  "it-dark-mobile",
-  "it-light-mobile",
-]);
-
-/**
- * `surfaces.ts` ships five default full-page variant keys (it omits
- * en-light-mobile / it-dark-desktop / it-light-mobile to keep the human-review
- * shot count down). The comprehensive baseline wants the full 8-cell cross, so
- * we extend VARIANTS with the missing four desktop/mobile cells here. The tablet
- * pair (en-light-tablet / it-dark-tablet) already exists in VARIANTS.
- */
-const DESKTOP_VP = { width: 1440, height: 900 } as const;
-const MOBILE_VP = { width: 390, height: 844 } as const;
-
-const EXTRA_VARIANTS: typeof VARIANTS = [
-  {
-    key: "en-light-mobile",
-    locale: "en",
-    theme: "light",
-    device: "mobile",
-    viewport: MOBILE_VP,
-  },
-  {
-    key: "it-dark-desktop",
-    locale: "it",
-    theme: "dark",
-    device: "desktop",
-    viewport: DESKTOP_VP,
-  },
-  {
-    key: "it-light-mobile",
-    locale: "it",
-    theme: "light",
-    device: "mobile",
-    viewport: MOBILE_VP,
-  },
-];
-
-/** All known variants (the shared set + the four we add for the full cross). */
-const ALL_VARIANTS = [
-  ...VARIANTS,
-  ...EXTRA_VARIANTS.filter((e) => !VARIANTS.some((v) => v.key === e.key)),
-];
+/** The comprehensive asserted matrix: {desktop,mobile} × {en,it}, dark. */
+const FULL_MATRIX = new Set(VARIANTS.map((v) => v.key));
 
 // Pixel lane ONLY (2026-08-05 test audit): without VISUAL=1 this suite used to
-// run navigate-only "crash smoke" — but a11y.spec (every surface × both themes,
-// with prepare) and i18n-sweep.spec (every surface × both locales × both
+// run navigate-only "crash smoke" — but a11y.spec (every surface, with prepare) and i18n-sweep.spec (every surface × both locales × both
 // viewports, with prepare) already drive the exact same manifest, so the
 // no-flag pass duplicated ~344 navigations per run for no unique signal.
-// Blind spot: theme×locale×viewport CROSS combos those sweeps don't pair
-// (e.g. it+light+mobile) get no ambient crash smoke. The skip lives in a
+// The skip lives in a
 // beforeEach so it fires BEFORE the page fixture is built — an ambient run
 // never pays 344 browser-context setups just to skip.
 test.beforeEach(() => {
@@ -135,7 +75,7 @@ for (const surface of SURFACES) {
     if (FULL_MATRIX.has(k) || k.endsWith("-tablet")) keys.add(k);
   }
 
-  for (const variant of ALL_VARIANTS.filter((v) => keys.has(v.key))) {
+  for (const variant of VARIANTS.filter((v) => keys.has(v.key))) {
     const name = `${surface.slug} — ${variant.locale} ${variant.theme} @ ${variant.device}`;
     test(name, async ({ page }) => {
       await page.setViewportSize(variant.viewport);

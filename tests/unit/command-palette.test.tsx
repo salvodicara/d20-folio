@@ -74,8 +74,6 @@ beforeEach(() => {
   listCampaignsMock.mockResolvedValue([]);
   openReportMock.mockReset();
   importTriggerMock.mockReset();
-  // Deterministic starting theme (the store is a singleton across tests).
-  useUIStore.setState({ theme: "dark" });
   // No signed-in user by default → the campaign fetch is skipped.
   useAuthStore.setState({ user: null });
 });
@@ -249,14 +247,14 @@ describe("CommandPalette — quick actions (OWN-25c)", () => {
     expect(
       screen.getByRole("option", { name: /report a bug or idea/i })
     ).toBeInTheDocument();
-    // Theme + language are NOT in the bounded empty state…
+    // The language toggle is NOT in the bounded empty state…
     expect(
-      screen.queryByRole("option", { name: /switch to (light|dark) theme/i })
+      screen.queryByRole("option", { name: /switch to (english|italian)/i })
     ).not.toBeInTheDocument();
-    // …they reveal on type (the full Actions group fans out).
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "theme" } });
+    // …it reveals on type (the full Actions group fans out).
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "language" } });
     expect(
-      screen.getByRole("option", { name: /switch to (light|dark) theme/i })
+      screen.getByRole("option", { name: /switch to (english|italian)/i })
     ).toBeInTheDocument();
   });
 
@@ -275,15 +273,6 @@ describe("CommandPalette — quick actions (OWN-25c)", () => {
     ).toBeInTheDocument();
   });
 
-  it("the theme action toggles the stored theme in place", () => {
-    renderPalette();
-    expect(useUIStore.getState().theme).toBe("dark");
-    // Theme reveals on type (bounded launcher); then toggling works in place.
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "theme" } });
-    fireEvent.click(screen.getByRole("option", { name: /switch to light theme/i }));
-    expect(useUIStore.getState().theme).toBe("light");
-  });
-
   it("the new-character action navigates to creation", async () => {
     renderPalette();
     fireEvent.click(screen.getByRole("option", { name: /create a character/i }));
@@ -293,14 +282,14 @@ describe("CommandPalette — quick actions (OWN-25c)", () => {
 
   it("filters actions by an EN/IT keyword", () => {
     renderPalette();
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "tema" } });
-    // The Italian keyword surfaces the theme action even with an English UI label.
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "lingua" } });
+    // The Italian keyword surfaces the language action even with an English UI label.
     expect(
-      screen.getByRole("option", { name: /switch to (light|dark) theme/i })
+      screen.getByRole("option", { name: /switch to (english|italian)/i })
     ).toBeInTheDocument();
-    // …and not the language action.
+    // …and not an unrelated action.
     expect(
-      screen.queryByRole("option", { name: /switch to (english|italian)/i })
+      screen.queryByRole("option", { name: /create a character/i })
     ).not.toBeInTheDocument();
   });
 

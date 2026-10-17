@@ -210,26 +210,6 @@ describe("wizard pager cluster (fb3 mobile navigation)", () => {
   });
 });
 
-describe("on-art SURF exclusion covers the wizard surfaces", () => {
-  it(".lvl-pick is a SURF (chip ink never takes the backdrop treatment)", () => {
-    // The flip exclusion `:not(:where(… .lvl-pick …))` must name .lvl-pick.
-    expect(css).toMatch(
-      /\.on-art-scope :is\([^)]*\.text-text-secondary[^)]*\):not\( :where\([^)]*\.lvl-pick/
-    );
-  });
-
-  it("the wizard entry/card/hero surfaces are SURFs too", () => {
-    for (const cls of [".wiz-entry", ".wiz-card", ".wiz-hero", ".wiz-abil"]) {
-      expect(
-        new RegExp(
-          `\\.on-art-scope :is\\([^)]*\\.text-text-secondary[^)]*\\):not\\( :where\\([^)]*${cls.replace(".", "\\.")}`
-        ).test(css),
-        `${cls} missing from the SURF exclusion`
-      ).toBe(true);
-    }
-  });
-});
-
 describe("review scaling rows are REAL surfaces (owner round-2, 2026-06-11)", () => {
   it("`.lvl-card.lvl-scaling` is the warning-voiced opaque surface — never a translucent tint floating on the art", () => {
     expect(css).toMatch(

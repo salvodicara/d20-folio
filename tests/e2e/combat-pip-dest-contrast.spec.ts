@@ -74,7 +74,7 @@ async function shot(page: Page, name: string): Promise<void> {
 }
 
 test.describe("combat pip dest-chip — label text clears AA in both themes", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     test(`${theme}: cp-dest-chip label ≥ 4.5:1 on the chip`, async ({ page }) => {
       await bootDestChip(page, theme);
       const { color, bg } = await measure(page);
@@ -97,7 +97,7 @@ test.describe("combat pip dest-chip — label text clears AA in both themes", ()
 });
 
 test.describe("combat pip dest-chip — compact mobile glyph and round clear AA", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     test(`${theme}: compact cp-dest-lead ink ≥ 4.5:1 on the chip`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       const chip = await bootDestChip(page, theme);
@@ -138,7 +138,7 @@ test.describe("combat pip dest-chip — compact mobile glyph and round clear AA"
 });
 
 test.describe("combat pip multi-count — glyph and number clear AA in both themes", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     test(`${theme}: mobile cp-count ink ≥ 4.5:1 on the chip`, async ({ page }) => {
       await page.setViewportSize({ width: 390, height: 844 });
       await seedUI(page, theme, "play");

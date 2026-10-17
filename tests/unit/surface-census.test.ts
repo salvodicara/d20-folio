@@ -18,8 +18,8 @@ const VALID_ENTRY: SurfaceCensusEntry = {
   state: "resting",
   variants: [
     { locale: "it", theme: "dark", device: "desktop" },
-    { locale: "en", theme: "light", device: "desktop" },
-    { locale: "it", theme: "light", device: "mobile" },
+    { locale: "en", theme: "dark", device: "desktop" },
+    { locale: "it", theme: "dark", device: "mobile" },
     { locale: "en", theme: "dark", device: "mobile" },
   ],
   authority: "DESIGN.md",
@@ -122,8 +122,8 @@ describe("surface census contract", () => {
     ]);
     expect(PAIRWISE).toEqual([
       { locale: "it", theme: "dark", device: "desktop" },
-      { locale: "en", theme: "light", device: "desktop" },
-      { locale: "it", theme: "light", device: "mobile" },
+      { locale: "en", theme: "dark", device: "desktop" },
+      { locale: "it", theme: "dark", device: "mobile" },
       { locale: "en", theme: "dark", device: "mobile" },
     ]);
     expect(SURFACE_CENSUS).toHaveLength(100);

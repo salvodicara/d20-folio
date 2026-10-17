@@ -18,7 +18,7 @@ test.beforeAll(() => {
 });
 
 const VP = { width: 1440, height: 900 } as const;
-const THEMES = ["dark", "light"] as const;
+const THEMES = ["dark"] as const;
 
 const SCENARIOS = [
   { id: "scn-life-cleric", name: "Mirovel" },

@@ -68,12 +68,6 @@
       html {
         background-color: #0c0a07;
       }
-      /* Light-theme page background — applied pre-paint by the boot script below
-         (mirrors the inline dark default) so a light-theme user never sees the
-         dark page flash through before the stylesheet/store hydrate. */
-      html[data-theme="light"] {
-        background-color: #948f84;
-      }
       /* App-shell boot splash (PWA app-shell pattern): the gilt d20 mark, shown on
          the page background while the JS bundle downloads/parses on a cold start —
          the longest unavoidable blank. It lives INSIDE #root, so React replaces it
@@ -87,9 +81,6 @@
         background-color: #0c0a07;
         /* Its own pre-React layer, above everything; the in-app loader sits at --z-boot. */
         z-index: 9999;
-      }
-      html[data-theme="light"] .boot-splash {
-        background-color: #948f84;
       }
       .boot-splash svg {
         width: 76px;
@@ -115,29 +106,16 @@
       }
     </style>
     <title>d20 Folio</title>
-    <!-- Anti-FOUC boot: apply the persisted theme + the OS motion preference to
-         <html> BEFORE first paint, so a light-theme / reduced-motion user never
-         sees the hard-coded dark+auto default flash then restyle. Theme reads the
-         persisted Zustand store ("d20-folio-ui"); motion has no in-app toggle —
-         `data-motion` is a pure mirror of the OS prefers-reduced-motion setting.
-         Kept tiny + dependency-free; uiStore takes over once the bundle hydrates. -->
+    <!-- Anti-FOUC boot: apply the OS motion preference to <html> BEFORE first
+         paint, so a reduced-motion user never sees the hard-coded auto default
+         flash then restyle. The app is dark only: data-theme="dark" is static on
+         <html>. Motion has no in-app toggle — `data-motion` is a pure mirror of
+         the OS prefers-reduced-motion setting. Kept tiny + dependency-free;
+         uiStore takes over once the bundle hydrates. -->
     <script>
       (function () {
         try {
-          var root = document.documentElement;
-          var theme = "dark";
-          var raw = localStorage.getItem("d20-folio-ui");
-          if (raw) {
-            var s = JSON.parse(raw).state || {};
-            if (s.theme) theme = s.theme;
-          }
-          if (theme === "system") {
-            theme = window.matchMedia("(prefers-color-scheme: dark)").matches
-              ? "dark"
-              : "light";
-          }
-          root.setAttribute("data-theme", theme);
-          root.setAttribute(
+          document.documentElement.setAttribute(
             "data-motion",
             window.matchMedia("(prefers-reduced-motion: reduce)").matches
               ? "reduced"

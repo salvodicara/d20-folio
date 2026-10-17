@@ -15,7 +15,7 @@
  *     chain's ⟲ coin — the same seam as ⌘Z.
  *  4. No collision — the coin never overlaps the bottom nav, and a live toast
  *     never overlaps the coin.
- *  5. axe-clean on the play tab (both themes) with the chain bloomed.
+ *  5. axe-clean on the play tab (dark) with the chain bloomed.
  *
  * The Signet is the MOBILE home, so every test runs under the `mobile` project.
  */
@@ -205,7 +205,7 @@ test("no collision: the seal coin clears the bottom nav, and a live toast never 
   }
 });
 
-for (const theme of ["dark", "light"] as Theme[]) {
+for (const theme of ["dark"] as Theme[]) {
   test(`axe: the play tab is clean with the Signet chain bloomed [${theme}]`, async ({
     page,
   }) => {
