@@ -27,7 +27,12 @@ import type { BreakdownLine } from "@/lib/value-breakdown";
 import type { RiderVM } from "@/lib/views/rider-view";
 import { localeDistance, localeRangePair } from "@/lib/utils";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
-import { localizeWeaponCategory, localizeWeaponProperty } from "@/lib/views/srd-i18n";
+import {
+  localizeText,
+  localizeWeaponCategory,
+  localizeWeaponProperty,
+} from "@/lib/views/srd-i18n";
+import { uiText } from "@/lib/loc-text";
 
 /** The chip kinds the facts block renders (category → properties → masteries). */
 export type WeaponChipKind = "category" | "property" | "mastery";
@@ -200,9 +205,10 @@ function masteryLabel(token: string, locale: Locale): string {
     : token;
 }
 
-/** The DC word for the mastery-chip suffix — a fixed bilingual token composed at
- *  the presenter edge (the `OFFHAND_SUFFIX` pattern). */
-const DC_WORD: Record<Locale, string> = { en: "DC", it: "CD" };
+/** The DC word for the mastery-chip suffix (the `stats.dc` ui key). */
+function dcWord(locale: Locale): string {
+  return localizeText(uiText("stats.dc"), locale);
+}
 
 /**
  * RA-13 — append the engine-resolved number to a number-bearing mastery chip:
@@ -216,7 +222,7 @@ function masteryChipLabel(
   locale: Locale
 ): string {
   if (id === "topple" && detail?.toppleDc != null) {
-    return `${base} · ${DC_WORD[locale]} ${detail.toppleDc}`;
+    return `${base} · ${dcWord(locale)} ${detail.toppleDc}`;
   }
   if (id === "graze" && detail?.grazeDamage != null) {
     return `${base} · ${detail.grazeDamage}`;

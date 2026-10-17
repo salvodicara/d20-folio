@@ -490,7 +490,7 @@ export function PlayTab() {
         mode: "advantage",
         rollType: "attack",
         vs: "next-attack",
-        description: { lit: { en: "Next attack", it: "Prossimo attacco" } },
+        description: uiText("combat.nextAttack"),
       });
     }
     // PS-J — ONLY a blanket clause (no `scope`) may become the card's verdict; a

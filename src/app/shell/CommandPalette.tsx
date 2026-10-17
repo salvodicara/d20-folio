@@ -103,7 +103,7 @@ import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
 import { triggerCharacterImport } from "@/features/roster/import-trigger";
 import { openReport } from "@/features/report/open-report";
 import type { CampaignDoc } from "@/types/campaign";
-import { nextLocale, type Locale } from "@/lib/locale";
+import { nextLocale } from "@/lib/locale";
 
 export interface CommandPaletteProps {
   open: boolean;
@@ -148,12 +148,6 @@ const CURATED_QUICK = ["act:new-char", "act:new-camp", "act:report"];
  * ever becoming the whole group.
  */
 const GLOSS_HIT_CAP = 3;
-
-/** The palette's language-switch label, per target language. */
-const LANGUAGE_SWITCH_LABEL: Record<Locale, string> = {
-  en: "palette.actionLangToEn",
-  it: "palette.actionLangToIt",
-};
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const { t } = useTranslation();
@@ -385,7 +379,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       {
         key: "act:lang",
         run: () => toggleLanguage(),
-        label: t(LANGUAGE_SWITCH_LABEL[nextLocale(locale)]),
+        label: t(`palette.actionLangTo_${nextLocale(locale)}`),
         icon: Languages,
         terms: ["language", "lingua", "english", "inglese", "italian", "italiano"],
       },

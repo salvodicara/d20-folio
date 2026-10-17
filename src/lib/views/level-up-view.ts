@@ -26,7 +26,6 @@
  * §1.3 + §3.3). Raw NUMBERS (costs, picks-needed, HP, slot counts) stay raw; the
  * UI formats them at the edge via `t`.
  */
-import type { LocaleText } from "@/data/types";
 import { getClassTable, getFeaturesAtLevel, classFeatureIndex } from "@/data/classes";
 import { getExpandedSpellsThroughLevel } from "@/lib/expanded-spells";
 import type { Locale } from "@/lib/locale";
@@ -35,7 +34,8 @@ import { proseCorpus } from "@/lib/search";
 import { localizeSrd, hasSrd, type SrdKind } from "@/i18n/resolver";
 import { listFightingStyles, hasFightingStyleFeat } from "@/lib/fighting-style";
 import { listMasterableWeapons } from "@/lib/weapon-mastery-pick";
-import { localizeWeaponMastery } from "@/lib/views/srd-i18n";
+import { localizeText, localizeWeaponMastery } from "@/lib/views/srd-i18n";
+import { uiText } from "@/lib/loc-text";
 import { listMetamagicOptions } from "@/lib/metamagic-pick";
 import { eligibleInvocations } from "@/lib/invocation-pick";
 import { eligibleManeuvers } from "@/lib/maneuver-pick";
@@ -253,19 +253,14 @@ export function subclassReveal(
 
 /** The six ability codes, in canonical order. */
 const ABILITY_CODES = ["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const;
-/** ASI ability-tile labels (app abbreviations, not SRD LocaleText). */
-const ABILITY_LABELS: Record<string, LocaleText> = {
-  STR: { en: "STR", it: "FOR" },
-  DEX: { en: "DEX", it: "DES" },
-  CON: { en: "CON", it: "COS" },
-  INT: { en: "INT", it: "INT" },
-  WIS: { en: "WIS", it: "SAG" },
-  CHA: { en: "CHA", it: "CAR" },
-};
-
-/** The localized abbreviation for an ability code (the ASI tiles). */
+/**
+ * The localized abbreviation for an ability code (the ASI tiles), from the
+ * `abilities.<code>_short` ui key; an unknown code shows itself.
+ */
 export function abilityLabel(code: string, locale: Locale): string {
-  return ABILITY_LABELS[code]?.[locale] ?? code;
+  return (ABILITY_CODES as readonly string[]).includes(code)
+    ? localizeText(uiText(`abilities.${code}_short`), locale)
+    : code;
 }
 
 /** The ordered ability codes the ASI tiles render. */

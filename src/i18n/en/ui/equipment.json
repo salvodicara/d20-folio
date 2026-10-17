@@ -73,6 +73,11 @@
     "enchantNone": "None",
     "emptyTitle": "Your pack is empty",
     "emptyBlurb": "Weapons, armor, potions, and magic items you add will live here, with their damage, AC, charges, and weight.",
-    "noItemsMatch": "No items match your search."
+    "noItemsMatch": "No items match your search.",
+    "coinAmount": {
+      "gp": "{{amount}} gp",
+      "sp": "{{amount}} sp",
+      "cp": "{{amount}} cp"
+    }
   }
 }

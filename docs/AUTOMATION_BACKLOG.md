@@ -240,7 +240,7 @@ appears on a weapon row.
       locale-free) through the ONE `masteryNumbers` helper and flow through the ONE
       `buildWeaponFacts` seam, so the combat card and the inventory card agree by construction
       (incl. the off-hand row and `extraMasteries` — Battering Roots' Topple carries the DC too).
-      The "DC"/"CD" word is composed at the presenter edge (the `OFFHAND_SUFFIX` pattern), so RA-13
+      The "DC"/"CD" word is composed at the presenter edge from the `stats.dc` key, so RA-13
       adds NO i18n keys. Vex/Sap/Slow/Push stay reminder chips (they need the un-modeled enemy).
       Regression: the RA-13 blocks in `smart-tracker.test.ts` + `weapon-facts.test.tsx` (Nick
       free-economy, Topple/Graze resolved chips, cross-surface parity) + the off-hand-cap block in

@@ -77,6 +77,8 @@ import { ALL_TOOL_CHOICE_KINDS } from "@/data/background-equipment";
 import { CLASS_ROLE_IDS } from "@/features/creation/steps/class-roles";
 import { ALGO_ICONS } from "@/components/shared/icon-registry";
 import { CURRENCY_METALS } from "@/components/shared/currency";
+import { PRICE_COINS } from "@/lib/coin-price";
+import { LOCALES } from "@/lib/locale";
 
 // ── Flatten both locale catalogues once (the real shard-merge) ───────────────
 const enKeys = new Set(flatEntries(mergedUi("en") as Json).keys());
@@ -288,6 +290,20 @@ const FAMILIES: readonly Family[] = [
     label: "equipment.currencyAbbr.${currency}",
     source: "CURRENCY_METALS (@/components/shared/currency)",
     keys: () => CURRENCY_METALS.map((u) => `equipment.currencyAbbr.${u}`),
+  },
+  {
+    // A material cost's logged rider: `uiText(\`equipment.coinAmount.${coin}\`)`.
+    label: "equipment.coinAmount.${coin}",
+    source: "PRICE_COINS (@/lib/coin-price)",
+    keys: () => PRICE_COINS.map((c) => `equipment.coinAmount.${c}`),
+  },
+
+  // ── the language switch (settings menu + palette) ───────────────────────────
+  {
+    label: "settings.switchTo_${locale} + palette.actionLangTo_${locale}",
+    source: "LOCALES (@/lib/locale)",
+    keys: () =>
+      LOCALES.flatMap((l) => [`settings.switchTo_${l}`, `palette.actionLangTo_${l}`]),
   },
 
   // ── magicItems.* (rarity + type) ────────────────────────────────────────────

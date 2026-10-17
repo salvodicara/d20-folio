@@ -22,6 +22,7 @@ import {
   type InferExactSchema,
 } from "@/lib/exact-schema";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
+import { ALL_REACTION_TRIGGERS } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
 import { LOCALES, type Locale } from "@/lib/locale";
@@ -1975,6 +1976,10 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("CHA"),
       ]),
       trigger: LOCALE_TEXT_SCHEMA,
+      /** A structured trigger token, worded by `combat.reactionTrigger_<token>`. */
+      reactionTrigger: unionSchema(
+        ALL_REACTION_TRIGGERS.map((token) => literalSchema(token))
+      ),
     }
   ),
   "manifested-weapon": objectSchema(
