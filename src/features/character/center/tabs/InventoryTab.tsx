@@ -482,7 +482,7 @@ export function InventoryTab() {
   }, []);
 
   const toggleEquip = useCallback(
-    (idx: number) => {
+    (idx: number, name?: string) => {
       const store = useCharacterStore.getState();
       const char = store.character;
       if (!char) return;
@@ -518,20 +518,19 @@ export function InventoryTab() {
         equipping,
         sheetInEncounter()
       );
-      const row = view?.armor.find((r) => r.idx === idx);
-      if (change && row) {
+      if (change && name) {
         const time =
           change.time === "utilize"
             ? t("equipment.armorTimeUtilize")
             : t("equipment.armorTimeMinutes", { count: change.time });
         const key = `equipment.${change.verb}${change.tooSlowForFight ? "Fight" : ""}Toast`;
         useToastStore.getState().showToast({
-          message: t(key, { name: row.name, time }),
+          message: t(key, { name, time }),
           duration: 6_000,
         });
       }
     },
-    [t, view]
+    [t]
   );
 
   const updateCurrency = useCallback((key: CurrencyKey, value: number) => {

@@ -44,7 +44,7 @@ export interface GearCardCallbacks {
   onSell?: (vm: ItemRowVM) => void;
   onUpdateField: (idx: number, field: string, value: ItemFieldValue) => void;
   onUse: (vm: ItemRowVM) => void;
-  onToggleEquip: (idx: number) => void;
+  onToggleEquip: (idx: number, name?: string) => void;
   onToggleAttune: (idx: number) => void;
   onSpendCharge: (vm: ItemRowVM) => void;
   onSpendResource: (vm: ItemRowVM, resource: ItemResourceVM) => void;

@@ -38,7 +38,8 @@ export interface ArmorCardCallbacks {
   /** Sell one at half its list price (priced catalogue rows only). */
   onSell?: (vm: ItemRowVM) => void;
   onUpdateField: (idx: number, field: string, value: ItemFieldValue) => void;
-  onToggleEquip: (idx: number) => void;
+  /** `name` (the row's display name) lets the don / doff line name the armor. */
+  onToggleEquip: (idx: number, name?: string) => void;
   onToggleAttune: (idx: number) => void;
   onSpendCharge: (vm: ItemRowVM) => void;
   onSpendResource: (vm: ItemRowVM, resource: ItemResourceVM) => void;
@@ -178,7 +179,7 @@ export const ArmorCard = memo(function ArmorCard({
             variant={vm.equipped ? "primary" : "secondary"}
             onClick={(e) => {
               e.stopPropagation();
-              onToggleEquip(vm.idx);
+              onToggleEquip(vm.idx, displayName);
             }}
             title={vm.equipped ? t("equipment.unequip") : t("equipment.equip")}
           >
