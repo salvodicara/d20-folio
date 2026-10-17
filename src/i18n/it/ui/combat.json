@@ -531,6 +531,12 @@
       "critHint": "dadi raddoppiati"
     },
     "unarmedUnburdenedDie": "{{die}} se non impugni armi o Scudo",
-    "gainTempHp": "Ottieni {{amount}} PF temporanei"
+    "gainTempHp": "Ottieni {{amount}} PF temporanei",
+    "reactionTrigger_meleeAttackDamagesYou": "un'altra creatura ti infligge danni con un tiro per colpire in mischia",
+    "reactionTrigger_meleeAttackMissesYou": "una creatura ti manca con un tiro per colpire in mischia",
+    "nextAttack": "Prossimo attacco",
+    "extraDamage": "Danni extra",
+    "offhandName": "{{name}} (mano secondaria)",
+    "pactProneNote": "{{rider}}: spendi uno slot Magia del Patto; bersaglio Prono (Enorme o più piccolo)"
   }
 }

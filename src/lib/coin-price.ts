@@ -1,5 +1,6 @@
 /** The coins a price is named in. */
-export type PriceCoin = "cp" | "sp" | "gp";
+export const PRICE_COINS = ["cp", "sp", "gp"] as const;
+export type PriceCoin = (typeof PRICE_COINS)[number];
 
 /** The next coin up from a price's coin; each is worth ten of the one before. */
 export const NEXT_COIN = { cp: "sp", sp: "gp", gp: "pp" } as const;

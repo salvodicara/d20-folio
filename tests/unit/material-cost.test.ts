@@ -138,11 +138,11 @@ describe("paying gold from the purse", () => {
     ).toEqual({
       kind: "rider-use",
       action: { srd: { kind: "spell", key: "revivify", field: "name" } },
-      rider: { lit: { en: "300 gp", it: "300 mo" } },
+      rider: { ui: "equipment.coinAmount.gp", params: { amount: 300 } },
       effect: "generic",
     });
     expect(
       materialCostLogEvent({ spellId: "gentle-repose", gp: 0.02, consumed: true })
-    ).toMatchObject({ rider: { lit: { en: "2 cp", it: "2 mr" } } });
+    ).toMatchObject({ rider: { ui: "equipment.coinAmount.cp", params: { amount: 2 } } });
   });
 });

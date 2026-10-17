@@ -1,19 +1,21 @@
 /**
- * GUARD: no display text in shipped rules data (`src/data/**`, plus the name
- * tables and engine modules listed in `ALSO_COVERED`).
+ * GUARD: no inline display text anywhere in `src/` outside the catalogues.
  *
- * Rules data stores ids and mechanics; its words live in the catalogues
- * (`src/i18n/<locale>/srd/<kind>.json`), keyed by those ids, so a new language
- * is a new catalogue folder and never a data edit. This guard fails if inline
- * text reappears in the data layer:
- *   - a `LocaleText` leaf: an object literal with string values under two or
- *     more registered locale codes (`{ en: "…", it: "…" }`), OR
+ * Code stores ids and mechanics; its words live in the catalogues
+ * (`src/i18n/<locale>/srd/<kind>.json` for rules text, `src/i18n/<locale>/ui/*.json`
+ * for app chrome), keyed by those ids, so a new language is a new catalogue
+ * folder and never a code edit. This guard fails if inline text reappears in any
+ * source file:
+ *   - a `LocaleText` leaf: an object literal with text under two or more
+ *     registered locale codes (`{ en: "…", it: "…" }`, or per-locale template
+ *     functions `{ en: (x) => "…", it: (x) => "…" }`), OR
  *   - a locale-code property (`en:`, `it:`, any registered code) whose value is
  *     a natural-language string (multi-word).
  * The locale codes come from the registry (`@/lib/locale`), so a third language
  * is caught without touching this file.
  *
- * Bypass: `types.ts` declares the `LocaleText` type (no string values).
+ * Not scanned: `src/i18n/**`, the catalogues and their resolver, where the words
+ * live. There is no allowlist: a file that needs words adds a catalogue key.
  *
  * AST-driven (TS compiler API), so it can't be spelled around by formatting.
  */
@@ -23,23 +25,7 @@ import ts from "typescript";
 import { LOCALES } from "@/lib/locale";
 import { SRC_ROOT, srcFiles, readSrc } from "./__helpers__/src-files";
 
-const DATA_DIR = resolve(SRC_ROOT, "data");
-
-const BYPASS = new Set(["types.ts"]);
-
-/**
- * Files outside `src/data` that store ids only, too: name tables that hold
- * official names, and engine modules whose words live in the catalogues.
- */
-const ALSO_COVERED = [
-  "components/shared/combat-glossary.ts",
-  "lib/smart-tracker.ts",
-  "lib/condition-effects.ts",
-  "lib/base-action-states.ts",
-  "lib/surprise-state.ts",
-  "lib/wish-state.ts",
-  "lib/light-states.ts",
-].map((f) => resolve(SRC_ROOT, f));
+const I18N_DIR = resolve(SRC_ROOT, "i18n");
 
 const LOCALE_CODES: ReadonlySet<string> = new Set(LOCALES);
 
@@ -59,6 +45,15 @@ function isTextLiteral(
   );
 }
 
+/** A per-locale template function, `(x) => "…"`, whose body is a text literal. */
+function isTextFunction(e: ts.Expression): boolean {
+  return (
+    (ts.isArrowFunction(e) || ts.isFunctionExpression(e)) &&
+    ts.isExpression(e.body) &&
+    isTextLiteral(e.body)
+  );
+}
+
 /** A text literal's words, a template's holes read as one placeholder word. */
 function literalText(e: ts.StringLiteralLike | ts.TemplateExpression): string {
   if (!ts.isTemplateExpression(e)) return e.text;
@@ -74,7 +69,13 @@ function propName(p: ts.ObjectLiteralElementLike): string | undefined {
 
 function offenders(file: string): string[] {
   const text = readSrc(file);
-  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const sf = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS
+  );
   const found: string[] = [];
 
   function lineOf(node: ts.Node): number {
@@ -89,7 +90,7 @@ function offenders(file: string): string[] {
           name !== undefined &&
           LOCALE_CODES.has(name) &&
           ts.isPropertyAssignment(p) &&
-          isTextLiteral(p.initializer)
+          (isTextLiteral(p.initializer) || isTextFunction(p.initializer))
         );
       });
       if (localized.length >= 2) {
@@ -116,17 +117,14 @@ function offenders(file: string): string[] {
   return found;
 }
 
-describe("guard: no display text in shipped rules data (src/data/**) or name tables", () => {
-  // Explicit timeout: whole src/data AST walk (TypeScript compiler API), at risk
+describe("guard: no inline display text in src/ outside the catalogues", () => {
+  // Explicit timeout: whole src AST walk (TypeScript compiler API), at risk
   // of the 5 s default under V8 coverage + parallel load.
-  it("every data file and name table stores ids, never inline text", () => {
+  it("every source file stores ids, never inline text", () => {
     const violations: Record<string, string[]> = {};
-    for (const file of [
-      ...srcFiles({ under: DATA_DIR, exts: [".ts"] }),
-      ...ALSO_COVERED,
-    ]) {
+    for (const file of srcFiles({ under: SRC_ROOT, exts: [".ts", ".tsx"] })) {
       const base = relative(SRC_ROOT, file);
-      if (BYPASS.has(relative(DATA_DIR, file))) continue;
+      if (!relative(I18N_DIR, file).startsWith("..")) continue;
       const found = offenders(file);
       if (found.length) violations[base] = found;
     }

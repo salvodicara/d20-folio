@@ -1,24 +1,33 @@
+import { LOCALES, SOURCE_LOCALE, type Locale } from "@/lib/locale";
+
 /**
  * The "loading content" notice shown while an allowlisted account's pack
  * download keeps failing (the app retries until it lands). It can appear before
- * i18n exists, so it carries its own two strings and reads the language the way
- * i18next does (its stored choice, then the browser's).
+ * i18n exists, so it reads its sentence straight from each locale's tiny `boot`
+ * shard and picks the language the way i18next does (its stored choice, then the
+ * browser's).
  */
-const TEXT = {
-  en: "Loading your content… Folio will keep trying until it arrives.",
-  it: "Contenuti in caricamento… Folio continua a riprovare finché non arrivano.",
-} as const;
+const BOOT_SHARDS = import.meta.glob<{ boot: { packWaiting: string } }>(
+  "../i18n/*/ui/boot.json",
+  { eager: true, import: "default" }
+);
+
+function text(locale: Locale): string {
+  const shard = (code: Locale) => BOOT_SHARDS[`../i18n/${code}/ui/boot.json`];
+  return (shard(locale) ?? shard(SOURCE_LOCALE))?.boot.packWaiting ?? "";
+}
 
 const NOTICE_ID = "folio-pack-waiting";
 
-function language(): keyof typeof TEXT {
+function language(): Locale {
   let stored: string | null = null;
   try {
     stored = localStorage.getItem("i18nextLng");
   } catch {
     // Private mode can deny storage; the browser language decides.
   }
-  return (stored ?? navigator.language).toLowerCase().startsWith("it") ? "it" : "en";
+  const wanted = (stored ?? navigator.language).toLowerCase();
+  return LOCALES.find((code) => wanted.startsWith(code)) ?? SOURCE_LOCALE;
 }
 
 export function showPackWaiting(waiting: boolean): void {
@@ -31,7 +40,7 @@ export function showPackWaiting(waiting: boolean): void {
   const notice = document.createElement("p");
   notice.id = NOTICE_ID;
   notice.setAttribute("role", "status");
-  notice.textContent = TEXT[language()];
+  notice.textContent = text(language());
   Object.assign(notice.style, {
     position: "fixed",
     left: "50%",
