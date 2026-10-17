@@ -64,3 +64,20 @@ one keeps seeing it first; the generated playbook sits beside it until the playe
   plan. A reaction enters it as the one to hold, ready for its trigger.
 - Known gap: Sneak Attack's condition (Advantage or an ally next to the target) is a small table in
   the core until the rider grant declares it.
+
+## Out of combat (exploration), 2026-10-16
+
+`buildCombatPlaybook(character, { mode: "exploration" })` reads the same actions with no action
+economy (owner decision 2026-10-16: actions work outside combat too). Every step sits in the
+`anytime` slot; there is no movement, attack or reaction step and no "one slot spell per turn". The
+plan picks every ready step that applies, highest priority first; only Concentration still binds.
+
+- **Recover HP** (800, when below the maximum): feature uses first (Second Wind, Divine Spark, Lay
+  on Hands), then healing spells from the lowest slot, then consumables (a Potion of Healing spends
+  `{ kind: "item" }`).
+- **Ritual** (600): every levelled ritual the character may cast as one (prepared, or any in a
+  Wizard's spellbook), no slot spent, `+10` minutes.
+- **Checks** (500): Search, Study, Influence, Hide.
+- **Utility cantrips** (400): cantrips that neither damage nor heal (Light, Mage Hand, Guidance).
+- **Short Rest** (300, a reminder with no options): spent Short Rest uses and, when hurt, the Hit
+  Point Dice left.

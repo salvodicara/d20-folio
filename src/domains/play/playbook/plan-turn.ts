@@ -8,33 +8,52 @@
  *     no turn-wide limit: one concentration spell, one spell slot per turn
  *     (SRD 5.2.1 "One Spell with a Spell Slot per Turn").
  *  4. A candidate that loses is listed in `skipped` with the reason.
+ *
+ * Out of combat ({@link planExploration}) there is no turn: every ready step that
+ * applies is picked, and only Concentration (one spell at a time) still binds.
  */
 import {
-  ECONOMY_SLOTS,
-  type EconomySlot,
+  PLAYBOOK_SLOTS,
   type PlanSkipReason,
   type PlaybookLimit,
   type PlaybookPlan,
+  type PlaybookSlot,
   type PlaybookStep,
 } from "./types";
 
 export function planTurn(steps: ReadonlyArray<PlaybookStep>): PlaybookPlan {
+  return plan(steps, {
+    oneStepPerSlot: true,
+    limits: ["one-concentration", "one-slot-spell"],
+  });
+}
+
+/** Everything worth doing now, out of combat: no slots, one Concentration. */
+export function planExploration(steps: ReadonlyArray<PlaybookStep>): PlaybookPlan {
+  return plan(steps, { oneStepPerSlot: false, limits: ["one-concentration"] });
+}
+
+function plan(
+  steps: ReadonlyArray<PlaybookStep>,
+  rules: { oneStepPerSlot: boolean; limits: ReadonlyArray<PlaybookLimit> }
+): PlaybookPlan {
   const candidates = steps
     .filter((s) => s.status === "ready" && (s.slot === "reaction" || s.applies === true))
     .sort(
       (x, y) =>
         y.priority - x.priority ||
-        ECONOMY_SLOTS.indexOf(x.slot) - ECONOMY_SLOTS.indexOf(y.slot) ||
+        PLAYBOOK_SLOTS.indexOf(x.slot) - PLAYBOOK_SLOTS.indexOf(y.slot) ||
         (x.id < y.id ? -1 : x.id > y.id ? 1 : 0)
     );
 
-  const takenSlots = new Set<EconomySlot>();
+  const binding = (l: PlaybookLimit): boolean => rules.limits.includes(l);
+  const takenSlots = new Set<PlaybookSlot>();
   const usedLimits = new Set<PlaybookLimit>();
   const picks: Array<PlaybookPlan["picks"][number]> = [];
   const skipped: Array<{ stepId: string; reason: PlanSkipReason }> = [];
 
   for (const step of candidates) {
-    if (takenSlots.has(step.slot)) {
+    if (rules.oneStepPerSlot && takenSlots.has(step.slot)) {
       skipped.push({ stepId: step.id, reason: "slot-taken" });
       continue;
     }
@@ -45,18 +64,20 @@ export function planTurn(steps: ReadonlyArray<PlaybookStep>): PlaybookPlan {
     }
     const available = step.options.filter((o) => o.available);
     const option = available.find(
-      (o) => !(o.limits ?? []).some((l) => usedLimits.has(l))
+      (o) => !(o.limits ?? []).some((l) => binding(l) && usedLimits.has(l))
     );
     if (!option) {
-      const limit = (available[0]?.limits ?? []).find((l) => usedLimits.has(l));
+      const limit = (available[0]?.limits ?? []).find(
+        (l) => binding(l) && usedLimits.has(l)
+      );
       if (limit) skipped.push({ stepId: step.id, reason: limit });
       continue;
     }
     takenSlots.add(step.slot);
-    for (const l of option.limits ?? []) usedLimits.add(l);
+    for (const l of option.limits ?? []) if (binding(l)) usedLimits.add(l);
     picks.push({ slot: step.slot, stepId: step.id, actionId: option.actionId });
   }
 
-  picks.sort((x, y) => ECONOMY_SLOTS.indexOf(x.slot) - ECONOMY_SLOTS.indexOf(y.slot));
+  picks.sort((x, y) => PLAYBOOK_SLOTS.indexOf(x.slot) - PLAYBOOK_SLOTS.indexOf(y.slot));
   return { picks, skipped };
 }
