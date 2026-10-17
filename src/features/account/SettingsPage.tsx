@@ -1,8 +1,7 @@
 /**
  * SettingsPage — the full `/settings` destination (Phase 6).
  *
- * A PURE VIEW: it reads the shipped preference seams (`useUIStore` theme,
- * `useLocale` language, `authStore` identity) and dispatches to them — the SAME
+ * A PURE VIEW: it reads the shipped preference seams (`useLocale` language, `authStore` identity) and dispatches to them — the SAME
  * seams the Topbar `SettingsDropdown` uses, so there is ONE source of truth and
  * no forked persistence. The dropdown stays the quick-access surface; this is
  * the full page (the rewrite intentionally makes `/settings` a real page, not the
@@ -25,7 +24,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck, LogOut, Palette, Languages } from "lucide-react";
+import { ShieldCheck, LogOut, Languages } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Portrait } from "@/components/shared/Portrait";
 import { Section } from "@/components/shared/Section";
@@ -33,7 +32,6 @@ import { InfoCard } from "@/components/shared/InfoCard";
 import { Segmented } from "@/components/ui/segmented";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useLocale } from "@/hooks/useLocale";
 import { LOCALES, type Locale } from "@/lib/locale";
@@ -78,8 +76,6 @@ export function SettingsPage() {
   const navigate = useNavigate();
 
   // The SAME seams the dropdown uses — no forked state, no new persistence.
-  const theme = useUIStore((s) => s.theme);
-  const setTheme = useUIStore((s) => s.setTheme);
   const { language, setLanguage } = useLocale();
   const isAdmin = useIsAdmin();
   const user = useAuthStore((s) => s.user);
@@ -97,29 +93,12 @@ export function SettingsPage() {
           other hub); the settings form itself sits in a centered, readable column
           under it. */}
       <div className="on-art-scope mx-auto max-w-3xl">
-        {/* ── Appearance: theme · language ──────────────────────────────────── */}
+        {/* ── Appearance: language ──────────────────────────────────── */}
         <Section title={t("settings.appearance")}>
           {/* Seated in the SAME .info-card recipe as the Account card below, so the
-              appearance rows read as a composed tile instead of floating bare on the
-              page (the two .set-rows divide inside the one card). */}
+              appearance row reads as a composed tile instead of floating bare on the
+              page. */}
           <InfoCard>
-            <SettingRow
-              icon={Palette}
-              name={t("settings.theme")}
-              help={t("settings.themeHelp")}
-              control={
-                <Segmented<"dark" | "light" | "system">
-                  aria-label={t("settings.theme")}
-                  value={theme}
-                  onChange={setTheme}
-                  options={[
-                    { value: "dark", label: t("settings.darkMode") },
-                    { value: "light", label: t("settings.lightMode") },
-                    { value: "system", label: t("settings.systemMode") },
-                  ]}
-                />
-              }
-            />
             <SettingRow
               icon={Languages}
               name={t("settings.language")}

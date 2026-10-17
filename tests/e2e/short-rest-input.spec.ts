@@ -19,7 +19,7 @@ async function savedRestState(page: Page) {
 }
 
 for (const locale of ["en", "it"] as const) {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     for (const size of ["desktop", "mobile"] as const) {
       test(`short rest input and persistence: ${locale} ${theme} ${size}`, async ({
         page,

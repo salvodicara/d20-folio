@@ -64,7 +64,7 @@ if (
 }
 
 // jsdom does not implement matchMedia; provide a minimal stub so modules that
-// read it at import time (e.g. uiStore theme handling) work under test.
+// read it at import time (e.g. uiStore motion handling) work under test.
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   window.matchMedia = (query: string) => ({
     matches: false,

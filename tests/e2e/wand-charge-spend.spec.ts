@@ -1,5 +1,5 @@
 /**
- * Wand of Lightning Bolts on the Resources rail, Italian, light theme, desktop and
+ * Wand of Lightning Bolts on the Resources rail, Italian, dark theme, desktop and
  * phone (sweep 2026-10-16). Added from the Inventory and attuned but not yet
  * equipped, its row used to show a greyed spend with no reason. Now the row
  * names the missing step ("Da equipaggiare") and offers no dead control; once
@@ -37,12 +37,12 @@ async function countGap(row: Locator): Promise<number> {
 }
 
 for (const size of ["desktop", "mobile"] as const) {
-  test(`attuned wand: names the missing step, then spends a charge once equipped (it, light, ${size})`, async ({
+  test(`attuned wand: names the missing step, then spends a charge once equipped (it, dark, ${size})`, async ({
     page,
   }) => {
     await page.setViewportSize(size === "desktop" ? DESKTOP : MOBILE);
     await seedLang(page, "it");
-    await seedUI(page, "light", "play");
+    await seedUI(page, "dark", "play");
     await page.goto("/characters/mock-1?tab=inventory");
     await page.getByText("Lyra Voss").first().waitFor({ timeout: 60_000 });
     await freezeMotion(page);

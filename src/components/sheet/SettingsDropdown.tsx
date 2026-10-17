@@ -9,8 +9,8 @@
  * avatar.
  *
  * D17 — the menu and the `/settings` page have SEPARATE purposes (owner, "copy
- * D&D Beyond"): this is an ACCOUNT menu — identity, the two FAST-ACCESS toggles
- * (Theme · Language), then the bridge to the full Settings page, (Admin), and Sign
+ * D&D Beyond"): this is an ACCOUNT menu — identity, the FAST-ACCESS language
+ * toggle, then the bridge to the full Settings page, (Admin), and Sign
  * Out. Everything else (motion, and whatever Settings grows to) lives ONLY on the
  * page, so the two surfaces no longer duplicate the same controls.
  */
@@ -19,19 +19,9 @@ import { useState, useRef } from "react";
 import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import {
-  Globe,
-  MonitorCog,
-  Moon,
-  Sun,
-  Settings,
-  LogOut,
-  ShieldCheck,
-  Bug,
-} from "lucide-react";
+import { Globe, Settings, LogOut, ShieldCheck, Bug } from "lucide-react";
 import { Icon } from "@/components/ui/icon";
 import { Portrait } from "@/components/shared/Portrait";
-import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useLocale } from "@/hooks/useLocale";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -58,8 +48,6 @@ const LANGUAGE_SWITCH_LABEL: Record<Locale, string> = {
 export function SettingsDropdown({ current }: SettingsDropdownProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const theme = useUIStore((s) => s.theme);
-  const setTheme = useUIStore((s) => s.setTheme);
   const { language, toggleLanguage: toggleLang } = useLocale();
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
@@ -76,29 +64,11 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
     setOpen(false);
   }
 
-  const nextTheme = theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
-
-  function cycleTheme() {
-    setTheme(nextTheme);
-    setOpen(false);
-  }
-
   function handleLogout() {
     setOpen(false);
     void signOut();
   }
 
-  // A one-click cycle must name and picture its DESTINATION, not its current
-  // state. Otherwise "Dark Mode" + a moon silently activating Light is a false
-  // affordance; the full Settings page remains the direct three-way chooser.
-  const ThemeIcon =
-    nextTheme === "dark" ? Moon : nextTheme === "light" ? Sun : MonitorCog;
-  const nextThemeLabel =
-    nextTheme === "dark"
-      ? t("settings.useDarkTheme")
-      : nextTheme === "light"
-        ? t("settings.useLightTheme")
-        : t("settings.useSystemTheme");
   const nextLanguageLabel = t(LANGUAGE_SWITCH_LABEL[nextLocale(language)]);
 
   // The visible name (shown on wide screens) must be part of the button's ACCESSIBLE
@@ -179,15 +149,6 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
             >
               <Icon as={Globe} decorative />
               {nextLanguageLabel}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="menu-item"
-              onClick={cycleTheme}
-            >
-              <Icon as={ThemeIcon} decorative />
-              {nextThemeLabel}
             </button>
             <div className="menu-div" role="separator" />
             <button

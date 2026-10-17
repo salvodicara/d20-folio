@@ -13,19 +13,15 @@ import { MemoryRouter } from "react-router";
 
 const {
   navigateMock,
-  setThemeMock,
   setLanguageMock,
   signOutMock,
-  uiState,
   localeState,
   authState,
   isAdminState,
 } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
-  setThemeMock: vi.fn(),
   setLanguageMock: vi.fn(),
   signOutMock: vi.fn(() => Promise.resolve()),
-  uiState: { theme: "dark" },
   localeState: { language: "en" },
   authState: {
     user: { uid: "u1", email: "tester@example.com" },
@@ -42,13 +38,6 @@ vi.mock("react-router", async (importOriginal) => {
 // mock; lib/auth is mocked for the signOut spy.
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 vi.mock("@/lib/auth", () => ({ signOut: signOutMock }));
-vi.mock("@/stores/uiStore", () => ({
-  useUIStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      theme: uiState.theme,
-      setTheme: setThemeMock,
-    }),
-}));
 vi.mock("@/hooks/useLocale", () => ({
   useLocale: () => ({ language: localeState.language, setLanguage: setLanguageMock }),
 }));
@@ -70,10 +59,8 @@ function renderPage() {
 
 beforeEach(() => {
   navigateMock.mockReset();
-  setThemeMock.mockReset();
   setLanguageMock.mockReset();
   signOutMock.mockReset().mockResolvedValue(undefined);
-  uiState.theme = "dark";
   localeState.language = "en";
   authState.user = { uid: "u1", email: "tester@example.com" };
   authState.profile = null;
@@ -92,10 +79,9 @@ describe("SettingsPage", () => {
     expect(screen.queryByRole("heading", { name: /^admin$/i })).not.toBeInTheDocument();
   });
 
-  it("Theme segmented dispatches setTheme", () => {
+  it("has NO theme control (the app is dark only, owner 2026-10-16)", () => {
     renderPage();
-    fireEvent.click(screen.getByRole("button", { name: "Light Mode" }));
-    expect(setThemeMock).toHaveBeenCalledWith("light");
+    expect(screen.queryByText(/theme|mode/i)).not.toBeInTheDocument();
   });
 
   it("Language segmented dispatches setLanguage", () => {

@@ -87,7 +87,7 @@ async function shotEncounterSummary(
   if (prior) await page.setViewportSize(prior);
 }
 
-const THEMES: Theme[] = ["dark", "light"];
+const THEMES: Theme[] = ["dark"];
 
 // ════════════════════════════════════════════════════════════════════════════
 // A. Simple resource tracking in a shared encounter
@@ -203,11 +203,11 @@ test.describe("Combat Chronicle — simple sheet actions in shared encounters", 
   test("slot choice stays reachable on a phone in a shared encounter", async ({
     page,
   }) => {
-    await bootEvokerSheet(page, "light");
+    await bootEvokerSheet(page, "dark");
     await page.setViewportSize({ width: 390, height: 844 });
     const before = await openSpell(page, "Fireball");
     await expect(page.getByRole("button", { name: /^Level 3 slot/ })).toBeInViewport();
-    await shot(page, "A4-slot-choice-mobile-light");
+    await shot(page, "A4-slot-choice-mobile-dark");
     await spendSlot(page, 3, before);
   });
 });

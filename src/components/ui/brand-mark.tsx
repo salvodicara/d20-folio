@@ -15,9 +15,8 @@
  *     italic face, and a synthetic oblique shears ink outside the
  *     background-clip:text paint box (DESIGN.md §3).
  *
- * Tokens (gold-leaf-*, --font-title, --accent-text) are theme-aware via
- * folio.css, so the lockup is AA in both dark and light without per-call
- * colour overrides. The decorative gilt facets carry no semantic colour — the
+ * Tokens (gold-leaf-*, --font-title, --accent-text) come from folio.css, so
+ * the lockup is AA without per-call colour overrides. The decorative gilt facets carry no semantic colour — the
  * accessible name comes from the wordmark text (or `label` on the bare mark).
  *
  * SVG geometry is the DERIVED face-on icosahedron projection (looking straight
@@ -146,29 +145,25 @@ function GiltD20({ px, a11y, className, ...props }: GiltD20Props) {
       {...a11y}
       {...props}
     >
-      {/* Facet stops reference semantic gilt vars (defaulted to the bright
-          gold-leaf ramp; folio.css shifts them toward the DEEP ramp under
-          [data-theme="light"] so the carved 3D read survives on vellum — the
-          bright stops washed out gold-on-gold, the same failure the wordmark
-          already fixed). */}
+      {/* Facet stops on the bright gold-leaf ramp. */}
       <defs>
         <linearGradient id={face} x1="0" y1="0" x2="0.4" y2="1">
-          <stop offset="0" stopColor="var(--gilt-hi, var(--gold-leaf-50))" />
-          <stop offset="0.5" stopColor="var(--gilt-mid, var(--gold-leaf-300))" />
-          <stop offset="1" stopColor="var(--gilt-lo, var(--gold-leaf-700))" />
+          <stop offset="0" stopColor="var(--gold-leaf-50)" />
+          <stop offset="0.5" stopColor="var(--gold-leaf-300)" />
+          <stop offset="1" stopColor="var(--gold-leaf-700)" />
         </linearGradient>
         <linearGradient id={mid} x1="0.2" y1="0" x2="0.7" y2="1">
-          <stop offset="0" stopColor="var(--gilt-mid, var(--gold-leaf-300))" />
-          <stop offset="1" stopColor="var(--gilt-lo, var(--gold-leaf-500))" />
+          <stop offset="0" stopColor="var(--gold-leaf-300)" />
+          <stop offset="1" stopColor="var(--gold-leaf-500)" />
         </linearGradient>
         <linearGradient id={dim} x1="0" y1="0" x2="0.5" y2="1">
-          <stop offset="0" stopColor="var(--gilt-lo, var(--gold-leaf-500))" />
-          <stop offset="1" stopColor="var(--gilt-deep, var(--gold-leaf-900))" />
+          <stop offset="0" stopColor="var(--gold-leaf-500)" />
+          <stop offset="1" stopColor="var(--gold-leaf-900)" />
         </linearGradient>
         <radialGradient id={gem} cx="0.4" cy="0.35" r="0.8">
-          <stop offset="0" stopColor="var(--gilt-hi, var(--gold-leaf-50))" />
-          <stop offset="0.55" stopColor="var(--gilt-mid, var(--gold-leaf-300))" />
-          <stop offset="1" stopColor="var(--gilt-lo, var(--gold-leaf-700))" />
+          <stop offset="0" stopColor="var(--gold-leaf-50)" />
+          <stop offset="0.55" stopColor="var(--gold-leaf-300)" />
+          <stop offset="1" stopColor="var(--gold-leaf-700)" />
         </radialGradient>
         {/* Subtle drop shadow for the "20" numeral — one filter, no dup text. */}
         <filter id={`${uid}-shadow`} x="-20%" y="-20%" width="140%" height="140%">

@@ -5,7 +5,7 @@
  * every spell/feature card. Its TEXT must clear WCAG-AA 4.5:1 in both themes.
  * The saturated `--dmg-*` palette was tuned for chips/icons (3:1 graphic
  * threshold) and FAILED AA as body text for several outcomes (dark: fire 3.98,
- * necrotic 3.62, force 4.68; light: lightning 3.78, acid 3.77, radiant 4.21).
+ * necrotic 3.62, force 4.68).
  *
  * The fix introduced AA-safe `--dmg-*-ink` ON-TEXT variants. This test reads
  * those tokens straight from index.css and asserts each clears 4.5:1 against the
@@ -22,7 +22,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const css = readFileSync(resolve(here, "../../src/index.css"), "utf8");
 
 /** Extract the `[data-theme="<theme>"] { … }` first block body. */
-function themeBlock(theme: "dark" | "light"): string {
+function themeBlock(theme: "dark"): string {
   const start = css.indexOf(`[data-theme="${theme}"]`);
   expect(start, `theme block ${theme} present`).toBeGreaterThan(-1);
   const open = css.indexOf("{", start);
@@ -104,7 +104,7 @@ const CONDITIONS = rampTypes(themeBlock("dark"), "cond");
 
 const AA = 4.5;
 
-describe("both ink ramps are fully derived + symmetric across themes", () => {
+describe("both ink ramps are fully derived", () => {
   for (const [ramp, dark] of [
     ["dmg", INK_TOKENS],
     ["cond", CONDITIONS],
@@ -113,9 +113,6 @@ describe("both ink ramps are fully derived + symmetric across themes", () => {
       // A renamed token must EMPTY-fail here rather than silently shrink every
       // sweep that reads this set — the floor IS the guard on the derivation.
       expect(dark.length).toBeGreaterThan(10);
-    });
-    it(`light declares the same --${ramp}-*-ink ramp as dark`, () => {
-      expect(rampTypes(themeBlock("light"), ramp)).toEqual(dark);
     });
   }
 });
@@ -135,7 +132,7 @@ function mix(a: string, b: string, pct: number): string {
 const SPELL_LEVELS = ["c", "1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
 
 describe("verdict-chip ink tokens clear WCAG-AA", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     // The verdict chip renders on the card surface (surface-1 collapsed,
     // surface-2 when open). The 13% colour tint barely shifts luminance, so we
@@ -178,23 +175,19 @@ const SPELL_SCHOOLS = [
 ] as const;
 
 describe("spell-school enamel chips clear WCAG-AA (both themes, .cmp-verdict math)", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     const textPrimary = readVar(block, "--text-primary");
     const surface1 = readVar(block, "--bg-surface-1");
     const surface2 = readVar(block, "--bg-surface-2");
-    // Dark's `--accent-primary` is `var(--gold-leaf-500)` (not a literal hex),
-    // so resolve the ramp stop directly; light overrides with a literal.
-    const accent =
-      theme === "dark"
-        ? readVar(css, "--gold-leaf-500")
-        : readVar(block, "--accent-primary");
-    // The codex row ground inside the tome: mix(accent 13%, surface-2) dark /
-    // mix(accent 9%, surface-2) light (folio.css `.cmp-tome … .pick-row`).
-    const rowGround =
-      theme === "dark" ? mix(accent, surface2, 13) : mix(accent, surface2, 9);
-    const inkMixPct = theme === "dark" ? 62 : 55;
-    const tintPct = theme === "dark" ? 12 : 18;
+    // `--accent-primary` is `var(--gold-leaf-500)` (not a literal hex), so
+    // resolve the ramp stop directly.
+    const accent = readVar(css, "--gold-leaf-500");
+    // The codex row ground inside the tome: mix(accent 13%, surface-2)
+    // (folio.css `.cmp-tome … .pick-row`).
+    const rowGround = mix(accent, surface2, 13);
+    const inkMixPct = 62;
+    const tintPct = 12;
 
     for (const school of SPELL_SCHOOLS) {
       it(`${theme}: --school-${school} chip text ≥ ${AA}:1 on its tinted chip`, () => {
@@ -214,12 +207,11 @@ describe("spell-school enamel chips clear WCAG-AA (both themes, .cmp-verdict mat
 });
 
 describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
-    // The chip surface is mix(--cond 19%, surface-2) (22% in light). Use the
-    // larger tint as the worst case so the guard is conservative.
+    // The chip surface is mix(--cond 19%, surface-2).
     const surface2 = readVar(block, "--bg-surface-2");
-    const tintPct = theme === "light" ? 22 : 19;
+    const tintPct = 19;
 
     for (const cond of CONDITIONS) {
       it(`${theme}: --cond-${cond}-ink ≥ ${AA}:1 on its chip tint`, () => {
@@ -245,7 +237,7 @@ describe("condition-chip ink tokens clear WCAG-AA on the 19% tint", () => {
  * pinned in its own describe below.
  */
 describe("rules-prose grammar inks clear WCAG-AA on the prose grounds", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     const surfaces = [readVar(block, "--bg-surface-1"), readVar(block, "--bg-surface-2")];
 
@@ -297,7 +289,7 @@ describe("muted/faint text clears WCAG-AA on the DEEPEST recessed surface", () =
   // darker (light: #d6c8a0) and carries muted/faint text (the search-spells
   // placeholder, slot labels, etc.). A latent footgun — assert both clear 4.5:1
   // on --bg-recessed in BOTH themes so a placeholder never silently fails AA.
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     const recessed = readVar(block, "--bg-recessed");
     for (const name of ["--text-muted", "--text-faint"] as const) {
@@ -316,7 +308,7 @@ describe("special emphasis text clears WCAG-AA on the card surfaces", () => {
   // and renders on the card tiers — assert it clears 4.5:1 on surface-2 AND the
   // darker/deeper surface-3 in BOTH themes (it sits far above AA by design; the
   // guard pins that a retune can never drop it below the floor).
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     for (const surf of ["--bg-surface-2", "--bg-surface-3"] as const) {
       it(`${theme}: --text-special ≥ ${AA}:1 on ${surf}`, () => {
@@ -426,7 +418,7 @@ describe("candlelit translucency composite floor (dark --panel-alpha)", () => {
 });
 
 describe("spell-level seal digit ink clears WCAG-AA on the seal body", () => {
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     for (const lvl of SPELL_LEVELS) {
       it(`${theme}: --sl-${lvl}-ink ≥ ${AA}:1 on the seal gem body`, () => {
@@ -511,7 +503,7 @@ describe("combat top-bar dest-chip ink clears WCAG-AA on the carved socket", () 
   );
   expect(bgStops.length, "chip background has ≥1 color stop").toBeGreaterThan(0);
 
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     it(`${theme}: .cp-dest-chip text ≥ ${AA}:1 on its darkest background stop`, () => {
       const block = themeBlock(theme);
       const ink = resolveColor(colorValue, block);
@@ -567,14 +559,14 @@ describe("the statblock plaque grounds every rules-text ink at AA", () => {
    *  an unscoped `.mon-ref` one, which wins over the theme block's base. (A union
    *  would be wrong — the override REPLACES the recess under the plaque; nothing
    *  paints the base tier there.) */
-  function plaqueGround(theme: "dark" | "light"): string {
+  function plaqueGround(theme: "dark"): string {
     const block = themeBlock(theme);
     let scopedValue: string | undefined;
     let bareValue: string | undefined;
     for (const [, selector = "", body = ""] of folioNoComments.matchAll(
       /([^{}]*\.mon-ref[^{}]*)\{([^{}]*)\}/g
     )) {
-      const scoped = /\[data-theme="(dark|light)"\]/.exec(selector)?.[1];
+      const scoped = /\[data-theme="(dark)"\]/.exec(selector)?.[1];
       if (scoped && scoped !== theme) continue;
       const value = /--bg-recessed\s*:\s*([^;]+);/.exec(body)?.[1];
       if (!value) continue;
@@ -585,7 +577,7 @@ describe("the statblock plaque grounds every rules-text ink at AA", () => {
     return winner ? resolveColor(winner, block) : readVar(block, "--bg-recessed");
   }
 
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     const block = themeBlock(theme);
     const ground = plaqueGround(theme);
 

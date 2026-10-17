@@ -12,7 +12,7 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
  * vocabulary"). Pins the surviving grammar's load-bearing facts so a refactor
  * can't silently drop or re-add a piece:
  *   - selection is marked by the silver-over-bronze `--frame-selected` gradient
- *     (both themes), NOT by decorative diamonds;
+ *     NOT by decorative diamonds;
  *   - ordinary section dividers fade at both tips and stay NODELESS — the
  *     ceremonial hero/modal seat alone earns the shared traced weave;
  *   - the decorative diamonds trimmed in the ornament simplification stay gone
@@ -22,22 +22,20 @@ const folioCss = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8
  *     unfenced `scrollbar-width` disable every ::-webkit-scrollbar rule).
  */
 describe("ornament vocabulary (T5)", () => {
-  it("defines the selection metals + frame gradient in both themes", () => {
-    // Dark strike + light strike of the metal pair.
-    expect(indexCss.match(/--metal-silver:/g)?.length).toBe(2);
-    expect(indexCss.match(/--metal-bronze:/g)?.length).toBe(2);
-    // The silver→bronze→silver frame gradient derives from the metals, so ONE
-    // definition serves both themes.
+  it("defines the selection metals + frame gradient", () => {
+    expect(indexCss.match(/--metal-silver:/g)?.length).toBe(1);
+    expect(indexCss.match(/--metal-bronze:/g)?.length).toBe(1);
+    // The silver→bronze→silver frame gradient derives from the metals.
     expect(indexCss).toMatch(
       /--frame-selected:\s*linear-gradient\(\s*180deg,\s*var\(--metal-silver\),\s*var\(--metal-bronze\) 50%,\s*var\(--metal-silver\)\s*\)/
     );
   });
 
-  it("wires the binding corners + engraved titling in BOTH themes", () => {
+  it("wires the binding corners + engraved titling", () => {
     // The binding-corner fitting (the CC0 spandrel silhouette) ships as FOUR
     // external mask assets — one per orientation — struck with the warm
     // gold→bronze ramp approved for the current+B+BG3 hybrid. The cold silver
-    // frame remains selection-only. The engraved titling stays per-theme.
+    // frame remains selection-only.
     for (const k of ["tl", "tr", "bl", "br"]) {
       expect(folioCss).toContain(`url("/assets/ornaments/corner-${k}.svg")`);
     }
@@ -45,7 +43,7 @@ describe("ornament vocabulary (T5)", () => {
     expect(folioCss).toMatch(
       /background:\s*linear-gradient\(\s*180deg,\s*var\(--accent-primary-bright\),\s*var\(--metal-bronze\) 52%,\s*var\(--accent-primary\)\s*\)/
     );
-    expect(indexCss.match(/--engrave-title:/g)?.length).toBe(2);
+    expect(indexCss.match(/--engrave-title:/g)?.length).toBe(1);
     expect(folioCss).toMatch(/text-shadow:\s*var\(--engrave-title\)/);
   });
 
@@ -83,9 +81,6 @@ describe("ornament vocabulary (T5)", () => {
     );
     expect(folioCss).toMatch(/\.page-head-crest\s*\{[^}]*inset: 0/);
     expect(folioCss).toMatch(/\.page-head-crest\s*\{[^}]*opacity: 0\.055/);
-    expect(folioCss).toMatch(
-      /\[data-theme="light"\] \.page-head-crest\s*\{[^}]*opacity: 0\.14/
-    );
   });
 
   it("spends the traced open weave only on hero and dialog seat lines", () => {
@@ -120,10 +115,8 @@ describe("ornament vocabulary (T5)", () => {
   });
 
   it("keeps ordinary section dividers tip-faded and nodeless", () => {
-    const rule = folioCss.slice(
-      folioCss.indexOf(".sec-rule {"),
-      folioCss.indexOf('[data-theme="light"] .sec-rule')
-    );
+    const start = folioCss.indexOf(".sec-rule {");
+    const rule = folioCss.slice(start, folioCss.indexOf("}", start) + 1);
     expect(rule).toContain("--rule-c:");
     expect(rule).toMatch(
       /transparent,\s*var\(--rule-c\) 14%,\s*var\(--rule-c\) 86%,\s*transparent/

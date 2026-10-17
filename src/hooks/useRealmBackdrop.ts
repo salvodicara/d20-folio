@@ -6,13 +6,12 @@
  * the art by setting the variable on the document root while it is mounted and
  * clearing it on unmount — no second painter, no extra DOM layer. Callers pass a
  * CSS var REFERENCE (e.g. `"var(--asset-compendium-scene)"`), never a URL, so
- * the per-theme cascade keeps resolving the right sibling plate (dark/light) and
- * each theme still downloads only its own file. Swaps ride the backdrop
+ * the token cascade keeps resolving the right plate. Swaps ride the backdrop
  * crossfade (`transitionBackdrop`) so a realm change dissolves scene-into-scene
  * instead of hard-cutting (reduced motion keeps the cut).
  *
  * The campaign hub does NOT use this hook: its `useCampaignBackdrop` also
- * handles DM custom banners + crop focal/zoom + the light-theme custom-art veil.
+ * handles DM custom banners + crop focal/zoom.
  */
 
 import { useEffect } from "react";

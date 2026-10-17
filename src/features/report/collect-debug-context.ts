@@ -16,7 +16,8 @@
  *  - route / pathname + IDs parsed from the path (characterId, campaignId)
  *  - app version + build SHA (from Vite `define`s)
  *  - userAgent + viewport WxH
- *  - theme + locale (read from the SAME localStorage keys the app persists to)
+ *  - theme (always "dark": the app is dark only) + locale (read from the SAME
+ *    localStorage key the app persists to)
  *  - online status, serviceWorker controller presence
  *  - the recent error-log entries
  *
@@ -27,8 +28,6 @@
 import { getErrorLog, type ErrorLogEntry } from "./error-log";
 import { stripUndefined } from "@/lib/strip-undefined";
 
-/** The persisted UI store key (see `src/stores/uiStore.ts` → persist name). */
-const UI_STORE_KEY = "d20-folio-ui";
 /** i18next's language-detector cache key. */
 const I18N_LNG_KEY = "i18nextLng";
 
@@ -52,7 +51,7 @@ export interface DebugContext {
   viewport: string;
   /** Device pixel ratio (helps reproduce hi-dpi rendering bugs). */
   dpr: number;
-  /** "dark" | "light" | "system" — read from the persisted UI store. */
+  /** Always "dark" (the app is dark only); kept so the report shape is stable. */
   theme: string;
   /** "en" | "it" (or whatever i18next resolved). */
   locale: string;
@@ -89,29 +88,6 @@ const g = globalThis as unknown as {
   navigator?: Navigator;
   window?: Window;
 };
-
-/** Read a JSON value out of localStorage, tolerating absent/corrupt entries. */
-function readJson(key: string): unknown {
-  try {
-    const raw = g.localStorage?.getItem(key);
-    return raw == null ? undefined : JSON.parse(raw);
-  } catch {
-    return undefined;
-  }
-}
-
-/** The persisted theme, read from the zustand-persist envelope `{ state, version }`. */
-function readTheme(): string {
-  const parsed = readJson(UI_STORE_KEY);
-  if (parsed && typeof parsed === "object" && "state" in parsed) {
-    const state = (parsed as { state?: unknown }).state;
-    if (state && typeof state === "object" && "theme" in state) {
-      const theme = (state as { theme?: unknown }).theme;
-      if (typeof theme === "string") return theme;
-    }
-  }
-  return "unknown";
-}
 
 /** The persisted locale (i18next stores the bare language string). */
 function readLocale(): string {
@@ -154,7 +130,7 @@ export function collectDebugContext(): DebugContext {
     userAgent: nav?.userAgent ?? "unknown",
     viewport: win ? `${win.innerWidth}x${win.innerHeight}` : "unknown",
     dpr: win?.devicePixelRatio ?? 1,
-    theme: readTheme(),
+    theme: "dark",
     locale: readLocale(),
     online: nav?.onLine ?? true,
     // `navigator.serviceWorker` is undefined in non-secure contexts, so read it

@@ -11,9 +11,7 @@
  *      instantly and invisibly).
  *
  *   2. "WARM TO THE TOUCH" — browse-row hover KINDLES toward candle-gold
- *      (accent-tinted fill), never a plain neutral surface fill; and the
- *      light-theme .cmp-tab keeps its own perceptible hover strike (the base
- *      surface-2 fill is invisible on the ivory band).
+ *      (accent-tinted fill), never a plain neutral surface fill.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -27,12 +25,12 @@ const indexCss = readFileSync(resolve(here, "../../src/index.css"), "utf8");
 describe("interactive kindle grammar (wave 2)", () => {
   it("strikes the gilt glint on exactly the struck-gold tier, reduced-motion-gated", () => {
     // The resting band: an overlay pseudo parked off-face by transform, inked
-    // by the per-theme --glint-ink token (defined twice, once per theme root).
+    // by the --glint-ink token.
     expect(folioCss).toMatch(
       /\.btn\.primary::before,\s*\.btn\.brass::before,\s*\.endturn::before\s*\{[^}]*var\(--glint-ink\)[^}]*transform: translateX\(-130%\)/
     );
     const indexCssGlint = indexCss.match(/--glint-ink:/g)?.length;
-    expect(indexCssGlint).toBe(2);
+    expect(indexCssGlint).toBe(1);
     // The sweep: hover moves the band, ONLY under [data-motion="auto"], and the
     // transition — exactly `transform <n>ms var(--ease-standard)`, nothing else
     // (GPU-only) — lives on the hover rule itself (that is the one-shot).
@@ -68,11 +66,5 @@ describe("interactive kindle grammar (wave 2)", () => {
     expect(clOptHover).toBeTruthy();
     expect(clOptHover).toContain("var(--accent-glow)");
     expect(clOptHover).toContain("var(--accent-primary)");
-  });
-
-  it("keeps the light-theme compendium tab hover perceptible (its own strike)", () => {
-    expect(folioCss).toMatch(
-      /\[data-theme="light"\] \.cmp-tab:hover[^{]*\{[^}]*var\(--accent-primary\)/
-    );
   });
 });

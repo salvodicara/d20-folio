@@ -61,7 +61,7 @@ async function load(
 
 test("identity sweep — dark+light EN desktop", async ({ page }) => {
   test.setTimeout(600_000);
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     for (const s of SURFACES) {
       await load(page, s.route, theme, "en", DESKTOP);
       await page.screenshot({
@@ -74,7 +74,7 @@ test("identity sweep — dark+light EN desktop", async ({ page }) => {
 
 test("identity sweep — dark+light EN mobile", async ({ page }) => {
   test.setTimeout(600_000);
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     for (const s of SURFACES) {
       await load(page, s.route, theme, "en", MOBILE);
       await page.screenshot({
@@ -90,7 +90,7 @@ test("identity sweep — IT spot checks", async ({ page }) => {
   const spots = SURFACES.filter((s) =>
     ["login", "roster", "cockpit", "compendium", "settings"].includes(s.slug)
   );
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     for (const s of spots) {
       await load(page, s.route, theme, "it", DESKTOP);
       await page.screenshot({ path: shot(`${s.slug}-${theme}-it-desktop`) });
@@ -100,7 +100,7 @@ test("identity sweep — IT spot checks", async ({ page }) => {
 
 test("identity — modal chrome (dark+light)", async ({ page }) => {
   test.setTimeout(180_000);
-  for (const theme of ["dark", "light"] as const) {
+  for (const theme of ["dark"] as const) {
     await load(page, "/campaigns", theme, "en", DESKTOP);
     const createBtn = page
       .getByRole("button", {

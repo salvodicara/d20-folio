@@ -4,8 +4,8 @@
  * Its PURPOSE (owner-chosen): type to find ANYTHING — your CHARACTERS (→ open the
  * cockpit), the whole COMPENDIUM (spells · items · feats · maneuvers … → open the
  * entry's DETAIL in the codex), and the realm SECTIONS (→ jump). It also RUNS the
- * one-keystroke quick ACTIONS a player reaches for most (flip the theme, flip the
- * language — both in place — and start a new character). The empty query shows the
+ * one-keystroke quick ACTIONS a player reaches for most (flip the language in
+ * place, start a new character). The empty query shows the
  * sections + actions as a launcher; a query fans out into grouped results. This is
  * what justifies the assistant-y name (it used to only jump to four sections).
  *
@@ -64,8 +64,6 @@ import {
   SlidersHorizontal,
   Shield,
   SearchX,
-  Sun,
-  Moon,
   Languages,
   UserPlus,
   FlagTriangleRight,
@@ -122,7 +120,7 @@ const PALETTE_SEARCH_ID = "palette-search-input";
 /**
  * One actionable result, flattened across every group for Enter / roving. A hit
  * either NAVIGATES (`to`) or RUNS an in-app command (`run`) — the quick actions
- * (theme / language toggles) use `run`; everything else navigates.
+ * (the language toggle) use `run`; everything else navigates.
  */
 interface Hit {
   key: string;
@@ -219,8 +217,6 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const restIndex = coarsePointer ? -1 : 0;
   const { characters } = useCharacters();
   const uid = useAuthStore((s) => s.user?.uid);
-  const theme = useUIStore((s) => s.theme);
-  const setTheme = useUIStore((s) => s.setTheme);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
   const requestPlayRef = useUIStore((s) => s.requestPlayRef);
   const [query, setQuery] = useState("");
@@ -356,32 +352,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
 
   // ── Quick actions (OWN-25c) ──────────────────────────────────────────────────
   // The palette isn't only a finder: it runs the one-keystroke commands a player
-  // reaches for most — flip the theme, flip the language (both IN PLACE, reusing the
-  // same seams Settings drives), and start a new character. Shown on the empty palette
+  // reaches for most — flip the language (IN PLACE, reusing the same seam
+  // Settings drives), and start a new character. Shown on the empty palette
   // (immediately useful) and searchable by EN+IT keywords. `run` toggles execute via
   // the shared `activate()`; "new character" navigates.
   const actions: Hit[] = useMemo(() => {
-    const nextTheme = theme === "light" ? "dark" : "light";
     const defs: (Hit & { terms: string[] })[] = [
-      {
-        key: "act:theme",
-        run: () => setTheme(nextTheme),
-        label:
-          nextTheme === "light"
-            ? t("palette.actionThemeToLight")
-            : t("palette.actionThemeToDark"),
-        icon: nextTheme === "light" ? Sun : Moon,
-        terms: [
-          "theme",
-          "tema",
-          "aspetto",
-          "appearance",
-          "dark",
-          "light",
-          "scuro",
-          "chiaro",
-        ],
-      },
       {
         key: "act:lang",
         run: () => toggleLanguage(),
@@ -484,7 +460,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         (a.key !== "act:shortcuts" || !coarsePointer) &&
         matchesSearch(q, a.label, ...a.terms)
     );
-  }, [t, theme, setTheme, locale, toggleLanguage, q, openShortcutsSheet, coarsePointer]);
+  }, [t, locale, toggleLanguage, q, openShortcutsSheet, coarsePointer]);
 
   // ── Characters (the roster) ──────────────────────────────────────────────────
   // Searchable by NAME and by CLASS (localized + the stable id, so "wizard" and

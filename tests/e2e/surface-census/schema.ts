@@ -24,8 +24,8 @@ export const ATLAS_BOARDS = [
 
 export const PAIRWISE = [
   { locale: "it", theme: "dark", device: "desktop" },
-  { locale: "en", theme: "light", device: "desktop" },
-  { locale: "it", theme: "light", device: "mobile" },
+  { locale: "en", theme: "dark", device: "desktop" },
+  { locale: "it", theme: "dark", device: "mobile" },
   { locale: "en", theme: "dark", device: "mobile" },
 ] as const;
 
@@ -40,7 +40,7 @@ export const B01_MOTION_FRAMES = [
 
 export type AtlasBoard = (typeof ATLAS_BOARDS)[number];
 export type SurfaceLocale = "en" | "it";
-export type SurfaceTheme = "dark" | "light";
+export type SurfaceTheme = "dark";
 export type SurfaceDevice = "desktop" | "mobile";
 export type B01MotionFrame = (typeof B01_MOTION_FRAMES)[number];
 
@@ -74,7 +74,7 @@ export interface SurfaceCensusEntry {
 const BOARD_SET = new Set<string>(ATLAS_BOARDS);
 const MOTION_FRAME_SET = new Set<string>(B01_MOTION_FRAMES);
 const LOCALE_SET = new Set<string>(["en", "it"]);
-const THEME_SET = new Set<string>(["dark", "light"]);
+const THEME_SET = new Set<string>(["dark"]);
 const DEVICE_SET = new Set<string>(["desktop", "mobile"]);
 
 function requireText(value: string, field: string, id: string): void {

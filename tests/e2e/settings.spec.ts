@@ -3,10 +3,9 @@
  *
  * Drives the REAL flow against the dev server (VITE_DEV_BYPASS_AUTH=true): open
  * the account dropdown → Settings → land on /settings, then flip each control and
- * assert it drives the SAME global state the dropdown uses — data-theme on <html>
- * and the i18n locale (a visible string flips) — with theme persisting across a
- * reload (one source of truth: the persisted uiStore). Motion has no in-app
- * toggle: data-motion mirrors the OS prefers-reduced-motion setting.
+ * assert it drives the SAME global state the dropdown uses — the i18n locale (a
+ * visible string flips). The app is dark only: there is no theme control. Motion
+ * has no in-app toggle: data-motion mirrors the OS prefers-reduced-motion setting.
  *
  * Desktop-only: the account dropdown lives in the desktop topbar; the new
  * /settings surface is axe + visual covered at mobile width by the surface matrix.
@@ -47,21 +46,12 @@ test.describe("Settings page + dropdown bridge", () => {
     await expect(page.getByRole("menuitem", { name: /^characters$/i })).toHaveCount(0);
   });
 
-  test("toggling Theme drives data-theme and persists across a reload", async ({
-    page,
-  }) => {
+  test("there is no theme control and the app stays dark", async ({ page }) => {
     await openSettingsFromDropdown(page);
-    const html = page.locator("html");
-
-    await page.getByRole("button", { name: "Light" }).click();
-    await expect(html).toHaveAttribute("data-theme", "light");
-
-    // Persistence (one source of truth — the persisted uiStore): survive a reload.
-    await page.reload();
-    await expect(html).toHaveAttribute("data-theme", "light");
-
-    await page.getByRole("button", { name: "Dark" }).click();
-    await expect(html).toHaveAttribute("data-theme", "dark");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await expect(page.getByRole("button", { name: /^(light|dark|system)/i })).toHaveCount(
+      0
+    );
   });
 
   test("motion follows the OS prefers-reduced-motion (no in-app toggle)", async ({
