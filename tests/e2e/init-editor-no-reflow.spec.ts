@@ -68,6 +68,29 @@ async function bootEncounter(page: Page) {
   await page.goto("/campaigns/mock-1");
   await page.locator(".party-card").first().waitFor({ timeout: 20_000 });
   await freezeMotion(page);
+  await untilCardsSettle(page);
+}
+
+/**
+ * Wait until the cards stop changing size before any "at rest" measurement. A monster
+ * card fills in its speed and attacks only when its lazily loaded bestiary entry
+ * arrives (the Goblin grows 154 → 230 px). Under load that landed AFTER the baseline
+ * was taken, shifting every card below by 76 px (or 50, caught halfway) and failing
+ * the geometry checks about one run in two. Wait for the real condition: no request
+ * in flight, then two identical layouts 300 ms apart.
+ */
+async function untilCardsSettle(page: Page): Promise<void> {
+  await page.waitForLoadState("networkidle");
+  await expect
+    .poll(
+      async () => {
+        const first = JSON.stringify(await cardBoxes(page));
+        await page.waitForTimeout(300);
+        return first === JSON.stringify(await cardBoxes(page));
+      },
+      { timeout: 15_000 }
+    )
+    .toBe(true);
 }
 
 test.describe("initiative editor floats — the card never reflows", () => {
@@ -218,10 +241,13 @@ test.describe("initiative editor floats — the card never reflows", () => {
       .filter({ hasText: "Goblin Chief" })
       .first();
     const bossTrigger = bossCard.locator("button.vital-init");
+    await untilCardsSettle(page);
     await bossCard.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(150);
-    const beforeTop = (await bossCard.boundingBox())?.y;
-    expect(beforeTop).toBeDefined();
+    await untilCardsSettle(page);
+    // DOCUMENT-absolute, like every other box here: a card growing elsewhere makes the
+    // browser re-anchor the scroll (566 → 642), which a viewport `y` mistakes for a
+    // 76 px teleport of the card itself.
+    const beforeTop = (await absBox(bossCard)).top;
     await page.evaluate(() => {
       (
         window as typeof window & {
@@ -253,8 +279,8 @@ test.describe("initiative editor floats — the card never reflows", () => {
       )
       .toBeGreaterThan(0);
     await page.waitForTimeout(280);
-    const settledTop = (await bossCard.boundingBox())?.y;
-    expect(Math.abs((settledTop ?? 0) - (beforeTop ?? 0))).toBeGreaterThan(100);
+    const settledTop = (await absBox(bossCard)).top;
+    expect(Math.abs(settledTop - beforeTop)).toBeGreaterThan(100);
     const transitionFromYs = await page.evaluate(() =>
       (
         window as typeof window & {
@@ -274,9 +300,7 @@ test.describe("initiative editor floats — the card never reflows", () => {
     // the viewport itself stays fixed.
     expect(
       Math.abs(
-        (settledTop ?? 0) +
-          numericFromYs.reduce((sum, value) => sum + value, 0) -
-          (beforeTop ?? 0)
+        settledTop + numericFromYs.reduce((sum, value) => sum + value, 0) - beforeTop
       )
     ).toBeLessThanOrEqual(2);
     await expect(bossTrigger).toContainText("99");
