@@ -12,10 +12,21 @@
 import { useRef, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useAuthStore } from "@/stores/authStore";
+import { useCharacterSessionLog } from "@/features/character/useCharacterSessionLog";
+import type { SessionEntry } from "@/lib/session-log";
+import {
+  localizePlayEvent,
+  type SessionReportNames,
+} from "@/lib/views/session-report-view";
 import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { formatLogTime } from "@/lib/action-log-style";
-import { localizeCombatLogRow, type CombatLogRow } from "@/lib/views/combat-log-view";
+import {
+  localizeCombatLogRow,
+  playEventLogStyle,
+  type CombatLogRow,
+} from "@/lib/views/combat-log-view";
 import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Icon } from "@/components/ui/icon";
@@ -29,6 +40,11 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
   const { language } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const clearLog = useCharacterStore((s) => s.clearLog);
+  const uid = useAuthStore((s) => s.user?.uid);
+  // In a campaign, the panel reads the shared session: this character's own gestures
+  // and the DM's moves on it. Until the session has a line about it, the sheet's log.
+  const shared = useCharacterSessionLog(uid, character?.id);
+  const sessionEntries = shared?.entries ?? [];
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // ONE presenter call per row: localize the structured event → its line + style.
@@ -62,9 +78,80 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [character?.session.logEntries.length]);
+  }, [character?.session.logEntries.length, sessionEntries.length]);
+
+  // The session report's presenter renders a session line (golden rule 6: one
+  // wording for the same event in the report and here).
+  const renderSessionLine = useCallback(
+    (entry: SessionEntry): string | null => {
+      if (!shared) return null;
+      // This sheet names itself from its own character, never a stale party snapshot.
+      const nameOf = (id: string): string | undefined =>
+        id === shared.me ? character?.character.name : shared.nameOf(id);
+      const names: SessionReportNames = {
+        pc: nameOf,
+        condition: (id) =>
+          hasSrd("condition", id, "name", language)
+            ? localizeSrd("condition", id, "name", language)
+            : id,
+        action: (text) => localizeText(text, language),
+        spell: (ref) => concentrationLabel(ref, language),
+        source: (id) => grantSourceLabel(id, language),
+      };
+      const who = (id: string | undefined): string =>
+        (id && nameOf(id)) || t("combatChronicle.someone");
+      return localizePlayEvent(entry.event, t, who, names);
+    },
+    [shared, character?.character.name, t, language]
+  );
 
   if (!character) return null;
+
+  if (sessionEntries.length > 0) {
+    const lines = sessionEntries.slice(-maxEntries).flatMap((entry) => {
+      const text = renderSessionLine(entry);
+      return text
+        ? [{ id: entry.id, at: entry.at, text, style: playEventLogStyle(entry.event) }]
+        : [];
+    });
+    return (
+      <section>
+        <SectionHeader tight title={t("actionLog.title")} count={lines.length} />
+        <div className="rounded-md border border-border-medium bg-[var(--bg-recessed)] shadow-[var(--elev-recessed)]">
+          <div
+            ref={scrollRef}
+            className="max-h-[200px] overflow-y-auto p-2"
+            role="log"
+            tabIndex={0}
+            aria-label={t("actionLog.title")}
+          >
+            {lines.map((line) => (
+              <div
+                key={line.id}
+                className="log-row"
+                style={{ borderLeftColor: line.style.borderColor }}
+              >
+                <span
+                  className="log-glyph shrink-0"
+                  style={{ color: line.style.glyphColor }}
+                >
+                  <Icon as={line.style.glyph} size="xs" decorative />
+                </span>
+                <span className="log-body">
+                  <span className="log-text leading-tight">{line.text}</span>
+                  <span className="log-ts font-mono">{formatLogTime(line.at)}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* A shared log is the table's: no Clear here, only where it comes from. */}
+          <p className="border-t border-border-subtle px-2 py-1 text-right font-mono text-[length:var(--text-micro)] uppercase tracking-[0.08em] text-text-secondary">
+            {t("actionLog.fromSession")}
+          </p>
+        </div>
+      </section>
+    );
+  }
 
   const entries = character.session.logEntries.slice(-maxEntries);
 

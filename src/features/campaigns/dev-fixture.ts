@@ -396,9 +396,15 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
       // The DM (you) hasn't attached a character — shows the "attach" state.
       // B32 — a realistic display name, never the raw English "You" (which leaked
       // untranslated Italian-locale text via `campaignHub.narratedBy`).
+      // The `d20-dev-attached` flag attaches the mock hero (`mock-1`), so the sheet
+      // can be checked as a campaign member's (its log panel reads the session).
       "mock-uid": {
         displayName: "GM",
-        characterId: null,
+        characterId:
+          typeof window !== "undefined" &&
+          window.localStorage.getItem("d20-dev-attached") === "1"
+            ? "mock-1"
+            : null,
         role: "dm",
       },
       // D29 — Mara attached a character snapshot (the party card shows her hero);
