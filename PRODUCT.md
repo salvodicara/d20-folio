@@ -27,8 +27,8 @@ it is. Decisions behind this: `docs/strategy/2026-10-16-product-brief.md`.
 ## Brand Personality
 
 **A synthesis of real products, dark only** (owner approved, 2026-10-16; prototypes in
-`docs/design/system/`). Every element is copied from a named product and none is invented: Baldur's
-Gate 3 (bronze-framed dark panels, a medallion portrait, painted action icons, a shape and colour per
+`docs/design/system/`). Every element is copied from a named product and none is invented:
+Baldur's Gate 3 (bronze-framed dark panels, a medallion portrait, painted action icons, a shape and colour per
 turn resource, a round blue End Turn, capsule tabs), D&D Beyond (the header order AC, initiative,
 portrait, HP; actions as a table with framed values and its filters; notched box borders; the
 navigation on laptop and phone), Foundry dnd5e (AC in a shield, small stat plates, the combat
