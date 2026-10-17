@@ -87,5 +87,70 @@
   },
   "situation.mounted": {
     "name": "Mounted"
+  },
+  "action.dash": {
+    "name": "Dash",
+    "effect": "Double movement speed"
+  },
+  "action.dodge": {
+    "name": "Dodge",
+    "effect": "Attacks vs you have Disadvantage"
+  },
+  "action.disengage": {
+    "name": "Disengage",
+    "effect": "Movement doesn't provoke OA"
+  },
+  "action.help": {
+    "name": "Help",
+    "effect": "Ally gains Advantage on next attack or check"
+  },
+  "action.hide": {
+    "name": "Hide",
+    "effect": "DC 15 Stealth check → Invisible"
+  },
+  "action.influence": {
+    "name": "Influence",
+    "effect": "Cha/Wis check to sway a creature's attitude"
+  },
+  "action.magic": {
+    "name": "Magic",
+    "effect": "Cast a spell or use a magic item or feature"
+  },
+  "action.ready": {
+    "name": "Ready",
+    "effect": "Set trigger → reaction"
+  },
+  "action.search": {
+    "name": "Search",
+    "effect": "Wis check: Insight/Medicine/Perception/Survival"
+  },
+  "action.study": {
+    "name": "Study",
+    "effect": "Int check: Arcana/History/Investigation/Nature/Religion"
+  },
+  "action.utilize": {
+    "name": "Utilize",
+    "effect": "Use a nonmagical object needing an action"
+  },
+  "action.object-interaction": {
+    "name": "Interact with an Object",
+    "effect": "Draw, stow or open one object per turn"
+  },
+  "action.grapple": {
+    "name": "Grapple",
+    "effect": "Unarmed Strike: Str/Dex save or Grappled"
+  },
+  "action.shove": {
+    "name": "Shove",
+    "effect": "Unarmed Strike: Str/Dex save → push 5 ft or Prone"
+  },
+  "action.escape-grapple": {
+    "name": "Escape",
+    "effect": "Athletics/Acrobatics vs escape DC → free"
+  },
+  "action.opportunity-attack": {
+    "name": "Opportunity Attack",
+    "effect": "Enemy leaves melee reach without Disengaging",
+    "trigger": "enemy leaves reach"
   }
 }

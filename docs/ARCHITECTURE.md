@@ -3437,10 +3437,13 @@ The four variants:
   case: SRD content lifted into the id-keyed catalogues).
 - `custom` (`customText`) — a USER-authored single string (homebrew name/description) → shown verbatim
   via `localizeCustom`.
-- `lit` (`litText`) — an ENGINE-authored bilingual `LocaleText` constant (Unarmed Strike, the "(off-hand)"
-  suffix, base action-menu labels) → `text[locale]`. It freezes BOTH locales in code.
+- `lit` (`litText`) — an ENGINE-authored bilingual `LocaleText` constant → `text[locale]`. It freezes
+  BOTH locales in code, so it is being retired: the base action menu now reads the `rule` catalogue
+  (`action.<id>`) and the Unarmed Strike name and computed lines (`uiText(key, params)`) read `ui` keys.
+  It stays for rows stored before the move and the engine modules not yet migrated.
 - `ui` (`uiText`) — a REF to a `common`/ui CHROME key (e.g. `combat.otherReactionName`), resolved at
-  render via `i18n.getFixedT(locale)(key)`. Unlike `lit` it stores ONLY the key (never a frozen
+  render via `i18n.getFixedT(locale)(key, params)`; optional scalar `params` fill a computed number or die
+  (`combat.gainTempHp`, `{ amount }`). Unlike `lit` it stores ONLY the key (never a frozen
   both-locale value), so a logged row re-localizes on a language switch and the EN canonical resolves
   via the always-loaded EN `common`. Use for a view-synthesized row whose label is chrome, not SRD
   content, not user text (the combat off-list reaction). The key MUST exist in BOTH `{en,it}/ui/*.json`.

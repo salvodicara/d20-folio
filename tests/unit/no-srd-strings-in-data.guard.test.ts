@@ -1,6 +1,6 @@
 /**
  * GUARD: no display text in shipped rules data (`src/data/**`, plus the name
- * tables listed in `ALSO_COVERED`).
+ * tables and engine modules listed in `ALSO_COVERED`).
  *
  * Rules data stores ids and mechanics; its words live in the catalogues
  * (`src/i18n/<locale>/srd/<kind>.json`), keyed by those ids, so a new language
@@ -27,9 +27,12 @@ const DATA_DIR = resolve(SRC_ROOT, "data");
 
 const BYPASS = new Set(["types.ts"]);
 
-/** Name tables outside `src/data` that hold official names: ids only, too. */
-const ALSO_COVERED = ["components/shared/combat-glossary.ts"].map((f) =>
-  resolve(SRC_ROOT, f)
+/**
+ * Files outside `src/data` that store ids only, too: name tables that hold
+ * official names, and engine modules whose words live in the catalogues.
+ */
+const ALSO_COVERED = ["components/shared/combat-glossary.ts", "lib/smart-tracker.ts"].map(
+  (f) => resolve(SRC_ROOT, f)
 );
 
 const LOCALE_CODES: ReadonlySet<string> = new Set(LOCALES);
@@ -39,8 +42,23 @@ function isNaturalLanguage(s: string): boolean {
   return /\w\s+\w/.test(s);
 }
 
-function isStringLiteral(e: ts.Expression): e is ts.StringLiteralLike {
-  return ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e);
+/** A string or template literal (`${n} temporary HP` is text with a hole). */
+function isTextLiteral(
+  e: ts.Expression
+): e is ts.StringLiteralLike | ts.TemplateExpression {
+  return (
+    ts.isStringLiteral(e) ||
+    ts.isNoSubstitutionTemplateLiteral(e) ||
+    ts.isTemplateExpression(e)
+  );
+}
+
+/** A text literal's words, a template's holes read as one placeholder word. */
+function literalText(e: ts.StringLiteralLike | ts.TemplateExpression): string {
+  if (!ts.isTemplateExpression(e)) return e.text;
+  return [e.head.text, ...e.templateSpans.map((span) => `x${span.literal.text}`)].join(
+    ""
+  );
 }
 
 function propName(p: ts.ObjectLiteralElementLike): string | undefined {
@@ -65,7 +83,7 @@ function offenders(file: string): string[] {
           name !== undefined &&
           LOCALE_CODES.has(name) &&
           ts.isPropertyAssignment(p) &&
-          isStringLiteral(p.initializer)
+          isTextLiteral(p.initializer)
         );
       });
       if (localized.length >= 2) {
@@ -79,10 +97,11 @@ function offenders(file: string): string[] {
       if (
         name !== undefined &&
         LOCALE_CODES.has(name) &&
-        isStringLiteral(node.initializer) &&
-        isNaturalLanguage(node.initializer.text)
+        isTextLiteral(node.initializer) &&
+        isNaturalLanguage(literalText(node.initializer))
       ) {
-        found.push(`L${lineOf(node)}: ${name}: "${node.initializer.text.slice(0, 40)}…"`);
+        const text = literalText(node.initializer);
+        found.push(`L${lineOf(node)}: ${name}: "${text.slice(0, 40)}…"`);
       }
     }
     ts.forEachChild(node, visit);

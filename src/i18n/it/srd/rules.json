@@ -87,5 +87,70 @@
   },
   "situation.mounted": {
     "name": "In sella"
+  },
+  "action.dash": {
+    "name": "Scatto",
+    "effect": "Raddoppia il movimento"
+  },
+  "action.dodge": {
+    "name": "Schivata",
+    "effect": "Attacchi su di te in svantaggio"
+  },
+  "action.disengage": {
+    "name": "Disimpegno",
+    "effect": "Mov. non provoca AA"
+  },
+  "action.help": {
+    "name": "Aiuto",
+    "effect": "Alleato ottiene Vantaggio"
+  },
+  "action.hide": {
+    "name": "Nascondersi",
+    "effect": "Prova Furtività CD 15 → Invisibile"
+  },
+  "action.influence": {
+    "name": "Influenza",
+    "effect": "Prova Car/Sag per influenzare l'atteggiamento"
+  },
+  "action.magic": {
+    "name": "Magia",
+    "effect": "Lancia un incantesimo o usa oggetto/capacità magica"
+  },
+  "action.ready": {
+    "name": "Prepararsi",
+    "effect": "Imposta innesco → reazione"
+  },
+  "action.search": {
+    "name": "Ricerca",
+    "effect": "Prova Sag: Intuizione/Medicina/Percezione/Sopravvivenza"
+  },
+  "action.study": {
+    "name": "Studio",
+    "effect": "Prova Int: Arcano/Storia/Indagare/Natura/Religione"
+  },
+  "action.utilize": {
+    "name": "Utilizzo",
+    "effect": "Usa un oggetto non magico che richiede un'azione"
+  },
+  "action.object-interaction": {
+    "name": "Interagisci con un oggetto",
+    "effect": "Estrai, riponi o apri un oggetto a turno"
+  },
+  "action.grapple": {
+    "name": "Afferrare",
+    "effect": "Colpo Senz'armi: TS For/Des o Afferrato"
+  },
+  "action.shove": {
+    "name": "Spingere",
+    "effect": "Colpo Senz'armi: TS For/Des → 1,5 m o Prono"
+  },
+  "action.escape-grapple": {
+    "name": "Liberati",
+    "effect": "Atletica/Acrobazia contro CD di fuga → libero"
+  },
+  "action.opportunity-attack": {
+    "name": "Attacco di Opportunità",
+    "effect": "Nemico lascia portata senza Disimpegnarsi",
+    "trigger": "nemico lascia portata"
   }
 }

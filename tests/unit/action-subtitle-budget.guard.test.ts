@@ -40,6 +40,7 @@ import { srdRefForFeatureSource } from "@/lib/srd-feature-lookup";
 import { srdKey } from "@/i18n/srd-key";
 import { srdEn } from "@/i18n/srd-en";
 import { BASE_ACTIONS, srdEffectText } from "@/lib/smart-tracker";
+import { baseActionText } from "@/lib/base-action-states";
 import { EFFECT_LINE_BUDGET, localizeAction } from "@/lib/views/combat-action-view";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { customText, litText } from "@/lib/loc-text";
@@ -127,7 +128,12 @@ describe("collapsed-card subtitle budget (no truncation, by construction)", () =
     const violations: Violation[] = [];
     for (const ba of BASE_ACTIONS) {
       for (const locale of ["en", "it"] as const) {
-        for (const line of [ba.effect[locale], ba.trigger?.[locale]]) {
+        const fields = ba.hasTrigger
+          ? (["effect", "trigger"] as const)
+          : (["effect"] as const);
+        for (const line of fields.map((field) =>
+          localizeText(baseActionText(ba.id, field), locale)
+        )) {
           if (line && line.length > EFFECT_LINE_BUDGET) {
             violations.push({ key: ba.id, locale, length: line.length, line });
           }

@@ -25,10 +25,10 @@
  *    name or description). Not SRD: it carries its own text and the view shows it
  *    verbatim via `localizeCustom` (the documented resolver bypass).
  *  - `lit` — an ENGINE literal `LocaleText` that is NOT `src/data/**` SRD content and
- *    NOT user text: the small set of engine-authored bilingual constants the
- *    smart-tracker emits (Unarmed Strike, the "(off-hand)" suffix, the base
- *    action-menu labels). These legitimately stay bilingual in code — they are
- *    not part of the SRD-data strip — and the view reads `text[locale]`.
+ *    NOT user text. Being retired: engine words move to the catalogues (the
+ *    smart-tracker's base actions read the `rule` catalogue, its Unarmed Strike and
+ *    temp-HP lines `ui` keys); it stays for rows stored before the move and the
+ *    few engine modules not yet migrated. The view reads `text[locale]`.
  *  - `ui` — a REF to a `common`/ui i18n CHROME key (e.g. `"combat.otherReactionName"`),
  *    resolved at RENDER by the view via `i18n.getFixedT(locale)(key)`. Unlike `lit`,
  *    it NEVER freezes a both-locale value into the carrier — it stores only the key,
@@ -57,7 +57,10 @@ export type LocText =
   | { srd: { kind: SrdKind; key: string; field: string } }
   | { custom: string }
   | { lit: LocaleText }
-  | { ui: string };
+  | { ui: string; params?: UiTextParams };
+
+/** The scalar `{{name}}` values a `ui` text interpolates (a computed die, a number). */
+export type UiTextParams = Readonly<Record<string, string | number>>;
 
 /** Construct an SRD-catalogue `LocText` from a `(kind, key, field)`. */
 export function srdText(kind: SrdKind, key: string, field: string): LocText {
@@ -79,8 +82,10 @@ export function litText(text: LocaleText): LocText {
  * render time (`i18n.getFixedT(locale)(key)`). Contrast with {@link litText}: `ui`
  * is a REF to a chrome key resolved at render — it never freezes a both-locale value
  * — so a logged row re-localizes on a language switch and EN remains resolvable as the
- * canonical fallback. The `key` MUST exist in BOTH `{en,it}/ui/*.json`.
+ * canonical fallback. The `key` MUST exist in BOTH `{en,it}/ui/*.json`. `params`
+ * fill its `{{name}}` placeholders (a computed die or amount), so the words stay in
+ * the catalogue and only the fact rides the carrier.
  */
-export function uiText(key: string): LocText {
-  return { ui: key };
+export function uiText(key: string, params?: UiTextParams): LocText {
+  return params ? { ui: key, params } : { ui: key };
 }
