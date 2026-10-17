@@ -1,4 +1,4 @@
-# Rules coverage map — 2026-10-13
+# Rules coverage map — 2026-10-17
 
 Every SRD 5.2.1 rules element against today's `main`: auto = the engine computes it or one tap makes
 every consequence flow; 1-tap = one dedicated tap records it; manual = no dedicated support, but
@@ -62,7 +62,9 @@ over `catalogueActivities()` and the data modules. A closed gap updates its row 
 | Character        | Carrying capacity by size (Powerful Build)                                                           | auto              | —                                                                                                                       |
 | Character        | Breathing underwater (Gift of the Depths, Manta Ray, Adaptation, Elemental Command)                  | auto              | —                                                                                                                       |
 | Items            | Boots of Striding and Springing (30 ft jump for 10 ft)                                               | auto (partial)    | 30 ft Speed floor applied; the jump clause stays reference text                                                         |
-| Character        | Coins on purchase, travel pace, size, donning armor                                                  | manual            | —                                                                                                                       |
+| Character        | Coins on purchase and sale (change across pp, gp, ep, sp, cp)                                        | 1-tap             | Add Item's Buy pays with change, Sell returns half; undoable, logged; magic items have no list price                    |
+| Character        | Donning and doffing armor                                                                            | 1-tap             | Armor rows show don / doff time; Equip says it and, in a fight, that it is no one-action change (never blocks)          |
+| Character        | Size (species), travel pace                                                                          | auto / manual     | Size drives carrying capacity, shown in creation and the PDF; pace is a Play reference table, not tracked               |
 | Session log      | Player's own free-text line                                                                          | 1-tap             | Anyone adds a note in the Combat Chronicle during an encounter; no note box outside a fight                             |
 | Turns            | Extra turns (Thief's Reflexes, Time Stop)                                                            | 1-tap             | Shared Time Stop: the DM steps the order by hand                                                                        |
 | Encounter        | Add catalogue / improvised / homebrew monster, HP, conditions, turns                                 | 1-tap             | — (the monster condition editor does not offer immune conditions)                                                       |
