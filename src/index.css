@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./styles/folio.css";
 @import "./styles/system/char-hero.css";
+@import "./styles/system/play-turn.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    d20 Folio · Design Tokens · "Illuminated Folio" (CANONICAL source of truth)
@@ -310,6 +311,12 @@
     #7a5a28
   );
   --sys-shadow: rgb(0 0 0 / 0.55);
+  --sys-lit: #2a8db0;
+  --sys-lit-hi: #6fd3f2;
+  --sys-lit-deep: #0f3a4b;
+  --sys-on-lit: #f4fbff;
+  --sys-fs-endturn: 0.9375rem;
+  --sys-fs-round: 1.75rem;
 }
 
 [data-theme="dark"] {
@@ -464,9 +471,12 @@
   --edit-accent: var(--gold-leaf-300);
 
   /* § 09 Action-type slots + magic marker */
-  --at-action: var(--verdigris-300);
-  --at-bonus: var(--lapis-300);
-  --at-reaction: var(--vermilion-300);
+  /* Turn resources take Baldur's Gate 3's colours (design 2026-10): Action green,
+     Bonus orange, Reaction violet, Movement yellow. */
+  --at-action: #6cc04a;
+  --at-bonus: #ee9a3c;
+  --at-reaction: #c27be6;
+  --at-move: #e2c24e;
   /* Free actions are NEUTRAL (no economy hue that would collide with action/bonus/
      reaction or magic). text-muted was too dark to carry the filled "Use" CTA — its
      ink text washed out; text-secondary is the readable neutral (dark ink on light tan
@@ -484,7 +494,7 @@
   --at-free-vivid: var(--at-free);
   --at-nothing-vivid: var(--at-nothing);
   --at-magic-vivid: var(--at-magic);
-  --at-magic: var(--amethyst-300);
+  --at-magic: var(--lapis-300);
   /* AA-safe amethyst INK for amethyst-on-dark TEXT (ritual badge, any amethyst
      label): amethyst-300 (#8e5cc0) is only ~3.7:1 on the dark cards — below the
      4.5:1 floor for 10px text. amethyst-100 (#b89fd1) clears ~6.5:1. Keep the
