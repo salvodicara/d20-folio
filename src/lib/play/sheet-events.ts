@@ -101,7 +101,16 @@ export type SheetEvent =
   | { kind: "toggle-pin"; actionId: string; defaultPinned: boolean }
   | { kind: "long-rest" }
   | { kind: "short-rest" }
-  /** Minutes pass outside the turn order: what runs out ends (`passTime`). */
+  /**
+   * Minutes pass outside the turn order: what runs out ends (`passTime`).
+   * To the first dispatcher: when `timePassEndsConcentration(doc, minutes)`, an
+   * engine-held Concentration must end through the store teardown too. Never
+   * `setConcentration("")` and then rely on `dispatch`'s own undo: its snapshot is
+   * already past the teardown, so Undo would lose the Concentration. Wrap both steps
+   * in one whole-state undo, as the rests do (`beginWholeStateUndo`, #283):
+   * `seal = beginWholeStateUndo(); teardown; dispatch(event); undo = seal?.()`.
+   * Pinned in tests/unit/time-passes.test.ts.
+   */
   | { kind: "time-passes"; minutes: number };
 
 export type SheetEventKind = SheetEvent["kind"];

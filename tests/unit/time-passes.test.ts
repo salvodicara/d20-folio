@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { getSpellById } from "@/data/spells";
 import { applySheetEvent } from "@/lib/play/sheet-events";
 import { combatEventToPlayEvent } from "@/lib/session-log/character-events";
-import { passTime } from "@/lib/play/time";
+import { passTime, timePassEndsConcentration } from "@/lib/play/time";
 import { setActiveState } from "@/lib/play/states";
 import {
   concentrationBudgetRounds,
@@ -18,7 +18,7 @@ import {
   spellDurationRounds,
 } from "@/lib/spell-duration";
 import { resolveActiveStatesEndingOnRest } from "@/lib/smart-tracker";
-import { useCharacterStore } from "@/stores/characterStore";
+import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { conc } from "./__helpers__/concentration";
@@ -146,6 +146,31 @@ describe("Detect Magic (Concentration, up to 10 minutes)", () => {
     expect(store().character?.session.concentration).toBe("");
     undo?.();
     expect(store().character?.session.concentration).toBe(conc("detect-magic"));
+  });
+
+  // The dispatch contract (sheet-events.ts, `time-passes`): the Concentration
+  // teardown and the dispatch share ONE whole-state undo, as the rests do.
+  it("teardown + dispatch under one whole-state undo: Undo brings Concentration back", () => {
+    store().setCharacter(caster({ concentration: conc("detect-magic") }));
+    const doc = store().character;
+    if (!doc) throw new Error("no character");
+    const seal = beginWholeStateUndo();
+    if (timePassEndsConcentration(doc, 10)) {
+      store().setConcentration("", { undoable: false, silent: true });
+    }
+    store().dispatch({ kind: "time-passes", minutes: 10 });
+    const undo = seal?.();
+    expect(store().character?.session.concentration).toBe("");
+    expect(undo?.()).toBe(true);
+    expect(store().character?.session.concentration).toBe(conc("detect-magic"));
+  });
+
+  it("the teardown first, then dispatch's own undo alone, loses the Concentration", () => {
+    store().setCharacter(caster({ concentration: conc("detect-magic") }));
+    store().setConcentration("", { undoable: false, silent: true });
+    const undo = store().dispatch({ kind: "time-passes", minutes: 10 });
+    undo?.();
+    expect(store().character?.session.concentration).toBe("");
   });
 });
 
