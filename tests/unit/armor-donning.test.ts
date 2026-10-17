@@ -6,7 +6,11 @@
  */
 import { describe, expect, it } from "vitest";
 import { SRD_ARMOR, getArmor } from "@/data/armor";
-import { armorChange } from "@/lib/play/armor-donning";
+import { getEquipment } from "@/data/equipment";
+import { armorChange, armorSwap, wearArmor } from "@/lib/play/armor-donning";
+import type { CharacterDoc } from "@/types/character";
+
+type Equipment = CharacterDoc["character"]["equipment"];
 
 function category(id: string) {
   const armor = getArmor(id);
@@ -53,5 +57,66 @@ describe("inside a fight", () => {
   it("lets a Shield go on with the Utilize action, and flags nothing out of a fight", () => {
     expect(armorChange(category("shield"), true, true)?.tooSlowForFight).toBe(false);
     expect(armorChange(category("chain-mail"), true, false)?.tooSlowForFight).toBe(false);
+  });
+});
+
+describe("one body armor at a time", () => {
+  const leather = { srdId: "leather-armor", equipped: true };
+  const worn = (equipment: Equipment) => equipment.map((ref) => ref.equipped ?? false);
+
+  it("putting on Chain Mail takes the worn Leather off; the Shield stays", () => {
+    const result = wearArmor(
+      [leather, { srdId: "shield", equipped: true }, { srdId: "chain-mail" }],
+      2,
+      getEquipment
+    );
+    expect(worn(result.equipment)).toEqual([false, true, true]);
+    expect(result.doffed).toEqual([0]);
+  });
+
+  it("taking armor off, or putting on a Shield, takes nothing else off", () => {
+    const off = wearArmor(
+      [leather, { srdId: "chain-mail", equipped: true }],
+      1,
+      getEquipment
+    );
+    expect(worn(off.equipment)).toEqual([true, false]);
+    expect(off.doffed).toEqual([]);
+    const shieldOn = wearArmor([leather, { srdId: "shield" }], 1, getEquipment);
+    expect(worn(shieldOn.equipment)).toEqual([true, true]);
+    expect(shieldOn.doffed).toEqual([]);
+  });
+
+  it("homebrew body armor counts too", () => {
+    const result = wearArmor(
+      [
+        {
+          custom: true,
+          name: "Bone plate",
+          instanceId: "bone-1",
+          armorCategory: "heavy",
+          equipped: true,
+        },
+        { srdId: "chain-mail" },
+      ],
+      1,
+      getEquipment
+    );
+    expect(worn(result.equipment)).toEqual([false, true]);
+    expect(result.doffed).toEqual([0]);
+  });
+});
+
+describe("changing armor in one line", () => {
+  it("pairs the doff time of the armor coming off with the don time of the new one", () => {
+    // Leather comes off in 1 minute, Chain Mail goes on in 10.
+    expect(armorSwap(category("leather-armor"), category("chain-mail"), true)).toEqual({
+      doff: 1,
+      don: 10,
+      tooSlowForFight: true,
+    });
+    expect(
+      armorSwap(category("leather-armor"), category("chain-mail"), false).tooSlowForFight
+    ).toBe(false);
   });
 });

@@ -7,13 +7,15 @@
  */
 
 import { FolioInventoryIcon } from "@/components/shared/folio-icons";
-import { SRD_EQUIPMENT } from "@/data/equipment";
+import { SRD_EQUIPMENT, getEquipment } from "@/data/equipment";
+import { armorCategoryOf, doffBodyArmor } from "@/lib/play/armor-donning";
+import { showArmorToast } from "@/features/character/center/armor-toast";
 import { itemArtUrl } from "@/data/item-art";
 import { equipmentSealIcon, equipmentCategoryIcon } from "@/components/shared/item-icons";
 import { addEquipmentRef, addWeaponRef } from "@/lib/equipment-add";
 import { formatWeight } from "@/lib/utils";
 import { localizeWeaponMastery, localizeWeaponProperty } from "@/lib/views/srd-i18n";
-import { localizeSrd, hasSrd } from "@/i18n/resolver";
+import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { useCharacterStore } from "@/stores/characterStore";
 import { buyItem, purchaseOffer } from "@/features/character/center/purchase-offer";
@@ -22,7 +24,9 @@ import { ItemArtPlate } from "@/components/shared/ItemArtPlate";
 import { UniversalCardTags } from "@/components/shared/UniversalCard";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import type { SrdEquipmentData, EquipmentCategory } from "@/data/types";
-import type { SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
+import type { CharacterDoc, SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
+
+type EquipmentRef = CharacterDoc["character"]["equipment"][number];
 import {
   defineFilter,
   type CompendiumPickerSpec,
@@ -56,11 +60,15 @@ function formatCost(item: SrdEquipmentData, t: TFn): string {
 const itemText = (i: SrdEquipmentData, field: string, locale: Locale) =>
   localizeSrd("equipment", i.id, field, locale);
 
-/** Put `qty` units of a catalogue item on the open sheet (stacking onto a twin). */
-function addToSheet(item: SrdEquipmentData, qty: number): void {
+/**
+ * Put `qty` units of a catalogue item on the open sheet (stacking onto a twin). Body
+ * armor goes on worn, so the armor worn until now comes off (one body armor at a
+ * time); that row is returned so the caller can say the change.
+ */
+function addToSheet(item: SrdEquipmentData, qty: number): EquipmentRef | undefined {
   const store = useCharacterStore.getState();
   const character = store.character;
-  if (!character) return;
+  if (!character) return undefined;
   if (item.category === "weapon") {
     const newRef: SrdWeaponRef = { srdId: item.id, quantity: qty };
     store.setCharacter({
@@ -82,15 +90,44 @@ function addToSheet(item: SrdEquipmentData, qty: number): void {
         : {}),
       tracked: item.category === "gear" || item.category === "pack",
     };
+    const worn =
+      item.category === "armor"
+        ? doffBodyArmor(character.character.equipment, getEquipment)
+        : { equipment: character.character.equipment, doffed: [] };
     store.setCharacter({
       ...character,
       character: {
         // Stack onto an identical entry instead of appending a duplicate row.
         ...character.character,
-        equipment: addEquipmentRef(character.character.equipment, newRef),
+        equipment: addEquipmentRef(worn.equipment, newRef),
       },
     });
+    const offIdx = worn.doffed[0];
+    return offIdx === undefined ? undefined : character.character.equipment[offIdx];
   }
+  return undefined;
+}
+
+/** Add, then say an armor change in one line when the new armor replaced the worn one. */
+function addAndSay(item: SrdEquipmentData, qty: number, t: TFn, locale: Locale): void {
+  const off = addToSheet(item, qty);
+  const offCategory = off && armorCategoryOf(off, getEquipment);
+  if (!off || !offCategory || !item.armorCategory) return;
+  showArmorToast(
+    t,
+    {
+      name: itemText(item, "name", locale),
+      category: item.armorCategory,
+      equipping: true,
+    },
+    {
+      name:
+        "custom" in off
+          ? localizeCustom(off.name)
+          : localizeSrd("equipment", off.srdId, "name", locale),
+      category: offCategory,
+    }
+  );
 }
 
 export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
@@ -277,8 +314,10 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
     // The picker's stepper already yields the real unit count (it steps by the
     // bundle size for ammo). With no stepper, default to one bundle.
     const qty = quantity ?? item.bundleSize ?? 1;
-    if (options?.pay) buyItem(item, qty, itemText(item, "name", locale), t, addToSheet);
-    else addToSheet(item, qty);
+    const add = (entry: SrdEquipmentData, units: number) =>
+      addAndSay(entry, units, t, locale);
+    if (options?.pay) buyItem(item, qty, itemText(item, "name", locale), t, add);
+    else add(item, qty);
   },
 
   // A bought item, not found loot: one tap adds it and pays its price, with change.

@@ -17,7 +17,7 @@
  * theme-aware metal tokens. Honest blanks throughout; bilingual EN + IT.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -52,9 +52,8 @@ import { GearCard } from "./inventory/GearCard";
 import { inventoryItemDisplayName } from "./inventory/inventory-card-helpers";
 import { useItemResourceSpend } from "@/features/character/useItemResourceSpend";
 import { sellItem } from "@/features/character/center/purchase-offer";
-import { sheetInEncounter } from "@/features/character/center/sheet-in-encounter";
-import { armorChange } from "@/lib/play/armor-donning";
-import { useToastStore } from "@/stores/toastStore";
+import { armorCategoryOf, wearArmor } from "@/lib/play/armor-donning";
+import { showArmorToast } from "@/features/character/center/armor-toast";
 
 type CurrencyKey = "gp" | "sp" | "cp" | "pp" | "ep";
 // Order = highest→lowest denomination, ep last. The displayed abbreviation is
@@ -481,16 +480,27 @@ export function InventoryTab() {
     });
   }, []);
 
+  // The latest view for the equip toggle's armor-swap line (read at tap time, so the
+  // toggle keeps a stable identity and the memoized cards do not re-render).
+  const viewRef = useRef(view);
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
   const toggleEquip = useCallback(
     (idx: number, name?: string) => {
       const store = useCharacterStore.getState();
       const char = store.character;
       if (!char) return;
-      const equipCopy = [...char.character.equipment];
-      const ref = equipCopy[idx];
+      const ref = char.character.equipment[idx];
       if (!ref) return;
       const equipping = !(ref.equipped ?? false);
-      equipCopy[idx] = { ...ref, equipped: equipping };
+      // One body armor at a time: putting armor on takes the worn one off.
+      const { equipment: equipCopy, doffed } = wearArmor(
+        char.character.equipment,
+        idx,
+        getEquipment
+      );
       const effectiveEquipment = effectiveEquipmentForItemResources(
         equipCopy,
         char.session.itemResources
@@ -511,23 +521,19 @@ export function InventoryTab() {
           store.setActiveFeature(key, false);
         }
       }
-      // SRD don / doff time as the reason line; in a fight, say it is no one-action
-      // change. Never blocks: the toggle above already applied (override everywhere).
-      const change = armorChange(
-        "custom" in ref ? ref.armorCategory : getEquipment(ref.srdId)?.armorCategory,
-        equipping,
-        sheetInEncounter()
-      );
-      if (change && name) {
-        const time =
-          change.time === "utilize"
-            ? t("equipment.armorTimeUtilize")
-            : t("equipment.armorTimeMinutes", { count: change.time });
-        const key = `equipment.${change.verb}${change.tooSlowForFight ? "Fight" : ""}Toast`;
-        useToastStore.getState().showToast({
-          message: t(key, { name, time }),
-          duration: 6_000,
-        });
+      // SRD don / doff time as the reason line, ONE toast per tap (a swap reads as one
+      // change). Never blocks: the toggle above already applied (override everywhere).
+      const onCategory = armorCategoryOf(ref, getEquipment);
+      const offIdx = doffed[0];
+      const offRef = offIdx === undefined ? undefined : char.character.equipment[offIdx];
+      const offCategory = offRef && armorCategoryOf(offRef, getEquipment);
+      const offName = viewRef.current?.armor.find((r) => r.idx === offIdx)?.name;
+      if (onCategory && name) {
+        showArmorToast(
+          t,
+          { name, category: onCategory, equipping },
+          offCategory && offName ? { name: offName, category: offCategory } : undefined
+        );
       }
     },
     [t]

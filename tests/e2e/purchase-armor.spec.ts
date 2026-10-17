@@ -2,8 +2,9 @@
  * Coins on purchase and the armor time, Italian, dark theme, desktop and phone.
  * Bram has 50 gp and 3 pp: adding Chain Mail (75 gp) from the catalogue offers
  * "Paga 75 mo"; paying spends the 50 gp and breaks the 3 pp, 5 gp coming back, and
- * logs it. The Longsword sells for half its price. Taking the Chain Mail off says its
- * 5 minutes; putting it back on inside a fight says it does not fit in one action.
+ * logs it; the Chain Mail goes on and the worn Leather comes off. The Longsword sells
+ * for half its price. Taking the Chain Mail off says its 5 minutes; putting it on over
+ * the Leather inside a fight is one line naming both, and no single action covers it.
  * Review shots land under REVIEW_SHOTS when set, else in the test output dir.
  */
 import { test, expect, type Page } from "@playwright/test";
@@ -91,11 +92,20 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(coin(page, "sp")).toHaveText("5");
     await page.screenshot({ path: shotPath(`purchase-sold-${size}.png`) });
 
-    // The armor time: the fact on the row, a doff line, then a don line in a fight.
+    // One body armor at a time: the bought Chain Mail went on, the Leather came off.
+    const armorRow = (name: string) =>
+      page.locator("article", {
+        has: page.getByRole("button", { name: `Espandi: ${name}` }),
+      });
+    const chain = armorRow("Cotta di Maglia");
+    const leather = armorRow("Armatura di Cuoio");
+    await expect(chain.getByRole("button", { name: "Equipaggiato" })).toBeVisible();
+    await expect(
+      leather.getByRole("button", { name: "Equipaggia", exact: true })
+    ).toBeVisible();
+
+    // The armor time: the fact on the row, then one line per tap.
     await expand(page, "Cotta di Maglia");
-    const chain = page.locator("article", {
-      has: page.getByRole("button", { name: "Espandi: Cotta di Maglia" }),
-    });
     await expect(
       chain.getByRole("region", { name: "Cotta di Maglia", exact: true })
     ).toContainText("Indossare / Togliere10 min / 5 min");
@@ -104,20 +114,30 @@ for (const size of ["desktop", "mobile"] as const) {
       page.getByText("Togliere Cotta di Maglia richiede 5 minuti")
     ).toBeVisible();
     await page.screenshot({ path: shotPath(`armor-doff-${size}.png`) });
+    await leather.getByRole("button", { name: "Equipaggia", exact: true }).click();
+    await expect(
+      page.getByText("Indossare Armatura di Cuoio richiede 1 minuto")
+    ).toBeVisible();
 
-    // Roll Initiative on the Combat tab: a fight is on.
+    // In a fight, Chain Mail over the Leather: ONE line names both, and the swap holds.
     await page.getByRole("tab", { name: "Combattimento" }).click();
     await startSoloFight(page);
     await page.getByRole("tab", { name: "Inventario" }).click();
-    await expand(page, "Cotta di Maglia");
     await chain.getByRole("button", { name: "Equipaggia", exact: true }).click();
     await expect(
       page.getByText(
-        "Indossare Cotta di Maglia richiede 10 minuti: in combattimento non basta un'azione"
+        "Cambiare armatura: togliere Armatura di Cuoio (1 min) e indossare Cotta di Maglia (10 min); in combattimento non basta un'azione"
       )
     ).toBeVisible();
-    // Never blocked: the armor is on.
+    // One armor line on screen: the earlier ones were replaced, not stacked.
+    await expect(page.locator(".toast", { hasText: /Indossare|Togliere/ })).toHaveCount(
+      0
+    );
+    // Never blocked: the Chain Mail is on, the Leather off.
     await expect(chain.getByRole("button", { name: "Equipaggiato" })).toBeVisible();
+    await expect(
+      leather.getByRole("button", { name: "Equipaggia", exact: true })
+    ).toBeVisible();
     await page.screenshot({ path: shotPath(`armor-don-fight-${size}.png`) });
 
     // Both trades are in the log.
