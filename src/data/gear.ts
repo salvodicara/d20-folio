@@ -736,7 +736,7 @@ export const SRD_GEAR: SrdEquipmentData[] = [
   // gear row on dnd2024.wikidot.com/equipment:adventuring-gear. Modeled here as
   // catalogue rows (stable id → localized name via the SRD catalogue) so a
   // background pack resolves them through the SAME id→`localizeSrd` seam as every
-  // other item, never an inline-BiText custom string. Prices + weights verified
+  // other item, never an inline-LocaleText custom string. Prices + weights verified
   // against the wikidot gear table + the official IT SRD 5.2.1 gear table.
   // ============================================================
   {

@@ -17,6 +17,7 @@ import { DEV_BYPASS_AUTH, DEV_BYPASS_PHOTO_URL } from "@/lib/dev-bypass";
 // emulator sandbox; see `dev-impersonate.ts` + `scripts/dev-seed-sandbox.ts`).
 import { devActAsUid } from "@/lib/dev-impersonate";
 import { createEmailLinkSignIn } from "@/platform/email-link-sign-in";
+import type { Locale } from "@/lib/locale";
 
 const googleProvider = new GoogleAuthProvider();
 const EMULATOR_SANDBOX =
@@ -165,7 +166,7 @@ interface FirestoreUserDoc {
   createdAt: { toDate: () => Date } | null;
   lastActiveAt: { toDate: () => Date } | null;
   settings: {
-    language: "en" | "it";
+    language: Locale;
     theme: "dark" | "light" | "system";
   } | null;
 }

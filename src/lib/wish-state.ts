@@ -6,7 +6,7 @@
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 
 export const WISH_STRESS_STATE: Extract<Grant, { type: "while-active" }> = {
   type: "while-active",
@@ -31,6 +31,6 @@ export function isWishStressed(session: {
 }
 
 /** The bilingual name behind the Wish Stress key, for labels. */
-export function wishStressStateName(key: string): BiText | undefined {
+export function wishStressStateName(key: string): LocaleText | undefined {
   return key === WISH_STRESS_STATE.activeKey ? WISH_STRESS_STATE.label : undefined;
 }

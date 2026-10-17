@@ -8,9 +8,9 @@
  * until tapped off or the encounter ends. The sentences live in `VISION_REFERENCE`.
  */
 import { VISION_REFERENCE } from "@/data/combat-variants";
-import type { BiText } from "@/data/types";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
+import { srdText, type LocText } from "@/lib/loc-text";
 
 export const LIGHT_LEVELS = ["dim", "darkness"] as const;
 export type LightLevel = (typeof LIGHT_LEVELS)[number];
@@ -23,13 +23,13 @@ export function lightStateKey(level: LightLevel): string {
   return `light-${level}`;
 }
 
-function referenceName(id: string): BiText {
+function referenceName(id: string): LocText {
   const row = VISION_REFERENCE.find((note) => note.id === id);
   if (!row) throw new Error(`light-states: missing reference line "${id}"`);
-  return row.name;
+  return srdText("rule", row.key, "name");
 }
 
-const LABELS: Record<LightLevel, BiText> = {
+const LABELS: Record<LightLevel, LocText> = {
   dim: referenceName("dim-light"),
   darkness: referenceName("darkness"),
 };
@@ -96,11 +96,11 @@ export function resolveLightStateSources(
       const sight = sightUnder(level, darkvisionFt);
       return {
         id: lightStateKey(level),
+        label: LABELS[level],
         grants: [
           {
             type: "while-active",
             activeKey: lightStateKey(level),
-            label: LABELS[level],
             grants: sight ? OBSCUREMENT_GRANTS[sight] : [],
           },
         ],
@@ -109,12 +109,12 @@ export function resolveLightStateSources(
   );
 }
 
-/** The bilingual name behind a light key, for log lines and labels. */
-export function lightStateName(key: string): BiText | undefined {
+/** The name behind a light key, for log lines and labels. */
+export function lightStateName(key: string): LocText | undefined {
   const level = LIGHT_LEVELS.find((l) => lightStateKey(l) === key);
   return level ? LABELS[level] : undefined;
 }
 
-export function lightLevelName(level: LightLevel): BiText {
+export function lightLevelName(level: LightLevel): LocText {
   return LABELS[level];
 }

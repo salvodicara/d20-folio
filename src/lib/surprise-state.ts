@@ -6,7 +6,7 @@
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 
 export const SURPRISE_STATE: Extract<Grant, { type: "while-active" }> = {
   type: "while-active",
@@ -41,6 +41,6 @@ export function isSurprised(session: {
 }
 
 /** The bilingual name behind the Surprise key, for log lines and labels. */
-export function surpriseStateName(key: string): BiText | undefined {
+export function surpriseStateName(key: string): LocaleText | undefined {
   return key === SURPRISE_STATE.activeKey ? SURPRISE_STATE.label : undefined;
 }

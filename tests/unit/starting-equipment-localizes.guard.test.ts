@@ -7,7 +7,7 @@
  * ## Why this is the lock
  *
  * `src/data/background-equipment.ts` used to carry a `flavour(en, it)` helper
- * that produced INLINE-BiText pack items (Pouch/Borsa, Map/Mappa, …). Those
+ * that produced INLINE-LocaleText pack items (Pouch/Borsa, Map/Mappa, …). Those
  * strings bypassed the id→`localizeSrd` system and leaked EN through the
  * `localizeCustom` passthrough in the IT inventory. That escape hatch is DELETED:
  * a pack item is now EITHER a real SRD `srdId` OR the structural `fromToolChoice`
@@ -97,7 +97,7 @@ function assertModeledAndLocalized(id: string, where: string): void {
   }
 }
 
-describe("starting-equipment items are ALL modeled + localized (no inline BiText, no custom passthrough)", () => {
+describe("starting-equipment items are ALL modeled + localized (no inline LocaleText, no custom passthrough)", () => {
   it("there are sources to defend (every class + every background)", () => {
     // Every loaded class + the FULL loaded background set — not accidentally
     // empty. (The pack-mode breadth — 40+ backgrounds — is pinned in
@@ -118,7 +118,7 @@ describe("starting-equipment items are ALL modeled + localized (no inline BiText
       for (const opt of src.packages) {
         for (const item of opt.items) {
           if (item.fromToolChoice) continue; // markers checked below
-          // No name-only / inline-BiText form can exist (type-enforced) — assert it.
+          // No name-only / inline-LocaleText form can exist (type-enforced) — assert it.
           expect(item.srdId, `${src.label} ${opt.label}: item is an srdId`).toBeDefined();
           assertModeledAndLocalized(item.srdId, `${src.label} ${opt.label}`);
         }

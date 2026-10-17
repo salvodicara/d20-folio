@@ -27,7 +27,8 @@ import {
   type Ent,
 } from "./__helpers__/it-name-registry";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
-import { COVER_REFERENCE } from "@/data/cover";
+import { COVER_REFERENCE, coverKey } from "@/data/cover";
+import { srd } from "@tests/_harness/loc";
 
 const ents = loadEntities([PUBLIC_SRD_I18N]);
 // The sub-keyed catalogue rows (grant / action / trait blurbs) — user-visible prose
@@ -231,8 +232,7 @@ describe("IT name consistency (public SRD)", () => {
   });
 
   it("titles the cover states with the official IT SRD 5.2.1 terms", () => {
-    expect(COVER_REFERENCE.map((c) => c.name.it.toLowerCase())).toEqual([
-      ...COVER_DEGREES_IT,
-    ]);
+    const names = COVER_REFERENCE.map((c) => srd("rule", coverKey(c.id), "name", "it"));
+    expect(names.map((name) => name.toLowerCase())).toEqual([...COVER_DEGREES_IT]);
   });
 });

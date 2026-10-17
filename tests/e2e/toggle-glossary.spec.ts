@@ -8,7 +8,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
 import itGlossary from "../../src/i18n/it/ui/glossary.json" with { type: "json" };
-import { COVER_REFERENCE } from "../../src/data/cover";
+import itRules from "../../src/i18n/it/srd/rules.json" with { type: "json" };
 
 test.describe.configure({ timeout: 90_000 });
 
@@ -18,7 +18,7 @@ const SIZES = {
   phone375: { width: 375, height: 812 },
 } as const;
 
-const HALF_COVER = COVER_REFERENCE.find((c) => c.id === "half")?.name.it ?? "";
+const HALF_COVER = itRules["cover.half"].name;
 
 function shotPath(name: string): string {
   const dir = process.env.REVIEW_SHOTS;

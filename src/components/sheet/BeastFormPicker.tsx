@@ -14,7 +14,7 @@
  * `ModalShell` + `SearchField` + `matchesSearch`, mirroring
  * {@link import("./DivineInterventionModal").DivineInterventionModal}. SRD names
  * (Beast / attacks / traits) resolve through the `beasts` catalogue at render;
- * this component reads ZERO BiText.
+ * this component reads ZERO LocaleText.
  *
  * Folio-styled: the mode switch is the shared `Segmented` control; the list is
  * the fixed-height `flex-1` scroll region with the read-only stat block pinned

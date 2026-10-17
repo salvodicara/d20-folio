@@ -4,7 +4,7 @@
  * `UniversalCard kind="armor"` with the equip / attune toggles + charge counter on
  * the trailing control cluster, the equipped / AC-formula / attuned / charges /
  * weight facts grid, and the description. SRD CONTENT arrives PRE-LOCALIZED on the
- * VM — ZERO BiText / `[locale]` reads here; the only `t(...)` formats APP strings
+ * VM — ZERO LocaleText / `[locale]` reads here; the only `t(...)` formats APP strings
  * and the AC formula. Memoized (stable VM + stable callbacks).
  */
 import { memo } from "react";

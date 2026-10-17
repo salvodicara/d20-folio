@@ -3,7 +3,8 @@
  * D&D 2024 System Reference Document
  *
  * These types define the shape of all pre-loaded SRD content.
- * Every SRD entry has bilingual text (EN + IT) and a unique string ID.
+ * Every SRD entry has a unique string ID; its display text lives in the
+ * `src/i18n/<locale>/srd` catalogues, keyed by that ID.
  */
 
 // Type-only import — erased at compile time, so this introduces no runtime
@@ -15,6 +16,7 @@ import type { DamageType } from "@/types/damage";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
 // 22): a class table references a proficiency KIND by id, never a display string.
 import type { ProficiencyToken } from "@/types/ids";
+import type { Locale } from "@/lib/locale";
 
 /**
  * Source book/setting for an SRD entry. `"SRD"` = the CC-BY 5.2.1 subset; the
@@ -28,11 +30,13 @@ export type SrdSource = "SRD" | "Wiki" | "Faerun" | "Eberron" | "Exotic" | "Lorw
 // Shared Primitives
 // ============================================================
 
-/** Bilingual text — every user-visible string has both languages */
-export interface BiText {
-  en: string;
-  it: string;
-}
+/**
+ * Inline text in every supported language, derived from the locale registry
+ * (`@/lib/locale`): registering a language makes every literal that lacks it a
+ * type error. Rules data stores ids and keeps its text in the i18n catalogues;
+ * this shape is only for the engine literals still waiting to move there.
+ */
+export type LocaleText = Record<Locale, string>;
 
 /** D&D ability score codes */
 export type AbilityCode = CombatAbilityCode;
@@ -2702,7 +2706,7 @@ export interface SrdRaceTrait {
   /**
    * Stable id — `slug(name.en)`, the trait's catalogue-key segment
    * (`<raceId>.traits.<id>`). The ONLY locale-free handle for a trait once its
-   * `name`/`description` BiText is stripped: both the catalogue keys AND the
+   * `name`/`description` LocaleText is stripped: both the catalogue keys AND the
    * persisted `race:<raceId>:<trait.id>` runtime session ids ARE this id — no
    * English display name is ever embedded in a stored key (golden rule 7).
    */
@@ -2734,7 +2738,7 @@ export interface SrdRaceTrait {
  *     `"parchment"`, `"iron-pot"`). EVERY explicit pack member is one — the
  *     2024 packs list only real SRD rows, so each resolves through the
  *     id→`localizeSrd` seam and can never leak an EN-baked custom string in
- *     Italian. There is NO name-only / inline-BiText form (the former "flavour"
+ *     Italian. There is NO name-only / inline-LocaleText form (the former "flavour"
  *     escape hatch is deleted): a parametric count ("Parchment (10 sheets)") is
  *     `quantity`, a decorative annotation ("Book (prayers)") is dropped.
  *   - `fromToolChoice` — a structural MARKER ("the tool(s) chosen for THIS

@@ -20,7 +20,7 @@ import type {
 } from "@/lib/smart-tracker";
 import { BASE_ACTIONS, resolveActions } from "@/lib/smart-tracker";
 import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
-import type { AbilityCode, BiText } from "@/data/types";
+import type { AbilityCode } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { formatModifier } from "@/lib/utils";
@@ -43,8 +43,7 @@ import { buildMasteryRiders, type MasteryRiderVM } from "@/lib/views/mastery-rid
 import { buildRiders, type RiderVM } from "@/lib/views/rider-view";
 import { className } from "@/lib/views/level-up-view";
 import { economyActionCategory } from "@/lib/combat-economy";
-
-type Locale = keyof BiText;
+import type { Locale } from "@/lib/locale";
 
 /**
  * The one-line budget for a collapsed action card's effect line (characters).
@@ -652,7 +651,7 @@ export function baseActionName(id: string, locale: Locale): string | null {
  */
 export function combatHigherLevels(
   action: RawResolvedAction | ResolvedAction,
-  locale: "en" | "it"
+  locale: Locale
 ): string | null {
   if (action.source !== "spell" || !action.spellId) return null;
   return hasSrd("spell", action.spellId, "higherLevels", locale)

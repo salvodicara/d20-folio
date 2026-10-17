@@ -1,56 +1,49 @@
 /**
- * §7 GUARD — no SRD display strings in `src/data/**` (R6+R3 SLICE 7d).
+ * GUARD: no display text in shipped rules data (`src/data/**`).
  *
- * After THE STRIP the catalogues (`src/i18n/{en,it}/srd/<kind>.json`) are the
- * single source of SRD text; `src/data/**` is ids + mechanics ONLY. This guard
- * fails if any translatable string literal reappears in the data layer:
- *   - a `BiText` leaf — an object literal with BOTH `en` and `it` string
- *     properties (the exact shape the strip removed), OR
- *   - an `en:` / `it:` property whose value is a natural-language string
- *     (multi-word, or containing a space + a letter) — the codemod's signature.
+ * Rules data stores ids and mechanics; its words live in the catalogues
+ * (`src/i18n/<locale>/srd/<kind>.json`), keyed by those ids, so a new language
+ * is a new catalogue folder and never a data edit. This guard fails if inline
+ * text reappears in the data layer:
+ *   - a `LocaleText` leaf: an object literal with string values under two or
+ *     more registered locale codes (`{ en: "…", it: "…" }`), OR
+ *   - a locale-code property (`en:`, `it:`, any registered code) whose value is
+ *     a natural-language string (multi-word).
+ * The locale codes come from the registry (`@/lib/locale`), so a third language
+ * is caught without touching this file.
  *
- * Whitelisted files keep inline strings by design (documented bypasses):
- *   - `srd-names.ts` — a lightweight name index the eager persistence layer reads
- *     without pulling the SRD catalogues.
- *   - `types.ts` — the `BiText` interface declaration itself (no string VALUES).
- *   - `cover.ts` — a self-contained Cover quick-reference table that is NOT an
- *     id-keyed SRD entity rendered through the catalogue seam (no per-character
- *     mechanic; only a static reference). Documented bypass.
- *   - `travel-pace.ts` — a self-contained Travel Pace quick-reference table (SRD
- *     "Exploration"), NOT an id-keyed SRD entity rendered through the catalogue
- *     seam (no per-character mechanic; only a static reference). Documented
- *     bypass — same rationale as `cover.ts`.
- *   - `combat-variants.ts` — the Mounted/Underwater Combat quick-reference
- *     tables (SRD combat variants), NOT id-keyed SRD entities rendered through
- *     the catalogue seam (no per-character mechanic; only a static reference).
- *     Documented bypass — same rationale as `cover.ts`.
- *
- * NOTE: `background-equipment.ts` was REMOVED from this whitelist (2026-06-13)
- * when its `flavour(en,it)` inline-BiText escape hatch was deleted — every former
- * "flavour" pack item is now a real SRD catalogue id, so the file carries ids
- * ONLY and this guard now enforces no-BiText there too (the hatch cannot return).
+ * Bypasses, each one a slice still to move:
+ *   - `types.ts` declares the `LocaleText` type (no string values).
+ *   - `srd-names.ts` is the name index the eager persistence layer reads without
+ *     pulling the SRD catalogues; its names mirror the catalogues and the content
+ *     pack feeds it (`packClassNames` & co.).
  *
  * AST-driven (TS compiler API), so it can't be spelled around by formatting.
  */
 import { describe, it, expect } from "vitest";
 import { resolve, relative } from "node:path";
 import ts from "typescript";
+import { LOCALES } from "@/lib/locale";
 import { SRC_ROOT, srcFiles, readSrc } from "./__helpers__/src-files";
 
 const DATA_DIR = resolve(SRC_ROOT, "data");
 
-// Files allowed to keep inline strings (documented bypasses).
-const WHITELIST = new Set([
-  "srd-names.ts",
-  "types.ts",
-  "cover.ts",
-  "travel-pace.ts",
-  "combat-variants.ts",
-]);
+const BYPASS = new Set(["types.ts", "srd-names.ts"]);
+
+const LOCALE_CODES: ReadonlySet<string> = new Set(LOCALES);
 
 /** A natural-language string: multi-word (a space between word chars), not a slug/id/enum. */
 function isNaturalLanguage(s: string): boolean {
   return /\w\s+\w/.test(s);
+}
+
+function isStringLiteral(e: ts.Expression): e is ts.StringLiteralLike {
+  return ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e);
+}
+
+function propName(p: ts.ObjectLiteralElementLike): string | undefined {
+  if (!ts.isPropertyAssignment(p)) return undefined;
+  return ts.isIdentifier(p.name) || ts.isStringLiteral(p.name) ? p.name.text : undefined;
 }
 
 function offenders(file: string): string[] {
@@ -63,36 +56,32 @@ function offenders(file: string): string[] {
   }
 
   const visit = (node: ts.Node): void => {
-    // (1) A BiText leaf — object literal with BOTH `en` and `it` string props.
     if (ts.isObjectLiteralExpression(node)) {
-      const props = new Map<string, ts.Expression>();
-      for (const p of node.properties) {
-        if (
+      const localized = node.properties.filter((p) => {
+        const name = propName(p);
+        return (
+          name !== undefined &&
+          LOCALE_CODES.has(name) &&
           ts.isPropertyAssignment(p) &&
-          (ts.isIdentifier(p.name) || ts.isStringLiteral(p.name))
-        )
-          props.set(p.name.text, p.initializer);
-      }
-      const en = props.get("en");
-      const it = props.get("it");
-      const isStr = (e?: ts.Expression): boolean =>
-        e != null && (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e));
-      if (isStr(en) && isStr(it)) {
-        found.push(`L${lineOf(node)}: BiText leaf { en, it }`);
+          isStringLiteral(p.initializer)
+        );
+      });
+      if (localized.length >= 2) {
+        found.push(
+          `L${lineOf(node)}: inline text { ${localized.map(propName).join(", ")} }`
+        );
       }
     }
-    // (2) An `en:`/`it:` property assigned a natural-language string literal.
-    if (
-      ts.isPropertyAssignment(node) &&
-      (ts.isIdentifier(node.name) || ts.isStringLiteral(node.name)) &&
-      (node.name.text === "en" || node.name.text === "it") &&
-      (ts.isStringLiteral(node.initializer) ||
-        ts.isNoSubstitutionTemplateLiteral(node.initializer)) &&
-      isNaturalLanguage(node.initializer.text)
-    ) {
-      found.push(
-        `L${lineOf(node)}: ${node.name.text}: "${node.initializer.text.slice(0, 40)}…"`
-      );
+    if (ts.isPropertyAssignment(node)) {
+      const name = propName(node);
+      if (
+        name !== undefined &&
+        LOCALE_CODES.has(name) &&
+        isStringLiteral(node.initializer) &&
+        isNaturalLanguage(node.initializer.text)
+      ) {
+        found.push(`L${lineOf(node)}: ${name}: "${node.initializer.text.slice(0, 40)}…"`);
+      }
     }
     ts.forEachChild(node, visit);
   };
@@ -100,16 +89,14 @@ function offenders(file: string): string[] {
   return found;
 }
 
-describe("§7 guard — no SRD display strings in src/data/**", () => {
-  // Explicit timeout: whole src/data AST walk (TypeScript compiler API). The
-  // data corpus grew ~+1,000 lines (feats.ts etc.) in a data sweep; measured
-  // at risk of the 5 s default under V8 coverage + parallel load. 30 s gives
-  // 4–5× headroom and grows with the SRD corpus.
-  it("every data file (outside the documented bypasses) is free of BiText / NL strings", () => {
+describe("guard: no display text in shipped rules data (src/data/**)", () => {
+  // Explicit timeout: whole src/data AST walk (TypeScript compiler API), at risk
+  // of the 5 s default under V8 coverage + parallel load.
+  it("every data file outside the bypasses stores ids, never inline text", () => {
     const violations: Record<string, string[]> = {};
     for (const file of srcFiles({ under: DATA_DIR, exts: [".ts"] })) {
       const base = relative(DATA_DIR, file);
-      if (WHITELIST.has(base)) continue;
+      if (BYPASS.has(base)) continue;
       const found = offenders(file);
       if (found.length) violations[base] = found;
     }

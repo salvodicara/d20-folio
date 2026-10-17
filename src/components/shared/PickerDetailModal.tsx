@@ -34,7 +34,7 @@ export function PickerDetailModal<T extends { id: string }>({
       open={entry != null}
       onClose={onClose}
       // The localized title comes from the spec's `getName` (which resolves SRD
-      // strings from the catalogue), so the modal never reads the entry's BiText.
+      // strings from the catalogue), so the modal never reads the entry's LocaleText.
       title={
         entry
           ? spec.getName(entry, { t, locale, character, mode: "add" as const })

@@ -121,7 +121,7 @@ export const BACKGROUNDS_BY_ID: SrdIndex<SrdBackgroundData> = new Map(
  * English NAME (e.g. "Acolyte") while `mock.ts` / some imports use the ID
  * (e.g. "acolyte"). Name→id resolution (id passthrough + EN/IT name match) is
  * done by the SRD-free `backgroundIdByName` (its name table is pinned to the live
- * data), so this lookup never reads a background `name` BiText — after R3 those
+ * data), so this lookup never reads a background `name` LocaleText — after R3 those
  * strings live only in the i18n catalogues.
  */
 export function findBackground(value: string): SrdBackgroundData | undefined {

@@ -2,7 +2,7 @@
  * SLICE 7 (part 2) — compendium-spec SRD-resolver coverage.
  *
  * Every compendium picker spec now reads its display strings through the THROWING
- * SRD resolver (`localizeSrd`), not inline `entity.name[locale]` BiText. This test
+ * SRD resolver (`localizeSrd`), not inline `entity.name[locale]` LocaleText. This test
  * drives EVERY spec over its FULL data list in BOTH locales — calling `getName`,
  * `searchText`, `row` and `detail` — and asserts none throws. Because `localizeSrd`
  * throws (in dev/test) on a missing `kind`/`key`/`field`, a passing run is a HARD

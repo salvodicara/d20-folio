@@ -15,7 +15,7 @@ vi.mock("@/lib/firebase", () => ({
   storage: {},
 }));
 
-import { COVER_REFERENCE } from "@/data/cover";
+import { COVER_REFERENCE, coverKey } from "@/data/cover";
 import { COVER_STATES, coverStateKey, litCoverLevel } from "@/lib/cover-states";
 import { setCover } from "@/lib/play/cover";
 import { applySheetEvent } from "@/lib/play/sheet-events";
@@ -23,7 +23,8 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
-import { litText } from "@/lib/loc-text";
+import { srdText } from "@/lib/loc-text";
+import { srd } from "@tests/_harness/loc";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 
@@ -75,7 +76,10 @@ describe("the cover table's chips", () => {
   it.each(cases.map((c) => [c.id, c] as const))(
     "%s: the table's numbers match its own sentence",
     (_id, c) => {
-      expect(summaryNumbers(c.summary.en)).toEqual([c.acBonus, c.dexSaveBonus]);
+      expect(summaryNumbers(srd("rule", coverKey(c.id), "summary", "en"))).toEqual([
+        c.acBonus,
+        c.dexSaveBonus,
+      ]);
     }
   );
 
@@ -100,8 +104,8 @@ describe("the cover table's chips", () => {
       expect(session.effectBoundaries?.[key]).toEqual(UNTIL);
       const aggregate = aggregateCharacterGrants(MOCK_CHARACTER.character, session);
       const chip = aggregate.activatableGroups.find((group) => group.key === key);
-      expect(chip?.label).toEqual(litText(c.name));
-      expect(grantSourceLabel(key, "it")).toBe(c.name.it);
+      expect(chip?.label).toEqual(srdText("rule", coverKey(c.id), "name"));
+      expect(grantSourceLabel(key, "it")).toBe(srd("rule", coverKey(c.id), "name", "it"));
     }
   );
 

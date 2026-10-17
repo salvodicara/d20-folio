@@ -58,7 +58,7 @@ const HALFLING_ROGUE: ScenarioSpec = {
 describe("Barbarian Danger Sense declares the DEX-save advantage", () => {
   it("carries the exact advantage-on(save) grant", () => {
     const grants = classFeatureIndex.get("barbarian-danger-sense")?.grants ?? [];
-    // The grant's display `description` BiText was stripped to the SRD catalogue
+    // The grant's display `description` LocaleText was stripped to the SRD catalogue
     // (SLICE 7d); the mechanical fields (rollType / vs) remain.
     expect(grants.find((g) => g.type === "advantage-on")).toEqual({
       type: "advantage-on",

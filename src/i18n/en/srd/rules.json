@@ -1,0 +1,91 @@
+{
+  "cover.half": {
+    "name": "Half Cover",
+    "summary": "+2 AC and +2 Dexterity saving throws."
+  },
+  "cover.three-quarters": {
+    "name": "Three-Quarters Cover",
+    "summary": "+5 AC and +5 Dexterity saving throws."
+  },
+  "cover.total": {
+    "name": "Total Cover",
+    "summary": "Can't be targeted directly by an attack or targeted spell."
+  },
+  "travel-pace.fast": {
+    "name": "Fast",
+    "effect": "−5 penalty to passive Perception."
+  },
+  "travel-pace.normal": {
+    "name": "Normal"
+  },
+  "travel-pace.slow": {
+    "name": "Slow",
+    "effect": "Can move stealthily."
+  },
+  "mounted.eligible-mount": {
+    "name": "Eligible Mount",
+    "summary": "A willing creature at least one size larger than you, with a suitable anatomy, can serve as a mount."
+  },
+  "mounted.mount-dismount": {
+    "name": "Mounting & Dismounting",
+    "summary": "During your move, mounting or dismounting a creature within 5 feet costs movement equal to half your Speed (round down)."
+  },
+  "mounted.controlled-mount": {
+    "name": "Controlled Mount",
+    "summary": "A mount trained to accept a rider shares your Initiative and can take only the Dash, Disengage, or Dodge action."
+  },
+  "mounted.independent-mount": {
+    "name": "Independent Mount",
+    "summary": "An untrained mount keeps its own place in Initiative and moves and acts on its own."
+  },
+  "mounted.falling-off": {
+    "name": "Falling Off",
+    "summary": "If your mount is forced to move, or you or it is knocked Prone, succeed on a DC 10 Dexterity save or fall off Prone within 5 feet."
+  },
+  "underwater.melee-underwater": {
+    "name": "Melee Attacks",
+    "summary": "Without a Swim Speed, melee weapon attack rolls have Disadvantage unless the weapon deals Piercing damage."
+  },
+  "underwater.ranged-underwater": {
+    "name": "Ranged Attacks",
+    "summary": "A ranged weapon attack automatically misses a target beyond normal range, and has Disadvantage within normal range."
+  },
+  "underwater.fire-resistance": {
+    "name": "Fire Resistance",
+    "summary": "Anything underwater has Resistance to Fire damage."
+  },
+  "attack-situation.unseen-target": {
+    "name": "Unseen Target",
+    "summary": "When you attack a target you can't see, you have Disadvantage on the attack roll."
+  },
+  "attack-situation.unseen-attacker": {
+    "name": "Unseen Attacker",
+    "summary": "When a creature can't see you, you have Advantage on attack rolls against it."
+  },
+  "attack-situation.ranged-in-melee": {
+    "name": "Ranged in Melee",
+    "summary": "A ranged attack roll has Disadvantage while you are within 5 feet of an enemy who can see you and isn't Incapacitated."
+  },
+  "attack-situation.long-range": {
+    "name": "Long Range",
+    "summary": "A weapon attack roll against a target beyond normal range has Disadvantage; beyond long range it can't be made."
+  },
+  "vision.dim-light": {
+    "name": "Dim Light",
+    "summary": "Dim Light is Lightly Obscured: Disadvantage on Wisdom (Perception) checks to see in it, and passive Perception −5."
+  },
+  "vision.darkness": {
+    "name": "Darkness",
+    "summary": "Darkness is Heavily Obscured: you have the Blinded condition when trying to see in it; you fail checks that need sight and your attack rolls have Disadvantage."
+  },
+  "vision.darkvision": {
+    "name": "Darkvision",
+    "summary": "Within its range you see in Dim Light as if it were Bright Light, and in Darkness as if it were Dim Light (in shades of gray)."
+  },
+  "situation.underwater": {
+    "name": "Underwater"
+  },
+  "situation.mounted": {
+    "name": "Mounted"
+  }
+}

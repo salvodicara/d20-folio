@@ -56,7 +56,6 @@ import type {
   DiceCount,
   HealTerm,
   Recovery,
-  BiText,
   TrackerSpec,
   SrdClassFeatureData,
   SrdFeatData,
@@ -223,9 +222,9 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
+import type { Locale } from "@/lib/locale";
 
-/** Supported locale keys matching BiText */
-type Locale = keyof BiText;
+/** Supported locale keys matching LocaleText */
 
 // ============================================================
 // Types
@@ -233,7 +232,7 @@ type Locale = keyof BiText;
 
 /**
  * A resolved resource tracker as the ENGINE emits it — locale-FREE. `label` and
- * `description` are carried as `BiText` DATA (never read by locale here);
+ * `description` are carried as `LocaleText` DATA (never read by locale here);
  * `lib/views/tracker-view.localizeTrackers` resolves them into the display
  * `ResolvedTracker` at the presenter edge (docs/ARCHITECTURE.md). Every other
  * field is identical between the raw and display shapes.
@@ -851,7 +850,7 @@ export interface ResolvedAction {
 /**
  * The engine-emitted (locale-FREE) action summary. Identical to
  * {@link ActionSummary} EXCEPT the fields that used to carry a localized string
- * are carried as DATA: `range`/`duration`/`effect`/`trigger` as `BiText`,
+ * are carried as DATA: `range`/`duration`/`effect`/`trigger` as `LocaleText`,
  * weapon range as a structured {@link WeaponRangeSpec}, plus the RAW weapon
  * facts (`properties` / `weaponCategory` / `weaponMastery`) the presenter
  * turns into the unified weapon facts block. Every numeric / token / formula
@@ -5308,7 +5307,7 @@ function resolveFeatureActions(
           const id = `custom-${featureRef.instanceId}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
-          // the BiText contract holds.
+          // the LocaleText contract holds.
           const summary: RawActionSummary = {};
           // Custom user text (no translation) — emit the full string; the
           // presenter's budget gate OMITS (never slices) a line that doesn't
@@ -7514,7 +7513,7 @@ function resolveWeaponActions(
     const equipmentKey = isCustomItem ? `custom-${itemRef.instanceId}` : itemRef.srdId;
 
     // A healing potion shows its heal verdict; any other potion (Giant Strength,
-    // Fire Breath, …) shows a short effect from its SRD description (BiText data).
+    // Fire Breath, …) shows a short effect from its SRD description (LocaleText data).
     const summary: RawActionSummary = { uses: { current: qty, total: qty } };
     if (potionFormula) {
       summary.healing = potionFormula;

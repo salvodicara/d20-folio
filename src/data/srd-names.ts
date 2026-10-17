@@ -2,7 +2,7 @@
  * SRD display NAMES — the SRD-free localization source.
  *
  * Character records store class/race/background/subclass as English strings or
- * kebab-case ids. Resolving those to localized labels needs ONLY the name BiText,
+ * kebab-case ids. Resolving those to localized labels needs ONLY the name LocaleText,
  * not the multi-megabyte class/spell/background data. This tiny module holds those
  * names so a glance (the roster card, the identity line) can localize WITHOUT
  * pulling the SRD: importing the full `@/data/classes` / `races` / `backgrounds`
@@ -13,7 +13,7 @@
  * imports the full SRD data and fails if any name here drifts from it — so this
  * stays exact (and IT translations can never silently diverge).
  */
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import type { RaceId } from "@/types/ids";
 import { mergePack } from "@/lib/pack-merge";
 import {
@@ -26,7 +26,7 @@ import {
 /** A localized id→name entry (the data is keyed by stable kebab-case id). */
 export interface NamedEntry {
   id: string;
-  name: BiText;
+  name: LocaleText;
 }
 
 /**
@@ -154,7 +154,7 @@ export function backgroundNameById(backgroundId: string): string {
   return BACKGROUND_NAMES.find((b) => b.id.toLowerCase() === lower)?.name.en ?? "";
 }
 
-const PUBLIC_CLASS_NAMES: ReadonlyArray<BiText> = [
+const PUBLIC_CLASS_NAMES: ReadonlyArray<LocaleText> = [
   { en: "Barbarian", it: "Barbaro" },
   { en: "Bard", it: "Bardo" },
   { en: "Cleric", it: "Chierico" },
@@ -170,7 +170,7 @@ const PUBLIC_CLASS_NAMES: ReadonlyArray<BiText> = [
 ];
 
 /** Class display names — public SRD + content pack. */
-export const CLASS_NAMES: ReadonlyArray<BiText> = [
+export const CLASS_NAMES: ReadonlyArray<LocaleText> = [
   ...PUBLIC_CLASS_NAMES,
   ...packClassNames,
 ];

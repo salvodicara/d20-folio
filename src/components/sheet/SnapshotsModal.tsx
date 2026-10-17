@@ -28,6 +28,7 @@ import {
   Icon,
 } from "@/components/ui";
 import type { CharacterData, SessionState } from "@/types/character";
+import type { Locale } from "@/lib/locale";
 
 export interface SnapshotItem {
   id: string;
@@ -59,7 +60,7 @@ interface Props {
  */
 function classLevelSummary(
   character: CharacterData,
-  locale: "en" | "it",
+  locale: Locale,
   lvlLabel: string
 ): string {
   const entries = character.classes.filter((e) => e.classId);

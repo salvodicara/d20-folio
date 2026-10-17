@@ -1283,7 +1283,7 @@ active-feature toggles pruned). Baked ASIs are NOT auto-reverted — the destruc
 **Starting equipment (`src/data/background-equipment.ts`).** CLASS and BACKGROUND starting gear share
 ONE shape (`BackgroundEquipmentOption` — the 2024 "Choose A or B" packages) and ONE resolver. A
 `BackgroundEquipmentItem` is one of THREE forms: a stable catalogue id, a name-only flavour entry
-(inline BiText — the one documented data-guard bypass), or a `fromToolChoice` MARKER that references the
+(inline LocaleText — the one documented data-guard bypass), or a `fromToolChoice` MARKER that references the
 source's `choice-tool-proficiency` grant STRUCTURALLY (never a tool id/locale string). The shared
 `expandToolChoiceItem` resolves the marker to the player's picked tool (the SAME picks that derive the
 proficiency, golden rule 6 — built by `toolChoiceContextForClass`/`...ForBackground`; an umbrella
@@ -1401,7 +1401,7 @@ missing-key crash (the `combat.otherReactionName` IT-session white-screen). Pinn
 
 **SRD content strings.** Every SRD content string (name, description, range, duration, material,
 trigger, …) lives ONLY in the per-language, id-keyed JSON catalogues `src/i18n/{en,it}/srd/<kind>.json`
-(18 EAGER kinds + 1 LAZY display-only kind — the lazy tier below). **`src/data/**`is ids + mechanics ONLY** — the`BiText`/effect fields are stripped from the
+(18 EAGER kinds + 1 LAZY display-only kind — the lazy tier below). **`src/data/**`is ids + mechanics ONLY** — the`LocaleText`/effect fields are stripped from the
 data + SRD types; the catalogues are the single source of SRD text. A stripped entity is addressed by
 its stable `id`(race traits / sub-entities / named grants carry an explicit`id = slug(name.en)`), and
 resolves through one pure function `localizeSrd(kind, key, field, locale)` (`src/i18n/resolver.ts`) —
@@ -1665,8 +1665,8 @@ _now_; lock 6 additionally makes a future leak impossible to ship.
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `architecture-direction.guard.test.ts`        | engine never imports UI; engine-core never imports `@/i18n`/`i18next`/`react-i18next`; `lib/views`+`lib/pdf` are presenters |
 | `pure-modules-guard.test.ts`                  | `lib/views/**` (+ CI-pure lib modules) import no React/stores/Firebase/DOM                                                  |
-| `no-srd-strings-in-data.guard` (+ data guard) | no `BiText`/display literal in `src/data/**` (ids + mechanics only); the documented inline bypasses are whitelisted         |
-| `no-bitext-indexing.guard`                    | no `.name[locale]` / `[locale]` BiText indexing in `src/features` / `src/components` (UI renders VMs)                       |
+| `no-srd-strings-in-data.guard` (+ data guard) | no `LocaleText`/display literal in `src/data/**` (ids + mechanics only); the documented inline bypasses are whitelisted     |
+| `no-bitext-indexing.guard`                    | no `.name[locale]` / `[locale]` LocaleText indexing in `src/features` / `src/components` (UI renders VMs)                   |
 | `localize-srd.test.ts`                        | `localizeSrd` throws in dev/test on missing kind/id/field                                                                   |
 | ESLint `no-i18n-default-value`                | `defaultValue` option to `t()` (and inline string fallbacks) forbidden                                                      |
 | `i18n-parity.test.ts`                         | en/it key-set equality + no-empty + no English-in-IT across `ui/`+`srd/` (shares `scripts/i18n/leak-detectors.ts`)          |
@@ -3401,7 +3401,7 @@ attached campaigns (normally 0–1), fire-and-forget (a failed/offline write nev
 
 Between the engine and the UI sits a **pure presenter layer**, `src/lib/views/`: framework-free
 functions `(engine output + locale) → render-ready view-model`. It is the **ONLY engine-side layer
-that may localize/format** — read `locale`, index a `BiText`, or call the unit formatters. Engine-core
+that may localize/format** — read `locale`, index a `LocaleText`, or call the unit formatters. Engine-core
 emits **ids + raw numbers + i18n keys/args** and **never imports i18n** (pinned by the
 `architecture-direction.guard` zero-import count; `pure-modules-guard` pins `lib/views/**`
 React/store/Firebase-free). Present modules: `sheet-view.ts` (LeftHud/ResourceRail/Bio merge +
@@ -3433,7 +3433,7 @@ The four variants:
   case: SRD content lifted into the id-keyed catalogues).
 - `custom` (`customText`) — a USER-authored single string (homebrew name/description) → shown verbatim
   via `localizeCustom`.
-- `lit` (`litText`) — an ENGINE-authored bilingual `BiText` constant (Unarmed Strike, the "(off-hand)"
+- `lit` (`litText`) — an ENGINE-authored bilingual `LocaleText` constant (Unarmed Strike, the "(off-hand)"
   suffix, base action-menu labels) → `text[locale]`. It freezes BOTH locales in code.
 - `ui` (`uiText`) — a REF to a `common`/ui CHROME key (e.g. `combat.otherReactionName`), resolved at
   render via `i18n.getFixedT(locale)(key)`. Unlike `lit` it stores ONLY the key (never a frozen

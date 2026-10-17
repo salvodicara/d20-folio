@@ -3,7 +3,7 @@
  *
  * A tool is BOTH a proficiency (right-rail / Bio chip) and an equipment item (the
  * bag). The two surfaces used to NAME the same physical tool independently — the
- * proficiency catalogue (`src/lib/tools.ts`) carried hardcoded BiText while the
+ * proficiency catalogue (`src/lib/tools.ts`) carried hardcoded LocaleText while the
  * inventory catalogue (`src/i18n/<locale>/srd/equipment.json`) carried its own, keyed by
  * the SAME tool id — so in Italian one surface read "Strumenti da Scasso" and the
  * other "Strumenti da Ladro" for the very same Thieves' Tools. (It was ALSO a
@@ -15,7 +15,7 @@
  * tool id — and EVERY surface resolves the name from there. This guard makes the
  * drift class IMPOSSIBLE to reintroduce by pinning, red-before / green-after:
  *
- *   (a) `src/lib/tools.ts` carries NO BiText / display string — id + category only.
+ *   (a) `src/lib/tools.ts` carries NO LocaleText / display string — id + category only.
  *   (b) every catalogue tool id has its name defined in the equipment catalogue
  *       (EN + IT), and NOWHERE else (the single source).
  *   (c) the proficiency-surface string a tool resolves to is BYTE-IDENTICAL to the
@@ -35,9 +35,9 @@ import { srd } from "../_harness/loc";
 const LOCALES = ["en", "it"] as const;
 
 describe("tool-name single source (#107)", () => {
-  it("(a) src/lib/tools.ts carries NO BiText / display string — id + category only", () => {
+  it("(a) src/lib/tools.ts carries NO LocaleText / display string — id + category only", () => {
     const text = readSrc(resolve(SRC_ROOT, "lib", "tools.ts"));
-    // A BiText leaf `name: { en: "…", it: "…" }` — the exact shape the strip removed.
+    // A LocaleText leaf `name: { en: "…", it: "…" }` — the exact shape the strip removed.
     expect(text).not.toMatch(/name\s*:\s*\{\s*en\s*:/);
     // No `it:`/`en:` natural-language property assignment lingering in the catalogue.
     expect(text).not.toMatch(/\bit\s*:\s*"[^"]*\s[^"]*"/);

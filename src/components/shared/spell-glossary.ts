@@ -7,7 +7,7 @@
  *
  * Spellcasting Focus has no label of its own: the Material line names it.
  */
-import type { BiText } from "@/data/types";
+import type { LocaleText } from "@/data/types";
 import type { Locale } from "@/lib/locale";
 import { litText } from "@/lib/loc-text";
 import { localizeText } from "@/lib/views/srd-i18n";
@@ -35,7 +35,7 @@ export const SPELL_GLOSSARY = {
   spellSave: { en: "Saving Throw", it: "Tiro Salvezza" },
   reactionSpell: { en: "Reaction", it: "Reazione" },
   bonusActionSpell: { en: "Bonus Action", it: "Azione Bonus" },
-} as const satisfies Partial<Record<GlossaryTermId, BiText>>;
+} as const satisfies Partial<Record<GlossaryTermId, LocaleText>>;
 
 export type SpellTermId = keyof typeof SPELL_GLOSSARY;
 
