@@ -222,9 +222,6 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { WISH_STRESS_STATE } from "@/lib/wish-state";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import type { CostSpec } from "@/lib/cost-engine";
-import type { Locale } from "@/lib/locale";
-
-/** Supported locale keys matching LocaleText */
 
 // ============================================================
 // Types
