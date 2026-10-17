@@ -16,15 +16,19 @@ import { describe, it, expect } from "vitest";
 import { SPELL_GLOSSARY, type SpellTermId } from "@/components/shared/spell-glossary";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";
-import { RULE_TERMS, missingOfficialTerms } from "@tests/unit/__helpers__/glossary-terms";
+import {
+  RULE_TERMS,
+  missingOfficialTerms,
+  uiName,
+} from "@tests/unit/__helpers__/glossary-terms";
 
 const EN_TERMS: Record<string, string | undefined> = enGlossary.glossary.term;
 const IT_TERMS: Record<string, string | undefined> = itGlossary.glossary.term;
 
-const TERMS = Object.entries(SPELL_GLOSSARY) as [
-  SpellTermId,
-  (typeof SPELL_GLOSSARY)[SpellTermId],
-][];
+/** Each spell term with its official names, read from the ui key it names. */
+const TERMS = (Object.entries(SPELL_GLOSSARY) as [SpellTermId, string][]).map(
+  ([id, key]) => [id, { en: uiName(key, "en"), it: uiName(key, "it") }] as const
+);
 
 const PAIRS: ReadonlyArray<readonly [string, string]> = [
   ...RULE_TERMS,

@@ -160,8 +160,10 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   `classes.ts` (pack classes append; pack subclasses extend their public class table),
   `quickbuild.ts` (the per-class creation presets — the ONE record where a pack entry REPLACES
   the public one, keyed by class id via `overlayPackRecord`; see below),
-  `srd-names.ts` (the eager name index — the pack side is `content-pack/data/names.ts`,
-  literal names only, so the roster chunk never drags the pack corpora). Consumers only ever read
+  `src/i18n/srd-name-index.ts` (the names `srd-names.ts` reads: EN and the loaded locale from
+  the registry, any other locale's class/subclass/race/background shards fetched on demand with
+  the pack's `loadPackSrdCatalogues`, so the roster chunk never drags the pack corpora). Consumers
+  only ever read
   the aggregates — never a `@pack` (or `@pack/monsters`) path — so the seam stays single: the ONLY
   modules allowed to import either alias are the merge points themselves.
 - **The Polymorph Beast catalogue is a projection of the monster corpus** (D-5): the
@@ -1407,9 +1409,11 @@ its stable `id`(race traits / sub-entities / named grants carry an explicit`id =
 resolves through one pure function `localizeSrd(kind, key, field, locale)` (`src/i18n/resolver.ts`) —
 which THROWS in dev/test on any miss (lock 1) and returns the `⟦…⟧`sentinel in prod. Keys are the
 entity id, with dotted segments for nested fields.`localizeCustom`is the typed bypass for
-user-authored content (it keeps its own single-locale text, never touches the resolver). The two
-whitelisted inline-string bypasses are`background-equipment.ts`(creation-consumed`flavour`snapshots)
-and`srd-names.ts` (the lightweight name index the eager persistence layer reads).
+user-authored content (it keeps its own single-locale text, never touches the resolver). The data layer has no
+inline-string bypass (`no-srd-strings-in-data.guard`); the lightweight name index the eager persistence layer reads (`srd-names.ts`) takes its names from
+the catalogues through `src/i18n/srd-name-index.ts`. Only EN and the active locale's names ride
+startup; a stored label in another language makes the read seam await `ensureBuildNames`, which
+fetches the other locales' name shards on demand before the sync parse.
 
 **The lazy SRD-kind tier.** `SrdKind` splits into `EagerSrdKind` (the 18 kinds whose EN catalogue the
 Grant engine parses as FACTS — statically bundled, always loaded) and `LazySrdKind` (`monster`), a

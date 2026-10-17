@@ -1,5 +1,6 @@
 /**
- * GUARD: no display text in shipped rules data (`src/data/**`).
+ * GUARD: no display text in shipped rules data (`src/data/**`, plus the name
+ * tables listed in `ALSO_COVERED`).
  *
  * Rules data stores ids and mechanics; its words live in the catalogues
  * (`src/i18n/<locale>/srd/<kind>.json`), keyed by those ids, so a new language
@@ -12,11 +13,7 @@
  * The locale codes come from the registry (`@/lib/locale`), so a third language
  * is caught without touching this file.
  *
- * Bypasses, each one a slice still to move:
- *   - `types.ts` declares the `LocaleText` type (no string values).
- *   - `srd-names.ts` is the name index the eager persistence layer reads without
- *     pulling the SRD catalogues; its names mirror the catalogues and the content
- *     pack feeds it (`packClassNames` & co.).
+ * Bypass: `types.ts` declares the `LocaleText` type (no string values).
  *
  * AST-driven (TS compiler API), so it can't be spelled around by formatting.
  */
@@ -28,7 +25,12 @@ import { SRC_ROOT, srcFiles, readSrc } from "./__helpers__/src-files";
 
 const DATA_DIR = resolve(SRC_ROOT, "data");
 
-const BYPASS = new Set(["types.ts", "srd-names.ts"]);
+const BYPASS = new Set(["types.ts"]);
+
+/** Name tables outside `src/data` that hold official names: ids only, too. */
+const ALSO_COVERED = ["components/shared/combat-glossary.ts"].map((f) =>
+  resolve(SRC_ROOT, f)
+);
 
 const LOCALE_CODES: ReadonlySet<string> = new Set(LOCALES);
 
@@ -89,14 +91,17 @@ function offenders(file: string): string[] {
   return found;
 }
 
-describe("guard: no display text in shipped rules data (src/data/**)", () => {
+describe("guard: no display text in shipped rules data (src/data/**) or name tables", () => {
   // Explicit timeout: whole src/data AST walk (TypeScript compiler API), at risk
   // of the 5 s default under V8 coverage + parallel load.
-  it("every data file outside the bypasses stores ids, never inline text", () => {
+  it("every data file and name table stores ids, never inline text", () => {
     const violations: Record<string, string[]> = {};
-    for (const file of srcFiles({ under: DATA_DIR, exts: [".ts"] })) {
-      const base = relative(DATA_DIR, file);
-      if (BYPASS.has(base)) continue;
+    for (const file of [
+      ...srcFiles({ under: DATA_DIR, exts: [".ts"] }),
+      ...ALSO_COVERED,
+    ]) {
+      const base = relative(SRC_ROOT, file);
+      if (BYPASS.has(relative(DATA_DIR, file))) continue;
       const found = offenders(file);
       if (found.length) violations[base] = found;
     }

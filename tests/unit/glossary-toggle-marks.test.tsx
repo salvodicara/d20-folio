@@ -20,7 +20,7 @@ import { MovementSlider } from "@/features/character/center/MovementSlider";
 import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { CombatHeader } from "@/features/character/center/CombatHeader";
-import { COMBAT_GLOSSARY } from "@/components/shared/combat-glossary";
+import { combatTermName } from "@/components/shared/combat-glossary";
 import { coverKey } from "@/data/cover";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
@@ -80,7 +80,7 @@ describe("info marks after toggles explain their term", () => {
       </Dialog>
     );
     const group = screen.getByRole("group", { name: "Attack result on Goblin" });
-    markAfter(group, COMBAT_GLOSSARY.criticalHit.en, EN.criticalHit);
+    markAfter(group, combatTermName("criticalHit", "en"), EN.criticalHit);
   });
 
   it("the movement meter's ×2 explains Difficult Terrain", () => {
@@ -94,7 +94,7 @@ describe("info marks after toggles explain their term", () => {
       />
     );
     const toggle = screen.getByRole("button", { name: /^difficult terrain/i });
-    markAfter(toggle, COMBAT_GLOSSARY.difficultTerrain.en, EN.difficultTerrain);
+    markAfter(toggle, combatTermName("difficultTerrain", "en"), EN.difficultTerrain);
   });
 
   it("the Surprised chip by the initiative explains Surprise", () => {
@@ -109,7 +109,7 @@ describe("info marks after toggles explain their term", () => {
     );
     const init = container.querySelector(".turn .init") as HTMLElement;
     const chip = within(init).getByRole("button", { name: "Surprised" });
-    markAfter(chip, COMBAT_GLOSSARY.surprise.en, EN.surprise);
+    markAfter(chip, combatTermName("surprise", "en"), EN.surprise);
   });
 
   it("the AC tile's cover toggle explains Half Cover, the first tap's level", () => {

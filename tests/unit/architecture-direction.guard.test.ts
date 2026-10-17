@@ -74,6 +74,12 @@ const SRD_EN_MODULE = join(SRC, "i18n", "srd-en.ts");
 // Whitelisted on the same narrow grounds; the resolver stays UI/views-only.
 const SRD_KEY_MODULE = join(SRC, "i18n", "srd-key.ts");
 
+// The eager SRD name index (class/subclass/race/background names of EVERY locale):
+// the read seam (`data/srd-names.ts`) recognises a stored label in any language.
+// Like `srd-en.ts` it is locale-INDEPENDENT (it returns all languages, never the
+// active one), so engine-core reading it never branches on the user's language.
+const SRD_NAME_INDEX_MODULE = join(SRC, "i18n", "srd-name-index.ts");
+
 /** Is `absPath` inside a presenter sub-layer (`lib/views/` or `lib/pdf/`)? Those
  *  files MAY localize and MAY import the engine + other presenters. */
 function isUnderViews(absPath: string): boolean {
@@ -88,9 +94,14 @@ function isUnderViews(absPath: string): boolean {
 /** Does an import spec resolve to i18n infra (`@/i18n`, `i18next`, `react-i18next`)? */
 function isI18nImport(spec: string, resolved: string | null): boolean {
   if (spec === "i18next" || spec === "react-i18next") return true;
-  // The canonical-EN-facts accessor + the pure key-path helper are the
-  // whitelisted exemptions (see above) — both locale-independent, no strings.
-  if (resolved === SRD_EN_MODULE || resolved === SRD_KEY_MODULE) return false;
+  // The canonical-EN-facts accessor, the pure key-path helper and the name index
+  // are the whitelisted exemptions (see above), all locale-independent.
+  if (
+    resolved === SRD_EN_MODULE ||
+    resolved === SRD_KEY_MODULE ||
+    resolved === SRD_NAME_INDEX_MODULE
+  )
+    return false;
   if (resolved && (resolved === I18N_ROOT || resolved.startsWith(I18N_ROOT + "/")))
     return true;
   return false;
