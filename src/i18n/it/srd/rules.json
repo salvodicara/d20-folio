@@ -152,5 +152,44 @@
     "name": "Attacco di Opportunità",
     "effect": "Nemico lascia portata senza Disimpegnarsi",
     "trigger": "nemico lascia portata"
+  },
+  "roll.attacks": {
+    "name": "Tiri per colpire"
+  },
+  "roll.ability-checks": {
+    "name": "Prove di caratteristica"
+  },
+  "roll.dex-saves": {
+    "name": "Tiri salvezza su Destrezza"
+  },
+  "roll.str-dex-checks": {
+    "name": "Prove di Forza e Destrezza"
+  },
+  "roll.str-dex-saves": {
+    "name": "Tiri salvezza su Forza e Destrezza"
+  },
+  "roll.attacks-unproficient-armor": {
+    "name": "Tiri per colpire (indossando armatura senza competenza)"
+  },
+  "action.dodge.grants.0.grants.0": {
+    "description": "Gli attacchi contro di te hanno Svantaggio (Schivata)"
+  },
+  "action.dodge.grants.0.grants.1": {
+    "description": "Tiri salvezza su Destrezza (Schivata)"
+  },
+  "state.surprised": {
+    "name": "Sorpreso"
+  },
+  "state.surprised.grants.0.grants.0": {
+    "description": "Tiro d'Iniziativa (Sorpreso)"
+  },
+  "state.wish-stress": {
+    "name": "Stress di Desiderio"
+  },
+  "vision.dim-light.grants.0.grants.0": {
+    "description": "Prove di Saggezza (Percezione) per vedere (Leggermente Oscurato)"
+  },
+  "vision.darkness.grants.0.grants.0": {
+    "description": "Tiri per colpire (Accecato per la vista: Oscurità)"
   }
 }

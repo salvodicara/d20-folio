@@ -23,10 +23,14 @@ export function lightStateKey(level: LightLevel): string {
   return `light-${level}`;
 }
 
-function referenceName(id: string): LocText {
+function referenceKey(id: string): string {
   const row = VISION_REFERENCE.find((note) => note.id === id);
   if (!row) throw new Error(`light-states: missing reference line "${id}"`);
-  return srdText("rule", row.key, "name");
+  return row.key;
+}
+
+function referenceName(id: string): LocText {
+  return srdText("rule", referenceKey(id), "name");
 }
 
 const LABELS: Record<LightLevel, LocText> = {
@@ -44,33 +48,23 @@ export function sightUnder(
   return darkvision ? "lightly-obscured" : "heavily-obscured";
 }
 
-const OBSCUREMENT_GRANTS: Record<
+/**
+ * What each obscurement does to the player's own rolls. Its words key in the
+ * `rule` catalogue under the light level it reads as (Lightly Obscured is sight
+ * in Dim Light, Heavily Obscured sight in Darkness): `vision.<id>.grants.0.grants.<i>`.
+ */
+const OBSCUREMENT: Record<
   SightObscurement,
-  Extract<Grant, { type: "while-active" }>["grants"]
+  { referenceId: string; grants: Extract<Grant, { type: "while-active" }>["grants"] }
 > = {
-  "lightly-obscured": [
-    {
-      type: "disadvantage-on",
-      rollType: "check",
-      vs: "perception",
-      description: {
-        en: "Wisdom (Perception) checks to see (Lightly Obscured)",
-        it: "Prove di Saggezza (Percezione) per vedere (Leggermente Oscurato)",
-      },
-    },
-  ],
-  "heavily-obscured": [
-    {
-      type: "disadvantage-on",
-      rollType: "attack",
-      scope: "all",
-      vs: "attack",
-      description: {
-        en: "Attack rolls (Blinded for sight: Darkness)",
-        it: "Tiri per colpire (Accecato per la vista: Oscurità)",
-      },
-    },
-  ],
+  "lightly-obscured": {
+    referenceId: "dim-light",
+    grants: [{ type: "disadvantage-on", rollType: "check", vs: "perception" }],
+  },
+  "heavily-obscured": {
+    referenceId: "darkness",
+    grants: [{ type: "disadvantage-on", rollType: "attack", scope: "all", vs: "attack" }],
+  },
 };
 
 /** The light level lit on the session, if any. */
@@ -94,14 +88,18 @@ export function resolveLightStateSources(
   return LIGHT_LEVELS.filter((level) => activeKeys.has(lightStateKey(level))).map(
     (level) => {
       const sight = sightUnder(level, darkvisionFt);
+      const obscurement = sight ? OBSCUREMENT[sight] : undefined;
       return {
         id: lightStateKey(level),
         label: LABELS[level],
+        ...(obscurement
+          ? { ref: { kind: "rule", key: referenceKey(obscurement.referenceId) } as const }
+          : {}),
         grants: [
           {
             type: "while-active",
             activeKey: lightStateKey(level),
-            grants: sight ? OBSCUREMENT_GRANTS[sight] : [],
+            grants: obscurement?.grants ?? [],
           },
         ],
       };

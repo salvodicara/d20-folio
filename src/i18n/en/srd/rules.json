@@ -152,5 +152,44 @@
     "name": "Opportunity Attack",
     "effect": "Enemy leaves melee reach without Disengaging",
     "trigger": "enemy leaves reach"
+  },
+  "roll.attacks": {
+    "name": "Attack rolls"
+  },
+  "roll.ability-checks": {
+    "name": "Ability checks"
+  },
+  "roll.dex-saves": {
+    "name": "Dexterity saving throws"
+  },
+  "roll.str-dex-checks": {
+    "name": "Strength + Dexterity ability checks"
+  },
+  "roll.str-dex-saves": {
+    "name": "Strength + Dexterity saving throws"
+  },
+  "roll.attacks-unproficient-armor": {
+    "name": "Attack rolls (wearing armor you lack proficiency with)"
+  },
+  "action.dodge.grants.0.grants.0": {
+    "description": "Attacks against you have Disadvantage (Dodge)"
+  },
+  "action.dodge.grants.0.grants.1": {
+    "description": "Dexterity saving throws (Dodge)"
+  },
+  "state.surprised": {
+    "name": "Surprised"
+  },
+  "state.surprised.grants.0.grants.0": {
+    "description": "Initiative roll (Surprised)"
+  },
+  "state.wish-stress": {
+    "name": "Wish Stress"
+  },
+  "vision.dim-light.grants.0.grants.0": {
+    "description": "Wisdom (Perception) checks to see (Lightly Obscured)"
+  },
+  "vision.darkness.grants.0.grants.0": {
+    "description": "Attack rolls (Blinded for sight: Darkness)"
   }
 }

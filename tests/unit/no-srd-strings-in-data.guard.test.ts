@@ -31,9 +31,15 @@ const BYPASS = new Set(["types.ts"]);
  * Files outside `src/data` that store ids only, too: name tables that hold
  * official names, and engine modules whose words live in the catalogues.
  */
-const ALSO_COVERED = ["components/shared/combat-glossary.ts", "lib/smart-tracker.ts"].map(
-  (f) => resolve(SRC_ROOT, f)
-);
+const ALSO_COVERED = [
+  "components/shared/combat-glossary.ts",
+  "lib/smart-tracker.ts",
+  "lib/condition-effects.ts",
+  "lib/base-action-states.ts",
+  "lib/surprise-state.ts",
+  "lib/wish-state.ts",
+  "lib/light-states.ts",
+].map((f) => resolve(SRC_ROOT, f));
 
 const LOCALE_CODES: ReadonlySet<string> = new Set(LOCALES);
 
