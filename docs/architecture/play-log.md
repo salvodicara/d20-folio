@@ -34,9 +34,9 @@ was given. So the hot paths move to intention events as they are wired: `take-da
 Entries store ids and params, never translated text: a source is a `LocText` of kind `srd`,
 `ui` or `custom` (what a player typed), localized at render. `{ lit: { en, it } }` is not
 written by new entries. The `lit` text already stored (turn-economy actions in `combat/state`,
-Chronicle entries, e.g. monster action names) converts to ids in the same owner-gated migration
-as step 5 (snapshot → dry-run → idempotent apply → verify), not in a separate one; readers keep
-accepting it until then.
+Chronicle entries, e.g. monster action names) stays readable: readers keep accepting it. With
+the log in memory there is no storage migration to fold its conversion into, so converting it is a
+separate owner-gated migration (snapshot → dry-run → idempotent apply → verify), only if ever wanted.
 
 ## Relation to the session log
 
@@ -57,6 +57,13 @@ disagreeing.
    Done: `take-damage`, `heal` and `gain-temp-hp` in `sheet-events.ts`. The store's heal and
    temp HP dispatch them; its damage records its hit in the shadow (the command undo stays).
    Parity ignores the session log's narrative lines, which the store writes next to them.
-4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries.
-5. **Storage.** One Firestore document per entry, plus a periodic checkpoint for fast load.
-   It needs a migration, so snapshot → dry-run → apply, with the owner's yes.
+4. **Undo through the log.** The undo stack becomes `undo`/`redo` entries. Done for
+   `dispatch` in development: its undo appends an `undo` entry and the sheet becomes the fold,
+   but only when the log reproduces the live sheet (the shadow's parity); otherwise it restores
+   today's snapshot. The difference shows on an older action's undo: only that event goes,
+   later ones stay. Production keeps the snapshot until the owner turns it on. The log lives
+   in memory: undo does not survive a reload, by the owner's choice (2026-10-16).
+5. **Storage: not planned.** The owner chose to keep the play log in memory (2026-10-16).
+   For the record, the cost it would have had: one write per sheet action, at most doubling a
+   game day's writes. A prototype (one document per entry under the character, ordered by
+   `serverAt`, owner-only, append-only) is on the closed PR #339 if that ever changes.

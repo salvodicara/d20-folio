@@ -5,7 +5,7 @@
  * log equals the live character after every step.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
@@ -42,17 +42,33 @@ describe("play log shadow in the store", () => {
     expect(playLogShadowStats(id)?.entries).toBe(4);
   });
 
-  it("warns when a snapshot undo and the log's replay disagree", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  it("an older action's undo goes through the log: later changes stay (dev)", () => {
     const id = load();
+    const usedBefore = store().character?.session.spellSlots["1"]?.used ?? 0;
     const undoSlot = store().dispatch({ kind: "spend-slot", level: 1, pactMagic: false });
     store().dispatch({ kind: "set-temp-hp", temp: 5 });
-    // Undoing the older event restores its whole snapshot (dropping the temp HP too);
-    // the log takes out only that event.
     undoSlot?.();
-    expect(playLogShadowStats(id)?.mismatches).toBe(1);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("[play-log shadow]"));
-    warn.mockRestore();
+    const session = store().character?.session;
+    expect(session?.hp.temp).toBe(5);
+    expect(session?.spellSlots["1"]?.used ?? 0).toBe(usedBefore);
+    expect(playLogShadowStats(id)).toMatchObject({ mismatches: 0 });
+  });
+
+  it("falls back to the snapshot when a write went around the log", () => {
+    const id = load();
+    const usedBefore = store().character?.session.spellSlots["1"]?.used ?? 0;
+    const undoSlot = store().dispatch({ kind: "spend-slot", level: 1, pactMagic: false });
+    const before = store().character;
+    if (!before) throw new Error("no character");
+    // A write outside dispatch (a world commit, a rest dialog…): the log no longer
+    // reproduces the sheet, so the undo restores today's snapshot.
+    useCharacterStore.setState({
+      character: { ...before, session: { ...before.session, notes: "outside" } },
+    });
+    undoSlot?.();
+    expect(store().character?.session.notes).not.toBe("outside");
+    expect(store().character?.session.spellSlots["1"]?.used ?? 0).toBe(usedBefore);
+    expect(playLogShadowStats(id)).toMatchObject({ mismatches: 0 });
   });
 
   it("damage, healing and temporary HP reach the log as intentions", () => {
