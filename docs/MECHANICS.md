@@ -1003,6 +1003,14 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
     buff's STATS are never auto-applied.
     Spell timers read the stored cast level through the same duration selector, so an upcast Hex or
     Hunter's Mark arms and survives rests at its real 4/8/24-hour tier rather than the base hour.
+  - **Spell durations on the clock.** Every spell carries a structured `duration`
+    (`instantaneous | rounds | minutes | hours | days | until-dispelled |
+until-dispelled-or-triggered | special`, Concentration stays its own flag), written from the EN
+    duration by `scripts/spells/backfill-durations.ts` and guarded in `spell-data-integrity`. A held
+    Concentration with a clock duration counts down as `effectTimers["concentration:<spell>"]`
+    (`src/lib/spell-duration.ts`), so Detect Magic or Bane on enemies lapses with no state on the
+    caster. Out of combat the `time-passes` sheet event (`lib/play/time.ts`, 10 rounds per minute)
+    spends every countdown at once; a rest ends a Concentration whose time left fits inside it.
   - **Round-1 clauses** (`advantage-on { round1: true }`; `damage-rider { round1 }`). A clause that
     applies only in combat round 1 auto-clears afterward. A rider may additionally declare
     `requiresRiderTrackerId`, so Assassinate's flat `{ kind:"class-level", classId:"rogue" }` damage

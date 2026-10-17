@@ -32,6 +32,7 @@ import * as rests from "@/lib/play/rests";
 import * as states from "@/lib/play/states";
 import * as situations from "@/lib/play/situations";
 import * as surprise from "@/lib/play/surprise";
+import * as time from "@/lib/play/time";
 import * as vitals from "@/lib/play/vitals";
 import * as wish from "@/lib/play/wish";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -213,6 +214,7 @@ const CASES: {
   ],
   "long-rest": [{ kind: "long-rest" }, () => rests.longRestCharacter(doc)],
   "short-rest": [{ kind: "short-rest" }, () => rests.shortRestCharacter(doc)],
+  "time-passes": [{ kind: "time-passes", minutes: 1 }, () => time.passTime(doc, 1)],
 };
 
 describe("applySheetEvent", () => {

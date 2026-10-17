@@ -877,6 +877,24 @@ export interface SpellTempHpRoll {
   bonusPerUpcast?: number;
 }
 
+/**
+ * A spell's printed duration as a structured fact: how long it lasts on the clock.
+ * Concentration stays the separate `concentration` flag ("Concentration, up to 1
+ * minute" is `{ kind: "minutes", amount: 1 }` + `concentration: true`). Derived at
+ * edit time from the canonical EN duration (`scripts/spells/backfill-durations.ts`);
+ * a duration the clock cannot express ("Special", "Instantaneous or 1 hour") is
+ * `special`.
+ */
+export type SpellDuration =
+  | {
+      kind:
+        | "instantaneous"
+        | "until-dispelled"
+        | "until-dispelled-or-triggered"
+        | "special";
+    }
+  | { kind: "rounds" | "minutes" | "hours" | "days"; amount: number };
+
 export interface SrdSpellData {
   /** Unique slug ID: "fireball", "cure-wounds" */
   id: string;
@@ -966,6 +984,8 @@ export interface SrdSpellData {
   };
   /** Whether the spell requires concentration */
   concentration: boolean;
+  /** How long the spell lasts on the clock (see {@link SpellDuration}). */
+  duration: SpellDuration;
   /**
    * Whether the spell's duration is "Instantaneous" — the STRUCTURED fact that
    * replaces the old English-prose duration branch (golden rule 7: the engine

@@ -287,6 +287,7 @@ export function translateSpell(spell: SrdSpellData): ActivityTranslation {
     effects: spellEffects(spell),
     concentration: spell.concentration ? (true as const) : undefined,
     instantaneous: spell.instantaneous ? (true as const) : undefined,
+    duration: spell.duration,
     endsOnSave: spell.endsOnSuccessfulSave ? (true as const) : undefined,
     recurrence: spell.recurrence,
     tag: spell.effectTag,

@@ -90,6 +90,7 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
     failures: 2,
   },
   rest: { kind: "rest", restKind: "long" },
+  "time-passes": { kind: "time-passes", minutes: 10 },
   "turn-end": { kind: "turn-end", round: 3 },
   "effect-expired": { kind: "effect-expired", sourceId: "barbarian-rage" },
   "tracker-regain": {

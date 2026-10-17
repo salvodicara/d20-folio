@@ -16,6 +16,8 @@
     "deathSaveFailure": "Death save failed ({{successes}} ✓ / {{failures}} ✗)",
     "shortRest": "Took a Short Rest",
     "longRest": "Took a Long Rest",
+    "timePasses_one": "{{count}} minute passes",
+    "timePasses_other": "{{count}} minutes pass",
     "riderUse": "Spent {{rider}} on {{name}}",
     "masteryUse": "{{rider}} ({{name}})",
     "effectExpired": "{{name}} ended (duration elapsed)",
