@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Da dove viene ogni elemento</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <style>
+      main {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 24px;
+        display: grid;
+        gap: 20px;
+      }
+      h1 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 38px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 16px;
+      }
+      th {
+        text-align: left;
+        padding: 8px 12px;
+      }
+      td {
+        padding: 9px 12px;
+        border-top: 1px solid var(--line);
+        vertical-align: top;
+      }
+      td:first-child {
+        font-weight: 700;
+      }
+      td:nth-child(2) {
+        color: var(--text-2);
+      }
+      tr.ask td {
+        background: color-mix(in srgb, var(--cond) 10%, transparent);
+      }
+      tr.ask td:last-child {
+        color: var(--cond);
+        font-weight: 700;
+      }
+      tr.cut td {
+        color: var(--text-3);
+        text-decoration: line-through;
+      }
+      .sec td {
+        padding-top: 22px;
+        border-top: 0;
+        font-family: var(--font-label);
+        font-size: 13px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--gold);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Schermata di gioco: da dove viene ogni elemento</h1>
+      <table>
+        <thead>
+          <tr>
+            <th class="label">Elemento</th>
+            <th class="label">Copiato da</th>
+            <th class="label">Esito</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="sec">
+            <td colspan="3">Barre di navigazione</td>
+          </tr>
+          <tr>
+            <td>Barra in alto: Folio, Personaggi, Campagne, Compendio, account</td>
+            <td>D&amp;D Beyond, sito</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Telefono: titolo al centro, menu o freccia indietro</td>
+            <td>D&amp;D Beyond, app</td>
+            <td>tenuto</td>
+          </tr>
+          <tr class="cut">
+            <td>Pastiglia «sessione 7 · round 2» in alto</td>
+            <td>nessuno</td>
+            <td>tolto</td>
+          </tr>
+
+          <tr class="sec">
+            <td colspan="3">Testata del personaggio</td>
+          </tr>
+          <tr>
+            <td>Ritratto rotondo con anello d'oro</td>
+            <td>Baldur's Gate 3</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Nome, classe, specie</td>
+            <td>D&amp;D Beyond, Foundry</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Riposo breve, Riposo lungo, link alla campagna</td>
+            <td>D&amp;D Beyond, testata</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Stati attivi e «+ Stato»</td>
+            <td>D&amp;D Beyond (Conditions), Baldur's Gate 3 (icone di stato)</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>FOR DES COS… in riga, senza riquadri</td>
+            <td>Baldur's Gate 3</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Pallino sui tiri salvezza in cui sei competente</td>
+            <td>D&amp;D Beyond</td>
+            <td>tenuto (era una stella: tolta)</td>
+          </tr>
+          <tr>
+            <td>CA nello scudo; iniziativa, velocità, competenza negli esagoni</td>
+            <td>Foundry, D&amp;D Beyond</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Punti ferita con barra, PF temporanei, Danni e Cura</td>
+            <td>D&amp;D Beyond</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Tocchi un numero e vedi la somma</td>
+            <td>D&amp;D Beyond (riquadro laterale della CA)</td>
+            <td>tenuto</td>
+          </tr>
+
+          <tr class="sec">
+            <td colspan="3">Corpo</td>
+          </tr>
+          <tr>
+            <td>Schede a capsula: Gioco, Incantesimi…</td>
+            <td>Baldur's Gate 3 (Inventario, Libro, Scheda)</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Riquadri con cornice bronzo e angoli</td>
+            <td>Baldur's Gate 3</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Slot come gemme viola</td>
+            <td>Baldur's Gate 3</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Elenco abilità con la caratteristica a sinistra</td>
+            <td>D&amp;D Beyond, Foundry</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Filtri: Tutto, Attacchi, Azione, Bonus, Reazione, Altro, Uso limitato</td>
+            <td>D&amp;D Beyond (scheda Azioni)</td>
+            <td>tenuto, ora identici</td>
+          </tr>
+          <tr>
+            <td>Azioni a tabella: gittata, colpire/CD, effetto in riquadri</td>
+            <td>D&amp;D Beyond</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Gruppi Azioni, Azioni bonus, Reazioni, Altro; «1 attacco per azione»</td>
+            <td>D&amp;D Beyond</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Icone dipinte delle azioni</td>
+            <td>Baldur's Gate 3 (barra delle azioni)</td>
+            <td>tenuto, immagini nostre</td>
+          </tr>
+          <tr>
+            <td>Scheda dell'incantesimo al tocco lungo</td>
+            <td>Baldur's Gate 3 (descrizione dell'abilità)</td>
+            <td>tenuto</td>
+          </tr>
+          <tr class="cut">
+            <td>Gruppo «Utili fuori dallo scontro», filtro «Rituali»</td>
+            <td>nessuno</td>
+            <td>tolto: i rituali vanno in «Altro»</td>
+          </tr>
+          <tr class="ask">
+            <td>«Cosa ti conviene fare» (il consiglio con il perché)</td>
+            <td>nessuno: è la funzione nuova di Folio</td>
+            <td>da decidere</td>
+          </tr>
+
+          <tr class="sec">
+            <td colspan="3">Resoconto</td>
+          </tr>
+          <tr>
+            <td>Registro a destra, campo per una nota in fondo</td>
+            <td>Foundry (chat a destra), Roll20</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>Esplorazione e scontri nella stessa cronologia, con l'ora</td>
+            <td>Roll20 e Foundry (registro con orari)</td>
+            <td>tenuto</td>
+          </tr>
+          <tr>
+            <td>«Copia il resoconto»</td>
+            <td>Foundry (esporta il registro)</td>
+            <td>tenuto</td>
+          </tr>
+          <tr class="ask">
+            <td>Scontro finito chiuso in una riga («3 round · 4 goblin»)</td>
+            <td>nessuno</td>
+            <td>da decidere</td>
+          </tr>
+
+          <tr class="sec">
+            <td colspan="3">Turno</td>
+          </tr>
+          <tr>
+            <td>Azione, Bonus, Reazione, Movimento con forme e colori</td>
+            <td>Baldur's Gate 3</td>
+            <td>tenuto, solo in combattimento</td>
+          </tr>
+          <tr>
+            <td>«Fine turno» rotondo e blu</td>
+            <td>Baldur's Gate 3</td>
+            <td>tenuto, solo in combattimento</td>
+          </tr>
+          <tr class="cut">
+            <td>Barra «Fuori dal combattimento» e pulsante «Scontro»</td>
+            <td>nessuno</td>
+            <td>
+              tolti: fuori dallo scontro nessuna barra, come D&amp;D Beyond e Baldur's
+              Gate 3
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </main>
+  </body>
+</html>

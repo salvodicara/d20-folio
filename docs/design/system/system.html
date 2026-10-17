@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — sistema di design</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      .sys {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px 24px 96px;
+        display: grid;
+        gap: 56px;
+      }
+      .sys section {
+        display: grid;
+        gap: 20px;
+      }
+      .sys h2 {
+        font-family: var(--font-display);
+        font-size: 22px;
+        margin: 0;
+      }
+      .sys .lead {
+        margin: -12px 0 0;
+        color: var(--text-2);
+        font-size: 16px;
+        max-width: 70ch;
+      }
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      }
+      .grid--2 {
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+      }
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .stack {
+        display: grid;
+        gap: 8px;
+      }
+      .sw {
+        display: grid;
+        gap: 6px;
+        font-family: var(--font-ui);
+        font-size: 14px;
+      }
+      .sw__chip {
+        height: 56px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+      }
+      .sw small {
+        color: var(--text-3);
+        font-size: 13px;
+      }
+      .swatches {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      }
+      .spec {
+        font-family: var(--font-ui);
+        font-size: 13px;
+        color: var(--text-3);
+      }
+      .typerow {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 16px;
+        align-items: baseline;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      @media (max-width: 640px) {
+        .typerow {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+      }
+      .stage {
+        padding: 24px;
+        border-radius: 12px;
+        background: var(--bg);
+        border: 1px solid var(--line);
+      }
+      .phone-stage {
+        width: 390px;
+        max-width: 100%;
+        height: 520px;
+        border-radius: 28px;
+        border: 1px solid var(--line-2);
+        background: var(--scrim);
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="f-top">
+      <a class="f-brand" href="#">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+          <path d="M12 7l-5.2 9h10.4z" />
+          <path
+            d="M12 2v5M3.3 7L12 7l8.7 0M3.3 7l3.5 9M20.7 7l-3.5 9M3.3 17h3.5M20.7 17h-3.5M12 22l-5.2-6M12 22l5.2-6"
+            opacity=".55"
+          />
+        </svg>
+        FOLIO
+      </a>
+      <span class="f-meta" style="margin-left: 8px">Sistema di design · bozza 1</span>
+      <span style="flex: 1"></span>
+      <button class="f-btn f-btn--sm" data-theme-toggle>
+        <i data-lucide="sun-moon" class="f-i f-i--sm"></i>Chiaro / scuro
+      </button>
+    </header>
+
+    <main class="sys">
+      <section>
+        <div class="head">
+          <h1 class="f-display">Il sistema</h1>
+        </div>
+        <p class="lead">
+          Tre caratteri, una pietra calda, l'oro solo dove decidi, un colore per ogni tipo
+          di azione. Ogni schermata di Folio si costruisce solo con i pezzi di questa
+          pagina.
+        </p>
+      </section>
+
+      <!-- COLOURS -->
+      <section>
+        <h2 class="f-h">Colori</h2>
+        <div class="swatches">
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--bg)"></div>
+            Fondo
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--surface-1)"></div>
+            Pannello
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--surface-2)"></div>
+            Riga
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--surface-3)"></div>
+            Tocco / hover
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--inset)"></div>
+            Campo
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--gold-fill)"></div>
+            Oro (1 per schermata)
+          </div>
+        </div>
+        <div class="swatches">
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--type-action)"></div>
+            Azione
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--type-bonus)"></div>
+            Azione bonus
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--type-reaction)"></div>
+            Reazione
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--type-move)"></div>
+            Movimento
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--hp)"></div>
+            Punti ferita
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--temp)"></div>
+            PF temporanei
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--success)"></div>
+            Riuscito
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--warn)"></div>
+            Condizione
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--danger)"></div>
+            Pericolo
+          </div>
+          <div class="sw">
+            <div class="sw__chip" style="background: var(--info)"></div>
+            Effetto attivo
+          </div>
+        </div>
+      </section>
+
+      <!-- TYPE -->
+      <section>
+        <h2 class="f-h">Caratteri</h2>
+        <div>
+          <div class="typerow">
+            <span class="spec">Cinzel 30 · nomi</span>
+            <span class="f-display">Selene Varga</span>
+          </div>
+          <div class="typerow">
+            <span class="spec">Cinzel 22 · titoli</span>
+            <span class="f-title">Incantesimi</span>
+          </div>
+          <div class="typerow">
+            <span class="spec">Cinzel 15 · sezioni</span>
+            <span class="f-h">Questo turno</span>
+          </div>
+          <div class="typerow">
+            <span class="spec">Cinzel 44 · numeri eroe</span>
+            <span class="f-hp__now">31</span>
+          </div>
+          <div class="typerow">
+            <span class="spec">Alegreya Sans 16 · comandi</span>
+            <span class="f-ui" style="font-weight: 700"
+              >Mazza · Attacca · +6 · 1d6+3</span
+            >
+          </div>
+          <div class="typerow">
+            <span class="spec">Alegreya Sans 14 · dettagli</span>
+            <span class="f-meta">Azione · Attacco in mischia · 1,5 m</span>
+          </div>
+          <div class="typerow">
+            <span class="spec">Alegreya 16 · lettura</span>
+            <span class="f-prose"
+              >Una creatura che vedi entro gittata recupera punti ferita pari a 2d8 più il
+              tuo modificatore di Saggezza. Se hai dubbi, tocca una parola sottolineata:
+              Folio te la spiega.</span
+            >
+          </div>
+          <div class="typerow">
+            <span class="spec">Alegreya Sans 13 · etichette</span>
+            <span class="f-label">Classe armatura</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUTTONS -->
+      <section>
+        <h2 class="f-h">Pulsanti</h2>
+        <div class="row">
+          <button class="f-btn f-btn--primary">Fine turno</button>
+          <button class="f-btn">
+            <i data-lucide="swords" class="f-i f-i--sm"></i>Attacca
+          </button>
+          <button class="f-btn f-btn--ghost">Annulla</button>
+          <button class="f-btn f-btn--danger">
+            <i data-lucide="trash-2" class="f-i f-i--sm"></i>Elimina
+          </button>
+          <button class="f-btn" disabled>Già usata</button>
+          <button class="f-btn is-loading">Salvo</button>
+          <button class="f-btn f-btn--icon" aria-label="Altro">
+            <i data-lucide="more-horizontal" class="f-i"></i>
+          </button>
+        </div>
+        <div class="row">
+          <button class="f-btn f-btn--sm">Lancia</button>
+          <button class="f-btn f-btn--sm f-btn--ghost">Dettagli</button>
+          <span class="spec"
+            >Piccoli (36 px) solo su laptop; su telefono tutto è almeno 44 px.</span
+          >
+        </div>
+      </section>
+
+      <!-- NAVIGATION -->
+      <section>
+        <h2 class="f-h">Schede e filtri</h2>
+        <div class="f-tabs" role="tablist">
+          <button class="f-tab" role="tab" aria-selected="true">Gioco</button>
+          <button class="f-tab" role="tab" aria-selected="false">
+            Incantesimi <span class="f-tab__count">14</span>
+          </button>
+          <button class="f-tab" role="tab" aria-selected="false">Privilegi</button>
+          <button class="f-tab" role="tab" aria-selected="false">Inventario</button>
+          <button class="f-tab" role="tab" aria-selected="false">Storia</button>
+        </div>
+        <div>
+          <div class="f-seg" role="group" aria-label="Filtra per tipo">
+            <button class="f-seg__opt" aria-pressed="true">Tutto</button>
+            <button class="f-seg__opt" aria-pressed="false">
+              <span class="f-dot" style="--dot: var(--type-action)"></span>Azione
+            </button>
+            <button class="f-seg__opt" aria-pressed="false">
+              <span class="f-dot" style="--dot: var(--type-bonus)"></span>Bonus
+            </button>
+            <button class="f-seg__opt" aria-pressed="false">
+              <span class="f-dot" style="--dot: var(--type-reaction)"></span>Reazione
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- INPUTS -->
+      <section>
+        <h2 class="f-h">Campi</h2>
+        <div class="grid">
+          <label class="f-field">
+            <span class="f-field__label">Nome del personaggio</span>
+            <input class="f-input" value="Selene Varga" />
+            <span class="f-field__help">Lo vedono tutti nella campagna.</span>
+          </label>
+          <label class="f-field">
+            <span class="f-field__label">Danni subiti</span>
+            <input class="f-input" value="-4" aria-invalid="true" />
+            <span class="f-field__error"
+              ><i data-lucide="circle-alert" class="f-i f-i--sm"></i>Scrivi un numero da 0
+              in su.</span
+            >
+          </label>
+          <div class="f-field">
+            <span class="f-field__label">Cerca</span>
+            <div class="f-search">
+              <i data-lucide="search" class="f-i"></i>
+              <input class="f-input" placeholder="Incantesimi, mostri, regole…" />
+            </div>
+          </div>
+          <div class="f-field">
+            <span class="f-field__label">Quanti?</span>
+            <div class="f-stepper">
+              <button aria-label="Meno"><i data-lucide="minus" class="f-i"></i></button>
+              <input value="7" aria-label="Quantità" />
+              <button aria-label="Più"><i data-lucide="plus" class="f-i"></i></button>
+            </div>
+          </div>
+          <div class="f-field">
+            <button class="f-switch" role="switch" aria-checked="true">
+              <span class="f-switch__track"></span>Mostra i suggerimenti
+            </button>
+            <button class="f-switch" role="switch" aria-checked="false">
+              <span class="f-switch__track"></span>I giocatori vedono i PF dei mostri
+            </button>
+          </div>
+        </div>
+        <div class="grid grid--2">
+          <div class="stack" role="radiogroup">
+            <button class="f-choice" role="radio" aria-checked="true">
+              <span class="f-choice__mark"></span
+              ><span class="f-choice__title">Riposo breve</span>
+              <span class="f-choice__desc"
+                >Un'ora. Spendi Dadi Vita per curarti e ricarichi alcune capacità.</span
+              >
+            </button>
+            <button class="f-choice" role="radio" aria-checked="false">
+              <span class="f-choice__mark"></span
+              ><span class="f-choice__title">Riposo lungo</span>
+              <span class="f-choice__desc"
+                >Otto ore. Torni al massimo dei punti ferita e degli slot.</span
+              >
+            </button>
+          </div>
+          <label class="f-field">
+            <span class="f-field__label">Nota della sessione</span>
+            <textarea class="f-input">
+Il goblin ha detto che il capo si nasconde nella cripta a nord.</textarea
+            >
+          </label>
+        </div>
+      </section>
+
+      <!-- ROWS -->
+      <section>
+        <h2 class="f-h">
+          Righe azione
+          <span class="f-h__aside">Il colore sul bordo dice che tipo di azione è</span>
+        </h2>
+        <div class="stack" style="max-width: 860px">
+          <div class="f-row f-row--action">
+            <span class="f-row__icon"><i data-lucide="hammer" class="f-i"></i></span>
+            <button class="f-row__main">
+              <span class="f-row__title">Mazza</span>
+              <span class="f-row__meta"><b>Azione</b> · Attacco in mischia · 1,5 m</span>
+            </button>
+            <span class="f-row__side">
+              <span class="f-row__stats">
+                <button class="f-stat">
+                  <span class="f-stat__v">+6</span
+                  ><span class="f-stat__k">per colpire</span>
+                </button>
+                <button class="f-stat">
+                  <span class="f-stat__v">1d6+3</span
+                  ><span class="f-stat__k">contundenti</span>
+                </button>
+              </span>
+              <button class="f-btn f-btn--sm">Attacca</button>
+            </span>
+          </div>
+          <div class="f-row f-row--bonus">
+            <span class="f-row__icon"><i data-lucide="hand-heart" class="f-i"></i></span>
+            <button class="f-row__main">
+              <span class="f-row__title">Parola guaritrice</span>
+              <span class="f-row__meta"
+                ><b>Azione bonus</b> · Incantesimo di 1° livello · 18 m</span
+              >
+            </button>
+            <span class="f-row__side">
+              <span class="f-row__stats">
+                <button class="f-stat">
+                  <span class="f-stat__v">2d4+3</span
+                  ><span class="f-stat__k">PF curati</span>
+                </button>
+              </span>
+              <button class="f-btn f-btn--sm">Lancia</button>
+            </span>
+          </div>
+          <div class="f-row f-row--reaction">
+            <span class="f-row__icon"><i data-lucide="shield" class="f-i"></i></span>
+            <button class="f-row__main">
+              <span class="f-row__title">Attacco di opportunità</span>
+              <span class="f-row__meta"
+                ><b>Reazione</b> · Quando un nemico esce dalla tua portata</span
+              >
+            </button>
+            <span class="f-row__side"><button class="f-btn f-btn--sm">Usa</button></span>
+          </div>
+          <div class="f-row f-row--bonus is-spent">
+            <span class="f-row__icon"><i data-lucide="sword" class="f-i"></i></span>
+            <button class="f-row__main">
+              <span class="f-row__title">Arma spirituale</span>
+              <span class="f-row__meta f-row__status"
+                ><i data-lucide="check" class="f-i f-i--sm"></i>Azione bonus già usata in
+                questo turno</span
+              >
+            </button>
+            <span class="f-row__side"
+              ><button class="f-btn f-btn--sm" disabled>Lancia</button></span
+            >
+          </div>
+          <div>
+            <div class="f-row f-row--action is-open">
+              <span class="f-row__icon"><i data-lucide="flame" class="f-i"></i></span>
+              <button class="f-row__main" aria-expanded="true">
+                <span class="f-row__title">Fiamma sacra</span>
+                <span class="f-row__meta"><b>Azione</b> · Trucchetto · 18 m</span>
+              </button>
+              <span class="f-row__side">
+                <span class="f-row__stats">
+                  <button class="f-stat">
+                    <span class="f-stat__v">CD 14</span
+                    ><span class="f-stat__k">TS Destrezza</span>
+                  </button>
+                  <button class="f-stat">
+                    <span class="f-stat__v">2d8</span
+                    ><span class="f-stat__k">radiosi</span>
+                  </button>
+                </span>
+                <button class="f-btn f-btn--sm">Lancia</button>
+              </span>
+            </div>
+            <div class="f-row__detail">
+              <p class="f-prose" style="margin: 0 0 8px; font-size: 15px">
+                Una fiamma scende su una creatura che vedi. Deve superare un
+                <button class="f-term">tiro salvezza</button> di Destrezza o subire 2d8
+                danni radiosi. Non ottiene benefici dalla
+                <button class="f-term">copertura</button>.
+              </p>
+              <div class="row">
+                <span class="f-tag">Trucchetto</span><span class="f-tag">Evocazione</span
+                ><span class="f-tag">V, S</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHIPS & RESOURCES -->
+      <section>
+        <h2 class="f-h">Stati e risorse</h2>
+        <div class="grid grid--2">
+          <div class="f-panel stack">
+            <span class="f-label">Stati</span>
+            <div class="row">
+              <span class="f-chip f-chip--cond"
+                ><i data-lucide="eye-off" class="f-i f-i--sm"></i>Accecata
+                <button class="f-chip__x" aria-label="Togli">
+                  <i data-lucide="x" class="f-i f-i--sm"></i></button
+              ></span>
+              <span class="f-chip f-chip--buff"
+                ><i data-lucide="sparkles" class="f-i f-i--sm"></i>Benedizione · 9
+                round</span
+              >
+              <span class="f-chip"
+                ><i data-lucide="plus" class="f-i f-i--sm"></i>Aggiungi</span
+              >
+            </div>
+            <div class="row">
+              <span class="f-tag">Mischia</span
+              ><span class="f-tag f-tag--gold">Concentrazione</span
+              ><span class="f-tag">Rituale</span>
+            </div>
+          </div>
+          <div class="f-panel stack">
+            <div class="f-res">
+              <span class="f-res__name">Slot di 1° livello</span>
+              <span class="f-pips"
+                ><button class="f-pip" aria-label="Slot"></button
+                ><button class="f-pip" aria-label="Slot"></button
+                ><button class="f-pip" aria-label="Slot"></button
+                ><button class="f-pip is-spent" aria-label="Slot speso"></button
+              ></span>
+              <span class="f-res__count">3/4</span>
+            </div>
+            <div class="f-res">
+              <span class="f-res__name">Slot di 2° livello</span>
+              <span class="f-pips"
+                ><button class="f-pip" aria-label="Slot"></button
+                ><button class="f-pip is-spent" aria-label="Slot speso"></button
+                ><button class="f-pip is-spent" aria-label="Slot speso"></button
+              ></span>
+              <span class="f-res__count">1/3</span>
+            </div>
+            <div class="f-res">
+              <span class="f-res__name">Incanalare Divinità</span>
+              <span class="f-pips"
+                ><button class="f-pip" aria-label="Uso"></button
+                ><button class="f-pip is-spent" aria-label="Uso speso"></button
+              ></span>
+              <span class="f-res__count">1/2</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATS -->
+      <section>
+        <h2 class="f-h">Numeri</h2>
+        <div class="grid grid--2">
+          <div class="f-panel stack" style="gap: 14px">
+            <div class="f-hp">
+              <span class="f-label">Punti ferita</span>
+              <div class="f-hp__top">
+                <span class="f-hp__now">31</span><span class="f-hp__max">/ 38</span
+                ><span class="f-hp__temp">+5 temporanei</span>
+              </div>
+              <div class="f-bar">
+                <span class="f-bar__fill" style="width: 81%"></span
+                ><span class="f-bar__temp" style="left: 81%; width: 13%"></span>
+              </div>
+            </div>
+            <div class="f-tiles">
+              <button class="f-tile" aria-expanded="true">
+                <span class="f-label">CA</span><span class="f-tile__v">18</span>
+              </button>
+              <button class="f-tile">
+                <span class="f-label">Iniziativa</span><span class="f-tile__v">+1</span>
+              </button>
+              <button class="f-tile">
+                <span class="f-label">Velocità</span
+                ><span class="f-tile__v">9<small>m</small></span>
+              </button>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="f-econ">
+              <div class="f-econ__slot" style="--c: var(--type-action)">
+                <i data-lucide="swords" class="f-i"></i
+                ><span
+                  ><span class="f-econ__name">Azione</span><br /><span
+                    class="f-econ__state"
+                    >Libera</span
+                  ></span
+                >
+              </div>
+              <div class="f-econ__slot is-spent" style="--c: var(--type-bonus)">
+                <i data-lucide="zap" class="f-i"></i
+                ><span
+                  ><span class="f-econ__name">Bonus</span><br /><span
+                    class="f-econ__state"
+                    >Usata</span
+                  ></span
+                >
+              </div>
+              <div class="f-econ__slot" style="--c: var(--type-reaction)">
+                <i data-lucide="shield" class="f-i"></i
+                ><span
+                  ><span class="f-econ__name">Reazione</span><br /><span
+                    class="f-econ__state"
+                    >Libera</span
+                  ></span
+                >
+              </div>
+              <div class="f-econ__slot" style="--c: var(--type-move)">
+                <i data-lucide="footprints" class="f-i"></i
+                ><span
+                  ><span class="f-econ__name">Movimento</span><br /><span
+                    class="f-econ__state"
+                    >9 m su 9</span
+                  ></span
+                >
+              </div>
+            </div>
+            <span class="spec"
+              >Pieno = ancora disponibile. Tratteggiato = speso in questo turno.</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- EXPLAIN -->
+      <section>
+        <h2 class="f-h">Ogni numero si spiega</h2>
+        <p class="lead" style="margin-top: -8px">
+          Tocchi un numero sottolineato e Folio mostra da dove viene. Tocchi una parola
+          sottolineata e Folio la spiega con parole semplici.
+        </p>
+        <div class="grid grid--2" style="align-items: start">
+          <div class="f-pop" role="dialog" aria-label="Classe armatura">
+            <span class="f-pop__arrow"></span>
+            <div class="f-pop__head">
+              <span class="f-pop__title">Classe armatura</span
+              ><span class="f-tag">Calcolata</span>
+            </div>
+            <dl class="f-bd">
+              <div class="f-bd__row">
+                <dt>Cotta di maglia</dt>
+                <dd>16</dd>
+              </div>
+              <div class="f-bd__row">
+                <dt>Scudo</dt>
+                <dd>+2</dd>
+              </div>
+              <div class="f-bd__row is-off">
+                <dt>Destrezza</dt>
+                <dd>+1</dd>
+              </div>
+              <div class="f-bd__row f-bd__row--total">
+                <dt>Totale</dt>
+                <dd>18</dd>
+              </div>
+            </dl>
+            <p class="f-pop__note">
+              Con un'<button class="f-term">armatura pesante</button> la Destrezza non si
+              somma.
+            </p>
+            <div class="f-pop__foot">
+              <span class="f-meta">Il master dice altro?</span>
+              <button class="f-btn f-btn--sm f-btn--ghost">
+                <i data-lucide="pencil" class="f-i f-i--sm"></i>Cambia a mano
+              </button>
+            </div>
+          </div>
+          <div class="f-pop" role="dialog" aria-label="Tiro salvezza">
+            <span class="f-pop__arrow"></span>
+            <span class="f-gloss__kind"
+              ><i data-lucide="book-open" class="f-i f-i--sm"></i>Regola</span
+            >
+            <div class="f-pop__title" style="margin-top: 6px">Tiro salvezza</div>
+            <p class="f-gloss__body">
+              Un tiro per evitare un pericolo. Tiri un d20 e aggiungi il bonus indicato;
+              se arrivi alla CD, ti salvi.
+            </p>
+            <p class="f-gloss__eg">
+              Esempio: la CD è 14 e il tuo bonus di Destrezza è +2. Tiri 13: 13 + 2 = 15,
+              ti salvi.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- OVERLAYS -->
+      <section>
+        <h2 class="f-h">Finestre, menu, avvisi</h2>
+        <div class="grid grid--2" style="align-items: start">
+          <div
+            class="stage"
+            style="display: grid; place-items: center; background: var(--scrim)"
+          >
+            <div class="f-dialog" role="dialog" aria-labelledby="dlg-t">
+              <div class="f-dialog__head">
+                <div style="flex: 1">
+                  <h3 class="f-title" id="dlg-t">Riposo breve</h3>
+                  <p class="f-dialog__sub">Hai 3 Dadi Vita (d8) su 5.</p>
+                </div>
+                <button class="f-btn f-btn--icon f-btn--ghost" aria-label="Chiudi">
+                  <i data-lucide="x" class="f-i"></i>
+                </button>
+              </div>
+              <div class="f-dialog__body">
+                <div class="f-field">
+                  <span class="f-field__label">Dadi Vita da spendere</span>
+                  <div class="row">
+                    <div class="f-stepper">
+                      <button aria-label="Meno">
+                        <i data-lucide="minus" class="f-i"></i></button
+                      ><input value="2" aria-label="Dadi" /><button aria-label="Più">
+                        <i data-lucide="plus" class="f-i"></i>
+                      </button>
+                    </div>
+                    <span class="f-meta">Tira 2d8 e scrivi il totale qui sotto.</span>
+                  </div>
+                </div>
+                <label class="f-field">
+                  <span class="f-field__label">Totale dei dadi</span>
+                  <input class="f-input" value="9" />
+                  <span class="f-field__help"
+                    >+2 Costituzione per dado = <b>13 PF</b>. Arrivi a 38 su 38.</span
+                  >
+                </label>
+              </div>
+              <div class="f-dialog__foot">
+                <button class="f-btn f-btn--ghost">Annulla</button>
+                <button class="f-btn">Riposa</button>
+              </div>
+            </div>
+          </div>
+          <div class="stack" style="gap: 20px">
+            <div class="f-menu" role="menu">
+              <button class="f-menu__item" role="menuitem">
+                <i data-lucide="pencil" class="f-i"></i>Modifica
+              </button>
+              <button class="f-menu__item" role="menuitem">
+                <i data-lucide="copy" class="f-i"></i>Duplica
+              </button>
+              <button class="f-menu__item" role="menuitem">
+                <i data-lucide="share-2" class="f-i"></i>Condividi link
+              </button>
+              <div class="f-menu__sep"></div>
+              <button class="f-menu__item f-menu__item--danger" role="menuitem">
+                <i data-lucide="trash-2" class="f-i"></i>Elimina personaggio
+              </button>
+            </div>
+            <div class="f-toast" role="status">
+              <i data-lucide="circle-check" class="f-i"></i>
+              <span class="f-toast__text"><b>Mazza</b> registrata. Azione spesa.</span>
+              <button class="f-btn f-btn--sm f-btn--ghost">
+                <i data-lucide="undo-2" class="f-i f-i--sm"></i>Annulla
+              </button>
+            </div>
+            <div class="f-banner f-banner--danger" role="alert">
+              <i data-lucide="heart-pulse" class="f-i"></i>
+              <div class="f-banner__body">
+                <span class="f-banner__title">Sei a 0 punti ferita</span>
+                <span class="f-banner__text"
+                  >All'inizio del tuo turno fai un tiro salvezza contro la morte.</span
+                >
+                <div class="f-banner__actions">
+                  <button class="f-btn f-btn--sm">Successo</button
+                  ><button class="f-btn f-btn--sm">Fallimento</button>
+                </div>
+              </div>
+            </div>
+            <div class="f-banner f-banner--warn" role="status">
+              <i data-lucide="wifi-off" class="f-i"></i>
+              <div class="f-banner__body">
+                <span class="f-banner__title">Sei offline</span>
+                <span class="f-banner__text"
+                  >Puoi giocare lo stesso: salvo tutto appena torna la rete.</span
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="f-h">Su telefono, dal basso</h2>
+        <div class="phone-stage">
+          <div class="f-dialog f-dialog--sheet" role="dialog" aria-labelledby="sh-t">
+            <div class="f-grabber"></div>
+            <div class="f-dialog__head">
+              <h3 class="f-title" id="sh-t" style="flex: 1">Danni a Selene</h3>
+              <button class="f-btn f-btn--icon f-btn--ghost" aria-label="Chiudi">
+                <i data-lucide="x" class="f-i"></i>
+              </button>
+            </div>
+            <div class="f-dialog__body">
+              <label class="f-field"
+                ><span class="f-field__label">Quanti danni?</span
+                ><input class="f-input" inputmode="numeric" value="7"
+              /></label>
+              <div class="f-seg" role="group" aria-label="Moltiplicatore">
+                <button class="f-seg__opt" aria-pressed="false">Nessuno</button>
+                <button class="f-seg__opt" aria-pressed="false">Metà</button>
+                <button class="f-seg__opt" aria-pressed="true">Pieni</button>
+                <button class="f-seg__opt" aria-pressed="false">Doppi</button>
+              </div>
+              <span class="f-meta"
+                >Prima si tolgono i 5 PF temporanei: scendi a 29 / 38.</span
+              >
+            </div>
+            <div class="f-dialog__foot">
+              <button class="f-btn f-btn--ghost">Salta</button
+              ><button class="f-btn">Applica</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STATES -->
+      <section>
+        <h2 class="f-h">Vuoto, errore, caricamento</h2>
+        <div class="grid">
+          <div class="f-empty">
+            <span class="f-empty__icon"
+              ><i data-lucide="wand-sparkles" class="f-i f-i--lg"></i
+            ></span>
+            <p class="f-empty__title">Nessun incantesimo</p>
+            <p class="f-empty__text">
+              I chierici preparano incantesimi ogni giorno. Scegli i primi dal compendio.
+            </p>
+            <button class="f-btn">
+              <i data-lucide="plus" class="f-i f-i--sm"></i>Scegli incantesimi
+            </button>
+          </div>
+          <div class="f-empty">
+            <span class="f-empty__icon" style="color: var(--danger)"
+              ><i data-lucide="cloud-off" class="f-i f-i--lg"></i
+            ></span>
+            <p class="f-empty__title">Non riesco a caricare</p>
+            <p class="f-empty__text">
+              Il personaggio è salvato sul telefono. Riprova quando torna la rete.
+            </p>
+            <button class="f-btn">
+              <i data-lucide="rotate-cw" class="f-i f-i--sm"></i>Riprova
+            </button>
+          </div>
+          <div class="f-panel stack" aria-busy="true" aria-label="Caricamento">
+            <div class="row">
+              <span
+                class="f-skel"
+                style="width: 56px; height: 56px; border-radius: 50%"
+              ></span
+              ><span class="stack" style="flex: 1"
+                ><span class="f-skel" style="height: 18px; width: 70%"></span
+                ><span class="f-skel" style="height: 14px; width: 45%"></span
+              ></span>
+            </div>
+            <span class="f-skel" style="height: 64px"></span>
+            <span class="f-skel" style="height: 64px"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

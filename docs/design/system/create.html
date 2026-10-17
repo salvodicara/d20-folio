@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Nuovo personaggio</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      /* BG3 character creation: the scene behind, panels on top, words only on panels */
+      body {
+        background:
+          linear-gradient(180deg, rgb(11 9 7 / 0.55), rgb(11 9 7 / 0.92) 70%),
+          url("img/create-armoury.webp") center top / cover fixed,
+          var(--bg);
+      }
+      .cc {
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: var(--sp-6) var(--sp-6) 120px;
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr) 320px;
+        gap: var(--sp-6);
+        align-items: start;
+      }
+      /* BG3's step list: a ringed check and two lines, step and choice */
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: var(--sp-2);
+      }
+      .steps li {
+        display: grid;
+        grid-template-columns: 32px 1fr;
+        gap: var(--sp-3);
+        align-items: center;
+        padding: 6px var(--sp-2);
+        border-radius: var(--r-2);
+      }
+      .steps__mark {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--frame);
+        color: var(--text-3);
+        font-size: 14px;
+        font-weight: 700;
+        background: rgb(11 9 7 / 0.6);
+      }
+      .steps li.is-done .steps__mark {
+        border-color: var(--gold);
+        color: var(--gold-bright);
+      }
+      .steps li.is-current {
+        background: rgb(28 23 18 / 0.85);
+        box-shadow: inset 0 0 0 1px var(--frame);
+      }
+      .steps li.is-current .steps__mark {
+        border-color: var(--lit-hi);
+        color: #f4fbff;
+        background: var(--lit-deep);
+      }
+      .steps b {
+        display: block;
+        font-size: 15px;
+      }
+      .steps span span {
+        font-size: 14px;
+        color: var(--text-2);
+      }
+      /* BG3's choice tiles: emblem over name, the chosen one framed in gold */
+      .tiles {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: var(--sp-3);
+      }
+      .ctile {
+        display: grid;
+        justify-items: center;
+        gap: var(--sp-2);
+        padding: var(--sp-3) var(--sp-1);
+        border: 1px solid transparent;
+        border-radius: var(--r-2);
+        background: none;
+        cursor: pointer;
+        color: var(--text-2);
+        font-weight: 700;
+        font-size: 15px;
+      }
+      .ctile img {
+        width: 84px;
+        height: 84px;
+        border-radius: var(--r-2);
+        border: 1px solid var(--frame);
+        object-fit: cover;
+      }
+      .ctile:hover {
+        color: var(--text);
+      }
+      .ctile[aria-checked="true"] {
+        color: var(--gold-bright);
+      }
+      .ctile[aria-checked="true"] img {
+        border-color: var(--gold-bright);
+        box-shadow:
+          0 0 0 2px #0b0907,
+          0 0 0 3px var(--gold),
+          0 0 22px -4px rgb(240 200 120 / 0.7);
+      }
+      .chosen {
+        text-align: center;
+        display: grid;
+        gap: var(--sp-2);
+        justify-items: center;
+        padding: var(--sp-5) 0 var(--sp-2);
+      }
+      .chosen h3 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 32px;
+      }
+      .chosen p {
+        margin: 0;
+        max-width: 56ch;
+        color: var(--text-2);
+      }
+      .keyfacts {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--sp-3);
+        margin-top: var(--sp-4);
+        text-align: center;
+      }
+      .keyfacts div {
+        padding: var(--sp-3);
+        border: 1px solid var(--frame);
+        border-radius: var(--r-2);
+        background: var(--well);
+      }
+      .keyfacts b {
+        display: block;
+        font-size: 17px;
+      }
+      .summary {
+        display: grid;
+        gap: var(--sp-4);
+        justify-items: center;
+        text-align: center;
+      }
+      .summary .abils {
+        width: 100%;
+      }
+      .summary__list {
+        justify-self: stretch;
+        text-align: left;
+        font-size: 15px;
+        margin: 0;
+      }
+      .summary__list b {
+        color: var(--gold-bright);
+        font-weight: 700;
+      }
+      .ccfoot {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        display: flex;
+        gap: var(--sp-3);
+      }
+      .ccfoot .btn {
+        min-width: 180px;
+        min-height: 44px;
+      }
+      /* Phone: D&D Beyond's builder — numbered step tabs on top, rows to choose */
+      .ptabsteps {
+        display: none;
+      }
+      @media (max-width: 760px) {
+        .cc {
+          grid-template-columns: 1fr;
+          padding: var(--sp-3) var(--sp-3) 110px;
+          gap: var(--sp-3);
+        }
+        .cc > * {
+          min-width: 0;
+        }
+        .cc__steps,
+        .cc__summary {
+          display: none;
+        }
+        .ptabsteps {
+          display: flex;
+          gap: var(--sp-2);
+          overflow-x: auto;
+          scrollbar-width: none;
+          padding: var(--sp-3);
+          border-bottom: 1px solid var(--line);
+        }
+        .ptabsteps span {
+          flex: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          min-height: 36px;
+          padding: 0 var(--sp-3);
+          border-radius: 999px;
+          border: 1px solid var(--line);
+          color: var(--text-2);
+          font-size: 14px;
+          font-weight: 700;
+        }
+        .ptabsteps span.is-done {
+          border-color: var(--frame);
+        }
+        .ptabsteps span.is-current {
+          border-color: var(--gold);
+          color: var(--text);
+          background: color-mix(in srgb, var(--gold) 12%, transparent);
+        }
+        .tiles {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .ctile img {
+          width: 72px;
+          height: 72px;
+        }
+        .keyfacts {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .ccfoot {
+          left: 0;
+          right: 0;
+          bottom: 0;
+          transform: none;
+          padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + env(safe-area-inset-bottom));
+          background: linear-gradient(180deg, #1d1712, #0f0c09);
+          border-top: 1px solid var(--frame-strong);
+        }
+        .ccfoot .btn {
+          flex: 1;
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <a class="btn btn--quiet btn--icon only-phone" href="#" aria-label="Annulla"
+        ><i data-lucide="x" class="i"></i
+      ></a>
+      <a class="brand only-laptop" href="#"
+        ><svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+          <path d="M12 7l-5.2 9h10.4z" /></svg
+        >Folio</a
+      >
+      <nav class="nav only-laptop" aria-label="Principale">
+        <a href="#" aria-current="page">Personaggi</a><a href="#">Campagne</a
+        ><a href="#">Compendio</a>
+      </nav>
+      <div class="top__who only-phone">
+        <span class="top__name">Nuovo personaggio</span
+        ><span class="top__cls">Passo 2 di 9</span>
+      </div>
+      <span class="grow only-laptop"></span>
+      <span class="lrow__img only-laptop" style="width: 36px; height: 36px"
+        ><span style="font-size: 15px">M</span></span
+      >
+      <span class="only-phone" style="width: 44px"></span>
+    </header>
+
+    <nav class="ptabsteps" aria-label="Passi">
+      <span class="is-done"><i data-lucide="check" class="i i--sm"></i>Specie</span>
+      <span class="is-current">2 Classe</span>
+      <span>3 Sottoclasse</span>
+      <span>4 Background</span>
+      <span>5 Caratteristiche</span>
+      <span>6 Abilità</span>
+    </nav>
+
+    <main class="cc">
+      <ol
+        class="steps cc__steps frame frame--card"
+        aria-label="Passi"
+        style="padding: var(--sp-3)"
+      >
+        <li class="is-done">
+          <span class="steps__mark"><i data-lucide="check" class="i i--sm"></i></span
+          ><span><b>Specie</b><span>Umana</span></span>
+        </li>
+        <li class="is-current">
+          <span class="steps__mark">2</span
+          ><span><b>Classe</b><span>Chierico</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">3</span
+          ><span><b>Sottoclasse</b><span>al 3° livello</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">4</span
+          ><span><b>Background</b><span>da scegliere</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">5</span
+          ><span><b>Caratteristiche</b><span>da scegliere</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">6</span
+          ><span><b>Abilità</b><span>da scegliere</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">7</span
+          ><span><b>Incantesimi</b><span>da scegliere</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">8</span
+          ><span><b>Equipaggiamento</b><span>da scegliere</span></span>
+        </li>
+        <li>
+          <span class="steps__mark">9</span><span><b>Riepilogo</b></span>
+        </li>
+      </ol>
+
+      <section class="frame frame--crest" aria-labelledby="cls-h">
+        <span class="crest"></span><span class="frame__corner-tr"></span
+        ><span class="frame__corner-bl"></span>
+        <h2 class="ftitle" id="cls-h">Scegli la classe</h2>
+        <div class="tiles" role="radiogroup" aria-label="Classi">
+          <button class="ctile" role="radio" aria-checked="false">
+            <img src="img/class-bard.webp" alt="" />Bardo
+          </button>
+          <button class="ctile" role="radio" aria-checked="true">
+            <img src="img/class-cleric.webp" alt="" />Chierico
+          </button>
+          <button class="ctile" role="radio" aria-checked="false">
+            <img src="img/class-fighter.webp" alt="" />Guerriero
+          </button>
+          <button class="ctile" role="radio" aria-checked="false">
+            <img src="img/class-rogue.webp" alt="" />Ladro
+          </button>
+          <button class="ctile" role="radio" aria-checked="false">
+            <img src="img/class-wizard.webp" alt="" />Mago
+          </button>
+          <button class="ctile" role="radio" aria-checked="false">
+            <img src="img/class-ranger.webp" alt="" />Ranger
+          </button>
+        </div>
+        <div class="chosen">
+          <h3>Chierico</h3>
+          <p>
+            Un sacerdote che incanala il potere di una divinità: cura il gruppo, lo
+            protegge e colpisce con la luce. Buono per chi vuole aiutare gli altri.
+          </p>
+        </div>
+        <div class="keyfacts">
+          <div><span class="label">Dado vita</span><b>d8</b></div>
+          <div><span class="label">Principale</span><b>Saggezza</b></div>
+          <div><span class="label">Armature</span><b>Leggere, medie, scudi</b></div>
+          <div><span class="label">Incantesimi</span><b>Sì, dal 1° livello</b></div>
+        </div>
+      </section>
+
+      <!-- BG3's right-hand summary: crest, level line, the ability row, what you get -->
+      <aside class="frame frame--crest summary cc__summary" aria-label="Riepilogo">
+        <span class="crest"></span><span class="frame__corner-tr"></span
+        ><span class="frame__corner-bl"></span>
+        <img
+          src="img/class-cleric.webp"
+          alt=""
+          style="
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            object-fit: cover;
+          "
+        />
+        <div>
+          <div class="lrow__title">Umana · Chierica 1</div>
+          <div class="lrow__meta">Senza nome, per ora</div>
+        </div>
+        <div class="abils">
+          <div class="abil">
+            <span class="label">For</span><span class="abil__v">10</span>
+          </div>
+          <div class="abil">
+            <span class="label">Des</span><span class="abil__v">10</span>
+          </div>
+          <div class="abil">
+            <span class="label">Cos</span><span class="abil__v">10</span>
+          </div>
+          <div class="abil">
+            <span class="label">Int</span><span class="abil__v">10</span>
+          </div>
+          <div class="abil">
+            <span class="label">Sag</span><span class="abil__v">10</span>
+          </div>
+          <div class="abil">
+            <span class="label">Car</span><span class="abil__v">10</span>
+          </div>
+        </div>
+        <p class="summary__list">
+          <b>Tiri salvezza</b> Saggezza, Carisma<br /><b>Armi</b> semplici<br /><b
+            >Armature</b
+          >
+          leggere, medie, scudi
+        </p>
+      </aside>
+    </main>
+
+    <div class="ccfoot">
+      <button class="btn">
+        <i data-lucide="chevron-left" class="i i--sm"></i>Indietro
+      </button>
+      <button class="btn btn--lit">
+        Avanti<i data-lucide="chevron-right" class="i i--sm"></i>
+      </button>
+    </div>
+  </body>
+</html>
