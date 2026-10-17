@@ -5,7 +5,7 @@
  * Screenshots land in the test's own output directory.
  */
 import { test, expect, type Page } from "@playwright/test";
-import { seedUI, seedLang, freezeMotion } from "./surfaces";
+import { seedUI, seedLang, freezeMotion, startSoloFight } from "./surfaces";
 
 async function shot(page: Page, name: string): Promise<void> {
   await freezeMotion(page);
@@ -17,6 +17,8 @@ async function openPlay(page: Page, charId: string): Promise<void> {
   await seedLang(page, "it");
   await page.goto(`/characters/${charId}?tab=play`);
   await page.locator(".turn").waitFor({ timeout: 90_000 });
+  // The per-turn gates hold inside a fight; outside one the economy only logs.
+  await startSoloFight(page);
 }
 
 const roundNum = (page: Page) => page.locator(".turn .r-num");

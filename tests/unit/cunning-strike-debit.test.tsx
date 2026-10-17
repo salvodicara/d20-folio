@@ -108,6 +108,8 @@ function fireLastUndo(): void {
 }
 
 beforeEach(() => {
+  // A fight is on (round 2): the per-turn gates hold. Outside one the economy only logs.
+  useCharacterStore.setState({ combatRound: 2 });
   applyApi = null;
   useCharacterStore.setState({ character: null, loading: false, error: null });
   useUIStore.setState({ sheetMode: "play" });

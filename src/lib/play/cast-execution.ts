@@ -20,14 +20,57 @@ export const TURN_EXECUTION: ActionExecution = {
   ritual: false,
 };
 
+/** A use outside the turn's economy: logged, claims no turn slot, outlives End Turn. */
+const UNTIMED_EXECUTION: ActionExecution = {
+  consumesTurnEconomy: false,
+  turnScoped: false,
+  ritual: false,
+};
+
+/** What tells the sheet a fight is on. */
+export interface EncounterFacts {
+  /** The open character is in a campaign encounter (any phase). */
+  sharedEncounter: boolean;
+  /** The solo round counter (1 = no round has been advanced). */
+  soloRound: number;
+  /** The solo Initiative roll as typed ("" = not rolled). */
+  soloInitiative: string;
+}
+
+/**
+ * Whether a fight is on (owner decision 2026-10-16: actions work outside combat). A
+ * campaign encounter always is; solo, the player starts one by rolling Initiative or
+ * advancing a round, and End Combat (round 1, Initiative cleared) leaves it. With no
+ * fight the turn economy only logs: no per-turn budget, nothing waits for End Turn,
+ * like D&D Beyond and Foundry, which track turns only inside a combat.
+ */
+export function encounterRunning(facts: EncounterFacts): boolean {
+  return (
+    facts.sharedEncounter || facts.soloRound > 1 || facts.soloInitiative.trim() !== ""
+  );
+}
+
+/**
+ * A once-per-turn use (Sneak Attack, `recovery: "per-turn"`) is spent only inside a
+ * fight; outside one there is no turn for it to wait on, so the use is only logged.
+ */
+export function spendsOncePerTurnUse(
+  recovery: string | undefined,
+  inEncounter: boolean
+): boolean {
+  return inEncounter || recovery !== "per-turn";
+}
+
 /**
  * The execution of a use. A ritual is allowed only for a levelled SRD ritual spell
  * (null otherwise). Spells, cast-pool uses and extended casts stand outside the
- * turn's economy; everything else is a turn action.
+ * turn's economy, and so does every use made outside a fight (`inEncounter` false);
+ * everything else is a turn action.
  */
 export function executionFor(
   action: ResolvedAction,
-  ritual: boolean
+  ritual: boolean,
+  inEncounter = true
 ): ActionExecution | null {
   if (ritual) {
     const spell = action.spellId ? getSpellById(action.spellId) : undefined;
@@ -35,11 +78,12 @@ export function executionFor(
     return { consumesTurnEconomy: false, turnScoped: false, ritual: true };
   }
   if (
+    !inEncounter ||
     action.source === "spell" ||
     action.castPoolSourceId ||
     action.castTiming === "extended"
   ) {
-    return { consumesTurnEconomy: false, turnScoped: false, ritual: false };
+    return UNTIMED_EXECUTION;
   }
   return TURN_EXECUTION;
 }
