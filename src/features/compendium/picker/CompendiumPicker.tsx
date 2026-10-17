@@ -65,6 +65,10 @@ export function CompendiumPicker<T>({
   if (selected) {
     const added = picker.isAdded(selected);
     const view = spec.detail(selected, ctx, { added });
+    const purchase =
+      mode === "add"
+        ? spec.purchase?.(selected, ctx, picker.supportsQuantity ? picker.quantity : 1)
+        : undefined;
     return (
       <div className="flex flex-1 flex-col overflow-hidden">
         <CompendiumDetailBody view={view} locale={ctx.locale} />
@@ -77,6 +81,15 @@ export function CompendiumPicker<T>({
             }}
             onBack={() => picker.clearSelection()}
             addLabel={spec.addLabel?.(ctx)}
+            buy={
+              purchase && {
+                ...purchase,
+                onBuy: () => {
+                  picker.add(selected, { pay: true });
+                  if (spec.closeOnAdd) onClose?.();
+                },
+              }
+            }
             quantity={
               picker.supportsQuantity
                 ? {

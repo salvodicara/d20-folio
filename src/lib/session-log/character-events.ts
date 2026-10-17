@@ -130,6 +130,7 @@ export function combatEventToPlayEvent(
         : null;
     case "tracker-regain":
     case "slot-regain":
+    case "item-trade":
     case "legacy":
       return null;
   }

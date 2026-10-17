@@ -7,22 +7,32 @@
  */
 
 import { FolioInventoryIcon } from "@/components/shared/folio-icons";
-import { SRD_EQUIPMENT } from "@/data/equipment";
+import { SRD_EQUIPMENT, getEquipment } from "@/data/equipment";
+import { armorCategoryOf, doffBodyArmor } from "@/lib/play/armor-donning";
+import { showArmorToast } from "@/features/character/center/armor-toast";
 import { itemArtUrl } from "@/data/item-art";
 import { equipmentSealIcon, equipmentCategoryIcon } from "@/components/shared/item-icons";
 import { addEquipmentRef, addWeaponRef } from "@/lib/equipment-add";
 import { formatWeight } from "@/lib/utils";
 import { localizeWeaponMastery, localizeWeaponProperty } from "@/lib/views/srd-i18n";
-import { localizeSrd, hasSrd } from "@/i18n/resolver";
+import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { useCharacterStore } from "@/stores/characterStore";
+import { buyItem, purchaseOffer } from "@/features/character/center/purchase-offer";
 import { Icon } from "@/components/ui/icon";
 import { ItemArtPlate } from "@/components/shared/ItemArtPlate";
 import { UniversalCardTags } from "@/components/shared/UniversalCard";
 import { FilterChip } from "@/components/sheet/picker-parts";
 import type { SrdEquipmentData, EquipmentCategory } from "@/data/types";
-import type { SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
-import { defineFilter, type CompendiumPickerSpec, type PickerDetailView } from "../types";
+import type { CharacterDoc, SrdEquipmentRef, SrdWeaponRef } from "@/types/character";
+
+type EquipmentRef = CharacterDoc["character"]["equipment"][number];
+import {
+  defineFilter,
+  type CompendiumPickerSpec,
+  type PickerDetailView,
+  type TFn,
+} from "../types";
 import { CmpSeal } from "../CmpSeal";
 import { descriptionSearch, nameCorpus } from "./shared";
 
@@ -42,13 +52,83 @@ function categoryTone(cat: EquipmentCategory): string {
   return "var(--text-secondary)";
 }
 
-function formatCost(item: SrdEquipmentData): string {
-  return `${item.cost.amount} ${item.cost.unit}`;
+function formatCost(item: SrdEquipmentData, t: TFn): string {
+  return `${item.cost.amount} ${t(`equipment.currencyAbbr.${item.cost.unit}`)}`;
 }
 
 /** Resolve a localized SRD string for an equipment field (top-level catalogue key). */
 const itemText = (i: SrdEquipmentData, field: string, locale: Locale) =>
   localizeSrd("equipment", i.id, field, locale);
+
+/**
+ * Put `qty` units of a catalogue item on the open sheet (stacking onto a twin). Body
+ * armor goes on worn, so the armor worn until now comes off (one body armor at a
+ * time); that row is returned so the caller can say the change.
+ */
+function addToSheet(item: SrdEquipmentData, qty: number): EquipmentRef | undefined {
+  const store = useCharacterStore.getState();
+  const character = store.character;
+  if (!character) return undefined;
+  if (item.category === "weapon") {
+    const newRef: SrdWeaponRef = { srdId: item.id, quantity: qty };
+    store.setCharacter({
+      ...character,
+      character: {
+        ...character.character,
+        // Stack onto an identical weapon instead of duplicating the row.
+        weapons: addWeaponRef(character.character.weapons, newRef),
+      },
+    });
+  } else {
+    const newRef: SrdEquipmentRef = {
+      srdId: item.id,
+      quantity: qty,
+      // Only wearables default to equipped (so AC is right immediately); gear,
+      // packs, ammo and consumables are carried, not worn.
+      ...(item.category === "armor" || item.category === "shield"
+        ? { equipped: true }
+        : {}),
+      tracked: item.category === "gear" || item.category === "pack",
+    };
+    const worn =
+      item.category === "armor"
+        ? doffBodyArmor(character.character.equipment, getEquipment)
+        : { equipment: character.character.equipment, doffed: [] };
+    store.setCharacter({
+      ...character,
+      character: {
+        // Stack onto an identical entry instead of appending a duplicate row.
+        ...character.character,
+        equipment: addEquipmentRef(worn.equipment, newRef),
+      },
+    });
+    const offIdx = worn.doffed[0];
+    return offIdx === undefined ? undefined : character.character.equipment[offIdx];
+  }
+  return undefined;
+}
+
+/** Add, then say an armor change in one line when the new armor replaced the worn one. */
+function addAndSay(item: SrdEquipmentData, qty: number, t: TFn, locale: Locale): void {
+  const off = addToSheet(item, qty);
+  const offCategory = off && armorCategoryOf(off, getEquipment);
+  if (!off || !offCategory || !item.armorCategory) return;
+  showArmorToast(
+    t,
+    {
+      name: itemText(item, "name", locale),
+      category: item.armorCategory,
+      equipping: true,
+    },
+    {
+      name:
+        "custom" in off
+          ? localizeCustom(off.name)
+          : localizeSrd("equipment", off.srdId, "name", locale),
+      category: offCategory,
+    }
+  );
+}
 
 export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
   id: "equipment",
@@ -136,7 +216,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
         : itemText(item, "name", locale),
     meta: (
       <>
-        {formatCost(item)}
+        {formatCost(item, t)}
         {item.weight ? ` · ${formatWeight(item.weight, locale)}` : ""}
         {item.damage
           ? ` · ${item.damage.die} ${t(`srd.damage_${item.damage.type.toLowerCase()}`)}`
@@ -151,7 +231,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
   detail: (item, { t, locale }) => {
     const artUrl = itemArtUrl("equipment", item.id);
     const meta: NonNullable<PickerDetailView["meta"]> = [
-      { label: t("equipment.cost"), value: formatCost(item) },
+      { label: t("equipment.cost"), value: formatCost(item, t) },
     ];
     if (item.weight != null && item.weight > 0)
       meta.push({
@@ -229,41 +309,18 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
     };
   },
 
-  onAdd: (item, { character }, quantity) => {
+  onAdd: (item, { character, t, locale }, quantity, options) => {
     if (!character) return;
-    const store = useCharacterStore.getState();
     // The picker's stepper already yields the real unit count (it steps by the
     // bundle size for ammo). With no stepper, default to one bundle.
     const qty = quantity ?? item.bundleSize ?? 1;
-    if (item.category === "weapon") {
-      const newRef: SrdWeaponRef = { srdId: item.id, quantity: qty };
-      store.setCharacter({
-        ...character,
-        character: {
-          ...character.character,
-          // Stack onto an identical weapon instead of duplicating the row.
-          weapons: addWeaponRef(character.character.weapons, newRef),
-        },
-      });
-    } else {
-      const newRef: SrdEquipmentRef = {
-        srdId: item.id,
-        quantity: qty,
-        // Only wearables default to equipped (so AC is right immediately); gear,
-        // packs, ammo and consumables are carried, not worn.
-        ...(item.category === "armor" || item.category === "shield"
-          ? { equipped: true }
-          : {}),
-        tracked: item.category === "gear" || item.category === "pack",
-      };
-      store.setCharacter({
-        ...character,
-        character: {
-          // Stack onto an identical entry instead of appending a duplicate row.
-          ...character.character,
-          equipment: addEquipmentRef(character.character.equipment, newRef),
-        },
-      });
-    }
+    const add = (entry: SrdEquipmentData, units: number) =>
+      addAndSay(entry, units, t, locale);
+    if (options?.pay) buyItem(item, qty, itemText(item, "name", locale), t, add);
+    else add(item, qty);
   },
+
+  // A bought item, not found loot: one tap adds it and pays its price, with change.
+  purchase: (item, { character, t }, quantity) =>
+    character ? purchaseOffer(item, quantity, character.session.currency, t) : undefined,
 };

@@ -152,6 +152,20 @@ export interface CompendiumVerdict {
 }
 
 /**
+ * A priced entry's "Buy" offer in add mode: the label carries the price ("Buy for
+ * 75 gp"); `blockedReason` disables it and says why (the purse is short).
+ */
+export interface PickerPurchase {
+  label: ReactNode;
+  blockedReason?: string;
+}
+
+/** How an add commits: `pay` also takes the price from the purse (a purchase). */
+export interface PickerAddOptions {
+  pay?: boolean;
+}
+
+/**
  * The per-type declarative spec. Owns every per-type fact; the picker owns the
  * shared UI. `existingIds`/`onAdd`/`closeOnAdd`/`addLabel` are ADD-mode only —
  * browse-only types (e.g. feats) simply omit them.
@@ -212,7 +226,17 @@ export interface CompendiumPickerSpec<T> {
    * user chose in the picker's stepper (default 1) — honoured by quantity-bearing
    * types (equipment/magic items); browse-only/single types ignore it.
    */
-  onAdd?: (entry: T, ctx: PickerCtx, quantity?: number) => void;
+  onAdd?: (
+    entry: T,
+    ctx: PickerCtx,
+    quantity?: number,
+    options?: PickerAddOptions
+  ) => void;
+  /**
+   * Add mode: the "Buy" offer of a priced entry for `quantity` units (an add that
+   * also pays from the purse, `onAdd(…, { pay: true })`); undefined = not for sale.
+   */
+  purchase?: (entry: T, ctx: PickerCtx, quantity: number) => PickerPurchase | undefined;
   /**
    * Show a quantity stepper next to Add (D55), so the player sets the count at
    * add time (e.g. 3 potions) instead of adding then editing in the inventory.

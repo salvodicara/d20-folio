@@ -122,9 +122,9 @@ import {
 } from "@/components/sheet/CastLevelModal";
 import { castEconomySlot, withMetamagicDuration } from "@/lib/play/metamagic";
 import { activateActionState, applyActionConcentration } from "./action-state-commit";
+import { sheetInEncounter } from "./sheet-in-encounter";
 import {
   asRitualAction,
-  encounterRunning,
   executionFor,
   spendsOncePerTurnUse,
   TURN_EXECUTION,
@@ -371,18 +371,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   }
 
   /** Whether a fight is on for the open sheet; outside one the economy only logs. */
-  function inEncounter(): boolean {
-    const combat = useCombatStore.getState();
-    return encounterRunning({
-      sharedEncounter:
-        sheetEncounter(
-          useCombatStatusStore.getState().status,
-          useCharacterStore.getState().character?.id ?? null
-        ) !== null,
-      soloRound: combat.round,
-      soloInitiative: combat.initiative,
-    });
-  }
+  const inEncounter = sheetInEncounter;
 
   /** The recovery cadence of a live tracker (`"per-turn"` for Sneak Attack). */
   function trackerRecovery(trackerId: string): string | undefined {
