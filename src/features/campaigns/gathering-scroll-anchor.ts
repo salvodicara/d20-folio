@@ -15,7 +15,7 @@
  * as well as the cards creates an over-correction when the page is near a scroll boundary.
  */
 
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 
 /**
  * The row whose initiative CHANGED between two snapshots — the just-committed card the
@@ -35,10 +35,29 @@ export function initiativeChangeAnchor(
 }
 
 interface Snapshot {
-  /** Each row id → its document top (px) as of the last measured frame. */
+  /** Each row id → its document top (px), re-measured whenever a row changes size. */
   tops: Map<string, number>;
   /** Each row id → its initiative as of the last measured frame. */
   inits: Map<string, number | null>;
+}
+
+/** Each row's document top, in `rowIds` order; null when the DOM and model disagree. */
+function measureTops(
+  listEl: HTMLElement,
+  rowIds: readonly string[]
+): Map<string, number> | null {
+  const children = listEl.children;
+  if (children.length !== rowIds.length) return null;
+  const tops = new Map<string, number>();
+  for (let i = 0; i < rowIds.length; i++) {
+    const el = children[i];
+    const id = rowIds[i];
+    // Document coordinates make the FLIP baseline immune to the user scrolling
+    // between the initial render and the initiative commit.
+    if (el && id !== undefined)
+      tops.set(id, el.getBoundingClientRect().top + window.scrollY);
+  }
+  return tops;
 }
 
 const REORDER_MS = 220;
@@ -81,19 +100,10 @@ export function useGatheringScrollAnchor<E extends HTMLElement>({
     const children = listEl.children;
     // One child per row, in `rowIds` order — bail (drop the baseline) if they disagree
     // rather than compensate on a misaligned map.
-    if (children.length !== rowIds.length) {
+    const tops = measureTops(listEl, rowIds);
+    if (!tops) {
       prevRef.current = null;
       return;
-    }
-    const tops = new Map<string, number>();
-    for (let i = 0; i < rowIds.length; i++) {
-      const el = children[i];
-      const id = rowIds[i];
-      if (el && id !== undefined) {
-        // Document coordinates make the FLIP baseline immune to the user scrolling
-        // between the initial render and the initiative commit.
-        tops.set(id, el.getBoundingClientRect().top + window.scrollY);
-      }
     }
     const prev = prevRef.current;
     prevRef.current = { tops, inits: new Map(initByRowId) };
@@ -129,4 +139,21 @@ export function useGatheringScrollAnchor<E extends HTMLElement>({
       }, REORDER_MS + 30);
     }
   }, [enabled, rowIds, initByRowId, listRef]);
+
+  // Keep the baseline true between renders. A row can change size without this hook
+  // re-running (a monster card fills in its speed and attacks when its bestiary entry
+  // loads, +76 px), which moves every row below it; a baseline measured before that
+  // would start their glide from a stale top, so the cards visibly jump at the next
+  // commit. Re-measure the tops (the initiatives are unchanged) on every row resize.
+  useEffect(() => {
+    const listEl = listRef.current;
+    if (!enabled || !listEl || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const prev = prevRef.current;
+      const tops = measureTops(listEl, rowIds);
+      if (prev && tops) prevRef.current = { ...prev, tops };
+    });
+    for (const child of listEl.children) observer.observe(child);
+    return () => observer.disconnect();
+  }, [enabled, rowIds, listRef]);
 }
