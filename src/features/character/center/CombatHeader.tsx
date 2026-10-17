@@ -354,22 +354,15 @@ export function CombatHeader() {
     </HoverTip>
   ) : null;
   const restMedal = !readonly ? (
-    <HoverTip show={fineTip} content={t("character.rest")}>
-      <button
-        type="button"
-        className="rest-medal"
-        onClick={() => setRestOpen(true)}
-        aria-label={t("character.rest")}
-      >
-        <span className="rm-coin">
-          <Icon as={Moon} size="sm" decorative />
-        </span>
-      </button>
-    </HoverTip>
+    // D&D Beyond's header rest button: the rest dialog offers short and long rest.
+    <button type="button" className="rest-btn" onClick={() => setRestOpen(true)}>
+      <Icon as={Moon} size="sm" decorative />
+      {t("character.rest")}
+    </button>
   ) : null;
 
   return (
-    <header className="relative folio-panel gilt-frame mb-6 flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
+    <header className="char-hero relative mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       {/* `md:grow` + the name block's `grow` below (auto basis, so tight-width
           wrap competition with the actions cluster is unchanged): the identity
           block must take the header's FREE space, never shrink-to-fit around the
@@ -521,6 +514,7 @@ export function CombatHeader() {
             </p>
           )}
           <HeaderXp experience={charData.experience} level={level} editable={!readonly} />
+          {restMedal && <div className="hero-btns">{restMedal}</div>}
           {/* TB5 — the header is PURE identity + the reference-vitals strip. The
               in-combat session controls (live round, roll-to-total initiative, the
               your-turn cue + the shared turn-advance via End Turn) belong WITH the
@@ -552,7 +546,6 @@ export function CombatHeader() {
               the four reference tiles wrapping beneath (folio.css `.hdr-vitals`
               phone rule). */}
           <HeaderHpControl />
-          {restMedal}
 
           {/* P2 — two complementary affordances per vital: the whole-box hover
               `title` (owner 2026-06-08 — the instant full term, desktop) stays via
@@ -562,6 +555,7 @@ export function CombatHeader() {
               hero bar reads with the SAME stat vocabulary as the party / roster. */}
           <StatBadge
             density="tile"
+            className="v-shield"
             icon={Shield}
             fullLabel={t("character.vitals.acFull")}
             acronym={
@@ -626,6 +620,7 @@ export function CombatHeader() {
 
           <StatBadge
             density="tile"
+            className="v-hex"
             icon={Dices}
             fullLabel={t("character.vitals.initAria")}
             acronym={
@@ -707,6 +702,7 @@ export function CombatHeader() {
 
           <StatBadge
             density="tile"
+            className="v-hex"
             icon={Footprints}
             fullLabel={t("character.vitals.speed")}
             acronym={
@@ -736,6 +732,7 @@ export function CombatHeader() {
 
           <StatBadge
             density="tile"
+            className="v-hex"
             icon={Award}
             fullLabel={t("character.vitals.pbAria")}
             acronym={

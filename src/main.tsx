@@ -18,6 +18,9 @@ import "@fontsource/source-serif-4/latin-400.css";
 import "@fontsource/source-serif-4/latin-ext-400.css";
 import "@fontsource/source-serif-4/latin-600.css";
 import "@fontsource/source-serif-4/latin-ext-600.css";
+// Cormorant Garamond — names and titles in the 2026-10 design system (700 only).
+import "@fontsource/cormorant-garamond/latin-700.css";
+import "@fontsource/cormorant-garamond/latin-ext-700.css";
 // react-easy-crop's required stylesheet — provides the cropper's absolute /
 // contain layout. Without it the container resolves to 0/NaN dimensions and
 // the cropper throws on render (white-screening the app). MUST be imported.

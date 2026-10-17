@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./styles/folio.css";
+@import "./styles/system/char-hero.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    d20 Folio · Design Tokens · "Illuminated Folio" (CANONICAL source of truth)
@@ -278,6 +279,39 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    § 01 Palette · DARK theme (default)
    ═══════════════════════════════════════════════════════════════════════════ */
+/* ── Design system 2026-10 (owner approved; docs/design/system on the design branch) ──
+   A synthesis of Baldur's Gate 3, D&D Beyond and Foundry dnd5e. Dark only. Areas move
+   onto these tokens one at a time; folio.css's older tokens retire with their area. */
+:root {
+  --font-name: "Cormorant Garamond", "Georgia", serif;
+  --font-label: "Cinzel Variable", "Cinzel", "Georgia", serif;
+  --sys-fs-name: 2.25rem;
+  --sys-medal: 6rem;
+  --sys-r-1: 2px;
+  --sys-r-2: 6px;
+  --sys-r-full: 50%;
+  --sys-fs-plate: 1.375rem;
+  --sys-fs-shield: 1.875rem;
+  --sys-fs-hp: 2.5rem;
+  --sys-fs-hp-max: 1.375rem;
+  --sys-bg: #0b0907;
+  --sys-panel-2: #1c1712;
+  --sys-panel-3: #251e17;
+  --sys-frame: #6a5130;
+  --sys-frame-strong: #a8834a;
+  --sys-gold: #d4af66;
+  --sys-gold-bright: #f0d391;
+  --sys-gold-ring: conic-gradient(
+    from 210deg,
+    #7a5a28,
+    #f0d391,
+    #9c7636,
+    #e3c27e,
+    #7a5a28
+  );
+  --sys-shadow: rgb(0 0 0 / 0.55);
+}
+
 [data-theme="dark"] {
   --bg-page: #0c0a07;
   --bg-surface-1: #15110b;
