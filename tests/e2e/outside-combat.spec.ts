@@ -101,15 +101,11 @@ test("features and items out of combat: Second Wind and a Potion of Healing heal
   await tray.getByRole("button", { name: "Apply" }).click();
   await expect.poll(async () => (await saved(page)).hp).toBe(before.hp + 6);
 
-  // Second Wind took the Bonus Action, so the potion (also a Bonus Action) now
-  // waits for End Turn: the shot records it (Phase 1 item, no exploration mode).
-  const potion = page.getByRole("button", { name: "Used: Potion of Healing" }).first();
+  // Outside an encounter the economy only logs: Second Wind took the Bonus
+  // Action, yet the potion (also a Bonus Action) stays usable with no End Turn.
+  const potion = page.getByRole("button", { name: "Use: Potion of Healing" }).first();
   await potion.scrollIntoViewIfNeeded();
   await page.screenshot({ path: shotPath("03-bonus-taken-out-of-combat.png") });
-  await page
-    .locator(".turn")
-    .getByRole("button", { name: /End Turn/ })
-    .click();
 
   await page.getByRole("button", { name: "Use: Potion of Healing" }).click();
   await tray.getByRole("textbox").first().fill("7");
