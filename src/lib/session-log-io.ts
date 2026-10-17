@@ -21,6 +21,7 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
+  updateDoc,
   type Firestore,
   type QuerySnapshot,
 } from "firebase/firestore";
@@ -96,7 +97,13 @@ export function createFirestoreSessionLogStore(
         }))
       );
     },
-    async append(sessionId, item) {
+    async append(sessionId, item, options) {
+      // A fix into an older session appends without moving its `lastAt` (it already
+      // exists: the line it fixes is there), so it never becomes `latest()`.
+      if (options?.touch === false) {
+        await updateDoc(doc(logs, sessionId), { log: arrayUnion(item) });
+        return;
+      }
       await setDoc(
         doc(logs, sessionId),
         { schema: 1, log: arrayUnion(item), lastAt: item.at },

@@ -81,4 +81,18 @@ describe("session-log Firestore adapter", () => {
       event: { amount: 12 },
     });
   });
+
+  it("a fix written into an older session keeps tonight's session the latest", async () => {
+    const store = createFirestoreSessionLogStore(dbOf("dm"), "camp1");
+    let clock = new Date(2026, 9, 8, 20, 0);
+    const dm = createSessionRecorder({ store, uid: "dm", now: () => clock });
+    const line = await dm.record({ kind: "note", text: "Yesterday" });
+    clock = new Date(2026, 9, 9, 20, 0);
+    await dm.record({ kind: "note", text: "Tonight" });
+    clock = new Date(2026, 9, 9, 21, 0);
+    await dm.hide(line, { sessionId: "2026-10-08" });
+    expect(await store.latest()).toMatchObject({ id: "2026-10-09" });
+    const [, yesterday] = await store.recent(2);
+    expect(yesterday?.items.map((i) => i.type)).toEqual(["event", "hide"]);
+  });
 });
