@@ -191,7 +191,7 @@ const CHECK = ({
 
 const COMBOS: { locale: Locale; theme: Theme; device: "desktop" | "mobile" }[] = [];
 for (const locale of ["it", "en"] as Locale[])
-  for (const theme of ["dark", "light"] as Theme[])
+  for (const theme of ["dark"] as Theme[])
     for (const device of ["desktop", "mobile"] as const)
       COMBOS.push({ locale, theme, device });
 

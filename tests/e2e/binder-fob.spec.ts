@@ -15,7 +15,7 @@
  *     seam as ⌘Z — the ⟲ coin mounts with history and reverses the cast, and
  *     mounting the pair never moves the standing coins.
  *  4. The toast lane yields to the fob column — a live toast never overlaps.
- *  5. axe-clean on the play tab (both themes) with the chain fully populated.
+ *  5. axe-clean on the play tab (dark) with the chain fully populated.
  */
 
 import { test, expect, type Page } from "@playwright/test";
@@ -182,7 +182,7 @@ test("undo acts on a real out-of-combat act — a spell cast — through the ⟲
   }
 });
 
-for (const theme of ["dark", "light"] as Theme[]) {
+for (const theme of ["dark"] as Theme[]) {
   test(`axe: the play tab is clean with the fob chain populated [${theme}]`, async ({
     page,
   }) => {

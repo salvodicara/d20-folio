@@ -4,7 +4,6 @@ import { useUIStore } from "@/stores/uiStore";
 const s = () => useUIStore.getState();
 beforeEach(() => {
   useUIStore.setState({
-    theme: "dark",
     sidebarOpen: false,
     sheetMode: "play",
     playRefSections: {},
@@ -12,16 +11,29 @@ beforeEach(() => {
 });
 
 describe("uiStore", () => {
-  it("setTheme updates theme and applies data-theme to <html>", () => {
-    s().setTheme("light");
-    expect(s().theme).toBe("light");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  // The app is dark only (owner 2026-10-16): no theme state or setter, and
+  // <html> carries data-theme="dark" from import on.
+  it("pins data-theme=dark and exposes no theme switcher", () => {
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    const state = s() as unknown as Record<string, unknown>;
+    expect(state.setTheme).toBeUndefined();
   });
 
-  it("setTheme('system') resolves to light when system is not dark (stubbed matchMedia)", () => {
-    s().setTheme("system");
-    expect(s().theme).toBe("system");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+  it("ignores a theme persisted by an older build", async () => {
+    localStorage.setItem(
+      "d20-folio-ui",
+      JSON.stringify({ state: { theme: "light", sheetMode: "edit" }, version: 0 })
+    );
+    await useUIStore.persist.rehydrate();
+    expect(s().sheetMode).toBe("edit");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+  });
+
+  it("does not persist a theme", () => {
+    s().setSheetMode("edit");
+    const raw = localStorage.getItem("d20-folio-ui");
+    const persisted = JSON.parse(raw as string) as { state: Record<string, unknown> };
+    expect(persisted.state.theme).toBeUndefined();
   });
 
   it("toggleSidebar flips sidebarOpen", () => {

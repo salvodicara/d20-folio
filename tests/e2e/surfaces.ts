@@ -23,7 +23,8 @@ import { fileURLToPath } from "node:url";
 import { SURFACE_ROUTES, type SurfaceRoute } from "./surface-census";
 import { firstWord, teamFixtureName } from "./team-fixture";
 
-export type Theme = "dark" | "light";
+/** The app is dark only (owner 2026-10-16). */
+export type Theme = "dark";
 export type SheetMode = "play" | "edit";
 export type Locale = "en" | "it";
 
@@ -266,13 +267,6 @@ export const VARIANTS: {
     viewport: DESKTOP,
   },
   {
-    key: "en-light-desktop",
-    locale: "en",
-    theme: "light",
-    device: "desktop",
-    viewport: DESKTOP,
-  },
-  {
     key: "en-dark-mobile",
     locale: "en",
     theme: "dark",
@@ -280,9 +274,9 @@ export const VARIANTS: {
     viewport: MOBILE,
   },
   {
-    key: "it-light-desktop",
+    key: "it-dark-desktop",
     locale: "it",
-    theme: "light",
+    theme: "dark",
     device: "desktop",
     viewport: DESKTOP,
   },
@@ -298,26 +292,17 @@ export const VARIANTS: {
 /** The default full-page set (every variant). */
 export const FULL_PAGE_VARIANTS = [
   "en-dark-desktop",
-  "en-light-desktop",
   "en-dark-mobile",
-  "it-light-desktop",
+  "it-dark-desktop",
   "it-dark-mobile",
 ];
 
 /** Representative subset for overlays — the i18n lens + the mobile-overflow lens. */
-export const OVERLAY_VARIANTS = [
-  "en-light-desktop",
-  "it-light-desktop",
-  "it-dark-mobile",
-];
+export const OVERLAY_VARIANTS = ["en-dark-desktop", "it-dark-desktop", "it-dark-mobile"];
 
 /** Representative subset for overlays whose trigger genuinely exists only in
  * the desktop construction (for example the wide sheet History action). */
-export const DESKTOP_OVERLAY_VARIANTS = [
-  "en-light-desktop",
-  "it-light-desktop",
-  "en-dark-desktop",
-];
+export const DESKTOP_OVERLAY_VARIANTS = ["en-dark-desktop", "it-dark-desktop"];
 
 /**
  * Jump the guided create wizard to a step by its semantic, localized ORB label.

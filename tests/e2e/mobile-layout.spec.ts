@@ -260,7 +260,7 @@ test("guided wizard never overflows the page horizontally at narrow widths", asy
   await page.addInitScript(() => {
     localStorage.setItem(
       "d20-folio-ui",
-      JSON.stringify({ state: { theme: "light", motion: "auto" }, version: 0 })
+      JSON.stringify({ state: { motion: "auto" }, version: 0 })
     );
     localStorage.setItem("i18nextLng", "it");
   });

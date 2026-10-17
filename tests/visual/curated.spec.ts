@@ -12,7 +12,7 @@ import {
 
 const FUTURE_VARIANT: SurfaceVariant = {
   locale: "en",
-  theme: "light",
+  theme: "dark",
   device: "desktop",
 };
 
@@ -102,7 +102,7 @@ test("detector fails a hung capture with its census identity", async ({ browser 
       timeoutMs: 1_000,
     })
   ).rejects.toThrow(
-    "future.hung [en/light/desktop/entry]: visual capture exceeded 1000ms"
+    "future.hung [en/dark/desktop/entry]: visual capture exceeded 1000ms"
   );
 });
 
@@ -157,7 +157,7 @@ test("detector rejects a future specimen with a missing state marker", async ({
       board: "A00",
       route: "/detector",
       state: "visible",
-      variants: [{ locale: "en", theme: "light", device: "desktop" }],
+      variants: [{ locale: "en", theme: "dark", device: "desktop" }],
       authority: "detector",
       callSite: "tests/visual/curated.spec.ts",
       curatedReview: true,

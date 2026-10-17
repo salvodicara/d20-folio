@@ -7,7 +7,7 @@ when the code gains a surface this table does not list, or the table lists one t
 longer has. Run `pnpm exec node --experimental-strip-types scripts/design/surface-inventory.ts`
 to print the rows to add.
 
-A row is `done` only when it is checked in the vision on phone + laptop, dark + light, with
+A row is `done` only when it is checked in the vision on phone + laptop, dark (the only theme), with
 before/after shots shown to the owner. `state:` rows are written by hand: states inside a
 surface (edit mode, dying, a wizard step) that the scan cannot see.
 

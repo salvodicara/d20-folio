@@ -199,31 +199,26 @@ describe("CampaignHubPage", () => {
     expect(subscribeMock).not.toHaveBeenCalled();
   });
 
-  // The backdrop seam (daylight-sibling rebuild): the DEFAULT plate rides the
-  // per-theme `--asset-campaign-backdrop` token (so each theme paints + downloads
-  // its own sibling), and ONLY a custom banner raises `data-app-bg-custom` on
-  // <html> — the hook the light theme's custom-art veil keys on. Everything is
-  // restored on unmount (the app default backdrop returns).
-  it("feeds the per-theme default plate to --app-bg-art and flags ONLY custom art with data-app-bg-custom", () => {
+  // The backdrop seam: the DEFAULT plate rides the `--asset-campaign-backdrop`
+  // token, a custom banner feeds its own url, and everything is restored on
+  // unmount (the app default backdrop returns).
+  it("feeds the default plate or the custom banner to --app-bg-art and restores it on unmount", () => {
     const html = document.documentElement;
     const { unmount } = renderHubAt("/campaigns/c1");
-    // Default (no bannerUrl): the token reference, no custom flag.
+    // Default (no bannerUrl): the token reference.
     act(() => onDataRef.fn?.(makeCampaign({ id: "c1" })));
     expect(html.style.getPropertyValue("--app-bg-art")).toBe(
       "var(--asset-campaign-backdrop)"
     );
-    expect(html.hasAttribute("data-app-bg-custom")).toBe(false);
-    // Custom banner: the DM's own url + the veil flag.
+    // Custom banner: the DM's own url.
     act(() =>
       onDataRef.fn?.(makeCampaign({ id: "c1", bannerUrl: "https://art.example/b.png" }))
     );
     expect(html.style.getPropertyValue("--app-bg-art")).toBe(
       'url("https://art.example/b.png")'
     );
-    expect(html.hasAttribute("data-app-bg-custom")).toBe(true);
     // Unmount restores the app default backdrop.
     unmount();
     expect(html.style.getPropertyValue("--app-bg-art")).toBe("");
-    expect(html.hasAttribute("data-app-bg-custom")).toBe(false);
   });
 });

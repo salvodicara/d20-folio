@@ -1,11 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type Theme = "dark" | "light" | "system";
 type SheetMode = "play" | "edit";
 
 interface UIState {
-  theme: Theme;
   sidebarOpen: boolean;
   sheetMode: SheetMode;
   /**
@@ -36,7 +34,6 @@ interface UIState {
    * acts, and clears it. `null` when idle.
    */
   pendingPlayRef: string | null;
-  setTheme: (theme: Theme) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   setSheetMode: (mode: SheetMode) => void;
@@ -51,28 +48,15 @@ interface UIState {
   clearPlayRef: () => void;
 }
 
-function applyTheme(theme: Theme): void {
-  const root = document.documentElement;
-  const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const effectiveTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
-
-  root.setAttribute("data-theme", effectiveTheme);
-}
-
 export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
-      theme: "dark",
       sidebarOpen: false,
       sheetMode: "play",
       reportOpen: false,
       shortcutsOpen: false,
       playRefSections: {},
       pendingPlayRef: null,
-      setTheme: (theme) => {
-        applyTheme(theme);
-        set({ theme });
-      },
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setSheetMode: (mode) => set({ sheetMode: mode }),
@@ -87,29 +71,27 @@ export const useUIStore = create<UIState>()(
     }),
     {
       name: "d20-folio-ui",
+      // Older builds also persisted a `theme` ("dark" | "light" | "system"); the
+      // app is dark only (owner 2026-10-16), so that stale key is simply ignored.
       partialize: (state) => ({
-        theme: state.theme,
         sheetMode: state.sheetMode,
         playRefSections: state.playRefSections,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          applyTheme(state.theme);
-        }
-      },
     }
   )
 );
 
-// Apply OS preferences to <html> and keep them in sync.
+// The app is dark only (owner 2026-10-16): <html> always carries
+// data-theme="dark" (index.html sets it pre-paint; this pins it once the bundle
+// runs, whatever an older build persisted).
 //
 // Motion: there is no in-app animations toggle (removed Owner-feedback
 // 2026-06-07) — `data-motion` is a pure mirror of the OS `prefers-reduced-motion`
 // setting, which the CSS in index.css/folio.css gates every animation on. The
 // anti-FOUC boot script in index.html sets it before first paint; this listener
-// keeps it live if the user flips the OS setting while the app is open. Theme
-// "system" likewise follows the OS color scheme.
+// keeps it live if the user flips the OS setting while the app is open.
 if (typeof window !== "undefined") {
+  document.documentElement.setAttribute("data-theme", "dark");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const applyMotionFromOS = () => {
     document.documentElement.setAttribute(
@@ -119,11 +101,4 @@ if (typeof window !== "undefined") {
   };
   applyMotionFromOS();
   reducedMotion.addEventListener("change", applyMotionFromOS);
-
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    const { theme } = useUIStore.getState();
-    if (theme === "system") {
-      applyTheme("system");
-    }
-  });
 }

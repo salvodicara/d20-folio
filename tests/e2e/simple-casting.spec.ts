@@ -18,7 +18,7 @@ async function savedState(page: Page) {
 }
 
 for (const locale of ["en", "it"] as const) {
-  for (const theme of ["light", "dark"] as const) {
+  for (const theme of ["dark"] as const) {
     for (const size of ["desktop", "mobile"] as const) {
       test(`simple cast persists and undoes: ${locale} ${theme} ${size}`, async ({
         page,

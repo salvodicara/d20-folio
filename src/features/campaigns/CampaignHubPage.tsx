@@ -60,10 +60,8 @@ import { PartySummary } from "@/features/campaigns/PartySummary";
  * The bundled default campaign backdrop — the war-table plate, fed to the app's
  * existing `--app-bg-art` variable (so it renders under the app-owned scrim, NOT
  * a new band) whenever the DM hasn't set custom campaign art. Referenced through
- * the PER-THEME `--asset-campaign-backdrop` token (index.css), so each theme
- * paints — and downloads — its own sibling plate (candlelit night in dark,
- * daylight morning in light) and a live theme switch swaps it with no JS. Falls
- * back gracefully like every other asset.
+ * the `--asset-campaign-backdrop` token (index.css). Falls back gracefully like
+ * every other asset.
  */
 const CAMPAIGN_BACKDROP = "var(--asset-campaign-backdrop)";
 
@@ -90,10 +88,9 @@ function useCampaignBackdrop(
   bannerCrop: PortraitCrop | null
 ): void {
   useEffect(() => {
-    const html = document.documentElement;
-    const root = html.style;
+    const root = document.documentElement.style;
     // Every swap rides the backdrop crossfade (scene dissolves into scene —
-    // reduced motion keeps the hard cut). The attribute + focal/zoom mutations
+    // reduced motion keeps the hard cut). The focal/zoom mutations
     // ride the SAME transition as the art: the ghost snapshots the painter's
     // computed state (image, focal, veil, presence) before any of it changes.
     transitionBackdrop(() => {
@@ -101,11 +98,6 @@ function useCampaignBackdrop(
         "--app-bg-art",
         bannerUrl ? `url("${bannerUrl}")` : CAMPAIGN_BACKDROP
       );
-      // Custom art is ANY image — both themes carve its presence back to 0.55
-      // and the light theme veils it (`data-app-bg-custom`, the index.css
-      // glaze) so an arbitrary upload sits harmoniously under the chrome; the
-      // bundled per-theme plates render native (no veil, full presence).
-      if (bannerUrl) html.setAttribute("data-app-bg-custom", "");
       // Only a custom banner carries a crop; the default asset stays centred + unscaled.
       const position = bannerUrl ? cropToBackgroundPosition(bannerCrop) : null;
       if (position) {
@@ -122,7 +114,6 @@ function useCampaignBackdrop(
         root.removeProperty("--app-bg-art");
         root.removeProperty("--app-bg-art-position");
         root.removeProperty("--app-bg-art-scale");
-        html.removeAttribute("data-app-bg-custom");
       });
     };
   }, [bannerUrl, bannerCrop]);

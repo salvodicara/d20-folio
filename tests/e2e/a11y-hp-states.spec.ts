@@ -14,7 +14,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { seedUI, seedLang, freezeMotion, readyByName, type Theme } from "./surfaces";
 
 const BLOCKING = new Set(["serious", "critical"]);
-const THEMES: Theme[] = ["dark", "light"];
+const THEMES: Theme[] = ["dark"];
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 1000 },
   { name: "mobile", width: 390, height: 900 },

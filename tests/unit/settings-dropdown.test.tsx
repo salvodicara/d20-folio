@@ -3,8 +3,8 @@
  *
  * Proves the reconcile + D17: the redundant "Characters" entry is GONE, a
  * "Settings" link → /settings is present, the admin entry is gated by the shared
- * `useIsAdmin`, and the two fast-access toggles (theme · language) dispatch to the
- * SAME seams the full page uses (theme via uiStore, language via useLocale). Motion
+ * `useIsAdmin`, and the fast-access language toggle dispatches to the SAME seam the
+ * full page uses (useLocale). There is no theme toggle (dark only). Motion
  * is NO LONGER duplicated here — it lives only on the Settings page (D17).
  */
 
@@ -16,21 +16,17 @@ import { MemoryRouter } from "react-router";
 
 const {
   navigateMock,
-  setThemeMock,
   toggleLanguageMock,
   signOutMock,
   openReportMock,
-  uiState,
   localeState,
   authState,
   isAdminState,
 } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
-  setThemeMock: vi.fn(),
   toggleLanguageMock: vi.fn(),
   signOutMock: vi.fn(() => Promise.resolve()),
   openReportMock: vi.fn(),
-  uiState: { theme: "dark" },
   localeState: { language: "en" },
   authState: {
     user: { uid: "u1", email: "tester@example.com" },
@@ -45,13 +41,6 @@ vi.mock("react-router", async (importOriginal) => {
 });
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 vi.mock("@/lib/auth", () => ({ signOut: signOutMock }));
-vi.mock("@/stores/uiStore", () => ({
-  useUIStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      theme: uiState.theme,
-      setTheme: setThemeMock,
-    }),
-}));
 vi.mock("@/hooks/useLocale", () => ({
   useLocale: () => ({
     language: localeState.language,
@@ -83,11 +72,9 @@ function open(current: "settings" | "admin" | null = null) {
 
 beforeEach(() => {
   navigateMock.mockReset();
-  setThemeMock.mockReset();
   toggleLanguageMock.mockReset();
   signOutMock.mockReset().mockResolvedValue(undefined);
   openReportMock.mockReset();
-  uiState.theme = "dark";
   localeState.language = "en";
   authState.user = { uid: "u1", email: "tester@example.com" };
   authState.profile = null;
@@ -138,21 +125,11 @@ describe("SettingsDropdown — reconcile", () => {
     expect(navigateMock).toHaveBeenCalledWith("/admin");
   });
 
-  it("names the quick theme destination and dispatches dark → light", () => {
+  it("carries no theme toggle (the app is dark only, owner 2026-10-16)", () => {
     open();
     expect(
-      screen.queryByRole("menuitem", { name: /^dark mode$/i })
+      screen.queryByRole("menuitem", { name: /mode|theme/i })
     ).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("menuitem", { name: /switch to light mode/i }));
-    expect(setThemeMock).toHaveBeenCalledWith("light");
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-  });
-
-  it("names every next theme in the three-state cycle", () => {
-    uiState.theme = "light";
-    open();
-    fireEvent.click(screen.getByRole("menuitem", { name: /follow system theme/i }));
-    expect(setThemeMock).toHaveBeenCalledWith("system");
   });
 
   it("names the destination language instead of the current locale", () => {
@@ -173,7 +150,7 @@ describe("SettingsDropdown — reconcile", () => {
 
   it("does NOT carry a motion toggle (removed app-wide — motion follows the OS)", () => {
     open();
-    // The account menu keeps only the two fast-access toggles (theme · language).
+    // The account menu keeps only the fast-access language toggle.
     // The animations toggle was removed entirely (Owner-feedback 2026-06-07);
     // motion is driven purely by the OS prefers-reduced-motion setting.
     expect(

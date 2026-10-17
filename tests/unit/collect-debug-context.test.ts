@@ -3,7 +3,7 @@
  * (OWN-37).
  *
  * Verifies: the captured shape, ID parsing from the path, localStorage reads
- * (theme + locale), sanitization (no `undefined`), error-log inclusion, and that
+ * (locale), sanitization (no `undefined`), error-log inclusion, and that
  * the module runs with NO Firebase (the pure-modules guard asserts the import
  * graph; this asserts it actually executes under jsdom without env vars).
  */
@@ -57,21 +57,15 @@ describe("collectDebugContext", () => {
     expect(ctx.campaignId).toBe("camp-9");
   });
 
-  it("reads theme + locale from localStorage", () => {
-    localStorage.setItem(
-      "d20-folio-ui",
-      JSON.stringify({ state: { theme: "light" }, version: 0 })
-    );
+  it("reports the dark theme and reads the locale from localStorage", () => {
     localStorage.setItem("i18nextLng", "it");
     const ctx = collectDebugContext();
-    expect(ctx.theme).toBe("light");
+    expect(ctx.theme).toBe("dark");
     expect(ctx.locale).toBe("it");
   });
 
-  it("falls back to 'unknown' when persisted state is absent or corrupt", () => {
-    localStorage.setItem("d20-folio-ui", "{not json");
+  it("falls back to 'unknown' when the persisted locale is absent", () => {
     const ctx = collectDebugContext();
-    expect(ctx.theme).toBe("unknown");
     expect(ctx.locale).toBe("unknown");
   });
 

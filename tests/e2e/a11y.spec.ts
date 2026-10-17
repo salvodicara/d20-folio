@@ -24,7 +24,7 @@ import { SURFACES, seedUI, seedLang, freezeMotion, type Theme } from "./surfaces
 
 /** Impact levels we refuse to ship. Moderate/minor are reported but tolerated. */
 const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
-const THEMES: Theme[] = ["dark", "light"];
+const THEMES: Theme[] = ["dark"];
 
 for (const surface of SURFACES) {
   for (const theme of THEMES) {

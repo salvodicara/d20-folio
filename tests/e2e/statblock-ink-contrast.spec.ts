@@ -85,7 +85,7 @@ interface Probe {
   accentText: string;
 }
 
-for (const theme of ["dark", "light"] as const satisfies readonly Theme[]) {
+for (const theme of ["dark"] as const satisfies readonly Theme[]) {
   test(`${theme}: every statblock ink ≥ ${AA}:1 on the carved plaque`, async ({
     page,
   }) => {
