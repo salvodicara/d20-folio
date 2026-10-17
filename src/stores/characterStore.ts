@@ -2417,8 +2417,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const next = setDeathSavesTo(character, successes, failures);
-    if (!next) return;
-    set({ character: { ...character, session: next.session } });
+    // Through the sheet event (the same transition), so the track enters the play log.
+    if (!next || !get().dispatch({ kind: "set-death-saves", successes, failures }))
+      return;
     // Events-as-data: log ONLY when a NEW mark was added (a count rose) — clearing
     // a pip or resetting the track is bookkeeping, not a story beat.
     if (next.newMark) {
@@ -2734,7 +2735,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const recovered = recoverPerTurnTrackersOf(character);
     if (!recovered) return null;
     const { prior } = recovered;
-    set({ character: { ...character, session: recovered.session } });
+    // Forward through the sheet event (the same transition) so it enters the play log;
+    // the undo below stays tracker-scoped, because it composes inside End Turn's undo.
+    if (!get().dispatch({ kind: "recover-per-turn-trackers" })) return null;
     return () => {
       const cur = get().character;
       if (!cur) return;

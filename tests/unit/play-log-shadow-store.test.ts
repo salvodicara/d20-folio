@@ -8,6 +8,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { makeCharacterDoc } from "./_helpers";
 import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
 
 function load(): string {
@@ -79,5 +80,44 @@ describe("play log shadow in the store", () => {
     expect(store().character?.session.hp).toEqual({ current: 27, temp: 4 });
     // One checkpoint: none of the three wrote around the log.
     expect(playLogShadowStats(id)).toEqual({ entries: 3, checkpoints: 1, mismatches: 0 });
+  });
+
+  it("death saves reach the log: no write around it", () => {
+    const id = load();
+    store().dispatch({ kind: "add-condition", condition: "poisoned" });
+    store().setDeathSaves(1, 0);
+    store().setDeathSaves(1, 1);
+    store().dispatch({ kind: "spend-slot", level: 1, pactMagic: false });
+    expect(store().character?.session).toMatchObject({ deathSucc: 1, deathFail: 1 });
+    expect(playLogShadowStats(id)).toEqual({ entries: 4, checkpoints: 1, mismatches: 0 });
+  });
+
+  it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {
+    const doc = {
+      ...makeCharacterDoc(
+        { classId: "rogue", level: 3, features: [{ srdId: "rogue-sneak-attack" }] },
+        { trackers: { "rogue-sneak-attack": { used: 1 } } }
+      ),
+      id: `shadow-rogue-${Math.random().toString(36).slice(2)}`,
+    };
+    useCharacterStore.setState({
+      character: doc,
+      loading: false,
+      error: null,
+      readonly: false,
+    });
+    store().dispatch({ kind: "add-condition", condition: "poisoned" });
+    const undo = store().recoverPerTurnTrackers();
+    expect(store().character?.session.trackers["rogue-sneak-attack"]).toBeUndefined();
+    expect(playLogShadowStats(doc.id)).toEqual({
+      entries: 2,
+      checkpoints: 1,
+      mismatches: 0,
+    });
+    // Its undo stays field-scoped (it composes inside End Turn's undo).
+    undo?.();
+    expect(store().character?.session.trackers["rogue-sneak-attack"]).toEqual({
+      used: 1,
+    });
   });
 });

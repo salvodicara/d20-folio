@@ -215,6 +215,10 @@ const CASES: {
   "long-rest": [{ kind: "long-rest" }, () => rests.longRestCharacter(doc)],
   "short-rest": [{ kind: "short-rest" }, () => rests.shortRestCharacter(doc)],
   "time-passes": [{ kind: "time-passes", minutes: 1 }, () => time.passTime(doc, 1)],
+  "recover-per-turn-trackers": [
+    { kind: "recover-per-turn-trackers" },
+    () => at(states.recoverPerTurnTrackers(doc)?.session),
+  ],
 };
 
 describe("applySheetEvent", () => {
