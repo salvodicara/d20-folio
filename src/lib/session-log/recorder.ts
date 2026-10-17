@@ -41,9 +41,12 @@ export function nextSessionId(head: SessionHead | null, now: Date): string {
   return `${day}-${n + 1}`;
 }
 
-/** `id` lets a caller derive a deterministic item id (idempotent re-recording). */
+/** `id` lets a caller derive a deterministic item id (idempotent re-recording).
+ *  `sessionId` writes into a named session instead of the current one: a line is often
+ *  fixed after the game, when a newer session already exists. */
 interface ItemOptions {
   id?: string;
+  sessionId?: string;
 }
 
 export interface SessionRecorder {
@@ -51,12 +54,20 @@ export interface SessionRecorder {
   record(event: PlayEvent, options?: ItemOptions): Promise<string>;
   correct(target: string, event: PlayEvent, options?: ItemOptions): Promise<string>;
   retract(target: string, options?: ItemOptions): Promise<string>;
+  /** The narrative overrides (docs/architecture/session-narrative.md): take a line out of
+   *  the story or bring it back, or place it after another line (`null`: first). */
+  hide(target: string, options?: ItemOptions): Promise<string>;
+  show(target: string, options?: ItemOptions): Promise<string>;
+  move(target: string, after: string | null, options?: ItemOptions): Promise<string>;
 }
 
 type Draft =
   | { type: "event"; event: PlayEvent }
   | { type: "correct"; target: string; event: PlayEvent }
-  | { type: "retract"; target: string };
+  | { type: "retract"; target: string }
+  | { type: "hide"; target: string }
+  | { type: "show"; target: string }
+  | { type: "move"; target: string; after: string | null };
 
 export function createSessionRecorder(deps: {
   store: SessionLogStore;
@@ -68,7 +79,7 @@ export function createSessionRecorder(deps: {
   const newId = deps.newId ?? (() => crypto.randomUUID());
   const append = async (draft: Draft, options?: ItemOptions): Promise<string> => {
     const at = now();
-    const sessionId = nextSessionId(await deps.store.latest(), at);
+    const sessionId = options?.sessionId ?? nextSessionId(await deps.store.latest(), at);
     const id = options?.id ?? newId();
     const item: LogItem = { ...draft, id, by: deps.uid, at: at.getTime() };
     await deps.store.append(sessionId, item);
@@ -79,6 +90,9 @@ export function createSessionRecorder(deps: {
     correct: (target, event, options) =>
       append({ type: "correct", target, event }, options),
     retract: (target, options) => append({ type: "retract", target }, options),
+    hide: (target, options) => append({ type: "hide", target }, options),
+    show: (target, options) => append({ type: "show", target }, options),
+    move: (target, after, options) => append({ type: "move", target, after }, options),
   };
 }
 
