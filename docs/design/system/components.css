@@ -1725,3 +1725,42 @@ a.btn {
   color: var(--text-2);
   max-width: 40ch;
 }
+
+/* ── Time passes (Foundry SmallTime's step buttons) ───────────────── */
+.time-wrap {
+  position: relative;
+}
+.time-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 30;
+  width: 340px;
+  display: grid;
+  gap: var(--sp-3);
+}
+.time-pop[hidden] {
+  display: none;
+}
+.time-pop .pop__title {
+  margin: 0;
+}
+.time-steps {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--sp-2);
+}
+.time-steps .btn[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--gold-bright);
+}
+.time-ends p {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 4px 0 0;
+}
+.time-ends .i {
+  color: var(--buff);
+}

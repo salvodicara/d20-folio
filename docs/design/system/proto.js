@@ -21,6 +21,8 @@
         .forEach((t) =>
           t.setAttribute("aria-selected", String(t.dataset.tab === current[1]))
         );
+    if (params.has("time"))
+      document.getElementById("time-pop")?.removeAttribute("hidden");
     if (params.has("tip"))
       document.getElementById("tip-flame")?.removeAttribute("hidden");
     if (window.lucide) window.lucide.createIcons({ attrs: { "stroke-width": 1.75 } });

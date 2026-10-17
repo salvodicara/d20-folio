@@ -444,3 +444,8 @@
     font-size: 24px;
   }
 }
+
+/* The header hosts popovers: keep it above the panels below (frames create stacking contexts) */
+.hero {
+  z-index: 5;
+}

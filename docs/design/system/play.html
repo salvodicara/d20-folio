@@ -77,6 +77,42 @@
             <button class="btn btn--sm">
               <i data-lucide="moon" class="i i--sm"></i>Riposo lungo
             </button>
+            <!-- Time passes: Foundry's SmallTime step buttons; exploration only (in combat, rounds keep time) -->
+            <span class="time-wrap explore-only">
+              <button class="btn btn--sm" aria-expanded="false" data-toggle="time-pop">
+                <i data-lucide="hourglass" class="i i--sm"></i>Passa il tempo
+              </button>
+              <div
+                class="frame frame--card pop time-pop"
+                id="time-pop"
+                role="dialog"
+                aria-label="Passa il tempo"
+                hidden
+              >
+                <p class="pop__title">Passa il tempo</p>
+                <div class="time-steps" role="group" aria-label="Quanto tempo">
+                  <button class="btn btn--sm">+1 min</button
+                  ><button class="btn btn--sm">+10 min</button
+                  ><button class="btn btn--sm" aria-pressed="true">+1 ora</button
+                  ><button class="btn btn--sm">+8 ore</button>
+                </div>
+                <div class="time-steps" role="group" aria-label="Momento del giorno">
+                  <button class="btn btn--sm">
+                    <i data-lucide="sunrise" class="i i--sm"></i>All'alba</button
+                  ><button class="btn btn--sm">
+                    <i data-lucide="sunset" class="i i--sm"></i>Al tramonto
+                  </button>
+                </div>
+                <div class="time-ends">
+                  <span class="label">Finisce</span>
+                  <p>
+                    <i data-lucide="eye" class="i i--sm"></i>Individuazione del magico
+                    <span class="meta">(restavano 8 min)</span>
+                  </p>
+                </div>
+                <button class="btn btn--lit" style="width: 100%">Passa 1 ora</button>
+              </div>
+            </span>
             <a class="btn btn--sm" href="#"
               ><i data-lucide="castle" class="i i--sm"></i>La Cripta di Vetro</a
             >
@@ -671,6 +707,10 @@
                 <span class="label">Esplorazione</span
                 ><span class="log__time">21:58</span>
               </div>
+              <p class="log__entry log__entry--note">
+                <span class="log__dot log__dot--note"></span
+                ><span>Passa 1 ora. Finisce Individuazione del magico.</span>
+              </p>
               <p class="log__entry">
                 <span class="log__dot log__dot--heal"></span
                 ><span
