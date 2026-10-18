@@ -137,6 +137,7 @@ import {
 } from "@/lib/views/combat-action-view";
 import { repeatUseCost } from "@/lib/play/object-interaction";
 import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
+import { executionFor } from "@/lib/play/cast-execution";
 import {
   ESCAPE_GRAPPLE_ACTION_ID,
   escapeGrappleSkill,
@@ -1149,6 +1150,7 @@ export function PlayTab() {
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
                 onCommit={(checked) => dispatchAction(checked ?? action)}
+                onCastRitual={() => commitAction(action, { ritual: true })}
                 onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
               />
             ))}
@@ -1186,6 +1188,7 @@ export function PlayTab() {
               expandedId={expandedId}
               onExpand={setExpandedId}
               onCommit={dispatchAction}
+              onCastRitual={(action) => commitAction(action, { ritual: true })}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           ))
@@ -1211,6 +1214,7 @@ export function PlayTab() {
               expandedId={expandedId}
               onExpand={setExpandedId}
               onCommit={dispatchAction}
+              onCastRitual={(action) => commitAction(action, { ritual: true })}
               onPin={(action) => togglePinnedAction(action.id, action.defaultPinned)}
             />
           )}
@@ -1310,6 +1314,7 @@ export function PlayTab() {
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
                   onCommit={(checked) => dispatchAction(checked ?? action)}
+                  onCastRitual={() => commitAction(action, { ritual: true })}
                   onPin={() => togglePinnedAction(action.id, action.defaultPinned)}
                 />
               ))}
@@ -1491,6 +1496,7 @@ function ActionGroup({
   expandedId,
   onExpand,
   onCommit,
+  onCastRitual,
   onPin,
 }: {
   slot: EconomySlot;
@@ -1511,6 +1517,7 @@ function ActionGroup({
   expandedId: string | null;
   onExpand: (id: string | null) => void;
   onCommit: (action: ResolvedAction) => void;
+  onCastRitual: (action: ResolvedAction) => void;
   onPin: (action: ResolvedAction) => void;
 }) {
   const { t } = useTranslation();
@@ -1549,6 +1556,7 @@ function ActionGroup({
             open={expandedId === action.id}
             onOpenChange={(o) => onExpand(o ? action.id : null)}
             onCommit={() => onCommit(action)}
+            onCastRitual={() => onCastRitual(action)}
             onPin={() => onPin(action)}
           />
         ))}
@@ -1586,6 +1594,7 @@ function CombatActionCard({
   open,
   onOpenChange,
   onCommit,
+  onCastRitual,
   onPin,
 }: {
   action: CombatAction;
@@ -1621,6 +1630,8 @@ function CombatActionCard({
   /** Commit the card; a check entry (Search, Study, Influence) hands the action as
    *  used with its entered check. */
   onCommit: (checked?: ResolvedAction) => void;
+  /** Cast this spell as a ritual (no slot), as the Spells card offers it. */
+  onCastRitual?: () => void;
   onPin: () => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -1966,6 +1977,19 @@ function CombatActionCard({
       )}
       {!action.weaponFacts && (
         <UniversalCardFoot>
+          {onCastRitual && executionFor(action, true) && (
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={t("spells.castRitualAria", { name: action.name })}
+              onClick={(e) => {
+                e.stopPropagation();
+                onCastRitual();
+              }}
+            >
+              {t("spells.castRitual")}
+            </Button>
+          )}
           <PinAction pinned={pinned} label={pinLabel} onPin={onPin} />
         </UniversalCardFoot>
       )}

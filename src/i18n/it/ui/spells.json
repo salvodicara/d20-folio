@@ -71,6 +71,7 @@
     "prepareToCast": "Prepara per lanciare",
     "filterByLevel": "Filtra per livello incantesimo",
     "filterConcentration": "Solo incantesimi a concentrazione",
-    "preparedMax": "Max preparati"
+    "preparedMax": "Max preparati",
+    "castRitualAria": "Lancia {{name}} come rituale (nessuno slot, 10 minuti in più)"
   }
 }
