@@ -1,0 +1,68 @@
+/*
+ * Chips and filter pills in the design system 2026-10 (docs/design/system/play.html).
+ * Copied from D&D Beyond's action filters (All · Attack · Action · Bonus · Reaction …)
+ * and its condition chips; read in sentence case at the 14px reading floor rather
+ * than the old 10px uppercase label.
+ * `.fchip` is the one filter chip of the app (Play, compendium, add dialogs);
+ * `.status-badge` is the status ledge and situation toggles.
+ */
+
+.fchip {
+  min-height: 2.125rem;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--sys-line);
+  border-radius: var(--sys-r-full);
+  font-family: var(--font-body);
+  font-size: var(--text-sm-read);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+}
+.fchip .fc-count {
+  font-family: var(--font-body);
+  font-size: var(--text-sm-read);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+.fchip:hover {
+  border-color: var(--sys-frame);
+  color: var(--text-primary);
+}
+.fchip[aria-pressed="true"] {
+  border-color: var(--sys-gold);
+  background: color-mix(in oklab, var(--sys-gold) 12%, transparent);
+  color: var(--text-primary);
+}
+.fchip[aria-pressed="true"] .fc-count {
+  color: var(--text-secondary);
+}
+
+.status-badge {
+  min-height: 2rem;
+  padding: 0 var(--sp-3) 0 var(--sp-1);
+  font-family: var(--font-body);
+  font-size: var(--text-sm-read);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-primary);
+  background: var(--sys-panel-2);
+  border-color: color-mix(in oklab, var(--co) 60%, transparent);
+}
+.status-badge .sb-disc {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: transparent;
+  box-shadow: none;
+}
+.status-badge .sb-disc svg,
+.status-badge .sb-disc .icon {
+  width: 1rem;
+  height: 1rem;
+}
+.status-badge[data-kind="concentration"] {
+  --co: var(--sys-gold);
+  --co-ink: var(--sys-gold-bright);
+  box-shadow: none;
+}

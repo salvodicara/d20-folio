@@ -180,3 +180,26 @@
     height: 1.75rem;
   }
 }
+
+/* End Combat: the quiet bronze button, sentence case (as every secondary control) */
+.end-combat {
+  min-height: 2.25rem;
+  padding: 0 var(--sp-3);
+  border: 1px solid var(--sys-frame);
+  border-radius: var(--sys-r-2);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: var(--text-sm-read);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+}
+.end-combat:hover {
+  border-color: var(--sys-gold);
+  color: var(--sys-gold-bright);
+}
+.turn .r-lbl {
+  font-family: var(--font-label);
+  font-size: var(--text-2xs);
+}

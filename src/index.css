@@ -3,6 +3,7 @@
 @import "./styles/system/char-hero.css";
 @import "./styles/system/play-turn.css";
 @import "./styles/system/action-rows.css";
+@import "./styles/system/chips.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    d20 Folio · Design Tokens · "Illuminated Folio" (CANONICAL source of truth)
@@ -300,6 +301,8 @@
   --sys-panel-2: #1c1712;
   --sys-panel-3: #251e17;
   --sys-frame: #6a5130;
+  --sys-line: #2a2219;
+  --text-sm-read: 0.875rem; /* 14px: the reading floor for chips and secondary lines */
   --sys-frame-strong: #a8834a;
   --sys-gold: #d4af66;
   --sys-gold-bright: #f0d391;
