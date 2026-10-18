@@ -34,6 +34,12 @@ function lapse(
   return { ended, timers };
 }
 
+/** The status keys `minutes` passing would end (empty for no stretch): the preview of
+ *  `passTime`, with nothing applied. */
+export function timePassEnds(doc: CharacterDoc, minutes: number): ReadonlySet<string> {
+  return lapse(doc, minutes)?.ended ?? new Set();
+}
+
 /** Whether `minutes` passing ends the held Concentration. */
 export function timePassEndsConcentration(doc: CharacterDoc, minutes: number): boolean {
   const result = lapse(doc, minutes);
