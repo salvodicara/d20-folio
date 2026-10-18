@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Folio — Campagna</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="layout.css" />
+    <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+    <script src="proto.js"></script>
+    <style>
+      .tab-gruppo .only-resoconto,
+      .tab-gruppo .only-scontro,
+      .tab-resoconto .only-gruppo,
+      .tab-resoconto .only-scontro,
+      .tab-scontro .only-gruppo,
+      .tab-scontro .only-resoconto {
+        display: none !important;
+      }
+      .chead {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr) auto;
+        gap: var(--sp-5);
+        align-items: center;
+      }
+      .chead__img {
+        width: 96px;
+        height: 96px;
+        border-radius: var(--r-2);
+        border: 1px solid var(--frame-strong);
+        object-fit: cover;
+        box-shadow:
+          0 0 0 3px var(--panel),
+          0 0 0 4px var(--frame-inner);
+      }
+      .chead h1 {
+        margin: 0;
+        font-family: var(--font-title);
+        font-size: 36px;
+        line-height: 1;
+      }
+      .chead p {
+        margin: 6px 0 0;
+        color: var(--text-2);
+      }
+      .members {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--sp-5);
+      }
+      .two {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 380px;
+        gap: var(--sp-5);
+        align-items: start;
+      }
+      .jhead {
+        display: flex;
+        gap: var(--sp-2);
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: var(--sp-4);
+      }
+      .jhead .grow {
+        flex: 1;
+      }
+      @media (max-width: 760px) {
+        .members,
+        .two {
+          grid-template-columns: 1fr;
+        }
+        .chead {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="tab-resoconto">
+    <header class="top">
+      <a class="btn btn--quiet btn--icon only-phone" href="#" aria-label="Campagne"
+        ><i data-lucide="chevron-left" class="i"></i
+      ></a>
+      <a class="brand only-laptop" href="#"
+        ><svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" />
+          <path d="M12 7l-5.2 9h10.4z" /></svg
+        >Folio</a
+      >
+      <nav class="nav only-laptop" aria-label="Principale">
+        <a href="#">Personaggi</a><a href="#" aria-current="page">Campagne</a
+        ><a href="#">Compendio</a>
+      </nav>
+      <div class="top__who only-phone">
+        <span class="top__name">La Cripta di Vetro</span
+        ><span class="top__cls">Sessione 7</span>
+      </div>
+      <span class="grow only-laptop"></span>
+      <span class="lrow__img only-laptop" style="width: 36px; height: 36px"
+        ><span style="font-size: 15px">M</span></span
+      >
+      <button class="btn btn--quiet btn--icon only-phone" aria-label="Altro">
+        <i data-lucide="more-vertical" class="i"></i>
+      </button>
+    </header>
+
+    <main class="sheet">
+      <!-- Kanka's entity header: image, title, meta, actions -->
+      <section class="frame chead">
+        <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+        <img class="chead__img" src="img/campaign-war-room.webp" alt="" />
+        <div>
+          <h1>La Cripta di Vetro</h1>
+          <p>Master: Marco · 4 personaggi · sessione 7, giovedì 16 ottobre</p>
+        </div>
+        <button class="btn"><i data-lucide="user-plus" class="i i--sm"></i>Invita</button>
+      </section>
+
+      <nav class="tabs only-laptop" role="tablist" aria-label="Campagna">
+        <button class="tab" role="tab" aria-selected="false" data-tab="resoconto">
+          <i data-lucide="scroll-text" class="i i--sm"></i>Resoconto
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="gruppo">
+          <i data-lucide="users" class="i i--sm"></i>Gruppo
+        </button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="scontro">
+          <i data-lucide="swords" class="i i--sm"></i>Scontro
+        </button>
+        <button class="tab" role="tab" aria-selected="false">
+          <i data-lucide="skull" class="i i--sm"></i>Bestiario
+        </button>
+        <button class="tab" role="tab" aria-selected="false">
+          <i data-lucide="gem" class="i i--sm"></i>Tesoro
+        </button>
+      </nav>
+      <button class="switcher only-phone" aria-haspopup="menu">
+        <i data-lucide="scroll-text" class="i only-resoconto"></i
+        ><span class="only-resoconto">Resoconto</span>
+        <i data-lucide="users" class="i only-gruppo"></i
+        ><span class="only-gruppo">Gruppo</span>
+        <i data-lucide="swords" class="i only-scontro"></i
+        ><span class="only-scontro">Scontro</span>
+        <i data-lucide="chevrons-up-down" class="i switcher__chev"></i>
+      </button>
+
+      <!-- RESOCONTO: the session narrative, one line per event; Notion's block handle to hide or move a line -->
+      <section class="frame frame--crest only-resoconto" aria-labelledby="j-h">
+        <span class="crest"></span><span class="frame__corner-tr"></span
+        ><span class="frame__corner-bl"></span>
+        <h2 class="ftitle" id="j-h">Sessione 7</h2>
+        <div class="jhead">
+          <button class="btn btn--sm">
+            <i data-lucide="chevron-left" class="i i--sm"></i>Sessione 6
+          </button>
+          <span class="grow"></span>
+          <button class="btn btn--sm">
+            <i data-lucide="eye" class="i i--sm"></i>Mostra le righe nascoste
+          </button>
+          <button class="btn btn--sm btn--lit">
+            <i data-lucide="copy" class="i i--sm"></i>Copia il resoconto
+          </button>
+        </div>
+        <div class="log">
+          <div class="log__sec">
+            <div class="log__head">
+              <span class="label">Esplorazione</span><span class="log__time">21:05</span>
+            </div>
+            <div class="jline">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="log__dot log__dot--note"></span>
+              <p class="jline__text log__entry--note" style="margin: 0">
+                Il gruppo entra nella cripta dal portone a est.<span class="log__src"
+                  >Nota di Marco, il master</span
+                >
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+            <div class="jline is-hover">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="shape shape--action"></span>
+              <p class="jline__text" style="margin: 0">
+                <b>Selene</b> lancia Individuazione del magico come rituale.<span
+                  class="log__src"
+                  >10 minuti · concentrazione</span
+                >
+              </p>
+              <span class="jline__tools"
+                ><button class="btn btn--quiet btn--icon" aria-label="Nascondi">
+                  <i data-lucide="eye-off" class="i i--sm"></i></button
+                ><button class="btn btn--quiet btn--icon" aria-label="Modifica">
+                  <i data-lucide="pencil" class="i i--sm"></i></button
+              ></span>
+            </div>
+            <div class="jline is-hidden">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="shape shape--action is-spent"></span>
+              <p class="jline__text" style="margin: 0">
+                <b>Brann</b> prova ad aprire la grata: fallisce.<span class="log__src"
+                  >Nascosta dal resoconto</span
+                >
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+            <div class="jline">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="shape shape--action"></span>
+              <p class="jline__text" style="margin: 0">
+                <b>Selene</b> lancia Guida su Tib per la prova di Furtività: <b>+1d4</b>.
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+          </div>
+          <div class="log__sec">
+            <div class="log__head">
+              <span class="label">Scontro con i goblin</span
+              ><span class="log__time">21:40</span>
+            </div>
+            <span class="log__round">Round 1</span>
+            <div class="jline">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="shape shape--action"></span>
+              <p class="jline__text" style="margin: 0">
+                <b>Selene</b> lancia Benedizione su sé, Brann e Kaela.<span
+                  class="log__src"
+                  >Slot di 1° · concentrazione, 10 round</span
+                >
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+            <div class="jline">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="log__dot"></span>
+              <p class="jline__text" style="margin: 0">
+                Il <b>goblin 1</b> colpisce Selene: <b>7 danni</b>.<span class="log__src"
+                  >Dichiarato da Marco, il master</span
+                >
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+            <span class="log__round">Round 2</span>
+            <div class="jline">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="shape shape--bonus"></span>
+              <p class="jline__text" style="margin: 0">
+                <b>Selene</b> lancia Parola guaritrice su Kaela: <b>+11 PF</b>.
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+            <div class="jline">
+              <i data-lucide="grip-vertical" class="i i--sm jline__grip"></i
+              ><span class="shape shape--action"></span>
+              <p class="jline__text" style="margin: 0">
+                <b>Tib</b> attacca con lo stocco: <b>9 danni</b> al goblin 2.<span
+                  class="log__src"
+                  >Tib gioca senza app: dichiarato dal master</span
+                >
+              </p>
+              <span class="jline__tools"></span>
+            </div>
+          </div>
+        </div>
+        <input
+          class="input"
+          style="margin-top: var(--sp-4)"
+          placeholder="Scrivi una nota per il resoconto…"
+          aria-label="Nota"
+        />
+      </section>
+
+      <!-- GRUPPO: D&D Beyond's campaign Characters, card per member -->
+      <section class="members only-gruppo">
+        <article class="frame frame--card mcard">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="mcard__top">
+            <span class="lrow__img"><img src="img/portrait-selene.webp" alt="" /></span>
+            <div>
+              <div class="lrow__title">Selene Varga</div>
+              <div class="lrow__meta">Chierica 5 · Dominio della Vita · Umana</div>
+              <div class="lrow__meta">Giocatrice: Sara</div>
+            </div>
+            <div class="mcard__hp">
+              <b>31 <span>/ 38</span></b
+              ><span class="label">Punti ferita</span>
+            </div>
+          </div>
+          <div class="mcard__stats">
+            <div><b>13</b><span>Percez. passiva</span></div>
+            <div><b>10</b><span>Indagare passiva</span></div>
+            <div><b>16</b><span>Intuiz. passiva</span></div>
+            <div><b>18</b><span>CA</span></div>
+          </div>
+        </article>
+        <article class="frame frame--card mcard">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="mcard__top">
+            <span class="lrow__img"><span>B</span></span>
+            <div>
+              <div class="lrow__title">Brann Pietrascura</div>
+              <div class="lrow__meta">Guerriero 5 · Campione · Nano</div>
+              <div class="lrow__meta">Giocatore: Luca</div>
+            </div>
+            <div class="mcard__hp">
+              <b>44 <span>/ 49</span></b
+              ><span class="label">Punti ferita</span>
+            </div>
+          </div>
+          <div class="mcard__stats">
+            <div><b>12</b><span>Percez. passiva</span></div>
+            <div><b>9</b><span>Indagare passiva</span></div>
+            <div><b>11</b><span>Intuiz. passiva</span></div>
+            <div><b>19</b><span>CA</span></div>
+          </div>
+        </article>
+        <article class="frame frame--card mcard">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="mcard__top">
+            <span class="lrow__img"><span>K</span></span>
+            <div>
+              <div class="lrow__title">Kaela</div>
+              <div class="lrow__meta">Ladra 4 · Furfante · Elfa</div>
+              <div class="lrow__meta">Giocatrice: Giulia</div>
+            </div>
+            <div class="mcard__hp">
+              <b>27 <span>/ 27</span></b
+              ><span class="label">Punti ferita</span>
+            </div>
+          </div>
+          <div class="mcard__stats">
+            <div><b>16</b><span>Percez. passiva</span></div>
+            <div><b>14</b><span>Indagare passiva</span></div>
+            <div><b>12</b><span>Intuiz. passiva</span></div>
+            <div><b>15</b><span>CA</span></div>
+          </div>
+        </article>
+        <article class="frame frame--card mcard">
+          <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="mcard__top">
+            <span class="lrow__img"><span>T</span></span>
+            <div>
+              <div class="lrow__title">Tib <span class="tag">senza app</span></div>
+              <div class="lrow__meta">Bardo 4 · Halfling</div>
+              <div class="lrow__meta">Il master dichiara per lui</div>
+            </div>
+            <div class="mcard__hp">
+              <b>22 <span>/ 26</span></b
+              ><span class="label">Punti ferita</span>
+            </div>
+          </div>
+          <div class="mcard__stats">
+            <div><b>11</b><span>Percez. passiva</span></div>
+            <div><b>10</b><span>Indagare passiva</span></div>
+            <div><b>13</b><span>Intuiz. passiva</span></div>
+            <div><b>14</b><span>CA</span></div>
+          </div>
+        </article>
+      </section>
+
+      <!-- SCONTRO: Foundry's Combat Tracker (visibility per combatant: Foundry, Roll20 token bars); initiative typed from real dice (Foundry's Manual Initiative) -->
+      <section class="two only-scontro">
+        <div class="frame frame--crest">
+          <span class="crest"></span><span class="frame__corner-tr"></span
+          ><span class="frame__corner-bl"></span>
+          <h2 class="ftitle">Scontro con i goblin</h2>
+          <div class="tracker">
+            <div class="tracker__head">
+              <button class="btn btn--quiet btn--icon" aria-label="Round precedente">
+                <i data-lucide="chevron-left" class="i"></i>
+              </button>
+              <span class="tracker__round">Round 2</span>
+              <button class="btn btn--quiet btn--icon" aria-label="Round successivo">
+                <i data-lucide="chevron-right" class="i"></i>
+              </button>
+            </div>
+            <div class="trow">
+              <span class="lrow__img"><span>K</span></span>
+              <div>
+                <div class="trow__name">Kaela</div>
+                <div class="minibar"><span style="width: 100%"></span></div>
+              </div>
+              <span class="trow__state">27 / 27</span
+              ><input class="trow__init" value="19" aria-label="Iniziativa di Kaela" />
+            </div>
+            <div class="trow is-current">
+              <span class="lrow__img"><img src="img/portrait-selene.webp" alt="" /></span>
+              <div>
+                <div class="trow__name">Selene Varga</div>
+                <div class="minibar"><span style="width: 81%"></span></div>
+              </div>
+              <span class="trow__state">31 / 38</span
+              ><input class="trow__init" value="14" aria-label="Iniziativa di Selene" />
+            </div>
+            <div class="trow">
+              <span class="lrow__img"><span>G</span></span>
+              <div>
+                <div class="trow__name">Goblin 1</div>
+                <div class="trow__state">Ferito</div>
+              </div>
+              <span class="trow__state"></span
+              ><input
+                class="trow__init"
+                value="12"
+                aria-label="Iniziativa del goblin 1"
+              />
+            </div>
+            <div class="trow">
+              <span class="lrow__img"><span>B</span></span>
+              <div>
+                <div class="trow__name">Brann Pietrascura</div>
+                <div class="minibar"><span style="width: 90%"></span></div>
+              </div>
+              <span class="trow__state">44 / 49</span
+              ><input class="trow__init" value="9" aria-label="Iniziativa di Brann" />
+            </div>
+            <div class="trow is-down">
+              <span class="lrow__img"><span>G</span></span>
+              <div>
+                <div class="trow__name">Goblin 2</div>
+                <div class="trow__state">Sconfitto</div>
+              </div>
+              <span class="trow__state"></span
+              ><input class="trow__init" value="7" aria-label="Iniziativa del goblin 2" />
+            </div>
+            <div class="trow">
+              <span class="lrow__img"><span>T</span></span>
+              <div>
+                <div class="trow__name">Tib</div>
+                <div class="minibar"><span style="width: 85%"></span></div>
+              </div>
+              <span class="trow__state">22 / 26</span
+              ><input class="trow__init" value="5" aria-label="Iniziativa di Tib" />
+            </div>
+            <div class="tracker__foot">
+              <button class="btn btn--quiet">
+                <i data-lucide="plus" class="i i--sm"></i>Aggiungi creatura
+              </button>
+              <span style="display: flex; gap: 8px"
+                ><button class="btn">Fine scontro</button
+                ><button class="btn btn--lit">
+                  Turno successivo<i
+                    data-lucide="chevron-right"
+                    class="i i--sm"
+                  ></i></button
+              ></span>
+            </div>
+          </div>
+        </div>
+        <aside class="frame frame--crest">
+          <span class="crest"></span><span class="frame__corner-tr"></span
+          ><span class="frame__corner-bl"></span>
+          <h2 class="ftitle">Cosa vedono i giocatori</h2>
+          <div class="res">
+            <span class="res__name">PF dei mostri ai giocatori</span><span></span
+            ><span class="tag">Solo lo stato</span>
+          </div>
+          <p class="meta" style="margin: 8px 0 0">
+            I giocatori vedono «ferito» o «sconfitto», non i numeri.
+          </p>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

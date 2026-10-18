@@ -1,0 +1,451 @@
+/*
+ * d20 Folio design system — layouts (prototype v2, 2026-10-16).
+ * Laptop: identity band, BG3 tabs, three framed columns, BG3 HUD at the bottom.
+ * Phone (≤ 760px): D&D Beyond's mobile order — name in the top bar, AC · initiative ·
+ * portrait · HP in one strip, a section switcher, the list, the HUD.
+ */
+
+.grow {
+  flex: 1;
+}
+@media (min-width: 761px) {
+  .only-phone {
+    display: none !important;
+  }
+}
+.num {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  height: 60px;
+  padding: 0 var(--sp-6);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--gold-bright);
+  text-decoration: none;
+}
+.brand svg {
+  width: 26px;
+  height: 26px;
+  color: var(--gold);
+}
+.nav {
+  display: flex;
+  gap: var(--sp-5);
+}
+.nav a {
+  position: relative;
+  padding: 18px 0;
+  color: var(--text-2);
+  font-weight: 700;
+  text-decoration: none;
+}
+.nav a:hover {
+  color: var(--text);
+}
+.nav a[aria-current="page"] {
+  color: var(--text);
+}
+.nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.sheet {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: var(--sp-6) var(--sp-6) 160px;
+  display: grid;
+  gap: var(--sp-5);
+}
+
+/* ── Identity band ────────────────────────────────────────────────── */
+.hero {
+  --medal: 120px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-5) var(--sp-8);
+  background:
+    radial-gradient(600px 220px at 12% 50%, rgb(200 150 80 / 0.12), transparent 70%),
+    linear-gradient(180deg, #19130e, #110d0a);
+}
+.hero__id {
+  display: grid;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+.hero__name {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: var(--fs-name);
+  line-height: 1;
+}
+.hero__cls {
+  margin: 0;
+  color: var(--text-2);
+}
+.hero__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.hero__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+.hero .abils {
+  margin-top: var(--sp-2);
+  max-width: 440px;
+}
+.hero__badges {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+}
+.badge-wrap {
+  position: relative;
+}
+.pop-under {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+}
+.hero__hp {
+  display: grid;
+  gap: var(--sp-3);
+  width: 240px;
+}
+.hp__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2);
+}
+
+/* ── Columns ──────────────────────────────────────────────────────── */
+.play {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr) 330px;
+  gap: var(--sp-5);
+  align-items: start;
+}
+.play__side {
+  display: grid;
+  gap: var(--sp-5);
+}
+.play__main {
+  display: grid;
+  gap: var(--sp-4);
+}
+.play__log {
+  display: grid;
+  gap: var(--sp-4);
+  position: sticky;
+  top: 84px;
+}
+.skills {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+}
+.skills li {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+.skills li b {
+  font-weight: 800;
+}
+.skills li.is-prof b {
+  color: var(--gold-bright);
+}
+
+/* ── HUD bar ──────────────────────────────────────────────────────── */
+.hudbar {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 8px 8px 8px 28px;
+  border-radius: 999px;
+  border: 1px solid var(--frame-strong);
+  background: linear-gradient(180deg, #1d1712, #0f0c09);
+  box-shadow:
+    inset 0 0 0 3px #0f0c09,
+    inset 0 0 0 4px #2c2318,
+    0 18px 40px -10px rgb(0 0 0 / 0.8);
+}
+.hudbar .endturn {
+  /* sits inside the pill with the same 8px on every side: pill radius = circle radius + 8 */
+  width: 72px;
+  height: 72px;
+}
+
+@media (max-width: 1240px) {
+  .play {
+    grid-template-columns: 270px minmax(0, 1fr);
+  }
+  .play__log {
+    display: none;
+  }
+  .hero {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .hero__hp {
+    grid-column: 2 / -1;
+  }
+}
+
+/* ── Phone ────────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .only-laptop {
+    display: none !important;
+  }
+  .top {
+    height: 60px;
+    padding: 0 var(--sp-2);
+    gap: var(--sp-2);
+  }
+  .top__who {
+    flex: 1;
+    display: grid;
+    justify-items: center;
+    line-height: 1.15;
+  }
+  .top__name {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 22px;
+  }
+  .top__cls {
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .sheet {
+    padding: var(--sp-3) var(--sp-3) 150px;
+    gap: var(--sp-3);
+  }
+  .hero {
+    --medal: 84px;
+    grid-template-columns: auto auto 1fr;
+    grid-template-areas:
+      "badges medal hp"
+      "id id id";
+    gap: var(--sp-3) var(--sp-3);
+    padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  }
+  .hero__medal {
+    grid-area: medal;
+  }
+  .hero__badges {
+    grid-area: badges;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hero__badges .badge {
+    grid-template-columns: auto;
+  }
+  .hero__badges .label {
+    display: none;
+  }
+  .badge__shape {
+    width: 44px;
+    height: 48px;
+  }
+  .badge--hex .badge__shape {
+    width: 44px;
+    height: 44px;
+  }
+  .badge__v {
+    font-size: 22px;
+  }
+  .badge--hex .badge__v {
+    font-size: 19px;
+  }
+  .hero__badges .badge:nth-child(3) {
+    display: none;
+  }
+  .hero__hp {
+    grid-area: hp;
+    width: auto;
+    min-width: 0;
+  }
+  .hp__now {
+    font-size: 34px;
+  }
+  .hp__actions .btn {
+    padding: 0 8px;
+    min-height: 38px;
+  }
+  .hero__id {
+    grid-area: id;
+  }
+  .hero .abils {
+    max-width: none;
+    margin-top: 0;
+    padding-top: var(--sp-2);
+    border-top: 1px solid var(--line);
+  }
+  .abil__v {
+    font-size: 22px;
+  }
+  .play {
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+  }
+  .play__side {
+    order: 2;
+  }
+  .frame {
+    padding: var(--sp-4);
+  }
+  .frame--crest {
+    padding-top: var(--sp-5);
+  }
+  .play__main .ftitle {
+    display: none;
+  }
+  .pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: 0 var(--sp-4);
+  }
+  .pill {
+    flex: none;
+  }
+  .atable__head,
+  .arow {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    column-gap: var(--sp-3);
+  }
+  .slot {
+    width: 44px;
+    height: 44px;
+  }
+  .arow {
+    padding: var(--sp-2) 0;
+  }
+  .arow .btn {
+    min-width: 0;
+  }
+  .hudbar {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: none;
+    border-radius: 0;
+    border-width: 1px 0 0;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)) 16px;
+    box-shadow: 0 -10px 30px -10px rgb(0 0 0 / 0.8);
+  }
+  .hud {
+    justify-content: space-between;
+    gap: var(--sp-2);
+  }
+  .econ {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .econ__item {
+    font-size: 14px;
+    gap: 6px;
+  }
+  .endturn {
+    width: 78px;
+    height: 78px;
+  }
+  .endturn__inner {
+    font-size: 13px;
+  }
+  .hudbar .endturn {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* Campaign on phones */
+@media (max-width: 760px) {
+  .two > *,
+  .members > * {
+    min-width: 0;
+  }
+  .tracker__foot {
+    flex-wrap: wrap;
+  }
+  .tracker__foot > span {
+    flex: 1 1 100%;
+  }
+  .tracker__foot > span .btn {
+    flex: 1;
+  }
+  .trow {
+    grid-template-columns: 44px minmax(0, 1fr) auto 52px;
+    padding: var(--sp-2) 0;
+  }
+  .trow .lrow__img {
+    width: 44px;
+    height: 44px;
+  }
+  .trow__init {
+    width: 52px;
+  }
+  .mcard__top {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+  .mcard__top .lrow__img {
+    width: 56px;
+    height: 56px;
+  }
+  .mcard__hp {
+    grid-column: 1 / -1;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    gap: var(--sp-2);
+    align-items: baseline;
+    min-width: 0;
+  }
+  .mcard__stats b {
+    font-size: 24px;
+  }
+}
+
+/* The header hosts popovers: keep it above the panels below (frames create stacking contexts) */
+.hero {
+  z-index: 5;
+}

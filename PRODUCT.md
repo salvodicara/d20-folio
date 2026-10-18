@@ -26,14 +26,18 @@ it is. Decisions behind this: `docs/strategy/2026-10-16-product-brief.md`.
 
 ## Brand Personality
 
-**Direction B, "BG3 fantasy ricco"** (owner, 2026-10-16; approved as a direction, each screen still
-needs the owner's yes): magical, premium, confident, legible. Dark stone, gold leaf, engraved Cinzel
-capitals for titles, names, label capitals and big figures; Alegreya for every reading line, never
-below 14px. One gold-leaf lit action per screen (End Turn on Play). One colour per action type:
-Action ember, Bonus teal, Reaction violet, Movement green. The inset bronze/gold frame is the only
-panel ornament; no painting behind text; a round portrait medallion; every number opens its
-breakdown on tap. Legibility for beginners comes before ornament. The visual system of record is
-`DESIGN.md`.
+**A synthesis of real products, dark only** (owner approved, 2026-10-16; prototypes in
+`docs/design/system/`). Every element is copied from a named product and none is invented:
+Baldur's Gate 3 (bronze-framed dark panels, a medallion portrait, painted action icons, a shape and colour per
+turn resource, a round blue End Turn, capsule tabs), D&D Beyond (the header order AC, initiative,
+portrait, HP; actions as a table with framed values and its filters; notched box borders; the
+navigation on laptop and phone), Foundry dnd5e (AC in a shield, small stat plates, the combat
+tracker) and Notion, GitHub, Gmail and Slack for login, settings and notices. Turn resources: Action
+green circle, Bonus orange triangle, Reaction violet diamond, Movement yellow bar. Cormorant Garamond
+for names and titles, Cinzel for small capitals, Alegreya for everything read, never below 14px.
+There is no light theme. Logo: the stylised d20. Images are original, generated through the owner's
+ChatGPT, with provenance recorded. The visual system of record is `docs/design/system/` until
+`DESIGN.md` is rewritten from the built app.
 
 Voice is clear and confident, plain-language for beginners, never jargon-gatekeeping, with no
 marketing filler in task copy. Publicly observable interaction patterns from **D&D Beyond**

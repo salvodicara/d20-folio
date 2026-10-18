@@ -1,0 +1,91 @@
+/*
+ * d20 Folio design system — tokens (prototype v2, 2026-10-16).
+ * A synthesis of real products, not an invention:
+ *  - Baldur's Gate 3: near-black panels, bronze-and-gold hairline frames with corner filigree,
+ *    serif type, medallion portrait, a shape per action type, a round End Turn.
+ *  - Foundry dnd5e: AC in a shield, initiative and speed on small plates, a header band.
+ *  - D&D Beyond: header order (AC · initiative · portrait · HP), actions as a table with framed
+ *    hit and damage values, one section switcher on phones.
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..800;1,400..600&family=Cinzel:wght@500..800&family=Cormorant+Garamond:wght@600;700&display=swap");
+
+:root {
+  --font-title:
+    "Cormorant Garamond", Georgia, serif; /* names and titles, title case (BG3) */
+  --font-label: "Cinzel", Georgia, serif; /* small caps labels: FOR DES COS (BG3) */
+  --font-text: "Alegreya", Georgia, serif; /* every line a player reads or taps */
+
+  --fs-name: 36px;
+  --fs-title: 26px;
+  --fs-figure: 24px;
+  --fs-lg: 18px;
+  --fs-body: 16px;
+  --fs-sm: 14px;
+  --fs-label: 12px;
+
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  --r-1: 3px;
+  --r-2: 6px;
+  --r-3: 10px;
+  --touch: 44px;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ═══ One theme: dark (BG3 ships dark only; owner 2026-10-16: nobody uses light) ═══ */
+:root {
+  color-scheme: dark;
+  --bg: #0b0907;
+  --bg-glow: radial-gradient(
+    1400px 700px at 50% -20%,
+    rgb(150 110 60 / 0.16),
+    transparent 65%
+  );
+  --panel: #15110d;
+  --panel-2: #1c1712;
+  --panel-3: #251e17;
+  --well: #0d0a08;
+  --scrim: rgb(4 3 2 / 0.72);
+
+  --frame: #6a5130; /* bronze outer hairline */
+  --frame-inner: #2c2318; /* the second, inner line */
+  --frame-strong: #a8834a;
+  --gold: #d4af66;
+  --gold-bright: #f0d391;
+  --line: #2a2219;
+
+  --text: #eee2ca;
+  --text-2: #bcae93;
+  --text-3: #9a8c73;
+
+  /* Action types: BG3 shapes and colours */
+  --t-action: #6cc04a; /* green circle */
+  --t-bonus: #ee9a3c; /* orange triangle */
+  --t-reaction: #c27be6; /* violet diamond */
+  --t-move: #e2c24e; /* yellow bar */
+
+  --hp: #c83a2e;
+  --hp-hi: #ee6a55;
+  --hp-track: #2a1310;
+  --temp: #5fb3e6;
+  --heal: #6fcf8a;
+  --cond: #e2a84a;
+  --buff: #7fb2f0;
+  --danger: #ec6f5f;
+
+  /* The lit action: BG3's teal-blue End Turn ring, inside a gold rim */
+  --lit: #2a8db0;
+  --lit-hi: #6fd3f2;
+  --lit-deep: #0f3a4b;
+
+  --focus: #f0d391;
+  --shadow: 0 16px 40px -12px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.45);
+}
