@@ -26,7 +26,8 @@ export interface EffectChip {
   concentration: boolean;
 }
 
-function remainingOf(roundsLeft: number | undefined): EffectChip["remaining"] {
+/** A countdown as the table reads it: rounds under a minute, whole minutes from there. */
+export function remainingOf(roundsLeft: number | undefined): EffectChip["remaining"] {
   if (roundsLeft === undefined) return null;
   return roundsLeft < ROUNDS_PER_MINUTE
     ? { rounds: roundsLeft }
