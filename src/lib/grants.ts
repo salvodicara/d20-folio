@@ -68,7 +68,8 @@ import type { SrdKind } from "@/i18n/srd-en";
 import { srdEn } from "@/i18n/srd-en";
 import { srdKey, srdGrantSegment } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
-import { srdText, litText } from "@/lib/loc-text";
+import { srdText, litText, uiText } from "@/lib/loc-text";
+import { LOCALES } from "@/lib/locale";
 import type { CombatEffectBindings } from "@/types/combat-effect";
 import {
   conformResourceSpec,
@@ -806,7 +807,7 @@ export function grantField(ref: GrantRef, field: string, lit?: LocaleText): LocT
 }
 
 /** Fallback LocaleText for a synthetic grant that carries neither a `ref` nor inline text. */
-const EMPTY_LOCALE_TEXT: LocaleText = { en: "", it: "" };
+const EMPTY_LOCALE_TEXT = Object.fromEntries(LOCALES.map((l) => [l, ""])) as LocaleText;
 
 /**
  * PS-J — the `scope` slice an adv/dis clause carries into the aggregate: present
@@ -3512,9 +3513,11 @@ export function evaluateGrants(
             ? { description: grantField(gref, "description", g.description) }
             : {}),
           cost: g.cost,
-          ...(hasGrantField(gref, "trigger", g.trigger)
-            ? { trigger: grantField(gref, "trigger", g.trigger) }
-            : {}),
+          ...(g.reactionTrigger
+            ? { trigger: uiText(`combat.reactionTrigger_${g.reactionTrigger}`) }
+            : hasGrantField(gref, "trigger", g.trigger)
+              ? { trigger: grantField(gref, "trigger", g.trigger) }
+              : {}),
           saveAbility: g.saveAbility,
         });
         break;

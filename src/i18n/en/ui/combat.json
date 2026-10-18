@@ -531,6 +531,12 @@
       "critHint": "dice doubled"
     },
     "unarmedUnburdenedDie": "{{die}} if not holding a weapon or Shield",
-    "gainTempHp": "Gain {{amount}} temporary HP"
+    "gainTempHp": "Gain {{amount}} temporary HP",
+    "reactionTrigger_meleeAttackDamagesYou": "another creature damages you with a melee attack roll",
+    "reactionTrigger_meleeAttackMissesYou": "a creature misses you with a melee attack roll",
+    "nextAttack": "Next attack",
+    "extraDamage": "Extra damage",
+    "offhandName": "{{name}} (off-hand)",
+    "pactProneNote": "{{rider}}: spend a Pact Magic slot; target Prone (Huge or smaller)"
   }
 }

@@ -1409,8 +1409,8 @@ its stable `id`(race traits / sub-entities / named grants carry an explicit`id =
 resolves through one pure function `localizeSrd(kind, key, field, locale)` (`src/i18n/resolver.ts`) —
 which THROWS in dev/test on any miss (lock 1) and returns the `⟦…⟧`sentinel in prod. Keys are the
 entity id, with dotted segments for nested fields.`localizeCustom`is the typed bypass for
-user-authored content (it keeps its own single-locale text, never touches the resolver). The data layer has no
-inline-string bypass (`no-srd-strings-in-data.guard`); the lightweight name index the eager persistence layer reads (`srd-names.ts`) takes its names from
+user-authored content (it keeps its own single-locale text, never touches the resolver). No source file outside
+`src/i18n` holds inline text (`no-srd-strings-in-data.guard`, no allowlist); the lightweight name index the eager persistence layer reads (`srd-names.ts`) takes its names from
 the catalogues through `src/i18n/srd-name-index.ts`. Only EN and the active locale's names ride
 startup; a stored label in another language makes the read seam await `ensureBuildNames`, which
 fetches the other locales' name shards on demand before the sync parse.
@@ -1669,7 +1669,7 @@ _now_; lock 6 additionally makes a future leak impossible to ship.
 | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `architecture-direction.guard.test.ts`        | engine never imports UI; engine-core never imports `@/i18n`/`i18next`/`react-i18next`; `lib/views`+`lib/pdf` are presenters |
 | `pure-modules-guard.test.ts`                  | `lib/views/**` (+ CI-pure lib modules) import no React/stores/Firebase/DOM                                                  |
-| `no-srd-strings-in-data.guard` (+ data guard) | no `LocaleText`/display literal in `src/data/**` (ids + mechanics only); the documented inline bypasses are whitelisted     |
+| `no-srd-strings-in-data.guard` (+ data guard) | no `LocaleText`/display literal anywhere in `src/` outside `src/i18n` (ids + catalogue keys only); no allowlist             |
 | `no-bitext-indexing.guard`                    | no `.name[locale]` / `[locale]` LocaleText indexing in `src/features` / `src/components` (UI renders VMs)                   |
 | `localize-srd.test.ts`                        | `localizeSrd` throws in dev/test on missing kind/id/field                                                                   |
 | ESLint `no-i18n-default-value`                | `defaultValue` option to `t()` (and inline string fallbacks) forbidden                                                      |

@@ -16,7 +16,7 @@ import { FEATS_BY_ID } from "@/data/feats";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
 import { raceFeatureIndex, raceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { SrdKind } from "@/i18n/srd-en";
-import { srdText, customText, litText, type LocText } from "@/lib/loc-text";
+import { srdText, customText, uiText, type LocText } from "@/lib/loc-text";
 
 /** An SRD feature source the grant pipeline resolves (class-feature/feat/race-trait). */
 export type SrdFeatureSource = SrdClassFeatureData | SrdFeatData | RaceFeatureEntry;
@@ -66,7 +66,7 @@ export function srdRefForFeatureSource(entry: SrdFeatureSource): {
  * `localizeText`.
  */
 export function featureNameLoc(sourceId: string | undefined): LocText {
-  if (!sourceId) return litText({ en: "Extra damage", it: "Danni extra" });
+  if (!sourceId) return uiText("combat.extraDamage");
   const src = getSrdFeatureSource(sourceId);
   // An item (Demon Armor's claws) names itself from the magic-item catalogue.
   if (!src) {

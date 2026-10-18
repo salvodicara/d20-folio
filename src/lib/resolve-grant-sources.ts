@@ -34,7 +34,7 @@ import { findBackground } from "@/data/backgrounds";
 import { getClassTable } from "@/data/classes";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
-import type { SrdSpellData } from "@/data/types";
+import type { ReactionTrigger, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { isValidItemInstanceId } from "@/lib/resources";
 
@@ -77,27 +77,21 @@ export function resolveGrantSourcesForManeuvers(
   for (const id of maneuverIds) {
     const maneuver = MANEUVER_BY_ID.get(id);
     if (!maneuver) continue;
-    const trigger =
+    const reactionTrigger: ReactionTrigger | undefined =
       maneuver.slot === "reaction"
         ? maneuver.id === "parry"
-          ? {
-              en: "when another creature damages you with a melee attack roll",
-              it: "quando un'altra creatura ti infligge danni con un tiro per colpire in mischia",
-            }
-          : {
-              en: "when a creature misses you with a melee attack roll",
-              it: "quando una creatura ti manca con un tiro per colpire in mischia",
-            }
+          ? "meleeAttackDamagesYou"
+          : "meleeAttackMissesYou"
         : undefined;
     sources.push({
       id: maneuver.id,
       // The runtime granted-action this builds is a 1:1 projection of the maneuver
-      // ENTITY plus an engine-authored reaction trigger. Its display name/
+      // ENTITY plus a structured reaction trigger. Its display name/
       // description are NOT keyed under a positional `.grants.<seg>` path, so the
       // grant carries no localizable text — DORMANT: `grantedActions` has no UI
       // consumer; the maneuver picker localizes off the `maneuver` catalogue
-      // (`localizeSrd("maneuver", id, …)`) directly. The trigger LocaleText is the one
-      // engine-authored literal that stays inline.
+      // (`localizeSrd("maneuver", id, …)`) directly. The trigger is a token the
+      // `combat.reactionTrigger_<token>` key words.
       grants: [
         {
           type: "granted-action",
@@ -107,7 +101,7 @@ export function resolveGrantSourcesForManeuvers(
             trackerId: COMBAT_SUPERIORITY_FEATURE_ID,
             amount: 1,
           },
-          ...(trigger ? { trigger } : {}),
+          ...(reactionTrigger ? { reactionTrigger } : {}),
           ...(maneuver.save ? { saveAbility: maneuver.save } : {}),
         },
       ],
