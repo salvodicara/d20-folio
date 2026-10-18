@@ -77,6 +77,20 @@ describe("deriveCharacter", () => {
     expect(derivePartyMemberStats(doc).passivePerception).toBe(25);
   });
 
+  it("a play-reduced Hit Point maximum (Life Drain) reads the same as the sheet's header", () => {
+    const base = docs[0]?.[1];
+    if (!base) throw new Error("no scenario");
+    const doc: CharacterDoc = {
+      ...base,
+      session: { ...base.session, hpMaxReduction: 5 },
+    };
+    // The header's HP reads the whole session (use-hp-controls), reduction included.
+    const sheetMax = effectiveMaxHp(doc.character, doc.session);
+    expect(sheetMax).toBe(effectiveMaxHp(base.character, base.session) - 5);
+    expect(deriveCharacter(doc).hp.max).toBe(sheetMax);
+    expect(derivePartyMemberStats(doc).maxHp).toBe(sheetMax);
+  });
+
   it("hand-set sense and speed ranges reach the DM's party view, like the sheet's rail", () => {
     const found = docs.find(([, d]) => deriveCharacter(d).senses.length > 0)?.[1];
     if (!found) throw new Error("no scenario with a sense");
