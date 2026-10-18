@@ -94,6 +94,8 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     grantBundleChoices: session.grantBundleChoices,
     itemResources: session.itemResources,
     fadingPenalties: session.fadingPenalties,
+    // A play-reduced maximum (Life Drain) lowers max HP here exactly as on the sheet.
+    hpMaxReduction: session.hpMaxReduction,
   };
   const aggregate = aggregateCharacterGrants(character, aggSession);
   const level = totalLevel(character);
