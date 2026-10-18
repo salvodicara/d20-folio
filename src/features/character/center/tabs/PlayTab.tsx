@@ -66,10 +66,8 @@ import { formatModifier, localeDistance } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
-import {
-  canCastSpellWithSlots,
-  resolveSpellCastOptions,
-} from "@/lib/views/spell-cast-sources";
+import { canCastSpellWithSlots } from "@/lib/views/spell-cast-sources";
+import { isActionDepleted } from "@/lib/views/action-row-view";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
@@ -734,35 +732,11 @@ export function PlayTab() {
   }
 
   // Check if an action's resource is fully depleted (grey out the card)
+  // One rule with the actions table's view model (`isActionDepleted`).
   const isDepletedAction = useCallback(
-    (action: ResolvedAction): boolean => {
-      if (!character) return false;
-      // Feature/custom with tracker: uses.current is already clamped to 0
-      if (action.summary.uses != null) return action.summary.uses.current <= 0;
-      // Spell costing a slot: check remaining slots of that level. A spell with
-      // NO slot left is still castable when a free-cast / at-will / item-charge
-      // source remains (Magic Initiate, a Wand of Magic Missiles' charges, …) —
-      // so depletion is resolved from the SAME `resolveSpellCastOptions` seam
-      // the cast picker uses (S9 — single source: a charged-item spell is never
-      // greyed out while it has charges, even on a non-slot caster). Cantrips
-      // (level 0) never deplete.
-      if (action.costsSlot && action.slotLevel != null && action.spellId) {
-        const opts = resolveSpellCastOptions(
-          character,
-          action.spellId,
-          action.slotLevel,
-          true,
-          locale,
-          {
-            mastery: t("spellPrep.spellMasteryBadge"),
-            signature: t("spellPrep.signatureSpellBadge"),
-          }
-        );
-        return opts.length === 0; // depleted only when NO cast route remains
-      }
-      return false;
-    },
-    [character, locale, t]
+    (action: ResolvedAction): boolean =>
+      character ? isActionDepleted(character, action) : false,
+    [character]
   );
 
   // The tracker ids whose backing resource is fully spent — a consumable rider
