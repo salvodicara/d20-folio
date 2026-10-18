@@ -7456,12 +7456,23 @@ function resolveWeaponActions(
       summary.effect = srdEffectText("magic-item", itemRef.srdId);
     }
 
+    const type = consumableActionSlot({ isPotion, isConsumable });
+    // Drinking applies what the potion grants on the spot (Heroism's 10 temp HP).
+    const useEffects = isCustomItem
+      ? []
+      : resolveActionUseEffects(
+          getMagicItem(itemRef.srdId)?.grants,
+          type,
+          character,
+          itemRef.srdId
+        );
     actions.push({
       id,
       name,
       // Economy slot from the SHARED helper (a potion is a Bonus Action) so the combat
       // card and the inventory badge derive the same economy + colour (golden rule 6).
-      type: consumableActionSlot({ isPotion, isConsumable }),
+      type,
+      ...(useEffects.length > 0 ? { useEffects } : {}),
       source: "feature",
       spellLevel: null,
       concentration: false,

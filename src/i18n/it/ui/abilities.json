@@ -106,6 +106,8 @@
     "defenseKindVulnerability": "VULN",
     "none": "Nessuna",
     "autoBlankHint": "Calcolo automatico · svuota un campo per ripristinarlo",
-    "abilityScoreAria": "{{ability}} {{modifier}}, valore {{score}}; tiro salvezza {{saveBonus}}, {{saveState}}: tocca per il calcolo del tiro salvezza"
+    "abilityScoreAria": "{{ability}} {{modifier}}, valore {{score}}; tiro salvezza {{saveBonus}}, {{saveState}}: tocca per il calcolo del tiro salvezza",
+    "leap": "Balzo, una volta per turno",
+    "leapValue": "{{distance}} con {{cost}}"
   }
 }

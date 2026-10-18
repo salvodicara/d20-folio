@@ -762,8 +762,8 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "potion",
     attunement: false,
     durationRounds: 600,
-    // Bless for 1 hour (no Concentration). The 10 Temporary Hit Points are added
-    // by hand on the HP vital.
+    // Bless for 1 hour (no Concentration). The 10 Temporary Hit Points come once,
+    // on drinking (a Bonus Action): the slot-gated `temp-hp` the drink applies.
     grants: [
       POTION_STATE("potion-of-heroism", 60, [
         {
@@ -781,6 +781,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
           consume: "each",
         },
       ]),
+      { type: "temp-hp", formula: "10", slot: "bonus" },
     ],
     source: "SRD",
   },

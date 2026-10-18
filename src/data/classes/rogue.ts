@@ -488,9 +488,12 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     level: 3,
     // 2024 RAW (rogue:thief, Level 3: Second-Story Work). Climber → a Climb Speed
     // equal to walking Speed (the `climb-speed` grant with the "equal-to-walking"
-    // sentinel, resolved against walking Speed at render). Jumper (jump distance
-    // from DEX) has no grant kind, so it stays prose by design.
-    grants: [{ type: "climb-speed", amount: "equal-to-walking" }],
+    // sentinel, resolved against walking Speed at render). Jumper → `jump-ability`
+    // DEX (the jump rows read Dexterity when it is the better score).
+    grants: [
+      { type: "climb-speed", amount: "equal-to-walking" },
+      { type: "jump-ability", ability: "DEX" },
+    ],
     source: "SRD",
   },
   {

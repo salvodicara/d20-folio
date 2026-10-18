@@ -66,6 +66,11 @@ const STANDING_SPELLS = [
     targeting: { affinity: "enemy" },
   },
   {
+    id: "jump",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  {
     id: "longstrider",
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },

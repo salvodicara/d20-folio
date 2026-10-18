@@ -3022,5 +3022,8 @@
   },
   "alter-self.grants.0.grants.0.options.natural-weapons": {
     "label": "Natural Weapons"
+  },
+  "jump.grants.0": {
+    "label": "Jump"
   }
 }

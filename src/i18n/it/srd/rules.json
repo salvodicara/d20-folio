@@ -191,5 +191,24 @@
   },
   "vision.darkness.grants.0.grants.0": {
     "description": "Tiri per colpire (Accecato per la vista: Oscurità)"
+  },
+  "squeezing.space": {
+    "name": "Spazio più piccolo",
+    "summary": "Puoi infilarti in uno spazio abbastanza grande per una creatura di una taglia più piccola della tua."
+  },
+  "squeezing.movement": {
+    "name": "Movimento",
+    "summary": "Mentre ti infili, ogni metro che percorri in quello spazio ti costa un metro in più."
+  },
+  "squeezing.rolls": {
+    "name": "Tiri",
+    "summary": "Mentre ti infili, hai Svantaggio ai tiri per colpire e ai tiri salvezza su Destrezza, e i tiri per colpire contro di te hanno Vantaggio."
+  },
+  "situation.squeezing": {
+    "name": "Spazio stretto"
+  },
+  "potion.lethargy": {
+    "name": "Spossatezza",
+    "summary": "Quando l'effetto di Velocità termina, sei Incapacitato e hai Velocità 0 fino al termine del tuo turno successivo."
   }
 }

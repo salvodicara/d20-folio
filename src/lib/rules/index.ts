@@ -51,6 +51,11 @@ export type RuleTarget =
   | "speed:multiplier"
   | "speed:floor"
   | "speed:cap"
+  /** Jump distance read from this ability instead of Strength. */
+  | `jump:ability:${AbilityCode}`
+  /** A once-per-turn leap's distance, and the movement it costs. */
+  | "jump:leap"
+  | "jump:leap-cost"
   | `prof:save:${string}`
   | `prof:skill:${string}`
   | `prof:expertise:${string}`
@@ -243,6 +248,13 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "max", target: "speed:floor", value: grant.minFt }];
     case "speed-cap":
       return [{ op: "min", target: "speed:cap", value: grant.maxFt }];
+    case "jump-ability":
+      return [{ op: "flag", target: `jump:ability:${grant.ability}` }];
+    case "jump-leap":
+      return [
+        { op: "max", target: "jump:leap", value: grant.distanceFt },
+        { op: "min", target: "jump:leap-cost", value: grant.movementCostFt },
+      ];
     case "save-proficiency":
       return [{ op: "flag", target: `prof:save:${grant.ability}` }];
     case "skill-proficiency":

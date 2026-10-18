@@ -44,6 +44,7 @@ import {
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   drinkPotion,
+  startPotionAftereffects,
   recoverPerTurnTrackers as recoverPerTurnTrackersOf,
   restoreStateKey,
 } from "@/lib/play/states";
@@ -2998,18 +2999,21 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const nextCastLevels = Object.fromEntries(
       Object.entries(priorCastLevels ?? {}).filter(([key]) => !expiredKeys.has(key))
     );
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          effectTimers: timers,
-          activeFeatures: nextActive,
-          activeSpellCastLevels:
-            Object.keys(nextCastLevels).length > 0 ? nextCastLevels : undefined,
-        },
-      },
-    });
+    const priorBoundaries = character.session.effectBoundaries;
+    const ticked: SessionState = {
+      ...character.session,
+      effectTimers: timers,
+      activeFeatures: nextActive,
+      activeSpellCastLevels:
+        Object.keys(nextCastLevels).length > 0 ? nextCastLevels : undefined,
+    };
+    // A potion that ran out at this End Turn may leave an after-effect for the next
+    // turn (Speed's lethargy); out of combat there is no next turn to hold it.
+    const session =
+      forRound === undefined
+        ? ticked
+        : (startPotionAftereffects(ticked, expiredKeys, forRound) ?? ticked);
+    set({ character: { ...character, session } });
     const concentrationLogIds = concentrationExpired
       ? get().setConcentration("", { undoable: false })
       : [];
@@ -3036,6 +3040,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
               : { effectTimers: priorTimers }),
             activeFeatures: priorActive,
             activeSpellCastLevels: priorCastLevels,
+            effectBoundaries: priorBoundaries,
             concentration: priorConcentration,
             concentrationCastLevel: priorConcentrationCastLevel,
             concentrationConditions: priorConcentrationConditions,

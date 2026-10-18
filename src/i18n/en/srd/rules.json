@@ -191,5 +191,24 @@
   },
   "vision.darkness.grants.0.grants.0": {
     "description": "Attack rolls (Blinded for sight: Darkness)"
+  },
+  "squeezing.space": {
+    "name": "Smaller Space",
+    "summary": "You can squeeze through a space large enough for a creature one size smaller than you."
+  },
+  "squeezing.movement": {
+    "name": "Movement",
+    "summary": "While squeezing, you spend 1 extra foot for every foot you move there."
+  },
+  "squeezing.rolls": {
+    "name": "Rolls",
+    "summary": "While squeezing, you have Disadvantage on attack rolls and Dexterity saving throws, and attack rolls against you have Advantage."
+  },
+  "situation.squeezing": {
+    "name": "Squeezing"
+  },
+  "potion.lethargy": {
+    "name": "Lethargy",
+    "summary": "When the Haste effect ends, you are Incapacitated and have a Speed of 0 until the end of your next turn."
   }
 }

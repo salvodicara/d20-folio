@@ -116,21 +116,29 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["duration: 1 minute", "haste"],
     // S9 — 1 minute = 10 combat rounds.
     durationRounds: 10,
-    // Haste's standing package (no Concentration). Its end-of-effect lethargy
-    // turn is not projected for a potion.
+    // Haste's standing package (no Concentration), and Haste's end: Incapacitated
+    // (no actions) with a Speed of 0 until the end of your next turn.
     grants: [
-      POTION_STATE("potion-of-speed", 1, [
-        { type: "speed-multiplier", factor: 2 },
-        { type: "ac-bonus", amount: 2 },
-        { type: "advantage-on", rollType: "save", vs: "dex-save" },
+      POTION_STATE(
+        "potion-of-speed",
+        1,
+        [
+          { type: "speed-multiplier", factor: 2 },
+          { type: "ac-bonus", amount: 2 },
+          { type: "advantage-on", rollType: "save", vs: "dex-save" },
+          {
+            type: "extra-action",
+            slot: "action",
+            count: 1,
+            allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
+            maxAttacks: 1,
+          },
+        ],
         {
-          type: "extra-action",
-          slot: "action",
-          count: 1,
-          allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
-          maxAttacks: 1,
-        },
-      ]),
+          duration: { kind: "target-turn-boundary", turns: 1, phase: "turn-end" },
+          grants: [{ type: "turn-economy-block" }, { type: "speed-cap", maxFt: 0 }],
+        }
+      ),
     ],
     source: "SRD",
   },
@@ -929,9 +937,13 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // "Speed becomes 30 feet unless your Speed is higher" is modeled as a
     // `speed-floor` grant — a MAX (not a flat add, which would wrongly stack a
     // +30 onto a 30-ft base to 60), so a ≤30-ft base floors to 30 and a higher
-    // base is untouched. The carry-weight / Heavy-Armor reduction exemption +
-    // the 30-ft jump stay descriptive (no engine mechanic).
-    grants: [{ type: "speed-floor", minFt: 30 }],
+    // base is untouched. The once-per-turn 30-ft jump for 10 ft of movement is a
+    // `jump-leap`. The carry-weight / Heavy-Armor reduction exemption stays
+    // descriptive (no engine mechanic).
+    grants: [
+      { type: "speed-floor", minFt: 30 },
+      { type: "jump-leap", distanceFt: 30, movementCostFt: 10 },
+    ],
     source: "SRD",
   },
   {
