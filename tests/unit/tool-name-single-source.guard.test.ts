@@ -8,8 +8,8 @@
  * the SAME tool id — so in Italian one surface read "Strumenti da Scasso" and the
  * other "Strumenti da Ladro" for the very same Thieves' Tools. (It was ALSO a
  * rule-9 violation — a translatable string living in TypeScript — that the
- * `no-srd-strings-in-data` guard never caught because it only scans `src/data/**`,
- * not `src/lib/**`.)
+ * `no-srd-strings-in-data` guard never caught because it then scanned only
+ * `src/data/**`, not `src/lib/**`.)
  *
  * The fix: tool names live in ONE place — the SRD equipment catalogue keyed by the
  * tool id — and EVERY surface resolves the name from there. This guard makes the

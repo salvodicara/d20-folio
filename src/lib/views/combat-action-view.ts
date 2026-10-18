@@ -26,6 +26,7 @@ import type { CharacterDoc } from "@/types/character";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { formatModifier } from "@/lib/utils";
 import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
+import { uiText } from "@/lib/loc-text";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { GatedSlot } from "@/lib/condition-effects";
 import type { ConditionSense } from "@/types/condition";
@@ -71,18 +72,15 @@ function fitsEffectBudget(line: string): string | undefined {
 
 // ─── Action localization (the engine → display edge) ──────────────────────────
 
-/** The bilingual dual-wield off-hand name suffix (presenter-owned literal). */
-const OFFHAND_SUFFIX: Record<Locale, string> = {
-  en: " (off-hand)",
-  it: " (mano secondaria)",
-};
+/** A dual-wield off-hand row's display name: the weapon's name plus the suffix. */
+function offhandName(name: string, locale: Locale): string {
+  return localizeText(uiText("combat.offhandName", { name }), locale);
+}
 
-/** The bilingual Pact-of-the-Blade Prone-rider note template (presenter-owned). */
-const PACT_PRONE_NOTE: Record<Locale, (rider: string) => string> = {
-  en: (r) => `${r}: spend a Pact Magic slot; target Prone (Huge or smaller)`,
-  it: (r) =>
-    `${r}: spendi uno slot Magia del Patto; bersaglio Prono (Enorme o più piccolo)`,
-};
+/** The Pact-of-the-Blade Prone-rider note, composed around the rider's name. */
+function pactProneNote(rider: string, locale: Locale): string {
+  return localizeText(uiText("combat.pactProneNote", { rider }), locale);
+}
 
 /**
  * The one-line budget for ANY card chip (characters) — the chip token contract
@@ -114,14 +112,14 @@ export function chipText(core: string, composed?: string): string | undefined {
 /**
  * The heal-provenance phrase for the breakdown tip ("Fighter level" / "livello
  * da Guerriero" — IT SRD 5.2.1 phrasing). The class name resolves through the
- * shared {@link className} helper (single source — golden rule 6); only the
- * connective word + word order is presenter-owned. It lives in the TIP now,
- * never in the chip: the chip shows the evaluated number (chip-compact).
+ * shared {@link className} helper (single source — golden rule 6); the connective
+ * word and word order are the `features.formulaClassLevel` key's, the same phrase
+ * the tracker formulas read. It lives in the TIP now, never in the chip: the chip
+ * shows the evaluated number (chip-compact).
  */
-const CLASS_LEVEL_PHRASE: Record<Locale, (cls: string) => string> = {
-  en: (cls) => `${cls} level`,
-  it: (cls) => `livello da ${cls}`,
-};
+function classLevelPhrase(cls: string, locale: Locale): string {
+  return localizeText(uiText("features.formulaClassLevel", { class: cls }), locale);
+}
 
 /**
  * Format the engine's EVALUATED {@link ResolvedActionHeal} into the compact,
@@ -158,7 +156,7 @@ export function localizeHealBreakdown(
       {
         kind: "loc",
         value: formatModifier(heal.bonus),
-        label: CLASS_LEVEL_PHRASE[locale](className(heal.term.classId, locale)),
+        label: classLevelPhrase(className(heal.term.classId, locale), locale),
       },
     ];
   }
@@ -315,7 +313,7 @@ function localizeSummary(
   const proneEffect =
     pactProneRiders && pactProneRiders.length > 0
       ? pactProneRiders
-          .map((r) => PACT_PRONE_NOTE[locale](localizeText(r, locale)))
+          .map((r) => pactProneNote(localizeText(r, locale), locale))
           .join(" · ")
       : undefined;
   // The omit-not-slice gate: SRD lines are guard-bounded to the budget; an
@@ -363,11 +361,13 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
   const riders = buildRiders(summary, locale);
   const masteryRiders =
     action.source === "weapon" ? buildMasteryRiders(summary, locale) : [];
-  // The dual-wield off-hand row appends a fixed bilingual suffix to the weapon's
-  // own name (composed here — the engine carries only the base name ref).
-  const suffix = action.offhand ? OFFHAND_SUFFIX[locale] : "";
-  const enSuffix = action.offhand ? OFFHAND_SUFFIX.en : "";
-  const localizedName = localizeText(name, locale) + suffix;
+  // The dual-wield off-hand row wraps the weapon's own name in the off-hand
+  // suffix (composed here — the engine carries only the base name ref).
+  const displayName = (lang: Locale): string =>
+    action.offhand
+      ? offhandName(localizeText(name, lang), lang)
+      : localizeText(name, lang);
+  const localizedName = displayName(locale);
   // The unified weapon facts block (the SAME recipe the inventory WeaponCard
   // renders) — built only for weapon rows carrying the structured attack facts.
   const weaponFacts =
@@ -418,7 +418,7 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
   return {
     ...rest,
     name: localizedName,
-    nameEn: localizeText(name, "en") + enSuffix,
+    nameEn: displayName("en"),
     // The action's NAME as the engine's localizable LocText reference — carried
     // verbatim so the combat LOG stores a stable, re-localizable reference
     // (golden rule 7) instead of the economy-suffixed row `id` or the

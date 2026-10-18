@@ -37,7 +37,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { openReportAfterPaint } from "@/features/report/open-report";
 import { signOut } from "@/lib/auth";
-import { nextLocale, type Locale } from "@/lib/locale";
+import { nextLocale } from "@/lib/locale";
 
 /**
  * `current` is the account-ring anchor flag, computed in `Topbar` (never here —
@@ -48,12 +48,6 @@ import { nextLocale, type Locale } from "@/lib/locale";
 export interface SettingsDropdownProps {
   current: "settings" | "admin" | null;
 }
-
-/** The settings menu's language-switch label, per target language. */
-const LANGUAGE_SWITCH_LABEL: Record<Locale, string> = {
-  en: "settings.switchToEnglish",
-  it: "settings.switchToItalian",
-};
 
 export function SettingsDropdown({ current }: SettingsDropdownProps) {
   const { t } = useTranslation();
@@ -99,7 +93,7 @@ export function SettingsDropdown({ current }: SettingsDropdownProps) {
       : nextTheme === "light"
         ? t("settings.useLightTheme")
         : t("settings.useSystemTheme");
-  const nextLanguageLabel = t(LANGUAGE_SWITCH_LABEL[nextLocale(language)]);
+  const nextLanguageLabel = t(`settings.switchTo_${nextLocale(language)}`);
 
   // The visible name (shown on wide screens) must be part of the button's ACCESSIBLE
   // name too (WCAG 2.5.3 Label in Name) — so the aria-label leads with it when present.

@@ -7,7 +7,7 @@
 import { getSpellById } from "@/data/spells";
 import { activityFromSpell } from "@/lib/activities/from-spell";
 import { coinPrice, NEXT_COIN } from "@/lib/coin-price";
-import { srdText } from "@/lib/loc-text";
+import { srdText, uiText } from "@/lib/loc-text";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
 
@@ -69,16 +69,13 @@ export function adjustCurrency(
   return { ...session, currency };
 }
 
-/** The Italian coin abbreviations (the English ones are the coin ids). */
-const IT_COIN = { gp: "mo", sp: "ma", cp: "mr" } as const;
-
 /** The log line: "Spent 300 gp on Revivify" (the existing rider-use row). */
 export function materialCostLogEvent(cost: MaterialCost): CombatEvent {
   const { amount, coin } = coinPrice(cost.gp);
   return {
     kind: "rider-use",
     action: srdText("spell", cost.spellId, "name"),
-    rider: { lit: { en: `${amount} ${coin}`, it: `${amount} ${IT_COIN[coin]}` } },
+    rider: uiText(`equipment.coinAmount.${coin}`, { amount }),
     effect: "generic",
   };
 }

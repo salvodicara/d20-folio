@@ -73,6 +73,11 @@
     "enchantNone": "Nessuno",
     "emptyTitle": "Il tuo zaino è vuoto",
     "emptyBlurb": "Le armi, le armature, le pozioni e gli oggetti magici che aggiungi vivranno qui, con danni, CA, cariche e peso.",
-    "noItemsMatch": "Nessun oggetto corrisponde alla ricerca."
+    "noItemsMatch": "Nessun oggetto corrisponde alla ricerca.",
+    "coinAmount": {
+      "gp": "{{amount}} mo",
+      "sp": "{{amount}} ma",
+      "cp": "{{amount}} mr"
+    }
   }
 }

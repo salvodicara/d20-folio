@@ -149,6 +149,10 @@ export type ReactionTrigger =
   | "enemyEndsTurnNear"
   | "hitByAttack"
   | "hitOrMagicMissileTarget"
+  // Reaction maneuvers: a melee attack roll damages you, or one
+  // misses you.
+  | "meleeAttackDamagesYou"
+  | "meleeAttackMissesYou"
   // Ranger Fey Wanderer "Beguiling Twist": you or a creature within 120 ft
   // SUCCEEDS on a save to avoid or end the Charmed or Frightened condition.
   | "savedVsCharmOrFear"
@@ -167,6 +171,8 @@ export const ALL_REACTION_TRIGGERS = [
   "enemyEndsTurnNear",
   "hitByAttack",
   "hitOrMagicMissileTarget",
+  "meleeAttackDamagesYou",
+  "meleeAttackMissesYou",
   "savedVsCharmOrFear",
   "succeedDexSaveForHalf",
   "targetAttacks",
@@ -183,6 +189,8 @@ export const ALL_REACTION_TRIGGERS = [
     "enemyEndsTurnNear",
     "hitByAttack",
     "hitOrMagicMissileTarget",
+    "meleeAttackDamagesYou",
+    "meleeAttackMissesYou",
     "savedVsCharmOrFear",
     "succeedDexSaveForHalf",
     "targetAttacks",

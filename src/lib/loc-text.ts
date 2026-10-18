@@ -27,8 +27,10 @@
  *  - `lit` — an ENGINE literal `LocaleText` that is NOT `src/data/**` SRD content and
  *    NOT user text. Being retired: engine words move to the catalogues (the
  *    smart-tracker's base actions read the `rule` catalogue, its Unarmed Strike and
- *    temp-HP lines `ui` keys); it stays for rows stored before the move and the
- *    few engine modules not yet migrated. The view reads `text[locale]`.
+ *    temp-HP lines `ui` keys); it stays for rows stored before the move and for
+ *    names copied from a catalogue in every language (an encounter monster's
+ *    action). No source file spells words in one (`no-srd-strings-in-data`
+ *    guard). The view reads `text[locale]`.
  *  - `ui` — a REF to a `common`/ui i18n CHROME key (e.g. `"combat.otherReactionName"`),
  *    resolved at RENDER by the view via `i18n.getFixedT(locale)(key)`. Unlike `lit`,
  *    it NEVER freezes a both-locale value into the carrier — it stores only the key,
