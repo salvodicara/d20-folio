@@ -29,7 +29,12 @@ import { dropBeastForm } from "./forms";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
-import { setActiveSpellCastLevel, setActiveState, setBundleChoices } from "./states";
+import {
+  recoverPerTurnTrackers,
+  setActiveSpellCastLevel,
+  setActiveState,
+  setBundleChoices,
+} from "./states";
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
 import { passTime } from "./time";
@@ -101,6 +106,8 @@ export type SheetEvent =
   | { kind: "toggle-pin"; actionId: string; defaultPinned: boolean }
   | { kind: "long-rest" }
   | { kind: "short-rest" }
+  /** The owner's turn starts again: every spent per-turn tracker refills (Sneak Attack). */
+  | { kind: "recover-per-turn-trackers" }
   /**
    * Minutes pass outside the turn order: what runs out ends (`passTime`).
    * To the first dispatcher: when `timePassEndsConcentration(doc, minutes)`, an
@@ -205,6 +212,8 @@ export function applySheetEvent(
       return longRestCharacter(doc);
     case "short-rest":
       return shortRestCharacter(doc);
+    case "recover-per-turn-trackers":
+      return withSession(recoverPerTurnTrackers(doc)?.session);
     case "time-passes":
       return passTime(doc, event.minutes);
   }
