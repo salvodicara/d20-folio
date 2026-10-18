@@ -6,6 +6,7 @@
  * + engine onto the eager landing bundle (#59/#78). `use-hp-controls` re-exports
  * it, so existing imports are unaffected — one source.
  */
+import type { HpBandValue } from "@/lib/hp-band";
 export type HpStateValue = "healthy" | "wounded" | "critical" | "down";
 
 /** HP state thresholds — shared with the §22/§24 bar recipe. */
@@ -17,22 +18,9 @@ export function hpState(current: number, max: number): HpStateValue {
   return "critical";
 }
 
-/**
- * The qualitative HP BAND a player sees for an enemy whose exact HP the DM keeps
- * concealed (CARD-5). Distinct, coarser tiers than {@link hpState} so the number is
- * never inferable: `bloodied` is the official 2024 keyword (at or below HALF max);
- * `nearDeath` is the dire band (≤ a quarter). Down = no HP left. Derived from
- * current/max — there is NO stored band.
- */
-export type HpBandValue = "healthy" | "bloodied" | "nearDeath" | "down";
-
-export function hpBand(current: number, max: number): HpBandValue {
-  if (current <= 0) return "down";
-  const pct = max > 0 ? current / max : 0;
-  if (pct <= 0.25) return "nearDeath";
-  if (pct <= 0.5) return "bloodied";
-  return "healthy";
-}
+// The concealed-HP band is engine data now (src/lib/hp-band.ts): the encounter
+// tracker's view model and these molecules read the same rule.
+export { hpBand, type HpBandValue } from "@/lib/hp-band";
 
 /** Map a concealed band to the §22/§24 bar `data-state` so the band bar reuses the
  *  exact-HP bar colours (one bar recipe, no parallel palette). */
