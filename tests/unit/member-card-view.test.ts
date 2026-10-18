@@ -13,7 +13,7 @@ import { memberCardView } from "@/features/campaigns/member-card-view";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { makeCharacterDoc } from "./_helpers";
 
-const hero = makeCharacterDoc({ classId: "fighter", level: 3, name: "Mara" });
+const hero = makeCharacterDoc({ classId: "fighter", level: 3, name: "Mara" as never });
 
 describe("the party card carries the passives", () => {
   it("as the sheet derives them", () => {
