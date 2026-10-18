@@ -62,6 +62,9 @@ export interface MemberCharacterSnapshot {
    *  face, not just an initial. Null/absent → the character's tinted-initial fallback. */
   portraitUrl?: string | null;
   portraitCrop?: PortraitCrop | null;
+  /** The passive scores the party reads (the sheet's own derivation); absent on a
+   *  card written before they were added, until the member's next save. */
+  passives?: { perception: number; investigation: number; insight: number };
 }
 
 // ============================================================
