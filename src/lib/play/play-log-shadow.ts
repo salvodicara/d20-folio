@@ -32,7 +32,7 @@ export interface PlayLogShadow {
    * Undo through the log (phase 3a step 4): when the log reproduces `live`, record the
    * undo of `target` and return the fold without it, so only that event goes and every
    * later one stays. Null, recording nothing, when it does not (a write went around the
-   * log): the caller then falls back to its snapshot.
+   * log) or when `target` is no longer in it: the caller then falls back to its snapshot.
    */
   undoFrom(live: CharacterDoc, target: string): CharacterDoc | null;
   stats(): ShadowStats;
@@ -91,7 +91,10 @@ export function createPlayLogShadow(
       return check(id, after);
     },
     undoFrom(live, target) {
-      if (checkpoint === null || !same(foldPlayLog(checkpoint, entries), live))
+      // The target must still be in the log: a new checkpoint drops older entries,
+      // and undoing one of those through the log would silently change nothing.
+      const known = entries.some((entry) => entry.id === target && "event" in entry);
+      if (!known || checkpoint === null || !same(foldPlayLog(checkpoint, entries), live))
         return null;
       const id = `shadow-${++seq}`;
       entries.push({ id, seq, actor, undo: target });

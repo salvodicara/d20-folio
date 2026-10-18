@@ -148,4 +148,21 @@ describe("play log shadow", () => {
     expect(shadow.undoFrom(outside, id)).toBeNull();
     expect(shadow.stats().entries).toBe(1);
   });
+
+  it("declines when the event to undo is no longer in the log (a new checkpoint dropped it)", () => {
+    const shadow = createPlayLogShadow("player");
+    const doc = start();
+    const slot = { kind: "spend-slot", level: 1, pactMagic: false } satisfies SheetEvent;
+    const a = apply(doc, slot);
+    const { id } = shadow.record(doc, slot, a);
+    // A write around the log, then another event: the shadow starts over from there.
+    const outside: CharacterDoc = { ...a, session: { ...a.session, notes: "outside" } };
+    const temp = { kind: "set-temp-hp", temp: 5 } satisfies SheetEvent;
+    const b = apply(outside, temp);
+    shadow.record(outside, temp, b);
+    // The log reproduces the sheet, but the slot is no longer in it: undoing it through
+    // the log would change nothing, so the caller must use its snapshot.
+    expect(shadow.undoFrom(b, id)).toBeNull();
+    expect(shadow.stats().entries).toBe(1);
+  });
 });
