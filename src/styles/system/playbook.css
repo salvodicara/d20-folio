@@ -1,0 +1,46 @@
+/*
+ * The Play tab's playbook ("what to do this turn") in the design system 2026-10.
+ * Folio's own feature (owner-kept): it borrows its parts from the products the rest of
+ * the screen copies: each step numbered in its turn resource's colour (BG3's resource
+ * colours) and a plain card with the type colour on the left edge (D&D Beyond's rows).
+ */
+
+/* The numbered node: a small ring in the step's resource colour, not a brass coin */
+.algo-step:has(.algo-card[data-slot="action"]) {
+  --step-c: var(--at-action);
+}
+.algo-step:has(.algo-card[data-slot="bonus"]) {
+  --step-c: var(--at-bonus);
+}
+.algo-step:has(.algo-card[data-slot="reaction"]) {
+  --step-c: var(--at-reaction);
+}
+.algo-step:has(.algo-card[data-slot="movement"]) {
+  --step-c: var(--at-move);
+}
+.algo-step,
+.algo-add-row {
+  grid-template-columns: 2rem minmax(0, 1fr);
+  column-gap: var(--sp-3);
+}
+.algo-num .an-badge {
+  width: 2rem;
+  height: 2rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm-read);
+  color: var(--step-c, var(--sys-gold));
+  background: var(--sys-panel-2);
+  border: 1.5px solid color-mix(in oklab, var(--step-c, var(--sys-gold)) 75%, transparent);
+  box-shadow: none;
+}
+.algo-step:not(:last-of-type) .algo-num::after {
+  top: 2rem;
+  width: 1px;
+  background: var(--sys-line);
+}
+.algo-card[data-slot="movement"] {
+  --step-c: var(--at-move);
+}
+.algo-intro p {
+  font-size: var(--text-base);
+}

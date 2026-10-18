@@ -4,6 +4,7 @@
 @import "./styles/system/play-turn.css";
 @import "./styles/system/action-rows.css";
 @import "./styles/system/chips.css";
+@import "./styles/system/playbook.css";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    d20 Folio · Design Tokens · "Illuminated Folio" (CANONICAL source of truth)
