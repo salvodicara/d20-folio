@@ -1,0 +1,86 @@
+/*
+ * Action and card rows (UniversalCard) in the design system 2026-10.
+ * Copied from D&D Beyond's Actions list (one row per action, the type colour on the
+ * left edge, framed hit and damage values, a quiet button) and Baldur's Gate 3's
+ * hotbar slot (a dark square with a bronze rim behind each icon).
+ * UniversalCard is the one row the whole sheet uses, so Spells, Inventory and
+ * Features follow the same look.
+ */
+
+/* ── The icon slot (BG3) ──────────────────────────────────────────── */
+.uc-head {
+  grid-template-columns: 2.75rem minmax(0, 1fr) max-content auto;
+}
+.uc-seal {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: var(--sys-r-1);
+}
+.uc-seal.kind {
+  color: color-mix(in oklab, var(--at-c) 70%, var(--sys-gold-bright));
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      color-mix(in oklab, var(--at-c) 22%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--sys-panel-2), var(--sys-bg));
+  border: 1px solid var(--sys-frame);
+  box-shadow: inset 0 0 0 0.125rem var(--sys-bg);
+}
+.uc-seal.kind .icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+
+/* ── The row button: a quiet bronze capsule (D&D Beyond, BG3) ─────── */
+.cc-btn {
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--sp-4);
+  border: 1px solid var(--sys-frame);
+  border-radius: var(--sys-r-2);
+  background: linear-gradient(180deg, var(--sys-panel-3), var(--sys-panel-2));
+  box-shadow: none;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+.cc-btn:hover:not(:disabled) {
+  border-color: var(--sys-gold);
+  color: var(--sys-gold-bright);
+  box-shadow: none;
+}
+/* BG3's lit attack (an Extra Attack swing already paid for): gold rim and glow */
+.uc-cta.is-emphasis .cc-btn:not(:disabled) {
+  border-color: var(--sys-gold-bright);
+  color: var(--sys-gold-bright);
+  background: linear-gradient(180deg, var(--sys-panel-3), var(--sys-panel-2));
+  box-shadow: 0 0 0.75rem -0.125rem var(--sys-gold);
+}
+
+/* Spell-level seals join the same dark slot: the level figure keeps its level hue */
+.uc-seal.lvl {
+  color: color-mix(in oklab, var(--sl) 65%, var(--sys-gold-bright));
+  background:
+    radial-gradient(
+      circle at 50% 40%,
+      color-mix(in oklab, var(--sl) 22%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--sys-panel-2), var(--sys-bg));
+  border: 1px solid var(--sys-frame);
+  box-shadow: inset 0 0 0 0.125rem var(--sys-bg);
+  font-family: var(--font-name);
+  font-size: var(--sys-fs-plate);
+}
+.uc-seal.lvl.cantrip {
+  font-family: var(--font-label);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+}
