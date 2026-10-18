@@ -31,6 +31,7 @@ import type { MemberCharacterSnapshot } from "@/types/campaign";
 import type { RosterCharacterDoc } from "@/lib/character-cache";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
 import { asRaceId, resolveClassId, subclassIdByName } from "@/data/srd-names";
+import { deriveCharacter } from "@/lib/views/derive-character";
 
 /**
  * Build the party snapshot from EITHER a FULL parsed character (the cockpit
@@ -40,6 +41,11 @@ import { asRaceId, resolveClassId, subclassIdByName } from "@/data/srd-names";
  * that crashed the picker, #115). The discriminated-union input makes that omission
  * a COMPILE constraint, not a runtime sniff; the branch below is total.
  */
+function passivesOf(doc: CharacterDoc): NonNullable<MemberCharacterSnapshot["passives"]> {
+  const { perception, investigation, insight } = deriveCharacter(doc).passives;
+  return { perception, investigation, insight };
+}
+
 export function buildMemberSnapshot(
   doc: CharacterDoc | RosterCharacterDoc
 ): MemberCharacterSnapshot {
@@ -68,6 +74,8 @@ export function buildMemberSnapshot(
     // The hero's face for the party card (Storage URL + crop live on the doc).
     portraitUrl: doc.portraitUrl,
     portraitCrop: doc.portraitCrop,
+    // The passives come from the full sheet; a roster projection has none to give.
+    ...("projection" in c ? {} : { passives: passivesOf(doc as CharacterDoc) }),
   };
 }
 
