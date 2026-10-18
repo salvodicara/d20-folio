@@ -50,6 +50,14 @@ export function encounterRunning(facts: EncounterFacts): boolean {
   );
 }
 
+/** How the sheet plays right now: a fight (turns gate the economy) or exploration. */
+export type PlayMode = "combat" | "exploration";
+
+/** The one derivation the turn bar, the economy and the playbook share. */
+export function playMode(facts: EncounterFacts): PlayMode {
+  return encounterRunning(facts) ? "combat" : "exploration";
+}
+
 /**
  * A once-per-turn use (Sneak Attack, `recovery: "per-turn"`) is spent only inside a
  * fight; outside one there is no turn for it to wait on, so the use is only logged.

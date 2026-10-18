@@ -5,6 +5,7 @@
  * usually does on a turn, generated from its resolved actions. Ids and keys only:
  * labels, prose and icons belong to the view, which localizes every `why` key.
  */
+import type { PlayMode } from "@/lib/play/cast-execution";
 import type { ReactionTrigger, Recovery } from "@/data/types";
 import type { CombatAlgorithmStep } from "@/types/character";
 
@@ -24,7 +25,7 @@ export const ECONOMY_SLOTS: ReadonlyArray<EconomySlot> = [
  * `exploration` (rituals, rests, downtime) has none: every step is `anytime`, no
  * reaction waits for a trigger and the plan lists everything that applies now.
  */
-export type PlaybookMode = "combat" | "exploration";
+export type PlaybookMode = PlayMode;
 
 /** A step's slot: an economy slot in combat, `anytime` out of combat. */
 export type PlaybookSlot = EconomySlot | "anytime";
