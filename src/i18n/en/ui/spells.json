@@ -71,6 +71,7 @@
     "prepareToCast": "Prepare to cast",
     "filterByLevel": "Filter by spell level",
     "filterConcentration": "Only concentration spells",
-    "preparedMax": "Prepared max"
+    "preparedMax": "Prepared max",
+    "castRitualAria": "Cast {{name}} as a ritual (no slot, 10 minutes longer)"
   }
 }
