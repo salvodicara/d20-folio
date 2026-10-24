@@ -2,7 +2,7 @@
  * Pure play transitions for the character's active states (Rage, Bless lit on
  * yourself, a potion's timer): the character in, the next session out.
  */
-import { getSpellById } from "@/data/spells";
+import type { SrdSpellData } from "@/data/types";
 import type { Grant } from "@/lib/grants";
 import {
   potionStateGrant,
@@ -208,8 +208,11 @@ function choiceBundleKeys(grants: ReadonlyArray<Grant>): string[] {
  * Self form, Fire Shield's warm or chill, the weapon Shillelagh imbues). Each cast picks anew, so lighting the
  * state by a cast clears them and the rail asks again, as on the first cast.
  */
-export function castStateChoiceKeys(spellId: string, activeKey: string): string[] {
-  return (getSpellById(spellId)?.grants ?? []).flatMap((g) =>
+export function castStateChoiceKeys(
+  spell: Pick<SrdSpellData, "grants"> | undefined,
+  activeKey: string
+): string[] {
+  return (spell?.grants ?? []).flatMap((g) =>
     g.type === "while-active" && g.activeKey === activeKey
       ? choiceBundleKeys(g.grants)
       : []

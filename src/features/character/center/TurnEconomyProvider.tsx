@@ -152,6 +152,7 @@ import {
 import { getSpellById } from "@/data/spells";
 import { slotUsageKey } from "@/lib/cast-options";
 import { castPlan } from "@/lib/views/cast-plan";
+import { spellDataOf } from "@/lib/play/spell-identity";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";
@@ -1436,7 +1437,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         // A priced material component: "−300 mo" when consumed, else a reminder.
         const materialToastId = execution.withoutComponents
           ? null
-          : offerMaterialCost(action.spellId, t, locale);
+          : offerMaterialCost(action, t, locale);
         return () => {
           if (!canCommit()) return false;
           if (
@@ -1559,11 +1560,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     option: CastCommitOption,
     castLevel: number
   ): ResolvedAction {
-    const scaledAction = actionAtCastLevel(
-      action,
-      action.spellId ? getSpellById(action.spellId) : undefined,
-      castLevel
-    );
+    const scaledAction = actionAtCastLevel(action, spellDataOf(action), castLevel);
     if (option.kind !== "free-cast" || !action.spellId) return scaledAction;
     return applyCastSourceOverridesToAction(
       scaledAction,
@@ -1598,7 +1595,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       showToast({ message: t("combat.noSlotsRemaining"), duration: 2000 });
       return true;
     }
-    const spellData = action.spellId ? getSpellById(action.spellId) : undefined;
+    const spellData = spellDataOf(action);
     const finish = (
       option: CastCommitOption,
       metamagicIds: ReadonlyArray<string>

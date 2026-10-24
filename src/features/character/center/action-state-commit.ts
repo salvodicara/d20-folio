@@ -29,8 +29,8 @@ import {
 } from "@/lib/situational-states";
 import { castStateChoiceKeys } from "@/lib/play/states";
 import { castLitStates } from "@/lib/play/on-cast";
+import { spellDataOf, spellKeyOf } from "@/lib/play/spell-identity";
 import { castWeaponBinding, type WeaponBindingCast } from "@/lib/weapon-binding";
-import { getSpellById } from "@/data/spells";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { concentrationStatusKeys } from "@/lib/status";
 
@@ -80,10 +80,8 @@ export function activateActionState(
   const store = useCharacterStore.getState();
   // States the cast lights by itself ("Whenever you cast Divine Smite"), even for a
   // spell with no state of its own; undone with the cast.
-  const restoreCastLit =
-    action.source === "spell" && action.spellId
-      ? lightStatesActivatedByCast(action.spellId)
-      : () => undefined;
+  const castKey = action.source === "spell" ? spellKeyOf(action) : null;
+  const restoreCastLit = castKey ? lightStatesActivatedByCast(castKey) : () => undefined;
   const key = action.activatesKey;
   if (!key) return { activated: false, restore: restoreCastLit };
   const previousLevel = store.character?.session.activeSpellCastLevels?.[key];
@@ -106,19 +104,14 @@ export function activateActionState(
   // still-lit state, clears the remembered choice so the rail asks again. The same
   // cast keeps its pick across re-renders and reloads; undo puts the prior one back.
   const choiceKeys =
-    action.source === "spell" && action.spellId
-      ? castStateChoiceKeys(action.spellId, key)
-      : [];
+    action.source === "spell" ? castStateChoiceKeys(spellDataOf(action), key) : [];
   const priorChoices = Object.fromEntries(
     choiceKeys.map((bundleKey) => [
       bundleKey,
       store.character?.session.grantBundleChoices?.[bundleKey] ?? null,
     ])
   );
-  const spell =
-    action.source === "spell" && action.spellId
-      ? getSpellById(action.spellId)
-      : undefined;
+  const spell = action.source === "spell" ? spellDataOf(action) : undefined;
   const bound =
     binding && spell && store.character
       ? castWeaponBinding({ spell, ...binding }, store.character)

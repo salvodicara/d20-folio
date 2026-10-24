@@ -5,6 +5,7 @@
  * `{ gp, consumed }` the spell card's "M: 300 gp, consumed" tag reads): a consumed
  * cost is offered as a coin deduction, a kept one is only a reminder.
  */
+import { getSpellById } from "@/data/spells";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({
@@ -47,7 +48,7 @@ describe("the catalogue's costly material components", () => {
 
   it("finds priced spells, both consumed and kept", () => {
     expect(priced.length).toBeGreaterThan(30);
-    expect(castMaterialCost("revivify")).toEqual({
+    expect(castMaterialCost(getSpellById("revivify"))).toEqual({
       spellId: "revivify",
       gp: 300,
       consumed: true,
@@ -59,7 +60,7 @@ describe("the catalogue's costly material components", () => {
     "%s: the cast offers exactly its priced component",
     (_id, spell) => {
       const components = activityFromSpell(spell).cost.components;
-      expect(castMaterialCost(spell.id)).toEqual(
+      expect(castMaterialCost(spell)).toEqual(
         components?.gp
           ? { spellId: spell.id, gp: components.gp, consumed: !!components.consumed }
           : null
@@ -68,7 +69,7 @@ describe("the catalogue's costly material components", () => {
   );
 
   it("Gentle Repose consumes its 2 copper pieces (SRD 5.2.1)", () => {
-    expect(castMaterialCost("gentle-repose")).toEqual({
+    expect(castMaterialCost(getSpellById("gentle-repose"))).toEqual({
       spellId: "gentle-repose",
       gp: 0.02,
       consumed: true,
@@ -77,7 +78,7 @@ describe("the catalogue's costly material components", () => {
 
   it("a custom or unknown spell has no cost", () => {
     expect(castMaterialCost(undefined)).toBeNull();
-    expect(castMaterialCost("not-a-spell")).toBeNull();
+    expect(castMaterialCost(getSpellById("not-a-spell"))).toBeNull();
   });
 });
 
