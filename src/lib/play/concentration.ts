@@ -86,8 +86,9 @@ export function changeConcentration(
  * the world-side twin of {@link changeConcentration}'s teardown, through the canonical
  * kernel end (`planEngineConcentrationEnd`: the root, the concentration effect and
  * every standing it sourced end in one wave), committed as one journal action whose
- * mirror keeps `session.concentration` coherent. The caller mints `actionId` and keeps
- * it, so an undo can reverse that very action. Null when the
+ * mirror keeps `session.concentration` coherent. The caller mints `actionId` (the
+ * journal stores it), so the play log replays the end exactly and an undo can reverse
+ * that very action. Null when the
  * world holds no matching engine concentration (the sheet's teardown is then complete).
  */
 export function endEngineConcentration(

@@ -1963,8 +1963,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         combatPendingConcentrationSaves: nextPendingConcentrationSaves,
       });
       // The sheet's teardown and the engine's twin, as one play-log event. The engine
-      // end's journal id is minted here and travels in the event, so the undo below
-      // reverses that very action (a no-op when the dropped spell wasn't engine-held).
+      // end's journal id is minted here and travels in the event, so the log replays it
+      // exactly and the undo below reverses that very action (a no-op when the dropped
+      // spell wasn't engine-held).
       const engineActionId = `concentration-break-${crypto.randomUUID()}`;
       get().dispatch({
         kind: "set-concentration",
