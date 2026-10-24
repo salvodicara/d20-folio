@@ -9,6 +9,8 @@ import {
   resolveOnCastTrackerRefills,
 } from "@/lib/on-cast-effects";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { resolveGrantActiveKey, type WhileActiveDuration } from "@/lib/grants";
+import { resolveLifecycleGrantSources } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
 import {
@@ -81,4 +83,37 @@ export function statesActivatedByCast(doc: CharacterDoc, spellId: string): strin
     .filter((group) => group.activatedByCast?.includes(spellId))
     .map((group) => group.key);
   return [...new Set(keys)];
+}
+
+/**
+ * How long each state a cast of `spellId` lights lasts (see
+ * {@link statesActivatedByCast}): its own turn boundary ("until the start of your
+ * next turn") or round count, as its grant declares. A state with neither lasts until
+ * it is ended by hand.
+ */
+export function castLitStates(
+  doc: CharacterDoc,
+  spellId: string
+): Array<{
+  key: string;
+  turnBoundary?: { turns: number; phase: "turn-start" | "turn-end" };
+  rounds?: number;
+}> {
+  const keys = statesActivatedByCast(doc, spellId);
+  if (keys.length === 0) return [];
+  const durations = new Map<string, WhileActiveDuration | undefined>();
+  for (const source of resolveLifecycleGrantSources(doc)) {
+    for (const grant of source.grants ?? []) {
+      if (grant.type !== "while-active") continue;
+      durations.set(resolveGrantActiveKey(source, grant.activeKey), grant.duration);
+    }
+  }
+  return keys.map((key) => {
+    const duration = durations.get(key);
+    if (duration?.kind === "turn-boundary")
+      return { key, turnBoundary: { turns: duration.turns, phase: duration.phase } };
+    if (duration && "maxRounds" in duration && duration.maxRounds)
+      return { key, rounds: duration.maxRounds };
+    return { key };
+  });
 }
