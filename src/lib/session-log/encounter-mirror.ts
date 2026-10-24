@@ -75,7 +75,7 @@ export function chronicleToPlayEvent(event: CombatChronicleEvent): PlayEvent | n
       return {
         kind: "stat-change",
         stat: event.stat,
-        from: event.from,
+        ...(event.from === undefined ? {} : { from: event.from }),
         to: event.to,
         target: event.targetId,
       };

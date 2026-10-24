@@ -26,6 +26,7 @@ import {
   isDown,
   setMonsterAc,
   setMonsterCondition,
+  setMonsterSpeed,
   setMonsterTempHp,
 } from "@/features/campaigns/encounter";
 
@@ -221,6 +222,29 @@ export function recordMonsterAc(
     stat: "ac",
     from: before.ac,
     to: after.ac,
+  });
+}
+
+/** Set a MONSTER's walking-speed override ({@link setMonsterSpeed}) and record the
+ *  change as a `stat-change` beat ("Goblin: Speed 30 ft → 20 ft"). `shownFt` is the
+ *  speed the card showed before the edit (the override, else the stat block's, which
+ *  only the card knows); `null` when unknown, and the beat then carries only the new
+ *  speed. A no-op edit (equal to what was shown, or rejected) records nothing. */
+export function recordMonsterSpeed(
+  state: EncounterState,
+  monsterId: string,
+  feet: number,
+  shownFt: number | null
+): EncounterState {
+  const next = setMonsterSpeed(state, monsterId, feet);
+  const after = findMonster(next, monsterId)?.speed;
+  if (next === state || after === undefined || after === shownFt) return state;
+  return appendEvent(next, {
+    kind: "stat-change",
+    targetId: monsterId,
+    stat: "speed",
+    ...(shownFt === null ? {} : { from: shownFt }),
+    to: after,
   });
 }
 

@@ -18,6 +18,13 @@ export function isMonsterSpeedFt(value: unknown): value is number {
   );
 }
 
+/** A DM-entered speed as a storable value: rounded to whole feet and clamped to
+ *  `[0, MONSTER_SPEED_MAX_FT]`; `null` for a non-finite entry. */
+export function clampMonsterSpeedFt(feet: number): number | null {
+  if (!Number.isFinite(feet)) return null;
+  return Math.min(MONSTER_SPEED_MAX_FT, Math.max(0, Math.round(feet)));
+}
+
 /** The speed to show: the override when present (0 included), else the stat
  *  block's walking speed, else `null` (a hand-typed monster with no stat block). */
 export function monsterWalkingSpeedFt(

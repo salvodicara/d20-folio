@@ -12,6 +12,7 @@ import {
   setHp,
   setMonsterAc,
   setMonsterCondition,
+  setMonsterSpeed,
   setMonsterTempHp,
   startEncounter,
   toggleCondition,
@@ -148,6 +149,28 @@ describe("encounter scalar monster model", () => {
     expect(setMonsterAc(seeded, "monster-1", 15)).toBe(seeded);
     expect(setMonsterAc(seeded, "monster-1", Number.NaN)).toBe(seeded);
     expect(setMonsterAc(seeded, "pc-u1", 20)).toBe(seeded);
+    expect(parseEncounterState(slowed)).toBe(slowed);
+  });
+
+  it("sets a monster's speed override in whole feet clamped to 0-300, a no-op when equal or for a PC", () => {
+    const seeded = addMonster(startEncounter({ u1: { characterId: "c1" } }, ["u1"], 1), {
+      ...goblins,
+      count: 1,
+    });
+    // Slow: a 30 ft goblin drops to 20 ft.
+    const slowed = setMonsterSpeed(seeded, "monster-1", 20);
+    expect(monster(slowed, "monster-1").speed).toBe(20);
+    expect(monster(setMonsterSpeed(seeded, "monster-1", 0), "monster-1").speed).toBe(0);
+    expect(monster(setMonsterSpeed(seeded, "monster-1", 17.6), "monster-1").speed).toBe(
+      18
+    );
+    expect(monster(setMonsterSpeed(seeded, "monster-1", 999), "monster-1").speed).toBe(
+      300
+    );
+    expect(monster(setMonsterSpeed(seeded, "monster-1", -5), "monster-1").speed).toBe(0);
+    expect(setMonsterSpeed(slowed, "monster-1", 20)).toBe(slowed);
+    expect(setMonsterSpeed(seeded, "monster-1", Number.NaN)).toBe(seeded);
+    expect(setMonsterSpeed(seeded, "pc-u1", 20)).toBe(seeded);
     expect(parseEncounterState(slowed)).toBe(slowed);
   });
 

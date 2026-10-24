@@ -30,7 +30,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     traits: [
       { id: "amphibious", kind: "narrative" },
       { id: "eldritch-restoration", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
       { id: "mucus-cloud", kind: "save", save: "CON", dc: 14, onSuccess: "none" },
       { id: "probing-telepathy", kind: "narrative" },
     ],
@@ -100,7 +100,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 13000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -172,7 +172,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 18000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -240,7 +242,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 11500,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -330,7 +334,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 15000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -421,7 +425,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 13000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -499,7 +505,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 20000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -581,7 +587,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 15000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -652,7 +658,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 20000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -720,7 +728,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 18000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -801,7 +811,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 11500,
     traits: [
       { id: "ice-walk", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -951,7 +961,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 41000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -1028,7 +1038,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 62000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1096,7 +1108,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 33000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1186,7 +1200,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 50000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -1282,7 +1296,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 41000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1362,7 +1378,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 75000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -1446,7 +1462,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 50000,
     traits: [
       { id: "amphibious", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -1517,7 +1533,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 75000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1585,7 +1603,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60, darkvisionFt: 120 },
     languages: { ids: ["common", "draconic"] },
     xpInLair: 62000,
-    traits: [{ id: "legendary-resistance", kind: "narrative" }],
+    traits: [
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1671,7 +1691,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     xpInLair: 33000,
     traits: [
       { id: "ice-walk", kind: "narrative" },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
       { id: "multiattack", kind: "narrative" },
@@ -2283,7 +2303,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         kind: "narrative",
         damage: [{ dice: "3d8", damageType: "fire" }],
       },
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
       {
         id: "magic-resistance",
         kind: "narrative",

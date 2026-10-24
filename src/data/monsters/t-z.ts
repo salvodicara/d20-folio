@@ -393,7 +393,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["celestial", "elvish", "sylvan"], telepathyFt: 120 },
     traits: [
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
       {
         id: "magic-resistance",
         kind: "narrative",
@@ -471,7 +471,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common"], plusAnyCount: 2 },
     xpInLair: 11500,
     traits: [
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
       { id: "misty-escape", kind: "narrative" },
       { id: "spider-climb", kind: "narrative" },
       { id: "vampire-weakness", kind: "narrative" },

@@ -19,12 +19,14 @@ export interface SessionReportNames {
   spell(ref: ConcentrationRef): string;
   /** A feature/spell/item id's display name (a status's source); the id when unknown. */
   source?(sourceId: string): string;
+  /** A distance in feet in the reader's unit ("30 ft" / "9 m"); feet when absent. */
+  distance?(ft: number): string;
 }
 
 /** The results the report can say; another stored value is left out of the line. */
 const OUTCOMES = new Set(["hit", "miss", "critical", "saved", "failed"]);
 /** The stats this version can name; a newer app's stat reads as an unknown line. */
-const KNOWN_STATS: ReadonlySet<string> = new Set(["ac"]);
+const KNOWN_STATS: ReadonlySet<string> = new Set(["ac", "speed"]);
 
 export function localizePlayEvent(
   event: PlayEvent,
@@ -132,14 +134,23 @@ export function localizePlayEvent(
           }),
         })
       );
-    case "stat-change":
+    case "stat-change": {
       // A stat this version doesn't know (a newer app's) degrades like an unknown kind.
       if (!KNOWN_STATS.has(event.stat)) break;
-      return t(`sessionReport.statChange.${event.stat}`, {
-        target: who(event.target),
-        from: event.from,
-        to: event.to,
-      });
+      const value = (n: number): string | number =>
+        event.stat === "speed" ? (names.distance?.(n) ?? `${n} ft`) : n;
+      // No value before (a hand-typed monster's unknown speed): only the new one.
+      return event.from === undefined
+        ? t(`sessionReport.statChange.${event.stat}Set`, {
+            target: who(event.target),
+            to: value(event.to),
+          })
+        : t(`sessionReport.statChange.${event.stat}`, {
+            target: who(event.target),
+            from: value(event.from),
+            to: value(event.to),
+          });
+    }
     case "death-save":
       return t(`sessionReport.deathSave.${event.outcome}`, { actor: who(event.actor) });
     case "rest":
