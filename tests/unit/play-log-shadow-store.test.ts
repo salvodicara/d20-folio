@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
+import type { CharacterDoc } from "@/types/character";
 import { drinkPotion } from "@/lib/play/states";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { potionTimerKey } from "@/lib/potion-states";
@@ -315,6 +316,85 @@ describe("play log shadow in the store", () => {
     expect(store().character?.session.effectTimers?.["barbarian-rage"]?.roundsLeft).toBe(
       2
     );
+  });
+
+  describe("an item's state ends when its copy stops being held (Ring of Invisibility)", () => {
+    const ringKey = "magic-item:ring-copy:ring-of-invisibility";
+    const wearingRing = (): CharacterDoc => {
+      const doc = makeCharacterDoc({
+        classId: "fighter",
+        level: 5,
+        equipment: [
+          {
+            srdId: "ring-of-invisibility",
+            instanceId: "ring-copy",
+            equipped: true,
+            attuned: true,
+            quantity: 1,
+          },
+        ],
+      });
+      doc.id = `shadow-ring-${Math.random().toString(36).slice(2)}`;
+      doc.session.activeFeatures = [ringKey];
+      useCharacterStore.setState({
+        character: doc,
+        loading: false,
+        error: null,
+        readonly: false,
+      });
+      return doc;
+    };
+    const editEquipment = (equipment: CharacterDoc["character"]["equipment"]) => {
+      const cur = store().character;
+      if (!cur) throw new Error("no character");
+      store().setCharacter({ ...cur, character: { ...cur.character, equipment } });
+    };
+
+    it("taking the ring off ends Invisible, with its log line, through the log", () => {
+      const doc = wearingRing();
+      expect(effectiveSessionConditions(doc.session)).toContain("invisible");
+      const ring = doc.character.equipment[0];
+      if (!ring || "custom" in ring) throw new Error("no ring");
+      editEquipment([{ ...ring, equipped: false }]);
+      const after = store().character;
+      if (!after) throw new Error("no character");
+      expect(after.session.activeFeatures ?? []).not.toContain(ringKey);
+      expect(effectiveSessionConditions(after.session)).not.toContain("invisible");
+      expect(after.session.logEntries.at(-1)?.event).toMatchObject({
+        kind: "condition-loss",
+        conditionId: "invisible",
+      });
+      expect(playLogShadowStats(doc.id)).toEqual({
+        entries: 1,
+        checkpoints: 1,
+        mismatches: 0,
+      });
+    });
+
+    it("so does the ring leaving the bag", () => {
+      wearingRing();
+      editEquipment([]);
+      expect(store().character?.session.activeFeatures ?? []).not.toContain(ringKey);
+    });
+
+    it("an edit that keeps it worn changes nothing", () => {
+      const doc = wearingRing();
+      const ring = doc.character.equipment[0];
+      if (!ring || "custom" in ring) throw new Error("no ring");
+      editEquipment([{ ...ring, notes: "a plain band" }]);
+      expect(store().character?.session.activeFeatures).toContain(ringKey);
+      expect(playLogShadowStats(doc.id)).toBeNull();
+    });
+
+    it("loading a character is not an edit: nothing is written to its log", () => {
+      const doc = wearingRing();
+      const ring = doc.character.equipment[0];
+      if (!ring || "custom" in ring) throw new Error("no ring");
+      const other = { ...doc, id: `${doc.id}-other` };
+      other.character = { ...doc.character, equipment: [{ ...ring, equipped: false }] };
+      store().setCharacter(other);
+      expect(playLogShadowStats(other.id)).toBeNull();
+    });
   });
 
   it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {
