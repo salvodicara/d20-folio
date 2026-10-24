@@ -754,7 +754,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
         type: "while-active",
         activeKey: "spell-see-invisibility",
         duration: timedSpellDuration(60),
-        grants: [{ type: "defense-note" }],
+        grants: [{ type: "see-invisible" }],
       },
     ],
     source: "SRD",

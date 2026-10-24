@@ -23,7 +23,9 @@
  *  - Meld into Stone: Disadvantage on Wisdom (Perception) checks to hear outside.
  *  - Mislead: the caster gains the Invisible condition; the double is a note.
  *  - The rest light a reminder on the right creature(s) for the right time.
- *    Guidance, Resistance and Glibness moved to batch 2 (their numbers).
+ *    Guidance, Resistance and Glibness moved to batch 2 (their numbers); See
+ *    Invisibility, the three Detect spells, Feather Fall and Expeditious Retreat
+ *    moved to batch 3.
  */
 import { describe, expect, it } from "vitest";
 import { getSpellById } from "@/data/spells";
@@ -190,28 +192,6 @@ const ROWS: ReadonlyArray<Row> = [
     lit: { notes: 1 },
   },
   {
-    id: "feather-fall",
-    recipient: "selected",
-    targeting: { affinity: "any", maxTargets: 5 },
-    minutes: 1,
-    concentration: false,
-    lit: { notes: 1 },
-  },
-  {
-    id: "expeditious-retreat",
-    recipient: "caster",
-    minutes: 10,
-    concentration: true,
-    lit: { notes: 1 },
-  },
-  {
-    id: "see-invisibility",
-    recipient: "caster",
-    minutes: 60,
-    concentration: false,
-    lit: { notes: 1 },
-  },
-  {
     id: "comprehend-languages",
     recipient: "caster",
     minutes: 60,
@@ -230,27 +210,6 @@ const ROWS: ReadonlyArray<Row> = [
     recipient: "caster",
     minutes: 60,
     concentration: false,
-    lit: { notes: 1 },
-  },
-  {
-    id: "detect-magic",
-    recipient: "caster",
-    minutes: 10,
-    concentration: true,
-    lit: { notes: 1 },
-  },
-  {
-    id: "detect-evil-and-good",
-    recipient: "caster",
-    minutes: 10,
-    concentration: true,
-    lit: { notes: 1 },
-  },
-  {
-    id: "detect-poison-and-disease",
-    recipient: "caster",
-    minutes: 10,
-    concentration: true,
     lit: { notes: 1 },
   },
   {

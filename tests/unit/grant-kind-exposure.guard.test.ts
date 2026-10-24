@@ -559,6 +559,16 @@ const EXPOSURE: Record<string, Exposure> = {
   "damage-die-reduction": {
     open: "core seam deriveDamageDieReductions (2026-10-24); no rendered surface yet",
   },
+  // The Detect spells' sense: `deriveSensesAndSpeeds().detections` (and
+  // `deriveCharacter().detections`) is the core seam; the old rail shows feet only.
+  detection: {
+    open: "core seam deriveSensesAndSpeeds detections (2026-10-24); no rendered surface yet",
+  },
+  // Feather Fall: `slowedFallFtPerRound` + `fallDamageDice(…, slowed)` (play/fall)
+  // are the core seam; the HP popover's fall preset does not read it yet.
+  "slowed-fall": {
+    open: "core seam slowedFallFtPerRound / fallDamageDice (2026-10-24); the HP fall preset does not read it yet",
+  },
 };
 
 describe("grant-kind exposure guard — no Grant kind ships invisible", () => {

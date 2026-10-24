@@ -39,6 +39,7 @@ import {
   deriveSensesAndSpeeds,
   deriveDamageDefenses,
   deriveDefenseKind,
+  type DetectionEntry,
   type SenseEntry,
   type SpeedEntry,
 } from "@/lib/views/sheet-view";
@@ -78,6 +79,10 @@ export interface CharacterSheet {
   speeds: SpeedEntry[];
   /** Darkvision and kin with a positive range (hand-set ranges win). */
   senses: SenseEntry[];
+  /** Senses with no distance limit, only line of sight (See Invisibility). */
+  unlimitedSenses: SenseEntry["kind"][];
+  /** What the character senses the presence of (Detect Magic), with its range. */
+  detections: DetectionEntry[];
   /** The primary caster's DC and attack (override-first), or null for a non-caster. */
   spellcasting: { ability: AbilityCode; saveDc: number; attackBonus: number } | null;
   /** Active condition ids, including those riding concentration and encounter effects. */
@@ -207,6 +212,8 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     walkingSpeedFt,
     speeds,
     senses,
+    unlimitedSenses: derived.unlimitedSenses,
+    detections: derived.detections,
     spellcasting,
     conditions: effectiveSessionConditions(session),
     defenses,

@@ -189,7 +189,6 @@ const STANDING_SPELLS = [
     recipient: "selected",
     targeting: { affinity: "any", maxTargets: 5 },
   },
-  { id: "expeditious-retreat", recipient: "caster" },
   {
     id: "protection-from-evil-and-good",
     recipient: "selected",

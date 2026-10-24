@@ -46,6 +46,7 @@
   "character.background",
   "character.class",
   "character.damageSource_spell",
+  "character.detect_magic",
   "character.equipment",
   "character.health.hitDice",
   "character.health.hpAbbr",

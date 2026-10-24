@@ -14,7 +14,14 @@
  * the bilingual `LocaleText` descriptions that already live on the grants.
  */
 
-import { ruleNumber, SENSE_KINDS } from "@/lib/rules";
+import {
+  DETECTION_TARGETS,
+  ruleFlag,
+  ruleNumber,
+  SENSE_KINDS,
+  type DetectionTarget,
+  type SenseKind,
+} from "@/lib/rules";
 import type {
   AggregatedGrants,
   AdvantageClause,
@@ -638,7 +645,7 @@ export function deriveDamageDefenses(
 // ─── L6 — non-walking speeds + non-darkvision senses ────────────────────────
 
 /** The sense kinds (single home: `lib/rules`); re-exported for the i18n guard. */
-export { SENSE_KINDS };
+export { DETECTION_TARGETS, SENSE_KINDS };
 
 export interface SenseEntry {
   /** Sense kind — used for the i18n key + glyph. */
@@ -659,8 +666,19 @@ export interface SpeedEntry {
   rangeFt: number;
 }
 
+/** A `detection` sense: what the character senses, and within how many feet. */
+export interface DetectionEntry {
+  what: DetectionTarget;
+  rangeFt: number;
+}
+
 export interface SensesSpeedsView {
+  /** Senses with a range in feet. */
   senses: SenseEntry[];
+  /** Senses with no distance limit, only line of sight (See Invisibility). */
+  unlimitedSenses: SenseKind[];
+  /** What the character senses the presence of (Detect Magic), in display order. */
+  detections: DetectionEntry[];
   speeds: SpeedEntry[];
   airAndWaterBreathing: boolean;
 }
@@ -697,10 +715,18 @@ export function deriveSensesAndSpeeds(
     senses.push({ kind: "tremorsense", rangeFt: aggregate.tremorsenseFt });
   if (aggregate.truesightFt > 0)
     senses.push({ kind: "truesight", rangeFt: aggregate.truesightFt });
-  if (aggregate.seeInvisibleFt > 0)
+  const unlimitedSenses = SENSE_KINDS.filter((kind) =>
+    ruleFlag(aggregate.values, `sense:${kind}:unlimited`)
+  );
+  // An unlimited sense already covers every range of the same kind.
+  if (aggregate.seeInvisibleFt > 0 && !unlimitedSenses.includes("see-invisible"))
     senses.push({ kind: "see-invisible", rangeFt: aggregate.seeInvisibleFt });
   const xRayFt = ruleNumber(aggregate.values, "sense:x-ray");
   if (xRayFt > 0) senses.push({ kind: "x-ray", rangeFt: xRayFt });
+  const detections = DETECTION_TARGETS.flatMap((what) => {
+    const rangeFt = ruleNumber(aggregate.values, `detect:${what}`);
+    return rangeFt > 0 ? [{ what, rangeFt }] : [];
+  });
 
   const speeds: SpeedEntry[] = [];
   const fly = resolveNonWalkingSpeed(aggregate.flySpeed, walkingSpeedFt);
@@ -712,6 +738,8 @@ export function deriveSensesAndSpeeds(
 
   return {
     senses,
+    unlimitedSenses,
+    detections,
     speeds,
     airAndWaterBreathing: aggregate.airAndWaterBreathing,
   };
