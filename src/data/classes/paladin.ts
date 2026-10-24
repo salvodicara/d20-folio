@@ -422,6 +422,7 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
       {
         type: "while-active",
         activeKey: "paladin-devotion-smite-of-protection",
+        activatedByCast: ["divine-smite"],
         duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
         grants: [
           {

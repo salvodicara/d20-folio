@@ -726,6 +726,8 @@ export interface ActivatableGroup {
   sourceId: string;
   label: LocText;
   active: boolean;
+  /** Spell ids whose cast lights this state (the grant's `activatedByCast`). */
+  activatedByCast?: ReadonlyArray<string>;
 }
 
 /**
@@ -3493,6 +3495,7 @@ export function evaluateGrants(
               ? (sourceLabels.get(sourceId) ?? grantField(gref, "label"))
               : grantField(gref, "label", g.label),
           active,
+          ...(g.activatedByCast ? { activatedByCast: g.activatedByCast } : {}),
         });
         if (active) {
           for (let i = 0; i < g.grants.length; i++) {
