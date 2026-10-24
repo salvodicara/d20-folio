@@ -275,6 +275,9 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
     id: "ranger-relentless-hunter",
     class: "ranger",
     level: 13,
+    // "Taking damage can't break your Concentration on Hunter's Mark": damage
+    // queues no Concentration save while Hunter's Mark is the held spell.
+    grants: [{ type: "concentration-damage-proof", spellId: "hunters-mark" }],
     source: "SRD",
   },
   {
@@ -432,10 +435,18 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
     class: "ranger",
     subclass: "hunter",
     level: 11,
-    // Conditional cleave of the Hunter's Mark bonus die — no numeric grant kind
-    // models "copy this turn's Hunter's Mark damage to a second creature", so it
-    // stays a descriptive feature (REPLACES the removed 2014 Volley/Whirlwind
+    // "Once per turn when you deal damage to a creature marked by your Hunter's
+    // Mark, you can also deal that spell's extra damage to a different creature":
+    // a free row, once per turn (REPLACES the removed 2014 Volley/Whirlwind
     // "Multiattack" at this level).
+    grants: [
+      {
+        id: "superior-hunters-prey",
+        type: "granted-action",
+        slot: "free",
+        maxUsesPerTurn: 1,
+      },
+    ],
     source: "SRD",
   },
   {

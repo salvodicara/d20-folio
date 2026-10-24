@@ -201,10 +201,17 @@ describe("action save DC guard", () => {
 
   it("every save-forcing maneuver a Battle Master knows reaches the sweep", () => {
     const forcing = SRD_MANEUVERS.filter((m) => m.save).map((m) => m.id);
+    // Other granted actions force saves too (Open Hand Technique); only maneuvers count here.
+    const maneuverIds = new Set(SRD_MANEUVERS.map((m) => m.id));
     const swept = new Set<string>();
     for (const [, , a] of sweep()) {
-      if (a.id.startsWith("granted-action:") && a.summary.saveDcParts) {
-        swept.add(a.id.split(":")[1] ?? "");
+      const sourceId = a.id.split(":")[1] ?? "";
+      if (
+        a.id.startsWith("granted-action:") &&
+        maneuverIds.has(sourceId) &&
+        a.summary.saveDcParts
+      ) {
+        swept.add(sourceId);
       }
     }
     expect([...swept].sort()).toEqual([...forcing].sort());

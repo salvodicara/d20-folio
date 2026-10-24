@@ -562,6 +562,11 @@
     "description": "Ogni volta che usi Recuperare Energie, puoi muoverti fino a metà della tua Velocità senza provocare Attacchi di Opportunità.",
     "name": "Spostamento Tattico"
   },
+  "fighter-tactical-shift.grants.tactical-shift": {
+    "description": "Muoviti fino a metà della tua Velocità senza provocare Attacchi di Opportunità.",
+    "name": "Spostamento Tattico",
+    "trigger": "Quando usi Recuperare Energie."
+  },
   "fighter-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di tre tipi di armi Semplici o da Guerra a tua scelta, che diventano quattro al 4° livello, cinque al 10° e sei al 16°. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
     "name": "Padronanza d'Armi"
@@ -660,6 +665,21 @@
     "description": "Ogni volta che colpisci una creatura con un attacco di Raffica di Colpi, puoi imporre al bersaglio uno dei seguenti effetti: Disorientamento — non può effettuare Attacchi di Opportunità fino all'inizio del suo prossimo turno; Spinta — deve superare un TS su Forza o essere spinta fino a 4,5 metri da te; oppure Rovesciamento — deve superare un TS su Destrezza o subire la condizione Prono.",
     "name": "Tecnica della Mano Aperta"
   },
+  "monk-open-hand-technique.grants.addle": {
+    "description": "Il bersaglio non può effettuare Attacchi di Opportunità fino all'inizio del suo prossimo turno.",
+    "name": "Disorientamento",
+    "trigger": "Quando colpisci una creatura con un attacco di Raffica di Colpi."
+  },
+  "monk-open-hand-technique.grants.push": {
+    "description": "Il bersaglio deve superare un tiro salvezza su Forza o essere spinto fino a 4,5 metri da te.",
+    "name": "Spinta",
+    "trigger": "Quando colpisci una creatura con un attacco di Raffica di Colpi."
+  },
+  "monk-open-hand-technique.grants.topple": {
+    "description": "Il bersaglio deve superare un tiro salvezza su Destrezza o subire la condizione Prono.",
+    "name": "Rovesciamento",
+    "trigger": "Quando colpisci una creatura con un attacco di Raffica di Colpi."
+  },
   "monk-open-hand-wholeness-of-body": {
     "description": "Ottieni la capacità di curarti. Come Azione Bonus, recuperi Punti Ferita pari a un tiro del tuo dado Arti Marziali più il tuo modificatore di Saggezza (minimo 1 Punto Ferita). Puoi usarlo un numero di volte pari al tuo modificatore di Saggezza (minimo una), recuperando tutti gli usi spesi al termine di un Riposo Lungo.",
     "name": "Integrità del Corpo"
@@ -690,6 +710,11 @@
   "monk-self-restoration": {
     "description": "Alla fine di ciascuno dei tuoi turni, puoi rimuovere una delle seguenti condizioni da te stesso: Affascinato, Spaventato o Avvelenato. Inoltre, rinunciare a cibo e bevande non ti conferisce livelli di Indebolimento.",
     "name": "Autorigenerazione"
+  },
+  "monk-self-restoration.grants.self-restoration": {
+    "description": "Rimuovi da te stesso una delle seguenti condizioni: Affascinato, Spaventato o Avvelenato.",
+    "name": "Autorigenerazione",
+    "trigger": "Alla fine di ciascuno dei tuoi turni."
   },
   "monk-slow-fall": {
     "description": "Puoi usare la tua Reazione quando cadi per ridurre qualsiasi danno da caduta che subisci di un ammontare pari a cinque volte il tuo livello da Monaco.",
@@ -807,6 +832,9 @@
   "paladin-devotion-smite-of-protection": {
     "description": "La tua punizione magica ora irradia energia protettiva. Ogni volta che lanci Punizione Divina, tu e i tuoi alleati ottenete Mezza Copertura mentre vi trovate nella tua Aura di Protezione. L'aura mantiene questo beneficio fino all'inizio del tuo turno successivo.",
     "name": "Punizione Protettiva"
+  },
+  "paladin-devotion-smite-of-protection.grants.0": {
+    "label": "Punizione Protettiva"
   },
   "paladin-divine-smite": {
     "description": "Hai sempre preparato l'incantesimo Punizione Divina. Puoi lanciarlo senza consumare uno slot incantesimo, ma devi completare un Riposo Lungo prima di poterlo lanciare nuovamente in questo modo.",
@@ -932,6 +960,11 @@
     "description": "Una volta per turno quando infliggi danni a una creatura segnata dal tuo Marchio del Cacciatore, puoi infliggere anche i danni extra di quell'incantesimo a una creatura diversa che puoi vedere entro 9 metri dalla prima creatura.",
     "name": "Preda del Cacciatore Superiore"
   },
+  "ranger-hunter-superior-hunters-prey.grants.superior-hunters-prey": {
+    "description": "Infliggi anche i danni extra del Marchio del Cacciatore a una creatura diversa che puoi vedere entro 9 metri dalla prima.",
+    "name": "Preda del Cacciatore Superiore",
+    "trigger": "Quando infliggi danni a una creatura segnata dal tuo Marchio del Cacciatore."
+  },
   "ranger-hunter-superior-hunters-defense": {
     "description": "Quando subisci danni, puoi usare una Reazione per ottenere Resistenza a quel danno e a qualsiasi altro danno dello stesso tipo fino alla fine del turno in corso.",
     "name": "Difesa del Cacciatore Superiore"
@@ -959,7 +992,7 @@
     "description": "Tiri per colpire contro il bersaglio del tuo Marchio del Cacciatore"
   },
   "ranger-relentless-hunter": {
-    "description": "Il tuo Marchio del Cacciatore non richiede più Concentrazione.",
+    "description": "Subire danni non può interrompere la tua Concentrazione sul Marchio del Cacciatore.",
     "name": "Cacciatore Implacabile"
   },
   "ranger-roving": {
@@ -1032,6 +1065,9 @@
   "rogue-elusive": {
     "description": "Sei così elusivo che gli attaccanti raramente ottengono il sopravvento su di te. Nessun tiro per colpire ha Vantaggio contro di te mentre non sei Incapacitato.",
     "name": "Inafferrabile"
+  },
+  "rogue-elusive.grants.0": {
+    "description": "Nessun tiro per colpire ha Vantaggio contro di te mentre non sei Incapacitato"
   },
   "rogue-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
@@ -1123,6 +1159,11 @@
   "sorcerer-arcane-apotheosis": {
     "description": "Mentre il tuo privilegio Stregoneria Innata è attivo, puoi usare un'opzione di Metamagia in ognuno dei tuoi turni senza spendere Punti Stregoneria per essa.",
     "name": "Apoteosi Arcana"
+  },
+  "sorcerer-arcane-apotheosis.grants.arcane-apotheosis": {
+    "description": "Usa un'opzione di Metamagia senza spendere Punti Stregoneria per essa.",
+    "name": "Apoteosi Arcana",
+    "trigger": "Mentre la tua Stregoneria Innata è attiva."
   },
   "sorcerer-asi": {
     "description": "Puoi aumentare un punteggio di caratteristica di 2, o due punteggi di caratteristica di 1 ciascuno. In alternativa, puoi scegliere un talento. Non puoi aumentare un punteggio oltre 20 con questo privilegio.",
@@ -1316,6 +1357,11 @@
   "wizard-evoker-sculpt-spells": {
     "description": "Puoi creare sacche di relativa sicurezza all'interno degli effetti delle tue invocazioni. Quando lanci un incantesimo di Invocazione che influenza altre creature che puoi vedere, puoi sceglierne un numero pari a 1 più il livello dell'incantesimo. Le creature scelte superano automaticamente i loro tiri salvezza contro l'incantesimo e non subiscono alcun danno se normalmente ne subirebbero la metà superando il tiro salvezza.",
     "name": "Plasmare Incantesimi"
+  },
+  "wizard-evoker-sculpt-spells.grants.sculpt-spells": {
+    "description": "Scegli fino a 1 più il livello dell'incantesimo di quelle creature: superano automaticamente i tiri salvezza contro l'incantesimo e non subiscono danni se normalmente ne subirebbero la metà superando il tiro salvezza.",
+    "name": "Plasmare Incantesimi",
+    "trigger": "Quando lanci un incantesimo di Invocazione che influenza altre creature che puoi vedere."
   },
   "wizard-memorize-spell": {
     "description": "Ogni volta che finisci un Riposo Breve, puoi studiare il tuo libro degli incantesimi e sostituire uno degli incantesimi da Mago di livello 1+ che hai preparato con un altro incantesimo di livello 1+ dal tuo libro. (2024: nessun limite di una volta per Riposo Lungo.)",

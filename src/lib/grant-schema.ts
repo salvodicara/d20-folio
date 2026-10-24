@@ -265,6 +265,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
   "concentration-blocked": objectSchema({
     type: literalSchema("concentration-blocked"),
   }),
+  /**
+   * Taking damage can't break your Concentration on `spellId` (Relentless
+   * Hunter on Hunter's Mark): damage queues no Concentration save while that
+   * spell is the one held. Dropping to 0 HP still ends it.
+   */
+  "concentration-damage-proof": objectSchema({
+    spellId: stringSchema,
+    type: literalSchema("concentration-damage-proof"),
+  }),
   "healing-blocked": objectSchema({
     type: literalSchema("healing-blocked"),
   }),

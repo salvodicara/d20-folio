@@ -456,6 +456,9 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     id: "rogue-elusive",
     class: "rogue",
     level: 18,
+    // "No attack roll has Advantage against you while you aren't Incapacitated":
+    // a defense line on the sheet (the attacker's roll is the DM's).
+    grants: [{ type: "defense-note" }],
     source: "SRD",
   },
   {

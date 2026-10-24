@@ -1158,6 +1158,12 @@ export interface RollFloorClause {
  * A resolved face-triggered d20 reroll (Halfling Luck): an entered d20 showing
  * one of `faces` may be rerolled once, and the new face stands.
  */
+export interface ConcentrationDamageProofClause {
+  sourceId: string;
+  /** The held spell whose Concentration damage can't break. */
+  spellId: string;
+}
+
 export interface D20RerollClause {
   sourceId: string;
   faces: readonly [number, ...number[]];
@@ -1914,6 +1920,8 @@ export interface AggregatedGrants {
   rollFloors: ReadonlyArray<RollFloorClause>;
   /** Face-triggered d20 rerolls on every D20 Test (Halfling Luck on a 1). */
   d20Rerolls: ReadonlyArray<D20RerollClause>;
+  /** Held spells whose Concentration taking damage can't break (Relentless Hunter). */
+  concentrationDamageProof: ReadonlyArray<ConcentrationDamageProofClause>;
   /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
   rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
   /**
@@ -2214,6 +2222,7 @@ export function emptyAggregate(): AggregatedGrants {
     disadvantages: [],
     rollFloors: [],
     d20Rerolls: [],
+    concentrationDamageProof: [],
     rollDieAdjustments: [],
     incomingAttackAdvantages: [],
     incomingAttackDisadvantages: [],
@@ -2483,6 +2492,7 @@ export function evaluateGrants(
   const disadvantages: AdvantageClause[] = [];
   const rollFloors: RollFloorClause[] = [];
   const d20Rerolls: D20RerollClause[] = [];
+  const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
   const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const incomingAttackAdvantages: IncomingAttackClause[] = [];
   const incomingAttackDisadvantages: IncomingAttackClause[] = [];
@@ -3257,6 +3267,9 @@ export function evaluateGrants(
       case "d20-reroll":
         d20Rerolls.push({ sourceId, faces: g.faces });
         break;
+      case "concentration-damage-proof":
+        concentrationDamageProof.push({ sourceId, spellId: g.spellId });
+        break;
       case "roll-die-adjustment":
         rollDieAdjustments.push({
           sourceId,
@@ -4000,6 +4013,7 @@ export function evaluateGrants(
     disadvantages,
     rollFloors,
     d20Rerolls,
+    concentrationDamageProof,
     rollDieAdjustments,
     incomingAttackAdvantages,
     incomingAttackDisadvantages,
