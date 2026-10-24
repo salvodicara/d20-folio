@@ -258,6 +258,8 @@ function localizeSummary(
   // display summary.
   delete rest.heavyDisadvantage;
   delete rest.damageBreakdown;
+  // The save DC's lines are read raw through `actionSaveDc` (the action-row facts).
+  delete rest.saveDcParts;
   delete rest.attackBreakdown;
   // The on-hit RIDERS carry a `source` NAME ref (a LocText) → they have no place
   // on the LOCALIZED summary; `localizeAction` resolves them into the render-ready
