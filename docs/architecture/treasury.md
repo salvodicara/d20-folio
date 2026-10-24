@@ -23,8 +23,12 @@ move is logged, and no total is ever overwritten by hand. The campaign is a view
   split divides each coin evenly and gives what doesn't divide to the chest, or makes
   change first when asked.
 - **View**: `campaignHoldings` is the chest, each member's purse, and their sum.
-- **Items** (next step) follow the same move, carrying an item instance id instead of
-  coins; the chest gets an item list next to its coins.
+- **Items** (`src/lib/treasury-items.ts`): the same one-owner rule and an `ItemMove`
+  with an item instance id and a quantity. A whole item moves as it is, but its new
+  owner neither wears nor attunes to it yet; part of a stack starts a new stack at the
+  receiver (`splitAs`) or joins one of theirs (`mergeInto`). Found items come in with
+  the move, sold or broken ones go out. `reverseItemMove` undoes any of them exactly,
+  worn and attuned included. The chest gets an item list next to its coins.
 
 ## Where the coins live (proposed, for the wiring step)
 
