@@ -105,6 +105,11 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "conditionImmunities",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
+  // A lit state's condition joins the one condition read seam the chips render.
+  "state-condition": {
+    via: "effectiveSessionConditions",
+    consumer: "src/features/character/molecules/ResourceRail.tsx",
+  },
   "damage-resistance-source": {
     via: "deriveDamageSourceResistances",
     consumer: "src/features/character/molecules/ResourceRail.tsx",

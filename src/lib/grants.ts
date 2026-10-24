@@ -2570,6 +2570,10 @@ export function evaluateGrants(
       case "heroic-inspiration-on-rest":
         rules.push(...(compileGrant(g) ?? []));
         break;
+      case "state-condition":
+        // The condition seam owns this (`effectiveSessionConditions` via
+        // `potionStateConditions`): a condition never feeds back into the aggregate.
+        break;
       case "damage-transfer":
         // The persistent-damage reducer owns this because it needs the exact
         // effect-source combatant, which a sheet-wide aggregate intentionally lacks.

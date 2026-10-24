@@ -173,7 +173,22 @@ describe("the Active Potions rail section", () => {
     useCharacterStore.getState().consumePotionBuff("potion-of-flying");
     useCharacterStore.getState().consumePotionBuff("potion-of-invisibility");
     const doc = current();
-    const vms = potionTimerVMs(deriveStatuses(doc), "en", doc.session.activeFeatures);
-    expect(vms.map((p) => p.itemId)).toEqual(["potion-of-invisibility"]);
+    // Both SRD potions now light a state, so neither repeats as a bare countdown.
+    expect(potionTimerVMs(deriveStatuses(doc), "en", doc.session.activeFeatures)).toEqual(
+      []
+    );
+    // A countdown with no lit state (Invisibility's state ended by hand) still lists.
+    const bare = {
+      ...doc,
+      session: {
+        ...doc.session,
+        activeFeatures: ["potion:potion-of-flying"],
+      },
+    };
+    expect(
+      potionTimerVMs(deriveStatuses(bare), "en", bare.session.activeFeatures).map(
+        (p) => p.itemId
+      )
+    ).toEqual(["potion-of-invisibility"]);
   });
 });

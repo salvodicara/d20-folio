@@ -189,6 +189,7 @@ export function deriveSavesAndChecks(
     concentration: session.concentration ?? "",
     concentrationConditions: session.concentrationConditions,
     encounterEffects: session.encounterEffects,
+    activeFeatures,
   });
   const pbOverride = charData.proficiencyBonusOverride;
   const level = totalLevel(charData);

@@ -731,9 +731,21 @@
     "label": "Tempesta (29)"
   },
   "potion-of-growth": {
-    "description": "La tua taglia raddoppia e il peso si moltiplica per otto per 1d4 ore. Hai Vantaggio su prove e tiri salvezza di Forza, e infliggi +1d4 danni extra con le armi.",
+    "description": "Quando bevi questa pozione, ottieni l'effetto \"ingrandire\" dell'incantesimo Ingrandire/Ridurre per 1d4 ore (senza Concentrazione): la tua taglia aumenta di una categoria, hai Vantaggio alle prove di Forza e ai tiri salvezza su Forza, e i tuoi attacchi con armi o colpi senz'armi infliggono 1d4 danni extra se il colpo va a segno.",
     "name": "Pozione di Crescita",
-    "summary": "Taglia doppia 1d4 ore: Vantaggio For, +1d4 danni"
+    "summary": "Ingrandire per 1d4 ore: Vantaggio For, +1d4 danni"
+  },
+  "potion-of-growth.grants.0": {
+    "label": "Pozione di Crescita"
+  },
+  "potion-of-growth.grants.0.grants.0": {
+    "description": "Prove di Forza (Pozione di Crescita)"
+  },
+  "potion-of-growth.grants.0.grants.1": {
+    "description": "Tiri salvezza di Forza (Pozione di Crescita)"
+  },
+  "potion-of-growth.grants.0.grants.3": {
+    "description": "Pozione di Crescita: la taglia aumenta di una categoria (per esempio da Media a Grande)"
   },
   "potion-of-healing": {
     "description": "Ripristina punti ferita quando consumata. Guarigione (2d4+2), Superiore (4d4+4), Eccezionale (8d4+8), Suprema (10d4+20). Bere o somministrare richiede un'Azione Bonus.",
@@ -748,9 +760,12 @@
     "label": "Pozione di Eroismo"
   },
   "potion-of-invisibility": {
-    "description": "Tu e tutto ciò che trasporti diventate invisibili per 1 ora. L'effetto termina anticipatamente se attacchi o lanci un incantesimo.",
+    "description": "Il contenitore di questa pozione sembra vuoto ma al tatto pare contenere un liquido. Quando bevi la pozione, hai la condizione Invisibile per 1 ora. L'effetto termina prima se effettui un tiro per colpire, infliggi danni o lanci un incantesimo.",
     "name": "Pozione di Invisibilità",
-    "summary": "Invisibile per 1 ora (termina se attacchi o lanci)"
+    "summary": "Invisibile 1 ora (finisce se attacchi, ferisci o lanci)"
+  },
+  "potion-of-invisibility.grants.0": {
+    "label": "Pozione di Invisibilità"
   },
   "potion-of-invulnerability": {
     "description": "Per 1 minuto dopo aver bevuto questa pozione, hai Resistenza a tutti i danni. Il liquido sciropposo di questa pozione somiglia a ferro liquefatto.",

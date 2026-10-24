@@ -203,6 +203,31 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       sourceId: stringSchema,
     }
   ),
+  /**
+   * While its `while-active` state is lit, you have this condition, and ending the
+   * condition ends the state (Potion of Invisibility). Read by the condition seam
+   * (`effectiveSessionConditions`), never the aggregate, so a condition the state
+   * gives can never feed back into the grants that compute it.
+   */
+  "state-condition": objectSchema({
+    condition: unionSchema([
+      literalSchema("blinded"),
+      literalSchema("charmed"),
+      literalSchema("deafened"),
+      literalSchema("frightened"),
+      literalSchema("grappled"),
+      literalSchema("incapacitated"),
+      literalSchema("invisible"),
+      literalSchema("paralyzed"),
+      literalSchema("petrified"),
+      literalSchema("poisoned"),
+      literalSchema("prone"),
+      literalSchema("restrained"),
+      literalSchema("stunned"),
+      literalSchema("unconscious"),
+    ]),
+    type: literalSchema("state-condition"),
+  }),
   "spellcasting-blocked": objectSchema({
     type: literalSchema("spellcasting-blocked"),
   }),
@@ -1838,6 +1863,16 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         },
         {
           resourceCost: ITEM_RESOURCE_COST_SCHEMA,
+          /**
+           * Each use after the first before a Long Rest costs this saving throw; a
+           * failure gains `exhaustion` levels (Ring of X-ray Vision: DC 15 CON, 1).
+           * The uses are counted by `lib/play/reuse-save.ts`.
+           */
+          reuseSave: objectSchema({
+            ability: CASTING_ABILITY_SCHEMA,
+            dc: numberSchema,
+            exhaustion: numberSchema,
+          }),
           tracker: objectSchema(
             {
               recovery: unionSchema([

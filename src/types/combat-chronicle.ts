@@ -16,6 +16,7 @@
  * encounter clears.
  */
 
+import type { DamageType } from "@/types/damage";
 import type { LocText } from "@/lib/loc-text";
 
 /** Shared fields every chronicle event carries. */
@@ -67,6 +68,12 @@ export type CombatChronicleEvent =
       attackerId?: string;
       /** Exact resolved action; absent on manual beats. */
       action?: LocText;
+      /** The damage types that actually landed (net above 0), when the hit was typed:
+       *  what a Troll's Regeneration reads to switch off for its next turn. */
+      damageTypes?: DamageType[];
+      /** Whose turn it was when the hit landed (absent while gathering initiative):
+       *  places the beat against the target's own turns inside a round. */
+      turnOf?: string;
     } & ChronicleEventBase)
   /** A combatant regained HP. */
   | ({

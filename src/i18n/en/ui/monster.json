@@ -58,6 +58,7 @@
       "regenerate": "Regenerate +{{amount}}",
       "regenerateHint": "Skip it if it took {{types}} damage since its last turn",
       "regenerationAction": "Regeneration",
+      "regenerationSuppressedAction": "Regeneration: switched off this turn by the damage it took",
       "factsLabel": "Traits that change the numbers"
     }
   }

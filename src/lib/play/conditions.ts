@@ -9,7 +9,9 @@ import {
   planSelfConditionApply,
   planSelfConditionEnd,
 } from "@/lib/mechanics-world-store";
+import { potionStatesGiving } from "@/lib/potion-states";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { endStateKeys } from "./states";
 import { commitWorldCondition } from "./world-commit";
 
 /**
@@ -41,7 +43,11 @@ export function removeCondition(
   const engine = commitWorldCondition(doc, "condition-end", (uid, world, id) =>
     planSelfConditionEnd(doc, uid, world, condition, id)
   );
-  const base = engine ? engine.session : doc.session;
+  // A condition a lit potion state gives (Invisibility) ends with that state.
+  const base = endStateKeys(
+    engine ? engine.session : doc.session,
+    potionStatesGiving(doc.session.activeFeatures ?? [], condition)
+  );
   const clearsHiddenDc = condition === "invisible" && doc.session.hiddenDc !== undefined;
   return {
     session: {
