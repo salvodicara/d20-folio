@@ -17,22 +17,28 @@ import {
   type MaterialCost,
 } from "@/lib/play/material-cost";
 import type { Locale } from "@/lib/locale";
+import type { ResolvedAction } from "@/lib/smart-tracker";
+import { spellDataOf } from "@/lib/play/spell-identity";
 
 const OFFER_MS = 10_000;
 
 /** Show the cast's material note, when its spell has a priced component; returns
  *  the toast id so undoing the cast can withdraw it. */
 export function offerMaterialCost(
-  spellId: string | undefined,
+  /** The cast spell, catalogue or homebrew (`name`: the homebrew spell's own). */
+  spell: Pick<
+    ResolvedAction,
+    "spellId" | "customSpellInstanceId" | "homebrewSpell" | "name"
+  >,
   t: TFunction,
   locale: Locale
 ): string | null {
-  const cost = castMaterialCost(spellId);
+  const cost = castMaterialCost(spellDataOf(spell));
   const currency = useCharacterStore.getState().character?.session.currency;
   if (!cost || !currency) return null;
   const { amount, coin } = coinPrice(cost.gp);
   const params = {
-    spell: grantSourceLabel(cost.spellId, locale),
+    spell: spell.spellId ? grantSourceLabel(cost.spellId, locale) : spell.name,
     amount,
     coin: t(`equipment.currencyAbbr.${coin}`),
   };
