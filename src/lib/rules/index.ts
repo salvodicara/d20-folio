@@ -51,6 +51,14 @@ export type RuleTarget =
   | `detect:${DetectionTarget}`
   /** A fall slowed to this many feet per round, landing without damage. */
   | "fall:slowed"
+  /** Critical Hits against the character become normal hits (Adamantine Armor). */
+  | "defense:no-critical-hits"
+  /** Worn armor's drawback the character ignores (Mithral Armor). */
+  | `armor:waive:${"stealth-disadvantage" | "strength-requirement"}`
+  /** A dying character stabilizes on its own (Periapt of Wound Closure). */
+  | "trait:auto-stabilize"
+  /** How spent Hit Point Dice heal: doubled, or each die's maximum. */
+  | `hit-dice:${"double" | "maximum"}`
   | "trait:air-and-water-breathing"
   | "trait:carry-as-larger-size"
   | "speed:walk"
@@ -351,6 +359,14 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "flag", target: "block:healing" }];
     case "turn-economy-block":
       return [{ op: "flag", target: "block:turn-economy" }];
+    case "critical-hit-immunity":
+      return [{ op: "flag", target: "defense:no-critical-hits" }];
+    case "armor-penalty-waiver":
+      return [{ op: "flag", target: `armor:waive:${grant.penalty}` }];
+    case "auto-stabilize":
+      return [{ op: "flag", target: "trait:auto-stabilize" }];
+    case "hit-dice-healing":
+      return [{ op: "flag", target: `hit-dice:${grant.rule}` }];
     case "heroic-inspiration-at-turn-start":
       return [{ op: "flag", target: "trait:heroic-inspiration-at-turn-start" }];
     case "heroic-inspiration-on-rest":

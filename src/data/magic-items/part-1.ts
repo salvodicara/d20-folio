@@ -451,6 +451,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "500 GP",
     properties: ["critical hits become normal hits"],
+    // Any Critical Hit against the wearer becomes a normal hit.
+    grants: [{ type: "critical-hit-immunity" }],
     source: "SRD",
   },
   {
@@ -460,6 +462,11 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "800 GP",
     properties: ["no stealth disadvantage", "no strength requirement"],
+    // No Stealth Disadvantage and no Strength requirement.
+    grants: [
+      { type: "armor-penalty-waiver", penalty: "stealth-disadvantage" },
+      { type: "armor-penalty-waiver", penalty: "strength-requirement" },
+    ],
     source: "SRD",
   },
   {
@@ -831,6 +838,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "1000 GP",
     properties: ["auto-stabilize", "double Hit Dice healing"],
+    // Stabilizes when dying; Hit Point Dice restore double.
+    grants: [{ type: "auto-stabilize" }, { type: "hit-dice-healing", rule: "double" }],
     source: "SRD",
   },
   {

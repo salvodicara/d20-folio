@@ -73,6 +73,8 @@ export interface RiderVM {
   damageTypeId?: string;
   /** Every type the player may choose for this rider when resolving the hit. */
   damageTypeChoiceIds?: ReadonlyArray<string>;
+  /** Only when the attack's d20 shows a 20 (Sword of Sharpness's extra 14). */
+  onRoll20?: true;
   /**
    * G14 — `"attack-or-spell"` for a rider that rides ONE attack OR spell per turn
    * rather than this weapon (a species revelation's +PB). The component
@@ -142,6 +144,7 @@ export function buildRiders(summary: RawActionSummary, locale: Locale): RiderVM[
       dice: r.dice,
       damageTypeId: r.damageType,
       ...(r.damageTypeChoices ? { damageTypeChoiceIds: [...r.damageTypeChoices] } : {}),
+      ...(r.onRoll20 ? { onRoll20: true as const } : {}),
       ...(r.scope ? { scope: r.scope } : {}),
       ...(r.vsMarkedTarget ? { vsMarkedTarget: r.vsMarkedTarget } : {}),
       ...(r.whileActive ? { whileActive: true } : {}),

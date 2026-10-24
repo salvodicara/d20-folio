@@ -447,6 +447,9 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
     });
   }
   for (const [index, extra] of (s.extraDamage ?? []).entries()) {
+    // An on-a-20 rider is no hit-time option: the damage tray adds it to a
+    // Critical row (`damageTrayPlan().attack.onRoll20`).
+    if (extra.onRoll20) continue;
     const riderTypes = extra.damageTypeChoices?.length
       ? [...extra.damageTypeChoices]
       : [extra.damageType as DamageType];

@@ -569,6 +569,31 @@ const EXPOSURE: Record<string, Exposure> = {
   "slowed-fall": {
     open: "core seam slowedFallFtPerRound / fallDamageDice (2026-10-24); the HP fall preset does not read it yet",
   },
+  // Adamantine Armor: the entered hit's crit flag drops in `takeDamage`.
+  "critical-hit-immunity": {
+    via: "defense:no-critical-hits",
+    consumer: "src/lib/play/damage.ts",
+  },
+  // Mithral Armor: the Stealth clause and the Strength-requirement Speed penalty.
+  "armor-penalty-waiver": {
+    via: "armor:waive:stealth-disadvantage",
+    consumer: "src/lib/smart-tracker.ts",
+  },
+  // Periapt of Wound Closure: a hit that leaves you dying leaves you Stable.
+  "auto-stabilize": {
+    via: "stabilizedDeathSaves",
+    consumer: "src/lib/play/damage.ts",
+  },
+  // Periapt (double) and Potion of Vitality (maximum): `hitDiceHealing` (play/hit-dice)
+  // is the core seam; the Short Rest dialog still computes its own heal.
+  "hit-dice-healing": {
+    open: "core seam hitDiceHealing (2026-10-24); the Short Rest dialog does not read it yet",
+  },
+  // Manuals and Tomes: `studyItemAbilityScores` (play/study-item) is the core seam;
+  // no Study action writes it yet.
+  "permanent-ability-increase": {
+    open: "core seam studyItemAbilityScores (2026-10-24); no Study action wired yet",
+  },
 };
 
 describe("grant-kind exposure guard — no Grant kind ships invisible", () => {
