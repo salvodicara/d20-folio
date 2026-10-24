@@ -151,7 +151,7 @@ import {
 } from "@/lib/play/ready";
 import { getSpellById } from "@/data/spells";
 import { slotUsageKey } from "@/lib/cast-options";
-import { castPlan } from "@/lib/play/cast-plan";
+import { castPlan } from "@/lib/views/cast-plan";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";

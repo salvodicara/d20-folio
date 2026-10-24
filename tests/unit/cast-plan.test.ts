@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 
 import { TURN_EXECUTION } from "@/lib/play/cast-execution";
-import { castPlan } from "@/lib/play/cast-plan";
+import { castPlan } from "@/lib/views/cast-plan";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "./_helpers";
 
