@@ -1552,6 +1552,14 @@ export interface AggregatedGrants {
     activeKey: string;
     hitPoints: number;
   }>;
+  /** The lit `weapon-binding` grants, each with the active key whose state owns it
+   * (the cast level and the chosen weapon are read by that key). Consumed by
+   * `resolveWeaponBindings`, which rides each on its chosen weapon's row only. */
+  weaponBindings: ReadonlyArray<{
+    sourceId: string;
+    activeKey: string;
+    grant: Extract<Grant, { type: "weapon-binding" }>;
+  }>;
   /**
    * Number of EXTRA weapon attacks granted with a single Attack action (the
    * "Extra Attack" feature). 0 when no source grants it. MAX across `extra-attack`
@@ -2164,6 +2172,7 @@ export function emptyAggregate(): AggregatedGrants {
     atZeroHpInterrupts: [],
     resources: [],
     zeroHpFloors: [],
+    weaponBindings: [],
     extraAttacks: 0,
     extraActions: [],
     turnEconomyBlocked: false,
@@ -2432,6 +2441,7 @@ export function evaluateGrants(
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
   const resources: AggregatedGrants["resources"][number][] = [];
   const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
+  const weaponBindings: AggregatedGrants["weaponBindings"][number][] = [];
   const extraActions: AggregatedGrants["extraActions"][number][] = [];
   // Save, concentration, initiative and spell DC/attack bonuses fold through `lib/rules`.
   const abilityCheckBonuses: {
@@ -2826,6 +2836,11 @@ export function evaluateGrants(
         if (activeKey) {
           zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
         }
+        break;
+      case "weapon-binding":
+        // Only a lit state binds: outside a `while-active` there is no key to
+        // read the chosen weapon and the cast level by.
+        if (activeKey) weaponBindings.push({ sourceId, activeKey, grant: g });
         break;
       // Migrated to the generic rules grammar: flat parts sum, ability-modifier
       // parts stay terms the reader resolves against the effective scores.
@@ -3934,6 +3949,7 @@ export function evaluateGrants(
     atZeroHpInterrupts,
     resources,
     zeroHpFloors,
+    weaponBindings,
     extraAttacks: Math.max(0, ruleValue(values, "attack:extra") ?? 0),
     extraActions,
     turnEconomyBlocked: ruleFlag(values, "block:turn-economy"),

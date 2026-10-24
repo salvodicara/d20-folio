@@ -418,6 +418,36 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "minutes", amount: 1 },
+    // 2024 (spell:shillelagh): a Club or Quarterstaff you hold uses your
+    // spellcasting ability instead of Strength for its melee attack and damage
+    // rolls, its damage die becomes a d8 (d10 at level 5, d12 at 11, 2d6 at 17),
+    // and it can deal Force damage instead of its normal type. The cast names the
+    // weapon (`weapon-binding`); a new cast picks again.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-shillelagh",
+        duration: timedSpellDuration(1),
+        grants: [
+          {
+            type: "weapon-binding",
+            choiceKey: "spell-shillelagh:weapon",
+            weaponIds: ["club", "quarterstaff"],
+            spellcastingAbility: true,
+            damageDie: "1d8",
+            damageDieByLevel: [
+              { minLevel: 5, die: "1d10" },
+              { minLevel: 11, die: "1d12" },
+              { minLevel: 17, die: "2d6" },
+            ],
+            damageTypeChoice: {
+              choiceKey: "spell-shillelagh:damage-type",
+              options: ["force"],
+            },
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {

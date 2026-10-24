@@ -76,6 +76,9 @@ const STANDING_SPELLS = [
     targeting: { affinity: "ally", maxTargets: 1 },
   },
   { id: "shield", recipient: "caster" },
+  // The caster's own chosen weapon (`weapon-binding`).
+  { id: "magic-weapon", recipient: "caster" },
+  { id: "shillelagh", recipient: "caster" },
   {
     id: "vicious-mockery",
     recipient: "selected",

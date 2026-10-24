@@ -606,6 +606,11 @@ const EXPOSURE: Record<string, Exposure> = {
   "permanent-ability-increase": {
     open: "core seam studyItemAbilityScores (2026-10-24); no Study action wired yet",
   },
+  // Magic Weapon / Shillelagh: the lit binding changes its chosen weapon's row.
+  "weapon-binding": {
+    via: "resolveWeaponBindings",
+    consumer: "src/lib/smart-tracker.ts",
+  },
 };
 
 describe("grant-kind exposure guard — no Grant kind ships invisible", () => {

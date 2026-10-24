@@ -195,13 +195,17 @@ export function restoreStateKey(
 function choiceBundleKeys(grants: ReadonlyArray<Grant>): string[] {
   return grants.flatMap((g) => {
     if (g.type === "choice-grant-bundle") return [g.bundleKey];
+    // The weapon a cast names (Shillelagh's staff) and its damage-type pick.
+    if (g.type === "weapon-binding") {
+      return [g.choiceKey, ...(g.damageTypeChoice ? [g.damageTypeChoice.choiceKey] : [])];
+    }
     return g.type === "while-active" ? choiceBundleKeys(g.grants) : [];
   });
 }
 
 /**
  * The option choices a spell's standing state carries (Enlarge or Reduce, an Alter
- * Self form, Fire Shield's warm or chill). Each cast picks anew, so lighting the
+ * Self form, Fire Shield's warm or chill, the weapon Shillelagh imbues). Each cast picks anew, so lighting the
  * state by a cast clears them and the rail asks again, as on the first cast.
  */
 export function castStateChoiceKeys(spellId: string, activeKey: string): string[] {
