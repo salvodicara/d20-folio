@@ -8,6 +8,7 @@ import {
   resolveOnCastSlotRegain,
   resolveOnCastTrackerRefills,
 } from "@/lib/on-cast-effects";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
 import {
@@ -65,4 +66,19 @@ export function expendedSlotLevel(
   if (option) return castOptionExpendsSpellSlot(option) ? option.level : null;
   const slot = spends.find((spend) => spend.kind === "slot");
   return slot?.level ?? null;
+}
+
+/**
+ * The states a cast of `spellId` lights by itself: the active keys of the character's
+ * `while-active` grants whose `activatedByCast` names the spell ("Whenever you cast
+ * Divine Smite", Smite of Protection). Read from the aggregate, so only grants the
+ * character really has count (subclass, level, equipped and attuned items), with keys
+ * bound to the item copy. A still-lit state is listed too: casting again re-arms it.
+ */
+export function statesActivatedByCast(doc: CharacterDoc, spellId: string): string[] {
+  const groups = aggregateCharacterGrants(doc.character, doc.session).activatableGroups;
+  const keys = groups
+    .filter((group) => group.activatedByCast?.includes(spellId))
+    .map((group) => group.key);
+  return [...new Set(keys)];
 }

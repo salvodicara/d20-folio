@@ -1909,6 +1909,11 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     },
     {
       /**
+       * Spell ids whose cast lights this state by itself: "Whenever you cast Divine
+       * Smite" (Smite of Protection). Read by `statesActivatedByCast`.
+       */
+      activatedByCast: arraySchema(stringSchema),
+      /**
        * An equipped magic item's explicit activation contract. Magic items do
        * not own `mechanics.actions`, so this is the one declarative bridge that
        * lets the shared action/tracker/undo pipeline surface their activated
