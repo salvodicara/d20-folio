@@ -88,9 +88,8 @@ export function resolveGrantSourcesForManeuvers(
       // The runtime granted-action this builds is a 1:1 projection of the maneuver
       // ENTITY plus a structured reaction trigger. Its display name/
       // description are NOT keyed under a positional `.grants.<seg>` path, so the
-      // grant carries no localizable text — DORMANT: `grantedActions` has no UI
-      // consumer; the maneuver picker localizes off the `maneuver` catalogue
-      // (`localizeSrd("maneuver", id, …)`) directly. The trigger is a token the
+      // grant carries no localizable text: the board row (`grantedActionRows`) and
+      // the maneuver picker name it from the `maneuver` catalogue directly. The trigger is a token the
       // `combat.reactionTrigger_<token>` key words.
       grants: [
         {

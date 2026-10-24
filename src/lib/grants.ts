@@ -915,6 +915,8 @@ export interface GrantedAction {
   trigger?: LocText;
   /** Ability a TARGET saves against (when the action forces a save). */
   saveAbility?: AbilityCode;
+  /** The ability that sets that save's DC (8 + PB + its modifier), when declared. */
+  saveDcAbility?: AbilityCode;
   /** The structured trigger token, when the grant declares one. */
   reactionTrigger?: ReactionTrigger;
   /** A hard cap on uses per turn. */
@@ -3585,6 +3587,7 @@ export function evaluateGrants(
               ? { trigger: grantField(gref, "trigger", g.trigger) }
               : {}),
           saveAbility: g.saveAbility,
+          ...(g.saveDcAbility ? { saveDcAbility: g.saveDcAbility } : {}),
           ...(g.reactionTrigger ? { reactionTrigger: g.reactionTrigger } : {}),
           ...(g.maxUsesPerTurn !== undefined ? { maxUsesPerTurn: g.maxUsesPerTurn } : {}),
         });

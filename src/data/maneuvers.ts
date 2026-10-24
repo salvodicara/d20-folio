@@ -59,7 +59,16 @@ export interface SrdManeuver {
    *    Die.)
    */
   slot: (typeof MANEUVER_SLOTS)[number];
+  /**
+   * Where the rolled Superiority Die goes: the triggering attack's damage
+   * (Trip Attack, Riposte) or its attack roll (Precision Attack). Omitted when
+   * the die goes elsewhere (a check, AC, Temporary Hit Points, an ally's roll).
+   */
+  dieAddsTo?: ManeuverDieTarget;
 }
+
+/** The roll a maneuver's Superiority Die adds to. */
+export type ManeuverDieTarget = "damage" | "attack-roll";
 
 /**
  * Public maneuvers. The 2024 maneuver roster is PHB-only (not in SRD 5.2.1),
