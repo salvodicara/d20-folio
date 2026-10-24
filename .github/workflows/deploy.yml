@@ -204,11 +204,15 @@ jobs:
 
       # P1 was migrated before its client shipped. Old clients may have since
       # reintroduced legacy entries, so prove the current corpus immediately
-      # before promotion. Both checks are read-only and fail on any pending work.
+      # before promotion. Every check is read-only and fails on any pending work.
+      # Item resources (#386): the catalogue now declares item-owned resources, so
+      # an unmigrated owned copy would show a full counter; the owner-gated
+      # `live-data-migration` (snapshot, dry-run, yes, apply, verify) must run first.
       - name: Verify saved-character compatibility
         run: |
           node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
           node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
+          node --import ./scripts/alias-loader.mjs scripts/migrate-item-resources.ts --check
 
       - name: Require live Blaze billing
         run: |

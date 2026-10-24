@@ -10,8 +10,10 @@ Verify already proved green; it never re-verifies or builds anything new.
 
 1. **Owner's word.** Get an explicit yes for this deploy, in this conversation. Done when the owner has
    said yes to this SHA.
-2. **Migrations first.** If the SHA reads a new stored shape, run the `live-data-migration` skill to
-   completion first. Done when every pending migration's `--check` is green against production.
+2. **Migrations first.** Read "Pending for the next deploy" in `docs/RELEASE.md`, and run each one (and
+   any other the SHA's new stored shape needs) through the `live-data-migration` skill to completion.
+   Done when every pending migration's `--check` is green against production; `deploy.yml` re-runs
+   those checks and refuses to promote otherwise.
 3. **Dispatch.** From a clean checkout equal to `origin/main`: `just deploy`. It only dispatches
    `deploy.yml`, which waits for green CI + Verify, refuses an unverified content-pack commit, backs up
    Firestore, deploys Functions, then Hosting with the Firestore/Storage rules, and requires SAFE-01
