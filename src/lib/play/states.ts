@@ -16,6 +16,7 @@ import {
 } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState, TrackerState } from "@/types/character";
 import { restoreTrackerEntry } from "./recoveries";
+import { countActivationUse } from "./reuse-save";
 
 /** Drop one key from an optional record; undefined when nothing is left. */
 function without<T>(
@@ -45,8 +46,10 @@ export function setActiveState(
   const levels = isActive
     ? doc.session.activeSpellCastLevels
     : without(doc.session.activeSpellCastLevels, key);
+  // Lighting a state whose item strains on reuse counts the use (Ring of X-ray Vision).
+  const base = isActive ? countActivationUse(doc, key) : doc.session;
   const session: SessionState = {
-    ...doc.session,
+    ...base,
     activeFeatures: isActive ? [...active, key] : active.filter((k) => k !== key),
     activeSpellCastLevels: levels && Object.keys(levels).length > 0 ? levels : undefined,
     effectTimers: without(doc.session.effectTimers, key),
