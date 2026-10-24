@@ -6084,12 +6084,24 @@ export function grantedActionRows(
 
     if (activity.save) {
       summary.saveAbility = activity.save.ability;
+      const scores = combatAbilityScores(character);
+      const level = totalLevel(charData);
+      const pbOverride = charData.proficiencyBonusOverride;
+      const dc = activity.save.dc;
       if (maneuver) {
-        const { STR, DEX } = combatAbilityScores(character);
-        const level = totalLevel(charData);
-        const pbOverride = charData.proficiencyBonusOverride;
+        const { STR, DEX } = scores;
         summary.saveDC = maneuverSaveDc(STR, DEX, level, pbOverride);
         summary.saveDcParts = maneuverSaveDcBreakdown(STR, DEX, level, pbOverride);
+      } else if (dc?.kind === "ability") {
+        // "DC 8 plus your Constitution modifier and Proficiency Bonus".
+        const score = scores[dc.ability];
+        summary.saveDC = featureSaveDc(level, score, pbOverride);
+        summary.saveDcParts = featureSaveDcBreakdown(
+          level,
+          dc.ability,
+          score,
+          pbOverride
+        );
       }
     }
 

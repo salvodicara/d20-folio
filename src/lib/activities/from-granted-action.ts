@@ -13,7 +13,13 @@ type GrantedActionGrant = Extract<Grant, { type: "granted-action" }>;
 /** The facts a granted action declares, from the grant or its aggregate. */
 type GrantedActionFacts = Pick<
   GrantedActionGrant,
-  "id" | "slot" | "cost" | "saveAbility" | "reactionTrigger" | "maxUsesPerTurn"
+  | "id"
+  | "slot"
+  | "cost"
+  | "saveAbility"
+  | "saveDcAbility"
+  | "reactionTrigger"
+  | "maxUsesPerTurn"
 >;
 
 function activityOf(
@@ -32,7 +38,14 @@ function activityOf(
       pay: facts.cost ? [compact({ ...facts.cost })] : undefined,
     }),
     requires,
-    save: facts.saveAbility ? { ability: facts.saveAbility } : undefined,
+    save: facts.saveAbility
+      ? compact({
+          ability: facts.saveAbility,
+          dc: facts.saveDcAbility
+            ? { kind: "ability" as const, ability: facts.saveDcAbility }
+            : undefined,
+        })
+      : undefined,
     effects: [],
   });
 }

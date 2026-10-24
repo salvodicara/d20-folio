@@ -2067,6 +2067,16 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("WIS"),
         literalSchema("CHA"),
       ]),
+      /** The ability that sets the save DC (8 + PB + its modifier): Energy
+       *  Redirection's "DC 8 plus your Constitution modifier and Proficiency Bonus". */
+      saveDcAbility: unionSchema([
+        literalSchema("STR"),
+        literalSchema("DEX"),
+        literalSchema("CON"),
+        literalSchema("INT"),
+        literalSchema("WIS"),
+        literalSchema("CHA"),
+      ]),
       trigger: LOCALE_TEXT_SCHEMA,
       /** A structured trigger token, worded by `combat.reactionTrigger_<token>`. */
       reactionTrigger: unionSchema(

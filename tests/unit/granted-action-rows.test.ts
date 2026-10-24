@@ -14,7 +14,8 @@
  */
 import { describe, expect, it } from "vitest";
 import { evaluateGrants } from "@/lib/grants";
-import { grantedActionRows, resolveActions } from "@/lib/smart-tracker";
+import { actionSaveDc, grantedActionRows, resolveActions } from "@/lib/smart-tracker";
+import { breakdownTotal } from "@/lib/value-breakdown";
 import type { CharacterDoc } from "@/types/character";
 import { loc } from "../_harness/loc";
 import { makeCharacterDoc } from "./_helpers";
@@ -130,5 +131,35 @@ describe("granted actions on the board — homebrew", () => {
       ui: "combat.reactionTrigger_meleeAttackDamagesYou",
     });
     expect(row?.summary.saveDC).toBeUndefined();
+  });
+
+  it("a save whose DC names an ability: 8 + PB + that modifier, with its lines", () => {
+    // CON 16 (+3), level 5 (PB +3) → DC 14.
+    const doc = makeCharacterDoc({
+      level: 5,
+      abilityScores: { STR: 10, DEX: 12, CON: 16, INT: 10, WIS: 10, CHA: 10 },
+    });
+    const [row] = grantedActionRows(
+      doc,
+      evaluateGrants([
+        {
+          id: "homebrew-burst",
+          grants: [
+            {
+              type: "granted-action",
+              id: "burst",
+              name: { en: "Burst", it: "Scoppio" },
+              slot: "action",
+              saveAbility: "DEX",
+              saveDcAbility: "CON",
+            },
+          ],
+        },
+      ]).grantedActions
+    );
+    expect(row?.summary).toMatchObject({ saveAbility: "DEX", saveDC: 14 });
+    const dc = actionSaveDc(row?.summary ?? {});
+    expect(dc?.parts?.map((p) => ("value" in p ? p.value : 0))).toEqual([8, 3, 3]);
+    expect(dc?.parts && breakdownTotal(dc.parts)).toBe(14);
   });
 });
