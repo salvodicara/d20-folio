@@ -10,7 +10,8 @@ Verify already proved green; it never re-verifies or builds anything new.
 
 1. **Owner's word.** Get an explicit yes for this deploy, in this conversation. Done when the owner has
    said yes to this SHA.
-2. **Migrations first.** Read "Pending for the next deploy" in `docs/RELEASE.md`, and run each one (and
+2. **Migrations first.** Read "Pending for the next deploy" in `docs/RELEASE.md` and the
+   "Dati e compatibilità" list in `docs/release/vX.Y.Z-draft.md`, and run each one (and
    any other the SHA's new stored shape needs) through the `live-data-migration` skill to completion.
    Done when every pending migration's `--check` is green against production; `deploy.yml` re-runs
    those checks and refuses to promote otherwise.
