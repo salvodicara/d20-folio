@@ -245,6 +245,13 @@ interface CharacterState {
 
   // Actions
   setCharacter: (doc: CharacterDoc | null) => void;
+  /**
+   * A sheet edit with ONE undo for the edit and every consequence it set off (an item
+   * taken off ends the state it gave, the Ring of Invisibility's Invisible): the
+   * whole prior state comes back, while nothing changed since. Null when the edit
+   * changed nothing. The edit path for surfaces that offer an undo.
+   */
+  editCharacter: (doc: CharacterDoc) => (() => boolean) | null;
   /** Project campaign-owned effects without adding them to character persistence. */
   setEncounterEffects: (
     characterId: string | null,
@@ -1172,6 +1179,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
   // sheet you own after viewing someone else's is fully editable again).
+  editCharacter: (doc) => {
+    const seal = beginWholeStateUndo();
+    get().setCharacter(doc);
+    return seal?.() ?? null;
+  },
+
   setCharacter: (doc) => {
     // `null` closes the sheet; a different id is a load. Only an edit is checked.
     const editing = doc !== null && get().character?.id === doc.id;

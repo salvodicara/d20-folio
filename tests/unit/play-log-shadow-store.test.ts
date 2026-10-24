@@ -371,6 +371,29 @@ describe("play log shadow in the store", () => {
       });
     });
 
+    it("one undo of the edit brings back the ring AND the Invisible it gave", () => {
+      const doc = wearingRing();
+      const ring = doc.character.equipment[0];
+      if (!ring || "custom" in ring) throw new Error("no ring");
+      const cur = store().character;
+      if (!cur) throw new Error("no character");
+      const undo = store().editCharacter({
+        ...cur,
+        character: { ...cur.character, equipment: [{ ...ring, equipped: false }] },
+      });
+      expect(store().character?.session.activeFeatures ?? []).not.toContain(ringKey);
+      expect(undo?.()).toBe(true);
+      const back = store().character;
+      if (!back) throw new Error("no character");
+      expect(back.character.equipment[0]).toMatchObject({ equipped: true });
+      expect(back.session.activeFeatures).toContain(ringKey);
+      expect(effectiveSessionConditions(back.session)).toContain("invisible");
+      expect(back.session.logEntries.at(-1)?.event).not.toMatchObject({
+        kind: "condition-loss",
+        conditionId: "invisible",
+      });
+    });
+
     it("so does the ring leaving the bag", () => {
       wearingRing();
       editEquipment([]);
