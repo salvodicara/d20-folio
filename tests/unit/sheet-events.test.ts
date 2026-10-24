@@ -25,6 +25,7 @@ import * as defenses from "@/lib/play/defenses";
 import * as cover from "@/lib/play/cover";
 import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
+import * as trackerRolls from "@/lib/play/tracker-rolls";
 import * as forms from "@/lib/play/forms";
 import * as light from "@/lib/play/light";
 import * as pins from "@/lib/play/pins";
@@ -100,6 +101,18 @@ const CASES: {
   "spend-tracker": [
     { kind: "spend-tracker", trackerId: "arcane-recovery", amount: 1 },
     () => at(vitals.spendTracker(doc, "arcane-recovery", 1)),
+  ],
+  "set-tracker-roll": [
+    { kind: "set-tracker-roll", trackerId: "arcane-recovery", index: 0, value: 3 },
+    () => at(trackerRolls.setTrackerRoll(doc, "arcane-recovery", 0, 3)),
+  ],
+  "spend-tracker-roll": [
+    { kind: "spend-tracker-roll", trackerId: "arcane-recovery", index: 0 },
+    () => at(trackerRolls.spendTrackerRoll(doc, "arcane-recovery", 0)),
+  ],
+  "top-up-tracker": [
+    { kind: "top-up-tracker", trackerId: "arcane-recovery", upTo: "full" },
+    () => at(trackerRolls.topUpTracker(doc, "arcane-recovery", "full")),
   ],
   "restore-tracker": [
     { kind: "restore-tracker", trackerId: "arcane-recovery", amount: 1 },
