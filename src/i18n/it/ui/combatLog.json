@@ -35,6 +35,7 @@
     "withOutcome": "{{line}}: {{outcome}}",
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",
     "givenCondition": "{{target}} ha fallito il TS: {{condition}}",
-    "unknownEvent": "Voce registrata da una versione più nuova dell'app"
+    "unknownEvent": "Voce registrata da una versione più nuova dell'app",
+    "riderTakenFrom": "{{effect}} ({{source}})"
   }
 }

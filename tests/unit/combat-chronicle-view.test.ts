@@ -41,6 +41,11 @@ const SAMPLES: Record<
   heal: { kind: "heal", amount: 5, target: "pc-mara" },
   "temp-hp": { kind: "temp-hp", amount: 5, target: "pc-mara" },
   "max-hp": { kind: "max-hp", reduction: 6, target: "pc-mara" },
+  rider: {
+    kind: "rider",
+    rider: { kind: "speed-reduction", feet: 10 },
+    target: "pc-mara",
+  },
   condition: { kind: "condition", conditionId: "prone", gained: true, target: "pc-mara" },
   concentration: {
     kind: "concentration",

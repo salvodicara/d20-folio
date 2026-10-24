@@ -60,6 +60,7 @@
     "copied": "Report copied",
     "automatic": "Automatic report",
     "addNotes": "Write notes",
-    "notes": "Session notes"
+    "notes": "Session notes",
+    "rider": "{{target}}: {{effect}}"
   }
 }

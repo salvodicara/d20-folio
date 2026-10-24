@@ -35,6 +35,7 @@
     "withOutcome": "{{line}}: {{outcome}}",
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
     "givenCondition": "{{target}} failed the save: {{condition}}",
-    "unknownEvent": "An entry from a newer version of the app"
+    "unknownEvent": "An entry from a newer version of the app",
+    "riderTakenFrom": "{{effect}} ({{source}})"
   }
 }

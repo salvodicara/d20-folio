@@ -60,6 +60,7 @@
     "copied": "Resoconto copiato",
     "automatic": "Resoconto automatico",
     "addNotes": "Scrivi le note",
-    "notes": "Note della sessione"
+    "notes": "Note della sessione",
+    "rider": "{{target}}: {{effect}}"
   }
 }

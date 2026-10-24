@@ -8,6 +8,7 @@
 import type { LocText } from "@/lib/loc-text";
 import type { Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
+import { riderEffectClause } from "@/lib/views/effect-rider-view";
 import type { PlayEvent, ReportSection, SessionEntry } from "@/lib/session-log";
 import type { ConcentrationRef } from "@/types/ids";
 
@@ -116,6 +117,13 @@ export function localizePlayEvent(
           source: names.source?.(event.sourceId) ?? event.sourceId,
           amount: event.amount ?? 0,
         }
+      );
+    case "rider":
+      return withSource(
+        t("sessionReport.rider", {
+          target: who(event.target),
+          effect: riderEffectClause(event.rider, t, names.locale),
+        })
       );
     case "down":
       return t("sessionReport.down", { target: who(event.target) });

@@ -27,6 +27,7 @@
  * {@link LocText} — a homebrew name with no SRD id).
  */
 
+import type { RiderEffect } from "@/lib/activities/riders";
 import type { ExtraTurnSource } from "@/lib/play/extra-turns";
 import type { ActionType } from "@/data/types";
 import type { ConcentrationRef } from "@/types/ids";
@@ -123,6 +124,13 @@ export type CombatEvent =
   | { kind: "fading-penalty"; penaltyId: string; amount: number }
   /** A condition was gained. */
   | { kind: "condition-gain"; conditionId: string; source?: LocText }
+  /**
+   * A generic rider landed on the character (pushed 15 ft, Speed −10 ft, its Hit
+   * Point maximum drained, swallowed), from `source` when the sheet knows it. The
+   * conditions and the maximum it changes log their own lines; this one says what
+   * the table plays. An older reader shows a neutral line.
+   */
+  | { kind: "rider-taken"; rider: RiderEffect; source?: LocText }
   /**
    * The character's action did something to ANOTHER creature, declared on the
    * damage tray after the use (owner 2026-10-12): healed Aria 8, the goblin

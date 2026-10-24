@@ -52,7 +52,9 @@ export function ActionLog({ maxEntries = 50 }: { maxEntries?: number }) {
         // text, a `custom` homebrew name shows verbatim — golden rule 7).
         (loc: LocText) => localizeText(loc, language),
         // A rider's provenance is the engine's localizable LocText reference → resolve it.
-        (rider: LocText) => localizeText(rider, language)
+        (rider: LocText) => localizeText(rider, language),
+        // A rider distance reads in the reader's units (IT: metres).
+        language
       ),
     [t, language]
   );
