@@ -23,6 +23,7 @@
     "tempHp": "{{target}} ottiene {{amount}} PF temporanei",
     "maxHpReduced": "I PF massimi di {{target}} sono ridotti di {{reduction}}",
     "maxHpRestored": "I PF massimi di {{target}} tornano normali",
+    "locale": "it",
     "statChange": {
       "ac": "{{target}}: CA {{from}} → {{to}}",
       "acSet": "{{target}}: CA {{to}}",

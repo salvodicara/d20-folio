@@ -32,8 +32,6 @@ export interface FeedNames {
   spell: (ref: ConcentrationRef) => string;
   /** A status source id's display name (a feature, spell or item). */
   source?: (sourceId: string) => string;
-  /** A distance in feet in the reader's unit (a speed change line). */
-  distance?: (ft: number) => string;
 }
 
 /** The minimum a combatant row needs to be ranked as a candidate attacker. */
@@ -181,7 +179,6 @@ export function localizeFeedEvent(
       action: names.action,
       spell: names.spell,
       source: names.source,
-      distance: names.distance,
     }) ?? ""
   );
 }
