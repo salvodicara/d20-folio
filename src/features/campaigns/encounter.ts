@@ -100,6 +100,7 @@ const MONSTER_COMBATANT_KEYS = new Set([
   "bardicInspirationDie",
   "heroicInspiration",
   "spent",
+  "concentration",
 ]);
 
 function hasOnlyKeys(value: Record<string, unknown>, keys: ReadonlySet<string>): boolean {
@@ -178,7 +179,8 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
       !nonEmptyString(value.bardicInspirationDie)) ||
     (value.heroicInspiration !== undefined &&
       typeof value.heroicInspiration !== "boolean") ||
-    (value.spent !== undefined && !isSpentUses(value.spent))
+    (value.spent !== undefined && !isSpentUses(value.spent)) ||
+    (value.concentration !== undefined && !nonEmptyString(value.concentration))
   ) {
     return false;
   }

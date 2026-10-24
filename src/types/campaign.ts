@@ -225,6 +225,13 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * legendary action pool). Absent or missing key = nothing spent.
    */
   spent?: Readonly<Record<string, number>>;
+  /**
+   * The spell id the monster is concentrating on (SRD Concentration), set when it
+   * casts a Concentration spell from its stat block. Absent = not concentrating.
+   * READER FIRST: parsed since this field existed; nothing writes it until a deploy
+   * carrying the reader is live (older clients reject unknown monster keys).
+   */
+  concentration?: string;
 }
 
 /**
