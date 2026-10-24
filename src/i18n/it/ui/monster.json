@@ -58,6 +58,7 @@
       "regenerate": "Rigenera +{{amount}}",
       "regenerateHint": "Saltalo se dall'ultimo turno ha subito danni da {{types}}",
       "regenerationAction": "Rigenerazione",
+      "regenerationSuppressedAction": "Rigenerazione: non funziona in questo turno per i danni subiti",
       "factsLabel": "Tratti che cambiano i numeri"
     }
   }
