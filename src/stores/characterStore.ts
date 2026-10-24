@@ -36,6 +36,10 @@ import {
 import { takeDamage } from "@/lib/play/damage";
 import { longRestFadeEvents, longRestFades, omitStateKeys } from "@/lib/play/rests";
 import { topUpUsed } from "@/lib/play/tracker-rolls";
+import {
+  advanceEffectTimers as advanceEffectTimersOf,
+  expiredBoundaries,
+} from "@/lib/play/effect-timers";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   drinkPotion,
@@ -68,10 +72,8 @@ import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
 import {
   getInitiativeTrackerTopUps,
-  resolveActiveBoundaryEffects,
   resolveActiveStatesEndingOn,
   resolveActiveStatesEndingOnRest,
-  advanceEffectTimers as advanceEffectTimersEngine,
   resolveTrackers,
   potionTimerKey,
 } from "@/lib/smart-tracker";
@@ -2653,17 +2655,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return null;
     if (!Number.isFinite(rounds) || rounds <= 0) return null;
     const previousTimer = character.session.effectTimers?.[key];
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          effectTimers: {
-            ...(character.session.effectTimers ?? {}),
-            [key]: { roundsLeft: rounds, tickedRound: litRound(character.id) },
-          },
-        },
-      },
+    get().dispatch({
+      kind: "arm-effect-timer",
+      key,
+      rounds,
+      tickedRound: litRound(character.id),
     });
     // Restore only this key so undo cannot overwrite another effect started in
     // the meantime.
@@ -2694,17 +2690,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const character = get().character;
     if (!character || !Number.isFinite(boundary.round) || boundary.round < 1) return null;
     const previous = character.session.effectBoundaries?.[key];
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          effectBoundaries: {
-            ...(character.session.effectBoundaries ?? {}),
-            [key]: { round: Math.round(boundary.round), phase: boundary.phase },
-          },
-        },
-      },
+    get().dispatch({
+      kind: "arm-effect-boundary",
+      key,
+      round: boundary.round,
+      phase: boundary.phase,
     });
     return () => {
       const current = get().character;
@@ -2754,21 +2744,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       })
     );
     const nextLocalEffects = effectiveCombatEffects(nextLegacyEffects);
-    const sources = new Map(
-      resolveActiveBoundaryEffects(character).map((effect) => [
-        effect.activeKey,
-        effect.sourceId,
-      ])
-    );
-    const phaseIndex = position.phase === "turn-start" ? 0 : 1;
-    const expired = Object.entries(priorBoundaries ?? {}).flatMap(
-      ([activeKey, boundary]) =>
-        position.round > boundary.round ||
-        (position.round === boundary.round &&
-          phaseIndex >= (boundary.phase === "turn-start" ? 0 : 1))
-          ? [{ activeKey, sourceId: sources.get(activeKey) ?? activeKey }]
-          : []
-    );
+    const expired = expiredBoundaries(character, position);
     if (expired.length === 0 && expiredLocalEffects.length === 0) return noop;
     const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
     const priorActive = character.session.activeFeatures ?? [];
@@ -2777,27 +2753,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentrationCastLevel = character.session.concentrationCastLevel;
     const priorConcentrationConditions = character.session.concentrationConditions;
     const concentrationExpired = endsConcentration(priorConcentration, expiredKeys);
-    const boundaries = Object.fromEntries(
-      Object.entries(priorBoundaries ?? {}).filter(([key]) => !expiredKeys.has(key))
-    );
-    const activeFeatures = priorActive.filter((key) => !expiredKeys.has(key));
-    const castLevels = Object.fromEntries(
-      Object.entries(priorCastLevels ?? {}).filter(([key]) => !expiredKeys.has(key))
-    );
     set({
       combatActiveEffects: nextLocalEffects,
       combatLegacyActiveEffects: nextLegacyEffects,
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          activeFeatures,
-          activeSpellCastLevels:
-            Object.keys(castLevels).length > 0 ? castLevels : undefined,
-          effectBoundaries: Object.keys(boundaries).length > 0 ? boundaries : undefined,
-        },
-      },
     });
+    if (expired.length > 0) {
+      get().dispatch({
+        kind: "expire-effect-boundaries",
+        round: position.round,
+        phase: position.phase,
+      });
+    }
     const concentrationLogIds = concentrationExpired
       ? get().setConcentration("", { undoable: false })
       : [];
@@ -2871,7 +2837,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return noop;
     const character = get().character;
     if (!character) return noop;
-    const { timers, expired } = advanceEffectTimersEngine(character, forRound);
+    const { expired } = advanceEffectTimersOf(character, forRound);
     // Snapshot for undo BEFORE mutating: prior timers + active toggles/cast levels
     // + the log entries the expiry appends, so Undo-End-Turn reverts the whole step.
     const priorTimers = character.session.effectTimers;
@@ -2886,22 +2852,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     );
     // Drop each expired state's toggle (every while-active grant retracts) and
     // emit its expiry log line.
-    const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
-    const nextActive = priorActive.filter((key) => !expiredKeys.has(key));
-    const nextCastLevels = Object.fromEntries(
-      Object.entries(priorCastLevels ?? {}).filter(([key]) => !expiredKeys.has(key))
-    );
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          effectTimers: timers,
-          activeFeatures: nextActive,
-          activeSpellCastLevels:
-            Object.keys(nextCastLevels).length > 0 ? nextCastLevels : undefined,
-        },
-      },
+    get().dispatch({
+      kind: "advance-effect-timers",
+      ...(forRound !== undefined ? { forRound } : {}),
     });
     const concentrationLogIds = concentrationExpired
       ? get().setConcentration("", { undoable: false })

@@ -24,6 +24,13 @@ import { addCondition, removeCondition } from "./conditions";
 import { addSessionDefense, removeSessionDefense } from "./defenses";
 import { setTrackerRoll, spendTrackerRoll, topUpTracker } from "./tracker-rolls";
 import { setConcentration } from "./concentration";
+import {
+  advanceEffectTimers,
+  armEffectBoundary,
+  armEffectTimer,
+  expireEffectBoundaries,
+  type BoundaryPhase,
+} from "./effect-timers";
 import { setCover, type CoverUntil } from "./cover";
 import { setLight } from "./light";
 import { adjustCurrency, type CurrencyDelta } from "./material-cost";
@@ -130,6 +137,14 @@ export type SheetEvent =
   | { kind: "short-rest" }
   /** The owner's turn starts again: every spent per-turn tracker refills (Sneak Attack). */
   | { kind: "recover-per-turn-trackers" }
+  /** A lit state's round countdown starts (`tickedRound`: the round it counts from). */
+  | { kind: "arm-effect-timer"; key: string; rounds: number; tickedRound: number }
+  /** A lit state ends at an encounter boundary (a round and the phase within it). */
+  | { kind: "arm-effect-boundary"; key: string; round: number; phase: BoundaryPhase }
+  /** End Turn's tick of every timed state; expired ones go out. */
+  | { kind: "advance-effect-timers"; forRound?: number }
+  /** The boundary states that have expired at this position end. */
+  | { kind: "expire-effect-boundaries"; round: number; phase: BoundaryPhase }
   /** The character attacked, dealt damage or cast a spell: the states that end early
    *  on that act end (Potion of Invisibility). */
   | { kind: "perform-act"; act: StateEndingAct }
@@ -265,6 +280,18 @@ export function applySheetEvent(
       return shortRestCharacter(doc);
     case "perform-act":
       return withSession(endStatesOnAct(doc, event.act)?.session);
+    case "arm-effect-timer":
+      return withSession(armEffectTimer(doc, event.key, event.rounds, event.tickedRound));
+    case "arm-effect-boundary":
+      return withSession(
+        armEffectBoundary(doc, event.key, { round: event.round, phase: event.phase })
+      );
+    case "advance-effect-timers":
+      return withSession(advanceEffectTimers(doc, event.forRound).session);
+    case "expire-effect-boundaries":
+      return withSession(
+        expireEffectBoundaries(doc, { round: event.round, phase: event.phase })
+      );
     case "recover-per-turn-trackers":
       return withSession(recoverPerTurnTrackers(doc)?.session);
     case "time-passes":

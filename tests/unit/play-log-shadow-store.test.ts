@@ -274,6 +274,49 @@ describe("play log shadow in the store", () => {
     expect(store().passBreathTurn()).toBeNull();
   });
 
+  it("effect timers and boundaries reach the log; their undos stay narrow", () => {
+    const doc = {
+      ...makeCharacterDoc(
+        { classId: "barbarian", level: 3, features: [{ srdId: "barbarian-rage" }] },
+        { activeFeatures: ["barbarian-rage"] }
+      ),
+      id: `shadow-timers-${Math.random().toString(36).slice(2)}`,
+    };
+    useCharacterStore.setState({
+      character: doc,
+      loading: false,
+      error: null,
+      readonly: false,
+    });
+    store().armEffectTimer("barbarian-rage", 2);
+    expect(store().character?.session.effectTimers?.["barbarian-rage"]?.roundsLeft).toBe(
+      2
+    );
+    store().armEffectBoundary("barbarian-rage", { round: 3, phase: "turn-end" });
+    const tick = store().advanceEffectTimers(1);
+    expect(store().character?.session.effectTimers?.["barbarian-rage"]?.roundsLeft).toBe(
+      1
+    );
+    expect(tick.expired).toEqual([]);
+    const expiry = store().expireEffectBoundaries({ round: 4, phase: "turn-start" });
+    expect(expiry.expired.map((e) => e.activeKey)).toEqual(["barbarian-rage"]);
+    expect(store().character?.session.activeFeatures ?? []).not.toContain(
+      "barbarian-rage"
+    );
+    // Four writes, none of them around the log.
+    expect(playLogShadowStats(doc.id)).toEqual({
+      entries: 4,
+      checkpoints: 1,
+      mismatches: 0,
+    });
+    expiry.restore();
+    expect(store().character?.session.activeFeatures).toContain("barbarian-rage");
+    tick.restore();
+    expect(store().character?.session.effectTimers?.["barbarian-rage"]?.roundsLeft).toBe(
+      2
+    );
+  });
+
   it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {
     const doc = {
       ...makeCharacterDoc(
