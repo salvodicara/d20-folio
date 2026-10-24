@@ -34,10 +34,12 @@ import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
 import {
+  endStatesOnAct,
   recoverPerTurnTrackers,
   setActiveSpellCastLevel,
   setActiveState,
   setBundleChoices,
+  type StateEndingAct,
 } from "./states";
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
@@ -126,6 +128,9 @@ export type SheetEvent =
   | { kind: "short-rest" }
   /** The owner's turn starts again: every spent per-turn tracker refills (Sneak Attack). */
   | { kind: "recover-per-turn-trackers" }
+  /** The character attacked, dealt damage or cast a spell: the states that end early
+   *  on that act end (Potion of Invisibility). */
+  | { kind: "perform-act"; act: StateEndingAct }
   /**
    * Minutes pass outside the turn order: what runs out ends (`passTime`).
    * To the first dispatcher: when `timePassEndsConcentration(doc, minutes)`, an
@@ -254,6 +259,8 @@ export function applySheetEvent(
       return longRestCharacter(doc);
     case "short-rest":
       return shortRestCharacter(doc);
+    case "perform-act":
+      return withSession(endStatesOnAct(doc, event.act)?.session);
     case "recover-per-turn-trackers":
       return withSession(recoverPerTurnTrackers(doc)?.session);
     case "time-passes":

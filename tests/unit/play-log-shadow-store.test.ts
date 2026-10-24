@@ -5,12 +5,19 @@
  * log equals the live character after every step.
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
+import { drinkPotion } from "@/lib/play/states";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { potionTimerKey } from "@/lib/potion-states";
 import { customInstanceId } from "./__helpers__/custom-items";
-import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
+import {
+  playLogShadowStats,
+  setPlayLogSink,
+  useCharacterStore,
+} from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 
 function load(): string {
@@ -112,11 +119,17 @@ describe("play log shadow in the store", () => {
   it("removing a condition reaches the log, and its undo brings it back", () => {
     const id = load();
     store().dispatch({ kind: "add-condition", condition: "poisoned" });
+    const removed = vi.fn();
+    setPlayLogSink({ added: vi.fn(), removed, corrected: vi.fn() });
     const undo = store().removeConditionSilent("poisoned");
+    const lineId = store().character?.session.logEntries.at(-1)?.id;
     expect(store().character?.session.conditions).not.toContain("poisoned");
     expect(playLogShadowStats(id)).toEqual({ entries: 2, checkpoints: 1, mismatches: 0 });
     undo?.();
+    setPlayLogSink(null);
     expect(store().character?.session.conditions).toContain("poisoned");
+    // The campaign's session log hears that the "lost Poisoned" line is gone.
+    expect(removed).toHaveBeenCalledWith(id, lineId);
     expect(playLogShadowStats(id)).toMatchObject({ checkpoints: 1, mismatches: 0 });
   });
 
@@ -190,6 +203,75 @@ describe("play log shadow in the store", () => {
       used: 0,
       rolls: [17, null],
     });
+  });
+
+  it("an act (a spell cast) ends a drunk Invisibility, through the log, and undoes", () => {
+    const base = makeCharacterDoc({
+      classId: "fighter",
+      level: 5,
+      equipment: [{ srdId: "potion-of-invisibility", quantity: 1 }],
+    });
+    const drunk = drinkPotion(base, "potion-of-invisibility", 0);
+    if (!drunk) throw new Error("no potion");
+    const doc = {
+      ...base,
+      session: drunk,
+      id: `shadow-act-${Math.random().toString(36).slice(2)}`,
+    };
+    useCharacterStore.setState({
+      character: doc,
+      loading: false,
+      error: null,
+      readonly: false,
+    });
+    expect(effectiveSessionConditions(doc.session)).toContain("invisible");
+
+    const result = store().performAct("cast-spell");
+    expect(result?.ended).toEqual([potionTimerKey("potion-of-invisibility")]);
+    const after = store().character;
+    if (!after) throw new Error("no character");
+    expect(effectiveSessionConditions(after.session)).not.toContain("invisible");
+    expect(playLogShadowStats(doc.id)).toEqual({
+      entries: 1,
+      checkpoints: 1,
+      mismatches: 0,
+    });
+    result?.undo();
+    const back = store().character;
+    expect(back && effectiveSessionConditions(back.session)).toContain("invisible");
+  });
+
+  it("an act ends nothing when no lit state ends on it", () => {
+    load();
+    expect(store().performAct("attack-roll")).toBeNull();
+  });
+
+  it("a turn ends while choking: 1 Exhaustion from Suffocation, through the log, and undoes", () => {
+    const id = load();
+    const removed = vi.fn();
+    setPlayLogSink({ added: vi.fn(), removed, corrected: vi.fn() });
+    const before = store().character?.session.exhaustion ?? 0;
+    store().dispatch({ kind: "hold-breath", choking: true });
+    const undo = store().passBreathTurn();
+    const lineId = store().character?.session.logEntries.at(-1)?.id;
+    expect(store().character?.session.exhaustion).toBe(before + 1);
+    const lastLine = store().character?.session.logEntries.at(-1)?.event;
+    expect(lastLine).toMatchObject({ kind: "condition-gain", conditionId: "exhaustion" });
+    expect(playLogShadowStats(id)).toEqual({ entries: 2, checkpoints: 1, mismatches: 0 });
+    undo?.();
+    setPlayLogSink(null);
+    expect(store().character?.session.exhaustion).toBe(before);
+    // The campaign's session log hears that the line is gone too.
+    expect(removed).toHaveBeenCalledWith(id, lineId);
+    expect(store().character?.session.logEntries.at(-1)?.event).not.toMatchObject({
+      kind: "condition-gain",
+      conditionId: "exhaustion",
+    });
+  });
+
+  it("a turn ends while breathing: nothing happens", () => {
+    load();
+    expect(store().passBreathTurn()).toBeNull();
   });
 
   it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {

@@ -39,9 +39,12 @@ import { topUpUsed } from "@/lib/play/tracker-rolls";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   drinkPotion,
+  endStatesOnAct,
   recoverPerTurnTrackers as recoverPerTurnTrackersOf,
   restoreStateKey,
+  type StateEndingAct,
 } from "@/lib/play/states";
+import { breathLogEvents } from "@/lib/play/suffocation";
 import {
   recoverTrackerByAltCost as recoverByAltCost,
   recoverTrackerByMinSlot as recoverByMinSlot,
@@ -529,6 +532,20 @@ interface CharacterState {
    * this only refills it once per turn.
    */
   recoverPerTurnTrackers: () => (() => void) | null;
+  /**
+   * The character attacked, dealt damage or cast a spell: every lit state that ends
+   * early on that act ends (Potion of Invisibility), through the play log. Returns the
+   * state keys it ended, for the caller's notice, and the undo; null when nothing
+   * ended. The UI that knows an act happened calls it (the core has no act funnel).
+   */
+  performAct: (act: StateEndingAct) => { ended: string[]; undo: () => void } | null;
+  /**
+   * The owner's turn ends while holding their breath (SRD Suffocation): one turn of
+   * air goes, or, out of breath, 1 Exhaustion with its log line. Through the play
+   * log; returns the undo, or null when the character is breathing. Called at End
+   * Turn, next to `recoverPerTurnTrackers`.
+   */
+  passBreathTurn: () => (() => void) | null;
   /**
    * S9 — drinking a CONSUMED buff potion (Potion of Speed / Giant Strength / …)
    * arms its self-sustaining `potion:<itemId>` round countdown in
@@ -2215,12 +2232,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
     flushParentPersistence(get);
     return () => {
+      // The line goes first, while it is still there: removing it tells the campaign's
+      // session log too (after the undo it would already be gone).
+      get().removeLogEntry(lossLogId);
       undoRemoval();
       set({
         combatActiveEffects: effectiveCombatEffects(prevLocalEffects),
         combatLegacyActiveEffects: prevLocalEffects,
       });
-      get().removeLogEntry(lossLogId);
       // Re-persist the restored trio so the subdoc converges with the undo.
       persistCombat(get);
       flushParentPersistence(get);
@@ -2558,6 +2577,43 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   setActiveSpellCastLevel: (key, level) => {
     get().dispatch({ kind: "set-active-cast-level", key, level });
+  },
+
+  performAct: (act) => {
+    const character = get().character;
+    if (!character) return null;
+    const ended = endStatesOnAct(character, act)?.ended;
+    if (!ended) return null;
+    const undo = get().dispatch({ kind: "perform-act", act });
+    if (!undo) return null;
+    persistCombat(get);
+    return {
+      ended,
+      undo: () => {
+        undo();
+        persistCombat(get);
+      },
+    };
+  },
+
+  passBreathTurn: () => {
+    const before = get().character;
+    if (!before) return null;
+    const undo = get().dispatch({ kind: "breath-turn-end" });
+    const after = get().character;
+    if (!undo || !after) return null;
+    const logged = breathLogEvents(before, after).flatMap((event) => {
+      const id = get().logEvent(event);
+      return id ? [id] : [];
+    });
+    persistCombat(get);
+    return () => {
+      // The lines go first, while they are still there: removing one tells the
+      // campaign's session log too (after the undo it would already be gone).
+      for (const id of logged) get().removeLogEntry(id);
+      undo();
+      persistCombat(get);
+    };
   },
 
   recoverPerTurnTrackers: () => {
