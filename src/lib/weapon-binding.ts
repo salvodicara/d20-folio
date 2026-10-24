@@ -12,6 +12,7 @@
  */
 import type { SrdSpellData } from "@/data/types";
 import type { AggregatedGrants, Grant } from "@/lib/grants";
+import { isHomebrewMagicWeapon } from "@/lib/homebrew-items";
 import type { AbilityCode } from "@/types/ability";
 import type { CharacterDoc, CustomWeapon, SrdWeaponRef } from "@/types/character";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
@@ -84,7 +85,13 @@ function weaponRejection(
   if (grant.weaponIds && (custom || !grant.weaponIds.includes(weapon.srdId))) {
     return "weapon-not-allowed";
   }
-  if (grant.nonmagical && !custom && weapon.enchantItemId) return "magical-weapon";
+  // A bound catalogue enchant, or a homebrew weapon with magic-item mechanics.
+  if (
+    grant.nonmagical &&
+    (custom ? isHomebrewMagicWeapon(weapon) : weapon.enchantItemId)
+  ) {
+    return "magical-weapon";
+  }
   return null;
 }
 

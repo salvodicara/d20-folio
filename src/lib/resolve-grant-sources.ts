@@ -17,6 +17,8 @@ import type {
   CustomFeature,
   SrdEquipmentRef,
   CustomEquipment,
+  SrdWeaponRef,
+  CustomWeapon,
   SrdSpellRef,
   CustomSpell,
   ClassEntry,
@@ -39,6 +41,8 @@ import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { isValidItemInstanceId } from "@/lib/resources";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { homebrewSpellData } from "@/lib/homebrew-spells";
+import { homebrewItemData } from "@/lib/homebrew-items";
+import { isMagicalCopy } from "@/lib/item-copies";
 import { customText } from "@/lib/loc-text";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
@@ -156,7 +160,9 @@ export function resolveGrantSourcesForFeatures(
  *   - attunement satisfied — an attunement-required item (`attunement: true` in
  *     its SRD data) grants nothing until `attuned === true` (`undefined` = never
  *     attuned = inert).
- * Custom equipment carries no SRD grants and is skipped.
+ * A structured homebrew item (`CustomEquipment.mechanics`) is a source the same
+ * way, gated by the same rules and named by its own title; its copy id is its
+ * `instanceId` (`homebrewItemData`). A text-only homebrew item grants nothing.
  */
 export function resolveGrantSourcesForEquipment(
   equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>,
@@ -164,9 +170,13 @@ export function resolveGrantSourcesForEquipment(
 ): GrantSource[] {
   const sources: GrantSource[] = [];
   for (const e of equipment) {
-    if ("custom" in e) continue;
     if (e.equipped !== true) continue; // only worn/wielded items are active
     if (!attunementSatisfied(e)) continue; // attunement-required, not yet attuned
+    if ("custom" in e) {
+      const source = homebrewItemSource(e, itemResources?.[e.instanceId]);
+      if (source) sources.push(source);
+      continue;
+    }
     const item = getMagicItem(e.srdId);
     if (!item?.grants?.length) continue;
     // A potion's state comes from drinking it (`potion-states.ts`), never from carrying it.
@@ -189,6 +199,40 @@ export function resolveGrantSourcesForEquipment(
     });
   }
   return sources;
+}
+
+/** One structured homebrew item copy as a grant source, or null (text-only, a
+ *  potion, no grants, or a copy whose stored state is no longer magical). */
+function homebrewItemSource(
+  entry: CustomEquipment | CustomWeapon,
+  itemState: ItemResourceState | undefined
+): GrantSource | null {
+  const item = homebrewItemData(entry);
+  if (!item?.grants?.length || item.type === "potion") return null;
+  if (!isMagicalCopy(itemState, item.id, entry.instanceId)) return null;
+  return {
+    id: `magic-item:${entry.instanceId}`,
+    label: customText(entry.name),
+    grants: item.grants,
+    item: { itemId: item.id, instanceId: entry.instanceId },
+  };
+}
+
+/**
+ * A structured homebrew weapon (`CustomWeapon.mechanics`) → its grant source. A
+ * carried weapon is at hand (weapons have no worn flag), so the gate is attunement
+ * alone. Its `item-bound-bonus` / `item-bound-damage-rider` grants are inert in the
+ * aggregate — they ride its own row (`resolveItemBoundWeaponBonus`); the rest
+ * (resistances, senses, while-active states) apply like a worn item's.
+ */
+export function resolveGrantSourcesForWeapons(
+  weapons: ReadonlyArray<SrdWeaponRef | CustomWeapon>
+): GrantSource[] {
+  return weapons.flatMap((weapon) => {
+    if (!("custom" in weapon) || !attunementSatisfied(weapon)) return [];
+    const source = homebrewItemSource(weapon, undefined);
+    return source ? [source] : [];
+  });
 }
 
 /**
@@ -683,6 +727,8 @@ export function resolveAllGrantSources(
     race?: string;
     features: ReadonlyArray<SrdFeatureRef | CustomFeature>;
     equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>;
+    /** Carried weapons — a structured homebrew weapon's own grants. */
+    weapons?: ReadonlyArray<SrdWeaponRef | CustomWeapon>;
     /** PROSE sweep — prepared buff spells with standing while-active grants. */
     spells?: ReadonlyArray<SrdSpellRef | CustomSpell>;
     /** R4 — class-scoped picks live on each entry; flattened across all of them. */
@@ -711,6 +757,7 @@ export function resolveAllGrantSources(
     ...resolveGrantSourcesForRace(character.race),
     ...resolveGrantSourcesForFeatures(nonRaceFeatures),
     ...resolveGrantSourcesForEquipment(character.equipment, itemResources),
+    ...resolveGrantSourcesForWeapons(character.weapons ?? []),
     ...resolveGrantSourcesForSpells(character.spells ?? []),
     ...resolveGrantSourcesForInvocations(invocations),
     ...resolveGrantSourcesForManeuvers(maneuvers),

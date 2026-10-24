@@ -157,6 +157,7 @@ import {
 } from "@/lib/character-d20-tests";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
 import { createItemInstanceId } from "@/lib/item-resources";
+import { itemCopyItemId } from "@/lib/homebrew-items";
 
 export type MechanicsPlanCommitResult =
   | { status: "applied"; receipt: MechanicsReceipt }
@@ -1803,9 +1804,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     }
     const owners = character.character.equipment.filter(
       (ref) =>
-        !("custom" in ref) &&
-        ref.srdId === item.itemId &&
-        ref.srdId === binding.srdId &&
+        itemCopyItemId(ref) === item.itemId &&
+        item.itemId === binding.srdId &&
         ref.instanceId === instanceId
     );
     if (owners.length !== 1) {
@@ -1840,14 +1840,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       const instanceId = entry.binding.instanceId;
       if (typeof instanceId !== "string") return { status: "rejected" };
       const owners = character.character.equipment.filter(
-        (ref) => !("custom" in ref) && ref.instanceId === instanceId
+        (ref) => ref.instanceId === instanceId && itemCopyItemId(ref) !== undefined
       );
       const owner = owners[0];
       if (
         owners.length !== 1 ||
         !owner ||
-        "custom" in owner ||
-        owner.srdId !== entry.item.itemId ||
+        itemCopyItemId(owner) !== entry.item.itemId ||
         entry.binding.srdId !== entry.item.itemId
       ) {
         return { status: "rejected" };

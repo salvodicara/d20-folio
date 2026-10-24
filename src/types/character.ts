@@ -17,6 +17,7 @@ import type {
   ActionHeal,
   ActionTargeting,
   ActionTempHpRoll,
+  HomebrewItemMechanics,
   HomebrewSpellMechanics,
   Recovery,
   ResourceRecoveryTrigger,
@@ -274,6 +275,14 @@ export interface CustomEquipment {
   };
   /** MAGIC-ITEMS — true when the player has attuned to this item. */
   attuned?: boolean;
+  /**
+   * Structured mechanics in the catalogue magic item's own shape (grants while
+   * worn and attuned, typed charges with recovery and depletion, spells cast from
+   * them, attunement requirement, rarity, type). Stored as authored; the engine
+   * reads it only through `homebrewItemData`, which leaves out any field the
+   * current schema rejects. Optional: absent on every older homebrew item.
+   */
+  mechanics?: HomebrewItemMechanics;
   /** Stable identity of this custom entry — never keyed by name. */
   instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
@@ -326,6 +335,15 @@ export interface CustomWeapon {
   description?: string;
   notes?: string;
   tags?: CharacterTag[];
+  /** True when the player has attuned to this weapon (see CustomEquipment.attuned). */
+  attuned?: boolean;
+  /**
+   * Structured mechanics in the catalogue magic item's own shape (see
+   * CustomEquipment.mechanics). Its `item-bound-bonus` / `item-bound-damage-rider`
+   * grants ride THIS weapon's row only; its other grants apply while it is carried
+   * (and attuned, when it requires attunement).
+   */
+  mechanics?: HomebrewItemMechanics;
   /** Stable identity of this custom entry — never keyed by name. */
   instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */

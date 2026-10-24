@@ -47,10 +47,17 @@ import type { Locale } from "@/lib/locale";
  * free-cast / spells-view rows never read the (stripped) source LocaleText.
  */
 export function grantSourceName(
-  source: { id: string; name?: LocaleText; ref?: { kind: SrdKind; key: string } },
+  source: {
+    id: string;
+    name?: LocaleText;
+    label?: LocText;
+    ref?: { kind: SrdKind; key: string };
+  },
   locale: Locale
 ): string {
   if (source.ref) return localizeSrd(source.ref.kind, source.ref.key, "name", locale);
+  // A homebrew source (feature, spell, item) is named by its own title.
+  if (source.label) return localizeText(source.label, locale);
   return source.name?.[locale] ?? source.id;
 }
 

@@ -11,6 +11,7 @@ import {
   resolveItemResources,
   type ItemResourceOmission,
 } from "@/lib/item-resources";
+import { homebrewItemCatalogue } from "@/lib/homebrew-items";
 import {
   prepareItemResourceCommand,
   prepareItemResourceRevert,
@@ -209,8 +210,9 @@ export function prepareItemResourceBoundary(args: {
     }
     catalogueIds.add(item.id);
   }
+  // A structured homebrew copy brings its own pools (keyed by its instanceId).
   const definitions = new Map(
-    args.catalogue.map((item) => [
+    [...args.catalogue, ...homebrewItemCatalogue(args.equipment)].map((item) => [
       item.id,
       { itemId: item.id, resources: item.resources ?? [] } satisfies ResourceItemSpec,
     ])
