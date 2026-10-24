@@ -3,8 +3,9 @@
  * 2026-10-18): AC, initiative, speed, Proficiency Bonus, max HP, the six saves, the
  * 18 skills and the three passives, every one as `{ total, parts }`. The total is
  * the number the sheet shows (`deriveCharacter`, the one derivation); the parts are
- * the existing breakdown builders' and always sum to it. A hand-set value has no
- * composition to explain, so its parts are null. Cases come from every dev scenario.
+ * the existing breakdown builders' and always sum to it. A hand-set value keeps the
+ * computed parts plus one manual-adjustment part (the full sweep is
+ * overrides-breakdown-guard.test.ts). Cases come from every dev scenario.
  */
 import { describe, expect, it } from "vitest";
 
@@ -67,7 +68,7 @@ describe("sheetNumbers", () => {
     expect(n.passives.perception.parts?.length).toBeGreaterThan(1);
   });
 
-  it("a hand-set number shows as set, with nothing to explain", () => {
+  it("a hand-set number shows as set, its computed parts plus the adjustment", () => {
     const base = docs[0]?.[1];
     if (!base) throw new Error("no scenario");
     const doc: CharacterDoc = {
@@ -83,14 +84,25 @@ describe("sheetNumbers", () => {
       },
     };
     const n = sheetNumbers(doc);
-    expect(n.ac).toEqual({ total: 21, parts: null });
-    expect(n.initiative).toEqual({ total: 7, parts: null });
-    expect(n.speed).toEqual({ total: 45, parts: null });
-    expect(n.proficiencyBonus).toEqual({ total: 6, parts: null });
-    expect(n.passives.perception).toEqual({ total: 25, parts: null });
+    const adjustment = (parts: Parameters<typeof breakdownTotal>[0] | null) =>
+      parts?.at(-1);
+    for (const [number, total] of [
+      [n.ac, 21],
+      [n.initiative, 7],
+      [n.speed, 45],
+      [n.proficiencyBonus, 6],
+      [n.passives.perception, 25],
+    ] as const) {
+      expect(number.total).toBe(total);
+      expect(breakdownTotal(number.parts ?? [])).toBe(total);
+      expect(adjustment(number.parts)?.label).toEqual({ term: "breakdown.override" });
+    }
     // A rolled or hand-pinned max HP is not the by-the-book composition.
-    expect(n.maxHp.parts).toBeNull();
     expect(n.maxHp.total).toBe(deriveCharacter(doc).hp.max);
+    expect(adjustment(n.maxHp.parts)).toEqual({
+      label: { term: "breakdown.override" },
+      value: 3,
+    });
   });
 });
 

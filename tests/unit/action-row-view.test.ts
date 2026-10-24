@@ -111,7 +111,7 @@ describe("the row's save DC, with where it comes from", () => {
     ).toBeNull();
   });
 
-  it("a hand-set DC shows as set, with nothing to explain", () => {
+  it("a hand-set DC shows as set, its lines plus the manual adjustment", () => {
     const base = wizard();
     const doc = {
       ...base,
@@ -126,10 +126,9 @@ describe("the row's save DC, with where it comes from", () => {
         },
       },
     };
-    expect(actionRowFacts(doc, action(doc, "thunderwave"), new Set()).saveDc).toEqual({
-      total: 17,
-      parts: null,
-    });
+    const dc = actionRowFacts(doc, action(doc, "thunderwave"), new Set()).saveDc;
+    expect(dc?.total).toBe(17);
+    expect(dc?.parts?.at(-1)).toMatchObject({ kind: "term", term: "breakdown.override" });
   });
 });
 

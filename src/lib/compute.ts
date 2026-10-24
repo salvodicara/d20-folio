@@ -27,6 +27,7 @@ import {
   termPart,
   abilityPart,
   locPart,
+  withOverride,
 } from "@/lib/value-breakdown";
 import { srdText, customText, type LocText } from "@/lib/loc-text";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
@@ -804,20 +805,20 @@ export function effectiveProficiencyBonus(
 /**
  * The Proficiency Bonus as one "by character level" line whose tap explains the
  * table in plain words (re-foundation phase 2: every number explained). A hand-set
- * bonus has no composition to explain, so it has no breakdown (as a hand-set AC).
+ * bonus keeps that line and adds the manual adjustment ({@link withOverride}).
  */
 export function proficiencyBonusBreakdown(
   level: number,
   override?: number | null
-): RawBreakdownPart[] | null {
-  if (override != null) return null;
+): RawBreakdownPart[] {
   const bonus = proficiencyBonus(level);
-  return [
+  const parts = [
     termPart("breakdown.proficiency.byLevel", bonus, undefined, {
       term: "breakdown.why.proficiencyByLevel",
       params: { level, bonus },
     }),
   ];
+  return override != null ? withOverride(parts, override) : parts;
 }
 
 /**
@@ -922,10 +923,9 @@ export function resolveCastingModifier(
 /**
  * The per-source parts of the spell SAVE DC for the breakdown tip
  * ("8 base · +4 PB · +3 WIS"). 8 + PB + spellcasting-ability mod + the resolved
- * `spell-save-dc-bonus` grant total (Rod of the Pact Keeper, etc.). Returns
- * `null` when a manual `override` pins the DC (a hand-set number has no
- * composition to explain — override-first). `breakdownTotal` equals
- * `spellSaveDC(...) + castingModifier` by construction; the guard pins it.
+ * `spell-save-dc-bonus` grant total (Rod of the Pact Keeper, etc.). A manual
+ * `override` keeps those lines and adds the manual adjustment ({@link withOverride}).
+ * `breakdownTotal` equals {@link effectiveSpellSaveDc} by construction; the guards pin it.
  */
 export function buildSpellSaveDcBreakdown(args: {
   level: number;
@@ -934,8 +934,7 @@ export function buildSpellSaveDcBreakdown(args: {
   pbOverride?: number | null;
   override?: number | null;
   castingModifier?: number;
-}): RawBreakdownPart[] | null {
-  if (args.override != null) return null;
+}): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [
     termPart("breakdown.base", 8),
     termPart(
@@ -946,13 +945,15 @@ export function buildSpellSaveDcBreakdown(args: {
   ];
   if (args.castingModifier)
     parts.push(termPart("breakdown.spell.bonus", args.castingModifier));
-  return parts;
+  return args.override != null ? withOverride(parts, args.override) : parts;
 }
 
 /**
  * The per-source parts of the spell ATTACK bonus for the breakdown tip
  * ("+4 PB · +3 WIS"). PB + spellcasting-ability mod + the `spell-attack-bonus`
- * grant total + the exhaustion penalty. `null` under a manual `override`.
+ * grant total + the exhaustion penalty. A manual `override` keeps those lines and
+ * adds the manual adjustment; Exhaustion still applies on top of it, as in
+ * {@link spellAttackBonus}.
  */
 export function buildSpellAttackBreakdown(args: {
   level: number;
@@ -962,8 +963,7 @@ export function buildSpellAttackBreakdown(args: {
   override?: number | null;
   castingModifier?: number;
   exhaustion?: number;
-}): RawBreakdownPart[] | null {
-  if (args.override != null) return null;
+}): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [
     termPart(
       "character.proficiencyBonus",
@@ -975,7 +975,7 @@ export function buildSpellAttackBreakdown(args: {
     parts.push(termPart("breakdown.spell.bonus", args.castingModifier));
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
-  return parts;
+  return args.override != null ? withOverride(parts, args.override + exPenalty) : parts;
 }
 
 /**
@@ -1024,8 +1024,9 @@ export function savingThrowBonus(
  * The per-source parts of a saving throw for the breakdown tip
  * ("+3 CON · +4 PB · +5 Aura"). Ability mod + PB (when proficient) + the
  * resolved per-save grant bonus (Paladin Aura of Protection) + exhaustion.
- * Returns `null` under a manual `override` (override-first). `breakdownTotal`
- * equals `savingThrowBonus(...)` by construction (the guard pins it). A
+ * A manual `override` keeps those lines and adds the manual adjustment; Exhaustion
+ * still applies on top of it. `breakdownTotal` equals `savingThrowBonus(...)` by
+ * construction (the guard pins it). A
  * single-component save (not proficient, no bonus, no exhaustion) returns one
  * part — the consumer suppresses the tip then (golden rule 19).
  */
@@ -1038,8 +1039,7 @@ export function buildSaveBreakdown(args: {
   exhaustion?: number;
   pbOverride?: number | null;
   saveBonus?: number;
-}): RawBreakdownPart[] | null {
-  if (args.override != null) return null;
+}): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [
     abilityPart(args.ability, abilityModifier(args.abilityScore)),
   ];
@@ -1054,7 +1054,7 @@ export function buildSaveBreakdown(args: {
   if (args.saveBonus) parts.push(termPart("breakdown.featureBonus", args.saveBonus));
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
-  return parts;
+  return args.override != null ? withOverride(parts, args.override + exPenalty) : parts;
 }
 
 /**
@@ -1828,8 +1828,8 @@ export function passiveAdvantageStep(
  * tier) + the resolved check bonus + exhaustion — the SAME register `skillBonus`
  * sums, so the tip and the headline can never drift (golden rule 6):
  * `breakdownTotal(parts) === skillBonus(...)` (override-free) by construction.
- * Returns `null` under a manual `override` (override-first — no composition to
- * explain), exactly like {@link buildSaveBreakdown}. A single-component skill (no
+ * A manual `override` keeps those lines and adds the manual adjustment up to the
+ * hand-set bonus the sheet's rail shows (`override ?? auto`). A single-component skill (no
  * proficiency, no bonus, no exhaustion) returns one part — the consumer suppresses
  * the tip then (golden rule 19).
  */
@@ -1842,8 +1842,7 @@ export function buildSkillBreakdown(args: {
   exhaustion?: number;
   pbOverride?: number | null;
   checkBonus?: number;
-}): RawBreakdownPart[] | null {
-  if (args.override != null) return null;
+}): RawBreakdownPart[] {
   const profPart = proficiencyContribution(
     args.proficiency,
     effectiveProficiencyBonus(args.level, args.pbOverride)
@@ -1855,7 +1854,7 @@ export function buildSkillBreakdown(args: {
   if (args.checkBonus) parts.push(termPart("breakdown.featureBonus", args.checkBonus));
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
-  return parts;
+  return args.override != null ? withOverride(parts, args.override) : parts;
 }
 
 /**
