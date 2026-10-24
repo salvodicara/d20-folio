@@ -93,7 +93,7 @@ import {
 // its own string-returning `srdText` helper below).
 import { srdText as srdTextRef, customText as customTextRef } from "@/lib/loc-text";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
-import { fadingD20Penalty, fadingPenaltyParts } from "@/lib/play/fading-penalties";
+import { fadingPenaltyParts } from "@/lib/play/fading-penalties";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import { buildWeaponRange } from "@/lib/smart-tracker";
 import { appendAbilityModToDice } from "@/lib/utils";
@@ -442,7 +442,6 @@ function buildWeaponVM(
   const enchantItem = enchantItemId ? MAGIC_ITEMS_BY_ID.get(enchantItemId) : undefined;
   const enchantBonus = resolveItemBoundWeaponBonus(enchantItem?.grants);
   const isRangedWeapon = !isCustom && srdWeapon?.weaponType === "ranged";
-  const hasAtkOverride = ref.attackBonusOverride != null;
   // Flat to-hit bonuses (`weapon-attack-bonus` — Archery & other fighting
   // styles), resolved with provenance so the to-hit breakdown NAMES each by its
   // feat's canonical key (#94, golden rule 6). The SAME resolver the combat
@@ -452,7 +451,8 @@ function buildWeaponVM(
     isRanged: isRangedWeapon,
     scores: effectiveScores,
   });
-  // Per-source to-hit composition for the tooltip — empty under an override.
+  // Per-source to-hit composition for the tooltip (+ the manual adjustment under an
+  // override).
   const attackBreakdownParts = buildWeaponAttackBreakdown({
     attackStat: stat,
     abilityMod: mod,
@@ -465,15 +465,11 @@ function buildWeaponVM(
     featureBonuses: attackFeatureBonuses,
     exhaustionPenalty: exPenalty,
     fadingParts: fadingPenaltyParts(doc.session.fadingPenalties),
-    hasOverride: hasAtkOverride,
+    override: ref.attackBonusOverride,
   });
   // The to-hit DERIVES from the breakdown (golden rule 6; the AC pattern), so
-  // the figure and the tip are the same arithmetic. Override pins it directly.
-  const attackBonus = hasAtkOverride
-    ? (ref.attackBonusOverride ?? 0) +
-      exPenalty +
-      fadingD20Penalty(doc.session.fadingPenalties)
-    : breakdownTotal(attackBreakdownParts);
+  // the figure and the tip are the same arithmetic, a hand-set to-hit included.
+  const attackBonus = breakdownTotal(attackBreakdownParts);
   const attackBreakdown = localizeBreakdown(attackBreakdownParts, locale);
   // Flat damage bonuses currently up (`weapon-damage-bonus` — Rage Damage while
   // raging, issue #27): the SAME resolver the combat attack row uses, so the

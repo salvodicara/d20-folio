@@ -81,7 +81,7 @@ describe("action save DC breakdown", () => {
     ]);
   });
 
-  it("has no lines when a manual override pins the DC", () => {
+  it("keeps its lines and adds the manual adjustment when an override pins the DC", () => {
     const doc = wizard({
       spellcasting: {
         ability: "INT",
@@ -92,7 +92,13 @@ describe("action save DC breakdown", () => {
       },
     });
     const dc = actionSaveDc(action(doc, "spell-hold-person").summary);
-    expect(dc).toEqual({ total: 19, parts: null });
+    expect(dc?.total).toBe(19);
+    expect(rows(dc?.parts)).toEqual([
+      ["term:breakdown.base", 8],
+      ["term:character.proficiencyBonus", 3],
+      ["ability:INT", 4],
+      ["term:breakdown.override", 4],
+    ]);
   });
 
   it("explains a Monk's Grapple DC from Strength", () => {

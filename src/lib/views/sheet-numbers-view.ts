@@ -35,5 +35,9 @@ export function sheetNumbersView(
       investigation: lines(n.passives.investigation),
       insight: lines(n.passives.insight),
     },
+    spellcasting: n.spellcasting && {
+      saveDc: lines(n.spellcasting.saveDc),
+      attackBonus: lines(n.spellcasting.attackBonus),
+    },
   };
 }

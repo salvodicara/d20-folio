@@ -3,6 +3,7 @@
     "rubric": "Scomposizione",
     "base": "Base",
     "featureBonus": "Bonus da privilegi",
+    "override": "Correzione manuale",
     "hpMaxReduction": "Riduzione dei PF massimi",
     "ac": {
       "formBase": "Base della forma",

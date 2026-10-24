@@ -29,7 +29,8 @@ JSON (`/srd/v1/index.json`).
 Since 0.24.1, also the pure core the new app is built on:
 
 - `sheetNumbers(doc)`: every sheet number as `{ total, parts }` (the parts sum to the
-  total; a hand-set number has none).
+  total; a hand-set number keeps the computed parts plus one manual-adjustment part, read
+  with `isHandSet(parts)`; parts are null only for a homebrew max HP).
 - Shared combat: `rollInitiative` (the first roll starts the fight), `passTurn` /
   `turnBack`, `encounterEndReason`, `endCombat` / `reopenCombat`.
 - The treasury: `lootMoves`, `applyMove` / `reverseMove`, `campaignHoldings`, and

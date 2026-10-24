@@ -556,7 +556,7 @@ export function buildSpellsViewModel(
     );
     const prepared = preparedCount(effective, isPreparedCaster);
     const preparedMax = sc.preparedMaxOverride ?? sc.preparedMax;
-    // Breakdown tips (override → empty, so the consumer suppresses the tip).
+    // Breakdown tips (an override keeps the lines and adds the manual adjustment).
     const saveDcParts = buildSpellSaveDcBreakdown({
       level,
       abilityScore: effectiveScores[sc.ability],
@@ -579,8 +579,8 @@ export function buildSpellsViewModel(
       pureSaveDC,
       attackBonus: computedAtkBonus,
       pureAttackBonus: pureAtkBonus,
-      saveDCBreakdown: saveDcParts ? localizeBreakdown(saveDcParts, locale) : [],
-      attackBreakdown: atkParts ? localizeBreakdown(atkParts, locale) : [],
+      saveDCBreakdown: localizeBreakdown(saveDcParts, locale),
+      attackBreakdown: localizeBreakdown(atkParts, locale),
       ability: sc.ability,
       isPreparedCaster,
       preparedCount: prepared,
