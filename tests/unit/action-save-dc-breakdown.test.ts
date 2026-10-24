@@ -4,11 +4,13 @@
  * made of, from the same builders the spell and feature DC tips use. A DC pinned
  * by hand (a manual override, a casting source's printed DC) has no lines. The
  * guard sweeps every dev scenario and every resolved action, with each
- * concentration spell also held, so the lines always sum to the DC shown.
+ * concentration spell also held and each Battle Master knowing every maneuver,
+ * so the lines always sum to the DC shown.
  */
 
 import { describe, expect, it } from "vitest";
 
+import { SRD_MANEUVERS } from "@/data/maneuvers";
 import { concentrationValue } from "@/lib/concentration";
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
 import {
@@ -131,12 +133,33 @@ describe("action save DC breakdown", () => {
   });
 });
 
+/** A Battle Master scenario knowing every maneuver (each save-forcing one is a
+ *  row with its own DC); `undefined` for any other character. */
+function knowingEveryManeuver(doc: CharacterDoc): CharacterDoc | undefined {
+  const classes = doc.character.classes;
+  if (!classes.some((c) => c.subclassId === "battle-master")) return undefined;
+  const maneuverChoices = SRD_MANEUVERS.map((m) => m.id);
+  return {
+    ...doc,
+    character: {
+      ...doc.character,
+      classes: classes.map((c) =>
+        c.subclassId === "battle-master" ? { ...c, maneuverChoices } : c
+      ),
+    },
+  };
+}
+
 /** Every scenario, plus one variant per concentration spell held (its follow-up
- *  row carries its own DC). */
+ *  row carries its own DC) and one per Battle Master knowing every maneuver. */
 function* sweep(): Generator<[string, CharacterDoc, RawResolvedAction]> {
   for (const id of Object.keys(DEV_SCENARIOS)) {
     const doc = buildDevScenario(id);
     if (!doc) continue;
+    const maneuvers = knowingEveryManeuver(doc);
+    if (maneuvers) {
+      for (const a of resolveActions(maneuvers)) yield [`${id}+maneuvers`, maneuvers, a];
+    }
     for (const scope of ["combat", "spellbook"] as const) {
       const actions = resolveActions(doc, scope);
       for (const a of actions) yield [id, doc, a];
@@ -174,5 +197,16 @@ describe("action save DC guard", () => {
     }
     // Spells, feature actions and the Grapple/Shove rows all reach the sweep.
     expect(explained).toBeGreaterThan(30);
+  });
+
+  it("every save-forcing maneuver a Battle Master knows reaches the sweep", () => {
+    const forcing = SRD_MANEUVERS.filter((m) => m.save).map((m) => m.id);
+    const swept = new Set<string>();
+    for (const [, , a] of sweep()) {
+      if (a.id.startsWith("granted-action:") && a.summary.saveDcParts) {
+        swept.add(a.id.split(":")[1] ?? "");
+      }
+    }
+    expect([...swept].sort()).toEqual([...forcing].sort());
   });
 });

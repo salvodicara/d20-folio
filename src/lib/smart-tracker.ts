@@ -30,6 +30,7 @@ import {
   activityFromItemActivation,
   activityFromSpell,
   addsSpellMod,
+  grantedActionActivities,
   type Activity,
   type ActivityDice,
   type FeatureOwnerKind,
@@ -109,6 +110,7 @@ import {
   type ResourcePayment,
   type FreeCastCapacityStep,
   type FreeCastEntry,
+  type GrantedAction,
   whileActiveDurationAtCastLevel,
   resolveGrantActiveKey,
   grantField,
@@ -147,6 +149,7 @@ import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdRaceTrait } from "@/data/types";
 import { SRD_INVOCATIONS, invocationTrackerId } from "@/data/invocations";
+import { SRD_MANEUVERS, type ManeuverDieTarget } from "@/data/maneuvers";
 import {
   getSrdFeatureSource,
   srdRefForFeatureSource,
@@ -187,6 +190,8 @@ import {
   effectiveSpellAttackBonus,
   featureSaveDc,
   featureSaveDcBreakdown,
+  maneuverSaveDc,
+  maneuverSaveDcBreakdown,
   buildSpellSaveDcBreakdown,
   isWeaponProficient,
   exhaustionPenalty,
@@ -502,6 +507,9 @@ export interface ActionSummary {
   uses?: { current: number; total: number; isPool?: boolean; unit?: TrackerUnit };
   /** Feature die: "d6", "d8", "d10" */
   die?: string;
+  /** The roll `die` is spent on: the triggering attack's damage or its attack
+   *  roll (a maneuver's Superiority Die). Omitted when the die goes elsewhere. */
+  dieAddsTo?: ManeuverDieTarget;
   /** Trigger condition (for reactions): "when hit by attack", "when creature casts spell" */
   trigger?: string;
   /** Healing formula: "1d10+9", "5×level" */
@@ -4898,6 +4906,7 @@ export function resolveActions(
   const deduped: RawResolvedAction[] = [];
   for (const a of [
     ...resolveFeatureActions(character, ctx),
+    ...grantedActionRows(character),
     ...resolveEquipmentActions(character, ctx),
     ...resolveSpellActions(character, ctx),
     ...resolveWeaponActions(character, ctx),
@@ -5992,6 +6001,127 @@ function resolveFeatureActions(
   }
 
   return actions;
+}
+
+const MANEUVER_BY_ID = new Map(SRD_MANEUVERS.map((m) => [m.id, m]));
+
+/** The economies a granted action's source already has a `mechanics.actions` row
+ *  for: a granted action of one of them is that row's duplicate (Superior
+ *  Hunter's Defense), the rule the catalogue applies too. */
+function ownRowEconomies(sourceId: string): Set<ActionType> {
+  const actions =
+    getSrdFeatureSource(sourceId)?.mechanics?.actions ??
+    INVOCATION_BY_ID.get(sourceId)?.mechanics?.actions ??
+    [];
+  return new Set(actions.map((action) => action.type));
+}
+
+/** A granted action's name: the maneuver's catalogue name, the grant's own name,
+ *  else its source feature's (an SRD grant whose catalogue entry has none). */
+function grantedActionName(granted: GrantedAction): LocText {
+  if (MANEUVER_BY_ID.has(granted.sourceId)) {
+    return srdText("maneuver", granted.sourceId, "name");
+  }
+  const { name } = granted;
+  if ("srd" in name && !srdEn(name.srd.kind, name.srd.key, name.srd.field)) {
+    return featureNameLoc(granted.sourceId);
+  }
+  return name;
+}
+
+/**
+ * A character's granted actions — the option a choice bundle holds (Horde
+ * Breaker under Hunter's Prey), each learned maneuver, a homebrew grant — as
+ * board rows, read from their Activities: the economy, the once-per-turn cap,
+ * the trigger, the tracker each use spends (with its uses and die), the save a
+ * target rolls and, for a maneuver, the DC (8 + PB + the better of STR and DEX)
+ * with its lines and the roll its Superiority Die adds to. The aggregate holds
+ * only the chosen bundle option, so the row follows the player's pick. A granted
+ * action whose source already has a row of its economy adds nothing.
+ */
+export function grantedActionRows(
+  character: CharacterDoc,
+  grantedActions: ReadonlyArray<GrantedAction> = aggregateCharacterGrants(
+    character.character,
+    character.session
+  ).grantedActions
+): RawResolvedAction[] {
+  const { character: charData, session } = character;
+  const pinned = new Set(session.pinnedActions);
+  const activities = grantedActionActivities(grantedActions);
+  const rows: RawResolvedAction[] = [];
+  grantedActions.forEach((granted, index) => {
+    const activity = activities[index];
+    if (!activity || ownRowEconomies(granted.sourceId).has(granted.slot)) return;
+    const maneuver = MANEUVER_BY_ID.get(granted.sourceId);
+    const type = actionTypeOf(activity.cost) ?? granted.slot;
+    const summary: RawActionSummary = {};
+    const effect = maneuver
+      ? srdEffectText("maneuver", maneuver.id)
+      : granted.description;
+    // A reaction reads by its trigger, as a feature reaction does.
+    if (effect && !(type === "reaction" && granted.trigger)) summary.effect = effect;
+    if (granted.trigger) summary.trigger = granted.trigger;
+
+    const pay = activity.cost.pay?.find((cost) => cost.kind === "tracker");
+    const trackerId = pay?.kind === "tracker" ? pay.trackerId : undefined;
+    const tracker = trackerId
+      ? getSrdFeatureSource(trackerId)?.mechanics?.tracker
+      : undefined;
+    if (trackerId && tracker) {
+      const scalingLevel = featureScalingLevel(trackerId, character);
+      const spec = resolveTrackerSpec(tracker, scalingLevel);
+      const total = resolveTrackerTotal(spec.total, character, scalingLevel);
+      summary.uses = {
+        current: Math.max(0, total - (session.trackers[trackerId]?.used ?? 0)),
+        total,
+        isPool: spec.isPool,
+        unit: spec.unit,
+      };
+      if (spec.die) summary.die = spec.die;
+    }
+    if (maneuver?.dieAddsTo && summary.die) summary.dieAddsTo = maneuver.dieAddsTo;
+
+    if (activity.save) {
+      summary.saveAbility = activity.save.ability;
+      if (maneuver) {
+        const { STR, DEX } = combatAbilityScores(character);
+        const level = totalLevel(charData);
+        const pbOverride = charData.proficiencyBonusOverride;
+        summary.saveDC = maneuverSaveDc(STR, DEX, level, pbOverride);
+        summary.saveDcParts = maneuverSaveDcBreakdown(STR, DEX, level, pbOverride);
+      }
+    }
+
+    const description = maneuver
+      ? srdText("maneuver", maneuver.id, "description")
+      : granted.description;
+    rows.push({
+      id: activity.id,
+      name: grantedActionName(granted),
+      type,
+      source: "feature",
+      spellLevel: null,
+      concentration: false,
+      summary,
+      costsSlot: false,
+      ...(pay?.kind === "tracker"
+        ? {
+            costTracker: pay.trackerId,
+            ...(pay.amount !== undefined ? { trackerCost: pay.amount } : {}),
+            ...(tracker?.isPool ? { costTrackerIsPool: true } : {}),
+            ...(tracker?.unit ? { costTrackerUnit: tracker.unit } : {}),
+          }
+        : {}),
+      ...(activity.cost.maxUsesPerTurn !== undefined
+        ? { maxUsesPerTurn: activity.cost.maxUsesPerTurn }
+        : {}),
+      pinned: pinned.has(activity.id),
+      defaultPinned: false,
+      ...(description ? { description } : {}),
+    });
+  });
+  return rows;
 }
 
 /**

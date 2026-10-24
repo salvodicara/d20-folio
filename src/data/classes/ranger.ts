@@ -446,8 +446,8 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
     // Reaction-granted, situational damage Resistance to an arbitrary incoming
     // type — surfaced as a Reaction action chip (Resistance is to whatever type
     // hit you, not a fixed `damage-resistance` grant).
-    // PROSE-SWEPT 2026-06-10 — `granted-action` grants have no live UI consumer
-    // (dormant); the combat row comes from `mechanics.actions`, added here.
+    // The combat row comes from `mechanics.actions`; the granted action of the
+    // same economy is its duplicate and adds no second row (`grantedActionRows`).
     grants: [
       {
         id: "superior-hunters-defense",

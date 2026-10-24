@@ -326,6 +326,7 @@ const MANEUVER_FIELDS: Readonly<Record<string, FieldRule>> = {
   id: IGNORE,
   save: compiled("action"),
   slot: compiled("action"),
+  dieAddsTo: compiled("action"),
 };
 
 const BEAST_FIELDS: Readonly<Record<string, FieldRule>> = {
