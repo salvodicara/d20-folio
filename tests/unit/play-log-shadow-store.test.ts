@@ -92,6 +92,32 @@ describe("play log shadow in the store", () => {
     expect(playLogShadowStats(id)).toEqual({ entries: 4, checkpoints: 1, mismatches: 0 });
   });
 
+  it("a Short Rest and a Long Rest reach the log", () => {
+    const id = load();
+    // Not concentrating: ending concentration still writes around the log (its own step).
+    const doc = store().character;
+    if (!doc) throw new Error("no character");
+    useCharacterStore.setState({
+      character: { ...doc, session: { ...doc.session, concentration: "" } },
+    });
+    store().dispatch({ kind: "spend-slot", level: 1, pactMagic: false });
+    store().shortRest();
+    store().longRest();
+    expect(store().character?.session.spellSlots["1"]?.used ?? 0).toBe(0);
+    expect(playLogShadowStats(id)).toEqual({ entries: 3, checkpoints: 1, mismatches: 0 });
+  });
+
+  it("removing a condition reaches the log, and its undo brings it back", () => {
+    const id = load();
+    store().dispatch({ kind: "add-condition", condition: "poisoned" });
+    const undo = store().removeConditionSilent("poisoned");
+    expect(store().character?.session.conditions).not.toContain("poisoned");
+    expect(playLogShadowStats(id)).toEqual({ entries: 2, checkpoints: 1, mismatches: 0 });
+    undo?.();
+    expect(store().character?.session.conditions).toContain("poisoned");
+    expect(playLogShadowStats(id)).toMatchObject({ checkpoints: 1, mismatches: 0 });
+  });
+
   it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {
     const doc = {
       ...makeCharacterDoc(

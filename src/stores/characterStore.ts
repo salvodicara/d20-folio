@@ -34,13 +34,7 @@ import {
   removeLogEntry as removeLogEntryById,
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
-import {
-  longRestCharacter,
-  longRestFadeEvents,
-  longRestFades,
-  omitStateKeys,
-  shortRestCharacter,
-} from "@/lib/play/rests";
+import { longRestFadeEvents, longRestFades, omitStateKeys } from "@/lib/play/rests";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   drinkPotion,
@@ -2308,23 +2302,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    const removed = removeConditionFrom(character, condition);
-    if (!removed) return null;
-    const prevConditions = character.session.conditions;
-    const prevConcentrationConditions = character.session.concentrationConditions;
+    if (!removeConditionFrom(character, condition)) return null;
     const prevLocalEffects = get().combatLegacyActiveEffects;
     const nextLegacyEffects = prevLocalEffects.filter(
       (effect) =>
         effect.payload.kind !== "condition" || effect.payload.conditionId !== condition
     );
-    // RA-12 — dropping Invisible ends the hidden state: the remembered find-DC
-    // goes with it (and comes back on undo).
-    const prevHiddenDc = character.session.hiddenDc;
-    const clearsHiddenDc = condition === "invisible" && prevHiddenDc !== undefined;
+    // The engine end, the chip and (RA-12) an Invisible's remembered find-DC all go
+    // through the play log; its undo brings every one of them back.
+    const undoRemoval = get().dispatch({ kind: "remove-condition", condition });
+    if (!undoRemoval) return null;
     set({
       combatActiveEffects: effectiveCombatEffects(nextLegacyEffects),
       combatLegacyActiveEffects: nextLegacyEffects,
-      character: { ...character, session: removed.session },
     });
     // Events-as-data: a lost condition is a story beat. Capture the id so the
     // reverse removes EXACTLY this line (a mis-tapped removal restores both the
@@ -2337,24 +2327,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
     flushParentPersistence(get);
     return () => {
-      // Reverse the ENGINE end first (the exact journal reverse restores the
-      // world occurrence and re-lights the chip through its mirror), so the
-      // legacy field restores below compose onto the restored world.
-      if (removed.worldActionId) undoWorldAction(get, removed.worldActionId);
-      const cur = get().character;
-      if (!cur) return;
+      undoRemoval();
       set({
         combatActiveEffects: effectiveCombatEffects(prevLocalEffects),
         combatLegacyActiveEffects: prevLocalEffects,
-        character: {
-          ...cur,
-          session: {
-            ...cur.session,
-            conditions: prevConditions,
-            concentrationConditions: prevConcentrationConditions,
-            ...(clearsHiddenDc ? { hiddenDc: prevHiddenDc } : {}),
-          },
-        },
       });
       get().removeLogEntry(lossLogId);
       // Re-persist the restored trio so the subdoc converges with the undo.
@@ -2666,7 +2642,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const fades = longRestFadeEvents(longRestFades(character));
-    set({ combatPendingConcentrationSaves: [], character: longRestCharacter(character) });
+    set({ combatPendingConcentrationSaves: [] });
+    get().dispatch({ kind: "long-rest" });
     // Events-as-data: a Long Rest is a story beat (the log survives the rest —
     // `logEntries` is untouched above). Logged AFTER the set so it lands on the
     // post-rest character, with what it faded (a penalty step, a restored maximum).
@@ -2691,10 +2668,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (endsConcentration(beforeRest.session.concentration, initiallyEndedKeys)) {
       get().setConcentration("", { undoable: false, silent: true });
     }
-    const { character } = get();
-    if (!character) return;
+    if (!get().character) return;
 
-    set({ character: shortRestCharacter(character) });
+    get().dispatch({ kind: "short-rest" });
     // Events-as-data: a Short Rest is a story beat.
     get().logEvent({ kind: "rest", restKind: "short" });
     persistCombat(get);
