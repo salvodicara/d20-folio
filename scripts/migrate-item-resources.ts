@@ -172,8 +172,8 @@ export type CatalogueMode = "srd-only" | "composed";
  * (Bag of Beans, Dust of Dryness, Sovereign Glue, Universal Solvent) had no legacy
  * counter. The Necklace of Fireballs stays on its legacy counter (rolled capacity). */
 export const EXPECTED_CATALOGUE_FINGERPRINTS: Readonly<Record<CatalogueMode, string>> = {
-  "srd-only": "6499930d2e21e872b88b73ab95c1e29701ad4940ea7180e72e704dae0b1c22c2",
-  composed: "39e4c5aeeb754926ca3049d8e2f3f916cb9eea21beb3c5b456b3c2c18706fb8d",
+  "srd-only": "a8b0ebde0c71cd272240d83ca6fab1d19bcdfc6101e2d684d2323f66a3448084",
+  composed: "4d84b6789f1115b9b797f4231c91d4f529a884a7fce921b25b767d15cf0e9fd4",
 };
 
 export function catalogueFingerprint(

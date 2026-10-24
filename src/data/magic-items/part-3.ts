@@ -101,6 +101,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Constitution +2, to a maximum of 30: written into the stored score once
     // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
     grants: [{ type: "permanent-ability-increase", ability: "CON", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -113,6 +115,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Strength +2, to a maximum of 30: written into the stored score once
     // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
     grants: [{ type: "permanent-ability-increase", ability: "STR", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -134,6 +138,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Dexterity +2, to a maximum of 30: written into the stored score once
     // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
     grants: [{ type: "permanent-ability-increase", ability: "DEX", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -563,6 +569,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Intelligence +2, to a maximum of 30: written into the stored score once
     // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
     grants: [{ type: "permanent-ability-increase", ability: "INT", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -575,6 +583,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Charisma +2, to a maximum of 30: written into the stored score once
     // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
     grants: [{ type: "permanent-ability-increase", ability: "CHA", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -587,6 +597,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Wisdom +2, to a maximum of 30: written into the stored score once
     // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
     grants: [{ type: "permanent-ability-increase", ability: "WIS", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
