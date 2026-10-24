@@ -127,6 +127,7 @@ import {
   resolveAllGrantSources,
   raceTraitSessionId,
 } from "@/lib/resolve-grant-sources";
+import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import {
   effectiveMaxHp,
   bloodiedFromHp,
@@ -5226,6 +5227,34 @@ function featureActionActivity(
   });
 }
 
+/**
+ * Activation inference (issue #27 dogfood) — a feature carrying BOTH actions AND
+ * a `while-active` grant is an ACTIVATION feature (Rage, Bladesong, Innate
+ * Sorcery, Starry Form, a homebrew stance): using its action IS entering the
+ * state. Inferred from the two facts the data already declares — no second
+ * declaration (declare the least). The combat commit loop flips this key into
+ * `session.activeFeatures` (lighting the rail chip + every while-active grant)
+ * and clears it on undo. The first `while-active` grant is the one it lights.
+ */
+function featureActivation(
+  grants: ReadonlyArray<Grant> | undefined
+): Pick<ResolvedAction, "activatesKey" | "activationEndsEarlyOn" | "activeTurnBoundary"> {
+  const state = grants?.find((g) => g.type === "while-active");
+  if (state?.type !== "while-active") return {};
+  const duration = state.duration;
+  return {
+    activatesKey: state.activeKey,
+    activationEndsEarlyOn:
+      duration?.kind === "maintained" || duration?.kind === "timed"
+        ? duration.endsEarlyOn
+        : undefined,
+    activeTurnBoundary:
+      duration?.kind === "turn-boundary"
+        ? { phase: duration.phase, turns: duration.turns }
+        : undefined,
+  };
+}
+
 /** Apply every target-facing capability a feature/homebrew action declares,
  * read from its Activity. All source kinds use this one projection. */
 function applyActionEffectSummary(
@@ -5437,6 +5466,11 @@ function resolveFeatureActions(
   for (const featureRef of charData.features) {
     if ("custom" in featureRef) {
       if (featureRef.actions) {
+        // A homebrew feature's grants make its action an activation exactly as
+        // a catalogue feature's do (a homebrew stance entered by its action).
+        const customGrants = homebrewFeatureGrants(featureRef);
+        const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } =
+          featureActivation(customGrants);
         for (const [index, a] of featureRef.actions.entries()) {
           const id = `custom-${featureRef.instanceId}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
@@ -5464,11 +5498,15 @@ function resolveFeatureActions(
           }
           applyActionEffectSummary(
             summary,
-            featureActionActivity(a, {
-              owner: "custom-feature",
-              ownerId: featureRef.instanceId,
-              index,
-            }),
+            featureActionActivity(
+              a,
+              {
+                owner: "custom-feature",
+                ownerId: featureRef.instanceId,
+                index,
+              },
+              customGrants
+            ),
             `custom-${featureRef.instanceId}`,
             character,
             ctx,
@@ -5494,6 +5532,9 @@ function resolveFeatureActions(
             pinned: pinnedSet.has(id),
             defaultPinned: false,
             description: customText(a.description),
+            ...(activatesKey ? { activatesKey } : {}),
+            ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
+            ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
             ...actionTurnConstraints(a),
           });
         }
@@ -5506,32 +5547,9 @@ function resolveFeatureActions(
     // The catalogue base key for this feature's strings (name/desc/action descs).
     const featRef = srdRefForFeatureSource(srdFeature);
 
-    // Activation inference (issue #27 dogfood) — an SRD feature carrying BOTH
-    // `mechanics.actions` AND a `while-active` grant is an ACTIVATION feature
-    // (Rage, Bladesong, Innate Sorcery, Starry Form…): using its action IS
-    // entering the state. Inferred from the two facts the data already
-    // declares — no second declaration (declare the least). The combat commit
-    // loop flips this key into `session.activeFeatures` (lighting the rail
-    // chip + every while-active grant) and clears it on undo.
-    let activatesKey: string | undefined;
-    let activationEndsEarlyOn: ReadonlyArray<string> | undefined;
-    let activeTurnBoundary: ResolvedAction["activeTurnBoundary"];
-    if ("grants" in srdFeature) {
-      for (const g of srdFeature.grants ?? []) {
-        if (g.type === "while-active") {
-          activatesKey = g.activeKey;
-          activationEndsEarlyOn =
-            g.duration?.kind === "maintained" || g.duration?.kind === "timed"
-              ? g.duration.endsEarlyOn
-              : undefined;
-          activeTurnBoundary =
-            g.duration?.kind === "turn-boundary"
-              ? { phase: g.duration.phase, turns: g.duration.turns }
-              : undefined;
-          break;
-        }
-      }
-    }
+    const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } = featureActivation(
+      "grants" in srdFeature ? srdFeature.grants : undefined
+    );
 
     // B2 — a CLASS feature's tracker + scaling dice scale by its OWNING-class
     // level (Wild Shape uses scale with Druid level, not the total; Divine Spark's

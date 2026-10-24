@@ -700,6 +700,7 @@ const CUSTOM_FEATURE_KEYS = [
   "contentBlocks",
   "trackers",
   "actions",
+  "grants",
   "subtitle",
   "instanceId",
 ] as const;
@@ -740,6 +741,17 @@ function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomF
             obj.actions,
             `${path}.actions`
           ) as unknown as CustomFeature["actions"],
+        }
+      : {}),
+    // Authored Grant-language mechanics stay as written (array shape enforced);
+    // the engine conforms each element at its one seam (`homebrewFeatureGrants`),
+    // so a newer client's kind is preserved here and inert on this one.
+    ...(obj.grants !== undefined
+      ? {
+          grants: recordArray(
+            obj.grants,
+            `${path}.grants`
+          ) as unknown as CustomFeature["grants"],
         }
       : {}),
     ...(obj.subtitle !== undefined
