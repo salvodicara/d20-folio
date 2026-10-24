@@ -1,0 +1,85 @@
+{
+  "playbook": {
+    "line": {
+      "position": "**Muoviti** fino a {{speed}}, se ti serve avvicinarti.",
+      "positionRange": "**Muoviti** fino a {{speed}}, restando a distanza.",
+      "healAllyDown": "**{{action}}** su un alleato a terra.",
+      "selfHealBloodied": "**{{action}}** quando sei Sanguinante.",
+      "areaWhenGrouped": "**{{action}}** quando almeno {{min}} nemici sono vicini tra loro.",
+      "burstToughFoe": "**{{action}}** contro un nemico pericoloso.",
+      "controlToughFoe": "**{{action}}** sul nemico più pericoloso.",
+      "concentrationOpener": "**{{action}}** all'inizio del combattimento.",
+      "defaultAttack": "**{{action}}** sul nemico più vicino.",
+      "setUpAdvantage": "**{{action}}** se in questo turno non ti muovi.",
+      "disengageWhenAdjacent": "**{{action}}** se hai un nemico accanto.",
+      "hideWhenPossible": "**{{action}}** se puoi sparire alla vista.",
+      "dashWhenFar": "**{{action}}** se il bersaglio è lontano.",
+      "reactionDefense": {
+        "hitByAttack": "**{{action}}** quando un attacco ti colpisce.",
+        "hitOrMagicMissileTarget": "**{{action}}** quando un attacco ti colpisce o un Dardo Incantato ti prende di mira.",
+        "takeDamage": "**{{action}}** quando subisci danni.",
+        "other": "**{{action}}** quando succede ciò che la attiva."
+      },
+      "opportunityAttack": "**{{action}}** quando un nemico esce dalla tua portata.",
+      "recoverHp": "**{{action}}** per recuperare Punti Ferita.",
+      "ritualNoSlot": "**{{action}}** come rituale.",
+      "check": {
+        "search": "**{{action}}** per trovare ciò che è nascosto.",
+        "study": "**{{action}}** per ricordare o capire qualcosa.",
+        "influence": "**{{action}}** per convincere qualcuno.",
+        "hide": "**{{action}}** per non farti vedere."
+      },
+      "utilityCantrip": "**{{action}}** quando può tornare utile.",
+      "shortRest": {
+        "toFull": "Sei a {{current}} su {{max}}: un **riposo breve** ti porterebbe al massimo.",
+        "some": "Sei a {{current}} su {{max}}: un **riposo breve** ti ridà circa {{heal}} Punti Ferita.",
+        "uses": "Un **riposo breve** ti ridà quello che hai usato."
+      }
+    },
+    "why": {
+      "bestDamage": "in media {{average}} danni",
+      "bestDamageVs": "in media {{average}} danni ({{other}}: {{otherAverage}})",
+      "cantripNoCost": "non spende slot",
+      "worksAtRange": "funziona anche a distanza",
+      "reaches": "arriva a {{range}}",
+      "extraAttack": "attacchi {{attacks}} volte con ogni azione di Attacco",
+      "weaponMastery": "la sua padronanza aggiunge {{mastery}}",
+      "sneakAttack": "{{dice}} in più di Attacco Furtivo con Vantaggio o un alleato accanto al bersaglio",
+      "areaHitsMany": "colpisce più nemici insieme",
+      "extraAction": "ti dà un'azione in più",
+      "recharges": {
+        "short-rest": "torna dopo un riposo breve",
+        "long-rest": "torna dopo un riposo lungo",
+        "dawn": "torna all'alba",
+        "other": "torna col tempo",
+        "short-or-long-rest": "torna dopo un riposo breve o lungo"
+      },
+      "costsSlot": "spendi uno slot di {{level}}° livello",
+      "revivesAlly": "l'alleato a 0 Punti Ferita si rialza",
+      "selfHeal": "recuperi {{amount}} Punti Ferita",
+      "keepsActionFree": "ti lascia libera l'azione",
+      "oneConcentration": "richiede Concentrazione",
+      "controlsFoe": "può mettere fuori gioco quel nemico",
+      "advantageNextAttack": "il tuo prossimo attacco ha Vantaggio",
+      "bonusMobility": "ti costa solo un'Azione Bonus",
+      "reactionDefense": "ti protegge quando ti attaccano",
+      "opportunityAttack": "lo colpisci mentre se ne va",
+      "alreadyConcentrating": "stai già mantenendo la Concentrazione su un altro incantesimo",
+      "noUsesLeft": "non ti restano usi",
+      "noSlotLeft": "non ti restano slot per lanciarlo",
+      "cannotAct": "sei Incapacitato",
+      "playerPinned": "l'hai messo tu per primo",
+      "ritualNoSlot": "ci mette {{minutes}} minuti in più ma non spende uno slot",
+      "explorationCheck": "è una prova di caratteristica e non costa niente",
+      "cheapestFirst": "prima il modo che costa meno",
+      "usesItem": "consuma un oggetto",
+      "limitedUse_one": "ti resta {{count}} uso su {{total}}",
+      "limitedUse_other": "ti restano {{count}} usi su {{total}}",
+      "recoversOnShortRest_one": "torna {{count}} uso su {{total}}",
+      "recoversOnShortRest_other": "tornano {{count}} usi su {{total}}",
+      "hitDiceHeal_one": "ti resta {{count}} Dado Vita su {{total}}",
+      "hitDiceHeal_other": "ti restano {{count}} Dadi Vita su {{total}}",
+      "and": " e "
+    }
+  }
+}
