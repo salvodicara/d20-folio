@@ -59,8 +59,7 @@ export function castPreview(
   labels: CastBadgeLabels = NO_LABELS
 ): CastPreview | null {
   const spell = getSpellById(spellId);
-  const known = doc.character.spells.some((s) => !("custom" in s) && s.srdId === spellId);
-  if (!spell || !known) return null;
+  if (!spell) return null;
 
   const routes = resolveSpellCastOptions(doc, spellId, spell.level, true, locale, labels);
   // The routes leave a spent slot level out; the dialog shows it greyed ("none"), so
@@ -115,6 +114,10 @@ export function castPreview(
       };
     })
     .sort((a, b) => a.level - b.level);
+
+  // On the list, or castable through a grant (an invocation, a feat, an item).
+  const known = doc.character.spells.some((s) => !("custom" in s) && s.srdId === spellId);
+  if (!known && routes.length === 0) return null;
 
   const held = doc.session.concentration;
   return {

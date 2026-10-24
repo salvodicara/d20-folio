@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 
 import { concentrationValue } from "@/lib/concentration";
 import { castPreview } from "@/lib/views/cast-preview";
+import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
 
 const wizard = (session = {}) =>
@@ -105,5 +106,20 @@ describe("castPreview", () => {
       ends: null,
     });
     expect(castPreview(wizard(), "wish")).toBeNull();
+  });
+
+  it("a spell granted at will, not on the list, still has its preview (Armor of Shadows)", () => {
+    const warlock = structuredClone(MOCK_CHARACTER);
+    warlock.character.features = [];
+    warlock.character.equipment = [];
+    warlock.character.spells = [];
+    warlock.character.classes = warlock.character.classes.map((e, i) =>
+      i === 0 ? { ...e, maneuverChoices: [], invocationChoices: ["armor-of-shadows"] } : e
+    );
+    const preview = castPreview(warlock, "mage-armor");
+    expect(preview?.levels).toContainEqual(
+      expect.objectContaining({ level: 1, remaining: Infinity, available: true })
+    );
+    expect(preview?.defaultLevel).toBe(1);
   });
 });
