@@ -39,13 +39,13 @@ import {
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
 import { conformGrant, type Grant } from "@/lib/grants";
-import { CONDITION_APPLICATION_SCHEMA } from "@/lib/homebrew-actions";
+import { CONDITION_APPLICATION_SCHEMA, homebrewActionDef } from "@/lib/homebrew-actions";
 import { classifySpellCastingTime } from "@/lib/cast-options";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import { ABILITY_CODES } from "@/types/ability";
 import { CONDITION_ID_SCHEMA } from "@/types/condition";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
-import type { CustomSpell, SrdSpellRef } from "@/types/character";
+import type { ActionData, CustomSpell, SrdSpellRef } from "@/types/character";
 
 // ─── The exact shape of every structured catalogue-spell field ───────────────
 
@@ -79,7 +79,8 @@ const SPELL_DURATION = unionSchema([
  *  translator the catalogue's goes through. */
 const OBJECT = customSchema<"object", Readonly<Record<string, unknown>>>("object");
 const GRANT = customSchema<"grant", Grant>("grant");
-/** A follow-up action: a plain object naming a known action economy. */
+/** A follow-up action: a known action economy, each field held to the homebrew
+ *  action's own schema (`homebrewActionDef`); a rejected field is out of play. */
 const ACTION_DEF = customSchema<"action-def", Readonly<Record<string, unknown>>>(
   "action-def"
 );
@@ -107,7 +108,9 @@ const CONTEXT: ExactSchemaContext<
     "action-def": (value) =>
       plainObject(value) &&
       (ALL_ACTION_TYPES as ReadonlyArray<unknown>).includes(value.type)
-        ? value
+        ? (homebrewActionDef(value as unknown as ActionData) as unknown as Readonly<
+            Record<string, unknown>
+          >)
         : null,
   },
   refs: {},

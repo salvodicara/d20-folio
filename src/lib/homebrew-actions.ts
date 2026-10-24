@@ -16,7 +16,12 @@
  * resolver's card facts.
  */
 import type { EffectRiders, SrdActionDef } from "@/data/types";
-import { ALL_CLASS_IDS, ALL_CREATURE_TYPES, ALL_REACTION_TRIGGERS } from "@/data/types";
+import {
+  ALL_ACTION_TYPES,
+  ALL_CLASS_IDS,
+  ALL_CREATURE_TYPES,
+  ALL_REACTION_TRIGGERS,
+} from "@/data/types";
 import {
   arraySchema,
   booleanSchema,
@@ -291,6 +296,48 @@ function plainObject(value: unknown): value is Readonly<Record<string, unknown>>
 
 const cache = new WeakMap<object, SrdActionDef>();
 
+/** Every structured field of `authored` its schema accepts, in schema order. */
+function acceptedFields(authored: Readonly<Record<string, unknown>>) {
+  const accepted: Record<string, unknown> = {};
+  for (const [key, schema] of Object.entries(HOMEBREW_ACTION_FIELD_SCHEMAS)) {
+    if (!Object.hasOwn(authored, key)) continue;
+    const value: unknown = conformExact(schema, authored[key], CONTEXT);
+    if (value !== null) accepted[key] = value;
+  }
+  return accepted;
+}
+
+const isActionType = (value: unknown): value is SrdActionDef["type"] =>
+  (ALL_ACTION_TYPES as ReadonlyArray<unknown>).includes(value);
+
+/** A player's override of a catalogue feature action, as the resolver reads it. */
+export type HomebrewActionOverride = Partial<SrdActionDef> &
+  Partial<Pick<ActionData, "label" | "description">>;
+
+const overrideCache = new WeakMap<object, HomebrewActionOverride>();
+
+/**
+ * A stored `actionOverrides` element (a player's change to a catalogue feature
+ * action) as the fields the resolver may merge over the catalogue action: its label
+ * and description when they are text, its id and type when valid, and every
+ * structured field its schema accepts. Anything else is out of play, so the
+ * catalogue's own value keeps playing; the stored override is never touched.
+ */
+export function homebrewActionOverride(raw: unknown): HomebrewActionOverride {
+  if (!plainObject(raw)) return {};
+  const hit = overrideCache.get(raw);
+  if (hit) return hit;
+  const override = Object.freeze({
+    ...(typeof raw.id === "string" ? { id: raw.id } : {}),
+    ...(isActionType(raw.type) ? { type: raw.type } : {}),
+    ...(typeof raw.label === "string" ? { label: raw.label } : {}),
+    ...(typeof raw.description === "string" ? { description: raw.description } : {}),
+    ...acceptedFields(raw),
+  }) as HomebrewActionOverride;
+  overrideCache.set(raw, override);
+  return override;
+}
+
 /**
  * A stored homebrew feature action as a catalogue action — the one shape the action
  * engine reads: its own type and id, and every known field its schema accepts. A
@@ -300,14 +347,7 @@ export function homebrewActionDef(action: ActionData): SrdActionDef {
   const hit = cache.get(action);
   if (hit) return hit;
   const authored: unknown = action;
-  const accepted: Record<string, unknown> = {};
-  if (plainObject(authored)) {
-    for (const [key, schema] of Object.entries(HOMEBREW_ACTION_FIELD_SCHEMAS)) {
-      if (!Object.hasOwn(authored, key)) continue;
-      const value: unknown = conformExact(schema, authored[key], CONTEXT);
-      if (value !== null) accepted[key] = value;
-    }
-  }
+  const accepted = plainObject(authored) ? acceptedFields(authored) : {};
   const def = Object.freeze({
     ...accepted,
     type: action.type,

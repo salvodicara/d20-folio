@@ -130,7 +130,7 @@ import {
   resolveAllGrantSources,
   raceTraitSessionId,
 } from "@/lib/resolve-grant-sources";
-import { homebrewActionDef } from "@/lib/homebrew-actions";
+import { homebrewActionDef, homebrewActionOverride } from "@/lib/homebrew-actions";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
 import { homebrewItemData } from "@/lib/homebrew-items";
@@ -5685,10 +5685,15 @@ function resolveFeatureActions(
     let actionIndex = -1;
     for (const authoredAction of srdFeature.mechanics.actions) {
       actionIndex += 1;
-      const actionOverride =
+      // A stored override is the player's text: only the fields its schema
+      // accepts merge over the catalogue action (`homebrewActionOverride`).
+      const storedOverride =
         featureRef.actionOverrides?.find(
           (candidate) => candidate.id && candidate.id === authoredAction.id
         ) ?? featureRef.actionOverrides?.[actionIndex];
+      const actionOverride = storedOverride
+        ? homebrewActionOverride(storedOverride)
+        : undefined;
       const action = { ...authoredAction, ...actionOverride } as SrdActionDef &
         Partial<Pick<ActionData, "label" | "description">>;
       if (
