@@ -561,20 +561,7 @@ function hpMaxReductionOf(session: AggregationSession): number {
     : 0;
 }
 
-/**
- * The ONE Bloodied arithmetic (rule 6 — single source of truth): a character is
- * Bloodied iff `0 < currentHp ≤ ⌊effectiveMax / 2⌋` (2024 RAW). HP only — NOT
- * temporary HP. A degenerate `effectiveMax ≤ 0` is never Bloodied (the `> 0` band
- * test fails), and a character at 0 HP is DYING/unconscious — NOT Bloodied (the
- * dying surface owns the ≤ 0 band). BOTH the engine predicate `isBloodied`
- * (smart-tracker.ts) and the UI hook's `bloodied` mark (use-hp-controls.ts) call
- * THIS function over the EFFECTIVE max they already have in scope, so the two
- * derivations can never drift. Pure arithmetic — pass the already-resolved
- * effective max (via {@link effectiveMaxHp}) so callers share one max source too.
- */
-export function bloodiedFromHp(currentHp: number, effectiveMax: number): boolean {
-  return currentHp > 0 && currentHp <= Math.floor(effectiveMax / 2);
-}
+export { bloodiedFromHp } from "@/lib/hp-band";
 
 /**
  * The per-source {@link RawBreakdownPart}s of a character's EFFECTIVE max HP for the
