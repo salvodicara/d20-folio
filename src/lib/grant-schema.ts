@@ -62,6 +62,24 @@ const CAST_LEVELS_SCHEMA = arraySchema(
   })
 );
 
+/** The creature types a weapon's extra damage can be limited to. */
+const RIDER_CREATURE_TYPE_SCHEMA = unionSchema([
+  literalSchema("aberration"),
+  literalSchema("beast"),
+  literalSchema("celestial"),
+  literalSchema("construct"),
+  literalSchema("dragon"),
+  literalSchema("elemental"),
+  literalSchema("fey"),
+  literalSchema("fiend"),
+  literalSchema("giant"),
+  literalSchema("humanoid"),
+  literalSchema("monstrosity"),
+  literalSchema("ooze"),
+  literalSchema("plant"),
+  literalSchema("undead"),
+]);
+
 const CASTING_ABILITY_SCHEMA = unionSchema([
   literalSchema("STR"),
   literalSchema("DEX"),
@@ -2413,26 +2431,58 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("item-bound-damage-rider"),
     },
     {
-      targetCreatureTypes: arraySchema(
-        unionSchema([
-          literalSchema("aberration"),
-          literalSchema("beast"),
-          literalSchema("celestial"),
-          literalSchema("construct"),
-          literalSchema("dragon"),
-          literalSchema("elemental"),
-          literalSchema("fey"),
-          literalSchema("fiend"),
-          literalSchema("giant"),
-          literalSchema("humanoid"),
-          literalSchema("monstrosity"),
-          literalSchema("ooze"),
-          literalSchema("plant"),
-          literalSchema("undead"),
-        ])
-      ),
+      /** Not against these creature types (Sword of Life Stealing: no Constructs
+       *  or Undead). */
+      excludeCreatureTypes: arraySchema(RIDER_CREATURE_TYPE_SCHEMA),
+      /** Only when the d20 of the attack roll shows a 20 (Sword of Sharpness's
+       *  extra 14 Slashing). A plain number in `dice` is a fixed amount. */
+      onRoll20: literalSchema(true),
+      targetCreatureTypes: arraySchema(RIDER_CREATURE_TYPE_SCHEMA),
     }
   ),
+  /**
+   * Critical Hits against the wearer become normal hits (Adamantine Armor): the
+   * hit's extra dice and a Critical Hit's two Death Saving Throw failures at 0 HP.
+   */
+  "critical-hit-immunity": objectSchema({
+    type: literalSchema("critical-hit-immunity"),
+  }),
+  /**
+   * Worn armor loses one of its drawbacks (Mithral Armor): its Disadvantage on
+   * Dexterity (Stealth) checks, or its Strength requirement's −10 ft Speed.
+   */
+  "armor-penalty-waiver": objectSchema({
+    penalty: unionSchema([
+      literalSchema("stealth-disadvantage"),
+      literalSchema("strength-requirement"),
+    ]),
+    type: literalSchema("armor-penalty-waiver"),
+  }),
+  /** A dying creature stabilizes on its own (Periapt of Wound Closure). */
+  "auto-stabilize": objectSchema({
+    type: literalSchema("auto-stabilize"),
+  }),
+  /**
+   * Hit Point Dice spent to heal restore more: `double` doubles the HP restored
+   * (Periapt of Wound Closure); `maximum` restores each die's maximum (Potion of
+   * Vitality).
+   */
+  "hit-dice-healing": objectSchema({
+    rule: unionSchema([literalSchema("double"), literalSchema("maximum")]),
+    type: literalSchema("hit-dice-healing"),
+  }),
+  /**
+   * Studying the item raises an ability score for good, up to `cap` (Manual of
+   * Bodily Health: Constitution +2, to a maximum of 30). Never a standing bonus:
+   * the increase is written into the stored score once, so it stays after the
+   * book is gone (`studyItemAbilityScores`).
+   */
+  "permanent-ability-increase": objectSchema({
+    ability: CASTING_ABILITY_SCHEMA,
+    amount: numberSchema,
+    cap: numberSchema,
+    type: literalSchema("permanent-ability-increase"),
+  }),
   /**
    * Incoming damage of these types is reduced by a rolled die (Resistance:
    * 1d4, once per turn). The dice stay table-rolled: a defense line, not

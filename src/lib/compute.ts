@@ -1520,6 +1520,9 @@ export interface ItemBoundDamageRider {
   dice: string;
   damageType: DamageType | "same-as-weapon";
   targetCreatureTypes?: ReadonlyArray<CreatureType>;
+  excludeCreatureTypes?: ReadonlyArray<CreatureType>;
+  /** Only when the attack's d20 shows a 20 (Sword of Sharpness). */
+  onRoll20?: true;
 }
 
 /**
@@ -1539,6 +1542,8 @@ export function resolveItemBoundDamageRiders(
       dice: g.dice,
       damageType: g.damageType,
       ...(g.targetCreatureTypes ? { targetCreatureTypes: g.targetCreatureTypes } : {}),
+      ...(g.excludeCreatureTypes ? { excludeCreatureTypes: g.excludeCreatureTypes } : {}),
+      ...(g.onRoll20 ? { onRoll20: true as const } : {}),
     });
   };
   for (const g of grants ?? []) {

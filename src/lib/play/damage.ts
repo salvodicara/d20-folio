@@ -11,6 +11,7 @@ import {
   type PcDamageTransitionResult,
 } from "@/lib/combat-transition";
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
+import { ruleFlag } from "@/lib/rules";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { commitWorldVitals, drainedTemporary } from "./world-commit";
 
@@ -49,12 +50,20 @@ export function takeDamage(
       deathSaves: { successes: doc.session.deathSucc, failures: doc.session.deathFail },
     },
     intake: { stage: "resolved", amount },
-    ...(opts?.crit ? { crit: true } : {}),
+    // Adamantine Armor: a Critical Hit against you is a normal hit.
+    ...(opts?.crit && !ruleFlag(aggregate.values, "defense:no-critical-hits")
+      ? { crit: true }
+      : {}),
     ...(opts?.hit ? { hit: opts.hit } : {}),
     persistentEffects,
     stateZeroHpFloors: [...stateFloorByKey.values()],
   });
   if (!transition.changed) return null;
+  const deathSaves = stabilizedDeathSaves(
+    transition.state.hp.current,
+    transition.state.deathSaves,
+    ruleFlag(aggregate.values, "trait:auto-stabilize")
+  );
 
   const consumedEffectIds = new Set(transition.consumedEffectIds);
   const consumedActiveKeys = new Set([
@@ -82,10 +91,7 @@ export function takeDamage(
       zeroHitPoints:
         transition.state.hp.current > 0
           ? null
-          : zeroTrackFor(
-              transition.state.deathSaves.successes,
-              transition.state.deathSaves.failures
-            ),
+          : zeroTrackFor(deathSaves.successes, deathSaves.failures),
     };
     return state;
   });
@@ -99,8 +105,8 @@ export function takeDamage(
         temp: transition.state.hp.temp,
       },
       conditions: [...transition.state.conditions],
-      deathSucc: transition.state.deathSaves.successes,
-      deathFail: transition.state.deathSaves.failures,
+      deathSucc: deathSaves.successes,
+      deathFail: deathSaves.failures,
       ...(consumedEffectIds.size > 0
         ? {
             encounterEffects: persistentEffects.filter(
@@ -119,4 +125,18 @@ export function takeDamage(
     transition,
     consumedEffectIds,
   };
+}
+
+/**
+ * The death saves after a hit: a character who stabilizes on its own (Periapt of
+ * Wound Closure) is Stable (three successes, no failures) the moment the hit leaves
+ * it dying. Dead stays dead; above 0 HP nothing changes.
+ */
+export function stabilizedDeathSaves(
+  hpAfter: number,
+  deathSaves: { successes: number; failures: number },
+  autoStabilize: boolean
+): { successes: number; failures: number } {
+  if (!autoStabilize || hpAfter > 0 || deathSaves.failures >= 3) return deathSaves;
+  return { successes: 3, failures: 0 };
 }

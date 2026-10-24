@@ -2585,6 +2585,10 @@ export function evaluateGrants(
       case "concentration-blocked":
       case "healing-blocked":
       case "turn-economy-block":
+      case "critical-hit-immunity":
+      case "armor-penalty-waiver":
+      case "auto-stabilize":
+      case "hit-dice-healing":
       case "heroic-inspiration-at-turn-start":
       case "heroic-inspiration-on-rest":
         rules.push(...(compileGrant(g) ?? []));
@@ -3328,6 +3332,10 @@ export function evaluateGrants(
         // (`resolveItemBoundWeaponBonus`) reads the item's grants directly —
         // aggregating it would smear the +N across every attack. The case exists
         // to keep the switch exhaustive (no silent fall-through).
+        break;
+      case "permanent-ability-increase":
+        // Never a standing bonus: studying the book writes the increase into the
+        // stored score once (`studyItemAbilityScores`), so it outlives the item.
         break;
 
       // ── Pending choices (level-up wizard pickers) ───────────────────

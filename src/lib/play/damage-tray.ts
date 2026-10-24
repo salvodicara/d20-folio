@@ -22,6 +22,7 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { AttackOutcome } from "@/types/combat-log";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
+import type { CreatureType } from "@/data/types";
 
 export type { AttackOutcome } from "@/types/combat-log";
 /** Foundry dnd5e's chat card order: Hit · Miss · Critical. */
@@ -52,12 +53,28 @@ export interface DamageTrayPlan {
   /** The action rolls to hit (a weapon, an attack-roll spell): each row says Hit,
    *  Miss or Critical. A miss deals nothing, half the total (Acid Arrow), or the
    *  Graze mastery's fixed damage. */
-  attack?: { onMiss: "none" | "half"; graze?: number };
+  attack?: { onMiss: "none" | "half"; graze?: number; onRoll20?: OnRoll20Damage[] };
   /** Each target took its own share of separate instances (Magic Missile's darts,
    *  Scorching Ray's rays): every row has its own rolled total instead of one shared
    *  total. Only when the instances are split across more than one target. */
   perTarget?: true;
   targets: string[];
+}
+
+/**
+ * Extra damage the weapon deals only when the attack's d20 shows a 20 (Sword of
+ * Sharpness: 14 Slashing; Mace of Smiting: 7 Bludgeoning, 14 against a Construct).
+ * A fixed `amount` is added by the tray to a Critical row; a dice rider is shown
+ * for the player to roll into the total. A Critical row stands for the 20: a
+ * Critical Hit on a lower roll (Improved Critical) is the player's call.
+ */
+export interface OnRoll20Damage {
+  dice: string;
+  amount?: number;
+  damageType: DamageType;
+  targetCreatureTypes?: ReadonlyArray<CreatureType>;
+  excludeCreatureTypes?: ReadonlyArray<CreatureType>;
+  sourceName?: string;
 }
 
 /** The action makes an attack roll (a weapon, an attack-roll spell): its tray rows
@@ -110,6 +127,24 @@ export function damageTrayPlan(
   const halfOnMiss = parts.some(
     (part) => part.id === "primary" && part.damageOnMiss === "half"
   );
+  const onRoll20: OnRoll20Damage[] = (s.extraDamage ?? []).flatMap((extra) =>
+    extra.onRoll20
+      ? [
+          {
+            dice: extra.dice,
+            ...(extra.fixedAmount !== undefined ? { amount: extra.fixedAmount } : {}),
+            damageType: extra.damageType as DamageType,
+            ...(extra.targetCreatureTypes
+              ? { targetCreatureTypes: extra.targetCreatureTypes }
+              : {}),
+            ...(extra.excludeCreatureTypes
+              ? { excludeCreatureTypes: extra.excludeCreatureTypes }
+              : {}),
+            ...(extra.sourceName ? { sourceName: extra.sourceName } : {}),
+          },
+        ]
+      : []
+  );
   const planTargets = [
     ...new Set([...items.map((item) => item.targetId), ...(attacks ? targets : [])]),
   ];
@@ -147,6 +182,7 @@ export function damageTrayPlan(
           attack: {
             onMiss: halfOnMiss ? ("half" as const) : ("none" as const),
             ...(graze !== undefined && graze > 0 ? { graze } : {}),
+            ...(onRoll20.length > 0 ? { onRoll20 } : {}),
           },
         }
       : {}),
@@ -207,6 +243,30 @@ export interface TrayRow {
   conditions: string[];
   /** The attack's result on this target, when the action rolls to hit. */
   attack?: AttackOutcome;
+  /** The target's creature type, when known (an on-a-20 rider may hinge on it). */
+  creatureType?: CreatureType;
+}
+
+/** Whether an on-a-20 rider reaches a target of this type. An unknown type meets
+ *  no "only against" list and no "not against" list. */
+function reachesTarget(rider: OnRoll20Damage, creatureType?: CreatureType): boolean {
+  if (rider.targetCreatureTypes)
+    return creatureType !== undefined && rider.targetCreatureTypes.includes(creatureType);
+  if (rider.excludeCreatureTypes && creatureType !== undefined)
+    return !rider.excludeCreatureTypes.includes(creatureType);
+  return true;
+}
+
+/** The fixed on-a-20 damage a Critical row adds to the rolled total (Sword of
+ *  Sharpness: +14); 0 on any other row. */
+export function onRoll20Amount(
+  row: Pick<TrayRow, "attack" | "creatureType">,
+  plan: DamageTrayPlan
+): number {
+  if (row.attack !== "critical" || plan.effect !== "damage") return 0;
+  return (plan.attack?.onRoll20 ?? [])
+    .filter((rider) => reachesTarget(rider, row.creatureType))
+    .reduce((sum, rider) => sum + (rider.amount ?? 0), 0);
 }
 
 /**
@@ -240,7 +300,8 @@ export function factsMultiplier(
 export function initialTrayRow(
   plan: DamageTrayPlan,
   targetId: string,
-  defenses?: DamageDefenses
+  defenses?: DamageDefenses,
+  creatureType?: CreatureType
 ): TrayRow {
   const defense =
     plan.effect === "damage" ? targetDefense(defenses, plan.damageType) : null;
@@ -253,6 +314,7 @@ export function initialTrayRow(
   return {
     targetId,
     ...facts,
+    ...(creatureType ? { creatureType } : {}),
     multiplier: factsMultiplier(facts, plan),
     conditions:
       plan.conditions && !plan.conditions.optIn
@@ -278,9 +340,12 @@ export function rowNeedsTotal(row: TrayRow, plan: DamageTrayPlan): boolean {
 
 /** What this row applies from the rolled total: the total × its multiplier, every
  *  halving rounded down (¼ = halve twice, the same as ⌊total / 4⌋). A grazing miss
- *  multiplies the Graze damage instead. */
+ *  multiplies the Graze damage instead. A Critical row adds the weapon's fixed
+ *  on-a-20 damage ({@link onRoll20Amount}) before the multiplier. */
 export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
-  const base = grazes(row, plan) ? (plan.attack?.graze ?? 0) : total;
+  const base = grazes(row, plan)
+    ? (plan.attack?.graze ?? 0)
+    : total + onRoll20Amount(row, plan);
   const amount = Math.max(0, Math.floor(base));
   if (plan.effect !== "damage") return amount;
   switch (row.multiplier) {

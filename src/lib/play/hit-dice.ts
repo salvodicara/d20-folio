@@ -8,6 +8,8 @@
 import { getClassTable } from "@/data/classes";
 import { resolveClassId } from "@/data/srd-names";
 import { getClasses } from "@/lib/classes";
+import type { AggregatedGrants } from "@/lib/grants";
+import { ruleFlag } from "@/lib/rules";
 import type { CharacterData } from "@/types/character";
 
 export type HitDieSize = CharacterData["hitDieType"];
@@ -73,4 +75,27 @@ export function hitDiceLabel(
     dice:
       pool.length === 1 && only && count !== undefined ? `${count}d${only.die}` : null,
   };
+}
+
+/**
+ * The HP that spent Hit Point Dice restore: the rolled total plus the Constitution
+ * modifier per die (at least 1 per die). A `hit-dice-healing` `maximum` grant
+ * (Potion of Vitality) restores each die's maximum instead, with no roll needed;
+ * `double` (Periapt of Wound Closure) doubles the HP restored. `null` while a
+ * needed roll is missing.
+ */
+export function hitDiceHealing(input: {
+  pool: ReadonlyArray<HitDiceEntry>;
+  count: number;
+  rolled: number | null;
+  conMod: number;
+  aggregate: Pick<AggregatedGrants, "values">;
+}): number | null {
+  const { pool, count, conMod, aggregate } = input;
+  if (count <= 0) return 0;
+  const maximum = ruleFlag(aggregate.values, "hit-dice:maximum");
+  const rolled = maximum ? hitDiceTotalRange(pool, count).max : input.rolled;
+  if (rolled === null) return null;
+  const restored = Math.max(count, rolled + count * conMod);
+  return ruleFlag(aggregate.values, "hit-dice:double") ? restored * 2 : restored;
 }

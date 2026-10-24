@@ -297,6 +297,10 @@ function localizeSummary(
     ...(rider.targetCreatureTypes
       ? { targetCreatureTypes: rider.targetCreatureTypes }
       : {}),
+    ...(rider.excludeCreatureTypes
+      ? { excludeCreatureTypes: rider.excludeCreatureTypes }
+      : {}),
+    ...(rider.onRoll20 ? { onRoll20: true as const } : {}),
   }));
   // S8 ROLL-ENTRY — a feature `heal:` action that rolls a die (Second Wind 1d10 +
   // level) carries a self-applicable heal: surface the dice token (the player

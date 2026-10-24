@@ -26,6 +26,7 @@
       "unarmoredDefenseNoShield": "Se non indossi armature e non impugni scudi, la tua CA base è {{base}} più i modificatori di caratteristica elencati qui.",
       "rider": "Quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
       "riderOnce": "Una volta per turno, quando colpisci, infliggi {{dice}} danni extra di tipo {{type}}.",
+      "riderOnRoll20": "Quando ottieni 20 al tiro per colpire, infliggi {{dice}} danni extra di tipo {{type}}.",
       "riderCost": "Quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}.",
       "riderOnceCost": "Una volta per turno, quando colpisci, puoi spendere un utilizzo di {{tracker}} per infliggere {{dice}} danni extra di tipo {{type}}.",
       "proficiencyByLevel": "Al livello {{level}} il tuo bonus di competenza è +{{bonus}}. Parte da +2 e cresce di 1 ogni quattro livelli, fino a +6 al livello 17.",

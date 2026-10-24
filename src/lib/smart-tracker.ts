@@ -40,7 +40,13 @@ import {
   secondaryDamage,
   translateWeapon,
 } from "@/lib/activities";
-import { ruleConditional, ruleNumber, ruleParts, type RuleFact } from "@/lib/rules";
+import {
+  ruleConditional,
+  ruleFlag,
+  ruleNumber,
+  ruleParts,
+  type RuleFact,
+} from "@/lib/rules";
 import { buildWeaponRange, type WeaponRangeSpec } from "@/lib/weapon-range";
 
 export { buildWeaponRange, type WeaponRangeSpec };
@@ -446,6 +452,9 @@ export interface ActionSummary {
     round1?: true;
     requiresRiderTrackerId?: string;
     targetCreatureTypes?: ReadonlyArray<CreatureType>;
+    excludeCreatureTypes?: ReadonlyArray<CreatureType>;
+    /** Only when the attack's d20 shows a 20: never a hit-time optional part. */
+    onRoll20?: true;
   }>;
   /**
    * How this weapon's OWN damage dice are manipulated when rolled (Great Weapon
@@ -1133,6 +1142,10 @@ export interface RawActionSummary extends Omit<
     round1?: true;
     requiresRiderTrackerId?: string;
     targetCreatureTypes?: ReadonlyArray<CreatureType>;
+    /** Not against these creature types (Sword of Life Stealing). */
+    excludeCreatureTypes?: ReadonlyArray<CreatureType>;
+    /** Only when the attack's d20 shows a 20 (Sword of Sharpness's extra 14). */
+    onRoll20?: true;
     /**
      * G14 — an `attack-or-spell` rider is NOT weapon-bound (a celestial-revelation
      * Revelation's +PB): it rides ONE attack OR spell per turn, surfaced as a
@@ -2127,12 +2140,23 @@ function itemBoundRiderEntries(
   return resolveItemBoundDamageRiders(getMagicItem(itemId)?.grants, isLit).map((r) => {
     const damageType =
       r.damageType === "same-as-weapon" ? weaponDamageType : r.damageType;
+    // A plain number ("14") is a fixed amount: nothing to roll.
+    const fixedAmount = /^\d+$/.test(r.dice) ? Number(r.dice) : undefined;
     return {
       dice: r.dice,
+      ...(fixedAmount !== undefined ? { fixedAmount } : {}),
       damageType,
       oncePerTurn: false,
-      why: riderWhy({ dice: r.dice, damageType, oncePerTurn: false, sourceId: itemId }),
+      why: riderWhy({
+        dice: r.dice,
+        damageType,
+        oncePerTurn: false,
+        sourceId: itemId,
+        ...(r.onRoll20 ? { onRoll20: true as const } : {}),
+      }),
       ...(r.targetCreatureTypes ? { targetCreatureTypes: r.targetCreatureTypes } : {}),
+      ...(r.excludeCreatureTypes ? { excludeCreatureTypes: r.excludeCreatureTypes } : {}),
+      ...(r.onRoll20 ? { onRoll20: true as const } : {}),
       source: srdText("magic-item", itemId, "name"),
     };
   });
@@ -2146,14 +2170,17 @@ function riderWhy(rider: {
   /** The tracker each use spends — its id IS the owning feature's ("monk-focus"). */
   trackerId?: string;
   sourceId?: string;
+  onRoll20?: true;
 }): BreakdownWhy {
-  const term = rider.oncePerTurn
-    ? rider.trackerId
-      ? "breakdown.why.riderOnceCost"
-      : "breakdown.why.riderOnce"
-    : rider.trackerId
-      ? "breakdown.why.riderCost"
-      : "breakdown.why.rider";
+  const term = rider.onRoll20
+    ? "breakdown.why.riderOnRoll20"
+    : rider.oncePerTurn
+      ? rider.trackerId
+        ? "breakdown.why.riderOnceCost"
+        : "breakdown.why.riderOnce"
+      : rider.trackerId
+        ? "breakdown.why.riderCost"
+        : "breakdown.why.rider";
   return {
     term,
     params: {
@@ -8708,13 +8735,15 @@ export function effectiveWalkingSpeedFt(
   // Heavy-armor Strength penalty (only when a resolver can confirm worn armor) —
   // resolved against the wearer's EFFECTIVE Strength (post-Gauntlets/Belt), the
   // same chokepoint the combat/score family uses.
-  const armorPenaltyFt = resolveSrd
-    ? resolveArmorEffects(
-        charData.equipment,
-        resolveSrd,
-        combatAbilityScores(character).STR
-      ).speedPenaltyFt
-    : 0;
+  // Mithral Armor has no Strength requirement.
+  const armorPenaltyFt =
+    resolveSrd && !ruleFlag(agg.values, "armor:waive:strength-requirement")
+      ? resolveArmorEffects(
+          charData.equipment,
+          resolveSrd,
+          combatAbilityScores(character).STR
+        ).speedPenaltyFt
+      : 0;
 
   const reduction = exhaustionSpeedReductionFt(character.session.exhaustion);
   const resolved = multiplied - armorPenaltyFt - reduction;
@@ -8775,13 +8804,15 @@ export function effectiveWalkingSpeedBreakdown(
     parts.push(named(source, "breakdown.speed.multiplier", multiplied - running));
   }
 
-  const armorPenaltyFt = resolveSrd
-    ? resolveArmorEffects(
-        charData.equipment,
-        resolveSrd,
-        combatAbilityScores(character).STR
-      ).speedPenaltyFt
-    : 0;
+  // Mithral Armor has no Strength requirement.
+  const armorPenaltyFt =
+    resolveSrd && !ruleFlag(agg.values, "armor:waive:strength-requirement")
+      ? resolveArmorEffects(
+          charData.equipment,
+          resolveSrd,
+          combatAbilityScores(character).STR
+        ).speedPenaltyFt
+      : 0;
   if (armorPenaltyFt !== 0)
     parts.push(termPart("breakdown.speed.heavyArmor", -armorPenaltyFt));
   const reduction = exhaustionSpeedReductionFt(character.session.exhaustion);
@@ -8848,6 +8879,14 @@ export function wornArmorDisadvantageClauses(
 ): ReadonlyArray<AdvantageClause> {
   const training = armorDisadvantageClauses(character);
   const { character: charData } = character;
+  // Mithral Armor imposes no Disadvantage on Stealth.
+  if (
+    ruleFlag(
+      aggregateCharacterGrants(charData, character.session).values,
+      "armor:waive:stealth-disadvantage"
+    )
+  )
+    return training;
   const stealth = charData.equipment.flatMap((ref) => {
     if ("custom" in ref || ref.equipped !== true) return [];
     const armor = getEquipment(ref.srdId);
