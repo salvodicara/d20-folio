@@ -7,8 +7,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { effectChipsView } from "@/lib/views/effect-chips-view";
+import { concentrationValue } from "@/lib/concentration";
+import { effectChipsView, effectGroupsView } from "@/lib/views/effect-chips-view";
 import { makeCharacterDoc } from "./_helpers";
+import { buildDevScenario } from "@/lib/dev-scenarios";
 
 const barbarian = (session = {}) =>
   makeCharacterDoc(
@@ -71,5 +73,53 @@ describe("effectChipsView", () => {
 
   it("an empty sheet has no chips", () => {
     expect(effectChipsView(barbarian(), "en")).toEqual([]);
+  });
+});
+
+/**
+ * The header's three fixed group buttons (direction 2026-10-23, row 8): ◉ the spell
+ * Concentration holds, ✦ the effects (with their count), ⚠ the conditions (with their
+ * count). A buff Concentration holds sits under Concentration (it ends with it), so
+ * nothing is counted twice.
+ */
+describe("effectGroupsView", () => {
+  it("splits the chips into concentration, effects and conditions, with counts", () => {
+    const groups = effectGroupsView(
+      barbarian({
+        activeFeatures: ["barbarian-rage"],
+        conditions: ["poisoned", "prone"],
+        concentration: concentrationValue("bless"),
+      }),
+      "en"
+    );
+    expect(groups.concentration.spell).toEqual({ id: "bless", name: "Bless" });
+    expect(groups.effects.count).toBe(1);
+    expect(groups.effects.chips.map((c) => c.id)).toEqual(["barbarian-rage"]);
+    expect(groups.conditions.count).toBe(2);
+    expect(groups.conditions.chips.map((c) => c.id)).toEqual(["poisoned", "prone"]);
+  });
+
+  it("a buff Concentration holds sits under Concentration, not among the effects", () => {
+    // Bless lit on yourself, held by your Concentration (a Life Cleric).
+    const cleric = buildDevScenario("scn-life-cleric");
+    if (!cleric) throw new Error("no scenario");
+    cleric.session = {
+      ...cleric.session,
+      concentration: concentrationValue("bless"),
+      activeFeatures: ["spell-bless"],
+      conditions: [],
+    };
+    const groups = effectGroupsView(cleric, "en");
+    expect(groups.concentration.spell).toEqual({ id: "bless", name: "Bless" });
+    expect(groups.concentration.holds.map((c) => c.id)).toEqual(["spell-bless"]);
+    expect(groups.effects.chips.map((c) => c.id)).not.toContain("spell-bless");
+  });
+
+  it("an empty sheet: no spell, nothing to count", () => {
+    expect(effectGroupsView(barbarian(), "en")).toEqual({
+      concentration: { spell: null, holds: [] },
+      effects: { count: 0, chips: [] },
+      conditions: { count: 0, chips: [] },
+    });
   });
 });
