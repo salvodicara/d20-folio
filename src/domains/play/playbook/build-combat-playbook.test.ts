@@ -263,10 +263,17 @@ describe("Cleric", () => {
   });
 
   it("a utility Concentration spell (Detect Magic) never opens the fight; Bless does", () => {
-    const doc = cleric(5, {
+    const doc = buildScenario({
+      name: "Cleric 5 (Detect Magic)",
+      raceId: "human",
+      classId: "cleric",
+      subclassId: "life-domain",
+      level: 5,
+      background: "acolyte",
+      abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 10, WIS: 18, CHA: 12 },
+      weapons: [{ srdId: "mace", quantity: 1 }],
       spells: [
         { srdId: "sacred-flame" },
-        { srdId: "healing-word", prepared: true },
         { srdId: "detect-magic", prepared: true },
         { srdId: "bless", prepared: true },
       ],

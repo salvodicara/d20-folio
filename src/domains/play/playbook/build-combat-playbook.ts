@@ -119,7 +119,7 @@ interface Draft {
 function hasCombatEffect(action: RawResolvedAction): boolean {
   const { summary } = action;
   if (summary.damage || summary.saveDC != null || summary.heal) return true;
-  if (summary.resolution === "attack") return true;
+  if (summary.attackBonus != null) return true;
   const affinity = summary.targeting?.affinity;
   return affinity === "ally" || affinity === "enemy" || affinity === "any";
 }
