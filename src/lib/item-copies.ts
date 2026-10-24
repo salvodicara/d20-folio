@@ -3,9 +3,18 @@
  * charges: the single copy with that id, worn, attuned when it needs it, and still
  * magical. The one rule the item-resource commands, the inventory's resource rows
  * and the grant aggregation read (they each wrote it on their own before).
+ *
+ * A structured homebrew item is one copy whose item id is its own `instanceId`
+ * (`homebrewItemData`), so it is found and gated by the same rule.
  */
 import { attunementSatisfied } from "@/lib/attunement";
-import type { CharacterDoc, ItemResourceState, SrdEquipmentRef } from "@/types/character";
+import { itemCopyItemId } from "@/lib/homebrew-items";
+import type {
+  CharacterDoc,
+  CustomEquipment,
+  ItemResourceState,
+  SrdEquipmentRef,
+} from "@/types/character";
 
 /** The single copy of `itemId` with this `instanceId`, or null (absent, or two copies
  *  wrongly share the id). */
@@ -13,10 +22,9 @@ export function exactItemCopy(
   doc: CharacterDoc,
   itemId: string,
   instanceId: string
-): SrdEquipmentRef | null {
+): SrdEquipmentRef | CustomEquipment | null {
   const copies = doc.character.equipment.filter(
-    (entry): entry is SrdEquipmentRef =>
-      !("custom" in entry) && entry.srdId === itemId && entry.instanceId === instanceId
+    (entry) => entry.instanceId === instanceId && itemCopyItemId(entry) === itemId
   );
   return copies.length === 1 ? (copies[0] ?? null) : null;
 }

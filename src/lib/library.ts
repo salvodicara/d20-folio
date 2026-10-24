@@ -181,6 +181,7 @@ export function toLibraryEntry(draft: LibraryDraft, now: number): LibraryEntry {
     case "weapon": {
       const item = structuredClone(draft.item);
       item.quantity = 1;
+      delete item.attuned;
       delete item.notes;
       delete item.tags;
       delete item.attackBonusOverride;

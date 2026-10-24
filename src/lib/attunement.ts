@@ -9,18 +9,22 @@
  * true`), never from the ref's shape, is golden rule 6: a Brooch of Shielding
  * gates identically however it was stored, and the sheet/engine can't disagree.
  */
-import type { SrdEquipmentRef, CustomEquipment } from "@/types/character";
+import type { SrdEquipmentRef, CustomEquipment, CustomWeapon } from "@/types/character";
 import { getMagicItem } from "@/data/magic-items";
+import { homebrewItemMechanics } from "@/lib/homebrew-items";
 
-type EquipRef = SrdEquipmentRef | CustomEquipment;
+type EquipRef = SrdEquipmentRef | CustomEquipment | CustomWeapon;
 
 /**
  * Whether an equipment ref REQUIRES attunement — from the SRD magic-item data
- * (`attunement: true`). Custom (homebrew) items have no SRD row, so they opt in
- * by carrying an explicit `attuned` flag.
+ * (`attunement: true`). A homebrew item declares it the same way in its structured
+ * mechanics (`mechanics.attunement`); an older text-only one opts in by carrying
+ * an explicit `attuned` flag.
  */
 export function requiresAttunement(ref: EquipRef): boolean {
-  if ("custom" in ref) return ref.attuned !== undefined;
+  if ("custom" in ref) {
+    return homebrewItemMechanics(ref)?.attunement === true || ref.attuned !== undefined;
+  }
   return getMagicItem(ref.srdId)?.attunement === true || ref.attuned !== undefined;
 }
 

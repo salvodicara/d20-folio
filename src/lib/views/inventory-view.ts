@@ -51,6 +51,7 @@ import { WEAPONS_BY_ID } from "@/data/weapons";
 import { GEAR_BY_ID } from "@/data/gear";
 import { ARMOR_BY_ID } from "@/data/armor";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
+import { homebrewItemData } from "@/lib/homebrew-items";
 import { requiresAttunement } from "@/lib/attunement";
 import { getClassTable } from "@/data/classes";
 import { totalLevel, primaryClassId, allEntryPicks } from "@/lib/classes";
@@ -440,7 +441,17 @@ function buildWeaponVM(
   // the enchant is NOT re-added on top (mirrors the combat weapon row).
   const enchantItemId = isCustom ? undefined : ref.enchantItemId;
   const enchantItem = enchantItemId ? MAGIC_ITEMS_BY_ID.get(enchantItemId) : undefined;
-  const enchantBonus = resolveItemBoundWeaponBonus(enchantItem?.grants);
+  // A structured homebrew weapon IS its own magic item (the combat row's rule).
+  const homebrewWeapon = isCustom ? homebrewItemData(ref) : undefined;
+  const enchantBonus = resolveItemBoundWeaponBonus(
+    homebrewWeapon ? homebrewWeapon.grants : enchantItem?.grants
+  );
+  const enchantNameRef =
+    isCustom && homebrewWeapon
+      ? customTextRef(ref.name)
+      : enchantItem
+        ? srdTextRef("magic-item", enchantItem.id, "name")
+        : undefined;
   const isRangedWeapon = !isCustom && srdWeapon?.weaponType === "ranged";
   // Flat to-hit bonuses (`weapon-attack-bonus` — Archery & other fighting
   // styles), resolved with provenance so the to-hit breakdown NAMES each by its
@@ -459,9 +470,7 @@ function buildWeaponVM(
     ...(abilityWhy ? { abilityWhy } : {}),
     proficiencyBonus: isProficient ? effectivePB : 0,
     enchantBonus,
-    ...(enchantItem && enchantBonus !== 0
-      ? { enchantName: srdTextRef("magic-item", enchantItem.id, "name") }
-      : {}),
+    ...(enchantNameRef && enchantBonus !== 0 ? { enchantName: enchantNameRef } : {}),
     featureBonuses: attackFeatureBonuses,
     exhaustionPenalty: exPenalty,
     fadingParts: fadingPenaltyParts(doc.session.fadingPenalties),
@@ -566,9 +575,7 @@ function buildWeaponVM(
       abilityMod: mod,
       ...(abilityWhy ? { abilityWhy } : {}),
       enchantBonus,
-      ...(enchantItem
-        ? { enchantName: srdTextRef("magic-item", enchantItem.id, "name") }
-        : {}),
+      ...(enchantNameRef ? { enchantName: enchantNameRef } : {}),
       featureBonuses,
       hasOverride: hasDamageOverride,
     }),

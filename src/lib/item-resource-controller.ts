@@ -9,6 +9,7 @@
  */
 import { MAGIC_ITEMS_BY_ID, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { canSpendCopy } from "@/lib/item-copies";
+import { homebrewItemCatalogue, itemCopyItemId } from "@/lib/homebrew-items";
 import {
   prepareItemResourceBoundary,
   prepareItemResourceBoundaryReplay,
@@ -104,8 +105,15 @@ export interface ItemResourceCommandPorts {
   occurrenceId?: () => string;
 }
 
-function itemDefinition(itemId: string): ResourceItemSpec | null {
-  const item = MAGIC_ITEMS_BY_ID.get(itemId);
+/** The typed pools behind an item id: the catalogue item, or the character's own
+ *  structured homebrew copy (whose item id is its instanceId). */
+function itemDefinition(
+  character: CharacterDoc,
+  itemId: string
+): ResourceItemSpec | null {
+  const item =
+    MAGIC_ITEMS_BY_ID.get(itemId) ??
+    homebrewItemCatalogue(character.character.equipment).find(({ id }) => id === itemId);
   return item?.resources?.length ? { itemId: item.id, resources: item.resources } : null;
 }
 
@@ -157,7 +165,7 @@ export function createItemResourceCommands(
       const character = ports.character();
       if (!character || ports.readonly()) return null;
       const identity = initialRecipe.identity;
-      const item = itemDefinition(identity.itemId);
+      const item = itemDefinition(character, identity.itemId);
       if (!item) {
         notifyConflict();
         return null;
@@ -236,11 +244,10 @@ export function createItemResourceCommands(
         }
         for (const group of groups.values()) {
           const copies = equipment.filter(
-            (entry) => !("custom" in entry) && entry.srdId === group.identity.itemId
+            (entry) => itemCopyItemId(entry) === group.identity.itemId
           );
           const copyIndex = copies.findIndex(
-            (entry) =>
-              !("custom" in entry) && entry.instanceId === group.identity.instanceId
+            (entry) => entry.instanceId === group.identity.instanceId
           );
           const sourceName = ports.itemName(
             group.identity.itemId,

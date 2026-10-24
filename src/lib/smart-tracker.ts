@@ -132,6 +132,7 @@ import {
 } from "@/lib/resolve-grant-sources";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
+import { homebrewItemData } from "@/lib/homebrew-items";
 import { customSpellConcentrationValue } from "@/lib/concentration";
 import {
   effectiveMaxHp,
@@ -153,7 +154,8 @@ import {
 } from "@/lib/cast-options";
 import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
-import type { CreatureSize, SrdRaceTrait } from "@/data/types";
+import type { CreatureSize, SrdMagicItemData, SrdRaceTrait } from "@/data/types";
+import type { CustomWeapon } from "@/types/character";
 import { SRD_INVOCATIONS, invocationTrackerId } from "@/data/invocations";
 import { SRD_MANEUVERS, type ManeuverDieTarget } from "@/data/maneuvers";
 import {
@@ -2176,7 +2178,46 @@ function itemBoundRiderEntries(
           : authoredKey
       )
     );
-  return resolveItemBoundDamageRiders(getMagicItem(itemId)?.grants, isLit).map((r) => {
+  return boundRiderEntries(getMagicItem(itemId)?.grants, isLit, weaponDamageType, {
+    sourceId: itemId,
+    source: srdText("magic-item", itemId, "name"),
+  });
+}
+
+/**
+ * A structured homebrew weapon's OWN extra damage (`item-bound-damage-rider` in its
+ * mechanics): this row only. A rider inside a `while-active` counts while the
+ * weapon's own state is lit (keyed by its copy, like a catalogue item's).
+ */
+function homebrewWeaponRiderEntries(
+  weapon: CustomWeapon,
+  weaponDamageType: DamageType,
+  session: CharacterDoc["session"]
+): NonNullable<RawActionSummary["extraDamage"]> {
+  const item = homebrewItemData(weapon);
+  if (!item) return [];
+  const lit = new Set(session.activeFeatures ?? []);
+  const source = {
+    id: `magic-item:${weapon.instanceId}`,
+    item: { itemId: item.id, instanceId: weapon.instanceId },
+  };
+  return boundRiderEntries(
+    item.grants,
+    (authoredKey) => lit.has(resolveGrantActiveKey(source, authoredKey)),
+    weaponDamageType,
+    { source: customText(weapon.name) }
+  );
+}
+
+/** One magic weapon's bound riders as its row's extra-damage entries. */
+function boundRiderEntries(
+  grants: SrdMagicItemData["grants"],
+  isLit: (authoredKey: string) => boolean,
+  weaponDamageType: DamageType,
+  owner: { sourceId?: string; source: LocText }
+): NonNullable<RawActionSummary["extraDamage"]> {
+  const { sourceId } = owner;
+  return resolveItemBoundDamageRiders(grants, isLit).map((r) => {
     const damageType =
       r.damageType === "same-as-weapon" ? weaponDamageType : r.damageType;
     // A plain number ("14") is a fixed amount: nothing to roll.
@@ -2190,13 +2231,13 @@ function itemBoundRiderEntries(
         dice: r.dice,
         damageType,
         oncePerTurn: false,
-        sourceId: itemId,
+        ...(sourceId ? { sourceId } : {}),
         ...(r.onRoll20 ? { onRoll20: true as const } : {}),
       }),
       ...(r.targetCreatureTypes ? { targetCreatureTypes: r.targetCreatureTypes } : {}),
       ...(r.excludeCreatureTypes ? { excludeCreatureTypes: r.excludeCreatureTypes } : {}),
       ...(r.onRoll20 ? { onRoll20: true as const } : {}),
-      source: srdText("magic-item", itemId, "name"),
+      source: owner.source,
     };
   });
 }
@@ -7350,18 +7391,27 @@ function resolveWeaponActions(
     // `attackBonusOverride`/`damageOverride` seam (which still wins when the
     // player pins a value by hand — override-first). 0 for a mundane weapon.
     const enchantItemId = isCustom ? undefined : weaponRef.enchantItemId;
+    // A structured homebrew weapon IS its own magic item: its `item-bound-bonus`
+    // rides this row, exactly as a bound catalogue enchant's does.
+    const homebrewWeapon = isCustom ? homebrewItemData(weaponRef) : undefined;
     const enchantOnlyBonus = resolveItemBoundWeaponBonus(
-      enchantItemId ? getMagicItem(enchantItemId)?.grants : undefined
+      homebrewWeapon
+        ? homebrewWeapon.grants
+        : enchantItemId
+          ? getMagicItem(enchantItemId)?.grants
+          : undefined
     );
     // A spell's +N on this weapon (Magic Weapon) adds like an enchant; the tip
     // names the item when one is bound, else the spell.
     const itemBoundBonus = enchantOnlyBonus + (binding?.bonus ?? 0);
     const enchantName: LocText | undefined =
-      enchantItemId && enchantOnlyBonus !== 0
-        ? srdText("magic-item", enchantItemId, "name")
-        : binding && binding.bonus !== 0
-          ? featureNameLoc(binding.sourceId)
-          : undefined;
+      isCustom && homebrewWeapon && enchantOnlyBonus !== 0
+        ? customText(weaponRef.name)
+        : enchantItemId && enchantOnlyBonus !== 0
+          ? srdText("magic-item", enchantItemId, "name")
+          : binding && binding.bonus !== 0
+            ? featureNameLoc(binding.sourceId)
+            : undefined;
     // Per-source to-hit composition for the breakdown tip (ability + PB + named
     // fighting styles + magic enchant + exhaustion), plus the manual adjustment
     // under an override. The to-hit total DERIVES from `breakdownTotal(parts)` so
@@ -7537,6 +7587,7 @@ function resolveWeaponActions(
       ...(enchantItemId
         ? itemBoundRiderEntries(enchantItemId, damageType, charData, session)
         : []),
+      ...(isCustom ? homebrewWeaponRiderEntries(weaponRef, damageType, session) : []),
     ];
 
     // Flag-style die manipulations on this weapon's own damage roll (Great

@@ -582,6 +582,8 @@ const CUSTOM_WEAPON_KEYS = [
   "description",
   "notes",
   "tags",
+  "attuned",
+  "mechanics",
   "instanceId",
 ] as const;
 
@@ -621,6 +623,13 @@ function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWe
     weapon.description = opt(obj.description, isString, `${path}.description`);
   if (obj.notes !== undefined) weapon.notes = opt(obj.notes, isString, `${path}.notes`);
   if (obj.tags !== undefined) weapon.tags = opt(obj.tags, isTagArray, `${path}.tags`);
+  if (obj.attuned !== undefined)
+    weapon.attuned = opt(obj.attuned, isBool, `${path}.attuned`);
+  // Structured mechanics stay as written (object shape enforced); the engine
+  // conforms each field at its one seam (`homebrewItemData`), so a newer client's
+  // field is preserved here and inert on this one.
+  if (obj.mechanics !== undefined)
+    weapon.mechanics = opt(obj.mechanics, isRecord, `${path}.mechanics`);
   if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_WEAPON_KEYS);
   return { ...weapon, instanceId: obj.instanceId, ...(unknown ? { unknown } : {}) };
@@ -646,6 +655,7 @@ const CUSTOM_EQUIPMENT_KEYS = [
   "unit",
   "attuned",
   "charges",
+  "mechanics",
   "instanceId",
 ] as const;
 
@@ -692,6 +702,9 @@ function parseCustomEquipment(
     equip.attuned = opt(obj.attuned, isBool, `${path}.attuned`);
   if (obj.charges !== undefined)
     equip.charges = parseEquipmentCharges(obj.charges, `${path}.charges`);
+  // Same as a homebrew weapon's: stored verbatim, conformed by `homebrewItemData`.
+  if (obj.mechanics !== undefined)
+    equip.mechanics = opt(obj.mechanics, isRecord, `${path}.mechanics`);
   if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_EQUIPMENT_KEYS);
   return { ...equip, instanceId: obj.instanceId, ...(unknown ? { unknown } : {}) };

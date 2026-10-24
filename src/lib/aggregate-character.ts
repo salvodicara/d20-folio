@@ -22,6 +22,7 @@
  * dedupe makes double-counting unrepresentable.
  */
 import { isMagicalCopy } from "@/lib/item-copies";
+import { itemCopyItemId } from "@/lib/homebrew-items";
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
 import { resolveCoverStateSources } from "@/lib/cover-states";
 import { resolveWishStressStateSources } from "@/lib/wish-state";
@@ -79,12 +80,15 @@ export function effectiveEquipmentForItemResources(
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): CharacterDoc["character"]["equipment"] {
   if (!itemResources) return equipment;
-  return equipment.filter(
-    (ref) =>
-      "custom" in ref ||
-      ref.instanceId === undefined ||
-      isMagicalCopy(itemResources[ref.instanceId], ref.srdId, ref.instanceId)
-  );
+  return equipment.filter((ref) => {
+    if (ref.instanceId === undefined) return true;
+    // A text-only homebrew item has no item identity, so no state can end it.
+    const itemId = itemCopyItemId(ref);
+    return (
+      itemId === undefined ||
+      isMagicalCopy(itemResources[ref.instanceId], itemId, ref.instanceId)
+    );
+  });
 }
 
 /** The session slices that feed sheet-wide grant aggregation. */

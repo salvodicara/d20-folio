@@ -22,6 +22,7 @@ import {
   makeItemResourceKey,
   type ItemResourceKey,
 } from "@/lib/resources";
+import { homebrewItemData } from "@/lib/homebrew-items";
 
 /** Runtime guard for the locale-free identity of one physical item copy. */
 export function isItemInstanceId(value: unknown): value is string {
@@ -157,21 +158,22 @@ export function resolveItemResources(args: {
   const normalizedState = parsedState.ok ? parsedState.value : {};
   const omissions: ItemResourceOmission[] = [];
   const candidates: Array<{
-    ref: SrdEquipmentRef;
+    ref: SrdEquipmentRef | CustomEquipment;
     item: Pick<SrdMagicItemData, "id" | "resources">;
   }> = [];
 
   for (const entry of args.equipment) {
-    if ("custom" in entry) continue;
-    const item = catalogue.get(entry.srdId);
+    // A structured homebrew item carries its own typed pools; its item id is its
+    // copy's `instanceId`. A text-only homebrew item owns no typed resource.
+    const item = "custom" in entry ? homebrewItemData(entry) : catalogue.get(entry.srdId);
     if (!item?.resources?.length) continue;
     if (entry.instanceId === undefined) {
-      omissions.push({ itemId: entry.srdId, reason: "missing-instance-id" });
+      omissions.push({ itemId: item.id, reason: "missing-instance-id" });
       continue;
     }
     if (!isItemInstanceId(entry.instanceId)) {
       omissions.push({
-        itemId: entry.srdId,
+        itemId: item.id,
         instanceId: entry.instanceId,
         reason: "invalid-instance-id",
       });

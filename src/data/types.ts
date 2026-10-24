@@ -3325,5 +3325,35 @@ export interface SrdMagicItemData {
   source: SrdSource;
 }
 
+/**
+ * Catalogue-only identity of a magic item: its slug and its book. A homebrew item
+ * has its own identity (its physical copy's `instanceId`) and comes from no book.
+ */
+export type CatalogueItemIdentityKey = "id" | "source";
+
+/**
+ * The magic-item facts a homebrew item stores elsewhere or never as mechanics: the
+ * healing roll sits at the homebrew item's top level
+ * (`CustomEquipment.potionFormula`), and `properties` are the catalogue's prose
+ * tags, which a homebrew item states structurally (`grants`, `resources`).
+ */
+export type HomebrewItemTopLevelKey = "potionFormula" | "properties";
+
+/**
+ * A homebrew weapon's or item's structured mechanics (`CustomWeapon.mechanics`,
+ * `CustomEquipment.mechanics`): every structured {@link SrdMagicItemData} field, in
+ * the catalogue's own shape, so a homebrew item plays exactly as a catalogue magic
+ * item does (its grants while worn and attuned, its charges with their recovery and
+ * their depletion, the spells cast from them, its attunement requirement, rarity
+ * and type). Derived from `SrdMagicItemData`, so a new catalogue field is a
+ * homebrew field too.
+ */
+export type HomebrewItemMechanics = {
+  readonly [Key in Exclude<
+    keyof SrdMagicItemData,
+    CatalogueItemIdentityKey | HomebrewItemTopLevelKey
+  >]?: SrdMagicItemData[Key];
+};
+
 /** Map of SRD entity types by ID for fast lookup */
 export type SrdIndex<T extends { id: string }> = Map<string, T>;

@@ -15,6 +15,12 @@
  * (`homebrewSpellMechanics`) accepts it — so the spell reaches the same engine path
  * (`homebrewSpellData` → `translateSpell`).
  *
+ * The same holds for every structured catalogue MAGIC-ITEM field: a homebrew weapon
+ * or item (`CustomWeapon.mechanics`, `CustomEquipment.mechanics`) carries it, both
+ * stored forms carry it unchanged, and the one homebrew item validator
+ * (`homebrewItemMechanics`) accepts it — so the item reaches the same item paths
+ * (`homebrewItemData` → grant sources, item resources).
+ *
  * The same holds for every Activity effect: each effect kind is reachable from the
  * homebrew action dialect (`ActionData`) or a homebrew spell's mechanics, or is
  * recorded below as a gap with what it needs.
@@ -33,13 +39,25 @@ import {
 } from "@/lib/character-codec";
 import { parseLibraryEntries } from "@/lib/library-codec";
 import { toLibraryEntry } from "@/lib/library";
-import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
+import {
+  resolveGrantSourcesForEquipment,
+  resolveGrantSourcesForFeatures,
+} from "@/lib/resolve-grant-sources";
+import { SRD_MAGIC_ITEMS as catalogueMagicItems } from "@/data/magic-items";
+import {
+  HOMEBREW_ITEM_FIELD_SCHEMAS,
+  homebrewItemData,
+  homebrewItemMechanics,
+} from "@/lib/homebrew-items";
 import { activityFromAction } from "@/lib/activities/from-action";
 import { translateSpell } from "@/lib/activities/from-spell";
 import type { ActivityEffectKind } from "@/lib/activities/types";
 import { spells as catalogueSpells } from "@/data/spells";
 import type {
+  CatalogueItemIdentityKey,
   CatalogueSpellIdentityKey,
+  HomebrewItemMechanics,
+  HomebrewItemTopLevelKey,
   HomebrewSpellMechanics,
   HomebrewSpellTopLevelKey,
   SrdSpellData,
@@ -50,7 +68,13 @@ import {
   homebrewSpellMechanics,
 } from "@/lib/homebrew-spells";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import type { ActionData, CustomFeature, CustomSpell } from "@/types/character";
+import type {
+  ActionData,
+  CustomEquipment,
+  CustomFeature,
+  CustomSpell,
+  CustomWeapon,
+} from "@/types/character";
 import { sample, schemaBranches } from "@tests/unit/__helpers__/grant-samples";
 import { customInstanceId } from "./__helpers__/custom-items";
 
@@ -395,4 +419,146 @@ describe("every Activity effect kind is homebrew-expressible or a recorded gap",
       expect(activity.effects.map((e) => e.kind)).toContain(kind);
     });
   }
+});
+
+/**
+ * The magic-item fields a homebrew weapon or item does not take as mechanics —
+ * field → why. Typed over both key sets (`CatalogueItemIdentityKey`,
+ * `HomebrewItemTopLevelKey`), so a new exemption is a type change, never a silent one.
+ */
+const ITEM_FIELD_EXEMPTIONS: Readonly<
+  Record<CatalogueItemIdentityKey | HomebrewItemTopLevelKey, string>
+> = {
+  id: "catalogue identity: a homebrew item is keyed by its own copy's instanceId",
+  source: "the catalogue book: a homebrew item is the player's own",
+  potionFormula:
+    "stored at the homebrew item's top level (CustomEquipment.potionFormula)",
+  properties:
+    "the catalogue's prose tags; a homebrew item states them as grants and resources",
+};
+
+function homebrewWand(mechanics: HomebrewItemMechanics): CustomEquipment {
+  return {
+    custom: true,
+    name: "House Wand",
+    equipped: true,
+    quantity: 1,
+    instanceId: customInstanceId("house-wand"),
+    mechanics,
+  };
+}
+
+function homebrewBlade(mechanics: HomebrewItemMechanics): CustomWeapon {
+  return {
+    custom: true,
+    name: "House Blade",
+    quantity: 1,
+    damageDie: "1d8",
+    damageType: "slashing",
+    attackStat: "STR",
+    properties: "",
+    instanceId: customInstanceId("house-blade"),
+    mechanics,
+  };
+}
+
+/** Store and re-read a homebrew weapon or item exactly as a character doc does. */
+function itemThroughCharacterCodec<T extends CustomEquipment | CustomWeapon>(item: T): T {
+  const doc = structuredClone(MOCK_CHARACTER);
+  if ("damageDie" in item) doc.character.weapons = [...doc.character.weapons, item];
+  else doc.character.equipment = [...doc.character.equipment, item];
+  const stored = JSON.parse(JSON.stringify(serializeCharacterEnvelope(doc))) as {
+    build: Record<string, unknown>;
+    state: Record<string, unknown>;
+  };
+  const parsed = parseCharacterEnvelope(stored.build, stored.state);
+  if (!parsed.ok) throw new Error(`character codec rejected: ${parsed.error}`);
+  const back = [...parsed.character.weapons, ...parsed.character.equipment].find(
+    (entry) => "custom" in entry && entry.instanceId === item.instanceId
+  );
+  if (!back) throw new Error("homebrew item lost by the character codec");
+  return back as T;
+}
+
+/** Store and re-read a homebrew weapon or item exactly as the account library does. */
+function itemThroughLibraryCodec<T extends CustomEquipment | CustomWeapon>(item: T): T {
+  const entry =
+    "damageDie" in item
+      ? toLibraryEntry({ kind: "weapon", item }, 1)
+      : toLibraryEntry({ kind: "equipment", item: item }, 1);
+  const stored = JSON.parse(JSON.stringify({ entries: [entry] })) as Record<
+    string,
+    unknown
+  >;
+  const parsed = parseLibraryEntries(stored);
+  if (!parsed.ok) throw new Error(`library codec rejected: ${parsed.failure.path}`);
+  const back = parsed.entries[0];
+  if (back?.kind !== "weapon" && back?.kind !== "equipment") {
+    throw new Error("library entry lost");
+  }
+  return back.item as T;
+}
+
+/** Each structured field a catalogue magic item uses, with its first carrier's value. */
+function catalogueItemFieldSamples(): Map<string, unknown> {
+  const samples = new Map<string, unknown>();
+  for (const item of catalogueMagicItems) {
+    for (const [key, value] of Object.entries(item)) {
+      if (key in ITEM_FIELD_EXEMPTIONS || samples.has(key)) continue;
+      samples.set(key, value);
+    }
+  }
+  return samples;
+}
+
+describe("every structured catalogue magic-item field is homebrew-expressible", () => {
+  const samples = catalogueItemFieldSamples();
+
+  it("covers every catalogue item field, with a justified exemption only", () => {
+    const fields = new Set(catalogueMagicItems.flatMap((item) => Object.keys(item)));
+    for (const field of fields) {
+      if (field in ITEM_FIELD_EXEMPTIONS) {
+        expect(
+          ITEM_FIELD_EXEMPTIONS[field as keyof typeof ITEM_FIELD_EXEMPTIONS],
+          field
+        ).toMatch(/^.{24,}$/);
+      } else {
+        expect(HOMEBREW_ITEM_FIELD_SCHEMAS, field).toHaveProperty(field);
+      }
+    }
+    const unsampled = Object.keys(HOMEBREW_ITEM_FIELD_SCHEMAS).filter(
+      (field) => !samples.has(field)
+    );
+    expect(unsampled).toEqual([]);
+  });
+
+  it("each field survives both codecs on a weapon and an item, and the validator accepts it", () => {
+    for (const [field, value] of samples) {
+      for (const item of [
+        homebrewWand({ [field]: value }),
+        homebrewBlade({ [field]: value }),
+      ]) {
+        for (const read of [itemThroughCharacterCodec, itemThroughLibraryCodec]) {
+          const back = read(item);
+          expect(back.mechanics, `${read.name}: ${field}`).toEqual(item.mechanics);
+          expect(back.unknown?.mechanics, `${read.name}: a known field`).toBeUndefined();
+          const accepted = homebrewItemMechanics(back) as Record<string, unknown>;
+          expect(
+            isDeepStrictEqual(accepted[field], value),
+            `${read.name}: ${field}`
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
+  it("an accepted item reaches the catalogue's item-grant path", () => {
+    const wand = homebrewWand({ grants: [{ type: "darkvision", range: 60 }] });
+    const [source] = resolveGrantSourcesForEquipment([wand]);
+    expect(source?.item).toEqual({
+      itemId: wand.instanceId,
+      instanceId: wand.instanceId,
+    });
+    expect(source?.grants).toEqual(homebrewItemData(wand)?.grants);
+  });
 });
