@@ -256,6 +256,17 @@ export const SORCERER_FEATURES: SrdClassFeatureData[] = [
     id: "sorcerer-arcane-apotheosis",
     class: "sorcerer",
     level: 20,
+    // "While your Innate Sorcery feature is active, you can use one Metamagic
+    // option on each of your turns without spending Sorcery Points on it": a
+    // free row, once per turn.
+    grants: [
+      {
+        id: "arcane-apotheosis",
+        type: "granted-action",
+        slot: "free",
+        maxUsesPerTurn: 1,
+      },
+    ],
     source: "SRD",
   },
   {

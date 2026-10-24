@@ -120,6 +120,20 @@ export function d20RerollFor(
   return rerolls.find((reroll) => reroll.faces.includes(face))?.sourceId ?? null;
 }
 
+/**
+ * Whether damage to `character` queues a Concentration save on the spell it
+ * holds. `false` when nothing is held, or when a source makes that spell's
+ * Concentration damage-proof (Relentless Hunter: "Taking damage can't break your
+ * Concentration on Hunter's Mark"). Dropping to 0 HP still ends Concentration;
+ * that rule is the damage seam's, not this one's.
+ */
+export function damageQueuesConcentrationSave(character: CharacterDoc): boolean {
+  const held = character.session.concentration;
+  if (!held) return false;
+  const aggregate = aggregateCharacterGrants(character.character, character.session);
+  return !aggregate.concentrationDamageProof.some((clause) => clause.spellId === held);
+}
+
 /** Build a Death Save without smuggling in an ability-scoped CON-save bonus. */
 export function deathSaveD20Context(
   character: CharacterDoc
