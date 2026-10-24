@@ -219,6 +219,15 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "5000 GP",
     properties: ["+2d6 fire damage", "bonus action ignite"],
+    // A Bonus Action ignites the blade: while ablaze, +2d6 Fire on its own hits.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "flame-tongue",
+        activation: { action: "bonus" },
+        grants: [{ type: "item-bound-damage-rider", dice: "2d6", damageType: "fire" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -230,7 +239,10 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["+1d6 cold damage", "fire resistance"],
     // Fire resistance while held is modeled; the +1d6 cold rider + light stay
     // descriptive (weapon damage riders resolve through the attack pipeline).
-    grants: [{ type: "damage-resistance", damageType: "fire" }],
+    grants: [
+      { type: "damage-resistance", damageType: "fire" },
+      { type: "item-bound-damage-rider", dice: "1d6", damageType: "cold" },
+    ],
     source: "SRD",
   },
   {
@@ -266,7 +278,15 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["+1 bonus", "+3d6 vs dragons"],
     // PRIM-item-bound-bonus — +1 to attack and damage. The +3d6 vs Dragons rider
     // stays descriptive.
-    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
+    grants: [
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
+      {
+        type: "item-bound-damage-rider",
+        dice: "3d6",
+        damageType: "same-as-weapon",
+        targetCreatureTypes: ["dragon"],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -278,7 +298,15 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["+1 bonus", "+2d6 vs giants", "DC 15 STR prone"],
     // PRIM-item-bound-bonus — +1 to attack and damage. The +2d6 vs Giants + prone
     // riders stay descriptive.
-    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
+    grants: [
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
+      {
+        type: "item-bound-damage-rider",
+        dice: "2d6",
+        damageType: "same-as-weapon",
+        targetCreatureTypes: ["giant"],
+      },
+    ],
     source: "SRD",
   },
   {

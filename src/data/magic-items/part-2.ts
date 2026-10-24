@@ -706,6 +706,14 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "weapon",
     attunement: true,
+    grants: [
+      {
+        type: "item-bound-damage-rider",
+        dice: "2d6",
+        damageType: "radiant",
+        targetCreatureTypes: ["fiend", "undead"],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1282,6 +1290,8 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "weapon",
     attunement: true,
+    // The extra 2d6 Necrotic; the no-healing save stays the target's.
+    grants: [{ type: "item-bound-damage-rider", dice: "2d6", damageType: "necrotic" }],
     source: "SRD",
   },
   {
@@ -1291,6 +1301,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "weapon",
     attunement: false,
+    grants: [
+      { type: "item-bound-damage-rider", dice: "2d6", damageType: "same-as-weapon" },
+    ],
     source: "SRD",
   },
   {

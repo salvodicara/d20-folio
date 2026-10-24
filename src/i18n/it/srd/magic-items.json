@@ -439,6 +439,9 @@
     "description": "Puoi usare un'Azione Bonus per accendere o spegnere le fiamme su questa spada. Quando è in fiamme, infligge 2d6 danni da Fuoco extra a ogni colpo e irradia luce intensa in un raggio di 12 metri.",
     "name": "Lingua di Fiamme"
   },
+  "flame-tongue.grants.0": {
+    "label": "Infuocata"
+  },
   "folding-boat": {
     "description": "Questo oggetto appare come una scatola di legno che misura 30 centimetri di lunghezza, 15 centimetri di larghezza e 15 centimetri di profondità. Pesa circa 2 chilogrammi e galleggia. Può essere aperta per riporvi oggetti all'interno. Questo oggetto ha anche tre parole di comando, ciascuna delle quali richiede un'azione Magia per essere usata: Prima Parola di Comando. La scatola si dispiega in una Barca a Remi. Seconda Parola di Comando. La scatola si dispiega in una Chiatta. Terza Parola di Comando. La Barca Pieghevole si ripiega in una scatola se non ci sono creature a bordo. Qualsiasi oggetto nell'imbarcazione che non possa entrare nella scatola rimane all'esterno della scatola mentre si ripiega. Qualsiasi oggetto nell'imbarcazione che possa entrare nella scatola lo fa. Quando la scatola diventa un'imbarcazione, il suo peso diventa quello di un'imbarcazione normale della sua taglia, e tutto ciò che era riposto nella scatola rimane nella barca. Le statistiche per la Barca a Remi e la Chiatta sono in “Equipaggiamento”. Se una delle due imbarcazioni viene ridotta a 0 Punti Ferita, la Barca Pieghevole viene distrutta.",
     "name": "Barca Pieghevole"

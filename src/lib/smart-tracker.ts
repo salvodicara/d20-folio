@@ -48,6 +48,7 @@ import type {
   ActionData,
   CharacterData,
   CharacterDoc,
+  SrdEquipmentRef,
   TrackerData,
 } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
@@ -159,7 +160,11 @@ import {
   legacyMagicItemCharges,
   parseMagicItemDawnRecharge,
 } from "@/lib/magic-item-utils";
-import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
+import {
+  isValidItemInstanceId,
+  makeItemResourceIdentity,
+  type ItemResourceIdentity,
+} from "@/lib/resources";
 import { resolveItemConsumable, consumableActionSlot } from "@/lib/srd-resolve";
 import {
   appendAbilityModToDice,
@@ -193,6 +198,7 @@ import {
   resolveSpellDamageTypeOverrides,
   resolveComponentWaiver,
   resolveItemBoundWeaponBonus,
+  resolveItemBoundDamageRiders,
   attacksPerAction,
   maxTableExtraAttacks,
   isHeavyArmorEquipped,
@@ -2089,6 +2095,49 @@ export function weaponDieWhy(
  * ride as `LocText` params, so a NEW rider added tomorrow is self-explaining the
  * moment it declares its grant (golden rule 2).
  */
+/**
+ * The bound magic weapon's own extra-damage entries for its row. A rider inside a
+ * `while-active` counts only while a copy of that item in the bag has the state lit
+ * (per copy, or an un-numbered legacy copy).
+ */
+function itemBoundRiderEntries(
+  itemId: string,
+  weaponDamageType: DamageType,
+  charData: CharacterDoc["character"],
+  session: CharacterDoc["session"]
+): NonNullable<RawActionSummary["extraDamage"]> {
+  const lit = new Set(session.activeFeatures ?? []);
+  const copies = charData.equipment.filter(
+    (ref): ref is SrdEquipmentRef => !("custom" in ref) && ref.srdId === itemId
+  );
+  const isLit = (authoredKey: string) =>
+    copies.some((ref) =>
+      lit.has(
+        isValidItemInstanceId(ref.instanceId)
+          ? resolveGrantActiveKey(
+              {
+                id: `magic-item:${ref.instanceId}`,
+                item: { itemId, instanceId: ref.instanceId },
+              },
+              authoredKey
+            )
+          : authoredKey
+      )
+    );
+  return resolveItemBoundDamageRiders(getMagicItem(itemId)?.grants, isLit).map((r) => {
+    const damageType =
+      r.damageType === "same-as-weapon" ? weaponDamageType : r.damageType;
+    return {
+      dice: r.dice,
+      damageType,
+      oncePerTurn: false,
+      why: riderWhy({ dice: r.dice, damageType, oncePerTurn: false, sourceId: itemId }),
+      ...(r.targetCreatureTypes ? { targetCreatureTypes: r.targetCreatureTypes } : {}),
+      source: srdText("magic-item", itemId, "name"),
+    };
+  });
+}
+
 function riderWhy(rider: {
   dice: string;
   damageType: string;
@@ -7101,18 +7150,25 @@ function resolveWeaponActions(
     // rider surfaces elsewhere (excluded here). A strict Two-Handed-property check
     // (NOT the Versatile-inclusive `isTwoHandedCapable` below) gates the grip.
     const isTwoHandedOnly = properties.some((p) => /\btwo-?handed\b/i.test(p));
-    const extraDamage = resolveAttackDamageRiders(
-      grantAgg.damageRiders,
-      {
-        kind: "weapon",
-        isRanged: isRangedWeapon,
-        isFinesse: properties.some((p) => p.toLowerCase() === "finesse"),
-        isTwoHanded: isTwoHandedOnly,
-        damageType,
-      },
-      character,
-      ctx.abilityScores
-    );
+    const extraDamage = [
+      ...resolveAttackDamageRiders(
+        grantAgg.damageRiders,
+        {
+          kind: "weapon",
+          isRanged: isRangedWeapon,
+          isFinesse: properties.some((p) => p.toLowerCase() === "finesse"),
+          isTwoHanded: isTwoHandedOnly,
+          damageType,
+        },
+        character,
+        ctx.abilityScores
+      ),
+      // The bound magic weapon's OWN extra damage (Vicious Weapon's 2d6, Flame
+      // Tongue's 2d6 Fire while ablaze) — this row only.
+      ...(enchantItemId
+        ? itemBoundRiderEntries(enchantItemId, damageType, charData, session)
+        : []),
+    ];
 
     // Flag-style die manipulations on this weapon's own damage roll (Great
     // Weapon Fighting floor / Savage Attacker reroll). The GWF floor needs a
