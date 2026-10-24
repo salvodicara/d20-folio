@@ -4,7 +4,8 @@
  * maximum of 30" — and the book loses its magic. The increase is written into the
  * stored score like an Ability Score Improvement, so it stays when the book is
  * sold or lost, and every reader of the stored sheet sees it. Pure: the store
- * writes the returned scores and marks the copy non-magical.
+ * writes the returned scores and spends the book's single `uses` resource, whose
+ * depletion leaves the copy nonmagical, so the same book can't be studied twice.
  */
 import type { AbilityCode } from "@/data/types";
 import type { Grant } from "@/lib/grants";
