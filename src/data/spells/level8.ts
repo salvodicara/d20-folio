@@ -160,6 +160,23 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
+    // SRD 5.2.1: "creatures of your choice have Advantage on all saving throws, and
+    // other creatures have Disadvantage on attack rolls against them." The Fiend or
+    // Undead attacker's CON save against Blinded is the note.
+    targeting: { affinity: "ally" },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-holy-aura",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          { type: "advantage-on", rollType: "save", vs: "holy-aura" },
+          { type: "incoming-attack-disadvantage" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -218,6 +235,9 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
       lifetime: { kind: "manual" },
     },
     targeting: { affinity: "enemy", maxTargets: 1 },
+    // SRD 5.2.1: "If the target has 150 Hit Points or fewer, it has the Stunned
+    // condition. Otherwise, its Speed is 0 until the start of your next turn."
+    hitPointThreshold: { max: 150, atOrBelow: "condition", otherwise: "speed-zero" },
     source: "SRD",
   },
   {

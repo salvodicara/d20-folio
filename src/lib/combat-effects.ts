@@ -692,6 +692,23 @@ export function concentrationEffectIdsOwnedBy(
   );
 }
 
+/** Live occurrences on `targetId` whose state ends early when that creature does
+ * `act` ("attack-roll", "cast-spell", "deal-damage"): Sanctuary cast on an ally ends
+ * on the ally's own attack, spell or damage. The caller revokes them. */
+export function effectIdsEndingOnAct(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  act: string
+): string[] {
+  return foldCombatEffectOps(operations).flatMap((effect) => {
+    if (effect.target.combatantId !== targetId) return [];
+    const duration = resolveCombatEffectGrantGroup(effect)?.duration;
+    return duration && "endsEarlyOn" in duration && duration.endsEarlyOn?.includes(act)
+      ? [effect.id]
+      : [];
+  });
+}
+
 /** Revoke every live occurrence projecting one condition onto a target. This is
  * the pure DM-override/cure twin of the transactional IO path: manual/base state
  * is handled by its own reducer, while exact source occurrences get inverse ops. */

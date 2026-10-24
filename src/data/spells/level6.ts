@@ -84,6 +84,22 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    // SRD 5.2.1: "you can make one melee spell attack ... Psychic damage equal to
+    // 3d12 plus your spellcasting ability modifier, and the target has the
+    // Frightened condition until the start of your next turn"; again "As a Bonus
+    // Action on your later turns". +1d12 per slot level above 6.
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    attackType: "melee",
+    damageType: "psychic",
+    damageDice: "3d12",
+    damageDicePerUpcast: "1d12",
+    damageAddsCastMod: true,
+    conditionApplication: {
+      options: ["frightened"],
+      on: "hit",
+      lifetime: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+    },
+    recurrence: "bonus-action-retrigger",
     source: "SRD",
   },
   {
@@ -316,6 +332,34 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    // SRD 5.2.1: "On a failed save, the target has the Charmed condition for the
+    // duration ... has Disadvantage on Dexterity saving throws and attack rolls, and
+    // other creatures have Advantage on attack rolls against it."
+    conditionApplication: {
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-ottos-irresistible-dance",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          { type: "disadvantage-on", rollType: "save", vs: "dex" },
+          {
+            type: "disadvantage-on",
+            rollType: "attack",
+            scope: "all",
+            vs: "ottos-irresistible-dance",
+          },
+          { type: "incoming-attack-advantage" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {

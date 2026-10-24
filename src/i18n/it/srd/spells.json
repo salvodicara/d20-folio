@@ -3328,5 +3328,47 @@
   },
   "glibness.grants.0.grants.1": {
     "description": "La magia che determinerebbe se dici la verità ti indica come sincero"
+  },
+  "slow.grants.0": {
+    "label": "Lentezza"
+  },
+  "slow.grants.0.grants.3": {
+    "description": "Niente reazioni; nel suo turno un'azione o un'azione bonus, non entrambe, e un solo attacco con l'azione di attacco; un incantesimo con componente somatica fallisce il 25 per cento delle volte"
+  },
+  "ottos-irresistible-dance.grants.0": {
+    "label": "Danza Irresistibile"
+  },
+  "ottos-irresistible-dance.grants.0.grants.0": {
+    "description": "Tiri salvezza su Destrezza (Danza Irresistibile)"
+  },
+  "ottos-irresistible-dance.grants.0.grants.1": {
+    "description": "Tiri per colpire (Danza Irresistibile)"
+  },
+  "ottos-irresistible-dance.grants.0.grants.2": {
+    "description": "Le altre creature hanno vantaggio ai tiri per colpire contro chi danza"
+  },
+  "ottos-irresistible-dance.grants.0.grants.3": {
+    "description": "Usa tutto il suo movimento per danzare sul posto; con un'azione per ricomporsi ripete il tiro salvezza e con un successo l'incantesimo termina"
+  },
+  "holy-aura.grants.0": {
+    "label": "Aura Sacra"
+  },
+  "holy-aura.grants.0.grants.0": {
+    "description": "Tutti i tiri salvezza (Aura Sacra)"
+  },
+  "holy-aura.grants.0.grants.1": {
+    "description": "Le altre creature hanno svantaggio ai tiri per colpire contro di te"
+  },
+  "holy-aura.grants.0.grants.2": {
+    "description": "Un immondo o un non morto che ti colpisce con un tiro per colpire in mischia effettua un tiro salvezza su Costituzione o è accecato fino al termine del suo turno successivo"
+  },
+  "sanctuary.grants.0": {
+    "label": "Santuario"
+  },
+  "sanctuary.grants.0.grants.0": {
+    "description": "Una creatura che ti bersaglia con un tiro per colpire o un incantesimo che infligge danni effettua un tiro salvezza su Saggezza o sceglie un nuovo bersaglio o lo perde; le aree ti colpiscono comunque"
+  },
+  "conjure-minor-elementals.grants.0": {
+    "label": "Evoca Elementali Minori"
   }
 }

@@ -8,6 +8,7 @@
 import type { ActionType } from "@/data/types";
 import type { GatedSlot } from "@/lib/condition-effects";
 import { executionFor } from "@/lib/play/cast-execution";
+import { rollsToHit } from "@/lib/play/damage-tray";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { CombatAction } from "./combat-action-view";
 import type { CharacterDoc } from "@/types/character";
@@ -26,6 +27,37 @@ export interface ActionRowFacts {
   availability: ActionAvailability;
   /** The save DC the action forces, with its display lines (see `CombatAction`). */
   saveDc: CombatAction["saveDc"];
+  /** It rolls to hit (a weapon, an attack-roll spell): the "Attacchi" filter. */
+  attack: boolean;
+  /** Its use is limited: counted uses, a resource pool or a spell slot to pay. */
+  limitedUse: boolean;
+}
+
+/** How many rows each filter chip of the actions table shows. */
+export interface ActionFilterCounts {
+  all: number;
+  attacks: number;
+  actions: number;
+  bonus: number;
+  reactions: number;
+  other: number;
+  limited: number;
+}
+
+/** Count the rows under each filter chip. */
+export function actionFilterCounts(
+  rows: ReadonlyArray<ActionRowFacts>
+): ActionFilterCounts {
+  const count = (keep: (row: ActionRowFacts) => boolean) => rows.filter(keep).length;
+  return {
+    all: rows.length,
+    attacks: count((row) => row.attack),
+    actions: count((row) => row.group === "actions"),
+    bonus: count((row) => row.group === "bonus"),
+    reactions: count((row) => row.group === "reactions"),
+    other: count((row) => row.group === "other"),
+    limited: count((row) => row.limitedUse),
+  };
 }
 
 const GROUP: Record<ActionType, ActionGroup> = {
@@ -85,5 +117,11 @@ export function actionRowFacts(
         ? { kind: "blocked", reason: "condition" }
         : { kind: "available" },
     saveDc: action.saveDc,
+    attack: rollsToHit(action),
+    limitedUse:
+      action.summary.uses != null ||
+      action.costTracker !== undefined ||
+      action.resourcePayment !== undefined ||
+      action.costsSlot,
   };
 }
