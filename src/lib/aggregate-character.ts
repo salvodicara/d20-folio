@@ -21,6 +21,7 @@
  * every derived stat here without a legacy activation row, and key-identity
  * dedupe makes double-counting unrepresentable.
  */
+import { isMagicalCopy } from "@/lib/item-copies";
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
 import { resolveCoverStateSources } from "@/lib/cover-states";
 import { resolveWishStressStateSources } from "@/lib/wish-state";
@@ -78,16 +79,12 @@ export function effectiveEquipmentForItemResources(
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): CharacterDoc["character"]["equipment"] {
   if (!itemResources) return equipment;
-  return equipment.filter((ref) => {
-    if ("custom" in ref || ref.instanceId === undefined) return true;
-    const state = itemResources[ref.instanceId];
-    return (
-      state === undefined ||
-      (state.itemId === ref.srdId &&
-        state.instanceId === ref.instanceId &&
-        state.disposition === "magical")
-    );
-  });
+  return equipment.filter(
+    (ref) =>
+      "custom" in ref ||
+      ref.instanceId === undefined ||
+      isMagicalCopy(itemResources[ref.instanceId], ref.srdId, ref.instanceId)
+  );
 }
 
 /** The session slices that feed sheet-wide grant aggregation. */
