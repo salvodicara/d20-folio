@@ -262,6 +262,30 @@ describe("Cleric", () => {
     });
   });
 
+  it("a utility Concentration spell (Detect Magic) never opens the fight; Bless does", () => {
+    const doc = buildScenario({
+      name: "Cleric 5 (Detect Magic)",
+      raceId: "human",
+      classId: "cleric",
+      subclassId: "life-domain",
+      level: 5,
+      background: "acolyte",
+      abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 10, WIS: 18, CHA: 12 },
+      weapons: [{ srdId: "mace", quantity: 1 }],
+      spells: [
+        { srdId: "sacred-flame" },
+        { srdId: "detect-magic", prepared: true },
+        { srdId: "bless", prepared: true },
+      ],
+    });
+    const opener = step(
+      buildCombatPlaybook(doc, { round: 1 }),
+      "action:concentration-opener"
+    );
+    expect(optionIds(opener)).toContain("spell-bless");
+    expect(optionIds(opener)).not.toContain("spell-detect-magic");
+  });
+
   it("level 5: an ally at 0 HP beats the opener", () => {
     const pb = buildCombatPlaybook(cleric(5), { round: 1, allyDown: true });
     expect(pick(pb, "bonus")).toBe("spell-healing-word");
