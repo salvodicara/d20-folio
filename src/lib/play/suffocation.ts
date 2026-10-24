@@ -37,7 +37,11 @@ function canBreatheWater(doc: CharacterDoc): boolean {
 
 function constitution(doc: CharacterDoc): number {
   const aggregate = aggregateCharacterGrants(doc.character, doc.session);
-  return aggregateAbilityScores(doc.character.abilityScores, aggregate).CON;
+  return aggregateAbilityScores(
+    doc.character.abilityScores,
+    aggregate,
+    doc.character.abilityScoreOverrides
+  ).CON;
 }
 
 /** Start holding breath (or choking, out of air at once). Null when already holding

@@ -2759,17 +2759,21 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
   // Cunning Strike's save DC is a generic feature DC (8 + PB + DEX mod) — routed
   // through the shared `featureSaveDc` so it can never drift from the formula. D2 —
   // the DEX read is the EFFECTIVE score (set-score item floor applied).
-  const dc = featureSaveDc(
+  const computedDc = featureSaveDc(
     totalLevel(charData),
     combatAbilityScores(character).DEX,
     charData.proficiencyBonusOverride
   );
-  const dcParts = featureSaveDcBreakdown(
+  const computedParts = featureSaveDcBreakdown(
     totalLevel(charData),
     "DEX",
     combatAbilityScores(character).DEX,
     charData.proficiencyBonusOverride
   );
+  // A hand-set Cunning Strike DC, keyed by the feature id, wins (manual adjustment).
+  const pin = charData.saveDcOverrides?.["rogue-cunning-strike"];
+  const dc = pin ?? computedDc;
+  const dcParts = pin === undefined ? computedParts : withOverride(computedParts, pin);
 
   // Stable display order: by cost ascending, then by EN name — so the cheap
   // options surface first regardless of which source contributed them.
@@ -5008,9 +5012,28 @@ export function resolveActions(
   ]) {
     if (seenIds.has(a.id)) continue;
     seenIds.add(a.id);
-    deduped.push(a);
+    deduped.push(withSaveDcPin(a, charData.saveDcOverrides?.[a.id]));
   }
   return deduped;
+}
+
+/**
+ * A hand-set save DC (`saveDcOverrides[action.id]`) on a resolved action: the DC
+ * becomes the pin and its lines keep the computed ones plus the manual adjustment
+ * ({@link withOverride}). One seam after resolution, so every action source (feature,
+ * maneuver, Grapple/Shove, spell) honours it the same way. A DC-less action is unchanged.
+ */
+function withSaveDcPin(action: RawResolvedAction, pin: number | undefined) {
+  const { summary } = action;
+  if (pin === undefined || summary.saveDC == null) return action;
+  return {
+    ...action,
+    summary: {
+      ...summary,
+      saveDC: pin,
+      saveDcParts: withOverride(summary.saveDcParts ?? [], pin),
+    },
+  };
 }
 
 /**
@@ -8508,7 +8531,11 @@ function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, numbe
     sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
-  return aggregateAbilityScores(character.character.abilityScores, agg);
+  return aggregateAbilityScores(
+    character.character.abilityScores,
+    agg,
+    character.character.abilityScoreOverrides
+  );
 }
 
 /**

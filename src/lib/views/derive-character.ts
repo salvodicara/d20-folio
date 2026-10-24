@@ -106,7 +106,11 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
   const level = totalLevel(character);
   const pbOverride = character.proficiencyBonusOverride;
   const pb = effectiveProficiencyBonus(level, pbOverride);
-  const scores = aggregateAbilityScores(character.abilityScores, aggregate);
+  const scores = aggregateAbilityScores(
+    character.abilityScores,
+    aggregate,
+    character.abilityScoreOverrides
+  );
   const abilities = Object.fromEntries(
     ALL_ABILITIES.map(({ code }) => [
       code,

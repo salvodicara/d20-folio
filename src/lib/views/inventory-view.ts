@@ -821,7 +821,11 @@ export function buildInventoryViewModel(
   // Behaviour-preserving with no ability-score item (floors/bonus empty → an equal-
   // valued copy of the stored scores).
   const scoreAgg = aggregateCharacterGrants(character, doc.session);
-  const effectiveScores = aggregateAbilityScores(character.abilityScores, scoreAgg);
+  const effectiveScores = aggregateAbilityScores(
+    character.abilityScores,
+    scoreAgg,
+    character.abilityScoreOverrides
+  );
 
   const level = totalLevel(character);
   const effectivePB = effectiveProficiencyBonus(
@@ -897,6 +901,7 @@ export function buildInventoryViewModel(
     items.reduce((s, i) => s + i.weight * i.quantity, 0);
   const { carry: capacity, pushDragLift } = carryingCapacity(effectiveScores.STR, {
     asLargerSize: scoreAgg.carryAsLargerSize,
+    pin: character.carryingCapacityOverride,
   });
   const encumbrance: EncumbranceVM = {
     carried,

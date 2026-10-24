@@ -1,7 +1,8 @@
 /**
  * The sheet's numbers, each with where it comes from: AC, initiative, walking speed,
- * Proficiency Bonus, max HP, the six saves, the 18 skills, the three passives and the
- * spell save DC and attack, every one as `{ total, parts }` (re-foundation phase 2:
+ * Proficiency Bonus, max HP, the six saves, the 18 skills, the three passives, the
+ * spell save DC and attack, the six effective ability scores, carrying capacity and
+ * the two jump distances, every one as `{ total, parts }` (re-foundation phase 2:
  * every number explained).
  *
  * The total is the number the sheet shows, read from {@link deriveCharacter} (the one
@@ -16,6 +17,7 @@
 import type { AbilityCode } from "@/data/types";
 import { getEquipment } from "@/data/equipment";
 import {
+  abilityScoreBreakdown,
   aggregateCharacterGrants,
   computeCharacterAcBreakdown,
   computeCharacterMaxHp,
@@ -26,6 +28,10 @@ import {
   aggregateAbilityScores,
   buildSpellAttackBreakdown,
   buildSpellSaveDcBreakdown,
+  carryingCapacity,
+  carryingCapacityBreakdown,
+  jumpBreakdown,
+  jumpDistance,
   proficiencyBonusBreakdown,
   resolveCastingModifier,
 } from "@/lib/compute";
@@ -58,6 +64,12 @@ export interface SheetNumbers<Part> {
   passives: Record<PassiveId, Explained<Part>>;
   /** The primary caster's spell save DC and attack, or null for a non-caster. */
   spellcasting: { saveDc: Explained<Part>; attackBonus: Explained<Part> } | null;
+  /** The six EFFECTIVE ability scores (item floors and bonuses, then a pin). */
+  abilities: Record<AbilityCode, Explained<Part>>;
+  /** Carrying capacity in pounds (push/drag/lift is twice it). */
+  carryingCapacity: Explained<Part>;
+  /** Running long and high jump in feet. */
+  jump: { long: Explained<Part>; high: Explained<Part> };
 }
 
 const nonEmpty = (parts: RawBreakdownPart[] | null): RawBreakdownPart[] | null =>
@@ -102,7 +114,31 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
 
   // The same inputs deriveCharacter feeds the spell save DC and attack.
   const sc = character.spellcasting;
-  const scores = aggregateAbilityScores(character.abilityScores, aggregate);
+  const scores = aggregateAbilityScores(
+    character.abilityScores,
+    aggregate,
+    character.abilityScoreOverrides
+  );
+  const abilities = Object.fromEntries(
+    (Object.keys(scores) as AbilityCode[]).map((ability) => [
+      ability,
+      {
+        total: scores[ability],
+        parts: abilityScoreBreakdown(
+          character.abilityScores,
+          aggregate,
+          ability,
+          character.abilityScoreOverrides?.[ability]
+        ),
+      },
+    ])
+  ) as Record<AbilityCode, Explained<RawBreakdownPart>>;
+  const carryOptions = {
+    asLargerSize: aggregate.carryAsLargerSize,
+    pin: character.carryingCapacityOverride,
+  };
+  const jump = jumpDistance(scores.STR, character.jumpOverrides);
+  const jumpParts = jumpBreakdown(scores.STR, character.jumpOverrides);
   const casterClass = primaryClassId(character);
   const spellcasting =
     sc && sheet.spellcasting
@@ -183,5 +219,14 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
       insight: passive("insight"),
     },
     spellcasting,
+    abilities,
+    carryingCapacity: {
+      total: carryingCapacity(scores.STR, carryOptions).carry,
+      parts: carryingCapacityBreakdown(scores.STR, carryOptions),
+    },
+    jump: {
+      long: { total: jump.long, parts: jumpParts.long },
+      high: { total: jump.high, parts: jumpParts.high },
+    },
   };
 }

@@ -154,6 +154,9 @@ const OPTIONAL_EMPTY_KEYS: ReadonlyArray<keyof CharacterData> = [
   "conditionImmunityOverrides",
   "armorProficiencyOverrides",
   "weaponProficiencyOverrides",
+  "abilityScoreOverrides",
+  "saveDcOverrides",
+  "jumpOverrides",
   // Tool-CHOICE picks: an empty `{}` (no choice made) carries no information —
   // drop on minimize, leave absent on rehydrate (the type allows omission).
   "toolChoices",
@@ -348,6 +351,16 @@ const MAP_OVERRIDE_KEYS = [
   "speedOverrides",
 ] as const;
 
+/** The `build.pins` fields: only a finite number is a pin; anything else derives. */
+const PIN_SCALAR_KEYS = ["carryingCapacityOverride"] as const;
+const PIN_MAP_KEYS = [
+  "abilityScoreOverrides",
+  "saveDcOverrides",
+  "jumpOverrides",
+] as const;
+const isFiniteNumber = (v: unknown): v is number =>
+  typeof v === "number" && Number.isFinite(v);
+
 /**
  * Override-safety seam (goal prong 3: an override must NEVER break the sheet). A
  * manual override may be ANY finite homebrew value, but a non-finite one
@@ -370,6 +383,21 @@ function sanitizeOverrides(c: Record<string, unknown>): void {
       }
       c[key] = cleaned;
     }
+  }
+  for (const key of PIN_SCALAR_KEYS) {
+    if (c[key] !== undefined && c[key] !== null && !isFiniteNumber(c[key])) c[key] = null;
+  }
+  for (const key of PIN_MAP_KEYS) {
+    const map = c[key];
+    if (map === undefined) continue;
+    c[key] =
+      map && typeof map === "object" && !Array.isArray(map)
+        ? Object.fromEntries(
+            Object.entries(map as Record<string, unknown>).filter(([, v]) =>
+              isFiniteNumber(v)
+            )
+          )
+        : undefined;
   }
   const sc = c.spellcasting;
   if (sc && typeof sc === "object" && !Array.isArray(sc)) {

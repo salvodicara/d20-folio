@@ -505,7 +505,11 @@ export function buildSpellsViewModel(
   // DC + spell attack derive from these, so a Headband of Intellect wizard's spell
   // DC/attack reflect INT 19, and an Ioun Stone of Intellect adds its +2 (rule 6).
   // Behaviour-preserving with no ability-score item (floors/bonus empty).
-  const effectiveScores = aggregateAbilityScores(character.abilityScores, grantAggregate);
+  const effectiveScores = aggregateAbilityScores(
+    character.abilityScores,
+    grantAggregate,
+    character.abilityScoreOverrides
+  );
 
   // Cast-summary numbers (override-aware + the pure reset targets).
   let castSummary: CastSummaryVM | null = null;

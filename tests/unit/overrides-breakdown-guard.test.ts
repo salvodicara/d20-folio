@@ -12,7 +12,13 @@ import { describe, expect, it } from "vitest";
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
 import { computeCharacterMaxHp } from "@/lib/aggregate-character";
 import { exhaustionPenalty } from "@/lib/compute";
-import { buildWeaponAttackBreakdown } from "@/lib/smart-tracker";
+import {
+  actionSaveDc,
+  buildWeaponAttackBreakdown,
+  resolveActions,
+  resolveCunningStrikeOptions,
+} from "@/lib/smart-tracker";
+import { makeCharacterDoc } from "./_helpers";
 import {
   OVERRIDE_TERM,
   breakdownTotal,
@@ -158,6 +164,29 @@ const CASES: Record<keyof N, (doc: CharacterDoc) => Case[]> = {
       },
     ];
   },
+  abilities: () =>
+    ABILITIES.map((ability) => ({
+      name: `ability:${ability}`,
+      read: (n: N) => n.abilities[ability],
+      pin: (d: CharacterDoc, v: number) =>
+        withChar(d, {
+          abilityScoreOverrides: { ...d.character.abilityScoreOverrides, [ability]: v },
+        }),
+    })),
+  carryingCapacity: () => [
+    {
+      name: "carryingCapacity",
+      read: (n) => n.carryingCapacity,
+      pin: (d, v) => withChar(d, { carryingCapacityOverride: v }),
+    },
+  ],
+  jump: () =>
+    (["long", "high"] as const).map((kind) => ({
+      name: `jump:${kind}`,
+      read: (n: N) => n.jump[kind],
+      pin: (d: CharacterDoc, v: number) =>
+        withChar(d, { jumpOverrides: { ...d.character.jumpOverrides, [kind]: v } }),
+    })),
 };
 
 const isOverridePart = (p: RawBreakdownPart | undefined): boolean =>
@@ -179,6 +208,8 @@ describe("every sheet number can be set by hand and stays explained", () => {
       for (const c of cases) {
         const before = c.read(baseline);
         if (!before) throw new Error(`${c.name}: no baseline number`);
+        // Unpinned, the parts already sum to the number shown.
+        if (before.parts) expect(breakdownTotal(before.parts), c.name).toBe(before.total);
         // Never the computed value, so the override part always carries a difference.
         const value = c.value ? c.value(doc, before.total) : before.total + 3;
         const pinned = c.pin(doc, value);
@@ -267,5 +298,50 @@ describe("a pinned skill still takes Exhaustion, like a pinned save", () => {
     expect(isHandSet(n.skills.find((s) => s.id === "athletics")?.parts)).toBe(false);
     expect(isHandSet(null)).toBe(false);
     expect(deriveCharacter(doc).skills.find((s) => s.id === "stealth")?.bonus).toBe(3);
+  });
+});
+
+/**
+ * A save DC an action shows can be pinned by the action's id (`saveDcOverrides`):
+ * feature, maneuver, Grapple/Shove and spell cards alike, over every dev scenario.
+ */
+describe("every action's save DC can be set by hand and stays explained", () => {
+  it.each(docs)(
+    "%s: a pinned action DC shows the pin plus the adjustment",
+    (_id, doc) => {
+      for (const action of resolveActions(doc, "combat")) {
+        const before = actionSaveDc(action.summary);
+        if (!before) continue;
+        const pin = before.total + 3;
+        const pinned = withChar(doc, {
+          saveDcOverrides: { ...doc.character.saveDcOverrides, [action.id]: pin },
+        });
+        const after = resolveActions(pinned, "combat").find((a) => a.id === action.id);
+        const dc = after && actionSaveDc(after.summary);
+        expect(dc?.total, action.id).toBe(pin);
+        expect(breakdownTotal(dc?.parts ?? []), action.id).toBe(pin);
+        expect(isHandSet(dc?.parts), action.id).toBe(true);
+        expect(
+          dc?.parts?.filter((p) => !isOverridePart(p)),
+          action.id
+        ).toEqual(before.parts ?? []);
+      }
+    }
+  );
+
+  it("a Cunning Strike DC is pinned by the feature id", () => {
+    const doc = makeCharacterDoc({
+      class: "rogue",
+      level: 5,
+      abilityScores: { STR: 10, DEX: 18, CON: 12, INT: 10, WIS: 10, CHA: 10 },
+      features: [{ srdId: "rogue-cunning-strike" }],
+    });
+    const pinned = withChar(doc, { saveDcOverrides: { "rogue-cunning-strike": 17 } });
+    const poison = resolveCunningStrikeOptions(pinned).options.find(
+      (o) => o.optionId === "poison"
+    );
+    expect(poison?.saveDc).toBe(17);
+    expect(breakdownTotal(poison?.saveDcParts ?? [])).toBe(17);
+    expect(isHandSet(poison?.saveDcParts)).toBe(true);
   });
 });

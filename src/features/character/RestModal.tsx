@@ -167,7 +167,10 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   // against effective CON (smart-tracker `combatAbilityScores`); the preview must
   // use the SAME score, never raw, or it disagrees with the actual heal (rule 6).
   const agg = aggregateCharacterGrants(charData, session);
-  const conMod = abilityModifier(aggregateAbilityScores(charData.abilityScores, agg).CON);
+  const conMod = abilityModifier(
+    aggregateAbilityScores(charData.abilityScores, agg, charData.abilityScoreOverrides)
+      .CON
+  );
   // The total is checked against the largest dice the pool holds.
   const rollRange = hitDiceTotalRange(hitDice, hitDiceToSpend);
   const roll = Number(diceTotal);
