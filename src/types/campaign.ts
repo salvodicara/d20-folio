@@ -269,6 +269,14 @@ export interface CustomMonster {
  * Round-based (a plain counter, never a Timestamp) so the read boundary needs no
  * date normalization.
  */
+/** Why a fight ended: all enemies down, a rest, an idle hour, or by hand. */
+export type EncounterEndReason = "enemies-defeated" | "rest" | "idle" | "manual";
+
+export interface EncounterEnded {
+  reason: EncounterEndReason;
+  at: number;
+}
+
 export interface EncounterClock {
   startedAt: number;
   lastActivityAt: number;
@@ -348,6 +356,12 @@ export interface EncounterState {
    * a fight started before it existed. See `@/features/campaigns/encounter-lifecycle`.
    */
   clock?: EncounterClock;
+  /**
+   * The fight is over but kept, so ending it is never a disaster (owner,
+   * 2026-10-24): it says why and when, reopening removes it, and the next initiative
+   * roll starts a fresh fight. Absent while the fight goes on.
+   */
+  ended?: EncounterEnded;
   /**
    * THE COMBAT CHRONICLE feed — the factual, structured log the DM's tracker edits
    * accumulate over the fight ({@link CombatChronicleEvent}: ids + numbers only, never

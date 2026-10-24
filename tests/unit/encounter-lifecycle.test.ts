@@ -1,21 +1,24 @@
 /**
  * The shared-combat lifecycle (owner direction 2026-10-23, row 12): combat starts on
  * the first initiative roll, for the whole campaign, with no Start button, and it
- * never blocks. A late roll or a late member joins. The DM, the player whose turn it
- * is, or anyone once a turn has stalled moves the turn on. The fight ends by itself
- * when every enemy is down, on a rest, or after an hour with nothing happening; "End"
- * is anyone's. Pure engine: nothing here is wired to a screen yet.
+ * never blocks. A late roll or a late member joins. Anyone at the table passes the
+ * turn, at once (the group plays fair). The fight ends by itself when every enemy is
+ * down, on a rest, or after an hour with nothing happening; "End" is anyone's. And no
+ * click is ever a disaster (owner, 2026-10-24): a passed turn goes back, an ended
+ * fight reopens. Pure engine: nothing here is wired to a screen yet.
  */
 import { describe, expect, it } from "vitest";
 
 import { addMonster, parseEncounterState } from "@/features/campaigns/encounter";
 import {
   IDLE_END_MS,
-  STALLED_TURN_MS,
   canAdvanceTurn,
+  endCombat,
   encounterEndReason,
   passTurn,
+  reopenCombat,
   rollInitiative,
+  turnBack,
 } from "@/features/campaigns/encounter-lifecycle";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
@@ -117,14 +120,23 @@ describe("it never blocks", () => {
     expect(fight.order).toEqual(["pc-u1", "pc-u3"]);
   });
 
-  it("the DM, the player on turn, or anyone after a stall can pass the turn", () => {
-    const fight = started(); // Ana's turn since T0
-    expect(canAdvanceTurn(fight, { uid: "dm", isDm: true }, T0)).toBe(true);
-    expect(canAdvanceTurn(fight, { uid: "u1", isDm: false }, T0)).toBe(true);
-    expect(canAdvanceTurn(fight, { uid: "u2", isDm: false }, T0 + 5_000)).toBe(false);
-    expect(canAdvanceTurn(fight, { uid: "u2", isDm: false }, T0 + STALLED_TURN_MS)).toBe(
-      true
-    );
+  it("anyone at the table can pass the turn, at once", () => {
+    const fight = started(); // Ana's turn
+    expect(canAdvanceTurn(fight)).toBe(true);
+    expect(canAdvanceTurn({ ...fight, currentCombatantId: null })).toBe(false);
+  });
+
+  it("a passed turn goes back: the same combatant, the same round", () => {
+    const before = withGoblins(started(), 15);
+    const passed = passTurn(before, T0 + 30_000);
+    expect(passed.currentCombatantId).not.toBe(before.currentCombatantId);
+    const back = turnBack(passed, T0 + 31_000);
+    expect(back.currentCombatantId).toBe(before.currentCombatantId);
+    expect(back.round).toBe(before.round);
+    expect(back.clock).toMatchObject({
+      lastActivityAt: T0 + 31_000,
+      turnStartedAt: T0 + 31_000,
+    });
   });
 
   it("passing the turn starts the next one's clock", () => {
@@ -184,11 +196,47 @@ describe("the fight ends by itself", () => {
   });
 });
 
+describe("ending is reversible", () => {
+  it("an ended fight keeps everything, says why and when, and reopens as it was", () => {
+    const fight = withGoblins(started(), 15);
+    const ended = endCombat(fight, "enemies-defeated", T0 + 9_000);
+    expect(ended.ended).toEqual({ reason: "enemies-defeated", at: T0 + 9_000 });
+    expect(ended.combatants).toEqual(fight.combatants);
+    expect(encounterEndReason(ended, { now: T0 + 10 * IDLE_END_MS })).toBeNull();
+    const reopened = reopenCombat(ended, T0 + 12_000);
+    expect(reopened.ended).toBeUndefined();
+    expect({ ...reopened, clock: undefined }).toEqual({ ...fight, clock: undefined });
+    expect(reopened.clock?.lastActivityAt).toBe(T0 + 12_000);
+  });
+
+  it("anyone can end it by hand", () => {
+    expect(endCombat(started(), "manual", T0).ended?.reason).toBe("manual");
+  });
+
+  it("a roll after the fight ended starts a new one", () => {
+    const ended = endCombat(withGoblins(started(), 15), "rest", T0 + 1_000);
+    const fresh = rollInitiative(ended, {
+      ...party,
+      combatantId: "pc-u2",
+      pcInitiatives: { "pc-u2": 7 },
+      now: T0 + 5_000,
+    });
+    expect(fresh.ended).toBeUndefined();
+    expect(fresh.combatants.map((c) => c.id)).toEqual(["pc-u1", "pc-u2"]);
+    expect(fresh.currentCombatantId).toBe("pc-u2");
+    expect(fresh.epoch).toBe(T0 + 5_000);
+  });
+});
+
 describe("the stored clock", () => {
   it("reads back, and a malformed one reads as absent instead of breaking the fight", () => {
     const fight = started();
     expect(parseEncounterState(structuredClone(fight)).clock).toEqual(fight.clock);
     const bad = { ...structuredClone(fight), clock: { startedAt: "soon" } };
     expect(parseEncounterState(bad).clock).toBeUndefined();
+    const ended = endCombat(fight, "idle", T0 + IDLE_END_MS);
+    expect(parseEncounterState(structuredClone(ended)).ended).toEqual(ended.ended);
+    const badEnd = { ...structuredClone(ended), ended: { reason: "boredom", at: 1 } };
+    expect(parseEncounterState(badEnd).ended).toBeUndefined();
   });
 });

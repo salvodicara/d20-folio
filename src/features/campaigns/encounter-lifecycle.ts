@@ -7,10 +7,12 @@
  * - Order: until a turn has been passed, the current turn is always the top of the
  *   initiative order, so a higher roll that comes in late takes it. After that a late
  *   roll (or a late member) slots in by initiative without moving the current turn.
- * - Advance: the DM, the player whose turn it is, or anyone once the turn has stalled
- *   for {@link STALLED_TURN_MS}.
- * - End: every enemy down, a rest, or {@link IDLE_END_MS} with nothing happening;
- *   "End" itself is anyone's (`endEncounter`).
+ * - Advance: anyone at the table, at once (owner, 2026-10-24: the group plays fair).
+ * - End: every enemy down, a rest, or {@link IDLE_END_MS} with nothing happening, or
+ *   anyone by hand.
+ * - Nothing is a disaster (owner, 2026-10-24): a passed turn goes back
+ *   ({@link turnBack}), and an ended fight is kept, marked `ended`, until the next
+ *   roll starts a new one, so it reopens as it was ({@link reopenCombat}).
  *
  * Pure transitions over the stored `EncounterState`, timed by the caller's `now`; the
  * timing lives in `EncounterState.clock`. PC initiative totals (roll + bonus) are the
@@ -19,18 +21,18 @@
 import type {
   EncounterClock,
   EncounterCombatant,
+  EncounterEndReason,
   EncounterState,
 } from "@/types/campaign";
 import {
   advanceTurn,
   isDown,
+  prevTurn,
   sortByInitiative,
   startEncounter,
   type EncounterPcSeed,
 } from "./encounter";
 
-/** How long a turn may sit before anyone at the table can pass it. */
-export const STALLED_TURN_MS = 60_000;
 /** How long a fight may go with nothing happening before it ends by itself. */
 export const IDLE_END_MS = 60 * 60_000;
 
@@ -55,8 +57,10 @@ export function rollInitiative(
   input: RollInitiativeInput
 ): EncounterState {
   const { now } = input;
+  // A roll after the fight ended starts a new one.
+  const live = state?.ended ? null : state;
   let fight =
-    state ??
+    live ??
     withClock(startEncounter(input.seeds, input.attachedUids, now), {
       startedAt: now,
       lastActivityAt: now,
@@ -67,16 +71,9 @@ export function rollInitiative(
   return touch(syncOrder(fight, input.pcInitiatives, now), now);
 }
 
-/** Whether `actor` may pass the current turn now. */
-export function canAdvanceTurn(
-  state: EncounterState,
-  actor: { uid: string; isDm: boolean },
-  now: number
-): boolean {
-  if (state.currentCombatantId === null) return false;
-  if (actor.isDm || state.currentCombatantId === `pc-${actor.uid}`) return true;
-  const since = state.clock?.turnStartedAt;
-  return since !== undefined && now - since >= STALLED_TURN_MS;
+/** Whether the turn can be passed: by anyone at the table, whenever there is one. */
+export function canAdvanceTurn(state: EncounterState): boolean {
+  return state.currentCombatantId !== null && !state.ended;
 }
 
 /** Pass the turn: the next combatant's turn starts now, and turns have begun. */
@@ -94,13 +91,26 @@ export function passTurn(state: EncounterState, now: number): EncounterState {
     : moved;
 }
 
-export type EncounterEndReason = "enemies-defeated" | "rest" | "idle";
+/**
+ * The undo of a pass: the turn goes back to the previous combatant (and round), and
+ * their turn starts again now. Anyone may do it, as anyone may pass.
+ */
+export function turnBack(state: EncounterState, now: number): EncounterState {
+  const moved = prevTurn(state);
+  if (moved === state) return state;
+  return state.clock
+    ? withClock(moved, { ...state.clock, lastActivityAt: now, turnStartedAt: now })
+    : moved;
+}
 
-/** Why the fight should end by itself now, or null while it goes on. */
+export type { EncounterEndReason };
+
+/** Why the fight should end by itself now, or null while it goes on (or is over). */
 export function encounterEndReason(
   state: EncounterState,
   facts: { now: number; restTaken?: boolean }
-): EncounterEndReason | null {
+): Exclude<EncounterEndReason, "manual"> | null {
+  if (state.ended) return null;
   const enemies = state.combatants.filter(
     (c) => c.kind === "monster" && c.side !== "ally"
   );
@@ -110,6 +120,23 @@ export function encounterEndReason(
   const last = state.clock?.lastActivityAt;
   if (last !== undefined && facts.now - last >= IDLE_END_MS) return "idle";
   return null;
+}
+
+/** End the fight, keeping it so it can reopen; the next roll starts a new one. */
+export function endCombat(
+  state: EncounterState,
+  reason: EncounterEndReason,
+  now: number
+): EncounterState {
+  return { ...state, ended: { reason, at: now } };
+}
+
+/** The undo of an end: the fight goes on exactly where it stopped. */
+export function reopenCombat(state: EncounterState, now: number): EncounterState {
+  if (!state.ended) return state;
+  const { ended: _ended, ...open } = state;
+  void _ended;
+  return touch(open, now);
 }
 
 /** Something happened in the fight (a roll, damage, a note): it is not idle. */
