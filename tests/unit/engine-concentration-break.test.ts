@@ -45,7 +45,7 @@ import {
   type CharacterCastCapability,
 } from "@/lib/mechanics-world-store";
 import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
-import { useCharacterStore } from "@/stores/characterStore";
+import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
@@ -275,6 +275,23 @@ describe("legacy authoritative drops of an engine-held spell", () => {
     expect(restored.session.concentration).toBe("blur");
     expect(engineConcentrationHandle(liveWorld(restored))?.spellId).toBe("blur");
     expect([...worldStandingActiveKeys(restored.session.world)]).toContain("spell-blur");
+  });
+
+  it("manual stop goes through the play log, engine end included, and the log replays it", () => {
+    const doc = {
+      ...docWithEngineBlur(),
+      id: `engine-conc-${Math.random().toString(36).slice(2)}`,
+    };
+    loadStore(doc);
+    useCharacterStore.getState().setConcentration("");
+    expect(useCharacterStore.getState().character?.session.concentration).toBe("");
+    // One entry, one checkpoint, and the fold of the log equals the live sheet: the
+    // engine end is part of the event, not a write around it.
+    expect(playLogShadowStats(doc.id)).toEqual({
+      entries: 1,
+      checkpoints: 1,
+      mismatches: 0,
+    });
   });
 
   it("lets a cast undo restore the exact engine concentration it replaced", () => {

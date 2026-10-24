@@ -8,7 +8,16 @@
 import { revertBuildFromPrior } from "@/lib/polymorph";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import { concentrationStatusKeys, endStatuses } from "@/lib/status";
-import type { CharacterData, CharacterDoc } from "@/types/character";
+import { concentrationValue } from "@/lib/concentration";
+import {
+  boundaryCommitFacts,
+  characterWorldState,
+  commitCharacterAction,
+  engineConcentrationHandle,
+  persistedWorldUid,
+  planEngineConcentrationEnd,
+} from "@/lib/mechanics-world-store";
+import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 
 export interface ConcentrationChange {
@@ -70,4 +79,51 @@ export function changeConcentration(
     droppedActiveKeys,
     ...(revertBuild ? { revertBuild } : {}),
   };
+}
+
+/**
+ * End the ENGINE-held concentration occurrence when the sheet drops the same spell:
+ * the world-side twin of {@link changeConcentration}'s teardown, through the canonical
+ * kernel end (`planEngineConcentrationEnd`: the root, the concentration effect and
+ * every standing it sourced end in one wave), committed as one journal action whose
+ * mirror keeps `session.concentration` coherent. The caller mints `actionId` and keeps
+ * it, so an undo can reverse that very action. Null when the
+ * world holds no matching engine concentration (the sheet's teardown is then complete).
+ */
+export function endEngineConcentration(
+  doc: CharacterDoc,
+  droppedSpell: StoredConcentration,
+  actionId: string
+): SessionState | null {
+  if (doc.session.world === undefined) return null;
+  const uid = persistedWorldUid(doc.session.world);
+  if (uid === null) return null;
+  const world = characterWorldState(doc, uid, doc.character.hp.max);
+  if (!world) return null;
+  const handle = engineConcentrationHandle(world);
+  if (!handle || handle.spellId === null) return null;
+  if (concentrationValue(handle.spellId) !== droppedSpell) return null;
+  const action = planEngineConcentrationEnd(doc, uid, world, actionId);
+  if (!action) return null;
+  return (
+    commitCharacterAction(doc, uid, world, action, boundaryCommitFacts(action))
+      ?.session ?? null
+  );
+}
+
+/**
+ * The whole concentration change as one sheet transition: the sheet's teardown, then
+ * the engine's when the dropped spell was engine-held.
+ */
+export function setConcentration(
+  doc: CharacterDoc,
+  spell: StoredConcentration,
+  engineActionId: string,
+  opts: { castLevel?: number; retractedFormTempHp?: number } = {}
+): CharacterDoc {
+  const prev = doc.session.concentration;
+  const changed = changeConcentration(doc, spell, opts).doc;
+  if (!prev || prev === spell) return changed;
+  const ended = endEngineConcentration(changed, prev, engineActionId);
+  return ended ? { ...changed, session: ended } : changed;
 }

@@ -19,7 +19,9 @@ import {
   type SheetEventKind,
 } from "@/lib/play/sheet-events";
 import * as companions from "@/lib/play/companions";
+import * as concentration from "@/lib/play/concentration";
 import * as conditions from "@/lib/play/conditions";
+import { concentrationValue } from "@/lib/concentration";
 import * as damage from "@/lib/play/damage";
 import * as defenses from "@/lib/play/defenses";
 import * as cover from "@/lib/play/cover";
@@ -135,6 +137,19 @@ const CASES: {
   "set-fading-penalty": [
     { kind: "set-fading-penalty", penaltyId: "raise-dead", amount: 2 },
     () => at(fading.setFadingPenalty(doc, "raise-dead", 2)),
+  ],
+  "set-concentration": [
+    {
+      kind: "set-concentration",
+      spell: concentrationValue("bless"),
+      engineActionId: "concentration-break-1",
+    },
+    () =>
+      concentration.setConcentration(
+        doc,
+        concentrationValue("bless"),
+        "concentration-break-1"
+      ),
   ],
   "add-condition": [
     { kind: "add-condition", condition: "poisoned" },
