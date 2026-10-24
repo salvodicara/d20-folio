@@ -175,6 +175,8 @@ import {
   effectiveSpellSaveDc,
   effectiveSpellAttackBonus,
   featureSaveDc,
+  featureSaveDcBreakdown,
+  buildSpellSaveDcBreakdown,
   isWeaponProficient,
   exhaustionPenalty,
   exhaustionSpeedReductionFt,
@@ -1179,6 +1181,10 @@ export interface RawActionSummary extends Omit<
   /** Locale-free damage composition — `localizeAction` localizes each part's
    *  label and folds it onto `weaponFacts.breakdown` (the unified facts VM). */
   damageBreakdown?: ReadonlyArray<RawBreakdownPart>;
+  /** The lines of {@link ActionSummary.saveDC} (8, PB, the ability, a grant
+   *  bonus), set wherever `saveDC` is set and from the same builders. Absent when
+   *  a manual or source override pins the DC. Read it through {@link actionSaveDc}. */
+  saveDcParts?: ReadonlyArray<RawBreakdownPart>;
   /** Locale-free to-hit composition (#94) — `localizeAction` localizes each
    *  part's label and folds it onto `weaponFacts.attackBreakdown`. The to-hit
    *  total derives from `breakdownTotal(parts)` so they can't drift. */
@@ -2542,6 +2548,8 @@ export interface ResolvedCunningStrikeOption {
   saveAbility: AbilityCode | null;
   /** Resolved save DC, or `null` when there is no save. */
   saveDc: number | null;
+  /** The lines of `saveDc` (8, PB, DEX), or `null` when there is no save. */
+  saveDcParts: RawBreakdownPart[] | null;
   condition?: ConditionId;
 }
 
@@ -2582,6 +2590,12 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
     combatAbilityScores(character).DEX,
     charData.proficiencyBonusOverride
   );
+  const dcParts = featureSaveDcBreakdown(
+    totalLevel(charData),
+    "DEX",
+    combatAbilityScores(character).DEX,
+    charData.proficiencyBonusOverride
+  );
 
   // Stable display order: by cost ascending, then by EN name — so the cheap
   // options surface first regardless of which source contributed them.
@@ -2594,6 +2608,7 @@ export function resolveCunningStrikeOptions(character: CharacterDoc): {
       description: o.description,
       saveAbility: o.save ?? null,
       saveDc: o.save ? dc : null,
+      saveDcParts: o.save ? dcParts : null,
       ...(o.condition ? { condition: o.condition } : {}),
     }))
     // Stable order by cost, then by the stable `optionId` (golden rule 7 — the
@@ -4810,6 +4825,51 @@ function resolveBundleDamageType(
 }
 
 /**
+ * The ONE way to read an action's save DC with its lines: the shown number and
+ * the parts it sums to (8, PB, the ability, a grant bonus), or `parts: null`
+ * when a manual or source override pins the DC (override-first, like
+ * `buildSpellSaveDcBreakdown`). `null` when the action forces no save.
+ */
+export function actionSaveDc(
+  summary: Pick<RawActionSummary, "saveDC" | "saveDcParts">
+): { total: number; parts: RawBreakdownPart[] | null } | null {
+  if (summary.saveDC == null) return null;
+  return {
+    total: summary.saveDC,
+    parts: summary.saveDcParts ? [...summary.saveDcParts] : null,
+  };
+}
+
+/** A spell save DC and its lines from the two spell builders (override-first:
+ *  `parts` is `null` when `override` pins the number). */
+function spellSaveDcWithParts(
+  level: number,
+  ability: AbilityCode,
+  abilityScore: number,
+  castingModifier: number,
+  override: number | null | undefined,
+  pbOverride: number | null | undefined
+): { total: number; parts: RawBreakdownPart[] | null } {
+  return {
+    total: effectiveSpellSaveDc(
+      level,
+      abilityScore,
+      castingModifier,
+      override,
+      pbOverride
+    ),
+    parts: buildSpellSaveDcBreakdown({
+      level,
+      abilityScore,
+      ability,
+      pbOverride,
+      override,
+      castingModifier,
+    }),
+  };
+}
+
+/**
  * S11 — resolve an action's SAVE + ATTACK halves onto its summary, SHARED by
  * every feature-action source (class features, feats, species traits, equipment,
  * invocations, homebrew) so a save-based attack surfaces identically wherever the
@@ -4834,10 +4894,14 @@ function applySaveAttackSummary(
   const { save, target } = activity;
   if (save && save.dc?.kind === "ability") {
     summary.saveAbility = save.ability;
-    summary.saveDC = featureSaveDc(
+    const score = ctx.abilityScores[save.dc.ability];
+    const pbOverride = character.character.proficiencyBonusOverride;
+    summary.saveDC = featureSaveDc(ctx.level, score, pbOverride);
+    summary.saveDcParts = featureSaveDcBreakdown(
       ctx.level,
-      ctx.abilityScores[save.dc.ability],
-      character.character.proficiencyBonusOverride
+      save.dc.ability,
+      score,
+      pbOverride
     );
   }
   const [condition] = effectsOfKind(activity, "condition");
@@ -5864,8 +5928,9 @@ function resolveSpellActions(
     primaryClassId(charData)
   );
   const dc = charData.spellcasting
-    ? effectiveSpellSaveDc(
+    ? spellSaveDcWithParts(
         level,
+        castAbility,
         castScore,
         dcGrantBonus,
         charData.spellcasting.saveDCOverride,
@@ -6046,8 +6111,9 @@ function resolveSpellActions(
     // class block contributes only its global manual overrides.
     const recomputeSpellNumbers = spellDiverges || sc == null;
     const spellDc = recomputeSpellNumbers
-      ? effectiveSpellSaveDc(
+      ? spellSaveDcWithParts(
           level,
+          spellCastAbility,
           spellCastScore,
           resolveCastingModifier(
             spellGrantAggregate.spellSaveDcBonus,
@@ -6337,7 +6403,8 @@ function resolveSpellActions(
 
     // Save DC + ability
     if (save && spellDc != null) {
-      summary.saveDC = spellDc;
+      summary.saveDC = spellDc.total;
+      if (spellDc.parts) summary.saveDcParts = spellDc.parts;
       summary.saveAbility = save.ability;
     }
 
@@ -6614,7 +6681,13 @@ function resolveSpellActions(
           ...(follow.save && spellDc != null
             ? {
                 saveAbility: follow.save.ability,
-                saveDC: sourceCast?.castOverrides?.saveDC ?? spellDc,
+                // A casting source's printed DC pins the number (no lines).
+                ...(sourceCast?.castOverrides?.saveDC !== undefined
+                  ? { saveDC: sourceCast.castOverrides.saveDC }
+                  : {
+                      saveDC: spellDc.total,
+                      ...(spellDc.parts ? { saveDcParts: spellDc.parts } : {}),
+                    }),
               }
             : {}),
           ...(followCondition ? { conditionApplication: followCondition.apply } : {}),
@@ -7531,6 +7604,12 @@ function resolveTemporaryHpActions(
     ctx.level,
     charData.proficiencyBonusOverride
   );
+  const unarmedStrikeDcParts = featureSaveDcBreakdown(
+    ctx.level,
+    "STR",
+    ctx.abilityScores.STR,
+    charData.proficiencyBonusOverride
+  );
 
   // 6. Universal base combat actions (every character; a condition-bound one,
   //    Escape while Grappled, only under its condition)
@@ -7555,7 +7634,13 @@ function resolveTemporaryHpActions(
       summary: {
         effect: baseActionText(ba.id, "effect"),
         ...(ba.hasTrigger ? { trigger: baseActionText(ba.id, "trigger") } : {}),
-        ...(isUnarmedStrikeOption ? { saveDC: unarmedStrikeDc, saveAbility: "STR" } : {}),
+        ...(isUnarmedStrikeOption
+          ? {
+              saveDC: unarmedStrikeDc,
+              saveDcParts: unarmedStrikeDcParts,
+              saveAbility: "STR",
+            }
+          : {}),
         ...(ba.id === "base-grapple"
           ? {
               conditionApplication: {
