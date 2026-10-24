@@ -260,6 +260,14 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     components: { v: true, s: false, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-glibness",
+        duration: timedSpellDuration(60),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

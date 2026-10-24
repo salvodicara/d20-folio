@@ -37,6 +37,20 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
+    targeting: { affinity: "ally" },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-beacon-of-hope",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          { type: "advantage-on", rollType: "save", vs: "wis" },
+          { type: "advantage-on", rollType: "save", vs: "death-saving-throws" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -62,6 +76,14 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "minutes", amount: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-blink",
+        duration: timedSpellDuration(1),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -611,6 +633,16 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-tongues",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -645,6 +677,16 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 24 },
+    targeting: { affinity: "ally", maxTargets: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-water-breathing",
+        duration: timedSpellDuration(1440),
+        recipient: "selected",
+        grants: [{ type: "air-and-water-breathing" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -664,6 +706,27 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     // SRD 5.2.1: "A willing creature you touch" + one additional creature for
     // each spell slot level above 3.
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-gaseous-form",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [
+          { type: "fly-speed", amount: 10 },
+          { type: "speed-cap", maxFt: 0 },
+          { type: "damage-resistance", damageType: "bludgeoning" },
+          { type: "damage-resistance", damageType: "piercing" },
+          { type: "damage-resistance", damageType: "slashing" },
+          { type: "condition-immunity", condition: "prone" },
+          { type: "advantage-on", rollType: "save", vs: "str" },
+          { type: "advantage-on", rollType: "save", vs: "dex" },
+          { type: "advantage-on", rollType: "save", vs: "con" },
+          { type: "spellcasting-blocked" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -718,6 +781,17 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 8 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-meld-into-stone",
+        duration: timedSpellDuration(480),
+        grants: [
+          { type: "disadvantage-on", rollType: "check", vs: "perception" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -736,6 +810,16 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 8 },
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-nondetection",
+        duration: timedSpellDuration(480),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -810,6 +894,14 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "minutes", amount: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-speak-with-plants",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -826,6 +918,16 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    targeting: { affinity: "ally", maxTargets: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-water-walk",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

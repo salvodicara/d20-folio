@@ -1185,6 +1185,20 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     components: { v: false, s: true, m: false },
     concentration: true,
     duration: { kind: "hours", amount: 1 },
+    targeting: { affinity: "self" },
+    conditionApplication: {
+      options: ["invisible"],
+      on: "automatic",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-mislead",
+        duration: timedSpellDuration(60),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1264,6 +1278,16 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    targeting: { affinity: "ally", maxTargets: 8 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-rarys-telepathic-bond",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

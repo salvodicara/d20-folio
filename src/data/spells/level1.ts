@@ -193,6 +193,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-comprehend-languages",
+        duration: timedSpellDuration(60),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -233,6 +241,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-detect-magic",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -245,6 +261,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-disguise-self",
+        duration: timedSpellDuration(60),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -357,6 +381,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-expeditious-retreat",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -424,6 +456,15 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "minutes", amount: 1 },
     targeting: { affinity: "any", maxTargets: 5 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-feather-fall",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -737,6 +778,15 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // SRD 5.2.1: "You touch a willing creature" + "one additional creature for
     // each spell slot level above 1".
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-jump",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -831,6 +881,16 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-protection-from-evil-and-good",
+        duration: timedSpellDuration(10),
+        recipient: "selected",
+        grants: [{ type: "incoming-attack-disadvantage" }, { type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -942,6 +1002,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "minutes", amount: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-speak-with-animals",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1070,6 +1138,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-detect-evil-and-good",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1086,6 +1162,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-detect-poison-and-disease",
+        duration: timedSpellDuration(10),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

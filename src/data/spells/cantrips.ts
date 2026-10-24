@@ -1,4 +1,5 @@
 import type { SrdSpellData } from "../types";
+import { timedSpellDuration } from "./duration";
 
 export const SRD_CANTRIPS: SrdSpellData[] = [
   {
@@ -130,6 +131,16 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-guidance",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -289,6 +300,16 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-resistance",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

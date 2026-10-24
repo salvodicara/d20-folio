@@ -178,6 +178,14 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "days", amount: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-find-the-path",
+        duration: timedSpellDuration(1440),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -246,6 +254,21 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    targeting: { affinity: "ally", maxTargets: 12 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-heroes-feast",
+        duration: timedSpellDuration(1440),
+        recipient: "selected",
+        grants: [
+          { type: "damage-resistance", damageType: "poison" },
+          { type: "condition-immunity", condition: "frightened" },
+          { type: "condition-immunity", condition: "poisoned" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -578,6 +601,23 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 8 },
+    targeting: { affinity: "ally", maxTargets: 11 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-wind-walk",
+        duration: timedSpellDuration(480),
+        recipient: "selected",
+        grants: [
+          { type: "fly-speed", amount: 300 },
+          { type: "condition-immunity", condition: "prone" },
+          { type: "damage-resistance", damageType: "bludgeoning" },
+          { type: "damage-resistance", damageType: "piercing" },
+          { type: "damage-resistance", damageType: "slashing" },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {

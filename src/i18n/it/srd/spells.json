@@ -3022,5 +3022,239 @@
   },
   "alter-self.grants.0.grants.0.options.natural-weapons": {
     "label": "Armi naturali"
+  },
+  "water-breathing.grants.0": {
+    "label": "Respirare Sott'acqua"
+  },
+  "gaseous-form.grants.0": {
+    "label": "Forma Gassosa"
+  },
+  "gaseous-form.grants.0.grants.6": {
+    "description": "Tiri salvezza su Forza (Forma Gassosa)"
+  },
+  "gaseous-form.grants.0.grants.7": {
+    "description": "Tiri salvezza su Destrezza (Forma Gassosa)"
+  },
+  "gaseous-form.grants.0.grants.8": {
+    "description": "Tiri salvezza su Costituzione (Forma Gassosa)"
+  },
+  "gaseous-form.grants.0.grants.10": {
+    "description": "Nube nebbiosa: non può parlare, manipolare oggetti né attaccare; può entrare nello spazio di altre creature e passare per aperture strette; termina a 0 punti ferita"
+  },
+  "enhance-ability.grants.0.grants.0": {
+    "label": "Caratteristica"
+  },
+  "enhance-ability.grants.0.grants.0.options.str": {
+    "label": "Forza"
+  },
+  "enhance-ability.grants.0.grants.0.options.str.grants.0": {
+    "description": "Prove di Forza (Caratteristica Potenziata)"
+  },
+  "enhance-ability.grants.0.grants.0.options.dex": {
+    "label": "Destrezza"
+  },
+  "enhance-ability.grants.0.grants.0.options.dex.grants.0": {
+    "description": "Prove di Destrezza (Caratteristica Potenziata)"
+  },
+  "enhance-ability.grants.0.grants.0.options.int": {
+    "label": "Intelligenza"
+  },
+  "enhance-ability.grants.0.grants.0.options.int.grants.0": {
+    "description": "Prove di Intelligenza (Caratteristica Potenziata)"
+  },
+  "enhance-ability.grants.0.grants.0.options.wis": {
+    "label": "Saggezza"
+  },
+  "enhance-ability.grants.0.grants.0.options.wis.grants.0": {
+    "description": "Prove di Saggezza (Caratteristica Potenziata)"
+  },
+  "enhance-ability.grants.0.grants.0.options.cha": {
+    "label": "Carisma"
+  },
+  "enhance-ability.grants.0.grants.0.options.cha.grants.0": {
+    "description": "Prove di Carisma (Caratteristica Potenziata)"
+  },
+  "enhance-ability.grants.0": {
+    "label": "Caratteristica Potenziata"
+  },
+  "protection-from-evil-and-good.grants.0": {
+    "label": "Protezione dal Bene e dal Male"
+  },
+  "protection-from-evil-and-good.grants.0.grants.0": {
+    "description": "Aberrazioni, celestiali, elementali, folletti, immondi e non morti hanno svantaggio ai tiri per colpire contro di te"
+  },
+  "protection-from-evil-and-good.grants.0.grants.1": {
+    "description": "Quelle creature non possono possederti né renderti affascinato o spaventato; se lo sei già, hai vantaggio ai nuovi tiri salvezza contro l'effetto"
+  },
+  "beacon-of-hope.grants.0": {
+    "label": "Faro di Speranza"
+  },
+  "beacon-of-hope.grants.0.grants.0": {
+    "description": "Tiri salvezza su Saggezza (Faro di Speranza)"
+  },
+  "beacon-of-hope.grants.0.grants.1": {
+    "description": "Tiri salvezza contro morte (Faro di Speranza)"
+  },
+  "beacon-of-hope.grants.0.grants.2": {
+    "description": "Le guarigioni fanno recuperare il numero massimo di punti ferita possibile"
+  },
+  "pass-without-trace.grants.0": {
+    "label": "Passare Senza Tracce"
+  },
+  "pass-without-trace.grants.0.grants.1": {
+    "description": "+10 alle prove di Destrezza (Furtività) entro 9 metri dall'incantatore; non lasci tracce"
+  },
+  "heroes-feast.grants.0": {
+    "label": "Banchetto degli Eroi"
+  },
+  "heroes-feast.grants.0.grants.3": {
+    "description": "Il tuo massimo dei punti ferita aumenta di 2d10 e recuperi lo stesso numero di punti ferita"
+  },
+  "wind-walk.grants.0": {
+    "label": "Camminare nel Vento"
+  },
+  "wind-walk.grants.0.grants.5": {
+    "description": "Forma di nuvola: puoi effettuare solo l'azione Scatto o un'azione di Magia per iniziare a riassumere la tua forma (1 minuto, stordito)"
+  },
+  "meld-into-stone.grants.0": {
+    "label": "Fondersi nella Pietra"
+  },
+  "meld-into-stone.grants.0.grants.0": {
+    "description": "Prove di Saggezza (Percezione) per sentire i suoni fuori dalla pietra"
+  },
+  "meld-into-stone.grants.0.grants.1": {
+    "description": "Fuso nella pietra: non vedi all'esterno e non puoi muoverti; con 1,5 metri di movimento ne esci e l'incantesimo termina"
+  },
+  "mislead.grants.0": {
+    "label": "Fuorviare"
+  },
+  "mislead.grants.0.grants.0": {
+    "description": "Appare un doppio illusorio; l'invisibilità termina dopo che effettui un tiro per colpire, infliggi danni o lanci un incantesimo. Azione di Magia: muovi il doppio fino al doppio della tua velocità"
+  },
+  "guidance.grants.0": {
+    "label": "Guida"
+  },
+  "guidance.grants.0.grants.0": {
+    "description": "Aggiungi 1d4 alle prove di caratteristica con l'abilità scelta"
+  },
+  "resistance.grants.0": {
+    "label": "Resistenza"
+  },
+  "resistance.grants.0.grants.0": {
+    "description": "Una volta per turno, i danni del tipo scelto che subisci sono ridotti di 1d4"
+  },
+  "jump.grants.0": {
+    "label": "Salto"
+  },
+  "jump.grants.0.grants.0": {
+    "description": "Una volta in ciascun tuo turno, puoi saltare fino a 9 metri usando 3 metri di movimento"
+  },
+  "feather-fall.grants.0": {
+    "label": "Caduta Morbida"
+  },
+  "feather-fall.grants.0.grants.0": {
+    "description": "Cadi di 18 metri per round e non subisci danni da caduta; l'incantesimo termina per te quando atterri"
+  },
+  "expeditious-retreat.grants.0": {
+    "label": "Ritirata Rapida"
+  },
+  "expeditious-retreat.grants.0.grants.0": {
+    "description": "Puoi effettuare l'azione Scatto come azione bonus"
+  },
+  "see-invisibility.grants.0": {
+    "label": "Vedere Invisibilità"
+  },
+  "see-invisibility.grants.0.grants.0": {
+    "description": "Vedi creature e oggetti invisibili come se fossero visibili e puoi vedere nel Piano Etereo"
+  },
+  "comprehend-languages.grants.0": {
+    "label": "Comprensione dei Linguaggi"
+  },
+  "comprehend-languages.grants.0.grants.0": {
+    "description": "Comprendi qualsiasi lingua che senti o vedi segnata, e i testi scritti di cui tocchi la superficie"
+  },
+  "speak-with-animals.grants.0": {
+    "label": "Parlare con gli Animali"
+  },
+  "speak-with-animals.grants.0.grants.0": {
+    "description": "Puoi comprendere le bestie, parlare con loro e usare con loro le abilità dell'azione di Influenza"
+  },
+  "disguise-self.grants.0": {
+    "label": "Camuffare Se Stesso"
+  },
+  "disguise-self.grants.0.grants.0": {
+    "description": "Hai un aspetto diverso; per scoprirlo serve un'azione di Studio e una prova di Intelligenza (Indagare) contro la CD dei tuoi incantesimi"
+  },
+  "detect-magic.grants.0": {
+    "label": "Individuazione del Magico"
+  },
+  "detect-magic.grants.0.grants.0": {
+    "description": "Percepisci gli effetti magici entro 9 metri; un'azione di Magia ne mostra l'aura e la scuola dell'incantesimo"
+  },
+  "detect-evil-and-good.grants.0": {
+    "label": "Individuazione del Bene e del Male"
+  },
+  "detect-evil-and-good.grants.0.grants.0": {
+    "description": "Percepisci aberrazioni, celestiali, elementali, folletti, immondi e non morti entro 9 metri, e un eventuale Santificare"
+  },
+  "detect-poison-and-disease.grants.0": {
+    "label": "Individuazione delle Malattie e dei Veleni"
+  },
+  "detect-poison-and-disease.grants.0.grants.0": {
+    "description": "Percepisci veleni, creature velenose e contagi magici entro 9 metri, e di che tipo sono"
+  },
+  "nondetection.grants.0": {
+    "label": "Anti-Individuazione"
+  },
+  "nondetection.grants.0.grants.0": {
+    "description": "Gli incantesimi di divinazione non possono bersagliarti e i sensori magici di scrutamento non possono percepirti"
+  },
+  "tongues.grants.0": {
+    "label": "Linguaggi"
+  },
+  "tongues.grants.0.grants.0": {
+    "description": "Comprendi qualsiasi lingua parlata o segnata, e ogni creatura che conosce una lingua comprende te"
+  },
+  "water-walk.grants.0": {
+    "label": "Camminare sull'Acqua"
+  },
+  "water-walk.grants.0.grants.0": {
+    "description": "Ti muovi su qualsiasi superficie liquida come su terreno solido; con un'azione bonus passi dentro o fuori dal liquido"
+  },
+  "blink.grants.0": {
+    "label": "Intermittenza"
+  },
+  "blink.grants.0.grants.0": {
+    "description": "Alla fine di ogni tuo turno tira 1d6: con 4-6 svanisci nel Piano Etereo fino all'inizio del tuo turno successivo"
+  },
+  "speak-with-plants.grants.0": {
+    "label": "Parlare con i Vegetali"
+  },
+  "speak-with-plants.grants.0.grants.0": {
+    "description": "I vegetali entro 9 metri parlano con te e seguono comandi semplici; puoi rendere normale il terreno difficile dovuto ai vegetali, o il contrario"
+  },
+  "rarys-telepathic-bond.grants.0": {
+    "label": "Legame Telepatico"
+  },
+  "rarys-telepathic-bond.grants.0.grants.0": {
+    "description": "Comunichi telepaticamente con le altre creature collegate, a qualsiasi distanza su questo piano"
+  },
+  "find-the-path.grants.0": {
+    "label": "Scopri il Percorso"
+  },
+  "find-the-path.grants.0.grants.0": {
+    "description": "Sai a che distanza e in che direzione si trova la destinazione nominata, e quale strada è la più diretta a ogni bivio"
+  },
+  "etherealness.grants.0": {
+    "label": "Forma Eterea"
+  },
+  "etherealness.grants.0.grants.0": {
+    "description": "Sei nel Confine Etereo: solo creature ed effetti lì presenti possono influenzarti o percepirti; vedi fino a 18 metri nel piano che hai lasciato"
+  },
+  "glibness.grants.0": {
+    "label": "Loquacità"
+  },
+  "glibness.grants.0.grants.0": {
+    "description": "Quando effettui una prova di Carisma, puoi sostituire il tiro con un 15; la magia che rileva le menzogne ti indica come sincero"
   }
 }
