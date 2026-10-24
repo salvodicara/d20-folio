@@ -3135,13 +3135,100 @@
     "label": "Guidance"
   },
   "guidance.grants.0.grants.0": {
-    "description": "Add 1d4 to ability checks using the chosen skill"
+    "label": "Skill"
+  },
+  "guidance.grants.0.grants.0.options.acrobatics": {
+    "label": "Acrobatics"
+  },
+  "guidance.grants.0.grants.0.options.animal-handling": {
+    "label": "Animal Handling"
+  },
+  "guidance.grants.0.grants.0.options.arcana": {
+    "label": "Arcana"
+  },
+  "guidance.grants.0.grants.0.options.athletics": {
+    "label": "Athletics"
+  },
+  "guidance.grants.0.grants.0.options.deception": {
+    "label": "Deception"
+  },
+  "guidance.grants.0.grants.0.options.history": {
+    "label": "History"
+  },
+  "guidance.grants.0.grants.0.options.insight": {
+    "label": "Insight"
+  },
+  "guidance.grants.0.grants.0.options.intimidation": {
+    "label": "Intimidation"
+  },
+  "guidance.grants.0.grants.0.options.investigation": {
+    "label": "Investigation"
+  },
+  "guidance.grants.0.grants.0.options.medicine": {
+    "label": "Medicine"
+  },
+  "guidance.grants.0.grants.0.options.nature": {
+    "label": "Nature"
+  },
+  "guidance.grants.0.grants.0.options.perception": {
+    "label": "Perception"
+  },
+  "guidance.grants.0.grants.0.options.performance": {
+    "label": "Performance"
+  },
+  "guidance.grants.0.grants.0.options.persuasion": {
+    "label": "Persuasion"
+  },
+  "guidance.grants.0.grants.0.options.religion": {
+    "label": "Religion"
+  },
+  "guidance.grants.0.grants.0.options.sleight-of-hand": {
+    "label": "Sleight of Hand"
+  },
+  "guidance.grants.0.grants.0.options.stealth": {
+    "label": "Stealth"
+  },
+  "guidance.grants.0.grants.0.options.survival": {
+    "label": "Survival"
   },
   "resistance.grants.0": {
     "label": "Resistance"
   },
   "resistance.grants.0.grants.0": {
-    "description": "Once per turn, damage of the chosen type you take is reduced by 1d4"
+    "label": "Damage type"
+  },
+  "resistance.grants.0.grants.0.options.acid": {
+    "label": "Acid"
+  },
+  "resistance.grants.0.grants.0.options.bludgeoning": {
+    "label": "Bludgeoning"
+  },
+  "resistance.grants.0.grants.0.options.cold": {
+    "label": "Cold"
+  },
+  "resistance.grants.0.grants.0.options.fire": {
+    "label": "Fire"
+  },
+  "resistance.grants.0.grants.0.options.lightning": {
+    "label": "Lightning"
+  },
+  "resistance.grants.0.grants.0.options.necrotic": {
+    "label": "Necrotic"
+  },
+  "resistance.grants.0.grants.0.options.piercing": {
+    "label": "Piercing"
+  },
+  "resistance.grants.0.grants.0.options.poison": {
+    "label": "Poison"
+  },
+  "resistance.grants.0.grants.0.options.radiant": {
+    "label": "Radiant"
+  },
+  "resistance.grants.0.grants.0.options.slashing": {
+    "label": "Slashing"
+  },
+  "resistance.grants.0.grants.0.options.thunder": {
+    "label": "Thunder"
   },
   "jump.grants.0": {
     "label": "Jump"
@@ -3255,6 +3342,9 @@
     "label": "Glibness"
   },
   "glibness.grants.0.grants.0": {
-    "description": "When you make a Charisma check, you can replace the roll with a 15; magic that detects lies reads you as truthful"
+    "description": "Charisma checks: you can replace the roll with a 15"
+  },
+  "glibness.grants.0.grants.1": {
+    "description": "Magic that would determine if you are telling the truth reads you as truthful"
   }
 }

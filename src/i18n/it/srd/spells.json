@@ -3135,13 +3135,100 @@
     "label": "Guida"
   },
   "guidance.grants.0.grants.0": {
-    "description": "Aggiungi 1d4 alle prove di caratteristica con l'abilità scelta"
+    "label": "Abilità"
+  },
+  "guidance.grants.0.grants.0.options.acrobatics": {
+    "label": "Acrobazia"
+  },
+  "guidance.grants.0.grants.0.options.animal-handling": {
+    "label": "Addestrare Animali"
+  },
+  "guidance.grants.0.grants.0.options.arcana": {
+    "label": "Arcano"
+  },
+  "guidance.grants.0.grants.0.options.athletics": {
+    "label": "Atletica"
+  },
+  "guidance.grants.0.grants.0.options.deception": {
+    "label": "Inganno"
+  },
+  "guidance.grants.0.grants.0.options.history": {
+    "label": "Storia"
+  },
+  "guidance.grants.0.grants.0.options.insight": {
+    "label": "Intuizione"
+  },
+  "guidance.grants.0.grants.0.options.intimidation": {
+    "label": "Intimidire"
+  },
+  "guidance.grants.0.grants.0.options.investigation": {
+    "label": "Indagare"
+  },
+  "guidance.grants.0.grants.0.options.medicine": {
+    "label": "Medicina"
+  },
+  "guidance.grants.0.grants.0.options.nature": {
+    "label": "Natura"
+  },
+  "guidance.grants.0.grants.0.options.perception": {
+    "label": "Percezione"
+  },
+  "guidance.grants.0.grants.0.options.performance": {
+    "label": "Intrattenere"
+  },
+  "guidance.grants.0.grants.0.options.persuasion": {
+    "label": "Persuasione"
+  },
+  "guidance.grants.0.grants.0.options.religion": {
+    "label": "Religione"
+  },
+  "guidance.grants.0.grants.0.options.sleight-of-hand": {
+    "label": "Rapidità di Mano"
+  },
+  "guidance.grants.0.grants.0.options.stealth": {
+    "label": "Furtività"
+  },
+  "guidance.grants.0.grants.0.options.survival": {
+    "label": "Sopravvivenza"
   },
   "resistance.grants.0": {
     "label": "Resistenza"
   },
   "resistance.grants.0.grants.0": {
-    "description": "Una volta per turno, i danni del tipo scelto che subisci sono ridotti di 1d4"
+    "label": "Tipo di danno"
+  },
+  "resistance.grants.0.grants.0.options.acid": {
+    "label": "Acido"
+  },
+  "resistance.grants.0.grants.0.options.bludgeoning": {
+    "label": "Contundente"
+  },
+  "resistance.grants.0.grants.0.options.cold": {
+    "label": "Freddo"
+  },
+  "resistance.grants.0.grants.0.options.fire": {
+    "label": "Fuoco"
+  },
+  "resistance.grants.0.grants.0.options.lightning": {
+    "label": "Fulmine"
+  },
+  "resistance.grants.0.grants.0.options.necrotic": {
+    "label": "Necrotico"
+  },
+  "resistance.grants.0.grants.0.options.piercing": {
+    "label": "Perforante"
+  },
+  "resistance.grants.0.grants.0.options.poison": {
+    "label": "Veleno"
+  },
+  "resistance.grants.0.grants.0.options.radiant": {
+    "label": "Radiante"
+  },
+  "resistance.grants.0.grants.0.options.slashing": {
+    "label": "Tagliente"
+  },
+  "resistance.grants.0.grants.0.options.thunder": {
+    "label": "Tuono"
   },
   "jump.grants.0": {
     "label": "Salto"
@@ -3255,6 +3342,9 @@
     "label": "Loquacità"
   },
   "glibness.grants.0.grants.0": {
-    "description": "Quando effettui una prova di Carisma, puoi sostituire il tiro con un 15; la magia che rileva le menzogne ti indica come sincero"
+    "description": "Prove di Carisma: puoi sostituire il tiro con un 15"
+  },
+  "glibness.grants.0.grants.1": {
+    "description": "La magia che determinerebbe se dici la verità ti indica come sincero"
   }
 }

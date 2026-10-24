@@ -523,6 +523,29 @@ export function deriveFlatDamageReductions(
   return lines;
 }
 
+/** One resolved `damage-die-reduction` line (Resistance: −1d4 Fire, once per turn). */
+export interface DamageDieReductionLine {
+  sourceId: string;
+  /** The die the table rolls and subtracts ("1d4"). */
+  dice: string;
+  /** Sorted, de-duplicated damage types the reduction applies to. */
+  damageTypes: DamageType[];
+  oncePerTurn: boolean;
+}
+
+/** The rolled-die damage reductions as defense lines. The die is table-rolled,
+ * so the damage-intake math does not subtract it. */
+export function deriveDamageDieReductions(
+  aggregate: AggregatedGrants
+): DamageDieReductionLine[] {
+  return aggregate.damageDieReductions.map((e) => ({
+    sourceId: e.sourceId,
+    dice: e.dice,
+    damageTypes: [...new Set(e.damageTypes)].sort(),
+    oncePerTurn: e.oncePerTurn,
+  }));
+}
+
 // ─── RA-05 — the damage-intake defense bundle ────────────────────────────────
 
 /**
