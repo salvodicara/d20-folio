@@ -79,11 +79,20 @@ e2e-pack:
 build:
     pnpm build
 
+# Fetch the linked pack checkout's origin and stop if it lags origin/main (never pulls).
+pack-fresh:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    [ -e content-pack ] || exit 0
+    top="$(git -C "$(cd content-pack && pwd -P)/.." rev-parse --show-toplevel)"
+    git -C "$top" fetch --quiet origin main || echo "! could not fetch the pack origin; checking the last fetched state"
+    node --import ./scripts/alias-loader.mjs -e 'import("./scripts/pack/pack-freshness-setup.ts").then((m) => m.default())'
+
 # The bundle budget on the COMPOSED build, the one `deploy.yml` ships. CI's `build +
 # budget` job builds SRD-only, so the private pack's growth (its EN text rides the
 # eager closure) is measured here, in Verify's `budget (composed)` job and at deploy
 # time. Needs `content-pack` linked to the pack's origin/main.
-budget-pack:
+budget-pack: pack-fresh
     @test -e content-pack/index.ts || { echo "✗ content-pack is not linked: link the pack (its origin/main) first."; exit 1; }
     pnpm build
     pnpm test:budget
