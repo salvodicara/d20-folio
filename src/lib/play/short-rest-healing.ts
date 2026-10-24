@@ -19,7 +19,11 @@ export function shortRestHealing(
   rolled: number | null
 ): number | null {
   const aggregate = aggregateCharacterGrants(doc.character, doc.session);
-  const con = aggregateAbilityScores(doc.character.abilityScores, aggregate).CON;
+  const con = aggregateAbilityScores(
+    doc.character.abilityScores,
+    aggregate,
+    doc.character.abilityScoreOverrides
+  ).CON;
   return hitDiceHealing({
     pool: hitDicePool(doc.character),
     count,

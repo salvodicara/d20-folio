@@ -215,7 +215,11 @@ export function deriveSavesAndChecks(
     fadingPenalties: session.fadingPenalties,
   });
 
-  const effectiveScores = aggregateAbilityScores(charData.abilityScores, fullAggregate);
+  const effectiveScores = aggregateAbilityScores(
+    charData.abilityScores,
+    fullAggregate,
+    charData.abilityScoreOverrides
+  );
   const displayedSaves = mergeSaveProficiencies(
     charData.savingThrows,
     aggregate.saveProficiencies

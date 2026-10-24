@@ -39,5 +39,10 @@ export function sheetNumbersView(
       saveDc: lines(n.spellcasting.saveDc),
       attackBonus: lines(n.spellcasting.attackBonus),
     },
+    abilities: Object.fromEntries(
+      Object.entries(n.abilities).map(([ability, value]) => [ability, lines(value)])
+    ) as SheetNumbers<BreakdownLine>["abilities"],
+    carryingCapacity: lines(n.carryingCapacity),
+    jump: { long: lines(n.jump.long), high: lines(n.jump.high) },
   };
 }

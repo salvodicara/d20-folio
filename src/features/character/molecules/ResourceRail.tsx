@@ -317,7 +317,11 @@ export function ResourceRail() {
   // keying CHA/WIS); per RAW the formula uses the CURRENT (effective) score, so an
   // ability-boosting item raises it. Resolve effective scores ONCE and feed the
   // aura effect line, never the raw stored scores (rule 6).
-  const effectiveScores = aggregateAbilityScores(charData.abilityScores, aggregate);
+  const effectiveScores = aggregateAbilityScores(
+    charData.abilityScores,
+    aggregate,
+    charData.abilityScoreOverrides
+  );
   const spellSlots = charData.spellSlots;
   const concentration = vitalConcentration(session);
   const concentrationRounds = concentration

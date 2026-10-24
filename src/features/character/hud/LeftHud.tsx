@@ -143,7 +143,11 @@ export function LeftHud() {
 
   const level = totalLevel(charData);
   const pb = effectiveProficiencyBonus(level, charData.proficiencyBonusOverride);
-  const effectiveScores = aggregateAbilityScores(charData.abilityScores, fullAggregate);
+  const effectiveScores = aggregateAbilityScores(
+    charData.abilityScores,
+    fullAggregate,
+    charData.abilityScoreOverrides
+  );
   // The per-save row keyed for the medallion loop (bonus + breakdown + auto-fail
   // cause + proficiency all come from the shared builder).
   const saveByCode = new Map(savesChecks.saves.map((s) => [s.id, s]));
@@ -248,7 +252,7 @@ export function LeftHud() {
   // so read-only movement facts beside the derived speeds. Reads the EFFECTIVE
   // STR (a set-STR item raises it), the same single source the encumbrance
   // capacity uses (rule 6).
-  const jump = jumpDistance(effectiveScores.STR);
+  const jump = jumpDistance(effectiveScores.STR, charData.jumpOverrides);
   // #68 — passive scores are override-first: the computed value is the default, an
   // explicit override replaces it (reset returns to computed). Numbers + breakdown
   // come from the SHARED builder; the rail localizes the label + the tip lines.

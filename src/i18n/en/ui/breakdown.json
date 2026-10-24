@@ -37,7 +37,8 @@
         "up": "{{value}} ÷ {{divisor}}, rounded up.",
         "down": "{{value}} ÷ {{divisor}}, rounded down."
       },
-      "maneuverBestAbility": "A maneuver's DC uses your Strength or Dexterity modifier, whichever is higher."
+      "maneuverBestAbility": "A maneuver's DC uses your Strength or Dexterity modifier, whichever is higher.",
+      "carryStrength": "You can carry 15 times your Strength score ({{score}})."
     },
     "speed": {
       "multiplier": "Speed multiplier",
@@ -56,6 +57,14 @@
     "tracker": {
       "fixed": "Set by the feature",
       "minimum": "Minimum 1"
+    },
+    "carry": {
+      "strength": "Strength × 15",
+      "largerSize": "One size larger"
+    },
+    "jump": {
+      "strengthScore": "Strength score",
+      "minimum": "Never below 0"
     }
   }
 }

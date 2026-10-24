@@ -37,7 +37,8 @@
         "up": "{{value}} ÷ {{divisor}}, arrotondato per eccesso.",
         "down": "{{value}} ÷ {{divisor}}, arrotondato per difetto."
       },
-      "maneuverBestAbility": "La CD di una manovra usa il modificatore di Forza o di Destrezza, il più alto dei due."
+      "maneuverBestAbility": "La CD di una manovra usa il modificatore di Forza o di Destrezza, il più alto dei due.",
+      "carryStrength": "Puoi trasportare 15 volte il tuo punteggio di Forza ({{score}})."
     },
     "speed": {
       "multiplier": "Moltiplicatore di velocità",
@@ -56,6 +57,14 @@
     "tracker": {
       "fixed": "Stabilito dal privilegio",
       "minimum": "Minimo 1"
+    },
+    "carry": {
+      "strength": "Forza × 15",
+      "largerSize": "Una taglia più grande"
+    },
+    "jump": {
+      "strengthScore": "Punteggio di Forza",
+      "minimum": "Mai sotto 0"
     }
   }
 }

@@ -54,6 +54,7 @@ import {
   locPart,
   breakdownTotal,
   termPart,
+  withOverride,
   type RawBreakdownPart,
 } from "@/lib/value-breakdown";
 import { srdText } from "@/lib/loc-text";
@@ -203,7 +204,11 @@ export function computeCharacterAC(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  const scores = aggregateAbilityScores(character.abilityScores, agg);
+  const scores = aggregateAbilityScores(
+    character.abilityScores,
+    agg,
+    character.abilityScoreOverrides
+  );
   return computeAC(
     effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
@@ -249,12 +254,14 @@ function sourcePart(
  * feature bonus and the resulting-score cap that trims it ("+2, to a maximum of
  * 20"). Each is named by the entry it came from. The stored base stays whole: the
  * increases baked into it are not recorded reliably, so no split is invented.
- * `breakdownTotal(parts)` equals the shown score; the guard pins it.
+ * `breakdownTotal(parts)` equals the shown score; the guard pins it. A hand-set score
+ * (`pin`) keeps those parts and adds the manual adjustment ({@link withOverride}).
  */
 export function abilityScoreBreakdown(
   base: Record<AbilityCode, number>,
   aggregate: AggregatedGrants,
-  ability: AbilityCode
+  ability: AbilityCode,
+  pin?: number
 ): RawBreakdownPart[] {
   const origins = aggregate.ruleOrigins;
   const parts: RawBreakdownPart[] = [termPart("breakdown.base", base[ability])];
@@ -281,7 +288,7 @@ export function abilityScoreBreakdown(
       parts.push(sourcePart(source, "breakdown.ability.cap", cap - score));
     }
   }
-  return parts;
+  return pin === undefined ? parts : withOverride(parts, pin);
 }
 
 /**
@@ -306,7 +313,11 @@ export function computeCharacterAcBreakdown(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): RawBreakdownPart[] {
-  const scores = aggregateAbilityScores(character.abilityScores, agg);
+  const scores = aggregateAbilityScores(
+    character.abilityScores,
+    agg,
+    character.abilityScoreOverrides
+  );
   return computeACDetailed(
     effectiveEquipmentForItemResources(character.equipment, itemResources),
     scores,
@@ -482,7 +493,11 @@ function initiativeInputs(
   aggregate: InitiativeAggregate,
   exhaustion: number
 ): Parameters<typeof computeInitiative> {
-  const scores = aggregateAbilityScores(character.abilityScores, aggregate);
+  const scores = aggregateAbilityScores(
+    character.abilityScores,
+    aggregate,
+    character.abilityScoreOverrides
+  );
   const grantBonus =
     aggregate.initiativeBonusFlat +
     aggregate.initiativeBonusAbilities.reduce(

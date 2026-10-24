@@ -870,6 +870,23 @@ export interface CharacterData {
   weaponProficiencyOverrides?: Record<ProficiencyToken, boolean>;
   /** Override for total hit dice (null = use character level) */
   hitDiceTotalOverride?: number | null;
+  /**
+   * Hand-set numbers stored under `build.pins` (overrides always possible). Each is
+   * optional; absent = computed. A pin sets the number; a situational penalty
+   * (Exhaustion) still applies on top where the number takes one.
+   */
+  /** EFFECTIVE ability scores (after item floors and bonuses), per ability. */
+  abilityScoreOverrides?: Partial<Record<AbilityCode, number>>;
+  /**
+   * Save DCs keyed by the id of what shows the DC: an action id (`resolveActions`:
+   * a feature, maneuver, Grapple/Shove or spell card) or `rogue-cunning-strike`.
+   * Beats every computed DC, the spell DC override included.
+   */
+  saveDcOverrides?: Record<string, number>;
+  /** Carrying capacity in pounds (push/drag/lift is twice it). */
+  carryingCapacityOverride?: number | null;
+  /** Running long and high jump in feet. */
+  jumpOverrides?: { long?: number; high?: number };
 
   spellcasting: SpellcastingConfig | null;
   spellSlots: Array<{ level: number; total: number; pactMagic?: boolean }>;

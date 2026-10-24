@@ -244,7 +244,11 @@ function ownerContext(doc: CharacterDoc): {
 } {
   const charData = doc.character;
   const agg = aggregateCharacterGrants(charData, doc.session);
-  const scores = aggregateAbilityScores(charData.abilityScores, agg);
+  const scores = aggregateAbilityScores(
+    charData.abilityScores,
+    agg,
+    charData.abilityScoreOverrides
+  );
   const sc = charData.spellcasting;
   const spellAttackMod = sc
     ? effectiveSpellAttackBonus(

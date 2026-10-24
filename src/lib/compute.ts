@@ -1898,7 +1898,9 @@ export function effectiveAbilityScores(
 
 /**
  * The effective ability scores over a grant aggregate: {@link effectiveAbilityScores}
- * fed the aggregate's floors, item bonuses and caps. The one call every surface makes.
+ * fed the aggregate's floors, item bonuses and caps, then the player's hand-set
+ * scores (`abilityScoreOverrides`, which pin the EFFECTIVE score). The one call every
+ * surface makes; pass the character's pins so a pinned score reaches everything.
  */
 export function aggregateAbilityScores(
   base: Record<AbilityCode, number>,
@@ -1906,14 +1908,19 @@ export function aggregateAbilityScores(
     readonly abilityScoreFloors: Partial<Record<AbilityCode, number>>;
     readonly itemAbilityScoreBonus?: Partial<Record<AbilityCode, number>>;
     readonly itemAbilityScoreCap?: Partial<Record<AbilityCode, number>>;
-  }
+  },
+  pins?: Partial<Record<AbilityCode, number>>
 ): Record<AbilityCode, number> {
-  return effectiveAbilityScores(
+  const scores = effectiveAbilityScores(
     base,
     aggregate.abilityScoreFloors,
     aggregate.itemAbilityScoreBonus,
     aggregate.itemAbilityScoreCap
   );
+  for (const [ability, pin] of Object.entries(pins ?? {}) as [AbilityCode, number][]) {
+    if (ability in scores) scores[ability] = pin;
+  }
+  return scores;
 }
 
 /** The six ability codes in canonical stat-block order. */
@@ -2257,27 +2264,71 @@ export function resolveFamiliarEnhancements(
  * Carrying capacity (2024 PHB): your Strength score × 15 (pounds). You can
  * push, drag, or lift up to twice that. Returned in pounds; the UI converts to
  * kg for IT via `formatWeight`. A character is Small or Medium (×1); counting
- * as one size larger (Powerful Build) makes a Medium one Large (×2).
+ * as one size larger (Powerful Build) makes a Medium one Large (×2). A hand-set
+ * capacity (`pin`, the character's `carryingCapacityOverride`) replaces the carry,
+ * and push/drag/lift stays twice it.
  */
 export function carryingCapacity(
   strScore: number,
-  options: { asLargerSize?: boolean } = {}
+  options: { asLargerSize?: boolean; pin?: number | null } = {}
 ): {
   carry: number;
   pushDragLift: number;
 } {
   const factor = options.asLargerSize ? 2 : 1;
-  return { carry: strScore * 15 * factor, pushDragLift: strScore * 30 * factor };
+  const carry = options.pin ?? strScore * 15 * factor;
+  return { carry, pushDragLift: carry * 2 };
+}
+
+/**
+ * The lines of {@link carryingCapacity}'s carry: Strength × 15, then the doubling for
+ * counting as one size larger, then the manual adjustment under a pin. They sum to it.
+ */
+export function carryingCapacityBreakdown(
+  strScore: number,
+  options: { asLargerSize?: boolean; pin?: number | null } = {}
+): RawBreakdownPart[] {
+  const base = strScore * 15;
+  const parts = [
+    termPart("breakdown.carry.strength", base, undefined, {
+      term: "breakdown.why.carryStrength",
+      params: { score: strScore },
+    }),
+  ];
+  if (options.asLargerSize) parts.push(termPart("breakdown.carry.largerSize", base));
+  return options.pin != null ? withOverride(parts, options.pin) : parts;
 }
 
 /**
  * Jump distances (2024 PHB), in feet, with a running start (≥10 ft):
  *  - long jump = your Strength SCORE (feet)
  *  - high jump = 3 + your Strength MODIFIER (feet, min 0)
- * Standing jumps are half these — the UI can note that.
+ * Standing jumps are half these — the UI can note that. A hand-set distance
+ * (`pins`, the character's `jumpOverrides`) replaces its computed one.
  */
-export function jumpDistance(strScore: number): { long: number; high: number } {
-  return { long: strScore, high: Math.max(0, 3 + abilityModifier(strScore)) };
+export function jumpDistance(
+  strScore: number,
+  pins?: { long?: number; high?: number }
+): { long: number; high: number } {
+  return {
+    long: pins?.long ?? strScore,
+    high: pins?.high ?? Math.max(0, 3 + abilityModifier(strScore)),
+  };
+}
+
+/** The lines of {@link jumpDistance}, each summing to its distance (pins included). */
+export function jumpBreakdown(
+  strScore: number,
+  pins?: { long?: number; high?: number }
+): { long: RawBreakdownPart[]; high: RawBreakdownPart[] } {
+  const long = [termPart("breakdown.jump.strengthScore", strScore)];
+  const mod = abilityModifier(strScore);
+  const high = [termPart("breakdown.base", 3), abilityPart("STR", mod)];
+  if (3 + mod < 0) high.push(termPart("breakdown.jump.minimum", -(3 + mod)));
+  return {
+    long: pins?.long !== undefined ? withOverride(long, pins.long) : long,
+    high: pins?.high !== undefined ? withOverride(high, pins.high) : high,
+  };
 }
 
 /**

@@ -104,7 +104,11 @@ function effectiveScores(character: CharacterDoc) {
   const aggregate = aggregateCharacterGrants(character.character, character.session);
   return {
     aggregate,
-    scores: aggregateAbilityScores(character.character.abilityScores, aggregate),
+    scores: aggregateAbilityScores(
+      character.character.abilityScores,
+      aggregate,
+      character.character.abilityScoreOverrides
+    ),
   };
 }
 

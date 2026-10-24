@@ -963,6 +963,19 @@ const OVERRIDE_MAP: ReadonlyArray<[string, string]> = [
 ];
 
 /**
+ * Hand-set numbers with no `build.overrides` home → their `build.pins` key. A key of
+ * its own because the v0.25.0 reader rebuilds `build.overrides` from its fixed map on
+ * write (dropping a new sub-key there), while it keeps an unknown top-level build key
+ * verbatim. Non-finite values are neutralized on read by `sanitizeOverrides`.
+ */
+const PIN_MAP: ReadonlyArray<[string, string]> = [
+  ["abilityScoreOverrides", "abilities"],
+  ["saveDcOverrides", "saveDcs"],
+  ["carryingCapacityOverride", "carry"],
+  ["jumpOverrides", "jump"],
+];
+
+/**
  * GR10 read-normalization for the proficiency override maps: conform each key from
  * its legacy English label ("Light armor") to its stable {@link ProficiencyToken}
  * (`light-armor`) so an override stored before the token migration still applies.
@@ -1110,6 +1123,7 @@ export const KNOWN_BUILD_KEYS: readonly string[] = [
   "asi",
   "originFeats",
   "overrides",
+  "pins",
   "features",
   "customs",
   "lore",
@@ -1173,6 +1187,15 @@ function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
     if (v !== undefined && v !== null) overrides[oKey] = v;
   }
   if (Object.keys(overrides).length > 0) build.overrides = overrides;
+
+  const pins: Record<string, unknown> = {};
+  for (const [minKey, pKey] of PIN_MAP) {
+    const v = min[minKey];
+    if (v === undefined || v === null) continue;
+    if (isRecord(v) && Object.keys(v).length === 0) continue;
+    pins[pKey] = v;
+  }
+  if (Object.keys(pins).length > 0) build.pins = pins;
 
   // Features: SRD chosen-feat refs → `build.features`; custom (homebrew) features
   // + custom conditions → `build.customs`.
@@ -1304,6 +1327,15 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
   // A malformed XP value is not read, but it is still the player's data: keep it.
   if (build.experience !== undefined && min.experience === undefined) {
     unknownBuild = { ...unknownBuild, experience: build.experience };
+  }
+  if (isRecord(build.pins)) {
+    for (const [minKey, pKey] of PIN_MAP) {
+      const v = build.pins[pKey];
+      if (v !== undefined && v !== null) min[minKey] = v;
+    }
+  } else if (build.pins !== undefined) {
+    // Not a pins record this version can read: still the player's data, so keep it.
+    unknownBuild = { ...unknownBuild, pins: build.pins };
   }
   if (unknownBuild) min.unknown = unknownBuild;
 
