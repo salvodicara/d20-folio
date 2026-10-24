@@ -8,6 +8,7 @@
  * the React edge.
  */
 
+import { exactItemCopy } from "@/lib/item-copies";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import type {
   ResourceRecoveryTrigger,
@@ -17,7 +18,7 @@ import type {
 import { attunementSatisfied } from "@/lib/attunement";
 import { resolveItemResources, type ItemResourceOmission } from "@/lib/item-resources";
 import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
-import type { CharacterDoc, SrdEquipmentRef } from "@/types/character";
+import type { CharacterDoc } from "@/types/character";
 
 export type ItemResourceLabelTranslationKey =
   | "equipment.charges"
@@ -134,18 +135,6 @@ export function itemResourceRecoveryTranslationKey(
   }
 }
 
-function exactOwner(
-  doc: CharacterDoc,
-  itemId: string,
-  instanceId: string
-): SrdEquipmentRef | null {
-  const owners = doc.character.equipment.filter(
-    (entry): entry is SrdEquipmentRef =>
-      !("custom" in entry) && entry.srdId === itemId && entry.instanceId === instanceId
-  );
-  return owners.length === 1 ? (owners[0] ?? null) : null;
-}
-
 /**
  * Build one render-safe VM per typed resource on every valid physical copy.
  * Catalogue order and equipment order are preserved; copies never collapse by
@@ -172,7 +161,7 @@ export function buildItemResourceViewModels(
   return {
     omissions: resolved.omissions,
     resources: resolved.resources.map((resource) => {
-      const owner = exactOwner(doc, resource.itemId, resource.instanceId);
+      const owner = exactItemCopy(doc, resource.itemId, resource.instanceId);
       const copies = copiesByItem.get(resource.itemId) ?? [];
       const copyIndex = copies.indexOf(resource.instanceId);
       const copyNumber = copies.length > 1 && copyIndex >= 0 ? copyIndex + 1 : null;

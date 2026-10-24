@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useTranslation } from "react-i18next";
 import { ItemResourceInputModal } from "@/components/sheet/ItemResourceInputModal";
 import { MAGIC_ITEMS_BY_ID, SRD_MAGIC_ITEMS } from "@/data/magic-items";
-import { attunementSatisfied } from "@/lib/attunement";
+import { canSpendCopy } from "@/lib/item-copies";
 import {
   prepareItemResourceBoundary,
   prepareItemResourceBoundaryReplay,
@@ -59,29 +59,7 @@ function hasActiveSpendOwner(
   character: CharacterDoc,
   identity: ItemResourceCommandRecipe["identity"]
 ): boolean {
-  const owners = character.character.equipment.filter(
-    (entry) =>
-      !("custom" in entry) &&
-      entry.srdId === identity.itemId &&
-      entry.instanceId === identity.instanceId
-  );
-  const owner = owners[0];
-  if (
-    owners.length !== 1 ||
-    !owner ||
-    "custom" in owner ||
-    owner.equipped !== true ||
-    !attunementSatisfied(owner)
-  ) {
-    return false;
-  }
-  const state = character.session.itemResources?.[identity.instanceId];
-  return (
-    !state ||
-    (state.itemId === identity.itemId &&
-      state.instanceId === identity.instanceId &&
-      state.disposition === "magical")
-  );
+  return canSpendCopy(character, identity.itemId, identity.instanceId);
 }
 
 export function ItemResourceCommandProvider({ children }: { children: ReactNode }) {
