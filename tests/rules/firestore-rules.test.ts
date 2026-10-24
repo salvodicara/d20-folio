@@ -1432,6 +1432,33 @@ describe("firestore.rules — sanitized public character projection", () => {
     });
   });
 
+  it("a private note is the author's alone: not the DM, not the party, not a stranger", async () => {
+    // Owner answer 2026-10-24: a note not shared with the party is visible ONLY to
+    // its author. The sheet's play state is readable by the campaign (the DM reads
+    // it, below), so private notes live in their own owner-only subcollection.
+    const NOTE = [...SHARED_PARENT, "privateNotes", "note-1"] as const;
+    const owner = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(setDoc(doc(owner, ...NOTE), { text: "@Bo lied", at: 1 }));
+    await assertSucceeds(getDoc(doc(owner, ...NOTE)));
+    await assertSucceeds(getDocs(collection(owner, ...SHARED_PARENT, "privateNotes")));
+
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    // The DM does read the character's play state…
+    await assertSucceeds(getDoc(doc(dm, ...SHARED_PARENT, "combat", "state")));
+    // …but never its private notes, nor may anyone but the author write them.
+    for (const reader of [
+      dm,
+      testEnv.authenticatedContext("outsider").firestore(),
+      testEnv.unauthenticatedContext().firestore(),
+    ]) {
+      await assertFails(getDoc(doc(reader, ...NOTE)));
+      await assertFails(getDocs(collection(reader, ...SHARED_PARENT, "privateNotes")));
+      await assertFails(
+        setDoc(doc(reader, ...SHARED_PARENT, "privateNotes", "x"), { text: "" })
+      );
+    }
+  });
+
   it("anonymous exact GET returns only the closed public schema", async () => {
     const anon = testEnv.unauthenticatedContext().firestore();
     const snapshot = await assertSucceeds(getDoc(doc(anon, ...PUBLIC_SHEET)));
