@@ -576,6 +576,11 @@ const EXPOSURE: Record<string, Exposure> = {
   "d20-reroll": {
     open: "core seam d20RerollFor / character-d20-tests (2026-10-24); no entry offers the reroll yet",
   },
+  // Relentless Hunter: `damageQueuesConcentrationSave` (character-d20-tests) is the
+  // core seam; the store's damage seams still queue the save unconditionally.
+  "concentration-damage-proof": {
+    open: "core seam damageQueuesConcentrationSave (2026-10-24); the damage seams do not ask it yet",
+  },
   // Adamantine Armor: the entered hit's crit flag drops in `takeDamage`.
   "critical-hit-immunity": {
     via: "defense:no-critical-hits",
@@ -600,6 +605,11 @@ const EXPOSURE: Record<string, Exposure> = {
   // no Study action writes it yet.
   "permanent-ability-increase": {
     open: "core seam studyItemAbilityScores (2026-10-24); no Study action wired yet",
+  },
+  // Magic Weapon / Shillelagh: the lit binding changes its chosen weapon's row.
+  "weapon-binding": {
+    via: "resolveWeaponBindings",
+    consumer: "src/lib/smart-tracker.ts",
   },
 };
 

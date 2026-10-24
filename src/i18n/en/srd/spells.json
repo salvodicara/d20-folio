@@ -3370,5 +3370,11 @@
   },
   "conjure-minor-elementals.grants.0": {
     "label": "Conjure Minor Elementals"
+  },
+  "magic-weapon.grants.0": {
+    "label": "Magic Weapon"
+  },
+  "shillelagh.grants.0": {
+    "label": "Shillelagh"
   }
 }

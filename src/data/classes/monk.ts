@@ -438,7 +438,17 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     // Poisoned on yourself at end of turn (a manual choice), and forgoing food or
     // drink no longer causes Exhaustion. There is NO Long-Rest exhaustion-level
     // reduction in 2024 — the prior `exhaustion-recovery` grant was a 2014/hybrid
-    // invention, so it is removed.
+    // invention, so it is removed. The end-of-turn removal is a free row, once
+    // per turn ("you can remove one of the following conditions"); the food and
+    // drink clause stays prose.
+    grants: [
+      {
+        id: "self-restoration",
+        type: "granted-action",
+        slot: "free",
+        maxUsesPerTurn: 1,
+      },
+    ],
     source: "SRD",
   },
   {
@@ -572,6 +582,26 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     class: "monk",
     subclass: "open-hand",
     level: 3,
+    // "Whenever you hit a creature with a Flurry of Blows attack, you can impose
+    // one of the following effects": three free rows. Push forces a Strength
+    // save, Topple a Dexterity save, both against the Monk's DC (8 + WIS + PB).
+    grants: [
+      { id: "addle", type: "granted-action", slot: "free" },
+      {
+        id: "push",
+        type: "granted-action",
+        slot: "free",
+        saveAbility: "STR",
+        saveDcAbility: "WIS",
+      },
+      {
+        id: "topple",
+        type: "granted-action",
+        slot: "free",
+        saveAbility: "DEX",
+        saveDcAbility: "WIS",
+      },
+    ],
     source: "SRD",
   },
   {

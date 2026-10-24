@@ -3370,5 +3370,11 @@
   },
   "conjure-minor-elementals.grants.0": {
     "label": "Evoca Elementali Minori"
+  },
+  "magic-weapon.grants.0": {
+    "label": "Arma Magica"
+  },
+  "shillelagh.grants.0": {
+    "label": "Randello Incantato"
   }
 }

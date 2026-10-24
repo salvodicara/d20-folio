@@ -227,6 +227,7 @@ import {
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
+import { resolveWeaponBindings } from "@/lib/weapon-binding";
 import { srdText, customText, uiText } from "@/lib/loc-text";
 import type {
   BreakdownLine,
@@ -7155,9 +7156,13 @@ function resolveWeaponActions(
   // gates on. A weapon not in this set never emits `weaponMastery`, so no
   // surface can show an unowned mastery (owner mandate 2026-06-12).
   const masteredIds = new Set(allEntryPicks(charData, "weaponMasteries"));
+  // The lit spells bound to one chosen weapon (Magic Weapon, Shillelagh), by the
+  // index of that weapon — each change rides its own weapon's row only.
+  const weaponBindings = resolveWeaponBindings(grantAgg.weaponBindings, character);
 
-  for (const weaponRef of charData.weapons) {
+  for (const [weaponIndex, weaponRef] of charData.weapons.entries()) {
     const isCustom = "custom" in weaponRef;
+    const binding = weaponBindings.get(weaponIndex);
     const srdWeapon = isCustom ? undefined : WEAPONS_BY_ID.get(weaponRef.srdId);
     // Weapon name. `nameEn` is the canonical English FACT (action id + proficiency
     // lookup) — from the equipment catalogue via `srdEn`, else an id-derived title.
@@ -7188,7 +7193,18 @@ function resolveWeaponActions(
           weaponType: srdWeapon?.weaponType,
           properties: srdWeapon?.properties ?? [],
           scores: ctx.abilityScores,
-          weaponAttackAbilities: grantAgg.weaponAttackAbilities,
+          // Shillelagh's "spellcasting ability instead of Strength": one more
+          // swap, won only when its modifier is higher, named by the spell.
+          weaponAttackAbilities: binding?.attackAbility
+            ? [
+                ...grantAgg.weaponAttackAbilities,
+                {
+                  ability: binding.attackAbility,
+                  magicOnly: false,
+                  sourceId: binding.sourceId,
+                },
+              ]
+            : grantAgg.weaponAttackAbilities,
           isMonkMelee: isMonkMeleeWeapon(srdWeapon),
         });
     const attackStat: AbilityCode = statResolution.ability;
@@ -7226,9 +7242,18 @@ function resolveWeaponActions(
     // `attackBonusOverride`/`damageOverride` seam (which still wins when the
     // player pins a value by hand — override-first). 0 for a mundane weapon.
     const enchantItemId = isCustom ? undefined : weaponRef.enchantItemId;
-    const itemBoundBonus = resolveItemBoundWeaponBonus(
+    const enchantOnlyBonus = resolveItemBoundWeaponBonus(
       enchantItemId ? getMagicItem(enchantItemId)?.grants : undefined
     );
+    // A spell's +N on this weapon (Magic Weapon) adds like an enchant; the tip
+    // names the item when one is bound, else the spell.
+    const itemBoundBonus = enchantOnlyBonus + (binding?.bonus ?? 0);
+    const enchantName: LocText | undefined =
+      enchantItemId && enchantOnlyBonus !== 0
+        ? srdText("magic-item", enchantItemId, "name")
+        : binding && binding.bonus !== 0
+          ? featureNameLoc(binding.sourceId)
+          : undefined;
     const hasAtkOverride = weaponRef.attackBonusOverride != null;
     // Per-source to-hit composition for the breakdown tip (ability + PB + named
     // fighting styles + magic enchant + exhaustion) — empty under an override.
@@ -7241,9 +7266,7 @@ function resolveWeaponActions(
       ...(abilityWhy ? { abilityWhy } : {}),
       proficiencyBonus: proficient ? pb : 0,
       enchantBonus: itemBoundBonus,
-      ...(enchantItemId && itemBoundBonus !== 0
-        ? { enchantName: srdText("magic-item", enchantItemId, "name") }
-        : {}),
+      ...(enchantName ? { enchantName } : {}),
       featureBonuses: weaponAtkBonuses,
       // `exPenalty` is Exhaustion plus any fading penalty; the tip names each.
       exhaustionPenalty: exhaustionPenalty(session.exhaustion),
@@ -7266,21 +7289,26 @@ function resolveWeaponActions(
     const printedDie = isCustom
       ? weaponRef.damageDie
       : ((weaponActivity && primaryDamage(weaponActivity)?.dice?.dice) ?? "1d8");
-    const dieResolution: ResolvedWeaponDie = isCustom
-      ? { die: printedDie }
-      : effectiveWeaponDie(
-          printedDie,
-          isMonkMeleeWeapon(srdWeapon),
-          grantAgg.weaponAttackAbilities,
-          (sid, key) => (sid ? featureClassRow(sid, character)?.[key] : undefined)
-        );
+    const dieResolution: ResolvedWeaponDie = binding?.damageDie
+      ? // Shillelagh's die replaces the weapon's own, in either grip.
+        { die: binding.damageDie, replaced: printedDie, sourceId: binding.sourceId }
+      : isCustom
+        ? { die: printedDie }
+        : effectiveWeaponDie(
+            printedDie,
+            isMonkMeleeWeapon(srdWeapon),
+            grantAgg.weaponAttackAbilities,
+            (sid, key) => (sid ? featureClassRow(sid, character)?.[key] : undefined)
+          );
     const damageDie = dieResolution.die;
     // The feature that REPLACED the printed die (Martial Arts) — the tip renders
     // `1d4 → 1d6` and unfolds this sentence on tap.
     const dieWhy = weaponDieWhy(dieResolution, character);
-    const damageType = isCustom
-      ? weaponRef.damageType
-      : ((weaponActivity && fixedDamageType(weaponActivity)) ?? "bludgeoning");
+    const damageType =
+      binding?.damageType ??
+      (isCustom
+        ? weaponRef.damageType
+        : ((weaponActivity && fixedDamageType(weaponActivity)) ?? "bludgeoning"));
     const properties = isCustom
       ? weaponRef.properties
         ? weaponRef.properties
@@ -7424,9 +7452,12 @@ function resolveWeaponActions(
     // card can offer a stance toggle. A per-weapon damageOverride takes
     // precedence (it already replaced the one-handed formula), so don't offer
     // a stance against an override.
-    const rawVersatileDie = properties
-      .map((p) => /Versatile\s*\(([^)]+)\)/i.exec(p)?.[1])
-      .find((m): m is string => !!m);
+    // A die a spell set (Shillelagh) is the die in either grip: no stance to offer.
+    const rawVersatileDie = binding?.damageDie
+      ? undefined
+      : properties
+          .map((p) => /Versatile\s*\(([^)]+)\)/i.exec(p)?.[1])
+          .find((m): m is string => !!m);
     // The Monk Martial Arts die replaces a Monk weapon's printed die in EITHER
     // grip, so the two-handed die runs through the SAME `effectiveWeaponDie`
     // (max with the MA die, gated on `isMonkMeleeWeapon`, resolved at the Monk's
@@ -7462,9 +7493,7 @@ function resolveWeaponActions(
       abilityMod: mod,
       ...(abilityWhy ? { abilityWhy } : {}),
       enchantBonus: itemBoundBonus,
-      ...(enchantItemId && itemBoundBonus !== 0
-        ? { enchantName: srdText("magic-item", enchantItemId, "name") }
-        : {}),
+      ...(enchantName ? { enchantName } : {}),
       featureBonuses: weaponDmgBonuses,
       hasOverride: weaponRef.damageOverride != null && weaponRef.damageOverride !== "",
     });

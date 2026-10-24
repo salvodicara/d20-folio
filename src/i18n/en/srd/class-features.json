@@ -562,6 +562,11 @@
     "description": "Whenever you use your Second Wind, you can move up to half your Speed without provoking Opportunity Attacks.",
     "name": "Tactical Shift"
   },
+  "fighter-tactical-shift.grants.tactical-shift": {
+    "description": "Move up to half your Speed without provoking Opportunity Attacks.",
+    "name": "Tactical Shift",
+    "trigger": "When you use your Second Wind."
+  },
   "fighter-weapon-mastery": {
     "description": "You can use the mastery property of three kinds of Simple or Martial weapons of your choice, increasing to four kinds at level 4, five at level 10, and six at level 16. Whenever you finish a Long Rest, you can change which weapons you have chosen.",
     "name": "Weapon Mastery"
@@ -660,6 +665,21 @@
     "description": "Whenever you hit a creature with a Flurry of Blows attack, you can impose one of the following effects on the target: Addle — it can't make Opportunity Attacks until the start of its next turn; Push — it must succeed on a Strength save or be pushed up to 15 feet away from you; or Topple — it must succeed on a Dexterity save or have the Prone condition.",
     "name": "Open Hand Technique"
   },
+  "monk-open-hand-technique.grants.addle": {
+    "description": "The target can't make Opportunity Attacks until the start of its next turn.",
+    "name": "Addle",
+    "trigger": "When you hit a creature with a Flurry of Blows attack."
+  },
+  "monk-open-hand-technique.grants.push": {
+    "description": "The target must succeed on a Strength saving throw or be pushed up to 15 feet away from you.",
+    "name": "Push",
+    "trigger": "When you hit a creature with a Flurry of Blows attack."
+  },
+  "monk-open-hand-technique.grants.topple": {
+    "description": "The target must succeed on a Dexterity saving throw or have the Prone condition.",
+    "name": "Topple",
+    "trigger": "When you hit a creature with a Flurry of Blows attack."
+  },
   "monk-open-hand-wholeness-of-body": {
     "description": "You gain the ability to heal yourself. As a Bonus Action, you regain Hit Points equal to one roll of your Martial Arts die plus your Wisdom modifier (minimum of 1 Hit Point). You can use this a number of times equal to your Wisdom modifier (minimum of once), regaining all expended uses when you finish a Long Rest.",
     "name": "Wholeness of Body"
@@ -690,6 +710,11 @@
   "monk-self-restoration": {
     "description": "At the end of each of your turns, you can remove one of the following conditions from yourself: Charmed, Frightened, or Poisoned. In addition, forgoing food and drink doesn't give you levels of Exhaustion.",
     "name": "Self-Restoration"
+  },
+  "monk-self-restoration.grants.self-restoration": {
+    "description": "Remove one of the following conditions from yourself: Charmed, Frightened, or Poisoned.",
+    "name": "Self-Restoration",
+    "trigger": "At the end of each of your turns."
   },
   "monk-slow-fall": {
     "description": "You can use your Reaction when you fall to reduce any Falling damage you take by an amount equal to five times your Monk level.",
@@ -807,6 +832,9 @@
   "paladin-devotion-smite-of-protection": {
     "description": "Your magical smite now radiates protective energy. Whenever you cast Divine Smite, you and your allies have Half Cover while in your Aura of Protection. The aura has this benefit until the start of your next turn.",
     "name": "Smite of Protection"
+  },
+  "paladin-devotion-smite-of-protection.grants.0": {
+    "label": "Smite of Protection"
   },
   "paladin-divine-smite": {
     "description": "You always have the Divine Smite spell prepared. You can cast it without expending a spell slot, but you must finish a Long Rest before you can cast it this way again.",
@@ -932,6 +960,11 @@
     "description": "Once per turn when you deal damage to a creature marked by your Hunter's Mark, you can also deal that spell's extra damage to a different creature you can see within 30 feet of the first creature.",
     "name": "Superior Hunter's Prey"
   },
+  "ranger-hunter-superior-hunters-prey.grants.superior-hunters-prey": {
+    "description": "Also deal Hunter's Mark's extra damage to a different creature you can see within 30 feet of the first creature.",
+    "name": "Superior Hunter's Prey",
+    "trigger": "When you deal damage to a creature marked by your Hunter's Mark."
+  },
   "ranger-hunter-superior-hunters-defense": {
     "description": "When you take damage, you can take a Reaction to give yourself Resistance to that damage and any other damage of the same type until the end of the current turn.",
     "name": "Superior Hunter's Defense"
@@ -959,7 +992,7 @@
     "description": "Attacks against the target of your Hunter's Mark"
   },
   "ranger-relentless-hunter": {
-    "description": "Your Hunter's Mark no longer requires Concentration.",
+    "description": "Taking damage can't break your Concentration on Hunter's Mark.",
     "name": "Relentless Hunter"
   },
   "ranger-roving": {
@@ -1032,6 +1065,9 @@
   "rogue-elusive": {
     "description": "You are so evasive that attackers rarely gain the upper hand against you. No attack roll has Advantage against you while you aren't Incapacitated.",
     "name": "Elusive"
+  },
+  "rogue-elusive.grants.0": {
+    "description": "No attack roll has Advantage against you while you aren't Incapacitated"
   },
   "rogue-epic-boon": {
     "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
@@ -1123,6 +1159,11 @@
   "sorcerer-arcane-apotheosis": {
     "description": "While your Innate Sorcery feature is active, you can use one Metamagic option on each of your turns without spending Sorcery Points on it.",
     "name": "Arcane Apotheosis"
+  },
+  "sorcerer-arcane-apotheosis.grants.arcane-apotheosis": {
+    "description": "Use one Metamagic option without spending Sorcery Points on it.",
+    "name": "Arcane Apotheosis",
+    "trigger": "While your Innate Sorcery is active."
   },
   "sorcerer-asi": {
     "description": "You can increase one ability score by 2, or two ability scores by 1 each. Alternatively, you can choose a feat. You cannot increase an ability score above 20 using this feature.",
@@ -1316,6 +1357,11 @@
   "wizard-evoker-sculpt-spells": {
     "description": "You can create pockets of relative safety within the effects of your evocations. When you cast an Evocation spell that affects other creatures that you can see, you can choose a number of them equal to 1 plus the spell’s level. The chosen creatures automatically succeed on their saving throws against the spell, and they take no damage if they would normally take half damage on a successful save.",
     "name": "Sculpt Spells"
+  },
+  "wizard-evoker-sculpt-spells.grants.sculpt-spells": {
+    "description": "Choose up to 1 plus the spell's level of those creatures: they automatically succeed on their saving throws against the spell and take no damage if they would normally take half damage on a successful save.",
+    "name": "Sculpt Spells",
+    "trigger": "When you cast an Evocation spell that affects other creatures you can see."
   },
   "wizard-memorize-spell": {
     "description": "Whenever you finish a Short Rest, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared with another level 1+ spell from your spellbook. (2024: there is no once-per-Long-Rest limit.)",

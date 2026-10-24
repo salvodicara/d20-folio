@@ -377,6 +377,21 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-brutal-strike",
     class: "barbarian",
     level: 9,
+    // "If the chosen attack hits, the target takes an extra 1d10 damage" — of the
+    // attack's own type, once on your turn, on a Strength-based attack (melee weapon or Unarmed Strike; the rider skips a
+    // ranged weapon). Greater Brutal Strike (L17) raises it to 2d10 through
+    // `diceByLevel`. Forgoing Reckless Attack's Advantage and the Forceful /
+    // Hamstring effects stay the player's call (prose).
+    grants: [
+      {
+        type: "damage-rider",
+        dice: "1d10",
+        diceByLevel: { 17: "2d10" },
+        damageType: "same-as-weapon",
+        appliesTo: "melee-weapon",
+        oncePerTurn: true,
+      },
+    ],
     source: "SRD",
   },
   {
@@ -389,6 +404,7 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-greater-brutal-strike",
     class: "barbarian",
     level: 17,
+    // The 2d10 is Brutal Strike's own `diceByLevel` step at Barbarian 17.
     source: "SRD",
   },
   {

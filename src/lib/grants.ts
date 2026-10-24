@@ -1158,6 +1158,12 @@ export interface RollFloorClause {
  * A resolved face-triggered d20 reroll (Halfling Luck): an entered d20 showing
  * one of `faces` may be rerolled once, and the new face stands.
  */
+export interface ConcentrationDamageProofClause {
+  sourceId: string;
+  /** The held spell whose Concentration damage can't break. */
+  spellId: string;
+}
+
 export interface D20RerollClause {
   sourceId: string;
   faces: readonly [number, ...number[]];
@@ -1546,6 +1552,14 @@ export interface AggregatedGrants {
     activeKey: string;
     hitPoints: number;
   }>;
+  /** The lit `weapon-binding` grants, each with the active key whose state owns it
+   * (the cast level and the chosen weapon are read by that key). Consumed by
+   * `resolveWeaponBindings`, which rides each on its chosen weapon's row only. */
+  weaponBindings: ReadonlyArray<{
+    sourceId: string;
+    activeKey: string;
+    grant: Extract<Grant, { type: "weapon-binding" }>;
+  }>;
   /**
    * Number of EXTRA weapon attacks granted with a single Attack action (the
    * "Extra Attack" feature). 0 when no source grants it. MAX across `extra-attack`
@@ -1914,6 +1928,8 @@ export interface AggregatedGrants {
   rollFloors: ReadonlyArray<RollFloorClause>;
   /** Face-triggered d20 rerolls on every D20 Test (Halfling Luck on a 1). */
   d20Rerolls: ReadonlyArray<D20RerollClause>;
+  /** Held spells whose Concentration taking damage can't break (Relentless Hunter). */
+  concentrationDamageProof: ReadonlyArray<ConcentrationDamageProofClause>;
   /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
   rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
   /**
@@ -2156,6 +2172,7 @@ export function emptyAggregate(): AggregatedGrants {
     atZeroHpInterrupts: [],
     resources: [],
     zeroHpFloors: [],
+    weaponBindings: [],
     extraAttacks: 0,
     extraActions: [],
     turnEconomyBlocked: false,
@@ -2214,6 +2231,7 @@ export function emptyAggregate(): AggregatedGrants {
     disadvantages: [],
     rollFloors: [],
     d20Rerolls: [],
+    concentrationDamageProof: [],
     rollDieAdjustments: [],
     incomingAttackAdvantages: [],
     incomingAttackDisadvantages: [],
@@ -2423,6 +2441,7 @@ export function evaluateGrants(
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
   const resources: AggregatedGrants["resources"][number][] = [];
   const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
+  const weaponBindings: AggregatedGrants["weaponBindings"][number][] = [];
   const extraActions: AggregatedGrants["extraActions"][number][] = [];
   // Save, concentration, initiative and spell DC/attack bonuses fold through `lib/rules`.
   const abilityCheckBonuses: {
@@ -2483,6 +2502,7 @@ export function evaluateGrants(
   const disadvantages: AdvantageClause[] = [];
   const rollFloors: RollFloorClause[] = [];
   const d20Rerolls: D20RerollClause[] = [];
+  const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
   const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const incomingAttackAdvantages: IncomingAttackClause[] = [];
   const incomingAttackDisadvantages: IncomingAttackClause[] = [];
@@ -2816,6 +2836,11 @@ export function evaluateGrants(
         if (activeKey) {
           zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
         }
+        break;
+      case "weapon-binding":
+        // Only a lit state binds: outside a `while-active` there is no key to
+        // read the chosen weapon and the cast level by.
+        if (activeKey) weaponBindings.push({ sourceId, activeKey, grant: g });
         break;
       // Migrated to the generic rules grammar: flat parts sum, ability-modifier
       // parts stay terms the reader resolves against the effective scores.
@@ -3256,6 +3281,9 @@ export function evaluateGrants(
         break;
       case "d20-reroll":
         d20Rerolls.push({ sourceId, faces: g.faces });
+        break;
+      case "concentration-damage-proof":
+        concentrationDamageProof.push({ sourceId, spellId: g.spellId });
         break;
       case "roll-die-adjustment":
         rollDieAdjustments.push({
@@ -3921,6 +3949,7 @@ export function evaluateGrants(
     atZeroHpInterrupts,
     resources,
     zeroHpFloors,
+    weaponBindings,
     extraAttacks: Math.max(0, ruleValue(values, "attack:extra") ?? 0),
     extraActions,
     turnEconomyBlocked: ruleFlag(values, "block:turn-economy"),
@@ -4002,6 +4031,7 @@ export function evaluateGrants(
     disadvantages,
     rollFloors,
     d20Rerolls,
+    concentrationDamageProof,
     rollDieAdjustments,
     incomingAttackAdvantages,
     incomingAttackDisadvantages,
