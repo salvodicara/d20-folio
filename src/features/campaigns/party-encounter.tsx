@@ -2458,6 +2458,17 @@ function MonsterHpControl({
 
 // ─── Add monster / NPC form ───────────────────────────────────────────────────
 
+/** The template fields {@link AddMonsterForm} edits; an edit keeps every other one. */
+const FORM_FIELDS: ReadonlySet<string> = new Set([
+  "name",
+  "ac",
+  "maxHp",
+  "creatureType",
+  "cr",
+  "notes",
+  "defenses",
+]);
+
 /** Inline form to add a monster/NPC batch — name + count are the only fields typed
  *  from scratch; every numeric is a clamped NumberStepper (no dice, no invalid state
  *  reachable — golden rule 20). DM-only. CONTROLLED: the open/closed toggle lives with
@@ -2552,7 +2563,13 @@ export function AddMonsterForm({
   function submit(): void {
     const trimmed = name.trim();
     if (trimmed === "") return;
+    // Keep what the form doesn't show (the structured `mechanics`, the portrait, a
+    // newer client's fields); the fields below are the form's own and overwrite.
+    const unshown = Object.fromEntries(
+      Object.entries(initial ?? {}).filter(([key]) => !FORM_FIELDS.has(key))
+    ) as Partial<CustomMonster>;
     const template: CustomMonster = {
+      ...unshown,
       name: trimmed,
       ac,
       maxHp,

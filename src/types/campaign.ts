@@ -8,6 +8,7 @@
 import type {
   CreatureType,
   CurrencyUnit,
+  HomebrewMonsterMechanics,
   MonsterConditionImmunity,
   QualifiedDefense,
   QualifiedDefenseNote,
@@ -148,6 +149,14 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * monster name at add time, renameable after (golden rule 7).
    */
   srdId?: string;
+  /**
+   * The library entry id of the homebrew monster this creature was added from —
+   * the homebrew twin of `srdId`: its stat block resolves from the DM's library
+   * (`homebrewMonsterLookup`), and a deleted entry degrades to no stat block.
+   * READER FIRST: parsed since this field existed; nothing writes it until a deploy
+   * carrying the reader is live (older clients reject unknown monster keys).
+   */
+  homebrewId?: string;
   /** Armor Class (informational; the DM may edit). */
   ac: number;
   /** The DM's walking-speed override in feet (e.g. after the Slow weapon mastery).
@@ -268,6 +277,15 @@ export interface CustomMonster {
   portraitCrop?: PortraitCrop;
   /** Optional homebrew defenses; omitted means none. Stable ids only. */
   defenses?: CombatDefenseSnapshot;
+  /**
+   * The structured stat block, in the catalogue's own shape (attacks, saves,
+   * limited uses, legendary actions, spellcasting, trait facts, Multiattack) —
+   * each entry structured or written as text. Read only through
+   * `homebrewMonsterStatBlock` (`lib/homebrew-monsters.ts`), which conforms each
+   * field and leaves out of play what it rejects. Every library reader since
+   * v0.25.0 passes it through untouched; absent on a text-only template.
+   */
+  mechanics?: HomebrewMonsterMechanics;
 }
 
 /**

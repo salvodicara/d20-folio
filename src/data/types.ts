@@ -2712,6 +2712,71 @@ export interface MonsterStatBlock {
   source: SrdSource; // always "SRD" in the public repo (partition guard)
 }
 
+/** The five stat-block sections that hold named entries. */
+export type MonsterEntrySectionKey =
+  | "traits"
+  | "actions"
+  | "bonusActions"
+  | "reactions"
+  | "legendaryActions";
+
+/** Catalogue-only identity of a stat block: its slug and its book. A homebrew
+ *  monster's identity is its library entry. */
+export type CatalogueMonsterIdentityKey = "id" | "source";
+
+/**
+ * The stat-block facts a homebrew monster already stores at its top level
+ * (`CustomMonster`): Armor Class, average Hit Points, Challenge Rating, creature
+ * type and its defenses. The encounter seeds from them; the stat block derives
+ * from them, so each lives once.
+ */
+export type HomebrewMonsterTopLevelKey =
+  | "ac"
+  | "hp"
+  | "cr"
+  | "type"
+  | "damageVulnerabilities"
+  | "damageResistances"
+  | "damageImmunities"
+  | "conditionImmunities"
+  | "qualifiedDefenses";
+
+/** A structured homebrew stat-block entry: a catalogue entry plus the DM's own
+ *  name and text (user content — a catalogue entry keeps them in the catalogue). */
+export type HomebrewMonsterEntry = MonsterEntry & {
+  readonly name: string;
+  readonly text?: string;
+};
+
+/** A homebrew entry written as TEXT only ("Melee Attack Roll: +6, reach 5 ft.
+ *  Hit: …"): the monster-print readers derive its kind and facts. `id` defaults to
+ *  the slug of its name. */
+export interface HomebrewMonsterPrintEntry {
+  readonly id?: string;
+  readonly name: string;
+  readonly text: string;
+}
+
+/**
+ * A homebrew monster's structured stat block (`CustomMonster.mechanics`): every
+ * {@link MonsterStatBlock} field in the catalogue's own shape, so a homebrew
+ * monster runs through the same encounter paths a catalogue one does (attacks and
+ * saves, Recharge and N/Day uses, legendary actions and resistance, spellcasting,
+ * trait facts, Multiattack, movement, breathing, Concentration). Each entry is
+ * either structured or written as text and read by the print readers. Derived
+ * from `MonsterStatBlock`, so a new catalogue field is a homebrew field too.
+ */
+export type HomebrewMonsterMechanics = {
+  readonly [Key in Exclude<
+    keyof MonsterStatBlock,
+    CatalogueMonsterIdentityKey | HomebrewMonsterTopLevelKey | MonsterEntrySectionKey
+  >]?: MonsterStatBlock[Key];
+} & {
+  readonly [Key in MonsterEntrySectionKey]?: ReadonlyArray<
+    HomebrewMonsterEntry | HomebrewMonsterPrintEntry
+  >;
+};
+
 // ============================================================
 // SRD Class Tables (Level Progression)
 // ============================================================

@@ -17,18 +17,32 @@
  *  - {@link printedMovement}: how an entry moves the monster (Teleport, Leap,
  *    Charge, Dash/Disengage/Hide, Spider Climb).
  *  - {@link printedBreathing}: Amphibious and Water Breathing.
+ *  - {@link printedTraitFact}: the number a prose trait changes at the table
+ *    (Magic Resistance, Pack Tactics, Regeneration and what suppresses it).
+ *  - {@link printedAttack}, {@link printedSave}, {@link printedSpellcasting}: an
+ *    entry's opening line (to-hit, reach and range, damage; save and DC; the
+ *    spellcasting ability, DC and spell lists by tier).
+ *  - {@link printedEntryHeader}, {@link printedUses}: "(Recharge 5–6)" and
+ *    "(3/Day)" limits.
  *
- * The escape DC, durations and later stages stay text.
+ * The escape DC, durations and later stages stay text. A homebrew monster written
+ * as text goes through these same readers (`monster-print-entries.ts`), so a
+ * catalogue print and a DM's print read the same way.
  */
 import type {
   AbilityCode,
   ConditionId,
+  MonsterAttackEntry,
   MonsterBreathing,
   MonsterDamage,
   MonsterMoveSpeed,
   MonsterMovement,
   MonsterMultiattack,
   MonsterMultiattackStep,
+  MonsterSaveEntry,
+  MonsterSpellcastingEntry,
+  MonsterTraitFact,
+  MonsterTraitRoll,
 } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { CONDITION_IDS } from "@/types/condition";
@@ -465,4 +479,382 @@ export function printedBreathing(text: string): MonsterBreathing | undefined {
   if (all.some((s) => /^The [a-z-]+(?: [a-z-]+)? can breathe only underwater\.$/.test(s)))
     return "water-only";
   return undefined;
+}
+
+// ─── Trait facts ─────────────────────────────────────────────────────────────
+
+/** "attack rolls and saving throws" → ["attack", "save"], printed order. */
+function traitRolls(phrase: string): MonsterTraitRoll[] | undefined {
+  const out: MonsterTraitRoll[] = [];
+  for (const part of phrase.split(/ and |, /)) {
+    const p = part.trim();
+    if (/^(an )?melee attack rolls?$/.test(p)) out.push("melee-attack");
+    else if (/^(an )?attack rolls?$/.test(p)) out.push("attack");
+    else if (/^saving throws$/.test(p)) out.push("save");
+    else if (/^ability checks$/.test(p)) out.push("check");
+    else if (/^D20 Tests$/.test(p)) out.push("d20");
+    else return undefined;
+  }
+  return out;
+}
+
+function knownDamageType(word: string): DamageType | undefined {
+  const type = word.toLowerCase();
+  return (DAMAGE_TYPES as readonly string[]).includes(type)
+    ? (type as DamageType)
+    : undefined;
+}
+
+type AdvantageWhen = Extract<MonsterTraitFact, { kind: "advantage" }>["when"];
+type DisadvantageWhen = Extract<MonsterTraitFact, { kind: "disadvantage" }>["when"];
+
+function bends(
+  kind: "advantage",
+  phrase: string,
+  when: AdvantageWhen
+): MonsterTraitFact | undefined;
+function bends(
+  kind: "disadvantage",
+  phrase: string,
+  when: DisadvantageWhen
+): MonsterTraitFact | undefined;
+function bends(
+  kind: "advantage" | "disadvantage",
+  phrase: string,
+  when: AdvantageWhen | DisadvantageWhen
+): MonsterTraitFact | undefined {
+  const rolls = traitRolls(phrase);
+  if (!rolls) return undefined;
+  return { kind, rolls, when } as MonsterTraitFact;
+}
+
+/**
+ * The number a prose trait changes at the table, as its print states it: Magic
+ * Resistance, Pack Tactics, Bloodied Fury, Sunlight and Light Sensitivity,
+ * Regeneration (the damage that switches it off, whether it needs 1 Hit Point),
+ * Acid Absorption, Siege Monster. Undefined when the print states none.
+ */
+export function printedTraitFact(text: string): MonsterTraitFact | undefined {
+  let m: RegExpMatchArray | null;
+  if (
+    /has Advantage on saving throws against spells and other magical effects/.test(text)
+  )
+    return { kind: "advantage", rolls: ["save"], when: "vs-spells" };
+  if (
+    (m = text.match(
+      /has Advantage on (an attack roll|attack rolls) against a creature if at least one of the [\w ]+'s allies is within 5 feet of the creature/
+    ))
+  )
+    return bends("advantage", m[1] ?? "", "ally-near-target");
+  if ((m = text.match(/^While Bloodied, the [\w ]+ has Advantage on ([\w ]+)\.$/)))
+    return bends("advantage", m[1] ?? "", "bloodied");
+  if ((m = text.match(/has Advantage on ([\w ]+) while it is Bloodied\.$/)))
+    return bends("advantage", m[1] ?? "", "bloodied");
+  if (
+    (m = text.match(
+      /(?:^|\. )While in sunlight, (?:the [\w ]+|it) has Disadvantage on ([\w ]+)\.$/
+    ))
+  )
+    return bends("disadvantage", m[1] ?? "", "sunlight");
+  if (
+    (m = text.match(/^While in Bright Light, the [\w ]+ has Disadvantage on ([\w ]+)\.$/))
+  )
+    return bends("disadvantage", m[1] ?? "", "bright-light");
+  if ((m = text.match(/regains (\d+) Hit Points at the start of each of its turns/))) {
+    const off = text.match(/takes (\w+) or (\w+) damage, this trait doesn't function/);
+    const suppressedBy = off
+      ? [knownDamageType(off[1] ?? ""), knownDamageType(off[2] ?? "")]
+      : [];
+    if (!suppressedBy.every((type): type is DamageType => type !== undefined))
+      return undefined;
+    return {
+      kind: "regeneration",
+      amount: Number(m[1]),
+      ...(off ? { suppressedBy } : {}),
+      ...(/if it has at least 1 Hit Point/.test(text) ? { needsHp: true as const } : {}),
+    };
+  }
+  if (
+    (m = text.match(
+      /is subjected to (\w+) damage, it (takes no damage and instead )?regains a number of Hit Points equal to the \1 damage dealt/
+    ))
+  ) {
+    const damageType = knownDamageType(m[1] ?? "");
+    if (!damageType) return undefined;
+    return { kind: "absorb", damageType, ...(m[2] ? { instead: true as const } : {}) };
+  }
+  if (/deals double damage to objects and structures/.test(text))
+    return { kind: "siege" };
+  return undefined;
+}
+
+// ─── Limits ──────────────────────────────────────────────────────────────────
+
+type EntryUses = NonNullable<MonsterAttackEntry["uses"]>;
+type EntryRecharge = NonNullable<MonsterAttackEntry["recharge"]>;
+
+const RECHARGE = /\s*\(Recharge ([2-6])(?:[–-]6)?\)\s*$/;
+const PER_DAY = /\s*\(([1-9]\d*)\/Day(?:, or \d+\/Day in Lair)?\)\s*$/;
+const PER_REST = /\s*\(Recharges after a (Short or Long|Long) Rest\)\s*$/;
+
+/**
+ * An entry name's printed limit: "Fire Breath (Recharge 5–6)" → recharge 5,
+ * "Misty Step (3/Day)" → 3 per day, "(Recharges after a Short or Long Rest)" → once
+ * per rest. `name` is the name without it; a form tag ("(Vampire Form Only)") stays.
+ */
+export function printedEntryHeader(printedName: string): {
+  name: string;
+  recharge?: EntryRecharge;
+  uses?: EntryUses;
+} {
+  let m: RegExpMatchArray | null;
+  if ((m = printedName.match(RECHARGE)))
+    return {
+      name: printedName.slice(0, m.index).trim(),
+      recharge: Number(m[1]) as EntryRecharge,
+    };
+  if ((m = printedName.match(PER_DAY)))
+    return {
+      name: printedName.slice(0, m.index).trim(),
+      uses: { count: Number(m[1]), per: "day" },
+    };
+  if ((m = printedName.match(PER_REST)))
+    return {
+      name: printedName.slice(0, m.index).trim(),
+      uses: { count: 1, per: m[1] === "Long" ? "long-rest" : "short-or-long-rest" },
+    };
+  return { name: printedName.trim() };
+}
+
+/** The "(3/Day)" an entry's text opens with ("(3/Day, or 4/Day in Lair) If the
+ *  dragon fails a saving throw, …"), as a per-day limit; the lair count stays text. */
+export function printedUses(text: string): EntryUses | undefined {
+  const m = text.match(/^\(([1-9]\d*)\/Day(?:, or \d+\/Day in Lair)?\)/);
+  return m ? { count: Number(m[1]), per: "day" } : undefined;
+}
+
+// ─── Opening lines ───────────────────────────────────────────────────────────
+
+const TYPE = `(${DAMAGE_TYPES.map((type) => type.charAt(0).toUpperCase() + type.slice(1)).join("|")})`;
+/** One printed amount: "13 (2d8 + 4) Bludgeoning damage", or flat "1 Slashing damage". */
+const AMOUNT = String.raw`(\d+)(?: \((\d+d\d+(?: [+-] \d+)?)\))? ${TYPE} damage`;
+
+/** The damage clauses `clause` opens with: the first amount and each "plus" amount
+ *  right after it ("13 (1d10 + 8) Slashing damage plus 5 (2d4) Fire damage"). */
+function leadingDamage(clause: string): MonsterDamage[] {
+  const out: MonsterDamage[] = [];
+  // "—or 8 (1d10 + 3) Piercing damage if …—" is a variant of the first amount.
+  const plus = new RegExp(String.raw`^(?: |—[^—]*—)plus ${AMOUNT}`);
+  let rest = clause;
+  let match = rest.match(new RegExp(String.raw`^${AMOUNT}`));
+  while (match) {
+    out.push({
+      dice: match[2] ? match[2].replace(/ /g, "") : (match[1] ?? ""),
+      damageType: damageType(match[3] ?? ""),
+    });
+    rest = rest.slice(match[0].length);
+    match = rest.match(plus);
+  }
+  return out;
+}
+
+/** "ft." or "feet"; the line's own full stop follows the last one. */
+const FT = String.raw`(?:ft\.|feet)`;
+const RANGE = String.raw`range (\d+)(?:\/(\d+))?`;
+const ATTACK_LINE = new RegExp(
+  String.raw`^(Melee|Ranged|Melee or Ranged) Attack Roll: \+(\d+)(?: to hit)?(?: \([^)]*\))?, (?:reach (\d+) (?:${FT} or ${RANGE} )?|${RANGE} )(?:ft|feet)\. Hit: (.*)$`,
+  "s"
+);
+
+/**
+ * An attack's opening line: "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (2d8 + 4)
+ * Bludgeoning damage." — its mode, to-hit, reach and range, the damage its Hit
+ * clause opens with and the conditions it gives. Undefined when the text is no
+ * attack, its hit opens with no damage, or it names a condition that is none.
+ */
+export function printedAttack(
+  text: string
+): Omit<MonsterAttackEntry, "id" | "recharge" | "uses"> | undefined {
+  const m = text.match(ATTACK_LINE);
+  if (!m) return undefined;
+  const [, mode, toHit, reach, nearMixed, farMixed, near, far, hit = ""] = m;
+  const damage = leadingDamage(hit);
+  if (damage.length === 0) return undefined;
+  let conditions: PrintedHitConditions | undefined;
+  try {
+    conditions = printedHitConditions(text);
+  } catch {
+    return undefined;
+  }
+  const rangeNear = nearMixed ?? near;
+  const rangeFar = farMixed ?? far;
+  return {
+    kind: "attack",
+    attack: mode === "Melee" ? "melee" : mode === "Ranged" ? "ranged" : "melee-or-ranged",
+    toHit: Number(toHit),
+    ...(reach ? { reachFt: Number(reach) } : {}),
+    ...(rangeNear
+      ? {
+          rangeFt: {
+            near: Number(rangeNear),
+            ...(rangeFar ? { far: Number(rangeFar) } : {}),
+          },
+        }
+      : {}),
+    damage,
+    ...(conditions ? { conditions: conditions.conditions } : {}),
+    ...(conditions?.gated ? { conditionsIf: true as const } : {}),
+    ...(conditions?.save ? { conditionSave: conditions.save } : {}),
+  };
+}
+
+/** What a success does, as the print states it: "Success: Half damage." is half,
+ *  any other first Success sentence is special, none is none (a "Failure or
+ *  Success:" footer is not one). */
+function printedOnSuccess(text: string): MonsterSaveEntry["onSuccess"] {
+  const withoutFooter = text.replace(/Failure or Success:[^.]*\.?/gi, "");
+  const match = withoutFooter.match(/Success:\s*([^.]*)/i);
+  if (match === null) return "none";
+  return /^Half damage( only)?$/i.test((match[1] ?? "").trim()) ? "half" : "special";
+}
+
+const SAVE_LINE =
+  /\b(Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) Saving Throw: DC (\d+)[,.]/;
+
+/**
+ * A save entry's line: "Dexterity Saving Throw: DC 21, each creature in a 60-foot
+ * Cone. Failure: 59 (17d6) Fire damage. Success: Half damage." — the ability and
+ * DC, the damage and conditions of its Failure clause, and what a success does.
+ */
+export function printedSave(
+  text: string
+): Omit<MonsterSaveEntry, "id" | "recharge" | "uses"> | undefined {
+  const m = text.match(SAVE_LINE);
+  const save = ABILITY[m?.[1] ?? ""];
+  if (!m || !save) return undefined;
+  const rest = text.slice((m.index ?? 0) + m[0].length);
+  const failure = rest.match(/\bFailure: (.*)$/s)?.[1] ?? "";
+  // "Failure: If the target has 20 Hit Points or fewer, … Otherwise, the target
+  // takes 18 (4d8) Psychic damage." — the damage of the otherwise branch.
+  const otherwise = failure.match(
+    /\b(?:Otherwise, the target|It otherwise) takes (.*)$/s
+  );
+  const damage = leadingDamage(failure);
+  if (damage.length === 0 && otherwise) damage.push(...leadingDamage(otherwise[1] ?? ""));
+  let conditions: ConditionId[];
+  try {
+    conditions = failureConditions(rest);
+  } catch {
+    return undefined;
+  }
+  return {
+    kind: "save",
+    save,
+    dc: Number(m[2]),
+    ...(damage.length > 0 ? { damage } : {}),
+    onSuccess: printedOnSuccess(text),
+    ...(conditions.length > 0 ? { conditions } : {}),
+  };
+}
+
+/** The SRD prints a few spells without their wizard's name ("Acid Arrow"); their
+ *  catalogue id keeps it. Pinned against `src/i18n/en/srd/spells.json`. */
+const SPELL_PRINT_IDS: Readonly<Record<string, string>> = {
+  "arcane-hand": "bigbys-hand",
+  "instant-summons": "drawmijs-instant-summons",
+  "black-tentacles": "evards-black-tentacles",
+  "secret-chest": "leomunds-secret-chest",
+  "tiny-hut": "leomunds-tiny-hut",
+  "acid-arrow": "melfs-acid-arrow",
+  "faithful-hound": "mordenkainens-faithful-hound",
+  "magnificent-mansion": "mordenkainens-magnificent-mansion",
+  "private-sanctum": "mordenkainens-private-sanctum",
+  "arcane-sword": "mordenkainens-sword",
+  "arcanists-magic-aura": "nystuls-magic-aura",
+  "freezing-sphere": "otilukes-freezing-sphere",
+  "resilient-sphere": "otilukes-resilient-sphere",
+  "irresistible-dance": "ottos-irresistible-dance",
+  "telepathic-bond": "rarys-telepathic-bond",
+  "hideous-laughter": "tashas-hideous-laughter",
+  "floating-disk": "tensers-floating-disk",
+};
+
+/** A printed spell name as its catalogue id: "Command (level 2 version)" →
+ *  "command", "Detect Evil and Good" → "detect-evil-and-good", "Acid Arrow" →
+ *  "melfs-acid-arrow". */
+export function printedSpellId(name: string): string {
+  const slug = name
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return SPELL_PRINT_IDS[slug] ?? slug;
+}
+
+/** "A (level 2 version), B, C" → ids; a parenthetical keeps its own commas. */
+function spellList(list: string): string[] {
+  const names: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (const char of list) {
+    if (char === "(") depth += 1;
+    if (char === ")") depth -= 1;
+    if (char === "," && depth === 0) {
+      names.push(current);
+      current = "";
+    } else current += char;
+  }
+  names.push(current);
+  return names.map((name) => printedSpellId(name.trim())).filter(Boolean);
+}
+
+const TIER =
+  /(At Will|(\d+)\/Day(?: Each)?): (.*?)(?=\s+(?:At Will|\d+\/Day(?: Each)?):|$)/gs;
+
+/**
+ * A Spellcasting entry's text: "… using Charisma as the spellcasting ability (spell
+ * save DC 20, +12 to hit with spell attacks): At Will: Command (level 2 version),
+ * Detect Magic. 1/Day: Fireball." — the ability, DC, spell-attack bonus, the at-will
+ * spells and each N/Day tier, as spell ids (an upcast qualifier stays text).
+ */
+export function printedSpellcasting(
+  text: string
+): Omit<MonsterSpellcastingEntry, "id" | "recharge" | "uses"> | undefined {
+  const lists = text.match(
+    /\busing (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) as (?:the )?spellcasting ability(?: \(([^)]*)\))?:\s*(.*)$/s
+  );
+  // One spell: "The imp casts Invisibility on itself, requiring no spell components
+  // and using Charisma as the spellcasting ability."; "twice" is two casts a use.
+  const single = lists
+    ? null
+    : text.match(
+        /^(?:\([^)]*\) )?The [\w -]+? casts (?:the )?(.+?)(?: spell)?(?: on itself)?( twice)?, (?:requiring [^,]+? and )?using (Strength|Dexterity|Constitution|Intelligence|Wisdom|Charisma) as (?:the )?spellcasting ability(?: \(([^)]*)\))?\.(?:\s|$)/
+      );
+  const ability = ABILITY[(lists ?? single)?.[lists ? 1 : 3] ?? ""];
+  if (!ability || !(lists ?? single)) return undefined;
+  const qualifier = lists ? lists[2] : single?.[4];
+  const dc = qualifier?.match(/spell save DC (\d+)/)?.[1];
+  const toHit = qualifier?.match(/\+(\d+) to hit with spell attacks/)?.[1];
+  const atWill: string[] = [];
+  const perDay: Array<{ count: number; spellIds: string[] }> = [];
+  if (single) {
+    const ids = spellList((single[1] ?? "").replace(/(^|, )or /g, "$1"));
+    if (single[2]) perDay.push({ count: 2, spellIds: ids });
+    else atWill.push(...ids);
+  }
+  for (const [, label, count, list = ""] of (lists?.[3] ?? "").matchAll(TIER)) {
+    const ids = spellList(list.replace(/\.\s*$/, ""));
+    if (label === "At Will") atWill.push(...ids);
+    else perDay.push({ count: Number(count), spellIds: ids });
+  }
+  if (atWill.length === 0 && perDay.length === 0) return undefined;
+  return {
+    kind: "spellcasting",
+    ability,
+    ...(dc ? { dc: Number(dc) } : {}),
+    ...(toHit ? { toHit: Number(toHit) } : {}),
+    ...(atWill.length > 0 ? { atWill } : {}),
+    ...(perDay.length > 0 ? { perDay } : {}),
+  };
 }

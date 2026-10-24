@@ -12,6 +12,7 @@
 import { getSpellById } from "@/data/spells";
 import type { MonsterStatBlock } from "@/data/types";
 import { concentrationSaveDc } from "@/lib/compute";
+import { encounterMonsterBlockId } from "@/lib/homebrew-monsters";
 import { monsterSaveBonus } from "@/lib/monster";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
@@ -92,13 +93,14 @@ export interface MonsterConcentrationSave {
   spell: string;
   ability: "CON";
   dc: number;
-  /** The stat block's Constitution save; absent for a custom monster. */
+  /** The stat block's Constitution save; absent for a hand-typed monster. */
   bonus?: number;
 }
 
-/** Resolves a monster's stat block by its bestiary id. The bestiary is a lazy chunk,
- *  so the caller (the DM's encounter screen, which holds it) passes `getMonster`. */
-export type MonsterBlockLookup = (srdId: string) => MonsterStatBlock | undefined;
+/** Resolves a monster's stat block by its id. The bestiary is a lazy chunk, so the
+ *  caller (the DM's encounter screen, which holds it) passes `getMonster`, or
+ *  `homebrewMonsterLookup(library, getMonster)` to reach homebrew stat blocks too. */
+export type MonsterBlockLookup = (blockId: string) => MonsterStatBlock | undefined;
 
 /** The save one hit of `damage` asks, or null (not concentrating, no damage). */
 export function monsterConcentrationSave(
@@ -109,7 +111,8 @@ export function monsterConcentrationSave(
   const spell = monster.concentration;
   const dc = concentrationSaveDc(damage);
   if (!spell || dc === 0) return null;
-  const block = monster.srdId ? blockOf?.(monster.srdId) : undefined;
+  const blockId = encounterMonsterBlockId(monster);
+  const block = blockId ? blockOf?.(blockId) : undefined;
   return {
     monsterId: monster.id,
     spell,
