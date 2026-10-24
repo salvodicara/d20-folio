@@ -1389,8 +1389,12 @@ always-loaded canonical FALLBACK on both axes:
 
 So an EN user pays only EN; an IT user pays EN srd + EN ui + IT ui (no IT-side duplication of facts).
 `srd-en.ts` is the process-wide catalogue REGISTRY (EN seeded static; other locales registered lazily by
-`ensureLocale`). Workbox precaches every locale chunk, so an offline language switch works even for an
-EN-only user.
+`ensureLocale`). The Italian chunks and the bestiary are NOT precached (2026-10-24, `assets/lazy/` in
+`vite.config.ts`): the service worker caches them on use, the first visit's are re-fetched through it once
+it takes control (`src/app/lazy-cache-seed.ts`), and the cockpit warms the bestiary for a character with
+forms, a familiar or summons (`src/app/bestiary-warmup.ts`). An Italian player's first online visit leaves
+everything they need offline (`pnpm test:e2e:offline`); a first language switch made offline shows the
+English text until the next online visit.
 
 The i18n completeness LOCKS (the throwing resolver + missing-key handler, disabled `fallbackLng` in
 dev/test, the parity + locale-sweep gates) are catalogued under **Architecture invariants → the five
