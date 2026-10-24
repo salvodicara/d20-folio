@@ -39,6 +39,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tentacle",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 9,
         reachFt: 15,
@@ -64,8 +66,16 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "lash", kind: "narrative" },
-      { id: "psychic-drain", kind: "narrative" },
+      {
+        id: "lash",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "tentacle" },
+      },
+      {
+        id: "psychic-drain",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "consume-memories" },
+      },
     ],
     source: "SRD",
   },
@@ -135,7 +145,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "none",
       },
       { id: "frightful-presence", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -194,7 +208,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendaryActions: [
       { id: "cloaked-flight", kind: "narrative" },
       { id: "sonic-boom", kind: "narrative" },
-      { id: "tail-swipe", kind: "narrative" },
+      {
+        id: "tail-swipe",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -271,7 +289,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "blazing-light", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
       {
         id: "scorching-sands",
         kind: "save",
@@ -359,7 +381,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "guiding-light", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
       {
         id: "thunderclap",
         kind: "save",
@@ -439,7 +465,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "none",
       },
       { id: "mind-jolt", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -516,7 +546,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         conditions: ["incapacitated"],
       },
       { id: "guiding-light", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -591,7 +625,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "2d6", damageType: "poison" }],
         onSuccess: "none",
       },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -651,7 +689,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendaryActions: [
       { id: "commanding-presence", kind: "narrative" },
       { id: "fiery-rays", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -730,7 +772,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "4d6", damageType: "cold" }],
         onSuccess: "half",
       },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -791,7 +837,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "none",
       },
       { id: "frightful-presence", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -870,6 +920,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claws",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -949,7 +1001,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "none",
       },
       { id: "frightful-presence", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1008,7 +1064,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendaryActions: [
       { id: "cloaked-flight", kind: "narrative" },
       { id: "sonic-boom", kind: "narrative" },
-      { id: "tail-swipe", kind: "narrative" },
+      {
+        id: "tail-swipe",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1085,7 +1145,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "blazing-light", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
       {
         id: "scorching-sands",
         kind: "save",
@@ -1178,7 +1242,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "guiding-light", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
       {
         id: "thunderclap",
         kind: "save",
@@ -1260,7 +1328,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "none",
       },
       { id: "mind-jolt", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1339,7 +1411,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         conditions: ["incapacitated"],
       },
       { id: "guiding-light", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1414,7 +1490,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "5d6", damageType: "poison" }],
         onSuccess: "none",
       },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1474,7 +1554,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     legendaryActions: [
       { id: "commanding-presence", kind: "narrative" },
       { id: "fiery-rays", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1558,7 +1642,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "4d6", damageType: "cold" }],
         onSuccess: "half",
       },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1619,7 +1707,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "none",
       },
       { id: "frightful-presence", kind: "narrative" },
-      { id: "pounce", kind: "narrative" },
+      {
+        id: "pounce",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+      },
     ],
     source: "SRD",
   },
@@ -1748,6 +1840,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -1786,6 +1880,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tail",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 10,
@@ -1957,6 +2053,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "shortsword",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 7,
         reachFt: 5,
@@ -2071,7 +2168,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     conditionImmunities: ["poisoned"],
     languages: { ids: ["ignan"] },
     traits: [
-      { id: "fire-aura", kind: "narrative" },
+      {
+        id: "fire-aura",
+        kind: "narrative",
+        damage: [{ dice: "1d10", damageType: "fire" }],
+      },
       { id: "illumination", kind: "narrative" },
     ],
     actions: [
@@ -2177,7 +2278,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         ],
         onSuccess: "half",
       },
-      { id: "fire-aura", kind: "narrative" },
+      {
+        id: "fire-aura",
+        kind: "narrative",
+        damage: [{ dice: "3d8", damageType: "fire" }],
+      },
       { id: "legendary-resistance", kind: "narrative" },
       {
         id: "magic-resistance",
@@ -2190,6 +2295,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "flame-whip",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 14,
         reachFt: 30,
@@ -2307,7 +2414,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 120, unimpededByMagicalDarkness: true },
     languages: { ids: ["infernal"], telepathyFt: 120 },
     traits: [
-      { id: "barbed-hide", kind: "narrative" },
+      {
+        id: "barbed-hide",
+        kind: "narrative",
+        damage: [{ dice: "1d10", damageType: "piercing" }],
+      },
       { id: "diabolical-restoration", kind: "narrative" },
       {
         id: "magic-resistance",
@@ -2320,6 +2431,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claws",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -2436,6 +2549,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "beard",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -2637,7 +2751,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 60 },
     traits: [
       { id: "amorphous", kind: "narrative" },
-      { id: "corrosive-form", kind: "narrative" },
+      {
+        id: "corrosive-form",
+        kind: "narrative",
+        damage: [{ dice: "1d8", damageType: "acid" }],
+      },
       { id: "spider-climb", kind: "narrative" },
     ],
     actions: [
@@ -2776,6 +2894,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 3,
         reachFt: 5,
@@ -2825,6 +2945,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "infernal-sting",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 8,
         reachFt: 10,
@@ -2958,6 +3079,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claw",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -3037,6 +3160,8 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "grab",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 4,
         reachFt: 10,

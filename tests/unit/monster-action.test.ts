@@ -17,6 +17,7 @@ import type { MonsterEntry } from "@/data/types";
 import {
   initialTrayRow,
   setAttackOutcome,
+  toggleCondition,
   toggleSaved,
   type DamageTrayPlan,
 } from "@/lib/play/damage-tray";
@@ -81,7 +82,34 @@ describe("monster actions — every printed attack and save", () => {
       expect(plan.attack).toEqual({ onMiss: "none" });
       expect(plan.effect).toBe("damage");
       expect(plan.save).toBeUndefined();
-      expect(plan.conditions).toBeUndefined();
+      if (entry.conditions?.length) {
+        // The Hit clause's conditions, off when a sentence gates them or a save
+        // the hit forces decides them, and never on a miss.
+        const optIn = Boolean(entry.conditionsIf || entry.conditionSave);
+        expect(plan.conditions).toEqual({
+          options: [...entry.conditions],
+          pickOne: false,
+          ...(optIn ? { optIn: true } : {}),
+          ...(entry.conditionSave
+            ? {
+                save: {
+                  ability: entry.conditionSave.save,
+                  dc: entry.conditionSave.dc,
+                },
+              }
+            : {}),
+        });
+        const row = initialTrayRow(plan, "pc-a");
+        expect(row.conditions).toEqual(optIn ? [] : [...entry.conditions]);
+        const on = { ...row, conditions: [...entry.conditions] };
+        expect(monsterTrayLandings(plan, [on], 10)[0]?.conditions).toEqual([
+          ...entry.conditions,
+        ]);
+        const missed = setAttackOutcome(on, "miss", plan);
+        expect(monsterTrayLandings(plan, [missed], 10)[0]?.conditions).toEqual([]);
+      } else {
+        expect(plan.conditions).toBeUndefined();
+      }
     } else {
       expect(action.save).toEqual({ ability: entry.save, dc: entry.dc });
       expect(plan.attack).toBeUndefined();
@@ -110,10 +138,86 @@ describe("monster actions — every printed attack and save", () => {
 
   it("keeps prose entries (Multiattack, Spellcasting) off the one-tap list", () => {
     for (const monster of MONSTERS) {
-      for (const action of monsterActions(monster))
-        expect(["attack", "save"]).toContain(
-          action.toHit !== undefined ? "attack" : action.save ? "save" : "other"
+      for (const action of monsterActions(monster)) {
+        const entry = (monster[action.section] ?? []).find(
+          (candidate) => candidate.id === action.entryId
         );
+        expect(entry?.kind).not.toBe("spellcasting");
+        if (entry?.kind === "narrative")
+          expect(Boolean(entry.damage || entry.performs)).toBe(true);
+      }
+    }
+  });
+});
+
+const prose = MONSTERS.flatMap((monster) =>
+  MONSTER_ACTION_SECTIONS.flatMap((section) =>
+    (monster[section] ?? []).flatMap((entry) =>
+      entry.kind === "narrative" && (entry.damage || entry.performs)
+        ? [{ monster, section, entry: entry }]
+        : []
+    )
+  )
+);
+
+const SECTION_ECONOMY = {
+  traits: "trait",
+  actions: "action",
+  bonusActions: "bonus",
+  reactions: "reaction",
+  legendaryActions: "legendary",
+} as const;
+
+describe("monster actions — prose entries the print makes one tap", () => {
+  it("covers the auras and the entries that use another attack", () => {
+    expect(prose.filter(({ entry }) => entry.damage).length).toBeGreaterThan(8);
+    expect(prose.filter(({ entry }) => entry.performs).length).toBeGreaterThan(25);
+  });
+
+  it.each(
+    prose.map(({ monster, section, entry }) => [
+      `${monster.id}.${section}.${entry.id}`,
+      monster,
+      section,
+      entry,
+    ])
+  )("%s opens the tray its print states", (key, monster, section, entry) => {
+    const action = monsterActions(monster).find(
+      (candidate) => `${monster.id}.${candidate.section}.${candidate.entryId}` === key
+    );
+    expect(action).toBeDefined();
+    if (!action) return;
+    expect(action.activity.source).toEqual({
+      kind: "monster",
+      monsterId: monster.id,
+      section,
+      entryId: entry.id,
+    });
+    expect(action.activity.cost.economy).toBe(SECTION_ECONOMY[section]);
+    const plan = monsterTrayPlan(action, ["pc-a"]);
+    if (entry.damage) {
+      // Damage with no roll: the total lands on every picked creature.
+      expect(monsterActionDice(action)).toEqual(entry.damage.map((c) => c.dice));
+      expect(plan.effect).toBe("damage");
+      expect(plan.attack).toBeUndefined();
+      expect(plan.save).toBeUndefined();
+      expect(monsterTrayLandings(plan, [initialTrayRow(plan, "pc-a")], 6)).toEqual([
+        { targetId: "pc-a", amount: 6, conditions: [] },
+      ]);
+    }
+    if (entry.performs) {
+      // The used entry's numbers and tray, at this entry's own cost.
+      const used = monsterActions(monster).find(
+        (candidate) =>
+          candidate.section === entry.performs?.section &&
+          candidate.entryId === entry.performs.entryId
+      );
+      expect(used).toBeDefined();
+      if (!used) return;
+      expect(action.toHit).toBe(used.toHit);
+      expect(action.save).toEqual(used.save);
+      expect(monsterActionDice(action)).toEqual(monsterActionDice(used));
+      expect(plan).toEqual(monsterTrayPlan(used, ["pc-a"]));
     }
   });
 });
@@ -134,6 +238,74 @@ describe("monster actions — Apply", () => {
       { targetId: "pc-lyra", amount: 7, conditions: [], outcome: "hit" },
       { targetId: "pc-bren", amount: 0, conditions: [], outcome: "miss" },
     ]);
+  });
+
+  it("a wolf's bite: Prone is offered off (Medium or smaller), lands when the DM taps it", () => {
+    const wolf = MONSTERS.find((m) => m.id === "wolf");
+    const bite = wolf && monsterActions(wolf).find((a) => a.entryId === "bite");
+    if (!bite) throw new Error("wolf bite expected");
+    const plan = monsterTrayPlan(bite, ["pc-lyra"]);
+    expect(plan.conditions).toEqual({ options: ["prone"], pickOne: false, optIn: true });
+    const row = toggleCondition(initialTrayRow(plan, "pc-lyra"), "prone", plan);
+    expect(monsterTrayLandings(plan, [row], 5)).toEqual([
+      { targetId: "pc-lyra", amount: 5, conditions: ["prone"], outcome: "hit" },
+    ]);
+  });
+
+  it("a ghoul's claw: Paralyzed rides the CON 10 save the hit forces", () => {
+    const ghoul = MONSTERS.find((m) => m.id === "ghoul");
+    const claw = ghoul && monsterActions(ghoul).find((a) => a.entryId === "claw");
+    if (!claw) throw new Error("ghoul claw expected");
+    expect(monsterTrayPlan(claw, ["pc-lyra"]).conditions).toEqual({
+      options: ["paralyzed"],
+      pickOne: false,
+      optIn: true,
+      save: { ability: "CON", dc: 10 },
+    });
+  });
+
+  it("a kraken's tentacle: Grappled and Restrained land on a hit", () => {
+    const kraken = MONSTERS.find((m) => m.id === "kraken");
+    const tentacle =
+      kraken && monsterActions(kraken).find((a) => a.entryId === "tentacle");
+    if (!tentacle) throw new Error("kraken tentacle expected");
+    const plan = monsterTrayPlan(tentacle, ["pc-lyra"]);
+    expect(monsterTrayLandings(plan, [initialTrayRow(plan, "pc-lyra")], 24)).toEqual([
+      {
+        targetId: "pc-lyra",
+        amount: 24,
+        conditions: ["grappled", "restrained"],
+        outcome: "hit",
+      },
+    ]);
+  });
+
+  it("a salamander's fire aura: the rolled fire lands on each creature the DM picks", () => {
+    const salamander = MONSTERS.find((m) => m.id === "salamander");
+    const aura =
+      salamander && monsterActions(salamander).find((a) => a.entryId === "fire-aura");
+    if (!aura) throw new Error("salamander fire aura expected");
+    const plan = monsterTrayPlan(aura, ["a", "b"]);
+    expect(plan.damageType).toBe("fire");
+    expect(
+      monsterTrayLandings(
+        plan,
+        plan.targets.map((id) => initialTrayRow(plan, id)),
+        7
+      )
+    ).toEqual([
+      { targetId: "a", amount: 7, conditions: [] },
+      { targetId: "b", amount: 7, conditions: [] },
+    ]);
+  });
+
+  it("a dragon's Pounce is its Rend, as a legendary action", () => {
+    const pounce = dragon && monsterActions(dragon).find((a) => a.entryId === "pounce");
+    const rend = dragon && monsterActions(dragon).find((a) => a.entryId === "rend");
+    if (!pounce || !rend) throw new Error("adult-red-dragon pounce and rend expected");
+    expect(pounce.section).toBe("legendaryActions");
+    expect(pounce.toHit).toBe(rend.toHit);
+    expect(pounce.activity.cost).toEqual({ economy: "legendary" });
   });
 
   it("a dragon's fire breath: Saved halves for one of three targets", () => {

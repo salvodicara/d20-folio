@@ -70,6 +70,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "rock-launch",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "ranged",
         toHit: 8,
         rangeFt: { near: 60 },
@@ -164,6 +166,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 8,
         reachFt: 5,
@@ -199,6 +203,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "ram",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -284,6 +290,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -341,6 +348,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "battleaxe",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 7,
         reachFt: 5,
@@ -383,8 +392,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["ignan"] },
     traits: [
-      { id: "fire-aura", kind: "narrative" },
-      { id: "fire-form", kind: "narrative" },
+      {
+        id: "fire-aura",
+        kind: "narrative",
+        damage: [{ dice: "1d10", damageType: "fire" }],
+      },
+      {
+        id: "fire-form",
+        kind: "narrative",
+        damage: [{ dice: "1d10", damageType: "fire" }],
+      },
       { id: "illumination", kind: "narrative" },
       { id: "water-susceptibility", kind: "narrative" },
     ],
@@ -717,6 +734,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claw",
         kind: "attack",
+        conditions: ["paralyzed"],
+        conditionSave: { save: "CON", dc: 10 },
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -828,6 +847,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claw",
         kind: "attack",
+        conditions: ["paralyzed"],
+        conditionSave: { save: "CON", dc: 10 },
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -946,6 +967,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -970,6 +993,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -1031,6 +1055,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claw",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 3,
         reachFt: 5,
@@ -1057,6 +1083,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 8,
         reachFt: 5,
@@ -1065,6 +1093,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tail",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 8,
         reachFt: 10,
@@ -1124,6 +1154,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "ram",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 10,
@@ -1182,12 +1214,14 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 3,
         reachFt: 5,
         damage: [{ dice: "1d6+2", damageType: "piercing" }],
       },
-      { id: "swallow", kind: "narrative" },
+      { id: "swallow", kind: "narrative", damage: [{ dice: "2d4", damageType: "acid" }] },
     ],
     source: "SRD",
   },
@@ -1209,6 +1243,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "ram",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -1240,7 +1276,14 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "2d6+3", damageType: "piercing" }],
       },
     ],
-    bonusActions: [{ id: "rampage", kind: "narrative", uses: { count: 1, per: "day" } }],
+    bonusActions: [
+      {
+        id: "rampage",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "bite" },
+        uses: { count: 1, per: "day" },
+      },
+    ],
     source: "SRD",
   },
   // Giant Lizard (2024 SRD 5.2.1). AC 12, HP 19, CR 1/4.
@@ -1290,6 +1333,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tentacles",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 10,
@@ -1388,6 +1433,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claw",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -1524,6 +1571,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -1532,7 +1581,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
           { dice: "2d4", damageType: "poison" },
         ],
       },
-      { id: "swallow", kind: "narrative" },
+      { id: "swallow", kind: "narrative", damage: [{ dice: "3d6", damageType: "acid" }] },
     ],
     source: "SRD",
   },
@@ -1590,6 +1639,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gouge",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -1700,6 +1750,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 2,
         reachFt: 5,
@@ -1751,6 +1803,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pincer",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 9,
         reachFt: 10,
@@ -1846,7 +1900,14 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d10+1", damageType: "piercing" }],
       },
     ],
-    bonusActions: [{ id: "rampage", kind: "narrative", uses: { count: 1, per: "day" } }],
+    bonusActions: [
+      {
+        id: "rampage",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rend" },
+        uses: { count: 1, per: "day" },
+      },
+    ],
     source: "SRD",
   },
   // Goat (2024 SRD 5.2.1). AC 10, HP 4, CR 0.
@@ -2051,6 +2112,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 8,
         reachFt: 5,
@@ -2243,6 +2306,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tentacles",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -2269,6 +2334,8 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "rend",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,

@@ -357,6 +357,7 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "nightmare-ray",
         kind: "attack",
+        conditions: ["frightened"],
         attack: "ranged",
         toHit: 5,
         rangeFt: { near: 60 },
@@ -395,6 +396,7 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -403,6 +405,8 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tentacle",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 10,
@@ -556,6 +560,8 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -675,7 +681,13 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
         conditions: ["charmed"],
       },
     ],
-    reactions: [{ id: "riposte", kind: "narrative" }],
+    reactions: [
+      {
+        id: "riposte",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "rapier" },
+      },
+    ],
     source: "SRD",
   },
   // Pit Fiend (2024 SRD 5.2.1). AC 21, HP 337, CR 20.
@@ -720,6 +732,8 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
+        conditionSave: { save: "CON", dc: 21 },
         attack: "melee",
         toHit: 14,
         reachFt: 10,
@@ -1096,6 +1110,8 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled", "restrained"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 14,
         reachFt: 10,

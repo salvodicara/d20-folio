@@ -301,7 +301,16 @@ export type ActivityEffect =
       /** One temporary-HP amount divided among the targets. */
       pool?: number;
     })
-  | (EffectBase & { kind: "condition"; apply: CombatConditionApplication })
+  | (EffectBase & {
+      kind: "condition";
+      apply: CombatConditionApplication;
+      /** Offered off: a sentence of the print gates it (a monster's "If the target
+       *  is a Medium or smaller creature, …"). */
+      optIn?: true;
+      /** It rides its own save, not the activity's (a hit that forces "Constitution
+       *  Saving Throw: DC 10"). */
+      save?: { ability: AbilityCode; dc: number };
+    })
   | (EffectBase & {
       kind: "end-condition";
       options: ReadonlyArray<ConditionId>;

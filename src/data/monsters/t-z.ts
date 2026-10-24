@@ -41,6 +41,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled"],
         attack: "melee",
         toHit: 19,
         reachFt: 15,
@@ -57,6 +58,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tail",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 19,
         reachFt: 30,
@@ -107,6 +110,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "rend",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -253,6 +258,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 9,
         reachFt: 5,
@@ -349,6 +356,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 10,
         reachFt: 10,
@@ -357,6 +366,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tail",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 10,
         reachFt: 15,
@@ -432,7 +443,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3 },
     legendaryActions: [
-      { id: "charging-horn", kind: "narrative" },
+      {
+        id: "charging-horn",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "radiant-horn" },
+      },
       { id: "shimmering-shield", kind: "narrative" },
     ],
     source: "SRD",
@@ -470,6 +485,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "grave-strike",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 9,
         reachFt: 5,
@@ -497,7 +514,11 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "beguile", kind: "narrative" },
-      { id: "deathless-strike", kind: "narrative" },
+      {
+        id: "deathless-strike",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "grave-strike" },
+      },
     ],
     source: "SRD",
   },
@@ -530,6 +551,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "umbral-dagger",
         kind: "attack",
+        conditions: ["poisoned"],
+        conditionsIf: true,
         attack: "melee-or-ranged",
         toHit: 5,
         reachFt: 5,
@@ -572,6 +595,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "claw",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -753,6 +778,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "hooves",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -780,6 +807,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "hooves",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -892,6 +921,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "slam",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 7,
         reachFt: 5,
@@ -1021,6 +1052,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tusk",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -1367,6 +1400,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -1408,6 +1443,8 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -1516,6 +1553,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "sting",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 7,
         reachFt: 10,

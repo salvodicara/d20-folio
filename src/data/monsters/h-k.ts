@@ -223,6 +223,8 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tree-club",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 8,
         reachFt: 10,
@@ -231,6 +233,7 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "trash-lob",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "ranged",
         toHit: 8,
         rangeFt: { near: 60, far: 240 },
@@ -408,6 +411,8 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
+        conditionSave: { save: "CON", dc: 12 },
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -1088,6 +1093,7 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "tentacle",
         kind: "attack",
+        conditions: ["grappled", "restrained"],
         attack: "melee",
         toHit: 17,
         reachFt: 30,
@@ -1122,7 +1128,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "storm-bolt", kind: "narrative" },
+      {
+        id: "storm-bolt",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "lightning-strike" },
+      },
       {
         id: "toxic-ink",
         kind: "save",
