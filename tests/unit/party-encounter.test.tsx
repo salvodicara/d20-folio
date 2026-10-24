@@ -162,6 +162,33 @@ describe("AddMonsterForm — submit() resets every field, not just name/count/no
       null
     );
   });
+
+  it("EDIT mode keeps what the form doesn't show (the stat block); a cleared field stays cleared", () => {
+    const onSubmit = vi.fn();
+    const mechanics = {
+      actions: [
+        {
+          name: "Slam",
+          text: "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Bludgeoning damage.",
+        },
+      ],
+    };
+    render(
+      <AddMonsterForm
+        submitLabel="Save"
+        showCount={false}
+        initial={{ name: "Bog Brute", ac: 11, maxHp: 59, notes: "Hates fire", mechanics }}
+        onSubmit={onSubmit}
+      />
+    );
+    fireEvent.change(screen.getByLabelText("DM notes"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(onSubmit).toHaveBeenLastCalledWith(
+      { name: "Bog Brute", ac: 11, maxHp: 59, mechanics },
+      1,
+      null
+    );
+  });
 });
 
 // ─── B27 — MonsterInitChip focuses without scrolling the page ───────────────────
