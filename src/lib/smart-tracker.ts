@@ -738,6 +738,9 @@ export interface ResolvedAction {
   /** Exact stored index for a custom spell. Its action id is index-based too, so
    * duplicate homebrew names remain independently castable. */
   customSpellIndex?: number;
+  /** A custom spell's stable `instanceId` (its Concentration and any per-spell state
+   * key on it, never on the name). */
+  customSpellInstanceId?: string;
   /** Canonical casting-time class. Present only on spell casts. */
   castTiming?: SpellCastTiming;
   /** SRD weapon id (set for equipped SRD weapon actions, incl. their off-hand
@@ -6335,6 +6338,7 @@ function resolveSpellActions(
         type: customActionType,
         source: "spell",
         customSpellIndex: spellIndexInBook,
+        customSpellInstanceId: customSpell.instanceId,
         castTiming: customCastTiming,
         spellLevel: customSpell.level,
         concentration: customSpell.concentration,

@@ -35,6 +35,58 @@ export function customConcentrationValue(customName: string): ConcentrationRef {
   return `${CUSTOM_CONCENTRATION_PREFIX}${customName}` as ConcentrationRef;
 }
 
+/** Marks the id form behind the custom prefix: `custom:#<instanceId>#<name>`. */
+const CUSTOM_ID_MARK = "#";
+
+/**
+ * Stamp concentration on a homebrew spell by its STABLE `instanceId` (two homebrew
+ * spells, or a homebrew copy of a catalogue spell, may share a name). The name rides
+ * along so a label reads without the sheet. Older clients read the whole value as a
+ * name (shown as text, never a crash); the legacy `custom:<name>` form stays readable.
+ */
+export function customSpellConcentrationValue(spell: {
+  instanceId: string;
+  name: string;
+}): ConcentrationRef {
+  return `${CUSTOM_CONCENTRATION_PREFIX}${CUSTOM_ID_MARK}${spell.instanceId}${CUSTOM_ID_MARK}${spell.name}` as ConcentrationRef;
+}
+
+/** A custom value's parts: the instanceId (absent in the legacy name form) and name. */
+function customParts(value: string): { instanceId?: string; name: string } | null {
+  if (!value.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return null;
+  const rest = value.slice(CUSTOM_CONCENTRATION_PREFIX.length);
+  if (rest.startsWith(CUSTOM_ID_MARK)) {
+    const end = rest.indexOf(CUSTOM_ID_MARK, CUSTOM_ID_MARK.length);
+    if (end > CUSTOM_ID_MARK.length) {
+      return {
+        instanceId: rest.slice(CUSTOM_ID_MARK.length, end),
+        name: rest.slice(end + 1),
+      };
+    }
+  }
+  return { name: rest };
+}
+
+/** The name a custom concentration value shows (either stored form), or null. */
+export function customConcentrationName(value: string): string | null {
+  return customParts(value)?.name ?? null;
+}
+
+/**
+ * Whether `stored` is this homebrew spell's Concentration: the id form by its id; the
+ * legacy name form by its name (all a legacy value can say).
+ */
+export function holdsCustomSpellConcentration(
+  stored: string,
+  spell: { instanceId: string; name: string }
+): boolean {
+  const parts = customParts(stored);
+  if (!parts) return false;
+  return parts.instanceId !== undefined
+    ? parts.instanceId === spell.instanceId
+    : parts.name === spell.name;
+}
+
 /**
  * Boundary read-normalization (golden rule 10 — the bounded one-way untrusted-input
  * seam): conform a RAW stored concentration value to a valid {@link StoredConcentration}

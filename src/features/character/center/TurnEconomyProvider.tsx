@@ -795,6 +795,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       {
         concentration: action.concentration,
         ...(action.spellId ? { spellId: action.spellId } : {}),
+        ...(action.customSpellInstanceId
+          ? { customSpellInstanceId: action.customSpellInstanceId }
+          : {}),
         name: action.name,
       },
       t,
