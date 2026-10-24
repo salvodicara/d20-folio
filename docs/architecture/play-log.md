@@ -44,6 +44,21 @@ The session log (`src/lib/session-log/`) is the table's narrative for the report
 character's entries are the source its lines are derived from, so the two records stop
 disagreeing.
 
+## Undo in new code (rule, 2026-10-24)
+
+The store has grown five undo styles. New code uses only two:
+
+- **One play-log event** (`dispatch`): its own undo, through the log when it reproduces the
+  sheet. Ids a transition mints (a world journal action) are minted by the caller and carried
+  in the event, so the replay is exact (`set-concentration`, `add-condition`).
+- **An edit and everything it sets off** (`editCharacter`, `studyItem`): one whole-state undo
+  (`beginWholeStateUndo`), causal (only while nothing changed since), which also takes the added
+  log lines out of the campaign session log.
+
+A log line written next to an event is removed before the undo runs, so the campaign session
+log hears it too. Hand-written narrow restores stay only where an existing undo composes them
+(End Turn's), and are not added anew.
+
 ## Steps (each shippable, nothing visible until the last)
 
 1. **Types and fold.** `src/lib/play/play-log.ts`: the entry union, `effectiveEvents` and
