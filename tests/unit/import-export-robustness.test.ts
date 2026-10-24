@@ -7,6 +7,7 @@
  * recalculate and be consistent."
  */
 import { describe, it, expect } from "vitest";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { primaryClassId, primarySubclassId, primaryClassName } from "@/lib/classes";
 import { importCharacter, serializeCharacter } from "@/lib/character-io";
@@ -144,7 +145,7 @@ describe("minimal round-trip is render-identical + idempotent", () => {
   ];
   const effIds = (c: CharacterData): string[] =>
     resolveEffectiveSpells(c, { grantBundleChoices: undefined })
-      .flatMap((s) => ("custom" in s ? [`c:${s.name}`] : [s.srdId]))
+      .flatMap((s) => ("custom" in s ? [`c:${homebrewTextKey(s.name)}`] : [s.srdId]))
       .sort();
   const featIds = (c: CharacterData): string[] =>
     c.features.flatMap((f) => ("srdId" in f ? [f.srdId] : ["custom"])).sort();

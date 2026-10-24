@@ -60,6 +60,7 @@ import {
 } from "@/lib/exact-schema";
 import {
   GRANT_SCHEMA,
+  conformLocaleText,
   type Grant as SchemaGrant,
   type GrantSchemaCustomTypes,
 } from "@/lib/grant-schema";
@@ -71,6 +72,7 @@ import { srdKey, srdGrantSegment } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
 import { srdText, litText, uiText } from "@/lib/loc-text";
 import { LOCALES } from "@/lib/locale";
+import { conformHomebrewText, homebrewLocaleText } from "@/lib/homebrew-text";
 import type { CombatEffectBindings } from "@/types/combat-effect";
 import {
   conformResourceSpec,
@@ -122,6 +124,7 @@ function conformProficiencyToken(value: unknown): ProficiencyToken | null {
 const GRANT_SCHEMA_CONTEXT: ExactSchemaContext<GrantSchemaCustomTypes, GrantSchemaRefs> =
   {
     customs: {
+      "locale-text": conformLocaleText,
       "proficiency-token": conformProficiencyToken,
       "resource-spec": conformResourceSpec,
     },
@@ -135,6 +138,34 @@ const conformGrantExact = exactConformer(GRANT_SCHEMA, GRANT_SCHEMA_CONTEXT);
 
 export function conformGrant(value: unknown): Readonly<Grant> | null {
   return conformGrantExact(value);
+}
+
+/**
+ * A homebrew grant's text is what the player wrote: a plain string (language
+ * unknown, so every locale) or some languages, filled for the rest through
+ * `homebrewText`'s fallback. Every other field is held to the same schema.
+ */
+function conformHomebrewLocaleText(value: unknown): LocaleText | null {
+  const text = conformHomebrewText(value);
+  return text === null ? null : homebrewLocaleText(text);
+}
+
+const HOMEBREW_GRANT_SCHEMA_CONTEXT: ExactSchemaContext<
+  GrantSchemaCustomTypes,
+  GrantSchemaRefs
+> = {
+  customs: { ...GRANT_SCHEMA_CONTEXT.customs, "locale-text": conformHomebrewLocaleText },
+  refs: GRANT_SCHEMA_CONTEXT.refs,
+};
+
+const conformHomebrewGrantExact = exactConformer(
+  GRANT_SCHEMA,
+  HOMEBREW_GRANT_SCHEMA_CONTEXT
+);
+
+/** {@link conformGrant} for a player-authored grant: partial text with the fallback. */
+export function conformHomebrewGrant(value: unknown): Readonly<Grant> | null {
+  return conformHomebrewGrantExact(value);
 }
 
 /** Strict, canonical authoring boundary for an ordered list of mechanics. */

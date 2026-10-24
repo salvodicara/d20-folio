@@ -36,7 +36,7 @@ import {
   type ExactSchema,
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
-import { conformGrant, type Grant } from "@/lib/grants";
+import { conformHomebrewGrant, type Grant } from "@/lib/grants";
 import {
   conformResourceRecoveryTrigger,
   isValidItemInstanceId,
@@ -131,7 +131,7 @@ const CONTEXT: ExactSchemaContext<
 > = {
   customs: {
     object: (value) => (plainObject(value) ? value : null),
-    grant: (value) => conformGrant(value),
+    grant: (value) => conformHomebrewGrant(value),
     trigger: (value) => conformResourceRecoveryTrigger(value),
   },
   refs: {},
@@ -196,7 +196,7 @@ export function homebrewItemMechanics(
     if (key === "grants") {
       if (!Array.isArray(raw)) continue;
       accepted.grants = raw.flatMap((grant: unknown) => {
-        const conformed = conformGrant(grant);
+        const conformed = conformHomebrewGrant(grant);
         return conformed ? [conformed] : [];
       });
       continue;

@@ -11,6 +11,7 @@
  */
 import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it } from "vitest";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
 import { spells as catalogueSpells } from "@/data/spells";
 import type { HomebrewSpellMechanics, SrdSpellData } from "@/data/types";
 import { effectiveAC } from "@/lib/aggregate-character";
@@ -51,7 +52,7 @@ function homebrewSpell(over: Partial<CustomSpell> = {}): CustomSpell {
     concentration: false,
     description: "A bead of flame bursts.",
     prepared: true,
-    instanceId: customInstanceId(over.name ?? "Ember Burst"),
+    instanceId: customInstanceId(homebrewText(over.name, "en") || "Ember Burst"),
     ...over,
   };
 }
@@ -178,7 +179,7 @@ describe("a homebrew buff spell: a grant held by 1-minute Concentration", () => 
     if (!lit) throw new Error("the state did not light");
     return changeConcentration(
       { ...doc, session: lit },
-      customConcentrationValue(WARDING_GLOW.name),
+      customConcentrationValue(homebrewText(WARDING_GLOW.name, "en")),
       { castLevel: 1 }
     ).doc;
   }
@@ -200,7 +201,7 @@ describe("a homebrew buff spell: a grant held by 1-minute Concentration", () => 
     const doc = cast();
     const halfway = passTime(doc, 0.5) ?? doc;
     expect(halfway.session.concentration).toBe(
-      customConcentrationValue(WARDING_GLOW.name)
+      customConcentrationValue(homebrewText(WARDING_GLOW.name, "en"))
     );
     expect(halfway.session.activeFeatures).toContain("homebrew-warding-glow");
     const after = passTime(halfway, 0.5);
@@ -212,7 +213,7 @@ describe("a homebrew buff spell: a grant held by 1-minute Concentration", () => 
     useUndoStore.setState({ characterId: null, past: [], future: [] });
     const store = () => useCharacterStore.getState();
     store().setCharacter(cast());
-    const held = customConcentrationValue(WARDING_GLOW.name);
+    const held = customConcentrationValue(homebrewText(WARDING_GLOW.name, "en"));
     let round = 0;
     let expired: ReadonlyArray<{ activeKey: string }> = [];
     while (expired.length === 0 && round < 20) {

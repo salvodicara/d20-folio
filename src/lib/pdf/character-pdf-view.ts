@@ -48,7 +48,7 @@ import { buildSpellsViewModel, type SpellsViewModel } from "@/lib/views/spells-v
 import { buildInventoryViewModel } from "@/lib/views/inventory-view";
 import { buildItemResourceViewModels } from "@/lib/views/item-resource-view";
 import { buildGrantedFeatures, deriveOriginFeats } from "@/lib/character-build";
-import { localizeSrd, hasSrd } from "@/i18n/resolver";
+import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
 import { classFeatureIndex, getClassTable } from "@/data/classes";
 import { getRace, raceFeatureIndex, raceTraitCatKey } from "@/data/races";
 import { FEATS_BY_ID } from "@/data/feats";
@@ -917,7 +917,7 @@ function buildFeatureVMs(
 
   for (const ref of refs) {
     if ("custom" in ref) {
-      const name = ref.title;
+      const name = localizeCustom(ref.title, locale);
       if (!name || seen.has(`custom:${name}`)) continue;
       seen.add(`custom:${name}`);
       out.push({

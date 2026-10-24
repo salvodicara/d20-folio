@@ -19,6 +19,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { primaryClassId } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
+import type { HomebrewText } from "@/lib/homebrew-text";
 import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
@@ -150,7 +151,7 @@ export function SpellsTab() {
   );
 
   const updateSpellField = useCallback(
-    (spellIdx: number, field: string, value: string | boolean | number | null) => {
+    (spellIdx: number, field: string, value: HomebrewText | boolean | number | null) => {
       if (!character) return;
       const store = useCharacterStore.getState();
       const spells = [...character.character.spells];
