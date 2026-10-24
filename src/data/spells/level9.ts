@@ -139,6 +139,12 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // SRD 5.2.1: "If the target has 100 Hit Points or fewer, it dies. Otherwise, it
+    // takes 12d12 Psychic damage."
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    damageType: "psychic",
+    damageDice: "12d12",
+    hitPointThreshold: { max: 100, atOrBelow: "dies" },
     source: "SRD",
   },
   {
@@ -1492,6 +1498,8 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // SRD 5.2.1: "The creature is revived with all its Hit Points."
+    revives: { hitPoints: "all" },
     source: "SRD",
   },
   {

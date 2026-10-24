@@ -972,6 +972,9 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // SRD 5.2.1: "The creature returns to life with 1 Hit Point." The -4 D20 Test
+    // penalty is the rail's fading penalty (`FADING_PENALTIES`).
+    revives: { hitPoints: 1 },
     source: "SRD",
   },
   {

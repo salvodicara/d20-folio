@@ -3885,7 +3885,9 @@ export function evaluateGrants(
     swimSpeed: nonWalkingSpeed(values, "swim"),
     climbSpeed: nonWalkingSpeed(values, "climb"),
     ruleOrigins,
-    speedMultiplier: Math.max(1, ruleValue(values, "speed:multiplier") ?? 1),
+    speedMultiplier:
+      Math.max(1, ruleValue(values, "speed:multiplier") ?? 1) *
+      Math.min(1, ruleValue(values, "speed:reduction") ?? 1),
     speedFloorFt: Math.max(0, ruleValue(values, "speed:floor") ?? 0),
     speedCapFt: ruleValue(values, "speed:cap"),
     // Projections of the folded rules; each baseline (crit on 20, 3 attunement

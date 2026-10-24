@@ -189,6 +189,11 @@ function spellEffects(spell: SrdSpellData): ActivityEffect[] {
   if (spell.conditionApplication) {
     effects.push({ kind: "condition", apply: spell.conditionApplication });
   }
+  if (spell.stabilizes) effects.push({ kind: "stabilize" });
+  if (spell.revives) effects.push({ kind: "revive", hitPoints: spell.revives.hitPoints });
+  if (spell.hitPointThreshold) {
+    effects.push({ kind: "hp-threshold", ...spell.hitPointThreshold });
+  }
   if (spell.conditionRemoval) {
     effects.push(
       compact({

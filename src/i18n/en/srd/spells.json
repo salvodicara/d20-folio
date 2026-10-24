@@ -3328,5 +3328,47 @@
   },
   "glibness.grants.0.grants.1": {
     "description": "Magic that would determine if you are telling the truth reads you as truthful"
+  },
+  "slow.grants.0": {
+    "label": "Slow"
+  },
+  "slow.grants.0.grants.3": {
+    "description": "No Reactions; on its turn an action or a Bonus Action, not both, and one attack with the Attack action; a spell with a Somatic component fails 25 percent of the time"
+  },
+  "ottos-irresistible-dance.grants.0": {
+    "label": "Otto's Irresistible Dance"
+  },
+  "ottos-irresistible-dance.grants.0.grants.0": {
+    "description": "Dexterity saving throws (Otto's Irresistible Dance)"
+  },
+  "ottos-irresistible-dance.grants.0.grants.1": {
+    "description": "Attack rolls (Otto's Irresistible Dance)"
+  },
+  "ottos-irresistible-dance.grants.0.grants.2": {
+    "description": "Other creatures have Advantage on attack rolls against the dancer"
+  },
+  "ottos-irresistible-dance.grants.0.grants.3": {
+    "description": "Uses all its movement to dance in place; an action to collect itself repeats the save and ends the spell on a success"
+  },
+  "holy-aura.grants.0": {
+    "label": "Holy Aura"
+  },
+  "holy-aura.grants.0.grants.0": {
+    "description": "All saving throws (Holy Aura)"
+  },
+  "holy-aura.grants.0.grants.1": {
+    "description": "Other creatures have Disadvantage on attack rolls against you"
+  },
+  "holy-aura.grants.0.grants.2": {
+    "description": "A Fiend or an Undead that hits you with a melee attack roll makes a Constitution saving throw or is Blinded until the end of its next turn"
+  },
+  "sanctuary.grants.0": {
+    "label": "Sanctuary"
+  },
+  "sanctuary.grants.0.grants.0": {
+    "description": "A creature that targets you with an attack roll or a damaging spell makes a Wisdom saving throw or picks a new target or loses it; areas still reach you"
+  },
+  "conjure-minor-elementals.grants.0": {
+    "label": "Conjure Minor Elementals"
   }
 }

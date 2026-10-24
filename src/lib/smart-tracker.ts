@@ -335,6 +335,14 @@ export interface ActionSummary {
   grantsHeroicInspiration?: true;
   /** Set the selected 0-HP creature's death-save state to Stable. */
   stabilize?: true;
+  /** Return the selected dead creature to life with these Hit Points. */
+  revive?: { hitPoints: number | "all" };
+  /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
+  hitPointThreshold?: {
+    max: number;
+    atOrBelow: "dies" | "condition";
+    otherwise?: "speed-zero";
+  };
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
@@ -6607,6 +6615,17 @@ function resolveSpellActions(
     }
     const [condition] = effectsOfKind(activity, "condition");
     if (condition) summary.conditionApplication = condition.apply;
+    if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
+    const [revive] = effectsOfKind(activity, "revive");
+    if (revive) summary.revive = { hitPoints: revive.hitPoints };
+    const [threshold] = effectsOfKind(activity, "hp-threshold");
+    if (threshold) {
+      summary.hitPointThreshold = {
+        max: threshold.max,
+        atOrBelow: threshold.atOrBelow,
+        ...(threshold.otherwise ? { otherwise: threshold.otherwise } : {}),
+      };
+    }
     if (target?.affinity) {
       summary.targeting = {
         affinity: target.affinity,
@@ -8843,7 +8862,10 @@ export function effectiveWalkingSpeedBreakdown(
 
   const multiplied = Math.round(running * agg.speedMultiplier);
   if (multiplied !== running) {
-    const source = ruleParts(agg.ruleOrigins, "speed:multiplier")[0]?.source;
+    const source = (
+      ruleParts(agg.ruleOrigins, "speed:multiplier")[0] ??
+      ruleParts(agg.ruleOrigins, "speed:reduction")[0]
+    )?.source;
     parts.push(named(source, "breakdown.speed.multiplier", multiplied - running));
   }
 

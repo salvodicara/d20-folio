@@ -912,6 +912,21 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
+    // SRD 5.2.1: "You ward a creature within range ... The spell ends if the warded
+    // creature makes an attack roll, casts a spell, or deals damage."
+    targeting: { affinity: "ally", maxTargets: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-sanctuary",
+        duration: {
+          ...timedSpellDuration(1),
+          endsEarlyOn: ["attack-roll", "cast-spell", "deal-damage"],
+        },
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

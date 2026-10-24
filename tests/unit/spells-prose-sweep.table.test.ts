@@ -259,6 +259,24 @@ const STANDING_SPELLS = [
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 3 },
   },
   { id: "glibness", recipient: "caster" },
+  // Spells batch 4 (2026-10-24): the cast lights the spell's own effect.
+  {
+    id: "slow",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 6 },
+  },
+  {
+    id: "ottos-irresistible-dance",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  { id: "holy-aura", recipient: "selected", targeting: { affinity: "ally" } },
+  {
+    id: "sanctuary",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "conjure-minor-elementals", recipient: "caster" },
 ] as const satisfies ReadonlyArray<StandingSpellExpectation>;
 
 describe("PROSE sweep — standing buff spells carry while-active grants", () => {

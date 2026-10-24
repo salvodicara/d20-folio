@@ -66,6 +66,8 @@ export type RuleTarget =
   /** A speed equal to (1) or twice (2) the walking speed; outranks a fixed number. */
   | `speed:${MoveMode}:walking`
   | "speed:multiplier"
+  /** The strongest slowing factor below 1 (Slow: half Speed). */
+  | "speed:reduction"
   | "speed:floor"
   | "speed:cap"
   | `prof:save:${string}`
@@ -262,7 +264,11 @@ export function compileGrant(grant: Grant): Rule[] | null {
           ];
     }
     case "speed-multiplier":
-      return [{ op: "max", target: "speed:multiplier", value: grant.factor }];
+      // A factor below 1 slows (Slow halves): the strongest slow and the strongest
+      // haste both apply, so Haste and Slow together cancel out.
+      return grant.factor < 1
+        ? [{ op: "min", target: "speed:reduction", value: Math.max(0, grant.factor) }]
+        : [{ op: "max", target: "speed:multiplier", value: grant.factor }];
     case "speed-floor":
       return [{ op: "max", target: "speed:floor", value: grant.minFt }];
     case "speed-cap":

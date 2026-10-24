@@ -72,7 +72,7 @@ describe("generic rules grammar — movement", () => {
     expect(out.climbSpeed).toBeNull();
   });
 
-  it("caps at the lowest cap and floors at the highest floor, never below 1×", () => {
+  it("caps at the lowest cap, floors at the highest floor, and a factor below 1 slows", () => {
     const out = evaluateGrants([
       source("cap-a", [{ type: "speed-cap", maxFt: 20 }]),
       source("cap-b", [{ type: "speed-cap", maxFt: 10 }]),
@@ -81,7 +81,7 @@ describe("generic rules grammar — movement", () => {
     ]);
     expect(out.speedCapFt).toBe(10);
     expect(out.speedFloorFt).toBe(30);
-    expect(out.speedMultiplier).toBe(1);
+    expect(out.speedMultiplier).toBe(0.5);
   });
 
   it("adds a conditional bonus only when its fact holds", () => {

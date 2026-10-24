@@ -518,6 +518,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // SRD 5.2.1: "That creature revives with 1 Hit Point."
+    revives: { hitPoints: 1 },
     source: "SRD",
   },
   {
@@ -553,6 +555,23 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     targeting: { affinity: "enemy", maxTargets: 6 },
+    // SRD 5.2.1: "An affected target's Speed is halved, it takes a -2 penalty to AC
+    // and Dexterity saving throws, and it can't take Reactions." The action economy
+    // and the somatic-failure chance are the note.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-slow",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [
+          { type: "ac-bonus", amount: -2 },
+          { type: "save-bonus", amount: -2, appliesToSave: "DEX" },
+          { type: "speed-multiplier", factor: 0.5 },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {

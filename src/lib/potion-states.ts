@@ -10,6 +10,7 @@
  * end-on-act seams see its lit key, per physical copy.
  */
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { spells } from "@/data/spells";
 import type { Grant } from "@/lib/grant-schema";
 import type { GrantSource } from "@/lib/grants";
 
@@ -69,6 +70,22 @@ function activatedItemState(authoredKey: string): WhileActive | undefined {
   return activatedItemStates.get(authoredKey);
 }
 
+let spellEndOnActStates: ReadonlyMap<string, WhileActive> | undefined;
+
+/** A lit spell state whose duration ends early on an act (Sanctuary), by its key. */
+function spellEndOnActState(key: string): WhileActive | undefined {
+  spellEndOnActStates ??= new Map(
+    spells.flatMap((spell) =>
+      (spell.grants ?? []).flatMap((grant) =>
+        grant.type === "while-active" && grant.duration && "endsEarlyOn" in grant.duration
+          ? [[grant.activeKey, grant] as const]
+          : []
+      )
+    )
+  );
+  return spellEndOnActStates.get(key);
+}
+
 /** The state behind a lit key: a drunk potion's, or an activated item's (per copy). */
 function stateGrantOf(key: string): WhileActive | undefined {
   const itemId = potionItemOf(key);
@@ -98,13 +115,14 @@ export function potionStatesGiving(
   return [...activeKeys].filter((key) => stateConditionsOf(key).includes(condition));
 }
 
-/** The lit potion state keys whose duration ends early on `act` ("attack-roll"). */
+/** The lit potion, item or spell state keys whose duration ends early on `act`
+ *  ("attack-roll"): Potion of Invisibility, Sanctuary. */
 export function potionStatesEndingOn(
   activeKeys: Iterable<string>,
   act: string
 ): string[] {
   return [...activeKeys].filter((key) => {
-    const duration = stateGrantOf(key)?.duration;
+    const duration = (stateGrantOf(key) ?? spellEndOnActState(key))?.duration;
     return (
       duration !== undefined &&
       "endsEarlyOn" in duration &&
