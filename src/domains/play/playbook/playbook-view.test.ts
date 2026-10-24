@@ -2,8 +2,9 @@
  * The playbook as board 01 shows it: one line per step (the action's name in bold,
  * then its target or condition) and one "why" sentence with numbers, two reasons at
  * most joined with "e"/"and". Cases follow the approved Italian examples ("**Fiamma
- * sacra** sul nemico più vicino." / "In media 9 danni contro i 6,5 della Mazza, e
- * arriva a 18 m."; "Sei a 31 su 38: un **riposo breve** ti porterebbe al massimo.").
+ * sacra** sul nemico più vicino." / "In media 9 danni (Mazza: 6,5) e arriva a 18 m.";
+ * "Sei a 31 su 38: un **riposo breve** ti porterebbe al massimo."); a cost or a
+ * requirement follows a ";" (Direction review of #434).
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
@@ -50,7 +51,7 @@ describe("playbookView", () => {
       before: "",
       strong: "Fiamma Sacra",
       after: " sul nemico più vicino.",
-      why: "In media 9 danni, contro 6,5 con Mazza e arriva a 18 metri.",
+      why: "In media 9 danni (Mazza: 6,5) e arriva a 18 m.",
     });
   });
 
@@ -84,14 +85,23 @@ describe("playbookView", () => {
       "ritual-no-slot"
     );
     expect(line?.strong).toBe("Individuazione del Magico");
-    expect(line?.why).toMatch(/^Ci mette 10 minuti in più, ma non spende uno slot/);
+    expect(line?.why).toBe(
+      "Ci mette 10 minuti in più ma non spende uno slot; richiede Concentrazione."
+    );
+  });
+
+  it("healing a downed ally: who gets up, then what you spend", () => {
+    const line = find(playbookView(cleric(), "it").steps, "heal-ally-down");
+    expect(line?.why).toBe(
+      "L'alleato a 0 Punti Ferita si rialza; spendi uno slot di 1° livello."
+    );
   });
 
   it("one use left reads singular in Italian (Action Surge)", () => {
     const doc = buildDevScenario("scn-champion-6");
     if (!doc) throw new Error("scenario missing");
     const line = find(playbookView(doc, "it").steps, "burst-tough-foe");
-    expect(line?.why).toBe("Ti dà un'azione in più e ti resta 1 uso su 1.");
+    expect(line?.why).toBe("Ti dà un'azione in più; ti resta 1 uso su 1.");
   });
 
   it("English: Sneak Attack's condition rides the attack's why", () => {

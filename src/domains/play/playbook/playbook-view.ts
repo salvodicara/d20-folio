@@ -68,10 +68,31 @@ function number(value: number, locale: Locale): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value);
 }
 
-function sentence(clauses: string[], locale: Locale): string | null {
-  const picked = clauses.slice(0, 2);
-  if (picked.length === 0) return null;
-  const joined = picked.join(locale === "it" ? " e " : " and ");
+/** What a reason costs or needs reads as its own clause, after ";" (board 01). */
+const COST_KEYS = new Set([
+  "costs-slot",
+  "one-concentration",
+  "limited-use",
+  "recharges",
+  "uses-item",
+  "no-uses-left",
+  "no-slot-left",
+]);
+
+function sentence(
+  clauses: ReadonlyArray<{ text: string; key: string }>,
+  locale: Locale
+): string | null {
+  const [first, second] = clauses;
+  if (!first) return null;
+  const joiner = !second
+    ? ""
+    : COST_KEYS.has(second.key)
+      ? "; "
+      : locale === "it"
+        ? " e "
+        : " and ";
+  const joined = `${first.text}${joiner}${second?.text ?? ""}`;
   return `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`;
 }
 
@@ -93,8 +114,11 @@ function reach(facts: Facts, id: string): string | null {
   const range = action.summary.weaponRange;
   if (range?.kind === "ranged") return localeDistance(range.nearFt, facts.locale);
   if (action.source !== "spell") return null;
-  const printed = localizeAction(action, facts.locale).summary.range;
-  return printed && /\d/.test(printed) ? printed : null;
+  // The short form the action table uses ("18 m"), from the printed feet.
+  const feet = /(\d+)\s*(feet|foot|ft)/i.exec(
+    localizeAction(action, "en").summary.range ?? ""
+  );
+  return feet ? localeDistance(Number(feet[1]), facts.locale) : null;
 }
 
 function averageOf(facts: Facts, id: string | undefined, perAction: number): number {
@@ -234,7 +258,13 @@ function whySentence(step: PlaybookStep, facts: Facts): string | null {
   );
   const best = ranked.findIndex((why) => why.key === "best-damage");
   if (best > 0) ranked.unshift(...ranked.splice(best, 1));
-  const clauses = [...new Set(ranked.flatMap((why) => clause(why, step, facts) ?? []))];
+  const seen = new Set<string>();
+  const clauses = ranked.flatMap((why) => {
+    const text = clause(why, step, facts);
+    if (!text || seen.has(text)) return [];
+    seen.add(text);
+    return [{ text, key: why.key }];
+  });
   return sentence(clauses, facts.locale);
 }
 
