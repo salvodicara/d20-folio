@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 
@@ -129,6 +130,66 @@ describe("play log shadow in the store", () => {
     // The removal's undo (its toast) brings the resistance back.
     useUndoStore.getState().undo();
     expect(store().character?.session.sessionDefenses?.resistance).toEqual(["fire"]);
+  });
+
+  it("recorded tracker rolls and a pool top-up reach the log; their undos stay narrow", () => {
+    const doc = {
+      ...makeCharacterDoc(
+        {
+          classId: "monk",
+          level: 3,
+          features: [
+            { srdId: "monk-focus" },
+            {
+              custom: true,
+              title: "Foretelling",
+              emoji: "",
+              source: "Homebrew",
+              tags: [],
+              contentBlocks: [],
+              trackers: [
+                {
+                  id: "foretelling",
+                  label: "Foretelling",
+                  total: "2",
+                  recovery: "long-rest",
+                  recordedRolls: { min: 1, max: 20 },
+                },
+              ],
+              instanceId: customInstanceId("Foretelling"),
+            },
+          ],
+        },
+        { trackers: { "monk-focus": { used: 3 } } }
+      ),
+      id: `shadow-trackers-${Math.random().toString(36).slice(2)}`,
+    };
+    useCharacterStore.setState({
+      character: doc,
+      loading: false,
+      error: null,
+      readonly: false,
+    });
+    store().setTrackerRoll("foretelling", 0, 17);
+    const undoSpend = store().spendTrackerRoll("foretelling", 0);
+    const undoTopUp = store().topUpTracker("monk-focus", "full");
+    expect(store().character?.session.trackers.foretelling).toEqual({
+      used: 1,
+      rolls: [null],
+    });
+    expect(store().character?.session.trackers["monk-focus"]).toBeUndefined();
+    expect(playLogShadowStats(doc.id)).toEqual({
+      entries: 3,
+      checkpoints: 1,
+      mismatches: 0,
+    });
+    undoTopUp?.();
+    undoSpend?.();
+    expect(store().character?.session.trackers["monk-focus"]).toEqual({ used: 3 });
+    expect(store().character?.session.trackers.foretelling).toEqual({
+      used: 0,
+      rolls: [17, null],
+    });
   });
 
   it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {

@@ -21,6 +21,7 @@ import {
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
 import { addSessionDefense, removeSessionDefense } from "./defenses";
+import { setTrackerRoll, spendTrackerRoll, topUpTracker } from "./tracker-rolls";
 import { setCover, type CoverUntil } from "./cover";
 import { setLight } from "./light";
 import { adjustCurrency, type CurrencyDelta } from "./material-cost";
@@ -65,6 +66,9 @@ export type SheetEvent =
   | { kind: "restore-slot"; level: number; pactMagic: boolean }
   | { kind: "spend-tracker"; trackerId: string; amount: number }
   | { kind: "restore-tracker"; trackerId: string; amount: number }
+  | { kind: "set-tracker-roll"; trackerId: string; index: number; value: number | null }
+  | { kind: "spend-tracker-roll"; trackerId: string; index: number }
+  | { kind: "top-up-tracker"; trackerId: string; upTo: number | "full" }
   | { kind: "set-death-saves"; successes: number; failures: number }
   | { kind: "set-exhaustion"; level: number }
   | { kind: "start-fading-penalty"; penaltyId: string }
@@ -153,6 +157,12 @@ export function applySheetEvent(
       return withSession(spendTracker(doc, event.trackerId, event.amount));
     case "restore-tracker":
       return withSession(restoreTracker(doc, event.trackerId, event.amount));
+    case "set-tracker-roll":
+      return withSession(setTrackerRoll(doc, event.trackerId, event.index, event.value));
+    case "spend-tracker-roll":
+      return withSession(spendTrackerRoll(doc, event.trackerId, event.index));
+    case "top-up-tracker":
+      return withSession(topUpTracker(doc, event.trackerId, event.upTo));
     case "set-death-saves":
       return withSession(setDeathSaves(doc, event.successes, event.failures)?.session);
     case "set-exhaustion":
