@@ -164,6 +164,7 @@ export function aggregateCharacterGrants(
             concentration: session.concentration ?? "",
             concentrationConditions: session.concentrationConditions,
             encounterEffects: session.encounterEffects,
+            activeFeatures: session.activeFeatures,
           })
         ),
         // The engine world's standing-fact projections: the exact Aid amount

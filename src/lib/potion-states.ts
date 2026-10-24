@@ -28,6 +28,51 @@ export function potionStateGrant(
   return undefined;
 }
 
+/** The drunk potion behind a `potion:<id>` state key, or null for any other key. */
+function potionItemOf(key: string): string | null {
+  return key.startsWith(POTION_TIMER_PREFIX)
+    ? key.slice(POTION_TIMER_PREFIX.length)
+    : null;
+}
+
+/** The conditions a lit potion state's `state-condition` grants give (Invisibility). */
+function stateConditionsOf(key: string): string[] {
+  const itemId = potionItemOf(key);
+  if (!itemId) return [];
+  return (potionStateGrant(itemId)?.grants ?? []).flatMap((grant) =>
+    grant.type === "state-condition" ? [grant.condition] : []
+  );
+}
+
+/** Every condition the lit potion states give, in key order (duplicates kept once). */
+export function potionStateConditions(activeKeys: Iterable<string>): string[] {
+  return [...new Set([...activeKeys].flatMap(stateConditionsOf))];
+}
+
+/** The lit potion state keys that give `condition` (ending the condition ends them). */
+export function potionStatesGiving(
+  activeKeys: Iterable<string>,
+  condition: string
+): string[] {
+  return [...activeKeys].filter((key) => stateConditionsOf(key).includes(condition));
+}
+
+/** The lit potion state keys whose duration ends early on `act` ("attack-roll"). */
+export function potionStatesEndingOn(
+  activeKeys: Iterable<string>,
+  act: string
+): string[] {
+  return [...activeKeys].filter((key) => {
+    const itemId = potionItemOf(key);
+    const duration = itemId ? potionStateGrant(itemId)?.duration : undefined;
+    return (
+      duration !== undefined &&
+      "endsEarlyOn" in duration &&
+      (duration.endsEarlyOn ?? []).includes(act)
+    );
+  });
+}
+
 /** The lit potion states as grant sources; an unlit potion contributes nothing. */
 export function resolvePotionStateSources(activeKeys: Iterable<string>): GrantSource[] {
   const sources: GrantSource[] = [];

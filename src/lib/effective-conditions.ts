@@ -1,5 +1,6 @@
 import { vitalConditions } from "@/lib/character-vitals";
 import { withImpliedConditions } from "@/lib/condition";
+import { potionStateConditions } from "@/lib/potion-states";
 import type { SessionState } from "@/types/character";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
@@ -20,7 +21,10 @@ export function effectiveSessionConditions(
   session: Pick<
     SessionState,
     "conditions" | "concentrationConditions" | "encounterEffects" | "concentration"
-  > & { readonly world?: unknown }
+  > & {
+    readonly world?: unknown;
+    readonly activeFeatures?: SessionState["activeFeatures"];
+  }
 ): string[] {
   return withImpliedConditions([
     // The manual/base ledger reads through the ONE vitals projection seam
@@ -28,5 +32,7 @@ export function effectiveSessionConditions(
     ...vitalConditions(session),
     ...(session.concentration ? (session.concentrationConditions ?? []) : []),
     ...projectedEncounterConditions(session.encounterEffects),
+    // A lit potion state's own condition (Potion of Invisibility).
+    ...potionStateConditions(session.activeFeatures ?? []),
   ]);
 }
