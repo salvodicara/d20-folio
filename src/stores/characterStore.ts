@@ -36,6 +36,7 @@ import {
 import { takeDamage } from "@/lib/play/damage";
 import { longRestFadeEvents, longRestFades, omitStateKeys } from "@/lib/play/rests";
 import { topUpUsed } from "@/lib/play/tracker-rolls";
+import { prepareStudy } from "@/lib/play/study-command";
 import {
   advanceEffectTimers as advanceEffectTimersOf,
   expiredBoundaries,
@@ -252,6 +253,12 @@ interface CharacterState {
    * changed nothing. The edit path for surfaces that offer an undo.
    */
   editCharacter: (doc: CharacterDoc) => (() => boolean) | null;
+  /**
+   * Study one copy of a manual or tome: its ability score rises in the stored sheet
+   * and the copy spends its one use, turning nonmagical, so it can't be studied
+   * twice. One undo puts both back; null when the copy can't be studied.
+   */
+  studyItem: (instanceId: string) => (() => boolean) | null;
   /** Project campaign-owned effects without adding them to character persistence. */
   setEncounterEffects: (
     characterId: string | null,
@@ -1179,6 +1186,28 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
   // The normal owner-edit load path — always clears read-only (so re-entering a
   // sheet you own after viewing someone else's is fully editable again).
+  studyItem: (instanceId) => {
+    if (get().readonly) return null;
+    const character = get().character;
+    if (!character) return null;
+    const study = prepareStudy(character, instanceId, `study-${crypto.randomUUID()}`);
+    if (!study) return null;
+    const seal = beginWholeStateUndo();
+    const { item, binding, operation } = study.spend;
+    if (get().applyItemResourceOperation(item, binding, operation).status !== "applied")
+      return null;
+    const spent = get().character;
+    if (!spent) return null;
+    set({
+      character: {
+        ...spent,
+        character: { ...spent.character, abilityScores: study.scores },
+      },
+    });
+    flushParentPersistence(get);
+    return seal?.() ?? null;
+  },
+
   editCharacter: (doc) => {
     const seal = beginWholeStateUndo();
     get().setCharacter(doc);
