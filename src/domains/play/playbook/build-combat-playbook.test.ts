@@ -262,6 +262,23 @@ describe("Cleric", () => {
     });
   });
 
+  it("a utility Concentration spell (Detect Magic) never opens the fight; Bless does", () => {
+    const doc = cleric(5, {
+      spells: [
+        { srdId: "sacred-flame" },
+        { srdId: "healing-word", prepared: true },
+        { srdId: "detect-magic", prepared: true },
+        { srdId: "bless", prepared: true },
+      ],
+    });
+    const opener = step(
+      buildCombatPlaybook(doc, { round: 1 }),
+      "action:concentration-opener"
+    );
+    expect(optionIds(opener)).toContain("spell-bless");
+    expect(optionIds(opener)).not.toContain("spell-detect-magic");
+  });
+
   it("level 5: an ally at 0 HP beats the opener", () => {
     const pb = buildCombatPlaybook(cleric(5), { round: 1, allyDown: true });
     expect(pick(pb, "bonus")).toBe("spell-healing-word");
