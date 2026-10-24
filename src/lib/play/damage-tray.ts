@@ -22,7 +22,8 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { AttackOutcome } from "@/types/combat-log";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
-import type { CreatureType } from "@/data/types";
+import type { CreatureType, SpellHitPointThreshold, SpellRevive } from "@/data/types";
+import { hitPointThresholdOutcome, revivalHitPoints } from "@/lib/play/spell-outcomes";
 
 export type { AttackOutcome } from "@/types/combat-log";
 /** Foundry dnd5e's chat card order: Hit · Miss · Critical. */
@@ -58,8 +59,22 @@ export interface DamageTrayPlan {
    *  Scorching Ray's rays): every row has its own rolled total instead of one shared
    *  total. Only when the instances are split across more than one target. */
   perTarget?: true;
+  /** The spell returns a dead target to life with these Hit Points (Revivify: 1). */
+  revive?: SpellRevive;
+  /** The target's current Hit Points pick what happens (Power Word Kill / Stun). */
+  hitPointThreshold?: SpellHitPointThreshold;
   targets: string[];
 }
+
+/** What the spell does to this target from its own Hit Points. `branch` is null when
+ *  the viewer can't see them: the DM decides. "otherwise" is the rest of the spell
+ *  (Power Word Kill's damage); "speed-zero" is Power Word Stun's own otherwise. */
+export type TrayOutcome =
+  | { kind: "revive"; hitPoints: number | null }
+  | {
+      kind: "threshold";
+      branch: "dies" | "condition" | "otherwise" | "speed-zero" | null;
+    };
 
 /**
  * Extra damage the weapon deals only when the attack's d20 shows a 20 (Sword of
@@ -186,6 +201,10 @@ export function damageTrayPlan(
           },
         }
       : {}),
+    ...(spec.revives ? { revive: { ...spec.revives } } : {}),
+    ...(spec.hitPointThreshold
+      ? { hitPointThreshold: { ...spec.hitPointThreshold } }
+      : {}),
     targets: planTargets,
   };
 }
@@ -252,6 +271,8 @@ export interface TrayRow {
   /** The target's own defense against each on-a-20 rider type that differs from
    *  the primary damage type (Sword of Life Stealing's Necrotic on a Slashing hit). */
   onRoll20Defense?: Partial<Record<DamageType, TargetDefense>>;
+  /** What the spell does to this target from its own Hit Points, when it hangs on them. */
+  outcome?: TrayOutcome;
 }
 
 /** Whether an on-a-20 rider reaches a target of this type. An unknown type meets
@@ -377,11 +398,36 @@ export function factsMultiplier(
   return TRAY_MULTIPLIERS.find((m) => FACTOR[m] === product) ?? "1";
 }
 
+function trayOutcome(
+  plan: DamageTrayPlan,
+  hp: { current: number; max: number } | undefined
+): { outcome: TrayOutcome } | Record<string, never> {
+  if (plan.revive) {
+    return {
+      outcome: {
+        kind: "revive",
+        hitPoints: hp ? revivalHitPoints(plan.revive, hp.max) : null,
+      },
+    };
+  }
+  const threshold = plan.hitPointThreshold;
+  if (!threshold) return {};
+  if (!hp) return { outcome: { kind: "threshold", branch: null } };
+  const branch = hitPointThresholdOutcome(threshold, hp.current);
+  return {
+    outcome: {
+      kind: "threshold",
+      branch: branch === "otherwise" ? (threshold.otherwise ?? "otherwise") : branch,
+    },
+  };
+}
+
 export function initialTrayRow(
   plan: DamageTrayPlan,
   targetId: string,
   defenses?: DamageDefenses,
-  creatureType?: CreatureType
+  creatureType?: CreatureType,
+  hp?: { current: number; max: number }
 ): TrayRow {
   const defense =
     plan.effect === "damage" ? targetDefense(defenses, plan.damageType) : null;
@@ -402,6 +448,7 @@ export function initialTrayRow(
     ...facts,
     ...(creatureType ? { creatureType } : {}),
     ...(Object.keys(onRoll20Defense).length > 0 ? { onRoll20Defense } : {}),
+    ...trayOutcome(plan, hp),
     multiplier: factsMultiplier(facts, plan),
     conditions:
       plan.conditions && !plan.conditions.optIn
