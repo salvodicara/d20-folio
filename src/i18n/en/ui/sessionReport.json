@@ -23,7 +23,6 @@
     "tempHp": "{{target}} gains {{amount}} temporary HP",
     "maxHpReduced": "{{target}}'s Hit Point maximum is reduced by {{reduction}}",
     "maxHpRestored": "{{target}}'s Hit Point maximum returns to normal",
-    "locale": "en",
     "statChange": {
       "ac": "{{target}}: AC {{from}} → {{to}}",
       "acSet": "{{target}}: AC {{to}}",

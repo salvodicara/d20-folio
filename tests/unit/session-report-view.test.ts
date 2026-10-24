@@ -59,6 +59,7 @@ const names: SessionReportNames = {
   action: (text) => ("custom" in text ? text.custom : "?"),
   spell: (ref) => (ref === "bless" ? "Bless" : ref),
   source: (id) => (id === "rage" ? "Rage" : id),
+  locale: "en",
 };
 
 async function render(lng: "en" | "it"): Promise<string> {
@@ -76,7 +77,7 @@ async function render(lng: "en" | "it"): Promise<string> {
     report,
     i18n.t("sessionReport.title", { date: "2026-10-08" }),
     (k, a) => i18n.t(k, a),
-    names
+    { ...names, locale: lng }
   );
 }
 
@@ -279,10 +280,13 @@ describe("localizePlayEvent: a monster's stat change", () => {
     expect(localizePlayEvent(slowed, en_, who, names)).toBe(
       "Goblin: Speed 30 ft → 20 ft"
     );
-    expect(localizePlayEvent(slowed, it, who, names)).toBe("Goblin: Velocità 9 m → 6 m");
+    const itNames: SessionReportNames = { ...names, locale: "it" };
+    expect(localizePlayEvent(slowed, it, who, itNames)).toBe(
+      "Goblin: Velocità 9 m → 6 m"
+    );
     expect(localizePlayEvent(set, en_, who, names)).toBe("Goblin: Speed 25 ft");
     // Italian never shows feet (owner rule: IT in metres), decimals with a comma.
-    expect(localizePlayEvent(set, it, who, names)).toBe("Goblin: Velocità 7,5 m");
+    expect(localizePlayEvent(set, it, who, itNames)).toBe("Goblin: Velocità 7,5 m");
   });
 
   it("a kind or stat from a newer app version reads as a neutral line, never blank", async () => {

@@ -6,6 +6,7 @@
  */
 
 import type { LocText } from "@/lib/loc-text";
+import type { Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import type { PlayEvent, ReportSection, SessionEntry } from "@/lib/session-log";
 import type { ConcentrationRef } from "@/types/ids";
@@ -20,6 +21,8 @@ export interface SessionReportNames {
   spell(ref: ConcentrationRef): string;
   /** A feature/spell/item id's display name (a status's source); the id when unknown. */
   source?(sourceId: string): string;
+  /** The report's language: a speed stored in feet reads in its unit (IT: metres). */
+  locale: Locale;
 }
 
 /** The results the report can say; another stored value is left out of the line. */
@@ -138,7 +141,7 @@ export function localizePlayEvent(
       if (!KNOWN_STATS.has(event.stat)) break;
       // Speeds are stored in feet and read in the report language's unit (IT: metres).
       const value = (n: number): string | number =>
-        event.stat === "speed" ? localeDistance(n, t("sessionReport.locale")) : n;
+        event.stat === "speed" ? localeDistance(n, names.locale) : n;
       // No value before (a hand-typed monster's unknown speed): only the new one.
       return event.from === undefined
         ? t(`sessionReport.statChange.${event.stat}Set`, {
