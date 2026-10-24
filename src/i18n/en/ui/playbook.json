@@ -1,0 +1,84 @@
+{
+  "playbook": {
+    "line": {
+      "position": "**Move** up to {{speed}}, if you need to get closer.",
+      "positionRange": "**Move** up to {{speed}}, keeping your distance.",
+      "healAllyDown": "**{{action}}** on an ally who is down.",
+      "selfHealBloodied": "**{{action}}** when you are Bloodied.",
+      "areaWhenGrouped": "**{{action}}** when {{min}} or more enemies are close together.",
+      "burstToughFoe": "**{{action}}** against a dangerous enemy.",
+      "controlToughFoe": "**{{action}}** on the most dangerous enemy.",
+      "concentrationOpener": "**{{action}}** at the start of the fight.",
+      "defaultAttack": "**{{action}}** on the nearest enemy.",
+      "setUpAdvantage": "**{{action}}** if you are not moving this turn.",
+      "disengageWhenAdjacent": "**{{action}}** if an enemy is next to you.",
+      "hideWhenPossible": "**{{action}}** if you can get out of sight.",
+      "dashWhenFar": "**{{action}}** if the target is far away.",
+      "reactionDefense": {
+        "hitByAttack": "**{{action}}** when an attack hits you.",
+        "hitOrMagicMissileTarget": "**{{action}}** when an attack hits you or a Magic Missile targets you.",
+        "takeDamage": "**{{action}}** when you take damage.",
+        "other": "**{{action}}** when it is triggered."
+      },
+      "opportunityAttack": "**{{action}}** when an enemy leaves your reach.",
+      "recoverHp": "**{{action}}** to get Hit Points back.",
+      "ritualNoSlot": "**{{action}}** as a ritual.",
+      "check": {
+        "search": "**{{action}}** to find what is hidden.",
+        "study": "**{{action}}** to remember or work something out.",
+        "influence": "**{{action}}** to win someone over.",
+        "hide": "**{{action}}** to stay out of sight."
+      },
+      "utilityCantrip": "**{{action}}** when it can help.",
+      "shortRest": {
+        "toFull": "You are at {{current}} of {{max}}: a **Short Rest** would bring you to full.",
+        "some": "You are at {{current}} of {{max}}: a **Short Rest** gives back about {{heal}} Hit Points.",
+        "uses": "A **Short Rest** gives back what you used."
+      }
+    },
+    "why": {
+      "bestDamage": "on average {{average}} damage",
+      "bestDamageVs": "on average {{average}} damage, against {{otherAverage}} with {{other}}",
+      "cantripNoCost": "it doesn't use a spell slot",
+      "worksAtRange": "it works from a distance",
+      "reaches": "it reaches {{range}}",
+      "extraAttack": "you attack {{attacks}} times with each Attack action",
+      "weaponMastery": "its mastery adds {{mastery}}",
+      "sneakAttack": "{{dice}} more Sneak Attack with Advantage or an ally next to the target",
+      "areaHitsMany": "it hits several enemies at once",
+      "extraAction": "it gives you one more action",
+      "recharges": {
+        "short-rest": "it comes back after a Short Rest",
+        "long-rest": "it comes back after a Long Rest",
+        "dawn": "it comes back at dawn",
+        "other": "it comes back with time",
+        "short-or-long-rest": "it comes back after a Short or Long Rest"
+      },
+      "costsSlot": "it uses a level {{level}} spell slot",
+      "revivesAlly": "an ally at 0 Hit Points gets back up",
+      "selfHeal": "you get back {{amount}} Hit Points",
+      "keepsActionFree": "it leaves your action free",
+      "oneConcentration": "it needs your Concentration",
+      "controlsFoe": "it can take that enemy out of the fight",
+      "advantageNextAttack": "your next attack has Advantage",
+      "bonusMobility": "it only takes a Bonus Action",
+      "reactionDefense": "it protects you when you are attacked",
+      "opportunityAttack": "you hit it as it leaves",
+      "alreadyConcentrating": "you are already concentrating on another spell",
+      "noUsesLeft": "you have no uses left",
+      "noSlotLeft": "you have no spell slots left for it",
+      "cannotAct": "you are Incapacitated",
+      "playerPinned": "you put it first",
+      "ritualNoSlot": "it takes {{minutes}} more minutes, but doesn't use a spell slot",
+      "explorationCheck": "it is an ability check and costs nothing",
+      "cheapestFirst": "the cheapest way first",
+      "usesItem": "it uses up one item",
+      "limitedUse_one": "you have {{count}} of {{total}} uses left",
+      "limitedUse_other": "you have {{count}} of {{total}} uses left",
+      "recoversOnShortRest_one": "{{count}} of {{total}} uses comes back",
+      "recoversOnShortRest_other": "{{count}} of {{total}} uses come back",
+      "hitDiceHeal_one": "you have {{count}} of {{total}} Hit Point Dice left",
+      "hitDiceHeal_other": "you have {{count}} of {{total}} Hit Point Dice left"
+    }
+  }
+}
