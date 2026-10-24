@@ -78,7 +78,8 @@
       "recoversOnShortRest_one": "torna {{count}} uso su {{total}}",
       "recoversOnShortRest_other": "tornano {{count}} usi su {{total}}",
       "hitDiceHeal_one": "ti resta {{count}} Dado Vita su {{total}}",
-      "hitDiceHeal_other": "ti restano {{count}} Dadi Vita su {{total}}"
+      "hitDiceHeal_other": "ti restano {{count}} Dadi Vita su {{total}}",
+      "and": " e "
     }
   }
 }

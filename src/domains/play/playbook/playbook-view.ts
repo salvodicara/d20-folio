@@ -85,13 +85,7 @@ function sentence(
 ): string | null {
   const [first, second] = clauses;
   if (!first) return null;
-  const joiner = !second
-    ? ""
-    : COST_KEYS.has(second.key)
-      ? "; "
-      : locale === "it"
-        ? " e "
-        : " and ";
+  const joiner = !second ? "" : COST_KEYS.has(second.key) ? "; " : t("why.and", locale);
   const joined = `${first.text}${joiner}${second?.text ?? ""}`;
   return `${joined.charAt(0).toUpperCase()}${joined.slice(1)}.`;
 }

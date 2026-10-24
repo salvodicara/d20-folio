@@ -78,7 +78,8 @@
       "recoversOnShortRest_one": "{{count}} of {{total}} uses comes back",
       "recoversOnShortRest_other": "{{count}} of {{total}} uses come back",
       "hitDiceHeal_one": "you have {{count}} of {{total}} Hit Point Dice left",
-      "hitDiceHeal_other": "you have {{count}} of {{total}} Hit Point Dice left"
+      "hitDiceHeal_other": "you have {{count}} of {{total}} Hit Point Dice left",
+      "and": " and "
     }
   }
 }

@@ -119,9 +119,8 @@ describe("playbookView", () => {
       for (const line of playbookView(cleric(), locale, { mode: "exploration" }).steps) {
         if (!line.why) continue;
         expect(line.why.match(/\./g)?.length ?? 0, line.why).toBeLessThanOrEqual(2);
-        expect(
-          line.why.split(locale === "it" ? " e " : " and ").length
-        ).toBeLessThanOrEqual(3);
+        // At most two reasons: one joiner (" e " / " and " / "; ").
+        expect(line.why.split(/; | e | and /).length, line.why).toBeLessThanOrEqual(3);
       }
     }
   });
