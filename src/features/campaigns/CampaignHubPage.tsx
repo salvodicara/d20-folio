@@ -20,6 +20,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import "./encounter.css";
+import { useCampaignBestiaryWarmup } from "@/app/bestiary-warmup";
 import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
 import { AlertTriangle, Coins, Crown, Users } from "lucide-react";
@@ -130,6 +131,7 @@ function useCampaignBackdrop(
 
 export function CampaignHubPage() {
   const { campaignId } = useParams();
+  useCampaignBestiaryWarmup();
   // Personal is the invisible solo world-layer, never a campaign — redirect it
   // (and any missing id) back to the realm list.
   if (!campaignId || campaignId === PERSONAL_CAMPAIGN_ID) {

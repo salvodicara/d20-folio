@@ -76,6 +76,24 @@ function resolveGitSha(): string {
 }
 
 // https://vite.dev/config/
+/** Italian text (public or pack, catalogue or UI), and English bestiary names. */
+const LAZY_DATA_MODULE = [
+  /[\\/]i18n[\\/]it[\\/]/,
+  /[\\/]i18n[\\/]en[\\/]srd[\\/]monsters(\.json$|[\\/])/,
+];
+
+/** A chunk made only of lazy data (see `chunkFileNames`), or the bestiary corpus. */
+export function isLazyDataChunk(chunk: {
+  name: string;
+  moduleIds: readonly string[];
+}): boolean {
+  if (chunk.name === "srd-monsters") return true;
+  return (
+    chunk.moduleIds.length > 0 &&
+    chunk.moduleIds.every((id) => LAZY_DATA_MODULE.some((re) => re.test(id)))
+  );
+}
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkgVersion),
@@ -194,6 +212,10 @@ export default defineConfig({
           // Item plates follow the bestiary rule: only an opened leaf pays for
           // its illustration; the visited object then remains available offline.
           "**/assets/items/**/*.webp",
+          // One language's text and the bestiary (see `chunkFileNames`): cached on
+          // first use by the "lazy-data" route, so an Italian player's first visit
+          // caches the Italian shards it loads at startup.
+          "**/assets/lazy/**",
         ],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024, // 4 MiB — bundle is ~2.1 MiB
         // The public SRD catalogue (`/srd/v1/*.json`, `pnpm srd:catalogue`) is data
@@ -201,6 +223,20 @@ export default defineConfig({
         // the app shell.
         navigateFallbackDenylist: [/^\/srd\//],
         runtimeCaching: [
+          {
+            // The lazy-data chunks (precache-excluded above). Hashed file names, so
+            // CacheFirst never serves stale code: a new build asks for new names.
+            urlPattern: /\/assets\/lazy\/.*\.js$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "lazy-data-cache",
+              expiration: {
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 60 * 24 * 180,
+                purgeOnQuotaError: true,
+              },
+            },
+          },
           {
             urlPattern: /\/assets\/monsters\/.*\.webp$/,
             handler: "CacheFirst",
@@ -394,6 +430,17 @@ export default defineConfig({
           return isMonsterPortrait
             ? "assets/monsters/[name]-[hash][extname]"
             : "assets/[name]-[hash][extname]";
+        },
+        // Data a player only needs in one language, or only with a bestiary, lives
+        // under `assets/lazy/`: the Italian catalogue and UI shards (an English
+        // player never loads them), the bestiary corpus and its English names. The
+        // service worker caches that folder on use instead of precaching it (see
+        // `globIgnores` and the "lazy-data" route), and the cockpit warms the
+        // bestiary for a character that has forms, a familiar or summons.
+        chunkFileNames(chunk) {
+          return isLazyDataChunk(chunk)
+            ? "assets/lazy/[name]-[hash].js"
+            : "assets/[name]-[hash].js";
         },
         // Rolldown (Vite 8's bundler) requires manualChunks as a function.
         // Pattern: bucket modules by their pathname; everything else falls

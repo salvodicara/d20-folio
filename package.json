@@ -36,6 +36,7 @@
     "test:e2e": "playwright test --project=chromium",
     "test:e2e:visual": "VISUAL=1 playwright test --project=chromium visual",
     "test:e2e:all": "playwright test",
+    "test:e2e:offline": "playwright test --config playwright.offline.config.ts",
     "test:e2e:all:visual": "VISUAL=1 playwright test visual",
     "visual:review": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; playwright test --config=playwright.visual.config.ts tests/visual/curated.spec.ts \"$@\"' --",
     "visual:motion": "sh -c 'if [ \"$1\" = \"--\" ]; then shift; fi; playwright test --config=playwright.visual.config.ts tests/visual/motion.spec.ts \"$@\"' --",

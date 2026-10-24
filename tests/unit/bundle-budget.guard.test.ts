@@ -717,6 +717,27 @@ describe("bundle budget — eager entry + precache ceilings (P3)", () => {
     expect(sw, "html2canvas needs a runtime-cache route").toMatch(/html2canvas/);
   });
 
+  // 2026-10-24: one language's text and the bestiary moved out of the install
+  // (vite.config `assets/lazy/`, ~2.7 MiB): an Italian player's first visit caches
+  // the Italian shards it loads at startup, the cockpit warms the bestiary for a
+  // character with forms, a familiar or summons. Neither may creep back in.
+  it("keeps Italian text and the bestiary out of the precache, cached on first use", () => {
+    if (!haveDist) return;
+    const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
+    const urls = [...sw.matchAll(/\burl:\s*"([^"]+)"/g)].map((m) => m[1] ?? "");
+    expect(urls.filter((u) => u.includes("/lazy/"))).toEqual([]);
+    expect(sw, "the lazy data needs a runtime-cache route").toMatch(/lazy-data-cache/);
+    const lazy = readdirSync(resolve(ASSETS, "lazy"));
+    expect(lazy.some((f) => f.startsWith("srd-monsters-"))).toBe(true);
+    // Italian-only words (a spell, a monster) never sit in a precached chunk.
+    const leaks = urls
+      .filter((u) => u.endsWith(".js"))
+      .filter((u) =>
+        /Palla di Fuoco|Allosauro/.test(readFileSync(resolve(DIST, u), "utf8"))
+      );
+    expect(leaks, "Italian text entered the precache outside assets/lazy/").toEqual([]);
+  });
+
   it("PWA precache total is within the ceiling", () => {
     if (!haveDist) return;
     // The generated SW embeds the precache manifest as `[{url, revision}, ...]`.

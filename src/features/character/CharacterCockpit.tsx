@@ -34,6 +34,7 @@ import { useUndoRedoShortcut } from "@/hooks/useUndoRedoShortcut";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { useLazySrdKind } from "@/hooks/useLazySrdKind";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useBestiaryWarmup } from "@/app/bestiary-warmup";
 import { useUIStore } from "@/stores/uiStore";
 import { Icon } from "@/components/ui";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ export function CharacterCockpit() {
   // subscription — never a fork.
   useCharacterSubscription(characterId);
   useSessionLogPlayerRecorder(characterId);
+  useBestiaryWarmup();
   return <CockpitView />;
 }
 
