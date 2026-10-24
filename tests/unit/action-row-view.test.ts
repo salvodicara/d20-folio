@@ -8,7 +8,11 @@
 import { describe, expect, it } from "vitest";
 
 import { actionSaveDc, resolveActions } from "@/lib/smart-tracker";
-import { actionGroup, actionRowFacts } from "@/lib/views/action-row-view";
+import {
+  actionFilterCounts,
+  actionGroup,
+  actionRowFacts,
+} from "@/lib/views/action-row-view";
 import { localizeAction } from "@/lib/views/combat-action-view";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -125,6 +129,50 @@ describe("the row's save DC, with where it comes from", () => {
     expect(actionRowFacts(doc, action(doc, "thunderwave"), new Set()).saveDc).toEqual({
       total: 17,
       parts: null,
+    });
+  });
+});
+
+/**
+ * The actions table's filter chips (direction 2026-10-23, Play list row 12): Tutto ·
+ * Attacchi · Azione · Bonus · Reazione · Altro · Uso limitato, each with its count. An
+ * attack is an action that rolls to hit (the damage tray's rule); a limited use is
+ * one with counted uses, a resource pool, or a spell slot to pay.
+ */
+describe("the filter chips", () => {
+  it("each row says whether it is an attack and whether its use is limited", () => {
+    const doc = wizard();
+    const facts = (id: string) => actionRowFacts(doc, action(doc, id), new Set());
+    expect(facts("fire-bolt")).toMatchObject({ attack: true, limitedUse: false });
+    expect(facts("magic-missile")).toMatchObject({ attack: false, limitedUse: true });
+    expect(facts("thunderwave")).toMatchObject({ attack: false, limitedUse: true });
+  });
+
+  it("count every chip from the rows", () => {
+    const doc = wizard();
+    const rows = ["fire-bolt", "magic-missile", "thunderwave", "detect-magic"].map((id) =>
+      actionRowFacts(doc, action(doc, id), new Set())
+    );
+    expect(actionFilterCounts(rows)).toEqual({
+      all: 4,
+      attacks: 1,
+      actions: 4,
+      bonus: 0,
+      reactions: 0,
+      other: 0,
+      limited: 3,
+    });
+  });
+
+  it("no rows, every chip at zero", () => {
+    expect(actionFilterCounts([])).toEqual({
+      all: 0,
+      attacks: 0,
+      actions: 0,
+      bonus: 0,
+      reactions: 0,
+      other: 0,
+      limited: 0,
     });
   });
 });
