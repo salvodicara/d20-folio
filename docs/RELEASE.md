@@ -82,6 +82,12 @@ after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml -
 
 ### Migrate before you deploy (ADR-0009)
 
+**Pending for the next deploy (2026-10-24): item resources.** Since #386, 17 catalogue items declare
+item-owned `resources`, so every owned copy needs `scripts/migrate-item-resources.ts` applied before
+the client that reads them ships; otherwise it shows a full counter. Run it through the
+`live-data-migration` skill (snapshot → `--check` dry-run → owner's yes → `--apply --backup <dir>` →
+`--check` green). `deploy.yml` runs its `--check` and refuses to promote while anything is pending.
+
 **State (2026-09-03):** both P1 migrations are applied and `--check`-green on production; the P1 deploy is
 pending. Immediately before that deploy re-run both `--check`; if the identity check reports pending
 changes (the deployed pre-P1 client strips `instanceId`s on autosave), re-apply it — idempotent, same
