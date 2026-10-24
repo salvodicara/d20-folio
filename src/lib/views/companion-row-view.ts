@@ -17,7 +17,15 @@
  */
 
 import type { CharacterDoc, SessionState } from "@/types/character";
-import type { AbilityCode, BestiaryPickRule, CompanionStatBlock } from "@/data/types";
+import type {
+  AbilityCode,
+  BestiaryPickRule,
+  CompanionStatBlock,
+  SrdMagicItemData,
+} from "@/data/types";
+import { getMagicItem } from "@/data/magic-items";
+import { attunementSatisfied } from "@/lib/attunement";
+import { isValidItemInstanceId } from "@/lib/resources";
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import { classEntryLevel, totalLevel } from "@/lib/classes";
@@ -381,38 +389,83 @@ export function buildSummonedMonsterGroups(
   for (const spellId of spellIds) {
     const spell = getSpellById(spellId);
     if (!spell) continue;
-    const pick = spell.bestiaryPick;
-    if (pick) {
-      if (spell.concentration && doc.session.concentration !== spellId) continue;
-      const monsterId = doc.session.companionVariant?.[spellId];
-      groups.push({
-        spellId,
-        options: [],
-        ...(monsterId ? { monsterId } : {}),
-        pick,
-        count: 1,
-        current: [doc.session.companionHp?.[summonInstanceKey(spellId, 1)]?.current],
-      });
-      continue;
-    }
-    const options = spell.summonedMonsters?.options;
-    if (!options?.length) continue;
-    const picked = doc.session.companionVariant?.[spellId];
-    const option = options.find((o) => o.monsterId === picked) ?? options[0];
-    if (!option) continue;
-    const count =
-      doc.session.companionCount?.[spellId] ??
-      summonCount(option.count, spell.level, spell.level, 0);
-    groups.push({
-      spellId,
-      options: options.map((o) => o.monsterId),
-      monsterId: option.monsterId,
-      count,
-      current: Array.from(
-        { length: count },
-        (_, i) => doc.session.companionHp?.[summonInstanceKey(spellId, i + 1)]?.current
-      ),
-    });
+    // A Concentration pick (Gate) exists only while the caster concentrates on it.
+    const concentrating = doc.session.concentration === spellId;
+    if (spell.bestiaryPick && spell.concentration && !concentrating) continue;
+    const group = monsterGroup(doc.session, spellId, spell, spell.level);
+    if (group) groups.push({ spellId, ...group });
+  }
+  return groups;
+}
+
+/** The source-agnostic half of a summoned group, keyed by `groupId`. */
+function monsterGroup(
+  session: SessionState,
+  groupId: string,
+  source: Pick<SrdMagicItemData, "summonedMonsters" | "bestiaryPick">,
+  level: number
+): Omit<SummonedMonsterGroup, "spellId"> | null {
+  const pick = source.bestiaryPick;
+  if (pick) {
+    const monsterId = session.companionVariant?.[groupId];
+    return {
+      options: [],
+      ...(monsterId ? { monsterId } : {}),
+      pick,
+      count: 1,
+      current: [session.companionHp?.[summonInstanceKey(groupId, 1)]?.current],
+    };
+  }
+  const options = source.summonedMonsters?.options;
+  if (!options?.length) return null;
+  const picked = session.companionVariant?.[groupId];
+  const option = options.find((o) => o.monsterId === picked) ?? options[0];
+  if (!option) return null;
+  const count =
+    session.companionCount?.[groupId] ?? summonCount(option.count, level, level, 0);
+  return {
+    options: options.map((o) => o.monsterId),
+    monsterId: option.monsterId,
+    count,
+    current: Array.from(
+      { length: count },
+      (_, i) => session.companionHp?.[summonInstanceKey(groupId, i + 1)]?.current
+    ),
+  };
+}
+
+/** One magic item's group of bestiary creatures (Horn of Valhalla's Berserkers,
+ *  the Iron Flask's prisoner). Same fields as a spell's group; `groupId` is the
+ *  physical copy's key for `companionVariant` / `companionCount` / `companionHp`. */
+export interface ItemSummonGroup extends Omit<SummonedMonsterGroup, "spellId"> {
+  itemId: string;
+  /** `magic-item:<instanceId>` (the grant-source id of the copy), else the item id. */
+  groupId: string;
+}
+
+/**
+ * Every equipped magic item that becomes or calls bestiary creatures (Figurine of
+ * Wondrous Power, Staff of the Python, Horn of Valhalla, Ring of Djinni Summoning,
+ * Efreeti Bottle) or holds one the player picks (Iron Flask). Same gate as the
+ * item's grants: equipped, attuned when it requires it, and still magical. A
+ * cooldown or a random table in the item's text stays the player's to track.
+ * Corpus-free, like {@link buildSummonedMonsterGroups}.
+ */
+export function buildItemSummonGroups(doc: CharacterDoc): ItemSummonGroup[] {
+  const groups: ItemSummonGroup[] = [];
+  const seen = new Set<string>();
+  for (const ref of doc.character.equipment) {
+    if ("custom" in ref || ref.equipped !== true || !attunementSatisfied(ref)) continue;
+    const item = getMagicItem(ref.srdId);
+    if (!item || (!item.summonedMonsters && !item.bestiaryPick)) continue;
+    const instanceId = isValidItemInstanceId(ref.instanceId) ? ref.instanceId : undefined;
+    const state = instanceId ? doc.session.itemResources?.[instanceId] : undefined;
+    if (state && state.disposition !== "magical") continue;
+    const groupId = instanceId ? `magic-item:${instanceId}` : item.id;
+    if (seen.has(groupId)) continue;
+    seen.add(groupId);
+    const group = monsterGroup(doc.session, groupId, item, 0);
+    if (group) groups.push({ itemId: item.id, groupId, ...group });
   }
   return groups;
 }

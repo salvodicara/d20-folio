@@ -15,6 +15,9 @@
     "description": "Mentre indossi questo amuleto, non puoi essere bersaglio di incantesimi di Divinazione né percepito tramite sensori di scrutamento magici, a meno che tu non lo consenta.",
     "name": "Amuleto Anti-Individuazione e Localizzazione"
   },
+  "amulet-of-proof-against-detection-and-location.grants.0": {
+    "description": "Gli incantesimi di Divinazione non possono bersagliarti e i sensori di scrutamento non possono percepirti, a meno che tu non lo permetta"
+  },
   "amulet-of-the-planes": {
     "description": "Mentre indossi questo amuleto, puoi compiere un'azione Magia per nominare un luogo che conosci su un altro piano di esistenza. Poi effettua una prova di Intelligenza (Arcano) con CD 15. Se la prova riesce, lanci Spostamento Planare. Se fallisce, tu e ogni creatura e oggetto entro 4,5 metri da te viaggiate verso una destinazione casuale determinata tirando 1d100 e consultando la tabella seguente. 1d100 Destinazione 01-60 Luogo casuale sul piano che hai nominato 61-70 Luogo casuale su un Piano Interno determinato tirando 1d6: con 1, il Piano dell'Aria; con 2, il Piano della Terra; con 3, il Piano del Fuoco; con 4, il Piano dell'Acqua; con 5, il Reame Fatato; con 6, lo Shadowfell 71-80 Luogo casuale su un Piano Esterno determinato tirando 1d8: con 1, Arborea; con 2, Arcadia; con 3, i Beastlands; con 4, Bytopia; con 5, Elysium; con 6, Mechanus; con 7, il Monte Celestia; con 8, Ysgard 81-90 Luogo casuale su un Piano Esterno determinato tirando 1d8: con 1, l'Abisso; con 2, Acheron; con 3, Carceri; con 4, Gehenna; con 5, Hades; con 6, Limbo; con 7, i Nove Inferi; con 8, Pandemonium 91-00 Luogo casuale sul Piano Astrale",
     "name": "Amuleto dei Piani"
@@ -927,6 +930,9 @@
     "description": "Mentre indossi questo anello, sei immune alla magia che permette ad altre creature di leggere i tuoi pensieri, determinare se stai mentendo, conoscere il tuo allineamento o conoscere il tuo tipo di creatura. Le creature possono comunicare telepaticamente con te solo se lo permetti. Puoi compiere un'azione Magia per rendere l'anello impercettibile finché non compi un'altra azione Magia per renderlo percettibile, finché non rimuovi l'anello, o finché non muori. Se muori mentre indossi l'anello, la tua anima vi entra, a meno che non ospiti già un'anima. Puoi rimanere nell'anello o partire per l'aldilà. Finché la tua anima è nell'anello, puoi comunicare telepaticamente con qualsiasi creatura che lo indossi. Chi lo indossa non può impedire questa comunicazione telepatica.",
     "name": "Anello di Scudo Mentale"
   },
+  "ring-of-mind-shielding.grants.0": {
+    "description": "Immune alla magia che legge i tuoi pensieri, rivela se menti o conosce il tuo allineamento o tipo di creatura"
+  },
   "ring-of-protection": {
     "description": "Ottieni un bonus di +1 alla CA e ai tiri salvezza mentre indossi questo anello.",
     "name": "Anello di Protezione"
@@ -1050,6 +1056,12 @@
   "rope-of-climbing": {
     "description": "Questa corda lunga 18 metri può sostenere fino a circa 1.350 chilogrammi. Mentre tieni in mano un'estremità della corda, puoi compiere un'azione Magia per comandare all'altra estremità della corda di animarsi e muoversi verso una destinazione a tua scelta, fino alla lunghezza della corda lontano da te. Quell'estremità si muove di 3 metri nel tuo turno quando la comandi per la prima volta e di 3 metri all'inizio di ciascuno dei tuoi turni successivi finché non raggiunge la sua destinazione o finché non le dici di fermarsi. Puoi anche dire alla corda di fissarsi saldamente a un oggetto o di staccarsi, di annodarsi o snodarsi, oppure di avvolgersi per il trasporto. Se dici alla corda di annodarsi, grandi nodi appaiono a intervalli di 30 centimetri lungo la corda. Mentre è annodata, la corda si accorcia a una lunghezza di 15 metri e concede Vantaggio alle prove di caratteristica effettuate per arrampicarsi usando la corda. La corda ha CA 20, PF 20, e Immunità ai danni da Veleno e Psichici. Recupera 1 Punto Ferita ogni 5 minuti finché ha almeno 1 Punto Ferita. Se la corda scende a 0 Punti Ferita, viene distrutta.",
     "name": "Corda per Scalare"
+  },
+  "rope-of-climbing.grants.0": {
+    "label": "Corda annodata (Vantaggio alle prove per arrampicarsi)"
+  },
+  "rope-of-climbing.grants.0.grants.0": {
+    "description": "Prove di caratteristica per arrampicarsi usando la corda"
   },
   "rope-of-entanglement": {
     "description": "Questa corda è lunga 9 metri. Mentre tieni in mano un'estremità della corda, puoi compiere un'azione Magia per comandare all'altra estremità di scattare in avanti e irretire una creatura che puoi vedere entro 6 metri da te. Il bersaglio deve riuscire in un tiro salvezza su Destrezza con CD 15 o ottenere la condizione Trattenuto. Puoi rilasciare il bersaglio lasciando andare la tua estremità della corda (facendo avvolgere la corda nello spazio del bersaglio) o usando un'Azione Bonus per ripetere il comando (facendo avvolgere la corda nella tua mano). Un bersaglio Trattenuto dalla corda può compiere un'azione per effettuare, a sua scelta, una prova di Forza (Atletica) con CD 15 o di Destrezza (Acrobazia) con CD 15. Se la prova riesce, il bersaglio non è più Trattenuto dalla corda. Se stai ancora tenendo in mano la corda quando un bersaglio le sfugge, puoi compiere una Reazione per comandare alla corda di avvolgersi nella tua mano; altrimenti, la corda si avvolge nello spazio del bersaglio. La corda ha CA 20, PF 20, e Immunità ai danni da Veleno e Psichici. Recupera 1 Punto Ferita ogni 5 minuti finché ha almeno 1 Punto Ferita. Se la corda scende a 0 Punti Ferita, viene distrutta.",
@@ -1491,6 +1503,18 @@
   "candle-of-invocation": {
     "description": "La magia di questa candela si attiva quando viene accesa, il che richiede un'azione Magia. Dopo aver bruciato per 4 ore, la candela è distrutta. Puoi spegnerla in anticipo per usarla in un secondo momento; sottrai il tempo per cui ha bruciato, in incrementi di 1 minuto, dal suo tempo di combustione totale. Mentre è accesa, la candela emana Luce Fioca in un raggio di 9 metri. Mentre ti trovi entro quella luce, hai Vantaggio alle Prove con D20. Inoltre, un Chierico o un Druido entro la luce può lanciare gli incantesimi di livello 1 che ha preparato senza spendere slot incantesimo. In alternativa, quando accendi la candela per la prima volta, puoi lanciare Portale con essa; così facendo la candela viene distrutta. Il portale creato dall'incantesimo conduce a un particolare Piano Esterno scelto dal DM o determinato tirando sulla tabella seguente. 1d100 Piano Esterno 01–05 Abisso 06–10 Acheronte 11–15 Ade 16–22 Arborea 23–30 Arcadia 31–38 Bytopia 39–43 Carceri 44–51 Elysium 52–56 Gehenna 57–61 Limbo 62–69 Mechanus 70–77 Monte Celestia 78–82 Nove Inferi 83–87 Pandemonium 88–95 Terre Bestiali 96–00 Ysgard",
     "name": "Candela dell'Invocazione"
+  },
+  "candle-of-invocation.grants.0": {
+    "label": "Candela accesa (Vantaggio ai Test del d20 nella sua luce)"
+  },
+  "candle-of-invocation.grants.0.grants.0": {
+    "description": "Prove di caratteristica (nella luce della candela)"
+  },
+  "candle-of-invocation.grants.0.grants.1": {
+    "description": "Tiri salvezza (nella luce della candela)"
+  },
+  "candle-of-invocation.grants.0.grants.2": {
+    "description": "Tiri per colpire (nella luce della candela)"
   },
   "iron-flask": {
     "description": "Mentre tieni in mano questa ampolla di ferro con tappo di ottone, puoi compiere un'azione Magia per prendere di mira una creatura che puoi vedere entro 18 metri da te. Se l'ampolla è vuota e il bersaglio è originario di un piano di esistenza diverso da quello in cui ti trovi, il bersaglio deve superare un tiro salvezza su Saggezza con CD 17, altrimenti resta intrappolato nell'ampolla. Se il bersaglio è già stato intrappolato dall'ampolla in passato, ha Vantaggio al tiro salvezza. Una volta intrappolata, la creatura rimane nell'ampolla finché non viene liberata. L'ampolla può contenere una sola creatura alla volta. Una creatura intrappolata nell'ampolla non invecchia e non ha bisogno di respirare, mangiare o bere. Puoi compiere un'azione Magia per rimuovere il tappo dell'ampolla e liberare la creatura al suo interno. La creatura obbedisce quindi ai tuoi comandi per 1 ora e li comprende anche se non conosce la lingua in cui sono impartiti. Se non impartisci comandi o dai alla creatura un comando che potrebbe portarla alla morte o alla prigionia, si difende ma per il resto non compie azioni. Al termine della durata, la creatura agisce secondo la sua normale indole e il suo allineamento. Un incantesimo Identificare rivela se l'ampolla contiene una creatura, ma l'unico modo per determinarne il tipo è aprirla. Un'Ampolla di Ferro appena scoperta potrebbe già contenere una creatura scelta dal DM.",

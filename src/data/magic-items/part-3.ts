@@ -37,6 +37,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Opening it brings an Efreeti; what it does is the DM's 1d10 table (prose).
+    summonedMonsters: { options: [{ monsterId: "efreeti", count: { base: 1 } }] },
     source: "SRD",
   },
   {
@@ -80,6 +82,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Berserker spirits: 2 from the Silver horn (the table's most common); the
+    // player sets 3–5 for a Brass, Bronze or Iron horn. The 7-day wait stays prose.
+    summonedMonsters: { options: [{ monsterId: "berserker", count: { base: 2 } }] },
     source: "SRD",
   },
   {
@@ -814,6 +819,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "ring",
     attunement: true,
+    // Summons its Djinni (Concentration, up to 1 hour; 24 hours before it comes again).
+    summonedMonsters: { options: [{ monsterId: "djinni", count: { base: 1 } }] },
     source: "SRD",
   },
   {
@@ -1268,6 +1275,24 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
+    // Lit, its light gives Advantage on D20 Tests. The Cleric/Druid free level 1
+    // casts, the burn time and the Gate stay prose.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "candle-of-invocation",
+        grants: [
+          { type: "advantage-on", rollType: "check", vs: "candle-of-invocation" },
+          { type: "advantage-on", rollType: "save", vs: "candle-of-invocation" },
+          {
+            type: "advantage-on",
+            rollType: "attack",
+            vs: "candle-of-invocation",
+            scope: "all",
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1275,6 +1300,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: false,
+    // Holds one creature from another plane: whichever the table traps or the DM
+    // put inside, picked from the bestiary.
+    bestiaryPick: {},
     source: "SRD",
   },
   {
