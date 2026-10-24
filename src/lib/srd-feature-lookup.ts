@@ -14,6 +14,7 @@ import type { SrdClassFeatureData, SrdFeatData } from "@/data/types";
 import { classFeatureIndex } from "@/data/classes";
 import { FEATS_BY_ID } from "@/data/feats";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
+import { getSpellById } from "@/data/spells";
 import { raceFeatureIndex, raceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { SrdKind } from "@/i18n/srd-en";
 import { srdText, customText, uiText, type LocText } from "@/lib/loc-text";
@@ -68,10 +69,12 @@ export function srdRefForFeatureSource(entry: SrdFeatureSource): {
 export function featureNameLoc(sourceId: string | undefined): LocText {
   if (!sourceId) return uiText("combat.extraDamage");
   const src = getSrdFeatureSource(sourceId);
-  // An item (Demon Armor's claws) names itself from the magic-item catalogue.
+  // An item (Demon Armor's claws) names itself from the magic-item catalogue, a
+  // spell (Shillelagh's die on a staff) from the spell catalogue.
   if (!src) {
-    return MAGIC_ITEMS_BY_ID.has(sourceId)
-      ? srdText("magic-item", sourceId, "name")
+    if (MAGIC_ITEMS_BY_ID.has(sourceId)) return srdText("magic-item", sourceId, "name");
+    return getSpellById(sourceId)
+      ? srdText("spell", sourceId, "name")
       : customText(sourceId);
   }
   const ref = srdRefForFeatureSource(src);

@@ -2431,6 +2431,42 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     type: literalSchema("item-bound-bonus"),
   }),
   /**
+   * A spell (or any lit state) that changes ONE chosen weapon while it lasts (Magic
+   * Weapon's +1, Shillelagh's ability and die). Inside a `while-active` only: the
+   * weapon is the caster's pick stored at `session.grantBundleChoices[choiceKey]`
+   * (`weapon-binding.ts` encodes it), and the change rides that weapon's row alone
+   * while the state is lit. `weaponIds` limits the pick to those SRD weapons;
+   * `nonmagical` to a weapon with no magic enchant bound. The +N is `bonus`, raised
+   * by `bonusByCastLevel` (the slot level the state was cast at); the damage die
+   * becomes `damageDie`, raised by `damageDieByLevel` (character level);
+   * `spellcastingAbility` lets the attack and damage use the caster's spellcasting
+   * ability instead of Strength; `damageTypeChoice` offers other damage types,
+   * the pick stored at its own `choiceKey`.
+   */
+  "weapon-binding": objectSchema(
+    {
+      choiceKey: stringSchema,
+      type: literalSchema("weapon-binding"),
+    },
+    {
+      bonus: numberSchema,
+      bonusByCastLevel: arraySchema(
+        objectSchema({ amount: numberSchema, minLevel: numberSchema })
+      ),
+      damageDie: stringSchema,
+      damageDieByLevel: arraySchema(
+        objectSchema({ die: stringSchema, minLevel: numberSchema })
+      ),
+      damageTypeChoice: objectSchema({
+        choiceKey: stringSchema,
+        options: arraySchema(DAMAGE_TYPE_SCHEMA),
+      }),
+      nonmagical: literalSchema(true),
+      spellcastingAbility: literalSchema(true),
+      weaponIds: arraySchema(stringSchema),
+    }
+  ),
+  /**
    * A falling creature descends at most `feetPerRound` feet per round and takes no
    * damage from the fall when it lands (Feather Fall: 60 feet per round).
    */

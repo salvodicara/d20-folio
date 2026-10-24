@@ -597,6 +597,30 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    // 2024 (spell:magic-weapon): "You touch a nonmagical weapon. Until the spell
+    // ends, that weapon becomes a magic weapon with a +1 bonus to attack rolls and
+    // damage rolls"; +2 with a level 3–5 slot, +3 with a level 6+ slot. The cast
+    // names the weapon (`weapon-binding`); a new cast picks again ("The spell ends
+    // early if you cast it again").
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-magic-weapon",
+        duration: timedSpellDuration(60),
+        grants: [
+          {
+            type: "weapon-binding",
+            choiceKey: "spell-magic-weapon:weapon",
+            nonmagical: true,
+            bonus: 1,
+            bonusByCastLevel: [
+              { minLevel: 3, amount: 2 },
+              { minLevel: 6, amount: 3 },
+            ],
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
