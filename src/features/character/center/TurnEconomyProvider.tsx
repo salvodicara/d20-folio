@@ -24,6 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { expiryNoticeSources, unmaintainedStates } from "@/lib/play/end-turn";
 import {
   lazy,
   Suspense,
@@ -74,7 +75,6 @@ import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   resolveTrackers,
-  resolveActiveMaintainedEffects,
   getActionCostOptions,
   extraActionsThisTurn,
   extraActionRulesThisTurn,
@@ -2172,11 +2172,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // Turn (no latch) — a `Keep` clears only the current round, so the next idle
     // turn prompts AGAIN; a maintaining event clears only ITS round. Computed
     // BEFORE endTurn clears the per-round flags.
-    const maintainedThisRound: ReadonlySet<string> = new Set(
-      Object.values(c.selected)
-        .flat()
-        .flatMap((entry) => entry.triggerEvents ?? [])
-    );
     // FRONTIER-S3 — run the turn/round recovery+expiry engine at this seam (the
     // owner's turn just ended → their next turn begins):
     //   • PER-TURN RECOVERY — auto-reset every `recovery: "per-turn"` tracker to
@@ -2191,15 +2186,20 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       encounterStatus?.round ?? c.round
     );
     const expiredKeys = new Set(expired.map((e) => e.activeKey));
-    const doc = useCharacterStore.getState().character;
-    const unmaintained = doc
-      ? resolveActiveMaintainedEffects(doc).filter(
-          (e) =>
-            !expiredKeys.has(e.activeKey) &&
-            !e.maintainedBy.some((m) => maintainedThisRound.has(m))
-        )
-      : [];
-    setMaintenancePrompts(unmaintained);
+    setMaintenancePrompts(
+      unmaintainedStates(useCharacterStore.getState().character, c.selected, expiredKeys)
+    );
+    // Each ended effect's live feedback (the log already has its line).
+    const announce = (sourceIds: string[]) => {
+      for (const sourceId of sourceIds) {
+        showToast({
+          message: t("combatLog.effectExpired", {
+            name: grantSourceLabel(sourceId, locale),
+          }),
+          duration: 4000,
+        });
+      }
+    };
 
     // ENCOUNTER (C5): End Turn just ADVANCES the shared turn pointer — the SAME
     // `advanceEncounterTurn` transaction the encounter's Next button calls (THE FIX
@@ -2247,22 +2247,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         encounterStatus.encounter.currentCombatantId
       );
       // Timed-state expiry (Rage at its round cap) still surfaces its live feedback.
-      for (const e of expired) {
-        showToast({
-          message: t("combatLog.effectExpired", {
-            name: grantSourceLabel(e.sourceId, locale),
-          }),
-          duration: 4000,
-        });
-      }
-      for (const e of boundaryAtEnd.expired) {
-        showToast({
-          message: t("combatLog.effectExpired", {
-            name: grantSourceLabel(e.sourceId, locale),
-          }),
-          duration: 4000,
-        });
-      }
+      announce(expiryNoticeSources(expired, boundaryAtEnd.expired));
       return;
     }
 
@@ -2318,23 +2303,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     // FRONTIER-S3 — announce each auto-expired state (Rage at 100 rounds). The hard
     // drop already logged an `effect-expired` line + cleared the toggle; this is the
     // live feedback. Its undo rides the single End-Turn undo below.
-    for (const e of expired) {
-      // Reuse the combat-LOG expiry line — one semantic unit = one i18n key (rule 6).
-      showToast({
-        message: t("combatLog.effectExpired", {
-          name: grantSourceLabel(e.sourceId, locale),
-        }),
-        duration: 4000,
-      });
-    }
-    for (const e of [...boundaryAtEnd.expired, ...boundaryAtStart.expired]) {
-      showToast({
-        message: t("combatLog.effectExpired", {
-          name: grantSourceLabel(e.sourceId, locale),
-        }),
-        duration: 4000,
-      });
-    }
+    announce(
+      expiryNoticeSources(expired, boundaryAtEnd.expired, boundaryAtStart.expired)
+    );
     // Register the single, compaction-carrying End-Turn entry via the Pattern-B
     // helper: its reverse restores the round/economy AND re-instates the
     // compacted sub-entries, and its replay re-runs the whole `handleEndTurn`
