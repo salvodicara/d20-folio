@@ -35,6 +35,7 @@ import {
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
 import { longRestFadeEvents, longRestFades, omitStateKeys } from "@/lib/play/rests";
+import { topUpUsed } from "@/lib/play/tracker-rolls";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import {
   drinkPotion,
@@ -1678,78 +1679,21 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
 
   setTrackerRoll: (trackerId, index, value) => {
-    if (get().readonly || index < 0 || !Number.isInteger(index)) return;
-    const character = get().character;
-    if (!character) return;
-    const tracker = resolveTrackers(character).find((entry) => entry.id === trackerId);
-    if (!tracker?.recordedRolls) return;
-    const available = Math.max(0, tracker.total - tracker.used);
-    if (index >= available) return;
-    const normalized =
-      value === null || !Number.isFinite(value)
-        ? null
-        : Math.min(
-            tracker.recordedRolls.max,
-            Math.max(tracker.recordedRolls.min, Math.round(value))
-          );
-    const prior = character.session.trackers[trackerId];
-    const rolls = Array.from({ length: available }, (_, slot): number | null =>
-      slot === index ? normalized : (prior?.rolls?.[slot] ?? null)
-    );
-    const used = prior?.used ?? 0;
-    const nextEntry: TrackerState | undefined = rolls.some(
-      (roll): roll is number => typeof roll === "number"
-    )
-      ? { used, rolls }
-      : used > 0
-        ? { used }
-        : undefined;
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          trackers: restoreTrackerEntry(character.session.trackers, trackerId, nextEntry),
-        },
-      },
-    });
+    if (!get().dispatch({ kind: "set-tracker-roll", trackerId, index, value })) return;
     flushParentPersistence(get);
   },
 
   spendTrackerRoll: (trackerId, index) => {
-    if (get().readonly || index < 0 || !Number.isInteger(index)) return null;
-    const character = get().character;
-    if (!character) return null;
-    const tracker = resolveTrackers(character).find((entry) => entry.id === trackerId);
-    const prior = character.session.trackers[trackerId];
-    if (
-      !tracker?.recordedRolls ||
-      !prior ||
-      prior.used >= tracker.total ||
-      index >= tracker.total - prior.used ||
-      typeof prior.rolls?.[index] !== "number"
-    ) {
-      return null;
-    }
-    const rolls = [...prior.rolls];
-    rolls.splice(index, 1);
-    const next: TrackerState = {
-      used: Math.min(tracker.total, prior.used + 1),
-      ...(rolls.length > 0 ? { rolls } : {}),
-    };
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          trackers: { ...character.session.trackers, [trackerId]: next },
-        },
-      },
-    });
+    const prior = get().character?.session.trackers[trackerId];
+    // Forward through the play log; the undo below stays tracker-scoped and never
+    // clobbers a later change to the same tracker.
+    if (!get().dispatch({ kind: "spend-tracker-roll", trackerId, index })) return null;
+    const next = get().character?.session.trackers[trackerId];
     flushParentPersistence(get);
     return () => {
       const live = get().character;
-      if (!live || !trackerStateEquals(live.session.trackers[trackerId], next)) return;
+      if (!live || !next || !trackerStateEquals(live.session.trackers[trackerId], next))
+        return;
       set({
         character: {
           ...live,
@@ -1767,26 +1711,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const character = get().character;
     if (!character) return null;
-    const tracker = resolveTrackers(character).find((entry) => entry.id === trackerId);
-    if (!tracker) return null;
-    const floor =
-      upTo === "full" ? tracker.total : Math.min(tracker.total, Math.max(0, upTo));
-    const appliedUsed = tracker.total - floor;
+    const appliedUsed = topUpUsed(character, trackerId, upTo);
+    if (appliedUsed === null) return null;
     const prior = character.session.trackers[trackerId];
     if ((prior?.used ?? 0) <= appliedUsed) return () => {};
-    const trackers =
-      appliedUsed === 0
-        ? restoreTrackerEntry(character.session.trackers, trackerId, undefined)
-        : {
-            ...character.session.trackers,
-            [trackerId]: { used: appliedUsed },
-          };
-    set({
-      character: {
-        ...character,
-        session: { ...character.session, trackers },
-      },
-    });
+    get().dispatch({ kind: "top-up-tracker", trackerId, upTo });
     flushParentPersistence(get);
     return () => {
       const live = get().character;
@@ -2570,59 +2499,27 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   // just don't need a parallel mutator here.
 
   addSessionDefense: (kind, id) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    const current = character.session.sessionDefenses?.[kind] ?? [];
-    if (current.includes(id)) return;
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          sessionDefenses: {
-            ...character.session.sessionDefenses,
-            [kind]: [...current, id],
-          },
-        },
-      },
-    });
+    get().dispatch({ kind: "add-session-defense", defense: kind, id });
   },
 
   removeSessionDefense: (kind, id) => {
     if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    const prev = character.session.sessionDefenses;
-    const current = prev?.[kind] ?? [];
+    const current = get().character?.session.sessionDefenses?.[kind] ?? [];
     if (!current.includes(id)) return;
-    // Immediate-commit WITH 5s undo (mirrors removeCondition), now routed onto the
-    // session undo stack: a mis-tap would silently drop an active magical protection.
-    // The store emits stable ids only; the view localizes (toasts-as-data, §3.2). The
-    // removal runs INSIDE `execute` so redo re-applies it; the reverse restores the
-    // exact prior session-defense map.
+    // Immediate-commit WITH 5s undo (mirrors removeCondition), routed onto the session
+    // undo stack: a mis-tap would silently drop an active magical protection. The
+    // store emits stable ids only; the view localizes (toasts-as-data, §3.2). The
+    // removal goes through the play log INSIDE `execute`, so redo re-applies it and
+    // the reverse is the log's own undo.
     registerUndoableToast(
       { intent: { kind: "defense-removed", defenseKind: kind, defenseId: id } },
       () => {
-        set({
-          character: {
-            ...character,
-            session: {
-              ...character.session,
-              sessionDefenses: { ...prev, [kind]: current.filter((d) => d !== id) },
-            },
-          },
+        const undo = get().dispatch({
+          kind: "remove-session-defense",
+          defense: kind,
+          id,
         });
-        return () => {
-          const cur = get().character;
-          if (!cur) return;
-          set({
-            character: {
-              ...cur,
-              session: { ...cur.session, sessionDefenses: prev },
-            },
-          });
-        };
+        return () => undo?.();
       },
       { turnScoped: false }
     );

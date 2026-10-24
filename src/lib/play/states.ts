@@ -4,7 +4,11 @@
  */
 import { getSpellById } from "@/data/spells";
 import type { Grant } from "@/lib/grants";
-import { potionStateGrant, potionTimerKey } from "@/lib/potion-states";
+import {
+  potionStateGrant,
+  potionStatesEndingOn,
+  potionTimerKey,
+} from "@/lib/potion-states";
 import {
   potionDurationRounds,
   resolveActiveTimedEffects,
@@ -12,6 +16,7 @@ import {
 } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState, TrackerState } from "@/types/character";
 import { restoreTrackerEntry } from "./recoveries";
+import { countActivationUse } from "./reuse-save";
 
 /** Drop one key from an optional record; undefined when nothing is left. */
 function without<T>(
@@ -41,8 +46,10 @@ export function setActiveState(
   const levels = isActive
     ? doc.session.activeSpellCastLevels
     : without(doc.session.activeSpellCastLevels, key);
+  // Lighting a state whose item strains on reuse counts the use (Ring of X-ray Vision).
+  const base = isActive ? countActivationUse(doc, key) : doc.session;
   const session: SessionState = {
-    ...doc.session,
+    ...base,
     activeFeatures: isActive ? [...active, key] : active.filter((k) => k !== key),
     activeSpellCastLevels: levels && Object.keys(levels).length > 0 ? levels : undefined,
     effectTimers: without(doc.session.effectTimers, key),
@@ -60,6 +67,44 @@ export function setActiveState(
       [key]: { roundsLeft: timed.maxRounds, tickedRound: litRound },
     },
   };
+}
+
+/** End these lit state keys: their toggle, countdown, turn edge and cast level go. */
+export function endStateKeys(
+  session: SessionState,
+  keys: ReadonlyArray<string>
+): SessionState {
+  if (keys.length === 0) return session;
+  let next: SessionState = {
+    ...session,
+    activeFeatures: (session.activeFeatures ?? []).filter((k) => !keys.includes(k)),
+  };
+  for (const key of keys) {
+    next = {
+      ...next,
+      activeSpellCastLevels: without(next.activeSpellCastLevels, key),
+      effectTimers: without(next.effectTimers, key),
+      effectBoundaries: without(next.effectBoundaries, key),
+    };
+  }
+  return next;
+}
+
+/** Something you do that ends a state early ("The effect ends early if you make an
+ *  attack roll, deal damage, or cast a spell"). */
+export type StateEndingAct = "attack-roll" | "deal-damage" | "cast-spell";
+
+/**
+ * End every lit state whose duration ends early on `act` (Potion of Invisibility),
+ * with the keys it ended for the caller's notice; null when nothing ends.
+ */
+export function endStatesOnAct(
+  doc: CharacterDoc,
+  act: StateEndingAct
+): { session: SessionState; ended: string[] } | null {
+  const ended = potionStatesEndingOn(doc.session.activeFeatures ?? [], act);
+  if (ended.length === 0) return null;
+  return { session: endStateKeys(doc.session, ended), ended };
 }
 
 /** Record (or clear, with no level) the slot level an active spell state was cast at. */

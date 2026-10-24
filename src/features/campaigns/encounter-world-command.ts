@@ -62,6 +62,7 @@ import {
   resolveDamageIntake,
   type DamageInstance,
 } from "@/lib/damage-intake";
+import type { DamageType } from "@/types/damage";
 import type { EncounterState } from "@/types/campaign";
 import type { LocText } from "@/lib/loc-text";
 import type { SharedMaterialState } from "@/types/material-state";
@@ -291,8 +292,50 @@ export function applyAdversaryDamageParts(
   const monster = encounter.combatants.find(({ id }) => id === monsterId);
   if (!monster || monster.kind !== "monster") return encounter;
   const defenses = monsterDamageDefenses(monster.defenses) ?? NO_DEFENSES;
-  const { netTotal } = resolveDamageIntake(parts, defenses);
-  return applyAdversaryDamage(encounter, campaignId, monsterId, netTotal);
+  const intake = resolveDamageIntake(parts, defenses);
+  const next = applyAdversaryDamage(encounter, campaignId, monsterId, intake.netTotal);
+  return stampLandedDamageTypes(
+    next,
+    encounter.events?.length ?? 0,
+    monsterId,
+    landedDamageTypes(intake.parts),
+    encounter.currentCombatantId
+  );
+}
+
+/** The damage types of the parts that landed (net above 0), first-seen order. */
+function landedDamageTypes(
+  parts: ReadonlyArray<{ readonly type?: DamageType; readonly net: number }>
+): DamageType[] {
+  const types: DamageType[] = [];
+  for (const part of parts) {
+    if (part.type && part.net > 0 && !types.includes(part.type)) types.push(part.type);
+  }
+  return types;
+}
+
+/**
+ * Stamp the hit's new damage beat with the types that landed and whose turn it was,
+ * so a trait that reacts to a damage type (a Troll's Regeneration) reads the log
+ * alone. An untyped hit stays as it was.
+ */
+function stampLandedDamageTypes(
+  encounter: EncounterState,
+  before: number,
+  monsterId: string,
+  damageTypes: DamageType[],
+  turnOf: string | null
+): EncounterState {
+  if (damageTypes.length === 0) return encounter;
+  const events = encounter.events ?? [];
+  return {
+    ...encounter,
+    events: events.map((event, index) =>
+      index >= before && event.kind === "hp-damage" && event.targetId === monsterId
+        ? { ...event, damageTypes, ...(turnOf ? { turnOf } : {}) }
+        : event
+    ),
+  };
 }
 
 /**

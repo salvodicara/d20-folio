@@ -1,3 +1,4 @@
+import { ENLARGE_EFFECT_GRANTS } from "../enlarge-effect";
 import type { SrdSpellData } from "../types";
 import { OTHERWORLDLY_STEED } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
@@ -326,17 +327,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
             options: [
               {
                 id: "enlarge",
-                grants: [
-                  { type: "advantage-on", rollType: "check", vs: "str" },
-                  { type: "advantage-on", rollType: "save", vs: "str" },
-                  {
-                    type: "damage-rider",
-                    dice: "1d4",
-                    damageType: "same-as-weapon",
-                    appliesTo: "weapon-or-unarmed",
-                  },
-                  { type: "defense-note" },
-                ],
+                grants: [...ENLARGE_EFFECT_GRANTS],
               },
               {
                 id: "reduce",

@@ -21,9 +21,11 @@ import {
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
 import * as damage from "@/lib/play/damage";
+import * as defenses from "@/lib/play/defenses";
 import * as cover from "@/lib/play/cover";
 import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
+import * as trackerRolls from "@/lib/play/tracker-rolls";
 import * as forms from "@/lib/play/forms";
 import * as light from "@/lib/play/light";
 import * as pins from "@/lib/play/pins";
@@ -63,6 +65,7 @@ const doc = withWorld(
       familiar: { monsterId: "owl", creatureType: "fey" },
       companionHp: { "find-familiar": { current: 1 }, wolf: { current: 3 } },
       activeFeatures: ["rage"],
+      sessionDefenses: { resistance: ["fire"] },
     }
   )
 );
@@ -101,6 +104,18 @@ const CASES: {
     { kind: "spend-tracker", trackerId: "arcane-recovery", amount: 1 },
     () => at(vitals.spendTracker(doc, "arcane-recovery", 1)),
   ],
+  "set-tracker-roll": [
+    { kind: "set-tracker-roll", trackerId: "arcane-recovery", index: 0, value: 3 },
+    () => at(trackerRolls.setTrackerRoll(doc, "arcane-recovery", 0, 3)),
+  ],
+  "spend-tracker-roll": [
+    { kind: "spend-tracker-roll", trackerId: "arcane-recovery", index: 0 },
+    () => at(trackerRolls.spendTrackerRoll(doc, "arcane-recovery", 0)),
+  ],
+  "top-up-tracker": [
+    { kind: "top-up-tracker", trackerId: "arcane-recovery", upTo: "full" },
+    () => at(trackerRolls.topUpTracker(doc, "arcane-recovery", "full")),
+  ],
   "restore-tracker": [
     { kind: "restore-tracker", trackerId: "arcane-recovery", amount: 1 },
     () => at(vitals.restoreTracker(doc, "arcane-recovery", 1)),
@@ -128,6 +143,14 @@ const CASES: {
   "remove-condition": [
     { kind: "remove-condition", condition: "prone" },
     () => at(conditions.removeCondition(doc, "prone")?.session),
+  ],
+  "add-session-defense": [
+    { kind: "add-session-defense", defense: "immunity", id: "poison" },
+    () => at(defenses.addSessionDefense(doc, "immunity", "poison")),
+  ],
+  "remove-session-defense": [
+    { kind: "remove-session-defense", defense: "resistance", id: "fire" },
+    () => at(defenses.removeSessionDefense(doc, "resistance", "fire")),
   ],
   "set-bundle-choices": [
     { kind: "set-bundle-choices", choices: { "spell-enlarge-reduce": "enlarge" } },

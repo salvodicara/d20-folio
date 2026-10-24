@@ -1,3 +1,4 @@
+import { ENLARGE_EFFECT_GRANTS } from "../enlarge-effect";
 import type { SrdMagicItemData } from "../types";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { POTION_STATE } from "./_potion";
@@ -105,6 +106,11 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "200 GP",
     properties: ["duration: 1d4 hours", "extra damage: 1d4"],
+    // The Enlarge effect of Enlarge/Reduce, no Concentration. The countdown runs the
+    // 1d4's maximum (4 hours = 2400 rounds); the table's roll ends it sooner from
+    // the state's own toggle.
+    durationRounds: 2400,
+    grants: [POTION_STATE("potion-of-growth", 240, ENLARGE_EFFECT_GRANTS)],
     source: "SRD",
   },
   {
@@ -142,6 +148,16 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     price: "5000 GP",
     properties: ["duration: 1 hour", "invisibility"],
     durationRounds: 600,
+    // The Invisible condition for 1 hour, ending early on an attack roll, damage
+    // dealt or a spell cast (`endStatesOnAct`).
+    grants: [
+      POTION_STATE(
+        "potion-of-invisibility",
+        60,
+        [{ type: "state-condition", condition: "invisible" }],
+        ["attack-roll", "deal-damage", "cast-spell"]
+      ),
+    ],
     source: "SRD",
   },
   {
