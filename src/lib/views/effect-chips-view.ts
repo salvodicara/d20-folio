@@ -10,7 +10,7 @@
 import type { Locale } from "@/lib/locale";
 import { deriveStatuses, statusRoundsLeft } from "@/lib/status";
 import type { CharacterDoc } from "@/types/character";
-import { conditionChips, grantSourceLabel } from "./tracker-view";
+import { concentrationLabel, conditionChips, grantSourceLabel } from "./tracker-view";
 
 const ROUNDS_PER_MINUTE = 10;
 
@@ -54,4 +54,35 @@ export function effectChipsView(doc: CharacterDoc, locale: Locale): EffectChip[]
     })
   );
   return [...buffs, ...conditions];
+}
+
+/** The header's three fixed groups (direction 2026-10-23, row 8). */
+export interface EffectGroups {
+  /** ◉ The spell Concentration holds, and the buffs that end with it. */
+  concentration: { spell: { id: string; name: string } | null; holds: EffectChip[] };
+  /** ✦ Every other buff, with its count. */
+  effects: { count: number; chips: EffectChip[] };
+  /** ⚠ The conditions, with their count. */
+  conditions: { count: number; chips: EffectChip[] };
+}
+
+/**
+ * The chips as the header's three group buttons show them. A buff Concentration
+ * holds sits under Concentration (it ends with it), never among the effects too, so
+ * nothing is counted twice; a condition always sits under conditions.
+ */
+export function effectGroupsView(doc: CharacterDoc, locale: Locale): EffectGroups {
+  const chips = effectChipsView(doc, locale);
+  const held = doc.session.concentration;
+  const holds = chips.filter((chip) => chip.kind === "buff" && chip.concentration);
+  const effects = chips.filter((chip) => chip.kind === "buff" && !chip.concentration);
+  const conditions = chips.filter((chip) => chip.kind === "condition");
+  return {
+    concentration: {
+      spell: held ? { id: held, name: concentrationLabel(held, locale) } : null,
+      holds,
+    },
+    effects: { count: effects.length, chips: effects },
+    conditions: { count: conditions.length, chips: conditions },
+  };
 }
