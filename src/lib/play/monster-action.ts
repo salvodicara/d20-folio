@@ -6,8 +6,10 @@
  *
  * Pure: the entry is read through its Activity (`translateMonsterEntry`), the plan is
  * the tray's own {@link DamageTrayPlan}, and Apply's per-target result is plain
- * arithmetic over the rolled total. Prose entries (Multiattack, Spellcasting) stay
- * text: the card shows Multiattack as a reference line.
+ * arithmetic over the rolled total. An attack offers the conditions its Hit clause
+ * gives; prose that deals damage with no roll (Fire Aura) or uses one of the
+ * block's attacks (Pounce) is one tap too. Other prose (Multiattack, Spellcasting)
+ * stays text: the card shows Multiattack as a reference line.
  */
 import type { AbilityCode, MonsterEntry, MonsterStatBlock } from "@/data/types";
 import {
@@ -51,12 +53,29 @@ const damageEffects = (activity: Activity): DamageEffect[] =>
   activity.effects.filter((effect): effect is DamageEffect => effect.kind === "damage");
 
 function fromEntry(
-  monsterId: string,
+  block: MonsterStatBlock,
   section: MonsterSection,
   entry: MonsterEntry
 ): MonsterAction | null {
-  if (entry.kind !== "attack" && entry.kind !== "save") return null;
-  const { activity } = translateMonsterEntry(monsterId, section, entry);
+  if (entry.kind === "narrative" && entry.performs) {
+    // A move that uses another entry (a dragon's Pounce, "makes one Rend
+    // attack"): that entry's numbers, under this entry's name and cost.
+    const { section: usedSection, entryId } = entry.performs;
+    const used = (block[usedSection] ?? []).find((candidate) => candidate.id === entryId);
+    const action =
+      used && used.kind !== "narrative" && fromEntry(block, usedSection, used);
+    if (!action) return null;
+    const { activity: own } = translateMonsterEntry(block.id, section, entry);
+    return {
+      ...action,
+      section,
+      entryId: entry.id,
+      activity: { ...action.activity, id: own.id, source: own.source, cost: own.cost },
+    };
+  }
+  const automatic = entry.kind === "narrative" && (entry.damage?.length ?? 0) > 0;
+  if (entry.kind !== "attack" && entry.kind !== "save" && !automatic) return null;
+  const { activity } = translateMonsterEntry(block.id, section, entry);
   const bonus = activity.attack?.bonus;
   const dc = activity.save?.dc;
   return {
@@ -70,11 +89,13 @@ function fromEntry(
   };
 }
 
-/** Every printed attack and save of the stat block, in section then print order. */
+/** Every one-tap entry of the stat block, in section then print order: its
+ *  printed attacks and saves, the damage its prose deals with no roll (Fire
+ *  Aura), and the moves that use one of them (Pounce). */
 export function monsterActions(block: MonsterStatBlock): MonsterAction[] {
   return MONSTER_ACTION_SECTIONS.flatMap((section) =>
     (block[section] ?? []).flatMap((entry) => {
-      const action = fromEntry(block.id, section, entry);
+      const action = fromEntry(block, section, entry);
       return action ? [action] : [];
     })
   );
@@ -108,11 +129,15 @@ export function monsterTrayPlan(
     for (const type of effect.types ?? []) types.add(type);
   }
   const [only] = types;
-  const conditions = action.activity.effects.flatMap((effect) =>
-    effect.kind === "condition" && effect.apply.on === "failed-save"
-      ? effect.apply.options
-      : []
+  const landing = action.activity.effects.filter(
+    (effect): effect is Extract<ActivityEffect, { kind: "condition" }> =>
+      effect.kind === "condition" &&
+      (effect.apply.on === "failed-save" || effect.apply.on === "hit")
   );
+  const conditions = landing.flatMap((effect) => effect.apply.options);
+  // A gated rider or one its own save decides is offered off (the tray's Topple).
+  const optIn = landing.some((effect) => effect.optIn || effect.save);
+  const conditionSave = landing.find((effect) => effect.save)?.save;
   return {
     effect: damage.length > 0 ? "damage" : null,
     ...(concrete && types.size === 1 && only ? { damageType: only } : {}),
@@ -126,7 +151,14 @@ export function monsterTrayPlan(
         }
       : {}),
     ...(conditions.length > 0
-      ? { conditions: { options: conditions, pickOne: false } }
+      ? {
+          conditions: {
+            options: conditions,
+            pickOne: false,
+            ...(optIn ? { optIn: true as const } : {}),
+            ...(conditionSave ? { save: conditionSave } : {}),
+          },
+        }
       : {}),
     ...(action.toHit !== undefined ? { attack: { onMiss: "none" as const } } : {}),
     targets: [...targets],

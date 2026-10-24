@@ -134,6 +134,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "paralyzing-touch",
         kind: "attack",
+        conditions: ["paralyzed"],
         attack: "melee",
         toHit: 12,
         reachFt: 5,
@@ -171,7 +172,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     reactions: [{ id: "protective-magic", kind: "narrative" }],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "deathly-teleport", kind: "narrative" },
+      {
+        id: "deathly-teleport",
+        kind: "narrative",
+        damage: [{ dice: "2d10", damageType: "necrotic" }],
+      },
       {
         id: "disrupt-life",
         kind: "save",
@@ -404,6 +409,8 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 10,
         reachFt: 10,
@@ -533,6 +540,8 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 3,
         reachFt: 5,
@@ -648,6 +657,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -705,6 +715,8 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pseudopod",
         kind: "attack",
+        conditions: ["grappled"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -749,6 +761,8 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -778,6 +792,8 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -934,7 +950,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "dread-command", kind: "narrative" },
-      { id: "glare", kind: "narrative" },
+      {
+        id: "glare",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "dreadful-glare" },
+      },
       { id: "necrotic-strike", kind: "narrative" },
     ],
     source: "SRD",

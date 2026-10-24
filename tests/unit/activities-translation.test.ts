@@ -55,6 +55,7 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   bestiaryPick: "the creature the caster picks, a monster stat block",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
+  performs: "a stat-block entry that uses another one, resolved on the block",
   saveAbility: "a save with no declared DC ability",
   damageChoice: "a choice declared next to a fixed type (data to fix)",
   damageTypes: "several types declared next to a fixed type (data to fix)",
@@ -450,6 +451,21 @@ function failedSaveConditions(activity: Activity): ConditionId[] | undefined {
   return ids.length > 0 ? ids : undefined;
 }
 
+/** An attack's Hit-clause conditions, their gate and the save they ride. */
+function hitConditions(activity: Activity) {
+  const effect = activity.effects.find(
+    (candidate): candidate is Extract<ActivityEffect, { kind: "condition" }> =>
+      candidate.kind === "condition" && candidate.apply.on === "hit"
+  );
+  return {
+    conditions: effect?.apply.options,
+    conditionsIf: effect?.optIn,
+    conditionSave: effect?.save
+      ? { save: effect.save.ability, dc: effect.save.dc }
+      : undefined,
+  };
+}
+
 /** The old monster entry fields, read back from the Activity. */
 function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): MonsterEntry {
   const recharge = activity.cost.pay?.find((resource) => resource.kind === "recharge");
@@ -478,6 +494,7 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
         reachFt: activity.target?.reachFt,
         rangeFt: activity.target?.rangeFt,
         damage,
+        ...hitConditions(activity),
       });
     case "save":
       return clean({
@@ -495,12 +512,21 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
       });
     default:
       // Spellcasting lists and prose entries keep only their identity and limits
-      // (plus a trait's table fact).
-      return clean({ ...base, kind: entry.kind, fact: activity.fact } as MonsterEntry);
+      // (plus a trait's table fact, or the damage it deals with no roll).
+      return clean({
+        ...base,
+        kind: entry.kind,
+        fact: activity.fact,
+        damage: clauses.length > 0 ? damage : undefined,
+      } as MonsterEntry);
   }
 }
 
 function monsterEntryMechanics(entry: MonsterEntry): MonsterEntry {
+  // The entry another one uses is resolved on the stat block (the `performs` gap).
+  if (entry.kind === "narrative" && entry.performs) {
+    return clean({ ...entry, performs: undefined });
+  }
   if (entry.kind !== "spellcasting") return clean(entry);
   const { id, recharge, uses, kind } = entry;
   return clean({ id, recharge, uses, kind } as MonsterEntry);

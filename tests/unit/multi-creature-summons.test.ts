@@ -173,7 +173,10 @@ describe("multi-creature summons — each creature's attacks are Activities", ()
             const { activity, gaps } = translateMonsterEntry(monsterId, section, entry);
             expect(gaps, activity.id).toEqual([]);
             if (entry.kind === "attack") {
-              expect(activity.effects.length, activity.id).toBe(entry.damage.length);
+              expect(
+                activity.effects.filter((effect) => effect.kind === "damage").length,
+                activity.id
+              ).toBe(entry.damage.length);
             }
             entries++;
           }

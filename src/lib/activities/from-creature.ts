@@ -70,7 +70,23 @@ export function translateMonsterEntry(
           mode: entry.attack,
           bonus: { kind: "printed" as const, value: entry.toHit },
         },
-        effects: entry.damage.map((clause) => damage(clause)),
+        effects: [
+          ...entry.damage.map((clause) => damage(clause)),
+          // The conditions the "Hit:" clause gives, its gate and the save the hit
+          // forces; the escape DC and duration stay text.
+          ...(entry.conditions && entry.conditions.length > 0
+            ? [
+                compact({
+                  kind: "condition" as const,
+                  apply: { options: [...entry.conditions], on: "hit" as const },
+                  optIn: entry.conditionsIf,
+                  save: entry.conditionSave
+                    ? { ability: entry.conditionSave.save, dc: entry.conditionSave.dc }
+                    : undefined,
+                }),
+              ]
+            : []),
+        ],
       });
       break;
     case "save":
@@ -117,7 +133,19 @@ export function translateMonsterEntry(
         activity = { ...base, effects: [], fact: entry.fact };
         break;
       }
+      // Damage to other creatures with no roll (Fire Aura): it just happens.
+      if (entry.damage && entry.damage.length > 0) {
+        activity = { ...base, effects: entry.damage.map((clause) => damage(clause)) };
+        break;
+      }
       activity = { ...base, effects: [] };
+      if (entry.performs) {
+        gaps.push({
+          field: "performs",
+          reason: `uses the stat block's ${entry.performs.section} entry "${entry.performs.entryId}": that entry's Activity at this one's cost`,
+        });
+        break;
+      }
       gaps.push({
         field: "text",
         reason: "a prose-only entry: what it does is in the text",

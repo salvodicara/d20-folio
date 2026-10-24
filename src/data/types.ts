@@ -2323,6 +2323,16 @@ export interface MonsterNarrativeEntry extends MonsterEntryBase {
   kind: "narrative";
   /** The table-changing number this trait carries, when it has one. */
   fact?: MonsterTraitFact;
+  /** Damage it deals to other creatures with no attack roll or save, printed
+   *  order: "each creature … takes 5 (1d10) Fire damage" (Fire Aura, Corrosive
+   *  Form, Barbed Hide). Pinned to the print by `printedAutomaticDamage`. */
+  damage?: ReadonlyArray<MonsterDamage>;
+  /** The one attack or save of the same stat block it uses: a dragon's Pounce
+   *  "makes one Rend attack". Pinned to the print by `printedPerformedEntry`. */
+  performs?: {
+    section: "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions";
+    entryId: string;
+  };
 }
 
 /** A 2024 attack-roll entry: "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6+2) …". */
@@ -2341,6 +2351,16 @@ export interface MonsterAttackEntry extends MonsterEntryBase {
    * the sentence stay prose-only (D-3/D-10).
    */
   damage: ReadonlyArray<MonsterDamage>;
+  /** The conditions the "Hit:" clause gives, printed order ("it has the Grappled
+   *  condition (escape DC 13)"); the escape DC and duration stay text. Pinned to
+   *  the print by `printedHitConditions`. */
+  conditions?: ReadonlyArray<ConditionId>;
+  /** A sentence gates them on a fact the print states (a size, a charge, 0 HP):
+   *  the DM turns them on. */
+  conditionsIf?: true;
+  /** They land only on a failed save the hit forces ("Constitution Saving Throw:
+   *  DC 10. Failure: The target has the Paralyzed condition"). */
+  conditionSave?: { save: AbilityCode; dc: number };
 }
 
 /** A save-based entry: "Dexterity Saving Throw: DC 13, … Failure: … Success: …". */

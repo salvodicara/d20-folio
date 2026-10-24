@@ -36,6 +36,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "rend",
         kind: "attack",
+        conditions: ["poisoned"],
         attack: "melee",
         toHit: 5,
         reachFt: 5,
@@ -264,11 +265,19 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 24, DEX: 13, CON: 21, INT: 4, WIS: 10, CHA: 5 },
     damageImmunities: ["cold", "fire"],
     senses: { darkvisionFt: 60, tremorsenseFt: 60 },
-    traits: [{ id: "heat-aura", kind: "narrative" }],
+    traits: [
+      {
+        id: "heat-aura",
+        kind: "narrative",
+        damage: [{ dice: "3d10", damageType: "fire" }],
+      },
+    ],
     actions: [
       {
         id: "bite",
         kind: "attack",
+        conditions: ["grappled", "restrained"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 11,
         reachFt: 10,
@@ -305,6 +314,8 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "gore",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 7,
         reachFt: 5,
@@ -363,6 +374,8 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "talons",
         kind: "attack",
+        conditions: ["grappled", "restrained"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 13,
         reachFt: 5,
@@ -431,7 +444,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "antennae", kind: "save", save: "DEX", dc: 11, onSuccess: "none" },
       { id: "destroy-metal", kind: "narrative" },
     ],
-    reactions: [{ id: "reflexive-antennae", kind: "narrative" }],
+    reactions: [
+      {
+        id: "reflexive-antennae",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "antennae" },
+      },
+    ],
     source: "SRD",
   },
   // Saber-Toothed Tiger (2024 SRD 5.2.1). AC 13, HP 52, CR 2.
@@ -515,7 +534,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["fire"],
     senses: { darkvisionFt: 60 },
     languages: { ids: ["ignan"] },
-    traits: [{ id: "fire-aura", kind: "narrative" }],
+    traits: [
+      {
+        id: "fire-aura",
+        kind: "narrative",
+        damage: [{ dice: "2d6", damageType: "fire" }],
+      },
+    ],
     actions: [
       { id: "multiattack", kind: "narrative" },
       {
@@ -1202,7 +1227,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "arcane-prowl", kind: "narrative" },
+      {
+        id: "arcane-prowl",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "claw" },
+      },
       { id: "weight-of-years", kind: "save", save: "CON", dc: 16, onSuccess: "none" },
     ],
     source: "SRD",
@@ -1268,7 +1297,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "arcane-prowl", kind: "narrative" },
+      {
+        id: "arcane-prowl",
+        kind: "narrative",
+        performs: { section: "actions", entryId: "claw" },
+      },
       { id: "weight-of-years", kind: "save", save: "CON", dc: 16, onSuccess: "none" },
     ],
     source: "SRD",
@@ -1429,6 +1462,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "enchanting-bow",
         kind: "attack",
+        conditions: ["charmed"],
         attack: "ranged",
         toHit: 6,
         rangeFt: { near: 40, far: 160 },
@@ -1601,6 +1635,8 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "boulder",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "ranged",
         toHit: 9,
         rangeFt: { near: 60, far: 240 },
@@ -1726,6 +1762,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "thunderbolt",
         kind: "attack",
+        conditions: ["blinded", "deafened"],
         attack: "ranged",
         toHit: 14,
         rangeFt: { near: 500 },
@@ -1873,6 +1910,8 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "swarm-of-grasping-hands",
         kind: "attack",
+        conditions: ["prone"],
+        conditionsIf: true,
         attack: "melee",
         toHit: 4,
         reachFt: 5,
