@@ -29,3 +29,13 @@ export {
   secondaryDamage,
   type DamageTypeFacet,
 } from "./read";
+export {
+  hpMaxReductionAmount,
+  isRiderEffect,
+  riderNotes,
+  swallowedFacts,
+  SWALLOWED_CONDITIONS,
+  type RiderEffect,
+  type RiderNote,
+  type SwallowedFacts,
+} from "./riders";

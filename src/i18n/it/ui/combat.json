@@ -1,5 +1,18 @@
 {
   "combat": {
+    "effectRider": {
+      "push": "Spinto fino a {{distance}} più lontano",
+      "pull": "Tirato fino a {{distance}} più vicino",
+      "speedReduction": "Velocità −{{distance}}",
+      "speedReduction_turn-start_actor": "Velocità −{{distance}} fino all'inizio del prossimo turno di chi la usa",
+      "speedReduction_turn-end_actor": "Velocità −{{distance}} fino alla fine del prossimo turno di chi la usa",
+      "speedReduction_turn-start_target": "Velocità −{{distance}} fino all'inizio del suo prossimo turno",
+      "speedReduction_turn-end_target": "Velocità −{{distance}} fino alla fine del suo prossimo turno",
+      "hpMaxReductionDice": "Punti Ferita massimi −{{dice}} fino a un Riposo Lungo",
+      "hpMaxReductionDamage": "Punti Ferita massimi ridotti dei danni subiti, fino a un Riposo Lungo",
+      "swallowed": "Inghiottito: Accecato e Trattenuto, Copertura Totale dall'esterno",
+      "swallowDamage": "{{dice}} all'inizio di ogni turno di chi lo ha inghiottito"
+    },
     "title": "Combattimento",
     "declareApplyFailed": "Impossibile applicare l'effetto. Il DM può correggerlo dallo scontro.",
     "resolveNextRollAdjustment": "Prossimo {{roll}} {{sign}}{{dice}}",

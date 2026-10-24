@@ -39,6 +39,7 @@ import {
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
 import { conformGrant, type Grant } from "@/lib/grants";
+import { CONDITION_APPLICATION_SCHEMA } from "@/lib/homebrew-actions";
 import { classifySpellCastingTime } from "@/lib/cast-options";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import { ABILITY_CODES } from "@/types/ability";
@@ -57,7 +58,6 @@ const DAMAGE_TYPES = arraySchema(DAMAGE_TYPE_SCHEMA);
 const GATE = literals(["attack", "save", "automatic"]);
 const HALF = literalSchema("half");
 const TRUE = literalSchema(true);
-const PHASE = literals(["turn-start", "turn-end"]);
 
 const SPELL_DURATION = unionSchema([
   objectSchema({
@@ -73,38 +73,6 @@ const SPELL_DURATION = unionSchema([
     amount: numberSchema,
   }),
 ]);
-
-const CONDITION_LIFETIME = unionSchema([
-  objectSchema({ kind: literalSchema("source") }),
-  objectSchema({ kind: literalSchema("manual") }),
-  objectSchema(
-    { kind: literalSchema("timed"), minutes: numberSchema, maxRounds: numberSchema },
-    {
-      byCastLevel: arraySchema(
-        objectSchema(
-          { minLevel: numberSchema },
-          { minutes: numberSchema, maxRounds: numberSchema, indefinite: TRUE }
-        )
-      ),
-    }
-  ),
-  objectSchema(
-    { kind: literalSchema("turn-boundary"), phase: PHASE, turns: numberSchema },
-    { anchor: literals(["actor", "target"]) }
-  ),
-]);
-
-const CONDITION_APPLICATION = objectSchema(
-  {
-    options: arraySchema(CONDITION_ID_SCHEMA),
-    on: literals(["hit", "failed-save", "automatic", "passed-check"]),
-  },
-  {
-    max: numberSchema,
-    lifetime: CONDITION_LIFETIME,
-    lifetimes: recordSchema("string", CONDITION_LIFETIME),
-  }
-);
 
 /** A plain JSON object whose inner shape is the catalogue's own nested dialect
  *  (an action, a stat block): checked to be an object here, read by the same
@@ -159,7 +127,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { options: arraySchema(CONDITION_ID_SCHEMA) },
     { max: numberSchema }
   ),
-  conditionApplication: CONDITION_APPLICATION,
+  conditionApplication: CONDITION_APPLICATION_SCHEMA,
   targeting: objectSchema(
     { affinity: literals(["ally", "enemy", "self", "any"]) },
     {

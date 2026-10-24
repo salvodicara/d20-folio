@@ -28,11 +28,14 @@
  * (`homebrewMonsterMechanics`) accepts it — so the monster reaches the same
  * encounter paths (`homebrewMonsterStatBlock` → counters, Multiattack, actions).
  *
- * The same holds for every Activity effect: each effect kind is reachable from the
- * homebrew action dialect (`ActionData`) or a homebrew spell's mechanics, or is
- * recorded below as a gap with what it needs.
+ * The same holds for every structured catalogue FEATURE-ACTION field: a homebrew
+ * feature action (`CustomFeature.actions[]`, the catalogue action's own shape)
+ * carries it, both stored forms carry it unchanged, every catalogue feature action
+ * plays unchanged as a homebrew one, and the one homebrew action validator
+ * (`homebrewActionDef`) accepts it — so every Activity effect kind is reachable from
+ * a homebrew feature action through the catalogue's own path (`translateAction`).
  *
- * A new Grant kind or effect kind that homebrew cannot express fails CI here. An
+ * A new Grant kind, field or effect kind that homebrew cannot express fails CI here. An
  * exemption is only for a kind that is catalogue-only BY NATURE, with its reason.
  */
 import { isDeepStrictEqual } from "node:util";
@@ -56,7 +59,13 @@ import {
   homebrewItemData,
   homebrewItemMechanics,
 } from "@/lib/homebrew-items";
-import { activityFromAction } from "@/lib/activities/from-action";
+import { activityFromAction, type ActionOwner } from "@/lib/activities/from-action";
+import { catalogueActions } from "@/lib/activities/catalogue";
+import {
+  HOMEBREW_ACTION_FIELD_SCHEMAS,
+  homebrewActionDef,
+  type HomebrewActionTopLevelKey,
+} from "@/lib/homebrew-actions";
 import { translateSpell } from "@/lib/activities/from-spell";
 import type { ActivityEffectKind } from "@/lib/activities/types";
 import { spells as catalogueSpells } from "@/data/spells";
@@ -72,7 +81,7 @@ import type {
   HomebrewSpellTopLevelKey,
   MonsterEntry,
   MonsterStatBlock,
-  SrdSpellData,
+  SrdActionDef,
 } from "@/data/types";
 import { SRD_MONSTERS_A_B } from "@/data/monsters/a-b";
 import { SRD_MONSTERS_C_D } from "@/data/monsters/c-d";
@@ -343,19 +352,138 @@ describe("every structured catalogue-spell field is homebrew-expressible", () =>
 });
 
 /**
- * Every Activity effect kind → the homebrew action (+ feature grants) or homebrew
- * spell mechanics that produce it, or the gap that keeps homebrew from it. Typed as
- * a full Record so a new effect kind fails the type check until it is classified.
+ * The catalogue-action fields a homebrew feature action keeps at its own top level —
+ * field → why. Typed over `HomebrewActionTopLevelKey`, so a new exemption is a type
+ * change, never a silent one.
  */
-type EffectCase =
-  | { action: ActionData; grants?: Grant[] }
-  | { spell: HomebrewSpellMechanics }
-  | { gap: string };
+const ACTION_FIELD_EXEMPTIONS: Readonly<Record<HomebrewActionTopLevelKey, string>> = {
+  id: "the action's own stable suffix, stored at the homebrew action's top level",
+  type: "the action economy, stored at the homebrew action's top level",
+  mechanicsProgram:
+    "a hand-written runtime program fed only by the catalogue transcriber, never authored by a player",
+};
 
-/** A homebrew spell's follow-up action (the catalogue's `followUp` dialect). */
-const followUp = (over: Partial<NonNullable<SrdSpellData["followUp"]>>) => ({
-  spell: { followUp: { type: "bonus" as const, ...over } },
+/** Samples for the action fields no public catalogue action carries today, so an
+ *  SRD-only run still proves them (pack-only fields, the generic riders, revival,
+ *  a threshold). */
+const UNUSED_ACTION_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
+  attackType: "melee",
+  requiresActionThisTurn: "flurry-of-blows",
+  grantHeroicInspiration: true,
+  costTrackerOverride: "house-recharge",
+  conditionRemoval: { options: ["charmed", "frightened"], max: 1 },
+  targetMark: { scope: "marked", maxRounds: 600 },
+  revives: { hitPoints: 1 },
+  hitPointThreshold: { max: 100, atOrBelow: "dies" },
+  forcedMovement: { direction: "push", feet: 10 },
+  speedReduction: { feet: 10, until: { phase: "turn-start", anchor: "actor" } },
+  hpMaxReduction: {},
+  swallows: { damage: { dice: "3d6", damageType: "acid" } },
+};
+
+/** Each structured field a catalogue feature action uses, with its first carrier's
+ *  value, then a sample for every schema'd field none carries. */
+function catalogueActionFieldSamples(): Map<string, unknown> {
+  const samples = new Map<string, unknown>();
+  for (const { action } of catalogueActions()) {
+    for (const [key, value] of Object.entries(action)) {
+      if (key in ACTION_FIELD_EXEMPTIONS || samples.has(key)) continue;
+      samples.set(key, value);
+    }
+  }
+  for (const [key, value] of Object.entries(UNUSED_ACTION_FIELD_SAMPLES)) {
+    if (!samples.has(key)) samples.set(key, value);
+  }
+  return samples;
+}
+
+/** The engine's own read of a stored homebrew feature action. */
+function homebrewActionActivity(feature: CustomFeature, index = 0) {
+  const stored = feature.actions?.[index];
+  if (!stored) throw new Error("homebrew action lost by the codec");
+  return activityFromAction(homebrewActionDef(stored), {
+    source: {
+      kind: "feature",
+      owner: "custom-feature",
+      ownerId: feature.instanceId,
+      index,
+    },
+    grants: homebrewFeatureGrants(feature),
+  });
+}
+
+describe("every structured catalogue-action field is homebrew-expressible", () => {
+  const samples = catalogueActionFieldSamples();
+
+  it("covers every catalogue action field, with a justified exemption only", () => {
+    const fields = new Set(
+      catalogueActions().flatMap(({ action }) => Object.keys(action))
+    );
+    for (const field of fields) {
+      if (field in ACTION_FIELD_EXEMPTIONS) {
+        expect(
+          ACTION_FIELD_EXEMPTIONS[field as HomebrewActionTopLevelKey],
+          field
+        ).toMatch(/^.{24,}$/);
+      } else {
+        expect(HOMEBREW_ACTION_FIELD_SCHEMAS, field).toHaveProperty(field);
+      }
+    }
+    const unsampled = Object.keys(HOMEBREW_ACTION_FIELD_SCHEMAS).filter(
+      (field) => !samples.has(field)
+    );
+    expect(unsampled).toEqual([]);
+  });
+
+  it("each field survives both codecs on a homebrew action and the validator accepts it", () => {
+    for (const [field, value] of samples) {
+      const feature = homebrewFeature({
+        actions: [{ ...base, [field]: value }],
+      });
+      for (const read of [throughCharacterCodec, throughLibraryCodec]) {
+        const back = read(feature);
+        expect(back.actions, `${read.name}: ${field}`).toEqual(feature.actions);
+        const [action] = back.actions ?? [];
+        if (!action) throw new Error("homebrew action lost");
+        const accepted = homebrewActionDef(action) as unknown as Record<string, unknown>;
+        expect(isDeepStrictEqual(accepted[field], value), `${read.name}: ${field}`).toBe(
+          true
+        );
+      }
+    }
+  });
+
+  it("every catalogue feature action plays unchanged as a homebrew action", () => {
+    let actions = 0;
+    for (const { action, owner } of catalogueActions()) {
+      const authored: Omit<SrdActionDef, "mechanicsProgram"> & Partial<SrdActionDef> = {
+        ...action,
+      };
+      delete authored.mechanicsProgram;
+      const homebrew = { ...authored, label: "Use", description: "Use it." };
+      const def = homebrewActionDef(homebrew);
+      expect(isDeepStrictEqual({ ...def }, authored), activityId(owner)).toBe(true);
+      actions += 1;
+    }
+    expect(actions).toBeGreaterThan(0);
+  });
 });
+
+const activityId = (owner: ActionOwner): string =>
+  owner.source.kind === "feature"
+    ? `${owner.source.ownerId}[${owner.source.index}]`
+    : owner.source.spellId;
+
+/**
+ * Every Activity effect kind → the homebrew feature action (+ feature grants) that
+ * produces it through the catalogue's own action path (`homebrewActionDef` →
+ * `translateAction`). Typed as a full Record so a new effect kind fails the type
+ * check until a homebrew action can express it.
+ */
+interface EffectCase {
+  action: ActionData;
+  grants?: Grant[];
+}
 
 const base = { type: "action", label: "Use", description: "Use it." } as const;
 
@@ -389,61 +517,57 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
     ],
   },
   damage: {
-    spell: { saveAbility: "DEX", damageDice: "2d6", damageType: "fire" },
+    action: {
+      ...base,
+      saveAbility: "DEX",
+      saveDcAbility: "CHA",
+      attack: { dice: "2d6", damageType: "fire", damageOnSave: "half" },
+    },
   },
   condition: {
-    spell: {
+    action: {
+      ...base,
       saveAbility: "WIS",
+      saveDcAbility: "CHA",
       conditionApplication: { options: ["frightened"], on: "failed-save" },
     },
   },
-  mark: followUp({ targetMark: { scope: "marked" } }),
-  maintain: followUp({ maintainsActiveKey: "house-spell-state" }),
-  stabilize: { spell: { stabilizes: true } },
-  "check-bonus": followUp({ checkBonus: { dice: "1d4" } }),
-  "next-attack-advantage": followUp({ grantsNextAttackAdvantage: true }),
-  "speed-zero": followUp({ locksMovement: true }),
-  revive: { spell: { revives: { hitPoints: 1 } } },
+  mark: { action: { ...base, type: "bonus", targetMark: { scope: "marked" } } },
+  maintain: { action: { ...base, type: "bonus", maintainsActiveKey: "house-state" } },
+  stabilize: { action: { ...base, stabilize: true } },
+  "check-bonus": { action: { ...base, checkBonus: { dice: "1d4" } } },
+  "next-attack-advantage": { action: { ...base, grantsNextAttackAdvantage: true } },
+  "speed-zero": { action: { ...base, locksMovement: true } },
+  revive: { action: { ...base, revives: { hitPoints: 1 } } },
   "hp-threshold": {
-    spell: { hitPointThreshold: { max: 100, atOrBelow: "dies" } },
+    action: { ...base, hitPointThreshold: { max: 100, atOrBelow: "dies" } },
+  },
+  "forced-movement": {
+    action: { ...base, forcedMovement: { direction: "push", feet: 10 } },
+  },
+  "speed-reduction": {
+    action: {
+      ...base,
+      speedReduction: { feet: 10, until: { phase: "turn-start", anchor: "actor" } },
+    },
+  },
+  "hp-max-reduction": { action: { ...base, hpMaxReduction: {} } },
+  swallow: {
+    action: { ...base, swallows: { damage: { dice: "3d6", damageType: "acid" } } },
   },
 };
 
-describe("every Activity effect kind is homebrew-expressible or a recorded gap", () => {
+describe("every Activity effect kind is expressible on a homebrew feature action", () => {
   for (const [kind, entry] of Object.entries(EFFECT_CASES)) {
-    if ("gap" in entry) continue;
-    if ("spell" in entry) {
-      it(`a homebrew spell produces "${kind}" after the codec`, () => {
-        const stored = spellThroughCharacterCodec(homebrewSpell(entry.spell));
-        const data = homebrewSpellData(stored);
-        if (!data) throw new Error("homebrew spell mechanics lost");
-        const { activity } = translateSpell(data);
-        const kinds = [...activity.effects, ...(activity.followUp?.effects ?? [])].map(
-          (e) => e.kind
-        );
-        expect(kinds).toContain(kind);
+    it(`a homebrew feature action produces "${kind}" after both codecs`, () => {
+      const feature = homebrewFeature({
+        actions: [entry.action],
+        ...(entry.grants ? { grants: entry.grants } : {}),
       });
-      continue;
-    }
-    it(`a homebrew feature action produces "${kind}" after the codec`, () => {
-      const stored = throughCharacterCodec(
-        homebrewFeature({
-          actions: [entry.action],
-          ...(entry.grants ? { grants: entry.grants } : {}),
-        })
-      );
-      const [action] = stored.actions ?? [];
-      if (!action) throw new Error("homebrew action lost by the codec");
-      const activity = activityFromAction(action, {
-        source: {
-          kind: "feature",
-          owner: "custom-feature",
-          ownerId: stored.instanceId,
-          index: 0,
-        },
-        grants: homebrewFeatureGrants(stored),
-      });
-      expect(activity.effects.map((e) => e.kind)).toContain(kind);
+      for (const read of [throughCharacterCodec, throughLibraryCodec]) {
+        const kinds = homebrewActionActivity(read(feature)).effects.map((e) => e.kind);
+        expect(kinds, read.name).toContain(kind);
+      }
     });
   }
 });

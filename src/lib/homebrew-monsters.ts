@@ -57,6 +57,7 @@ import {
   type ExactSchema,
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
+import { EFFECT_RIDER_SCHEMAS } from "@/lib/homebrew-actions";
 import type { LibraryEntry } from "@/lib/library";
 import { ALL_SKILLS } from "@/lib/skills";
 import { slugify } from "@/lib/utils";
@@ -217,6 +218,7 @@ export const HOMEBREW_MONSTER_ENTRY_SCHEMA: ExactSchema = discriminatedUnionSche
         conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
         conditionsIf: TRUE,
         conditionSave: objectSchema({ save: ABILITY, dc: COUNT }),
+        ...EFFECT_RIDER_SCHEMAS,
       }
     ),
     save: objectSchema(
@@ -231,6 +233,7 @@ export const HOMEBREW_MONSTER_ENTRY_SCHEMA: ExactSchema = discriminatedUnionSche
         ...ENTRY_BASE,
         damage: arraySchema(DAMAGE, 1),
         conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
+        ...EFFECT_RIDER_SCHEMAS,
       }
     ),
     spellcasting: objectSchema(

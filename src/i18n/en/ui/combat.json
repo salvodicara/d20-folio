@@ -1,5 +1,18 @@
 {
   "combat": {
+    "effectRider": {
+      "push": "Pushed up to {{distance}} away",
+      "pull": "Pulled up to {{distance}} closer",
+      "speedReduction": "Speed −{{distance}}",
+      "speedReduction_turn-start_actor": "Speed −{{distance}} until the start of the user's next turn",
+      "speedReduction_turn-end_actor": "Speed −{{distance}} until the end of the user's next turn",
+      "speedReduction_turn-start_target": "Speed −{{distance}} until the start of its next turn",
+      "speedReduction_turn-end_target": "Speed −{{distance}} until the end of its next turn",
+      "hpMaxReductionDice": "Hit Point maximum −{{dice}} until a Long Rest",
+      "hpMaxReductionDamage": "Hit Point maximum drops by the damage taken, until a Long Rest",
+      "swallowed": "Swallowed: Blinded and Restrained, Total Cover from outside",
+      "swallowDamage": "{{dice}} at the start of each of the swallower's turns"
+    },
     "title": "Combat",
     "declareApplyFailed": "Couldn't apply the effect. The DM can correct it from the encounter.",
     "resolveNextRollAdjustment": "Next {{roll}} {{sign}}{{dice}}",

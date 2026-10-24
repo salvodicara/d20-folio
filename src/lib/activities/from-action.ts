@@ -1,7 +1,14 @@
 /** Feature actions (`SrdActionDef`) → Activity. */
 import type { HealTerm, SrdActionDef } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
-import { compact, dice, statusEffect, terms, whileActiveGrants } from "./shared";
+import {
+  compact,
+  dice,
+  riderEffects,
+  statusEffect,
+  terms,
+  whileActiveGrants,
+} from "./shared";
 import type {
   Activity,
   ActivityEffect,
@@ -210,6 +217,11 @@ function effects(action: SrdActionDef, owner: ActionOwner): ActivityEffect[] {
   }
   if (action.grantsNextAttackAdvantage) out.push({ kind: "next-attack-advantage" });
   if (action.locksMovement) out.push({ kind: "speed-zero" });
+  if (action.revives) out.push({ kind: "revive", hitPoints: action.revives.hitPoints });
+  if (action.hitPointThreshold) {
+    out.push({ kind: "hp-threshold", ...action.hitPointThreshold });
+  }
+  out.push(...riderEffects(action));
   if (action.maintainsActiveKey) {
     out.push({ kind: "maintain", key: action.maintainsActiveKey });
   } else {

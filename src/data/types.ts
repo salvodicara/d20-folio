@@ -847,6 +847,50 @@ export interface SpellHitPointThreshold {
 }
 
 /**
+ * The target is moved by force, straight away from the source (`push`) or toward
+ * it (`pull`), up to `feet`. A fact the table plays on the map: the app never
+ * models positions.
+ */
+export interface ForcedMovement {
+  direction: "push" | "pull";
+  feet: number;
+}
+
+/**
+ * The target's Speed decreases by `feet` until a turn boundary of the user
+ * (`actor`) or of the target. Absent `until`: the text says how long.
+ */
+export interface SpeedReduction {
+  feet: number;
+  until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+}
+
+/**
+ * The target's Hit Point maximum decreases (a wight's Life Drain, Harm): by `dice`,
+ * or, absent, by the damage the target took from this use. A Long Rest restores it.
+ */
+export interface HpMaxReduction {
+  dice?: string;
+}
+
+/**
+ * The target is swallowed: it has the Blinded and Restrained conditions, Total Cover
+ * against everything outside the swallower, and takes `damage` at the start of each
+ * of the swallower's turns. Escaping stays in the text.
+ */
+export interface Swallow {
+  damage?: { dice: string; damageType: DamageType };
+}
+
+/** The generic riders an action or a monster attack/save can add to what it does. */
+export interface EffectRiders {
+  forcedMovement?: ForcedMovement;
+  speedReduction?: SpeedReduction;
+  hpMaxReduction?: HpMaxReduction;
+  swallows?: Swallow;
+}
+
+/**
  * A SECOND, simultaneous damage instance a single casting deals with its OWN
  * dice + type — for the handful of 2024 spells whose two damage components have
  * DIFFERENT dice that the single {@link SrdSpellData.damageDice}/`damageType`
@@ -1417,7 +1461,7 @@ export interface ActionDamageReduction {
 /** Stable semantic category used by restricted/alternate combat-economy actions. */
 export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "utilize";
 
-export interface SrdActionDef {
+export interface SrdActionDef extends EffectRiders {
   /** Optional stable suffix when one feature declares several actions of the same type. */
   id?: string;
   /**
@@ -1643,6 +1687,10 @@ export interface SrdActionDef {
    * rolled temp-HP rider.
    */
   tempHpRoll?: ActionTempHpRoll;
+  /** A dead target returns to life with these Hit Points (a homebrew revival). */
+  revives?: SpellRevive;
+  /** The target's current Hit Points pick the outcome (Power Word Kill's shape). */
+  hitPointThreshold?: SpellHitPointThreshold;
 }
 
 /**
@@ -2472,7 +2520,7 @@ export interface MonsterNarrativeEntry extends MonsterEntryBase {
 }
 
 /** A 2024 attack-roll entry: "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6+2) …". */
-export interface MonsterAttackEntry extends MonsterEntryBase {
+export interface MonsterAttackEntry extends MonsterEntryBase, EffectRiders {
   kind: "attack";
   attack: "melee" | "ranged" | "melee-or-ranged";
   /** To-hit bonus AS PRINTED (self-contained, like BeastAttack.toHit). */
@@ -2500,7 +2548,7 @@ export interface MonsterAttackEntry extends MonsterEntryBase {
 }
 
 /** A save-based entry: "Dexterity Saving Throw: DC 13, … Failure: … Success: …". */
-export interface MonsterSaveEntry extends MonsterEntryBase {
+export interface MonsterSaveEntry extends MonsterEntryBase, EffectRiders {
   kind: "save";
   save: AbilityCode;
   dc: number;
