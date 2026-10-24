@@ -19,6 +19,8 @@ export interface SessionReportNames {
   spell(ref: ConcentrationRef): string;
   /** A feature/spell/item id's display name (a status's source); the id when unknown. */
   source?(sourceId: string): string;
+  /** A recorded time (Unix ms) as the table reads it ("21:40"); no time when absent. */
+  time?(at: number): string;
 }
 
 /** The results the report can say; another stored value is left out of the line. */
@@ -151,6 +153,7 @@ export function localizePlayEvent(
       return event.actor ? `${who(event.actor)}: ${event.text}` : event.text;
     case "encounter-start":
     case "encounter-end":
+    case "scene-start":
     case "round-start":
       return null;
   }
@@ -185,7 +188,9 @@ export function renderSessionReport(
   };
   for (const section of sections) {
     if (section.kind === "outside") {
-      out.push("", `## ${t("sessionReport.outside")}`);
+      const title = section.title ? `: ${section.title}` : "";
+      const time = names.time ? ` · ${names.time(section.startedAt)}` : "";
+      out.push("", `## ${t("sessionReport.scene", { n: section.scene })}${title}${time}`);
       lines(section.entries, {});
       continue;
     }

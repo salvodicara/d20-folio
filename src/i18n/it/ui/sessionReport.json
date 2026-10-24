@@ -1,7 +1,7 @@
 {
   "sessionReport": {
     "title": "Sessione {{date}}",
-    "outside": "Fuori dal combattimento",
+    "scene": "Scena {{n}}",
     "encounter": "Scontro {{n}}",
     "beforeRounds": "Prima del primo round",
     "somethingUsed": "qualcosa",
