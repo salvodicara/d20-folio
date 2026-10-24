@@ -24,6 +24,8 @@ import {
   type SituationId,
 } from "@/lib/situational-states";
 import { castStateChoiceKeys } from "@/lib/play/states";
+import { castWeaponBinding, type WeaponBindingCast } from "@/lib/weapon-binding";
+import { getSpellById } from "@/data/spells";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { concentrationStatusKeys } from "@/lib/status";
 
@@ -65,7 +67,10 @@ export function ownTurnBoundary(
  * surgical inverse. Feature and spell commit paths differ only in payment. */
 export function activateActionState(
   action: ResolvedAction,
-  castLevel?: number
+  castLevel?: number,
+  /** The weapon a weapon-binding cast names (Magic Weapon, Shillelagh): bound when
+   *  the spell can take it. Absent (no picker yet): the state lights, nothing binds. */
+  binding?: Omit<WeaponBindingCast, "spell">
 ): { activated: boolean; restore: () => void } {
   const store = useCharacterStore.getState();
   const key = action.activatesKey;
@@ -99,10 +104,23 @@ export function activateActionState(
       store.character?.session.grantBundleChoices?.[bundleKey] ?? null,
     ])
   );
+  const spell =
+    action.source === "spell" && action.spellId
+      ? getSpellById(action.spellId)
+      : undefined;
+  const bound =
+    binding && spell && store.character
+      ? castWeaponBinding({ spell, ...binding }, store.character)
+      : null;
   if (choiceKeys.length > 0) {
     store.dispatch({
       kind: "set-bundle-choices",
-      choices: Object.fromEntries(choiceKeys.map((bundleKey) => [bundleKey, null])),
+      choices: {
+        ...Object.fromEntries(choiceKeys.map((bundleKey) => [bundleKey, null])),
+        // The named weapon's picks; their keys are among `choiceKeys`, so the
+        // restore below puts the prior picks back.
+        ...(bound?.ok ? bound.choices : {}),
+      },
     });
   }
   // An activated state can declaratively forbid Concentration (2024 Rage).
