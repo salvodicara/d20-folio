@@ -498,7 +498,7 @@ function riderFields(activity: Activity) {
       : undefined,
     swallows: swallow
       ? swallow.damage && swallowType
-        ? { damage: { dice: swallow.damage.dice.dice, damageType: swallowType } }
+        ? { damage: { dice: swallow.damage.dice.dice ?? "", damageType: swallowType } }
         : {}
       : undefined,
   };
