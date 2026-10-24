@@ -82,6 +82,10 @@ after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml -
 
 ### Migrate before you deploy (ADR-0009)
 
+**The next version's draft** lives in `docs/release/vX.Y.Z-draft.md` (now `v0.26.0-draft.md`): the
+player-facing notes and the "Dati e compatibilità" list (migrations, writers held off until old
+clients are gone, what an old client sees). Sessions add to it through PRs; the release starts from it.
+
 **Pending for the next deploy (2026-10-24): item resources.** Since #386, 17 catalogue items declare
 item-owned `resources`, so every owned copy needs `scripts/migrate-item-resources.ts` applied before
 the client that reads them ships; otherwise it shows a full counter. Run it through the
