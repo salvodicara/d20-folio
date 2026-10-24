@@ -15,6 +15,8 @@ import type {
 import type { SrdMagicItemData } from "@/data/types";
 import {
   decodeItemResourceState,
+  enteredRollMaximum,
+  enteredRollMinimum,
   isValidItemResourceState,
   isValidItemInstanceId,
   makeItemResourceKey,
@@ -302,12 +304,20 @@ function counterFromCharges(
     !charges ||
     !isWhole(charges.max, 1) ||
     !isWhole(charges.current) ||
-    charges.current > charges.max ||
-    spec.capacity.kind !== "fixed" ||
-    spec.capacity.amount !== charges.max
+    charges.current > charges.max
   ) {
     return undefined;
   }
+  // A rolled capacity (Necklace of Fireballs' 1d6 + 3 beads) takes the legacy max
+  // as the roll when the dice could make it: the old counter was pre-filled with
+  // the formula's maximum and spent down, so the beads left carry over verbatim.
+  const fits =
+    spec.capacity.kind === "fixed"
+      ? spec.capacity.amount === charges.max
+      : spec.initial.kind === "full" &&
+        charges.max >= enteredRollMinimum(spec.capacity.roll) &&
+        charges.max <= enteredRollMaximum(spec.capacity.roll);
+  if (!fits) return undefined;
   return { capacity: charges.max, current: charges.current, disabled: false };
 }
 

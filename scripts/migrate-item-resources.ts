@@ -170,10 +170,14 @@ export type CatalogueMode = "srd-only" | "composed";
  * charges, finite supplies). The ones that carried a legacy `charges` counter (fixed
  * 3/6/7/50-charge items) migrate into the same-capacity resource; rolled supplies
  * (Bag of Beans, Dust of Dryness, Sovereign Glue, Universal Solvent) had no legacy
- * counter. The Necklace of Fireballs stays on its legacy counter (rolled capacity). */
+ * counter.
+ * Re-pinned 2026-10-24 (batch 3): the Necklace of Fireballs gained typed `beads`
+ * (1d6 + 3, entered once). Its legacy counter (pre-filled with the formula's 9, then
+ * spent down) migrates with the legacy max as the rolled capacity and the beads left
+ * as they are; a max the roll could never make stays ambiguous. */
 export const EXPECTED_CATALOGUE_FINGERPRINTS: Readonly<Record<CatalogueMode, string>> = {
-  "srd-only": "a8b0ebde0c71cd272240d83ca6fab1d19bcdfc6101e2d684d2323f66a3448084",
-  composed: "4d84b6789f1115b9b797f4231c91d4f529a884a7fce921b25b767d15cf0e9fd4",
+  "srd-only": "ad4192ebf419ed34a33c5ec77ea7411c10b07adc0afd8117c3eb5d93e4970db9",
+  composed: "1299cb35b7df9b590f6d394d4e934e774036a68fde124fa5a03410166b19bd6d",
 };
 
 export function catalogueFingerprint(

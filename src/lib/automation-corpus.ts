@@ -305,6 +305,8 @@ const MAGIC_ITEM_FIELDS: Readonly<Record<string, FieldRule>> = {
   grants: compiled("grant"),
   resources: compiled("resource"),
   durationRounds: compiled("item-activation"),
+  summonedMonsters: compiled("stat-block"),
+  bestiaryPick: compiled("stat-block"),
   source: IGNORE,
 };
 

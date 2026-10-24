@@ -3271,6 +3271,20 @@ export interface SrdMagicItemData {
    * potion (Healing) or a non-timed effect.
    */
   durationRounds?: number;
+  /**
+   * The bestiary creature(s) the item becomes or calls (Figurine of Wondrous
+   * Power's Griffon, Staff of the Python's Giant Constrictor Snake, Horn of
+   * Valhalla's Berserkers). Same shape and session keys as
+   * {@link SrdSpellData.summonedMonsters}, keyed by the physical copy; the group
+   * exists while the item is equipped (and attuned, when it requires it). A
+   * cooldown or a random table in the item's text stays prose.
+   */
+  summonedMonsters?: SpellSummonedMonsters;
+  /**
+   * The item holds or calls one creature the player picks from the bestiary (Iron
+   * Flask), limited by the rule. Same seam as {@link SrdSpellData.bestiaryPick}.
+   */
+  bestiaryPick?: BestiaryPickRule;
   /** Content source */
   source: SrdSource;
 }

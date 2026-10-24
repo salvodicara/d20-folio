@@ -31,6 +31,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "ring",
     attunement: true,
+    // Mind reading, lie detection and alignment / creature-type sensing fail on you:
+    // a reminder line in the rail's Defenses.
+    grants: [{ type: "defense-note" }],
     source: "SRD",
   },
   {
@@ -81,6 +84,14 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    // Knotted, it grants Advantage on checks to climb with it: a toggle.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "rope-of-climbing-knotted",
+        grants: [{ type: "advantage-on", rollType: "check", vs: "athletics-climb" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -144,6 +155,10 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "staff",
     attunement: true,
+    // Thrown, it becomes a Giant Constrictor Snake under your control.
+    summonedMonsters: {
+      options: [{ monsterId: "giant-constrictor-snake", count: { base: 1 } }],
+    },
     source: "SRD",
   },
   {

@@ -1058,11 +1058,13 @@ function isValidEnteredRoll(roll: ResourceEnteredRoll): boolean {
   );
 }
 
-function enteredRollMinimum(roll: ResourceEnteredRoll): number {
+/** The lowest total an entered roll can make (every die a 1). */
+export function enteredRollMinimum(roll: ResourceEnteredRoll): number {
   return roll.dice + (roll.modifier ?? 0);
 }
 
-function enteredRollMaximum(roll: ResourceEnteredRoll): number {
+/** The highest total an entered roll can make (every die its top face). */
+export function enteredRollMaximum(roll: ResourceEnteredRoll): number {
   return roll.dice * roll.sides + (roll.modifier ?? 0);
 }
 

@@ -2,9 +2,9 @@
  * The "Magic items" row of docs/RULES_COVERAGE.md is counted, not estimated. Rule:
  * auto = the item declares at least one standing grant (a resistance, a bonus, a
  * sense, a score) the engine applies while it is worn; 1-tap = its only structured
- * mechanics are casts, activations, drunk states or a typed resource counter (or a
- * healing formula); reference = it declares nothing structured. Impossible is 0:
- * every item can be noted by hand.
+ * mechanics are casts, activations, drunk states, a typed resource counter, a
+ * healing formula or the bestiary creature it calls; reference = it declares
+ * nothing structured. Impossible is 0: every item can be noted by hand.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -24,7 +24,15 @@ const TAP_ONLY = new Set([
 function classOf(item: SrdMagicItemData): "auto" | "tap" | "reference" {
   const grants = item.grants ?? [];
   if (grants.some((grant) => !TAP_ONLY.has(grant.type))) return "auto";
-  if (grants.length > 0 || item.resources?.length || item.potionFormula) return "tap";
+  if (
+    grants.length > 0 ||
+    item.resources?.length ||
+    item.potionFormula ||
+    item.summonedMonsters ||
+    item.bestiaryPick
+  ) {
+    return "tap";
+  }
   return "reference";
 }
 

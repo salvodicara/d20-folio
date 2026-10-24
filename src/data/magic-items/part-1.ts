@@ -849,6 +849,20 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "3000 GP",
     properties: ["charges: 1d6+3", "8d6 fire per bead", "DC 15 DEX"],
+    // 1d6 + 3 beads, entered once from the table's roll; they never come back. A
+    // thrown bead is a level 3 Fireball (DC 15); each extra bead thrown with it
+    // raises the level by 1 (Fireball tops out at level 9).
+    resources: [FINITE_SUPPLY("beads", { dice: 1, sides: 6, modifier: 3 })],
+    grants: [
+      { type: "always-prepared-spell", spellId: "fireball" },
+      {
+        type: "free-cast-spell",
+        spellId: "fireball",
+        resourceCost: { resourceId: "beads" },
+        castOverrides: { saveDC: 15 },
+        castLevels: [3, 4, 5, 6, 7, 8, 9].map((level) => ({ level, cost: level - 2 })),
+      },
+    ],
     source: "SRD",
   },
   {
@@ -969,6 +983,9 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "common",
     type: "wondrous",
     attunement: false,
+    // The SRD's Bronze Griffon becomes a Griffon (up to 6 hours, then 5 days
+    // before it works again: the cooldown stays prose).
+    summonedMonsters: { options: [{ monsterId: "griffon", count: { base: 1 } }] },
     source: "SRD",
   },
   {
@@ -987,6 +1004,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
+    // Divination and scrying can't reach you: a reminder line in the rail's Defenses.
+    grants: [{ type: "defense-note" }],
     source: "SRD",
   },
   {
