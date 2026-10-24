@@ -1,0 +1,26 @@
+# Direction decisions (owner, 2026-10-23)
+
+Taken screen by screen from images. Approved mockups: [docs/design/direction-2026-10-23/](../design/direction-2026-10-23/).
+The style deltas (`src/`) sit on top of the prototypes in PR #347 (`design/system-from-scratch`).
+
+| #   | Area          | Decision                                                                                                                                                                                                  | Board  |
+| --- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 1   | Goal          | Perfect for the owner's two groups first; strangers later. Folio is the digital sheet at the table/Owlbear: numbers deplete as you play, maximum freedom, the sheet is always usable.                     | —      |
+| 2   | Gate          | No UI implementation until every screen's style and information placement is shown and approved. Engine work (invisible) may proceed.                                                                     | —      |
+| 3   | Look          | Start from the v2 prototype (BG3 + D&D Beyond + Foundry), keep the fantasy, raise clarity. Never judge an element alone: every option is shown inside its full screen.                                    | 01     |
+| 4   | Scanning      | Play is a live dashboard: coloured section bands, big left titles, dominant HP/AC, quieter secondary text, BG3 shapes ● action ▲ bonus ◆ reaction ▬ move, coloured sub-group bands, filters everywhere.   | 01     |
+| 5   | Colour        | One colour = one meaning, applied everywhere (spell slots purple on Play ⇒ every spell dialog purple). Coloured bands kept (neutral-gold variant rejected). "Your turn" banner is gold, not green.        | 01, 22 |
+| 6   | Play layout   | Three open columns: resources+skills · actions · log (Iniziativa replaces the top of the right column in combat).                                                                                         | 01, 02 |
+| 7   | HP            | Glowing ring around the portrait, vivid green → yellow (<½) → blood red (<¼), blue arc for temp HP; big number beside it in the same colour. No segments. High polish required.                           | 01     |
+| 8   | States        | Three fixed group buttons: ◉ concentration · ✦ effects (count) · ⚠ conditions (count); each opens its list below with plain words and "Togli".                                                            | 01, 03 |
+| 9   | Overflow      | Every screen survives the worst case: one line of states, long lists scroll inside their column ("altre N"), ellipsis for long names, compact rows; the current turn always visible.                      | 04     |
+| 10  | Sheet tabs    | Engraved full-width bar: Gioco · Incantesimi · Inventario · Privilegi · Storia. No Diario tab. Storia: background · characteristics · traits/ideals/bonds/flaws · appearance · story · allies.            | 01     |
+| 11  | Notes in play | Write in the Resoconto column (key N), @who #where !important, auto time/round stamp, "share with party"; shared notes merge by time into the session Diario; one plain "Copia".                          | 02, 12 |
+| 12  | Combat        | Starts on the first initiative roll (no Start button), for the whole campaign. Never blocks: late join, anyone advances a stalled turn, ends on enemies defeated / rest / 1 h idle / "Fine" by anyone.    | 01, 11 |
+| 13  | Automation    | Automate every mechanic possible, without errors; automatic turn effects always show a notice. Failure = "the app won't let me, I'll write it elsewhere". Homebrew and overrides always integrated.       | —      |
+| 14  | Campaign      | Tabs Gruppo · Scontro · Diario · Tesoro · Note. The campaign is a view over members' data (single source of truth); the journal lives here.                                                               | 10–13  |
+| 15  | Treasury      | Every coin/item has exactly one owner (a character or the party chest). Found loot: to me / to the chest / split. Every move logged; no total overwritten by hand.                                        | 13     |
+| 16  | Other screens | Approved at first impression: compendium (filters · list · detail), prepared-spells side panel, cast dialog, damage/heal, short rest, level-up "step 1 of 3", creation (DDB 2024 order), confirms/toasts. | 20–27  |
+| 17  | Later         | Icons revisited; AI-generated item/spell art in one style.                                                                                                                                                | —      |
+| 18  | Order of work | 1 perfect engine + 2 Play in the new style (parallel) → 3 shared combat → 4 one journal → 5 style on every other screen.                                                                                  | —      |
+| 19  | Deploy        | Hold the 112 changes on `main` since v0.25.0; ship them with the new style.                                                                                                                               | —      |
