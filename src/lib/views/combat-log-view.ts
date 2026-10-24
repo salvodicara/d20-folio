@@ -19,6 +19,8 @@
 import type { ActionEffect, CombatEvent } from "@/types/combat-log";
 import type { LocText } from "@/lib/loc-text";
 import { resolveLogStyle, type LogStyle } from "@/lib/action-log-style";
+import { SOURCE_LOCALE, type Locale } from "@/lib/locale";
+import { riderEffectClause } from "@/lib/views/effect-rider-view";
 
 /**
  * The minimal `t` shape this presenter needs — the i18next translator. Kept as a
@@ -106,6 +108,10 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle(event.reduction > 0 ? "damage" : "heal");
     case "condition-gain":
       return resolveLogStyle("condition-add");
+    case "rider-taken":
+      return resolveLogStyle(
+        event.rider.kind === "hp-max-reduction" ? "damage" : "condition-add"
+      );
     case "condition-loss":
       return resolveLogStyle("condition-remove");
     case "concentration-start":
@@ -161,7 +167,9 @@ export function localizeCombatEvent(
   resolveSourceName: ResolveSourceName,
   resolveSpellName: ResolveSpellName,
   resolveActionRef: ResolveActionRef,
-  resolveRiderRef: ResolveRiderRef
+  resolveRiderRef: ResolveRiderRef,
+  /** The reader's language: a rider's distance reads in its units (IT: metres). */
+  locale: Locale = SOURCE_LOCALE
 ): string {
   // The attack's declared result, appended to its line ("Used Longsword — critical").
   const withOutcome = (line: string, outcome: string | undefined): string =>
@@ -247,6 +255,15 @@ export function localizeCombatEvent(
       return t("combatLog.conditionGain", {
         condition: resolveConditionName(event.conditionId),
       });
+    case "rider-taken": {
+      const effect = riderEffectClause(event.rider, t, locale);
+      return event.source
+        ? t("combatLog.riderTakenFrom", {
+            effect,
+            source: resolveActionRef(event.source),
+          })
+        : effect;
+    }
     case "condition-loss":
       return t("combatLog.conditionLoss", {
         condition: resolveConditionName(event.conditionId),
@@ -335,7 +352,8 @@ export function localizeCombatLogRow(
   resolveSourceName: ResolveSourceName,
   resolveSpellName: ResolveSpellName,
   resolveActionRef: ResolveActionRef,
-  resolveRiderRef: ResolveRiderRef
+  resolveRiderRef: ResolveRiderRef,
+  locale: Locale = SOURCE_LOCALE
 ): CombatLogRow {
   // Widened on purpose: the log travels through the character doc, so an entry a
   // NEWER app version appended can reach this one with a kind it has never seen.
@@ -348,7 +366,8 @@ export function localizeCombatLogRow(
     resolveSourceName,
     resolveSpellName,
     resolveActionRef,
-    resolveRiderRef
+    resolveRiderRef,
+    locale
   ) as string | undefined;
   const style = eventLogStyle(event) as LogStyle | undefined;
   if (text === undefined || style === undefined) {

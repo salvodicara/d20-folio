@@ -43,6 +43,7 @@ import {
 } from "@/lib/views/weapon-facts-view";
 import { buildMasteryRiders, type MasteryRiderVM } from "@/lib/views/mastery-rider-view";
 import { buildRiders, type RiderVM } from "@/lib/views/rider-view";
+import { actionRiderLines } from "@/lib/views/effect-rider-view";
 import { className } from "@/lib/views/level-up-view";
 import { economyActionCategory } from "@/lib/combat-economy";
 import type { Locale } from "@/lib/locale";
@@ -242,6 +243,7 @@ function localizeSummary(
     pactProneRiders,
     trigger,
     heal,
+    effectRiders,
     ...rest
   } = summary;
   // The RAW weapon facts are folded into the unified WeaponFactsVM by
@@ -331,6 +333,9 @@ function localizeSummary(
     : proneEffect;
   return {
     ...rest,
+    ...(effectRiders?.length
+      ? { effectRiders: actionRiderLines(effectRiders, locale) }
+      : {}),
     ...(extraDamage?.length ? { extraDamage } : {}),
     ...(weaponRange && !rest.attackMode ? { attackMode: weaponRange.kind } : {}),
     ...(weaponRange?.kind === "melee" && weaponRange.thrown

@@ -59,6 +59,13 @@ export function combatEventToPlayEvent(
       };
     case "hp-max-reduction":
       return { kind: "max-hp", reduction: event.reduction, target: me };
+    case "rider-taken":
+      return {
+        kind: "rider",
+        rider: event.rider,
+        target: me,
+        ...(event.source ? { source: event.source } : {}),
+      };
     case "condition-gain":
     case "condition-loss":
       return {

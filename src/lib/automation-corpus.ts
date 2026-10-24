@@ -430,6 +430,10 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
     atWill: compiled("stat-block"),
     perDay: compiled("stat-block"),
     fact: compiled("stat-block"),
+    forcedMovement: compiled("stat-block"),
+    speedReduction: compiled("stat-block"),
+    hpMaxReduction: compiled("stat-block"),
+    swallows: compiled("stat-block"),
   }),
   "cover-rule": object({
     id: IGNORE,

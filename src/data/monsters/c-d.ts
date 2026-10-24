@@ -340,6 +340,7 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "slam",
         kind: "attack",
+        hpMaxReduction: { damageType: "acid" },
         attack: "melee",
         toHit: 9,
         reachFt: 5,

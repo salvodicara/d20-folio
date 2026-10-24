@@ -34,6 +34,8 @@ import {
   type Activity,
   type ActivityDice,
   type FeatureOwnerKind,
+  isRiderEffect,
+  type RiderEffect,
   damageTypeFacet,
   effectsOfKind,
   fixedDamageType,
@@ -130,7 +132,7 @@ import {
   resolveAllGrantSources,
   raceTraitSessionId,
 } from "@/lib/resolve-grant-sources";
-import { homebrewActionDef } from "@/lib/homebrew-actions";
+import { homebrewActionDef, homebrewActionOverride } from "@/lib/homebrew-actions";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
 import { homebrewItemData } from "@/lib/homebrew-items";
@@ -351,6 +353,12 @@ export interface ResolvedTracker {
 export interface ActionSummary {
   /** Attack bonus: +9 to hit */
   attackBonus?: number;
+  /**
+   * The generic riders the action's effects carry (push or pull, Speed loss, Hit
+   * Point maximum drain, swallow) as display lines, distances in the reader's units;
+   * `damageType` is the chip beside a line.
+   */
+  effectRiders?: ReadonlyArray<{ id: string; text: string; damageType?: DamageType }>;
   /** A deterministic held die delivered to the reviewed target. */
   grantedDie?: { kind: "bardic-inspiration"; die: string };
   /** A deterministic, non-stacking Heroic Inspiration grant. */
@@ -1164,7 +1172,11 @@ export interface RawActionSummary extends Omit<
   | "extraDamage"
   | "dieModifiers"
   | "onHitHeal"
+  | "effectRiders"
 > {
+  /** The generic riders of the action's Activity, locale-free; the presenter
+   *  (`actionRiderLines`) turns them into the card's lines. */
+  effectRiders?: ReadonlyArray<RiderEffect>;
   /**
    * Self-contained extra-damage riders on a hit (Berserker Frenzy +2d6, Psi
    * Warrior Psionic Strike +1d8+INT Force, Lifedrinker +1d6 Necrotic). The
@@ -5375,6 +5387,8 @@ function applyActionEffectSummary(
     summary.grantsHeroicInspiration = true;
   }
   if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
+  const riders = activity.effects.filter(isRiderEffect);
+  if (riders.length > 0) summary.effectRiders = riders;
   if (heals.some((effect) => effect.fromPool)) summary.poolSpendEffect = "healing";
   if (activity.skill) summary.skillCheck = activity.skill;
   const removals = effectsOfKind(activity, "end-condition");
@@ -5686,10 +5700,15 @@ function resolveFeatureActions(
     let actionIndex = -1;
     for (const authoredAction of srdFeature.mechanics.actions) {
       actionIndex += 1;
-      const actionOverride =
+      // A stored override is the player's text: only the fields its schema
+      // accepts merge over the catalogue action (`homebrewActionOverride`).
+      const storedOverride =
         featureRef.actionOverrides?.find(
           (candidate) => candidate.id && candidate.id === authoredAction.id
         ) ?? featureRef.actionOverrides?.[actionIndex];
+      const actionOverride = storedOverride
+        ? homebrewActionOverride(storedOverride)
+        : undefined;
       const action = { ...authoredAction, ...actionOverride } as SrdActionDef &
         Partial<Pick<ActionData, "label" | "description">>;
       if (

@@ -80,6 +80,10 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   "hp-max-reduction": { kind: "hp-max-reduction", reduction: 6, max: 24 },
   "fading-penalty": { kind: "fading-penalty", penaltyId: "raise-dead", amount: 4 },
   "condition-gain": { kind: "condition-gain", conditionId: "prone" },
+  "rider-taken": {
+    kind: "rider-taken",
+    rider: { kind: "forced-movement", direction: "push", feet: 15 },
+  },
   "condition-loss": { kind: "condition-loss", conditionId: "prone" },
   "concentration-start": { kind: "concentration-start", spell: conc("bless") },
   "concentration-end": { kind: "concentration-end", spell: conc("bless") },

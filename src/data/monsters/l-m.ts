@@ -693,6 +693,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "ocean-spear",
         kind: "attack",
+        speedReduction: { feet: 10, until: { phase: "turn-end", anchor: "target" } },
         attack: "melee-or-ranged",
         toHit: 2,
         reachFt: 5,

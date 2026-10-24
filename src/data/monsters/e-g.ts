@@ -501,6 +501,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "hammer-throw",
         kind: "attack",
+        forcedMovement: { direction: "push", feet: 15 },
         attack: "ranged",
         toHit: 11,
         rangeFt: { near: 60, far: 240 },
@@ -666,6 +667,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "great-bow",
         kind: "attack",
+        speedReduction: { feet: 10, until: { phase: "turn-end", anchor: "target" } },
         attack: "ranged",
         toHit: 9,
         rangeFt: { near: 150, far: 600 },

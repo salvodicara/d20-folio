@@ -656,6 +656,7 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "ice-spear",
         kind: "attack",
+        speedReduction: { feet: 10, until: { phase: "turn-end", anchor: "target" } },
         attack: "melee-or-ranged",
         toHit: 10,
         reachFt: 5,

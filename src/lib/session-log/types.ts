@@ -14,6 +14,7 @@
  * clock is needed.
  */
 
+import type { RiderEffect } from "@/lib/activities/riders";
 import type { ActionType } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
 import type { ChangeableStat } from "@/types/combat-chronicle";
@@ -78,6 +79,15 @@ export type PlayEvent =
       /** A D20 Test penalty's amount where it now stands (Raise Dead: 3 after a rest). */
       amount?: number;
       actor?: CombatantId;
+    }
+  /** A generic rider landed (pushed, slowed, drained, swallowed). An older reader
+   *  shows a neutral line. */
+  | {
+      kind: "rider";
+      rider: RiderEffect;
+      target?: CombatantId;
+      actor?: CombatantId;
+      source?: LocText;
     }
   | { kind: "down"; target: CombatantId }
   | { kind: "stabilized"; target: CombatantId; actor?: CombatantId; source?: LocText }
