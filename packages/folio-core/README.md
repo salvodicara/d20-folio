@@ -26,4 +26,15 @@ form attack in one `Activity` shape — and the translators `translateSpell`, `t
 `translateMonsterEntry`, …) and the session log (`foldSession`, `buildReport`). The SRD catalogue ships separately as static
 JSON (`/srd/v1/index.json`).
 
+Since 0.24.1, also the pure core the new app is built on:
+
+- `sheetNumbers(doc)`: every sheet number as `{ total, parts }` (the parts sum to the
+  total; a hand-set number has none).
+- Shared combat: `rollInitiative` (the first roll starts the fight), `passTurn` /
+  `turnBack`, `encounterEndReason`, `endCombat` / `reopenCombat`.
+- The treasury: `lootMoves`, `applyMove` / `reverseMove`, `campaignHoldings`, and
+  `applyItemMove` / `reverseItemMove` for items.
+- Notes in play: `parseNote` (@who, #where, !important), `noteLines`, and the private
+  notes (`privateNoteDraft`, `authorDiarioNotes`).
+
 Build: `pnpm core:build` (from the repository root). Not published yet.
