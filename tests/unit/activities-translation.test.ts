@@ -28,6 +28,7 @@ import {
   activityFromBeastAttack,
   activityFromCompanionAttack,
   activityFromItemActivation,
+  effectsOfKind,
   translateAction,
   translateMonsterEntry,
   translateSpell,
@@ -482,6 +483,27 @@ function hitConditions(activity: Activity) {
   };
 }
 
+/** The generic riders (push, Speed loss, drain, swallow), read back from the Activity. */
+function riderFields(activity: Activity) {
+  const push = effectsOfKind(activity, "forced-movement")[0];
+  const slow = effectsOfKind(activity, "speed-reduction")[0];
+  const drain = effectsOfKind(activity, "hp-max-reduction")[0];
+  const swallow = effectsOfKind(activity, "swallow")[0];
+  const swallowType = swallow?.damage?.types[0];
+  return {
+    forcedMovement: push ? { direction: push.direction, feet: push.feet } : undefined,
+    speedReduction: slow ? clean({ feet: slow.feet, until: slow.until }) : undefined,
+    hpMaxReduction: drain
+      ? clean({ dice: drain.dice?.dice, damageType: drain.damageType })
+      : undefined,
+    swallows: swallow
+      ? swallow.damage && swallowType
+        ? { damage: { dice: swallow.damage.dice.dice, damageType: swallowType } }
+        : {}
+      : undefined,
+  };
+}
+
 /** The old monster entry fields, read back from the Activity. */
 function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): MonsterEntry {
   const recharge = activity.cost.pay?.find((resource) => resource.kind === "recharge");
@@ -511,6 +533,7 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
         rangeFt: activity.target?.rangeFt,
         damage,
         ...hitConditions(activity),
+        ...riderFields(activity),
       });
     case "save":
       return clean({
@@ -525,6 +548,7 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
             ? "half"
             : "none",
         conditions: failedSaveConditions(activity),
+        ...riderFields(activity),
       });
     default:
       // Spellcasting lists and prose entries keep only their identity and limits
