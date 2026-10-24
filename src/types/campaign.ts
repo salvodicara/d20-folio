@@ -269,6 +269,22 @@ export interface CustomMonster {
  * Round-based (a plain counter, never a Timestamp) so the read boundary needs no
  * date normalization.
  */
+/** Why a fight ended: all enemies down, a rest, an idle hour, or by hand. */
+export type EncounterEndReason = "enemies-defeated" | "rest" | "idle" | "manual";
+
+export interface EncounterEnded {
+  reason: EncounterEndReason;
+  at: number;
+}
+
+export interface EncounterClock {
+  startedAt: number;
+  lastActivityAt: number;
+  turnStartedAt: number;
+  /** A turn has been passed: from then on a late roll no longer takes the top. */
+  turnsBegun: boolean;
+}
+
 export interface EncounterState {
   /** Every combatant at the table (PC refs + individual creatures), insertion order. */
   combatants: EncounterCombatant[];
@@ -331,6 +347,21 @@ export interface EncounterState {
   epoch: number;
   /** Lifecycle marker (only "active" today; ending the encounter clears the field). */
   status: "active";
+  /**
+   * When the fight started, when anything last happened and when the current turn
+   * began (ms since epoch), and whether a turn has been passed yet. It lets combat
+   * start on the first initiative roll and never block: a stalled turn can be passed
+   * by anyone, and an hour with nothing happening ends the fight. Written by any
+   * member (a roll, a turn passed), so a malformed value reads as absent; absent on
+   * a fight started before it existed. See `@/features/campaigns/encounter-lifecycle`.
+   */
+  clock?: EncounterClock;
+  /**
+   * The fight is over but kept, so ending it is never a disaster (owner,
+   * 2026-10-24): it says why and when, reopening removes it, and the next initiative
+   * roll starts a fresh fight. Absent while the fight goes on.
+   */
+  ended?: EncounterEnded;
   /**
    * THE COMBAT CHRONICLE feed — the factual, structured log the DM's tracker edits
    * accumulate over the fight ({@link CombatChronicleEvent}: ids + numbers only, never

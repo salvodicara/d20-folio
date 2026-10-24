@@ -213,6 +213,33 @@ function validExtraTurns(value: unknown): boolean {
 /** Strict encounter boundary. It returns the original current-model value and never
  * repairs, expands or rewrites persisted combatants. The one exception is the
  * member-writable `extraTurns`: a malformed value reads as absent instead of throwing. */
+const END_REASONS: ReadonlySet<unknown> = new Set([
+  "enemies-defeated",
+  "rest",
+  "idle",
+  "manual",
+]);
+
+function validEnded(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === 2 &&
+    END_REASONS.has(value.reason) &&
+    safeInteger(value.at)
+  );
+}
+
+function validClock(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.keys(value).length === 4 &&
+    ["startedAt", "lastActivityAt", "turnStartedAt"].every((key) =>
+      safeInteger(value[key])
+    ) &&
+    typeof value.turnsBegun === "boolean"
+  );
+}
+
 export function parseEncounterState(value: unknown): EncounterState {
   if (
     !isRecord(value) ||
@@ -282,11 +309,17 @@ export function parseEncounterState(value: unknown): EncounterState {
       throw new TypeError("Invalid encounter initiative swap");
     }
   }
-  if (value.extraTurns !== undefined && !validExtraTurns(value.extraTurns)) {
-    // A member may write this field (turn advance), so a malformed value must never
-    // break the fight for the whole table: it reads as absent (the plain order).
+  // Members write these (a turn advance, a roll), so a malformed value must never
+  // break the fight for the whole table: it reads as absent (the plain order, no clock).
+  const badExtraTurns =
+    value.extraTurns !== undefined && !validExtraTurns(value.extraTurns);
+  const badClock = value.clock !== undefined && !validClock(value.clock);
+  const badEnded = value.ended !== undefined && !validEnded(value.ended);
+  if (badExtraTurns || badClock || badEnded) {
     const rest: Record<string, unknown> = { ...value };
-    delete rest.extraTurns;
+    if (badExtraTurns) delete rest.extraTurns;
+    if (badClock) delete rest.clock;
+    if (badEnded) delete rest.ended;
     return rest as unknown as EncounterState;
   }
   return value as unknown as EncounterState;
