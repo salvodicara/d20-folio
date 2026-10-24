@@ -24,7 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
-import { expiryNoticeSources, unmaintainedStates } from "@/lib/play/end-turn";
+import { runEndTurn } from "@/lib/play/end-turn";
 import {
   lazy,
   Suspense,
@@ -2114,199 +2114,108 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   // economy resets at the START of your NEXT turn (when the shared pointer lands back
   // on your PC; the `useCombatStatusStore` subscription above), not here, so it is
   // robust even if you never formally End Turn (the DM advances you, you go AFK).
+  // End Turn: the sequence is `runEndTurn` (lib/play/end-turn); this wires its
+  // ports to the stores, the shared turn and this provider's toasts and prompt.
   function handleEndTurn() {
-    const c = useCombatStore.getState();
-    const charStore = useCharacterStore.getState();
-    const combatStatusStore = useCombatStatusStore.getState();
-    const encounterStatus = combatStatusStore.status;
-    // A stale/off-turn control must be a true no-op. Check before any local
-    // recovery, expiry, log, or boundary mutation; the shared CAS remains the
-    // authoritative persistence guard.
-    if (encounterStatus && !encounterStatus.isMyTurn) return;
-    const boundaryAtEnd = charStore.expireEffectBoundaries({
-      round: encounterStatus?.round ?? c.round,
-      phase: "turn-end",
-    });
-    // USE-APPLIES (Task 2) — Rage-style `maintained` states end at the end of
-    // your turn UNLESS a maintaining event happened this round. Two events are
-    // AUTO-tracked from the durable per-round action receipts:
-    //   • `"attack"` — an attack-roll or target-save action stamped this event.
-    //     Merely occupying the Action slot (Dash/Help) never qualifies.
-    // The `"bonus-extend"` maintainer (the dedicated "spend a Bonus Action to
-    // extend") is NOT inferred from an arbitrary bonus action — that would over-
-    // maintain; it is the prompt's own `Keep` affordance. A maintained state is
-    // suppressed for THIS End Turn iff one of its declared `maintainedBy` events
-    // actually happened this round; otherwise it surfaces a keep/end prompt —
-    // never silently killed (the player may maintain off-app). Generic: reads the
-    // metadata, no Rage special case. The check recomputes from scratch EVERY End
-    // Turn (no latch) — a `Keep` clears only the current round, so the next idle
-    // turn prompts AGAIN; a maintaining event clears only ITS round. Computed
-    // BEFORE endTurn clears the per-round flags.
-    // FRONTIER-S3 — run the turn/round recovery+expiry engine at this seam (the
-    // owner's turn just ended → their next turn begins):
-    //   • PER-TURN RECOVERY — auto-reset every `recovery: "per-turn"` tracker to
-    //     full (Sneak Attack's once-per-turn use), so the rogue never un-ticks it.
-    //   • TIMED EXPIRY — decrement every active `maxRounds` state's round timer and
-    //     AUTO-DROP the ones that hit 0 (Rage at 100 rounds), logging an
-    //     `effect-expired` line. Both return undo appliers folded into the End-Turn
-    //     undo. Run BEFORE the maintenance prompt is committed so an EXPIRED state
-    //     never also surfaces a keep/end prompt (a hard drop supersedes the soft one).
-    const restorePerTurn = charStore.recoverPerTurnTrackers();
-    const { expired, restore: restoreTimers } = charStore.advanceEffectTimers(
-      encounterStatus?.round ?? c.round
-    );
-    const expiredKeys = new Set(expired.map((e) => e.activeKey));
-    setMaintenancePrompts(
-      unmaintainedStates(useCharacterStore.getState().character, c.selected, expiredKeys)
-    );
-    // Each ended effect's live feedback (the log already has its line).
-    const announce = (sourceIds: string[]) => {
-      for (const sourceId of sourceIds) {
-        showToast({
-          message: t("combatLog.effectExpired", {
-            name: grantSourceLabel(sourceId, locale),
-          }),
-          duration: 4000,
-        });
-      }
-    };
-
-    // ENCOUNTER (C5): End Turn just ADVANCES the shared turn pointer — the SAME
-    // `advanceEncounterTurn` transaction the encounter's Next button calls (THE FIX
-    // for the owner's live "round 6, 7, 8…" bug: never a private solo counter, never
-    // the bogus solo "round started" toast that bumped `combatStore.round` while the
-    // encounter stayed at round 1). The per-turn economy is NOT reset here — it
-    // resets when the shared pointer LANDS BACK on this PC (turn-start, the
-    // `useCombatStatusStore` subscription above), so the budget is always fresh at the
-    // START of your turn even if you never formally End Turn (the DM advances you, you
-    // go AFK, you join mid-combat). The just-committed economy + its 5s undo toasts
-    // stay live through the brief hand-off (a mis-tap is still undoable right after
-    // ending the turn; the toasts auto-expire). The per-turn recovery / timed-state
-    // expiry above still ran — this player's turn just ended. Read the shared status
-    // at CLICK time (getState — never a reactive subscription, so the §7.2
-    // render-isolation of this provider holds).
-    if (encounterStatus) {
-      // DOUBLE-ACTIVATION CAS (optimistic layer): once the first End Turn optimistically
-      // advanced, the status reads `isMyTurn === false`; a rapid second press then finds it
-      // is no longer this PC's turn and no-ops here — so the optimistic pointer can't be
-      // double-stepped even before the disarm re-renders (the persisted CAS mirrors this).
-      // BUG 2 — flip the turn hand-off IMMEDIATELY (optimistic): publish the advanced status
-      // + pip so the sheet band goes to its `waiting` state, the own-turn controls vanish,
-      // and the pip flips quiet in THIS tick — instead of feeling dead for the
-      // `runTransaction` server round-trip. The real snapshot reconciles it when it lands.
-      const optimisticStatus = advanceGlobalCombat(encounterStatus);
-      // FLICKER FIX — record the in-flight hand-off BEFORE publishing it: the producer's
-      // reconcile keeps the turn optimistically advanced while the shared write is in flight,
-      // so a lagging listener (the pip's shared-campaigns query re-firing first, or a peer's
-      // `combat/state` echo re-running the status memo) can NEVER republish the pre-advance
-      // "your turn" frame during the round-trip. Cleared the instant the real read lands (the
-      // producer) or the write fails (`advanceSharedTurn`). See `combat-reconcile.ts`.
-      combatStatusStore.setPendingTurn({
-        campaignId: encounterStatus.campaignId,
-        epoch: encounterStatus.encounter.epoch,
-        fromId: encounterStatus.encounter.currentCombatantId ?? encounterStatus.myId,
-        fromRound: encounterStatus.round,
-      });
-      combatStatusStore.set(
-        optimisticStatus,
-        syncPipToStatus(combatStatusStore.pip, optimisticStatus)
-      );
-      advanceSharedTurn(
-        encounterStatus.campaignId,
-        encounterStatus.myId,
-        encounterStatus.encounter.currentCombatantId
-      );
-      // Timed-state expiry (Rage at its round cap) still surfaces its live feedback.
-      announce(expiryNoticeSources(expired, boundaryAtEnd.expired));
-      return;
-    }
-
-    // SOLO — the immediate-next-turn path: `endTurn` bumps the local round AND clears
-    // the turn economy (round++ folded with the reset), and we finalize this turn's
-    // undo machinery NOW (the next turn starts right away). Snapshot the turn first so
-    // a mis-tapped End Turn restores the round, the spent economy slots, the reaction
-    // and the movement in one go (endTurn() replaces these wholesale, so the captured
-    // references stay valid for restore).
-    const prevTurn = {
-      round: c.round,
-      selected: c.selected,
-      // B6 — restore the turn's budget too, so Undo-End-Turn re-allows the same
-      // multi-action economy (an Action Surge turn stays a 2-action turn on undo).
-      budget: c.budget,
-      attacksUsed: c.attacksUsed,
-      outcomeReceipts: c.outcomeReceipts,
-      outcomeOrdinal: c.outcomeOrdinal,
-      attackSwings: c.attackSwings,
-      reactionUsed: c.reactionUsed,
-      reactionUsedId: c.reactionUsedId,
-      reactionOutcomeOccurrenceId: c.reactionOutcomeOccurrenceId,
-      movementUsedFt: c.movementUsedFt,
-      // Restored on Undo-End-Turn so the maintained-state check re-evaluates the
-      // SAME round identically (a hit round stays a hit round through undo).
-      damageTakenThisRound: c.damageTakenThisRound,
-    };
-    // COMPACTION (§1.4) — capture this turn's turn-scoped stack entries (each
-    // committed slot's individual reverse-applier) and FOLD them into the single
-    // End-Turn entry. `purgeTurnScoped` removes them from the stack and dismisses
-    // their now-stale "X used — Undo" toasts (a turn-N toast left live into turn N+1
-    // could otherwise fire a fresh commit's reverse-applier). Undoing End Turn
-    // re-instates them, so every restored slot is again individually undoable — the
-    // shipped re-arm behaviour, generalized onto the stack.
-    const compacted = useUndoStore.getState().past.filter((e) => e.turnScoped);
-    useUndoStore.getState().purgeTurnScoped();
-    endTurn();
-    // Fire the canonical engine turn boundary over the character's own world
-    // (start lazily, complete-turn, mirror expiries) — fail-closed and
-    // one-way; see `advanceSoloWorldTurn`. The legacy expiry engines below
-    // keep running for every state the world does not own yet.
-    advanceSoloWorldTurn(c.round);
-    const boundaryAtStart = useCharacterStore.getState().expireEffectBoundaries({
-      round: c.round + 1,
-      phase: "turn-start",
-    });
-    const restoreReadied = expireReadiedSpell(c.round + 1);
-    // Log the round advance as a STRUCTURED turn-end event (the new round number).
-    // Undoable: removing the entry on undo keeps the log faithful to the restored turn.
-    const turnLogId = useCharacterStore
-      .getState()
-      .logEvent({ kind: "turn-end", round: c.round + 1 });
-    // FRONTIER-S3 — announce each auto-expired state (Rage at 100 rounds). The hard
-    // drop already logged an `effect-expired` line + cleared the toggle; this is the
-    // live feedback. Its undo rides the single End-Turn undo below.
-    announce(
-      expiryNoticeSources(expired, boundaryAtEnd.expired, boundaryAtStart.expired)
-    );
-    // Register the single, compaction-carrying End-Turn entry via the Pattern-B
-    // helper: its reverse restores the round/economy AND re-instates the
-    // compacted sub-entries, and its replay re-runs the whole `handleEndTurn`
-    // (solo) so a fresh turn advance + compaction is re-performed and itself
-    // undoable.
-    registerUndoableResult(
-      { message: t("combat.endTurnToast", { round: c.round + 1 }) },
-      () => {
-        useCombatStore.setState(prevTurn);
-        useCharacterStore.getState().removeLogEntry(turnLogId);
-        // FRONTIER-S3 — revert the turn/round engine's effects too: re-spend the
-        // per-turn trackers we auto-reset, restore any auto-expired state's
-        // timers/toggles/log. The whole step undoes atomically.
-        restorePerTurn?.();
-        restoreTimers();
-        restoreReadied?.();
-        boundaryAtStart.restore();
-        boundaryAtEnd.restore();
-        // Re-evaluate the maintenance prompt for the restored round (it was set for
-        // the advanced round; undoing the round un-sets it).
-        setMaintenancePrompts([]);
-        // Re-instate the compacted sub-entries onto the stack WITHOUT clearing
-        // `future` (the End-Turn entry was just moved there by the store's undo).
-        useUndoStore.setState((s) => ({
-          past: [...s.past, ...compacted].slice(-MAX_UNDO_DEPTH),
-        }));
+    runEndTurn({
+      // Read at CLICK time (getState, never a reactive subscription), so the
+      // render isolation of this provider holds.
+      encounter: () => useCombatStatusStore.getState().status,
+      soloRound: () => useCombatStore.getState().round,
+      selections: () => useCombatStore.getState().selected,
+      character: () => useCharacterStore.getState().character,
+      expireBoundaries: (position) =>
+        useCharacterStore.getState().expireEffectBoundaries(position),
+      recoverPerTurnTrackers: () => useCharacterStore.getState().recoverPerTurnTrackers(),
+      advanceEffectTimers: (round) =>
+        useCharacterStore.getState().advanceEffectTimers(round),
+      setMaintenancePrompts,
+      announce: (sourceIds) => {
+        for (const sourceId of sourceIds) {
+          showToast({
+            message: t("combatLog.effectExpired", {
+              name: grantSourceLabel(sourceId, locale),
+            }),
+            duration: 4000,
+          });
+        }
       },
-      // The replay re-runs the whole solo End Turn — a fresh advance + compaction.
-      () => handleEndTurn(),
-      { turnScoped: true }
-    );
+      handOffSharedTurn: () => {
+        const combatStatusStore = useCombatStatusStore.getState();
+        const encounterStatus = combatStatusStore.status;
+        if (!encounterStatus) return;
+        // Flip the hand-off at once (optimistic): the band goes to `waiting` and the
+        // own-turn controls vanish in this tick, not after the shared write's round
+        // trip. The in-flight turn is recorded BEFORE it is published, so a lagging
+        // listener can never republish the pre-advance "your turn" frame; it clears
+        // when the real read lands or the write fails (see combat-reconcile.ts). A
+        // rapid second press then reads `isMyTurn === false` and no-ops.
+        const optimisticStatus = advanceGlobalCombat(encounterStatus);
+        combatStatusStore.setPendingTurn({
+          campaignId: encounterStatus.campaignId,
+          epoch: encounterStatus.encounter.epoch,
+          fromId: encounterStatus.encounter.currentCombatantId ?? encounterStatus.myId,
+          fromRound: encounterStatus.round,
+        });
+        combatStatusStore.set(
+          optimisticStatus,
+          syncPipToStatus(combatStatusStore.pip, optimisticStatus)
+        );
+        advanceSharedTurn(
+          encounterStatus.campaignId,
+          encounterStatus.myId,
+          encounterStatus.encounter.currentCombatantId
+        );
+      },
+      advanceSoloTurn: () => {
+        const c = useCombatStore.getState();
+        // endTurn() replaces these wholesale, so the captured references stay valid
+        // for the restore (round, economy, budget, reaction, movement, and the
+        // round's damage so the maintained-state check re-evaluates identically).
+        const prevTurn = {
+          round: c.round,
+          selected: c.selected,
+          budget: c.budget,
+          attacksUsed: c.attacksUsed,
+          outcomeReceipts: c.outcomeReceipts,
+          outcomeOrdinal: c.outcomeOrdinal,
+          attackSwings: c.attackSwings,
+          reactionUsed: c.reactionUsed,
+          reactionUsedId: c.reactionUsedId,
+          reactionOutcomeOccurrenceId: c.reactionOutcomeOccurrenceId,
+          movementUsedFt: c.movementUsedFt,
+          damageTakenThisRound: c.damageTakenThisRound,
+        };
+        endTurn();
+        // The canonical engine turn boundary over the character's own world
+        // (fail-closed, one-way); the legacy expiry engines keep running for every
+        // state the world does not own yet.
+        advanceSoloWorldTurn(prevTurn.round);
+        return () => useCombatStore.setState(prevTurn);
+      },
+      compactTurnUndo: () => {
+        // The turn's own entries fold into End Turn's; their stale toasts close.
+        // Undoing End Turn re-instates them, each again individually undoable,
+        // without clearing `future` (the End Turn entry just moved there).
+        const compacted = useUndoStore.getState().past.filter((e) => e.turnScoped);
+        useUndoStore.getState().purgeTurnScoped();
+        return () =>
+          useUndoStore.setState((s) => ({
+            past: [...s.past, ...compacted].slice(-MAX_UNDO_DEPTH),
+          }));
+      },
+      expireReadiedSpell,
+      logTurnEnd: (round) =>
+        useCharacterStore.getState().logEvent({ kind: "turn-end", round }),
+      removeLogEntry: (id) => useCharacterStore.getState().removeLogEntry(id),
+      registerUndo: (round, reverse, replay) =>
+        registerUndoableResult(
+          { message: t("combat.endTurnToast", { round }) },
+          reverse,
+          replay,
+          { turnScoped: true }
+        ),
+    });
   }
 
   // Pool-spend confirm. A plain pool commits now; a dice-healing pool turns the
