@@ -70,7 +70,7 @@ export function spendsOncePerTurnUse(
 }
 
 /**
- * The execution of a use. A ritual is allowed only for a levelled SRD ritual spell
+ * The execution of a use. A ritual is allowed only for a levelled ritual spell (catalogue or homebrew)
  * (null otherwise). Spells, cast-pool uses and extended casts stand outside the
  * turn's economy, and so does every use made outside a fight (`inEncounter` false);
  * everything else is a turn action.
@@ -81,7 +81,7 @@ export function executionFor(
   inEncounter = true
 ): ActionExecution | null {
   if (ritual) {
-    const spell = action.spellId ? getSpellById(action.spellId) : undefined;
+    const spell = action.spellId ? getSpellById(action.spellId) : action.homebrewSpell;
     if (action.source !== "spell" || !spell?.ritual || spell.level === 0) return null;
     return { consumesTurnEconomy: false, turnScoped: false, ritual: true };
   }

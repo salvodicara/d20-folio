@@ -2626,7 +2626,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const initiallyEndedKeys = new Set(
       resolveActiveStatesEndingOnRest(beforeRest, "short")
     );
-    if (endsConcentration(beforeRest.session.concentration, initiallyEndedKeys)) {
+    if (
+      endsConcentration(
+        beforeRest.session.concentration,
+        initiallyEndedKeys,
+        beforeRest.character.spells
+      )
+    ) {
       get().setConcentration("", { undoable: false, silent: true });
     }
     if (!get().character) return;
@@ -2831,7 +2837,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentration = character.session.concentration;
     const priorConcentrationCastLevel = character.session.concentrationCastLevel;
     const priorConcentrationConditions = character.session.concentrationConditions;
-    const concentrationExpired = endsConcentration(priorConcentration, expiredKeys);
+    const concentrationExpired = endsConcentration(
+      priorConcentration,
+      expiredKeys,
+      character.character.spells
+    );
     set({
       combatActiveEffects: nextLocalEffects,
       combatLegacyActiveEffects: nextLegacyEffects,
@@ -2927,7 +2937,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentrationConditions = character.session.concentrationConditions;
     const concentrationExpired = endsConcentration(
       priorConcentration,
-      expired.map((effect) => effect.activeKey)
+      expired.map((effect) => effect.activeKey),
+      character.character.spells
     );
     // Drop each expired state's toggle (every while-active grant retracts) and
     // emit its expiry log line.

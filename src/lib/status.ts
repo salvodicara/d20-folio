@@ -16,10 +16,14 @@
  * toggles, the potion timers, the concentration badge) reads this view, so
  * when storage later moves to `session.statuses[]` only this module changes.
  */
-import type { CharacterDoc, SessionState } from "@/types/character";
+import type {
+  CharacterDoc,
+  CustomSpell,
+  SessionState,
+  SrdSpellRef,
+} from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
-import { getSpellById } from "@/data/spells";
-import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
+import { concentrationSpellData } from "@/lib/homebrew-spells";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import {
   resolveGrantActiveKey,
@@ -79,7 +83,9 @@ export function deriveStatuses(character: CharacterDoc): Status[] {
   const timers = session.effectTimers ?? {};
   const boundaries = session.effectBoundaries ?? {};
   const castLevels = session.activeSpellCastLevels ?? {};
-  const concentrationKeys = new Set(concentrationStatusKeys(session.concentration));
+  const concentrationKeys = new Set(
+    concentrationStatusKeys(session.concentration, character.character.spells)
+  );
 
   // The first declaration of each key wins, as in every lifecycle resolver.
   const declared = new Map<
@@ -195,13 +201,17 @@ export function concentrationRoundsLeft(
  * The status keys a Concentration spell holds — every `while-active` wrapper
  * the spell declares (Fly, Haste, Hunter's Mark, Bless lit on yourself, and the
  * hidden duration-only wrappers of condition spells). A status whose key is in
- * this set carries `concentration: true`. Resolved from the spell's stable ref,
- * never its name; "" and a custom spell hold nothing.
+ * this set carries `concentration: true`. Resolved from the spell's stable ref;
+ * a homebrew spell's `custom:` ref resolves through the character's own `spells`
+ * (a structured homebrew spell holds its states too). "" and a text-only custom
+ * spell hold nothing.
  */
-export function concentrationStatusKeys(ref: StoredConcentration): string[] {
-  if (ref === "" || ref.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return [];
+export function concentrationStatusKeys(
+  ref: StoredConcentration,
+  spells?: ReadonlyArray<SrdSpellRef | CustomSpell>
+): string[] {
   return (
-    getSpellById(ref)?.grants?.flatMap((grant) =>
+    concentrationSpellData(ref, spells)?.grants?.flatMap((grant) =>
       grant.type === "while-active" ? [grant.activeKey] : []
     ) ?? []
   );
@@ -212,11 +222,12 @@ export function concentrationStatusKeys(ref: StoredConcentration): string[] {
  *  the Concentration's own countdown (Detect Magic's 10 minutes passed). */
 export function endsConcentration(
   concentration: StoredConcentration,
-  endedKeys: Iterable<string>
+  endedKeys: Iterable<string>,
+  spells?: ReadonlyArray<SrdSpellRef | CustomSpell>
 ): boolean {
   if (concentration === "") return false;
   const held = new Set([
-    ...concentrationStatusKeys(concentration),
+    ...concentrationStatusKeys(concentration, spells),
     concentrationTimerKey(concentration),
   ]);
   for (const key of endedKeys) if (held.has(key)) return true;
