@@ -18,7 +18,7 @@ import type {
   ResolvedActionHeal,
   ActionResolveScope,
 } from "@/lib/smart-tracker";
-import { BASE_ACTIONS, resolveActions } from "@/lib/smart-tracker";
+import { actionSaveDc, BASE_ACTIONS, resolveActions } from "@/lib/smart-tracker";
 import { baseActionText } from "@/lib/base-action-states";
 import type { BreakdownLine, RawBreakdownPart } from "@/lib/value-breakdown";
 import type { AbilityCode } from "@/data/types";
@@ -417,8 +417,12 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
           locale
         )
       : undefined;
+  const dc = actionSaveDc(summary);
   return {
     ...rest,
+    saveDc: dc
+      ? { total: dc.total, parts: dc.parts ? localizeBreakdown(dc.parts, locale) : null }
+      : null,
     name: localizedName,
     nameEn: displayName("en"),
     // The action's NAME as the engine's localizable LocText reference — carried
@@ -478,6 +482,12 @@ export interface CombatAction extends ResolvedAction {
   riders?: RiderVM[];
   /** The weapon's declarable Weapon-Mastery riders (one-tap rows). */
   masteryRiders?: MasteryRiderVM[];
+  /**
+   * The save DC the action forces and its lines (8, PB, the ability, a grant bonus)
+   * as display lines for the breakdown tip, from the engine's `actionSaveDc`; `parts`
+   * is null when an override pins the DC. Null when the action forces no save.
+   */
+  saveDc: { total: number; parts: BreakdownLine[] | null } | null;
 }
 
 /**
