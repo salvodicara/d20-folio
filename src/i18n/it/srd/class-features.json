@@ -905,8 +905,7 @@
   },
   "ranger-hunter-defensive-tactics.grants.0.options.multiattack-defense.grants.multiattack-defense": {
     "description": "Quella creatura ha Svantaggio a tutti gli altri tiri per colpire contro di te in questo turno.",
-    "name": "Difesa Multiattacco",
-    "trigger": "Quando una creatura ti colpisce con un tiro per colpire."
+    "name": "Difesa Multiattacco"
   },
   "ranger-hunter-hunters-lore": {
     "description": "Mentre una creatura è segnata dal tuo Marchio del Cacciatore, sai se quella creatura ha Immunità, Resistenze o Vulnerabilità e, in tal caso, quali sono.",

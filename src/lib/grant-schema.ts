@@ -1812,6 +1812,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     ]),
     type: literalSchema("round1-damage-double"),
   }),
+  /**
+   * A face-triggered d20 reroll on every D20 Test (Halfling Luck: "When you roll
+   * a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the
+   * new roll"). One reroll per die; the new face stands.
+   */
+  "d20-reroll": objectSchema({
+    faces: arraySchema(numberSchema, 1),
+    type: literalSchema("d20-reroll"),
+  }),
   "roll-floor": objectSchema(
     {
       appliesTo: unionSchema([literalSchema("all"), literalSchema("proficient")]),
@@ -2047,6 +2056,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       ),
       description: LOCALE_TEXT_SCHEMA,
       id: stringSchema,
+      /** A hard cap on uses per turn (Horde Breaker: "Once on each of your turns"). */
+      maxUsesPerTurn: numberSchema,
       name: LOCALE_TEXT_SCHEMA,
       saveAbility: unionSchema([
         literalSchema("STR"),

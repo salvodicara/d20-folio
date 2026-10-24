@@ -309,7 +309,7 @@ const INVOCATION_FIELDS: Readonly<Record<string, FieldRule>> = {
   id: IGNORE,
   prerequisite: compiled("system:class-progression"),
   grants: compiled("grant"),
-  mechanics: object({ actions: compiled("action") }),
+  mechanics: object({ actions: compiled("action"), tracker: compiled("tracker") }),
 };
 
 const METAMAGIC_FIELDS: Readonly<Record<string, FieldRule>> = {

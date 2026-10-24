@@ -12,12 +12,13 @@ import {
   catalogueActivities,
   catalogueBeastAttacks,
   catalogueCompanionAttacks,
+  catalogueGrantedActions,
   catalogueItemActivations,
   catalogueMonsterEntries,
 } from "@/lib/activities/catalogue";
 
 describe("catalogueActivities", () => {
-  it("holds one Activity per spell, action, monster entry, form attack, activation and weapon", async () => {
+  it("holds one Activity per spell, action, monster entry, form attack, granted action, activation and weapon", async () => {
     const all = await catalogueActivities();
     const expected =
       spells.length +
@@ -25,6 +26,7 @@ describe("catalogueActivities", () => {
       (await catalogueMonsterEntries()).length +
       catalogueBeastAttacks().length +
       catalogueCompanionAttacks().length +
+      catalogueGrantedActions().length +
       catalogueItemActivations().length +
       SRD_WEAPONS.length;
     expect(all.length).toBe(expected);

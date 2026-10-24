@@ -46,16 +46,22 @@ export interface SrdEldritchInvocation {
    * (an invocation lives outside `character.features[]`, exactly like a race
    * trait): same owning-class (Warlock) scaling level, same cost/cross-tracker/
    * summary resolution, feeding the ONE Play-board action pipeline — never a
-   * parallel model. No `tracker` sibling (unlike the race-trait shape): every
-   * current invocation action is a bare economy row with no resource pool of its
-   * own; add one only alongside a real consumer when an invocation actually needs
-   * it (never a half-wired, untested primitive). Optional — most invocations
-   * model their whole benefit as `grants` (an at-will cast, a sense, a passive
-   * rider) and never need this.
+   * parallel model. Optional — most invocations model their whole benefit as
+   * `grants` (an at-will cast, a sense, a passive rider) and never need this.
+   *
+   * `tracker` is the invocation's own counter (Gift of the Protectors: once per
+   * Long Rest), keyed `invocation:<id>` (`invocationTrackerId`) and resolved by
+   * `resolveTrackers` like a race trait's.
    */
   mechanics?: {
     actions?: import("@/data/types").SrdActionDef[];
+    tracker?: import("@/data/types").TrackerSpec;
   };
+}
+
+/** The session id of an invocation's own counter (`mechanics.tracker`). */
+export function invocationTrackerId(invocationId: string): string {
+  return `invocation:${invocationId}`;
 }
 
 const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
@@ -233,6 +239,16 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "gift-of-the-protectors",
     prerequisite: "Level 9+ Warlock, Pact of the Tome Invocation",
+    // "When any creature whose name is on the page is reduced to 0 Hit Points but
+    // not killed outright, the creature magically drops to 1 Hit Point instead.
+    // Once this magic is triggered, no creature can benefit from it until you
+    // finish a Long Rest." One use per Long Rest; the warlock's own 0-HP prompt
+    // offers it (the player knows whose names are on the page), an ally's save
+    // is spent from the counter by hand.
+    grants: [
+      { type: "at-zero-hp-interrupt", trackerId: "invocation:gift-of-the-protectors" },
+    ],
+    mechanics: { tracker: { total: "1", recovery: "long-rest" } },
   },
   {
     id: "investment-of-the-chain-master",

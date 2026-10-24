@@ -26,6 +26,7 @@ import type {
   CreatureSize,
   DamageSource,
   FeatCategory,
+  ReactionTrigger,
   SpellSchool,
   WeaponCategory,
   WeaponMastery,
@@ -905,6 +906,8 @@ function grantSegmentArgs(g: Grant): { id?: string; optionId?: string; nameEn?: 
  */
 export interface GrantedAction {
   sourceId: string;
+  /** The grant's own stable id, when it declares one. */
+  id?: string;
   name: LocText;
   slot: ActionType;
   description?: LocText;
@@ -912,6 +915,10 @@ export interface GrantedAction {
   trigger?: LocText;
   /** Ability a TARGET saves against (when the action forces a save). */
   saveAbility?: AbilityCode;
+  /** The structured trigger token, when the grant declares one. */
+  reactionTrigger?: ReactionTrigger;
+  /** A hard cap on uses per turn. */
+  maxUsesPerTurn?: number;
 }
 
 /**
@@ -1143,6 +1150,15 @@ export interface RollFloorClause {
    * `weaponDamageBonuses.whileActiveKey` does. Absent = an unconditional floor.
    */
   whileActiveKey?: string;
+}
+
+/**
+ * A resolved face-triggered d20 reroll (Halfling Luck): an entered d20 showing
+ * one of `faces` may be rerolled once, and the new face stands.
+ */
+export interface D20RerollClause {
+  sourceId: string;
+  faces: readonly [number, ...number[]];
 }
 
 /** A resolved physical die adjustment. Dice stay table-entered; the stable
@@ -1894,6 +1910,8 @@ export interface AggregatedGrants {
   disadvantages: ReadonlyArray<AdvantageClause>;
   /** Roll floors (Rogue Reliable Talent): treat a d20 below `floor` as `floor`. */
   rollFloors: ReadonlyArray<RollFloorClause>;
+  /** Face-triggered d20 rerolls on every D20 Test (Halfling Luck on a 1). */
+  d20Rerolls: ReadonlyArray<D20RerollClause>;
   /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
   rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
   /**
@@ -2193,6 +2211,7 @@ export function emptyAggregate(): AggregatedGrants {
     advantages: [],
     disadvantages: [],
     rollFloors: [],
+    d20Rerolls: [],
     rollDieAdjustments: [],
     incomingAttackAdvantages: [],
     incomingAttackDisadvantages: [],
@@ -2461,6 +2480,7 @@ export function evaluateGrants(
   const advantages: AdvantageClause[] = [];
   const disadvantages: AdvantageClause[] = [];
   const rollFloors: RollFloorClause[] = [];
+  const d20Rerolls: D20RerollClause[] = [];
   const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const incomingAttackAdvantages: IncomingAttackClause[] = [];
   const incomingAttackDisadvantages: IncomingAttackClause[] = [];
@@ -3232,6 +3252,9 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+      case "d20-reroll":
+        d20Rerolls.push({ sourceId, faces: g.faces });
+        break;
       case "roll-die-adjustment":
         rollDieAdjustments.push({
           sourceId,
@@ -3549,6 +3572,7 @@ export function evaluateGrants(
       case "granted-action":
         grantedActions.push({
           sourceId,
+          ...(g.id ? { id: g.id } : {}),
           name: grantField(gref, "name", g.name),
           slot: g.slot,
           ...(hasGrantField(gref, "description", g.description)
@@ -3561,6 +3585,8 @@ export function evaluateGrants(
               ? { trigger: grantField(gref, "trigger", g.trigger) }
               : {}),
           saveAbility: g.saveAbility,
+          ...(g.reactionTrigger ? { reactionTrigger: g.reactionTrigger } : {}),
+          ...(g.maxUsesPerTurn !== undefined ? { maxUsesPerTurn: g.maxUsesPerTurn } : {}),
         });
         break;
 
@@ -3970,6 +3996,7 @@ export function evaluateGrants(
     advantages,
     disadvantages,
     rollFloors,
+    d20Rerolls,
     rollDieAdjustments,
     incomingAttackAdvantages,
     incomingAttackDisadvantages,

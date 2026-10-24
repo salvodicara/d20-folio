@@ -905,8 +905,7 @@
   },
   "ranger-hunter-defensive-tactics.grants.0.options.multiattack-defense.grants.multiattack-defense": {
     "description": "That creature has Disadvantage on all other attack rolls against you this turn.",
-    "name": "Multiattack Defense",
-    "trigger": "When a creature hits you with an attack roll."
+    "name": "Multiattack Defense"
   },
   "ranger-hunter-hunters-lore": {
     "description": "While a creature is marked by your Hunter's Mark, you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if so, what they are.",

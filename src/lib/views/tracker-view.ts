@@ -525,7 +525,13 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
     const raceLabel = raceTraitSourceLabel(sourceId, locale);
     if (raceLabel) return raceLabel;
   }
-  for (const kind of ["class-feature", "feat", "magic-item", "spell"] as const) {
+  for (const kind of [
+    "class-feature",
+    "feat",
+    "invocation",
+    "magic-item",
+    "spell",
+  ] as const) {
     if (hasSrd(kind, sourceId, "name", locale)) {
       return localizeSrd(kind, sourceId, "name", locale);
     }

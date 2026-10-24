@@ -304,6 +304,10 @@ const PUBLIC_RACES: SrdRaceData[] = [
       },
       {
         id: "luck",
+        // "When you roll a 1 on the d20 of a D20 Test, you can reroll the die,
+        // and you must use the new roll." The entered-d20 kernel authorizes the
+        // reroll chain (character-d20-tests); entries ask `d20RerollFor`.
+        grants: [{ type: "d20-reroll", faces: [1] }],
       },
       {
         id: "naturally-stealthy",

@@ -380,6 +380,8 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
                 id: "horde-breaker",
                 type: "granted-action",
                 slot: "free",
+                // "Once on each of your turns when you make an attack with a weapon".
+                maxUsesPerTurn: 1,
               },
             ],
           },
@@ -415,6 +417,8 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
                 id: "multiattack-defense",
                 type: "granted-action",
                 slot: "free",
+                // "When a creature hits you with an attack roll".
+                reactionTrigger: "hitByAttack",
               },
             ],
           },
