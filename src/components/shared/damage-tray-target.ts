@@ -8,7 +8,12 @@ import type { EncounterCombatantView } from "@/features/campaigns/encounter-view
 import { hpBand } from "@/features/character/molecules/hp-tier";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import type { Locale } from "@/lib/locale";
-import type { DamageTrayPlan } from "@/lib/play/damage-tray";
+import {
+  initialTrayRow,
+  type DamageTrayPlan,
+  type TrayRow,
+} from "@/lib/play/damage-tray";
+import type { CreatureType } from "@/data/types";
 import { conditionLabel } from "@/lib/views/tracker-view";
 
 /** One target as the tray shows it. */
@@ -21,7 +26,16 @@ export interface TrayTarget {
   /** The concealed band (a monster's HP the viewer may not see). */
   band?: ReturnType<typeof hpBand>;
   defenses?: DamageDefenses;
+  /** The creature's type, when known: an on-a-20 rider may hinge on it (Mace of
+   *  Smiting's 14 against a Construct). Absent for a player character. */
+  creatureType?: CreatureType;
   row?: EncounterCombatantView;
+}
+
+/** The target's first tray row, with everything the tray reads from the creature:
+ *  its defenses and its type. */
+export function initialTrayRowFor(plan: DamageTrayPlan, target: TrayTarget): TrayRow {
+  return initialTrayRow(plan, target.id, target.defenses, target.creatureType);
 }
 
 /** An encounter row as a tray target; `exact` when the viewer may see its HP. */
@@ -37,6 +51,7 @@ export function trayTargetFromRow(
       ? { hp: { current: row.currentHp, max: row.maxHp, temp: row.tempHp } }
       : { band: hpBand(row.currentHp, row.maxHp) }),
     ...(row.defenses ? { defenses: row.defenses } : {}),
+    ...(row.creatureType ? { creatureType: row.creatureType } : {}),
     row,
   };
 }
