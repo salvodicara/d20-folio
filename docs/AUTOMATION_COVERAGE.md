@@ -9,7 +9,11 @@
 > **Open exposure gaps (2026-10-08).** `self-heal-on-other`, `maximize-spell-healing` and
 > `roll-die-adjustment` lost their only consumer when the mandatory combat resolver was removed
 > (2026-09-21). They are modeled but have no effect in play until the Activity model gives them a
-> consumer again (see `docs/architecture/rules-model.html`). The on-cast triggers in
+> consumer again (see `docs/architecture/rules-model.html`). Since 2026-10-24 the core save and
+> skill rows (`saves-checks-view`, `dieAdjustments`) carry `roll-die-adjustment` dice again
+> (Bless, Guidance on its skill), and the new `damage-die-reduction` (Resistance: −1d4 of one type,
+> once per turn) has its core seam in `deriveDamageDieReductions`; neither is rendered until the
+> new sheet reads them. The on-cast triggers in
 > `src/lib/on-cast-effects.ts` (Arcane Ward refill, Expert Divination slot regain) are wired
 > again (2026-10-12): `src/lib/play/on-cast.ts` folds them into every slot-spending cast and
 > reaction cast, logged and undone with the cast. The Wild Magic Surge reminder is still unwired.

@@ -1,5 +1,43 @@
 import type { SrdSpellData } from "../types";
+import type { DamageType } from "@/types/damage";
 import { timedSpellDuration } from "./duration";
+
+/** Guidance's choice: the 18 skills, by id. */
+const GUIDANCE_SKILLS = [
+  "acrobatics",
+  "animal-handling",
+  "arcana",
+  "athletics",
+  "deception",
+  "history",
+  "insight",
+  "intimidation",
+  "investigation",
+  "medicine",
+  "nature",
+  "perception",
+  "performance",
+  "persuasion",
+  "religion",
+  "sleight-of-hand",
+  "stealth",
+  "survival",
+] as const;
+
+/** Resistance's choice, in the spell's own order. */
+const RESISTANCE_DAMAGE_TYPES: readonly DamageType[] = [
+  "acid",
+  "bludgeoning",
+  "cold",
+  "fire",
+  "lightning",
+  "necrotic",
+  "piercing",
+  "poison",
+  "radiant",
+  "slashing",
+  "thunder",
+];
 
 export const SRD_CANTRIPS: SrdSpellData[] = [
   {
@@ -138,7 +176,27 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
         activeKey: "spell-guidance",
         duration: timedSpellDuration(1),
         recipient: "selected",
-        grants: [{ type: "defense-note" }],
+        // SRD 5.2.1: "choose a skill ... adds 1d4 to any ability check using the
+        // chosen skill".
+        grants: [
+          {
+            type: "choice-grant-bundle",
+            bundleKey: "spell-guidance",
+            options: GUIDANCE_SKILLS.map((id) => ({
+              id,
+              grants: [
+                {
+                  type: "roll-die-adjustment",
+                  rollType: "check",
+                  operation: "add",
+                  dice: "1d4",
+                  consume: "each",
+                  appliesTo: id,
+                },
+              ],
+            })),
+          },
+        ],
       },
     ],
     source: "SRD",
@@ -307,7 +365,25 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
         activeKey: "spell-resistance",
         duration: timedSpellDuration(1),
         recipient: "selected",
-        grants: [{ type: "defense-note" }],
+        // SRD 5.2.1: the chosen type's damage "reduces the total damage taken by
+        // 1d4. A creature can benefit from this spell only once per turn."
+        grants: [
+          {
+            type: "choice-grant-bundle",
+            bundleKey: "spell-resistance",
+            options: RESISTANCE_DAMAGE_TYPES.map((damageType) => ({
+              id: damageType,
+              grants: [
+                {
+                  type: "damage-die-reduction",
+                  dice: "1d4",
+                  damageTypes: [damageType],
+                  oncePerTurn: true,
+                },
+              ],
+            })),
+          },
+        ],
       },
     ],
     source: "SRD",

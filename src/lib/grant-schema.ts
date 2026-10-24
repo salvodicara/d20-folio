@@ -1793,20 +1793,35 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("roll-floor"),
     },
     {
+      /** Only rolls of this ability (Glibness: Charisma checks). Absent = any. */
+      ability: unionSchema([
+        literalSchema("STR"),
+        literalSchema("DEX"),
+        literalSchema("CON"),
+        literalSchema("INT"),
+        literalSchema("WIS"),
+        literalSchema("CHA"),
+      ]),
       description: LOCALE_TEXT_SCHEMA,
     }
   ),
-  "roll-die-adjustment": objectSchema({
-    consume: unionSchema([literalSchema("next"), literalSchema("each")]),
-    dice: stringSchema,
-    operation: unionSchema([literalSchema("add"), literalSchema("subtract")]),
-    rollType: unionSchema([
-      literalSchema("attack"),
-      literalSchema("save"),
-      literalSchema("check"),
-    ]),
-    type: literalSchema("roll-die-adjustment"),
-  }),
+  "roll-die-adjustment": objectSchema(
+    {
+      consume: unionSchema([literalSchema("next"), literalSchema("each")]),
+      dice: stringSchema,
+      operation: unionSchema([literalSchema("add"), literalSchema("subtract")]),
+      rollType: unionSchema([
+        literalSchema("attack"),
+        literalSchema("save"),
+        literalSchema("check"),
+      ]),
+      type: literalSchema("roll-die-adjustment"),
+    },
+    {
+      /** A check die scoped to one skill id (Guidance). Absent = every check. */
+      appliesTo: stringSchema,
+    }
+  ),
   "incoming-attack-advantage": objectSchema(
     {
       type: literalSchema("incoming-attack-advantage"),
@@ -2363,6 +2378,21 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     target: literalSchema("weapon-attack-and-damage"),
     type: literalSchema("item-bound-bonus"),
   }),
+  /**
+   * Incoming damage of these types is reduced by a rolled die (Resistance:
+   * 1d4, once per turn). The dice stay table-rolled: a defense line, not
+   * intake math.
+   */
+  "damage-die-reduction": objectSchema(
+    {
+      damageTypes: arraySchema(DAMAGE_TYPE_SCHEMA),
+      dice: stringSchema,
+      type: literalSchema("damage-die-reduction"),
+    },
+    {
+      oncePerTurn: booleanSchema,
+    }
+  ),
 });
 
 export type GrantSchemaCustomTypes = {

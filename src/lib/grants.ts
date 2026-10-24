@@ -1133,6 +1133,8 @@ export interface RollFloorClause {
   rollType: "check" | "save" | "attack";
   floor: number;
   appliesTo: "proficient" | "all";
+  /** Only rolls of this ability (Glibness: Charisma checks). Absent = any. */
+  ability?: AbilityCode;
   description: LocText;
   /**
    * Carries the wrapping `while-active` toggle (when any — Circle of Stars
@@ -1151,6 +1153,17 @@ export interface RollDieAdjustmentClause {
   operation: "add" | "subtract";
   dice: string;
   consume: "next" | "each";
+  /** A check die scoped to one skill id (Guidance). Absent = every check. */
+  appliesTo?: string;
+}
+
+/** A resolved rolled-die damage reduction (Resistance: −1d4 of one type, once
+ * per turn). A defense line: the table rolls the die, intake math ignores it. */
+export interface DamageDieReductionClause {
+  sourceId: string;
+  dice: string;
+  damageTypes: ReadonlyArray<DamageType>;
+  oncePerTurn: boolean;
 }
 
 /**
@@ -1296,6 +1309,8 @@ export interface AggregatedGrants {
     condition?: "wearing-heavy-armor";
     sourceId: string;
   }>;
+  /** Rolled-die damage reductions (`damage-die-reduction` — Resistance). */
+  damageDieReductions: ReadonlyArray<DamageDieReductionClause>;
   /** Active Evasion-style save-damage rewrites, source-attributed. */
   saveDamageRules: ReadonlyArray<{
     ability: AbilityCode;
@@ -2088,6 +2103,7 @@ export function emptyAggregate(): AggregatedGrants {
     healingBlocked: false,
     damageSourceResistances: new Set(),
     flatDamageReductions: [],
+    damageDieReductions: [],
     saveDamageRules: [],
     speedBonusFt: 0,
     conditionalSpeedBonusFt: {},
@@ -2362,6 +2378,7 @@ export function evaluateGrants(
   );
 
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
+  const damageDieReductions: DamageDieReductionClause[] = [];
   const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
   // Movement (speeds fold through `lib/rules`)
@@ -2594,6 +2611,14 @@ export function evaluateGrants(
           trigger: g.trigger,
           ...(g.condition ? { condition: g.condition } : {}),
           sourceId,
+        });
+        break;
+      case "damage-die-reduction":
+        damageDieReductions.push({
+          sourceId,
+          dice: g.dice,
+          damageTypes: g.damageTypes,
+          oncePerTurn: g.oncePerTurn ?? false,
         });
         break;
       case "save-damage-rule":
@@ -3196,6 +3221,7 @@ export function evaluateGrants(
           rollType: g.rollType,
           floor: g.floor,
           appliesTo: g.appliesTo,
+          ...(g.ability ? { ability: g.ability } : {}),
           description: grantField(gref, "description", g.description),
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
@@ -3207,6 +3233,7 @@ export function evaluateGrants(
           operation: g.operation,
           dice: g.dice,
           consume: g.consume,
+          ...(g.appliesTo ? { appliesTo: g.appliesTo } : {}),
         });
         break;
       case "incoming-attack-advantage":
@@ -3807,6 +3834,7 @@ export function evaluateGrants(
       ruleFlagIds(values, "defense:resist-source:") as DamageSource[]
     ),
     flatDamageReductions,
+    damageDieReductions,
     saveDamageRules,
     // Projections of the folded rules, kept until their readers move to `values`.
     speedBonusFt: ruleNumber(values, "speed:walk"),
