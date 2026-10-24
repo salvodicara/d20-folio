@@ -56,6 +56,9 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   performs: "a stat-block entry that uses another one, resolved on the block",
+  multiattack: "a routine over the block's own entries, resolved on the block",
+  movement: "how the monster moves, a fact the table plays on the map",
+  breathes: "what the monster breathes, a fact of the monster",
   saveAbility: "a save with no declared DC ability",
   damageChoice: "a choice declared next to a fixed type (data to fix)",
   damageTypes: "several types declared next to a fixed type (data to fix)",
@@ -536,9 +539,16 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
 }
 
 function monsterEntryMechanics(entry: MonsterEntry): MonsterEntry {
-  // The entry another one uses is resolved on the stat block (the `performs` gap).
-  if (entry.kind === "narrative" && entry.performs) {
-    return clean({ ...entry, performs: undefined });
+  // The entry another one uses, a Multiattack's routine, a move and a breathing
+  // fact are resolved on the stat block (their named gaps).
+  if (entry.kind === "narrative") {
+    return clean({
+      ...entry,
+      performs: undefined,
+      multiattack: undefined,
+      movement: undefined,
+      breathes: undefined,
+    });
   }
   if (entry.kind !== "spellcasting") return clean(entry);
   const { id, recharge, uses, kind } = entry;

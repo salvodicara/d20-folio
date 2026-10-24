@@ -74,7 +74,11 @@ function printedFact(text: string): MonsterTraitFact | undefined {
     return { kind: "advantage", rolls: rolls(m[1] ?? ""), when: "bloodied" };
   if ((m = text.match(/has Advantage on ([\w ]+) while it is Bloodied\.$/)))
     return { kind: "advantage", rolls: rolls(m[1] ?? ""), when: "bloodied" };
-  if ((m = text.match(/^While in sunlight, the [\w ]+ has Disadvantage on ([\w ]+)\.$/)))
+  if (
+    (m = text.match(
+      /(?:^|\. )While in sunlight, (?:the [\w ]+|it) has Disadvantage on ([\w ]+)\.$/
+    ))
+  )
     return { kind: "disadvantage", rolls: rolls(m[1] ?? ""), when: "sunlight" };
   if (
     (m = text.match(/^While in Bright Light, the [\w ]+ has Disadvantage on ([\w ]+)\.$/))
@@ -157,13 +161,20 @@ describe("monster trait facts", () => {
     });
   });
 
+  it("the Vampire and its spawn have Disadvantage in sunlight (after the damage sentence)", () => {
+    for (const key of ["vampire.traits.sunlight", "vampire-spawn.traits.sunlight"])
+      expect(TRAITS.find((trait) => trait.key === key)?.entry, key).toMatchObject({
+        fact: { kind: "disadvantage", rolls: ["attack", "check"], when: "sunlight" },
+      });
+  });
+
   it("the activity translator carries the fact instead of a prose gap", () => {
     for (const { monster, entry, key, text } of printed) {
       const { activity, gaps } = translateMonsterEntry(monster.id, "traits", entry);
       expect(gaps, key).toEqual([]);
       expect(activity.fact, key).toEqual(printedFact(text));
     }
-    const prose = TRAITS.find(({ key }) => key === "aboleth.traits.amphibious");
+    const prose = TRAITS.find(({ key }) => key === "aboleth.traits.probing-telepathy");
     expect(prose).toBeDefined();
     if (!prose) return;
     expect(

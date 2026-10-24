@@ -2342,6 +2342,76 @@ export type MonsterTraitFact =
   | { kind: "absorb"; damageType: DamageType; instead?: true }
   | { kind: "siege" };
 
+/**
+ * One step of a Multiattack: `count` uses of an entry of the same stat block.
+ * Several ids are the DM's pick for each of the `count` ("two attacks, using
+ * Scimitar and Pistol in any combination", "uses Fling, Lightning Strike, or
+ * Swallow"). Ids resolve in the block's sections, actions first.
+ */
+export interface MonsterMultiattackStep {
+  count: number;
+  use: ReadonlyArray<string>;
+  /** "if available", "can use": the routine stands without it. */
+  optional?: true;
+}
+
+/**
+ * A Multiattack's printed routine (pinned to the print by `printedMultiattack`):
+ * `steps` in print order, `or` a second routine the print offers instead
+ * ("…, or it makes three Poison Ray attacks"), and `replace` the swap it allows
+ * ("It can replace one attack with a use of Spellcasting"): `count` attacks
+ * ("any" = each of them) traded for one use of an entry in `use`; `of` = only that
+ * attack ("the Claw attack"). The cast spell and upcast stay text.
+ */
+export interface MonsterMultiattack {
+  steps: ReadonlyArray<MonsterMultiattackStep>;
+  or?: ReadonlyArray<MonsterMultiattackStep>;
+  replace?: { count: number | "any"; use: ReadonlyArray<string>; of?: string };
+}
+
+/** A Speed a move uses: `walk` is the plain Speed. */
+export type MonsterMoveSpeed = "walk" | "fly" | "swim" | "burrow";
+
+/**
+ * How an entry moves the monster, as the print states it (pinned by
+ * `printedMovement`); distances in feet, a share of a Speed derives from the
+ * block's `speeds`. `gated` = a sentence makes it conditional ("While
+ * underwater", "If the roc has a creature Grappled").
+ *  - `teleport` up to `feet` (Blink Dog, Balor, Marilith).
+ *  - `leap`: jumps up to `feet` by spending `costFt` of movement (Bulette).
+ *  - `long-jump`: its Long Jump distance, `highFt` its High Jump, after a
+ *    `runningStartFt` running start (Frog, Lion).
+ *  - `move` up to its Speed (`half` of it) in one of `speeds`, or up to `feet`,
+ *    with no Opportunity Attacks or toward an enemy (Charge, Pounce, Swoop).
+ *  - `take-action`: Dash, Disengage or Hide (`pickOne` = one of them).
+ *  - `spider-climb`: climbs difficult surfaces and ceilings with no check.
+ *  - `burrow-through` solid rock or earth and stone (`half` its Burrow Speed).
+ */
+export type MonsterMovement = (
+  | { kind: "teleport"; feet: number }
+  | { kind: "leap"; feet: number; costFt: number }
+  | { kind: "long-jump"; feet: number; highFt?: number; runningStartFt?: number }
+  | {
+      kind: "move";
+      speeds: ReadonlyArray<MonsterMoveSpeed>;
+      /** A printed distance instead of a share of a Speed ("moves up to 15 feet"). */
+      feet?: number;
+      half?: true;
+      noOpportunityAttacks?: true;
+      towardEnemy?: true;
+    }
+  | {
+      kind: "take-action";
+      actions: ReadonlyArray<"dash" | "disengage" | "hide">;
+      pickOne?: true;
+    }
+  | { kind: "spider-climb" }
+  | { kind: "burrow-through"; material: "solid-rock" | "earth-and-stone"; half?: true }
+) & { gated?: true };
+
+/** What a monster breathes (Amphibious, Water Breathing), pinned by `printedBreathing`. */
+export type MonsterBreathing = "air-and-water" | "water-only";
+
 /** A prose-only entry (Multiattack, auras, most traits, legendary moves). */
 export interface MonsterNarrativeEntry extends MonsterEntryBase {
   kind: "narrative";
@@ -2357,6 +2427,12 @@ export interface MonsterNarrativeEntry extends MonsterEntryBase {
     section: "traits" | "actions" | "bonusActions" | "reactions" | "legendaryActions";
     entryId: string;
   };
+  /** A Multiattack's routine over the block's own entries. */
+  multiattack?: MonsterMultiattack;
+  /** How it moves the monster (Teleport, Leap, Charge, Spider Climb). */
+  movement?: MonsterMovement;
+  /** What the monster breathes (Amphibious, Water Breathing). */
+  breathes?: MonsterBreathing;
 }
 
 /** A 2024 attack-roll entry: "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6+2) …". */

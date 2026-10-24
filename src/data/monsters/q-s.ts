@@ -83,7 +83,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "fiendish-restoration", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["cursed-touch"] }] },
+      },
       {
         id: "cursed-touch",
         kind: "attack",
@@ -194,7 +198,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -237,7 +245,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
         kind: "narrative",
         fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
       },
-      { id: "water-breathing", kind: "narrative" },
+      { id: "water-breathing", kind: "narrative", breathes: "water-only" },
     ],
     actions: [
       {
@@ -362,7 +370,14 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     saveProficiencies: ["DEX", "WIS"],
     skills: [{ skill: "perception", expertise: true }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["beak"] }],
+          replace: { count: 1, use: ["talons"] },
+        },
+      },
       {
         id: "beak",
         kind: "attack",
@@ -382,7 +397,20 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "4d6+9", damageType: "slashing" }],
       },
     ],
-    bonusActions: [{ id: "swoop", kind: "narrative", recharge: 5 }],
+    bonusActions: [
+      {
+        id: "swoop",
+        kind: "narrative",
+        movement: {
+          kind: "move",
+          speeds: ["fly"],
+          half: true,
+          noOpportunityAttacks: true,
+          gated: true,
+        },
+        recharge: 5,
+      },
+    ],
     source: "SRD",
   },
   // Roper (2024 SRD 5.2.1). AC 20, HP 93, CR 5.
@@ -399,9 +427,21 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 18, DEX: 8, CON: 17, INT: 7, WIS: 16, CHA: 6 },
     skills: [{ skill: "perception" }, { skill: "stealth", expertise: true }],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "spider-climb", kind: "narrative" }],
+    traits: [
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
+    ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["tentacle"] },
+            { count: 1, use: ["reel"] },
+            { count: 2, use: ["bite"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -432,7 +472,16 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     traits: [{ id: "iron-scent", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["bite"] },
+            { count: 2, use: ["antennae"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -470,9 +519,19 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { skill: "stealth", expertise: true },
     ],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "running-leap", kind: "narrative" }],
+    traits: [
+      {
+        id: "running-leap",
+        kind: "narrative",
+        movement: { kind: "long-jump", feet: 25, runningStartFt: 10 },
+      },
+    ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -482,7 +541,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "2d6+4", damageType: "slashing" }],
       },
     ],
-    bonusActions: [{ id: "nimble-escape", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "nimble-escape",
+        kind: "narrative",
+        movement: { kind: "take-action", actions: ["disengage", "hide"], pickOne: true },
+      },
+    ],
     source: "SRD",
   },
   // Sahuagin Warrior (2024 SRD 5.2.1). AC 12, HP 22, CR 1/2.
@@ -506,7 +571,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "shark-telepathy", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["claw"] }] },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -516,7 +585,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d6+1", damageType: "slashing" }],
       },
     ],
-    bonusActions: [{ id: "aquatic-charge", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "aquatic-charge",
+        kind: "narrative",
+        movement: { kind: "move", speeds: ["swim"], towardEnemy: true },
+      },
+    ],
     source: "SRD",
   },
   // Salamander (2024 SRD 5.2.1). AC 15, HP 90, CR 5.
@@ -542,7 +617,14 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["flame-spear"] }],
+          replace: { count: 1, use: ["constrict"] },
+        },
+      },
       {
         id: "flame-spear",
         kind: "attack",
@@ -661,7 +743,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common"], plusAnyCount: 1 },
     gear: [{ id: "leather-armor" }, { id: "longbow" }, { id: "shortsword" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["shortsword", "longbow"] }] },
+      },
       {
         id: "shortsword",
         kind: "attack",
@@ -695,7 +781,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common", "giant", "aquan"] },
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "coven-magic", kind: "narrative" },
       {
         id: "vile-appearance",
@@ -747,8 +833,19 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 1, DEX: 12, CON: 8, INT: 1, WIS: 10, CHA: 2 },
     skills: [{ skill: "perception" }, { skill: "stealth", expertise: true }],
     xp: 0,
-    traits: [{ id: "water-breathing", kind: "narrative" }],
-    actions: [{ id: "bubble-dash", kind: "narrative" }],
+    traits: [{ id: "water-breathing", kind: "narrative", breathes: "water-only" }],
+    actions: [
+      {
+        id: "bubble-dash",
+        kind: "narrative",
+        movement: {
+          kind: "move",
+          speeds: ["swim"],
+          noOpportunityAttacks: true,
+          gated: true,
+        },
+      },
+    ],
     source: "SRD",
   },
   // Shadow (2024 SRD 5.2.1). AC 12, HP 27, CR 1/2.
@@ -796,7 +893,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d6+2", damageType: "necrotic" }],
       },
     ],
-    bonusActions: [{ id: "shadow-stealth", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "shadow-stealth",
+        kind: "narrative",
+        movement: { kind: "take-action", actions: ["hide"], gated: true },
+      },
+    ],
     source: "SRD",
   },
   // Shambling Mound (2024 SRD 5.2.1). AC 15, HP 110, CR 5.
@@ -823,7 +926,14 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["charged-tendril"] }],
+          replace: { count: 1, use: ["engulf"] },
+        },
+      },
       {
         id: "charged-tendril",
         kind: "attack",
@@ -878,7 +988,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "spell-storing", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["fist"] }] },
+      },
       {
         id: "fist",
         kind: "attack",
@@ -931,7 +1045,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1027,7 +1145,14 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["flying-sword"] }],
+          replace: { count: 1, use: ["slaying-bow"] },
+        },
+      },
       {
         id: "flying-sword",
         kind: "attack",
@@ -1179,7 +1304,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["claw"] }] },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -1265,7 +1394,16 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["claw"] },
+            { count: 1, use: ["roar"] },
+          ],
+        },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -1360,7 +1498,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "stealth" }],
     senses: { darkvisionFt: 30 },
     traits: [
-      { id: "spider-climb", kind: "narrative" },
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
       { id: "web-walker", kind: "narrative" },
     ],
     actions: [
@@ -1396,7 +1534,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal", "common"] },
     traits: [{ id: "fiendish-restoration", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["bite", "necrotic-ray"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -1524,7 +1666,17 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
         ],
       },
     ],
-    bonusActions: [{ id: "cunning-action", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "cunning-action",
+        kind: "narrative",
+        movement: {
+          kind: "take-action",
+          actions: ["dash", "disengage", "hide"],
+          pickOne: true,
+        },
+      },
+    ],
     source: "SRD",
   },
   // Steam Mephit (2024 SRD 5.2.1). AC 10, HP 17, CR 1/4.
@@ -1623,7 +1775,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["giant"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["stone-club", "boulder"] }] },
+      },
       {
         id: "stone-club",
         kind: "attack",
@@ -1688,7 +1844,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["slam", "force-bolt"] }] },
+      },
       {
         id: "slam",
         kind: "attack",
@@ -1745,9 +1905,13 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["lightning", "thunder"],
     senses: { darkvisionFt: 120, truesightFt: 30 },
     languages: { ids: ["common", "giant"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["storm-sword", "thunderbolt"] }] },
+      },
       {
         id: "storm-sword",
         kind: "attack",
@@ -1811,7 +1975,16 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal", "common", "infernal"], telepathyFt: 60 },
     traits: [{ id: "incubus-form", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["fiendish-touch"] },
+            { count: 1, use: ["charm", "draining-kiss"] },
+          ],
+        },
+      },
       {
         id: "fiendish-touch",
         kind: "attack",
@@ -1948,7 +2121,11 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     ],
     senses: { blindsightFt: 30 },
     traits: [
-      { id: "spider-climb", kind: "narrative" },
+      {
+        id: "spider-climb",
+        kind: "narrative",
+        movement: { kind: "spider-climb", gated: true },
+      },
       { id: "swarm", kind: "narrative" },
     ],
     actions: [
@@ -1989,7 +2166,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     traits: [
       { id: "swarm", kind: "narrative" },
-      { id: "water-breathing", kind: "narrative" },
+      { id: "water-breathing", kind: "narrative", breathes: "water-only" },
     ],
     actions: [
       {

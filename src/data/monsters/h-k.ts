@@ -28,7 +28,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     traits: [{ id: "draconic-origin", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["claw"] }] },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -46,7 +50,9 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
         onSuccess: "half",
       },
     ],
-    bonusActions: [{ id: "leap", kind: "narrative" }],
+    bonusActions: [
+      { id: "leap", kind: "narrative", movement: { kind: "leap", feet: 30, costFt: 10 } },
+    ],
     source: "SRD",
   },
   // Harpy (2024 SRD 5.2.1). AC 11, HP 38, CR 1.
@@ -128,7 +134,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -188,7 +198,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -201,7 +215,9 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
         ],
       },
     ],
-    bonusActions: [{ id: "leap", kind: "narrative" }],
+    bonusActions: [
+      { id: "leap", kind: "narrative", movement: { kind: "leap", feet: 30, costFt: 10 } },
+    ],
     source: "SRD",
   },
   // Hill Giant (2024 SRD 5.2.1). AC 13, HP 105, CR 5.
@@ -219,7 +235,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }],
     languages: { ids: ["giant"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["tree-club", "trash-lob"] }] },
+      },
       {
         id: "tree-club",
         kind: "attack",
@@ -256,7 +276,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception", expertise: true }],
     traits: [{ id: "flyby", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -283,7 +307,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }],
     traits: [{ id: "hold-breath", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -313,7 +341,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     gear: [{ id: "greatsword" }, { id: "half-plate-armor" }, { id: "longbow" }],
     traits: [{ id: "aura-of-authority", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["greatsword", "longbow"] }] },
+      },
       {
         id: "greatsword",
         kind: "attack",
@@ -449,7 +481,14 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["searing-fork", "hurl-flame"] }],
+          replace: { count: 1, use: ["infernal-tail"] },
+        },
+      },
       {
         id: "searing-fork",
         kind: "attack",
@@ -493,7 +532,7 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 18, DEX: 14, CON: 15, INT: 1, WIS: 10, CHA: 4 },
     skills: [{ skill: "perception" }],
     senses: { blindsightFt: 60 },
-    traits: [{ id: "water-breathing", kind: "narrative" }],
+    traits: [{ id: "water-breathing", kind: "narrative", breathes: "water-only" }],
     actions: [
       {
         id: "bite",
@@ -606,7 +645,14 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["ice-spear"] }],
+          replace: { count: 1, use: ["tail"] },
+        },
+      },
       {
         id: "ice-spear",
         kind: "attack",
@@ -768,7 +814,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["abyssal", "common", "infernal"], telepathyFt: 60 },
     traits: [{ id: "succubus-form", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["restless-touch"] }] },
+      },
       {
         id: "restless-touch",
         kind: "attack",
@@ -836,7 +886,14 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       { id: "invisibility", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["wind-swipe"] }],
+          replace: { count: 1, use: ["vortex"] },
+        },
+      },
       {
         id: "wind-swipe",
         kind: "attack",
@@ -894,7 +951,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bladed-arm", "fiery-bolt"] }] },
+      },
       {
         id: "bladed-arm",
         kind: "attack",
@@ -993,7 +1054,11 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     gear: [{ id: "greatsword" }, { id: "heavy-crossbow" }, { id: "plate-armor" }],
     languages: { ids: ["common"], plusAnyCount: 1 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["greatsword", "heavy-crossbow"] }] },
+      },
       {
         id: "greatsword",
         kind: "attack",
@@ -1084,12 +1149,21 @@ export const SRD_MONSTERS_H_K: ReadonlyArray<MonsterStatBlock> = [
     },
     xpInLair: 62000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
       { id: "siege-monster", kind: "narrative", fact: { kind: "siege" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["tentacle"] },
+            { count: 1, use: ["fling", "lightning-strike", "swallow"] },
+          ],
+        },
+      },
       {
         id: "tentacle",
         kind: "attack",
