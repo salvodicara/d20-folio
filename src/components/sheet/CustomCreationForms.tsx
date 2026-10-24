@@ -104,6 +104,9 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
     if (!name.trim()) return;
 
     const newSpell: CustomSpell = {
+      // Keep what the form doesn't show (structured `mechanics`, …): an edit only
+      // overwrites the fields below.
+      ...seed,
       custom: true,
       name: name.trim(),
       level,
@@ -323,6 +326,7 @@ export function CustomEquipmentForm({
 
     if (isWeapon) {
       const weapon: CustomWeapon = {
+        ...seedWeapon,
         custom: true,
         name: name.trim(),
         quantity,
@@ -349,6 +353,7 @@ export function CustomEquipmentForm({
     } else if (isArmor) {
       const parsedAc = parseInt(acBonus, 10);
       const armor: CustomEquipment = {
+        ...seedGear,
         custom: true,
         name: name.trim(),
         description: description.trim() || undefined,
@@ -373,6 +378,10 @@ export function CustomEquipmentForm({
       keepInLibrary({ kind: "equipment", item: armor }, t);
     } else {
       const equipment: CustomEquipment = {
+        ...seedGear,
+        // Plain gear again: drop an armor seed's AC fields.
+        armorCategory: undefined,
+        acBonus: undefined,
         custom: true,
         name: name.trim(),
         description: description.trim() || undefined,
