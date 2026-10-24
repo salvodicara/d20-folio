@@ -23,7 +23,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { prepareMechanicsCommand, type MechanicsCommand } from "@/lib/mechanics-command";
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
-import { useCharacterStore } from "@/stores/characterStore";
+import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -37,9 +37,11 @@ const UID = "test-uid";
 function docWithWorld(
   char: Parameters<typeof makeCharacterDoc>[0] = {},
   session: Partial<SessionState> = {},
-  opts: { seedTrackers?: boolean } = {}
+  opts: { seedTrackers?: boolean; id?: string } = {}
 ): CharacterDoc {
   const doc = makeCharacterDoc(char, session);
+  // The world is bound to the character id, so a fresh id must be set before it.
+  if (opts.id) doc.id = opts.id;
   const world = characterWorldState(
     doc,
     UID,
@@ -434,6 +436,25 @@ describe("conditions family: addCondition / removeConditionSilent", () => {
     undo?.();
     expect(liveConditionCount("poisoned")).toBe(1);
     expect(liveDoc().session.conditions).toContain("poisoned");
+  });
+
+  it("condition events replay exactly: the removal's undo goes through the log, a later change stays", () => {
+    const id = `world-cond-${Math.random().toString(36).slice(2)}`;
+    load(docWithWorld({}, {}, { id }));
+    useCharacterStore.getState().addCondition("poisoned");
+    const undo = useCharacterStore.getState().removeConditionSilent("poisoned");
+    // Something else happens after the removal.
+    useCharacterStore
+      .getState()
+      .dispatch({ kind: "toggle-pin", actionId: "dagger", defaultPinned: false });
+    const pinsAfter = liveDoc().session.pinnedActions;
+    expect(playLogShadowStats(id)).toMatchObject({ checkpoints: 1, mismatches: 0 });
+    undo?.();
+    expect(liveConditionCount("poisoned")).toBe(1);
+    expect(liveDoc().session.conditions).toContain("poisoned");
+    // Only the removal went: the later change is still there.
+    expect(liveDoc().session.pinnedActions).toEqual(pinsAfter);
+    expect(playLogShadowStats(id)).toMatchObject({ checkpoints: 1, mismatches: 0 });
   });
 
   it("applyHiddenState books Invisible as a world occurrence; its undo ends it", () => {

@@ -66,7 +66,9 @@ export function commitWorldVitals(
 }
 
 /** Commit one planned condition action (apply/end) over the persisted world —
- * the {@link commitWorldVitals} skeleton with a caller-supplied planner. */
+ * the {@link commitWorldVitals} skeleton with a caller-supplied planner. The journal
+ * stores the action id: a caller that supplies one (minted once, carried by its sheet
+ * event) gets a commit the play log replays exactly; without one a fresh id is minted. */
 export function commitWorldCondition(
   doc: CharacterDoc,
   prefix: string,
@@ -74,7 +76,8 @@ export function commitWorldCondition(
     uid: string,
     world: Readonly<CharacterMaterialState>,
     actionId: string
-  ) => Readonly<JournalActionDraft> | null
+  ) => Readonly<JournalActionDraft> | null,
+  givenActionId?: string
 ): WorldVitalsCommit | null {
   if (doc.session.world === undefined) return null;
   const uid = persistedWorldUid(doc.session.world);
@@ -87,7 +90,7 @@ export function commitWorldCondition(
     characterTrackerSeeds(doc)
   );
   if (!world) return null;
-  const actionId = `${prefix}-${crypto.randomUUID()}`;
+  const actionId = givenActionId ?? `${prefix}-${crypto.randomUUID()}`;
   const action = plan(uid, world, actionId);
   if (!action) return null;
   const committed = commitCharacterAction(

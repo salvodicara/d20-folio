@@ -86,8 +86,10 @@ export type SheetEvent =
       castLevel?: number;
       retractedFormTempHp?: number;
     }
-  | { kind: "add-condition"; condition: string }
-  | { kind: "remove-condition"; condition: string }
+  /** `worldActionId`: the journal id of the world commit, minted once by the caller so
+   *  the play log replays it exactly (a fresh one is minted without it). */
+  | { kind: "add-condition"; condition: string; worldActionId?: string }
+  | { kind: "remove-condition"; condition: string; worldActionId?: string }
   | { kind: "add-session-defense"; defense: SessionDefenseKind; id: string }
   | { kind: "remove-session-defense"; defense: SessionDefenseKind; id: string }
   | { kind: "set-active-state"; key: string; isActive: boolean; litRound: number }
@@ -202,9 +204,11 @@ export function applySheetEvent(
           : {}),
       });
     case "add-condition":
-      return withSession(addCondition(doc, event.condition));
+      return withSession(addCondition(doc, event.condition, event.worldActionId));
     case "remove-condition":
-      return withSession(removeCondition(doc, event.condition)?.session);
+      return withSession(
+        removeCondition(doc, event.condition, event.worldActionId)?.session
+      );
     case "add-session-defense":
       return withSession(addSessionDefense(doc, event.defense, event.id));
     case "remove-session-defense":

@@ -19,10 +19,17 @@ import { commitWorldCondition } from "./world-commit";
  * only moves chips on an engine transition, and a world that still holds a condition
  * the DM's card removed sees none.
  */
-export function addCondition(doc: CharacterDoc, condition: string): SessionState | null {
+export function addCondition(
+  doc: CharacterDoc,
+  condition: string,
+  worldActionId?: string
+): SessionState | null {
   if (doc.session.conditions.includes(condition)) return null;
-  const engine = commitWorldCondition(doc, "condition-apply", (uid, world, id) =>
-    planSelfConditionApply(doc, uid, world, condition, id)
+  const engine = commitWorldCondition(
+    doc,
+    "condition-apply",
+    (uid, world, id) => planSelfConditionApply(doc, uid, world, condition, id),
+    worldActionId
   );
   const base = engine ? engine.session : doc.session;
   return base.conditions.includes(condition)
@@ -37,11 +44,15 @@ export function addCondition(doc: CharacterDoc, condition: string): SessionState
  */
 export function removeCondition(
   doc: CharacterDoc,
-  condition: string
+  condition: string,
+  givenActionId?: string
 ): { session: SessionState; worldActionId: string | null } | null {
   if (!effectiveSessionConditions(doc.session).includes(condition)) return null;
-  const engine = commitWorldCondition(doc, "condition-end", (uid, world, id) =>
-    planSelfConditionEnd(doc, uid, world, condition, id)
+  const engine = commitWorldCondition(
+    doc,
+    "condition-end",
+    (uid, world, id) => planSelfConditionEnd(doc, uid, world, condition, id),
+    givenActionId
   );
   // A condition a lit potion state gives (Invisibility) ends with that state.
   const base = endStateKeys(
