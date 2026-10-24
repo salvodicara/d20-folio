@@ -255,6 +255,10 @@ export const WIZARD_FEATURES: SrdClassFeatureData[] = [
     class: "wizard",
     subclass: "evoker",
     level: 6,
+    // "When you cast an Evocation spell that affects other creatures that you can
+    // see, you can choose a number of them equal to 1 plus the spell's level": a
+    // free row beside the cast (the chosen creatures' saves are theirs).
+    grants: [{ id: "sculpt-spells", type: "granted-action", slot: "free" }],
     source: "SRD",
   },
   {

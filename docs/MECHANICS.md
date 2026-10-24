@@ -942,6 +942,9 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   mutations (`heavy-armor`, `incapacitated`) without naming Rage in UI/store code. Unknown homebrew
   tokens remain manual overrides. Maintainers consume persisted action `triggerEvents`; merely spending
   the Action slot (Dash, Help) never impersonates an attack/save event.
+- **Damage-proof Concentration.** `concentration-damage-proof { spellId }` (Relentless Hunter on
+  Hunter's Mark, any homebrew spell) means damage queues no Concentration save while that spell is
+  held; `damageQueuesConcentrationSave` answers it. Dropping to 0 HP still ends Concentration.
 - **Rest lifetime seam.** A completed rest also advances declared active-state time: maintained and
   owner-turn-boundary states always end; a `timed` state ends when its declared minutes fit within the
   Short/Long Rest. The store retracts the toggle and its timer, boundary and cast-level provenance as

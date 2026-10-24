@@ -412,11 +412,29 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     subclass: "oath-of-devotion",
     level: 15,
     // The Divine Smite spell is always readied via L2 "Paladin's Smite"
-    // (paladin-divine-smite grants always-prepared-spell). The half-cover aura
-    // is an emanation tied to combat state — the cover system is resolved by
-    // the combat-state layer, so it is left prose-only here (NOTE: no Grant for
-    // the +2 AC / +2 DEX-save Half Cover; surface it when the cover/aura combat
-    // model lands). We model only the always-readied fact + descriptive note.
+    // (paladin-divine-smite grants always-prepared-spell). "Whenever you cast
+    // Divine Smite, you and your allies have Half Cover while in your Aura of
+    // Protection. The aura has this benefit until the start of your next turn":
+    // a state lit after the cast, ending at your next turn's start, holding a
+    // Half-Cover aura of the Aura of Protection's reach (10 ft; 30 ft from
+    // Paladin 18, Aura Expansion).
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "paladin-devotion-smite-of-protection",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [
+          {
+            type: "aura",
+            auraId: "smite-of-protection",
+            radius: "variable",
+            radiusByLevel: { 1: 10, 18: 30 },
+            affects: "allies-and-self",
+            effect: { kind: "half-cover" },
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
