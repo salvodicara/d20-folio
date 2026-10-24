@@ -27,6 +27,7 @@ import * as defenses from "@/lib/play/defenses";
 import * as cover from "@/lib/play/cover";
 import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
+import * as timers from "@/lib/play/effect-timers";
 import * as trackerRolls from "@/lib/play/tracker-rolls";
 import * as forms from "@/lib/play/forms";
 import * as light from "@/lib/play/light";
@@ -258,6 +259,22 @@ const CASES: {
   "perform-act": [
     { kind: "perform-act", act: "cast-spell" },
     () => at(states.endStatesOnAct(doc, "cast-spell")?.session),
+  ],
+  "arm-effect-timer": [
+    { kind: "arm-effect-timer", key: "rage", rounds: 10, tickedRound: 0 },
+    () => at(timers.armEffectTimer(doc, "rage", 10, 0)),
+  ],
+  "arm-effect-boundary": [
+    { kind: "arm-effect-boundary", key: "rage", round: 2, phase: "turn-end" },
+    () => at(timers.armEffectBoundary(doc, "rage", { round: 2, phase: "turn-end" })),
+  ],
+  "advance-effect-timers": [
+    { kind: "advance-effect-timers", forRound: 1 },
+    () => at(timers.advanceEffectTimers(doc, 1).session),
+  ],
+  "expire-effect-boundaries": [
+    { kind: "expire-effect-boundaries", round: 3, phase: "turn-start" },
+    () => at(timers.expireEffectBoundaries(doc, { round: 3, phase: "turn-start" })),
   ],
   "recover-per-turn-trackers": [
     { kind: "recover-per-turn-trackers" },
