@@ -430,6 +430,13 @@ service cloud.firestore {
       allow read, write: if isNotBlocked() && request.auth.uid == uid;
     }
 
+    // Private play notes (owner 2026-10-24): a note not shared with the party is
+    // visible ONLY to its author, never the DM or the party (who may read the sheet
+    // and its play state). Owner-only, like the snapshots.
+    match /users/{uid}/characters/{charId}/privateNotes/{noteId} {
+      allow read, write: if isNotBlocked() && request.auth.uid == uid;
+    }
+
     // The account-level homebrew library (`library/index` — ONE doc holding the whole
     // `entries` list; see src/lib/library-io.ts). OWNER-ONLY, plus the free-tier cap
     // mirrored from FREE_TIER_LIMITS.libraryEntries so a direct write can't bypass it.
