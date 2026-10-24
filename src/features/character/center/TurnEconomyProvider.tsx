@@ -109,11 +109,7 @@ import {
   maxReplaceAttackSpellLevel,
   isPipAttackAction,
 } from "@/lib/views/combat-action-view";
-import {
-  resolveSpellCastOptions,
-  resolveMetamagicForCast,
-  remainingSorceryPoints,
-} from "@/lib/views/spell-cast-sources";
+import { remainingSorceryPoints } from "@/lib/views/spell-cast-sources";
 import { PoolSpendModal, type PoolSpendRequest } from "@/components/sheet/PoolSpendModal";
 import {
   CastLevelModal,
@@ -154,7 +150,8 @@ import {
   releaseKeepsConcentration,
 } from "@/lib/play/ready";
 import { getSpellById } from "@/data/spells";
-import { buildCastOptions, slotUsageKey } from "@/lib/cast-options";
+import { slotUsageKey } from "@/lib/cast-options";
+import { castPlan } from "@/lib/views/cast-plan";
 import { itemResourceSpend } from "@/lib/item-resource-commands";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";
@@ -1588,46 +1585,16 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     ) => void,
     execution: ActionExecution = TURN_EXECUTION
   ): boolean {
-    if (action.summary.recurringUse) return false;
-    if (action.source !== "spell" || !character) return false;
-
-    const isCantrip = (action.spellLevel ?? 0) === 0;
-    const baseLevel = action.slotLevel ?? action.spellLevel ?? 1;
-    const availableOptions = isCantrip
-      ? []
-      : action.spellId
-        ? resolveSpellCastOptions(character, action.spellId, baseLevel, true, locale, {
-            mastery: t("spellPrep.spellMasteryBadge"),
-            signature: t("spellPrep.signatureSpellBadge"),
-          })
-        : buildCastOptions(
-            character.character.spellSlots,
-            character.session.spellSlots,
-            baseLevel
-          );
-    if (execution.ritual) {
-      const option: CastCommitOption = { kind: "ritual", level: baseLevel };
-      const finalAction = actionForCastOption(action, option, baseLevel);
-      if (onConfigured) onConfigured(finalAction, option, []);
-      else void commitCastOption(finalAction, slot, option, [], false, execution);
-      return true;
-    }
-    const options = availableOptions;
-    if (!isCantrip && options.length === 0) {
+    if (!character) return false;
+    const plan = castPlan(character, action, execution, locale, {
+      mastery: t("spellPrep.spellMasteryBadge"),
+      signature: t("spellPrep.signatureSpellBadge"),
+    });
+    if (plan.kind === "none") return false;
+    if (plan.kind === "no-slots") {
       showToast({ message: t("combat.noSlotsRemaining"), duration: 2000 });
       return true;
     }
-
-    const metamagic: MetamagicCastRow[] = action.spellId
-      ? resolveMetamagicForCast(character, action.spellId).map((m) => ({
-          id: m.id,
-          name: localizeSrd("metamagic", m.id, "name", locale),
-          cost: m.cost,
-          affordable: m.affordable,
-          appliesToSpell: m.appliesToSpell,
-          stacksWithPrimary: m.stacksWithPrimary,
-        }))
-      : [];
     const spellData = action.spellId ? getSpellById(action.spellId) : undefined;
     const finish = (
       option: CastCommitOption,
@@ -1646,17 +1613,20 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
         );
     };
 
-    if (metamagic.length === 0) {
-      if (isCantrip) {
-        finish({ kind: "cantrip", level: 0 }, []);
-        return true;
-      }
-      if (options.length === 1 && options[0]) {
-        finish(options[0], []);
-        return true;
-      }
+    if (plan.kind === "commit") {
+      finish(plan.option, []);
+      return true;
     }
 
+    const { baseLevel, options } = plan;
+    const metamagic: MetamagicCastRow[] = plan.metamagic.map((m) => ({
+      id: m.id,
+      name: localizeSrd("metamagic", m.id, "name", locale),
+      cost: m.cost,
+      affordable: m.affordable,
+      appliesToSpell: m.appliesToSpell,
+      stacksWithPrimary: m.stacksWithPrimary,
+    }));
     setCastRequest({
       characterId: character.id,
       action,
