@@ -12,6 +12,10 @@ export {
   translateMonsterEntry,
 } from "./from-creature";
 export { activityFromItemActivation } from "./from-item";
+export {
+  activityFromGrantedAction,
+  grantedActionActivities,
+} from "./from-granted-action";
 export { translateWeapon } from "./from-weapon";
 export {
   actionTypeOf,

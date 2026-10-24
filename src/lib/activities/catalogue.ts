@@ -14,6 +14,7 @@ import { classFeatures } from "@/data/classes";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_FEATS } from "@/data/feats";
 import { SRD_INVOCATIONS } from "@/data/invocations";
+import { SRD_MANEUVERS } from "@/data/maneuvers";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { SRD_RACES } from "@/data/races";
 import { SRD_WEAPONS } from "@/data/weapons";
@@ -28,16 +29,18 @@ import type {
 } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 import { raceTraitSessionId } from "@/lib/race-trait-id";
+import { resolveGrantSourcesForManeuvers } from "@/lib/resolve-grant-sources";
 import { translateAction, type ActionOwner } from "./from-action";
 import {
   activityFromBeastAttack,
   activityFromCompanionAttack,
   translateMonsterEntry,
 } from "./from-creature";
+import { activityFromGrantedAction } from "./from-granted-action";
 import { activityFromItemActivation } from "./from-item";
 import { translateSpell } from "./from-spell";
 import { translateWeapon } from "./from-weapon";
-import type { ActivityTranslation, MonsterSection } from "./types";
+import type { ActivityRequires, ActivityTranslation, MonsterSection } from "./types";
 
 export interface CatalogueAction {
   action: SrdActionDef;
@@ -194,11 +197,82 @@ export function catalogueItemActivations(): Array<{
   );
 }
 
+type GrantedActionGrant = Extract<Grant, { type: "granted-action" }>;
+
+/** Every `granted-action` in a grant list, with the bundle option it sits under. */
+function grantedActionsIn(
+  grants: ReadonlyArray<Grant> | undefined,
+  requires?: ActivityRequires
+): Array<{ grant: GrantedActionGrant; requires?: ActivityRequires }> {
+  return (grants ?? []).flatMap((grant) => {
+    if (grant.type === "granted-action")
+      return [{ grant, ...(requires ? { requires } : {}) }];
+    if (grant.type === "while-active") return grantedActionsIn(grant.grants, requires);
+    if (grant.type === "choice-grant-bundle") {
+      return grant.options.flatMap((option) =>
+        grantedActionsIn(option.grants, {
+          bundleOption: { bundleKey: grant.bundleKey, optionId: option.id },
+        })
+      );
+    }
+    return [];
+  });
+}
+
+/**
+ * Every declared `granted-action` as an Activity: feature, feat, species-trait and
+ * invocation grants (inside `while-active` and choice-bundle options too) and every
+ * maneuver through the learned-maneuver seam. A granted action whose owner already
+ * declares a `mechanics.actions` row of the same economy is that row's duplicate
+ * (Superior Hunter's Defense) and adds nothing.
+ */
+export function catalogueGrantedActions(): ActivityTranslation[] {
+  const owners: Array<{
+    sourceId: string;
+    grants?: ReadonlyArray<Grant>;
+    actions?: ReadonlyArray<SrdActionDef>;
+  }> = [
+    ...classFeatures.map((f) => ({
+      sourceId: f.id,
+      grants: f.grants,
+      actions: f.mechanics?.actions,
+    })),
+    ...SRD_FEATS.map((f) => ({
+      sourceId: f.id,
+      grants: f.grants,
+      actions: f.mechanics?.actions,
+    })),
+    ...SRD_RACES.flatMap((race) =>
+      race.traits.map((trait) => ({
+        sourceId: raceTraitSessionId(race.id, trait),
+        grants: trait.grants,
+        actions: trait.mechanics?.actions,
+      }))
+    ),
+    ...SRD_INVOCATIONS.map((inv) => ({
+      sourceId: inv.id,
+      grants: inv.grants,
+      actions: inv.mechanics?.actions,
+    })),
+    ...resolveGrantSourcesForManeuvers(SRD_MANEUVERS.map((m) => m.id)).map((source) => ({
+      sourceId: source.id,
+      grants: source.grants,
+    })),
+  ];
+  return owners.flatMap(({ sourceId, grants, actions }) =>
+    grantedActionsIn(grants)
+      .filter(
+        ({ grant }) => !(actions ?? []).some((action) => action.type === grant.slot)
+      )
+      .map(({ grant, requires }) => activityFromGrantedAction(grant, sourceId, requires))
+  );
+}
+
 /**
  * Every active mechanic in the catalogue as one Activity with the source fields it
  * cannot express yet: spells, feature/feat/species/equipment/invocation actions,
- * monster stat-block entries, beast-form and companion attacks, magic-item
- * activations and weapon attacks, in that order.
+ * monster stat-block entries, beast-form and companion attacks, granted actions,
+ * magic-item activations and weapon attacks, in that order.
  */
 export async function catalogueActivities(): Promise<ActivityTranslation[]> {
   const monsterEntries = await catalogueMonsterEntries();
@@ -216,6 +290,7 @@ export async function catalogueActivities(): Promise<ActivityTranslation[]> {
       activity: activityFromCompanionAttack(ownerId, attack),
       gaps: [],
     })),
+    ...catalogueGrantedActions(),
     ...catalogueItemActivations().flatMap(({ itemId, grant }) => {
       const activity = activityFromItemActivation(itemId, grant);
       return activity ? [{ activity, gaps: [] }] : [];

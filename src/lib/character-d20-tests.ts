@@ -22,6 +22,7 @@ import {
   savingThrowBonus,
   aggregateAbilityScores,
 } from "@/lib/compute";
+import type { D20RerollClause } from "@/lib/grants";
 import type { CharacterDoc } from "@/types/character";
 import type { D20RollMode, D20TestRequest, D20TestResult } from "@/types/d20-test";
 import type { PendingConcentrationSave } from "@/types/combat-state";
@@ -43,6 +44,8 @@ interface CharacterD20ContextBase {
   readonly modifierTerms: readonly CharacterD20ModifierTerm[];
   readonly advantageSourceIds: readonly string[];
   readonly disadvantageSourceIds: readonly string[];
+  /** Face-triggered rerolls the character may take on this test (Halfling Luck). */
+  readonly rerolls: readonly D20RerollClause[];
 }
 
 /** Fully resolved facts for one character Death Save. */
@@ -105,6 +108,18 @@ function effectiveScores(character: CharacterDoc) {
   };
 }
 
+/**
+ * The source that lets an entered d20 face be rerolled, or `null` (Halfling
+ * Luck: "When you roll a 1 on the d20 of a D20 Test, you can reroll the die").
+ * Any D20 Test entry asks this; the new face then stands.
+ */
+export function d20RerollFor(
+  rerolls: ReadonlyArray<D20RerollClause>,
+  face: number
+): string | null {
+  return rerolls.find((reroll) => reroll.faces.includes(face))?.sourceId ?? null;
+}
+
 /** Build a Death Save without smuggling in an ability-scoped CON-save bonus. */
 export function deathSaveD20Context(
   character: CharacterDoc
@@ -150,6 +165,7 @@ export function deathSaveD20Context(
       DEATH_SAVE_VS,
       "disadvantage"
     ),
+    rerolls: aggregate.d20Rerolls,
   };
 }
 
@@ -217,6 +233,7 @@ export function concentrationSaveD20Context(
       CONCENTRATION_SAVE_VS,
       "disadvantage"
     ),
+    rerolls: aggregate.d20Rerolls,
   };
 }
 
@@ -245,7 +262,16 @@ function kernelRequest(context: CharacterD20TestContext): D20TestRequest {
       disadvantageSourceIds: context.disadvantageSourceIds,
       extraD20SourceIds: [],
       faceFloors: [],
-      replacements: [],
+      // One reroll per die: the new face must be used ("you must use the new roll").
+      replacements: context.rerolls.map((reroll) => ({
+        appliesTo: "d20" as const,
+        rule: {
+          faces: reroll.faces,
+          kind: "faces" as const,
+          maximumUses: { kind: "fixed" as const, value: enteredD20FaceCount(context) },
+          sourceId: reroll.sourceId,
+        },
+      })),
       substitutions: [],
       totalFloors: [],
     },
@@ -271,11 +297,34 @@ function kernelRequest(context: CharacterD20TestContext): D20TestRequest {
   };
 }
 
+/** Each die's rerolled faces → kernel replacement steps, each naming the rule
+ * that allowed it from the face it replaced (none → an unauthorized step). */
+function rerollSteps(
+  context: CharacterD20TestContext,
+  faces: ReadonlyArray<number>,
+  rerolled: ReadonlyArray<ReadonlyArray<number>>
+) {
+  return rerolled.map((chain, index) => {
+    let current = faces[index] ?? 0;
+    return chain.map((face) => {
+      const sourceId = d20RerollFor(context.rerolls, current) ?? "unauthorized-reroll";
+      current = face;
+      return { face, sourceId };
+    });
+  });
+}
+
 function resolveEnteredFaces(
   context: CharacterD20TestContext,
-  faces: ReadonlyArray<number>
+  faces: ReadonlyArray<number>,
+  rerolled: ReadonlyArray<ReadonlyArray<number>> = []
 ): CharacterEnteredD20Result {
-  const result = evaluateEnteredCombatD20Test(kernelRequest(context), { faces });
+  const result = evaluateEnteredCombatD20Test(kernelRequest(context), {
+    faces,
+    ...(rerolled.length > 0
+      ? { replacements: rerollSteps(context, faces, rerolled) }
+      : {}),
+  });
   if (!result) {
     throw new TypeError("entered D20 faces do not satisfy the resolved save request");
   }
@@ -302,20 +351,27 @@ function resolveEnteredFaces(
   };
 }
 
+/** `rerolled[i]`: the faces die `i` was rerolled to, in order (Halfling Luck). */
 export function resolveCharacterDeathSave(
   character: CharacterDoc,
-  faces: ReadonlyArray<number>
+  faces: ReadonlyArray<number>,
+  rerolled: ReadonlyArray<ReadonlyArray<number>> = []
 ): CharacterEnteredD20Result {
-  return resolveEnteredFaces(deathSaveD20Context(character), faces);
+  return resolveEnteredFaces(deathSaveD20Context(character), faces, rerolled);
 }
 
 export function resolveCharacterConcentrationSave(
   character: CharacterDoc,
   pending: PendingConcentrationSave,
-  faces: ReadonlyArray<number>
+  faces: ReadonlyArray<number>,
+  rerolled: ReadonlyArray<ReadonlyArray<number>> = []
 ): CharacterEnteredD20Result {
   if (concentrationSaveDc(pending.damage) !== pending.difficultyClass) {
     throw new TypeError("pending Concentration save has a stale damage/DC pair");
   }
-  return resolveEnteredFaces(concentrationSaveD20Context(character, pending), faces);
+  return resolveEnteredFaces(
+    concentrationSaveD20Context(character, pending),
+    faces,
+    rerolled
+  );
 }

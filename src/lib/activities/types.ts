@@ -54,6 +54,8 @@ export type ActivitySource =
       actionId?: string;
     }
   | { kind: "monster"; monsterId: string; section: MonsterSection; entryId: string }
+  /** A `granted-action` grant of a source (a feature option, a learned maneuver). */
+  | { kind: "granted-action"; sourceId: string; actionId: string }
   /** Activating a magic item's property (its `while-active` activation). */
   | { kind: "item-activation"; itemId: string; activeKey: string }
   | { kind: "beast"; beastId: string; attack: string }

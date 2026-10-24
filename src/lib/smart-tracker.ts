@@ -146,7 +146,7 @@ import {
 import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdRaceTrait } from "@/data/types";
-import { SRD_INVOCATIONS } from "@/data/invocations";
+import { SRD_INVOCATIONS, invocationTrackerId } from "@/data/invocations";
 import {
   getSrdFeatureSource,
   srdRefForFeatureSource,
@@ -3023,6 +3023,7 @@ export function resolveTrackers(character: CharacterDoc): RawResolvedTracker[] {
   for (const t of [
     ...resolveSrdTrackers(character),
     ...resolveRaceTrackers(character, level),
+    ...resolveInvocationTrackers(character),
     ...resolveEquipmentTrackers(character),
     ...resolveMagicItemTrackers(character),
     ...resolveFreeCastFeatTrackers(character),
@@ -3691,6 +3692,48 @@ function resolveRaceTrackers(
     }
   }
 
+  return trackers;
+}
+
+/**
+ * Invocation counters (Gift of the Protectors, 1/Long Rest). Invocations live
+ * outside `features[]` on the per-class `invocationChoices`, so their
+ * `mechanics.tracker` is surfaced here like a race trait's, keyed
+ * `invocation:<id>` and scaled by the Warlock level.
+ */
+function resolveInvocationTrackers(character: CharacterDoc): RawResolvedTracker[] {
+  const { character: charData, session } = character;
+  const trackers: RawResolvedTracker[] = [];
+  const known = allEntryPicks(charData, "invocationChoices");
+  if (known.length === 0) return trackers;
+  const level = classEntryLevel(charData, "warlock") || totalLevel(charData);
+  for (const invId of known) {
+    const inv = INVOCATION_BY_ID.get(invId);
+    if (!inv?.mechanics?.tracker) continue;
+    const spec = resolveTrackerSpec(inv.mechanics.tracker, level);
+    const total = resolveTrackerTotal(spec.total, character);
+    if (total <= 0) continue;
+    const id = invocationTrackerId(inv.id);
+    trackers.push({
+      id,
+      label: srdText("invocation", inv.id, "name"),
+      description: srdText("invocation", inv.id, "description"),
+      total,
+      recovery: spec.recovery,
+      ...(spec.autoRecover === false ? { autoRecover: false } : {}),
+      ...(spec.longRestRecovery !== undefined
+        ? { longRestRecovery: spec.longRestRecovery }
+        : {}),
+      die: spec.die,
+      recordedRolls: spec.recordedRolls,
+      rolls: session.trackers[id]?.rolls,
+      isPool: spec.isPool,
+      unit: spec.unit,
+      shortRestRecovery: spec.shortRestRecovery,
+      refreshOnActivationOf: spec.refreshOnActivationOf,
+      used: vitalTrackerUsed(session, id),
+    });
+  }
   return trackers;
 }
 

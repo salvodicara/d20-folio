@@ -331,6 +331,13 @@ export function composeCombatAttackContext(
 export interface CombatEnteredD20Facts {
   /** Natural d20 faces in trail order; empty for a non-rolled test. */
   readonly faces: readonly number[];
+  /**
+   * Voluntary replacements per d20, in trail order (a Halfling Luck reroll of a
+   * 1): each step's new face and the request rule's source that allows it.
+   */
+  readonly replacements?: ReadonlyArray<
+    ReadonlyArray<{ readonly face: number; readonly sourceId: string }>
+  >;
   /** Entered faces per authored entered-modifier source, in trail order. */
   readonly enteredModifierFaces?: Readonly<Record<string, readonly number[]>>;
   /** An explicit table ruling that replaces the computed outcome. */
@@ -340,16 +347,26 @@ export interface CombatEnteredD20Facts {
 
 function facedTrails(
   requirement: Readonly<DiceRollRequirement>,
-  faces: readonly number[]
+  faces: readonly number[],
+  replacements: CombatEnteredD20Facts["replacements"] = []
 ): DiceObservation | null {
-  if (requirement.trails.length !== faces.length || requirement.aggregates.length > 0) {
+  if (
+    requirement.trails.length !== faces.length ||
+    requirement.aggregates.length > 0 ||
+    replacements.length > faces.length
+  ) {
     return null;
   }
   const trails: DiceTrailObservation[] = [];
   for (const [index, trail] of requirement.trails.entries()) {
     const face = faces[index];
     if (face === undefined) return null;
-    trails.push({ initialFace: face, steps: [], trailId: trail.trailId });
+    const steps = (replacements[index] ?? []).map(({ face: next, sourceId }) => ({
+      face: next,
+      kind: "replacement" as const,
+      sourceId,
+    }));
+    trails.push({ initialFace: face, steps, trailId: trail.trailId });
   }
   return { aggregates: [], trails };
 }
@@ -369,9 +386,9 @@ export function evaluateEnteredCombatD20Test(
   let d20: D20TestObservation["d20"] = null;
   const enteredModifiers: D20TestObservation["enteredModifiers"][number][] = [];
   if (review.d20Requirement === null) {
-    if (entered.faces.length > 0) return null;
+    if (entered.faces.length > 0 || (entered.replacements?.length ?? 0) > 0) return null;
   } else {
-    d20 = facedTrails(review.d20Requirement, entered.faces);
+    d20 = facedTrails(review.d20Requirement, entered.faces, entered.replacements);
     if (!d20) return null;
     for (const rule of review.enteredModifiers) {
       const faces = entered.enteredModifierFaces?.[rule.sourceId];

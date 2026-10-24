@@ -521,9 +521,11 @@ const EXPOSURE: Record<string, Exposure> = {
     plumbing:
       "Wizard Ritual Adept is the classId === 'wizard' branch in canRitualCast — same behavior, no aggregate read",
   },
+  // Every granted action is an Activity (`catalogueGrantedActions`, per character
+  // `grantedActionActivities`); mechanics.actions stays the old action-row surface.
   "granted-action": {
-    plumbing:
-      "deliberately dormant: mechanics.actions is the action-row surface (classes-prose-sweep decision); the kind exists for sources that lack a mechanics block",
+    via: "activityFromGrantedAction",
+    consumer: "src/lib/activities/catalogue.ts",
   },
 
   // ── Shipped 2026-06-22: formerly OPEN, now consumed ──
@@ -568,6 +570,11 @@ const EXPOSURE: Record<string, Exposure> = {
   // are the core seam; the HP popover's fall preset does not read it yet.
   "slowed-fall": {
     open: "core seam slowedFallFtPerRound / fallDamageDice (2026-10-24); the HP fall preset does not read it yet",
+  },
+  // Halfling Luck: `d20RerollFor` and the Death/Concentration save resolvers
+  // (character-d20-tests) accept a rerolled 1; no entry offers the reroll yet.
+  "d20-reroll": {
+    open: "core seam d20RerollFor / character-d20-tests (2026-10-24); no entry offers the reroll yet",
   },
   // Adamantine Armor: the entered hit's crit flag drops in `takeDamage`.
   "critical-hit-immunity": {
