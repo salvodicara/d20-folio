@@ -370,6 +370,11 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "enchantOptions",
     consumer: "src/features/character/center/tabs/inventory/WeaponCard.tsx",
   },
+  // A bound magic weapon's own extra die rides only its row (the weapon-row builder).
+  "item-bound-damage-rider": {
+    via: "resolveItemBoundDamageRiders",
+    consumer: "src/lib/smart-tracker.ts",
+  },
   "on-crit-movement-rider": {
     via: "onCritMoveFt",
     consumer: "src/features/character/center/tabs/PlayTab.tsx",

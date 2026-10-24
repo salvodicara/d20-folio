@@ -2400,6 +2400,40 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     type: literalSchema("slowed-fall"),
   }),
   /**
+   * Extra damage on a hit with THIS magic weapon only (Vicious Weapon's 2d6, Frost
+   * Brand's 1d6 Cold, Mace of Disruption's 2d6 Radiant vs Fiends and Undead). Like
+   * `item-bound-bonus` it rides only the weapon row the item is bound to
+   * (`enchantItemId`), never every attack; inside a `while-active` it rides only
+   * while a held copy of the item has that state lit (Flame Tongue ablaze).
+   */
+  "item-bound-damage-rider": objectSchema(
+    {
+      damageType: unionSchema([DAMAGE_TYPE_SCHEMA, literalSchema("same-as-weapon")]),
+      dice: stringSchema,
+      type: literalSchema("item-bound-damage-rider"),
+    },
+    {
+      targetCreatureTypes: arraySchema(
+        unionSchema([
+          literalSchema("aberration"),
+          literalSchema("beast"),
+          literalSchema("celestial"),
+          literalSchema("construct"),
+          literalSchema("dragon"),
+          literalSchema("elemental"),
+          literalSchema("fey"),
+          literalSchema("fiend"),
+          literalSchema("giant"),
+          literalSchema("humanoid"),
+          literalSchema("monstrosity"),
+          literalSchema("ooze"),
+          literalSchema("plant"),
+          literalSchema("undead"),
+        ])
+      ),
+    }
+  ),
+  /**
    * Incoming damage of these types is reduced by a rolled die (Resistance:
    * 1d4, once per turn). The dice stay table-rolled: a defense line, not
    * intake math.

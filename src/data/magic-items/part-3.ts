@@ -507,7 +507,10 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // Attuned, your Strength is 20 unless already higher. The 1d8 Thunder rider
     // needs the item-bound rider seam; Clap of Thunder and Earthquake stay text.
-    grants: [{ type: "ability-score-set", ability: "STR", value: 20 }],
+    grants: [
+      { type: "ability-score-set", ability: "STR", value: 20 },
+      { type: "item-bound-damage-rider", dice: "1d8", damageType: "thunder" },
+    ],
     source: "SRD",
   },
   {

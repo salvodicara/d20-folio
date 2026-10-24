@@ -14,6 +14,7 @@ import type {
 } from "@/data/types";
 import { CREATURE_SIZE_ORDER } from "@/data/types";
 import type { DamageType } from "@/types/damage";
+import type { CreatureType } from "@/data/types";
 import { appendAbilityModToDice } from "@/lib/utils";
 // Ability modifier lives in the SRD-free `@/lib/ability` module so eager callers
 // (the persistence-layer sanitizer) can use the formula without dragging compute's
@@ -1512,6 +1513,40 @@ export function resolveItemBoundWeaponBonus(
     if (g.type === "item-bound-bonus") total += g.amount;
   }
   return total;
+}
+
+/** One extra-damage die a magic weapon adds to its own hits (`item-bound-damage-rider`). */
+export interface ItemBoundDamageRider {
+  dice: string;
+  damageType: DamageType | "same-as-weapon";
+  targetCreatureTypes?: ReadonlyArray<CreatureType>;
+}
+
+/**
+ * The extra damage a bound magic weapon adds to ITS row: every top-level
+ * `item-bound-damage-rider`, plus those inside a `while-active` whose authored key
+ * `isLit` says is up (Flame Tongue ablaze). Read off the item's grants directly, like
+ * {@link resolveItemBoundWeaponBonus}, so the die never smears across other attacks.
+ */
+export function resolveItemBoundDamageRiders(
+  grants: ReadonlyArray<Grant> | undefined,
+  isLit: (authoredKey: string) => boolean
+): ItemBoundDamageRider[] {
+  const riders: ItemBoundDamageRider[] = [];
+  const add = (g: Grant) => {
+    if (g.type !== "item-bound-damage-rider") return;
+    riders.push({
+      dice: g.dice,
+      damageType: g.damageType,
+      ...(g.targetCreatureTypes ? { targetCreatureTypes: g.targetCreatureTypes } : {}),
+    });
+  };
+  for (const g of grants ?? []) {
+    if (g.type === "while-active") {
+      if (isLit(g.activeKey)) g.grants.forEach(add);
+    } else add(g);
+  }
+  return riders;
 }
 
 /** A resolved forced-movement rider on a cantrip — the consumer's read model. */
