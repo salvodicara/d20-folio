@@ -124,14 +124,10 @@ import {
   type MechanicsReceipt,
 } from "@/lib/mechanics-command";
 import {
-  boundaryCommitFacts,
   characterTrackerSeeds,
   characterWorldState,
-  commitCharacterAction,
-  engineConcentrationHandle,
   persistedWorldUid,
   zeroTrackFor,
-  planEngineConcentrationEnd,
   planSelfConditionApply,
   undoCharacterAction,
 } from "@/lib/mechanics-world-store";
@@ -912,54 +908,8 @@ function causalD20CommandUndo(
   };
 }
 
-/**
- * End the ENGINE-held concentration occurrence when the legacy authority drops
- * the same spell — the world-side twin of `setConcentration`'s teardown. The
- * end runs through the canonical kernel machinery (`planEngineConcentrationEnd`:
- * one end request over the owning program root; dependents — the concentration
- * effect and every standing buff it sourced — end in the same wave), committed
- * as one journal action whose mirror keeps `session.concentration` coherent.
- * After it, neither the world nor the session holds the spell (no re-mirror
- * zombie). Reads the world's own persisted uid, so this store stays
- * Firebase-free. Returns the committed action id (the undo pairing) or null
- * when the world holds no matching engine concentration — the legacy teardown
- * alone is then complete.
- */
-function endEngineConcentrationWorld(
-  get: () => CharacterState,
-  droppedSpell: string
-): string | null {
-  const doc = get().character;
-  if (!doc || doc.session.world === undefined) return null;
-  const uid = persistedWorldUid(doc.session.world);
-  if (uid === null) return null;
-  const world = characterWorldState(doc, uid, doc.character.hp.max);
-  if (!world) return null;
-  const handle = engineConcentrationHandle(world);
-  if (
-    !handle ||
-    handle.spellId === null ||
-    concentrationValue(handle.spellId) !== droppedSpell
-  ) {
-    return null;
-  }
-  const actionId = `concentration-break-${crypto.randomUUID()}`;
-  const action = planEngineConcentrationEnd(doc, uid, world, actionId);
-  if (!action) return null;
-  const committed = commitCharacterAction(
-    doc,
-    uid,
-    world,
-    action,
-    boundaryCommitFacts(action)
-  );
-  if (!committed) return null;
-  useCharacterStore.setState({ character: { ...doc, session: committed.session } });
-  return actionId;
-}
-
 /** Exactly reverse one committed table/engine world action (the undo pairing
- * of {@link commitWorldVitals} / {@link endEngineConcentrationWorld}) through
+ * of {@link commitWorldVitals} / the engine concentration end) through
  * the canonical journal reverse, whose mirror restores every world-owned
  * legacy field in the same motion; a conflicting or already-reversed action is
  * a silent no-op (never a partial rewind). */
@@ -2011,13 +1961,22 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         combatActiveEffects: nextLocalEffects,
         combatLegacyActiveEffects: nextLegacyEffects,
         combatPendingConcentrationSaves: nextPendingConcentrationSaves,
-        character: change.doc,
       });
-      // The engine twin of the teardown (fresh read: it composes ONTO the doc
-      // the set above just wrote, so the legacy field changes are never lost).
-      if (prev && prev !== spell) {
-        engineEndActionId = endEngineConcentrationWorld(get, prev) ?? engineEndActionId;
-      }
+      // The sheet's teardown and the engine's twin, as one play-log event. The engine
+      // end's journal id is minted here and travels in the event, so the log replays it
+      // exactly and the undo below reverses that very action (a no-op when the dropped
+      // spell wasn't engine-held).
+      const engineActionId = `concentration-break-${crypto.randomUUID()}`;
+      get().dispatch({
+        kind: "set-concentration",
+        spell,
+        engineActionId,
+        ...(opts?.castLevel !== undefined ? { castLevel: opts.castLevel } : {}),
+        ...(opts?.retractedFormTempHp !== undefined
+          ? { retractedFormTempHp: opts.retractedFormTempHp }
+          : {}),
+      });
+      if (prev && prev !== spell) engineEndActionId = engineActionId;
       persistCombat(get);
       flushParentPersistence(get);
       if (opts?.silent) return [];

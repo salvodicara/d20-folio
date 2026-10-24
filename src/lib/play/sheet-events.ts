@@ -10,6 +10,7 @@ import type { LightLevel } from "@/lib/light-states";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { SituationId } from "@/lib/situational-states";
 import type { CharacterDoc, SessionDefenseKind, SessionState } from "@/types/character";
+import type { StoredConcentration } from "@/types/ids";
 import {
   dismissFamiliar,
   releaseCompanion,
@@ -22,6 +23,7 @@ import {
 import { addCondition, removeCondition } from "./conditions";
 import { addSessionDefense, removeSessionDefense } from "./defenses";
 import { setTrackerRoll, spendTrackerRoll, topUpTracker } from "./tracker-rolls";
+import { setConcentration } from "./concentration";
 import { setCover, type CoverUntil } from "./cover";
 import { setLight } from "./light";
 import { adjustCurrency, type CurrencyDelta } from "./material-cost";
@@ -74,6 +76,14 @@ export type SheetEvent =
   | { kind: "set-exhaustion"; level: number }
   | { kind: "start-fading-penalty"; penaltyId: string }
   | { kind: "set-fading-penalty"; penaltyId: string; amount: number }
+  | {
+      kind: "set-concentration";
+      spell: StoredConcentration;
+      /** The journal id of the engine end, if the dropped spell was engine-held. */
+      engineActionId: string;
+      castLevel?: number;
+      retractedFormTempHp?: number;
+    }
   | { kind: "add-condition"; condition: string }
   | { kind: "remove-condition"; condition: string }
   | { kind: "add-session-defense"; defense: SessionDefenseKind; id: string }
@@ -179,6 +189,13 @@ export function applySheetEvent(
       return withSession(startFadingPenalty(doc, event.penaltyId));
     case "set-fading-penalty":
       return withSession(setFadingPenalty(doc, event.penaltyId, event.amount));
+    case "set-concentration":
+      return setConcentration(doc, event.spell, event.engineActionId, {
+        ...(event.castLevel !== undefined ? { castLevel: event.castLevel } : {}),
+        ...(event.retractedFormTempHp !== undefined
+          ? { retractedFormTempHp: event.retractedFormTempHp }
+          : {}),
+      });
     case "add-condition":
       return withSession(addCondition(doc, event.condition));
     case "remove-condition":

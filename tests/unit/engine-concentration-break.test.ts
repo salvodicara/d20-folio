@@ -45,7 +45,7 @@ import {
   type CharacterCastCapability,
 } from "@/lib/mechanics-world-store";
 import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
-import { useCharacterStore } from "@/stores/characterStore";
+import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import type { CharacterMaterialState } from "@/types/material-state";
@@ -160,8 +160,9 @@ function commit(
 }
 
 /** Engine-cast Blur onto a fresh doc: world concentration + standing + mirror. */
-function docWithEngineBlur(): CharacterDoc {
-  const doc = wizardDoc();
+function docWithEngineBlur(id?: string): CharacterDoc {
+  // The world is bound to the character id, so a fresh id must be set before it.
+  const doc = id ? { ...wizardDoc(), id } : wizardDoc();
   const world = characterWorldState(doc, UID, doc.character.hp.max);
   if (!world) throw new Error("world fixture");
   const capability = characterSpellCapability(doc, UID, "blur", {
@@ -275,6 +276,26 @@ describe("legacy authoritative drops of an engine-held spell", () => {
     expect(restored.session.concentration).toBe("blur");
     expect(engineConcentrationHandle(liveWorld(restored))?.spellId).toBe("blur");
     expect([...worldStandingActiveKeys(restored.session.world)]).toContain("spell-blur");
+  });
+
+  it("manual stop goes through the play log, engine end included, and the log replays it exactly", () => {
+    // A fresh id keeps this test's shadow log its own.
+    const doc = docWithEngineBlur(`engine-conc-${Math.random().toString(36).slice(2)}`);
+    loadStore(doc);
+    useCharacterStore.getState().setConcentration("");
+    const after = useCharacterStore.getState().character;
+    if (!after) throw new Error("no character");
+    expect(after.session.concentration).toBe("");
+    // The engine end really ran: a new journal action in the stored world.
+    const actions = (after.session.world as { actions?: { id: string }[] }).actions ?? [];
+    expect(actions.some((a) => a.id.startsWith("concentration-break-"))).toBe(true);
+    // One entry, one checkpoint, and the fold of the log equals the live sheet: the
+    // engine end is part of the event, and its journal id travels with it.
+    expect(playLogShadowStats(doc.id)).toEqual({
+      entries: 1,
+      checkpoints: 1,
+      mismatches: 0,
+    });
   });
 
   it("lets a cast undo restore the exact engine concentration it replaced", () => {
