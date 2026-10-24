@@ -3202,6 +3202,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     ) {
       return () => {};
     }
+    // A spent interrupt (Gift of the Protectors already triggered, Relentless
+    // Endurance used) saves no one until it recovers, whoever calls.
+    const pool = resolveTrackers(character).find((tracker) => tracker.id === trackerId);
+    if (!pool || pool.used >= pool.total) return () => {};
     const priorHp = character.session.hp;
     const priorTracker = character.session.trackers[trackerId];
     const priorUsed = priorTracker?.used ?? 0;

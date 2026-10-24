@@ -812,15 +812,15 @@ describe("applyAtZeroHpInterrupt — S4 at-0-HP wiring", () => {
         { race: asRaceId("orc"), features: [{ srdId: "orc-relentless-endurance" }] },
         {
           hp: { current: 0, temp: 0 },
-          trackers: { "relentless-endurance": { used: 0 } },
+          trackers: { "race:orc:relentless-endurance": { used: 0 } },
           deathFail: 2,
           deathSucc: 1,
         }
       )
     );
-    const restore = store().applyAtZeroHpInterrupt("relentless-endurance");
+    const restore = store().applyAtZeroHpInterrupt("race:orc:relentless-endurance");
     expect(store().character?.session.hp.current).toBe(1);
-    expect(store().character?.session.trackers["relentless-endurance"]).toEqual({
+    expect(store().character?.session.trackers["race:orc:relentless-endurance"]).toEqual({
       used: 1,
     });
     expect(store().character?.session.deathFail).toBe(0);
@@ -828,7 +828,7 @@ describe("applyAtZeroHpInterrupt — S4 at-0-HP wiring", () => {
     // Undo restores HP + the tracker + the death saves.
     restore();
     expect(store().character?.session.hp.current).toBe(0);
-    expect(store().character?.session.trackers["relentless-endurance"]).toEqual({
+    expect(store().character?.session.trackers["race:orc:relentless-endurance"]).toEqual({
       used: 0,
     });
     expect(store().character?.session.deathFail).toBe(2);
@@ -840,12 +840,12 @@ describe("applyAtZeroHpInterrupt — S4 at-0-HP wiring", () => {
         { race: asRaceId("orc"), features: [{ srdId: "orc-relentless-endurance" }] },
         {
           hp: { current: 0, temp: 0 },
-          trackers: { "relentless-endurance": { used: 0 } },
+          trackers: { "race:orc:relentless-endurance": { used: 0 } },
           conditions: ["unconscious", "prone"],
         }
       )
     );
-    const restore = store().applyAtZeroHpInterrupt("relentless-endurance");
+    const restore = store().applyAtZeroHpInterrupt("race:orc:relentless-endurance");
     expect(store().character?.session.conditions).toEqual(["prone"]);
     restore();
     expect(store().character?.session.conditions).toEqual(["unconscious", "prone"]);
