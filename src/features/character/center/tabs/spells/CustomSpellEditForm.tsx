@@ -11,6 +11,9 @@ import { CheckboxField } from "@/components/ui/selection";
 import { Select } from "@/components/shared/Select";
 import { castingTimeI18nKey } from "@/lib/utils";
 import type { CustomSpell } from "@/types/character";
+import { useLocale } from "@/hooks/useLocale";
+import type { HomebrewText } from "@/lib/homebrew-text";
+import { editHomebrewText, homebrewText } from "@/lib/views/homebrew-text-view";
 
 /** The same casting-time option tokens the creation form offers (stable ids). */
 const CASTING_TIMES = [
@@ -36,18 +39,29 @@ export function CustomSpellEditForm({
   onUpdateComponent,
 }: {
   spell: CustomSpell;
-  onUpdateField: (field: string, value: string | boolean | number | null) => void;
+  onUpdateField: (field: string, value: HomebrewText | boolean | number | null) => void;
   onUpdateComponent: (key: "v" | "s" | "m" | "material", value: boolean | string) => void;
 }) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
+  // The form edits the viewer's language; a text written per language keeps the
+  // languages the form does not show (`editHomebrewText`).
+  const shown = (value: HomebrewText | undefined) => homebrewText(value, locale);
+  const edited = (value: HomebrewText | undefined, next: string) =>
+    editHomebrewText(value, locale, next);
   return (
     <div className="custom-spell-form">
       <Input
         type="text"
-        defaultValue={spell.name}
+        defaultValue={shown(spell.name)}
         placeholder={t("common.name")}
         aria-label={t("common.name")}
-        onBlur={(e) => onUpdateField("name", e.target.value.trim() || spell.name)}
+        onBlur={(e) =>
+          onUpdateField(
+            "name",
+            e.target.value.trim() ? edited(spell.name, e.target.value.trim()) : spell.name
+          )
+        }
       />
       <div className="csf-row">
         <label className="field">
@@ -153,17 +167,21 @@ export function CustomSpellEditForm({
         style={{ minHeight: 80, resize: "vertical" }}
         placeholder={t("common.descriptionPlaceholder")}
         rows={4}
-        defaultValue={spell.description}
+        defaultValue={shown(spell.description)}
         aria-label={t("common.descriptionPlaceholder")}
-        onBlur={(e) => onUpdateField("description", e.target.value)}
+        onBlur={(e) =>
+          onUpdateField("description", edited(spell.description, e.target.value))
+        }
       />
       <Textarea
         style={{ minHeight: 48, resize: "vertical" }}
         placeholder={t("spells.higherLevelsPlaceholder")}
         rows={2}
-        defaultValue={spell.higherLevels ?? ""}
+        defaultValue={shown(spell.higherLevels)}
         aria-label={t("spells.higherLevelsPlaceholder")}
-        onBlur={(e) => onUpdateField("higherLevels", e.target.value)}
+        onBlur={(e) =>
+          onUpdateField("higherLevels", edited(spell.higherLevels, e.target.value))
+        }
       />
       <Textarea
         style={{ minHeight: 48, resize: "vertical" }}

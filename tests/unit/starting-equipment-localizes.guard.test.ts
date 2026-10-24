@@ -30,6 +30,7 @@
  * or drop one en/it name → this guard fails.
  */
 import { describe, expect, it } from "vitest";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 import { classTables } from "@/data/classes";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import {
@@ -154,7 +155,7 @@ describe("starting-equipment items are ALL modeled + localized (no inline Locale
         for (const e of out.equipment) {
           expect(
             isCustomEquipment(e),
-            `${src.label} ${opt.label}: "${isCustomEquipment(e) ? e.name : ""}" is custom`
+            `${src.label} ${opt.label}: "${isCustomEquipment(e) ? homebrewTextKey(e.name) : ""}" is custom`
           ).toBe(false);
         }
         // Every resolved ref (weapon + equipment) localizes in en + it.

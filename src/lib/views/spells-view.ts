@@ -406,8 +406,9 @@ function buildCustomCardVM(args: {
   ref: CustomSpell;
   idx: number;
   session: SessionState;
+  locale: Locale;
 }): SpellCardVM {
-  const { ref, idx, session } = args;
+  const { ref, idx, session, locale } = args;
   const isCantrip = ref.level === 0;
   return {
     key: `custom-${ref.instanceId}`,
@@ -416,16 +417,16 @@ function buildCustomCardVM(args: {
     data: null,
     activity: null,
     ref,
-    name: localizeCustom(ref.name),
-    searchEn: localizeCustom(ref.name),
-    description: localizeCustom(ref.description),
-    higherLevels: ref.higherLevels ? localizeCustom(ref.higherLevels) : null,
+    name: localizeCustom(ref.name, locale),
+    searchEn: localizeCustom(ref.name, "en"),
+    description: localizeCustom(ref.description, locale),
+    higherLevels: ref.higherLevels ? localizeCustom(ref.higherLevels, locale) : null,
     facts: {
-      range: ref.range ? localizeCustom(ref.range) : "",
-      duration: ref.duration ? localizeCustom(ref.duration) : null,
+      range: ref.range ? localizeCustom(ref.range, locale) : "",
+      duration: ref.duration ? localizeCustom(ref.duration, locale) : null,
       material:
         ref.components.m && ref.components.material
-          ? localizeCustom(ref.components.material)
+          ? localizeCustom(ref.components.material, locale)
           : null,
     },
     level: ref.level,
@@ -625,7 +626,7 @@ export function buildSpellsViewModel(
     const idx = character.spells.indexOf(ref);
     let vm: SpellCardVM;
     if ("custom" in ref) {
-      vm = buildCustomCardVM({ ref, idx, session });
+      vm = buildCustomCardVM({ ref, idx, session, locale });
     } else {
       const data = spellIndex.get(ref.srdId);
       if (!data) continue; // an unknown srdId has no card to render

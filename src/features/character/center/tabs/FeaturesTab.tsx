@@ -58,7 +58,7 @@ import {
   localizeText,
   localizeWeaponMastery,
 } from "@/lib/views/srd-i18n";
-import { localizeSrd, hasSrd } from "@/i18n/resolver";
+import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
 import { srdOptionParts } from "@/components/shared/srd-option";
 import type { ActionType, Recovery } from "@/data/types";
 import { Tracker, type TrackerColor } from "@/components/shared/Tracker";
@@ -526,8 +526,8 @@ export function FeaturesTab() {
         return {
           id: `custom-${ref.instanceId}`,
           idx,
-          name: ref.title,
-          nameEn: ref.title,
+          name: localizeCustom(ref.title, locale),
+          nameEn: localizeCustom(ref.title, "en"),
           notes: "",
           description: ref.contentBlocks.map((b) => b.text ?? "").join("\n"),
           source: ref.source,

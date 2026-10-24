@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 import {
   canonicalizeForCompare,
   minimizeCharacter,
@@ -85,8 +86,8 @@ function renderEquivalent(doc: CharacterData): unknown {
   const effective = resolveEffectiveSpells(doc, { grantBundleChoices: undefined })
     .slice()
     .sort((a, b) =>
-      ("custom" in a ? `c:${a.name}` : `s:${a.srdId}`).localeCompare(
-        "custom" in b ? `c:${b.name}` : `s:${b.srdId}`
+      ("custom" in a ? `c:${homebrewTextKey(a.name)}` : `s:${a.srdId}`).localeCompare(
+        "custom" in b ? `c:${homebrewTextKey(b.name)}` : `s:${b.srdId}`
       )
     );
   return canonicalizeForCompare({ ...doc, spells: effective });

@@ -22,7 +22,7 @@ import {
   type InferExactSchema,
 } from "@/lib/exact-schema";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
-import { ALL_REACTION_TRIGGERS } from "@/data/types";
+import { ALL_REACTION_TRIGGERS, type LocaleText } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
 import { LOCALES, type Locale } from "@/lib/locale";
@@ -30,13 +30,28 @@ import { DETECTION_TARGETS } from "@/lib/rules/detection-targets";
 
 const RESOURCE_SPEC_SCHEMA = customSchema<"resource-spec", ResourceSpec>("resource-spec");
 
-/** Inline text in every registered language (`LocaleText`): one field per locale. */
-const LOCALE_TEXT_SCHEMA = objectSchema(
-  Object.fromEntries(LOCALES.map((locale) => [locale, stringSchema])) as Record<
-    Locale,
-    typeof stringSchema
-  >
-);
+/**
+ * Inline text (`LocaleText`). The conformer decides how much is required: the
+ * catalogue's demands every registered language (`conformLocaleText`); a homebrew
+ * grant's accepts what the player wrote (a string or some languages) and fills the
+ * rest through `homebrewText`'s fallback (`homebrewFeatureGrants`).
+ */
+const LOCALE_TEXT_SCHEMA = customSchema<"locale-text", LocaleText>("locale-text");
+
+/** Text in every registered language, as the catalogue authors it; else null. */
+export function conformLocaleText(value: unknown): LocaleText | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const keys = Object.keys(record);
+  if (keys.length !== LOCALES.length) return null;
+  const text: Partial<Record<Locale, string>> = {};
+  for (const code of LOCALES) {
+    const entry = record[code];
+    if (typeof entry !== "string") return null;
+    text[code] = entry;
+  }
+  return text as LocaleText;
+}
 
 /**
  * The one physical-payment pointer a grant on a MAGIC ITEM may carry: the id of
@@ -2572,6 +2587,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
 });
 
 export type GrantSchemaCustomTypes = {
+  readonly "locale-text": LocaleText;
   readonly "proficiency-token": ProficiencyToken;
   readonly "resource-spec": ResourceSpec;
 };

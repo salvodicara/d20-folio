@@ -389,12 +389,12 @@ function buildWeaponVM(
   const srdWeapon = isCustom ? undefined : WEAPONS_BY_ID.get(ref.srdId);
 
   const name = isCustom
-    ? localizeCustom(ref.name)
+    ? localizeCustom(ref.name, locale)
     : srdWeapon
       ? localizeSrd("equipment", ref.srdId, "name", locale)
       : titleize(ref.srdId);
   const searchEn = isCustom
-    ? localizeCustom(ref.name)
+    ? localizeCustom(ref.name, "en")
     : srdWeapon
       ? localizeSrd("equipment", ref.srdId, "name", "en")
       : ref.srdId;
@@ -539,7 +539,7 @@ function buildWeaponVM(
 
   const description = isCustom
     ? ref.description
-      ? localizeCustom(ref.description)
+      ? localizeCustom(ref.description, locale)
       : ""
     : srdWeapon
       ? srdText("equipment", ref.srdId, "description", locale)
@@ -679,14 +679,14 @@ function buildItemVM(
     !isCustom && (ARMOR_BY_ID.has(ref.srdId) || magicItem?.type === "armor");
 
   const name = isCustom
-    ? localizeCustom(ref.name)
+    ? localizeCustom(ref.name, locale)
     : srdItem
       ? localizeSrd("equipment", ref.srdId, "name", locale)
       : magicItem
         ? localizeSrd("magic-item", ref.srdId, "name", locale)
         : titleize(ref.srdId);
   const searchEn = isCustom
-    ? localizeCustom(ref.name)
+    ? localizeCustom(ref.name, "en")
     : srdItem
       ? localizeSrd("equipment", ref.srdId, "name", "en")
       : magicItem
@@ -694,7 +694,7 @@ function buildItemVM(
         : ref.srdId;
   const description = isCustom
     ? ref.description
-      ? localizeCustom(ref.description)
+      ? localizeCustom(ref.description, locale)
       : ""
     : srdItem
       ? srdText("equipment", ref.srdId, "description", locale)

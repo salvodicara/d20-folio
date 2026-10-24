@@ -12,6 +12,7 @@
  */
 import { isDeepStrictEqual } from "node:util";
 import { beforeEach, describe, expect, it } from "vitest";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import type { HomebrewItemMechanics, SrdMagicItemData } from "@/data/types";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -50,7 +51,7 @@ function homebrewWeapon(over: Partial<CustomWeapon> = {}): CustomWeapon {
     damageType: "slashing",
     attackStat: "STR",
     properties: "Versatile",
-    instanceId: customInstanceId(over.name ?? "Moon Blade"),
+    instanceId: customInstanceId(homebrewText(over.name, "en") || "Moon Blade"),
     ...over,
   };
 }
@@ -61,7 +62,7 @@ function homebrewItem(over: Partial<CustomEquipment> = {}): CustomEquipment {
     name: "Ember Wand",
     equipped: true,
     quantity: 1,
-    instanceId: customInstanceId(over.name ?? "Ember Wand"),
+    instanceId: customInstanceId(homebrewText(over.name, "en") || "Ember Wand"),
     ...over,
   };
 }

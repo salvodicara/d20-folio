@@ -13,6 +13,7 @@
  * gives one to a plain stack that has none).
  */
 import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 import { ownerKey, type TreasuryOutside, type TreasuryOwner } from "./treasury";
 
 export type TreasuryItem = (SrdEquipmentRef & { instanceId: string }) | CustomEquipment;
@@ -52,7 +53,7 @@ const countOf = (item: TreasuryItem): number => item.quantity ?? 1;
 
 const sameItem = (a: TreasuryItem, b: TreasuryItem): boolean =>
   "custom" in a
-    ? "custom" in b && a.name === b.name
+    ? "custom" in b && homebrewTextKey(a.name) === homebrewTextKey(b.name)
     : !("custom" in b) && a.srdId === b.srdId;
 
 /** The item as it arrives: no longer worn or attuned, unless the move restores it. */

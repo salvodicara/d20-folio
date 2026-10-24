@@ -12,7 +12,7 @@
  * older one: it is preserved, and inert until this client knows it, while its
  * sibling grants keep working.
  */
-import { conformGrant, type Grant } from "@/lib/grants";
+import { conformHomebrewGrant, type Grant } from "@/lib/grants";
 import type { CustomFeature } from "@/types/character";
 
 const EMPTY: readonly Grant[] = Object.freeze([]);
@@ -28,7 +28,7 @@ export function homebrewFeatureGrants(
   if (hit) return hit;
   const accepted = Object.freeze(
     authored.flatMap((raw: unknown) => {
-      const grant = conformGrant(raw);
+      const grant = conformHomebrewGrant(raw);
       return grant ? [grant] : [];
     })
   );

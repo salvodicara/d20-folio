@@ -55,6 +55,8 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { matchesSearch } from "@/lib/search";
+import { useLocale } from "@/hooks/useLocale";
+import { localizeCustom } from "@/i18n/resolver";
 import { castingTimeI18nKey } from "@/lib/utils";
 import { localizeTrackerRecovery } from "@/lib/views/tracker-view";
 import {
@@ -147,6 +149,7 @@ export function CustomTabBody({
   onDetailTitle?: (title: string | null) => void;
 }) {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
   const entries = useLibraryStore((s) => s.entries);
   const removeFromLibrary = useLibraryStore((s) => s.removeFromLibrary);
   const updateEntry = useLibraryStore((s) => s.updateEntry);
@@ -258,7 +261,7 @@ export function CustomTabBody({
             value: t("common.yes"),
             term: "concentration",
           });
-        description = spell.description;
+        description = localizeCustom(spell.description, locale);
         break;
       }
       case "weapon": {
@@ -275,7 +278,9 @@ export function CustomTabBody({
         );
         if (weapon.properties)
           grid.push({ label: t("custom.properties"), value: weapon.properties });
-        description = weapon.description;
+        description = weapon.description
+          ? localizeCustom(weapon.description, locale)
+          : undefined;
         break;
       }
       case "equipment": {
@@ -299,7 +304,9 @@ export function CustomTabBody({
           grid.push({ label: t("equipment.autoRemove"), value: t("common.yes") });
         if (item.potionFormula)
           grid.push({ label: t("custom.healingFormula"), value: item.potionFormula });
-        description = item.description;
+        description = item.description
+          ? localizeCustom(item.description, locale)
+          : undefined;
         break;
       }
       case "feature": {

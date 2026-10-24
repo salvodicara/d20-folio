@@ -27,7 +27,7 @@ import type { Locale } from "@/lib/locale";
  * presenter edge (R6+R3 SLICE 7c). The ONE seam that turns a Grant-engine
  * carrier's localizable reference into text:
  *  - `srd`    → `localizeSrd(kind, key, field, locale)` (the catalogue);
- *  - `custom` → `localizeCustom(text)` (user-authored, verbatim);
+ *  - `custom` → `localizeCustom(text, locale)` (user-authored, `homebrewText`);
  *  - `ui`     → `i18n.getFixedT(locale)(key)` (a `common`/ui chrome key, resolved
  *               at render — safe here because the active locale is always loaded
  *               AND EN `common` is now always loaded as the canonical fallback);
@@ -65,7 +65,7 @@ export function localizeText(text: LocText, locale: Locale): string {
   if ("srd" in text) {
     return localizeSrd(text.srd.kind, text.srd.key, text.srd.field, locale);
   }
-  if ("custom" in text) return localizeCustom(text.custom);
+  if ("custom" in text) return localizeCustom(text.custom, locale);
   if ("ui" in text) return i18n.getFixedT(locale)(text.ui, text.params);
   return text.lit[locale];
 }

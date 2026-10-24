@@ -22,6 +22,7 @@
 import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
+import type { HomebrewText } from "@/lib/homebrew-text";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Icon } from "@/components/ui/icon";
@@ -84,7 +85,7 @@ export interface SpellCardCallbacks {
   onSummonFamiliar: () => void;
   onTogglePrepared: (idx: number) => void;
   onDelete: (idx: number) => void;
-  onUpdateField: (idx: number, field: string, value: string | null) => void;
+  onUpdateField: (idx: number, field: string, value: HomebrewText | null) => void;
   onUpdateComponent: (
     idx: number,
     key: "v" | "s" | "m" | "material",
@@ -261,7 +262,7 @@ export const SpellCard = memo(function SpellCard({
         <CustomSpellEditForm
           spell={vm.ref as CustomSpell}
           onUpdateField={(field, value) =>
-            onUpdateField(vm.idx, field, value as string | null)
+            onUpdateField(vm.idx, field, value as HomebrewText | null)
           }
           onUpdateComponent={(key, value) => onUpdateComponent(vm.idx, key, value)}
         />

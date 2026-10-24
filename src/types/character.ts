@@ -6,6 +6,7 @@
  * data for custom/homebrew content.
  */
 
+import type { HomebrewText } from "@/lib/homebrew-text";
 import type {
   AbilityCode,
   BeastStatBlock,
@@ -110,7 +111,7 @@ export interface SrdSpellRef {
 /** Custom/homebrew spell (not in SRD) */
 export interface CustomSpell {
   custom: true;
-  name: string;
+  name: HomebrewText;
   level: number;
   school: SpellSchool;
   castingTime: string;
@@ -123,8 +124,8 @@ export interface CustomSpell {
   };
   duration: string;
   concentration: boolean;
-  description: string;
-  higherLevels?: string;
+  description: HomebrewText;
+  higherLevels?: HomebrewText;
   prepared?: boolean;
   notes?: string;
   tags?: CharacterTag[];
@@ -167,9 +168,9 @@ export interface SrdFeatureRef {
 /** Custom/homebrew feature (not in SRD) */
 export interface CustomFeature {
   custom: true;
-  title: string;
+  title: HomebrewText;
   emoji: string;
-  subtitle?: string;
+  subtitle?: HomebrewText;
   source: string;
   tags: CharacterTag[];
   contentBlocks: ContentBlockData[];
@@ -244,8 +245,8 @@ export interface SrdEquipmentRef {
 /** Custom/homebrew equipment (not in SRD) */
 export interface CustomEquipment {
   custom: true;
-  name: string;
-  description?: string;
+  name: HomebrewText;
+  description?: HomebrewText;
   emoji?: string;
   notes?: string;
   /** Whether this armor/shield is currently worn/equipped */
@@ -323,7 +324,7 @@ export interface SrdWeaponRef {
 /** Custom/homebrew weapon (not in SRD) */
 export interface CustomWeapon {
   custom: true;
-  name: string;
+  name: HomebrewText;
   quantity: number;
   emoji?: string;
   damageDie: string;
@@ -332,7 +333,7 @@ export interface CustomWeapon {
   attackBonusOverride?: number | null;
   damageOverride?: string | null;
   properties: string;
-  description?: string;
+  description?: HomebrewText;
   notes?: string;
   tags?: CharacterTag[];
   /** True when the player has attuned to this weapon (see CustomEquipment.attuned). */

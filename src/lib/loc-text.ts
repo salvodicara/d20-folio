@@ -24,10 +24,11 @@
  *  - `custom` — a USER-authored single string (a homebrew feature/spell/weapon
  *    name or description). Not SRD: it carries its own text and the view shows it
  *    verbatim via `localizeCustom` (the documented resolver bypass).
- *  - `lit` — an ENGINE literal `LocaleText` that is NOT `src/data/**` SRD content and
- *    NOT user text. Being retired: engine words move to the catalogues (the
- *    smart-tracker's base actions read the `rule` catalogue, its Unarmed Strike and
- *    temp-HP lines `ui` keys); it stays for rows stored before the move and for
+ *  - `lit` — an ENGINE literal `LocaleText` that is NOT `src/data/**` SRD content
+ *    (or homebrew text the player wrote per language, filled by `customText`).
+ *    Being retired: engine words move to the catalogues (the smart-tracker's
+ *    base actions read the `rule` catalogue, its Unarmed Strike and temp-HP lines
+ *    `ui` keys); it stays for rows stored before the move and for
  *    names copied from a catalogue in every language (an encounter monster's
  *    action). No source file spells words in one (`no-srd-strings-in-data`
  *    guard). The view reads `text[locale]`.
@@ -50,6 +51,7 @@
  */
 import type { LocaleText } from "@/data/types";
 import type { SrdKind } from "@/i18n/srd-en";
+import { homebrewLocaleText, type HomebrewText } from "@/lib/homebrew-text";
 
 /**
  * A stable, localizable text reference — see the module doc. Exactly one of the
@@ -69,9 +71,14 @@ export function srdText(kind: SrdKind, key: string, field: string): LocText {
   return { srd: { kind, key, field } };
 }
 
-/** Construct a `LocText` from a USER-authored single string (custom content). */
-export function customText(text: string): LocText {
-  return { custom: text };
+/**
+ * Construct a `LocText` from USER-authored text (custom content). A plain string
+ * stays `custom`, shown verbatim. Text authored per language becomes a `lit`
+ * filled for every locale through `homebrewText`'s fallback, so a row that stores
+ * it (a log line, a turn's action name) is the shape every reader already knows.
+ */
+export function customText(text: HomebrewText): LocText {
+  return typeof text === "string" ? { custom: text } : { lit: homebrewLocaleText(text) };
 }
 
 /** Construct a `LocText` from an ENGINE-authored bilingual literal. */
