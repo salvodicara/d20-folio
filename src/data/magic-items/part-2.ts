@@ -725,8 +725,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: false,
     // PRIM-item-bound-bonus — the printed +1 weapon enchant (rides only
     // the weapon row it is bound to; other effects stay as noted). On a 20: an
-    // extra 7 Bludgeoning, 14 against a Construct (7 + 7); the +3 against
-    // Constructs and the destroy-at-25-HP stay the table's.
+    // extra 7 Bludgeoning, or 14 against a Construct (so an unknown target still
+    // gets the 7); the +3 against Constructs and the destroy-at-25-HP stay the
+    // table's.
     grants: [
       { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
       {
@@ -734,10 +735,11 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
         dice: "7",
         damageType: "bludgeoning",
         onRoll20: true,
+        excludeCreatureTypes: ["construct"],
       },
       {
         type: "item-bound-damage-rider",
-        dice: "7",
+        dice: "14",
         damageType: "bludgeoning",
         onRoll20: true,
         targetCreatureTypes: ["construct"],

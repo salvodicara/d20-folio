@@ -64,9 +64,9 @@ export interface DamageTrayPlan {
 /**
  * Extra damage the weapon deals only when the attack's d20 shows a 20 (Sword of
  * Sharpness: 14 Slashing; Mace of Smiting: 7 Bludgeoning, 14 against a Construct).
- * A fixed `amount` is added by the tray to a Critical row; a dice rider is shown
- * for the player to roll into the total. A Critical row stands for the 20: a
- * Critical Hit on a lower roll (Improved Critical) is the player's call.
+ * A fixed `amount` is added only to a row whose entered d20 face is 20
+ * ({@link setD20Face}); a Critical with no face offers it as an explicit option
+ * ({@link onRoll20Option}), and a Critical on a 19 (Improved Critical) never adds it.
  */
 export interface OnRoll20Damage {
   dice: string;
@@ -245,6 +245,13 @@ export interface TrayRow {
   attack?: AttackOutcome;
   /** The target's creature type, when known (an on-a-20 rider may hinge on it). */
   creatureType?: CreatureType;
+  /** Whether the attack's d20 showed a natural 20: `true` for a 20, `false` for
+   *  any other entered face (a Champion's Critical on a 19), absent when no face was
+   *  entered. Only `true` adds an on-a-20 rider; a Critical alone never does. */
+  natural20?: boolean;
+  /** The target's own defense against each on-a-20 rider type that differs from
+   *  the primary damage type (Sword of Life Stealing's Necrotic on a Slashing hit). */
+  onRoll20Defense?: Partial<Record<DamageType, TargetDefense>>;
 }
 
 /** Whether an on-a-20 rider reaches a target of this type. An unknown type meets
@@ -257,16 +264,89 @@ function reachesTarget(rider: OnRoll20Damage, creatureType?: CreatureType): bool
   return true;
 }
 
-/** The fixed on-a-20 damage a Critical row adds to the rolled total (Sword of
- *  Sharpness: +14); 0 on any other row. */
+/** The fixed on-a-20 riders that reach this row's target, before any face check. */
+function reachingRiders(
+  row: Pick<TrayRow, "creatureType">,
+  plan: DamageTrayPlan
+): OnRoll20Damage[] {
+  if (plan.effect !== "damage") return [];
+  return (plan.attack?.onRoll20 ?? []).filter(
+    (rider) => rider.amount !== undefined && reachesTarget(rider, row.creatureType)
+  );
+}
+
+const riderSum = (riders: ReadonlyArray<OnRoll20Damage>): number =>
+  riders.reduce((sum, rider) => sum + (rider.amount ?? 0), 0);
+
+/** Enter the attack's d20 face. A natural 20 is a Critical Hit (SRD 5.2.1); any
+ *  other face keeps the row's outcome (a Champion's 19 is still marked Critical). */
+export function setD20Face(row: TrayRow, face: number, plan: DamageTrayPlan): TrayRow {
+  const next = { ...row, natural20: face === 20 };
+  return face === 20 ? setAttackOutcome(next, "critical", plan) : next;
+}
+
+/**
+ * A Critical row whose d20 face is unknown: the on-a-20 damage it WOULD add, as an
+ * explicit "if it was a natural 20" option to confirm (by entering the face with
+ * {@link setD20Face}). Never added silently. `null` when nothing is pending.
+ */
+export function onRoll20Option(
+  row: Pick<TrayRow, "attack" | "creatureType" | "natural20">,
+  plan: DamageTrayPlan
+): { amount: number; riders: OnRoll20Damage[] } | null {
+  if (row.attack !== "critical" || row.natural20 !== undefined) return null;
+  const riders = reachingRiders(row, plan);
+  const amount = riderSum(riders);
+  return amount === 0 ? null : { amount, riders };
+}
+
+function onRoll20Landed(
+  row: Pick<TrayRow, "attack" | "natural20">,
+  plan: DamageTrayPlan
+): boolean {
+  return row.natural20 === true && row.attack !== "miss" && plan.effect === "damage";
+}
+
+/** The fixed on-a-20 damage of the primary damage type (Sword of Sharpness's 14
+ *  Slashing on a Longsword): added to the rolled total before the row's multiplier.
+ *  Only on a natural 20, never on a Critical alone. */
 export function onRoll20Amount(
-  row: Pick<TrayRow, "attack" | "creatureType">,
+  row: Pick<TrayRow, "attack" | "creatureType" | "natural20">,
   plan: DamageTrayPlan
 ): number {
-  if (row.attack !== "critical" || plan.effect !== "damage") return 0;
-  return (plan.attack?.onRoll20 ?? [])
-    .filter((rider) => reachesTarget(rider, row.creatureType))
-    .reduce((sum, rider) => sum + (rider.amount ?? 0), 0);
+  if (!onRoll20Landed(row, plan)) return 0;
+  return riderSum(
+    reachingRiders(row, plan).filter((rider) => rider.damageType === plan.damageType)
+  );
+}
+
+/** One on-a-20 amount of another type than the primary, with its own multiplier. */
+export interface OnRoll20Line {
+  amount: number;
+  damageType: DamageType;
+  multiplier: TrayMultiplier;
+  sourceName?: string;
+}
+
+/** The fixed on-a-20 damage of another type than the primary (Sword of Life
+ *  Stealing's 15 Necrotic on a Slashing hit): each its own line, multiplied by the
+ *  target's own defense against that type, the way a dice rider is its own part. */
+export function onRoll20Lines(
+  row: Pick<TrayRow, "attack" | "creatureType" | "natural20" | "onRoll20Defense">,
+  plan: DamageTrayPlan
+): OnRoll20Line[] {
+  if (!onRoll20Landed(row, plan)) return [];
+  return reachingRiders(row, plan)
+    .filter((rider) => rider.damageType !== plan.damageType)
+    .map((rider) => {
+      const defense = row.onRoll20Defense?.[rider.damageType];
+      return {
+        amount: rider.amount ?? 0,
+        damageType: rider.damageType,
+        multiplier: defense ? defenseMultiplier(defense) : ("1" as const),
+        ...(rider.sourceName ? { sourceName: rider.sourceName } : {}),
+      };
+    });
 }
 
 /**
@@ -311,10 +391,17 @@ export function initialTrayRow(
     defenseOn: defense !== null,
     ...(plan.attack ? { attack: "hit" as const } : {}),
   };
+  const onRoll20Defense: Partial<Record<DamageType, TargetDefense>> = {};
+  for (const rider of plan.attack?.onRoll20 ?? []) {
+    if (rider.damageType === plan.damageType) continue;
+    const own = targetDefense(defenses, rider.damageType);
+    if (own) onRoll20Defense[rider.damageType] = own;
+  }
   return {
     targetId,
     ...facts,
     ...(creatureType ? { creatureType } : {}),
+    ...(Object.keys(onRoll20Defense).length > 0 ? { onRoll20Defense } : {}),
     multiplier: factsMultiplier(facts, plan),
     conditions:
       plan.conditions && !plan.conditions.optIn
@@ -338,17 +425,8 @@ export function rowNeedsTotal(row: TrayRow, plan: DamageTrayPlan): boolean {
   return !grazes(row, plan) && row.multiplier !== "0";
 }
 
-/** What this row applies from the rolled total: the total × its multiplier, every
- *  halving rounded down (¼ = halve twice, the same as ⌊total / 4⌋). A grazing miss
- *  multiplies the Graze damage instead. A Critical row adds the weapon's fixed
- *  on-a-20 damage ({@link onRoll20Amount}) before the multiplier. */
-export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
-  const base = grazes(row, plan)
-    ? (plan.attack?.graze ?? 0)
-    : total + onRoll20Amount(row, plan);
-  const amount = Math.max(0, Math.floor(base));
-  if (plan.effect !== "damage") return amount;
-  switch (row.multiplier) {
+function applyMultiplier(amount: number, multiplier: TrayMultiplier): number {
+  switch (multiplier) {
     case "0":
       return 0;
     case "0.25":
@@ -360,6 +438,26 @@ export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): nu
     default:
       return amount;
   }
+}
+
+/** What this row applies from the rolled total: the total × its multiplier, every
+ *  halving rounded down (¼ = halve twice, the same as ⌊total / 4⌋). A grazing miss
+ *  multiplies the Graze damage instead. A natural-20 row adds the weapon's fixed
+ *  on-a-20 damage: of the primary type before the multiplier ({@link onRoll20Amount}),
+ *  of another type as its own line with its own multiplier ({@link onRoll20Lines}). */
+export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
+  const base = grazes(row, plan)
+    ? (plan.attack?.graze ?? 0)
+    : total + onRoll20Amount(row, plan);
+  const amount = Math.max(0, Math.floor(base));
+  if (plan.effect !== "damage") return amount;
+  return (
+    applyMultiplier(amount, row.multiplier) +
+    onRoll20Lines(row, plan).reduce(
+      (sum, line) => sum + applyMultiplier(line.amount, line.multiplier),
+      0
+    )
+  );
 }
 
 /** The conditions this row lands: none once the target saved or the attack missed. */

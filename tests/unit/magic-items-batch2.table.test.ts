@@ -9,14 +9,18 @@ import { getMagicItem } from "@/data/magic-items";
 import type { AbilityCode, CreatureType } from "@/data/types";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { combatDamageParts } from "@/lib/combat-resolution";
+import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import { resolveItemBoundDamageRiders } from "@/lib/compute";
 import type { Grant } from "@/lib/grants";
 import {
   damageTrayPlan,
   initialTrayRow,
   onRoll20Amount,
+  onRoll20Lines,
+  onRoll20Option,
   rowAmount,
   setAttackOutcome,
+  setD20Face,
 } from "@/lib/play/damage-tray";
 import { takeDamage } from "@/lib/play/damage";
 import { slowedFallFtPerRound } from "@/lib/play/fall";
@@ -30,6 +34,7 @@ import {
 } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
 import type { CharacterDoc, SrdEquipmentRef } from "@/types/character";
+import type { DamageType } from "@/types/damage";
 import { srd } from "../_harness/loc";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -55,30 +60,45 @@ function statedOnRoll20(id: string) {
   return { amount: Number(m[1]), damageType: (m[2] ?? "").toLowerCase() };
 }
 
+/** Each sword is a Longsword; the Mace of Smiting is a Mace. */
+const BASE_WEAPON: Record<string, string> = { "mace-of-smiting": "mace" };
+const weaponOf = (itemId: string) => BASE_WEAPON[itemId] ?? "longsword";
+
 function wielding(itemId: string): CharacterDoc {
   return makeCharacterDoc({
     classId: "fighter",
     level: 5,
     equipment: [worn(itemId)],
-    weapons: [{ srdId: "longsword", quantity: 1, enchantItemId: itemId }],
+    weapons: [{ srdId: weaponOf(itemId), quantity: 1, enchantItemId: itemId }],
   });
 }
 
 function trayFor(itemId: string) {
   const row = resolveActions(wielding(itemId)).find(
-    (a) => a.source === "weapon" && a.weaponId === "longsword"
+    (a) => a.source === "weapon" && a.weaponId === weaponOf(itemId)
   );
-  if (!row) throw new Error("no longsword row");
+  if (!row) throw new Error(`no ${weaponOf(itemId)} row`);
   const action = localizeAction(row, "en");
   const plan = damageTrayPlan(action, ["monster-1"], "pc-me");
   if (!plan) throw new Error("no tray");
   return { action, plan };
 }
 
-function critical(itemId: string, creatureType?: CreatureType) {
+function critical(
+  itemId: string,
+  creatureType?: CreatureType,
+  defenses?: DamageDefenses
+) {
   const { plan } = trayFor(itemId);
-  const hit = initialTrayRow(plan, "monster-1", undefined, creatureType);
-  return { plan, hit, crit: setAttackOutcome(hit, "critical", plan) };
+  const hit = initialTrayRow(plan, "monster-1", defenses, creatureType);
+  // A natural 20: the d20 face is known, and it is a Critical Hit.
+  return { plan, hit, crit: setD20Face(hit, 20, plan) };
+}
+
+/** Everything the on-a-20 riders add to a row on top of a rolled 0. */
+function extraOn(itemId: string, creatureType?: CreatureType): number {
+  const { plan, crit } = critical(itemId, creatureType);
+  return rowAmount(0, crit, plan);
 }
 
 const ON_ROLL_20 = ["sword-of-sharpness", "sword-of-life-stealing", "mace-of-smiting"];
@@ -95,31 +115,75 @@ describe("on-a-20 weapon riders", () => {
     expect(riders.every((r) => r.onRoll20)).toBe(true);
   });
 
-  it.each(ON_ROLL_20)("%s: a Critical row adds it, a hit row does not", (id) => {
+  it.each(ON_ROLL_20)("%s: only a natural 20 adds it, never any Critical", (id) => {
     const want = statedOnRoll20(id);
+    const { plan, hit, crit } = critical(id);
+    expect(crit.attack).toBe("critical");
+    expect(crit.natural20).toBe(true);
+    // A Champion's Critical Hit on a 19 (Improved Critical): no rider, nothing to confirm.
+    const champion = setAttackOutcome(setD20Face(hit, 19, plan), "critical", plan);
+    expect(champion.natural20).toBe(false);
+    expect(onRoll20Amount(champion, plan)).toBe(0);
+    expect(onRoll20Lines(champion, plan)).toEqual([]);
+    expect(rowAmount(10, champion, plan)).toBe(10);
+    expect(onRoll20Option(champion, plan)).toBeNull();
+    // Only "Critical" tapped, face unknown: never added silently, offered instead.
+    const tapped = setAttackOutcome(hit, "critical", plan);
+    expect(rowAmount(10, tapped, plan)).toBe(10);
+    expect(onRoll20Option(tapped, plan)).toMatchObject({ amount: want.amount });
+    // Confirming the natural 20 adds it.
+    expect(rowAmount(10, setD20Face(tapped, 20, plan), plan)).toBe(10 + want.amount);
+    expect(onRoll20Option(crit, plan)).toBeNull();
+  });
+
+  it.each(ON_ROLL_20)("%s: never a hit-time option, nothing on a plain hit", (id) => {
     const { action } = trayFor(id);
-    // Never offered as a hit-time optional part.
     expect(
       combatDamageParts(action).filter((p) => p.id.startsWith("extra-"))
     ).toHaveLength(0);
-    const { plan, hit, crit } = critical(id);
+    const { plan, hit } = critical(id);
     expect(onRoll20Amount(hit, plan)).toBe(0);
     expect(rowAmount(10, hit, plan)).toBe(10);
-    expect(rowAmount(10, crit, plan)).toBe(10 + want.amount);
+  });
+
+  it("a rider of the primary type rides the primary's multiplier", () => {
+    // Sword of Sharpness's 14 Slashing on a Longsword (Slashing): one amount, halved.
+    const resistant = { ...NO_DEFENSES, resistances: new Set<DamageType>(["slashing"]) };
+    const { plan, crit } = critical("sword-of-sharpness", undefined, resistant);
+    expect(plan.damageType).toBe("slashing");
+    expect(crit.multiplier).toBe("0.5");
+    expect(onRoll20Amount(crit, plan)).toBe(14);
+    expect(rowAmount(10, crit, plan)).toBe(Math.floor((10 + 14) / 2));
+  });
+
+  it("a rider of another type is its own line with its own multiplier", () => {
+    // Sword of Life Stealing's 15 Necrotic on a Slashing hit.
+    const slashResistant = {
+      ...NO_DEFENSES,
+      resistances: new Set<DamageType>(["slashing"]),
+    };
+    const resisted = critical("sword-of-life-stealing", "humanoid", slashResistant);
+    expect(onRoll20Amount(resisted.crit, resisted.plan)).toBe(0);
+    expect(onRoll20Lines(resisted.crit, resisted.plan)).toEqual([
+      expect.objectContaining({ amount: 15, damageType: "necrotic", multiplier: "1" }),
+    ]);
+    // The resisted Slashing halves; the Necrotic stays whole.
+    expect(rowAmount(10, resisted.crit, resisted.plan)).toBe(5 + 15);
+    const necroticResistant = {
+      ...NO_DEFENSES,
+      resistances: new Set<DamageType>(["necrotic"]),
+    };
+    const own = critical("sword-of-life-stealing", "humanoid", necroticResistant);
+    expect(own.crit.multiplier).toBe("1");
+    expect(rowAmount(10, own.crit, own.plan)).toBe(10 + 7);
   });
 
   it("Sword of Life Stealing: not against a Construct or an Undead", () => {
     expect(text("sword-of-life-stealing")).toMatch(/isn’t a Construct or an Undead/);
-    expect(
-      onRoll20Amount(
-        critical("sword-of-life-stealing", "undead").crit,
-        critical("sword-of-life-stealing").plan
-      )
-    ).toBe(0);
-    const { plan, crit } = critical("sword-of-life-stealing", "construct");
-    expect(onRoll20Amount(crit, plan)).toBe(0);
-    const humanoid = critical("sword-of-life-stealing", "humanoid");
-    expect(onRoll20Amount(humanoid.crit, humanoid.plan)).toBe(15);
+    expect(extraOn("sword-of-life-stealing", "undead")).toBe(0);
+    expect(extraOn("sword-of-life-stealing", "construct")).toBe(0);
+    expect(extraOn("sword-of-life-stealing", "humanoid")).toBe(15);
+    expect(extraOn("sword-of-life-stealing")).toBe(15);
   });
 
   it("Mace of Smiting: 7, or 14 if it's a Construct", () => {
@@ -127,10 +191,24 @@ describe("on-a-20 weapon riders", () => {
       /extra (\d+) Bludgeoning damage, or (\d+) Bludgeoning damage if it’s a Construct/.exec(
         text("mace-of-smiting")
       );
-    const any = critical("mace-of-smiting");
-    expect(onRoll20Amount(any.crit, any.plan)).toBe(Number(m?.[1]));
-    const construct = critical("mace-of-smiting", "construct");
-    expect(onRoll20Amount(construct.crit, construct.plan)).toBe(Number(m?.[2]));
+    const base = Number(m?.[1]);
+    const vsConstruct = Number(m?.[2]);
+    // Two riders: the base excluding Constructs, the Construct amount only for them.
+    expect(
+      resolveItemBoundDamageRiders(getMagicItem("mace-of-smiting")?.grants, () => false)
+    ).toEqual([
+      expect.objectContaining({
+        dice: String(base),
+        excludeCreatureTypes: ["construct"],
+      }),
+      expect.objectContaining({
+        dice: String(vsConstruct),
+        targetCreatureTypes: ["construct"],
+      }),
+    ]);
+    expect(extraOn("mace-of-smiting")).toBe(base);
+    expect(extraOn("mace-of-smiting", "construct")).toBe(vsConstruct);
+    expect(extraOn("mace-of-smiting", "undead")).toBe(base);
   });
 });
 
