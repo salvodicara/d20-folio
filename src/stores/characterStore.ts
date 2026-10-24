@@ -2111,7 +2111,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   addCondition: (condition, opts) => {
     // WORLD-FIRST: a manual chip commits as a real world condition occurrence
     // (the manual-condition seam program); see `addCondition` in lib/play.
-    if (!get().dispatch({ kind: "add-condition", condition })) return;
+    const worldActionId = `condition-apply-${crypto.randomUUID()}`;
+    if (!get().dispatch({ kind: "add-condition", condition, worldActionId })) return;
     // Events-as-data: a gained condition is a story beat (the condition id is
     // stable; the presenter resolves its localized name).
     get().logEvent({ kind: "condition-gain", conditionId: condition });
@@ -2215,7 +2216,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     );
     // The engine end, the chip and (RA-12) an Invisible's remembered find-DC all go
     // through the play log; its undo brings every one of them back.
-    const undoRemoval = get().dispatch({ kind: "remove-condition", condition });
+    const undoRemoval = get().dispatch({
+      kind: "remove-condition",
+      condition,
+      worldActionId: `condition-end-${crypto.randomUUID()}`,
+    });
     if (!undoRemoval) return null;
     set({
       combatActiveEffects: effectiveCombatEffects(nextLegacyEffects),
