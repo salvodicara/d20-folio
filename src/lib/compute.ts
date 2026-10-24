@@ -1828,8 +1828,8 @@ export function passiveAdvantageStep(
  * tier) + the resolved check bonus + exhaustion — the SAME register `skillBonus`
  * sums, so the tip and the headline can never drift (golden rule 6):
  * `breakdownTotal(parts) === skillBonus(...)` (override-free) by construction.
- * A manual `override` keeps those lines and adds the manual adjustment up to the
- * hand-set bonus the sheet's rail shows (`override ?? auto`). A single-component skill (no
+ * A manual `override` keeps those lines and adds the manual adjustment; Exhaustion
+ * still applies on top of the pinned modifier, as for a save. A single-component skill (no
  * proficiency, no bonus, no exhaustion) returns one part — the consumer suppresses
  * the tip then (golden rule 19).
  */
@@ -1854,7 +1854,7 @@ export function buildSkillBreakdown(args: {
   if (args.checkBonus) parts.push(termPart("breakdown.featureBonus", args.checkBonus));
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
-  return args.override != null ? withOverride(parts, args.override) : parts;
+  return args.override != null ? withOverride(parts, args.override + exPenalty) : parts;
 }
 
 /**

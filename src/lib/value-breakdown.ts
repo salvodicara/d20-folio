@@ -222,3 +222,13 @@ export function withOverride(
 ): RawBreakdownPart[] {
   return [...computed, termPart(OVERRIDE_TERM, shown - breakdownTotal(computed))];
 }
+
+/**
+ * Whether a breakdown is of a hand-set number: it carries the manual-adjustment part
+ * anywhere among its parts (never assume it is last). UIs read this, never the term.
+ */
+export function isHandSet(
+  parts: ReadonlyArray<RawBreakdownPart> | null | undefined
+): boolean {
+  return parts?.some((p) => "term" in p.label && p.label.term === OVERRIDE_TERM) ?? false;
+}

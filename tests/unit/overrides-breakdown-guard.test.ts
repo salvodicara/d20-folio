@@ -16,6 +16,7 @@ import { buildWeaponAttackBreakdown } from "@/lib/smart-tracker";
 import {
   OVERRIDE_TERM,
   breakdownTotal,
+  isHandSet,
   termPart,
   type RawBreakdownPart,
 } from "@/lib/value-breakdown";
@@ -59,7 +60,7 @@ const withChar = (
   patch: Partial<CharacterDoc["character"]>
 ): CharacterDoc => ({ ...doc, character: { ...doc.character, ...patch } });
 
-/** A save or spell attack still takes the Exhaustion penalty on top of a hand-set bonus. */
+/** A pin sets the modifier: a save, skill or spell attack still takes Exhaustion on top. */
 const plusExhaustion = (pinned: CharacterDoc, value: number): number =>
   value + exhaustionPenalty(pinned.session.exhaustion);
 
@@ -130,6 +131,7 @@ const CASES: Record<keyof N, (doc: CharacterDoc) => Case[]> = {
         withChar(d, {
           skillBonusOverrides: { ...d.character.skillBonusOverrides, [id]: v },
         }),
+      shown: plusExhaustion,
     })),
   passives: () =>
     (Object.keys(PASSIVE_FIELD) as (keyof typeof PASSIVE_FIELD)[]).map((id) => ({
@@ -190,11 +192,14 @@ describe("every sheet number can be set by hand and stays explained", () => {
         expect(after?.parts, c.name).not.toBeNull();
         const parts = after?.parts ?? [];
         expect(breakdownTotal(parts), c.name).toBe(shown);
-        expect(isOverridePart(parts.at(-1)), c.name).toBe(true);
+        expect(isHandSet(parts), c.name).toBe(true);
         expect(parts.filter(isOverridePart), c.name).toHaveLength(1);
         // The computed explanation is kept as it was (a by-the-book baseline).
         if (before.parts && !before.parts.some(isOverridePart)) {
-          expect(parts.slice(0, -1), c.name).toEqual(before.parts);
+          expect(
+            parts.filter((p) => !isOverridePart(p)),
+            c.name
+          ).toEqual(before.parts);
         }
       }
     }
@@ -233,4 +238,34 @@ describe("a hand-set weapon to-hit stays explained", () => {
       expect(breakdownTotal(parts)).toBe(pin - 5);
     }
   );
+});
+
+describe("a pinned skill still takes Exhaustion, like a pinned save", () => {
+  it("at Exhaustion 2 shows the pin, a −4 Exhaustion line, and the total with it", () => {
+    const base = docs[0]?.[1];
+    if (!base) throw new Error("no scenario");
+    const doc = withChar(
+      { ...base, session: { ...base.session, exhaustion: 2 } },
+      {
+        skillBonusOverrides: { stealth: 7 },
+        savingThrowBonusOverrides: { DEX: 7 },
+      }
+    );
+    const n = sheetNumbers(doc);
+    const skill = n.skills.find((s) => s.id === "stealth");
+    const save = n.saves.find((s) => s.ability === "DEX");
+    for (const number of [skill, save]) {
+      expect(number?.total).toBe(3);
+      expect(number?.parts).toContainEqual({
+        label: { term: "character.exhaustion" },
+        value: -4,
+      });
+      expect(breakdownTotal(number?.parts ?? [])).toBe(3);
+      expect(isHandSet(number?.parts)).toBe(true);
+    }
+    // The same character's unpinned numbers are not hand-set.
+    expect(isHandSet(n.skills.find((s) => s.id === "athletics")?.parts)).toBe(false);
+    expect(isHandSet(null)).toBe(false);
+    expect(deriveCharacter(doc).skills.find((s) => s.id === "stealth")?.bonus).toBe(3);
+  });
 });
