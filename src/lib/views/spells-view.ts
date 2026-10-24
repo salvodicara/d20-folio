@@ -64,7 +64,7 @@ import { slotUsageKey } from "@/lib/cast-options";
 import { vitalSlotUsed } from "@/lib/character-vitals";
 import { evaluateGrants, type SpellDieAugmentEntry } from "@/lib/grants";
 import { grantSourceName } from "@/lib/views/srd-i18n";
-import { customConcentrationValue } from "@/lib/concentration";
+import { holdsCustomSpellConcentration } from "@/lib/concentration";
 import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
 
 type SpellRef = SrdSpellRef | CustomSpell;
@@ -432,7 +432,7 @@ function buildCustomCardVM(args: {
     isCantrip,
     concentration: ref.concentration,
     ritual: false,
-    concentratingNow: session.concentration === customConcentrationValue(ref.name),
+    concentratingNow: holdsCustomSpellConcentration(session.concentration, ref),
     isPrepared: ref.prepared ?? false,
     isAlwaysPrepared: false,
     prepLocked: true,

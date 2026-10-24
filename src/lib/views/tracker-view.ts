@@ -65,7 +65,7 @@ import { abilityModifier } from "@/lib/ability";
 import { localeDistance, pickDiceByLevel } from "@/lib/utils";
 import { SRD_CONDITIONS } from "@/data/conditions";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
-import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
+import { customConcentrationName } from "@/lib/concentration";
 import { getRace, rawRaceTraitCatKey } from "@/data/races";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { condColor, condInkColor } from "@/lib/condition-color";
@@ -300,9 +300,8 @@ export function actionHigherLevels(
 
 export function concentrationLabel(value: string, locale: Locale): string {
   if (!value) return value;
-  if (value.startsWith(CUSTOM_CONCENTRATION_PREFIX)) {
-    return value.slice(CUSTOM_CONCENTRATION_PREFIX.length);
-  }
+  const customName = customConcentrationName(value);
+  if (customName !== null) return customName;
   return localizeSrd("spell", value, "name", locale);
 }
 

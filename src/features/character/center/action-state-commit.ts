@@ -9,7 +9,11 @@ import { useCombatStatusStore } from "@/features/campaigns/global-combat-context
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { turnBoundaryAfter } from "@/lib/combat-effects";
-import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
+import {
+  concentrationValue,
+  customConcentrationValue,
+  customSpellConcentrationValue,
+} from "@/lib/concentration";
 import {
   COVER_STATES,
   coverStateKey,
@@ -234,7 +238,12 @@ export function applyActionConcentration(
     ? store.setConcentration(
         action.spellId
           ? concentrationValue(action.spellId)
-          : customConcentrationValue(action.name),
+          : action.customSpellInstanceId
+            ? customSpellConcentrationValue({
+                instanceId: action.customSpellInstanceId,
+                name: action.name,
+              })
+            : customConcentrationValue(action.name),
         {
           castLevel,
           captureUndo: (undo) => {
