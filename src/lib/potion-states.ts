@@ -4,8 +4,12 @@
  * same key as its countdown: drinking lights the key, and the countdown's expiry
  * (or a rest) ends it like any other timed state. The potion is gone once drunk,
  * so the lit key itself, not the inventory, is the grant source.
+ *
+ * An activated item state that gives a condition or ends on an act (Ring of
+ * Invisibility, Dust of Disappearance) is read the same way here: the condition and
+ * end-on-act seams see its lit key, per physical copy.
  */
-import { getMagicItem } from "@/data/magic-items";
+import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import type { Grant } from "@/lib/grant-schema";
 import type { GrantSource } from "@/lib/grants";
 
@@ -35,11 +39,48 @@ function potionItemOf(key: string): string | null {
     : null;
 }
 
-/** The conditions a lit potion state's `state-condition` grants give (Invisibility). */
-function stateConditionsOf(key: string): string[] {
+type WhileActive = Extract<Grant, { type: "while-active" }>;
+
+/** The per-copy prefix an item activation's state key carries (`resolveGrantActiveKey`). */
+const ITEM_COPY_PREFIX = "magic-item:";
+
+let activatedItemStates: ReadonlyMap<string, WhileActive> | undefined;
+
+/**
+ * A worn item's activated state that gives a condition or ends on an act (Ring and
+ * Cloak of Invisibility, Dust of Disappearance), by its authored key. Like a potion's,
+ * the lit key is the source: the condition seam reads sessions, not inventories.
+ */
+function activatedItemState(authoredKey: string): WhileActive | undefined {
+  activatedItemStates ??= new Map(
+    SRD_MAGIC_ITEMS.flatMap((item) =>
+      item.type === "potion"
+        ? []
+        : (item.grants ?? []).flatMap((grant) =>
+            grant.type === "while-active" &&
+            grant.activation &&
+            (grant.grants.some((inner) => inner.type === "state-condition") ||
+              (grant.duration && "endsEarlyOn" in grant.duration))
+              ? [[grant.activeKey, grant] as const]
+              : []
+          )
+    )
+  );
+  return activatedItemStates.get(authoredKey);
+}
+
+/** The state behind a lit key: a drunk potion's, or an activated item's (per copy). */
+function stateGrantOf(key: string): WhileActive | undefined {
   const itemId = potionItemOf(key);
-  if (!itemId) return [];
-  return (potionStateGrant(itemId)?.grants ?? []).flatMap((grant) =>
+  if (itemId) return potionStateGrant(itemId);
+  if (!key.startsWith(ITEM_COPY_PREFIX)) return activatedItemState(key);
+  const copySeparator = key.indexOf(":", ITEM_COPY_PREFIX.length);
+  return copySeparator < 0 ? undefined : activatedItemState(key.slice(copySeparator + 1));
+}
+
+/** The conditions a lit state's `state-condition` grants give (Invisibility). */
+function stateConditionsOf(key: string): string[] {
+  return (stateGrantOf(key)?.grants ?? []).flatMap((grant) =>
     grant.type === "state-condition" ? [grant.condition] : []
   );
 }
@@ -63,8 +104,7 @@ export function potionStatesEndingOn(
   act: string
 ): string[] {
   return [...activeKeys].filter((key) => {
-    const itemId = potionItemOf(key);
-    const duration = itemId ? potionStateGrant(itemId)?.duration : undefined;
+    const duration = stateGrantOf(key)?.duration;
     return (
       duration !== undefined &&
       "endsEarlyOn" in duration &&

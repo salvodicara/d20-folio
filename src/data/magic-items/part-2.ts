@@ -1,5 +1,7 @@
+import { REDUCE_EFFECT_GRANTS } from "../enlarge-effect";
 import type { SrdMagicItemData } from "../types";
 import { POTION_STATE } from "./_potion";
+import { DAWN_CHARGES, DAWN_USES, FINITE_SUPPLY } from "./_resource";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
 
 export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
@@ -19,6 +21,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "ring",
     attunement: true,
+    grants: [{ type: "at-will-cast-spell", spellId: "jump" }],
     source: "SRD",
   },
   {
@@ -59,6 +62,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "ring",
     attunement: false,
+    grants: [{ type: "at-will-cast-spell", spellId: "water-walk" }],
     source: "SRD",
   },
   {
@@ -86,6 +90,16 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    // Sending, then neither stone works until the next dawn (tracked per stone).
+    resources: [DAWN_USES()],
+    grants: [
+      { type: "always-prepared-spell", spellId: "sending" },
+      {
+        type: "free-cast-spell",
+        spellId: "sending",
+        resourceCost: { resourceId: "uses" },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -272,6 +286,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {
@@ -468,6 +483,8 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: false,
+    // 3d4 beans, entered once from the table's roll; the empty bag is nonmagical.
+    resources: [FINITE_SUPPLY("uses", { dice: 3, sides: 4 }, "nonmagical")],
     source: "SRD",
   },
   {
@@ -529,6 +546,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: false,
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -538,6 +556,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: false,
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -547,6 +566,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: false,
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -556,6 +576,12 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: false,
+    // Knock, 10 times; after the tenth it cracks and is useless.
+    resources: [FINITE_SUPPLY("uses", 10, "nonmagical")],
+    grants: [
+      { type: "always-prepared-spell", spellId: "knock" },
+      { type: "free-cast-spell", spellId: "knock", resourceCost: { resourceId: "uses" } },
+    ],
     source: "SRD",
   },
   {
@@ -703,6 +729,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {
@@ -752,6 +779,10 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "potion",
     attunement: false,
+    // The Reduce effect of Enlarge/Reduce, no Concentration. The countdown runs the
+    // 1d4's maximum (4 hours = 2400 rounds); the table's roll ends it sooner.
+    durationRounds: 2400,
+    grants: [POTION_STATE("potion-of-diminution", 240, REDUCE_EFFECT_GRANTS)],
     source: "SRD",
   },
   {
@@ -854,6 +885,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {
@@ -890,6 +922,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {
@@ -944,6 +977,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "rod",
     attunement: true,
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -1219,6 +1253,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {
@@ -1228,6 +1263,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: false,
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -1319,6 +1355,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
+    resources: [DAWN_CHARGES(7, { dice: 1, sides: 6, modifier: 1 }, "destroyed")],
     source: "SRD",
   },
   {
@@ -1493,6 +1530,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
+    resources: [DAWN_CHARGES(7, { dice: 1, sides: 6, modifier: 1 }, "destroyed")],
     source: "SRD",
   },
   {
@@ -1504,6 +1542,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
+    resources: [DAWN_CHARGES(7, { dice: 1, sides: 6, modifier: 1 }, "destroyed")],
     source: "SRD",
   },
   {

@@ -77,7 +77,8 @@ describe("timed potions declare their standing effect", () => {
     for (const item of SRD_MAGIC_ITEMS.filter((i) => potionStateGrant(i.id))) {
       const grant = potionStateGrant(item.id);
       const duration = grant?.type === "while-active" ? grant.duration : undefined;
-      expect(item.id.startsWith("potion-"), item.id).toBe(true);
+      // Potions and oils (Oil of Slipperiness) share the drink-to-light path.
+      expect(item.type, item.id).toBe("potion");
       expect(duration, item.id).toMatchObject({
         kind: "timed",
         maxRounds: item.durationRounds,

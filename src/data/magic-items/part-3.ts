@@ -1,5 +1,7 @@
+import { FREEDOM_OF_MOVEMENT_GRANTS } from "../freedom-of-movement-effect";
 import type { SrdMagicItemData } from "../types";
 import { POTION_STATE } from "./_potion";
+import { DAWN_CHARGES, DAWN_USES, FINITE_SUPPLY } from "./_resource";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
 
 export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
@@ -205,6 +207,19 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 6", "recharge: 1d6 / dawn"],
+    // Dancing Lights and Light at will; Faerie Fire for 1 charge. Lightning Spheres
+    // and Shooting Stars spend charges from the same counter by hand.
+    resources: [DAWN_CHARGES(6, { dice: 1, sides: 6 })],
+    grants: [
+      { type: "at-will-cast-spell", spellId: "dancing-lights" },
+      { type: "at-will-cast-spell", spellId: "light" },
+      { type: "always-prepared-spell", spellId: "faerie-fire" },
+      {
+        type: "free-cast-spell",
+        spellId: "faerie-fire",
+        resourceCost: { resourceId: "charges" },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -226,6 +241,19 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    // A Magic action and 1 charge: until the end of your next turn, creatures that
+    // can see you have Disadvantage on attack rolls against you. The Stunned save
+    // for onlookers is theirs to roll.
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "robe-of-scintillating-colors",
+        activation: { action: "action", resourceCost: { resourceId: "charges" } },
+        duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+        grants: [{ type: "incoming-attack-disadvantage" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -477,6 +505,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // Attuned, your Strength is 20 unless already higher. The 1d8 Thunder rider
+    // needs the item-bound rider seam; Clap of Thunder and Earthquake stay text.
+    grants: [{ type: "ability-score-set", ability: "STR", value: 20 }],
     source: "SRD",
   },
   {
@@ -609,6 +640,18 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    // A Magic action and 1 charge: the Invisible condition for 1 hour; pulling the
+    // hood down is the toggle's own off.
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "cloak-of-invisibility",
+        activation: { action: "action", resourceCost: { resourceId: "charges" } },
+        duration: { kind: "timed", minutes: 60, maxRounds: 600 },
+        grants: [{ type: "state-condition", condition: "invisible" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -650,6 +693,17 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    // 1 charge casts Gate or Plane Shift.
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
+    grants: [
+      { type: "always-prepared-spell", spellId: "gate" },
+      { type: "always-prepared-spell", spellId: "plane-shift" },
+      {
+        type: "free-cast-from-list",
+        spellIds: ["gate", "plane-shift"],
+        resourceCost: { resourceId: "charges" },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -685,6 +739,8 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "armor",
     attunement: true,
+    // The Etherealness effect, once per dawn.
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -807,6 +863,19 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     attunement: true,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 5", "recharge: 1 / dawn"],
+    // Heal for 1 charge, Resurrection for 5; 1 charge back at dawn; on the last
+    // charge a d20 of 1 makes the rod vanish.
+    resources: [DAWN_CHARGES(5, 1, "destroyed")],
+    grants: [
+      { type: "always-prepared-spell", spellId: "heal" },
+      { type: "always-prepared-spell", spellId: "resurrection" },
+      {
+        type: "free-cast-from-list",
+        spellIds: ["heal", "resurrection"],
+        spellCosts: { resurrection: 5 },
+        resourceCost: { resourceId: "charges" },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -837,6 +906,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: false,
+    resources: [FINITE_SUPPLY("uses", { dice: 1, sides: 6, modifier: 1 })],
     source: "SRD",
   },
   {
@@ -890,6 +960,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: false,
+    resources: [FINITE_SUPPLY("uses", { dice: 1, sides: 6, modifier: 1 })],
     source: "SRD",
   },
   {
@@ -997,6 +1068,9 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "potion",
     attunement: false,
+    // Applied, the Freedom of Movement effect for 8 hours (4800 rounds).
+    durationRounds: 4800,
+    grants: [POTION_STATE("oil-of-slipperiness", 480, FREEDOM_OF_MOVEMENT_GRANTS)],
     source: "SRD",
   },
   {
