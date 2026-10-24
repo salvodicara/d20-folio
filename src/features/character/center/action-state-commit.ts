@@ -24,6 +24,7 @@ import {
   type SituationId,
 } from "@/lib/situational-states";
 import { castStateChoiceKeys } from "@/lib/play/states";
+import { castLitStates } from "@/lib/play/on-cast";
 import { castWeaponBinding, type WeaponBindingCast } from "@/lib/weapon-binding";
 import { getSpellById } from "@/data/spells";
 import type { ResolvedAction } from "@/lib/smart-tracker";
@@ -73,8 +74,14 @@ export function activateActionState(
   binding?: Omit<WeaponBindingCast, "spell">
 ): { activated: boolean; restore: () => void } {
   const store = useCharacterStore.getState();
+  // States the cast lights by itself ("Whenever you cast Divine Smite"), even for a
+  // spell with no state of its own; undone with the cast.
+  const restoreCastLit =
+    action.source === "spell" && action.spellId
+      ? lightStatesActivatedByCast(action.spellId)
+      : () => undefined;
   const key = action.activatesKey;
-  if (!key) return { activated: false, restore: () => undefined };
+  if (!key) return { activated: false, restore: restoreCastLit };
   const previousLevel = store.character?.session.activeSpellCastLevels?.[key];
   const previousConcentration = store.character?.session.concentration ?? "";
   const previousConcentrationCastLevel = store.character?.session.concentrationCastLevel;
@@ -151,6 +158,7 @@ export function activateActionState(
   return {
     activated,
     restore: () => {
+      restoreCastLit();
       const current = useCharacterStore.getState();
       const canRestoreConcentration =
         concentrationLogIds.length > 0 &&
@@ -182,6 +190,36 @@ export function activateActionState(
       }
       for (const id of concentrationLogIds) current.removeLogEntry(id);
     },
+  };
+}
+
+/**
+ * Light every state a cast of `spellId` activates (Smite of Protection on Divine
+ * Smite) with its declared end; a still-lit one is re-armed. Returns the inverse:
+ * each end goes back to what it was, and a state this cast lit goes dark again.
+ */
+function lightStatesActivatedByCast(spellId: string): () => void {
+  const store = useCharacterStore.getState();
+  const doc = store.character;
+  if (!doc) return () => undefined;
+  const restores = castLitStates(doc, spellId).map(({ key, turnBoundary, rounds }) => {
+    const wasLit = (
+      useCharacterStore.getState().character?.session.activeFeatures ?? []
+    ).includes(key);
+    if (!wasLit) store.setActiveFeature(key, true);
+    const boundary = turnBoundary
+      ? ownTurnBoundary(turnBoundary.turns, turnBoundary.phase)
+      : null;
+    const restoreBoundary = boundary ? store.armEffectBoundary(key, boundary) : null;
+    const restoreTimer = rounds ? store.armEffectTimer(key, rounds) : null;
+    return () => {
+      restoreTimer?.();
+      restoreBoundary?.();
+      if (!wasLit) useCharacterStore.getState().setActiveFeature(key, false);
+    };
+  });
+  return () => {
+    for (const restore of restores.reverse()) restore();
   };
 }
 
