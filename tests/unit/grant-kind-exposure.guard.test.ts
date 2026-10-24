@@ -435,7 +435,7 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
   "roll-die-adjustment": {
-    open: "consumer removed with the mandatory resolution flow (2026-09-21)",
+    open: "consumer removed with the mandatory resolution flow (2026-09-21); the save and skill rows carry it again as dieAdjustments (saves-checks-view, 2026-10-24), not rendered yet",
   },
   "healing-blocked": {
     via: "healingBlocked",
@@ -553,6 +553,11 @@ const EXPOSURE: Record<string, Exposure> = {
   "replace-attack-with-cast": {
     via: "resolveReplaceAttackWithCast",
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",
+  },
+  // Resistance's −1d4 on the chosen type: `deriveDamageDieReductions` (sheet-view)
+  // is the core seam; no rendered surface until the new sheet reads it.
+  "damage-die-reduction": {
+    open: "core seam deriveDamageDieReductions (2026-10-24); no rendered surface yet",
   },
 };
 

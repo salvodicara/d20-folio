@@ -23,6 +23,7 @@
  *  - Meld into Stone: Disadvantage on Wisdom (Perception) checks to hear outside.
  *  - Mislead: the caster gains the Invisible condition; the double is a note.
  *  - The rest light a reminder on the right creature(s) for the right time.
+ *    Guidance, Resistance and Glibness moved to batch 2 (their numbers).
  */
 import { describe, expect, it } from "vitest";
 import { getSpellById } from "@/data/spells";
@@ -181,22 +182,6 @@ const ROWS: ReadonlyArray<Row> = [
   },
   // ── A reminder on the right creature(s) for the spell's duration ─────────
   {
-    id: "guidance",
-    recipient: "selected",
-    targeting: { affinity: "ally", maxTargets: 1 },
-    minutes: 1,
-    concentration: true,
-    lit: { notes: 1 },
-  },
-  {
-    id: "resistance",
-    recipient: "selected",
-    targeting: { affinity: "ally", maxTargets: 1 },
-    minutes: 1,
-    concentration: true,
-    lit: { notes: 1 },
-  },
-  {
     id: "jump",
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
@@ -326,13 +311,6 @@ const ROWS: ReadonlyArray<Row> = [
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 3 },
     minutes: 480,
-    concentration: false,
-    lit: { notes: 1 },
-  },
-  {
-    id: "glibness",
-    recipient: "caster",
-    minutes: 60,
     concentration: false,
     lit: { notes: 1 },
   },

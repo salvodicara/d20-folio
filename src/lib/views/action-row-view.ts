@@ -9,6 +9,7 @@ import type { ActionType } from "@/data/types";
 import type { GatedSlot } from "@/lib/condition-effects";
 import { executionFor } from "@/lib/play/cast-execution";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import type { CombatAction } from "./combat-action-view";
 import type { CharacterDoc } from "@/types/character";
 import { resolveSpellCastOptions } from "./spell-cast-sources";
 
@@ -23,6 +24,8 @@ export interface ActionRowFacts {
   /** It can be cast as a ritual (a levelled SRD ritual spell). */
   ritual: boolean;
   availability: ActionAvailability;
+  /** The save DC the action forces, with its display lines (see `CombatAction`). */
+  saveDc: CombatAction["saveDc"];
 }
 
 const GROUP: Record<ActionType, ActionGroup> = {
@@ -67,7 +70,7 @@ export function isActionDepleted(
 
 export function actionRowFacts(
   character: CharacterDoc,
-  action: ResolvedAction,
+  action: CombatAction,
   blockedSlots: ReadonlySet<GatedSlot>
 ): ActionRowFacts {
   const depleted = isActionDepleted(character, action);
@@ -81,5 +84,6 @@ export function actionRowFacts(
       : conditionBlocked
         ? { kind: "blocked", reason: "condition" }
         : { kind: "available" },
+    saveDc: action.saveDc,
   };
 }

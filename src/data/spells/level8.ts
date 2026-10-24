@@ -265,7 +265,18 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
         type: "while-active",
         activeKey: "spell-glibness",
         duration: timedSpellDuration(60),
-        grants: [{ type: "defense-note" }],
+        // SRD 5.2.1: "when you make a Charisma check, you can replace the number
+        // you roll with a 15"; the lie-detection clause stays a note.
+        grants: [
+          {
+            type: "roll-floor",
+            rollType: "check",
+            floor: 15,
+            appliesTo: "all",
+            ability: "CHA",
+          },
+          { type: "defense-note" },
+        ],
       },
     ],
     source: "SRD",

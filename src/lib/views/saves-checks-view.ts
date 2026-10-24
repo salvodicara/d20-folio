@@ -40,7 +40,7 @@ import {
   aggregateAbilityScores,
 } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
-import { evaluateGrants } from "@/lib/grants";
+import { evaluateGrants, type RollDieAdjustmentClause } from "@/lib/grants";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { mergeSkillProficiencies, mergeSaveProficiencies } from "@/lib/views/sheet-view";
@@ -81,6 +81,8 @@ export interface SaveCheckSaveRow {
   breakdownParts: RawBreakdownPart[] | null;
   /** The FIRST active condition id that auto-fails this save (crimson mark). */
   autoFailCause?: string;
+  /** Physical dice added to / taken from this save (Bless: +1d4). */
+  dieAdjustments: RollDieAdjustmentClause[];
 }
 
 /** One skill row (all 18), engine-computed + override-first. */
@@ -95,6 +97,8 @@ export interface SaveCheckSkillRow {
   auto: number;
   override: number | null;
   breakdownParts: RawBreakdownPart[] | null;
+  /** Physical dice on this skill's checks (Guidance on the chosen skill: +1d4). */
+  dieAdjustments: RollDieAdjustmentClause[];
 }
 
 /** One passive score row (Perception/Insight/Investigation). */
@@ -233,6 +237,12 @@ export function deriveSavesAndChecks(
       effectiveScores
     );
   const autoFail = autoFailByAbility(conditions);
+  const saveDice = fullAggregate.rollDieAdjustments.filter((d) => d.rollType === "save");
+  const checkDiceFor = (skillId: string): RollDieAdjustmentClause[] =>
+    fullAggregate.rollDieAdjustments.filter(
+      (d) =>
+        d.rollType === "check" && (d.appliesTo === undefined || d.appliesTo === skillId)
+    );
 
   const saves: SaveCheckSaveRow[] = ALL_ABILITIES.map(({ code }) => {
     const proficient = displayedSaves.includes(code);
@@ -277,6 +287,7 @@ export function deriveSavesAndChecks(
         saveBonus: saveBonusFor(code),
       }),
       ...(cause ? { autoFailCause: cause } : {}),
+      dieAdjustments: saveDice,
     };
   });
 
@@ -316,6 +327,7 @@ export function deriveSavesAndChecks(
         pbOverride,
         checkBonus,
       }),
+      dieAdjustments: checkDiceFor(skill.id),
     };
   });
 
