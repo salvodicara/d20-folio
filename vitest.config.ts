@@ -60,6 +60,8 @@ export default defineConfig({
   // vite.config.ts serves the pack's real directory via `server.fs.allow`.
   resolve: { alias, preserveSymlinks: true },
   test: {
+    // A composed run refuses a pack checkout behind its origin/main (scripts/pack/pack-freshness.ts).
+    globalSetup: ["./scripts/pack/pack-freshness-setup.ts"],
     // ── Fast / slow lanes (docs/ARCHITECTURE.md) ──────────────────────────
     // Two Vitest projects share one coverage run:
     //   • fast — `node` env, jsdom-free pure-logic `.test.ts`. Pre-commit smoke
