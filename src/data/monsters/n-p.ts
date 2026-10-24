@@ -1233,6 +1233,7 @@ export const SRD_MONSTERS_N_P: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "swallow",
         kind: "save",
+        swallows: { damage: { dice: "5d6", damageType: "acid" } },
         save: "STR",
         dc: 19,
         onSuccess: "none",

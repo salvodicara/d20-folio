@@ -124,7 +124,10 @@ export const EFFECT_RIDER_SCHEMAS: {
       }),
     }
   ),
-  hpMaxReduction: objectSchema({}, { dice: stringSchema }),
+  hpMaxReduction: objectSchema(
+    {},
+    { dice: stringSchema, damageType: DAMAGE_TYPE_SCHEMA }
+  ),
   swallows: objectSchema(
     {},
     { damage: objectSchema({ dice: stringSchema, damageType: DAMAGE_TYPE_SCHEMA }) }

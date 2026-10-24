@@ -299,6 +299,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "swallow",
         kind: "save",
+        swallows: {},
         save: "STR",
         dc: 19,
         onSuccess: "none",
@@ -1267,6 +1268,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "life-drain",
         kind: "attack",
+        hpMaxReduction: {},
         attack: "melee",
         toHit: 4,
         reachFt: 5,
@@ -1721,6 +1723,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "steam-breath",
         kind: "save",
+        speedReduction: { feet: 10, until: { phase: "turn-end", anchor: "actor" } },
         save: "CON",
         dc: 10,
         recharge: 6,
@@ -2003,6 +2006,7 @@ export const SRD_MONSTERS_Q_S: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "draining-kiss",
         kind: "save",
+        hpMaxReduction: {},
         save: "CON",
         dc: 15,
         damage: [{ dice: "3d8", damageType: "psychic" }],

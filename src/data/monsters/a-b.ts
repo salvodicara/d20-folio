@@ -404,6 +404,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "repulsion-breath",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 60 },
         save: "STR",
         dc: 19,
         onSuccess: "none",
@@ -860,6 +861,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "cold-gale",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 30 },
         save: "DEX",
         dc: 19,
         damage: [{ dice: "4d6", damageType: "cold" }],
@@ -988,6 +990,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "whirlwind",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 20 },
         save: "STR",
         dc: 13,
         recharge: 4,
@@ -1354,6 +1357,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "repulsion-breath",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 60 },
         save: "STR",
         dc: 23,
         onSuccess: "none",
@@ -1824,6 +1828,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "cold-gale",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 30 },
         save: "DEX",
         dc: 23,
         damage: [{ dice: "4d6", damageType: "cold" }],
@@ -2893,6 +2898,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "swallow",
         kind: "save",
+        swallows: { damage: { dice: "6d6", damageType: "acid" } },
         save: "DEX",
         dc: 18,
         onSuccess: "none",
@@ -3353,6 +3359,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "repulsion-breath",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 30 },
         save: "STR",
         dc: 12,
         onSuccess: "none",

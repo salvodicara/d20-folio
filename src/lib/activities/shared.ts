@@ -87,6 +87,7 @@ export function riderEffects(riders: EffectRiders): ActivityEffect[] {
         kind: "hp-max-reduction" as const,
         dice:
           hpMaxReduction.dice !== undefined ? { dice: hpMaxReduction.dice } : undefined,
+        damageType: hpMaxReduction.damageType,
       })
     );
   }

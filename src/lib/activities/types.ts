@@ -371,7 +371,12 @@ export type ActivityEffect =
     })
   /** The target's Hit Point maximum decreases by `dice`, or, absent, by the
    *  damage it took from this use (Life Drain). A Long Rest restores it. */
-  | (EffectBase & { kind: "hp-max-reduction"; dice?: ActivityDice })
+  | (EffectBase & {
+      kind: "hp-max-reduction";
+      dice?: ActivityDice;
+      /** Only the damage of this type taken counts (a vampire's Necrotic bite). */
+      damageType?: DamageType;
+    })
   /** The target is swallowed: Blinded and Restrained, Total Cover from outside,
    *  and `damage` at the start of each of the swallower's turns. */
   | (EffectBase & {

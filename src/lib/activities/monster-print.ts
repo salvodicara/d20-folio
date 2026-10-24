@@ -32,6 +32,7 @@
 import type {
   AbilityCode,
   ConditionId,
+  EffectRiders,
   MonsterAttackEntry,
   MonsterBreathing,
   MonsterDamage,
@@ -43,6 +44,8 @@ import type {
   MonsterSpellcastingEntry,
   MonsterTraitFact,
   MonsterTraitRoll,
+  SpeedReduction,
+  Swallow,
 } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { CONDITION_IDS } from "@/types/condition";
@@ -705,6 +708,7 @@ export function printedAttack(
     ...(conditions ? { conditions: conditions.conditions } : {}),
     ...(conditions?.gated ? { conditionsIf: true as const } : {}),
     ...(conditions?.save ? { conditionSave: conditions.save } : {}),
+    ...printedRiders(hit),
   };
 }
 
@@ -754,6 +758,89 @@ export function printedSave(
     ...(damage.length > 0 ? { damage } : {}),
     onSuccess: printedOnSuccess(text),
     ...(conditions.length > 0 ? { conditions } : {}),
+    ...printedRiders(failure),
+  };
+}
+
+/** "until the end of its next turn" (the target's) or "… of the mephit's next
+ *  turn" (the user's). */
+const UNTIL = /\buntil the (start|end) of (its|the [^,.]+?['’]s) next turn\b/i;
+const LEADING_UNTIL = /^Until the (start|end) of (its|the [^,.]+?['’]s) next turn,/;
+
+function turnBoundary(
+  match: RegExpMatchArray | null
+): NonNullable<SpeedReduction["until"]> | undefined {
+  if (!match) return undefined;
+  return {
+    phase: match[1]?.toLowerCase() === "start" ? "turn-start" : "turn-end",
+    anchor: match[2]?.toLowerCase() === "its" ? "target" : "actor",
+  };
+}
+
+/** "its Speed decreases by 10 feet until the end of its next turn", or the
+ *  boundary opening the sentence ("Until the end of its next turn, … its Speed
+ *  decreases by 10 feet"). */
+function printedSpeedReduction(clause: string): SpeedReduction | undefined {
+  for (const sentence of sentences(clause)) {
+    const m = sentence.match(/\bSpeed (?:decreases|is reduced) by (\d+) (?:feet|ft\.)/);
+    if (!m) continue;
+    const after = sentence.slice((m.index ?? 0) + m[0].length);
+    const until =
+      turnBoundary(after.match(UNTIL)) ?? turnBoundary(sentence.match(LEADING_UNTIL));
+    return { feet: Number(m[1]), ...(until ? { until } : {}) };
+  }
+  return undefined;
+}
+
+/**
+ * The swallow a print states: the target has the Blinded and Restrained conditions,
+ * Total Cover from outside, and one damage at the start of each of the swallower's
+ * turns. A print that gives other conditions (the kraken: Restrained only) is no
+ * generic swallow; two damage clauses (the remorhaz's Acid plus Fire) leave the
+ * damage to the text.
+ */
+function printedSwallow(clause: string): Swallow | undefined {
+  if (!/\bswallow/i.test(clause)) return undefined;
+  if (!/\bhas the Blinded and Restrained conditions\b/.test(clause)) return undefined;
+  if (!/\bTotal Cover against attacks and other effects outside\b/.test(clause)) {
+    return undefined;
+  }
+  const m = clause.match(
+    /\btakes \d+ \((\d+d\d+(?: [+-] \d+)?)\) (\w+) damage( plus [^.]*?)? at the start of each of the [^.]+?['’]s turns/
+  );
+  if (!m || m[3]) return {};
+  return {
+    damage: { dice: (m[1] ?? "").replace(/ /g, ""), damageType: damageType(m[2] ?? "") },
+  };
+}
+
+/**
+ * The generic riders a Hit or Failure clause prints, as facts the DM applies:
+ * "pushed up to 15 feet" (or pulled), "its Speed decreases by 10 feet until …",
+ * "its Hit Point maximum decreases by an amount equal to the [Necrotic] damage
+ * taken", and a swallow. A drain over time ("every 24 hours", "Subsequent
+ * Failures") is no immediate drain and stays text.
+ */
+export function printedRiders(clause: string): EffectRiders {
+  const push = clause.match(/\b(pushed|pulled) up to (\d+) (?:feet|ft\.)/);
+  const speed = printedSpeedReduction(clause);
+  const drain = clause.match(
+    /\bHit Point maximum decreases by an amount equal to the (?:(\w+) )?damage taken\b/
+  );
+  const drainType = drain?.[1] ? damageType(drain[1]) : undefined;
+  const swallows = printedSwallow(clause);
+  return {
+    ...(push
+      ? {
+          forcedMovement: {
+            direction: push[1] === "pulled" ? ("pull" as const) : ("push" as const),
+            feet: Number(push[2]),
+          },
+        }
+      : {}),
+    ...(speed ? { speedReduction: speed } : {}),
+    ...(drain ? { hpMaxReduction: drainType ? { damageType: drainType } : {} } : {}),
+    ...(swallows ? { swallows } : {}),
   };
 }
 

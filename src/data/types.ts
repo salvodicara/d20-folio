@@ -871,6 +871,8 @@ export interface SpeedReduction {
  */
 export interface HpMaxReduction {
   dice?: string;
+  /** Only the damage of this type counts ("equal to the Necrotic damage taken"). */
+  damageType?: DamageType;
 }
 
 /**

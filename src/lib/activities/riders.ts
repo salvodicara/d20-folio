@@ -63,6 +63,8 @@ export function riderNotes(effect: RiderEffect): RiderNote[] {
           text: effect.dice?.dice
             ? { ui: `${KEY}.hpMaxReductionDice`, params: { dice: effect.dice.dice } }
             : { ui: `${KEY}.hpMaxReductionDamage` },
+          // "equal to the Necrotic damage taken": the chip names the type that counts.
+          ...(effect.damageType ? { damageType: effect.damageType } : {}),
         },
       ];
     case "swallow": {

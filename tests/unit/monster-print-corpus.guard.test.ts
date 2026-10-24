@@ -8,6 +8,9 @@
  *    the one attack or save of the block it uses, how it moves the monster and
  *    what the monster breathes;
  *  - a Multiattack declares its routine over the block's own entries;
+ *  - an attack's Hit clause and a save's Failure clause declare the generic riders
+ *    they print: a push or pull, a Speed reduction, a Hit Point maximum drain by
+ *    the damage taken, a swallow;
  *  - no entry declares one its print does not state.
  *
  * The cases come from `src/i18n/en/srd/monsters.json`, never a hand list. Blind
@@ -17,7 +20,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import type { MonsterEntry, MonsterStatBlock } from "@/data/types";
+import type { EffectRiders, MonsterEntry, MonsterStatBlock } from "@/data/types";
 import { SRD_MONSTERS_A_B } from "@/data/monsters/a-b";
 import { SRD_MONSTERS_C_D } from "@/data/monsters/c-d";
 import { SRD_MONSTERS_E_G } from "@/data/monsters/e-g";
@@ -33,6 +36,7 @@ import {
   printedMovement,
   printedMultiattack,
   printedPerformedEntry,
+  printedRiders,
   type PrintedEntryName,
 } from "@/lib/activities/monster-print";
 
@@ -59,6 +63,17 @@ const SECTIONS = [
   "legendaryActions",
 ] as const;
 
+/** The generic riders a clause prints, every key present (absent = undefined). */
+function riders(clause: string) {
+  const read = printedRiders(clause);
+  return {
+    forcedMovement: read.forcedMovement,
+    speedReduction: read.speedReduction,
+    hpMaxReduction: read.hpMaxReduction,
+    swallows: read.swallows,
+  };
+}
+
 /** The one-tap facts the print states for this entry, in the data's shape. */
 function printed(entry: MonsterEntry, text: string, names: PrintedEntryName[]) {
   if (entry.kind === "attack") {
@@ -67,8 +82,10 @@ function printed(entry: MonsterEntry, text: string, names: PrintedEntryName[]) {
       conditions: hit?.conditions,
       conditionsIf: hit?.gated,
       conditionSave: hit?.save,
+      ...riders(text.match(/\bHit: (.*)$/s)?.[1] ?? ""),
     };
   }
+  if (entry.kind === "save") return riders(text.match(/\bFailure: (.*)$/s)?.[1] ?? "");
   if (entry.kind === "narrative") {
     const multiattack = names.find((n) => n.entryId === entry.id)?.name ?? "";
     if (/^Multiattack\b/.test(multiattack))
@@ -92,12 +109,20 @@ function printed(entry: MonsterEntry, text: string, names: PrintedEntryName[]) {
 }
 
 function declared(entry: MonsterEntry) {
+  const declaredRiders = (riding: EffectRiders) => ({
+    forcedMovement: riding.forcedMovement,
+    speedReduction: riding.speedReduction,
+    hpMaxReduction: riding.hpMaxReduction,
+    swallows: riding.swallows,
+  });
   if (entry.kind === "attack")
     return {
       conditions: entry.conditions,
       conditionsIf: entry.conditionsIf,
       conditionSave: entry.conditionSave,
+      ...declaredRiders(entry),
     };
+  if (entry.kind === "save") return declaredRiders(entry);
   if (entry.kind === "narrative")
     return {
       damage: entry.damage,
@@ -150,6 +175,16 @@ describe("monster print corpus", () => {
     expect(
       prose.filter(({ entry }) => entry.kind === "narrative" && entry.breathes).length
     ).toBe(40);
+    // The generic riders an attack's Hit or a save's Failure prints.
+    const riding = cases.flatMap(({ entry }) =>
+      entry.kind === "attack" || entry.kind === "save" ? [entry] : []
+    );
+    expect(riding.filter((entry) => entry.forcedMovement).length).toBe(8);
+    expect(riding.filter((entry) => entry.speedReduction).length).toBe(4);
+    // Life Drain-style: by the damage taken (the dice drains over days stay text).
+    expect(riding.filter((entry) => entry.hpMaxReduction).length).toBe(7);
+    // Behir, Purple Worm, Remorhaz, Tarrasque (the Kraken's is Restrained only).
+    expect(riding.filter((entry) => entry.swallows).length).toBe(4);
   });
 
   it.each(cases.map(({ key, entry, text, names }) => [key, entry, text, names] as const))(

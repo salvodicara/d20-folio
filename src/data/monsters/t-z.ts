@@ -89,6 +89,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "swallow",
         kind: "save",
+        swallows: { damage: { dice: "16d6", damageType: "acid" } },
         save: "STR",
         dc: 27,
         onSuccess: "none",
@@ -580,6 +581,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "save",
+        hpMaxReduction: { damageType: "necrotic" },
         save: "CON",
         dc: 17,
         damage: [
@@ -711,6 +713,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "bite",
         kind: "save",
+        hpMaxReduction: { damageType: "necrotic" },
         save: "CON",
         dc: 14,
         damage: [
@@ -1487,6 +1490,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "life-drain",
         kind: "save",
+        hpMaxReduction: {},
         save: "CON",
         dc: 13,
         damage: [{ dice: "1d8+2", damageType: "necrotic" }],
@@ -1696,6 +1700,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "life-drain",
         kind: "attack",
+        hpMaxReduction: {},
         attack: "melee",
         toHit: 6,
         reachFt: 5,
@@ -2022,6 +2027,7 @@ export const SRD_MONSTERS_T_Z: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "repulsion-breath",
         kind: "save",
+        forcedMovement: { direction: "push", feet: 40 },
         save: "STR",
         dc: 15,
         onSuccess: "none",
