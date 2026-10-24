@@ -16,7 +16,15 @@
 > new sheet reads them. Likewise the new `detection` (Detect Magic, Detect Evil and Good, Detect
 > Poison and Disease: 30 ft, in `deriveSensesAndSpeeds().detections`) and `slowed-fall` (Feather
 > Fall: `slowedFallFtPerRound`, and `fallDamageDice` returns 0 for a slowed fall) wait for the new
-> sheet and the HP fall preset to read them (2026-10-24). The on-cast triggers in
+> sheet and the HP fall preset to read them (2026-10-24). So do `hit-dice-healing` (Periapt of
+> Wound Closure doubles, Potion of Vitality maximizes: `hitDiceHealing`; the Short Rest dialog
+> still computes its own heal) and `permanent-ability-increase` (Manuals and Tomes:
+> `studyItemAbilityScores` writes +2, max 30, into the stored score; no Study action yet). The
+> on-a-20 weapon riders (Sword of Sharpness, Sword of Life Stealing, Mace of Smiting) reach the
+> damage tray only on a natural 20 (`setD20Face`; same type as the hit in `onRoll20Amount`, another type
+> as its own line in `onRoll20Lines`); a Critical with no face
+> offers it to confirm (`onRoll20Option`). The tray UI does not yet ask the face or pass the
+> target's creature type. The on-cast triggers in
 > `src/lib/on-cast-effects.ts` (Arcane Ward refill, Expert Divination slot regain) are wired
 > again (2026-10-12): `src/lib/play/on-cast.ts` folds them into every slot-spending cast and
 > reaction cast, logged and undone with the cast. The Wild Magic Surge reminder is still unwired.

@@ -98,6 +98,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Constitution +2, to a maximum of 30: written into the stored score once
+    // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
+    grants: [{ type: "permanent-ability-increase", ability: "CON", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -107,6 +112,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Strength +2, to a maximum of 30: written into the stored score once
+    // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
+    grants: [{ type: "permanent-ability-increase", ability: "STR", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -125,6 +135,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Dexterity +2, to a maximum of 30: written into the stored score once
+    // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
+    grants: [{ type: "permanent-ability-increase", ability: "DEX", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -143,6 +158,19 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // Swift death: while a sworn enemy is named, the bow's hits can add 3d6
+    // Piercing (the tray's opt-in: tick it against the sworn enemy only).
+    // Advantage, cover and the 7-day limit stay the table's.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "oathbow-sworn-enemy",
+        activation: { action: "free" },
+        grants: [
+          { type: "item-bound-damage-rider", dice: "3d6", damageType: "piercing" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -170,6 +198,14 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "potion",
     attunement: false,
+    // For 24 hours each spent Hit Point Die restores its maximum. Removing the
+    // Exhaustion and the Poisoned condition on drinking stays the table's.
+    durationRounds: 14400,
+    grants: [
+      POTION_STATE("potion-of-vitality", 1440, [
+        { type: "hit-dice-healing", rule: "maximum" },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -496,6 +532,16 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    // On a 20 against a creature: an extra 14 Slashing (the Exhaustion level
+    // and the maximized dice against objects stay the table's).
+    grants: [
+      {
+        type: "item-bound-damage-rider",
+        dice: "14",
+        damageType: "slashing",
+        onRoll20: true,
+      },
+    ],
     source: "SRD",
   },
   {
@@ -520,6 +566,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Intelligence +2, to a maximum of 30: written into the stored score once
+    // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
+    grants: [{ type: "permanent-ability-increase", ability: "INT", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -529,6 +580,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Charisma +2, to a maximum of 30: written into the stored score once
+    // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
+    grants: [{ type: "permanent-ability-increase", ability: "CHA", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -538,6 +594,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
+    // Wisdom +2, to a maximum of 30: written into the stored score once
+    // (`studyItemAbilityScores`); the 48 hours of study stay the table's.
+    grants: [{ type: "permanent-ability-increase", ability: "WIS", amount: 2, cap: 30 }],
+    // One study, then the book loses its magic: the Study action spends this use.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {

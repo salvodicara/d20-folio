@@ -724,8 +724,27 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     type: "weapon",
     attunement: false,
     // PRIM-item-bound-bonus — the printed +1 weapon enchant (rides only
-    // the weapon row it is bound to; other effects stay as noted).
-    grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 }],
+    // the weapon row it is bound to; other effects stay as noted). On a 20: an
+    // extra 7 Bludgeoning, or 14 against a Construct (so an unknown target still
+    // gets the 7); the +3 against Constructs and the destroy-at-25-HP stay the
+    // table's.
+    grants: [
+      { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
+      {
+        type: "item-bound-damage-rider",
+        dice: "7",
+        damageType: "bludgeoning",
+        onRoll20: true,
+        excludeCreatureTypes: ["construct"],
+      },
+      {
+        type: "item-bound-damage-rider",
+        dice: "14",
+        damageType: "bludgeoning",
+        onRoll20: true,
+        targetCreatureTypes: ["construct"],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -903,6 +922,8 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "ring",
     attunement: true,
+    // Descends 60 feet per round and takes no damage from falling.
+    grants: [{ type: "slowed-fall", feetPerRound: 60 }],
     source: "SRD",
   },
   {
@@ -1281,6 +1302,17 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "weapon",
     attunement: true,
+    // On a 20: an extra 15 Necrotic unless the target is a Construct or an
+    // Undead; the matching Temporary Hit Points stay the table's.
+    grants: [
+      {
+        type: "item-bound-damage-rider",
+        dice: "15",
+        damageType: "necrotic",
+        onRoll20: true,
+        excludeCreatureTypes: ["construct", "undead"],
+      },
+    ],
     source: "SRD",
   },
   {

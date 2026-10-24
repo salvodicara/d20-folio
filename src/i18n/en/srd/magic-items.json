@@ -636,6 +636,9 @@
     "description": "When you nock an arrow on this bow, it whispers in Elvish, “Swift defeat to my enemies.” When you use this weapon to make a ranged attack, you can utter or sign the following command words: “Swift death to you who have wronged me.” The target of your attack becomes your sworn enemy until it dies or until dawn 7 days later. You can have only one such sworn enemy at a time. When your sworn enemy dies, you can choose a new one after the next dawn. When you make a ranged attack roll with this weapon against your sworn enemy, you have Advantage on the roll. In addition, your target gains no benefit from Half Cover or Three-Quarters Cover, and you suffer no Disadvantage due to long range. If the attack hits, your sworn enemy takes an extra 3d6 Piercing damage. While your sworn enemy lives, you have Disadvantage on attack rolls with all other weapons.",
     "name": "Oathbow"
   },
+  "oathbow.grants.0": {
+    "label": "Sworn enemy"
+  },
   "oil-of-etherealness": {
     "description": "One vial of this oil can cover one Medium or smaller creature, along with the equipment it’s wearing and carrying (one additional vial is required for each size category above Medium). Applying the oil takes 10 minutes. The affected creature then gains the effect of the Etherealness spell for 1 hour. Beads of this cloudy, gray oil form on the outside of its container and quickly evaporate.",
     "name": "Oil of Etherealness",
@@ -870,6 +873,9 @@
     "description": "When you drink this potion, it removes any Exhaustion levels you have and ends the Poisoned condition on you. For the next 24 hours, you regain the maximum number of Hit Points for any Hit Point Die you spend. This potion’s crimson liquid regularly pulses with dull light, calling to mind a heartbeat.",
     "name": "Potion of Vitality",
     "summary": "Removes Exhaustion + Poisoned; max HP Die rolls for 24 h"
+  },
+  "potion-of-vitality.grants.0": {
+    "label": "Potion of Vitality"
   },
   "potion-of-water-breathing": {
     "description": "You can breathe underwater for 1 hour after drinking this potion.",

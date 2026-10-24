@@ -636,6 +636,9 @@
     "description": "Quando incocchi una freccia su quest'arco, esso sussurra in Elfico: “Rapida sconfitta ai miei nemici”. Quando usi quest'arma per effettuare un attacco a distanza, puoi pronunciare o segnalare a gesti le seguenti parole di comando: “Rapida morte a te che mi hai fatto torto”. Il bersaglio del tuo attacco diventa il tuo nemico giurato finché non muore o fino all'alba di 7 giorni dopo. Puoi avere un solo nemico giurato alla volta. Quando il tuo nemico giurato muore, puoi sceglierne uno nuovo dopo l'alba successiva. Quando effettui un tiro per colpire a distanza con quest'arma contro il tuo nemico giurato, hai Vantaggio al tiro. Inoltre, il tuo bersaglio non ottiene alcun beneficio da Mezza Copertura o Tre Quarti di Copertura, e tu non subisci alcuno Svantaggio dovuto alla gittata lunga. Se l'attacco colpisce, il tuo nemico giurato subisce 3d6 danni Perforanti aggiuntivi. Finché il tuo nemico giurato è in vita, hai Svantaggio ai tiri per colpire con tutte le altre armi.",
     "name": "Arco del Giuramento"
   },
+  "oathbow.grants.0": {
+    "label": "Nemico giurato"
+  },
   "oil-of-etherealness": {
     "description": "Una fiala di questo olio può ricoprire una creatura di taglia Media o più piccola, insieme all'equipaggiamento che indossa e trasporta (è richiesta una fiala aggiuntiva per ogni categoria di taglia superiore a Media). Applicare l'olio richiede 10 minuti. La creatura interessata ottiene quindi l'effetto dell'incantesimo Forma Eterea per 1 ora. Goccioline di questo olio grigio e torbido si formano sull'esterno del suo contenitore e rapidamente evaporano.",
     "name": "Olio della Forma Eterea",
@@ -870,6 +873,9 @@
     "description": "Quando bevi questa pozione, essa rimuove tutti i livelli di Indebolimento che hai e termina la condizione Avvelenato su di te. Per le successive 24 ore, recuperi il numero massimo di Punti Ferita per ogni Dado Vita che spendi. Il liquido cremisi di questa pozione pulsa regolarmente di una luce fioca, evocando un battito cardiaco.",
     "name": "Pozione di Vitalità",
     "summary": "Rimuove Indebolimento e Avvelenato; Dadi Vita max 24 ore"
+  },
+  "potion-of-vitality.grants.0": {
+    "label": "Pozione di Vitalità"
   },
   "potion-of-water-breathing": {
     "description": "Puoi respirare sott'acqua per 1 ora dopo aver bevuto questa pozione.",
