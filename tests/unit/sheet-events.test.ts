@@ -21,6 +21,7 @@ import {
 import * as companions from "@/lib/play/companions";
 import * as conditions from "@/lib/play/conditions";
 import * as damage from "@/lib/play/damage";
+import * as defenses from "@/lib/play/defenses";
 import * as cover from "@/lib/play/cover";
 import * as material from "@/lib/play/material-cost";
 import * as fading from "@/lib/play/fading-penalties";
@@ -61,6 +62,7 @@ const doc = withWorld(
       familiar: { monsterId: "owl", creatureType: "fey" },
       companionHp: { "find-familiar": { current: 1 }, wolf: { current: 3 } },
       activeFeatures: ["rage"],
+      sessionDefenses: { resistance: ["fire"] },
     }
   )
 );
@@ -126,6 +128,14 @@ const CASES: {
   "remove-condition": [
     { kind: "remove-condition", condition: "prone" },
     () => at(conditions.removeCondition(doc, "prone")?.session),
+  ],
+  "add-session-defense": [
+    { kind: "add-session-defense", defense: "immunity", id: "poison" },
+    () => at(defenses.addSessionDefense(doc, "immunity", "poison")),
+  ],
+  "remove-session-defense": [
+    { kind: "remove-session-defense", defense: "resistance", id: "fire" },
+    () => at(defenses.removeSessionDefense(doc, "resistance", "fire")),
   ],
   "set-bundle-choices": [
     { kind: "set-bundle-choices", choices: { "spell-enlarge-reduce": "enlarge" } },

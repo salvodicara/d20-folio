@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
 import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
+import { useUndoStore } from "@/stores/undoStore";
 
 function load(): string {
   const doc = structuredClone(MOCK_CHARACTER);
@@ -116,6 +117,18 @@ describe("play log shadow in the store", () => {
     undo?.();
     expect(store().character?.session.conditions).toContain("poisoned");
     expect(playLogShadowStats(id)).toMatchObject({ checkpoints: 1, mismatches: 0 });
+  });
+
+  it("a defense gained or lost in play (a potion's resistance) reaches the log", () => {
+    const id = load();
+    store().addSessionDefense("resistance", "fire");
+    expect(store().character?.session.sessionDefenses?.resistance).toEqual(["fire"]);
+    store().removeSessionDefense("resistance", "fire");
+    expect(store().character?.session.sessionDefenses?.resistance ?? []).toEqual([]);
+    expect(playLogShadowStats(id)).toEqual({ entries: 2, checkpoints: 1, mismatches: 0 });
+    // The removal's undo (its toast) brings the resistance back.
+    useUndoStore.getState().undo();
+    expect(store().character?.session.sessionDefenses?.resistance).toEqual(["fire"]);
   });
 
   it("End Turn's per-turn recovery (Sneak Attack) reaches the log", () => {

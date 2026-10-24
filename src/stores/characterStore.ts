@@ -2570,59 +2570,27 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   // just don't need a parallel mutator here.
 
   addSessionDefense: (kind, id) => {
-    if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    const current = character.session.sessionDefenses?.[kind] ?? [];
-    if (current.includes(id)) return;
-    set({
-      character: {
-        ...character,
-        session: {
-          ...character.session,
-          sessionDefenses: {
-            ...character.session.sessionDefenses,
-            [kind]: [...current, id],
-          },
-        },
-      },
-    });
+    get().dispatch({ kind: "add-session-defense", defense: kind, id });
   },
 
   removeSessionDefense: (kind, id) => {
     if (get().readonly) return;
-    const { character } = get();
-    if (!character) return;
-    const prev = character.session.sessionDefenses;
-    const current = prev?.[kind] ?? [];
+    const current = get().character?.session.sessionDefenses?.[kind] ?? [];
     if (!current.includes(id)) return;
-    // Immediate-commit WITH 5s undo (mirrors removeCondition), now routed onto the
-    // session undo stack: a mis-tap would silently drop an active magical protection.
-    // The store emits stable ids only; the view localizes (toasts-as-data, §3.2). The
-    // removal runs INSIDE `execute` so redo re-applies it; the reverse restores the
-    // exact prior session-defense map.
+    // Immediate-commit WITH 5s undo (mirrors removeCondition), routed onto the session
+    // undo stack: a mis-tap would silently drop an active magical protection. The
+    // store emits stable ids only; the view localizes (toasts-as-data, §3.2). The
+    // removal goes through the play log INSIDE `execute`, so redo re-applies it and
+    // the reverse is the log's own undo.
     registerUndoableToast(
       { intent: { kind: "defense-removed", defenseKind: kind, defenseId: id } },
       () => {
-        set({
-          character: {
-            ...character,
-            session: {
-              ...character.session,
-              sessionDefenses: { ...prev, [kind]: current.filter((d) => d !== id) },
-            },
-          },
+        const undo = get().dispatch({
+          kind: "remove-session-defense",
+          defense: kind,
+          id,
         });
-        return () => {
-          const cur = get().character;
-          if (!cur) return;
-          set({
-            character: {
-              ...cur,
-              session: { ...cur.session, sessionDefenses: prev },
-            },
-          });
-        };
+        return () => undo?.();
       },
       { turnScoped: false }
     );
