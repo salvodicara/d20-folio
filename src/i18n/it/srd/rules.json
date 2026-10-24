@@ -88,6 +88,9 @@
   "situation.mounted": {
     "name": "In sella"
   },
+  "hazard.suffocation": {
+    "name": "Soffocamento"
+  },
   "action.dash": {
     "name": "Scatto",
     "effect": "Raddoppia il movimento"

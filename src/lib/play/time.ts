@@ -5,7 +5,8 @@
  * Concentration and everything it holds (Detect Magic after 10 minutes). A state tied
  * to the turn order cannot outlast a minute away from it: a turn edge (Shield) passes
  * and a maintained state (Rage) is not kept up. A duration the clock never ends
- * (until dispelled, a custom spell) is left alone.
+ * (until dispelled, a custom spell) is left alone. A held breath counts every round
+ * of the stretch (`suffocation.ts`).
  *
  * The caller owns the side effects, as for a rest: when the stretch ends an
  * engine-held Concentration (`timePassEndsConcentration`), it ends it through the
@@ -16,6 +17,7 @@ import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import { endStatuses, endsConcentration } from "@/lib/status";
 import type { CharacterDoc } from "@/types/character";
 import { changeConcentration } from "./concentration";
+import { passBreathRounds } from "./suffocation";
 
 /** The status keys a stretch of `minutes` ends, and the countdowns left after it. */
 function lapse(
@@ -50,6 +52,16 @@ export function timePassEndsConcentration(doc: CharacterDoc, minutes: number): b
 export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | null {
   const result = lapse(doc, minutes);
   if (!result) return null;
+  // A held breath counts every turn of the stretch (SRD Suffocation).
+  const breath = passBreathRounds(doc, Math.round(minutes * ROUNDS_PER_MINUTE));
+  const timed = passTimers(breath ? { ...doc, session: breath } : doc, result);
+  return timed ?? (breath ? { ...doc, session: breath } : null);
+}
+
+function passTimers(
+  doc: CharacterDoc,
+  result: NonNullable<ReturnType<typeof lapse>>
+): CharacterDoc | null {
   const { ended, timers } = result;
   const before = doc.session.effectTimers ?? {};
   const counted =

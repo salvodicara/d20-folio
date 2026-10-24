@@ -42,6 +42,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   inspiration?: true;
   bardicInspirationDie?: string;
   exhaustion?: number;
+  breath?: NonNullable<SessionState["breath"]>;
   fadingPenalties?: NonNullable<SessionState["fadingPenalties"]>;
   sessionDefenses?: SessionState["sessionDefenses"];
   pinnedActions?: string[];
@@ -96,6 +97,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "deathFail",
   "inspiration",
   "exhaustion",
+  "breath",
   "fadingPenalties",
   "sessionDefenses",
   "pinnedActions",
@@ -297,6 +299,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.deathFail !== 0) state.deathFail = session.deathFail;
   if (session.inspiration) state.inspiration = true;
   if (session.exhaustion !== 0) state.exhaustion = session.exhaustion;
+  if (session.breath) state.breath = session.breath;
   if (isNonEmptyRecord(session.fadingPenalties)) {
     state.fadingPenalties = session.fadingPenalties;
   }
@@ -399,6 +402,19 @@ function parseSessionDefenses(value: unknown): SessionState["sessionDefenses"] {
     if (Array.isArray(value[key])) defenses[key] = stringArray(value[key]);
   }
   return Object.keys(defenses).length > 0 ? defenses : undefined;
+}
+
+/** A held breath, or undefined (breathing) when the stored shape is not one. */
+function parseBreath(value: unknown): SessionState["breath"] {
+  if (!isRecord(value)) return undefined;
+  const { roundsLeft, gained, choking } = value;
+  if (!Number.isSafeInteger(roundsLeft) || (roundsLeft as number) < 0) return undefined;
+  if (!Number.isSafeInteger(gained) || (gained as number) < 0) return undefined;
+  return {
+    roundsLeft: roundsLeft as number,
+    gained: gained as number,
+    ...(choking === true ? { choking: true as const } : {}),
+  };
 }
 
 function parseFadingPenalties(value: unknown): SessionState["fadingPenalties"] {
@@ -672,6 +688,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   session.deathFail = numOr(state.deathFail, 0);
   session.inspiration = state.inspiration === true;
   session.exhaustion = numOr(state.exhaustion, 0);
+  const breath = parseBreath(state.breath);
+  if (breath) session.breath = breath;
   session.fadingPenalties = parseFadingPenalties(state.fadingPenalties);
   session.sessionDefenses = parseSessionDefenses(state.sessionDefenses);
   session.pinnedActions = stringArray(state.pinnedActions);

@@ -1036,6 +1036,13 @@ export interface SessionState {
   bardicInspirationDie?: string;
   exhaustion: number;
   /**
+   * A held breath (SRD 5.2.1 Suffocation), counted in the character's turn ends:
+   * `roundsLeft` turns of air remain (0 = out of breath, suffocating); `gained` is the
+   * Exhaustion levels suffocating added, removed when it breathes again. `choking`:
+   * no air at all, so breathing water does not help. Absent while breathing.
+   */
+  breath?: { roundsLeft: number; gained: number; choking?: true };
+  /**
    * D20 Test penalties that fade by one each Long Rest (Raise Dead's −4), keyed by
    * the imposing catalogue id → the amount still remaining. Absent when none runs.
    */

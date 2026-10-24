@@ -33,6 +33,7 @@ import * as ready from "@/lib/play/ready";
 import * as rests from "@/lib/play/rests";
 import * as states from "@/lib/play/states";
 import * as situations from "@/lib/play/situations";
+import * as suffocation from "@/lib/play/suffocation";
 import * as surprise from "@/lib/play/surprise";
 import * as time from "@/lib/play/time";
 import * as vitals from "@/lib/play/vitals";
@@ -60,6 +61,7 @@ const doc = withWorld(
       conditions: ["prone"],
       deathSucc: 1,
       exhaustion: 1,
+      breath: { roundsLeft: 0, gained: 1 },
       familiar: { monsterId: "owl", creatureType: "fey" },
       companionHp: { "find-familiar": { current: 1 }, wolf: { current: 3 } },
       activeFeatures: ["rage"],
@@ -241,6 +243,15 @@ const CASES: {
   "recover-per-turn-trackers": [
     { kind: "recover-per-turn-trackers" },
     () => at(states.recoverPerTurnTrackers(doc)?.session),
+  ],
+  "hold-breath": [
+    { kind: "hold-breath", choking: true },
+    () => at(suffocation.holdBreath(doc, { choking: true })),
+  ],
+  "breathe-again": [{ kind: "breathe-again" }, () => at(suffocation.breatheAgain(doc))],
+  "breath-turn-end": [
+    { kind: "breath-turn-end" },
+    () => at(suffocation.passBreathRounds(doc, 1)),
   ],
 };
 

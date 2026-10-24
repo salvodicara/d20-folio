@@ -88,6 +88,9 @@
   "situation.mounted": {
     "name": "Mounted"
   },
+  "hazard.suffocation": {
+    "name": "Suffocation"
+  },
   "action.dash": {
     "name": "Dash",
     "effect": "Double movement speed"
