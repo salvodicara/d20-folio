@@ -38,7 +38,7 @@ import {
   markExtraTurn,
   type StoredExtraTurn,
 } from "@/lib/play/extra-turns";
-import { isMonsterSpeedFt } from "@/lib/monster-speed";
+import { clampMonsterSpeedFt, isMonsterSpeedFt } from "@/lib/monster-speed";
 import type { PortraitCrop } from "@/types/character";
 import type { CombatDefenseSnapshot } from "@/types/campaign";
 
@@ -717,6 +717,21 @@ export function setMonsterAc(
   );
 }
 
+/** Set a MONSTER's walking-speed override mid-encounter (the Slow mastery's −10 ft,
+ *  a Ray of Frost). Whole feet clamped to `[0, MONSTER_SPEED_MAX_FT]`; an equal
+ *  value or a PC is a no-op (a PC's speed lives on its character doc). */
+export function setMonsterSpeed(
+  state: EncounterState,
+  id: string,
+  feet: number
+): EncounterState {
+  const next = clampMonsterSpeedFt(feet);
+  if (next === null) return state;
+  return mapCombatant(state, id, (c) =>
+    c.kind === "pc" || c.speed === next ? c : { ...c, speed: next }
+  );
+}
+
 /** Apply a signed HP delta (damage negative, heal positive) to one MONSTER,
  *  clamped to `[0, hp.max]`. A PC is a no-op — its HP lives in the `combat/state`
  *  subdoc (the player/DM multi-writer edit lands in a later chunk). */
@@ -1244,11 +1259,30 @@ const LIMITED_USE_SECTIONS = [
   "legendaryActions",
 ] as const;
 
-/** One counter a stat block declares: a Recharge or N/Day entry, or the legendary pool. */
+/** The stat-block sections that can print a limited use. */
+export type MonsterUseSection = (typeof LIMITED_USE_SECTIONS)[number];
+
+/** One counter a stat block declares: a Recharge or N/Day entry (Legendary
+ *  Resistance included), one spell of an "N/Day Each" spellcasting tier, or the
+ *  legendary pool. */
 export interface MonsterLimitedUse {
   key: string;
   max: number;
-  kind: "recharge" | "uses" | "legendary";
+  kind: "recharge" | "uses" | "spell" | "legendary";
+  /** The lowest d6 face that recharges it ("Recharge 5–6" → 5; kind "recharge" only). */
+  recharge?: number;
+  /** The spell this use casts (kind "spell" only). */
+  spellId?: string;
+}
+
+/** The `spent` key of an entry's use (`actions:fire-breath`), or of one spell of its
+ *  per-day tiers (`actions:spellcasting:fireball`). */
+export function monsterUseKey(
+  section: MonsterUseSection,
+  entryId: string,
+  spellId?: string
+): string {
+  return spellId ? `${section}:${entryId}:${spellId}` : `${section}:${entryId}`;
 }
 
 /** Every limited use the stat block prints, in stat-block order, the legendary pool last. */
@@ -1256,9 +1290,21 @@ export function monsterLimitedUses(block: MonsterStatBlock): MonsterLimitedUse[]
   const out: MonsterLimitedUse[] = [];
   for (const section of LIMITED_USE_SECTIONS) {
     for (const entry of block[section] ?? []) {
-      const key = `${section}:${entry.id}`;
-      if (entry.recharge) out.push({ key, max: 1, kind: "recharge" });
-      else if (entry.uses) out.push({ key, max: entry.uses.count, kind: "uses" });
+      const key = monsterUseKey(section, entry.id);
+      if (entry.recharge) {
+        out.push({ key, max: 1, kind: "recharge", recharge: entry.recharge });
+      } else if (entry.uses) out.push({ key, max: entry.uses.count, kind: "uses" });
+      if (entry.kind !== "spellcasting") continue;
+      for (const tier of entry.perDay ?? []) {
+        for (const spellId of tier.spellIds) {
+          out.push({
+            key: monsterUseKey(section, entry.id, spellId),
+            max: tier.count,
+            kind: "spell",
+            spellId,
+          });
+        }
+      }
     }
   }
   if (block.legendary) {
@@ -1305,6 +1351,20 @@ export function restoreMonsterUse(
     const used = combatant.spent?.[key] ?? 0;
     return used <= 0 ? combatant : withSpent(combatant, key, used - 1);
   });
+}
+
+/** The DM's Recharge roll for a spent Recharge entry: a d6 at or above the printed
+ *  threshold (5 or 6 for "Recharge 5–6") gives the use back. A miss, an unspent
+ *  entry, a face outside 1–6 or a non-Recharge use is a no-op. */
+export function rollMonsterRecharge(
+  state: EncounterState,
+  id: string,
+  use: MonsterLimitedUse,
+  d6: number
+): EncounterState {
+  if (use.kind !== "recharge" || use.recharge === undefined) return state;
+  if (!Number.isInteger(d6) || d6 < 1 || d6 > 6 || d6 < use.recharge) return state;
+  return restoreMonsterUse(state, id, use.key);
 }
 
 function refillLegendaryPool(state: EncounterState, id: string): EncounterState {

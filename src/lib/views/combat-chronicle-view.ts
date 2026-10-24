@@ -9,6 +9,7 @@
  * who may see it.
  */
 
+import type { Locale } from "@/lib/locale";
 import type { PlayEvent } from "@/lib/session-log";
 import type { LocText } from "@/lib/loc-text";
 import type { ConcentrationRef } from "@/types/ids";
@@ -32,6 +33,8 @@ export interface FeedNames {
   spell: (ref: ConcentrationRef) => string;
   /** A status source id's display name (a feature, spell or item). */
   source?: (sourceId: string) => string;
+  /** The reader's language (a speed line reads in its unit). */
+  locale: Locale;
 }
 
 /** The minimum a combatant row needs to be ranked as a candidate attacker. */
@@ -179,6 +182,7 @@ export function localizeFeedEvent(
       action: names.action,
       spell: names.spell,
       source: names.source,
+      locale: names.locale,
     }) ?? ""
   );
 }

@@ -26,6 +26,7 @@ const names: FeedNames = {
   condition: (id) => `⟨${id}⟩`,
   action: () => "Longsword",
   spell: (ref) => String(ref),
+  locale: "en",
 };
 const line = (event: PlayEvent, hp?: { current: number; max: number }): string =>
   localizeFeedEvent(event, t, names, hp);

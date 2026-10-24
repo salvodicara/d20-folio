@@ -56,6 +56,7 @@ export function SessionDayReport({
       action: (text) => localizeText(text, language),
       spell: (ref) => concentrationLabel(ref, language),
       source: (id) => grantSourceLabel(id, language),
+      locale: language,
     }),
     [campaign?.memberDetails, language]
   );

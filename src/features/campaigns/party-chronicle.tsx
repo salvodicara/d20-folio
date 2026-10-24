@@ -101,6 +101,7 @@ function useFeedNames(
       action: (action) => localizeText(action, language),
       spell: (ref) => concentrationLabel(ref, language),
       source: (id) => grantSourceLabel(id, language),
+      locale: language,
     }),
     [name, language]
   );

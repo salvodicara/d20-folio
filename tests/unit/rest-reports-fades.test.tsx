@@ -171,7 +171,7 @@ describe("the session report reads where a fading penalty now stands", () => {
           ) ?? { kind: "note", text: "" },
           (k, a) => t.t(k, a),
           (id) => (id === "pc-ana" ? "Ana" : "?"),
-          names
+          { ...names, locale: lng }
         );
       expect(line(3)).toBe(step);
       expect(line(0)).toBe(end);

@@ -117,7 +117,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     languages: { special: "all" },
     xpInLair: 41000,
     traits: [
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
       { id: "spirit-jar", kind: "narrative" },
     ],
     actions: [
@@ -898,7 +898,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common"], plusAnyCount: 3 },
     xpInLair: 15000,
     traits: [
-      { id: "legendary-resistance", kind: "narrative" },
+      { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
       {
         id: "magic-resistance",
         kind: "narrative",
