@@ -150,6 +150,7 @@ import {
 } from "@/lib/character-status";
 import {
   concentrationSaveD20Context,
+  damageQueuesConcentrationSave,
   resolveCharacterConcentrationSave,
   resolveCharacterDeathSave,
   type CharacterEnteredD20Result,
@@ -1458,7 +1459,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           intent: { kind: "concentration-dropped", spell: concentrating },
           duration: 5000,
         });
-      } else {
+      } else if (damageQueuesConcentrationSave(character)) {
+        // Relentless Hunter: damage can't break Concentration on Hunter's Mark, so
+        // that held spell asks no save (0 HP above still ends it outright).
         const dc = concentrationSaveDc(amount);
         const pending: PendingConcentrationSave = {
           id: crypto.randomUUID(),
@@ -2502,6 +2505,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       });
       return;
     }
+    // Relentless Hunter: damage can't break Concentration on Hunter's Mark.
+    if (!damageQueuesConcentrationSave(character)) return;
     const dc = concentrationSaveDc(damage);
     const pending: PendingConcentrationSave = {
       id: crypto.randomUUID(),
