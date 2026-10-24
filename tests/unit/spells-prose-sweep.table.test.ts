@@ -168,6 +168,98 @@ const STANDING_SPELLS = [
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1 },
   },
+  // Utility spells batch 1 (2026-10-24): the cast lights a standing state.
+  {
+    id: "guidance",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "resistance",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "jump",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  {
+    id: "feather-fall",
+    recipient: "selected",
+    targeting: { affinity: "any", maxTargets: 5 },
+  },
+  { id: "expeditious-retreat", recipient: "caster" },
+  {
+    id: "protection-from-evil-and-good",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "comprehend-languages", recipient: "caster" },
+  { id: "speak-with-animals", recipient: "caster" },
+  { id: "disguise-self", recipient: "caster" },
+  { id: "detect-magic", recipient: "caster" },
+  { id: "detect-evil-and-good", recipient: "caster" },
+  { id: "detect-poison-and-disease", recipient: "caster" },
+  {
+    id: "enhance-ability",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  { id: "pass-without-trace", recipient: "selected", targeting: { affinity: "ally" } },
+  { id: "see-invisibility", recipient: "caster" },
+  { id: "beacon-of-hope", recipient: "selected", targeting: { affinity: "ally" } },
+  { id: "blink", recipient: "caster" },
+  {
+    id: "gaseous-form",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+  },
+  { id: "meld-into-stone", recipient: "caster" },
+  {
+    id: "nondetection",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  { id: "speak-with-plants", recipient: "caster" },
+  {
+    id: "tongues",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
+  {
+    id: "water-breathing",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 10 },
+  },
+  {
+    id: "water-walk",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 10 },
+  },
+  { id: "mislead", recipient: "caster", targeting: { affinity: "self" } },
+  {
+    id: "rarys-telepathic-bond",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 8 },
+  },
+  { id: "find-the-path", recipient: "caster" },
+  {
+    id: "heroes-feast",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 12 },
+  },
+  {
+    id: "wind-walk",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 11 },
+  },
+  {
+    id: "etherealness",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 3 },
+  },
+  { id: "glibness", recipient: "caster" },
 ] as const satisfies ReadonlyArray<StandingSpellExpectation>;
 
 describe("PROSE sweep — standing buff spells carry while-active grants", () => {

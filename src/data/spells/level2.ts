@@ -291,6 +291,42 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "hours", amount: 1 },
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-enhance-ability",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [
+          {
+            type: "choice-grant-bundle",
+            bundleKey: "spell-enhance-ability",
+            options: [
+              {
+                id: "str",
+                grants: [{ type: "advantage-on", rollType: "check", vs: "str" }],
+              },
+              {
+                id: "dex",
+                grants: [{ type: "advantage-on", rollType: "check", vs: "dex" }],
+              },
+              {
+                id: "int",
+                grants: [{ type: "advantage-on", rollType: "check", vs: "int" }],
+              },
+              {
+                id: "wis",
+                grants: [{ type: "advantage-on", rollType: "check", vs: "wis" }],
+              },
+              {
+                id: "cha",
+                grants: [{ type: "advantage-on", rollType: "check", vs: "cha" }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -649,6 +685,19 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "hours", amount: 1 },
+    targeting: { affinity: "ally" },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-pass-without-trace",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [
+          { type: "ability-check-bonus", appliesTo: "stealth", value: 10 },
+          { type: "defense-note" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -704,6 +753,14 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-see-invisibility",
+        duration: timedSpellDuration(60),
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {

@@ -3022,5 +3022,239 @@
   },
   "alter-self.grants.0.grants.0.options.natural-weapons": {
     "label": "Natural Weapons"
+  },
+  "water-breathing.grants.0": {
+    "label": "Water Breathing"
+  },
+  "gaseous-form.grants.0": {
+    "label": "Gaseous Form"
+  },
+  "gaseous-form.grants.0.grants.6": {
+    "description": "Strength saving throws (Gaseous Form)"
+  },
+  "gaseous-form.grants.0.grants.7": {
+    "description": "Dexterity saving throws (Gaseous Form)"
+  },
+  "gaseous-form.grants.0.grants.8": {
+    "description": "Constitution saving throws (Gaseous Form)"
+  },
+  "gaseous-form.grants.0.grants.10": {
+    "description": "Misty cloud: can't talk, manipulate objects or attack; can enter other creatures' spaces and pass through narrow openings; ends at 0 Hit Points"
+  },
+  "enhance-ability.grants.0.grants.0": {
+    "label": "Ability"
+  },
+  "enhance-ability.grants.0.grants.0.options.str": {
+    "label": "Strength"
+  },
+  "enhance-ability.grants.0.grants.0.options.str.grants.0": {
+    "description": "Strength checks (Enhance Ability)"
+  },
+  "enhance-ability.grants.0.grants.0.options.dex": {
+    "label": "Dexterity"
+  },
+  "enhance-ability.grants.0.grants.0.options.dex.grants.0": {
+    "description": "Dexterity checks (Enhance Ability)"
+  },
+  "enhance-ability.grants.0.grants.0.options.int": {
+    "label": "Intelligence"
+  },
+  "enhance-ability.grants.0.grants.0.options.int.grants.0": {
+    "description": "Intelligence checks (Enhance Ability)"
+  },
+  "enhance-ability.grants.0.grants.0.options.wis": {
+    "label": "Wisdom"
+  },
+  "enhance-ability.grants.0.grants.0.options.wis.grants.0": {
+    "description": "Wisdom checks (Enhance Ability)"
+  },
+  "enhance-ability.grants.0.grants.0.options.cha": {
+    "label": "Charisma"
+  },
+  "enhance-ability.grants.0.grants.0.options.cha.grants.0": {
+    "description": "Charisma checks (Enhance Ability)"
+  },
+  "enhance-ability.grants.0": {
+    "label": "Enhance Ability"
+  },
+  "protection-from-evil-and-good.grants.0": {
+    "label": "Protection from Evil and Good"
+  },
+  "protection-from-evil-and-good.grants.0.grants.0": {
+    "description": "Aberrations, Celestials, Elementals, Fey, Fiends and Undead have Disadvantage on attack rolls against you"
+  },
+  "protection-from-evil-and-good.grants.0.grants.1": {
+    "description": "Those creatures can't possess you or make you Charmed or Frightened; if they already have, you have Advantage on new saving throws against it"
+  },
+  "beacon-of-hope.grants.0": {
+    "label": "Beacon of Hope"
+  },
+  "beacon-of-hope.grants.0.grants.0": {
+    "description": "Wisdom saving throws (Beacon of Hope)"
+  },
+  "beacon-of-hope.grants.0.grants.1": {
+    "description": "Death Saving Throws (Beacon of Hope)"
+  },
+  "beacon-of-hope.grants.0.grants.2": {
+    "description": "Healing restores the maximum number of Hit Points possible"
+  },
+  "pass-without-trace.grants.0": {
+    "label": "Pass without Trace"
+  },
+  "pass-without-trace.grants.0.grants.1": {
+    "description": "+10 to Dexterity (Stealth) checks while within 30 feet of the caster; you leave no tracks"
+  },
+  "heroes-feast.grants.0": {
+    "label": "Heroes' Feast"
+  },
+  "heroes-feast.grants.0.grants.3": {
+    "description": "Your Hit Point maximum increases by 2d10, and you gain the same number of Hit Points"
+  },
+  "wind-walk.grants.0": {
+    "label": "Wind Walk"
+  },
+  "wind-walk.grants.0.grants.5": {
+    "description": "Cloud form: you can take only the Dash action or a Magic action to begin reverting (1 minute, Stunned)"
+  },
+  "meld-into-stone.grants.0": {
+    "label": "Meld into Stone"
+  },
+  "meld-into-stone.grants.0.grants.0": {
+    "description": "Wisdom (Perception) checks to hear sounds outside the stone"
+  },
+  "meld-into-stone.grants.0.grants.1": {
+    "description": "Merged with the stone: you can't see outside it or move; 5 feet of movement leaves it and ends the spell"
+  },
+  "mislead.grants.0": {
+    "label": "Mislead"
+  },
+  "mislead.grants.0.grants.0": {
+    "description": "An illusory double appears; your invisibility ends after you make an attack roll, deal damage or cast a spell. Magic action: move the double up to twice your Speed"
+  },
+  "guidance.grants.0": {
+    "label": "Guidance"
+  },
+  "guidance.grants.0.grants.0": {
+    "description": "Add 1d4 to ability checks using the chosen skill"
+  },
+  "resistance.grants.0": {
+    "label": "Resistance"
+  },
+  "resistance.grants.0.grants.0": {
+    "description": "Once per turn, damage of the chosen type you take is reduced by 1d4"
+  },
+  "jump.grants.0": {
+    "label": "Jump"
+  },
+  "jump.grants.0.grants.0": {
+    "description": "Once on each of your turns, you can jump up to 30 feet by spending 10 feet of movement"
+  },
+  "feather-fall.grants.0": {
+    "label": "Feather Fall"
+  },
+  "feather-fall.grants.0.grants.0": {
+    "description": "You fall 60 feet per round and take no damage from the fall; the spell ends for you when you land"
+  },
+  "expeditious-retreat.grants.0": {
+    "label": "Expeditious Retreat"
+  },
+  "expeditious-retreat.grants.0.grants.0": {
+    "description": "You can take the Dash action as a Bonus Action"
+  },
+  "see-invisibility.grants.0": {
+    "label": "See Invisibility"
+  },
+  "see-invisibility.grants.0.grants.0": {
+    "description": "You see Invisible creatures and objects as if they were visible, and you can see into the Ethereal Plane"
+  },
+  "comprehend-languages.grants.0": {
+    "label": "Comprehend Languages"
+  },
+  "comprehend-languages.grants.0.grants.0": {
+    "description": "You understand any language you hear or see signed, and written text whose surface you touch"
+  },
+  "speak-with-animals.grants.0": {
+    "label": "Speak with Animals"
+  },
+  "speak-with-animals.grants.0.grants.0": {
+    "description": "You can comprehend and talk with Beasts and use the Influence action's skill options with them"
+  },
+  "disguise-self.grants.0": {
+    "label": "Disguise Self"
+  },
+  "disguise-self.grants.0.grants.0": {
+    "description": "You look different; a Study action and an Intelligence (Investigation) check against your spell save DC sees through it"
+  },
+  "detect-magic.grants.0": {
+    "label": "Detect Magic"
+  },
+  "detect-magic.grants.0.grants.0": {
+    "description": "You sense magical effects within 30 feet; a Magic action shows their aura and a spell's school"
+  },
+  "detect-evil-and-good.grants.0": {
+    "label": "Detect Evil and Good"
+  },
+  "detect-evil-and-good.grants.0.grants.0": {
+    "description": "You sense Aberrations, Celestials, Elementals, Fey, Fiends and Undead within 30 feet, and any Hallow there"
+  },
+  "detect-poison-and-disease.grants.0": {
+    "label": "Detect Poison and Disease"
+  },
+  "detect-poison-and-disease.grants.0.grants.0": {
+    "description": "You sense poisons, poisonous or venomous creatures and magical contagions within 30 feet, and their kind"
+  },
+  "nondetection.grants.0": {
+    "label": "Nondetection"
+  },
+  "nondetection.grants.0.grants.0": {
+    "description": "Divination spells can't target you, and magical scrying sensors can't perceive you"
+  },
+  "tongues.grants.0": {
+    "label": "Tongues"
+  },
+  "tongues.grants.0.grants.0": {
+    "description": "You understand any spoken or signed language, and any creature that knows a language understands you"
+  },
+  "water-walk.grants.0": {
+    "label": "Water Walk"
+  },
+  "water-walk.grants.0.grants.0": {
+    "description": "You move across any liquid surface as if it were solid ground; a Bonus Action passes into or out of the liquid"
+  },
+  "blink.grants.0": {
+    "label": "Blink"
+  },
+  "blink.grants.0.grants.0": {
+    "description": "At the end of each of your turns, roll 1d6: on a 4 to 6 you vanish to the Ethereal Plane until the start of your next turn"
+  },
+  "speak-with-plants.grants.0": {
+    "label": "Speak with Plants"
+  },
+  "speak-with-plants.grants.0.grants.0": {
+    "description": "Plants within 30 feet talk with you and follow simple commands; you can turn plant Difficult Terrain ordinary, or the reverse"
+  },
+  "rarys-telepathic-bond.grants.0": {
+    "label": "Telepathic Bond"
+  },
+  "rarys-telepathic-bond.grants.0.grants.0": {
+    "description": "You communicate telepathically with the other linked creatures, at any distance on this plane"
+  },
+  "find-the-path.grants.0": {
+    "label": "Find the Path"
+  },
+  "find-the-path.grants.0.grants.0": {
+    "description": "You know how far and in what direction the named destination is, and the most direct path at each choice"
+  },
+  "etherealness.grants.0": {
+    "label": "Etherealness"
+  },
+  "etherealness.grants.0.grants.0": {
+    "description": "You are in the Border Ethereal: only creatures and effects there can affect or perceive you; you see 60 feet into the plane you left"
+  },
+  "glibness.grants.0": {
+    "label": "Glibness"
+  },
+  "glibness.grants.0.grants.0": {
+    "description": "When you make a Charisma check, you can replace the roll with a 15; magic that detects lies reads you as truthful"
   }
 }

@@ -1,5 +1,5 @@
 import type { SrdSpellData } from "../types";
-import { timedConditionLifetime } from "./duration";
+import { timedConditionLifetime, timedSpellDuration } from "./duration";
 
 export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
   {
@@ -274,6 +274,16 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 8 },
+    targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 3 },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-etherealness",
+        duration: timedSpellDuration(480),
+        recipient: "selected",
+        grants: [{ type: "defense-note" }],
+      },
+    ],
     source: "SRD",
   },
   {
