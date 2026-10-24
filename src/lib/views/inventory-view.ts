@@ -63,6 +63,7 @@ import {
   type ResolvedWeaponAttackStat,
   type ResolvedWeaponDie,
   resolveItemBoundWeaponBonus,
+  resolveItemBoundDamageRiders,
   exhaustionPenalty,
   carryingCapacity,
   effectiveWeaponDie,
@@ -902,13 +903,15 @@ export function buildInventoryViewModel(
   };
 
   // Bindable weapon enchants — every inventory magic item carrying an
-  // `item-bound-bonus` grant (weapon-plus-1/2/3, Vorpal Sword, Sun Blade, …).
+  // `item-bound-bonus` grant (weapon-plus-1/2/3, Vorpal Sword, Sun Blade, …) or its
+  // own extra damage (`item-bound-damage-rider`: Vicious Weapon, Flame Tongue).
   const enchantOptions: EnchantOptionVM[] = [];
   for (const ref of character.equipment) {
     if ("custom" in ref) continue;
     const item = MAGIC_ITEMS_BY_ID.get(ref.srdId);
     const bonus = resolveItemBoundWeaponBonus(item?.grants);
-    if (!item || bonus === 0) continue;
+    const hasRider = resolveItemBoundDamageRiders(item?.grants, () => true).length > 0;
+    if (!item || (bonus === 0 && !hasRider)) continue;
     if (enchantOptions.some((o) => o.id === item.id)) continue;
     enchantOptions.push({
       id: item.id,

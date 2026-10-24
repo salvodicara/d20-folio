@@ -3320,6 +3320,7 @@ export function evaluateGrants(
         });
         break;
       case "item-bound-bonus":
+      case "item-bound-damage-rider":
         // INTENTIONALLY un-aggregated. A `weapon-attack-and-damage` bonus rides
         // ONLY its owning weapon's row, so the weapon-layer consumer
         // (`resolveItemBoundWeaponBonus`) reads the item's grants directly —
