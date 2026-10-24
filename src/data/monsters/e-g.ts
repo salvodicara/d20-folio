@@ -54,11 +54,19 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60, tremorsenseFt: 60 },
     languages: { ids: ["terran"] },
     traits: [
-      { id: "earth-glide", kind: "narrative" },
+      {
+        id: "earth-glide",
+        kind: "narrative",
+        movement: { kind: "burrow-through", material: "earth-and-stone" },
+      },
       { id: "siege-monster", kind: "narrative", fact: { kind: "siege" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["slam", "rock-launch"] }] },
+      },
       {
         id: "slam",
         kind: "attack",
@@ -107,7 +115,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       { id: "wishes", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["heated-blade", "hurl-flame"] }] },
+      },
       {
         id: "heated-blade",
         kind: "attack",
@@ -162,7 +174,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 40 },
     abilityScores: { STR: 22, DEX: 9, CON: 17, INT: 3, WIS: 11, CHA: 6 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["gore"] }] },
+      },
       {
         id: "gore",
         kind: "attack",
@@ -243,7 +259,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       { id: "magic-rope", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 3, use: ["withering-sword"] },
+            { count: 1, use: ["entangling-rope"], optional: true },
+          ],
+        },
+      },
       {
         id: "withering-sword",
         kind: "attack",
@@ -282,11 +307,20 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }, { skill: "stealth" }, { skill: "survival" }],
     senses: { darkvisionFt: 60 },
     traits: [
-      { id: "spider-climb", kind: "narrative" },
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
       { id: "web-walker", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["bite"] },
+            { count: 1, use: ["claw"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -344,7 +378,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["giant"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["battleaxe"] },
+            { count: 1, use: ["morningstar"] },
+          ],
+        },
+      },
       {
         id: "battleaxe",
         kind: "attack",
@@ -406,7 +449,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       { id: "water-susceptibility", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["burn"] }] },
+      },
       {
         id: "burn",
         kind: "attack",
@@ -435,7 +482,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["fire"],
     languages: { ids: ["giant"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["flame-sword", "hammer-throw"] }] },
+      },
       {
         id: "flame-sword",
         kind: "attack",
@@ -499,7 +550,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["slam"] }] },
+      },
       {
         id: "slam",
         kind: "attack",
@@ -556,8 +611,12 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }, { skill: "stealth" }],
     senses: { darkvisionFt: 30 },
     traits: [
-      { id: "amphibious", kind: "narrative" },
-      { id: "standing-leap", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
+      {
+        id: "standing-leap",
+        kind: "narrative",
+        movement: { kind: "long-jump", feet: 10, highFt: 5 },
+      },
     ],
     actions: [
       {
@@ -588,7 +647,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["cold"],
     languages: { ids: ["giant"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["frost-axe", "great-bow"] }] },
+      },
       {
         id: "frost-axe",
         kind: "attack",
@@ -634,7 +697,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["terran"] },
     traits: [{ id: "flyby", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["claw"] }] },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -785,7 +852,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       { id: "incorporeal-movement", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["withering-touch"] }] },
+      },
       {
         id: "withering-touch",
         kind: "attack",
@@ -832,7 +903,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -871,7 +946,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 23, DEX: 14, CON: 18, INT: 5, WIS: 12, CHA: 7 },
     skills: [{ skill: "athletics" }, { skill: "perception" }, { skill: "survival" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["fist"] }] },
+      },
       {
         id: "fist",
         kind: "attack",
@@ -891,7 +970,9 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         conditions: ["prone"],
       },
     ],
-    bonusActions: [{ id: "leap", kind: "narrative" }],
+    bonusActions: [
+      { id: "leap", kind: "narrative", movement: { kind: "leap", feet: 30, costFt: 10 } },
+    ],
     source: "SRD",
   },
   // Giant Badger (2024 SRD 5.2.1). AC 13, HP 15, CR 1/4.
@@ -1016,7 +1097,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }],
     senses: { blindsightFt: 10 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["bite"] },
+            { count: 1, use: ["constrict"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -1050,7 +1140,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 13, DEX: 13, CON: 11, INT: 1, WIS: 9, CHA: 3 },
     skills: [{ skill: "stealth" }],
     senses: { blindsightFt: 30 },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
       {
         id: "claw",
@@ -1079,7 +1169,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "stealth", expertise: true }],
     traits: [{ id: "hold-breath", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["bite"] },
+            { count: 1, use: ["tail"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -1118,7 +1217,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     damageResistances: ["necrotic", "radiant"],
     languages: { ids: ["celestial"], understandsOnlyIds: ["common", "auran"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1207,8 +1310,12 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }, { skill: "stealth", bonus: 4 }],
     senses: { darkvisionFt: 30 },
     traits: [
-      { id: "amphibious", kind: "narrative" },
-      { id: "standing-leap", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
+      {
+        id: "standing-leap",
+        kind: "narrative",
+        movement: { kind: "long-jump", feet: 20, highFt: 10 },
+      },
     ],
     actions: [
       {
@@ -1299,7 +1406,9 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 15, DEX: 12, CON: 13, INT: 2, WIS: 10, CHA: 5 },
     saveProficiencies: ["DEX"],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "spider-climb", kind: "narrative" }],
+    traits: [
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
+    ],
     actions: [
       {
         id: "bite",
@@ -1328,7 +1437,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       { skill: "stealth", expertise: true },
     ],
     senses: { darkvisionFt: 60 },
-    traits: [{ id: "water-breathing", kind: "narrative" }],
+    traits: [{ id: "water-breathing", kind: "narrative", breathes: "water-only" }],
     actions: [
       {
         id: "tentacles",
@@ -1341,7 +1450,14 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "2d6+3", damageType: "bludgeoning" }],
       },
     ],
-    reactions: [{ id: "ink-cloud", kind: "narrative", uses: { count: 1, per: "day" } }],
+    reactions: [
+      {
+        id: "ink-cloud",
+        kind: "narrative",
+        movement: { kind: "move", speeds: ["swim"] },
+        uses: { count: 1, per: "day" },
+      },
+    ],
     source: "SRD",
   },
   // Giant Owl (2024 SRD 5.2.1). AC 12, HP 19, CR 1/4.
@@ -1429,7 +1545,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 16, DEX: 13, CON: 15, INT: 1, WIS: 9, CHA: 3 },
     senses: { blindsightFt: 60 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["claw"] },
+            { count: 1, use: ["sting"] },
+          ],
+        },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -1465,7 +1590,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     hp: { average: 16, formula: "3d10" },
     speeds: { walk: 5, swim: 40 },
     abilityScores: { STR: 15, DEX: 12, CON: 11, INT: 2, WIS: 12, CHA: 5 },
-    traits: [{ id: "water-breathing", kind: "narrative" }],
+    traits: [{ id: "water-breathing", kind: "narrative", breathes: "water-only" }],
     actions: [
       {
         id: "ram",
@@ -1476,7 +1601,19 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "2d6+2", damageType: "bludgeoning" }],
       },
     ],
-    bonusActions: [{ id: "bubble-dash", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "bubble-dash",
+        kind: "narrative",
+        movement: {
+          kind: "move",
+          speeds: ["swim"],
+          half: true,
+          noOpportunityAttacks: true,
+          gated: true,
+        },
+      },
+    ],
     source: "SRD",
   },
   // Giant Shark (2024 SRD 5.2.1). AC 13, HP 92, CR 5.
@@ -1493,9 +1630,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 23, DEX: 11, CON: 21, INT: 1, WIS: 10, CHA: 5 },
     skills: [{ skill: "perception" }],
     senses: { blindsightFt: 60 },
-    traits: [{ id: "water-breathing", kind: "narrative" }],
+    traits: [{ id: "water-breathing", kind: "narrative", breathes: "water-only" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -1524,7 +1665,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     ],
     senses: { darkvisionFt: 60 },
     traits: [
-      { id: "spider-climb", kind: "narrative" },
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
       { id: "web-walker", kind: "narrative" },
     ],
     actions: [
@@ -1564,8 +1705,12 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 15, DEX: 13, CON: 13, INT: 2, WIS: 10, CHA: 3 },
     senses: { darkvisionFt: 60 },
     traits: [
-      { id: "amphibious", kind: "narrative" },
-      { id: "standing-leap", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
+      {
+        id: "standing-leap",
+        kind: "narrative",
+        movement: { kind: "long-jump", feet: 20, highFt: 10 },
+      },
     ],
     actions: [
       {
@@ -1713,7 +1858,9 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 12, DEX: 16, CON: 13, INT: 3, WIS: 12, CHA: 4 },
     skills: [{ skill: "perception" }, { skill: "stealth", expertise: true }],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
-    traits: [{ id: "spider-climb", kind: "narrative" }],
+    traits: [
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
+    ],
     actions: [
       {
         id: "bite",
@@ -1799,7 +1946,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["pincer"] },
+            { count: 1, use: ["pummel", "spellcasting"] },
+          ],
+        },
+      },
       {
         id: "pincer",
         kind: "attack",
@@ -1846,7 +2002,14 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     gear: [{ id: "shield" }, { id: "spear", qty: 3 }, { id: "studded-leather-armor" }],
     languages: { ids: ["common"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["spear"] }],
+          replace: { count: 1, use: ["shield-bash"] },
+        },
+      },
       {
         id: "spear",
         kind: "attack",
@@ -1904,6 +2067,7 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "rampage",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
         uses: { count: 1, per: "day" },
       },
@@ -1958,7 +2122,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common", "goblin"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["scimitar", "shortbow"] }] },
+      },
       {
         id: "scimitar",
         kind: "attack",
@@ -1976,7 +2144,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d6+2", damageType: "piercing" }],
       },
     ],
-    bonusActions: [{ id: "nimble-escape", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "nimble-escape",
+        kind: "narrative",
+        movement: { kind: "take-action", actions: ["disengage", "hide"], pickOne: true },
+      },
+    ],
     reactions: [{ id: "redirect-attack", kind: "narrative" }],
     source: "SRD",
   },
@@ -2007,7 +2181,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d4+2", damageType: "piercing" }],
       },
     ],
-    bonusActions: [{ id: "nimble-escape", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "nimble-escape",
+        kind: "narrative",
+        movement: { kind: "take-action", actions: ["disengage", "hide"], pickOne: true },
+      },
+    ],
     source: "SRD",
   },
   // Goblin Warrior (2024 SRD 5.2.1). AC 15, HP 10, CR 1/4.
@@ -2049,7 +2229,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d6+2", damageType: "piercing" }],
       },
     ],
-    bonusActions: [{ id: "nimble-escape", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "nimble-escape",
+        kind: "narrative",
+        movement: { kind: "take-action", actions: ["disengage", "hide"], pickOne: true },
+      },
+    ],
     source: "SRD",
   },
   // Gold Dragon Wyrmling (2024 SRD 5.2.1). AC 17, HP 60, CR 3.
@@ -2070,9 +2256,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["fire"],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -2200,9 +2390,13 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     conditionImmunities: ["poisoned"],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -2246,12 +2440,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common", "elvish", "sylvan"] },
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "coven-magic", kind: "narrative" },
       { id: "mimicry", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["claw"] }] },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -2294,7 +2492,16 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "stealth" }],
     senses: { darkvisionFt: 60 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["beak"] },
+            { count: 1, use: ["tentacles"] },
+          ],
+        },
+      },
       {
         id: "beak",
         kind: "attack",
@@ -2330,7 +2537,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception", expertise: true }],
     senses: { darkvisionFt: 60 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -2424,7 +2635,11 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     ],
     languages: { ids: ["common"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["javelin", "longsword"] }] },
+      },
       {
         id: "javelin",
         kind: "attack",
@@ -2468,7 +2683,14 @@ export const SRD_MONSTERS_E_G: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["celestial", "common"] },
     traits: [{ id: "celestial-restoration", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["bite"] }],
+          replace: { count: "any", use: ["poisonous-spittle"] },
+        },
+      },
       {
         id: "bite",
         kind: "attack",

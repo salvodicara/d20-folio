@@ -9,7 +9,8 @@
  * arithmetic over the rolled total. An attack offers the conditions its Hit clause
  * gives; prose that deals damage with no roll (Fire Aura) or uses one of the
  * block's attacks (Pounce) is one tap too. Other prose (Multiattack, Spellcasting)
- * stays text: the card shows Multiattack as a reference line.
+ * stays text: the card shows Multiattack as a reference line, and
+ * `monster-multiattack.ts` resolves its routine to these rows for the engine.
  */
 import type { AbilityCode, MonsterEntry, MonsterStatBlock } from "@/data/types";
 import {

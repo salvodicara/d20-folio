@@ -74,7 +74,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["elvish", "sylvan"] },
     gear: [{ id: "breastplate" }, { id: "longbow" }, { id: "pike" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["pike", "longbow"] }] },
+      },
       {
         id: "pike",
         kind: "attack",
@@ -134,7 +138,16 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["chain"] },
+            { count: 1, use: ["conjure-infernal-chain"] },
+          ],
+        },
+      },
       {
         id: "chain",
         kind: "attack",
@@ -182,7 +195,18 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["draconic"], understandsOnly: true },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["ram"] },
+            { count: 1, use: ["bite"] },
+            { count: 1, use: ["claw"] },
+          ],
+          replace: { count: 1, use: ["fire-breath"], of: "claw" },
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -238,11 +262,20 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["deep-speech"], understandsOnly: true },
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "sense-magic", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["pincer"] },
+            { count: 1, use: ["paralyzing-tentacles"] },
+          ],
+        },
+      },
       {
         id: "pincer",
         kind: "attack",
@@ -316,7 +349,14 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
         ],
       },
     ],
-    bonusActions: [{ id: "hasten", kind: "narrative", recharge: 5 }],
+    bonusActions: [
+      {
+        id: "hasten",
+        kind: "narrative",
+        movement: { kind: "take-action", actions: ["dash", "disengage"] },
+        recharge: 5,
+      },
+    ],
     source: "SRD",
   },
   // Cloaker (2024 SRD 5.2.1). AC 14, HP 91, CR 8.
@@ -343,7 +383,16 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["attach"] },
+            { count: 2, use: ["tail"] },
+          ],
+        },
+      },
       {
         id: "attach",
         kind: "attack",
@@ -395,7 +444,14 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "insight" }, { skill: "perception", expertise: true }],
     languages: { ids: ["common", "giant"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["thunderous-mace", "thundercloud"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "thunderous-mace",
         kind: "attack",
@@ -642,7 +698,7 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 6, DEX: 11, CON: 12, INT: 1, WIS: 8, CHA: 2 },
     skills: [{ skill: "stealth" }],
     senses: { blindsightFt: 30 },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
       {
         id: "claw",
@@ -814,7 +870,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     ],
     senses: { darkvisionFt: 120 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -882,7 +942,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["holy-mace"] }] },
+      },
       {
         id: "holy-mace",
         kind: "attack",
@@ -969,7 +1033,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       { id: "wishes", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["storm-blade", "storm-bolt"] }] },
+      },
       {
         id: "storm-blade",
         kind: "attack",
@@ -1038,7 +1106,16 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"], plusAnyCount: 3 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["slam"] },
+            { count: 1, use: ["unsettling-visage"], optional: true },
+          ],
+        },
+      },
       {
         id: "slam",
         kind: "attack",
@@ -1100,9 +1177,16 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     damageResistances: ["fire"],
     senses: { darkvisionFt: 120 },
     languages: { ids: ["draconic", "aquan"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["bite"] }],
+          replace: { count: 1, use: ["tail"] },
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -1189,7 +1273,7 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 120 },
     languages: { ids: ["elvish", "undercommon"] },
     traits: [
-      { id: "spider-climb", kind: "narrative" },
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
       {
         id: "sunlight-sensitivity",
         kind: "narrative",
@@ -1198,7 +1282,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       { id: "web-walker", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["foreleg", "poison-burst"] }] },
+      },
       {
         id: "foreleg",
         kind: "attack",
@@ -1235,7 +1323,11 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "druidic", "sylvan"] },
     gear: [{ id: "studded-leather-armor" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["vine-staff", "verdant-wisp"] }] },
+      },
       {
         id: "vine-staff",
         kind: "attack",
@@ -1292,7 +1384,16 @@ export const SRD_MONSTERS_C_D: ReadonlyArray<MonsterStatBlock> = [
       { id: "speak-with-beasts-and-plants", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["vine-lash", "thorn-burst"] },
+            { count: 1, use: ["spellcasting"], optional: true },
+          ],
+        },
+      },
       {
         id: "vine-lash",
         kind: "attack",

@@ -28,14 +28,23 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["deep-speech"], telepathyFt: 120 },
     xpInLair: 7200,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "eldritch-restoration", kind: "narrative" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
       { id: "mucus-cloud", kind: "save", save: "CON", dc: 14, onSuccess: "none" },
       { id: "probing-telepathy", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["tentacle"] },
+            { count: 1, use: ["consume-memories", "dominate-mind"], optional: true },
+          ],
+        },
+      },
       {
         id: "tentacle",
         kind: "attack",
@@ -99,11 +108,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 13000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -148,6 +164,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -176,7 +193,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -208,7 +232,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "cloaked-flight", kind: "narrative" },
+      {
+        id: "cloaked-flight",
+        kind: "narrative",
+        movement: { kind: "move", speeds: ["fly"], half: true },
+      },
       { id: "sonic-boom", kind: "narrative" },
       {
         id: "tail-swipe",
@@ -246,7 +274,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["sleep-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -296,6 +331,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
       {
@@ -333,11 +369,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 15000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["repulsion-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -388,6 +431,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
       {
@@ -429,7 +473,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["slowing-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -474,6 +525,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -504,11 +556,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 20000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting", "weakening-breath"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -555,6 +614,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -586,11 +646,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 15000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -634,6 +701,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -662,7 +730,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -700,6 +775,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -732,7 +808,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["paralyzing-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -785,6 +868,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -814,7 +898,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 3, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -850,6 +938,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -883,7 +972,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["auran"] },
     traits: [{ id: "air-form", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["thunderous-slam"] }] },
+      },
       {
         id: "thunderous-slam",
         kind: "attack",
@@ -960,11 +1053,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 41000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1014,6 +1114,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1042,7 +1143,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1074,7 +1182,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
-      { id: "cloaked-flight", kind: "narrative" },
+      {
+        id: "cloaked-flight",
+        kind: "narrative",
+        movement: { kind: "move", speeds: ["fly"], half: true },
+      },
       { id: "sonic-boom", kind: "narrative" },
       {
         id: "tail-swipe",
@@ -1112,7 +1224,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["sleep-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1162,6 +1281,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
       {
@@ -1199,11 +1319,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 50000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["repulsion-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1259,6 +1386,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
       {
@@ -1300,7 +1428,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["slowing-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1347,6 +1482,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1377,11 +1513,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 75000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting", "weakening-breath"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1430,6 +1573,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1461,11 +1605,18 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "draconic"] },
     xpInLair: 50000,
     traits: [
-      { id: "amphibious", kind: "narrative" },
+      { id: "amphibious", kind: "narrative", breathes: "air-and-water" },
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1509,6 +1660,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1537,7 +1689,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1575,6 +1734,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1607,7 +1767,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["rend"] }],
+          replace: { count: 1, use: ["paralyzing-breath", "spellcasting"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1665,6 +1832,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1694,7 +1862,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       { id: "legendary-resistance", kind: "narrative", uses: { count: 4, per: "day" } },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -1730,6 +1902,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "pounce",
         kind: "narrative",
+        movement: { kind: "move", speeds: ["walk"], half: true },
         performs: { section: "actions", entryId: "rend" },
       },
     ],
@@ -1759,7 +1932,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     ],
     senses: { blindsightFt: 60 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["slam"] }] },
+      },
       {
         id: "slam",
         kind: "attack",
@@ -1855,7 +2032,13 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 30, burrow: 10 },
     abilityScores: { STR: 17, DEX: 11, CON: 14, INT: 1, WIS: 13, CHA: 6 },
     senses: { darkvisionFt: 60, tremorsenseFt: 60 },
-    traits: [{ id: "tunneler", kind: "narrative" }],
+    traits: [
+      {
+        id: "tunneler",
+        kind: "narrative",
+        movement: { kind: "burrow-through", material: "solid-rock", half: true },
+      },
+    ],
     actions: [
       {
         id: "bite",
@@ -1896,7 +2079,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 19, DEX: 11, CON: 15, INT: 2, WIS: 12, CHA: 5 },
     saveProficiencies: ["STR"],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["tail"] }] },
+      },
       {
         id: "tail",
         kind: "attack",
@@ -1923,7 +2110,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 6, WIS: 12, CHA: 7 },
     skills: [{ skill: "athletics" }, { skill: "perception" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["fist"] }] },
+      },
       {
         id: "fist",
         kind: "attack",
@@ -1957,9 +2148,13 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 20, swim: 80 },
     abilityScores: { STR: 18, DEX: 16, CON: 13, INT: 4, WIS: 14, CHA: 6 },
     skills: [{ skill: "stealth" }],
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -2003,7 +2198,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 4, use: ["arcane-burst"] }] },
+      },
       {
         id: "arcane-burst",
         kind: "attack",
@@ -2069,7 +2268,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     ],
     traits: [{ id: "evasion", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["shortsword", "light-crossbow"] }] },
+      },
       {
         id: "shortsword",
         kind: "attack",
@@ -2094,7 +2297,17 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         ],
       },
     ],
-    bonusActions: [{ id: "cunning-action", kind: "narrative" }],
+    bonusActions: [
+      {
+        id: "cunning-action",
+        kind: "narrative",
+        movement: {
+          kind: "take-action",
+          actions: ["dash", "disengage", "hide"],
+          pickOne: true,
+        },
+      },
+    ],
     source: "SRD",
   },
   // Awakened Shrub (2024 SRD 5.2.1). AC 9, HP 10, CR 0.
@@ -2311,7 +2524,16 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["flame-whip"] },
+            { count: 1, use: ["lightning-blade"] },
+          ],
+        },
+      },
       {
         id: "flame-whip",
         kind: "attack",
@@ -2337,7 +2559,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         ],
       },
     ],
-    bonusActions: [{ id: "teleport", kind: "narrative" }],
+    bonusActions: [
+      { id: "teleport", kind: "narrative", movement: { kind: "teleport", feet: 60 } },
+    ],
     source: "SRD",
   },
   // Bandit (2024 SRD 5.2.1). AC 12, HP 11, CR 1/8.
@@ -2389,7 +2613,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     languages: { ids: ["common", "thieves-cant"] },
     gear: [{ id: "pistol" }, { id: "scimitar" }, { id: "studded-leather-armor" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["scimitar", "pistol"] }] },
+      },
       {
         id: "scimitar",
         kind: "attack",
@@ -2447,7 +2675,17 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["claws"] },
+            { count: 1, use: ["tail"] },
+          ],
+          or: [{ count: 2, use: ["hurl-flame"] }],
+        },
+      },
       {
         id: "claws",
         kind: "attack",
@@ -2565,7 +2803,16 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["beard"] },
+            { count: 1, use: ["infernal-glaive"] },
+          ],
+        },
+      },
       {
         id: "beard",
         kind: "attack",
@@ -2602,7 +2849,16 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 90 },
     languages: { ids: ["draconic"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["bite"] },
+            { count: 1, use: ["constrict"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -2691,7 +2947,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception", expertise: true }],
     senses: { darkvisionFt: 60 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -2721,9 +2981,13 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["acid"],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -2776,7 +3040,7 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         kind: "narrative",
         damage: [{ dice: "1d8", damageType: "acid" }],
       },
-      { id: "spider-climb", kind: "narrative" },
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
     ],
     actions: [
       {
@@ -2815,7 +3079,14 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         damage: [{ dice: "1d4+3", damageType: "piercing" }],
       },
     ],
-    bonusActions: [{ id: "teleport", kind: "narrative", recharge: 4 }],
+    bonusActions: [
+      {
+        id: "teleport",
+        kind: "narrative",
+        movement: { kind: "teleport", feet: 40 },
+        recharge: 4,
+      },
+    ],
     source: "SRD",
   },
   // Blood Hawk (2024 SRD 5.2.1). AC 12, HP 7, CR 1/8.
@@ -2868,7 +3139,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -2953,7 +3228,16 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
       },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["claw"] },
+            { count: 1, use: ["infernal-sting"] },
+          ],
+        },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -3042,9 +3326,13 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     damageImmunities: ["lightning"],
     senses: { blindsightFt: 10, darkvisionFt: 60 },
     languages: { ids: ["draconic"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["rend"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -3087,7 +3375,16 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception" }],
     senses: { darkvisionFt: 60 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["bite"] },
+            { count: 1, use: ["claw"] },
+          ],
+        },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -3128,7 +3425,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     gear: [{ id: "chain-shirt" }, { id: "javelin", qty: 6 }, { id: "morningstar" }],
     traits: [{ id: "abduct", kind: "narrative" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["javelin", "morningstar"] }] },
+      },
       {
         id: "javelin",
         kind: "attack",
@@ -3213,7 +3514,11 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
     skills: [{ skill: "perception", expertise: true }],
     senses: { darkvisionFt: 60, tremorsenseFt: 120 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -3232,7 +3537,9 @@ export const SRD_MONSTERS_A_B: ReadonlyArray<MonsterStatBlock> = [
         conditions: ["prone"],
       },
     ],
-    bonusActions: [{ id: "leap", kind: "narrative" }],
+    bonusActions: [
+      { id: "leap", kind: "narrative", movement: { kind: "leap", feet: 30, costFt: 10 } },
+    ],
     source: "SRD",
   },
 ];

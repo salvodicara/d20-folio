@@ -26,7 +26,14 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["abyssal", "common"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["claw"] }],
+          replace: { count: 1, use: ["corrupting-touch"] },
+        },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -56,7 +63,9 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
         perDay: [{ count: 1, spellIds: ["geas", "major-image", "scrying"] }],
       },
     ],
-    bonusActions: [{ id: "leap", kind: "narrative" }],
+    bonusActions: [
+      { id: "leap", kind: "narrative", movement: { kind: "leap", feet: 30, costFt: 10 } },
+    ],
     source: "SRD",
   },
   // Lemure (2024 SRD 5.2.1). AC 9, HP 9, CR 0.
@@ -121,7 +130,13 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       { id: "spirit-jar", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 3, use: ["eldritch-burst", "paralyzing-touch"] }],
+        },
+      },
       {
         id: "eldritch-burst",
         kind: "attack",
@@ -175,6 +190,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       {
         id: "deathly-teleport",
         kind: "narrative",
+        movement: { kind: "teleport", feet: 60 },
         damage: [{ dice: "2d10", damageType: "necrotic" }],
       },
       {
@@ -208,10 +224,21 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
         kind: "narrative",
         fact: { kind: "advantage", rolls: ["attack"], when: "ally-near-target" },
       },
-      { id: "running-leap", kind: "narrative" },
+      {
+        id: "running-leap",
+        kind: "narrative",
+        movement: { kind: "long-jump", feet: 25, runningStartFt: 10 },
+      },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [{ count: 2, use: ["rend"] }],
+          replace: { count: 1, use: ["roar"] },
+        },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -243,7 +270,9 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 20, climb: 20 },
     abilityScores: { STR: 2, DEX: 11, CON: 10, INT: 1, WIS: 8, CHA: 3 },
     senses: { darkvisionFt: 30 },
-    traits: [{ id: "spider-climb", kind: "narrative" }],
+    traits: [
+      { id: "spider-climb", kind: "narrative", movement: { kind: "spider-climb" } },
+    ],
     actions: [
       {
         id: "bite",
@@ -273,7 +302,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     gear: [{ id: "arcane-focus" }],
     languages: { ids: ["common"], plusAnyCount: 3 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["arcane-burst"] }] },
+      },
       {
         id: "arcane-burst",
         kind: "attack",
@@ -405,7 +438,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 24, DEX: 9, CON: 21, INT: 3, WIS: 11, CHA: 6 },
     saveProficiencies: ["STR", "CON"],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["gore"] }] },
+      },
       {
         id: "gore",
         kind: "attack",
@@ -443,7 +480,11 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"] },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 3, use: ["rend", "tail-spike"] }] },
+      },
       {
         id: "rend",
         kind: "attack",
@@ -493,7 +534,16 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       { id: "reactive", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 6, use: ["pact-blade"] },
+            { count: 1, use: ["constrict"] },
+          ],
+        },
+      },
       {
         id: "pact-blade",
         kind: "attack",
@@ -518,7 +568,14 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
         conditions: ["grappled", "restrained"],
       },
     ],
-    bonusActions: [{ id: "teleport", kind: "narrative", recharge: 5 }],
+    bonusActions: [
+      {
+        id: "teleport",
+        kind: "narrative",
+        movement: { kind: "teleport", feet: 120 },
+        recharge: 5,
+      },
+    ],
     reactions: [{ id: "parry", kind: "narrative" }],
     source: "SRD",
   },
@@ -567,7 +624,17 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 150 },
     languages: { ids: ["common"], plusAnyCount: 1 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["claw"] },
+            { count: 1, use: ["snake-hair"] },
+          ],
+          or: [{ count: 3, use: ["poison-ray"] }],
+        },
+      },
       {
         id: "claw",
         kind: "attack",
@@ -621,7 +688,7 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     speeds: { walk: 10, swim: 40 },
     abilityScores: { STR: 10, DEX: 13, CON: 12, INT: 11, WIS: 14, CHA: 12 },
     languages: { ids: ["common", "aquan"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
       {
         id: "ocean-spear",
@@ -651,9 +718,13 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     abilityScores: { STR: 18, DEX: 15, CON: 15, INT: 8, WIS: 10, CHA: 9 },
     senses: { darkvisionFt: 60 },
     languages: { ids: ["abyssal", "aquan"] },
-    traits: [{ id: "amphibious", kind: "narrative" }],
+    traits: [{ id: "amphibious", kind: "narrative", breathes: "air-and-water" }],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: { steps: [{ count: 2, use: ["bite", "claw", "harpoon"] }] },
+      },
       {
         id: "bite",
         kind: "attack",
@@ -853,7 +924,16 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
     senses: { darkvisionFt: 60 },
     languages: { ids: ["common"], plusAnyCount: 2 },
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 2, use: ["rotting-fist"] },
+            { count: 1, use: ["dreadful-glare"] },
+          ],
+        },
+      },
       {
         id: "rotting-fist",
         kind: "attack",
@@ -907,7 +987,16 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
       { id: "undead-restoration", kind: "narrative" },
     ],
     actions: [
-      { id: "multiattack", kind: "narrative" },
+      {
+        id: "multiattack",
+        kind: "narrative",
+        multiattack: {
+          steps: [
+            { count: 1, use: ["rotting-fist", "channel-negative-energy"] },
+            { count: 1, use: ["dreadful-glare"] },
+          ],
+        },
+      },
       {
         id: "rotting-fist",
         kind: "attack",
@@ -946,7 +1035,13 @@ export const SRD_MONSTERS_L_M: ReadonlyArray<MonsterStatBlock> = [
         perDay: [{ count: 1, spellIds: ["animate-dead", "harm", "insect-plague"] }],
       },
     ],
-    reactions: [{ id: "whirlwind-of-sand", kind: "narrative" }],
+    reactions: [
+      {
+        id: "whirlwind-of-sand",
+        kind: "narrative",
+        movement: { kind: "teleport", feet: 60 },
+      },
+    ],
     legendary: { uses: 3, usesInLair: 4 },
     legendaryActions: [
       { id: "dread-command", kind: "narrative" },

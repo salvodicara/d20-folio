@@ -128,24 +128,36 @@ export function translateMonsterEntry(
       });
       break;
     case "narrative":
-      // A trait that moves a number carries it as a fact; the rest is prose.
-      if (entry.fact) {
-        activity = { ...base, effects: [], fact: entry.fact };
-        break;
-      }
-      // Damage to other creatures with no roll (Fire Aura): it just happens.
-      if (entry.damage && entry.damage.length > 0) {
-        activity = { ...base, effects: entry.damage.map((clause) => damage(clause)) };
-        break;
-      }
-      activity = { ...base, effects: [] };
-      if (entry.performs) {
+      // A trait that moves a number carries it as a fact; damage to other
+      // creatures with no roll (Fire Aura) just happens; the rest is prose.
+      activity = entry.fact
+        ? { ...base, effects: [], fact: entry.fact }
+        : {
+            ...base,
+            effects: (entry.damage ?? []).map((clause) => damage(clause)),
+          };
+      if (entry.performs)
         gaps.push({
           field: "performs",
           reason: `uses the stat block's ${entry.performs.section} entry "${entry.performs.entryId}": that entry's Activity at this one's cost`,
         });
-        break;
-      }
+      if (entry.multiattack)
+        gaps.push({
+          field: "multiattack",
+          reason:
+            "a routine over the stat block's own entries, each its own Activity (multiattackPlan)",
+        });
+      if (entry.movement)
+        gaps.push({
+          field: "movement",
+          reason: `moves the monster (${entry.movement.kind}): a fact the table plays on the map`,
+        });
+      if (entry.breathes)
+        gaps.push({
+          field: "breathes",
+          reason: `breathes ${entry.breathes}: a fact of the monster, not an activity`,
+        });
+      if (gaps.length > 0 || entry.fact || activity.effects.length > 0) break;
       gaps.push({
         field: "text",
         reason: "a prose-only entry: what it does is in the text",

@@ -5,6 +5,8 @@
  * saves, prose that deals damage with no roll, moves that use one of them) or is
  * Regeneration's one-tap heal; reference = everything else (Multiattack,
  * Spellcasting, prose, the facts the card only shows). Auto and impossible are 0.
+ * The note also states what is structured for the engine but not yet on the
+ * card (Multiattack routines, moves, breathing, trait facts), counted the same way.
  */
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -35,6 +37,10 @@ describe("RULES_COVERAGE monster row", () => {
   it("states the counted 1-tap / reference split of the public bestiary", () => {
     let entries = 0;
     let tap = 0;
+    let routines = 0;
+    let moves = 0;
+    let breathing = 0;
+    let facts = 0;
     for (const block of SRD) {
       const actions = new Set(
         monsterActions(block).map(({ section, entryId }) => `${section}:${entryId}`)
@@ -45,6 +51,11 @@ describe("RULES_COVERAGE monster row", () => {
           const regeneration =
             entry.kind === "narrative" && entry.fact?.kind === "regeneration";
           if (actions.has(`${section}:${entry.id}`) || regeneration) tap += 1;
+          if (entry.kind !== "narrative") continue;
+          if (entry.multiattack) routines += 1;
+          if (entry.movement) moves += 1;
+          if (entry.breathes) breathing += 1;
+          if (entry.fact && !regeneration) facts += 1;
         }
     }
     const row = `Monster stat blocks (${SRD.length}, ${entries} entries)`;
@@ -53,5 +64,9 @@ describe("RULES_COVERAGE monster row", () => {
       .find((l) => l.includes(row));
     expect(line, row).toBeDefined();
     expect(line).toMatch(new RegExp(`\\| 0 / ${tap} / ${entries - tap} / 0 +\\|`));
+    expect(line).toContain(`${facts} fact traits`);
+    expect(line).toContain(`${routines} Multiattack routines`);
+    expect(line).toContain(`${moves} moves`);
+    expect(line).toContain(`${breathing} breathing facts`);
   });
 });
