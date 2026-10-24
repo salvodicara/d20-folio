@@ -273,7 +273,7 @@ describe("Shillelagh — a Club or Quarterstaff takes the spellcasting ability a
   });
 
   it("a new cast asks for the weapon again", () => {
-    expect(castStateChoiceKeys("shillelagh", "spell-shillelagh")).toEqual([
+    expect(castStateChoiceKeys(getSpellById("shillelagh"), "spell-shillelagh")).toEqual([
       "spell-shillelagh:weapon",
       "spell-shillelagh:damage-type",
     ]);

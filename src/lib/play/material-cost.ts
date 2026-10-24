@@ -4,7 +4,7 @@
  * kept one is only a reminder. Reads the spell's structured `{ gp, consumed }`
  * component facts (`activityFromSpell`), the ones the spell card's tag reads.
  */
-import { getSpellById } from "@/data/spells";
+import type { SrdSpellData } from "@/data/types";
 import { activityFromSpell } from "@/lib/activities/from-spell";
 import { coinPrice, NEXT_COIN } from "@/lib/coin-price";
 import { srdText, uiText } from "@/lib/loc-text";
@@ -21,8 +21,7 @@ type Currency = CharacterDoc["session"]["currency"];
 export type CurrencyDelta = Partial<Record<keyof Currency, number>>;
 
 /** The priced material component of a spell, or null (none, custom, unknown). */
-export function castMaterialCost(spellId: string | undefined): MaterialCost | null {
-  const spell = spellId ? getSpellById(spellId) : undefined;
+export function castMaterialCost(spell: SrdSpellData | undefined): MaterialCost | null {
   if (!spell) return null;
   const components = activityFromSpell(spell).cost.components;
   if (!components?.gp) return null;

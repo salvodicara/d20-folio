@@ -132,7 +132,7 @@ import {
 } from "@/lib/resolve-grant-sources";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
-import { customConcentrationValue } from "@/lib/concentration";
+import { customSpellConcentrationValue } from "@/lib/concentration";
 import {
   effectiveMaxHp,
   bloodiedFromHp,
@@ -6308,8 +6308,13 @@ function resolveSpellActions(
           description: customText(spellRef.description),
           ...(spellRef.range ? { range: customText(spellRef.range) } : {}),
           duration: customText(spellRef.duration),
-          concentrationRef: customConcentrationValue(spellRef.name),
-          fields: { customSpellIndex: spellIndexInBook, homebrewSpell: homebrew },
+          // Keyed on the spell's stable instanceId, never its (shareable) name.
+          concentrationRef: customSpellConcentrationValue(spellRef),
+          fields: {
+            customSpellIndex: spellIndexInBook,
+            customSpellInstanceId: spellRef.instanceId,
+            homebrewSpell: homebrew,
+          },
         });
         continue;
       }
@@ -7134,7 +7139,10 @@ interface CastSpellIdentity {
   /** The `session.concentration` value this spell holds. */
   concentrationRef: string;
   /** The source's own action fields (catalogue id, or homebrew index + data). */
-  fields: Pick<RawResolvedAction, "spellId" | "customSpellIndex" | "homebrewSpell">;
+  fields: Pick<
+    RawResolvedAction,
+    "spellId" | "customSpellIndex" | "customSpellInstanceId" | "homebrewSpell"
+  >;
 }
 
 /**
