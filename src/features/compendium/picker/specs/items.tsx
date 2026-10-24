@@ -337,8 +337,11 @@ export const itemsSpec: CompendiumPickerSpec<ItemEntry> = {
   quantityStep: (e) =>
     e.kind === "equipment" ? (equipmentSpec.quantityStep?.(e.item) ?? 1) : 1,
 
-  onAdd: (e, ctx: PickerCtx, quantity) => {
+  onAdd: (e, ctx: PickerCtx, quantity, options) => {
     if (e.kind === "magic") magicItemSpec.onAdd?.(e.item, ctx, quantity);
-    else equipmentSpec.onAdd?.(e.item, ctx, quantity);
+    else equipmentSpec.onAdd?.(e.item, ctx, quantity, options);
   },
+  // Only mundane equipment has a list price (2024 prices magic items by rarity).
+  purchase: (e, ctx, quantity) =>
+    e.kind === "equipment" ? equipmentSpec.purchase?.(e.item, ctx, quantity) : undefined,
 };

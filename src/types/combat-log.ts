@@ -185,6 +185,10 @@ export type CombatEvent =
   | { kind: "tracker-regain"; trackerId: string; amount: number }
   /** Casting a spell gave back one expended spell slot (Expert Divination). */
   | { kind: "slot-regain"; level: number }
+  /** The character bought or sold a catalogue item with their coins; `cp` is the
+   *  price paid or received, in copper (rendered as gp / sp / cp). An older app
+   *  version reads it as its "entry from a newer version" row. */
+  | { kind: "item-trade"; trade: "buy" | "sell"; item: LocText; cp: number }
   /**
    * Read-normalization ONLY (the bounded one-way boundary, golden rule 10): a
    * pre-events-as-data persisted entry that carried a frozen localized `text`.

@@ -19,6 +19,7 @@
 import type { ActionEffect, CombatEvent } from "@/types/combat-log";
 import type { LocText } from "@/lib/loc-text";
 import { resolveLogStyle, type LogStyle } from "@/lib/action-log-style";
+import { coinsText } from "@/lib/play/purchase";
 
 /**
  * The minimal `t` shape this presenter needs — the i18next translator. Kept as a
@@ -126,6 +127,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("tracker-use");
     case "slot-regain":
       return resolveLogStyle("spell-cast");
+    case "item-trade":
+      return resolveLogStyle("generic");
     case "effect-given":
       return resolveLogStyle(
         event.effect === "damage"
@@ -299,6 +302,11 @@ export function localizeCombatEvent(
       });
     case "slot-regain":
       return t("combatLog.slotRegain", { level: event.level });
+    case "item-trade":
+      return t(event.trade === "buy" ? "combatLog.itemBought" : "combatLog.itemSold", {
+        name: resolveActionRef(event.item),
+        price: coinsText(event.cp, t),
+      });
     case "effect-given":
       return event.effect === "condition"
         ? t("combatLog.givenCondition", {

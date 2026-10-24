@@ -5,7 +5,7 @@
  * Source: dnd2024.wikidot.com/equipment:armor (Creative Commons)
  */
 
-import type { SrdEquipmentData } from "./types";
+import type { ArmorCategory, SrdEquipmentData } from "./types";
 
 export const SRD_ARMOR: SrdEquipmentData[] = [
   // ============================================================
@@ -174,6 +174,23 @@ export function getArmorByCategory(
 ): SrdEquipmentData[] {
   return SRD_ARMOR.filter((a) => a.armorCategory === category);
 }
+
+/** Minutes to put armor on or take it off, or `"utilize"`: the Utilize action. */
+export type ArmorTime = number | "utilize";
+
+/**
+ * Time to don or doff armor (SRD 5.2.1 "Armor" table headings: Light 1 minute to
+ * don or doff, Medium 5 to don and 1 to doff, Heavy 10 and 5, Shield the Utilize
+ * action), keyed by the armor category every armor row already declares.
+ */
+export const ARMOR_DON_DOFF: Readonly<
+  Record<ArmorCategory, { don: ArmorTime; doff: ArmorTime }>
+> = {
+  light: { don: 1, doff: 1 },
+  medium: { don: 5, doff: 1 },
+  heavy: { don: 10, doff: 5 },
+  shield: { don: "utilize", doff: "utilize" },
+};
 
 /** Get all wearable armor (excludes shields) */
 export function getWearableArmor(): SrdEquipmentData[] {

@@ -49,7 +49,7 @@ import type { DamageType } from "@/types/damage";
 import type { ProficiencyToken } from "@/types/ids";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { GEAR_BY_ID } from "@/data/gear";
-import { ARMOR_BY_ID } from "@/data/armor";
+import { ARMOR_BY_ID, ARMOR_DON_DOFF, type ArmorTime } from "@/data/armor";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
 import { requiresAttunement } from "@/lib/attunement";
 import { getClassTable } from "@/data/classes";
@@ -93,6 +93,7 @@ import {
 import { srdText as srdTextRef, customText as customTextRef } from "@/lib/loc-text";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { fadingD20Penalty, fadingPenaltyParts } from "@/lib/play/fading-penalties";
+import { salePriceCp } from "@/lib/play/purchase";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
 import { buildWeaponRange } from "@/lib/smart-tracker";
 import { appendAbilityModToDice } from "@/lib/utils";
@@ -156,6 +157,8 @@ export interface WeaponRowVM {
   weight: number;
   /** The SRD list price (the "value" fact), or null (custom / unpriced). */
   cost: CostVM | null;
+  /** What selling ONE fetches (half the list price), in copper; 0 = not sellable. */
+  saleCp: number;
   attackBonus: number;
   /** Flat damage modifier — ability mod + bound enchant + active flat grant
    *  bonuses (Rage Damage while raging — issue #27). */
@@ -217,6 +220,8 @@ export interface ItemRowVM {
   /** The SRD list price (per bundle for bundle items), or null (custom /
    *  magic items — 2024 prices magic items by rarity, not a list cost). */
   cost: CostVM | null;
+  /** What selling ONE fetches (half the list price), in copper; 0 = not sellable. */
+  saleCp: number;
   notes: string;
   equipped: boolean;
   tracked: boolean;
@@ -244,6 +249,8 @@ export interface ItemRowVM {
 
   // ── armor context ──
   armorAc: ArmorAcVM | null;
+  /** The SRD time to don / doff it (minutes, or the Utilize action), armor only. */
+  donDoff: { don: ArmorTime; doff: ArmorTime } | null;
   stealthDisadvantage: boolean;
   /** Armor the class is NOT proficient with (Disadvantage + no spellcasting). */
   unproficientArmor: boolean;
@@ -627,6 +634,7 @@ function buildWeaponVM(
     quantity: ref.quantity,
     weight: srdWeapon?.weight ?? 0,
     cost: srdWeapon?.cost ?? null,
+    saleCp: srdWeapon ? salePriceCp(srdWeapon) : 0,
     attackBonus,
     damageMod,
     damageDie,
@@ -751,6 +759,7 @@ function buildItemVM(
     quantity: ref.quantity ?? 1,
     weight,
     cost: srdItem?.cost ?? null,
+    saleCp: srdItem ? salePriceCp(srdItem) : 0,
     notes: ref.notes ?? "",
     equipped: ref.equipped ?? false,
     tracked,
@@ -769,6 +778,7 @@ function buildItemVM(
       magicItem != null &&
       ((magicItem.grants?.length ?? 0) > 0 || ref.acBonus != null),
     armorAc,
+    donDoff: srdItem?.armorCategory ? ARMOR_DON_DOFF[srdItem.armorCategory] : null,
     stealthDisadvantage: !isCustom && (srdItem?.stealthDisadvantage ?? false),
     unproficientArmor:
       isArmor && !isArmorProficient(srdItem?.armorCategory, armorProficiencies),
