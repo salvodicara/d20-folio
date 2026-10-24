@@ -830,6 +830,22 @@ export interface ActionConditionRemoval {
   fromLevel?: number;
 }
 
+/** The Hit Points a revived creature returns with: a number, or all of them. */
+export interface SpellRevive {
+  hitPoints: number | "all";
+}
+
+/**
+ * An outcome gated on the target's current Hit Points. At or below `max` the
+ * target `dies` or takes the spell's `condition`; otherwise the rest of the spell
+ * applies (its damage), or `otherwise` names what does instead (Speed 0).
+ */
+export interface SpellHitPointThreshold {
+  max: number;
+  atOrBelow: "dies" | "condition";
+  otherwise?: "speed-zero";
+}
+
 /**
  * A SECOND, simultaneous damage instance a single casting deals with its OWN
  * dice + type — for the handful of 2024 spells whose two damage components have
@@ -941,6 +957,14 @@ export interface SrdSpellData {
    * The resolver applies `floor(net damage × fraction)` to the caster in the same
    * undoable commit. Vampiric Touch uses `0.5`. */
   selfHealingFromDamage?: { fraction: number };
+  /** The target, at 0 Hit Points and not dead, becomes Stable (Spare the Dying). */
+  stabilizes?: true;
+  /** A dead target returns to life with these Hit Points (Revivify: 1; Resurrection:
+   * all). Ordinary healing never revives; this names the revive transition. */
+  revives?: SpellRevive;
+  /** The target's current Hit Points pick the outcome (Power Word Kill, Power Word
+   * Stun): at or below `max` the threshold outcome, otherwise the rest of the spell. */
+  hitPointThreshold?: SpellHitPointThreshold;
   /**
    * A hand-authored deterministic-runtime program in the CANONICAL
    * MechanicsProgram format, for the few spells whose semantics exceed the

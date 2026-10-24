@@ -53,6 +53,10 @@ export interface CombatResolutionSpec {
   hasGrantedDie: boolean;
   hasHeroicInspiration: boolean;
   stabilizes: boolean;
+  /** The cast returns a dead creature to life with these Hit Points. */
+  revives?: { hitPoints: number | "all" };
+  /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
+  hitPointThreshold?: NonNullable<ResolvedAction["summary"]["hitPointThreshold"]>;
   conditionRemoval?: { options: string[]; max?: number };
   /** A variable healing pool paid by the reviewed outcome itself. Dice pools are
    * configured before this resolver; HP pools derive their exact debit here. */
@@ -207,6 +211,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
   const hasGrantedDie = s.grantedDie !== undefined;
   const hasHeroicInspiration = s.grantsHeroicInspiration === true;
   const stabilizes = s.stabilize === true;
+  const revives = s.revive;
   const poolSpend =
     s.poolSpendEffect === "healing" && action.costTrackerIsPool && s.uses
       ? {
@@ -266,7 +271,11 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     (s.targeting?.affinity === "self"
       ? "self"
       : s.targeting?.affinity === "ally" ||
-          (!s.targeting && (hasHealing || stabilizes || s.conditionRemoval !== undefined))
+          (!s.targeting &&
+            (hasHealing ||
+              stabilizes ||
+              revives !== undefined ||
+              s.conditionRemoval !== undefined))
         ? "ally"
         : hasTempHp && !s.targeting
           ? "self"
@@ -294,6 +303,8 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     hasGrantedDie,
     hasHeroicInspiration,
     stabilizes,
+    ...(revives ? { revives: { hitPoints: revives.hitPoints } } : {}),
+    ...(s.hitPointThreshold ? { hitPointThreshold: { ...s.hitPointThreshold } } : {}),
     ...(s.healingMode === "full" || s.healingMode === "maximum"
       ? { healingMode: s.healingMode }
       : {}),

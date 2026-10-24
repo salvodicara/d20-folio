@@ -140,6 +140,8 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
   );
   const condition = activity.effects.find((effect) => effect.kind === "condition");
   const removal = activity.effects.find((effect) => effect.kind === "end-condition");
+  const revive = activity.effects.find((effect) => effect.kind === "revive");
+  const threshold = activity.effects.find((effect) => effect.kind === "hp-threshold");
   const level = activity.source.kind === "spell" ? activity.source.level : -1;
   const types = primary?.types;
   return clean({
@@ -223,6 +225,17 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
     conditionRemoval:
       removal?.kind === "end-condition"
         ? { options: removal.options, max: removal.max }
+        : undefined,
+    stabilizes:
+      activity.effects.some((effect) => effect.kind === "stabilize") || undefined,
+    revives: revive?.kind === "revive" ? { hitPoints: revive.hitPoints } : undefined,
+    hitPointThreshold:
+      threshold?.kind === "hp-threshold"
+        ? {
+            max: threshold.max,
+            atOrBelow: threshold.atOrBelow,
+            otherwise: threshold.otherwise,
+          }
         : undefined,
     recurrence: activity.recurrence,
     resolveOnCast: activity.resolveOnCast,

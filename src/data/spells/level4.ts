@@ -59,6 +59,21 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CHA",
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    // SRD 5.2.1: "While there, the target has the Incapacitated condition." It
+    // lasts while the spell does (Concentration, 1 minute).
+    conditionApplication: {
+      options: ["incapacitated"],
+      on: "failed-save",
+      lifetime: { kind: "source" },
+    },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-banishment",
+        duration: timedSpellDuration(1),
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -121,6 +136,25 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    // SRD 5.2.1: "any attack you make deals an extra 2d8 damage when you hit a
+    // creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your
+    // choice when you make the attack)." The +1d8 per slot level above 4 and the
+    // Difficult Terrain are the table's.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-conjure-minor-elementals",
+        duration: timedSpellDuration(10),
+        grants: [
+          {
+            type: "damage-rider",
+            appliesTo: "weapon-or-unarmed",
+            dice: "2d8",
+            damageTypeChoices: ["acid", "cold", "fire", "lightning"],
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {

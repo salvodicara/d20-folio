@@ -340,6 +340,16 @@ export type ActivityEffect =
   | (EffectBase & { kind: "grant-die"; die: string })
   | (EffectBase & { kind: "heroic-inspiration" })
   | (EffectBase & { kind: "stabilize" })
+  /** A dead target returns to life with these Hit Points (Revivify, Resurrection). */
+  | (EffectBase & { kind: "revive"; hitPoints: number | "all" })
+  /** The target's current Hit Points pick the outcome: at or below `max` it dies or
+   *  takes the activity's condition; otherwise the rest applies, or `otherwise`. */
+  | (EffectBase & {
+      kind: "hp-threshold";
+      max: number;
+      atOrBelow: "dies" | "condition";
+      otherwise?: "speed-zero";
+    })
   | (EffectBase & { kind: "restore-resource"; trackerId: string; upTo: number | "full" })
   | (EffectBase & {
       kind: "reduce-damage";

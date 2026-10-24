@@ -414,6 +414,8 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // SRD 5.2.1: "The creature returns to life with all its Hit Points."
+    revives: { hitPoints: "all" },
     source: "SRD",
   },
   {

@@ -466,6 +466,8 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // SRD 5.2.1: "The creature becomes Stable."
+    stabilizes: true,
     source: "SRD",
   },
   {
