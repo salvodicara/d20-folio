@@ -80,6 +80,9 @@ export {
   type SheetNumbers,
 } from "@/lib/views/sheet-numbers";
 
+/** Whether a number's parts are of a hand-set value (they carry the manual adjustment). */
+export { isHandSet } from "@/lib/value-breakdown";
+
 /** Shared combat that starts on the first initiative roll and never blocks: anyone
  *  passes the turn, a pass goes back, an ended fight reopens. */
 export {

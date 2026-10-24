@@ -115,6 +115,15 @@ interface Draft {
  * The playbook for this character. `context.mode: "exploration"` reads it out of
  * combat (see {@link draftExplorationSteps}); absent, it is the combat turn.
  */
+/** Whether a spell row changes the fight: damage, a save, healing, an attack, or another creature. */
+function hasCombatEffect(action: RawResolvedAction): boolean {
+  const { summary } = action;
+  if (summary.damage || summary.saveDC != null || summary.heal) return true;
+  if (summary.attackBonus != null) return true;
+  const affinity = summary.targeting?.affinity;
+  return affinity === "ally" || affinity === "enemy" || affinity === "any";
+}
+
 export function buildCombatPlaybook(
   character: CharacterDoc,
   context: PlaybookContext = {},
@@ -236,9 +245,16 @@ function draftSteps(actions: ReadonlyArray<RawResolvedAction>, facts: Facts): Dr
       ],
     });
 
+    // A fight opener must do something in the fight: damage, a save, healing, an
+    // attack, or an effect on another creature (Bless, Hex). A self-only utility
+    // spell (Detect Magic, other divinations) is never the first thing to cast.
     const openers = byCheapest(
       slotSpells.filter(
-        (a) => a.concentration && !a.summary.conditionApplication && !a.summary.area
+        (a) =>
+          a.concentration &&
+          !a.summary.conditionApplication &&
+          !a.summary.area &&
+          hasCombatEffect(a)
       )
     );
     drafts.push({

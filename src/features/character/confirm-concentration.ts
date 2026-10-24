@@ -14,7 +14,11 @@
 import type { TFunction } from "i18next";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useConfirmStore } from "@/stores/confirmStore";
-import { concentrationValue, customConcentrationValue } from "@/lib/concentration";
+import {
+  concentrationValue,
+  customConcentrationValue,
+  holdsCustomSpellConcentration,
+} from "@/lib/concentration";
 import { vitalConcentration } from "@/lib/character-vitals";
 import { concentrationLabel } from "@/lib/views/tracker-view";
 import type { Locale } from "@/lib/locale";
@@ -25,6 +29,8 @@ export async function confirmConcentrationSwap(
     concentration: boolean;
     /** The SRD spell's stable id (omit for a custom/homebrew spell). */
     spellId?: string;
+    /** A custom spell's stable instanceId: its Concentration keys on it. */
+    customSpellInstanceId?: string;
     /** Localized display name (custom spells: the user-authored name). */
     name: string;
   },
@@ -40,13 +46,15 @@ export async function confirmConcentrationSwap(
   // The stored value is the spell's stable id (custom spells carry their name
   // behind the marker). Same spell → no conflict (re-applying is harmless);
   // compare against the SAME value the commit will store (golden rule 7).
-  if (
-    currentConc ===
-    (incoming.spellId
-      ? concentrationValue(incoming.spellId)
-      : customConcentrationValue(incoming.name))
-  )
-    return true;
+  const same = incoming.spellId
+    ? currentConc === concentrationValue(incoming.spellId)
+    : incoming.customSpellInstanceId
+      ? holdsCustomSpellConcentration(currentConc, {
+          instanceId: incoming.customSpellInstanceId,
+          name: incoming.name,
+        })
+      : currentConc === customConcentrationValue(incoming.name);
+  if (same) return true;
   return useConfirmStore.getState().confirm({
     title: t("combat.concentrationBreakTitle"),
     message: t("combat.concentrationWillEndWarning", {

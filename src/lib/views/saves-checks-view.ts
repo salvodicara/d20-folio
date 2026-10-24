@@ -71,7 +71,7 @@ export interface SaveCheckSaveRow {
   id: AbilityCode;
   /** Whether the character is proficient in this save (own + granted). */
   proficient: boolean;
-  /** The DISPLAYED bonus = `override ?? auto`. */
+  /** The DISPLAYED bonus: the override (or `auto`), with Exhaustion on top. */
   bonus: number;
   /** The engine-computed bonus IGNORING any override (drives the override chip + reset). */
   auto: number;
@@ -93,6 +93,7 @@ export interface SaveCheckSkillRow {
   ability: AbilityCode;
   /** Merged proficiency tier (own + granted + expertise + JoaT half). */
   proficiency: ProficiencyTier;
+  /** The DISPLAYED bonus: the override (or `auto`), with Exhaustion on top. */
   bonus: number;
   auto: number;
   override: number | null;
@@ -310,11 +311,21 @@ export function deriveSavesAndChecks(
       pbOverride,
       checkBonus
     );
+    // A pin sets the modifier; Exhaustion still applies on top, as for a save.
+    const bonus = skillBonus(
+      effectiveScores[ability],
+      level,
+      proficiency,
+      override,
+      exhaustion,
+      pbOverride,
+      checkBonus
+    );
     return {
       id: skill.id,
       ability,
       proficiency,
-      bonus: override ?? auto,
+      bonus,
       auto,
       override,
       breakdownParts: buildSkillBreakdown({

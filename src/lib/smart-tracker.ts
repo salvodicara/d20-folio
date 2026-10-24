@@ -240,7 +240,13 @@ import type {
   BreakdownWhy,
   RawBreakdownPart,
 } from "@/lib/value-breakdown";
-import { abilityPart, locPart, termPart, breakdownTotal } from "@/lib/value-breakdown";
+import {
+  abilityPart,
+  locPart,
+  termPart,
+  breakdownTotal,
+  withOverride,
+} from "@/lib/value-breakdown";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
 import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
@@ -741,9 +747,12 @@ export interface ResolvedAction {
    * A structured homebrew spell as catalogue spell data (`homebrewSpellData`): what
    * the cast seams read where a catalogue cast reads `getSpellById(spellId)` (the
    * cast-level scaling, the ritual check). Set only on a homebrew spell that
-   * declares mechanics; its Concentration stays the homebrew `custom:` ref.
+   * declares mechanics; its Concentration keys on `customSpellInstanceId`.
    */
   homebrewSpell?: SrdSpellData;
+  /** A custom spell's stable `instanceId` (its Concentration and any per-spell state
+   * key on it, never on the name). */
+  customSpellInstanceId?: string;
   /** Canonical casting-time class. Present only on spell casts. */
   castTiming?: SpellCastTiming;
   /** SRD weapon id (set for equipped SRD weapon actions, incl. their off-hand
@@ -2589,9 +2598,9 @@ export function resolveWeaponAttackBonuses(
  * other fighting styles), the magic-weapon enchant +N (named by its item), and
  * the exhaustion penalty. The displayed to-hit is `breakdownTotal(parts)`, so
  * the number a player sees and the tip's decomposition are the same arithmetic
- * by construction (golden rule 6; the AC pattern). Returns `[]` when a pinned
- * per-weapon `attackBonusOverride` replaces the figure — a hand-set value has no
- * composition to explain (override-first).
+ * by construction (golden rule 6; the AC pattern). A pinned per-weapon
+ * `attackBonusOverride` keeps those lines and adds the manual adjustment
+ * ({@link withOverride}); Exhaustion and a fading penalty still apply on top of it.
  */
 export function buildWeaponAttackBreakdown(opts: {
   attackStat: AbilityCode;
@@ -2610,10 +2619,9 @@ export function buildWeaponAttackBreakdown(opts: {
   exhaustionPenalty?: number;
   /** A fading D20 Test penalty's named rows (Raise Dead −4). */
   fadingParts?: ReadonlyArray<RawBreakdownPart>;
-  /** A pinned per-weapon attackBonusOverride suppresses the whole breakdown. */
-  hasOverride?: boolean;
+  /** A pinned per-weapon `attackBonusOverride` (null/absent = computed). */
+  override?: number | null;
 }): RawBreakdownPart[] {
-  if (opts.hasOverride) return [];
   const parts: RawBreakdownPart[] = [
     abilityPart(opts.attackStat, opts.abilityMod, undefined, opts.abilityWhy),
   ];
@@ -2631,8 +2639,13 @@ export function buildWeaponAttackBreakdown(opts: {
   if (opts.exhaustionPenalty && opts.exhaustionPenalty !== 0) {
     parts.push(termPart("character.exhaustion", opts.exhaustionPenalty));
   }
-  parts.push(...(opts.fadingParts ?? []));
-  return parts;
+  const fading = opts.fadingParts ?? [];
+  parts.push(...fading);
+  if (opts.override == null) return parts;
+  return withOverride(
+    parts,
+    opts.override + (opts.exhaustionPenalty ?? 0) + breakdownTotal(fading)
+  );
 }
 
 /**
@@ -6352,6 +6365,7 @@ function resolveSpellActions(
         type: customActionType,
         source: "spell",
         customSpellIndex: spellIndexInBook,
+        customSpellInstanceId: customSpell.instanceId,
         castTiming: customCastTiming,
         spellLevel: customSpell.level,
         concentration: customSpell.concentration,
@@ -7340,12 +7354,11 @@ function resolveWeaponActions(
         : binding && binding.bonus !== 0
           ? featureNameLoc(binding.sourceId)
           : undefined;
-    const hasAtkOverride = weaponRef.attackBonusOverride != null;
     // Per-source to-hit composition for the breakdown tip (ability + PB + named
-    // fighting styles + magic enchant + exhaustion) — empty under an override.
-    // The to-hit total DERIVES from `breakdownTotal(parts)` so the headline and
-    // the tip are the same arithmetic by construction (golden rule 6; the AC
-    // pattern). The override branch pins the figure directly (no composition).
+    // fighting styles + magic enchant + exhaustion), plus the manual adjustment
+    // under an override. The to-hit total DERIVES from `breakdownTotal(parts)` so
+    // the headline and the tip are the same arithmetic by construction (golden
+    // rule 6; the AC pattern).
     const attackBreakdown = buildWeaponAttackBreakdown({
       attackStat,
       abilityMod: mod,
@@ -7357,14 +7370,12 @@ function resolveWeaponActions(
       // `exPenalty` is Exhaustion plus any fading penalty; the tip names each.
       exhaustionPenalty: exhaustionPenalty(session.exhaustion),
       fadingParts: fadingPenaltyParts(session.fadingPenalties),
-      hasOverride: hasAtkOverride,
+      override: weaponRef.attackBonusOverride,
     });
     // Override-first: a pinned per-weapon `attackBonusOverride` replaces the
-    // entire to-hit, so the flat grant bonus is NOT re-added on top (it would
-    // double-count what the player already baked into their pinned value).
-    const weaponAtkBonus = hasAtkOverride
-      ? (weaponRef.attackBonusOverride ?? 0) + exPenalty
-      : breakdownTotal(attackBreakdown);
+    // entire to-hit (the flat grant bonus is NOT re-added on top); the builder's
+    // manual-adjustment part makes the parts sum to it, Exhaustion included.
+    const weaponAtkBonus = breakdownTotal(attackBreakdown);
     // Monk Martial Arts die upgrade: the MA die REPLACES the printed die when
     // larger, on Monk weapons (a Dagger 1d4 → 1d6, a Shortsword 1d6 → 1d8 at
     // Monk L5). Resolved against the Monk's OWN level (multiclass-correct) via

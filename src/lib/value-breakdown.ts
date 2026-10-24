@@ -11,12 +11,17 @@
  * composite derived stat reuses (golden rule 3): AC, initiative, spell save DC,
  * spell attack, saving throws, passive scores, the weapon to-hit, AND max HP all
  * emit {@link RawBreakdownPart}s through the builders here, the presenter localizes
- * them, and the single `BreakdownTip` renders them. (Max HP is OVERRIDE-GATED, #95:
- * the displayed HP max is a STORED, directly-editable value, so its tip shows ONLY
- * when the stored max still equals the by-the-book composition
- * `computeCharacterMaxHp` — per-class hit-die averages + CON + Tough / Dwarven
- * Toughness …; a hand-pinned or rolled max has no composition to explain and gets
- * no tip, exactly like an `acOverride` suppresses the AC tip. Golden rules 8/6/19.)
+ * them, and the single `BreakdownTip` renders them.
+ *
+ * ## Hand-set numbers (owner direction, row 13: overrides always possible)
+ *
+ * An override never empties a breakdown: the builder keeps the COMPUTED parts and
+ * {@link withOverride} appends ONE `breakdown.override` ("Manual adjustment") part
+ * for the difference to the number shown, so a beginner still sees the explanation
+ * and the sum still equals the headline. A stored max HP off the by-the-book
+ * `computeCharacterMaxHp` (rolled or pinned) reads the same way in `sheetNumbers`.
+ * The one exception is weapon DAMAGE: its override is a dice formula, not a scalar,
+ * so a pinned damage string has no parts.
  *
  * ## The single-source-of-truth invariant (golden rule 6)
  *
@@ -199,4 +204,31 @@ export function locPart(
     ...(note ? { note } : {}),
     ...(why ? { why } : {}),
   };
+}
+
+/** The term of the one part a hand-set number adds to its computed parts. */
+export const OVERRIDE_TERM = "breakdown.override";
+
+/**
+ * The parts of a HAND-SET number (an override): the computed parts as they are,
+ * then ONE manual-adjustment part for the difference to the number shown. So a
+ * beginner still sees where the computed value came from and how far the hand-set
+ * value moved it, and `breakdownTotal(result) === shown` by construction. The part
+ * is there even at +0: it is what marks the number as set by hand.
+ */
+export function withOverride(
+  computed: ReadonlyArray<RawBreakdownPart>,
+  shown: number
+): RawBreakdownPart[] {
+  return [...computed, termPart(OVERRIDE_TERM, shown - breakdownTotal(computed))];
+}
+
+/**
+ * Whether a breakdown is of a hand-set number: it carries the manual-adjustment part
+ * anywhere among its parts (never assume it is last). UIs read this, never the term.
+ */
+export function isHandSet(
+  parts: ReadonlyArray<RawBreakdownPart> | null | undefined
+): boolean {
+  return parts?.some((p) => "term" in p.label && p.label.term === OVERRIDE_TERM) ?? false;
 }

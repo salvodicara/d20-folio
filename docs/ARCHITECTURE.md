@@ -3466,9 +3466,12 @@ DERIVES the headline as the sum, so the shown value and the decomposed tip are t
 construction (rule 6). The presenter `localizeBreakdown` resolves the labels; the ONE `BreakdownTip`
 component renders them. Every composite value has a `build*`/`compute*Detailed`/`*Breakdown` producer
 feeding this register (AC, initiative, spell DC/attack, saves, passives, max HP, weapon damage/to-hit,
-heal — list in `value-breakdown.ts`). A single-component value gets no tip (golden rule 19); an override
-suppresses it. **Max HP is the OVERRIDE-GATE special case** (#95): its stored max shows the tip ONLY when
-`storedMax === computeCharacterMaxHp(...)` (a hand-pinned/rolled max deviates, like `acOverride`).
+heal — list in `value-breakdown.ts`). A single-component value gets no tip (golden rule 19). An override
+keeps the computed parts and adds ONE `breakdown.override` ("Manual adjustment") part for the difference
+(`withOverride`), so a hand-set number stays explained; `tests/unit/overrides-breakdown-guard.test.ts`
+pins it for every `sheetNumbers` entry (weapon damage, a dice formula, is the one exception). **Max HP**
+(#95): a stored max off `computeCharacterMaxHp(...)` (hand-pinned/rolled) reads as that adjustment in
+`sheetNumbers`; the old header still shows its tip only when `storedMax === computeCharacterMaxHp(...)`.
 A direct sheet CON edit (LeftHud) rebakes the stored max by the same inferred CON-term delta
 (`retroactiveConHpMax`, reusing `inferHpMax`), so the override-gate invariant
 `storedMax === computeCharacterMaxHp` survives a CON change for a by-the-book character, and a
