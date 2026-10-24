@@ -37,6 +37,7 @@ import {
 } from "./states";
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
+import { breatheAgain, holdBreath, passBreathRounds } from "./suffocation";
 import { passTime } from "./time";
 import { setWishStress } from "./wish";
 import {
@@ -118,7 +119,14 @@ export type SheetEvent =
    * `seal = beginWholeStateUndo(); teardown; dispatch(event); undo = seal?.()`.
    * Pinned in tests/unit/time-passes.test.ts.
    */
-  | { kind: "time-passes"; minutes: number };
+  | { kind: "time-passes"; minutes: number }
+  /** Start holding breath (SRD Suffocation); `choking`: no air at all. */
+  | { kind: "hold-breath"; choking?: boolean }
+  /** The character can breathe again: the Exhaustion suffocating added goes. */
+  | { kind: "breathe-again" }
+  /** The owner's turn ends while it holds its breath (one turn of air, or 1
+   *  Exhaustion out of breath). Its log line: `breathLogEvents(before, after)`. */
+  | { kind: "breath-turn-end" };
 
 export type SheetEventKind = SheetEvent["kind"];
 
@@ -216,5 +224,11 @@ export function applySheetEvent(
       return withSession(recoverPerTurnTrackers(doc)?.session);
     case "time-passes":
       return passTime(doc, event.minutes);
+    case "hold-breath":
+      return withSession(holdBreath(doc, { choking: event.choking }));
+    case "breathe-again":
+      return withSession(breatheAgain(doc));
+    case "breath-turn-end":
+      return withSession(passBreathRounds(doc, 1));
   }
 }
