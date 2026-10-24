@@ -82,6 +82,7 @@ const MONSTER_COMBATANT_KEYS = new Set([
   "side",
   "name",
   "srdId",
+  "homebrewId",
   "ac",
   "speed",
   "initiative",
@@ -167,6 +168,7 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
     (value.hidden !== undefined && typeof value.hidden !== "boolean") ||
     (value.side !== undefined && value.side !== "ally" && value.side !== "enemy") ||
     (value.srdId !== undefined && !nonEmptyString(value.srdId)) ||
+    (value.homebrewId !== undefined && !nonEmptyString(value.homebrewId)) ||
     (value.speed !== undefined && !isMonsterSpeedFt(value.speed)) ||
     (value.revealed !== undefined && typeof value.revealed !== "boolean") ||
     (value.notes !== undefined && !nonEmptyString(value.notes)) ||

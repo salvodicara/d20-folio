@@ -21,6 +21,13 @@
  * (`homebrewItemMechanics`) accepts it — so the item reaches the same item paths
  * (`homebrewItemData` → grant sources, item resources).
  *
+ * The same holds for every structured catalogue STAT-BLOCK field: a homebrew
+ * MONSTER (`CustomMonster.mechanics`, the catalogue stat block's own shape) carries
+ * it, the library codec carries it unchanged, every SRD stat block (its entries
+ * named) plays unchanged as a homebrew one, and the one homebrew monster validator
+ * (`homebrewMonsterMechanics`) accepts it — so the monster reaches the same
+ * encounter paths (`homebrewMonsterStatBlock` → counters, Multiattack, actions).
+ *
  * The same holds for every Activity effect: each effect kind is reachable from the
  * homebrew action dialect (`ActionData`) or a homebrew spell's mechanics, or is
  * recorded below as a gap with what it needs.
@@ -55,13 +62,33 @@ import type { ActivityEffectKind } from "@/lib/activities/types";
 import { spells as catalogueSpells } from "@/data/spells";
 import type {
   CatalogueItemIdentityKey,
+  CatalogueMonsterIdentityKey,
   CatalogueSpellIdentityKey,
   HomebrewItemMechanics,
   HomebrewItemTopLevelKey,
+  HomebrewMonsterMechanics,
+  HomebrewMonsterTopLevelKey,
   HomebrewSpellMechanics,
   HomebrewSpellTopLevelKey,
+  MonsterEntry,
+  MonsterStatBlock,
   SrdSpellData,
 } from "@/data/types";
+import { SRD_MONSTERS_A_B } from "@/data/monsters/a-b";
+import { SRD_MONSTERS_C_D } from "@/data/monsters/c-d";
+import { SRD_MONSTERS_E_G } from "@/data/monsters/e-g";
+import { SRD_MONSTERS_H_K } from "@/data/monsters/h-k";
+import { SRD_MONSTERS_L_M } from "@/data/monsters/l-m";
+import { SRD_MONSTERS_N_P } from "@/data/monsters/n-p";
+import { SRD_MONSTERS_Q_S } from "@/data/monsters/q-s";
+import { SRD_MONSTERS_T_Z } from "@/data/monsters/t-z";
+import { monsterLimitedUses } from "@/features/campaigns/encounter";
+import {
+  HOMEBREW_MONSTER_FIELD_SCHEMAS,
+  homebrewMonsterMechanics,
+  homebrewMonsterStatBlock,
+} from "@/lib/homebrew-monsters";
+import type { CustomMonster } from "@/types/campaign";
 import {
   HOMEBREW_SPELL_FIELD_SCHEMAS,
   homebrewSpellData,
@@ -560,5 +587,166 @@ describe("every structured catalogue magic-item field is homebrew-expressible", 
       instanceId: wand.instanceId,
     });
     expect(source?.grants).toEqual(homebrewItemData(wand)?.grants);
+  });
+});
+
+// ─── Monsters ───────────────────────────────────────────────────────────────
+
+const SRD_BESTIARY: ReadonlyArray<MonsterStatBlock> = [
+  ...SRD_MONSTERS_A_B,
+  ...SRD_MONSTERS_C_D,
+  ...SRD_MONSTERS_E_G,
+  ...SRD_MONSTERS_H_K,
+  ...SRD_MONSTERS_L_M,
+  ...SRD_MONSTERS_N_P,
+  ...SRD_MONSTERS_Q_S,
+  ...SRD_MONSTERS_T_Z,
+];
+
+/** Catalogue stat-block fields a homebrew monster states elsewhere — field → why. */
+const MONSTER_FIELD_EXEMPTIONS: Readonly<
+  Record<CatalogueMonsterIdentityKey | HomebrewMonsterTopLevelKey, string>
+> = {
+  id: "catalogue identity: a homebrew monster is keyed by its library entry id",
+  source: "the catalogue book: a homebrew monster is the DM's own",
+  ac: "stored at the template's top level (CustomMonster.ac), the encounter's seed",
+  hp: "the average is the template's top-level maxHp, the encounter's seed",
+  cr: "stored at the template's top level (CustomMonster.cr), which seeds the XP",
+  type: "stored at the template's top level (CustomMonster.creatureType)",
+  damageVulnerabilities: "stored in the template's top-level defenses snapshot",
+  damageResistances: "stored in the template's top-level defenses snapshot",
+  damageImmunities: "stored in the template's top-level defenses snapshot",
+  conditionImmunities: "stored in the template's top-level defenses snapshot",
+  qualifiedDefenses: "stored in the template's top-level defenses snapshot",
+};
+
+function homebrewMonster(mechanics: HomebrewMonsterMechanics): CustomMonster {
+  return { name: "House Monster", ac: 14, maxHp: 40, cr: "3", mechanics };
+}
+
+/** Store and re-read a homebrew monster exactly as the account library does. */
+function monsterThroughLibraryCodec(item: CustomMonster): CustomMonster {
+  const entry = toLibraryEntry({ kind: "monster", item }, 1);
+  const stored = JSON.parse(JSON.stringify({ entries: [entry] })) as Record<
+    string,
+    unknown
+  >;
+  const parsed = parseLibraryEntries(stored);
+  if (!parsed.ok) throw new Error(`library codec rejected: ${parsed.failure.path}`);
+  const back = parsed.entries[0];
+  if (back?.kind !== "monster") throw new Error("library entry lost");
+  return back.item;
+}
+
+/** Deviation overrides no public SRD print needs (the content pack's may): sampled
+ *  here so their schema is still proven. */
+const UNUSED_MONSTER_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
+  saveOverrides: { DEX: 7 },
+  passivePerceptionOverride: 17,
+};
+
+/** Each stat-block field the SRD bestiary uses, with its first carrier's value. */
+function catalogueMonsterFieldSamples(): Map<string, unknown> {
+  const samples = new Map<string, unknown>(Object.entries(UNUSED_MONSTER_FIELD_SAMPLES));
+  for (const monster of SRD_BESTIARY) {
+    for (const [key, value] of Object.entries(monster)) {
+      if (key in MONSTER_FIELD_EXEMPTIONS || samples.has(key)) continue;
+      samples.set(key, value);
+    }
+  }
+  return samples;
+}
+
+const STAT_BLOCK_SECTIONS = [
+  "traits",
+  "actions",
+  "bonusActions",
+  "reactions",
+  "legendaryActions",
+] as const;
+
+/** A catalogue entry as a homebrew one: the DM's name beside the catalogue shape. */
+const named = (entries: ReadonlyArray<MonsterEntry> | undefined) =>
+  entries?.map((entry) => ({ ...entry, name: entry.id }));
+
+describe("every structured catalogue stat-block field is homebrew-expressible", () => {
+  const samples = catalogueMonsterFieldSamples();
+
+  it("covers every catalogue monster field, with a justified exemption only", () => {
+    const fields = new Set(SRD_BESTIARY.flatMap((monster) => Object.keys(monster)));
+    for (const field of fields) {
+      if (field in MONSTER_FIELD_EXEMPTIONS) {
+        expect(
+          MONSTER_FIELD_EXEMPTIONS[field as keyof typeof MONSTER_FIELD_EXEMPTIONS],
+          field
+        ).toMatch(/^.{24,}$/);
+      } else {
+        expect(HOMEBREW_MONSTER_FIELD_SCHEMAS, field).toHaveProperty(field);
+      }
+    }
+    const unsampled = Object.keys(HOMEBREW_MONSTER_FIELD_SCHEMAS).filter(
+      (field) => !samples.has(field)
+    );
+    expect(unsampled).toEqual([]);
+  });
+
+  it("each field survives the library codec, and the validator accepts it", () => {
+    for (const [field, value] of samples) {
+      const isSection = (STAT_BLOCK_SECTIONS as readonly string[]).includes(field);
+      const authored = isSection ? named(value as ReadonlyArray<MonsterEntry>) : value;
+      // A section's Multiattack may name entries of other sections; carry them all.
+      const item = homebrewMonster(
+        isSection
+          ? Object.fromEntries(
+              STAT_BLOCK_SECTIONS.map((section) => [
+                section,
+                section === field
+                  ? authored
+                  : named(
+                      SRD_BESTIARY.find(
+                        (monster) => monster[field as typeof section] === value
+                      )?.[section]
+                    ),
+              ])
+            )
+          : { [field]: authored }
+      );
+      const back = monsterThroughLibraryCodec(item);
+      expect(back.mechanics, field).toEqual(item.mechanics);
+      const accepted = homebrewMonsterMechanics(back) as Record<string, unknown>;
+      expect(isDeepStrictEqual(accepted[field], authored), field).toBe(true);
+    }
+  });
+
+  it("every SRD stat block, its entries named, plays as a homebrew monster unchanged", () => {
+    let entries = 0;
+    for (const monster of SRD_BESTIARY) {
+      const mechanics = Object.fromEntries(
+        STAT_BLOCK_SECTIONS.flatMap((section) => {
+          entries += monster[section]?.length ?? 0;
+          return monster[section] ? [[section, named(monster[section])]] : [];
+        })
+      ) as HomebrewMonsterMechanics;
+      const accepted = homebrewMonsterMechanics(homebrewMonster(mechanics));
+      for (const section of STAT_BLOCK_SECTIONS) {
+        expect(
+          isDeepStrictEqual(accepted?.[section], mechanics[section]),
+          `${monster.id}.${section}`
+        ).toBe(true);
+      }
+    }
+    expect(entries).toBe(1326);
+  });
+
+  it("an accepted monster reaches the encounter's counter path", () => {
+    const dragon = SRD_BESTIARY.find((monster) => monster.id === "adult-red-dragon");
+    if (!dragon) throw new Error("no adult red dragon");
+    const item = homebrewMonster({
+      legendary: dragon.legendary,
+      traits: named(dragon.traits),
+      actions: named(dragon.actions),
+    });
+    const block = homebrewMonsterStatBlock("house-dragon", item);
+    expect(block && monsterLimitedUses(block)).toEqual(monsterLimitedUses(dragon));
   });
 });
