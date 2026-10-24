@@ -39,7 +39,6 @@ import {
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
 import { conformGrant, type Grant } from "@/lib/grants";
-import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { classifySpellCastingTime } from "@/lib/cast-options";
 import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import { ABILITY_CODES } from "@/types/ability";
@@ -112,10 +111,6 @@ const CONDITION_APPLICATION = objectSchema(
  *  translator the catalogue's goes through. */
 const OBJECT = customSchema<"object", Readonly<Record<string, unknown>>>("object");
 const GRANT = customSchema<"grant", Grant>("grant");
-const MECHANICS_PROGRAM = customSchema<
-  "mechanics-program",
-  Readonly<Record<string, unknown>>
->("mechanics-program");
 /** A follow-up action: a plain object naming a known action economy. */
 const ACTION_DEF = customSchema<"action-def", Readonly<Record<string, unknown>>>(
   "action-def"
@@ -134,7 +129,6 @@ const CONTEXT: ExactSchemaContext<
   {
     object: Readonly<Record<string, unknown>>;
     grant: Grant;
-    "mechanics-program": Readonly<Record<string, unknown>>;
     "action-def": Readonly<Record<string, unknown>>;
   },
   Record<never, never>
@@ -142,7 +136,6 @@ const CONTEXT: ExactSchemaContext<
   customs: {
     object: (value) => (plainObject(value) ? value : null),
     grant: (value) => conformGrant(value),
-    "mechanics-program": (value) => conformMechanicsProgram(value),
     "action-def": (value) =>
       plainObject(value) &&
       (ALL_ACTION_TYPES as ReadonlyArray<unknown>).includes(value.type)
@@ -194,7 +187,11 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { max: numberSchema, atOrBelow: literals(["dies", "condition"]) },
     { otherwise: literalSchema("speed-zero") }
   ),
-  mechanicsProgram: MECHANICS_PROGRAM,
+  // Stored as an object and inert on a homebrew spell: the program runtime is fed
+  // only by the catalogue transcriber, which conforms it there
+  // (`conformMechanicsProgram`); importing that authoring schema here would pull
+  // it into the Folio Core declaration build (TS7056).
+  mechanicsProgram: OBJECT,
   reactionTrigger: literals(ALL_REACTION_TRIGGERS),
   ritual: booleanSchema,
   duration: SPELL_DURATION,
