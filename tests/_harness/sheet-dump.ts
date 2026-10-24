@@ -57,6 +57,7 @@ import { getClassTable } from "@/data/classes";
 import { totalLevel, primaryClassId, primaryClassEntry, getClasses } from "@/lib/classes";
 import { getSpellById } from "@/data/spells";
 import { loc } from "./loc";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 
 const ABILITY_CODES = ALL_ABILITIES.map((a) => a.code);
 
@@ -66,7 +67,7 @@ function fmt(mod: number): string {
 }
 
 function spellName(ref: SrdSpellRef | CustomSpell): string {
-  if ("custom" in ref) return `${ref.name} (custom)`;
+  if ("custom" in ref) return `${homebrewTextKey(ref.name)} (custom)`;
   const data = getSpellById(ref.srdId);
   const lvl = data ? (data.level === 0 ? "cantrip" : `L${data.level}`) : "?";
   const tags = [

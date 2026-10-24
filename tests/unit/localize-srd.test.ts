@@ -56,7 +56,7 @@ describe("localizeSrd (R3 LOCK 1)", () => {
   });
 
   it("localizeCustom passes user text through verbatim (bypass path)", () => {
-    expect(localizeCustom("My Homebrew Spell")).toBe("My Homebrew Spell");
+    expect(localizeCustom("My Homebrew Spell", "it")).toBe("My Homebrew Spell");
   });
 });
 

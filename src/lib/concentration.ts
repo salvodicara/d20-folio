@@ -11,6 +11,7 @@
  * SRD label can never be smuggled in.
  */
 import { spellIndex } from "@/data/spells";
+import { homebrewTextKey, type HomebrewText } from "@/lib/homebrew-text";
 import type { ConcentrationRef, StoredConcentration } from "@/types/ids";
 import type { LogEntry } from "@/types/character";
 
@@ -46,9 +47,12 @@ const CUSTOM_ID_MARK = "#";
  */
 export function customSpellConcentrationValue(spell: {
   instanceId: string;
-  name: string;
+  name: HomebrewText;
 }): ConcentrationRef {
-  return `${CUSTOM_CONCENTRATION_PREFIX}${CUSTOM_ID_MARK}${spell.instanceId}${CUSTOM_ID_MARK}${spell.name}` as ConcentrationRef;
+  // Text authored per language rides in the source locale's fallback: one stable
+  // string, the same on every viewer's device.
+  const name = homebrewTextKey(spell.name);
+  return `${CUSTOM_CONCENTRATION_PREFIX}${CUSTOM_ID_MARK}${spell.instanceId}${CUSTOM_ID_MARK}${name}` as ConcentrationRef;
 }
 
 /** A custom value's parts: the instanceId (absent in the legacy name form) and name. */
@@ -78,13 +82,13 @@ export function customConcentrationName(value: string): string | null {
  */
 export function holdsCustomSpellConcentration(
   stored: string,
-  spell: { instanceId: string; name: string }
+  spell: { instanceId: string; name: HomebrewText }
 ): boolean {
   const parts = customParts(stored);
   if (!parts) return false;
   return parts.instanceId !== undefined
     ? parts.instanceId === spell.instanceId
-    : parts.name === spell.name;
+    : parts.name === homebrewTextKey(spell.name);
 }
 
 /**

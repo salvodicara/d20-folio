@@ -38,10 +38,13 @@ import {
   type ExactSchema,
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
-import { conformGrant, type Grant } from "@/lib/grants";
+import { conformHomebrewGrant, type Grant } from "@/lib/grants";
 import { CONDITION_APPLICATION_SCHEMA, homebrewActionDef } from "@/lib/homebrew-actions";
 import { classifySpellCastingTime } from "@/lib/cast-options";
-import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
+import {
+  CUSTOM_CONCENTRATION_PREFIX,
+  holdsCustomSpellConcentration,
+} from "@/lib/concentration";
 import { ABILITY_CODES } from "@/types/ability";
 import { CONDITION_ID_SCHEMA } from "@/types/condition";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
@@ -104,7 +107,7 @@ const CONTEXT: ExactSchemaContext<
 > = {
   customs: {
     object: (value) => (plainObject(value) ? value : null),
-    grant: (value) => conformGrant(value),
+    grant: (value) => conformHomebrewGrant(value),
     "action-def": (value) =>
       plainObject(value) &&
       (ALL_ACTION_TYPES as ReadonlyArray<unknown>).includes(value.type)
@@ -254,7 +257,7 @@ export function homebrewSpellMechanics(
     if (key === "grants") {
       if (!Array.isArray(raw)) continue;
       accepted.grants = raw.flatMap((grant: unknown) => {
-        const conformed = conformGrant(grant);
+        const conformed = conformHomebrewGrant(grant);
         return conformed ? [conformed] : [];
       });
       continue;
@@ -336,9 +339,9 @@ export function concentrationSpellData(
 ): SrdSpellData | undefined {
   if (ref === "") return undefined;
   if (!ref.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return getSpellById(ref);
-  const name = ref.slice(CUSTOM_CONCENTRATION_PREFIX.length);
   for (const spell of spells) {
-    if (!("custom" in spell) || spell.name !== name) continue;
+    // The id stamp by its instanceId, the legacy name stamp by its name.
+    if (!("custom" in spell) || !holdsCustomSpellConcentration(ref, spell)) continue;
     const data = homebrewSpellData(spell);
     if (data) return data;
   }

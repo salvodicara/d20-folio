@@ -39,6 +39,7 @@ import type { Locale } from "@/lib/locale";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hasEnProse, requestEnProse, srdCatalogues, type SrdKind } from "./srd-en";
 import { SOURCE_LOCALE } from "@/lib/locale";
+import { homebrewLocaleText, type HomebrewText } from "@/lib/homebrew-text";
 
 /** Re-exported so existing `import { SrdKind } from "@/i18n/resolver"` sites stay. */
 export type { SrdKind } from "./srd-en";
@@ -125,13 +126,13 @@ export function hasSrd(
 }
 
 /**
- * The single-locale text of a USER-authored (custom/homebrew) entity — the
- * documented bypass of the SRD resolver (docs/ARCHITECTURE.md). Custom
- * content is user data, not SRD: it carries its own string and is shown verbatim.
- * This typed pass-through marks every such site explicitly so the
- * `no-bitext-indexing` guard can tell "resolved SRD string" from "raw user
- * string" apart.
+ * The text of a USER-authored (custom/homebrew) entity in one locale — the
+ * documented bypass of the SRD resolver (docs/ARCHITECTURE.md). Custom content is
+ * user data, not SRD: a plain string is shown verbatim, text authored per language
+ * through `homebrewText`'s fallback (the viewer's locale, else the source locale,
+ * else any). Marks every such site explicitly so the `no-bitext-indexing` guard can
+ * tell "resolved SRD string" from "raw user string" apart.
  */
-export function localizeCustom(text: string): string {
-  return text;
+export function localizeCustom(text: HomebrewText, locale: Locale): string {
+  return homebrewLocaleText(text)[locale];
 }

@@ -23,6 +23,7 @@
  * prints "Tool Proficiency: Choose one kind of <X>" + "(X) <X> (same as above)…".
  */
 import { describe, expect, it } from "vitest";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import {
   resolveGrantSourcesForBackground,
@@ -125,8 +126,8 @@ describe("umbrella tool never survives into a created character", () => {
       for (const ref of out.equipment) {
         if (isCustomEquipment(ref)) {
           expect(
-            isUmbrellaToken(ref.name),
-            `${bg.id} custom umbrella "${ref.name}"`
+            isUmbrellaToken(homebrewText(ref.name, "en")),
+            `${bg.id} custom umbrella "${homebrewText(ref.name, "en")}"`
           ).toBe(false);
         } else {
           expect(isUmbrellaToken(ref.srdId), `${bg.id} srd umbrella ${ref.srdId}`).toBe(

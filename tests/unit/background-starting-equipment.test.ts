@@ -18,6 +18,7 @@
  *       Option A by default, never throw, and never silently drop an item.
  */
 import { describe, expect, it } from "vitest";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
 import {
   getBackground,
   getBackgroundEquipmentOptions,
@@ -181,7 +182,8 @@ describe("resolveStartingEquipment — consumer routes items + gold correctly", 
     expect(tool).toBeDefined();
     expect(
       out.equipment.some(
-        (e) => isCustomEquipment(e) && /gaming set|dice set/i.test(e.name)
+        (e) =>
+          isCustomEquipment(e) && /gaming set|dice set/i.test(homebrewText(e.name, "en"))
       )
     ).toBe(false);
   });

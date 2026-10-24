@@ -31,6 +31,8 @@ import { IconPicker } from "@/components/shared/icon-picker";
 import { DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
 import type { TFunction } from "i18next";
 import { createItemInstanceId } from "@/lib/item-resources";
+import { editHomebrewText, homebrewText } from "@/lib/views/homebrew-text-view";
+import { useLocale } from "@/hooks/useLocale";
 import type { LibraryDraft } from "@/lib/library";
 import type {
   CustomSpell,
@@ -86,7 +88,8 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
   const { t } = useTranslation();
   const character = useCharacterStore((s) => s.character);
   const seed = libraryEdit?.item;
-  const [name, setName] = useState(seed?.name ?? "");
+  const { language: locale } = useLocale();
+  const [name, setName] = useState(homebrewText(seed?.name, locale));
   const [level, setLevel] = useState(seed?.level ?? 1);
   const [school, setSchool] = useState<SpellSchool>(seed?.school ?? "evocation");
   const [castingTime, setCastingTime] = useState(seed?.castingTime ?? "action");
@@ -95,7 +98,7 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
   // leaking into the IT form), mirroring the locale-aware `range` default above.
   const [duration, setDuration] = useState(seed?.duration ?? t("spells.instantaneous"));
   const [concentration, setConcentration] = useState(seed?.concentration ?? false);
-  const [description, setDescription] = useState(seed?.description ?? "");
+  const [description, setDescription] = useState(homebrewText(seed?.description, locale));
   const [v, setV] = useState(seed?.components.v ?? true);
   const [s, setS] = useState(seed?.components.s ?? true);
   const [m, setM] = useState(seed?.components.m ?? false);
@@ -108,7 +111,8 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
       // overwrites the fields below.
       ...seed,
       custom: true,
-      name: name.trim(),
+      // An edit writes the viewer's language; the other authored ones are kept.
+      name: editHomebrewText(seed?.name, locale, name.trim()),
       level,
       school,
       castingTime,
@@ -116,7 +120,7 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
       components: { v, s, m },
       duration,
       concentration,
-      description,
+      description: editHomebrewText(seed?.description, locale, description),
       prepared: true,
       instanceId: seed?.instanceId ?? createItemInstanceId(),
     };
@@ -290,9 +294,16 @@ export function CustomEquipmentForm({
   const seed = libraryEdit?.item;
   const seedWeapon = seed && "damageDie" in seed ? seed : undefined;
   const seedGear = seed && !("damageDie" in seed) ? seed : undefined;
-  const [name, setName] = useState(seed?.name ?? "");
-  const [description, setDescription] = useState(seed?.description ?? "");
+  const { language: locale } = useLocale();
+  const [name, setName] = useState(homebrewText(seed?.name, locale));
+  const [description, setDescription] = useState(homebrewText(seed?.description, locale));
   const [isWeapon, setIsWeapon] = useState(seedWeapon != null);
+  // An edit writes the viewer's language; the other authored ones are kept.
+  const authoredName = () => editHomebrewText(seed?.name, locale, name.trim());
+  const authoredDescription = () =>
+    description.trim()
+      ? editHomebrewText(seed?.description, locale, description.trim())
+      : undefined;
   const [quantity, setQuantity] = useState(1);
   // "none" | "consumable" | "tracked" — mutually exclusive
   const [trackingMode, setTrackingMode] = useState<"none" | "consumable" | "tracked">(
@@ -328,13 +339,13 @@ export function CustomEquipmentForm({
       const weapon: CustomWeapon = {
         ...seedWeapon,
         custom: true,
-        name: name.trim(),
+        name: authoredName(),
         quantity,
         damageDie,
         damageType,
         attackStat,
         properties,
-        description: description.trim() || undefined,
+        description: authoredDescription(),
         instanceId: seedWeapon?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
@@ -355,8 +366,8 @@ export function CustomEquipmentForm({
       const armor: CustomEquipment = {
         ...seedGear,
         custom: true,
-        name: name.trim(),
-        description: description.trim() || undefined,
+        name: authoredName(),
+        description: authoredDescription(),
         equipped: true,
         quantity,
         armorCategory,
@@ -383,8 +394,8 @@ export function CustomEquipmentForm({
         armorCategory: undefined,
         acBonus: undefined,
         custom: true,
-        name: name.trim(),
-        description: description.trim() || undefined,
+        name: authoredName(),
+        description: authoredDescription(),
         equipped: true,
         quantity,
         isConsumable: trackingMode === "consumable",
@@ -638,7 +649,8 @@ export function CustomFeatureForm({
   // Both edit modes prefill from a feature; only the SHEET one writes an index back.
   const seed = libraryEdit?.item ?? editFeature;
   const initTracker = seed?.trackers?.[0];
-  const [title, setTitle] = useState(seed?.title ?? "");
+  const { language: locale } = useLocale();
+  const [title, setTitle] = useState(homebrewText(seed?.title, locale));
   const [source, setSource] = useState(seed?.source ?? "Homebrew");
   const [emoji, setEmoji] = useState(seed?.emoji ?? DEFAULT_ALGO_ICON.id);
   const [description, setDescription] = useState(seed?.contentBlocks[0]?.text ?? "");
@@ -671,7 +683,8 @@ export function CustomFeatureForm({
       // Preserve any fields the form doesn't edit (e.g. custom actions) on edit.
       ...seed,
       custom: true,
-      title: title.trim(),
+      // An edit writes the viewer's language; the other authored ones are kept.
+      title: editHomebrewText(seed?.title, locale, title.trim()),
       emoji: emoji || "✨",
       source,
       tags: seed?.tags ?? [],

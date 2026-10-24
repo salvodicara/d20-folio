@@ -28,6 +28,7 @@ import type {
 } from "@/types/character";
 import type { CustomMonster } from "@/types/campaign";
 import { createItemInstanceId } from "@/lib/item-resources";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 
 /**
  * The homebrew kinds, in display order — the union below derives from it. The first
@@ -89,7 +90,9 @@ export type LibraryEntry = LibraryDraft & { id: string; savedAt: number };
  * picker row and the settings row can never disagree).
  */
 export function libraryEntryName(entry: LibraryDraft): string {
-  return entry.kind === "feature" ? entry.item.title : entry.item.name;
+  // Text authored per language keys in the source locale's fallback: the same
+  // identity on every viewer's device.
+  return homebrewTextKey(entry.kind === "feature" ? entry.item.title : entry.item.name);
 }
 
 /**

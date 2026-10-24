@@ -240,6 +240,7 @@ import { srdKey } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
 import { resolveWeaponBindings } from "@/lib/weapon-binding";
 import { srdText, customText, uiText } from "@/lib/loc-text";
+import { homebrewTextKey } from "@/lib/homebrew-text";
 import type {
   BreakdownLine,
   BreakdownWhy,
@@ -7368,8 +7369,8 @@ function resolveWeaponActions(
       ? weaponRef.name
       : weaponRef.srdId.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     const nameEn = isCustom
-      ? weaponRef.name
-      : (srdEn("equipment", weaponRef.srdId, "name") ?? idTitle);
+      ? homebrewTextKey(weaponRef.name)
+      : (srdEn("equipment", weaponRef.srdId, "name") ?? homebrewTextKey(idTitle));
     const name: LocText =
       isCustom || !srdWeapon
         ? customText(idTitle)

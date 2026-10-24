@@ -97,6 +97,7 @@ import { isExperiencePoints } from "@/lib/experience";
 import { nonEmptyString, assertNonEmptyString } from "@/lib/non-empty-string";
 import { enToProficiencyToken } from "@/data/proficiency-vocab";
 import { isItemInstanceId, parseItemResources } from "@/lib/item-resources";
+import { isHomebrewText } from "@/lib/homebrew-text";
 import {
   sessionToState,
   stateToSession,
@@ -509,7 +510,7 @@ const CUSTOM_SPELL_KEYS = [
 
 function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpell {
   if (obj.custom !== true) fail("malformed-entry", path);
-  if (typeof obj.name !== "string") fail("malformed-entry", path);
+  if (!isHomebrewText(obj.name)) fail("malformed-entry", path);
   if (typeof obj.level !== "number") fail("malformed-entry", path);
   if (!isSpellSchool(obj.school)) fail("malformed-entry", path);
   if (typeof obj.castingTime !== "string") fail("malformed-entry", path);
@@ -520,7 +521,7 @@ function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpe
     fail("malformed-entry", path);
   if (typeof obj.duration !== "string") fail("malformed-entry", path);
   if (typeof obj.concentration !== "boolean") fail("malformed-entry", path);
-  if (typeof obj.description !== "string") fail("malformed-entry", path);
+  if (!isHomebrewText(obj.description)) fail("malformed-entry", path);
   // `instanceId` is REQUIRED on `CustomSpell`, so a variable typed as the full
   // interface could not be built incrementally (every field would have to be
   // present in the initial literal). Built as the interface minus that one field
@@ -547,7 +548,7 @@ function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpe
     description: obj.description,
   };
   if (obj.higherLevels !== undefined)
-    spell.higherLevels = opt(obj.higherLevels, isString, `${path}.higherLevels`);
+    spell.higherLevels = opt(obj.higherLevels, isHomebrewText, `${path}.higherLevels`);
   if (obj.prepared !== undefined)
     spell.prepared = opt(obj.prepared, isBool, `${path}.prepared`);
   if (obj.notes !== undefined) spell.notes = opt(obj.notes, isString, `${path}.notes`);
@@ -589,7 +590,7 @@ const CUSTOM_WEAPON_KEYS = [
 
 function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWeapon {
   if (obj.custom !== true) fail("malformed-entry", path);
-  if (typeof obj.name !== "string") fail("malformed-entry", path);
+  if (!isHomebrewText(obj.name)) fail("malformed-entry", path);
   if (typeof obj.damageDie !== "string") fail("malformed-entry", path);
   if (!isDamageType(obj.damageType)) fail("malformed-entry", path);
   if (obj.attackStat !== "STR" && obj.attackStat !== "DEX") fail("malformed-entry", path);
@@ -620,7 +621,7 @@ function parseCustomWeapon(obj: Record<string, unknown>, path: string): CustomWe
       `${path}.damageOverride`
     );
   if (obj.description !== undefined)
-    weapon.description = opt(obj.description, isString, `${path}.description`);
+    weapon.description = opt(obj.description, isHomebrewText, `${path}.description`);
   if (obj.notes !== undefined) weapon.notes = opt(obj.notes, isString, `${path}.notes`);
   if (obj.tags !== undefined) weapon.tags = opt(obj.tags, isTagArray, `${path}.tags`);
   if (obj.attuned !== undefined)
@@ -664,12 +665,12 @@ function parseCustomEquipment(
   path: string
 ): CustomEquipment {
   if (obj.custom !== true) fail("malformed-entry", path);
-  if (typeof obj.name !== "string") fail("malformed-entry", path);
+  if (!isHomebrewText(obj.name)) fail("malformed-entry", path);
   // See parseCustomSpell's comment — `instanceId` is required, so the built-up
   // variable omits it; the final `return` appends it (then `unknown`) last.
   const equip: Omit<CustomEquipment, "instanceId"> = { custom: true, name: obj.name };
   if (obj.description !== undefined)
-    equip.description = opt(obj.description, isString, `${path}.description`);
+    equip.description = opt(obj.description, isHomebrewText, `${path}.description`);
   if (obj.emoji !== undefined) equip.emoji = opt(obj.emoji, isString, `${path}.emoji`);
   if (obj.notes !== undefined) equip.notes = opt(obj.notes, isString, `${path}.notes`);
   if (obj.equipped !== undefined)
@@ -726,7 +727,7 @@ const CUSTOM_FEATURE_KEYS = [
 
 function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomFeature {
   if (obj.custom !== true) fail("malformed-entry", path);
-  if (typeof obj.title !== "string") fail("malformed-entry", path);
+  if (!isHomebrewText(obj.title)) fail("malformed-entry", path);
   if (typeof obj.emoji !== "string") fail("malformed-entry", path);
   if (typeof obj.source !== "string") fail("malformed-entry", path);
   if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
@@ -774,7 +775,7 @@ function parseCustomFeature(obj: Record<string, unknown>, path: string): CustomF
         }
       : {}),
     ...(obj.subtitle !== undefined
-      ? { subtitle: opt(obj.subtitle, isString, `${path}.subtitle`) }
+      ? { subtitle: opt(obj.subtitle, isHomebrewText, `${path}.subtitle`) }
       : {}),
     instanceId: obj.instanceId,
     ...(unknown ? { unknown } : {}),
