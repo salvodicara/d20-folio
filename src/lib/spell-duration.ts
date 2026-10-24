@@ -3,10 +3,10 @@
  * = 1 minute): the time budget a held Concentration spends as rounds tick, time passes
  * or a rest completes. Read from the structured `duration` fact, never the prose.
  */
-import { spellIndex } from "@/data/spells";
 import type { SpellDuration } from "@/data/types";
-import { CUSTOM_CONCENTRATION_PREFIX } from "@/lib/concentration";
 import { whileActiveDurationAtCastLevel } from "@/lib/grants";
+import { concentrationSpellData } from "@/lib/homebrew-spells";
+import type { CustomSpell, SrdSpellRef } from "@/types/character";
 
 export const ROUNDS_PER_MINUTE = 10;
 
@@ -29,16 +29,18 @@ export function concentrationTimerKey(ref: string): string {
 
 /**
  * The rounds a Concentration on this spell lasts at most, or null when it has no
- * clock budget (nothing held, a custom spell, a duration the clock never ends). A
- * slot that lengthens the spell (Hex at level 3: 8 hours) lengthens the budget too,
- * read from the spell's own cast-level duration tiers.
+ * clock budget (nothing held, a text-only custom spell, a duration the clock never
+ * ends). A structured homebrew spell (`custom:` ref, resolved through the
+ * character's `spells`) budgets its own structured duration. A slot that lengthens
+ * the spell (Hex at level 3: 8 hours) lengthens the budget too, read from the
+ * spell's own cast-level duration tiers.
  */
 export function concentrationBudgetRounds(
   ref: string,
-  castLevel: number | undefined
+  castLevel: number | undefined,
+  spells?: ReadonlyArray<SrdSpellRef | CustomSpell>
 ): number | null {
-  if (ref === "" || ref.startsWith(CUSTOM_CONCENTRATION_PREFIX)) return null;
-  const spell = spellIndex.get(ref);
+  const spell = concentrationSpellData(ref, spells);
   const base = spell ? spellDurationRounds(spell.duration) : null;
   if (base === null || !spell) return null;
   let budget = base;

@@ -1271,6 +1271,42 @@ export interface SrdSpellData {
 }
 
 /**
+ * Catalogue-only identity of a spell: its slug, its class lists and its book. A
+ * homebrew spell has its own identity (`CustomSpell.instanceId`), lives on no class
+ * list and comes from no book.
+ */
+export type CatalogueSpellIdentityKey = "id" | "classes" | "source";
+
+/**
+ * The spell facts a homebrew spell already stores at its top level
+ * (`CustomSpell.level/school/castingTime/concentration/components`), so its
+ * structured mechanics never repeat them.
+ */
+export type HomebrewSpellTopLevelKey =
+  | "level"
+  | "school"
+  | "castingTime"
+  | "concentration"
+  | "components";
+
+/**
+ * A homebrew spell's structured mechanics (`CustomSpell.mechanics`): every
+ * structured {@link SrdSpellData} field, in the catalogue's own shape, so a homebrew
+ * spell plays exactly as a catalogue spell does. Derived from `SrdSpellData`, so a
+ * new catalogue field is a homebrew field too. The material cost rides
+ * `components` (the gold price and whether the spell consumes it); the V/S/M flags
+ * stay on the homebrew spell itself.
+ */
+export type HomebrewSpellMechanics = {
+  readonly [Key in Exclude<
+    keyof SrdSpellData,
+    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey
+  >]?: SrdSpellData[Key];
+} & {
+  readonly components?: Pick<SrdSpellData["components"], "costGp" | "consumed">;
+};
+
+/**
  * The declarative facts of a weapon-attack cantrip (True Strike). Pure data —
  * no rolls, no character context. See {@link SrdSpellData.weaponAttackCantrip}.
  */

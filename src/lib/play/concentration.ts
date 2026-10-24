@@ -45,7 +45,10 @@ export function changeConcentration(
   // The dropped spell's statuses end, and its own countdown with them.
   const droppedActiveKeys =
     prev && prev !== spell
-      ? [...concentrationStatusKeys(prev), concentrationTimerKey(prev)]
+      ? [
+          ...concentrationStatusKeys(prev, doc.character.spells),
+          concentrationTimerKey(prev),
+        ]
       : [];
   const ended = endStatuses(session, droppedActiveKeys);
   return {

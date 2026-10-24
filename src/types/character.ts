@@ -17,6 +17,7 @@ import type {
   ActionHeal,
   ActionTargeting,
   ActionTempHpRoll,
+  HomebrewSpellMechanics,
   Recovery,
   ResourceRecoveryTrigger,
   SpellSchool,
@@ -128,6 +129,14 @@ export interface CustomSpell {
   tags?: CharacterTag[];
   /** Per-spell casting-ability override (see SrdSpellRef.spellAbilityOverride). */
   spellAbilityOverride?: AbilityCode;
+  /**
+   * Structured mechanics in the catalogue spell's own shape (save, attack, damage,
+   * area, targeting, grants, structured duration, ritual, upcast scaling, material
+   * cost, …). Stored as authored; the engine reads it only through
+   * `homebrewSpellData`, which leaves out any field the current schema rejects.
+   * Optional: absent on every older homebrew spell, which keeps its text-only play.
+   */
+  mechanics?: HomebrewSpellMechanics;
   /** Stable identity of this custom entry — never keyed by name. */
   instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */

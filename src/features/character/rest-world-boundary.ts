@@ -565,7 +565,13 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
     }
   } else {
     const initiallyEnded = new Set(resolveActiveStatesEndingOnRest(before, "short"));
-    if (endsConcentration(before.session.concentration, initiallyEnded)) {
+    if (
+      endsConcentration(
+        before.session.concentration,
+        initiallyEnded,
+        before.character.spells
+      )
+    ) {
       store.setConcentration("", { silent: true, undoable: false });
     }
   }

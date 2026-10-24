@@ -38,6 +38,7 @@ import type { ReactionTrigger, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { isValidItemInstanceId } from "@/lib/resources";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
+import { homebrewSpellData } from "@/lib/homebrew-spells";
 import { customText } from "@/lib/loc-text";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
@@ -234,18 +235,22 @@ function resolveSpellGrantSources(
   const sources: GrantSource[] = [];
   const seen = new Set<string>();
   for (const s of spells) {
-    if ("custom" in s) continue;
-    if (s.prepared !== true && s.alwaysPrepared !== true) continue;
-    if (seen.has(s.srdId)) continue;
-    const spell = getSpellById(s.srdId);
-    if (!spell?.grants?.length) continue;
+    const custom = "custom" in s;
+    if (s.prepared !== true && (custom || s.alwaysPrepared !== true)) continue;
+    // A structured homebrew spell is catalogue-shaped spell data (its grants
+    // conformed one by one); a text-only one declares no grants.
+    const spell = custom ? homebrewSpellData(s) : getSpellById(s.srdId);
+    if (!spell?.grants?.length || seen.has(spell.id)) continue;
     const selectedGrants = selectGrants(spell);
     if (!selectedGrants?.length) continue;
-    seen.add(s.srdId);
+    seen.add(spell.id);
     sources.push({
       id: spell.id,
       grants: selectedGrants,
-      ref: { kind: "spell", key: spell.id },
+      // A homebrew spell is named by its own title (a homebrew feature's way).
+      ...(custom
+        ? { label: customText(s.name) }
+        : { ref: { kind: "spell" as const, key: spell.id } }),
     });
   }
   return sources;

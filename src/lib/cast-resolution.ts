@@ -37,6 +37,8 @@ export function actionAtCastLevel(
   spell: SrdSpellData | undefined,
   castLevel: number
 ): ResolvedAction {
+  // A structured homebrew spell carries its own catalogue-shaped data.
+  spell ??= action.homebrewSpell;
   if (!spell || castLevel <= spell.level) return action;
 
   const activeKey = action.activatesKey ?? action.standingEffect?.activeKey;

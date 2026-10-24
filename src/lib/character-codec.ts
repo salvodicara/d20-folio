@@ -503,6 +503,7 @@ const CUSTOM_SPELL_KEYS = [
   "notes",
   "tags",
   "spellAbilityOverride",
+  "mechanics",
   "instanceId",
 ] as const;
 
@@ -557,6 +558,11 @@ function parseCustomSpell(obj: Record<string, unknown>, path: string): CustomSpe
       isAbilityCode,
       `${path}.spellAbilityOverride`
     );
+  // Structured mechanics stay as written (object shape enforced); the engine
+  // conforms each field at its one seam (`homebrewSpellData`), so a newer client's
+  // field is preserved here and inert on this one.
+  if (obj.mechanics !== undefined)
+    spell.mechanics = opt(obj.mechanics, isRecord, `${path}.mechanics`);
   if (!isItemInstanceId(obj.instanceId)) fail("malformed-entry", `${path}.instanceId`);
   const unknown = leftover(obj, CUSTOM_SPELL_KEYS);
   return { ...spell, instanceId: obj.instanceId, ...(unknown ? { unknown } : {}) };

@@ -45,7 +45,10 @@ export function timePassEnds(doc: CharacterDoc, minutes: number): ReadonlySet<st
 /** Whether `minutes` passing ends the held Concentration. */
 export function timePassEndsConcentration(doc: CharacterDoc, minutes: number): boolean {
   const result = lapse(doc, minutes);
-  return result !== null && endsConcentration(doc.session.concentration, result.ended);
+  return (
+    result !== null &&
+    endsConcentration(doc.session.concentration, result.ended, doc.character.spells)
+  );
 }
 
 /** The character after `minutes` pass, or null when nothing on it runs out or counts. */
@@ -78,7 +81,7 @@ function passTimers(
     ...doc,
     session: { ...session, ...endStatuses(session, ended) },
   };
-  return endsConcentration(doc.session.concentration, ended)
+  return endsConcentration(doc.session.concentration, ended, doc.character.spells)
     ? changeConcentration(next, "").doc
     : next;
 }

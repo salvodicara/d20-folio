@@ -55,7 +55,9 @@ import type {
   ActionData,
   CharacterData,
   CharacterDoc,
+  CustomSpell,
   SrdEquipmentRef,
+  SrdSpellRef,
   TrackerData,
 } from "@/types/character";
 import type { ProficiencyToken } from "@/types/ids";
@@ -67,6 +69,7 @@ import type {
   TrackerSpec,
   SrdClassFeatureData,
   SrdFeatData,
+  SrdSpellData,
   AbilityCode,
   ConditionId,
   CreatureType,
@@ -128,6 +131,8 @@ import {
   raceTraitSessionId,
 } from "@/lib/resolve-grant-sources";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
+import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
+import { customConcentrationValue } from "@/lib/concentration";
 import {
   effectiveMaxHp,
   bloodiedFromHp,
@@ -738,6 +743,13 @@ export interface ResolvedAction {
   /** Exact stored index for a custom spell. Its action id is index-based too, so
    * duplicate homebrew names remain independently castable. */
   customSpellIndex?: number;
+  /**
+   * A structured homebrew spell as catalogue spell data (`homebrewSpellData`): what
+   * the cast seams read where a catalogue cast reads `getSpellById(spellId)` (the
+   * cast-level scaling, the ritual check). Set only on a homebrew spell that
+   * declares mechanics; its Concentration keys on `customSpellInstanceId`.
+   */
+  homebrewSpell?: SrdSpellData;
   /** A custom spell's stable `instanceId` (its Concentration and any per-spell state
    * key on it, never on the name). */
   customSpellInstanceId?: string;
@@ -6286,6 +6298,21 @@ function resolveSpellActions(
 
     // ── Custom spell path ────────────────────────────────────────────────────
     if ("custom" in spellRef) {
+      // A homebrew spell with structured mechanics is catalogue-shaped spell data
+      // and resolves through the SAME cast below; only its words are the player's.
+      const homebrew = homebrewSpellData(spellRef);
+      if (homebrew) {
+        castSpell(homebrew, spellRef, {
+          actionId: homebrew.id,
+          name: customText(spellRef.name),
+          description: customText(spellRef.description),
+          ...(spellRef.range ? { range: customText(spellRef.range) } : {}),
+          duration: customText(spellRef.duration),
+          concentrationRef: customConcentrationValue(spellRef.name),
+          fields: { customSpellIndex: spellIndexInBook, homebrewSpell: homebrew },
+        });
+        continue;
+      }
       const customSpell = spellRef;
       // Unprepared homebrew spell on a prepared caster → not castable in combat.
       if (
@@ -6353,6 +6380,33 @@ function resolveSpellActions(
     }
 
     if (!spell) continue;
+    castSpell(spell, spellRef, {
+      actionId: `spell-${spell.id}`,
+      name: srdText("spell", spell.id, "name"),
+      description: srdText("spell", spell.id, "description"),
+      ...(srdEn("spell", spell.id, "range")
+        ? { range: srdText("spell", spell.id, "range") }
+        : {}),
+      duration: srdText("spell", spell.id, "duration"),
+      concentrationRef: spell.id,
+      fields: { spellId: spell.id },
+    });
+  }
+
+  return actions;
+
+  /**
+   * One spell's cast row (and its recurring row): a catalogue spell, or a homebrew
+   * spell's catalogue-shaped data. `identity` carries what differs — the words
+   * (catalogue strings or the player's own), the action key and the Concentration
+   * ref; every mechanic is read off the same spell data.
+   */
+  function castSpell(
+    spell: SrdSpellData,
+    spellRef: SrdSpellRef | CustomSpell,
+    identity: CastSpellIdentity
+  ): void {
+    const srdRef = "custom" in spellRef ? undefined : spellRef;
 
     // Unprepared level-1+ spell on a prepared caster → not castable in combat.
     // Cantrips, always-prepared grants, Spell Mastery / Signature picks, and
@@ -6363,13 +6417,13 @@ function resolveSpellActions(
         level: spell.level,
         preparedCaster,
         prepared: spellRef.prepared,
-        alwaysPrepared: spellRef.alwaysPrepared,
-        wizardSpellMastery: spellRef.wizardSpellMastery,
-        wizardSignatureSpell: spellRef.wizardSignatureSpell,
-        hasFreeCast: spellRef.freeCastSource != null,
+        alwaysPrepared: srdRef?.alwaysPrepared,
+        wizardSpellMastery: srdRef?.wizardSpellMastery,
+        wizardSignatureSpell: srdRef?.wizardSignatureSpell,
+        hasFreeCast: srdRef?.freeCastSource != null,
       })
     ) {
-      continue;
+      return;
     }
 
     // The spell's facts (cost, targets, check, effects, duration) are read off
@@ -6380,7 +6434,7 @@ function resolveSpellActions(
       cost.economy === "reaction" || cost.economy === "bonus" || cost.economy === "action"
         ? cost.economy
         : "extended";
-    if (ctx.scope === "combat" && castTiming === "extended") continue;
+    if (ctx.scope === "combat" && castTiming === "extended") return;
 
     // Per-spell casting ability (MULTICLASS RAW + feat/species pins). A
     // Cleric / Wizard's Guiding Bolt uses WIS, their Fireball INT — derived from
@@ -6392,7 +6446,7 @@ function resolveSpellActions(
     const spellCastAbility =
       resolveSpellAbility(spellRef, charData, spell.classes) ?? castAbility;
     const spellOwningClassId =
-      spellRef.spellAbilityOverride != null || spellRef.speciesSpellAbility
+      spellRef.spellAbilityOverride != null || srdRef?.speciesSpellAbility
         ? castClassId
         : resolveSpellOwningClassId(spell.classes, charData, castClassId);
     // Recompute when the ability OR the owning class diverges from the primary
@@ -6449,8 +6503,8 @@ function resolveSpellActions(
 
     // Range (always useful for positioning) — a spell-catalogue ref. The EN
     // presence is a FACT gate (a blank range emits nothing) via `srdEn`.
-    if (srdEn("spell", spell.id, "range")) {
-      summary.range = srdText("spell", spell.id, "range");
+    if (identity.range) {
+      summary.range = identity.range;
       // Cantrip range bonus (`cantrip-range-bonus` — Eldritch Spear): annotate
       // the printed range with the level-scaled increase. AX exposure audit —
       // previously aggregated but never consumed.
@@ -6491,7 +6545,7 @@ function resolveSpellActions(
             dice: resolved.extraDamage.dice,
             damageType: resolved.extraDamage.damageType,
             oncePerTurn: false,
-            source: srdText("spell", spell.id, "name"),
+            source: identity.name,
           },
         ];
       }
@@ -6613,7 +6667,7 @@ function resolveSpellActions(
       // pins the whole formula, so the rider is skipped to avoid double-counting.
       // No RNG — we only annotate the formula the player rolls externally.
       const damageOverride =
-        typeof spellRef.overrides?.damage === "string" ? spellRef.overrides.damage : null;
+        typeof srdRef?.overrides?.damage === "string" ? srdRef.overrides.damage : null;
       if (damageOverride != null) {
         summary.damage = damageOverride;
       } else if (summary.damage) {
@@ -6657,7 +6711,7 @@ function resolveSpellActions(
           damageType: againstType,
           oncePerTurn: false,
           targetCreatureTypes: against.vsCreatureTypes,
-          source: srdText("spell", spell.id, "name"),
+          source: identity.name,
         },
       ];
     }
@@ -6715,7 +6769,7 @@ function resolveSpellActions(
     // prose); the displayed duration is carried as bilingual DATA and localized in
     // the view (R6 §3.3).
     if (!activity.instantaneous) {
-      summary.duration = srdText("spell", spell.id, "duration");
+      summary.duration = identity.duration;
     }
 
     // Components (important for Silence, restrained, etc.)
@@ -6896,20 +6950,20 @@ function resolveSpellActions(
     }
 
     const castAction: RawResolvedAction = {
-      id: `spell-${spell.id}`,
-      name: srdText("spell", spell.id, "name"),
+      id: identity.actionId,
+      name: identity.name,
       type: actionType,
       source: "spell",
       castTiming,
       spellLevel: spell.level,
-      spellId: spell.id,
+      ...identity.fields,
       concentration: spell.concentration,
       summary,
       costsSlot: spell.level > 0,
       slotLevel: spell.level > 0 ? spell.level : undefined,
-      pinned: pinnedSet.has(`spell-${spell.id}`),
+      pinned: pinnedSet.has(identity.actionId),
       defaultPinned: false,
-      description: srdText("spell", spell.id, "description"),
+      description: identity.description,
       // Casting establishes the spell's while-active state (Shield of Faith's AC).
       ...(spellActivatesKey ? { activatesKey: spellActivatesKey } : {}),
       ...(spellActiveTurnBoundary ? { activeTurnBoundary: spellActiveTurnBoundary } : {}),
@@ -6937,12 +6991,13 @@ function resolveSpellActions(
       (key) => key !== undefined && activeFeatureKeys.has(key)
     );
     const persistentSpellActive =
-      session.concentration === spell.id || recurringActiveKey !== undefined;
+      session.concentration === identity.concentrationRef ||
+      recurringActiveKey !== undefined;
     const follow = activity.followUp;
     if ((activity.recurrence || follow) && persistentSpellActive) {
       const castLevel = Math.max(
         spell.level,
-        session.concentration === spell.id
+        session.concentration === identity.concentrationRef
           ? (session.concentrationCastLevel ?? spell.level)
           : recurringActiveKey
             ? (session.activeSpellCastLevels?.[recurringActiveKey] ?? spell.level)
@@ -7041,7 +7096,7 @@ function resolveSpellActions(
       }
       actions.push({
         ...castAction,
-        id: `spell-${spell.id}-recurring`,
+        id: `${identity.actionId}-recurring`,
         type,
         // The rules action the active spell lets you take (Expeditious Retreat's
         // bonus-action Dash), so the turn economy counts it as that action.
@@ -7065,8 +7120,21 @@ function resolveSpellActions(
       });
     }
   }
+}
 
-  return actions;
+/** What a spell's cast row takes from its source rather than its mechanics. */
+interface CastSpellIdentity {
+  /** The action key (pins, follow-ups): `spell-<id>` or the homebrew spell's id. */
+  actionId: string;
+  name: LocText;
+  description: LocText;
+  /** The printed range; absent when the spell prints none. */
+  range?: LocText;
+  duration: LocText;
+  /** The `session.concentration` value this spell holds. */
+  concentrationRef: string;
+  /** The source's own action fields (catalogue id, or homebrew index + data). */
+  fields: Pick<RawResolvedAction, "spellId" | "customSpellIndex" | "homebrewSpell">;
 }
 
 /**
@@ -8749,9 +8817,14 @@ function heldConcentrationTimer(
   activeTimed: ReadonlyArray<ActiveTimedEffect> = resolveActiveTimedEffects(character)
 ): ActiveTimedEffect[] {
   const { concentration, concentrationCastLevel } = character.session;
-  const maxRounds = concentrationBudgetRounds(concentration, concentrationCastLevel);
+  const sheetSpells = character.character.spells;
+  const maxRounds = concentrationBudgetRounds(
+    concentration,
+    concentrationCastLevel,
+    sheetSpells
+  );
   const heldKeys = new Set(
-    (spellIndex.get(concentration)?.grants ?? []).flatMap((grant) =>
+    (concentrationSpellData(concentration, sheetSpells)?.grants ?? []).flatMap((grant) =>
       grant.type === "while-active" ? [grant.activeKey] : []
     )
   );
