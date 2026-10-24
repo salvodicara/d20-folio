@@ -5,6 +5,8 @@
  * enters the rolled total. Italian sheets measure in metres (3 m per 10 ft, the
  * same scale as `localeDistance`).
  */
+import type { AggregatedGrants } from "@/lib/grants";
+import { ruleValue } from "@/lib/rules";
 import type { DamageType } from "@/types/damage";
 
 export const FALL_DAMAGE_TYPE: DamageType = "bludgeoning";
@@ -12,10 +14,28 @@ const MAX_FALL_DICE = 20;
 const FEET_PER_DIE = 10;
 const METRES_PER_DIE = 3;
 
-/** The number of d6 a fall of `distance` (in feet or metres) deals. */
-export function fallDamageDice(distance: number, unit: "ft" | "m"): number {
+/**
+ * The feet per round a fall is slowed to while a `slowed-fall` grant is lit
+ * (Feather Fall: 60), or null when nothing slows it. A slowed fall lands without
+ * damage.
+ */
+export function slowedFallFtPerRound(
+  aggregate: Pick<AggregatedGrants, "values">
+): number | null {
+  return ruleValue(aggregate.values, "fall:slowed");
+}
+
+/**
+ * The number of d6 a fall of `distance` (in feet or metres) deals; none when the
+ * fall is slowed (`slowedFallFtPerRound` is not null).
+ */
+export function fallDamageDice(
+  distance: number,
+  unit: "ft" | "m",
+  slowed = false
+): number {
   const perDie = unit === "ft" ? FEET_PER_DIE : METRES_PER_DIE;
-  if (!Number.isFinite(distance) || distance <= 0) return 0;
+  if (slowed || !Number.isFinite(distance) || distance <= 0) return 0;
   return Math.min(MAX_FALL_DICE, Math.floor(distance / perDie + 1e-9));
 }
 

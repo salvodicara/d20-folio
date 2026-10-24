@@ -2566,6 +2566,8 @@ export function evaluateGrants(
       case "truesight":
       case "see-invisible":
       case "x-ray":
+      case "detection":
+      case "slowed-fall":
       case "air-and-water-breathing":
       case "carry-as-larger-size":
         rules.push(...(compileGrant(g) ?? []));

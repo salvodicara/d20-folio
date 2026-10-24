@@ -6730,6 +6730,11 @@ function resolveSpellActions(
         ...castAction,
         id: `spell-${spell.id}-recurring`,
         type,
+        // The rules action the active spell lets you take (Expeditious Retreat's
+        // bonus-action Dash), so the turn economy counts it as that action.
+        ...(follow?.cost.economyCategory
+          ? { economyCategory: follow.cost.economyCategory }
+          : {}),
         concentration: false,
         costsSlot: false,
         slotLevel: undefined,

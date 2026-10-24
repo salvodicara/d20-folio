@@ -68,7 +68,12 @@ import { ALIGNMENT_IDS, alignmentIdByLabel } from "@/lib/lore-utils";
 import { castingTimeI18nKey } from "@/lib/utils";
 import { spells } from "@/data/spells";
 import { BASE_ACTIONS } from "@/lib/smart-tracker";
-import { SENSE_KINDS, SPEED_KINDS, ADVANTAGE_MODES } from "@/lib/views/sheet-view";
+import {
+  ADVANTAGE_MODES,
+  DETECTION_TARGETS,
+  SENSE_KINDS,
+  SPEED_KINDS,
+} from "@/lib/views/sheet-view";
 import { ATTACK_CLAUSE_SCOPES, AURA_AFFECTS } from "@/lib/grants";
 import { SITUATIONAL_ATTACK_SCOPES } from "@/lib/situational-states";
 import { MANEUVER_SLOTS } from "@/data/maneuvers";
@@ -216,6 +221,11 @@ const FAMILIES: readonly Family[] = [
     label: "character.sense_${kind}",
     source: "SENSE_KINDS (@/lib/views/sheet-view)",
     keys: () => SENSE_KINDS.map((k) => `character.sense_${k}`),
+  },
+  {
+    label: "character.detect_${what}",
+    source: "DETECTION_TARGETS (@/lib/views/sheet-view)",
+    keys: () => DETECTION_TARGETS.map((what) => `character.detect_${what}`),
   },
   {
     label: "character.speed_${kind}",

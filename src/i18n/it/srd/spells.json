@@ -3239,20 +3239,11 @@
   "feather-fall.grants.0": {
     "label": "Caduta Morbida"
   },
-  "feather-fall.grants.0.grants.0": {
-    "description": "Cadi di 18 metri per round e non subisci danni da caduta; l'incantesimo termina per te quando atterri"
-  },
   "expeditious-retreat.grants.0": {
     "label": "Ritirata Rapida"
   },
-  "expeditious-retreat.grants.0.grants.0": {
-    "description": "Puoi effettuare l'azione Scatto come azione bonus"
-  },
   "see-invisibility.grants.0": {
     "label": "Vedere Invisibilità"
-  },
-  "see-invisibility.grants.0.grants.0": {
-    "description": "Vedi creature e oggetti invisibili come se fossero visibili e puoi vedere nel Piano Etereo"
   },
   "comprehend-languages.grants.0": {
     "label": "Comprensione dei Linguaggi"
@@ -3275,20 +3266,11 @@
   "detect-magic.grants.0": {
     "label": "Individuazione del Magico"
   },
-  "detect-magic.grants.0.grants.0": {
-    "description": "Percepisci gli effetti magici entro 9 metri; un'azione di Magia ne mostra l'aura e la scuola dell'incantesimo"
-  },
   "detect-evil-and-good.grants.0": {
     "label": "Individuazione del Bene e del Male"
   },
-  "detect-evil-and-good.grants.0.grants.0": {
-    "description": "Percepisci aberrazioni, celestiali, elementali, folletti, immondi e non morti entro 9 metri, e un eventuale Santificare"
-  },
   "detect-poison-and-disease.grants.0": {
     "label": "Individuazione delle Malattie e dei Veleni"
-  },
-  "detect-poison-and-disease.grants.0.grants.0": {
-    "description": "Percepisci veleni, creature velenose e contagi magici entro 9 metri, e di che tipo sono"
   },
   "nondetection.grants.0": {
     "label": "Anti-Individuazione"

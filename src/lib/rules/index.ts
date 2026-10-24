@@ -25,6 +25,7 @@
 
 import type { AbilityCode } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
+import type { DetectionTarget } from "./detection-targets";
 
 /** The sense kinds, in display order (the i18n coverage guard reads this list). */
 export const SENSE_KINDS = [
@@ -37,11 +38,19 @@ export const SENSE_KINDS = [
 ] as const;
 export type SenseKind = (typeof SENSE_KINDS)[number];
 
+export { DETECTION_TARGETS, type DetectionTarget } from "./detection-targets";
+
 export type MoveMode = "fly" | "swim" | "climb";
 
 /** What a rule modifies. Grows one family at a time. */
 export type RuleTarget =
   | `sense:${SenseKind}`
+  /** The sense works at any distance the character can see (See Invisibility). */
+  | `sense:${SenseKind}:unlimited`
+  /** The range, in feet, within which the character senses this (Detect Magic). */
+  | `detect:${DetectionTarget}`
+  /** A fall slowed to this many feet per round, landing without damage. */
+  | "fall:slowed"
   | "trait:air-and-water-breathing"
   | "trait:carry-as-larger-size"
   | "speed:walk"
@@ -202,12 +211,19 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [
         { op: "add", target: "sense:darkvision", value: grant.amount, stack: "bonus" },
       ];
+    case "see-invisible":
+      return grant.range === undefined
+        ? [{ op: "flag", target: "sense:see-invisible:unlimited" }]
+        : [{ op: "max", target: "sense:see-invisible", value: grant.range }];
     case "blindsight":
     case "tremorsense":
     case "truesight":
-    case "see-invisible":
     case "x-ray":
       return [{ op: "max", target: `sense:${grant.type}`, value: grant.range }];
+    case "detection":
+      return [{ op: "max", target: `detect:${grant.what}`, value: grant.range }];
+    case "slowed-fall":
+      return [{ op: "min", target: "fall:slowed", value: grant.feetPerRound }];
     case "air-and-water-breathing":
       return [{ op: "flag", target: "trait:air-and-water-breathing" }];
     case "carry-as-larger-size":

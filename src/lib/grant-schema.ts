@@ -26,6 +26,7 @@ import { ALL_REACTION_TRIGGERS } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
 import { LOCALES, type Locale } from "@/lib/locale";
+import { DETECTION_TARGETS } from "@/lib/rules/detection-targets";
 
 const RESOURCE_SPEC_SCHEMA = customSchema<"resource-spec", ResourceSpec>("resource-spec");
 
@@ -130,9 +131,21 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     range: numberSchema,
     type: literalSchema("truesight"),
   }),
-  "see-invisible": objectSchema({
+  /** See Invisible creatures and objects within `range` feet; no `range` means no
+   * distance limit, only line of sight (See Invisibility). */
+  "see-invisible": objectSchema(
+    {
+      type: literalSchema("see-invisible"),
+    },
+    {
+      range: numberSchema,
+    }
+  ),
+  /** Sense the presence of `what` within `range` feet (Detect Magic: magic, 30 ft). */
+  detection: objectSchema({
     range: numberSchema,
-    type: literalSchema("see-invisible"),
+    type: literalSchema("detection"),
+    what: unionSchema(DETECTION_TARGETS.map((id) => literalSchema(id))),
   }),
   /** X-ray vision: solid objects within this range look transparent (Ring of X-ray Vision). */
   "x-ray": objectSchema({
@@ -2377,6 +2390,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     amount: numberSchema,
     target: literalSchema("weapon-attack-and-damage"),
     type: literalSchema("item-bound-bonus"),
+  }),
+  /**
+   * A falling creature descends at most `feetPerRound` feet per round and takes no
+   * damage from the fall when it lands (Feather Fall: 60 feet per round).
+   */
+  "slowed-fall": objectSchema({
+    feetPerRound: numberSchema,
+    type: literalSchema("slowed-fall"),
   }),
   /**
    * Incoming damage of these types is reduced by a rolled die (Resistance:

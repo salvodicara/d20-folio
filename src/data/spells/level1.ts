@@ -246,7 +246,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         type: "while-active",
         activeKey: "spell-detect-magic",
         duration: timedSpellDuration(10),
-        grants: [{ type: "defense-note" }],
+        grants: [{ type: "detection", what: "magic", range: 30 }],
       },
     ],
     source: "SRD",
@@ -381,12 +381,16 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    // 2024: "until the spell ends, you can take that action [Dash] again as a
+    // Bonus Action". The active spell grants the bonus-action Dash row (the
+    // Cunning Action shape); the cast's own Dash stays the table's.
+    followUp: { type: "bonus", economyCategory: "dash" },
     grants: [
       {
         type: "while-active",
         activeKey: "spell-expeditious-retreat",
         duration: timedSpellDuration(10),
-        grants: [{ type: "defense-note" }],
+        grants: [],
       },
     ],
     source: "SRD",
@@ -462,7 +466,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         activeKey: "spell-feather-fall",
         duration: timedSpellDuration(1),
         recipient: "selected",
-        grants: [{ type: "defense-note" }],
+        grants: [{ type: "slowed-fall", feetPerRound: 60 }],
       },
     ],
     source: "SRD",
@@ -1143,7 +1147,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         type: "while-active",
         activeKey: "spell-detect-evil-and-good",
         duration: timedSpellDuration(10),
-        grants: [{ type: "defense-note" }],
+        grants: [{ type: "detection", what: "evil-and-good", range: 30 }],
       },
     ],
     source: "SRD",
@@ -1167,7 +1171,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         type: "while-active",
         activeKey: "spell-detect-poison-and-disease",
         duration: timedSpellDuration(10),
-        grants: [{ type: "defense-note" }],
+        grants: [{ type: "detection", what: "poison-and-disease", range: 30 }],
       },
     ],
     source: "SRD",

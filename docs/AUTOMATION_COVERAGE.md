@@ -13,7 +13,10 @@
 > skill rows (`saves-checks-view`, `dieAdjustments`) carry `roll-die-adjustment` dice again
 > (Bless, Guidance on its skill), and the new `damage-die-reduction` (Resistance: −1d4 of one type,
 > once per turn) has its core seam in `deriveDamageDieReductions`; neither is rendered until the
-> new sheet reads them. The on-cast triggers in
+> new sheet reads them. Likewise the new `detection` (Detect Magic, Detect Evil and Good, Detect
+> Poison and Disease: 30 ft, in `deriveSensesAndSpeeds().detections`) and `slowed-fall` (Feather
+> Fall: `slowedFallFtPerRound`, and `fallDamageDice` returns 0 for a slowed fall) wait for the new
+> sheet and the HP fall preset to read them (2026-10-24). The on-cast triggers in
 > `src/lib/on-cast-effects.ts` (Arcane Ward refill, Expert Divination slot regain) are wired
 > again (2026-10-12): `src/lib/play/on-cast.ts` folds them into every slot-spending cast and
 > reaction cast, logged and undone with the cast. The Wild Magic Surge reminder is still unwired.
