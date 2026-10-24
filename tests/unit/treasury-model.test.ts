@@ -13,6 +13,8 @@ import {
   emptyPurse,
   lootMoves,
   ownerKey,
+  purseValueCp,
+  reverseMove,
   type Holdings,
   type TreasuryMove,
 } from "@/lib/treasury";
@@ -58,6 +60,67 @@ describe("found loot", () => {
   it("a split with no leftover writes no chest move", () => {
     const moves = lootMoves({ gp: 30 }, { split: [ana, bo] }, "m1", meta);
     expect(moves.map((m) => m.to)).toEqual([ana, bo]);
+  });
+});
+
+describe("a split that makes change (optional)", () => {
+  it("breaks what doesn't divide into smaller coins, so everyone gets the same", () => {
+    const moves = lootMoves(
+      { gp: 31 },
+      { split: [ana, bo], makeChange: true },
+      "m1",
+      meta
+    );
+    expect(moves.map((m) => m.to)).toEqual([ana, bo]);
+    expect(moves[0]?.coins).toMatchObject({ gp: 15, sp: 5 });
+    expect(moves[1]?.coins).toMatchObject({ gp: 15, sp: 5 });
+  });
+
+  it("only the last copper that can't divide goes to the chest; no value is lost", () => {
+    const found = { gp: 1 };
+    const moves = lootMoves(
+      found,
+      { split: [ana, bo, chest], makeChange: true },
+      "m1",
+      meta
+    );
+    const shares = moves.map((m) => m.coins);
+    expect(shares[0]).toMatchObject({ sp: 3, cp: 3 });
+    expect(shares[1]).toMatchObject({ sp: 3, cp: 3 });
+    expect(shares[2]).toMatchObject({ sp: 3, cp: 4 }); // the chest's share plus the leftover
+    const total = shares.reduce((sum, coins) => sum + purseValueCp(coins), 0);
+    expect(total).toBe(purseValueCp({ ...emptyPurse(), ...found }));
+  });
+});
+
+describe("every move can be undone", () => {
+  it("its reverse puts the coins back where they were", () => {
+    const start = holdings([[ana, { gp: 15 }]]);
+    const move: TreasuryMove = {
+      id: "m7",
+      from: ana,
+      to: bo,
+      coins: { ...emptyPurse(), gp: 10 },
+      ...meta,
+    };
+    const moved = applyMove(start, move);
+    if (!moved) throw new Error("no move");
+    const undo = reverseMove(move, "m8", { by: "u2", at: 2000, note: "" });
+    expect(undo).toMatchObject({ id: "m8", from: bo, to: ana, undoes: "m7" });
+    const back = applyMove(moved, undo);
+    expect(back?.[ownerKey(ana)]?.gp).toBe(15);
+    expect(back?.[ownerKey(bo)]?.gp).toBe(0);
+  });
+
+  it("found loot can be undone too, and the undo is refused if the coins are gone", () => {
+    const [found] = lootMoves({ gp: 5 }, { to: bo }, "m9", meta);
+    if (!found) throw new Error("no move");
+    const undo = reverseMove(found, "m10", meta);
+    const gained = applyMove({}, found);
+    if (!gained) throw new Error("no move");
+    expect(applyMove(gained, undo)?.[ownerKey(bo)]?.gp).toBe(0);
+    // Bo spent 3 of them meanwhile: undoing the 5 can't happen.
+    expect(applyMove(holdings([[bo, { gp: 2 }]]), undo)).toBeNull();
   });
 });
 

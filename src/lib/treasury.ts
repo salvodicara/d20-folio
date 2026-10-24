@@ -3,11 +3,13 @@
  * docs/architecture/treasury.md). Every coin has exactly one owner, a character or
  * the party chest. Coins only change hands through a {@link TreasuryMove}, a logged
  * record from one owner (or "found", from outside the party) to another (or "spent",
- * out of it). There is no "set the total": a correction is a move back. The
- * campaign's treasury is a view, the sum of what its owners hold.
+ * out of it). There is no "set the total", and every move can be undone by its
+ * reverse ({@link reverseMove}). The campaign's treasury is a view, the sum of what
+ * its owners hold.
  *
- * Pure: no store, no persistence. Coins are whole, never negative, and never changed
- * into other coins here (a split divides each coin on its own).
+ * Pure: no store, no persistence. Coins are whole and never negative. A split keeps
+ * each coin whole unless the table asks it to make change (owner, 2026-10-24: the
+ * common practice, remainder to the chest, with exact change as an option).
  */
 import type { CurrencyUnit } from "@/data/types";
 
@@ -17,11 +19,16 @@ export type TreasuryOwner =
   | { kind: "character"; characterId: string }
   | { kind: "chest" };
 
+/** Outside the party: where found coins come from and spent ones go. */
+export type TreasuryOutside = { kind: "found" } | { kind: "spent" };
+
 export interface TreasuryMove {
   id: string;
-  from: TreasuryOwner | { kind: "found" };
-  to: TreasuryOwner | { kind: "spent" };
+  from: TreasuryOwner | TreasuryOutside;
+  to: TreasuryOwner | TreasuryOutside;
   coins: Purse;
+  /** The move this one undoes (its exact reverse). */
+  undoes?: string;
   /** The member who made the move. */
   by: string;
   /** When (ms since epoch). */
@@ -49,6 +56,34 @@ function purseOf(coins: Partial<Purse>): Purse {
 
 const isEmpty = (purse: Purse): boolean => COINS.every((coin) => purse[coin] === 0);
 
+const isOutside = (end: TreasuryMove["from"]): end is TreasuryOutside =>
+  end.kind === "found" || end.kind === "spent";
+
+/** What each coin is worth in copper (SRD 5.2.1 "Coins"). */
+const COPPER: Record<CurrencyUnit, number> = { pp: 1000, gp: 100, ep: 50, sp: 10, cp: 1 };
+
+/** A purse's worth in copper pieces. */
+export function purseValueCp(coins: Partial<Purse>): number {
+  const purse = purseOf(coins);
+  return COINS.reduce((sum, coin) => sum + purse[coin] * COPPER[coin], 0);
+}
+
+/** The undo of `move`: the same coins back the other way, linked to it. */
+export function reverseMove(
+  move: TreasuryMove,
+  id: string,
+  meta: { by: string; at: number; note: string }
+): TreasuryMove {
+  return {
+    id,
+    from: move.to,
+    to: move.from,
+    coins: move.coins,
+    undoes: move.id,
+    ...meta,
+  };
+}
+
 /**
  * The holdings after `move`, or null when it can't happen: nothing to move, a
  * negative or fractional amount, or more than its owner holds.
@@ -59,7 +94,7 @@ export function applyMove(holdings: Holdings, move: TreasuryMove): Holdings | nu
     return null;
   if (isEmpty(coins)) return null;
   const next: Record<string, Purse> = { ...holdings };
-  if (move.from.kind !== "found") {
+  if (!isOutside(move.from)) {
     const key = ownerKey(move.from);
     const from = purseOf(next[key] ?? {});
     if (COINS.some((coin) => from[coin] < coins[coin])) return null;
@@ -67,7 +102,7 @@ export function applyMove(holdings: Holdings, move: TreasuryMove): Holdings | nu
       COINS.map((coin) => [coin, from[coin] - coins[coin]])
     ) as Purse;
   }
-  if (move.to.kind !== "spent") {
+  if (!isOutside(move.to)) {
     const key = ownerKey(move.to);
     const to = purseOf(next[key] ?? {});
     next[key] = Object.fromEntries(
@@ -77,12 +112,27 @@ export function applyMove(holdings: Holdings, move: TreasuryMove): Holdings | nu
   return next;
 }
 
-/** Who found loot goes to: one owner ("to me", "to the chest") or a split. */
-export type LootAssignment = { to: TreasuryOwner } | { split: readonly TreasuryOwner[] };
+/**
+ * Who found loot goes to: one owner ("to me", "to the chest") or a split. A split
+ * keeps each coin whole; `makeChange` breaks what doesn't divide into the next coin
+ * down so the shares come out equal.
+ */
+export type LootAssignment =
+  | { to: TreasuryOwner }
+  | { split: readonly TreasuryOwner[]; makeChange?: boolean };
+
+/** Where a coin that doesn't divide is broken into: the next coin down, and how many. */
+const CHANGE: Partial<Record<CurrencyUnit, { into: CurrencyUnit; count: number }>> = {
+  pp: { into: "gp", count: 10 },
+  gp: { into: "sp", count: 10 },
+  ep: { into: "sp", count: 5 },
+  sp: { into: "cp", count: 10 },
+};
 
 /**
  * The moves that bring found coins into the party. A split divides each coin evenly
- * among the owners named; what doesn't divide goes to the chest, so nothing is lost.
+ * among the owners named (breaking coins into change when asked); what still doesn't
+ * divide goes to the chest, so nothing is lost.
  * One move per owner who receives something, ids `${id}-${n}` for a split.
  */
 export function lootMoves(
@@ -96,12 +146,17 @@ export function lootMoves(
   if ("to" in assignment) return [{ id, from, to: assignment.to, coins, ...meta }];
   const among = assignment.split;
   if (among.length === 0) return [{ id, from, to: { kind: "chest" }, coins, ...meta }];
-  const share = Object.fromEntries(
-    COINS.map((coin) => [coin, Math.floor(coins[coin] / among.length)])
-  ) as Purse;
-  const leftover = Object.fromEntries(
-    COINS.map((coin) => [coin, coins[coin] - share[coin] * among.length])
-  ) as Purse;
+  // Highest coin first, so a coin broken into change is divided with the next one.
+  const pool = { ...coins };
+  const share = emptyPurse();
+  const leftover = emptyPurse();
+  for (const coin of COINS) {
+    share[coin] = Math.floor(pool[coin] / among.length);
+    const rest = pool[coin] - share[coin] * among.length;
+    const change = assignment.makeChange ? CHANGE[coin] : undefined;
+    if (change) pool[change.into] += rest * change.count;
+    else leftover[coin] = rest;
+  }
   const shares: { to: TreasuryOwner; coins: Purse }[] = among.map((to) => ({
     to,
     coins: share,

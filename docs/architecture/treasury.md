@@ -17,10 +17,11 @@ move is logged, and no total is ever overwritten by hand. The campaign is a view
 - **Owner**: `{ kind: "character", characterId }` or `{ kind: "chest" }`.
 - **Move**: `{ id, from, to, coins, by, at, note }`, where `from` is an owner or
   `found` (into the party) and `to` an owner or `spent` (out of it). A move never takes
-  more than its owner holds, never moves a negative or empty amount, and never changes
-  coins into other coins. There is no "set": a correction is a move back.
+  more than its owner holds and never moves a negative or empty amount. There is no
+  "set": a correction is a move back, and every move has an exact reverse.
 - **Loot**: `lootMoves` turns found coins into moves, all to one owner or split. A
-  split divides each coin evenly and gives what doesn't divide to the chest.
+  split divides each coin evenly and gives what doesn't divide to the chest, or makes
+  change first when asked.
 - **View**: `campaignHoldings` is the chest, each member's purse, and their sum.
 - **Items** (next step) follow the same move, carrying an item instance id instead of
   coins; the chest gets an item list next to its coins.
@@ -46,8 +47,13 @@ None for coins: today's chest balance is the chest's opening holding and
 `treasuryLog` stays as its history. Any change to stored data (a new log shape, chest
 items) goes through `live-data-migration` with the owner's yes.
 
-## Open for the owner
+## Owner answers (2026-10-24)
 
-- A split's leftover goes to the chest (proposed) or to whoever found it?
-- Should a split break coins into change (1 gp → 10 sp) so it divides exactly, or keep
-  each coin whole as proposed?
+"The most common practice, max flexibility, always undoable":
+
+- A split's leftover goes to the chest, and coins stay whole (the Foundry Item Piles
+  pattern). Making change to split exactly is an option at split time (`makeChange`):
+  what doesn't divide is broken into the next coin down, and only the last copper
+  that can't divide goes to the chest.
+- Every move can be undone: `reverseMove` sends the same coins back and records which
+  move it undoes. It is refused if whoever received them no longer holds them.
