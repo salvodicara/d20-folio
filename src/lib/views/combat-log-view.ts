@@ -19,6 +19,7 @@
 import type { ActionEffect, CombatEvent } from "@/types/combat-log";
 import type { LocText } from "@/lib/loc-text";
 import { resolveLogStyle, type LogStyle } from "@/lib/action-log-style";
+import type { PlayEvent } from "@/lib/session-log";
 
 /**
  * The minimal `t` shape this presenter needs — the i18next translator. Kept as a
@@ -146,6 +147,45 @@ const ATTACK_RESULTS = new Set(["hit", "miss", "critical"]);
 /** A rider from the `weapon-mastery` catalogue (Topple, Vex, …): no resource. */
 function isMasteryRef(rider: LocText): boolean {
   return "srd" in rider && rider.srd.kind === "weapon-mastery";
+}
+
+/**
+ * The same row style for a SESSION line (`PlayEvent`), so the sheet's log panel keeps
+ * one look whether it reads the sheet's own log or the shared session: the glyph
+ * from the event's kind, the colour from the action's economy slot when it has one.
+ * A session action carries no effect, so its glyph is the generic one.
+ */
+export function playEventLogStyle(event: PlayEvent): LogStyle {
+  switch (event.kind) {
+    case "action":
+      return resolveLogStyle("generic", event.slot);
+    case "damage":
+    case "down":
+      return resolveLogStyle("damage");
+    case "heal":
+    case "temp-hp":
+    case "resource-grant":
+      return resolveLogStyle("heal");
+    case "max-hp":
+      return resolveLogStyle(event.reduction > 0 ? "damage" : "heal");
+    case "condition":
+      return resolveLogStyle(event.gained ? "condition-add" : "condition-remove");
+    case "concentration":
+      return resolveLogStyle("spell-cast");
+    case "status":
+      return resolveLogStyle(event.started ? "spell-cast" : "effect-expired");
+    case "stabilized":
+    case "death-save":
+      return resolveLogStyle("death-save");
+    case "rest":
+      return resolveLogStyle("rest");
+    case "round-start":
+      return resolveLogStyle("turn-end");
+    case "encounter-start":
+    case "encounter-end":
+    case "note":
+      return resolveLogStyle("generic");
+  }
 }
 
 /**
