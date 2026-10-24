@@ -1,3 +1,4 @@
+import { FREEDOM_OF_MOVEMENT_GRANTS } from "../freedom-of-movement-effect";
 import type { SrdSpellData } from "../types";
 import { GIANT_INSECT } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
@@ -451,11 +452,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
         activeKey: "spell-freedom-of-movement",
         duration: timedSpellDuration(60),
         recipient: "selected",
-        grants: [
-          { type: "condition-immunity", condition: "paralyzed" },
-          { type: "condition-immunity", condition: "restrained" },
-          { type: "swim-speed", amount: "equal-to-walking" },
-        ],
+        grants: [...FREEDOM_OF_MOVEMENT_GRANTS],
       },
     ],
     source: "SRD",

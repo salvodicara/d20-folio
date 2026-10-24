@@ -88,7 +88,8 @@ describe("equipmentAfterLongRest against the catalogue text", () => {
   it("covers never-recharging items", () => {
     const never = legacy.filter(({ item }) => statedDawnRegain(item.id) === undefined);
     expect(never.map(({ item }) => item.id)).toEqual(
-      expect.arrayContaining(["gem-of-brightness", "scarab-of-protection"])
+      // Gem of Brightness moved to a typed resource (its 50 charges never return).
+      expect.arrayContaining(["scarab-of-protection"])
     );
   });
 

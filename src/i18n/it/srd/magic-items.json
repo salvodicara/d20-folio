@@ -257,6 +257,9 @@
     "description": "Questo mantello ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Mentre indossi il mantello, puoi compiere un'azione Magia per tirarti il cappuccio sulla testa e spendere 1 carica per ottenere la condizione Invisibile per 1 ora. L'effetto termina in anticipo se abbassi il cappuccio (non è richiesta alcuna azione) o smetti di indossare il cappuccio.",
     "name": "Mantello dell'Invisibilità"
   },
+  "cloak-of-invisibility.grants.0": {
+    "label": "Cappuccio alzato (Invisibile)"
+  },
   "cloak-of-protection": {
     "description": "Ottieni un bonus di +1 alla CA e ai tiri salvezza mentre indossi questo mantello.",
     "name": "Mantello della Protezione"
@@ -364,6 +367,9 @@
   "dust-of-disappearance": {
     "description": "Questa polvere somiglia a sabbia fine. Ce n'è abbastanza per un solo uso. Quando compi un'azione Utilizzo per gettare la polvere in aria, tu e ogni creatura e oggetto entro un'Emanazione di 3 metri che si origina da te ottenete la condizione Invisibile per 2d4 minuti. La durata è la stessa per tutti i soggetti, e la polvere viene consumata quando la sua magia ha effetto. Immediatamente dopo che una creatura interessata effettua un tiro per colpire, infligge danni o lancia un incantesimo, la condizione Invisibile termina per quella creatura.",
     "name": "Polvere dell'Invisibilità"
+  },
+  "dust-of-disappearance.grants.0": {
+    "label": "Invisibile (polvere)"
   },
   "dust-of-dryness": {
     "description": "Questa piccola bustina contiene 1d6 + 4 pizzichi di polvere. Con un'azione Utilizzo, puoi cospargere un pizzico della polvere sull'acqua, trasformando fino a un Cubo d'acqua di 4,5 metri in un'unica pallina delle dimensioni di una biglia, che galleggia o riposa vicino al punto in cui è stata cosparsa la polvere. Il peso della pallina è trascurabile. Una creatura può compiere un'azione Utilizzo per schiacciare la pallina contro una superficie dura, facendola frantumare e rilasciare l'acqua che la polvere ha assorbito. Farlo distrugge la pallina e ne termina la magia. Con un'azione Utilizzo, puoi cospargere un pizzico della polvere su un Elementale entro 1,5 metri da te composto per lo più d'acqua (come un Elementale dell'Acqua o uno Spirito dell'Acqua). Una tale creatura esposta a un pizzico della polvere effettua un tiro salvezza su Costituzione con CD 13, subendo 10d6 danni Necrotici se fallisce o la metà di quei danni se riesce.",
@@ -549,6 +555,9 @@
     "description": "Mentre è accesa, questa lanterna cieca brucia per 6 ore con circa mezzo litro d'olio, emanando Luce Intensa entro un raggio di 9 metri e Luce Fioca per altri 9 metri. Le creature e gli oggetti invisibili sono visibili finché si trovano nella Luce Intensa della lanterna. Puoi compiere un'azione Utilizzo per abbassare la copertura, riducendo la luce della lanterna a Luce Fioca entro un raggio di 1,5 metri.",
     "name": "Lanterna della Rivelazione"
   },
+  "lantern-of-revealing.grants.0": {
+    "label": "Lanterna accesa (rivela gli Invisibili)"
+  },
   "luck-blade": {
     "description": "+1 ai tiri per colpire e danni. +1 ai tiri salvezza mentre impugnata. Una volta per alba, ritira un attacco, prova o tiro salvezza. Può contenere 1d4-1 cariche di Desiderio (consumate permanentemente).",
     "name": "Lama della Fortuna"
@@ -695,6 +704,18 @@
     "description": "Quando bevi questa pozione, ottieni l'effetto di “riduzione” dell'incantesimo Ingrandire/Ridurre per 1d4 ore (non è richiesta Concentrazione). Il rosso nel liquido della pozione si contrae continuamente in una minuscola perlina e poi si espande per colorare il liquido limpido attorno a esso. Agitare la bottiglia non interrompe questo processo.",
     "name": "Pozione di Diminuzione",
     "summary": "Effetto Ridurre per 1d4 ore (niente Concentrazione)"
+  },
+  "potion-of-diminution.grants.0": {
+    "label": "Pozione di Diminuzione"
+  },
+  "potion-of-diminution.grants.0.grants.0": {
+    "description": "Prove di Forza (Pozione di Diminuzione)"
+  },
+  "potion-of-diminution.grants.0.grants.1": {
+    "description": "Tiri salvezza di Forza (Pozione di Diminuzione)"
+  },
+  "potion-of-diminution.grants.0.grants.2": {
+    "description": "Pozione di Diminuzione: la taglia diminuisce di una categoria (per esempio da Media a Piccola); gli attacchi con le tue armi o i colpi senz'armi infliggono 1d4 danni in meno se vanno a segno (minimo 1)"
   },
   "potion-of-flying": {
     "description": "Conferisce velocità di volo pari alla tua velocità di camminata per 1 ora. Puoi librarsi. Quando l'effetto termina, cadi se sei ancora in aria.",
@@ -883,8 +904,11 @@
     "name": "Anello della Libertà di Azione"
   },
   "ring-of-invisibility": {
-    "description": "Come Azione, diventi invisibile finché non attacchi, lanci un incantesimo o rimuovi l'anello. Puoi terminare l'effetto come Azione.",
+    "description": "Mentre indossi questo anello, puoi compiere un'azione Magia per ottenere la condizione Invisibile. Rimani Invisibile finché non rimuovi l'anello o finché non compi un'Azione Bonus per tornare visibile.",
     "name": "Anello di Invisibilità"
+  },
+  "ring-of-invisibility.grants.0": {
+    "label": "Invisibile (anello)"
   },
   "ring-of-jumping": {
     "description": "Mentre indossi questo anello, puoi lanciare Salto da esso, ma puoi prendere di mira solo te stesso quando lo fai.",
@@ -961,6 +985,12 @@
   "robe-of-scintillating-colors": {
     "description": "Questa veste ha 3 cariche, e recupera 1d3 cariche spese ogni giorno all'alba. Mentre la indossi, puoi compiere un'azione Magia e spendere 1 carica per far mostrare all'indumento un mutevole disegno di tinte abbaglianti fino alla fine del tuo turno successivo. Durante questo tempo, la veste emana Luce Intensa entro un raggio di 9 metri e Luce Fioca per altri 9 metri, e le creature che possono vederti hanno Svantaggio ai tiri per colpire contro di te. Qualsiasi creatura nella Luce Intensa che può vederti quando il potere della veste viene attivato deve riuscire in un tiro salvezza su Saggezza con CD 15 o ottenere la condizione Stordito finché l'effetto non termina.",
     "name": "Tunica dei Colori Scintillanti"
+  },
+  "robe-of-scintillating-colors.grants.0": {
+    "label": "Tinte abbaglianti"
+  },
+  "robe-of-scintillating-colors.grants.0.grants.0": {
+    "description": "I tiri per colpire contro di te hanno Svantaggio"
   },
   "robe-of-stars": {
     "description": "Questa veste nera o blu scuro è ricamata con piccole stelle bianche o argentate. Ottieni un bonus di +1 ai tiri salvezza mentre la indossi. Sei stelle, situate sulla parte superiore anteriore della veste, sono particolarmente grandi. Mentre la indossi, puoi usare un'azione Magia per rimuovere una delle stelle e spenderla per lanciare la versione di livello 5 di Dardo Incantato. Ogni giorno al tramonto, 1d6 stelle rimosse riappaiono sulla veste. Mentre indossi la veste, puoi usare un'azione Magia per entrare nel Piano Astrale con tutto ciò che indossi e trasporti. Vi rimani finché non usi un'azione Magia per tornare al piano da cui provenivi, riapparendo nell'ultimo spazio che occupavi o, se occupato, nello spazio libero più vicino.",
@@ -1368,6 +1398,9 @@
     "description": "Una fiala di questo olio può ricoprire una creatura di taglia Media o più piccola, insieme all'equipaggiamento che indossa e trasporta (è necessaria una fiala aggiuntiva per ogni categoria di taglia superiore alla Media). Applicare l'olio richiede 10 minuti. La creatura interessata ottiene quindi l'effetto dell'incantesimo Libertà di Movimento per 8 ore. In alternativa, l'olio può essere versato a terra con un'azione Magia: copre un quadrato di 3 metri di lato, riproducendo l'effetto dell'incantesimo Unto in quell'area per 8 ore. Questo unguento nero e appiccicoso è denso e pesante, ma scorre rapidamente quando viene versato.",
     "name": "Olio della Scivolosità",
     "summary": "Ungi una creatura: effetto Libertà di Movimento per 8 ore"
+  },
+  "oil-of-slipperiness.grants.0": {
+    "label": "Olio della Scivolosità"
   },
   "philter-of-love": {
     "description": "La prossima volta che vedi una creatura entro 10 minuti dopo aver bevuto questo filtro, ne rimani ammaliato e hai la condizione Affascinato per 1 ora. Questo liquido rosato ed effervescente contiene una bollicina a forma di cuore molto difficile da notare.",

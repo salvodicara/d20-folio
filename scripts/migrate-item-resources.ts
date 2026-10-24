@@ -165,10 +165,15 @@ export type CatalogueMode = "srd-only" | "composed";
 /** Pinned after the migration corpus was authored. A changed resource catalogue
  * changes migration meaning, so the one-off must be reviewed and re-pinned.
  * Re-pinned 2026-10-13: Gem of Seeing gained typed `charges` (3, 1d3 at dawn), so a
- * legacy Gem counter now migrates into that resource like every other charged item. */
+ * legacy Gem counter now migrates into that resource like every other charged item.
+ * Re-pinned 2026-10-24: 34 public items gained typed resources (dawn uses, dawn
+ * charges, finite supplies). The ones that carried a legacy `charges` counter (fixed
+ * 3/6/7/50-charge items) migrate into the same-capacity resource; rolled supplies
+ * (Bag of Beans, Dust of Dryness, Sovereign Glue, Universal Solvent) had no legacy
+ * counter. The Necklace of Fireballs stays on its legacy counter (rolled capacity). */
 export const EXPECTED_CATALOGUE_FINGERPRINTS: Readonly<Record<CatalogueMode, string>> = {
-  "srd-only": "51ac176dc03cda2c22860b95a94110989af85cdf2c858fd1662e42bf6038cc12",
-  composed: "f8f9b72e00257c0daf93b3f8a680f1983fa342fcd1924576e41f9d7f8ec18760",
+  "srd-only": "6499930d2e21e872b88b73ab95c1e29701ad4940ea7180e72e704dae0b1c22c2",
+  composed: "39e4c5aeeb754926ca3049d8e2f3f916cb9eea21beb3c5b456b3c2c18706fb8d",
 };
 
 export function catalogueFingerprint(

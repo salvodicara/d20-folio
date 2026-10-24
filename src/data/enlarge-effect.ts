@@ -18,3 +18,14 @@ export const ENLARGE_EFFECT_GRANTS: ReadonlyArray<Grant> = [
   },
   { type: "defense-note" },
 ];
+
+/**
+ * The "reduce" effect of Enlarge/Reduce (SRD 5.2.1): Disadvantage on Strength checks
+ * and Strength saving throws, and the size step with its 1d4-less damage as a note.
+ * Shared by the spell's Reduce option and the Potion of Diminution.
+ */
+export const REDUCE_EFFECT_GRANTS: ReadonlyArray<Grant> = [
+  { type: "disadvantage-on", rollType: "check", vs: "str" },
+  { type: "disadvantage-on", rollType: "save", vs: "str" },
+  { type: "defense-note" },
+];

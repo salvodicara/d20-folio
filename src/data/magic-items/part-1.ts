@@ -2,6 +2,7 @@ import { ENLARGE_EFFECT_GRANTS } from "../enlarge-effect";
 import type { SrdMagicItemData } from "../types";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { POTION_STATE } from "./_potion";
+import { DAWN_CHARGES, DAWN_USES, FINITE_SUPPLY } from "./_resource";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
 
 export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
@@ -299,6 +300,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "400 GP",
     properties: ["4d6 lightning", "DC 13 DEX", "1/dawn"],
+    // Once per dawn the thrown javelin becomes the 4d6 lightning line.
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -673,6 +676,16 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "80000 GP",
     properties: ["invisibility at will"],
+    // SRD 5.2.1: a Magic action gives you the Invisible condition until you take a
+    // Bonus Action to become visible (or remove the ring) — the toggle's own off.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "ring-of-invisibility",
+        activation: { action: "action" },
+        grants: [{ type: "state-condition", condition: "invisible" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -682,6 +695,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "1000 GP",
     properties: ["recover spell slot ≤ 3rd", "1/dawn"],
+    // The slot recovery is the player's own edit; the 1/dawn use is counted.
+    resources: [DAWN_USES()],
     source: "SRD",
   },
   {
@@ -762,6 +777,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     price: "4000 GP",
     properties: ["Levitate at will (self)"],
+    grants: [{ type: "at-will-cast-spell", spellId: "levitate" }],
     source: "SRD",
   },
   {
@@ -897,6 +913,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     price: "500 GP",
     properties: ["summon beast", "uses: 3/dawn"],
+    resources: [DAWN_USES(3)],
     source: "SRD",
   },
   {
@@ -1072,6 +1089,25 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    // One use: a Utilize action lights the Invisible condition for 2d4 minutes (the
+    // countdown runs the 8-minute maximum; the table's roll ends it sooner), ending
+    // early on an attack roll, damage dealt or a spell cast. The emptied packet keeps
+    // its row (no disposition), so the lit state outlives the spent dust.
+    resources: [FINITE_SUPPLY("uses", 1)],
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "dust-of-disappearance",
+        activation: { action: "action", resourceCost: { resourceId: "uses" } },
+        duration: {
+          kind: "timed",
+          minutes: 8,
+          maxRounds: 80,
+          endsEarlyOn: ["attack-roll", "deal-damage", "cast-spell"],
+        },
+        grants: [{ type: "state-condition", condition: "invisible" }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1081,6 +1117,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    resources: [FINITE_SUPPLY("uses", { dice: 1, sides: 6, modifier: 4 })],
     source: "SRD",
   },
   {
@@ -1099,6 +1136,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    // Breaking the gem summons its elemental and leaves it nonmagical.
+    resources: [FINITE_SUPPLY("uses", 1, "nonmagical")],
     source: "SRD",
   },
   {
@@ -1187,6 +1226,9 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: false,
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 50"],
+    // The beam spends 1 charge, the flare 5; the light costs none. Emptied, it is a
+    // nonmagical jewel.
+    resources: [FINITE_SUPPLY("charges", 50, "nonmagical")],
     source: "SRD",
   },
   {
@@ -1269,6 +1311,27 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
+    // Each spell has its own 1/dawn use (save DC 13). Telepathy 30 ft stays text.
+    resources: [
+      { ...DAWN_USES(), id: "detect-thoughts" },
+      { ...DAWN_USES(), id: "suggestion" },
+    ],
+    grants: [
+      { type: "always-prepared-spell", spellId: "detect-thoughts" },
+      { type: "always-prepared-spell", spellId: "suggestion" },
+      {
+        type: "free-cast-spell",
+        spellId: "detect-thoughts",
+        resourceCost: { resourceId: "detect-thoughts" },
+        castOverrides: { saveDC: 13 },
+      },
+      {
+        type: "free-cast-spell",
+        spellId: "suggestion",
+        resourceCost: { resourceId: "suggestion" },
+        castOverrides: { saveDC: 13 },
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1287,6 +1350,15 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
+    // While lit, Invisible creatures and objects in its 30-foot Bright Light are
+    // visible: a toggle on the Senses rail.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "lantern-of-revealing",
+        grants: [{ type: "see-invisible", range: 30 }],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -1367,6 +1439,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: false,
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {
@@ -1377,6 +1450,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     type: "wondrous",
     attunement: true,
     properties: ["charges: 3", "recharge: 1d3 / dawn"],
+    resources: [DAWN_CHARGES(3, { dice: 1, sides: 3 })],
     source: "SRD",
   },
   {

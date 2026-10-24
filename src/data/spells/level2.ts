@@ -1,4 +1,4 @@
-import { ENLARGE_EFFECT_GRANTS } from "../enlarge-effect";
+import { ENLARGE_EFFECT_GRANTS, REDUCE_EFFECT_GRANTS } from "../enlarge-effect";
 import type { SrdSpellData } from "../types";
 import { OTHERWORLDLY_STEED } from "./companions";
 import { timedConditionLifetime, timedSpellDuration } from "./duration";
@@ -367,11 +367,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
               },
               {
                 id: "reduce",
-                grants: [
-                  { type: "disadvantage-on", rollType: "check", vs: "str" },
-                  { type: "disadvantage-on", rollType: "save", vs: "str" },
-                  { type: "defense-note" },
-                ],
+                grants: [...REDUCE_EFFECT_GRANTS],
               },
             ],
           },
