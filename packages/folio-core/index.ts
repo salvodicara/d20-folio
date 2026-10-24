@@ -70,3 +70,76 @@ export {
   type SessionEntry,
   type ReportSection,
 } from "@/lib/session-log";
+
+// ── Since 0.24.1 (2026-10-24): the pure core the new app is built on ──────────
+
+/** Every sheet number as its total and the parts it comes from (locale-free). */
+export {
+  sheetNumbers,
+  type Explained,
+  type SheetNumbers,
+} from "@/lib/views/sheet-numbers";
+
+/** Shared combat that starts on the first initiative roll and never blocks: anyone
+ *  passes the turn, a pass goes back, an ended fight reopens. */
+export {
+  canAdvanceTurn,
+  encounterEndReason,
+  endCombat,
+  IDLE_END_MS,
+  passTurn,
+  reopenCombat,
+  rollInitiative,
+  touch,
+  turnBack,
+  type RollInitiativeInput,
+} from "@/features/campaigns/encounter-lifecycle";
+export type {
+  EncounterClock,
+  EncounterEndReason,
+  EncounterEnded,
+  EncounterState,
+} from "@/types/campaign";
+
+/** The treasury: one owner per coin and item, logged moves, every move undoable. */
+export {
+  applyMove,
+  campaignHoldings,
+  COINS,
+  emptyPurse,
+  lootMoves,
+  ownerKey,
+  purseValueCp,
+  reverseMove,
+  type CampaignHoldings,
+  type Holdings,
+  type LootAssignment,
+  type Purse,
+  type TreasuryMove,
+  type TreasuryOutside,
+  type TreasuryOwner,
+} from "@/lib/treasury";
+export {
+  applyItemMove,
+  reverseItemMove,
+  type ItemHoldings,
+  type ItemMove,
+  type TreasuryItem,
+} from "@/lib/treasury-items";
+
+/** Notes written in play: @who, #where and !important read from the text, with
+ *  their time, fight and round; private notes are the author's alone. */
+export {
+  noteLines,
+  parseNote,
+  resolveMentions,
+  type NoteLine,
+  type NoteMarks,
+} from "@/lib/session-log/notes";
+export {
+  authorDiarioNotes,
+  privateNoteDraft,
+  privateNoteLines,
+  type PrivateNote,
+  type PrivateNoteLine,
+} from "@/lib/session-log/private-notes";
