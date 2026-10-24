@@ -33,7 +33,6 @@ import {
   isArmorProficient,
   concentrationSaveDc,
   carryingCapacity,
-  jumpDistance,
   unarmedStrikeSaveDc,
   featureSaveDc,
   effectiveSpellSaveDc,
@@ -1815,13 +1814,6 @@ describe("Batch I — carrying capacity / jump / unarmed-strike DC (derived stat
   it("carrying capacity = STR×15 carry, STR×30 push/drag/lift", () => {
     expect(carryingCapacity(15)).toEqual({ carry: 225, pushDragLift: 450 });
     expect(carryingCapacity(8)).toEqual({ carry: 120, pushDragLift: 240 });
-  });
-
-  it("jump distance: long = STR score, high = 3 + STR mod (min 0)", () => {
-    expect(jumpDistance(16)).toEqual({ long: 16, high: 6 }); // +3 mod → 3+3
-    expect(jumpDistance(10)).toEqual({ long: 10, high: 3 }); // +0 mod → 3+0
-    expect(jumpDistance(6)).toEqual({ long: 6, high: 1 }); // -2 mod → 3-2
-    expect(jumpDistance(1).high).toBe(0); // 3 + (-5) clamps to 0
   });
 
   it("unarmed-strike Grapple/Shove DC = 8 + STR mod + PB", () => {

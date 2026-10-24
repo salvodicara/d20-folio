@@ -8,7 +8,14 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { SRD_MAGIC_ITEMS, getMagicItem } from "@/data/magic-items";
 import magicItemsEn from "@/i18n/en/srd/magic-items.json";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { POTION_TIMER_PREFIX, potionTimerKey } from "@/lib/smart-tracker";
+import spellsEn from "@/i18n/en/srd/spells.json";
+import { ruleFlag } from "@/lib/rules";
+import {
+  POTION_TIMER_PREFIX,
+  effectiveWalkingSpeedFt,
+  potionTimerKey,
+} from "@/lib/smart-tracker";
+import { localizeActions } from "@/lib/views/combat-action-view";
 import { deriveStatuses } from "@/lib/status";
 import { deriveSensesAndSpeeds } from "@/lib/views/sheet-view";
 import { potionTimerVMs } from "@/lib/views/tracker-view";
@@ -175,5 +182,107 @@ describe("the Active Potions rail section", () => {
     const doc = current();
     const vms = potionTimerVMs(deriveStatuses(doc), "en", doc.session.activeFeatures);
     expect(vms.map((p) => p.itemId)).toEqual(["potion-of-invisibility"]);
+  });
+});
+
+describe("Potion of Heroism: 10 Temporary Hit Points when drunk", () => {
+  it("its text says so, once (not each turn)", () => {
+    expect(text("potion-of-heroism")).toMatch(
+      /When you drink this potion, you gain 10 Temporary Hit Points that last for 1 hour/
+    );
+    expect(text("potion-of-heroism")).not.toMatch(/each of your turns/);
+  });
+
+  it("drinking it applies the 10 Temporary Hit Points (one tap, undoable)", () => {
+    const doc = makeCharacterDoc({
+      equipment: [
+        { srdId: "potion-of-heroism", quantity: 1 },
+        { srdId: "potion-of-healing", quantity: 1 },
+      ],
+    });
+    const actions = localizeActions(doc, "en");
+    const heroism = actions.find((a) => a.id === "item-potion-of-heroism");
+    expect(heroism?.type).toBe("bonus");
+    expect(heroism?.useEffects).toEqual([
+      { kind: "temp-hp", amount: 10, sourceId: "potion-of-heroism" },
+    ]);
+    // A healing potion heals by its roll; it grants no Temporary Hit Points.
+    const healing = actions.find((a) => a.id === "item-potion-of-healing");
+    expect(healing?.useEffects ?? []).toEqual([]);
+  });
+});
+
+describe("Potion of Speed: Haste's lethargy when it ends", () => {
+  const hasteText = (spellsEn as unknown as Record<string, { description?: string }>)[
+    "haste"
+  ]?.description;
+
+  beforeEach(() => {
+    useCharacterStore
+      .getState()
+      .setCharacter(
+        makeCharacterDoc({ equipment: [{ srdId: "potion-of-speed", quantity: 1 }] })
+      );
+  });
+
+  const lethargyKey = "potion:potion-of-speed:aftereffect";
+  const blocked = (doc: CharacterDoc) =>
+    ruleFlag(view(doc).aggregate.values, "block:turn-economy");
+
+  it("the potion is Haste, and Haste ends in a turn of lethargy", () => {
+    expect(text("potion-of-speed")).toMatch(/effects of Haste/);
+    expect(hasteText).toMatch(
+      /When the spell ends, the target is Incapacitated and has a Speed of 0 until the end of its next turn/
+    );
+  });
+
+  it("when the minute runs out: no actions and Speed 0 until the end of the next turn", () => {
+    useCharacterStore.getState().consumePotionBuff("potion-of-speed");
+    for (let round = 1; round <= 9; round++) {
+      useCharacterStore.getState().advanceEffectTimers(round);
+    }
+    expect(current().session.activeFeatures).toContain("potion:potion-of-speed");
+    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
+    expect(blocked(current())).toBe(false);
+
+    // The tenth End Turn ends the potion and starts the lethargy.
+    const step = useCharacterStore.getState().advanceEffectTimers(10);
+    const ended = current();
+    expect(ended.session.activeFeatures ?? []).not.toContain("potion:potion-of-speed");
+    expect(ended.session.activeFeatures).toContain(lethargyKey);
+    expect(ended.session.effectBoundaries?.[lethargyKey]).toEqual({
+      round: 11,
+      phase: "turn-end",
+    });
+    expect(blocked(ended)).toBe(true);
+    expect(effectiveWalkingSpeedFt(ended)).toBe(0);
+
+    // Your next turn starts still lethargic; its end clears it.
+    useCharacterStore
+      .getState()
+      .expireEffectBoundaries({ round: 11, phase: "turn-start" });
+    expect(current().session.activeFeatures).toContain(lethargyKey);
+    useCharacterStore.getState().expireEffectBoundaries({ round: 11, phase: "turn-end" });
+    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
+    expect(blocked(current())).toBe(false);
+    expect(effectiveWalkingSpeedFt(current())).toBe(30);
+
+    // Undoing the End Turn that ended the potion takes the lethargy back too.
+    useCharacterStore.getState().setCharacter(ended);
+    step.restore();
+    expect(current().session.activeFeatures).toContain("potion:potion-of-speed");
+    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
+    expect(current().session.effectBoundaries?.[lethargyKey]).toBeUndefined();
+  });
+
+  it("a minute passing out of combat leaves no lethargy turn behind", () => {
+    useCharacterStore.getState().consumePotionBuff("potion-of-speed");
+    for (let round = 0; round < 10; round++) {
+      useCharacterStore.getState().advanceEffectTimers();
+    }
+    expect(current().session.activeFeatures ?? []).not.toContain(
+      "potion:potion-of-speed"
+    );
+    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
   });
 });

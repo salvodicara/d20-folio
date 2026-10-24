@@ -35,7 +35,8 @@
         "up": "{{value}} ÷ {{divisor}}, rounded up.",
         "down": "{{value}} ÷ {{divisor}}, rounded down."
       },
-      "maneuverBestAbility": "A maneuver's DC uses your Strength or Dexterity modifier, whichever is higher."
+      "maneuverBestAbility": "A maneuver's DC uses your Strength or Dexterity modifier, whichever is higher.",
+      "jumpStanding": "With a running start of at least 10 feet. From a standstill, you jump half this distance."
     },
     "speed": {
       "multiplier": "Speed multiplier",

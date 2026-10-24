@@ -55,6 +55,12 @@ export const ATTACK_SITUATION_REFERENCE = notes("attack-situation", [
 ]);
 
 /**
+ * Squeezing into a smaller space (SRD 5.2.1 "Creature Size", "Space"): the one-tap
+ * Squeezing situation (`src/lib/situational-states.ts`) takes its sentences from here.
+ */
+export const SQUEEZING_REFERENCE = notes("squeezing", ["space", "movement", "rolls"]);
+
+/**
  * Light and vision (SRD 5.2.1 rules glossary "Dim Light", "Darkness", "Lightly
  * Obscured", "Heavily Obscured", "Darkvision", "Passive Perception"): the one-tap
  * light chip (`src/lib/light-states.ts`) takes its names and sentences from here.

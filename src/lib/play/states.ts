@@ -4,7 +4,12 @@
  */
 import { getSpellById } from "@/data/spells";
 import type { Grant } from "@/lib/grants";
-import { potionStateGrant, potionTimerKey } from "@/lib/potion-states";
+import {
+  POTION_TIMER_PREFIX,
+  potionAftereffectKey,
+  potionStateGrant,
+  potionTimerKey,
+} from "@/lib/potion-states";
 import {
   potionDurationRounds,
   resolveActiveTimedEffects,
@@ -183,4 +188,36 @@ export function setBundleChoices(
     ...doc.session,
     grantBundleChoices: Object.keys(next).length > 0 ? next : undefined,
   };
+}
+
+/**
+ * Light the after-effect of each potion whose countdown just ran out at the end of
+ * the owner's turn in `round` (Potion of Speed: Haste's lethargy, no actions and a
+ * Speed of 0 until the end of the next turn). Each one ends at its declared turn
+ * edge, counted from that next turn. Null when no expired potion declares one.
+ */
+export function startPotionAftereffects(
+  session: SessionState,
+  expiredKeys: Iterable<string>,
+  round: number
+): SessionState | null {
+  let next: SessionState | null = null;
+  for (const key of expiredKeys) {
+    if (!key.startsWith(POTION_TIMER_PREFIX)) continue;
+    const itemId = key.slice(POTION_TIMER_PREFIX.length);
+    const after = potionStateGrant(itemId)?.afterEffect;
+    if (!after) continue;
+    const base: SessionState = next ?? session;
+    const afterKey = potionAftereffectKey(itemId);
+    const active = base.activeFeatures ?? [];
+    next = {
+      ...base,
+      activeFeatures: active.includes(afterKey) ? active : [...active, afterKey],
+      effectBoundaries: {
+        ...(base.effectBoundaries ?? {}),
+        [afterKey]: { round: round + after.duration.turns, phase: after.duration.phase },
+      },
+    };
+  }
+  return next;
 }

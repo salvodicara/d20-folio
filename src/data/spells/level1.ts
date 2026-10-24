@@ -737,6 +737,17 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // SRD 5.2.1: "You touch a willing creature" + "one additional creature for
     // each spell slot level above 1".
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    // "Once on each of its turns until the spell ends, that creature can jump up
+    // to 30 feet by spending 10 feet of movement."
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-jump",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [{ type: "jump-leap", distanceFt: 30, movementCostFt: 10 }],
+      },
+    ],
     source: "SRD",
   },
   {

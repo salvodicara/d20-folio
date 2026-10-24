@@ -321,6 +321,18 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     maxFt: numberSchema,
     type: literalSchema("speed-cap"),
   }),
+  /** Jump distance from another ability (Second-Story Work: Dexterity). */
+  "jump-ability": objectSchema({
+    ability: literalSchema("DEX"),
+    type: literalSchema("jump-ability"),
+  }),
+  /** Once per turn, jump `distanceFt` for `movementCostFt` of movement (Jump, the
+   *  Boots of Striding and Springing). */
+  "jump-leap": objectSchema({
+    distanceFt: numberSchema,
+    movementCostFt: numberSchema,
+    type: literalSchema("jump-leap"),
+  }),
   "ac-bonus": objectSchema(
     {
       type: literalSchema("ac-bonus"),

@@ -2232,16 +2232,6 @@ export function carryingCapacity(
 }
 
 /**
- * Jump distances (2024 PHB), in feet, with a running start (≥10 ft):
- *  - long jump = your Strength SCORE (feet)
- *  - high jump = 3 + your Strength MODIFIER (feet, min 0)
- * Standing jumps are half these — the UI can note that.
- */
-export function jumpDistance(strScore: number): { long: number; high: number } {
-  return { long: strScore, high: Math.max(0, 3 + abilityModifier(strScore)) };
-}
-
-/**
  * The DC a target rolls against when you use your Unarmed Strike's Grapple or
  * Shove option (2024 PHB): 8 + Strength modifier + Proficiency Bonus.
  */

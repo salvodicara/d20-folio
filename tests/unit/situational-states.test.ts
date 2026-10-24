@@ -18,6 +18,7 @@ vi.mock("@/lib/firebase", () => ({
 
 import {
   ATTACK_SITUATION_REFERENCE,
+  SQUEEZING_REFERENCE,
   UNDERWATER_COMBAT_REFERENCE,
 } from "@/data/combat-variants";
 import { SRD_WEAPONS } from "@/data/weapons";
@@ -158,6 +159,24 @@ describe("the situations follow their SRD sentences", () => {
     const state = must(SITUATIONAL_STATES.find((s) => s.id === "mounted"));
     expect(state.attack).toEqual([]);
     expect(state.notes.map((n) => n.id)).toEqual(["controlled-mount"]);
+  });
+
+  it("squeezing: its rolls line becomes Disadvantage on every attack and DEX save, Advantage against you", () => {
+    const state = must(SITUATIONAL_STATES.find((s) => s.id === "squeezing"));
+    const rolls = must(SQUEEZING_REFERENCE.find((l) => l.id === "rolls"));
+    const movement = must(SQUEEZING_REFERENCE.find((l) => l.id === "movement"));
+    const sentence = summaryEn(rolls);
+    expect(sentence).toMatch(/Disadvantage on attack rolls and Dexterity saving throws/);
+    expect(sentence).toMatch(/attack rolls against you have Advantage/);
+    expect(state.reference).toEqual(SQUEEZING_REFERENCE);
+    expect(state.attack).toEqual([{ mode: "disadvantage", kinds: ["melee", "ranged"] }]);
+    expect(state.grant.grants).toEqual([
+      { type: "disadvantage-on", rollType: "save", vs: "dex-save" },
+      { type: "incoming-attack-advantage" },
+    ]);
+    // "1 extra foot for every foot": the movement meter's Difficult-terrain double.
+    expect(summaryEn(movement)).toMatch(/1 extra foot for every foot/);
+    expect(state.notes).toEqual([movement]);
   });
 });
 

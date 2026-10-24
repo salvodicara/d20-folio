@@ -8,6 +8,7 @@
 import { getMagicItem } from "@/data/magic-items";
 import type { Grant } from "@/lib/grant-schema";
 import type { GrantSource } from "@/lib/grants";
+import { srdText } from "@/lib/loc-text";
 
 /** The `effectTimers` / `activeFeatures` key prefix of a drunk potion. */
 export const POTION_TIMER_PREFIX = "potion:";
@@ -15,6 +16,14 @@ export const POTION_TIMER_PREFIX = "potion:";
 /** The key of a drunk potion's countdown and of the state it lights. */
 export function potionTimerKey(itemId: string): string {
   return `${POTION_TIMER_PREFIX}${itemId}`;
+}
+
+/** The suffix of the key a potion's after-effect (Speed's lethargy) is lit under. */
+export const POTION_AFTEREFFECT_SUFFIX = ":aftereffect";
+
+/** The key of a potion's after-effect, lit when its countdown runs out. */
+export function potionAftereffectKey(itemId: string): string {
+  return `${potionTimerKey(itemId)}${POTION_AFTEREFFECT_SUFFIX}`;
 }
 
 /** The standing effect a potion declares, keyed by its countdown key. */
@@ -33,6 +42,34 @@ export function resolvePotionStateSources(activeKeys: Iterable<string>): GrantSo
   const sources: GrantSource[] = [];
   for (const key of activeKeys) {
     if (!key.startsWith(POTION_TIMER_PREFIX)) continue;
+    if (key.endsWith(POTION_AFTEREFFECT_SUFFIX)) {
+      const itemId = key.slice(
+        POTION_TIMER_PREFIX.length,
+        -POTION_AFTEREFFECT_SUFFIX.length
+      );
+      const after = potionStateGrant(itemId)?.afterEffect;
+      // Its own source and chip ("Lethargy"), held while the key is lit; the
+      // turn edge it ends at is the key's stored boundary.
+      if (after) {
+        sources.push({
+          id: key,
+          label: srdText("rule", "potion.lethargy", "name"),
+          grants: [
+            {
+              type: "while-active",
+              activeKey: key,
+              duration: {
+                kind: "turn-boundary",
+                phase: after.duration.phase,
+                turns: after.duration.turns,
+              },
+              grants: [...after.grants],
+            },
+          ],
+        });
+      }
+      continue;
+    }
     const itemId = key.slice(POTION_TIMER_PREFIX.length);
     const grant = potionStateGrant(itemId);
     if (!grant) continue;

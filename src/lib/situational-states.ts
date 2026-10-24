@@ -11,6 +11,7 @@
 import {
   ATTACK_SITUATION_REFERENCE,
   MOUNTED_COMBAT_REFERENCE,
+  SQUEEZING_REFERENCE,
   UNDERWATER_COMBAT_REFERENCE,
   type CombatVariantNote,
 } from "@/data/combat-variants";
@@ -25,6 +26,7 @@ export const SITUATION_IDS = [
   "long-range",
   "underwater",
   "mounted",
+  "squeezing",
 ] as const;
 
 export type SituationId = (typeof SITUATION_IDS)[number];
@@ -125,6 +127,7 @@ const underwaterMelee = line(UNDERWATER_COMBAT_REFERENCE, "melee-underwater");
 const underwaterRanged = line(UNDERWATER_COMBAT_REFERENCE, "ranged-underwater");
 const underwaterFire = line(UNDERWATER_COMBAT_REFERENCE, "fire-resistance");
 const controlledMount = line(MOUNTED_COMBAT_REFERENCE, "controlled-mount");
+const squeezeMovement = line(SQUEEZING_REFERENCE, "movement");
 
 const BOTH: ReadonlyArray<AttackKind> = ["melee", "ranged"];
 
@@ -186,6 +189,20 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
     [controlledMount],
     [controlledMount],
     []
+  ),
+  // Held while you are in the smaller space (it outlasts your turn: attacks
+  // against you have Advantage), so it lasts like a place: until tapped off.
+  state(
+    "squeezing",
+    "fight",
+    srdText("rule", "situation.squeezing", "name"),
+    SQUEEZING_REFERENCE,
+    [squeezeMovement],
+    [{ mode: "disadvantage", kinds: BOTH }],
+    [
+      { type: "disadvantage-on", rollType: "save", vs: "dex-save" },
+      { type: "incoming-attack-advantage" },
+    ]
   ),
 ];
 

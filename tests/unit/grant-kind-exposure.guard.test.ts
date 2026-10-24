@@ -127,6 +127,12 @@ const EXPOSURE: Record<string, Exposure> = {
   "speed-multiplier": { via: "speedMultiplier", consumer: "src/lib/smart-tracker.ts" },
   "speed-floor": { via: "speedFloorFt", consumer: "src/lib/smart-tracker.ts" },
   "speed-cap": { via: "speedCapFt", consumer: "src/lib/smart-tracker.ts" },
+  // Jumping → the Left HUD's Long / High Jump rows and the leap row.
+  "jump-ability": {
+    via: "deriveJumps",
+    consumer: "src/features/character/hud/LeftHud.tsx",
+  },
+  "jump-leap": { via: "deriveJumps", consumer: "src/features/character/hud/LeftHud.tsx" },
   "fly-speed": {
     via: "deriveSensesAndSpeeds",
     consumer: "src/features/character/hud/LeftHud.tsx",

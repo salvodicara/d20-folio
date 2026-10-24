@@ -27,10 +27,10 @@ import {
   ALL_ABILITIES,
   abilityModifier,
   effectiveProficiencyBonus,
-  jumpDistance,
   aggregateAbilityScores,
 } from "@/lib/compute";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
+import { deriveJumps } from "@/lib/jump";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { BreakdownTip } from "@/components/shared/BreakdownTip";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -243,12 +243,14 @@ export function LeftHud() {
     fullAggregate,
     walkingSpeedFt
   );
-  // RA-26 — jump distances (2024 PHB, running start): long = STR SCORE ft,
-  // high = 3 + STR MOD ft (min 0). Pure STR-derived — no SRD grant modifies it —
-  // so read-only movement facts beside the derived speeds. Reads the EFFECTIVE
-  // STR (a set-STR item raises it), the same single source the encumbrance
-  // capacity uses (rule 6).
-  const jump = jumpDistance(effectiveScores.STR);
+  // Jump distances (SRD 5.2.1 Long / High Jump, running start) with their parts:
+  // the Strength score (or Dexterity through Second-Story Work), and the separate
+  // once-per-turn leap a grant gives (Jump, Boots of Striding and Springing).
+  const jump = deriveJumps(effectiveScores, fullAggregate);
+  const distanceLines = (parts: Parameters<typeof localizeBreakdown>[0]) =>
+    localizeBreakdown(parts, locale, (ft) =>
+      ft < 0 ? `−${localeDistance(-ft, locale)}` : localeDistance(ft, locale)
+    );
   // #68 — passive scores are override-first: the computed value is the default, an
   // explicit override replaces it (reset returns to computed). Numbers + breakdown
   // come from the SHARED builder; the rail localizes the label + the tip lines.
@@ -596,21 +598,40 @@ export function LeftHud() {
               </div>
             );
           })}
-          {/* RA-26 — always-present jump distances (read-only; STR-derived, no
-              override, no SRD grant seam). Two rows echoing the derived-speed rows
-              above, formatted via localeDistance (EN ft / IT metric, D3). */}
+          {/* Jump distances (read-only), each with its breakdown; the leap row
+              shows only when a grant gives one. */}
           <div className="flex items-center justify-between gap-2">
             <span className="text-text-secondary">{t("abilities.longJump")}</span>
             <span className="font-mono tabular-nums text-text-primary">
-              {localeDistance(jump.long, locale)}
+              <BreakdownTip
+                label={localeDistance(jump.long, locale)}
+                lines={distanceLines(jump.longParts)}
+              />
             </span>
           </div>
           <div className="flex items-center justify-between gap-2">
             <span className="text-text-secondary">{t("abilities.highJump")}</span>
             <span className="font-mono tabular-nums text-text-primary">
-              {localeDistance(jump.high, locale)}
+              <BreakdownTip
+                label={localeDistance(jump.high, locale)}
+                lines={distanceLines(jump.highParts)}
+              />
             </span>
           </div>
+          {jump.leap ? (
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-text-secondary">{t("abilities.leap")}</span>
+              <span className="text-right font-mono tabular-nums text-text-primary">
+                <BreakdownTip
+                  label={t("abilities.leapValue", {
+                    distance: localeDistance(jump.leap.distanceFt, locale),
+                    cost: localeDistance(jump.leap.movementCostFt, locale),
+                  })}
+                  lines={distanceLines(jump.leap.parts)}
+                />
+              </span>
+            </div>
+          ) : null}
         </div>
       </RailSection>
     </div>
