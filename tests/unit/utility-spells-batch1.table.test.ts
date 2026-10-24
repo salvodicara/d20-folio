@@ -31,6 +31,10 @@ import { translateSpell } from "@/lib/activities/from-spell";
 import { evaluateGrants, type AggregatedGrants, type Grant } from "@/lib/grants";
 import type { LocText } from "@/lib/loc-text";
 import { resolveGrantSourcesForSpells } from "@/lib/resolve-grant-sources";
+import { concentrationValue } from "@/lib/concentration";
+import { MOCK_CHARACTER } from "@/lib/mock";
+import { advanceEffectTimers, resolveActions } from "@/lib/smart-tracker";
+import type { CharacterDoc } from "@/types/character";
 import EN_SPELLS from "@/i18n/en/srd/spells.json";
 import IT_SPELLS from "@/i18n/it/srd/spells.json";
 
@@ -387,6 +391,22 @@ function expected(facts: LitFacts): Required<LitFacts> {
   };
 }
 
+/** The mock caster with `id` prepared and `activeKeys` lit (Concentration on it). */
+function caster(id: string, activeKeys: string[]): CharacterDoc {
+  return {
+    ...MOCK_CHARACTER,
+    character: { ...MOCK_CHARACTER.character, spells: [{ srdId: id, prepared: true }] },
+    session: {
+      ...MOCK_CHARACTER.session,
+      concentration: getSpellById(id)?.concentration
+        ? concentrationValue(id)
+        : MOCK_CHARACTER.session.concentration,
+      activeFeatures: activeKeys,
+      effectTimers: {},
+    },
+  };
+}
+
 function whileActive(id: string) {
   return getSpellById(id)?.grants?.find(
     (g): g is Extract<Grant, { type: "while-active" }> => g.type === "while-active"
@@ -432,6 +452,32 @@ describe("utility spells batch 1: the cast lights a standing state", () => {
       }
     }
   );
+
+  it.each(ROWS)("$id: the cast row hands its round cap to the timer path", (row) => {
+    const doc = caster(row.id, []);
+    const cast = resolveActions(doc, "spellbook").find((a) => a.spellId === row.id);
+    expect(cast).toBeDefined();
+    if (row.recipient === "caster") {
+      expect(cast?.activatesKey).toBe(keyOf(row.id));
+      expect(cast?.activeDurationRounds).toBe(row.minutes * 10);
+      expect(cast?.standingEffect).toBeUndefined();
+    } else {
+      expect(cast?.activatesKey).toBeUndefined();
+      expect(cast?.standingEffect).toEqual(
+        expect.objectContaining({ activeKey: keyOf(row.id), maxRounds: row.minutes * 10 })
+      );
+    }
+  });
+
+  it.each(ROWS)("$id: lit on yourself, it expires when its time has passed", (row) => {
+    const doc = caster(row.id, [keyOf(row.id)]);
+    const rounds = row.minutes * 10;
+    const early = advanceEffectTimers(doc, undefined, rounds - 1);
+    expect(early.expired.map((e) => e.activeKey)).not.toContain(keyOf(row.id));
+    expect(early.timers[keyOf(row.id)]?.roundsLeft).toBe(1);
+    const done = advanceEffectTimers(doc, undefined, rounds);
+    expect(done.expired.map((e) => e.activeKey)).toContain(keyOf(row.id));
+  });
 
   it.each(ROWS)("$id: nothing until lit, then exactly its effect", (row) => {
     const off = evaluateGrants(sourcesOf(row.id));
