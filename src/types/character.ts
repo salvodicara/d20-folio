@@ -34,6 +34,7 @@ import type {
 import type { NonEmptyString } from "@/lib/non-empty-string";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { Grant } from "@/lib/grant-schema";
 
 // ============================================================
 // SRD Reference Types (stored on character, resolved at render)
@@ -164,6 +165,13 @@ export interface CustomFeature {
   contentBlocks: ContentBlockData[];
   trackers?: TrackerData[];
   actions?: ActionData[];
+  /**
+   * Mechanics in the catalogue's own Grant language (senses, defenses, speeds, a
+   * `while-active` state its action enters, …). Stored as authored; the engine
+   * reads them only through `homebrewFeatureGrants`, which leaves out any element
+   * the current schema rejects. Optional: absent on every older homebrew feature.
+   */
+  grants?: ReadonlyArray<Grant>;
   /** Stable identity of this custom entry — never keyed by name. */
   instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */

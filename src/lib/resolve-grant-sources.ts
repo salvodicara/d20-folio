@@ -3,8 +3,8 @@
  * declarative grants pipeline.
  *
  * Each ref's `srdId` is looked up across class features, feats, and race
- * traits. Custom features carry no grants (they have a free-form schema
- * that the grants type union doesn't model) and are skipped.
+ * traits. A homebrew feature contributes the grants it declares in the same
+ * language (`CustomFeature.grants`, read through `homebrewFeatureGrants`).
  *
  * Lives in its own module so creation, level-up, and any future consumer
  * (e.g. the sheet header reading senses) all share the same resolution
@@ -37,6 +37,8 @@ import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
 import type { ReactionTrigger, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { isValidItemInstanceId } from "@/lib/resources";
+import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
+import { customText } from "@/lib/loc-text";
 
 const INVOCATION_BY_ID = new Map(SRD_INVOCATIONS.map((inv) => [inv.id, inv]));
 const MANEUVER_BY_ID = new Map(SRD_MANEUVERS.map((m) => [m.id, m]));
@@ -110,15 +112,22 @@ export function resolveGrantSourcesForManeuvers(
 }
 
 /**
- * Returns the resolved grant sources for an array of feature refs (ignoring
- * any custom features). Order is preserved.
+ * Returns the resolved grant sources for an array of feature refs. A homebrew
+ * feature with grants becomes a source keyed by its instance id and named by its
+ * title (the label of a `while-active` it declares without one). Order is preserved.
  */
 export function resolveGrantSourcesForFeatures(
   refs: ReadonlyArray<SrdFeatureRef | CustomFeature>
 ): GrantSource[] {
   const sources: GrantSource[] = [];
   for (const f of refs) {
-    if ("custom" in f) continue;
+    if ("custom" in f) {
+      const grants = homebrewFeatureGrants(f);
+      if (grants.length > 0) {
+        sources.push({ id: f.instanceId, label: customText(f.title), grants });
+      }
+      continue;
+    }
     const src = getSrdFeatureSource(f.srdId);
     if (!src) continue;
     sources.push({
