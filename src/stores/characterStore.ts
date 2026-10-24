@@ -50,6 +50,9 @@ import {
   type StateEndingAct,
 } from "@/lib/play/states";
 import { breathLogEvents } from "@/lib/play/suffocation";
+import { riderTakenEvents, riderTakenLog } from "@/lib/play/rider-taken";
+import type { RiderEffect } from "@/lib/activities";
+import type { LocText } from "@/lib/loc-text";
 import {
   unheldItemStateEvents,
   unheldItemStateLogEvents,
@@ -376,6 +379,17 @@ interface CharacterState {
    * persist. Returns the undo (prior total, prior current HP, the log line), or
    * null when nothing changed. */
   setHpMaxReduction: (total: number) => (() => void) | null;
+  /**
+   * A rider lands on the character (Life Drain, a swallow, a shove): its sheet events
+   * (`riderTakenEvents`), each through the play log, then its log line. Returns the
+   * one undo (the log line first, so the campaign session log hears it), or null
+   * when read-only or nothing was open.
+   */
+  takeRider: (
+    effect: RiderEffect,
+    facts: { damageTaken: number; rolled?: number },
+    source?: LocText
+  ) => (() => void) | null;
   /**
    * Expend one spell slot at `level`. `pactMagic` selects the Warlock Pact-Magic
    * pool (which can co-exist with a normal pool at the same level — Sorlock); it
@@ -1608,6 +1622,23 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         get().dispatch({ kind: "set-hp", current: before.session.hp.current });
       }
       get().removeLogEntry(logId);
+      persistCombat(get);
+    };
+  },
+
+  takeRider: (effect, facts, source) => {
+    const before = get().character;
+    if (!before || get().readonly) return null;
+    const undos: Array<() => void> = [];
+    for (const event of riderTakenEvents(before, effect, facts)) {
+      const undo = get().dispatch(event);
+      if (undo) undos.push(undo);
+    }
+    const logId = get().logEvent(riderTakenLog(effect, source));
+    persistCombat(get);
+    return () => {
+      get().removeLogEntry(logId);
+      for (const undo of undos.reverse()) undo();
       persistCombat(get);
     };
   },
