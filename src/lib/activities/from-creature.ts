@@ -6,7 +6,7 @@ import type {
   MonsterDamage,
   MonsterEntry,
 } from "@/data/types";
-import { compact, dice, terms } from "./shared";
+import { compact, dice, riderEffects, terms } from "./shared";
 import type {
   Activity,
   ActivityEconomy,
@@ -86,6 +86,7 @@ export function translateMonsterEntry(
                 }),
               ]
             : []),
+          ...riderEffects(entry),
         ],
       });
       break;
@@ -116,6 +117,7 @@ export function translateMonsterEntry(
                 },
               ]
             : []),
+          ...riderEffects(entry),
         ],
       });
       break;

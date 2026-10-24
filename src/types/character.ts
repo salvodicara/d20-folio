@@ -399,7 +399,16 @@ export interface TrackerData {
 }
 
 /** Feature action data */
-export interface ActionData {
+/**
+ * A homebrew feature action. It declares its mechanics in the catalogue action's
+ * own shape (every `SrdActionDef` field but the hand-written runtime program),
+ * stored as authored; the engine reads them only through `homebrewActionDef`, which
+ * leaves out any field the current schema rejects.
+ */
+export interface ActionData extends Omit<
+  SrdActionDef,
+  "mechanicsProgram" | "tempHpRoll" | "conditionRemoval" | "cureConditions"
+> {
   /** Stable suffix when a homebrew feature has multiple actions of one type. */
   id?: string;
   /** Action type */

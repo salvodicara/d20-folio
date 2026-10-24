@@ -130,6 +130,7 @@ import {
   resolveAllGrantSources,
   raceTraitSessionId,
 } from "@/lib/resolve-grant-sources";
+import { homebrewActionDef } from "@/lib/homebrew-actions";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
 import { homebrewItemData } from "@/lib/homebrew-items";
@@ -5412,6 +5413,55 @@ function applyActionEffectSummary(
   applySaveAttackSummary(summary, activity, character, ctx, scalingLevel);
 }
 
+/**
+ * The row facts a feature action declares beyond its card summary, shared by the
+ * catalogue and the homebrew feature branches: its alternate cost, the state it
+ * enters or maintains, its turn rules and the mark it binds.
+ */
+function featureActionRowFacts(
+  action: SrdActionDef,
+  sourceId: string,
+  activation: Pick<
+    ResolvedAction,
+    "activatesKey" | "activationEndsEarlyOn" | "activeTurnBoundary"
+  >
+) {
+  const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } = activation;
+  return {
+    // Alternate-cost primitive — carried verbatim so `getActionCostOptions`
+    // can offer it as a second payment route (Wild Companion: slot OR Wild Shape).
+    ...(action.alternateCost ? { alternateCost: action.alternateCost } : {}),
+    // Using this action establishes its feature's while-active state (Rage).
+    ...(activatesKey && !action.maintainsActiveKey ? { activatesKey } : {}),
+    ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
+    ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
+    ...(action.grantsNextAttackAdvantage
+      ? { grantsNextAttackAdvantage: true as const }
+      : {}),
+    ...(action.locksMovement ? { locksMovement: true as const } : {}),
+    ...actionTurnConstraints(action),
+    ...(action.maintainsActiveKey
+      ? { maintainsActiveKey: action.maintainsActiveKey }
+      : {}),
+    ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...(action.targetMark
+      ? {
+          standingEffect: {
+            sourceId,
+            sourceKind: "feature" as const,
+            activeKey: activatesKey ?? sourceId,
+            markScope: action.targetMark.scope,
+            targetAffinity: action.targeting?.affinity ?? ("enemy" as const),
+            ...(action.targeting?.excludeSelf ? { excludeSelf: true } : {}),
+            ...(action.targetMark.maxRounds !== undefined
+              ? { maxRounds: action.targetMark.maxRounds }
+              : {}),
+          },
+        }
+      : {}),
+  };
+}
+
 function actionTurnConstraints(
   action: Pick<
     SrdActionDef,
@@ -5537,7 +5587,10 @@ function resolveFeatureActions(
         const customGrants = homebrewFeatureGrants(featureRef);
         const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } =
           featureActivation(customGrants);
-        for (const [index, a] of featureRef.actions.entries()) {
+        for (const [index, stored] of featureRef.actions.entries()) {
+          // The stored action is read only through its one validator: a field
+          // the schema rejects is out of play, the stored action untouched.
+          const a = homebrewActionDef(stored);
           const id = `custom-${featureRef.instanceId}-${a.id ?? a.type}`;
           // Build summary from custom feature data. Custom content carries a
           // single user string (no translation); surface it in both locales so
@@ -5546,7 +5599,7 @@ function resolveFeatureActions(
           // Custom user text (no translation) — emit the full string; the
           // presenter's budget gate OMITS (never slices) a line that doesn't
           // fit the collapsed card, and the full text stays in the accordion.
-          summary.effect = customText(a.description);
+          summary.effect = customText(stored.description);
           // Check for custom trackers
           const cTracker =
             featureRef.trackers?.find((tracker) => tracker.id === a.costTracker) ??
@@ -5584,7 +5637,7 @@ function resolveFeatureActions(
           // SRD-feature behavior).
           actions.push({
             id,
-            name: customText(a.label || featureRef.title),
+            name: customText(stored.label || featureRef.title),
             type: a.type,
             source: "feature",
             spellLevel: null,
@@ -5597,11 +5650,12 @@ function resolveFeatureActions(
             costTrackerUnit: cTracker?.unit,
             pinned: pinnedSet.has(id),
             defaultPinned: false,
-            description: customText(a.description),
-            ...(activatesKey ? { activatesKey } : {}),
-            ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
-            ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
-            ...actionTurnConstraints(a),
+            description: customText(stored.description),
+            ...featureActionRowFacts(a, featureRef.instanceId, {
+              activatesKey,
+              activationEndsEarlyOn,
+              activeTurnBoundary,
+            }),
           });
         }
       }
@@ -5855,37 +5909,11 @@ function resolveFeatureActions(
         description: actionOverride?.description
           ? customText(actionOverride.description)
           : featLoc(srdFeature, "description"),
-        // Alternate-cost primitive — carried verbatim so `getActionCostOptions`
-        // can offer it as a second payment route (Wild Companion: slot OR Wild Shape).
-        ...(action.alternateCost ? { alternateCost: action.alternateCost } : {}),
-        // Using this action establishes its feature's while-active state (Rage).
-        ...(activatesKey && !action.maintainsActiveKey ? { activatesKey } : {}),
-        ...(activationEndsEarlyOn?.length ? { activationEndsEarlyOn } : {}),
-        ...(activeTurnBoundary ? { activeTurnBoundary } : {}),
-        ...(action.grantsNextAttackAdvantage
-          ? { grantsNextAttackAdvantage: true as const }
-          : {}),
-        ...(action.locksMovement ? { locksMovement: true as const } : {}),
-        ...actionTurnConstraints(action),
-        ...(action.maintainsActiveKey
-          ? { maintainsActiveKey: action.maintainsActiveKey }
-          : {}),
-        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
-        ...(action.targetMark
-          ? {
-              standingEffect: {
-                sourceId: srdFeature.id,
-                sourceKind: "feature" as const,
-                activeKey: activatesKey ?? srdFeature.id,
-                markScope: action.targetMark.scope,
-                targetAffinity: action.targeting?.affinity ?? ("enemy" as const),
-                ...(action.targeting?.excludeSelf ? { excludeSelf: true } : {}),
-                ...(action.targetMark.maxRounds !== undefined
-                  ? { maxRounds: action.targetMark.maxRounds }
-                  : {}),
-              },
-            }
-          : {}),
+        ...featureActionRowFacts(action, srdFeature.id, {
+          activatesKey,
+          activationEndsEarlyOn,
+          activeTurnBoundary,
+        }),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),

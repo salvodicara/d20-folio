@@ -1,4 +1,5 @@
 /** Small helpers the activity translators share. */
+import type { EffectRiders } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 import { startingStatusLifetime, statusEndsOn } from "@/lib/status-lifetime";
 import type { WhileActiveDuration } from "@/lib/grants";
@@ -54,4 +55,50 @@ export function statusEffect(
     lifetime: startingStatusLifetime(duration),
     endsOn: statusEndsOn(duration, concentration),
   });
+}
+
+/**
+ * The generic riders an action or a monster attack/save declares (push, Speed
+ * loss, Hit Point maximum drain, swallow), as effects in that order. One reader
+ * for every dialect that carries them.
+ */
+export function riderEffects(riders: EffectRiders): ActivityEffect[] {
+  const out: ActivityEffect[] = [];
+  const { forcedMovement, speedReduction, hpMaxReduction, swallows } = riders;
+  if (forcedMovement) {
+    out.push({
+      kind: "forced-movement",
+      direction: forcedMovement.direction,
+      feet: forcedMovement.feet,
+    });
+  }
+  if (speedReduction) {
+    out.push(
+      compact({
+        kind: "speed-reduction" as const,
+        feet: speedReduction.feet,
+        until: speedReduction.until,
+      })
+    );
+  }
+  if (hpMaxReduction) {
+    out.push(
+      compact({
+        kind: "hp-max-reduction" as const,
+        dice:
+          hpMaxReduction.dice !== undefined ? { dice: hpMaxReduction.dice } : undefined,
+      })
+    );
+  }
+  if (swallows) {
+    out.push(
+      compact({
+        kind: "swallow" as const,
+        damage: swallows.damage
+          ? { dice: { dice: swallows.damage.dice }, types: [swallows.damage.damageType] }
+          : undefined,
+      })
+    );
+  }
+  return out;
 }

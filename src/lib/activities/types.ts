@@ -358,7 +358,26 @@ export type ActivityEffect =
     })
   | (EffectBase & { kind: "check-bonus"; dice: string; refundOnFail?: true })
   | (EffectBase & { kind: "next-attack-advantage" })
-  | (EffectBase & { kind: "speed-zero" });
+  | (EffectBase & { kind: "speed-zero" })
+  /** The target is pushed away from or pulled toward the user, up to `feet`: a
+   *  fact the table plays on the map (a monster's shove, a Telekinetic push). */
+  | (EffectBase & { kind: "forced-movement"; direction: "push" | "pull"; feet: number })
+  /** The target's Speed decreases by `feet` until a turn boundary of the user
+   *  (`actor`) or the target. Absent `until`: the text says how long. */
+  | (EffectBase & {
+      kind: "speed-reduction";
+      feet: number;
+      until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+    })
+  /** The target's Hit Point maximum decreases by `dice`, or, absent, by the
+   *  damage it took from this use (Life Drain). A Long Rest restores it. */
+  | (EffectBase & { kind: "hp-max-reduction"; dice?: ActivityDice })
+  /** The target is swallowed: Blinded and Restrained, Total Cover from outside,
+   *  and `damage` at the start of each of the swallower's turns. */
+  | (EffectBase & {
+      kind: "swallow";
+      damage?: { dice: ActivityDice; types: ReadonlyArray<DamageType> };
+    });
 
 export type ActivityEffectKind = ActivityEffect["kind"];
 
