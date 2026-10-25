@@ -45,7 +45,10 @@
       "heavyArmor": "Heavy armor (Strength too low)",
       "minimum": "Minimum 0",
       "floor": "Minimum Speed",
-      "cap": "Speed limit"
+      "cap": "Speed limit",
+      "granted": "Granted speed",
+      "equalToWalking": "equal to your Speed",
+      "twiceWalking": "twice your Speed"
     },
     "ability": {
       "floor": "Minimum score",

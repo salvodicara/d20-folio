@@ -83,6 +83,19 @@ export {
 /** Whether a number's parts are of a hand-set value (they carry the manual adjustment). */
 export { isHandSet } from "@/lib/value-breakdown";
 
+/** The attunement limit (three, raised by a feature): the guard answers, the caller
+ *  decides; forcing past it never ends another attunement. */
+export {
+  ATTUNEMENT_LIMIT,
+  attuneItem,
+  attunementLimit,
+  canAttune,
+  unattuneItem,
+  type AttuneResult,
+  type AttunementRefusal,
+  type CanAttune,
+} from "@/lib/attunement-guard";
+
 /** Shared combat that starts on the first initiative roll and never blocks: anyone
  *  passes the turn, a pass goes back, an ended fight reopens. */
 export {

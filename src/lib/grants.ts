@@ -1410,6 +1410,7 @@ export interface AggregatedGrants {
   flySpeed: NonWalkingSpeed | null;
   swimSpeed: NonWalkingSpeed | null;
   climbSpeed: NonWalkingSpeed | null;
+  burrowSpeed: NonWalkingSpeed | null;
   /**
    * Multiplier applied to the effective walking Speed (Boots of Speed → 2).
    * Default 1 (no multiplier). MAX across `speed-multiplier` grants — multipliers
@@ -2181,6 +2182,7 @@ export function emptyAggregate(): AggregatedGrants {
     flySpeed: null,
     swimSpeed: null,
     climbSpeed: null,
+    burrowSpeed: null,
     ruleOrigins: [],
     speedMultiplier: 1,
     speedFloorFt: 0,
@@ -2718,6 +2720,7 @@ export function evaluateGrants(
       case "fly-speed":
       case "swim-speed":
       case "climb-speed":
+      case "burrow-speed":
       case "speed-multiplier":
       case "speed-floor":
       case "speed-cap":
@@ -3949,6 +3952,7 @@ export function evaluateGrants(
     flySpeed: nonWalkingSpeed(values, "fly"),
     swimSpeed: nonWalkingSpeed(values, "swim"),
     climbSpeed: nonWalkingSpeed(values, "climb"),
+    burrowSpeed: nonWalkingSpeed(values, "burrow"),
     ruleOrigins,
     speedMultiplier:
       Math.max(1, ruleValue(values, "speed:multiplier") ?? 1) *

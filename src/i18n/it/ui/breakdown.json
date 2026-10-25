@@ -45,7 +45,10 @@
       "heavyArmor": "Armatura pesante (Forza insufficiente)",
       "minimum": "Minimo 0",
       "floor": "Velocità minima",
-      "cap": "Limite di velocità"
+      "cap": "Limite di velocità",
+      "granted": "Velocità concessa",
+      "equalToWalking": "pari alla tua Velocità",
+      "twiceWalking": "il doppio della tua Velocità"
     },
     "ability": {
       "floor": "Punteggio minimo",
