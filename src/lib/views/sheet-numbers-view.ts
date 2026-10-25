@@ -26,6 +26,9 @@ export function sheetNumbersView(
     ac: lines(n.ac),
     initiative: lines(n.initiative),
     speed: lines(n.speed),
+    otherSpeeds: Object.fromEntries(
+      Object.entries(n.otherSpeeds).map(([kind, value]) => [kind, lines(value)])
+    ),
     proficiencyBonus: lines(n.proficiencyBonus),
     maxHp: lines(n.maxHp),
     saves: n.saves.map(lines),

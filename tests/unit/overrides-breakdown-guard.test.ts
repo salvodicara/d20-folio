@@ -97,6 +97,13 @@ const CASES: Record<keyof N, (doc: CharacterDoc) => Case[]> = {
       pin: (d, v) => withChar(d, { speedOverride: v }),
     },
   ],
+  otherSpeeds: (doc) =>
+    Object.keys(sheetNumbers(doc).otherSpeeds).map((kind) => ({
+      name: `speed:${kind}`,
+      read: (n: N) => n.otherSpeeds[kind as keyof N["otherSpeeds"]] ?? null,
+      pin: (d: CharacterDoc, v: number) =>
+        withChar(d, { speedOverrides: { ...d.character.speedOverrides, [kind]: v } }),
+    })),
   proficiencyBonus: () => [
     {
       name: "proficiencyBonus",

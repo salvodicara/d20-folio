@@ -211,8 +211,7 @@ export function MonsterStatBlockCard({
   for (const mode of ["climb", "fly", "swim", "burrow"] as const) {
     const v = m.speeds[mode];
     if (v == null) continue;
-    const label =
-      mode === "burrow" ? t("polymorph.speedBurrow") : t(`character.speed_${mode}`);
+    const label = t(`character.speed_${mode}`);
     let part = `${label} ${localeDistance(v, locale)}`;
     if (mode === "fly" && m.hover) part += ` (${t("monster.hover")})`;
     speedParts.push(part);

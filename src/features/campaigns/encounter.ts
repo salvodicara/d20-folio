@@ -24,6 +24,7 @@
  * free string is a monster's user-typed name.
  */
 
+import { mountLinks, mountedTurnOrder } from "@/lib/play/mounts";
 import type {
   CampaignDoc,
   EncounterState,
@@ -403,7 +404,8 @@ export function beginEncounterTurns(
   extraTurns: ReadonlyArray<StoredExtraTurn> = []
 ): EncounterState {
   if (state.currentCombatantId !== null) return state;
-  const frozen = freezeOrder(state, orderedIds);
+  // A controlled mount acts right after its rider (SRD 5.2.1 Mounted Combat).
+  const frozen = freezeOrder(state, mountedTurnOrder(orderedIds, mountLinks(state)));
   const first = frozen.order?.[0];
   if (first === undefined) return state;
   const begun: EncounterState = { ...frozen, currentCombatantId: first };

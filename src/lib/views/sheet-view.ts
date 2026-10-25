@@ -18,10 +18,14 @@ import {
   DETECTION_TARGETS,
   ruleFlag,
   ruleNumber,
+  ruleParts,
   SENSE_KINDS,
   type DetectionTarget,
   type SenseKind,
 } from "@/lib/rules";
+import type { SrdKind } from "@/i18n/srd-en";
+import { srdText } from "@/lib/loc-text";
+import { locPart, termPart, type RawBreakdownPart } from "@/lib/value-breakdown";
 import type {
   AggregatedGrants,
   AdvantageClause,
@@ -657,11 +661,12 @@ export interface SenseEntry {
  * Canonical runtime list of the non-walking speed kinds — source of truth for the
  * `character.speed_<kind>` i18n keys; the `SpeedEntry.kind` union is derived.
  */
-export const SPEED_KINDS = ["fly", "swim", "climb"] as const;
+export const SPEED_KINDS = ["fly", "swim", "climb", "burrow"] as const;
+export type SpeedKind = (typeof SPEED_KINDS)[number];
 
 export interface SpeedEntry {
   /** Movement kind — used for the i18n key. */
-  kind: (typeof SPEED_KINDS)[number];
+  kind: SpeedKind;
   /** Absolute feet after resolving the `equal-to-walking` sentinel. */
   rangeFt: number;
 }
@@ -697,9 +702,63 @@ export function resolveNonWalkingSpeed(
   return value;
 }
 
+/** The aggregate's value for one non-walking speed kind. */
+export function nonWalkingSpeedOf(
+  aggregate: AggregatedGrants,
+  kind: SpeedKind
+): NonWalkingSpeed | null {
+  switch (kind) {
+    case "fly":
+      return aggregate.flySpeed;
+    case "swim":
+      return aggregate.swimSpeed;
+    case "climb":
+      return aggregate.climbSpeed;
+    case "burrow":
+      return aggregate.burrowSpeed;
+  }
+}
+
+/**
+ * Where a non-walking speed comes from, for the "where does this number come from?"
+ * tip: ONE part, the winning grant's source (named by its catalogue entry; a source
+ * with no catalogue entry, such as homebrew, reads "Granted speed"), worth the
+ * resolved feet. A speed tied to the walking speed says so in a note (equal to, or
+ * twice, your Speed). Sums to `resolveNonWalkingSpeed(nonWalkingSpeedOf(aggregate,
+ * kind), walkingSpeedFt)`; empty when nothing grants the speed. A hand-set range
+ * adds its adjustment on top (`withOverride`), at the caller.
+ */
+export function nonWalkingSpeedBreakdown(
+  aggregate: AggregatedGrants,
+  kind: SpeedKind,
+  walkingSpeedFt: number
+): RawBreakdownPart[] {
+  const value = nonWalkingSpeedOf(aggregate, kind);
+  const rangeFt = resolveNonWalkingSpeed(value, walkingSpeedFt);
+  if (value === null || rangeFt === null) return [];
+  const relative = typeof value !== "number";
+  const winner = ruleParts(
+    aggregate.ruleOrigins,
+    relative ? `speed:${kind}:walking` : `speed:${kind}`
+  )[0]?.source;
+  const note = relative
+    ? {
+        term:
+          value === "twice-walking"
+            ? "breakdown.speed.twiceWalking"
+            : "breakdown.speed.equalToWalking",
+      }
+    : undefined;
+  return [
+    winner
+      ? locPart(srdText(winner.kind as SrdKind, winner.key, "name"), rangeFt, note)
+      : termPart("breakdown.speed.granted", rangeFt, note),
+  ];
+}
+
 /**
  * Derive the full senses (darkvision + blindsight + tremorsense + truesight)
- * and the three non-walking speeds. Only entries with a positive range are
+ * and the non-walking speeds (fly, swim, climb, burrow). Only entries with a positive range are
  * included. `walkingSpeedFt` resolves the `equal-to-walking` sentinel.
  */
 export function deriveSensesAndSpeeds(
@@ -728,13 +787,13 @@ export function deriveSensesAndSpeeds(
     return rangeFt > 0 ? [{ what, rangeFt }] : [];
   });
 
-  const speeds: SpeedEntry[] = [];
-  const fly = resolveNonWalkingSpeed(aggregate.flySpeed, walkingSpeedFt);
-  if (fly !== null && fly > 0) speeds.push({ kind: "fly", rangeFt: fly });
-  const swim = resolveNonWalkingSpeed(aggregate.swimSpeed, walkingSpeedFt);
-  if (swim !== null && swim > 0) speeds.push({ kind: "swim", rangeFt: swim });
-  const climb = resolveNonWalkingSpeed(aggregate.climbSpeed, walkingSpeedFt);
-  if (climb !== null && climb > 0) speeds.push({ kind: "climb", rangeFt: climb });
+  const speeds = SPEED_KINDS.flatMap((kind): SpeedEntry[] => {
+    const rangeFt = resolveNonWalkingSpeed(
+      nonWalkingSpeedOf(aggregate, kind),
+      walkingSpeedFt
+    );
+    return rangeFt !== null && rangeFt > 0 ? [{ kind, rangeFt }] : [];
+  });
 
   return {
     senses,

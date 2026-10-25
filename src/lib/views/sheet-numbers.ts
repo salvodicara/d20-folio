@@ -1,6 +1,6 @@
 /**
  * The sheet's numbers, each with where it comes from: AC, initiative, walking speed,
- * Proficiency Bonus, max HP, the six saves, the 18 skills, the three passives, the
+ * the other speeds (fly, swim, climb, burrow), Proficiency Bonus, max HP, the six saves, the 18 skills, the three passives, the
  * spell save DC and attack, the six effective ability scores, carrying capacity and
  * the two jump distances, every one as `{ total, parts }` (re-foundation phase 2:
  * every number explained).
@@ -40,6 +40,7 @@ import { effectiveWalkingSpeedBreakdown } from "@/lib/smart-tracker";
 import { withOverride, type RawBreakdownPart } from "@/lib/value-breakdown";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
+import { nonWalkingSpeedBreakdown, type SpeedKind } from "@/lib/views/sheet-view";
 import type { CharacterDoc } from "@/types/character";
 
 /** A number and its parts; `parts` is null when there is no composition to explain. */
@@ -55,6 +56,8 @@ export interface SheetNumbers<Part> {
   initiative: Explained<Part>;
   /** Walking speed in feet. */
   speed: Explained<Part>;
+  /** The non-walking speeds the character has (fly, swim, climb, burrow), in feet. */
+  otherSpeeds: Partial<Record<SpeedKind, Explained<Part>>>;
   proficiencyBonus: Explained<Part>;
   maxHp: Explained<Part>;
   /** Six saves in canonical ability order. */
@@ -190,6 +193,16 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
       sheet.walkingSpeedFt,
       effectiveWalkingSpeedBreakdown(doc, getEquipment),
       character.speedOverride != null
+    ),
+    otherSpeeds: Object.fromEntries(
+      sheet.speeds.map(({ kind, rangeFt }) => [
+        kind,
+        explained(
+          rangeFt,
+          nonWalkingSpeedBreakdown(aggregate, kind, sheet.walkingSpeedFt),
+          character.speedOverrides?.[kind] != null
+        ),
+      ])
     ),
     proficiencyBonus: {
       total: sheet.proficiencyBonus,

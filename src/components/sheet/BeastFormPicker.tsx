@@ -87,8 +87,7 @@ function BeastStatBlockView({
   for (const mode of ["fly", "swim", "climb", "burrow"] as const) {
     const v = beast.speeds[mode];
     if (typeof v === "number") {
-      const label =
-        mode === "burrow" ? t("polymorph.speedBurrow") : t(`character.speed_${mode}`);
+      const label = t(`character.speed_${mode}`);
       speedParts.push(`${label} ${localeDistance(v, locale)}`);
     }
   }

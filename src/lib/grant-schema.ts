@@ -389,6 +389,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     ]),
     type: literalSchema("climb-speed"),
   }),
+  "burrow-speed": objectSchema({
+    amount: unionSchema([
+      numberSchema,
+      literalSchema("equal-to-walking"),
+      literalSchema("twice-walking"),
+    ]),
+    type: literalSchema("burrow-speed"),
+  }),
   "speed-multiplier": objectSchema({
     factor: numberSchema,
     type: literalSchema("speed-multiplier"),

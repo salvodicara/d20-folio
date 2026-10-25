@@ -11,7 +11,6 @@
     "noForms": "No Beast forms are available at your level.",
     "crShort": "CR {{cr}}",
     "speedWalk": "Walk",
-    "speedBurrow": "Burrow",
     "traits": "Traits",
     "activeForm": "Polymorphed: {{name}}",
     "revert": "Revert form",
