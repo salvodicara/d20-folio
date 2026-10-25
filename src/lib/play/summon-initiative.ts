@@ -16,8 +16,9 @@ import { getSpellById } from "@/data/spells";
 import type { SummonTurn } from "@/data/types";
 import { summonInstanceKey } from "@/lib/summon-count";
 import type { EncounterState } from "@/types/campaign";
+import { isLink, summonLinks, summonedTurnOrder, type SummonLink } from "./summon-links";
 
-export type SummonLink = NonNullable<EncounterState["summons"]>[number];
+export { summonLinks, summonedTurnOrder, type SummonLink };
 
 /** Where a source's creature acts: its text's rule, or `own` when it says none. */
 export type SummonPlacement = SummonTurn | "own";
@@ -90,50 +91,7 @@ export function summonInitiativeEntries(
   return rows;
 }
 
-function isLink(value: unknown): value is SummonLink {
-  if (typeof value !== "object" || value === null) return false;
-  const { summonId, casterId } = value as Record<string, unknown>;
-  return (
-    typeof summonId === "string" && typeof casterId === "string" && summonId !== casterId
-  );
-}
-
 type SummonState = Pick<EncounterState, "combatants" | "summons" | "order">;
-
-/** Every standing link: both creatures still in the fight, each summon tied to one
- *  caster. The first of a clash wins. */
-export function summonLinks(
-  state: Pick<SummonState, "combatants" | "summons">
-): SummonLink[] {
-  const raw: unknown = state.summons;
-  if (!Array.isArray(raw)) return [];
-  const ids = new Set(state.combatants.map((c) => c.id));
-  const seen = new Set<string>();
-  const out: SummonLink[] = [];
-  for (const link of raw) {
-    if (!isLink(link) || !ids.has(link.summonId) || !ids.has(link.casterId)) continue;
-    if (seen.has(link.summonId)) continue;
-    seen.add(link.summonId);
-    out.push({ summonId: link.summonId, casterId: link.casterId });
-  }
-  return out;
-}
-
-/** The turn order with each linked summon moved right after its caster (several
- *  summons of one caster in the order they were linked). */
-export function summonedTurnOrder(
-  order: ReadonlyArray<string>,
-  links: ReadonlyArray<SummonLink>
-): string[] {
-  let out = [...order];
-  // Reverse, so each insertion right after the caster keeps the links' order.
-  for (const { summonId, casterId } of [...links].reverse()) {
-    if (!out.includes(summonId) || !out.includes(casterId)) continue;
-    out = out.filter((id) => id !== summonId);
-    out.splice(out.indexOf(casterId) + 1, 0, summonId);
-  }
-  return out;
-}
 
 function withLinks<T extends SummonState>(state: T, links: SummonLink[]): T {
   const next = { ...state };
