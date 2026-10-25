@@ -6,6 +6,7 @@
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { longRestExhaustionFloor } from "@/lib/play/provisions";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import {
   applyShortRestExhaustion,
@@ -124,7 +125,12 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
         character.session.effectBoundaries,
         endedActiveKeys
       ),
-      exhaustion: Math.max(0, character.session.exhaustion - exhaustionRemoved),
+      // Levels owed to thirst or hunger stay until a full day's water or food
+      // (SRD 5.2.1 Dehydration / Malnutrition).
+      exhaustion: Math.max(
+        longRestExhaustionFloor(character),
+        character.session.exhaustion - exhaustionRemoved
+      ),
       fadingPenalties: fadingPenaltiesAfterLongRest(character.session.fadingPenalties),
       inspiration: gainsInspiration,
       // A Bardic Inspiration die lasts at most 1 hour; a Long Rest always
