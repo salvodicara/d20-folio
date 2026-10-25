@@ -371,6 +371,14 @@ export interface EncounterState {
    */
   mounts?: Array<{ mountId: string; riderId: string; controlled: boolean }>;
   /**
+   * Who summoned whom: `summonId` shares `casterId`'s Initiative count and acts right
+   * after it (Summon Dragon, Staff of the Python). An ENCOUNTER key, never a monster
+   * key, for the same reason as `mounts`. Read through `summonLinks`
+   * (`@/lib/play/summon-initiative`), which drops a stale or malformed link.
+   * READER FIRST: nothing writes it until the encounter UI wires `linkSummon`.
+   */
+  summons?: Array<{ summonId: string; casterId: string }>;
+  /**
    * The per-encounter identity STAMP, set once at {@link startEncounter} (a monotonic
    * `Date.now()`). Identifies ONE fight across surfaces — the pip's "most recently
    * started" default when the viewer is in several fights, and the debounced writer's

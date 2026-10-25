@@ -1149,6 +1149,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "giant-insect",
+    summonTurn: "after-caster",
     level: 4,
     school: "conjuration",
     classes: ["druid"],

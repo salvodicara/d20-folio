@@ -980,6 +980,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:figurine-of-wondrous-power (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "figurine-of-wondrous-power",
+    summonTurn: "after-caster",
     rarity: "common",
     type: "wondrous",
     attunement: false,

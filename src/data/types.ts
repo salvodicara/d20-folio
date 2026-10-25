@@ -1302,6 +1302,11 @@ export interface SrdSpellData {
    */
   summonedMonsters?: SpellSummonedMonsters;
   /**
+   * Where the spell's creature acts in combat, when its text says (absent: it rolls
+   * its own Initiative). See {@link SummonTurn}.
+   */
+  summonTurn?: SummonTurn;
+  /**
    * The spell brings one creature the CASTER picks from the bestiary (Planar Ally,
    * Planar Binding, Gate, Awaken), limited by the spell's text. The pick rides
    * `session.companionVariant[<spellId>]` (a monster id); the Companions rail shows
@@ -2023,6 +2028,17 @@ export interface SummonCount {
  * stat block (`src/data/monsters`, printed verbatim) and how many one cast makes.
  * The first option is the default; the pick rides `session.companionVariant`.
  */
+/**
+ * Where a summoned creature acts in the Initiative order, as its source's text says:
+ * `after-caster` — it shares the caster's Initiative count and takes its turn right
+ * after the caster's (Summon Dragon, Giant Insect, Figurine of Wondrous Power);
+ * `caster-turn` — it has no turn of its own and acts when the caster commands it on
+ * the caster's turn (Bigby's Hand). Absent: the text says nothing, so the creature
+ * rolls its own Initiative (Animate Dead, Planar Ally, Horn of Valhalla).
+ */
+export const ALL_SUMMON_TURNS = ["after-caster", "caster-turn"] as const;
+export type SummonTurn = (typeof ALL_SUMMON_TURNS)[number];
+
 export interface SpellSummonedMonsters {
   options: ReadonlyArray<{ monsterId: string; count: SummonCount }>;
 }
@@ -3435,6 +3451,8 @@ export interface SrdMagicItemData {
    * cooldown or a random table in the item's text stays prose.
    */
   summonedMonsters?: SpellSummonedMonsters;
+  /** Where the item's creature acts in combat, when its text says. See {@link SummonTurn}. */
+  summonTurn?: SummonTurn;
   /**
    * The item holds or calls one creature the player picks from the bestiary (Iron
    * Flask), limited by the rule. Same seam as {@link SrdSpellData.bestiaryPick}.

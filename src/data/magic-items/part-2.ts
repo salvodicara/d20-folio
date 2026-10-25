@@ -152,6 +152,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:staff-of-the-python (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "staff-of-the-python",
+    summonTurn: "after-caster",
     rarity: "uncommon",
     type: "staff",
     attunement: true,

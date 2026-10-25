@@ -5,6 +5,7 @@ import { timedConditionLifetime, timedSpellDuration } from "./duration";
 export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
   {
     id: "animate-objects",
+    summonTurn: "after-caster",
     level: 5,
     school: "transmutation",
     classes: ["artificer", "bard", "sorcerer", "wizard"],
@@ -1069,6 +1070,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
   },
   {
     id: "bigbys-hand",
+    summonTurn: "caster-turn",
     level: 5,
     school: "evocation",
     classes: ["artificer", "sorcerer", "wizard"],
@@ -1314,6 +1316,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
   },
   {
     id: "summon-dragon",
+    summonTurn: "after-caster",
     level: 5,
     school: "conjuration",
     classes: ["wizard"],

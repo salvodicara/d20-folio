@@ -250,6 +250,13 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "raised bestiary creatures are entities with their own stat blocks (their attacks are monster Activities)",
     });
   }
+  if (spell.summonTurn) {
+    gaps.push({
+      field: "summonTurn",
+      reason:
+        "where the summoned creature acts is an Initiative-order fact of the encounter (lib/play/summon-initiative), not an activity",
+    });
+  }
   if (spell.bestiaryPick) {
     gaps.push({
       field: "bestiaryPick",
