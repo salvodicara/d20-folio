@@ -422,6 +422,7 @@ const SCHEMAS: Readonly<Record<AutomationCorpusSchema, FieldRule>> = {
     conditions: compiled("stat-block"),
     conditionsIf: compiled("stat-block"),
     conditionSave: compiled("stat-block"),
+    bloodiedDamage: compiled("stat-block"),
     performs: compiled("stat-block"),
     multiattack: compiled("stat-block"),
     movement: compiled("stat-block"),

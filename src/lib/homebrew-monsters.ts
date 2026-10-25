@@ -218,6 +218,7 @@ export const HOMEBREW_MONSTER_ENTRY_SCHEMA: ExactSchema = discriminatedUnionSche
         conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
         conditionsIf: TRUE,
         conditionSave: objectSchema({ save: ABILITY, dc: COUNT }),
+        bloodiedDamage: DAMAGE,
         ...EFFECT_RIDER_SCHEMAS,
       }
     ),
