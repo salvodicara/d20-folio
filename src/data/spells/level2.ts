@@ -378,6 +378,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
   },
   {
     id: "find-steed",
+    summonTurn: "after-caster",
     level: 2,
     school: "conjuration",
     classes: ["paladin"],

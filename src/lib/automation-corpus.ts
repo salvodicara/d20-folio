@@ -194,6 +194,7 @@ const SPELL_FIELDS: Readonly<Record<string, FieldRule>> = {
     allowBackReferences: true,
   },
   summonedMonsters: compiled("stat-block"),
+  summonTurn: compiled("stat-block"),
   bestiaryPick: compiled("stat-block"),
 };
 
@@ -306,6 +307,7 @@ const MAGIC_ITEM_FIELDS: Readonly<Record<string, FieldRule>> = {
   resources: compiled("resource"),
   durationRounds: compiled("item-activation"),
   summonedMonsters: compiled("stat-block"),
+  summonTurn: compiled("stat-block"),
   bestiaryPick: compiled("stat-block"),
   source: IGNORE,
 };

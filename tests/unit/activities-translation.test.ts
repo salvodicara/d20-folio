@@ -54,6 +54,7 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   companion: "a summoned entity, not an activity",
   summonedMonsters: "raised bestiary creatures, each a monster stat block",
   bestiaryPick: "the creature the caster picks, a monster stat block",
+  summonTurn: "where a summoned creature acts, an encounter fact",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   performs: "a stat-block entry that uses another one, resolved on the block",

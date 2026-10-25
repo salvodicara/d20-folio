@@ -36,6 +36,17 @@
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",
     "givenCondition": "{{target}} ha fallito il TS: {{condition}}",
     "unknownEvent": "Voce registrata da una versione più nuova dell'app",
-    "riderTakenFrom": "{{effect}} ({{source}})"
+    "riderTakenFrom": "{{effect}} ({{source}})",
+    "exhaustionChange": "Indebolimento livello {{to}} (era {{from}})",
+    "exhaustionEnded": "Indebolimento terminato",
+    "slotSpent_one": "Speso uno slot incantesimo di livello {{level}}",
+    "slotSpent_other": "Spesi {{count}} slot incantesimo di livello {{level}}",
+    "slotSpentPact_one": "Speso uno slot di Magia del Patto di livello {{level}}",
+    "slotSpentPact_other": "Spesi {{count}} slot di Magia del Patto di livello {{level}}",
+    "slotRestored_other": "Recuperati {{count}} slot incantesimo di livello {{level}}",
+    "slotRestoredPact_one": "Recuperato uno slot di Magia del Patto di livello {{level}}",
+    "slotRestoredPact_other": "Recuperati {{count}} slot di Magia del Patto di livello {{level}}",
+    "inspirationGained": "Ottenuta Ispirazione Eroica",
+    "inspirationSpent": "Spesa Ispirazione Eroica"
   }
 }

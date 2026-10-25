@@ -22,7 +22,11 @@
  */
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
 import type { HomebrewItemMechanics, ResourceSpec, SrdMagicItemData } from "@/data/types";
-import { ALL_MAGIC_ITEM_RARITIES, ALL_MAGIC_ITEM_TYPES } from "@/data/types";
+import {
+  ALL_MAGIC_ITEM_RARITIES,
+  ALL_MAGIC_ITEM_TYPES,
+  ALL_SUMMON_TURNS,
+} from "@/data/types";
 import {
   arraySchema,
   booleanSchema,
@@ -158,6 +162,7 @@ export const HOMEBREW_ITEM_FIELD_SCHEMAS: {
   resources: arraySchema(RESOURCE),
   durationRounds: numberSchema,
   summonedMonsters: OBJECT,
+  summonTurn: literals(ALL_SUMMON_TURNS),
   bestiaryPick: OBJECT,
 };
 

@@ -108,6 +108,28 @@ export type PlayEvent =
       to: number;
       target: CombatantId;
     }
+  /** The Exhaustion level changed (`to` 0 = it ended). An older reader shows a
+   *  neutral line. */
+  | {
+      kind: "exhaustion";
+      /** Absent when the level before was unknown. */
+      from?: number;
+      to: number;
+      target?: CombatantId;
+      source?: LocText;
+    }
+  /** `count` spell slots of `level` were spent or regained by hand. */
+  | {
+      kind: "spell-slot";
+      level: number;
+      count: number;
+      spent: boolean;
+      pactMagic?: true;
+      actor?: CombatantId;
+      source?: LocText;
+    }
+  /** Heroic Inspiration was gained or spent (given by someone else: `resource-grant`). */
+  | { kind: "inspiration"; gained: boolean; target?: CombatantId; source?: LocText }
   | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
   | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }
   /** Minutes pass outside the turn order; what runs out in them ends. */

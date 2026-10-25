@@ -61,6 +61,7 @@ import {
   setDeathSaves,
   setExhaustion,
   setHp,
+  setInspiration,
   setHpMaxReduction,
   setTempHp,
   spendSpellSlot,
@@ -83,6 +84,8 @@ export type SheetEvent =
   | { kind: "top-up-tracker"; trackerId: string; upTo: number | "full" }
   | { kind: "set-death-saves"; successes: number; failures: number }
   | { kind: "set-exhaustion"; level: number }
+  /** Heroic Inspiration held or spent. Its log line: `sheetEventLogEvents`. */
+  | { kind: "set-inspiration"; held: boolean }
   | { kind: "start-fading-penalty"; penaltyId: string }
   | { kind: "set-fading-penalty"; penaltyId: string; amount: number }
   | {
@@ -207,6 +210,8 @@ export function applySheetEvent(
       return withSession(setDeathSaves(doc, event.successes, event.failures)?.session);
     case "set-exhaustion":
       return withSession(setExhaustion(doc, event.level));
+    case "set-inspiration":
+      return withSession(setInspiration(doc, event.held));
     case "start-fading-penalty":
       return withSession(startFadingPenalty(doc, event.penaltyId));
     case "set-fading-penalty":

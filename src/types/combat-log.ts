@@ -194,6 +194,30 @@ export type CombatEvent =
   /** Casting a spell gave back one expended spell slot (Expert Divination). */
   | { kind: "slot-regain"; level: number }
   /**
+   * The Exhaustion level changed by hand or by an effect (`to` 0 = it ended). Lines
+   * from `@/lib/play/resource-log`; an older reader shows a neutral line.
+   */
+  | { kind: "exhaustion-change"; from: number; to: number; source?: LocText }
+  /** `count` spell slots of `level` were spent (a pip ticked); `pactMagic`: the Pact
+   *  Magic pool. An older reader shows a neutral line. */
+  | {
+      kind: "slot-spent";
+      level: number;
+      count: number;
+      pactMagic?: true;
+      source?: LocText;
+    }
+  /** `count` spell slots of `level` were regained by hand (a pip cleared). */
+  | {
+      kind: "slot-restored";
+      level: number;
+      count: number;
+      pactMagic?: true;
+      source?: LocText;
+    }
+  /** Heroic Inspiration was gained or spent. An older reader shows a neutral line. */
+  | { kind: "inspiration-change"; gained: boolean; source?: LocText }
+  /**
    * Read-normalization ONLY (the bounded one-way boundary, golden rule 10): a
    * pre-events-as-data persisted entry that carried a frozen localized `text`.
    * Rendered verbatim so an existing user's history stays visible; the engine

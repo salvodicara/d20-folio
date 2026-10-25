@@ -23,6 +23,7 @@ import {
   ALL_ACTION_TYPES,
   ALL_CREATURE_TYPES,
   ALL_REACTION_TRIGGERS,
+  ALL_SUMMON_TURNS,
 } from "@/data/types";
 import {
   arraySchema,
@@ -230,6 +231,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   grants: arraySchema(GRANT),
   companion: OBJECT,
   summonedMonsters: OBJECT,
+  summonTurn: literals(ALL_SUMMON_TURNS),
   bestiaryPick: OBJECT,
   components: objectSchema({}, { costGp: numberSchema, consumed: booleanSchema }),
 };

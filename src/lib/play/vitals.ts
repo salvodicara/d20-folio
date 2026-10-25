@@ -287,3 +287,8 @@ export function setExhaustion(doc: CharacterDoc, level: number): SessionState | 
   });
   return engine ? engine.session : { ...doc.session, exhaustion: target };
 }
+
+/** Heroic Inspiration held or not; null when it already is. */
+export function setInspiration(doc: CharacterDoc, held: boolean): SessionState | null {
+  return doc.session.inspiration === held ? null : { ...doc.session, inspiration: held };
+}

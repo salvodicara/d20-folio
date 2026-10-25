@@ -162,6 +162,29 @@ export function localizePlayEvent(
             to: value(event.to),
           });
     }
+    case "exhaustion":
+      return withSource(
+        event.from === undefined
+          ? t("sessionReport.exhaustionSet", { target: who(event.target), to: event.to })
+          : t("sessionReport.exhaustion", {
+              target: who(event.target),
+              from: event.from,
+              to: event.to,
+            })
+      );
+    case "spell-slot":
+      return withSource(
+        t(
+          `sessionReport.slot.${event.spent ? "spent" : "regained"}${event.pactMagic ? "Pact" : ""}`,
+          { actor: who(event.actor), count: event.count, level: event.level }
+        )
+      );
+    case "inspiration":
+      return withSource(
+        t(`sessionReport.inspiration.${event.gained ? "gained" : "spent"}`, {
+          target: who(event.target),
+        })
+      );
     case "death-save":
       return t(`sessionReport.deathSave.${event.outcome}`, { actor: who(event.actor) });
     case "rest":

@@ -41,6 +41,9 @@ const SAMPLES: Record<
   heal: { kind: "heal", amount: 5, target: "pc-mara" },
   "temp-hp": { kind: "temp-hp", amount: 5, target: "pc-mara" },
   "max-hp": { kind: "max-hp", reduction: 6, target: "pc-mara" },
+  exhaustion: { kind: "exhaustion", from: 1, to: 2, target: "pc-mara" },
+  "spell-slot": { kind: "spell-slot", level: 3, count: 1, spent: true, actor: "pc-mara" },
+  inspiration: { kind: "inspiration", gained: true, target: "pc-mara" },
   rider: {
     kind: "rider",
     rider: { kind: "speed-reduction", feet: 10 },

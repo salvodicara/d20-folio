@@ -61,6 +61,22 @@
     "automatic": "Automatic report",
     "addNotes": "Write notes",
     "notes": "Session notes",
-    "rider": "{{target}}: {{effect}}"
+    "rider": "{{target}}: {{effect}}",
+    "exhaustion": "{{target}}: Exhaustion {{from}} → {{to}}",
+    "exhaustionSet": "{{target}}: Exhaustion {{to}}",
+    "slot": {
+      "spent_one": "{{actor}} spends a level {{level}} spell slot",
+      "spent_other": "{{actor}} spends {{count}} level {{level}} spell slots",
+      "spentPact_one": "{{actor}} spends a level {{level}} Pact Magic slot",
+      "spentPact_other": "{{actor}} spends {{count}} level {{level}} Pact Magic slots",
+      "regained_one": "{{actor}} regains a level {{level}} spell slot",
+      "regained_other": "{{actor}} regains {{count}} level {{level}} spell slots",
+      "regainedPact_one": "{{actor}} regains a level {{level}} Pact Magic slot",
+      "regainedPact_other": "{{actor}} regains {{count}} level {{level}} Pact Magic slots"
+    },
+    "inspiration": {
+      "gained": "{{target}} gains Heroic Inspiration",
+      "spent": "{{target}} spends Heroic Inspiration"
+    }
   }
 }
