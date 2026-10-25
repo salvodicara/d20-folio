@@ -8624,8 +8624,13 @@ export interface Round1DamageDoubleEntry {
   sourceId: string;
   /** The TARGET's save ability (Death Strike: CON). */
   saveAbility: AbilityCode;
-  /** The resolved save DC (8 + PB + the governing ability mod, via `featureSaveDc`). */
+  /**
+   * The save DC: 8 + PB + the governing ability mod (via `featureSaveDc`), or the
+   * hand-set `saveDcOverrides[sourceId]` when one is pinned.
+   */
   saveDC: number;
+  /** Lines that sum to `saveDC`: the computed ones, plus a manual adjustment when pinned. */
+  saveDcParts: RawBreakdownPart[];
 }
 
 /**
@@ -8643,15 +8648,24 @@ export function resolveRound1DamageDoubles(
   if (agg.round1DamageDoubles.length === 0) return [];
   const level = totalLevel(character.character);
   const scores = combatAbilityScores(character);
-  return agg.round1DamageDoubles.map((r) => ({
-    sourceId: r.sourceId,
-    saveAbility: r.saveAbility,
-    saveDC: featureSaveDc(
+  const { proficiencyBonusOverride, saveDcOverrides } = character.character;
+  return agg.round1DamageDoubles.map((r) => {
+    const parts = featureSaveDcBreakdown(
       level,
+      r.saveDcAbility,
       scores[r.saveDcAbility],
-      character.character.proficiencyBonusOverride
-    ),
-  }));
+      proficiencyBonusOverride
+    );
+    // A hand-set DC, keyed by the feature id, wins (manual adjustment).
+    const pin = saveDcOverrides?.[r.sourceId];
+    return {
+      sourceId: r.sourceId,
+      saveAbility: r.saveAbility,
+      saveDC:
+        pin ?? featureSaveDc(level, scores[r.saveDcAbility], proficiencyBonusOverride),
+      saveDcParts: pin === undefined ? parts : withOverride(parts, pin),
+    };
+  });
 }
 
 // ════════════════════════════════════════════════════════════════════════════

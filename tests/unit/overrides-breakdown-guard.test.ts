@@ -17,8 +17,10 @@ import {
   buildWeaponAttackBreakdown,
   resolveActions,
   resolveCunningStrikeOptions,
+  resolveRound1DamageDoubles,
 } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 import {
   OVERRIDE_TERM,
   breakdownTotal,
@@ -350,5 +352,42 @@ describe("every action's save DC can be set by hand and stays explained", () => 
     expect(poison?.saveDc).toBe(17);
     expect(breakdownTotal(poison?.saveDcParts ?? [])).toBe(17);
     expect(isHandSet(poison?.saveDcParts)).toBe(true);
+  });
+
+  it("a round-1 damage-doubler DC (Death Strike style) is explained and pinned by its feature id", () => {
+    const id = customInstanceId("First Blood");
+    // Level 9 → PB 4; DEX 18 → +4 ⇒ DC 16.
+    const doc = makeCharacterDoc({
+      level: 9,
+      abilityScores: { STR: 10, DEX: 18, CON: 12, INT: 10, WIS: 10, CHA: 10 },
+      features: [
+        {
+          custom: true,
+          title: "First Blood",
+          emoji: "🗡️",
+          source: "Homebrew",
+          tags: [],
+          contentBlocks: [],
+          grants: [
+            { type: "round1-damage-double", saveAbility: "CON", saveDcAbility: "DEX" },
+          ],
+          instanceId: id,
+        },
+      ],
+    });
+    const [computed] = resolveRound1DamageDoubles(doc);
+    expect(computed?.saveDC).toBe(16);
+    expect(breakdownTotal(computed?.saveDcParts ?? [])).toBe(16);
+    expect(isHandSet(computed?.saveDcParts)).toBe(false);
+
+    const [pinned] = resolveRound1DamageDoubles(
+      withChar(doc, { saveDcOverrides: { [id]: 19 } })
+    );
+    expect(pinned?.saveDC).toBe(19);
+    expect(breakdownTotal(pinned?.saveDcParts ?? [])).toBe(19);
+    expect(isHandSet(pinned?.saveDcParts)).toBe(true);
+    expect(pinned?.saveDcParts.filter((p) => !isOverridePart(p))).toEqual(
+      computed?.saveDcParts
+    );
   });
 });
