@@ -123,6 +123,8 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       env: {
         VITE_DEV_BYPASS_AUTH: "true",
+        // No HMR socket: it reloads a page by itself mid-test (see vite.config.ts).
+        VITE_E2E_NO_HMR: "true",
       },
     },
     // SW-enabled dev server for the portrait-export journey (real Workbox SW +
@@ -138,6 +140,9 @@ export default defineConfig({
             env: {
               VITE_DEV_BYPASS_AUTH: "true",
               VITE_PWA_DEV: "true",
+              // No VITE_E2E_NO_HMR here: the dev service worker needs the Vite
+              // client's socket (measured: the four portrait-sw tests time out
+              // without it). Only those four tests run on this server.
             },
           },
         ]

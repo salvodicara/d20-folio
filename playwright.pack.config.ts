@@ -29,7 +29,8 @@ export default defineConfig({
     {
       command: "pnpm vite --host 127.0.0.1 --port 5181 --strictPort",
       url: COMPOSED_URL,
-      env: EMULATOR_CLIENT_ENV,
+      // No HMR socket: it reloads a page by itself mid-test (see vite.config.ts).
+      env: { ...EMULATOR_CLIENT_ENV, VITE_E2E_NO_HMR: "true" },
       reuseExistingServer: !process.env.CI,
     },
     {
@@ -37,6 +38,7 @@ export default defineConfig({
       url: RUNTIME_URL,
       env: {
         ...EMULATOR_CLIENT_ENV,
+        VITE_E2E_NO_HMR: "true",
         VITE_CONTENT_PACK: "runtime",
         VITE_PACK_VERSION: process.env.VITE_PACK_VERSION ?? "",
       },
