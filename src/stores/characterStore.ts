@@ -160,7 +160,8 @@ import {
 } from "@/lib/character-d20-tests";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
 import { createItemInstanceId } from "@/lib/item-resources";
-import { itemCopyItemId } from "@/lib/homebrew-items";
+import { itemCopies, itemCopyItemId } from "@/lib/homebrew-items";
+import { exactItemCopy } from "@/lib/item-copies";
 
 export type MechanicsPlanCommitResult =
   | { status: "applied"; receipt: MechanicsReceipt }
@@ -1833,13 +1834,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         ...(current ? { state: structuredClone(current) } : {}),
       };
     }
-    const owners = character.character.equipment.filter(
-      (ref) =>
-        itemCopyItemId(ref) === item.itemId &&
-        item.itemId === binding.srdId &&
-        ref.instanceId === instanceId
-    );
-    if (owners.length !== 1) {
+    // The one copy with this id, a carried weapon included (a homebrew weapon with
+    // charges), never two sharing it.
+    const owner =
+      typeof instanceId === "string" && item.itemId === binding.srdId
+        ? exactItemCopy(character, item.itemId, instanceId)
+        : null;
+    if (!owner) {
       return {
         status: "rejected",
         ...(current ? { state: structuredClone(current) } : {}),
@@ -1870,7 +1871,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     for (const entry of entries) {
       const instanceId = entry.binding.instanceId;
       if (typeof instanceId !== "string") return { status: "rejected" };
-      const owners = character.character.equipment.filter(
+      // Every item copy, carried weapons included (a homebrew weapon's charges).
+      const owners = itemCopies(character.character).filter(
         (ref) => ref.instanceId === instanceId && itemCopyItemId(ref) !== undefined
       );
       const owner = owners[0];
