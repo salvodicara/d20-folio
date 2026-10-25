@@ -394,7 +394,14 @@ export default defineConfig({
   // The dev server serves modules by REAL path; allow the pack's real
   // directory (a symlink into the private content repo — the vitest lanes
   // instead resolve with preserveSymlinks, vitest.config.ts).
-  server: { fs: { allow: fsAllowRoots() } },
+  server: {
+    fs: { allow: fsAllowRoots() },
+    // The e2e servers run without HMR: its socket is what reloads a page by itself
+    // (a dropped connection on a busy runner, a re-optimised dependency, a file
+    // touched mid-run), destroying a test's page mid-step ("Execution context was
+    // destroyed … navigation"). Nothing in a test needs a hot update.
+    ...(process.env.VITE_E2E_NO_HMR === "true" ? { hmr: false, ws: false } : {}),
+  },
   build: {
     // CODE-SPLIT — split the SRD database, the Firebase SDK, and React-vendor
     // code into their own long-cacheable chunks. The dynamic-import shape on

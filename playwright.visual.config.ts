@@ -20,6 +20,6 @@ export default defineConfig({
     command: `pnpm vite --port ${VISUAL_PORT}`,
     url: `http://localhost:${VISUAL_PORT}`,
     reuseExistingServer: !RUNTIME_ENV.CI,
-    env: { VITE_DEV_BYPASS_AUTH: "true" },
+    env: { VITE_DEV_BYPASS_AUTH: "true", VITE_E2E_NO_HMR: "true" },
   },
 });
