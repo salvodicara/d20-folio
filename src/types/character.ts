@@ -1105,6 +1105,18 @@ export interface SessionState {
    */
   breath?: { roundsLeft: number; gained: number; choking?: true };
   /**
+   * Dehydration and Malnutrition (SRD 5.2.1 hazards): `daysWithoutFood` in a row, and
+   * the Exhaustion levels each hazard added (`thirst`, `hunger`) that a Long Rest can't
+   * remove until a day with the full water or food. Absent while nothing is owed. See
+   * `@/lib/play/provisions`.
+   */
+  provisions?: { daysWithoutFood?: number; thirst?: number; hunger?: number };
+  /**
+   * Burning (SRD 5.2.1 hazard): 1d4 Fire damage at the start of each of its turns
+   * until it is put out. Absent when not on fire. See `@/lib/play/environment`.
+   */
+  burning?: true;
+  /**
    * D20 Test penalties that fade by one each Long Rest (Raise Dead's −4), keyed by
    * the imposing catalogue id → the amount still remaining. Absent when none runs.
    */
@@ -1279,11 +1291,37 @@ export interface SessionState {
       tempHp: number;
     };
   };
+  /**
+   * Magic Jar (SRD 5.2.1): the caster's soul in its container (body catatonic), or
+   * possessing a Humanoid host whose Hit Points, Hit Point Dice, STR / DEX / CON,
+   * Speed and senses replaced the caster's own; `prior` restores them on the way
+   * back. Absent when the spell is not running. See `@/lib/play/magic-jar`.
+   */
+  magicJar?: MagicJarState;
   notes: string;
   logEntries: LogEntry[];
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
+
+/** The caster's own fields a Magic Jar possession replaces, restored on return. */
+export interface MagicJarPrior {
+  abilityScores: Record<"STR" | "DEX" | "CON", number>;
+  speedOverride: number | null;
+  speedOverrides: Record<string, number | null>;
+  senseRangeOverrides: Record<string, number | null>;
+  hpMax: number;
+  hpCurrent: number;
+  hpMaxReduction: number;
+  hitDieType: 4 | 6 | 8 | 10 | 12;
+  hitDiceTotalOverride: number | null;
+  hitDiceUsed: number;
+}
+
+/** Where the caster's soul is while Magic Jar lasts. */
+export type MagicJarState =
+  | { stage: "container" }
+  | { stage: "host"; hostId: string; prior: MagicJarPrior };
 
 /**
  * One action-/combat-log entry — the events-as-data shape (mirrors toasts-as-data).
