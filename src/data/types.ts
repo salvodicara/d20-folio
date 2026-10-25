@@ -2033,7 +2033,7 @@ export interface SummonCount {
  * `after-caster` — it shares the caster's Initiative count and takes its turn right
  * after the caster's (Summon Dragon, Giant Insect, Figurine of Wondrous Power);
  * `caster-turn` — it has no turn of its own and acts when the caster commands it on
- * the caster's turn (Bigby's Hand). Absent: the text says nothing, so the creature
+ * the caster's turn (Arcane Hand). Absent: the text says nothing, so the creature
  * rolls its own Initiative (Animate Dead, Planar Ally, Horn of Valhalla).
  */
 export const ALL_SUMMON_TURNS = ["after-caster", "caster-turn"] as const;

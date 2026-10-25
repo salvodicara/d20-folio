@@ -208,7 +208,9 @@ export function localizeCombatEvent(
   };
   // What caused the change, when the line knows ("Spent Heroic Inspiration (Lucky)").
   const withSource = (line: string, source: LocText | undefined): string =>
-    source ? t("combatLog.withSource", { line, source: resolveActionRef(source) }) : line;
+    source
+      ? t("sessionReport.withSource", { line, source: resolveActionRef(source) })
+      : line;
   switch (event.kind) {
     case "action-use":
       // ATTACK-PIPS — an Extra-Attack swing appends its count ("… — attack 2 of 2").
@@ -336,7 +338,13 @@ export function localizeCombatEvent(
       );
     case "slot-spent":
     case "slot-restored": {
-      const key = event.kind === "slot-spent" ? "slotSpent" : "slotRestored";
+      // One standard slot back reads as Expert Divination's line (one unit, one key).
+      const key =
+        event.kind === "slot-spent"
+          ? "slotSpent"
+          : event.count === 1 && !event.pactMagic
+            ? "slotRegain"
+            : "slotRestored";
       return withSource(
         t(`combatLog.${key}${event.pactMagic ? "Pact" : ""}`, {
           count: event.count,

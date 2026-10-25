@@ -10,7 +10,7 @@
  *   Staff of the Python: "shares your Initiative count, taking its turn immediately
  *   after yours." Figurine of Wondrous Power: "takes its turn immediately after you
  *   on your Initiative count."
- *   Bigby's Hand: "as a Bonus Action on your later turns, you can move the hand" — it
+ *   Arcane Hand: "as a Bonus Action on your later turns, you can move the hand" — it
  *   has no turn of its own.
  *   Animate Dead, Planar Ally, Horn of Valhalla: the text says nothing, so the
  *   creature rolls its own Initiative.

@@ -2,7 +2,7 @@
  * Summoned creatures in the Initiative order, as each source's SRD 5.2.1 text says
  * ({@link SummonTurn}): a creature that shares its caster's Initiative count takes its
  * turn right after the caster (Summon Dragon, Giant Insect, Staff of the Python); one
- * with no turn of its own gets no row (Bigby's Hand); any other rolls its own
+ * with no turn of its own gets no row (Arcane Hand); any other rolls its own
  * Initiative, typed at the table (Animate Dead, Planar Ally, Horn of Valhalla).
  *
  * Who summoned whom lives on the encounter (`EncounterState.summons`), never on a

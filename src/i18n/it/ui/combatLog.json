@@ -43,12 +43,10 @@
     "slotSpent_other": "Spesi {{count}} slot incantesimo di livello {{level}}",
     "slotSpentPact_one": "Speso uno slot di Magia del Patto di livello {{level}}",
     "slotSpentPact_other": "Spesi {{count}} slot di Magia del Patto di livello {{level}}",
-    "slotRestored_one": "Recuperato uno slot incantesimo di livello {{level}}",
     "slotRestored_other": "Recuperati {{count}} slot incantesimo di livello {{level}}",
     "slotRestoredPact_one": "Recuperato uno slot di Magia del Patto di livello {{level}}",
     "slotRestoredPact_other": "Recuperati {{count}} slot di Magia del Patto di livello {{level}}",
     "inspirationGained": "Ottenuta Ispirazione Eroica",
-    "inspirationSpent": "Spesa Ispirazione Eroica",
-    "withSource": "{{line}} ({{source}})"
+    "inspirationSpent": "Spesa Ispirazione Eroica"
   }
 }
