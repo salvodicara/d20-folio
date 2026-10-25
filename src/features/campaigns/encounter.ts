@@ -25,6 +25,7 @@
  */
 
 import { mountLinks, mountedTurnOrder } from "@/lib/play/mounts";
+import { summonLinks, summonedTurnOrder } from "@/lib/play/summon-links";
 import type {
   CampaignDoc,
   EncounterState,
@@ -404,8 +405,12 @@ export function beginEncounterTurns(
   extraTurns: ReadonlyArray<StoredExtraTurn> = []
 ): EncounterState {
   if (state.currentCombatantId !== null) return state;
-  // A controlled mount acts right after its rider (SRD 5.2.1 Mounted Combat).
-  const frozen = freezeOrder(state, mountedTurnOrder(orderedIds, mountLinks(state)));
+  // A controlled mount acts right after its rider (SRD 5.2.1 Mounted Combat), and a
+  // summon that shares its caster's Initiative right after the caster (Summon Dragon).
+  const frozen = freezeOrder(
+    state,
+    summonedTurnOrder(mountedTurnOrder(orderedIds, mountLinks(state)), summonLinks(state))
+  );
   const first = frozen.order?.[0];
   if (first === undefined) return state;
   const begun: EncounterState = { ...frozen, currentCombatantId: first };
