@@ -135,6 +135,32 @@ export function combatEventToPlayEvent(
             ),
           }
         : null;
+    case "exhaustion-change":
+      return {
+        kind: "exhaustion",
+        from: event.from,
+        to: event.to,
+        target: me,
+        ...(event.source ? { source: event.source } : {}),
+      };
+    case "slot-spent":
+    case "slot-restored":
+      return {
+        kind: "spell-slot",
+        level: event.level,
+        count: event.count,
+        spent: event.kind === "slot-spent",
+        ...(event.pactMagic ? { pactMagic: true as const } : {}),
+        actor: me,
+        ...(event.source ? { source: event.source } : {}),
+      };
+    case "inspiration-change":
+      return {
+        kind: "inspiration",
+        gained: event.gained,
+        target: me,
+        ...(event.source ? { source: event.source } : {}),
+      };
     case "tracker-regain":
     case "slot-regain":
     case "legacy":

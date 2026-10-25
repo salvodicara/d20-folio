@@ -131,7 +131,15 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
     case "tracker-regain":
       return resolveLogStyle("tracker-use");
     case "slot-regain":
+    case "slot-spent":
+    case "slot-restored":
       return resolveLogStyle("spell-cast");
+    case "exhaustion-change":
+      return resolveLogStyle(
+        event.to > event.from ? "condition-add" : "condition-remove"
+      );
+    case "inspiration-change":
+      return resolveLogStyle("tracker-use");
     case "effect-given":
       return resolveLogStyle(
         event.effect === "damage"
@@ -198,6 +206,9 @@ export function localizeCombatEvent(
       ),
     });
   };
+  // What caused the change, when the line knows ("Spent Heroic Inspiration (Lucky)").
+  const withSource = (line: string, source: LocText | undefined): string =>
+    source ? t("combatLog.withSource", { line, source: resolveActionRef(source) }) : line;
   switch (event.kind) {
     case "action-use":
       // ATTACK-PIPS — an Extra-Attack swing appends its count ("… — attack 2 of 2").
@@ -316,6 +327,29 @@ export function localizeCombatEvent(
       });
     case "slot-regain":
       return t("combatLog.slotRegain", { level: event.level });
+    case "exhaustion-change":
+      return withSource(
+        event.to === 0
+          ? t("combatLog.exhaustionEnded")
+          : t("combatLog.exhaustionChange", { from: event.from, to: event.to }),
+        event.source
+      );
+    case "slot-spent":
+    case "slot-restored": {
+      const key = event.kind === "slot-spent" ? "slotSpent" : "slotRestored";
+      return withSource(
+        t(`combatLog.${key}${event.pactMagic ? "Pact" : ""}`, {
+          count: event.count,
+          level: event.level,
+        }),
+        event.source
+      );
+    }
+    case "inspiration-change":
+      return withSource(
+        t(event.gained ? "combatLog.inspirationGained" : "combatLog.inspirationSpent"),
+        event.source
+      );
     case "effect-given":
       return event.effect === "condition"
         ? t("combatLog.givenCondition", {

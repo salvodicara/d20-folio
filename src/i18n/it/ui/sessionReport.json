@@ -61,6 +61,22 @@
     "automatic": "Resoconto automatico",
     "addNotes": "Scrivi le note",
     "notes": "Note della sessione",
-    "rider": "{{target}}: {{effect}}"
+    "rider": "{{target}}: {{effect}}",
+    "exhaustion": "{{target}}: Indebolimento {{from}} → {{to}}",
+    "exhaustionSet": "{{target}}: Indebolimento {{to}}",
+    "slot": {
+      "spent_one": "{{actor}} spende uno slot incantesimo di livello {{level}}",
+      "spent_other": "{{actor}} spende {{count}} slot incantesimo di livello {{level}}",
+      "spentPact_one": "{{actor}} spende uno slot di Magia del Patto di livello {{level}}",
+      "spentPact_other": "{{actor}} spende {{count}} slot di Magia del Patto di livello {{level}}",
+      "regained_one": "{{actor}} recupera uno slot incantesimo di livello {{level}}",
+      "regained_other": "{{actor}} recupera {{count}} slot incantesimo di livello {{level}}",
+      "regainedPact_one": "{{actor}} recupera uno slot di Magia del Patto di livello {{level}}",
+      "regainedPact_other": "{{actor}} recupera {{count}} slot di Magia del Patto di livello {{level}}"
+    },
+    "inspiration": {
+      "gained": "{{target}} ottiene Ispirazione Eroica",
+      "spent": "{{target}} spende Ispirazione Eroica"
+    }
   }
 }

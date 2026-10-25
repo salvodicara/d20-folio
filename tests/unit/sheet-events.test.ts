@@ -131,6 +131,10 @@ const CASES: {
     { kind: "set-exhaustion", level: 3 },
     () => at(vitals.setExhaustion(doc, 3)),
   ],
+  "set-inspiration": [
+    { kind: "set-inspiration", held: true },
+    () => at(vitals.setInspiration(doc, true)),
+  ],
   "start-fading-penalty": [
     { kind: "start-fading-penalty", penaltyId: "raise-dead" },
     () => at(fading.startFadingPenalty(doc, "raise-dead")),

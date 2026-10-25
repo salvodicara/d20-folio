@@ -103,6 +103,10 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
     amount: 2,
   },
   "slot-regain": { kind: "slot-regain", level: 1 },
+  "exhaustion-change": { kind: "exhaustion-change", from: 1, to: 2 },
+  "slot-spent": { kind: "slot-spent", level: 3, count: 1 },
+  "slot-restored": { kind: "slot-restored", level: 2, count: 2, pactMagic: true },
+  "inspiration-change": { kind: "inspiration-change", gained: true },
   "effect-given": {
     kind: "effect-given",
     effect: "heal",

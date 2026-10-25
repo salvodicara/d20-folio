@@ -36,6 +36,19 @@
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
     "givenCondition": "{{target}} failed the save: {{condition}}",
     "unknownEvent": "An entry from a newer version of the app",
-    "riderTakenFrom": "{{effect}} ({{source}})"
+    "riderTakenFrom": "{{effect}} ({{source}})",
+    "exhaustionChange": "Exhaustion level {{to}} (was {{from}})",
+    "exhaustionEnded": "Exhaustion ended",
+    "slotSpent_one": "Spent a level {{level}} spell slot",
+    "slotSpent_other": "Spent {{count}} level {{level}} spell slots",
+    "slotSpentPact_one": "Spent a level {{level}} Pact Magic slot",
+    "slotSpentPact_other": "Spent {{count}} level {{level}} Pact Magic slots",
+    "slotRestored_one": "Regained a level {{level}} spell slot",
+    "slotRestored_other": "Regained {{count}} level {{level}} spell slots",
+    "slotRestoredPact_one": "Regained a level {{level}} Pact Magic slot",
+    "slotRestoredPact_other": "Regained {{count}} level {{level}} Pact Magic slots",
+    "inspirationGained": "Gained Heroic Inspiration",
+    "inspirationSpent": "Spent Heroic Inspiration",
+    "withSource": "{{line}} ({{source}})"
   }
 }
