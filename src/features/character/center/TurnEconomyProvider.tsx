@@ -829,15 +829,17 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     );
     const spends = bareSpend ? [bareSpend] : [];
     paySpends(spends);
-    if (!bareSpend && action.costEquipment) {
-      restoreEquipment = cs.useEquipmentItem(action.costEquipment);
-    }
     // S9 — a CONSUMED buff potion (Speed / Giant Strength / …) arms its
     // self-sustaining round countdown when drunk, so its duration ticks at each
     // End Turn and auto-expires. No-op for an instant potion / non-item cost.
+    // Armed BEFORE the bottle is used: a homebrew potion reads its mechanics from
+    // its own row, which the last bottle's use removes.
     const restorePotionTimer = action.costEquipment
       ? cs.consumePotionBuff(action.costEquipment)
       : null;
+    if (!bareSpend && action.costEquipment) {
+      restoreEquipment = cs.useEquipmentItem(action.costEquipment);
+    }
     // RA-14 — a ranged attack with TRACKED ammunition debits one unit (SRD
     // "Ammunition": each attack expends one piece). The engine stamps
     // `summary.ammo` only when a matching inventory row exists, and the store
