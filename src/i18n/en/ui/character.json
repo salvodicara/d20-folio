@@ -73,6 +73,8 @@
     "speed_swimHint": "You have a Swimming Speed of this distance.",
     "speed_climb": "Climb",
     "speed_climbHint": "You have a Climbing Speed of this distance.",
+    "speed_burrow": "Burrow",
+    "speed_burrowHint": "You have a Burrow Speed of this distance: you can move through sand, earth, mud or ice.",
     "activeFeatures": "Active",
     "activeFeaturesHint": "Toggle a feature on while you're using it (Rage, Bladesong, Innate Sorcery, …). Its bonuses (resistances, speed, advantage) apply only while it's active.",
     "landChoiceHint": "Choose one option; you can re-choose each Long Rest. The selection sets your prepared Circle Spells and any related resistance.",

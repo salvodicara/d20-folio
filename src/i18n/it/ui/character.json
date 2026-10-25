@@ -73,6 +73,8 @@
     "speed_swimHint": "Hai una Velocità di Nuoto pari a questa distanza.",
     "speed_climb": "Scalata",
     "speed_climbHint": "Hai una Velocità di Scalata pari a questa distanza.",
+    "speed_burrow": "Scavo",
+    "speed_burrowHint": "Hai una Velocità di Scavo pari a questa distanza: puoi muoverti attraverso sabbia, terra, fango o ghiaccio.",
     "activeFeatures": "Attive",
     "activeFeaturesHint": "Attiva un privilegio mentre lo stai usando (Ira, Canto di Lama, Stregoneria Innata, …). I suoi bonus (resistenze, velocità, vantaggio) si applicano solo quando è attivo.",
     "landChoiceHint": "Scegli un'opzione; puoi riscegliere a ogni Riposo Lungo. La selezione imposta gli Incantesimi del Circolo preparati e l'eventuale resistenza correlata.",

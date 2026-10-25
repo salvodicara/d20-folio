@@ -40,7 +40,7 @@ export type SenseKind = (typeof SENSE_KINDS)[number];
 
 export { DETECTION_TARGETS, type DetectionTarget } from "./detection-targets";
 
-export type MoveMode = "fly" | "swim" | "climb";
+export type MoveMode = "fly" | "swim" | "climb" | "burrow";
 
 /** What a rule modifies. Grows one family at a time. */
 export type RuleTarget =
@@ -251,7 +251,8 @@ export function compileGrant(grant: Grant): Rule[] | null {
     }
     case "fly-speed":
     case "swim-speed":
-    case "climb-speed": {
+    case "climb-speed":
+    case "burrow-speed": {
       const mode = grant.type.slice(0, -"-speed".length) as MoveMode;
       return typeof grant.amount === "number"
         ? [{ op: "max", target: `speed:${mode}`, value: grant.amount }]

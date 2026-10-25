@@ -30,7 +30,11 @@ Since 0.24.1, also the pure core the new app is built on:
 
 - `sheetNumbers(doc)`: every sheet number as `{ total, parts }` (the parts sum to the
   total; a hand-set number keeps the computed parts plus one manual-adjustment part, read
-  with `isHandSet(parts)`; parts are null only for a homebrew max HP).
+  with `isHandSet(parts)`; parts are null only for a homebrew max HP). `otherSpeeds`
+  holds the fly, swim, climb and burrow speeds the character has.
+- Attunement: `canAttune(doc, itemInstanceId)` (no more than `attunementLimit(doc)`
+  items, three unless a feature raises it, and one copy of an item), `attuneItem` (with
+  `force` the player's override; no other attunement ends) and `unattuneItem`.
 - Shared combat: `rollInitiative` (the first roll starts the fight), `passTurn` /
   `turnBack`, `encounterEndReason`, `endCombat` / `reopenCombat`.
 - The treasury: `lootMoves`, `applyMove` / `reverseMove`, `campaignHoldings`, and

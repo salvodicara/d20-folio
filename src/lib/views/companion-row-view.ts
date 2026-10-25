@@ -124,8 +124,7 @@ function speedLabel(
   for (const mode of ["climb", "fly", "swim", "burrow"] as const) {
     const ft = resolved.speeds[mode];
     if (ft == null) continue;
-    const label =
-      mode === "burrow" ? t("polymorph.speedBurrow") : t(`character.speed_${mode}`);
+    const label = t(`character.speed_${mode}`);
     parts.push(`${label} ${localeDistance(ft, locale)}`);
   }
   return parts.length > 0 ? parts.join(", ") : undefined;

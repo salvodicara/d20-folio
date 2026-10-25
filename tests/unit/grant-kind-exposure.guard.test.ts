@@ -144,6 +144,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "deriveSensesAndSpeeds",
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
+  "burrow-speed": {
+    via: "deriveSensesAndSpeeds",
+    consumer: "src/features/character/hud/LeftHud.tsx",
+  },
 
   // ── Derived stats → cockpit header / Left HUD (each with an override) ──
   "ac-bonus": { via: "computeCharacterAC", consumer: "src/lib/aggregate-character.ts" },
