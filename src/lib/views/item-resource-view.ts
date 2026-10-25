@@ -16,6 +16,7 @@ import type {
   SrdMagicItemData,
 } from "@/data/types";
 import { attunementSatisfied } from "@/lib/attunement";
+import { isCopyAtHand, itemCopies } from "@/lib/homebrew-items";
 import { resolveItemResources, type ItemResourceOmission } from "@/lib/item-resources";
 import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
 import type { CharacterDoc } from "@/types/character";
@@ -146,7 +147,7 @@ export function buildItemResourceViewModels(
   catalogue: readonly Pick<SrdMagicItemData, "id" | "resources">[] = SRD_MAGIC_ITEMS
 ): ItemResourceViewResult {
   const resolved = resolveItemResources({
-    equipment: doc.character.equipment,
+    equipment: itemCopies(doc.character),
     catalogue,
     itemResources: doc.session.itemResources,
   });
@@ -175,7 +176,7 @@ export function buildItemResourceViewModels(
           ? null
           : !attunementSatisfied(owner)
             ? "needs-attunement"
-            : owner.equipped !== true
+            : !isCopyAtHand(owner)
               ? "not-equipped"
               : null;
 
@@ -196,7 +197,7 @@ export function buildItemResourceViewModels(
         disabled: !enabled,
         canSpend:
           owner !== null &&
-          owner.equipped === true &&
+          isCopyAtHand(owner) &&
           attunementSatisfied(owner) &&
           isLive &&
           enabled &&

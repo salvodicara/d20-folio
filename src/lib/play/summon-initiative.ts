@@ -22,8 +22,14 @@ export type SummonLink = NonNullable<EncounterState["summons"]>[number];
 /** Where a source's creature acts: its text's rule, or `own` when it says none. */
 export type SummonPlacement = SummonTurn | "own";
 
-/** What summoned the creatures: a spell, or a magic item's physical copy. */
-export type SummonSourceRef = { spellId: string } | { itemId: string };
+/**
+ * What summoned the creatures: a spell, or a magic item's physical copy. A source
+ * that carries its own `summonTurn` (a homebrew item's group, whose id is its copy's
+ * and is in no catalogue) is placed by it; any other is looked up by its id.
+ */
+export type SummonSourceRef = ({ spellId: string } | { itemId: string }) & {
+  summonTurn?: SummonTurn;
+};
 
 /**
  * One group of summoned creatures, as the Companions rail resolves it (a spell's
@@ -54,9 +60,10 @@ export interface SummonInitiativeEntry {
 /** The rule a source's text gives its creature. */
 export function summonTurnOf(source: SummonSourceRef): SummonPlacement {
   const turn =
-    "spellId" in source
+    source.summonTurn ??
+    ("spellId" in source
       ? getSpellById(source.spellId)?.summonTurn
-      : getMagicItem(source.itemId)?.summonTurn;
+      : getMagicItem(source.itemId)?.summonTurn);
   return turn ?? "own";
 }
 

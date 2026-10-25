@@ -629,6 +629,21 @@ export type WeaponMastery =
   | "Topple"
   | "Vex";
 
+/** Runtime list of the weapon mastery properties. */
+export const ALL_WEAPON_MASTERIES = [
+  "Cleave",
+  "Graze",
+  "Nick",
+  "Push",
+  "Sap",
+  "Slow",
+  "Topple",
+  "Vex",
+] as const satisfies ExhaustiveTuple<
+  WeaponMastery,
+  ["Cleave", "Graze", "Nick", "Push", "Sap", "Slow", "Topple", "Vex"]
+>;
+
 /**
  * Creature size categories (2024 PHB), smallest → largest. Used by mechanics
  * that gate on a target's size — e.g. the `cantrip-effect-rider`
@@ -1341,6 +1356,15 @@ export type HomebrewSpellTopLevelKey =
   | "components";
 
 /**
+ * A catalogue spell's hand-written runtime program (`mechanicsProgram`). Not a
+ * homebrew field: no play path reads a spell's program today (only the
+ * transcriber's `characterSpellCapability`, which no surface calls), and a homebrew
+ * feature action does not take one either. A homebrew spell that stored one (#436)
+ * keeps it verbatim and inert, like any unknown field.
+ */
+export type CatalogueSpellRuntimeKey = "mechanicsProgram";
+
+/**
  * A homebrew spell's structured mechanics (`CustomSpell.mechanics`): every
  * structured {@link SrdSpellData} field, in the catalogue's own shape, so a homebrew
  * spell plays exactly as a catalogue spell does. Derived from `SrdSpellData`, so a
@@ -1351,7 +1375,7 @@ export type HomebrewSpellTopLevelKey =
 export type HomebrewSpellMechanics = {
   readonly [Key in Exclude<
     keyof SrdSpellData,
-    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey
+    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey | CatalogueSpellRuntimeKey
   >]?: SrdSpellData[Key];
 } & {
   readonly components?: Pick<SrdSpellData["components"], "costGp" | "consumed">;
@@ -3490,6 +3514,18 @@ export type HomebrewItemMechanics = {
     keyof SrdMagicItemData,
     CatalogueItemIdentityKey | HomebrewItemTopLevelKey
   >]?: SrdMagicItemData[Key];
+};
+
+/**
+ * The structured facts a catalogue WEAPON (not its magic item) carries that a
+ * homebrew weapon declares too: its Weapon Mastery property. Picked from
+ * `SrdEquipmentData`, so it is the catalogue weapon's own shape.
+ */
+export type HomebrewWeaponFacts = Pick<SrdEquipmentData, "mastery">;
+
+/** A homebrew weapon's mechanics: a magic item's, plus the catalogue weapon's facts. */
+export type HomebrewWeaponMechanics = HomebrewItemMechanics & {
+  readonly [Key in keyof HomebrewWeaponFacts]?: HomebrewWeaponFacts[Key];
 };
 
 /** Map of SRD entity types by ID for fast lookup */

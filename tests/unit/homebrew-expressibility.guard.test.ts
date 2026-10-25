@@ -73,6 +73,7 @@ import type {
   CatalogueItemIdentityKey,
   CatalogueMonsterIdentityKey,
   CatalogueSpellIdentityKey,
+  CatalogueSpellRuntimeKey,
   HomebrewItemMechanics,
   HomebrewItemTopLevelKey,
   HomebrewMonsterMechanics,
@@ -218,8 +219,13 @@ describe("every Grant kind is homebrew-expressible", () => {
  * a new exemption is a type change, never a silent one.
  */
 const SPELL_FIELD_EXEMPTIONS: Readonly<
-  Record<CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey, string>
+  Record<
+    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey | CatalogueSpellRuntimeKey,
+    string
+  >
 > = {
+  mechanicsProgram:
+    "a hand-written runtime program no play path reads for a spell (only the test-only characterSpellCapability), never authored by a player — as for a homebrew action",
   id: "catalogue identity: a homebrew spell is keyed by its own instanceId",
   classes: "catalogue class lists: a homebrew spell sits on no class's list",
   source: "the catalogue book: a homebrew spell is the player's own",

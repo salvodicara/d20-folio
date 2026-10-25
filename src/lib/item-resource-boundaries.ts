@@ -1,17 +1,13 @@
 /** Pure, exact-boundary orchestration for resources owned by physical items. */
 
 import type { ResourceRecoveryTrigger, SrdMagicItemData } from "@/data/types";
-import type {
-  CustomEquipment,
-  ItemResourceState,
-  SrdEquipmentRef,
-} from "@/types/character";
+import type { ItemResourceState } from "@/types/character";
 import {
   parseItemResources,
   resolveItemResources,
   type ItemResourceOmission,
 } from "@/lib/item-resources";
-import { homebrewItemCatalogue } from "@/lib/homebrew-items";
+import { homebrewItemCatalogue, type ItemCopy } from "@/lib/homebrew-items";
 import {
   prepareItemResourceCommand,
   prepareItemResourceRevert,
@@ -191,7 +187,7 @@ function recipeInputs(
 export function prepareItemResourceBoundary(args: {
   trigger: ItemResourceRecoveryBoundary;
   occurrenceId: string;
-  equipment: readonly (SrdEquipmentRef | CustomEquipment)[];
+  equipment: readonly ItemCopy[];
   catalogue: readonly Pick<SrdMagicItemData, "id" | "resources">[];
   itemResources?: unknown;
   facts?: readonly ItemResourceBoundaryFact[];

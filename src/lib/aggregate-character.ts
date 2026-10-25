@@ -151,7 +151,7 @@ export function aggregateCharacterGrants(
         // Wish Stress holds until a Long Rest.
         ...resolveWishStressStateSources(activeKeys),
         // A drunk potion's state (Flying's fly speed) holds while its countdown runs.
-        ...resolvePotionStateSources(activeKeys),
+        ...resolvePotionStateSources(activeKeys, character.equipment),
         // A fading D20 Test penalty (Raise Dead) carries its flat penalties until it ends.
         ...resolveFadingPenaltySources(session.fadingPenalties),
         ...lightSources,

@@ -28,6 +28,7 @@ import {
   type Grant,
 } from "@/lib/grants";
 import { resolveAllGrantSources, flattenEntryPicks } from "@/lib/resolve-grant-sources";
+import { isHomebrewMagicWeapon } from "@/lib/homebrew-items";
 import { grantSourceName, localizeText } from "@/lib/views/srd-i18n";
 import { srdText } from "@/lib/loc-text";
 import { totalLevel as characterLevel } from "@/lib/classes";
@@ -72,8 +73,12 @@ export interface CastBadgeLabels {
  * projection and therefore keeps both routes.
  */
 export function canCastSpellWithSlots(character: CharacterDoc, spellId: string): boolean {
+  // A homebrew magic weapon is an item too: its spells are charge-backed, never slots.
+  const weapons = character.character.weapons.filter(
+    (weapon) => !("custom" in weapon && isHomebrewMagicWeapon(weapon))
+  );
   return resolveEffectiveSpells(
-    { ...character.character, equipment: [] },
+    { ...character.character, equipment: [], weapons },
     character.session
   ).some((spell) => !("custom" in spell) && spell.srdId === spellId);
 }

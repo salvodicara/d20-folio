@@ -11,8 +11,11 @@
  */
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { spells } from "@/data/spells";
+import type { SrdMagicItemData } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 import type { GrantSource } from "@/lib/grants";
+import { homebrewItemData, type ItemCopy } from "@/lib/homebrew-items";
+import { customText } from "@/lib/loc-text";
 
 /** The `effectTimers` / `activeFeatures` key prefix of a drunk potion. */
 export const POTION_TIMER_PREFIX = "potion:";
@@ -22,15 +25,76 @@ export function potionTimerKey(itemId: string): string {
   return `${POTION_TIMER_PREFIX}${itemId}`;
 }
 
-/** The standing effect a potion declares, keyed by its countdown key. */
-export function potionStateGrant(
+/**
+ * The structured homebrew potion among the character's copies whose item id (its
+ * `instanceId`) is `itemId`. A copy drunk to the last one has left the inventory,
+ * so its state can no longer be read from it.
+ */
+function homebrewPotion(
+  copies: ReadonlyArray<ItemCopy>,
   itemId: string
-): Extract<Grant, { type: "while-active" }> | undefined {
-  const key = potionTimerKey(itemId);
-  for (const grant of getMagicItem(itemId)?.grants ?? []) {
-    if (grant.type === "while-active" && grant.activeKey === key) return grant;
+): { entry: ItemCopy; item: SrdMagicItemData } | undefined {
+  for (const entry of copies) {
+    if (!("custom" in entry) || entry.instanceId !== itemId) continue;
+    const item = homebrewItemData(entry);
+    return item?.type === "potion" ? { entry, item } : undefined;
   }
   return undefined;
+}
+
+/**
+ * The standing effect a potion declares, keyed by its countdown key. A catalogue
+ * potion keys it `potion:<itemId>` (`POTION_STATE`). A homebrew potion's id is its
+ * copy's `instanceId`, minted per copy, so its `potion:`-keyed `while-active` is its
+ * state whatever the authored suffix, re-keyed to the copy's countdown.
+ */
+export function potionStateGrant(
+  itemId: string,
+  copies: ReadonlyArray<ItemCopy> = []
+): Extract<Grant, { type: "while-active" }> | undefined {
+  const key = potionTimerKey(itemId);
+  const catalogue = getMagicItem(itemId);
+  if (catalogue) {
+    for (const grant of catalogue.grants ?? []) {
+      if (grant.type === "while-active" && grant.activeKey === key) return grant;
+    }
+    return undefined;
+  }
+  for (const grant of homebrewPotion(copies, itemId)?.item.grants ?? []) {
+    if (
+      grant.type === "while-active" &&
+      grant.activeKey.startsWith(POTION_TIMER_PREFIX)
+    ) {
+      return { ...grant, activeKey: key };
+    }
+  }
+  return undefined;
+}
+
+/** The round countdown a drunk potion arms (its `durationRounds`), catalogue or
+ *  homebrew; undefined for an instant potion. */
+export function potionDurationRounds(
+  itemId: string,
+  copies: ReadonlyArray<ItemCopy> = []
+): number | undefined {
+  return (getMagicItem(itemId) ?? homebrewPotion(copies, itemId)?.item)?.durationRounds;
+}
+
+/**
+ * The potion id behind a drink's cost key: a catalogue potion's `srdId`, or a
+ * homebrew potion's own id for its `custom-<instanceId>` key (null when that copy
+ * is text-only, so there is nothing to arm).
+ */
+export function drunkPotionId(
+  copies: ReadonlyArray<ItemCopy>,
+  costKey: string
+): string | null {
+  for (const entry of copies) {
+    if ("custom" in entry && `custom-${entry.instanceId}` === costKey) {
+      return homebrewPotion(copies, entry.instanceId)?.item.id ?? null;
+    }
+  }
+  return costKey;
 }
 
 /** The drunk potion behind a `potion:<id>` state key, or null for any other key. */
@@ -131,18 +195,25 @@ export function potionStatesEndingOn(
   });
 }
 
-/** The lit potion states as grant sources; an unlit potion contributes nothing. */
-export function resolvePotionStateSources(activeKeys: Iterable<string>): GrantSource[] {
+/** The lit potion states as grant sources; an unlit potion contributes nothing. A
+ *  homebrew potion's state is read from its copy among `copies`, named by it. */
+export function resolvePotionStateSources(
+  activeKeys: Iterable<string>,
+  copies: ReadonlyArray<ItemCopy> = []
+): GrantSource[] {
   const sources: GrantSource[] = [];
   for (const key of activeKeys) {
     if (!key.startsWith(POTION_TIMER_PREFIX)) continue;
     const itemId = key.slice(POTION_TIMER_PREFIX.length);
-    const grant = potionStateGrant(itemId);
+    const grant = potionStateGrant(itemId, copies);
     if (!grant) continue;
+    const homebrew = getMagicItem(itemId) ? undefined : homebrewPotion(copies, itemId);
     sources.push({
       id: itemId,
       grants: [grant],
-      ref: { kind: "magic-item", key: itemId },
+      ...(homebrew && "custom" in homebrew.entry
+        ? { label: customText(homebrew.entry.name) }
+        : { ref: { kind: "magic-item", key: itemId } }),
     });
   }
   return sources;

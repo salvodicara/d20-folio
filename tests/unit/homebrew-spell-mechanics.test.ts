@@ -298,6 +298,23 @@ describe("the stored mechanics", () => {
     expect(played?.grants).toEqual([{ type: "darkvision", range: 60 }]);
   });
 
+  it("a stored runtime program (written since #436) is kept verbatim, never played", () => {
+    const program = { id: "house.program", steps: [] };
+    const stored = homebrewSpell({
+      mechanics: {
+        ...EMBER_BURST.mechanics,
+        mechanicsProgram: program,
+      } as unknown as HomebrewSpellMechanics,
+    });
+    for (const read of [throughCharacterCodec, throughLibraryCodec]) {
+      const back = read(stored);
+      expect(back.mechanics).toEqual(stored.mechanics);
+      const played = homebrewSpellMechanics(back);
+      expect(played).not.toHaveProperty("mechanicsProgram");
+      expect(played?.damageDice).toBe("8d6");
+    }
+  });
+
   it("an older reader keeps an unknown key (as v0.25.0 does `mechanics`) verbatim", () => {
     // v0.25.0's custom-spell reader knew no `mechanics`: it lands in the entry's
     // `unknown` bucket and is written back last, unchanged. The same contract,
@@ -334,6 +351,8 @@ const NOT_MECHANICS = new Set([
   "castingTime",
   "concentration",
   "components",
+  // The catalogue's runtime program: not a homebrew field (`CatalogueSpellRuntimeKey`).
+  "mechanicsProgram",
 ]);
 
 /** The catalogue spell's structured fields, as a homebrew spell would store them. */

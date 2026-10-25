@@ -9,7 +9,7 @@
  */
 import { MAGIC_ITEMS_BY_ID, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { canSpendCopy } from "@/lib/item-copies";
-import { homebrewItemCatalogue, itemCopyItemId } from "@/lib/homebrew-items";
+import { homebrewItemCatalogue, itemCopies, itemCopyItemId } from "@/lib/homebrew-items";
 import {
   prepareItemResourceBoundary,
   prepareItemResourceBoundaryReplay,
@@ -113,7 +113,9 @@ function itemDefinition(
 ): ResourceItemSpec | null {
   const item =
     MAGIC_ITEMS_BY_ID.get(itemId) ??
-    homebrewItemCatalogue(character.character.equipment).find(({ id }) => id === itemId);
+    homebrewItemCatalogue(itemCopies(character.character)).find(
+      ({ id }) => id === itemId
+    );
   return item?.resources?.length ? { itemId: item.id, resources: item.resources } : null;
 }
 
@@ -204,7 +206,7 @@ export function createItemResourceCommands(
       if (!character || ports.readonly()) return null;
       // Freeze the candidate set for the complete input interval. The store's
       // whole-batch CAS revalidates every addressed physical copy at commit.
-      const equipment = structuredClone(character.character.equipment);
+      const equipment = structuredClone(itemCopies(character.character));
       const itemResources = structuredClone(character.session.itemResources);
       const facts: ItemResourceBoundaryFact[] = [];
       const boundaryOccurrenceId = occurrenceId();
