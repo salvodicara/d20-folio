@@ -362,6 +362,15 @@ export interface EncounterState {
    */
   extraTurns?: Array<{ id: string; beforeId: string | null; started?: boolean }>;
   /**
+   * Who rides whom (SRD Mounted Combat): `mountId` carries `riderId`; `controlled`
+   * when the mount accepts the rider's control (it acts right after the rider, with
+   * Dash, Disengage or Dodge only). An ENCOUNTER key, never a monster key: older
+   * readers keep unknown encounter keys but reject unknown monster keys. Read through
+   * `mountLinks` (`@/lib/play/mounts`), which drops a stale or malformed link.
+   * READER FIRST: nothing writes it until the Play UI wires `mountCreature`.
+   */
+  mounts?: Array<{ mountId: string; riderId: string; controlled: boolean }>;
+  /**
    * The per-encounter identity STAMP, set once at {@link startEncounter} (a monotonic
    * `Date.now()`). Identifies ONE fight across surfaces — the pip's "most recently
    * started" default when the viewer is in several fights, and the debounced writer's

@@ -71,7 +71,11 @@ export function translateMonsterEntry(
           bonus: { kind: "printed" as const, value: entry.toHit },
         },
         effects: [
-          ...entry.damage.map((clause) => damage(clause)),
+          ...entry.damage.map((clause, index) =>
+            index === 0 && entry.bloodiedDamage
+              ? { ...damage(clause), whileBloodied: { dice: entry.bloodiedDamage.dice } }
+              : damage(clause)
+          ),
           // The conditions the "Hit:" clause gives, its gate and the save the hit
           // forces; the escape DC and duration stay text.
           ...(entry.conditions && entry.conditions.length > 0

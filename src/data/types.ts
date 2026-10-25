@@ -2547,6 +2547,10 @@ export interface MonsterAttackEntry extends MonsterEntryBase, EffectRiders {
   /** They land only on a failed save the hit forces ("Constitution Saving Throw:
    *  DC 10. Failure: The target has the Paralyzed condition"). */
   conditionSave?: { save: AbilityCode; dc: number };
+  /** The amount that replaces the primary Hit clause ([0]) while the monster itself
+   *  is Bloodied — a swarm's "or 2 (1d4) Piercing damage if the swarm is Bloodied".
+   *  The "plus" clauses stay. Pinned to the print by `printedAttack`. */
+  bloodiedDamage?: MonsterDamage;
 }
 
 /** A save-based entry: "Dexterity Saving Throw: DC 13, … Failure: … Success: …". */

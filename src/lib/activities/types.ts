@@ -282,6 +282,9 @@ export type ActivityEffect =
         orHeal?: true;
         /** The die when the weapon is held in two hands (Versatile). */
         twoHanded?: ActivityDice;
+        /** The dice while the actor itself is Bloodied, same type (a swarm's "or 2
+         *  (1d4) Piercing damage if the swarm is Bloodied"). */
+        whileBloodied?: ActivityDice;
       })
   | (EffectBase & {
       kind: "heal";

@@ -532,6 +532,12 @@ function monsterEntryFromActivity(activity: Activity, entry: MonsterEntry): Mons
         reachFt: activity.target?.reachFt,
         rangeFt: activity.target?.rangeFt,
         damage,
+        bloodiedDamage: clauses[0]?.whileBloodied
+          ? {
+              dice: clauses[0].whileBloodied.dice ?? "",
+              damageType: clauses[0].types?.[0],
+            }
+          : undefined,
         ...hitConditions(activity),
         ...riderFields(activity),
       });

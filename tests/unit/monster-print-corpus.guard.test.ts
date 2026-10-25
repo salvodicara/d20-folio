@@ -8,6 +8,8 @@
  *    the one attack or save of the block it uses, how it moves the monster and
  *    what the monster breathes;
  *  - a Multiattack declares its routine over the block's own entries;
+ *  - an attack declares the amount its Hit clause swaps in while the monster itself
+ *    is Bloodied (a swarm's "or 2 (1d4) Piercing damage if the swarm is Bloodied");
  *  - an attack's Hit clause and a save's Failure clause declare the generic riders
  *    they print: a push or pull, a Speed reduction, a Hit Point maximum drain by
  *    the damage taken, a swallow;
@@ -30,6 +32,7 @@ import { SRD_MONSTERS_N_P } from "@/data/monsters/n-p";
 import { SRD_MONSTERS_Q_S } from "@/data/monsters/q-s";
 import { SRD_MONSTERS_T_Z } from "@/data/monsters/t-z";
 import {
+  printedAttack,
   printedAutomaticDamage,
   printedBreathing,
   printedHitConditions,
@@ -82,6 +85,7 @@ function printed(entry: MonsterEntry, text: string, names: PrintedEntryName[]) {
       conditions: hit?.conditions,
       conditionsIf: hit?.gated,
       conditionSave: hit?.save,
+      bloodiedDamage: printedAttack(text)?.bloodiedDamage,
       ...riders(text.match(/\bHit: (.*)$/s)?.[1] ?? ""),
     };
   }
@@ -120,6 +124,7 @@ function declared(entry: MonsterEntry) {
       conditions: entry.conditions,
       conditionsIf: entry.conditionsIf,
       conditionSave: entry.conditionSave,
+      bloodiedDamage: entry.bloodiedDamage,
       ...declaredRiders(entry),
     };
   if (entry.kind === "save") return declaredRiders(entry);
@@ -185,6 +190,10 @@ describe("monster print corpus", () => {
     expect(riding.filter((entry) => entry.hpMaxReduction).length).toBe(7);
     // Behir, Purple Worm, Remorhaz, Tarrasque (the Kraken's is Restrained only).
     expect(riding.filter((entry) => entry.swallows).length).toBe(4);
+    // Every SRD swarm's attack prints its smaller amount while the swarm is Bloodied.
+    expect(
+      riding.filter((entry) => entry.kind === "attack" && entry.bloodiedDamage).length
+    ).toBe(7);
   });
 
   it.each(cases.map(({ key, entry, text, names }) => [key, entry, text, names] as const))(

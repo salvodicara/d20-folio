@@ -661,6 +661,20 @@ function leadingDamage(clause: string): MonsterDamage[] {
   return out;
 }
 
+/** The amount a Hit clause swaps in while the attacker itself is Bloodied: ", or 2
+ *  (1d4) Piercing damage if the swarm is Bloodied" (or between dashes). An amount
+ *  that depends on the target ("if the target is Bloodied") is not one. */
+function bloodiedDamage(clause: string): MonsterDamage | undefined {
+  const m = clause.match(
+    new RegExp(String.raw`(?:, |—)or ${AMOUNT} if the (?!target\b)[a-z]+ is Bloodied`)
+  );
+  if (!m) return undefined;
+  return {
+    dice: m[2] ? m[2].replace(/ /g, "") : (m[1] ?? ""),
+    damageType: damageType(m[3] ?? ""),
+  };
+}
+
 /** "ft." or "feet"; the line's own full stop follows the last one. */
 const FT = String.raw`(?:ft\.|feet)`;
 const RANGE = String.raw`range (\d+)(?:\/(\d+))?`;
@@ -683,6 +697,7 @@ export function printedAttack(
   const [, mode, toHit, reach, nearMixed, farMixed, near, far, hit = ""] = m;
   const damage = leadingDamage(hit);
   if (damage.length === 0) return undefined;
+  const whileBloodied = bloodiedDamage(hit);
   let conditions: PrintedHitConditions | undefined;
   try {
     conditions = printedHitConditions(text);
@@ -708,6 +723,7 @@ export function printedAttack(
     ...(conditions ? { conditions: conditions.conditions } : {}),
     ...(conditions?.gated ? { conditionsIf: true as const } : {}),
     ...(conditions?.save ? { conditionSave: conditions.save } : {}),
+    ...(whileBloodied ? { bloodiedDamage: whileBloodied } : {}),
     ...printedRiders(hit),
   };
 }
