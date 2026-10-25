@@ -152,6 +152,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     inspiration: session.inspiration ?? false,
     exhaustion: session.exhaustion ?? 0,
     ...(session.breath ? { breath: session.breath } : {}),
+    ...(session.provisions ? { provisions: session.provisions } : {}),
+    ...(session.burning ? { burning: true as const } : {}),
     // A D20 Test penalty fading by one each Long Rest (Raise Dead).
     fadingPenalties: session.fadingPenalties,
     pinnedActions: session.pinnedActions ?? [],
@@ -189,6 +191,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // S7 — the active Polymorph SELF-transformation. Enumerated so it round-trips a
     // reload mid-form; absent on every non-polymorph doc (back-compat, additive-only).
     polymorphForm: session.polymorphForm,
+    // Magic Jar's soul and the caster's own numbers it restores.
+    ...(session.magicJar ? { magicJar: session.magicJar } : {}),
     // D37 — the HELD Bardic Inspiration die (a die an ally Bard gave this
     // character). Was added to SessionState but NOT here, so the rebuild dropped
     // it on every save → the picked die reset on the next server echo (the #81

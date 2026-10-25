@@ -43,6 +43,8 @@ export interface CompactSessionState extends Record<string, unknown> {
   bardicInspirationDie?: string;
   exhaustion?: number;
   breath?: NonNullable<SessionState["breath"]>;
+  provisions?: NonNullable<SessionState["provisions"]>;
+  burning?: true;
   fadingPenalties?: NonNullable<SessionState["fadingPenalties"]>;
   sessionDefenses?: SessionState["sessionDefenses"];
   pinnedActions?: string[];
@@ -62,6 +64,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
   pactWeaponRiderTypes?: NonNullable<SessionState["pactWeaponRiderTypes"]>;
   polymorphForm?: NonNullable<SessionState["polymorphForm"]>;
+  magicJar?: NonNullable<SessionState["magicJar"]>;
   /**
    * The character's persisted mechanics world (`session.world`) — OPAQUE to
    * this codec. Carried verbatim, never shape-validated here: the world has
@@ -98,6 +101,8 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "inspiration",
   "exhaustion",
   "breath",
+  "provisions",
+  "burning",
   "fadingPenalties",
   "sessionDefenses",
   "pinnedActions",
@@ -117,6 +122,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "pactWeaponConfig",
   "pactWeaponRiderTypes",
   "polymorphForm",
+  "magicJar",
   "bardicInspirationDie",
   "world",
 ];
@@ -300,6 +306,8 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.inspiration) state.inspiration = true;
   if (session.exhaustion !== 0) state.exhaustion = session.exhaustion;
   if (session.breath) state.breath = session.breath;
+  if (session.provisions) state.provisions = session.provisions;
+  if (session.burning) state.burning = true;
   if (isNonEmptyRecord(session.fadingPenalties)) {
     state.fadingPenalties = session.fadingPenalties;
   }
@@ -346,6 +354,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
     state.pactWeaponRiderTypes = session.pactWeaponRiderTypes;
   }
   if (session.polymorphForm) state.polymorphForm = session.polymorphForm;
+  if (session.magicJar) state.magicJar = session.magicJar;
   if (isNonEmptyString(session.bardicInspirationDie)) {
     state.bardicInspirationDie = session.bardicInspirationDie;
   }
@@ -402,6 +411,17 @@ function parseSessionDefenses(value: unknown): SessionState["sessionDefenses"] {
     if (Array.isArray(value[key])) defenses[key] = stringArray(value[key]);
   }
   return Object.keys(defenses).length > 0 ? defenses : undefined;
+}
+
+/** Thirst and hunger owed, or undefined when the stored shape holds none. */
+function parseProvisions(value: unknown): SessionState["provisions"] {
+  if (!isRecord(value)) return undefined;
+  const out: NonNullable<SessionState["provisions"]> = {};
+  for (const key of ["daysWithoutFood", "thirst", "hunger"] as const) {
+    const count = value[key];
+    if (Number.isSafeInteger(count) && (count as number) > 0) out[key] = count as number;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
 }
 
 /** A held breath, or undefined (breathing) when the stored shape is not one. */
@@ -602,6 +622,53 @@ function parseFormStatBlock(value: unknown): BeastStatBlock | undefined {
   };
 }
 
+const nullableFinite = (value: unknown): value is number | null =>
+  value === null || finite(value);
+const nullableRecord = (value: unknown): value is Record<string, number | null> =>
+  isRecord(value) && Object.values(value).every(nullableFinite);
+
+/** Magic Jar's state, or undefined when the stored shape is not one. */
+function parseMagicJar(value: unknown): SessionState["magicJar"] {
+  if (!isRecord(value)) return undefined;
+  if (value.stage === "container") return { stage: "container" };
+  if (value.stage !== "host" || !isNonEmptyString(value.hostId)) return undefined;
+  const prior = value.prior;
+  if (!isRecord(prior) || !isRecord(prior.abilityScores)) return undefined;
+  const scores = prior.abilityScores;
+  if (
+    !finite(scores.STR) ||
+    !finite(scores.DEX) ||
+    !finite(scores.CON) ||
+    !nullableFinite(prior.speedOverride) ||
+    !nullableRecord(prior.speedOverrides) ||
+    !nullableRecord(prior.senseRangeOverrides) ||
+    !finite(prior.hpMax) ||
+    !finite(prior.hpCurrent) ||
+    !finite(prior.hpMaxReduction) ||
+    ![4, 6, 8, 10, 12].includes(prior.hitDieType as number) ||
+    !nullableFinite(prior.hitDiceTotalOverride) ||
+    !finite(prior.hitDiceUsed)
+  ) {
+    return undefined;
+  }
+  return {
+    stage: "host",
+    hostId: value.hostId,
+    prior: {
+      abilityScores: { STR: scores.STR, DEX: scores.DEX, CON: scores.CON },
+      speedOverride: prior.speedOverride,
+      speedOverrides: { ...prior.speedOverrides },
+      senseRangeOverrides: { ...prior.senseRangeOverrides },
+      hpMax: prior.hpMax,
+      hpCurrent: prior.hpCurrent,
+      hpMaxReduction: prior.hpMaxReduction,
+      hitDieType: prior.hitDieType as 4 | 6 | 8 | 10 | 12,
+      hitDiceTotalOverride: prior.hitDiceTotalOverride,
+      hitDiceUsed: prior.hitDiceUsed,
+    },
+  };
+}
+
 function parsePolymorphForm(value: unknown): SessionState["polymorphForm"] {
   if (!isRecord(value) || !isRecord(value.prior)) return undefined;
   const prior = value.prior;
@@ -690,6 +757,9 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   session.exhaustion = numOr(state.exhaustion, 0);
   const breath = parseBreath(state.breath);
   if (breath) session.breath = breath;
+  const provisions = parseProvisions(state.provisions);
+  if (provisions) session.provisions = provisions;
+  if (state.burning === true) session.burning = true;
   session.fadingPenalties = parseFadingPenalties(state.fadingPenalties);
   session.sessionDefenses = parseSessionDefenses(state.sessionDefenses);
   session.pinnedActions = stringArray(state.pinnedActions);
@@ -779,6 +849,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   );
   session.pactWeaponRiderTypes = parsePactWeaponRiderTypes(state.pactWeaponRiderTypes);
   session.polymorphForm = parsePolymorphForm(state.polymorphForm);
+  const magicJar = parseMagicJar(state.magicJar);
+  if (magicJar) session.magicJar = magicJar;
   if (isNonEmptyString(state.bardicInspirationDie)) {
     session.bardicInspirationDie = state.bardicInspirationDie;
   }
