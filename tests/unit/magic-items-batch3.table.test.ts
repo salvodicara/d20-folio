@@ -91,6 +91,8 @@ describe("items that call a bestiary creature", () => {
         monsterId,
         count: howMany(t),
         current: Array.from({ length: howMany(t) }, () => undefined),
+        // Where its creature acts, as the item says (Staff of the Python, Figurine).
+        ...(item(id).summonTurn ? { summonTurn: item(id).summonTurn } : {}),
       },
     ]);
   });

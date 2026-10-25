@@ -20,6 +20,7 @@ import { HELP_ACTION_ID } from "@/lib/play/help";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
   POTION_TIMER_PREFIX,
+  potionDurationRounds,
   potionTimerKey,
   resolvePotionStateSources,
 } from "@/lib/potion-states";
@@ -135,7 +136,11 @@ import {
 import { homebrewActionDef, homebrewActionOverride } from "@/lib/homebrew-actions";
 import { homebrewFeatureGrants } from "@/lib/homebrew-grants";
 import { concentrationSpellData, homebrewSpellData } from "@/lib/homebrew-spells";
-import { homebrewItemData } from "@/lib/homebrew-items";
+import {
+  homebrewItemData,
+  homebrewWeaponMastery,
+  itemCopies,
+} from "@/lib/homebrew-items";
 import { customSpellConcentrationValue } from "@/lib/concentration";
 import {
   effectiveMaxHp,
@@ -2851,7 +2856,7 @@ export function resolveItemResourceAvailability(
   identity: ItemResourceIdentity
 ): ItemResourceAvailability | null {
   const resolved = resolveItemResources({
-    equipment: character.character.equipment,
+    equipment: itemCopies(character.character),
     catalogue: SRD_MAGIC_ITEMS,
     itemResources: character.session.itemResources,
   }).resources.find(
@@ -7601,6 +7606,16 @@ function resolveWeaponActions(
     // name-derived `weaponId` action id above.
     const srdWeaponId = isCustom ? undefined : weaponRef.srdId;
 
+    // The weapon's OWN mastery — only when the character mastered this weapon. A
+    // homebrew weapon is its own kind: mastered when a pick names its instanceId.
+    const ownedMastery = isCustom
+      ? masteredIds.has(weaponRef.instanceId)
+        ? homebrewWeaponMastery(weaponRef)
+        : undefined
+      : srdWeapon?.mastery && masteredIds.has(weaponRef.srdId)
+        ? srdWeapon.mastery
+        : undefined;
+
     // Dual-wield candidate: must be melee + have Light property
     const isLight = properties.some((p) => p.toLowerCase() === "light");
     if (isLight && !isRangedWeapon) {
@@ -7624,9 +7639,7 @@ function resolveWeaponActions(
         ...(srdWeapon?.weaponCategory
           ? { weaponCategory: srdWeapon.weaponCategory }
           : {}),
-        ...(!isCustom && srdWeapon?.mastery && masteredIds.has(weaponRef.srdId)
-          ? { weaponMastery: srdWeapon.mastery }
-          : {}),
+        ...(ownedMastery ? { weaponMastery: ownedMastery } : {}),
         quantity: weaponRef.quantity,
       });
     }
@@ -7725,11 +7738,6 @@ function resolveWeaponActions(
       hasOverride: weaponRef.damageOverride != null && weaponRef.damageOverride !== "",
     });
 
-    // The weapon's OWN mastery — only when the character mastered this weapon.
-    const ownedMastery =
-      !isCustom && srdWeapon?.mastery && masteredIds.has(weaponRef.srdId)
-        ? srdWeapon.mastery
-        : undefined;
     // RA-13 — resolve the number-bearing masteries riding this row (own + any
     // feature-granted reach extras — Battering Roots' Topple carries the DC too),
     // through the ONE `masteryNumbers` seam. The chip prints the live number.
@@ -8703,7 +8711,10 @@ export function resolveLifecycleGrantSources(character: CharacterDoc): GrantSour
   return [
     ...resolveAllGrantSources(character.character, character.session.itemResources),
     ...resolveGrantSourcesForSpellLifecycles(character.character.spells),
-    ...resolvePotionStateSources(character.session.activeFeatures ?? []),
+    ...resolvePotionStateSources(
+      character.session.activeFeatures ?? [],
+      character.character.equipment
+    ),
   ];
 }
 
@@ -9087,12 +9098,10 @@ export { POTION_TIMER_PREFIX, potionTimerKey };
  * no RNG. The store's `consumePotionBuff` uses this to arm a `potion:<id>`
  * countdown in `effectTimers` (reusing the A2 cadence map); the drink is still
  * the player's explicit act. A potion that declares its standing state
- * (`potion-states.ts`) lights it for the same countdown.
+ * (`potion-states.ts`) lights it for the same countdown. A homebrew potion's is
+ * read from its copy (`potion-states.ts`).
  */
-export function potionDurationRounds(itemId: string): number | undefined {
-  const item = getMagicItem(itemId);
-  return item?.durationRounds;
-}
+export { potionDurationRounds };
 
 // ════════════════════════════════════════════════════════════════════════════
 // B6 — per-turn extra-action budget (Action Surge / Haste)

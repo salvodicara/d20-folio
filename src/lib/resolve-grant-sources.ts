@@ -221,16 +221,18 @@ function homebrewItemSource(
 /**
  * A structured homebrew weapon (`CustomWeapon.mechanics`) → its grant source. A
  * carried weapon is at hand (weapons have no worn flag), so the gate is attunement
- * alone. Its `item-bound-bonus` / `item-bound-damage-rider` grants are inert in the
+ * alone, plus its stored state: a copy no longer magical (destroyed, its charges
+ * spent out) grants nothing. Its `item-bound-bonus` / `item-bound-damage-rider` grants are inert in the
  * aggregate — they ride its own row (`resolveItemBoundWeaponBonus`); the rest
  * (resistances, senses, while-active states) apply like a worn item's.
  */
 export function resolveGrantSourcesForWeapons(
-  weapons: ReadonlyArray<SrdWeaponRef | CustomWeapon>
+  weapons: ReadonlyArray<SrdWeaponRef | CustomWeapon>,
+  itemResources?: Readonly<Record<string, ItemResourceState>>
 ): GrantSource[] {
   return weapons.flatMap((weapon) => {
     if (!("custom" in weapon) || !attunementSatisfied(weapon)) return [];
-    const source = homebrewItemSource(weapon, undefined);
+    const source = homebrewItemSource(weapon, itemResources?.[weapon.instanceId]);
     return source ? [source] : [];
   });
 }
@@ -757,7 +759,7 @@ export function resolveAllGrantSources(
     ...resolveGrantSourcesForRace(character.race),
     ...resolveGrantSourcesForFeatures(nonRaceFeatures),
     ...resolveGrantSourcesForEquipment(character.equipment, itemResources),
-    ...resolveGrantSourcesForWeapons(character.weapons ?? []),
+    ...resolveGrantSourcesForWeapons(character.weapons ?? [], itemResources),
     ...resolveGrantSourcesForSpells(character.spells ?? []),
     ...resolveGrantSourcesForInvocations(invocations),
     ...resolveGrantSourcesForManeuvers(maneuvers),

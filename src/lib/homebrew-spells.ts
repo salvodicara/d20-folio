@@ -162,11 +162,6 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { max: numberSchema, atOrBelow: literals(["dies", "condition"]) },
     { otherwise: literalSchema("speed-zero") }
   ),
-  // Stored as an object and inert on a homebrew spell: the program runtime is fed
-  // only by the catalogue transcriber, which conforms it there
-  // (`conformMechanicsProgram`); importing that authoring schema here would pull
-  // it into the Folio Core declaration build (TS7056).
-  mechanicsProgram: OBJECT,
   reactionTrigger: literals(ALL_REACTION_TRIGGERS),
   ritual: booleanSchema,
   duration: SPELL_DURATION,

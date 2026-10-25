@@ -5,12 +5,13 @@
 import type { SrdSpellData } from "@/data/types";
 import type { Grant } from "@/lib/grants";
 import {
+  drunkPotionId,
+  potionDurationRounds,
   potionStateGrant,
   potionStatesEndingOn,
   potionTimerKey,
 } from "@/lib/potion-states";
 import {
-  potionDurationRounds,
   resolveActiveTimedEffects,
   resolvePerTurnRecoveryTrackerIds,
 } from "@/lib/smart-tracker";
@@ -144,19 +145,25 @@ export function recoverPerTurnTrackers(
  * Drink a timed potion: a potion that declares a standing state (Flying's fly
  * speed) lights its `potion:<id>` key, armed to the declared countdown (drinking
  * another restarts it); any other timed potion only arms the bare countdown. Null
- * for an instant potion (Healing), which has nothing to arm.
+ * for an instant potion (Healing), which has nothing to arm. `costKey` is the
+ * drink's equipment key: a catalogue potion's `srdId`, or `custom-<instanceId>` for
+ * a homebrew potion, whose state and countdown are read from its copy and keyed
+ * `potion:<instanceId>` (`drunkPotionId`).
  */
 export function drinkPotion(
   doc: CharacterDoc,
-  itemId: string,
+  costKey: string,
   litRound: number
 ): SessionState | null {
+  const copies = doc.character.equipment;
+  const itemId = drunkPotionId(copies, costKey);
+  if (itemId === null) return null;
   const key = potionTimerKey(itemId);
-  if (potionStateGrant(itemId)) {
+  if (potionStateGrant(itemId, copies)) {
     const off = setActiveState(doc, key, false, litRound) ?? doc.session;
     return setActiveState({ ...doc, session: off }, key, true, litRound);
   }
-  const rounds = potionDurationRounds(itemId);
+  const rounds = potionDurationRounds(itemId, copies);
   if (rounds === undefined || !Number.isFinite(rounds) || rounds <= 0) return null;
   return {
     ...doc.session,

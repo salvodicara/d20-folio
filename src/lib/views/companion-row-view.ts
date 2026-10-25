@@ -22,9 +22,10 @@ import type {
   BestiaryPickRule,
   CompanionStatBlock,
   SrdMagicItemData,
+  SummonTurn,
 } from "@/data/types";
-import { getMagicItem } from "@/data/magic-items";
 import { attunementSatisfied } from "@/lib/attunement";
+import { isCopyAtHand, itemCopies, itemDataForCopy } from "@/lib/homebrew-items";
 import { isValidItemInstanceId } from "@/lib/resources";
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
@@ -444,22 +445,26 @@ export interface ItemSummonGroup extends Omit<SummonedMonsterGroup, "spellId"> {
   itemId: string;
   /** `magic-item:<instanceId>` (the grant-source id of the copy), else the item id. */
   groupId: string;
+  /** Where its creature acts, as the item says (`SrdMagicItemData.summonTurn`). */
+  summonTurn?: SummonTurn;
 }
 
 /**
  * Every equipped magic item that becomes or calls bestiary creatures (Figurine of
  * Wondrous Power, Staff of the Python, Horn of Valhalla, Ring of Djinni Summoning,
  * Efreeti Bottle) or holds one the player picks (Iron Flask). Same gate as the
- * item's grants: equipped, attuned when it requires it, and still magical. A
- * cooldown or a random table in the item's text stays the player's to track.
- * Corpus-free, like {@link buildSummonedMonsterGroups}.
+ * item's grants: at hand (worn, or a carried homebrew weapon), attuned when it
+ * requires it, and still magical. A structured homebrew item or weapon calls its
+ * creatures the same way, keyed by its own copy (`itemDataForCopy`). A cooldown or
+ * a random table in the item's text stays the player's to track. Corpus-free, like
+ * {@link buildSummonedMonsterGroups}.
  */
 export function buildItemSummonGroups(doc: CharacterDoc): ItemSummonGroup[] {
   const groups: ItemSummonGroup[] = [];
   const seen = new Set<string>();
-  for (const ref of doc.character.equipment) {
-    if ("custom" in ref || ref.equipped !== true || !attunementSatisfied(ref)) continue;
-    const item = getMagicItem(ref.srdId);
+  for (const ref of itemCopies(doc.character)) {
+    if (!isCopyAtHand(ref) || !attunementSatisfied(ref)) continue;
+    const item = itemDataForCopy(ref);
     if (!item || (!item.summonedMonsters && !item.bestiaryPick)) continue;
     const instanceId = isValidItemInstanceId(ref.instanceId) ? ref.instanceId : undefined;
     const state = instanceId ? doc.session.itemResources?.[instanceId] : undefined;
@@ -468,7 +473,14 @@ export function buildItemSummonGroups(doc: CharacterDoc): ItemSummonGroup[] {
     if (seen.has(groupId)) continue;
     seen.add(groupId);
     const group = monsterGroup(doc.session, groupId, item, 0);
-    if (group) groups.push({ itemId: item.id, groupId, ...group });
+    if (group) {
+      groups.push({
+        itemId: item.id,
+        groupId,
+        ...group,
+        ...(item.summonTurn ? { summonTurn: item.summonTurn } : {}),
+      });
+    }
   }
   return groups;
 }

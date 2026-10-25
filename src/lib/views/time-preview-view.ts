@@ -6,6 +6,7 @@
  */
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
+import { itemCopies } from "@/lib/homebrew-items";
 import { prepareItemResourceBoundary } from "@/lib/item-resource-boundaries";
 import type { Locale } from "@/lib/locale";
 import { timePassEnds } from "@/lib/play/time";
@@ -51,7 +52,7 @@ export function previewTimePasses(
   const result = prepareItemResourceBoundary({
     trigger: { kind: skip.boundary },
     occurrenceId: `time-preview-${skip.boundary}`,
-    equipment: doc.character.equipment,
+    equipment: itemCopies(doc.character),
     catalogue: SRD_MAGIC_ITEMS,
     itemResources: doc.session.itemResources,
   });

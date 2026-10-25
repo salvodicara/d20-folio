@@ -17,15 +17,27 @@
  * copy's own `instanceId` (a homebrew item IS one copy), so the item flows through
  * the SAME paths as a catalogue magic item: its grants while worn and attuned, its
  * typed charges (spent by the same controller, recovered at the same boundaries,
- * depleted by the same rule), the spells cast from them, and — on a weapon — its
- * +N and extra damage on its own row.
+ * depleted by the same rule), the spells cast from them, the creatures it calls, a
+ * potion's countdown and state, and — on a weapon — its +N and extra damage on its
+ * own row and its Weapon Mastery property (`homebrewWeaponMastery`).
+ *
+ * A structured homebrew weapon is an item copy like a worn item (`itemCopies`): its
+ * charges live under its `instanceId`, and it is at hand while carried, since a
+ * weapon has no worn flag (`isCopyAtHand`).
  */
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
-import type { HomebrewItemMechanics, ResourceSpec, SrdMagicItemData } from "@/data/types";
+import type {
+  HomebrewItemMechanics,
+  HomebrewWeaponFacts,
+  ResourceSpec,
+  SrdMagicItemData,
+  WeaponMastery,
+} from "@/data/types";
 import {
   ALL_MAGIC_ITEM_RARITIES,
   ALL_MAGIC_ITEM_TYPES,
   ALL_SUMMON_TURNS,
+  ALL_WEAPON_MASTERIES,
 } from "@/data/types";
 import {
   arraySchema,
@@ -47,6 +59,7 @@ import {
   isValidResourceItemSpec,
 } from "@/lib/resources";
 import type {
+  CharacterData,
   CustomEquipment,
   CustomWeapon,
   SrdEquipmentRef,
@@ -166,6 +179,17 @@ export const HOMEBREW_ITEM_FIELD_SCHEMAS: {
   bestiaryPick: OBJECT,
 };
 
+/**
+ * Every structured catalogue WEAPON fact → its exact schema (a homebrew weapon's
+ * `mechanics.mastery`). Typed over every key of `HomebrewWeaponFacts`, so a new one
+ * fails the type check until it is classified here.
+ */
+export const HOMEBREW_WEAPON_FIELD_SCHEMAS: {
+  readonly [Key in keyof Required<HomebrewWeaponFacts>]: ExactSchema;
+} = {
+  mastery: literals(ALL_WEAPON_MASTERIES),
+};
+
 /** A typed pool list the catalogue itself would accept, or null. */
 function conformResources(raw: unknown): ReadonlyArray<ResourceSpec> | null {
   const value = conformExact(HOMEBREW_ITEM_FIELD_SCHEMAS.resources, raw, CONTEXT);
@@ -192,6 +216,11 @@ export function homebrewItemMechanics(
 ): HomebrewItemMechanics | undefined {
   const authored: unknown = item.mechanics;
   if (!plainObject(authored)) return undefined;
+  // A weapon that declares only catalogue-weapon facts (its mastery) is mundane.
+  if (
+    !Object.keys(HOMEBREW_ITEM_FIELD_SCHEMAS).some((key) => Object.hasOwn(authored, key))
+  )
+    return undefined;
   const hit = mechanicsCache.get(authored);
   if (hit) return hit;
   const accepted: Record<string, unknown> = {};
@@ -248,11 +277,37 @@ export function homebrewItemData(item: HomebrewItem): SrdMagicItemData | undefin
   return data;
 }
 
-/** The homebrew items among the equipment, as catalogue-shaped item data. */
+/** One physical copy that can own an item's state: an equipment row, or a
+ *  homebrew weapon (which IS its own magic item). */
+export type ItemCopy = SrdEquipmentRef | CustomEquipment | CustomWeapon;
+
+/**
+ * Every physical item copy on the sheet: the equipment, then each structured
+ * homebrew weapon. A catalogue weapon is not a copy: its magic item rides an
+ * equipment row (`enchantItemId` binds that item to the weapon).
+ */
+export function itemCopies(
+  character: Pick<CharacterData, "equipment" | "weapons">
+): ItemCopy[] {
+  return [
+    ...character.equipment,
+    ...character.weapons.filter(
+      (weapon): weapon is CustomWeapon =>
+        "custom" in weapon && isHomebrewMagicWeapon(weapon)
+    ),
+  ];
+}
+
+/** Whether a copy is at hand: worn, or a carried weapon (a weapon has no worn flag). */
+export function isCopyAtHand(copy: ItemCopy): boolean {
+  return "damageDie" in copy || copy.equipped === true;
+}
+
+/** The homebrew items among these copies, as catalogue-shaped item data. */
 export function homebrewItemCatalogue(
-  equipment: ReadonlyArray<SrdEquipmentRef | CustomEquipment>
+  copies: ReadonlyArray<ItemCopy>
 ): SrdMagicItemData[] {
-  return equipment.flatMap((entry) => {
+  return copies.flatMap((entry) => {
     if (!("custom" in entry)) return [];
     const data = homebrewItemData(entry);
     return data ? [data] : [];
@@ -263,9 +318,7 @@ export function homebrewItemCatalogue(
  * The item id one physical copy answers to: a catalogue copy's `srdId`, a structured
  * homebrew copy's own id (its `instanceId`); undefined for a text-only homebrew item.
  */
-export function itemCopyItemId(
-  entry: SrdEquipmentRef | CustomEquipment
-): string | undefined {
+export function itemCopyItemId(entry: ItemCopy): string | undefined {
   return "custom" in entry ? homebrewItemData(entry)?.id : entry.srdId;
 }
 
@@ -279,4 +332,21 @@ export function itemDataForCopy(
 /** Whether a homebrew weapon carries magic-item mechanics (it is a magic weapon). */
 export function isHomebrewMagicWeapon(weapon: CustomWeapon): boolean {
   return homebrewItemData(weapon) !== undefined;
+}
+
+/**
+ * A homebrew weapon's own Weapon Mastery property (`mechanics.mastery`), conformed
+ * against the catalogue weapon's schema; undefined when it declares none or one the
+ * schema rejects. The weapon is its own kind: its mastery rides the attack row once
+ * the character's Weapon Mastery picks name the weapon's `instanceId`.
+ */
+export function homebrewWeaponMastery(weapon: CustomWeapon): WeaponMastery | undefined {
+  const authored: unknown = weapon.mechanics;
+  if (!plainObject(authored) || !Object.hasOwn(authored, "mastery")) return undefined;
+  const value: unknown = conformExact(
+    HOMEBREW_WEAPON_FIELD_SCHEMAS.mastery,
+    authored.mastery,
+    CONTEXT
+  );
+  return ALL_WEAPON_MASTERIES.find((mastery) => mastery === value);
 }

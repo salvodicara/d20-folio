@@ -19,6 +19,7 @@ import type {
   ActionTargeting,
   ActionTempHpRoll,
   HomebrewItemMechanics,
+  HomebrewWeaponMechanics,
   HomebrewSpellMechanics,
   Recovery,
   ResourceRecoveryTrigger,
@@ -342,9 +343,10 @@ export interface CustomWeapon {
    * Structured mechanics in the catalogue magic item's own shape (see
    * CustomEquipment.mechanics). Its `item-bound-bonus` / `item-bound-damage-rider`
    * grants ride THIS weapon's row only; its other grants apply while it is carried
-   * (and attuned, when it requires attunement).
+   * (and attuned, when it requires attunement). It may also declare the catalogue
+   * weapon's own Weapon Mastery property (`mastery`), read by `homebrewWeaponMastery`.
    */
-  mechanics?: HomebrewItemMechanics;
+  mechanics?: HomebrewWeaponMechanics;
   /** Stable identity of this custom entry — never keyed by name. */
   instanceId: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */

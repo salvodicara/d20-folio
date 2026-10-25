@@ -7,7 +7,6 @@
 import type { ResourceSpec } from "@/data/types";
 import type {
   CharacterDoc,
-  CustomEquipment,
   ItemResourceCounterState,
   ItemResourceState,
   SrdEquipmentRef,
@@ -22,7 +21,7 @@ import {
   makeItemResourceKey,
   type ItemResourceKey,
 } from "@/lib/resources";
-import { homebrewItemData } from "@/lib/homebrew-items";
+import { homebrewItemData, type ItemCopy } from "@/lib/homebrew-items";
 
 /** Runtime guard for the locale-free identity of one physical item copy. */
 export function isItemInstanceId(value: unknown): value is string {
@@ -149,7 +148,7 @@ function catalogueDefault(spec: ResourceSpec): {
  * copies are never collapsed by catalogue id.
  */
 export function resolveItemResources(args: {
-  equipment: readonly (SrdEquipmentRef | CustomEquipment)[];
+  equipment: readonly ItemCopy[];
   catalogue: readonly Pick<SrdMagicItemData, "id" | "resources">[];
   itemResources?: unknown;
 }): ResolvedItemResources {
@@ -158,7 +157,7 @@ export function resolveItemResources(args: {
   const normalizedState = parsedState.ok ? parsedState.value : {};
   const omissions: ItemResourceOmission[] = [];
   const candidates: Array<{
-    ref: SrdEquipmentRef | CustomEquipment;
+    ref: ItemCopy;
     item: Pick<SrdMagicItemData, "id" | "resources">;
   }> = [];
 

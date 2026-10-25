@@ -2,6 +2,7 @@
 
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import type { SrdMagicItemData } from "@/data/types";
+import { itemCopies } from "@/lib/homebrew-items";
 import {
   prepareItemResourceBoundary,
   type ItemResourceRecoveryBoundary,
@@ -24,7 +25,7 @@ export function availableTableClockBoundaries(
     const result = prepareItemResourceBoundary({
       trigger: { kind },
       occurrenceId: `table-clock-availability-${kind}`,
-      equipment: character.character.equipment,
+      equipment: itemCopies(character.character),
       catalogue,
       itemResources: character.session.itemResources,
     });
