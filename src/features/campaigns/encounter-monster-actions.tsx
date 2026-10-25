@@ -66,9 +66,9 @@ function entryName(monsterId: string, action: MonsterAction): LocText {
 }
 
 /** "1d6+2 Tagliente + 2d6 Fuoco" — every printed clause, its type or its choices. */
-function damageLine(action: MonsterAction, t: T): string {
+function damageLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): string {
   const types = monsterActionDamageTypes(action);
-  return monsterActionDice(action)
+  return monsterActionDice(action, hp)
     .map((dice, index) =>
       [dice, ...(types[index] ?? []).map((type) => t(`srd.damage_${type}`))]
         .join(" ")
@@ -78,7 +78,7 @@ function damageLine(action: MonsterAction, t: T): string {
 }
 
 /** The chip's numbers: "+4 · 1d6+2 Tagliente" or "TS DES · CD 21 · 17d6 Fuoco". */
-function numbersLine(action: MonsterAction, t: T): string {
+function numbersLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): string {
   const check =
     action.toHit !== undefined
       ? `${action.toHit >= 0 ? "+" : ""}${action.toHit}`
@@ -88,7 +88,7 @@ function numbersLine(action: MonsterAction, t: T): string {
             dc: action.save.dc,
           })
         : "";
-  return [check, damageLine(action, t)].filter(Boolean).join(" · ");
+  return [check, damageLine(action, t, hp)].filter(Boolean).join(" · ");
 }
 
 export function EncounterMonsterActions({
@@ -135,7 +135,7 @@ export function EncounterMonsterActions({
           >
             <span>{label(action)}</span>
             <span className="font-normal tabular-nums text-text-muted">
-              {numbersLine(action, t)}
+              {numbersLine(action, t, monster.hp)}
             </span>
           </Button>
         ))}
@@ -207,7 +207,7 @@ function MonsterActionTray({
     chosen.map((row) => row.id)
   );
   const targets = chosen.map((row) => trayTargetFromRow(row, true));
-  const dice = monsterActionDice(action).join(" + ");
+  const dice = monsterActionDice(action, monster.hp).join(" + ");
   const toggle = (id: string) =>
     setPicked((current) => {
       const next = new Set(current);

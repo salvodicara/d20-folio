@@ -12,6 +12,7 @@
  * stays text: the card shows Multiattack as a reference line, and
  * `monster-multiattack.ts` resolves its routine to these rows for the engine.
  */
+import { bloodiedFromHp } from "@/lib/hp-band";
 import type { AbilityCode, MonsterEntry, MonsterStatBlock } from "@/data/types";
 import {
   translateMonsterEntry,
@@ -102,11 +103,18 @@ export function monsterActions(block: MonsterStatBlock): MonsterAction[] {
   );
 }
 
-/** The printed dice of each damage clause ("1d6+2"), print order. */
-export function monsterActionDice(action: MonsterAction): string[] {
-  return damageEffects(action.activity).flatMap((effect) =>
-    effect.dice?.dice ? [effect.dice.dice] : []
-  );
+/** The dice of each damage clause ("1d6+2"), print order. With the creature's Hit
+ *  Points, a clause's smaller amount while it is Bloodied replaces the print (a swarm's
+ *  "or 2 (1d4) Piercing damage if the swarm is Bloodied"). */
+export function monsterActionDice(
+  action: MonsterAction,
+  hp?: { current: number; max: number }
+): string[] {
+  const bloodied = hp !== undefined && bloodiedFromHp(hp.current, hp.max);
+  return damageEffects(action.activity).flatMap((effect) => {
+    const dice = (bloodied && effect.whileBloodied?.dice) || effect.dice?.dice;
+    return dice ? [dice] : [];
+  });
 }
 
 /** The damage types of each printed clause (a use-time choice lists every option). */
