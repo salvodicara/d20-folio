@@ -43,3 +43,14 @@ pending"); this is the engine side's to-do for the screens.
 - Add a summon → `linkSummon` (the `summons` writer is held); Begin Turns already orders by
   `summonedTurnOrder` and `mountedTurnOrder`.
 - `multiattackPlan`, `monsterMovementFeet`, monster uses / recharge (Rules session).
+
+## Campaign Diario (owner 2026-10-26, board q38)
+
+- One page per session, as in World Anvil / Kanka / Foundry journals: the pasted AI chronicle
+  on top ("Cronaca della sessione", editable), the automatic session report with the
+  hand-written notes woven in below, one "Copia" (report + notes). The list on the left has
+  the sessions and "Tutta la cronaca". No separate Cronaca tab, chapter UI or recap view.
+- Data safety: today's campaign Chronicle (one shared Markdown document, `Chronicle.tsx`)
+  stays intact and readable under "Tutta la cronaca" from day one, kept verbatim as an
+  imported "Cronaca precedente" entry. Splitting it into per-session pages is a live-data
+  migration: snapshot → dry-run → owner yes → idempotent apply → verify (`live-data-migration`).
