@@ -428,6 +428,31 @@ describe("persistent combat effects", () => {
     expect(aidAggregate.hpFlat).toBe(20);
   });
 
+  // RAW 2024 Aid: +5 HP, and +5 more for each slot level above 2nd.
+  it.each([2, 3, 4, 5, 6, 7, 8, 9])(
+    "Aid cast with a level %i slot gives 5 per level above 1",
+    (slot) => {
+      const aid = effect(`aid-${slot}`, {
+        source: { kind: "spell", id: "aid", actionId: "spell-aid", castLevel: slot },
+        payload: { kind: "grant-group", activeKey: "spell-aid" },
+        duration: { kind: "encounter" },
+      });
+      expect(maxHpDeltaForEffect(aid)).toBe(5 * (slot - 1));
+      expect(evaluateGrants(resolveCombatEffectGrantSources([aid])).hpFlat).toBe(
+        5 * (slot - 1)
+      );
+    }
+  );
+
+  it("Aid with no recorded slot level counts as its own level: +5", () => {
+    const aid = effect("aid-base", {
+      source: { kind: "spell", id: "aid", actionId: "spell-aid" },
+      payload: { kind: "grant-group", activeKey: "spell-aid" },
+      duration: { kind: "encounter" },
+    });
+    expect(maxHpDeltaForEffect(aid)).toBe(5);
+  });
+
   it("resolves resistance, transfer, and a consumed zero-HP floor in one pass", () => {
     const bond = effect("bond", {
       actor: { kind: "monster", combatantId: "bond-source" },

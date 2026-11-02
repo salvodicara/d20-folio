@@ -15,7 +15,7 @@
  * read FROM this aggregate — they no longer parse English.
  */
 
-import { conformDiceScalar, type DiceScalar } from "@/lib/scalar";
+import { amountAtCastLevel, conformDiceScalar, type DiceScalar } from "@/lib/scalar";
 import type {
   AbilityCode,
   ActionEconomyCategory,
@@ -2792,14 +2792,14 @@ export function evaluateGrants(
         const amount =
           worldExact ??
           (g.castLevelScaling
-            ? g.amount +
+            ? amountAtCastLevel(g.amount, runtime?.castLevel) +
               Math.max(
                 0,
                 (runtime?.castLevel ?? g.castLevelScaling.baseLevel) -
                   g.castLevelScaling.baseLevel
               ) *
                 g.castLevelScaling.perLevel
-            : g.amount);
+            : amountAtCastLevel(g.amount, runtime?.castLevel));
         hpFlat += amount;
         // Attribute at the source of truth: the breakdown tip MAPS these instead
         // of re-walking sources, so it inherits the exact while-active descent
