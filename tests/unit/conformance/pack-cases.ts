@@ -3,4 +3,9 @@
  * content-pack/tests/unit/conformance (the titles themselves are public, in
  * corpus.md). Keys are `category:title`.
  */
-export const PACK_CASES: ReadonlyArray<string> = [];
+export const PACK_CASES: ReadonlyArray<string> = [
+  // 9-17
+  "11:Compelled Duel leash",
+  "11:Mounted feats and redirects",
+  "12:Portent has no range limit",
+];
