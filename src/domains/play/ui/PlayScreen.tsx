@@ -6,12 +6,14 @@
  * ring, name and identity line, what is going on, the six abilities, the four header
  * numbers and HP.
  */
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
+import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
@@ -23,7 +25,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { asLocale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
-import { Chip, HpRing, StatBadge } from "@/ui";
+import { Chip, HpRing, StatBadge, Toast } from "@/ui";
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
@@ -35,6 +37,7 @@ export function PlayScreen() {
   useSessionLogPlayerRecorder(characterId);
   useCollectPickups(characterId);
   const doc = useCharacterStore((s) => s.character);
+  const [toast, setToast] = useState<string | null>(null);
   const error = useCharacterStore((s) => s.error);
   useDocumentTitle(doc?.character.name);
 
@@ -55,9 +58,11 @@ export function PlayScreen() {
           <div className="f-play">
             <PlayLeft doc={doc} locale={locale} />
             <PlayCentre doc={doc} locale={locale} />
+            <PlayRight characterId={doc.id} locale={locale} onToast={setToast} />
           </div>
         </TurnEconomyProvider>
       </ItemResourceCommandProvider>
+      {toast && <Toast>{toast}</Toast>}
     </main>
   );
 }
