@@ -228,65 +228,65 @@ export type { ResourceRecoveryTrigger } from "@/types/resource";
 import type { ResourceRecoveryTrigger } from "@/types/resource";
 
 /** One physical dice instruction the table resolves (e.g. `1d6 + 1`). */
-export interface ResourceEnteredRoll {
+export interface ItemResourceEnteredRoll {
   dice: number;
   sides: number;
   modifier?: number;
 }
 
 /** Display unit of one typed item resource; keys the i18n label pair. */
-export type ResourceUnit = "charges" | "uses" | "beads" | "rounds";
+export type ItemResourceUnit = "charges" | "uses" | "beads" | "rounds";
 
-export type ResourceCapacitySpec =
+export type ItemResourceCapacitySpec =
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
-export type ResourceInitialSpec =
+export type ItemResourceInitialSpec =
   | { kind: "full" }
   | { kind: "empty" }
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
-export type ResourceRecoveryAmount =
+export type ItemResourceRecoveryAmount =
   | { kind: "full" }
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
-export interface ResourceRecoverySpec {
+export interface ItemResourceRecoverySpec {
   trigger: ResourceRecoveryTrigger;
-  amount: ResourceRecoveryAmount;
+  amount: ItemResourceRecoveryAmount;
 }
 
 /** Structured consequence of a depletion band; never free-text prose. */
-export interface ResourceDepletionOutcome {
+export interface ItemResourceDepletionOutcome {
   kind: "set-item-disposition";
   disposition: "destroyed" | "nonmagical";
 }
 
 /** One inclusive d20 band; a valid rule's bands cover 1–20 without overlap. */
-export interface ResourceDepletionBand {
+export interface ItemResourceDepletionBand {
   min: number;
   max: number;
-  outcomes: ReadonlyArray<ResourceDepletionOutcome>;
+  outcomes: ReadonlyArray<ItemResourceDepletionOutcome>;
 }
 
 /**
  * Consequence of spending the last unit: either an entered-d20 table the
  * player resolves physically, or a deterministic outcome that always fires.
  */
-export type ResourceDepletionRule =
-  | { kind: "entered-d20"; bands: ReadonlyArray<ResourceDepletionBand> }
-  | { kind: "deterministic"; outcomes: ReadonlyArray<ResourceDepletionOutcome> };
+export type ItemResourceDepletionRule =
+  | { kind: "entered-d20"; bands: ReadonlyArray<ItemResourceDepletionBand> }
+  | { kind: "deterministic"; outcomes: ReadonlyArray<ItemResourceDepletionOutcome> };
 
 /** Typed, instance-owned mutable pool declared by one catalogue item. */
-export interface ResourceSpec {
+export interface ItemResourceSpec {
   kind: "counter";
   id: string;
-  unit: ResourceUnit;
-  capacity: ResourceCapacitySpec;
-  initial: ResourceInitialSpec;
-  recoveries?: ReadonlyArray<ResourceRecoverySpec>;
-  onEmpty?: ResourceDepletionRule;
+  unit: ItemResourceUnit;
+  capacity: ItemResourceCapacitySpec;
+  initial: ItemResourceInitialSpec;
+  recoveries?: ReadonlyArray<ItemResourceRecoverySpec>;
+  onEmpty?: ItemResourceDepletionRule;
 }
 
 /** Level-gated override for a tracker — applied when character level ≥ `from` */
@@ -3425,7 +3425,7 @@ export interface SrdMagicItemData {
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /** Typed, instance-owned mutable pools. Prose and grants may consume a
    * resource by id, but never redeclare its capacity or recovery. */
-  resources?: ReadonlyArray<ResourceSpec>;
+  resources?: ReadonlyArray<ItemResourceSpec>;
   /**
    * S9 — a CONSUMED buff potion's timed duration, in COMBAT ROUNDS (1 round =
    * 6 seconds, so 1 minute = 10, 1 hour = 600). When set, drinking the potion

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type {
-  ResourceRecoveryAmount,
-  ResourceSpec,
+  ItemResourceRecoveryAmount,
+  ItemResourceSpec,
   SrdMagicItemData,
 } from "@/data/types";
 import {
@@ -22,9 +22,9 @@ type CatalogueItem = Pick<SrdMagicItemData, "id" | "resources">;
 function counter(
   id: string,
   trigger: ItemResourceRecoveryBoundary,
-  amount: ResourceRecoveryAmount = { kind: "full" },
+  amount: ItemResourceRecoveryAmount = { kind: "full" },
   capacity = 5
-): ResourceSpec {
+): ItemResourceSpec {
   return {
     kind: "counter",
     id,
@@ -193,7 +193,7 @@ describe("item resource recovery boundaries", () => {
           amount: { kind: "entered-roll", roll: { dice: 1, sides: 4 } },
         },
       ],
-    } satisfies ResourceSpec;
+    } satisfies ItemResourceSpec;
     const item = { id: "rolled-wand", resources: [rolled] } satisfies CatalogueItem;
     const identity = makeItemResourceIdentity(item.id, "wand-a", rolled.id);
     const base = {
@@ -415,7 +415,7 @@ describe("item resource recovery boundaries", () => {
           amount: { kind: "entered-roll", roll: { dice: 1, sides: 4 } },
         },
       ],
-    } satisfies ResourceSpec;
+    } satisfies ItemResourceSpec;
     const item = {
       id: "replay-focus",
       resources: [
