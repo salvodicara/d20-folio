@@ -20,6 +20,15 @@ const RULES = fs.readFileSync(
   "utf8"
 );
 
+// Real people's names live only in the private pack; without it the check runs on the public list alone.
+const PRIVATE_TERMS_FILE = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../content-pack/private-terms.json"
+);
+const PRIVATE_TERMS: string[] = fs.existsSync(PRIVATE_TERMS_FILE)
+  ? (JSON.parse(fs.readFileSync(PRIVATE_TERMS_FILE, "utf8")) as string[])
+  : [];
+
 const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900, scale: 1 },
   { name: "w1100", width: 1100, height: 800, scale: 1 },
@@ -63,10 +72,13 @@ for (const vp of VIEWPORTS) {
         test(`${lang} ${state} passes the design rules`, async ({ page }) => {
           await open(page, lang, state);
           await page.addScriptTag({ content: RULES });
-          const failures = await page.evaluate(() =>
-            (window as unknown as { __audit: (o: object) => object }).__audit({
-              needsLogo: false,
-            })
+          const failures = await page.evaluate(
+            (privateTerms) =>
+              (window as unknown as { __audit: (o: object) => object }).__audit({
+                needsLogo: false,
+                privateTerms,
+              }),
+            PRIVATE_TERMS
           );
           expect(failures).toEqual({});
 

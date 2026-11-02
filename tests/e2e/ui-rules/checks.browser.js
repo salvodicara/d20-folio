@@ -643,13 +643,22 @@ window.__audit = (opts) => {
       }
     }
   }
-  // c25 banned terms in any visible text, label or title (product names, real people, internal codes, dev words, AI, "!")
+  // c25 banned terms in any visible text, label or title (product names, internal codes, dev words, AI, "!").
+  // Real people's names stay private: the caller passes them as opts.privateTerms.
   {
     const BAN =
-      /\b(Owlbear|Discord|Roll20|Foundry|Fantasy Grounds|ChatGPT|GPT|Claude|Salvo|Marco|Giulia|Anna|Luca|null|undefined|debug|seed|flag|writer|lorem|TODO|FIXME)\b|D&D Beyond|esempio\.it|FOL-\d|\bIA\b|\bAI\b|[^\s!]!/;
+      /\b(Owlbear|Discord|Roll20|Foundry|Fantasy Grounds|ChatGPT|GPT|Claude|null|undefined|debug|seed|flag|writer|lorem|TODO|FIXME)\b|D&D Beyond|esempio\.it|FOL-\d|\bIA\b|\bAI\b|[^\s!]!/;
+    // Same matching as the licensing guard: bare names word-bounded and case-sensitive, the rest as substrings.
+    const people = (opts.privateTerms || []).map((t) => {
+      const esc = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(
+        /^[A-Za-zÀ-ÿ]+$/.test(t) ? `(?<![A-Za-zÀ-ÿ])${esc}(?![A-Za-zÀ-ÿ])` : esc
+      );
+    });
     const seen = new Set();
     const test = (t, where) => {
-      const m = t.match(BAN);
+      const m =
+        t.match(BAN) || (people.some((re) => re.test(t)) ? ["a private name"] : null);
       if (m && !seen.has(t)) {
         seen.add(t);
         add("banned", "«" + m[0] + "» in " + where + ": " + t.slice(0, 60));
