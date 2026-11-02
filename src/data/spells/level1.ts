@@ -657,6 +657,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         ]),
         targetScope: "cursed",
         grants: [
+          { id: "move-mark", type: "granted-action", slot: "bonus" },
           {
             type: "damage-rider",
             dice: "1d6",
@@ -705,6 +706,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         ]),
         targetScope: "marked",
         grants: [
+          { id: "move-mark", type: "granted-action", slot: "bonus" },
           {
             type: "damage-rider",
             dice: "1d6",
