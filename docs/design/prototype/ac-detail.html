@@ -1,0 +1,630 @@
+<!DOCTYPE html><html lang="it"><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Selene Varga · Folio</title>
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/layout.css">
+    
+    
+  <link rel="stylesheet" href="css/shared-2a449a19.css"><link rel="stylesheet" href="css/shared-a89fb1e9.css"></head>
+  <!-- ?mode=explore shows the same screen outside combat (BG3: real-time vs turn-based) -->
+  <body class="mode-combat">
+    <header class="top">
+      <a class="btn btn--quiet btn--icon only-phone" href="#" aria-label="Personaggi"><svg class="ic-ui" viewBox="0 0 256 256" width="24" height="24" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M168.49 199.51a12 12 0 0 1-17 17l-80-80a12 12 0 0 1 0-17l80-80a12 12 0 0 1 17 17L97 128Z"></path></svg></a>
+      <a class="brand only-laptop" href="#">
+        <svg class="logo" viewBox="0 0 48 48" width="32" height="32" aria-hidden="true"><defs><linearGradient id="glm" x1="0" y1="0" x2="0" y2="48" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f6e2a8"></stop><stop offset=".5" stop-color="#d7b67a"></stop><stop offset="1" stop-color="#a47a38"></stop></linearGradient></defs><g fill="none" stroke="url(#glm)" stroke-linejoin="round" stroke-linecap="round"><path d="M24.00 3.00 L42.19 13.50 L42.19 34.50 L24.00 45.00 L5.81 34.50 L5.81 13.50Z" stroke-width="2.6"></path><path d="M24.00 0.90 L44.01 12.45 L44.01 35.55 L24.00 47.10 L3.99 35.55 L3.99 12.45Z" stroke-width="1.1" opacity=".75"></path><path d="M24.00 15.70 L33.09 31.45 L14.91 31.45Z" stroke-width="2.2"></path><path d="M24.00 15.70 L24.00 3.00M24.00 15.70 L42.19 13.50M24.00 15.70 L5.81 13.50M33.09 31.45 L42.19 13.50M33.09 31.45 L42.19 34.50M33.09 31.45 L24.00 45.00M14.91 31.45 L5.81 13.50M14.91 31.45 L5.81 34.50M14.91 31.45 L24.00 45.00" stroke-width="1.5"></path></g></svg>
+        Folio
+      </a>
+      <nav class="nav only-laptop" aria-label="Principale">
+        <a href="#" aria-current="page" style="gap: 8px !important;">Personaggi</a>
+        <a href="#" style="gap: 8px !important;">Campagne</a>
+        <a href="#" style="gap: 8px !important;">Compendio</a>
+      </nav>
+      <div class="top__who only-phone">
+        <span class="top__name">Selene Varga</span>
+        <span class="top__cls"><span class="dots"><span class="dw"><span class="dt">Chierica 5</span><span class="dt">Umana</span></span></span></span>
+      </div>
+      <span class="grow only-laptop"></span>
+      
+      <button class="btn btn--quiet btn--icon only-phone" aria-label="Altro">
+        <svg class="ic-ui" viewBox="0 0 256 256" width="24" height="24" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M112 60a16 16 0 1 1 16 16a16 16 0 0 1-16-16m16 52a16 16 0 1 0 16 16a16 16 0 0 0-16-16m0 68a16 16 0 1 0 16 16a16 16 0 0 0-16-16"></path></svg>
+      </button>
+    <div class="tb-right"><span class="tb-search"><svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M232.49 215.51L185 168a92.12 92.12 0 1 0-17 17l47.53 47.54a12 12 0 0 0 17-17ZM44 112a68 68 0 1 1 68 68a68.07 68.07 0 0 1-68-68"></path></svg>Cerca nel&nbsp;compendio</span><span class="lrow__img only-laptop" style="width: 36px; height: 36px; padding: 4px !important;"><span style="font-size: 15px">M</span></span></div></header>
+
+    <main class="sheet">
+      <!-- Identity band: Foundry's header, D&D Beyond's order, BG3's medallion -->
+      <section class="frame hero" aria-label="Selene Varga" style="padding-top: 36px !important; padding-bottom: 36px !important;">
+        <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+        <div class="hero__medal">
+          <div class="medal" style="position: relative;">
+            <div class="medal__ring" style="padding: 4px !important;">
+              <div class="medal__img"><img src="img/portrait-selene.webp" alt=""></div>
+            </div>
+          <svg viewBox="0 0 100 100" style="position: absolute; left: -11px; top: -11px; width: 142px; height: 142px; overflow: visible; transform: rotate(-90deg);" data-orn=""><defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4ff9a"></stop><stop offset=".45" stop-color="#46f04a"></stop><stop offset="1" stop-color="#0c8a1c"></stop></linearGradient><linearGradient id="hgh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0c8a1c"></stop><stop offset=".5" stop-color="#46f04a"></stop><stop offset="1" stop-color="#d4ff9a"></stop></linearGradient><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8f0ff"></stop><stop offset=".5" stop-color="#33a6ff"></stop><stop offset="1" stop-color="#0a4f9c"></stop></linearGradient><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe7a1"></stop><stop offset=".5" stop-color="#c9973e"></stop><stop offset="1" stop-color="#6b4a1c"></stop></linearGradient><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"></feGaussianBlur><feMerge><feMergeNode in="b"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge></filter></defs><circle cx="50" cy="50" r="46" fill="none" stroke="#120a07" stroke-width="7"></circle><circle cx="50" cy="50" r="46" fill="none" stroke="url(#hgh)" stroke-width="5" stroke-linecap="round" stroke-dasharray="237.00174978681397 289.02652413026095" filter="url(#glow)"></circle><circle cx="50" cy="50" r="46" fill="none" stroke="url(#tg)" stroke-width="5" stroke-dasharray="37.573448136933926 289.02652413026095" stroke-dashoffset="-237.00174978681397" filter="url(#glow)"></circle><circle cx="50" cy="50" r="50" fill="none" stroke="url(#gold)" stroke-width="1.5"></circle><circle cx="50" cy="50" r="42" fill="none" stroke="url(#gold)" stroke-width="1"></circle></svg></div>
+        </div>
+
+        <div class="hero__id">
+          <h1 class="hero__name only-laptop">Selene Varga</h1>
+          <p class="hero__cls only-laptop"><span class="dots"><span class="dw"><span class="dt">Chierica 5</span><span class="dt">Dominio della Vita</span><span class="dt">Umana</span><span class="dt">Accolita</span></span></span></p>
+          <!-- D&D Beyond's header buttons: Short Rest, Long Rest, Campaign -->
+          <div class="hero__btns only-laptop">
+            <button class="btn btn--sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" class="i i--sm gi" style=""><path fill="currentColor" d="M281.53 23.438c48.44 71.504-18.447 145.556-63.655 58.968c27.295 144.502-65.22 166.347-74.75 74.75c-73.554 65.057-59.358 147.17-20.438 210.75l45.844-26.344c-12.004-18.318-17.995-42.502-15.31-66.218c25.688 39.43 106.855 10.088 97.124-59.938c10.695 32.074 37.802 28.97 65.78-20.5C278.07 297.622 337.95 364.248 378.032 333.5c1.47 11.97-2.95 25.657-10.592 38.063l46.968 12.53c55.122-47.503 79.71-135.97-3.812-175.53c39.08 60.478-13.1 105.064-60.72 41.468c-38.546-72.133 82.366-113.394-68.343-226.593zM173.876 48.124c-64.128 32.333-14.642 60.51-14.03 92.344c44.122-38.935-3.722-53.508 14.03-92.345zm74.47 269.094L75 416.874c2.71 18.39 8.98 34.417 18.813 48.5l92-44.063l-78.688 59.875c3.39 3.38 7.033 6.62 10.938 9.75L192.78 448c-.023-.738-.06-1.475-.06-2.22c0-37.22 30.495-67.56 67.81-67.56a67.55 67.55 0 0 1 29.44 6.717c-2.323-13.414-7.28-27.104-14.72-39.28l-94.938 40.124l82.47-56.467c-4.34-4.55-9.166-8.64-14.438-12.094zm58.874 57.624c1.61 7.148 2.6 14.315 2.967 21.312l.22 3.938c11.13 12.042 17.937 28.09 17.937 45.687a66.8 66.8 0 0 1-3.813 22.25l91.345 24.376c4.642-6.327 8.588-12.768 11.844-19.375l-63.158-24.686l70.125 6.844c.866-2.948 1.61-5.923 2.22-8.938l-97.063-34.22L439 427.5c.156-5.772-.103-11.67-.813-17.72L307.22 374.845zm-46.69 22.062c-27.26 0-49.124 21.8-49.124 48.875c0 27.078 21.864 48.876 49.125 48.876c27.263 0 49.126-21.798 49.126-48.875c0-27.075-21.863-48.874-49.125-48.874zm-4.936 11.78c43.778.002 58.435 71.595 0 71.595c26.622-23.113 29.81-46.888 0-71.592zm.187 9.845c-21.616 17.916-19.304 35.177 0 51.94c-42.375 0-31.745-51.94 0-51.94"></path></svg>Riposo breve
+            </button>
+            <button class="btn btn--sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" class="i i--sm gi" style=""><path fill="currentColor" d="M294.8 26.57L238 60.37l7.8 13.17L281 52.59L270.8 118l6.3 10.6L336 93.53l-7.8-13.17l-37.3 22.14L301 37.12zM147.1 60.55A224 224 0 0 0 32 256a224 224 0 0 0 224 224a224 224 0 0 0 214.9-161.2A208 208 0 0 1 320 384a208 208 0 0 1-208-208a208 208 0 0 1 35.1-115.45m244.5 52.05l-6.9 16.5l44.1 18.4l-68.3 35.9l-5.5 13.2l73.7 30.8l6.9-16.5l-46.7-19.5l68.3-35.9l5.5-13.2zm-115 64l-97.8 35l8.1 22.7l60.6-21.7l-35.4 97.9l6.5 18.1L320 292.4l-8.1-22.7l-64.2 23l35.4-97.9z"></path></svg>Riposo lungo
+            </button>
+            <!-- Time passes: Foundry's SmallTime step buttons; exploration only (in combat, rounds keep time) -->
+            <span class="time-wrap explore-only">
+              <button class="btn btn--sm" aria-expanded="false" data-toggle="time-pop">
+                <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M204 75.64V40a20 20 0 0 0-20-20H72a20 20 0 0 0-20 20v36a20.1 20.1 0 0 0 8 16l48 36l-48 36a20.1 20.1 0 0 0-8 16v36a20 20 0 0 0 20 20h112a20 20 0 0 0 20-20v-35.64a20.13 20.13 0 0 0-7.94-16L147.9 128l48.16-36.4A20.13 20.13 0 0 0 204 75.64M180 212H76v-30l52-39l52 39.33Zm0-138.35L128 113L76 74V44h104Z"></path></svg>Passa il&nbsp;tempo
+              </button>
+              <div class="frame frame--card pop time-pop" id="time-pop" role="dialog" aria-label="Passa il tempo" hidden="">
+                <p class="pop__title">Passa il&nbsp;tempo</p>
+                <div class="time-steps" role="group" aria-label="Quanto tempo">
+                  <button class="btn btn--sm">+1&nbsp;min</button><button class="btn btn--sm">+10&nbsp;min</button><button class="btn btn--sm" aria-pressed="true">+1&nbsp;ora</button><button class="btn btn--sm">+8&nbsp;ore</button>
+                </div>
+                <div class="time-steps" role="group" aria-label="Momento del giorno">
+                  <button class="btn btn--sm">
+                    <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M240 148h-36.11c.07-1.33.11-2.66.11-4a76 76 0 0 0-152 0c0 1.34 0 2.67.11 4H16a12 12 0 0 0 0 24h224a12 12 0 0 0 0-24m-164-4a52 52 0 0 1 104 0c0 1.34-.07 2.67-.17 4H76.17c-.1-1.33-.17-2.66-.17-4m144 56a12 12 0 0 1-12 12H48a12 12 0 0 1 0-24h160a12 12 0 0 1 12 12M12.62 92.21a12 12 0 0 1 15.17-7.59l12 4a12 12 0 1 1-7.58 22.77l-12-4a12 12 0 0 1-7.59-15.18m56-48.41a12 12 0 1 1 22.76-7.59l4 12a12 12 0 1 1-22.76 7.59Zm140 60a12 12 0 0 1 7.59-15.18l12-4a12 12 0 0 1 7.58 22.77l-12 4a12 12 0 0 1-15.17-7.59m-48-55.59l4-12a12 12 0 1 1 22.76 7.59l-4 12a12 12 0 1 1-22.76-7.59"></path></svg>All’alba</button><button class="btn btn--sm">
+                    <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M240 148h-36.11c.07-1.33.11-2.66.11-4a76 76 0 0 0-152 0c0 1.34 0 2.67.11 4H16a12 12 0 0 0 0 24h224a12 12 0 0 0 0-24m-164-4a52 52 0 0 1 104 0c0 1.34-.07 2.67-.17 4H76.17c-.1-1.33-.17-2.66-.17-4m144 56a12 12 0 0 1-12 12H48a12 12 0 0 1 0-24h160a12 12 0 0 1 12 12M12.62 92.21a12 12 0 0 1 15.17-7.59l12 4a12 12 0 1 1-7.58 22.77l-12-4a12 12 0 0 1-7.59-15.18m56-48.41a12 12 0 1 1 22.76-7.59l4 12a12 12 0 1 1-22.76 7.59Zm140 60a12 12 0 0 1 7.59-15.18l12-4a12 12 0 0 1 7.58 22.77l-12 4a12 12 0 0 1-15.17-7.59m-48-55.59l4-12a12 12 0 1 1 22.76 7.59l-4 12a12 12 0 1 1-22.76-7.59"></path></svg>Al tramonto
+                  </button>
+                </div>
+                <div class="time-ends">
+                  <span class="label">Finisce</span>
+                  <p>
+                    <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M251 123.13c-.37-.81-9.13-20.26-28.48-39.61C196.63 57.67 164 44 128 44S59.37 57.67 33.51 83.52C14.16 102.87 5.4 122.32 5 123.13a12.08 12.08 0 0 0 0 9.75c.37.82 9.13 20.26 28.49 39.61C59.37 198.34 92 212 128 212s68.63-13.66 94.48-39.51c19.36-19.35 28.12-38.79 28.49-39.61a12.08 12.08 0 0 0 .03-9.75m-46.06 33C183.47 177.27 157.59 188 128 188s-55.47-10.73-76.91-31.88A130.4 130.4 0 0 1 29.52 128a130.5 130.5 0 0 1 21.57-28.11C72.54 78.73 98.41 68 128 68s55.46 10.73 76.91 31.89A130.4 130.4 0 0 1 226.48 128a130.5 130.5 0 0 1-21.57 28.12ZM128 84a44 44 0 1 0 44 44a44.05 44.05 0 0 0-44-44m0 64a20 20 0 1 1 20-20a20 20 0 0 1-20 20"></path></svg>Individuazione del&nbsp;magico
+                    <span class="meta">(restavano 8&nbsp;min)</span>
+                  </p>
+                </div>
+                <button class="btn btn--lit" style="width: 100%">Passa 1&nbsp;ora</button>
+              </div>
+            </span>
+            <a class="btn btn--sm" href="#"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" class="i i--sm gi" style=""><path fill="currentColor" d="M254.25 15.344c-132.537 0-240.188 107.62-240.188 240.156c0 132.537 107.65 240.188 240.188 240.188S494.406 388.038 494.406 255.5S386.786 15.344 254.25 15.344m0 18.687c122.436 0 221.47 99.034 221.47 221.47c0 65.65-28.465 124.583-73.75 165.125V238.75l14-22.78h-7.595L364 101.5l-43.813 114.47h-8.156l14.595 22.78v33.875h-36.813v-88.188l14.625-22.78h-7.593l-44.406-114.47l-44.375 114.47h-7.594l14.03 22.78v123.22h-37.375v-18.094l14.594-22.782h-8.19l-43.78-114.467L95.344 266.78H87.75l14.03 22.783V416.25C59.25 375.9 32.75 318.83 32.75 255.5c0-122.436 99.064-221.47 221.5-221.47zm1.094 160.532h18.687v36.344h-18.686v-36.344zm110.156 87.97h18.688v36.312H365.5V282.53zm-246.656 22.03h18.687v36.344h-18.686v-36.344zm50.875 29.407h18.686v36.342H169.72V333.97zm170.81 30.5h18.69v36.342h-18.69z"></path></svg>La Cripta&nbsp;di&nbsp;Vetro</a>
+          </div>
+          <div class="hero__chips"><button class="sg conc" type="button">◉ Benedizione · 9&nbsp;round</button><button class="sg buff" type="button">✦ Effetti <span class="n">2</span></button><button class="sg cond" type="button">⚠ Condizioni <span class="n">1</span></button></div>
+          <div class="abils" role="group" aria-label="Caratteristiche">
+            <button class="abil" style="gap: 0px !important;">
+              <span class="label">For</span><span class="abil__v">+3</span><span class="abil__s" style="font-size: 14px !important;">16</span>
+            </button>
+            <button class="abil" style="gap: 0px !important;">
+              <span class="label">Des</span><span class="abil__v">+1</span><span class="abil__s" style="font-size: 14px !important;">12</span>
+            </button>
+            <button class="abil" style="gap: 0px !important;">
+              <span class="label">Cos</span><span class="abil__v">+2</span><span class="abil__s" style="font-size: 14px !important;">14</span>
+            </button>
+            <button class="abil" style="gap: 0px !important;">
+              <span class="label">Int</span><span class="abil__v">+0</span><span class="abil__s" style="font-size: 14px !important;">10</span>
+            </button>
+            <button class="abil is-prof" style="gap: 0px !important;">
+              <span class="label">Sag</span><span class="abil__v">+3</span><span class="abil__s" style="font-size: 14px !important;">16</span>
+            </button>
+            <button class="abil is-prof" style="gap: 0px !important;">
+              <span class="label">Car</span><span class="abil__v">+1</span><span class="abil__s" style="font-size: 14px !important;">13</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="hero__badges">
+          <div class="badge-wrap">
+            <button class="badge open" aria-expanded="true" data-toggle="bd-ac" data-collapse-phone="" data-anchor="" style="gap: 4px !important;">
+              <span class="badge__shape"><svg viewBox="0 0 58 64" aria-hidden="true" data-orn="">
+                  <path class="outer" d="M29 2 L54 10 C54 34 46 52 29 62 C12 52 4 34 4 10 Z"></path>
+                  <path class="inner" d="M29 7 L49 13.5 C49 33 42 48 29 56.5 C16 48 9 33 9 13.5 Z"></path></svg><span class="badge__v">18</span></span>
+              <span class="label">CA</span>
+            </button>
+            <div class="frame frame--card pop pop-under" id="bd-ac" role="dialog" aria-label="Classe armatura">
+              <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+              <p class="pop__title">Classe&nbsp;armatura</p>
+              <dl class="bd">
+                <div style="padding-top: 8px !important; padding-bottom: 8px !important;">
+                  <dt>Cotta di&nbsp;maglia</dt>
+                  <dd>16</dd>
+                </div>
+                <div style="padding-top: 8px !important; padding-bottom: 8px !important;">
+                  <dt>Scudo</dt>
+                  <dd>+2</dd>
+                </div>
+                <div class="off" style="padding-top: 8px !important; padding-bottom: 8px !important;">
+                  <dt>Destrezza</dt>
+                  <dd>+1</dd>
+                </div>
+                <div class="total" style="padding-bottom: 8px !important;">
+                  <dt>Totale</dt>
+                  <dd>18</dd>
+                </div>
+              </dl>
+              <p class="pop__note">
+                Con&nbsp;un’<button class="term">armatura pesante</button> la Destrezza non si
+                somma.
+              </p>
+              <button class="btn btn--quiet" style="margin: 8px 0 0 -16px">
+                <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="m230.14 70.54l-44.68-44.69a20 20 0 0 0-28.29 0L33.86 149.17A19.85 19.85 0 0 0 28 163.31V208a20 20 0 0 0 20 20h44.69a19.86 19.86 0 0 0 14.14-5.86L230.14 98.82a20 20 0 0 0 0-28.28M91 204H52v-39l84-84l39 39Zm101-101l-39-39l18.34-18.34l39 39Z"></path></svg>Il master ha deciso&nbsp;altro?&nbsp;Cambia
+              </button>
+            </div>
+          </div>
+          <button class="badge badge--hex" style="gap: 4px !important;">
+            <span class="badge__shape"><svg viewBox="0 0 58 58" aria-hidden="true" data-orn="">
+                <path class="outer" d="M29 2 L53 15.5 V42.5 L29 56 L5 42.5 V15.5 Z"></path>
+                <path class="inner" d="M29 7 L48.5 18 V40 L29 51 L9.5 40 V18 Z"></path></svg><span class="badge__v">+1</span></span>
+            <span class="label">Iniziativa</span>
+          </button>
+          <button class="badge badge--hex" style="gap: 4px !important;">
+            <span class="badge__shape"><svg viewBox="0 0 58 58" aria-hidden="true" data-orn="">
+                <path class="outer" d="M29 2 L53 15.5 V42.5 L29 56 L5 42.5 V15.5 Z"></path>
+                <path class="inner" d="M29 7 L48.5 18 V40 L29 51 L9.5 40 V18 Z"></path></svg><span class="badge__v">9<small>m</small></span></span>
+            <span class="label">Velocità</span>
+          </button>
+          <button class="badge badge--hex only-laptop" style="gap: 4px !important;">
+            <span class="badge__shape"><svg viewBox="0 0 58 58" aria-hidden="true" data-orn="">
+                <path class="outer" d="M29 2 L53 15.5 V42.5 L29 56 L5 42.5 V15.5 Z"></path>
+                <path class="inner" d="M29 7 L48.5 18 V40 L29 51 L9.5 40 V18 Z"></path></svg><span class="badge__v">+3</span></span>
+            <span class="label">Competenza</span>
+          </button>
+        </div>
+
+        <div class="hero__hp">
+          <div class="hp" style="gap: 8px !important;">
+            <div class="hp__top">
+              <span class="label">Punti ferita</span><span class="hp__temp combat-only">+5&nbsp;temporanei</span>
+            </div>
+            <div class="hp__top">
+              <button class="hp__now" style="text-shadow: rgba(70, 240, 74, 0.533) 0px 0px 14px; color: rgb(125, 255, 127) !important;">31</button><span class="hp__max">/ 38</span>
+            </div>
+            <div class="hpbar" style="display: none;">
+              <span class="hpbar__fill" style="width: 81.5%"></span><span class="hpbar__temp combat-only" style="left: 81.5%; width: 13%"></span>
+            </div>
+          </div>
+          <div class="hp__actions">
+            <button class="btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" class="i i--sm gi" style="color: var(--hp-hi);"><path fill="currentColor" d="M373.47 25.5c-33.475-.064-67.614 13.444-94.44 43.156l37.22 145.156l-33.437.032l35.343 132.093l-116.718-188.375l50.03 5.375L202.5 47.312C120.437-1.43 4.756 40.396 8.5 158.156c4.402 138.44 191.196 184.6 247.406 331.625c59.376-147.035 251.26-184.33 246.656-331.624c-2.564-82.042-64.6-132.532-129.093-132.656z"></path></svg>Danni
+            </button>
+            <button class="btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 512 512" class="i i--sm gi" style="color: var(--heal);"><path fill="currentColor" d="M372.48 31.215c-77.65 0-116.48 65.73-116.48 65.73s-38.83-65.72-116.48-65.72c-37.14 0-107.77 33.72-107.77 125.13c0 161.24 224.25 324.43 224.25 324.43s224.25-163.19 224.25-324.43c0-91.42-70.63-125.13-107.77-125.14m-145.492 115.02h60.698v79.415h79.238v60.7h-79.238v79.884h-60.698V286.35h-80.064v-60.7h80.064z"></path></svg>Cura
+            </button>
+          </div>
+        </div>
+      <div class="frz" aria-hidden="true" style="position: absolute; inset: 0px; pointer-events: none; z-index: 2;"><svg xmlns="http://www.w3.org/2000/svg" width="1392" height="327.765625" viewBox="0 0 1392 327.765625" style="position:absolute;left:0;top:0;overflow:visible;pointer-events:none" shape-rendering="geometricPrecision"><defs><linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2d9a0"></stop><stop offset=".38" stop-color="#c9a062"></stop><stop offset=".7" stop-color="#8f6834"></stop><stop offset="1" stop-color="#5a3c1a"></stop></linearGradient>
+<filter id="bev" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation=".6" flood-color="#000" flood-opacity=".9"></feDropShadow></filter></defs><path d="M6 6H1386 Q1386 6 1386 6V321.765625Q1386 321.765625 1386 321.765625H6Q6 321.765625 6 321.765625V6Q6 6 6 6" fill="none" stroke="#a98250" stroke-width="1.3"></path><path d="M-5.00 6.00L-4.44 6.09L-3.86 6.18L-3.27 6.27L-2.66 6.37L-2.03 6.46L-1.38 6.55L-0.72 6.64L-0.04 6.73L0.66 6.82L1.37 6.92L2.09 7.01L2.83 7.01L3.59 7.00L4.36 7.00L5.14 6.99L5.94 6.98L6.75 6.97L7.57 6.96L8.41 6.96L9.26 6.95L10.12 6.94L10.99 6.93L11.88 6.93L12.78 6.92L13.68 6.91L14.60 6.91L15.53 6.90L16.47 6.89L17.42 6.88L18.38 6.88L19.34 6.87L20.32 6.86L21.30 6.85L22.30 6.84L23.30 6.84L24.30 6.83L25.32 6.82L26.34 6.82L27.37 6.81L28.41 6.80L29.45 6.79L30.50 6.79L31.55 6.78L32.61 6.77L33.67 6.76L34.74 6.75L35.81 6.75L36.89 6.74L37.97 6.73L39.05 6.72L40.14 6.72L41.23 6.71L42.32 6.70L43.41 6.70L44.51 6.69L45.60 6.68L46.70 6.67L47.80 6.67L48.90 6.66L50.00 6.65L50.00 5.35L48.90 5.34L47.80 5.33L46.70 5.33L45.60 5.32L44.51 5.31L43.41 5.30L42.32 5.30L41.23 5.29L40.14 5.28L39.05 5.28L37.97 5.27L36.89 5.26L35.81 5.25L34.74 5.25L33.67 5.24L32.61 5.23L31.55 5.22L30.50 5.21L29.45 5.21L28.41 5.20L27.37 5.19L26.34 5.18L25.32 5.18L24.30 5.17L23.30 5.16L22.30 5.16L21.30 5.15L20.32 5.14L19.34 5.13L18.38 5.13L17.42 5.12L16.47 5.11L15.53 5.10L14.60 5.09L13.68 5.09L12.78 5.08L11.88 5.07L10.99 5.06L10.12 5.06L9.26 5.05L8.41 5.04L7.57 5.03L6.75 5.03L5.94 5.02L5.14 5.01L4.36 5.00L3.59 5.00L2.83 4.99L2.09 4.99L1.37 5.08L0.66 5.17L-0.04 5.27L-0.72 5.36L-1.38 5.45L-2.03 5.54L-2.66 5.63L-3.27 5.72L-3.86 5.82L-4.44 5.91L-5.00 6.00Z" fill="#a98250"></path><path d="M6.00 -5.00L5.91 -4.44L5.82 -3.86L5.72 -3.27L5.63 -2.66L5.54 -2.03L5.45 -1.38L5.36 -0.72L5.27 -0.04L5.17 0.66L5.08 1.37L4.99 2.09L4.99 2.83L5.00 3.59L5.00 4.36L5.01 5.14L5.02 5.94L5.03 6.75L5.03 7.57L5.04 8.41L5.05 9.26L5.06 10.12L5.06 10.99L5.07 11.88L5.08 12.78L5.09 13.68L5.09 14.60L5.10 15.53L5.11 16.47L5.12 17.42L5.13 18.38L5.13 19.34L5.14 20.32L5.15 21.30L5.16 22.30L5.16 23.30L5.17 24.30L5.18 25.32L5.18 26.34L5.19 27.37L5.20 28.41L5.21 29.45L5.21 30.50L5.22 31.55L5.23 32.61L5.24 33.67L5.25 34.74L5.25 35.81L5.26 36.89L5.27 37.97L5.28 39.05L5.28 40.14L5.29 41.23L5.30 42.32L5.30 43.41L5.31 44.51L5.32 45.60L5.33 46.70L5.33 47.80L5.34 48.90L5.35 50.00L6.65 50.00L6.66 48.90L6.67 47.80L6.67 46.70L6.68 45.60L6.69 44.51L6.70 43.41L6.70 42.32L6.71 41.23L6.72 40.14L6.72 39.05L6.73 37.97L6.74 36.89L6.75 35.81L6.75 34.74L6.76 33.67L6.77 32.61L6.78 31.55L6.79 30.50L6.79 29.45L6.80 28.41L6.81 27.37L6.82 26.34L6.82 25.32L6.83 24.30L6.84 23.30L6.84 22.30L6.85 21.30L6.86 20.32L6.87 19.34L6.88 18.38L6.88 17.42L6.89 16.47L6.90 15.53L6.91 14.60L6.91 13.68L6.92 12.78L6.93 11.88L6.93 10.99L6.94 10.12L6.95 9.26L6.96 8.41L6.96 7.57L6.97 6.75L6.98 5.94L6.99 5.14L7.00 4.36L7.00 3.59L7.01 2.83L7.01 2.09L6.92 1.37L6.82 0.66L6.73 -0.04L6.64 -0.72L6.55 -1.38L6.46 -2.03L6.37 -2.66L6.27 -3.27L6.18 -3.86L6.09 -4.44L6.00 -5.00Z" fill="#a98250"></path><path d="M38.98 5.93L37.96 5.98L36.98 6.14L36.01 6.31L35.07 6.51L34.14 6.72L33.23 6.95L32.33 7.18L31.46 7.43L30.60 7.69L29.75 7.96L28.92 8.25L28.11 8.54L27.31 8.85L26.53 9.17L25.76 9.50L25.01 9.85L24.28 10.21L23.56 10.58L22.85 10.96L22.16 11.35L21.48 11.76L20.82 12.18L20.17 12.62L19.54 13.07L18.92 13.53L18.32 14.01L17.73 14.50L17.16 15.00L16.60 15.52L16.05 16.05L15.52 16.60L15.00 17.16L14.50 17.73L14.01 18.32L13.53 18.92L13.07 19.54L12.62 20.17L12.18 20.82L11.76 21.48L11.35 22.16L10.96 22.85L10.58 23.56L10.21 24.28L9.85 25.01L9.50 25.76L9.17 26.53L8.85 27.31L8.54 28.11L8.25 28.92L7.96 29.75L7.69 30.60L7.43 31.46L7.18 32.33L6.95 33.23L6.72 34.14L6.51 35.07L6.31 36.01L6.14 36.98L5.98 37.96L5.93 38.98L6.07 39.02L6.47 38.08L6.77 37.14L7.07 36.21L7.37 35.30L7.67 34.41L7.97 33.54L8.28 32.68L8.59 31.85L8.91 31.02L9.23 30.22L9.56 29.43L9.90 28.66L10.24 27.91L10.59 27.18L10.95 26.45L11.32 25.75L11.69 25.06L12.08 24.39L12.47 23.73L12.87 23.09L13.28 22.46L13.70 21.84L14.12 21.24L14.56 20.65L15.01 20.08L15.47 19.52L15.93 18.97L16.41 18.44L16.90 17.91L17.40 17.40L17.91 16.90L18.44 16.41L18.97 15.93L19.52 15.47L20.08 15.01L20.65 14.56L21.24 14.12L21.84 13.70L22.46 13.28L23.09 12.87L23.73 12.47L24.39 12.08L25.06 11.69L25.75 11.32L26.45 10.95L27.18 10.59L27.91 10.24L28.66 9.90L29.43 9.56L30.22 9.23L31.02 8.91L31.85 8.59L32.68 8.28L33.54 7.97L34.41 7.67L35.30 7.37L36.21 7.07L37.14 6.77L38.08 6.47L39.02 6.07Z" fill="#a98250"></path><path d="M2.65 2.79L2.98 3.09L3.29 3.40L3.60 3.71L3.90 4.02L4.18 4.32L4.46 4.63L4.73 4.93L4.99 5.24L5.25 5.54L5.50 5.84L5.74 6.14L5.98 6.43L6.22 6.73L6.45 7.02L6.68 7.31L6.90 7.61L7.13 7.89L7.35 8.18L7.58 8.47L7.81 8.76L8.04 9.04L8.27 9.33L8.50 9.61L8.74 9.89L8.98 10.18L9.22 10.46L9.47 10.75L9.72 11.03L9.98 11.32L10.25 11.60L10.52 11.89L10.80 12.18L11.08 12.46L11.37 12.75L11.67 13.05L11.97 13.34L12.29 13.63L12.61 13.93L12.94 14.22L13.27 14.52L13.62 14.82L13.97 15.13L14.33 15.43L14.70 15.74L15.07 16.05L15.46 16.36L15.85 16.67L16.25 16.99L16.66 17.31L17.08 17.64L17.51 17.96L17.94 18.29L18.38 18.63L18.83 18.96L19.26 19.34L19.65 19.75L20.06 20.17L20.47 20.60L20.89 21.03L21.33 21.47L21.47 21.33L21.04 20.89L20.61 20.46L20.20 20.04L19.80 19.61L19.40 19.20L19.06 18.75L18.76 18.28L18.47 17.81L18.18 17.35L17.91 16.89L17.64 16.45L17.38 16.00L17.12 15.57L16.87 15.14L16.62 14.72L16.38 14.31L16.14 13.90L15.90 13.50L15.66 13.10L15.43 12.71L15.20 12.33L14.96 11.96L14.73 11.59L14.49 11.23L14.26 10.87L14.02 10.53L13.77 10.18L13.53 9.85L13.28 9.52L13.03 9.20L12.77 8.88L12.51 8.57L12.24 8.27L11.97 7.98L11.70 7.69L11.41 7.40L11.13 7.13L10.83 6.86L10.53 6.60L10.22 6.34L9.91 6.09L9.59 5.85L9.26 5.62L8.93 5.39L8.59 5.17L8.24 4.95L7.89 4.75L7.53 4.55L7.17 4.35L6.80 4.17L6.42 3.99L6.04 3.81L5.65 3.64L5.25 3.48L4.85 3.33L4.44 3.17L4.03 3.03L3.61 2.89L3.18 2.75L2.75 2.61Z" fill="#d9b878"></path><path d="M1397.00 6.00L1396.44 5.91L1395.86 5.82L1395.27 5.72L1394.66 5.63L1394.03 5.54L1393.38 5.45L1392.72 5.36L1392.04 5.27L1391.34 5.17L1390.63 5.08L1389.91 4.99L1389.17 4.99L1388.41 5.00L1387.64 5.00L1386.86 5.01L1386.06 5.02L1385.25 5.03L1384.43 5.03L1383.59 5.04L1382.74 5.05L1381.88 5.06L1381.01 5.06L1380.12 5.07L1379.22 5.08L1378.32 5.09L1377.40 5.09L1376.47 5.10L1375.53 5.11L1374.58 5.12L1373.63 5.13L1372.66 5.13L1371.68 5.14L1370.70 5.15L1369.70 5.16L1368.70 5.16L1367.70 5.17L1366.68 5.18L1365.66 5.18L1364.63 5.19L1363.59 5.20L1362.55 5.21L1361.50 5.21L1360.45 5.22L1359.39 5.23L1358.33 5.24L1357.26 5.25L1356.19 5.25L1355.11 5.26L1354.03 5.27L1352.95 5.28L1351.86 5.28L1350.77 5.29L1349.68 5.30L1348.59 5.30L1347.49 5.31L1346.40 5.32L1345.30 5.33L1344.20 5.33L1343.10 5.34L1342.00 5.35L1342.00 6.65L1343.10 6.66L1344.20 6.67L1345.30 6.67L1346.40 6.68L1347.49 6.69L1348.59 6.70L1349.68 6.70L1350.77 6.71L1351.86 6.72L1352.95 6.72L1354.03 6.73L1355.11 6.74L1356.19 6.75L1357.26 6.75L1358.33 6.76L1359.39 6.77L1360.45 6.78L1361.50 6.79L1362.55 6.79L1363.59 6.80L1364.63 6.81L1365.66 6.82L1366.68 6.82L1367.70 6.83L1368.70 6.84L1369.70 6.84L1370.70 6.85L1371.68 6.86L1372.66 6.87L1373.63 6.88L1374.58 6.88L1375.53 6.89L1376.47 6.90L1377.40 6.91L1378.32 6.91L1379.22 6.92L1380.12 6.93L1381.01 6.93L1381.88 6.94L1382.74 6.95L1383.59 6.96L1384.43 6.96L1385.25 6.97L1386.06 6.98L1386.86 6.99L1387.64 7.00L1388.41 7.00L1389.17 7.01L1389.91 7.01L1390.63 6.92L1391.34 6.82L1392.04 6.73L1392.72 6.64L1393.38 6.55L1394.03 6.46L1394.66 6.37L1395.27 6.27L1395.86 6.18L1396.44 6.09L1397.00 6.00Z" fill="#a98250"></path><path d="M1386.00 -5.00L1385.91 -4.44L1385.82 -3.86L1385.72 -3.27L1385.63 -2.66L1385.54 -2.03L1385.45 -1.38L1385.36 -0.72L1385.27 -0.04L1385.17 0.66L1385.08 1.37L1384.99 2.09L1384.99 2.83L1385.00 3.59L1385.01 4.36L1385.01 5.14L1385.02 5.94L1385.03 6.75L1385.03 7.57L1385.04 8.41L1385.05 9.26L1385.06 10.12L1385.06 10.99L1385.07 11.88L1385.08 12.78L1385.09 13.68L1385.10 14.60L1385.10 15.53L1385.11 16.47L1385.12 17.42L1385.13 18.38L1385.13 19.34L1385.14 20.32L1385.15 21.30L1385.15 22.30L1385.16 23.30L1385.17 24.30L1385.18 25.32L1385.18 26.34L1385.19 27.37L1385.20 28.41L1385.21 29.45L1385.21 30.50L1385.22 31.55L1385.23 32.61L1385.24 33.67L1385.24 34.74L1385.25 35.81L1385.26 36.89L1385.27 37.97L1385.28 39.05L1385.28 40.14L1385.29 41.23L1385.30 42.32L1385.31 43.41L1385.31 44.51L1385.32 45.60L1385.33 46.70L1385.34 47.80L1385.34 48.90L1385.35 50.00L1386.65 50.00L1386.66 48.90L1386.66 47.80L1386.67 46.70L1386.68 45.60L1386.69 44.51L1386.69 43.41L1386.70 42.32L1386.71 41.23L1386.72 40.14L1386.72 39.05L1386.73 37.97L1386.74 36.89L1386.75 35.81L1386.76 34.74L1386.76 33.67L1386.77 32.61L1386.78 31.55L1386.79 30.50L1386.79 29.45L1386.80 28.41L1386.81 27.37L1386.82 26.34L1386.82 25.32L1386.83 24.30L1386.84 23.30L1386.85 22.30L1386.85 21.30L1386.86 20.32L1386.87 19.34L1386.88 18.37L1386.88 17.42L1386.89 16.47L1386.90 15.53L1386.90 14.60L1386.91 13.68L1386.92 12.78L1386.93 11.88L1386.93 10.99L1386.94 10.12L1386.95 9.26L1386.96 8.41L1386.96 7.57L1386.97 6.75L1386.98 5.94L1386.99 5.14L1386.99 4.36L1387.00 3.59L1387.01 2.83L1387.01 2.09L1386.92 1.37L1386.82 0.66L1386.73 -0.04L1386.64 -0.72L1386.55 -1.38L1386.46 -2.03L1386.37 -2.66L1386.28 -3.27L1386.18 -3.86L1386.09 -4.44L1386.00 -5.00Z" fill="#a98250"></path><path d="M1352.98 6.07L1353.92 6.47L1354.86 6.77L1355.79 7.07L1356.70 7.37L1357.59 7.67L1358.46 7.97L1359.32 8.28L1360.15 8.59L1360.98 8.91L1361.78 9.23L1362.57 9.56L1363.34 9.90L1364.09 10.24L1364.82 10.59L1365.55 10.95L1366.25 11.32L1366.94 11.69L1367.61 12.08L1368.27 12.47L1368.91 12.87L1369.54 13.28L1370.16 13.70L1370.76 14.12L1371.35 14.56L1371.92 15.01L1372.48 15.47L1373.03 15.93L1373.56 16.41L1374.09 16.90L1374.60 17.40L1375.10 17.91L1375.59 18.44L1376.07 18.97L1376.53 19.52L1376.99 20.08L1377.44 20.65L1377.88 21.24L1378.30 21.84L1378.72 22.46L1379.13 23.09L1379.53 23.73L1379.92 24.39L1380.31 25.06L1380.68 25.75L1381.05 26.45L1381.41 27.18L1381.76 27.91L1382.10 28.66L1382.44 29.43L1382.77 30.22L1383.09 31.02L1383.41 31.85L1383.72 32.68L1384.03 33.54L1384.33 34.41L1384.63 35.30L1384.93 36.21L1385.23 37.14L1385.53 38.08L1385.93 39.02L1386.07 38.98L1386.02 37.96L1385.86 36.98L1385.69 36.01L1385.49 35.07L1385.28 34.14L1385.05 33.23L1384.82 32.33L1384.57 31.46L1384.31 30.60L1384.04 29.75L1383.75 28.92L1383.46 28.11L1383.15 27.31L1382.83 26.53L1382.50 25.76L1382.15 25.01L1381.79 24.28L1381.42 23.56L1381.04 22.85L1380.65 22.16L1380.24 21.48L1379.82 20.82L1379.38 20.17L1378.93 19.54L1378.47 18.92L1377.99 18.32L1377.50 17.73L1377.00 17.16L1376.48 16.60L1375.95 16.05L1375.40 15.52L1374.84 15.00L1374.27 14.50L1373.68 14.01L1373.08 13.53L1372.46 13.07L1371.83 12.62L1371.18 12.18L1370.52 11.76L1369.84 11.35L1369.15 10.96L1368.44 10.58L1367.72 10.21L1366.99 9.85L1366.24 9.50L1365.47 9.17L1364.69 8.85L1363.89 8.54L1363.08 8.25L1362.25 7.96L1361.40 7.69L1360.54 7.43L1359.67 7.18L1358.77 6.95L1357.86 6.72L1356.93 6.51L1355.99 6.31L1355.02 6.14L1354.04 5.98L1353.02 5.93Z" fill="#a98250"></path><path d="M1389.25 2.61L1388.82 2.75L1388.39 2.89L1387.97 3.03L1387.56 3.17L1387.15 3.33L1386.75 3.48L1386.35 3.64L1385.96 3.81L1385.58 3.99L1385.20 4.17L1384.83 4.35L1384.47 4.55L1384.11 4.75L1383.76 4.95L1383.41 5.17L1383.07 5.39L1382.74 5.62L1382.41 5.85L1382.09 6.09L1381.78 6.34L1381.47 6.60L1381.17 6.86L1380.87 7.13L1380.59 7.40L1380.30 7.69L1380.03 7.98L1379.76 8.27L1379.49 8.57L1379.23 8.88L1378.97 9.20L1378.72 9.52L1378.47 9.85L1378.23 10.18L1377.98 10.53L1377.74 10.87L1377.51 11.23L1377.27 11.59L1377.04 11.96L1376.80 12.33L1376.57 12.71L1376.34 13.10L1376.10 13.50L1375.86 13.90L1375.62 14.31L1375.38 14.72L1375.13 15.14L1374.88 15.57L1374.62 16.00L1374.36 16.45L1374.09 16.89L1373.82 17.35L1373.53 17.81L1373.24 18.28L1372.94 18.75L1372.60 19.20L1372.20 19.61L1371.80 20.04L1371.39 20.46L1370.96 20.89L1370.53 21.33L1370.67 21.47L1371.11 21.03L1371.53 20.60L1371.94 20.17L1372.35 19.75L1372.74 19.34L1373.17 18.96L1373.62 18.63L1374.06 18.29L1374.49 17.96L1374.92 17.64L1375.34 17.31L1375.75 16.99L1376.15 16.67L1376.54 16.36L1376.93 16.05L1377.30 15.74L1377.67 15.43L1378.03 15.13L1378.38 14.82L1378.73 14.52L1379.06 14.22L1379.39 13.93L1379.71 13.63L1380.03 13.34L1380.33 13.05L1380.63 12.75L1380.92 12.46L1381.20 12.18L1381.48 11.89L1381.75 11.60L1382.02 11.32L1382.28 11.03L1382.53 10.75L1382.78 10.46L1383.02 10.18L1383.26 9.89L1383.50 9.61L1383.73 9.33L1383.96 9.04L1384.19 8.76L1384.42 8.47L1384.65 8.18L1384.87 7.89L1385.10 7.61L1385.32 7.31L1385.55 7.02L1385.78 6.73L1386.02 6.43L1386.26 6.14L1386.50 5.84L1386.75 5.54L1387.01 5.24L1387.27 4.93L1387.54 4.63L1387.82 4.32L1388.10 4.02L1388.40 3.71L1388.71 3.40L1389.02 3.09L1389.35 2.79Z" fill="#d9b878"></path><path d="M-5.00 321.77L-4.44 321.86L-3.86 321.95L-3.27 322.04L-2.66 322.13L-2.03 322.22L-1.38 322.32L-0.72 322.41L-0.04 322.50L0.66 322.59L1.37 322.68L2.09 322.77L2.83 322.78L3.59 322.77L4.36 322.76L5.14 322.75L5.94 322.75L6.75 322.74L7.57 322.73L8.41 322.72L9.26 322.72L10.12 322.71L10.99 322.70L11.88 322.69L12.78 322.69L13.68 322.68L14.60 322.67L15.53 322.66L16.47 322.66L17.42 322.65L18.38 322.64L19.34 322.63L20.32 322.63L21.30 322.62L22.30 322.61L23.30 322.60L24.30 322.60L25.32 322.59L26.34 322.58L27.37 322.57L28.41 322.57L29.45 322.56L30.50 322.55L31.55 322.54L32.61 322.54L33.67 322.53L34.74 322.52L35.81 322.51L36.89 322.51L37.97 322.50L39.05 322.49L40.14 322.48L41.23 322.48L42.32 322.47L43.41 322.46L44.51 322.45L45.60 322.45L46.70 322.44L47.80 322.43L48.90 322.42L50.00 322.42L50.00 321.12L48.90 321.11L47.80 321.10L46.70 321.09L45.60 321.09L44.51 321.08L43.41 321.07L42.32 321.06L41.23 321.06L40.14 321.05L39.05 321.04L37.97 321.03L36.89 321.03L35.81 321.02L34.74 321.01L33.67 321.00L32.61 321.00L31.55 320.99L30.50 320.98L29.45 320.97L28.41 320.97L27.37 320.96L26.34 320.95L25.32 320.94L24.30 320.94L23.30 320.93L22.30 320.92L21.30 320.91L20.32 320.91L19.34 320.90L18.38 320.89L17.42 320.88L16.47 320.88L15.53 320.87L14.60 320.86L13.68 320.85L12.78 320.85L11.88 320.84L10.99 320.83L10.12 320.82L9.26 320.82L8.41 320.81L7.57 320.80L6.75 320.79L5.94 320.79L5.14 320.78L4.36 320.77L3.59 320.76L2.83 320.76L2.09 320.76L1.37 320.85L0.66 320.94L-0.04 321.03L-0.72 321.12L-1.38 321.22L-2.03 321.31L-2.66 321.40L-3.27 321.49L-3.86 321.58L-4.44 321.67L-5.00 321.77Z" fill="#a98250"></path><path d="M6.00 332.77L6.09 332.21L6.18 331.63L6.27 331.03L6.37 330.42L6.46 329.79L6.55 329.15L6.64 328.48L6.73 327.81L6.82 327.11L6.92 326.40L7.01 325.67L7.01 324.93L7.00 324.18L7.00 323.41L6.99 322.63L6.98 321.83L6.97 321.02L6.96 320.19L6.96 319.36L6.95 318.51L6.94 317.64L6.93 316.77L6.93 315.89L6.92 314.99L6.91 314.08L6.91 313.16L6.90 312.24L6.89 311.30L6.88 310.35L6.88 309.39L6.87 308.42L6.86 307.45L6.85 306.46L6.84 305.47L6.84 304.47L6.83 303.46L6.82 302.45L6.82 301.42L6.81 300.39L6.80 299.36L6.79 298.32L6.79 297.27L6.78 296.22L6.77 295.16L6.76 294.09L6.75 293.03L6.75 291.95L6.74 290.88L6.73 289.80L6.72 288.71L6.72 287.63L6.71 286.54L6.70 285.45L6.70 284.35L6.69 283.26L6.68 282.16L6.67 281.06L6.67 279.97L6.66 278.87L6.65 277.77L5.35 277.77L5.34 278.87L5.33 279.97L5.33 281.06L5.32 282.16L5.31 283.26L5.30 284.35L5.30 285.45L5.29 286.54L5.28 287.63L5.28 288.71L5.27 289.80L5.26 290.88L5.25 291.95L5.25 293.03L5.24 294.09L5.23 295.16L5.22 296.22L5.21 297.27L5.21 298.32L5.20 299.36L5.19 300.39L5.18 301.42L5.18 302.45L5.17 303.46L5.16 304.47L5.16 305.47L5.15 306.46L5.14 307.45L5.13 308.42L5.13 309.39L5.12 310.35L5.11 311.30L5.10 312.24L5.09 313.16L5.09 314.08L5.08 314.99L5.07 315.89L5.06 316.77L5.06 317.64L5.05 318.51L5.04 319.36L5.03 320.19L5.03 321.02L5.02 321.83L5.01 322.63L5.00 323.41L5.00 324.18L4.99 324.93L4.99 325.67L5.08 326.40L5.17 327.11L5.27 327.81L5.36 328.48L5.45 329.15L5.54 329.79L5.63 330.42L5.72 331.03L5.82 331.63L5.91 332.21L6.00 332.77Z" fill="#a98250"></path><path d="M39.02 321.69L38.08 321.30L37.14 320.99L36.21 320.69L35.30 320.39L34.41 320.10L33.54 319.79L32.68 319.49L31.85 319.18L31.02 318.86L30.22 318.53L29.43 318.20L28.66 317.87L27.91 317.52L27.18 317.17L26.45 316.81L25.75 316.45L25.06 316.07L24.39 315.69L23.73 315.30L23.09 314.90L22.46 314.49L21.84 314.07L21.24 313.64L20.65 313.20L20.08 312.76L19.52 312.30L18.97 311.83L18.44 311.35L17.91 310.87L17.40 310.37L16.90 309.85L16.41 309.33L15.93 308.79L15.47 308.25L15.01 307.69L14.56 307.11L14.12 306.52L13.70 305.92L13.28 305.31L12.87 304.68L12.47 304.04L12.08 303.38L11.69 302.70L11.32 302.02L10.95 301.31L10.59 300.59L10.24 299.85L9.90 299.10L9.56 298.33L9.23 297.54L8.91 296.74L8.59 295.92L8.28 295.08L7.97 294.23L7.67 293.35L7.37 292.46L7.07 291.56L6.77 290.63L6.47 289.69L6.07 288.75L5.93 288.78L5.98 289.80L6.14 290.79L6.31 291.75L6.51 292.70L6.72 293.63L6.95 294.54L7.18 295.43L7.43 296.31L7.69 297.17L7.96 298.01L8.25 298.84L8.54 299.66L8.85 300.45L9.17 301.24L9.50 302.00L9.85 302.75L10.21 303.49L10.58 304.21L10.96 304.92L11.35 305.61L11.76 306.28L12.18 306.94L12.62 307.59L13.07 308.22L13.53 308.84L14.01 309.45L14.50 310.03L15.00 310.61L15.52 311.17L16.05 311.72L16.60 312.25L17.16 312.77L17.73 313.27L18.32 313.76L18.92 314.24L19.54 314.70L20.17 315.15L20.82 315.58L21.48 316.00L22.16 316.41L22.85 316.81L23.56 317.19L24.28 317.56L25.01 317.92L25.76 318.26L26.53 318.59L27.31 318.91L28.11 319.22L28.92 319.52L29.75 319.80L30.60 320.07L31.46 320.34L32.33 320.58L33.23 320.82L34.14 321.04L35.07 321.26L36.01 321.45L36.98 321.63L37.96 321.78L38.98 321.84Z" fill="#a98250"></path><path d="M2.75 325.15L3.18 325.02L3.61 324.88L4.03 324.74L4.44 324.59L4.85 324.44L5.25 324.28L5.65 324.12L6.04 323.95L6.42 323.78L6.80 323.60L7.17 323.41L7.53 323.22L7.89 323.02L8.24 322.81L8.59 322.60L8.93 322.38L9.26 322.15L9.59 321.92L9.91 321.67L10.22 321.43L10.53 321.17L10.83 320.91L11.13 320.64L11.41 320.36L11.70 320.08L11.97 319.79L12.24 319.49L12.51 319.19L12.77 318.88L13.03 318.57L13.28 318.25L13.53 317.92L13.77 317.58L14.02 317.24L14.26 316.89L14.49 316.54L14.73 316.18L14.96 315.81L15.20 315.43L15.43 315.05L15.66 314.66L15.90 314.27L16.14 313.87L16.38 313.46L16.62 313.05L16.87 312.62L17.12 312.20L17.38 311.76L17.64 311.32L17.91 310.87L18.18 310.42L18.47 309.96L18.76 309.49L19.06 309.01L19.40 308.57L19.80 308.15L20.20 307.73L20.61 307.30L21.04 306.87L21.47 306.44L21.33 306.30L20.89 306.73L20.47 307.16L20.06 307.59L19.65 308.01L19.26 308.43L18.83 308.80L18.38 309.14L17.94 309.47L17.51 309.80L17.08 310.13L16.66 310.45L16.25 310.77L15.85 311.09L15.46 311.41L15.07 311.72L14.70 312.03L14.33 312.33L13.97 312.64L13.62 312.94L13.27 313.24L12.94 313.54L12.61 313.84L12.29 314.13L11.97 314.43L11.67 314.72L11.37 315.01L11.08 315.30L10.80 315.59L10.52 315.88L10.25 316.16L9.98 316.45L9.72 316.73L9.47 317.02L9.22 317.30L8.98 317.59L8.74 317.87L8.50 318.16L8.27 318.44L8.04 318.72L7.81 319.01L7.58 319.30L7.35 319.58L7.13 319.87L6.90 320.16L6.68 320.45L6.45 320.74L6.22 321.04L5.98 321.33L5.74 321.63L5.50 321.93L5.25 322.23L4.99 322.53L4.73 322.83L4.46 323.14L4.18 323.44L3.90 323.75L3.60 324.06L3.29 324.36L2.98 324.67L2.65 324.98Z" fill="#d9b878"></path><path d="M1397.00 321.77L1396.44 321.67L1395.86 321.58L1395.27 321.49L1394.66 321.40L1394.03 321.31L1393.38 321.22L1392.72 321.12L1392.04 321.03L1391.34 320.94L1390.63 320.85L1389.91 320.76L1389.17 320.76L1388.41 320.76L1387.64 320.77L1386.86 320.78L1386.06 320.79L1385.25 320.79L1384.43 320.80L1383.59 320.81L1382.74 320.82L1381.88 320.82L1381.01 320.83L1380.12 320.84L1379.22 320.85L1378.32 320.85L1377.40 320.86L1376.47 320.87L1375.53 320.88L1374.58 320.88L1373.63 320.89L1372.66 320.90L1371.68 320.91L1370.70 320.91L1369.70 320.92L1368.70 320.93L1367.70 320.94L1366.68 320.94L1365.66 320.95L1364.63 320.96L1363.59 320.97L1362.55 320.97L1361.50 320.98L1360.45 320.99L1359.39 321.00L1358.33 321.00L1357.26 321.01L1356.19 321.02L1355.11 321.03L1354.03 321.03L1352.95 321.04L1351.86 321.05L1350.77 321.06L1349.68 321.06L1348.59 321.07L1347.49 321.08L1346.40 321.09L1345.30 321.09L1344.20 321.10L1343.10 321.11L1342.00 321.12L1342.00 322.42L1343.10 322.42L1344.20 322.43L1345.30 322.44L1346.40 322.45L1347.49 322.45L1348.59 322.46L1349.68 322.47L1350.77 322.48L1351.86 322.48L1352.95 322.49L1354.03 322.50L1355.11 322.51L1356.19 322.51L1357.26 322.52L1358.33 322.53L1359.39 322.54L1360.45 322.54L1361.50 322.55L1362.55 322.56L1363.59 322.57L1364.63 322.57L1365.66 322.58L1366.68 322.59L1367.70 322.60L1368.70 322.60L1369.70 322.61L1370.70 322.62L1371.68 322.63L1372.66 322.63L1373.63 322.64L1374.58 322.65L1375.53 322.66L1376.47 322.66L1377.40 322.67L1378.32 322.68L1379.22 322.69L1380.12 322.69L1381.01 322.70L1381.88 322.71L1382.74 322.72L1383.59 322.72L1384.43 322.73L1385.25 322.74L1386.06 322.75L1386.86 322.75L1387.64 322.76L1388.41 322.77L1389.17 322.78L1389.91 322.77L1390.63 322.68L1391.34 322.59L1392.04 322.50L1392.72 322.41L1393.38 322.32L1394.03 322.22L1394.66 322.13L1395.27 322.04L1395.86 321.95L1396.44 321.86L1397.00 321.77Z" fill="#a98250"></path><path d="M1386.00 332.77L1386.09 332.21L1386.18 331.63L1386.28 331.03L1386.37 330.42L1386.46 329.79L1386.55 329.15L1386.64 328.48L1386.73 327.81L1386.82 327.11L1386.92 326.40L1387.01 325.67L1387.01 324.93L1387.00 324.18L1386.99 323.41L1386.99 322.63L1386.98 321.83L1386.97 321.02L1386.96 320.19L1386.96 319.36L1386.95 318.51L1386.94 317.64L1386.93 316.77L1386.93 315.89L1386.92 314.99L1386.91 314.08L1386.90 313.16L1386.90 312.24L1386.89 311.30L1386.88 310.35L1386.88 309.39L1386.87 308.42L1386.86 307.45L1386.85 306.46L1386.85 305.47L1386.84 304.47L1386.83 303.46L1386.82 302.45L1386.82 301.42L1386.81 300.39L1386.80 299.36L1386.79 298.32L1386.79 297.27L1386.78 296.22L1386.77 295.16L1386.76 294.09L1386.76 293.03L1386.75 291.95L1386.74 290.88L1386.73 289.80L1386.72 288.71L1386.72 287.63L1386.71 286.54L1386.70 285.45L1386.69 284.35L1386.69 283.26L1386.68 282.16L1386.67 281.06L1386.66 279.97L1386.66 278.87L1386.65 277.77L1385.35 277.77L1385.34 278.87L1385.34 279.97L1385.33 281.06L1385.32 282.16L1385.31 283.26L1385.31 284.35L1385.30 285.45L1385.29 286.54L1385.28 287.63L1385.28 288.71L1385.27 289.80L1385.26 290.88L1385.25 291.95L1385.24 293.03L1385.24 294.09L1385.23 295.16L1385.22 296.22L1385.21 297.27L1385.21 298.32L1385.20 299.36L1385.19 300.39L1385.18 301.42L1385.18 302.45L1385.17 303.46L1385.16 304.47L1385.15 305.47L1385.15 306.46L1385.14 307.45L1385.13 308.42L1385.13 309.39L1385.12 310.35L1385.11 311.30L1385.10 312.24L1385.10 313.16L1385.09 314.08L1385.08 314.99L1385.07 315.89L1385.06 316.77L1385.06 317.64L1385.05 318.51L1385.04 319.36L1385.03 320.19L1385.03 321.02L1385.02 321.83L1385.01 322.62L1385.01 323.41L1385.00 324.18L1384.99 324.93L1384.99 325.67L1385.08 326.40L1385.17 327.11L1385.27 327.81L1385.36 328.48L1385.45 329.15L1385.54 329.79L1385.63 330.42L1385.72 331.03L1385.82 331.63L1385.91 332.21L1386.00 332.77Z" fill="#a98250"></path><path d="M1353.02 321.84L1354.04 321.78L1355.02 321.63L1355.99 321.45L1356.93 321.26L1357.86 321.04L1358.77 320.82L1359.67 320.58L1360.54 320.34L1361.40 320.07L1362.25 319.80L1363.08 319.52L1363.89 319.22L1364.69 318.91L1365.47 318.59L1366.24 318.26L1366.99 317.92L1367.72 317.56L1368.44 317.19L1369.15 316.81L1369.84 316.41L1370.52 316.00L1371.18 315.58L1371.83 315.15L1372.46 314.70L1373.08 314.24L1373.68 313.76L1374.27 313.27L1374.84 312.77L1375.40 312.25L1375.95 311.72L1376.48 311.17L1377.00 310.61L1377.50 310.03L1377.99 309.45L1378.47 308.84L1378.93 308.22L1379.38 307.59L1379.82 306.94L1380.24 306.28L1380.65 305.61L1381.04 304.92L1381.42 304.21L1381.79 303.49L1382.15 302.75L1382.50 302.00L1382.83 301.24L1383.15 300.45L1383.46 299.66L1383.75 298.84L1384.04 298.01L1384.31 297.17L1384.57 296.31L1384.82 295.43L1385.05 294.54L1385.28 293.63L1385.49 292.70L1385.69 291.75L1385.86 290.79L1386.02 289.80L1386.07 288.78L1385.93 288.75L1385.53 289.69L1385.23 290.63L1384.93 291.56L1384.63 292.46L1384.33 293.35L1384.03 294.23L1383.72 295.08L1383.41 295.92L1383.09 296.74L1382.77 297.54L1382.44 298.33L1382.10 299.10L1381.76 299.85L1381.41 300.59L1381.05 301.31L1380.68 302.02L1380.31 302.70L1379.92 303.38L1379.53 304.04L1379.13 304.68L1378.72 305.31L1378.30 305.92L1377.88 306.52L1377.44 307.11L1376.99 307.69L1376.53 308.25L1376.07 308.79L1375.59 309.33L1375.10 309.85L1374.60 310.37L1374.09 310.87L1373.56 311.35L1373.03 311.83L1372.48 312.30L1371.92 312.76L1371.35 313.20L1370.76 313.64L1370.16 314.07L1369.54 314.49L1368.91 314.90L1368.27 315.30L1367.61 315.69L1366.94 316.07L1366.25 316.45L1365.55 316.81L1364.82 317.17L1364.09 317.52L1363.34 317.87L1362.57 318.20L1361.78 318.53L1360.98 318.86L1360.15 319.18L1359.32 319.49L1358.46 319.79L1357.59 320.10L1356.70 320.39L1355.79 320.69L1354.86 320.99L1353.92 321.30L1352.98 321.69Z" fill="#a98250"></path><path d="M1389.35 324.98L1389.02 324.67L1388.71 324.36L1388.40 324.06L1388.10 323.75L1387.82 323.44L1387.54 323.14L1387.27 322.83L1387.01 322.53L1386.75 322.23L1386.50 321.93L1386.26 321.63L1386.02 321.33L1385.78 321.04L1385.55 320.74L1385.32 320.45L1385.10 320.16L1384.87 319.87L1384.65 319.58L1384.42 319.30L1384.19 319.01L1383.96 318.72L1383.73 318.44L1383.50 318.16L1383.26 317.87L1383.02 317.59L1382.78 317.30L1382.53 317.02L1382.28 316.73L1382.02 316.45L1381.75 316.16L1381.48 315.88L1381.20 315.59L1380.92 315.30L1380.63 315.01L1380.33 314.72L1380.03 314.43L1379.71 314.13L1379.39 313.84L1379.06 313.54L1378.73 313.24L1378.38 312.94L1378.03 312.64L1377.67 312.33L1377.30 312.03L1376.93 311.72L1376.54 311.41L1376.15 311.09L1375.75 310.77L1375.34 310.45L1374.92 310.13L1374.49 309.80L1374.06 309.47L1373.62 309.14L1373.17 308.80L1372.74 308.43L1372.35 308.01L1371.94 307.59L1371.53 307.16L1371.11 306.73L1370.67 306.30L1370.53 306.44L1370.96 306.87L1371.39 307.30L1371.80 307.73L1372.20 308.15L1372.60 308.57L1372.94 309.01L1373.24 309.49L1373.53 309.96L1373.82 310.42L1374.09 310.87L1374.36 311.32L1374.62 311.76L1374.88 312.20L1375.13 312.62L1375.38 313.05L1375.62 313.46L1375.86 313.87L1376.10 314.27L1376.34 314.66L1376.57 315.05L1376.80 315.43L1377.04 315.81L1377.27 316.18L1377.51 316.54L1377.74 316.89L1377.98 317.24L1378.23 317.58L1378.47 317.92L1378.72 318.25L1378.97 318.57L1379.23 318.88L1379.49 319.19L1379.76 319.49L1380.03 319.79L1380.30 320.08L1380.59 320.36L1380.87 320.64L1381.17 320.91L1381.47 321.17L1381.78 321.43L1382.09 321.67L1382.41 321.92L1382.74 322.15L1383.07 322.38L1383.41 322.60L1383.76 322.81L1384.11 323.02L1384.47 323.22L1384.83 323.41L1385.20 323.60L1385.58 323.78L1385.96 323.95L1386.35 324.12L1386.75 324.28L1387.15 324.44L1387.56 324.59L1387.97 324.74L1388.39 324.88L1388.82 325.02L1389.25 325.15Z" fill="#d9b878"></path></svg></div></section>
+
+      <!-- Laptop: BG3 capsule tabs. Phone: D&D Beyond's section switcher. -->
+      <nav class="tabs only-laptop" role="tablist" aria-label="Scheda">
+        
+        
+        
+        
+        
+      <button class="tab" role="tab" aria-selected="true">
+          <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M216 28h-64a12 12 0 0 0-9.33 4.45L79.5 110.51l-4.66-4.65a20 20 0 0 0-28.29 0l-16.69 16.69a20 20 0 0 0 0 28.29L45 166l-21.14 21.17a20 20 0 0 0 0 28.28l16.69 16.69a20 20 0 0 0 28.28 0L90 211l15.17 15.16a20 20 0 0 0 28.29 0l16.69-16.69a20 20 0 0 0 0-28.3l-4.65-4.65l78.06-63.17A12 12 0 0 0 228 104V40a12 12 0 0 0-12-12M54.69 212.34l-11-11L62 183l11 11Zm64.61-6L49.65 136.7l11.05-11l69.65 69.65ZM204 98.27l-75.58 61.17L121 152l47.51-47.5a12 12 0 0 0-17-17L104 135l-7.45-7.44L157.73 52H204Z"></path></svg>Gioco
+        </button><button class="tab" role="tab" aria-selected="false">
+          <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M232 44h-72a43.86 43.86 0 0 0-32 13.85A43.86 43.86 0 0 0 96 44H24a12 12 0 0 0-12 12v144a12 12 0 0 0 12 12h72a20 20 0 0 1 20 20a12 12 0 0 0 24 0a20 20 0 0 1 20-20h72a12 12 0 0 0 12-12V56a12 12 0 0 0-12-12M96 188H36V68h60a20 20 0 0 1 20 20v104.81A43.8 43.8 0 0 0 96 188m124 0h-60a43.7 43.7 0 0 0-20 4.83V88a20 20 0 0 1 20-20h60Z"></path></svg>Incantesimi
+        </button><button class="tab" role="tab" aria-selected="false">
+          <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M172 48.55V36a28 28 0 0 0-28-28h-32a28 28 0 0 0-28 28v12.55A60.08 60.08 0 0 0 32 108v112a20 20 0 0 0 20 20h152a20 20 0 0 0 20-20V108a60.08 60.08 0 0 0-52-59.45M112 32h32a4 4 0 0 1 4 4v12h-40V36a4 4 0 0 1 4-4m48 128H96v-8a4 4 0 0 1 4-4h56a4 4 0 0 1 4 4Zm-64 24h64v32H96Zm104 32h-16v-64a28 28 0 0 0-28-28h-56a28 28 0 0 0-28 28v64H56V108a36 36 0 0 1 36-36h72a36 36 0 0 1 36 36Zm-40-116a12 12 0 0 1-12 12h-40a12 12 0 0 1 0-24h40a12 12 0 0 1 12 12"></path></svg>Inventario
+        </button><button class="tab" role="tab" aria-selected="false">
+          <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="m199 125.31l-49.88-18.39L130.69 57a19.92 19.92 0 0 0-37.38 0l-18.39 49.92L25 125.31a19.92 19.92 0 0 0 0 37.38l49.88 18.39L93.31 231a19.92 19.92 0 0 0 37.38 0l18.39-49.88L199 162.69a19.92 19.92 0 0 0 0-37.38m-63.38 35.16a12 12 0 0 0-7.11 7.11L112 212.28l-16.47-44.7a12 12 0 0 0-7.11-7.11L43.72 144l44.7-16.47a12 12 0 0 0 7.11-7.11L112 75.72l16.47 44.7a12 12 0 0 0 7.11 7.11l44.7 16.47ZM140 40a12 12 0 0 1 12-12h12V16a12 12 0 0 1 24 0v12h12a12 12 0 0 1 0 24h-12v12a12 12 0 0 1-24 0V52h-12a12 12 0 0 1-12-12m112 48a12 12 0 0 1-12 12h-4v4a12 12 0 0 1-24 0v-4h-4a12 12 0 0 1 0-24h4v-4a12 12 0 0 1 24 0v4h4a12 12 0 0 1 12 12"></path></svg>Privilegi
+        </button><button class="tab" role="tab" aria-selected="false">
+          <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M224.11 31.92a68 68 0 0 0-96.11-.05l-70.12 69.3A19.9 19.9 0 0 0 52 115.31V187l-28.48 28.51a12 12 0 0 0 17 17L69 204h71.7a19.87 19.87 0 0 0 14.15-5.86h.05l69.21-70a68.06 68.06 0 0 0 0-96.22m-79.21 17A44 44 0 0 1 210 108h-45l27.52-27.51a12 12 0 0 0-17-17L124 115V69.54ZM76 117l24-23.72V139l-24 24Zm63 63H93l48-48h45.5Z"></path></svg>Storia
+        </button></nav>
+      <button class="switcher only-phone" aria-haspopup="menu">
+        <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M216 28h-64a12 12 0 0 0-9.33 4.45L79.5 110.51l-4.66-4.65a20 20 0 0 0-28.29 0l-16.69 16.69a20 20 0 0 0 0 28.29L45 166l-21.14 21.17a20 20 0 0 0 0 28.28l16.69 16.69a20 20 0 0 0 28.28 0L90 211l15.17 15.16a20 20 0 0 0 28.29 0l16.69-16.69a20 20 0 0 0 0-28.3l-4.65-4.65l78.06-63.17A12 12 0 0 0 228 104V40a12 12 0 0 0-12-12M54.69 212.34l-11-11L62 183l11 11Zm64.61-6L49.65 136.7l11.05-11l69.65 69.65ZM204 98.27l-75.58 61.17L121 152l47.51-47.5a12 12 0 0 0-17-17L104 135l-7.45-7.44L157.73 52H204Z"></path></svg>Gioco<svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M184.49 167.51a12 12 0 0 1 0 17l-48 48a12 12 0 0 1-17 0l-48-48a12 12 0 0 1 17-17L128 207l39.51-39.52a12 12 0 0 1 16.98.03m-96-79L128 49l39.51 39.52a12 12 0 0 0 17-17l-48-48a12 12 0 0 0-17 0l-48 48a12 12 0 0 0 17 17Z"></path></svg>
+      </button>
+
+      <div class="play">
+        <aside class="play__side">
+          <section class="frame frame--crest" aria-labelledby="res-h" style="padding-top: 0px !important;">
+            <span class="crest"></span><span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+            <h2 class="ftitle" id="res-h" style="--c: #b07be6; background: linear-gradient(90deg, color-mix(in srgb, rgb(176, 123, 230) 55%, rgb(0, 0, 0)) 0%, color-mix(in srgb, rgb(176, 123, 230) 40%, rgb(0, 0, 0)) 55%, color-mix(in srgb, rgb(176, 123, 230) 26%, rgb(0, 0, 0)) 100%) !important; border-top: 3px solid rgb(176, 123, 230) !important; margin-left: calc(-1 * var(--pp) - 1px) !important; margin-right: calc(-1 * var(--pp) - 1px) !important; margin-top: -1px !important; padding-right: 20px !important; padding-left: 20px !important; gap: 12px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 512 512" class="ti gi" style=""><path fill="currentColor" d="M363.783 23.545c-9.782.057-16.583 3.047-20.744 10.22c-17.51 30.18-38.432 61.645-48.552 97.245c2.836.83 5.635 1.787 8.373 2.853c7.353 2.863 14.38 6.482 20.542 10.858c27.534-25.542 58.165-45.21 87.45-65.462c11.356-7.854 12.273-13.584 10.183-20.83s-9.868-16.365-20.525-23.176c-10.658-6.81-23.87-11.33-34.73-11.68q-1.02-.032-1.997-.027zm-68.998.746c-10.02-.182-17.792 6.393-23.924 20.24c-8.94 20.194-10.212 53.436-1.446 83.185c.156-.008.31-.023.467-.03c1.99-.087 3.99-.072 6 .03c9.436-34.822 27.966-64.72 44.013-91.528c-10.31-8.496-18.874-11.782-25.108-11.896zM197.5 82.5L187 97.97c14.82 10.04 29.056 19.725 39.813 31.374c3.916 4.24 7.37 8.722 10.31 13.607a38.1 38.1 0 0 1 13.69-10.792c.407-.188.82-.355 1.228-.53c-3.423-5.44-7.304-10.418-11.51-14.972C227.765 102.83 212.29 92.52 197.5 82.5m223.77 12.27c-29.255 20.228-58.575 39.152-84.348 62.78c.438.576.848 1.168 1.258 1.76c20.68-6.75 49.486-15.333 73.916-19.41c11.484-1.916 15.66-6.552 17.574-13.228s.447-16.71-5.316-26.983a63 63 0 0 0-3.083-4.92zm-223.938 47.87c-14.95.2-29.732 4.3-43.957 12.766l9.563 16.03c21.657-12.89 42.626-14.133 65.232-4.563q.782-8.387 3.728-15.21c.35-.806.73-1.586 1.123-2.354c-11.87-4.52-23.83-6.827-35.688-6.67zm75.8 3.934c-5.578-.083-10.597.742-14.427 2.526c-4.377 2.038-7.466 4.914-9.648 9.97c-.884 2.047-1.572 4.54-1.985 7.494c.456-.007.91-.03 1.365-.033c16.053-.084 32.587 2.77 49.313 9.19c7.714 2.96 15.062 7.453 22.047 13.184c3.217-2.445 4.99-4.72 5.773-6.535c1.21-2.798 1.095-5.184-.634-8.82c-3.46-7.275-15.207-16.955-28.856-22.27c-6.824-2.658-13.98-4.224-20.523-4.614q-1.228-.075-2.424-.092zm-24.757 38.457c-22.982.075-44.722 7.386-65 19.782c-32.445 19.835-60.565 53.124-80.344 90.032c-19.777 36.908-31.133 77.41-31.186 110.53c-.053 33.06 10.26 57.27 32.812 67.782c.043.02.082.043.125.063h.032c24.872 11.51 65.616 19.337 108.407 20.092c42.79.756 87.79-5.457 121.874-20.187c21.96-9.49 34.545-28.452 40.5-54.156c5.954-25.705 4.518-57.657-2.375-89.314c-6.894-31.657-19.2-63.06-34.095-87.875s-32.614-42.664-48.063-48.593c-14.664-5.627-28.898-8.2-42.687-8.156"></path></svg>Risorse</h2>
+            <div class="res" role="button" tabindex="0" aria-label="Slot di 1°: 3 su 4. Tocca per spendere o recuperare">
+              <span class="res__name">Slot di&nbsp;1°</span><span class="gems" style="gap: 4px !important;"><span class="gem" aria-hidden="true"></span><span class="gem" aria-hidden="true"></span><span class="gem" aria-hidden="true"></span><span class="gem is-spent" aria-hidden="true"></span></span><span class="res__count">3/4</span>
+            </div>
+            <div class="res" role="button" tabindex="0" aria-label="Slot di 2°: 3 su 3. Tocca per spendere o recuperare">
+              <span class="res__name">Slot di&nbsp;2°</span><span class="gems" style="gap: 4px !important;"><span class="gem" aria-hidden="true"></span><span class="gem" aria-hidden="true"></span><span class="gem" aria-hidden="true"></span></span><span class="res__count">3/3</span>
+            </div>
+            <div class="res" role="button" tabindex="0" aria-label="Slot di 3°: 2 su 2. Tocca per spendere o recuperare">
+              <span class="res__name">Slot di&nbsp;3°</span><span class="gems" style="gap: 4px !important;"><span class="gem" aria-hidden="true"></span><span class="gem" aria-hidden="true"></span></span><span class="res__count">2/2</span>
+            </div>
+            <div class="res" role="button" tabindex="0" aria-label="Incanalare Divinità: 1 su 2. Tocca per spendere o recuperare">
+              <span class="res__name">Incanalare&nbsp;Divinità</span><span class="gems" style="gap: 4px !important;"><span class="gem gem--gold" aria-hidden="true"></span><span class="gem gem--gold is-spent" aria-hidden="true"></span></span><span class="res__count">1/2</span>
+            </div>
+            <div class="res" role="button" tabindex="0" aria-label="Dadi Vita (d8): 3 su 5. Tocca per spendere o recuperare">
+              <span class="res__name">Dadi&nbsp;Vita&nbsp;(d8)</span><span class="gems" style="gap: 4px !important;"><span class="gem gem--gold" aria-hidden="true"></span><span class="gem gem--gold" aria-hidden="true"></span><span class="gem gem--gold" aria-hidden="true"></span><span class="gem gem--gold is-spent" aria-hidden="true"></span><span class="gem gem--gold is-spent" aria-hidden="true"></span></span><span class="res__count">3/5</span>
+            </div>
+          </section>
+
+          <section class="frame frame--crest only-laptop" aria-labelledby="sk-h" style="padding-top: 0px !important;">
+            <span class="crest"></span><span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+            <h2 class="ftitle" id="sk-h" style="--c: #4ec2b8; background: linear-gradient(90deg, color-mix(in srgb, rgb(78, 194, 184) 55%, rgb(0, 0, 0)) 0%, color-mix(in srgb, rgb(78, 194, 184) 40%, rgb(0, 0, 0)) 55%, color-mix(in srgb, rgb(78, 194, 184) 26%, rgb(0, 0, 0)) 100%) !important; border-top: 3px solid rgb(78, 194, 184) !important; margin-left: calc(-1 * var(--pp) - 1px) !important; margin-right: calc(-1 * var(--pp) - 1px) !important; margin-top: -1px !important; padding-right: 20px !important; padding-left: 20px !important; gap: 12px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 512 512" class="ti gi" style=""><path fill="currentColor" d="M107.563 21.406c122.47 187.613 107.72 216.17-74.97 55.813c83.344 103.73 183.05 185.66 287.876 260.75c-47.685 54.762-65.51 116.2-39.283 141.374c27.95 26.827 95.317 2.292 150.25-54.938s76.668-125.547 48.72-152.375c-26.4-25.338-87.652-4.57-140.657 46.033C267.523 213.846 194.602 110.56 107.562 21.406zm324.906 266.781c9.865-.14 18.234 2.508 24.25 8.282c21.386 20.528 4.908 72.768-37.126 116.56c-42.035 43.794-93.957 62.81-115.344 42.283c-19.952-19.15-6.325-65.992 29.72-107.75c3.706 2.625 7.405 5.264 11.124 7.875c-26.5 31.075-36.24 65.542-21.406 79.78c16.03 15.39 54.65 1.294 86.156-31.53c31.507-32.825 44-71.99 27.97-87.375c-15.205-14.592-50.578-2.533-81.064 26.75c-2.594-3.763-5.187-7.52-7.78-11.282c28.526-27.297 60.18-43.263 83.5-43.592zm-22.033 37.375c5.66-.08 10.457 1.44 13.907 4.75c12.267 11.774 2.827 41.758-21.28 66.875c-24.11 25.118-53.89 36.024-66.158 24.25c-11.245-10.793-3.876-36.93 16-60.562c5.976 4.173 11.97 8.327 17.97 12.47c-9.746 11-14.027 22.66-9.563 27.124c4.904 4.903 18.483-.735 30.343-12.595s17.498-25.47 12.594-30.375c-4.778-4.778-17.8.476-29.438 11.72q-6.316-9.138-12.625-18.283c16.46-15.875 34.774-25.184 48.25-25.375z"></path></svg>Abilità</h2>
+            <ul class="skills">
+              <li class="is-prof" style="padding-top: 8px !important; padding-bottom: 8px !important;"><span class="label">Sag</span>Intuizione<b>+6</b></li>
+              <li class="is-prof" style="padding-top: 8px !important; padding-bottom: 8px !important;"><span class="label">Sag</span>Medicina<b>+6</b></li>
+              <li style="padding-top: 8px !important; padding-bottom: 8px !important;"><span class="label">Sag</span>Percezione<b>+3</b></li>
+              <li class="is-prof" style="padding-top: 8px !important; padding-bottom: 8px !important;"><span class="label">Int</span>Religione<b>+3</b></li>
+              <li class="is-prof" style="padding-top: 8px !important; padding-bottom: 8px !important;"><span class="label">Car</span>Persuasione<b>+4</b></li>
+              <li style="padding-top: 8px !important; padding-bottom: 8px !important;"><span class="label">Des</span>Furtività<b>−1</b></li>
+            </ul>
+            <button class="btn btn--quiet" style="margin: 4px 0 0 -16px">
+              Tutte&nbsp;le&nbsp;18&nbsp;abilità
+            </button>
+          </section>
+        </aside>
+
+        <section class="play__main frame frame--crest" aria-labelledby="act-h" style="padding-top: 0px !important;">
+          <span class="crest"></span><span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+          <div class="boxtabs" style="--c: #c9d1dc; background: linear-gradient(90deg, color-mix(in srgb, rgb(201, 209, 220) 55%, rgb(0, 0, 0)) 0%, color-mix(in srgb, rgb(201, 209, 220) 40%, rgb(0, 0, 0)) 55%, color-mix(in srgb, rgb(201, 209, 220) 26%, rgb(0, 0, 0)) 100%) !important; border-top: 3px solid rgb(201, 209, 220) !important; margin-left: calc(-1 * var(--pp) - 1px) !important; margin-right: calc(-1 * var(--pp) - 1px) !important; margin-top: -1px !important; gap: 4px !important;"><span class="on" tabindex="0" role="button" style="padding-top: 16px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" class="tbi gi" style=""><path fill="currentColor" d="m491.844 22.533l-83.42 14.865L196.572 249.25c3.262 4.815 5.37 10.72 5.37 16.932c0 5.863-1.71 11.35-4.643 15.996a53 53 0 0 0-16.027-2.477c-15.724 0-29.904 6.89-39.69 17.796l-9.112-9.113l17.237-17.237a546 546 0 0 1-13.19-17.6l-19.443 19.44l-13.215-13.215l21.828-21.827a548 548 0 0 1-12.792-20.068L72.093 258.68l58.314 58.314a53 53 0 0 0-2.49 16.063a52.9 52.9 0 0 0 4.592 21.564l-72.14 72.14l-14.56-14.56L21.013 437l14.558 14.56l-8.607 8.608l27.246 27.246l8.606-8.61l14.56 14.56l24.798-24.8l-14.557-14.556l72.158-72.16a52.9 52.9 0 0 0 21.498 4.562a53 53 0 0 0 16.063-2.49l58.363 58.363L296.5 401.48a549 549 0 0 1-20.068-12.793l-21.83 21.83L241.39 397.3l19.442-19.44a550 550 0 0 1-17.603-13.194l-17.238 17.238l-9.16-9.16c10.905-9.785 17.795-23.965 17.795-39.69c0-5.346-.806-10.51-2.285-15.39c4.703-3.04 10.288-4.817 16.265-4.816c6.21 0 11.776 1.77 16.52 4.955L476.98 105.95zm-66.227 53.012l13.215 13.215l-191.684 191.68l-13.214-13.213zM181.273 298.39c19.257 0 34.665 15.41 34.665 34.665c0 19.256-15.408 34.666-34.665 34.666s-34.666-15.41-34.666-34.665s15.41-34.666 34.666-34.666"></path></svg>Azioni</span><span class="" tabindex="0" role="button" style="padding-top: 16px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" class="tbi gi" style=""><path fill="currentColor" d="M319.61 20.654c13.145 33.114 13.144 33.115-5.46 63.5c33.114-13.145 33.116-13.146 63.5 5.457c-13.145-33.114-13.146-33.113 5.457-63.498c-33.114 13.146-33.113 13.145-63.498-5.459zM113.024 38.021c-11.808 21.04-11.808 21.04-35.724 24.217c21.04 11.809 21.04 11.808 24.217 35.725c11.808-21.04 11.808-21.04 35.724-24.217c-21.04-11.808-21.04-11.808-24.217-35.725m76.55 56.184c-.952 50.588-.95 50.588-41.991 80.18c50.587.95 50.588.95 80.18 41.99c.95-50.588.95-50.588 41.99-80.18c-50.588-.95-50.588-.95-80.18-41.99zm191.177 55.885c-.046 24.127-.048 24.125-19.377 38.564c24.127.047 24.127.046 38.566 19.375c.047-24.126.046-24.125 19.375-38.564c-24.126-.047-24.125-.046-38.564-19.375m-184.086 83.88a96 96 0 0 0-3.492.134c-18.591 1.064-41.868 8.416-77.445 22.556L76.012 433.582c78.487-20.734 132.97-21.909 170.99-4.615V247.71c-18.076-8.813-31.79-13.399-46.707-13.737a91 91 0 0 0-3.629-.002zm122.686 11.42a209 209 0 0 0-8.514.098c-12.81.417-27.638 2.215-45.84 4.522v177.135c43.565-7.825 106.85-4.2 171.244 7.566l-39.78-177.197c-35.904-8.37-56.589-11.91-77.11-12.123zm2.289 16.95c18.889.204 36.852 2.768 53.707 5.02l4.437 16.523c-23.78-3.75-65.966-4.906-92.467-.98l-.636-17.805c11.959-2.154 23.625-2.88 34.959-2.758m-250.483 4.658L60.54 313.002h24.094l10.326-46.004H71.158zm345.881 0l39.742 177.031l2.239 9.973l22.591-.152l-40.855-186.852zm-78.857 57.82c16.993.026 33.67.791 49.146 2.223l3.524 17.174c-32.645-3.08-72.58-2.889-102.995 0l-.709-17.174c16.733-1.533 34.04-2.248 51.034-2.223m-281.793 6.18l-6.924 30.004h24.394l6.735-30.004H56.389zm274.418 27.244c4.656.021 9.487.085 14.716.203l2.555 17.498c-19.97-.471-47.115.56-59.728 1.05l-.7-17.985c16.803-.493 29.189-.828 43.157-.766m41.476.447c8.268.042 16.697.334 24.121.069l2.58 17.74c-8.653-.312-24.87-.83-32.064-.502l-2.807-17.234a257 257 0 0 1 8.17-.073m-326.97 20.309l-17.985 77.928l25.035-.17l17.455-77.758H45.313zm303.164 11.848c19.608-.01 38.66.774 56.449 2.572l2.996 20.787c-34.305-4.244-85.755-7.697-119.1-3.244l-.14-17.922c20.02-1.379 40.186-2.183 59.795-2.193m-166.606 44.05c-30.112.09-67.916 6.25-115.408 19.76l-7.22 2.053l187.759-1.27v-6.347c-16.236-9.206-37.42-14.278-65.13-14.196zm134.41 6.174c-19.63.067-37.112 1.439-51.283 4.182v10.064l177.594-1.203c-44.322-8.634-89.137-13.17-126.31-13.043zM26 475v18h460v-18z"></path></svg>Incantesimi</span><span class="" tabindex="0" role="button" style="padding-top: 16px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" class="tbi gi" style=""><path fill="currentColor" d="m186.438 20.56l-13.184 26.365q10.202-.39 20.47-.686l3.84-7.68h116.874l3.77 7.54q10.258.281 20.456.66l-13.102-26.2H186.437zm69.56 42.742c-45.757.056-91.452 1.566-135.38 4.363c-3.24 50.58-8.4 100.987-.786 145.824c89.297 12.395 180.102 12.985 272.764-.054c7.055-30.988 5.117-84.68-1.04-145.89c-43.974-2.893-89.73-4.3-135.558-4.244zm153.783 5.54c6.42 64.12 9.113 119.825-1.135 155.22l-1.61 5.56l-5.726.842c-98.8 14.528-195.613 13.81-290.605.002l-6.285-.914l-1.246-6.23c-9.89-49.49-4.085-102.785-.664-154.42c-4.89.354-9.765.72-14.602 1.107c-8.596 58.568-9.39 116.957-.05 175.292c110.24 12.088 222.275 12.205 336.203-.01c8.502-57.83 8.29-116.25-.017-175.313c-4.725-.4-9.485-.776-14.262-1.14zM255.966 92.3c32.526-.025 65.067 2.746 97.574 8.39l7.46 1.295v7.572c0 15.554 1.683 35.105-12.69 50.25c-9.912 10.444-25.655 17.337-51.31 20.585v18.164h-82v-18.452c-23.992-3.37-39.352-10.175-49.363-20.185C150.807 145.093 151 125.56 151 109.56v-7.594l7.484-1.278c32.444-5.54 64.955-8.362 97.48-8.386zm.012 17.994c-28.96.022-57.913 2.444-86.858 6.996c.265 12.28 1.635 22.296 9.243 29.904c5.914 5.914 16.952 11.416 36.637 14.582v-29.22h82v29.51c21.367-3.115 32.66-8.755 38.254-14.65c7.033-7.41 7.696-17.502 7.73-30.124c-29-4.63-58.006-7.02-87.007-6.998zM233 150.56v30h46v-30zm209.674 92.42a619 619 0 0 1-1.61 10.87c.214 2.352.42 4.706.63 7.06L471 290.213v-22.24l-28.326-24.995zm-373.485.12L41 267.973v22.24l29.318-29.318c.205-2.327.406-4.655.616-6.982a542 542 0 0 1-1.745-10.813m354.634 20.397a1638 1638 0 0 1-30.824 2.967v74.095h16v66h-16v80.615c10.318-.633 20.63-1.313 30.928-2.082c9.445-74.01 6.478-147.698-.104-221.596zm-335.576.03C81.725 338.09 78.58 412.1 88.06 485.1q15.487 1.184 30.94 2.145V406.56h-16v-66h16v-74.024a1537 1537 0 0 1-30.752-3.01zm286.752 4.4q-15.021 1.14-30 1.992v70.64h30zm-238 .085v72.547h30v-70.55a1557 1557 0 0 1-30-1.997m190 2.825c-47.65 2.173-94.984 2.19-142 .078v19.314c23.95-5.165 47.8-7.652 71.516-7.59c23.638.06 47.145 2.654 70.484 7.626v-19.43zM68.05 288.62L41 315.67v56.89h23.06c.376-27.987 1.88-55.975 3.99-83.94m375.948.047c2.12 27.872 3.61 55.83 3.957 83.892H471v-56.89zm-187.52 11.95c-23.68-.063-47.487 2.577-71.478 8.052v31.89h16v18.443c17.033 5.346 31.73 8.493 46 9.426v-2.87h18v2.868c14.27-.932 28.967-4.08 46-9.425V340.56h16v-31.866c-23.42-5.267-46.907-8.016-70.523-8.078zM121 358.558v30h22v-23h18v23h22v-30zm208 0v30h22v-23h18v23h22v-30zM201 377.8v28.76h-16v15.857c48.528 10.865 95.713 10.664 142 .045V406.56h-16V377.8c-16.332 4.747-31.283 7.52-46 8.326v11.433h-18v-11.434c-14.717-.806-29.668-3.58-46-8.326zM41 390.56v14h23.14q-.134-7-.163-14zm407.012 0a935 935 0 0 1-.18 14H471v-14zM137 406.56v19.798c6.137 7.214 11.222 9.77 14.934 9.844c3.734.075 8.697-2.122 15.066-9.79V406.56h-6v7h-18v-7zm208 0v19.798c6.137 7.214 11.222 9.77 14.934 9.844c3.734.075 8.697-2.122 15.066-9.79V406.56h-6v7h-18v-7zm-304 16v35.154c5.596 5.51 8.677 8.25 11.846 9.306c2.454.818 7.713 1.15 15.045 1.317c-1.544-15.25-2.586-30.51-3.204-45.778H41zm406.27 0c-.628 15.224-1.674 30.483-3.21 45.78c7.358-.168 12.635-.5 15.094-1.32c3.17-1.056 6.25-3.795 11.846-9.306V422.56zM185 440.842v49.498c47.55 1.51 94.877 1.446 142-.074V440.9c-46.316 10.03-93.74 10.185-142-.057zm-48 9.123v38.318q15.015.809 30 1.408v-39.678c-4.86 2.786-10.01 4.293-15.43 4.184c-5.192-.104-10.036-1.624-14.57-4.232m208 0v39.654c10.01-.403 20.01-.878 30-1.412v-38.194c-4.86 2.786-10.01 4.293-15.43 4.184c-5.192-.104-10.036-1.624-14.57-4.232"></path></svg>Inventario</span><span class="" tabindex="0" role="button" style="padding-top: 16px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" class="tbi gi" style=""><path fill="currentColor" d="M41 27.7v46h430v-46zm32 64v112.5l62 20.7V91.7zm80 0v139.2l79.3 26.4c-10.4 7.5-17.3 19.7-17.3 33.4c0 21 16.1 38.5 36.5 40.7l-22.3 43.7l-58.2 9.3l41.6 41.7l-9.1 58.2l52.5-26.7l52.5 26.7l-9.1-58.2l41.6-41.7l-58.2-9.3l-22.3-43.7c20.4-2.2 36.5-19.7 36.5-40.7c0-13.7-6.9-25.9-17.3-33.4l79.3-26.4V91.7h-94v159c-2.9-.6-5.9-1-9-1s-6.1.4-9 1v-159zm224 0v133.2l62-20.7V91.7zm-121 176c12.8 0 23 10.2 23 23s-10.2 23-23 23s-23-10.2-23-23s10.2-23 23-23"></path></svg>Privilegi</span><span class="" tabindex="0" role="button" style="padding-top: 16px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 512 512" class="tbi gi" style=""><path fill="currentColor" d="M496.938 14.063c-95.14 3.496-172.297 24.08-231.282 55.812l-29.47 49.28l-4.967-28.093c-10.535 7.402-20.314 15.222-29.314 23.407l-14.687 45.06l-5.032-25.155c-40.65 45.507-60.41 99.864-58.938 155.906c47.273-93.667 132.404-172.727 211.97-221.155l9.717 15.97c-75.312 45.838-156.387 121.202-202.187 208.25h12.156c19.78-12.02 39.16-26.858 58.406-43.44l-30.28 1.595l54.218-23.094c46.875-43.637 93.465-94.974 143.313-138.28l-24.47-5.19l56.5-21.03c26.853-20.485 54.8-37.844 84.344-49.843zM59.53 312.03v30.408H194V312.03zm20.376 49.095L47.25 389.813L24.97 474.78l14.53 15.876h177.22l14.56-15.875L209 389.814l-30.906-28.688H79.906z"></path></svg>Storia</span></div><div class="bn bn--mine" style="padding: 16px 20px !important; gap: 16px !important;"><b><span class="dots"><span class="dw"><span class="dt">ROUND&nbsp;2</span><span class="dt">TOCCA&nbsp;A&nbsp;TE</span></span></span></b><span class="ec" style="gap: 12px !important;"><span><span class="shape shape--action"></span> Azione</span><span class="x"><span class="shape shape--bonus"></span> Bonus</span><span><span class="shape shape--reaction"></span> Reazione</span><span><span class="shape shape--move"></span> 9&nbsp;m</span></span><span class="ft" style="padding: 8px 16px !important;">Fine turno&nbsp;<svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="m184.49 136.49l-80 80a12 12 0 0 1-17-17L159 128L87.51 56.49a12 12 0 1 1 17-17l80 80a12 12 0 0 1-.02 17"></path></svg></span></div><div class="boxscroll">
+
+          <div class="tip">
+            <button class="tip__head" aria-expanded="true" data-toggle="tip-body" data-collapse-phone="">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 512 512" class="i gi" style=""><path fill="currentColor" d="m203.97 23l-18.032 4.844l11.656 43.468c-25.837 8.076-50.32 21.653-71.594 40.75L94.53 80.594l-13.218 13.22l31.376 31.374c-19.467 21.125-33.414 45.53-41.813 71.343l-42.313-11.343l-4.843 18.063l42.25 11.313c-6.057 27.3-6.157 55.656-.345 83L23.72 308.78l4.843 18.064l41.812-11.22a193.3 193.3 0 0 0 31.25 59.876l-29.97 52.688l-16.81 29.593l29.56-16.842l52.657-29.97a193.3 193.3 0 0 0 60.094 31.407l-11.22 41.844l18.033 4.81l11.218-41.905a195.7 195.7 0 0 0 83-.375l11.312 42.28l18.063-4.81l-11.344-42.376c25.812-8.4 50.217-22.315 71.342-41.78l31.375 31.373l13.22-13.218l-31.47-31.47a193.3 193.3 0 0 0 40.72-71.563l43.53 11.657l4.813-18.063l-43.625-11.686a195.7 195.7 0 0 0-.344-82.063l43.97-11.78l-4.813-18.063L440.908 197c-6.73-20.866-17.08-40.79-31.032-58.844l29.97-52.656l16.842-29.563l-29.593 16.844l-52.656 29.97c-17.998-13.875-37.874-24.198-58.657-30.906l11.783-44L309.5 23l-11.78 43.97c-27-5.925-55.02-6.05-82.064-.376zm201.56 85L297.25 298.313l-.75.437l-40.844-40.875l-148.72 148.72l-2.186 1.25l109.125-191.75l41.78 41.78L405.532 108zm-149.686 10.594c21.858 0 43.717 5.166 63.594 15.47l-116.625 66.342l-2.22 1.28l-1.28 2.22l-66.25 116.406c-26.942-52.04-18.616-117.603 25.03-161.25c26.99-26.988 62.38-40.468 97.75-40.468zm122.72 74.594c26.994 52.054 18.67 117.672-25.002 161.343c-43.66 43.662-109.263 52.005-161.312 25.033l116.438-66.282l2.25-1.25l1.25-2.25l66.375-116.592z"></path></svg>
+              <span class="tip__title">Cosa ti&nbsp;conviene&nbsp;fare</span>
+              <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="m216.49 104.49l-80 80a12 12 0 0 1-17 0l-80-80a12 12 0 0 1 17-17L128 159l71.51-71.52a12 12 0 0 1 17 17Z"></path></svg>
+            </button>
+            <ol class="tip__steps" id="tip-body">
+              <li class="combat-only">
+                <span class="shape shape--move"></span><span><b>Muoviti</b> fino a&nbsp;9&nbsp;m, se ti serve&nbsp;avvicinarti.</span>
+              </li>
+              <li class="combat-only">
+                <span class="shape shape--action"></span><span><b>Fiamma sacra</b> sul nemico&nbsp;più&nbsp;vicino.<span class="why" style="font-size: 14px !important;">In media 9&nbsp;danni contro i&nbsp;6,5&nbsp;della Mazza, e&nbsp;arriva&nbsp;a&nbsp;18&nbsp;m.</span></span>
+              </li>
+              <li class="combat-only">
+                <span class="shape shape--reaction"></span><span>Tieni la&nbsp;reazione&nbsp;per&nbsp;un
+                  <button class="term">attacco di&nbsp;opportunità</button>.</span>
+              </li>
+              <li class="explore-only">
+                <span class="shape shape--action"></span><span><b>Guida</b> su chi sta per&nbsp;fare&nbsp;una&nbsp;prova.<span class="why" style="font-size: 14px !important;">Aggiunge 1d4&nbsp;al tiro, e&nbsp;non&nbsp;spende&nbsp;slot.</span></span>
+              </li>
+              <li class="explore-only">
+                <span class="shape shape--action"></span><span><b>Individuazione del&nbsp;magico</b> come
+                  <button class="term">rituale</button>.<span class="why" style="font-size: 14px !important;">Ci mette 10&nbsp;minuti in più, ma non&nbsp;spende&nbsp;uno&nbsp;slot.</span></span>
+              </li>
+              <li class="explore-only">
+                <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M177.62 159.6a52 52 0 0 1-34 34a12.2 12.2 0 0 1-3.6.55a12 12 0 0 1-3.6-23.45a28 28 0 0 0 18.32-18.32a12 12 0 0 1 22.9 7.2ZM220 144a92 92 0 0 1-184 0c0-28.81 11.27-58.18 33.48-87.28a12 12 0 0 1 17.9-1.33l19.69 19.11L127 19.89a12 12 0 0 1 18.94-5.12C168.2 33.25 220 82.85 220 144m-24 0c0-41.71-30.61-78.39-52.52-99.29l-20.21 55.4a12 12 0 0 1-19.63 4.5L80.71 82.36C67 103.38 60 124.06 60 144a68 68 0 0 0 136 0"></path></svg><span>Sei a&nbsp;31&nbsp;su&nbsp;38:&nbsp;un <b>riposo breve</b> ti porterebbe&nbsp;al&nbsp;massimo.</span>
+              </li>
+            </ol>
+          </div>
+
+          <!-- D&D Beyond's Actions filter: All · Attack · Action · Bonus · Reaction · Other · Limited use -->
+          <div class="pills" role="group" aria-label="Filtra" style="padding-top: 12px !important; padding-bottom: 12px !important; gap: 4px !important;">
+            <button class="pill" aria-pressed="true" style="gap: 8px !important;">Tutto</button>
+            <button class="pill" aria-pressed="false" style="gap: 8px !important;">Attacchi</button>
+            <button class="pill" aria-pressed="false" style="gap: 8px !important;">
+              <span class="shape shape--action"></span>Azione
+            </button>
+            <button class="pill" aria-pressed="false" style="gap: 8px !important;">
+              <span class="shape shape--bonus"></span>Bonus
+            </button>
+            <button class="pill" aria-pressed="false" style="gap: 8px !important;">
+              <span class="shape shape--reaction"></span>Reazione
+            </button>
+            <button class="pill" aria-pressed="false" style="gap: 8px !important;">Altro</button>
+            <button class="pill" aria-pressed="false" style="gap: 8px !important;">Uso limitato</button>
+          </div>
+
+          <div class="atable">
+            <div class="atable__head only-laptop" aria-hidden="true">
+              <span></span><span class="label">Nome</span><span class="label">Gittata</span><span class="label">TxC /&nbsp;CD</span><span class="label">Effetto</span><span></span>
+            </div>
+
+            <div class="agroup" data-k="action">
+              <span class="shape shape--action"></span>Azioni
+              <span class="agroup__note">· 1&nbsp;attacco&nbsp;per&nbsp;azione</span>
+            </div>
+            <div class="arow" data-k="action">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-mace.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Mazza</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;">Arma da&nbsp;mischia<span class="only-phone num"><span class="dots"><span class="dw"><span class="dt">+6</span><span class="dt">1d6+3</span></span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">1,5&nbsp;m</span>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">+6</button>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">1d6+3 <small>contundenti</small></button>
+              <button class="btn">Attacca</button>
+            </div>
+            <div class="arow-wrap">
+              <div class="arow" data-k="action">
+                <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-sacred-flame.webp" alt=""></span>
+                <button class="arow__name">
+                  <span class="arow__title">Fiamma sacra</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;">Trucchetto<span class="only-phone num"><span class="dots"><span class="dw"><span class="dt">CD&nbsp;14</span><span class="dt">2d8</span></span></span></span></span>
+                </button>
+                <span class="arow__range only-laptop">18&nbsp;m</span>
+                <button class="plate only-laptop" style="border-radius: 2px !important;">CD&nbsp;14 <small>DES</small></button>
+                <button class="plate only-laptop" style="border-radius: 2px !important;">2d8 <small>radiosi</small></button>
+                <button class="btn">Lancia</button>
+              </div>
+              <!-- BG3's spell tooltip, shown on hover / long press -->
+              <div class="frame frame--card spellcard" id="tip-flame" hidden="">
+                <span class="frame__corner-tr"></span><span class="frame__corner-bl"></span>
+                <div class="spellcard__head">
+                  <span class="slot slot--lg"><img src="img/icon-sacred-flame.webp" alt=""></span>
+                  <div>
+                    <p class="spellcard__title">Fiamma sacra</p>
+                    <p class="meta"><span class="dots"><span class="dw"><span class="dt">Trucchetto</span><span class="dt">Evocazione</span></span></span></p>
+                  </div>
+                </div>
+                <p class="spellcard__dmg">
+                  <b>2d8</b> danni radiosi <span class="meta">· in&nbsp;media&nbsp;9</span>
+                </p>
+                <p class="spellcard__text">
+                  Una fiamma scende su una creatura che&nbsp;vedi.&nbsp;Fa&nbsp;un
+                  <button class="term">tiro&nbsp;salvezza</button> di Destrezza contro la tua
+                  CD&nbsp;14: se fallisce subisce&nbsp;i&nbsp;danni.&nbsp;La
+                  <button class="term">copertura</button> non la&nbsp;protegge.
+                </p>
+                <div class="spellcard__foot">
+                  <span style="gap: 8px !important;"><span class="shape shape--action" style="gap: 8px !important;"></span>Azione</span><span style="gap: 8px !important;">18&nbsp;m</span><span style="gap: 8px !important;">V, S</span>
+                </div>
+              </div>
+            </div>
+            <div class="arow" data-k="action">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-preserve-life.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Preservare la&nbsp;vita</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;"><span class="dots"><span class="dw"><span class="dt">Incanalare&nbsp;Divinità</span><span class="dt">1&nbsp;su&nbsp;2</span></span></span><span class="only-phone num"><span class="dots"><span class="dw"><span class="dt">25&nbsp;PF</span></span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">9&nbsp;m</span><span class="arow__dash only-laptop">—</span>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">25 <small>PF</small></button>
+              <button class="btn">Usa</button>
+            </div>
+            <div class="arow" data-k="action">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-cure-wounds.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Cura ferite</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;">1°&nbsp;livello<span class="only-phone num"><span class="dots"><span class="dw"><span class="dt">2d8+6</span></span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">Contatto</span><span class="arow__dash only-laptop">—</span>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">2d8+6 <small>PF</small></button>
+              <button class="btn">Lancia</button>
+            </div>
+
+            <div class="arow" data-k="action">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-guidance.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Guida</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;"><span class="dots"><span class="dw"><span class="dt">Trucchetto</span><span class="dt">concentrazione,&nbsp;1&nbsp;min</span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">Contatto</span><span class="arow__dash only-laptop">—</span><button class="plate only-laptop" style="border-radius: 2px !important;">+1d4 <small>prova</small></button>
+              <button class="btn">Lancia</button>
+            </div>
+            <div class="agroup combat-only" data-k="bonus">
+              <span class="shape shape--bonus is-spent"></span>Azioni bonus
+              <span class="agroup__note">· già usata&nbsp;in&nbsp;questo&nbsp;turno</span>
+            </div>
+            <div class="agroup explore-only" data-k="bonus">
+              <span class="shape shape--bonus"></span>Azioni bonus
+            </div>
+            <div class="arow is-spent-in-combat" data-k="bonus">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-healing-word.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Parola guaritrice</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;">1°&nbsp;livello<span class="only-phone num"><span class="dots"><span class="dw"><span class="dt">2d4+6</span></span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">18&nbsp;m</span><span class="arow__dash only-laptop">—</span>
+              <span class="plate only-laptop" style="border-radius: 2px !important;">2d4+6 <small>PF</small></span>
+              <button class="btn combat-only" disabled="">Lancia</button><button class="btn explore-only">Lancia</button>
+            </div>
+            <div class="arow" data-k="bonus">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-spiritual-weapon.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Arma spirituale</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;"><span class="dots"><span class="dw"><span class="dt">2°&nbsp;livello</span><span class="dt">1&nbsp;minuto</span></span></span><span class="only-phone num"><span class="dots"><span class="dw"><span class="dt">+6</span><span class="dt">1d8+3</span></span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">18&nbsp;m</span>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">+6</button>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">1d8+3 <small>forza</small></button>
+              <button class="btn combat-only" disabled="">Lancia</button><button class="btn explore-only">Lancia</button>
+            </div>
+
+            <div class="agroup" data-k="reaction"><span class="shape shape--reaction"></span>Reazioni<span class="agroup__note">Una per round</span></div>
+            <div class="arow" data-k="reaction">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-opportunity-attack.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Attacco di&nbsp;opportunità</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;">Quando un nemico esce&nbsp;dalla&nbsp;tua&nbsp;portata</span>
+              </button>
+              <span class="arow__range only-laptop">1,5&nbsp;m</span>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">+6</button>
+              <button class="plate only-laptop" style="border-radius: 2px !important;">1d6+3 <small>contundenti</small></button>
+              <button class="btn">Usa</button>
+            </div>
+            <div class="agroup">
+              Altro <span class="agroup__note">· tempi di lancio&nbsp;lunghi&nbsp;e&nbsp;rituali</span>
+            </div>
+            <div class="arow">
+              <span class="slot" style="border-radius: 2px !important;"><img src="img/icon-detect-magic.webp" alt=""></span>
+              <button class="arow__name">
+                <span class="arow__title">Individuazione del&nbsp;magico</span><span class="arow__meta" style="gap: 8px !important; font-size: 14px !important;"><span class="dots"><span class="dw"><span class="dt">1°&nbsp;livello</span><span class="dt">rituale,&nbsp;10&nbsp;min</span></span></span></span>
+              </button>
+              <span class="arow__range only-laptop">9&nbsp;m</span><span class="arow__dash only-laptop">—</span><span class="arow__dash only-laptop">—</span>
+              <button class="btn">Rituale</button>
+            </div>
+          </div>
+        </div></section>
+
+        <!-- The log: one chronological record, exploration and combat (Roll20/Foundry chat log) -->
+        <aside class="play__log frame frame--crest only-laptop" aria-labelledby="log-h">
+          
+          
+          
+          
+          
+        <section class="pnl pnl-ini" style="padding-top: 0px !important;"><span class="crest"></span><span class="frame__corner-tr"></span><span class="frame__corner-bl"></span><h2 class="ftitle" id="ini-h" style="--c: #e3140c; background: linear-gradient(90deg, color-mix(in srgb, rgb(227, 20, 12) 55%, rgb(0, 0, 0)) 0%, color-mix(in srgb, rgb(227, 20, 12) 40%, rgb(0, 0, 0)) 55%, color-mix(in srgb, rgb(227, 20, 12) 26%, rgb(0, 0, 0)) 100%) !important; border-top: 3px solid rgb(227, 20, 12) !important; margin-left: calc(-1 * var(--pp) - 1px) !important; margin-right: calc(-1 * var(--pp) - 1px) !important; margin-top: -1px !important; padding-right: 20px !important; padding-left: 20px !important; gap: 12px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 512 512" class="ti gi" style=""><path fill="currentColor" d="M19.75 14.438c59.538 112.29 142.51 202.35 232.28 292.718l3.626 3.75l.063-.062c21.827 21.93 44.04 43.923 66.405 66.25c-18.856 14.813-38.974 28.2-59.938 40.312l28.532 28.53l68.717-68.717c42.337 27.636 76.286 63.646 104.094 105.81l28.064-28.06c-42.47-27.493-79.74-60.206-106.03-103.876l68.936-68.938l-28.53-28.53c-11.115 21.853-24.413 42.015-39.47 60.593c-43.852-43.8-86.462-85.842-130.125-125.47c-.224-.203-.432-.422-.656-.625C183.624 122.75 108.515 63.91 19.75 14.437zm471.875 0c-83.038 46.28-154.122 100.78-221.97 161.156l22.814 21.562l56.81-56.812l13.22 13.187l-56.438 56.44l24.594 23.186c61.802-66.92 117.6-136.92 160.97-218.72zm-329.53 125.906l200.56 200.53a403 403 0 0 1-13.405 13.032L148.875 153.53zm-76.69 113.28l-28.5 28.532l68.907 68.906c-26.29 43.673-63.53 76.414-106 103.907l28.063 28.06c27.807-42.164 61.758-78.174 104.094-105.81l68.718 68.717l28.53-28.53c-20.962-12.113-41.08-25.5-59.937-40.313c17.865-17.83 35.61-35.433 53.157-52.97l-24.843-25.655l-55.47 55.467c-4.565-4.238-9.014-8.62-13.374-13.062l55.844-55.844l-24.53-25.374c-18.28 17.856-36.602 36.06-55.158 54.594c-15.068-18.587-28.38-38.758-39.5-60.625z"></path></svg>Iniziativa · round&nbsp;2</h2><div class="ir " tabindex="0" role="button"><span class="ii">18</span><img src="file:///private/tmp/claude-501/-Users-salvatoredicara-Workspace-d20-folio--claude-worktrees-vigorous-chebyshev-be3ae5/61a0ea85-4a2f-42ef-a9f4-984dfc8b7cca/scratchpad/proto/docs/design/system/img/class-rogue.webp"><span class="in">Kaela</span><span class="ih">Insanguinata</span></div><div class="ir now" tabindex="0" role="button"><span class="ii">15</span><img src="file:///private/tmp/claude-501/-Users-salvatoredicara-Workspace-d20-folio--claude-worktrees-vigorous-chebyshev-be3ae5/61a0ea85-4a2f-42ef-a9f4-984dfc8b7cca/scratchpad/proto/docs/design/system/img/portrait-selene.webp"><span class="in">Selene (tu)<span class="tg" style="border-radius: 2px !important;">ORA</span></span><span class="ih">31/38</span></div><div class="ir next" tabindex="0" role="button" aria-label=" (dopo)"><span class="ii">12</span><span class="mon"><svg class="ic-game" viewBox="0 0 512 512" width="20" height="20" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M256 33c-8.5 0-21.318 5.745-35.06 16.17s-28.429 25.055-42.167 40.756c-19.597 22.397-37.26 47.053-48.41 64.597l49.582 37.188l49.23 12.307l2.288-6.864l17.074 5.692l-14.957 44.873l22.42 56.05l22.42-56.05l-14.957-44.873l17.074-5.692l2.287 6.864l49.23-12.307l49.583-37.188c-11.15-17.544-28.813-42.2-48.41-64.597c-13.738-15.7-28.424-30.33-42.166-40.756C277.318 38.745 264.5 33 256 33m-91.49 95.213l76 44l-9.02 15.574l-76-44zm182.98 0l9.02 15.574l-76 44l-9.02-15.574zM17.21 146.625c31.804 32.973 63.213 73.408 76.3 111.857c1.59-2.708 3.38-5.333 5.292-7.882c5.009-6.68 11.036-12.972 17.14-19.153c-8.95-12.884-11.752-29.088-12.605-42.886c-29.308-24.142-53.916-37.693-86.127-41.936m477.582 0c-32.21 4.243-56.819 17.794-86.127 41.936c-.853 13.798-3.654 30.002-12.605 42.886c6.104 6.181 12.131 12.474 17.14 19.153c1.912 2.55 3.703 5.174 5.291 7.882c13.088-38.449 44.497-78.884 76.301-111.857m-373.645 23.484c-.023.045-.054.1-.078.145c.137 16.376 2.007 44.095 13.295 55.383l6.364 6.363l-6.364 6.363c-8 8-15.74 15.805-21.164 23.037c-4.688 6.251-7.327 11.823-7.965 16.452l81.118 30.418c4.7-6.847 9.904-13.253 15.285-18.633l16.029-16.03l-.67 22.659c-.25 8.431-.383 16.131-.232 23.41l30.84 11.564L214.707 249h-50.98l-13.364 13.363l-12.726-12.726l11.312-11.313l-13.531-57.512zm269.708 0l-14.272 10.703l-13.531 57.512l11.312 11.313l-12.726 12.726L348.273 249h-50.98l-32.897 82.24l30.842-11.566c.15-7.278.018-14.978-.232-23.408l-.672-22.659l16.03 16.03c5.38 5.38 10.584 11.788 15.284 18.634l55.192-20.697l25.926-9.722c-.638-4.63-3.277-10.2-7.965-16.452c-5.424-7.232-13.164-15.037-21.164-23.037L371.273 232l6.364-6.363c11.288-11.288 13.158-39.007 13.295-55.383c-.024-.045-.055-.1-.078-.145zM157.867 197.65l7.848 33.35H183v-19.975l-10.945-2.736zm196.266 0l-14.188 10.64L329 211.024V231h17.285zM201 215.525V231h19.18l3.287-9.857zm110 0l-22.467 5.618L291.82 231H311zm-205.791 62.51a16 16 0 0 0-.117 1.256c7.79 37.424 34.985 88.461 66.066 129.256c15.682 20.582 32.34 38.649 47.582 51.271C233.983 472.441 248 479 256 479s22.017-6.559 37.26-19.182s31.9-30.689 47.582-51.271c31.081-40.795 58.277-91.832 66.066-129.256c-.02-.41-.063-.83-.117-1.256l-48.027 72.043L256 435.715l-102.764-85.637zm45.756 36.188l15.799 23.699l2.968 2.474c1.753-5.409 4.259-10.906 7.176-16.445zm210.07 0l-25.943 9.728c2.917 5.539 5.423 11.036 7.176 16.445l2.968-2.474zm-162.129 7.73c-1.782 2.76-3.48 5.558-5.006 8.356c-4.27 7.83-7.176 15.717-8.328 21.255l19.67 13.114c-4.116-14.232-5.864-28.048-6.336-42.725m114.188 0c-.472 14.677-2.22 28.493-6.336 42.725l19.67-13.114c-1.152-5.538-4.057-13.425-8.328-21.255c-1.527-2.798-3.224-5.596-5.006-8.356m-19.227 17.457L265 350.236v54.55l7.793-6.495l7.158-14.316c8.04-16.081 12.051-29.95 13.916-44.565m-75.734.002c1.864 14.614 5.876 28.483 13.916 44.563l7.158 14.316l7.793 6.494v-54.549z"></path></svg></span><span class="in">Goblin&nbsp;×⁠3</span><span class="ih">Insanguinato</span></div><div class="ir " tabindex="0" role="button"><span class="ii">9</span><img src="file:///private/tmp/claude-501/-Users-salvatoredicara-Workspace-d20-folio--claude-worktrees-vigorous-chebyshev-be3ae5/61a0ea85-4a2f-42ef-a9f4-984dfc8b7cca/scratchpad/proto/docs/design/system/img/class-fighter.webp"><span class="in">Brann</span><span class="ih">In forma</span></div><div class="ir " tabindex="0" role="button"><span class="ii">4</span><img src="file:///private/tmp/claude-501/-Users-salvatoredicara-Workspace-d20-folio--claude-worktrees-vigorous-chebyshev-be3ae5/61a0ea85-4a2f-42ef-a9f4-984dfc8b7cca/scratchpad/proto/docs/design/system/img/class-bard.webp"><span class="in">Tib</span><span class="ih">In forma</span></div><div class="iact"><span style="padding-right: 8px !important; padding-left: 8px !important; border-radius: 4px !important; font-size: 14px !important;"><svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M228 128a12 12 0 0 1-12 12h-76v76a12 12 0 0 1-24 0v-76H40a12 12 0 0 1 0-24h76V40a12 12 0 0 1 24 0v76h76a12 12 0 0 1 12 12"></path></svg>aggiungi</span><span style="padding-right: 8px !important; padding-left: 8px !important; border-radius: 4px !important; font-size: 14px !important;"><svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M228 128a100 100 0 0 1-98.66 100H128a99.4 99.4 0 0 1-68.62-27.29a12 12 0 0 1 16.48-17.45a76 76 0 1 0-1.57-109c-.13.13-.25.25-.39.37L54.89 92H72a12 12 0 0 1 0 24H24a12 12 0 0 1-12-12V56a12 12 0 0 1 24 0v20.72l21.48-19.66A100 100 0 0 1 228 128"></path></svg>indietro</span><span style="padding-right: 8px !important; padding-left: 8px !important; font-size: 14px !important;">Fine scontro</span></div></section><section class="pnl pnl-log" style="padding-top: 0px !important;"><h2 class="ftitle" id="log-h" style="--c: #6aa0f0; background: linear-gradient(90deg, color-mix(in srgb, rgb(106, 160, 240) 55%, rgb(0, 0, 0)) 0%, color-mix(in srgb, rgb(106, 160, 240) 40%, rgb(0, 0, 0)) 55%, color-mix(in srgb, rgb(106, 160, 240) 26%, rgb(0, 0, 0)) 100%) !important; border-top: 3px solid rgb(106, 160, 240) !important; margin-left: calc(-1 * var(--pp) - 1px) !important; margin-right: calc(-1 * var(--pp) - 1px) !important; margin-top: -1px !important; padding-right: 20px !important; padding-left: 20px !important; gap: 12px !important;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 512 512" class="ti gi" style=""><path fill="currentColor" d="M103.432 17.844a87 87 0 0 0-3.348.08q-3.822.163-7.604.678c-20.167 2.747-39.158 13.667-52.324 33.67c-24.613 37.4 2.194 98.025 56.625 98.025c.536 0 1.058-.012 1.583-.022v.704h60.565c-10.758 31.994-30.298 66.596-52.448 101.43a283 283 0 0 0-6.29 10.406l34.878 35.733l-56.263 9.423c-32.728 85.966-27.42 182.074 48.277 182.074v-.002l9.31.066c23.83-.57 46.732-4.298 61.325-12.887c4.174-2.458 7.63-5.237 10.467-8.42h-32.446c-20.33 5.95-40.8-6.94-47.396-25.922c-8.956-25.77 7.52-52.36 31.867-60.452a55.6 55.6 0 0 1 17.565-2.834v-.406h178.33c-.57-44.403 16.35-90.125 49.184-126c23.955-26.176 42.03-60.624 51.3-94.846l-41.225-24.932l38.272-6.906l-43.37-25.807h-.005l.002-.002l.002.002l52.127-8.85c-5.232-39.134-28.84-68.113-77.37-68.113C341.14 32.26 222.11 35.29 149.34 28.496c-14.888-6.763-30.547-10.723-45.908-10.652m.464 18.703c13.137.043 27.407 3.804 41.247 10.63l.033-.07c4.667 4.735 8.542 9.737 11.68 14.985H82.92l10.574 14.78c10.608 14.83 19.803 31.99 21.09 42.024c.643 5.017-.11 7.167-1.814 8.836c-1.705 1.67-6.228 3.875-15.99 3.875c-40.587 0-56.878-44.952-41.012-69.06C66.238 46.64 79.582 39.22 95.002 37.12a64 64 0 0 1 8.894-.573M118.5 80.78h46.28c4.275 15.734 3.656 33.07-.544 51.51H131.52c1.9-5.027 2.268-10.574 1.6-15.77c-1.527-11.913-7.405-24.065-14.62-35.74m101.553 317.095c6.44 6.84 11.192 15.31 13.37 24.914c3.797 16.736 3.092 31.208-1.767 43.204c-4.526 11.175-12.576 19.79-22.29 26h237.19c14.448 0 24.887-5.678 32.2-14.318c7.312-8.64 11.2-20.514 10.705-32.352a47.7 47.7 0 0 0-2.407-13.18l-69.91-8.205l42.017-20.528c-8.32-3.442-18.64-5.537-31.375-5.537H220.053zm-42.668.506a37 37 0 0 0-3.457.153a34.8 34.8 0 0 0-7.824 1.63c-15.11 5.02-25.338 21.54-20.11 36.583c3.673 10.57 15.347 17.71 25.654 13.938l1.555-.57h43.354c.946-6.36.754-13.882-1.358-23.192c-3.71-16.358-20.543-28.483-37.815-28.54z"></path></svg>Resoconto</h2><div class="log">
+            <div class="log__sec">
+              <div class="log__head">
+                <span class="label">Esplorazione</span><span class="log__time" style="font-size: 14px !important;">21:05</span>
+              </div>
+              <p class="log__entry log__entry--note">
+                <span class="log__dot log__dot--note"></span><span>Il gruppo entra nella cripta dal&nbsp;portone&nbsp;a&nbsp;est.<span class="log__src" style="font-size: 14px !important;">Nota di&nbsp;Ottavio,&nbsp;il&nbsp;master</span></span>
+              </p>
+              <p class="log__entry">
+                <span class="shape shape--action"></span><span>Hai lanciato <b>Individuazione del&nbsp;magico</b> come rituale, senza&nbsp;slot.<span class="log__src" style="font-size: 14px !important;"><span class="dots"><span class="dw"><span class="dt">10&nbsp;minuti</span><span class="dt">concentrazione</span></span></span></span></span>
+              </p>
+              <p class="log__entry">
+                <span class="shape shape--action"></span><span><b>Guida</b> su Tib per la prova di&nbsp;Furtività:&nbsp;<b>+1d4</b>.</span>
+              </p>
+            </div>
+            <div class="log__sec combat-only">
+              <div class="log__head">
+                <span class="label">Scontro con&nbsp;i&nbsp;goblin</span><span class="log__time" style="font-size: 14px !important;">21:40</span>
+              </div>
+              <span class="log__round" style="font-size: 14px !important;">Round 1</span>
+              <p class="log__entry">
+                <span class="shape shape--action"></span><span>Hai lanciato <b>Benedizione</b> su te, Brann&nbsp;e&nbsp;Kaela.<span class="log__src" style="font-size: 14px !important;"><span class="dots"><span class="dw"><span class="dt">Slot di&nbsp;1°</span><span class="dt">concentrazione,&nbsp;10&nbsp;round</span></span></span></span></span>
+              </p>
+              <p class="log__entry">
+                <span class="log__dot"></span><span>Il goblin ti ha&nbsp;colpito: <b>7&nbsp;danni</b>, da&nbsp;38&nbsp;a&nbsp;31.</span>
+              </p>
+              <span class="log__round" style="font-size: 14px !important;">Round 2</span>
+              <p class="log__entry">
+                <span class="shape shape--bonus"></span><span><b>Parola guaritrice</b> su Kaela: <b>+11&nbsp;PF</b>.<span class="log__src" style="font-size: 14px !important;">5&nbsp;sui dadi +&nbsp;3&nbsp;Saggezza +&nbsp;3&nbsp;Discepolo&nbsp;della&nbsp;Vita</span></span>
+              </p>
+            </div>
+            <div class="log__sec explore-only">
+              <div class="log__head">
+                <span class="label">Scontro con&nbsp;i&nbsp;goblin</span><span class="log__time" style="font-size: 14px !important;">21:40</span>
+              </div>
+              <button class="log__fold">
+                3&nbsp;round · 4&nbsp;goblin sconfitti · 12&nbsp;righe<svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="m216.49 104.49l-80 80a12 12 0 0 1-17 0l-80-80a12 12 0 0 1 17-17L128 159l71.51-71.52a12 12 0 0 1 17 17Z"></path></svg>
+              </button>
+            </div>
+            <div class="log__sec explore-only">
+              <div class="log__head">
+                <span class="label">Esplorazione</span><span class="log__time" style="font-size: 14px !important;">21:58</span>
+              </div>
+              <p class="log__entry log__entry--note">
+                <span class="log__dot log__dot--note"></span><span>Passa 1&nbsp;ora. Finisce Individuazione&nbsp;del&nbsp;magico.</span>
+              </p>
+              <p class="log__entry">
+                <span class="log__dot log__dot--heal"></span><span>Riposo breve: 2&nbsp;Dadi&nbsp;Vita, <b>+13&nbsp;PF</b>.<span class="log__src" style="font-size: 14px !important;">9&nbsp;sui dadi&nbsp;+&nbsp;4&nbsp;Costituzione</span></span>
+              </p>
+            </div>
+          </div><input class="input" placeholder="Scrivi una nota…" aria-label="Nota per il resoconto"><button class="btn btn--quiet" style="justify-self: start; margin-left: -16px">
+            <svg class="ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="M216 28H88a12 12 0 0 0-12 12v36H40a12 12 0 0 0-12 12v128a12 12 0 0 0 12 12h128a12 12 0 0 0 12-12v-36h36a12 12 0 0 0 12-12V40a12 12 0 0 0-12-12m-60 176H52V100h104Zm48-48h-24V88a12 12 0 0 0-12-12h-68V52h104Z"></path></svg>Copia il&nbsp;resoconto
+          </button></section></aside>
+      </div>
+    </main>
+
+    <!-- HUD, only in combat: BG3's turn resources and round End Turn. Outside combat no bar (BG3 real-time, D&D Beyond, Foundry). -->
+    <div class="hudbar combat-only">
+      <div class="hud combat-only">
+        <div class="econ" aria-label="Cosa ti resta in questo turno">
+          <span class="econ__item"><span class="shape shape--action"></span>Azione</span>
+          <span class="econ__item is-spent"><span class="shape shape--bonus is-spent"></span>Bonus</span>
+          <span class="econ__item"><span class="shape shape--reaction"></span>Reazione</span>
+          <span class="econ__item"><span class="shape shape--move"></span>9&nbsp;m</span>
+        </div>
+        <button class="endturn" aria-label="Fine turno">
+          <span class="endturn__inner" style="padding: 20px !important; font-size: 16px !important;">Fine<br>turno</span>
+        </button>
+      </div>
+    </div>
+  
+
+<div class="ds" data-ov=""><div class="f-pop f-c-act" role="dialog" aria-label="Classe armatura" data-pop="" data-dx="-24" style="left: 674.906px; top: 308.078px; --ax: 46px;"><h2 class="f-pnh f-c-act"><span class="f-ttl">Classe&nbsp;armatura</span></h2><div class="f-bd"><div class="f-row"><div class="f-main"><div class="f-t">Cotta di&nbsp;maglia</div></div><b class="f-strong" style="font-size:16px">16</b></div><div class="f-row"><div class="f-main"><div class="f-t">Scudo</div></div><b class="f-strong" style="font-size:16px">+2</b></div><div class="f-row"><div class="f-main"><div class="f-t">Totale</div></div><b class="f-strong" style="font-size:20px">18</b></div><div style="margin-top:8px"><button type="button" class="f-btn f-quiet" aria-label="Modifica a mano"><svg class="f-ic-ui" viewBox="0 0 256 256" width="16" height="16" fill="currentColor" aria-hidden="true"><path fill="currentColor" d="m230.14 70.54l-44.68-44.69a20 20 0 0 0-28.29 0L33.86 149.17A19.85 19.85 0 0 0 28 163.31V208a20 20 0 0 0 20 20h44.69a19.86 19.86 0 0 0 14.14-5.86L230.14 98.82a20 20 0 0 0 0-28.28M91 204H52v-39l84-84l39 39Zm101-101l-39-39l18.34-18.34l39 39Z"></path></svg><span class="f-lab">Modifica a&nbsp;mano</span></button></div></div></div></div><script>// Folio ornament generator: every ornament is a tapered calligraphic line, never a stuck-on picture.
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const bez=(p0,p1,p2,p3,t)=>{const u=1-t;return[u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]};
+// sample a chain of cubic segments [[p0,p1,p2,p3],...]
+function sample(segs,n=60){const pts=[];segs.forEach((s,i)=>{for(let k=(i?1:0);k<=n;k++)pts.push(bez(...s,k/n))});return pts}
+function spiral(cx,cy,r0,turns,a0,dir=1,k=0.18,n=140){const pts=[];for(let i=0;i<=n;i++){const th=a0+dir*i/n*turns*2*Math.PI;const r=r0*Math.exp(-k*i/n*turns*2*Math.PI);pts.push([cx+r*Math.cos(th),cy+r*Math.sin(th)])}return pts}
+// width profile: f(t) in 0..1
+const prof={
+ both:(w)=>t=>w*Math.pow(Math.sin(Math.PI*t),0.55)+0.15,
+ out:(w)=>t=>w*Math.pow(1-t,0.8)+0.15,
+ in:(w)=>t=>w*Math.pow(t,0.8)+0.15,
+ flat:(w)=>t=>w};
+function taper(pts,wf){const L=[],R=[];for(let i=0;i<pts.length;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const d=Math.hypot(dx,dy)||1;const nx=-dy/d,ny=dx/d;const w=wf(i/(pts.length-1))/2;L.push([pts[i][0]+nx*w,pts[i][1]+ny*w]);R.push([pts[i][0]-nx*w,pts[i][1]-ny*w])}
+ const all=L.concat(R.reverse());return 'M'+all.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join('L')+'Z'}
+const mir=(pts,cx)=>pts.map(p=>[2*cx-p[0],p[1]]);
+const mirY=(pts,cy)=>pts.map(p=>[p[0],2*cy-p[1]]);
+window.FolioOrn={sample,spiral,taper,prof,mir,mirY,NS};
+// Build an SVG overlay covering a box of size W x H (ornaments may overflow above/below)
+window.FolioOrn.svg=function(W,H,parts,defs=''){
+ return `<svg xmlns="${NS}" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0;overflow:visible;pointer-events:none" shape-rendering="geometricPrecision">${defs}${parts.join('')}</svg>`};
+})();
+;(function(){const O=window.FolioOrn;const {sample,spiral,taper,prof,mir}=O;
+const LINE='#a98250', LINE_HI='#d9b878', SH='#2a1a0c';
+const P=(d,fill=LINE,extra='')=>`<path d="${d}" fill="${fill}" ${extra}/>`;
+const GOLD=`<defs><linearGradient id="gm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2d9a0"/><stop offset=".38" stop-color="#c9a062"/><stop offset=".7" stop-color="#8f6834"/><stop offset="1" stop-color="#5a3c1a"/></linearGradient>
+<filter id="bev" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation=".6" flood-color="#000" flood-opacity=".9"/></filter></defs>`;
+// frame line: rounded rect with an optional gap on the top edge [gx0,gx1]
+function frame(W,H,i,r,gap){const x0=i,y0=i,x1=W-i,y1=H-i;const top=gap?`M${x0+r} ${y0}H${gap[0]}M${gap[1]} ${y0}H${x1-r}`:`M${x0+r} ${y0}H${x1-r}`;
+ return `<path d="${top} Q${x1} ${y0} ${x1} ${y0+r}V${y1-r}Q${x1} ${y1} ${x1-r} ${y1}H${x0+r}Q${x0} ${y1} ${x0} ${y1-r}V${y0+r}Q${x0} ${y0} ${x0+r} ${y0}" fill="none" stroke="${LINE}" stroke-width="1.3"/>`}
+// corner spur: the frame lines overshoot and end in a small leaf (BG3 bottom-left corner)
+function spur(x,y,sx,sy,s=1){const o=10*s;
+ const h=sample([[[x-sx*o,y],[x,y],[x+sx*20*s,y],[x+sx*40*s,y]]]), v=sample([[[x,y-sy*o],[x,y],[x,y+sy*20*s],[x,y+sy*40*s]]]);
+ const arc=sample([[[x+sx*30*s,y],[x+sx*12*s,y+sy*4*s],[x+sx*4*s,y+sy*12*s],[x,y+sy*30*s]]]);
+ const leaf=sample([[[x-sx*3*s,y-sy*3*s],[x+sx*4*s,y+sy*1*s],[x+sx*6*s,y+sy*6*s],[x+sx*14*s,y+sy*14*s]]]);
+ return P(taper(h,t=>t<.2?2.2*t/.2:2.2-t*.9),LINE)+P(taper(v,t=>t<.2?2.2*t/.2:2.2-t*.9),LINE)+P(taper(arc,prof.both(1.6*s)),LINE)+P(taper(leaf,t=>3.2*s*Math.sin(Math.PI*Math.min(1,t*1.1))+.2),LINE_HI)}
+// whiplash corner (Art Nouveau strands, BG3 side panel)
+function whip(x,y,sx,sy,s=1){let out='';[0,7,13].forEach((o,k)=>{const L=(70-k*14)*s;
+ const pts=sample([[[x+sx*(6+o)*s,y+sy*(L+20)*s],[x+sx*(6+o)*s,y+sy*28*s],[x+sx*(14+o)*s,y+sy*(10+o*.4)*s],[x+sx*(L+30)*s,y+sy*(6+o)*s]]]);
+ out+=P(taper(pts,prof.both((1.9-k*.45)*s)),k?LINE:LINE_HI)});return out}
+// shallow arch rising out of the top edge, tapering into the frame line
+function arch(cx,y,w,h,s=1){const L=sample([[[cx-w,y],[cx-w*.55,y],[cx-w*.38,y-h],[cx,y-h]]]),R=mir(L,cx).reverse();
+ const inner=sample([[[cx-w*.78,y+1],[cx-w*.45,y+1],[cx-w*.3,y-h+7],[cx,y-h+7]]]);
+ const curlL=spiral(cx-w-6,y+5,6,0.9,-Math.PI/2,-1,0.25);
+ return P(taper(L.concat(R),t=>2.4*Math.pow(Math.sin(Math.PI*t),0.7)+0.2),LINE_HI)
+  +P(taper(inner.concat(mir(inner,cx).reverse()),t=>1.1*Math.pow(Math.sin(Math.PI*t),0.8)+0.1))
+  +P(taper(curlL,prof.out(1.8)))+P(taper(mir(curlL,cx),prof.out(1.8)))}
+function diamond(cx,cy,w,h){return `<path d="M${cx} ${cy-h}L${cx+w} ${cy}L${cx} ${cy+h}L${cx-w} ${cy}Z" fill="url(#gm)" stroke="${SH}" stroke-width=".8" filter="url(#bev)"/><path d="M${cx} ${cy-h*.45}L${cx+w*.45} ${cy}L${cx} ${cy+h*.45}L${cx-w*.45} ${cy}Z" fill="${SH}" opacity=".55"/>`}
+// d20 emblem in line work (Folio's own mark)
+function d20(cx,cy,r){const p=[...Array(6)].map((_,i)=>[cx+r*Math.cos(Math.PI/6+i*Math.PI/3),cy+r*Math.sin(Math.PI/6+i*Math.PI/3)]);
+ const hex='M'+p.map(q=>q.join(' ')).join('L')+'Z';const tri=`M${cx} ${cy-r*.52}L${cx+r*.48} ${cy+r*.32}L${cx-r*.48} ${cy+r*.32}Z`;
+ return `<path d="${hex}" fill="#1a130d" stroke="url(#gm)" stroke-width="1.6"/><path d="${tri}" fill="none" stroke="url(#gm)" stroke-width="1.2"/><path d="M${p[0][0]} ${p[0][1]}L${cx+r*.48} ${cy+r*.32}M${p[2][0]} ${p[2][1]}L${cx-r*.48} ${cy+r*.32}M${p[4][0]} ${p[4][1]}L${cx} ${cy-r*.52}" stroke="${LINE}" stroke-width=".8"/>`}
+// heavy C-scroll volute (BG3 hotbar frieze), bevelled metal
+function volute(cx,cy,dir,s=1){const sh=`fill="url(#gm)" stroke="${SH}" stroke-width=".9" paint-order="stroke" filter="url(#bev)"`;
+ const ex=cx+dir*96*s;
+ const arm=sample([[[cx,cy],[cx+dir*30*s,cy-2*s],[cx+dir*62*s,cy-12*s],[ex,cy-12*s]]]);
+ const curl=spiral(ex+dir*0*s,cy-1*s,11*s,1.15,-Math.PI/2,dir,0.27);
+ const counter=sample([[[cx+dir*14*s,cy+3*s],[cx+dir*30*s,cy+12*s],[cx+dir*48*s,cy+12*s],[cx+dir*56*s,cy+5*s]]]);
+ const ccurl=spiral(cx+dir*56*s,cy+1*s,4.5*s,1.0,Math.PI/2,-dir,0.3);
+ const leaf=sample([[[cx+dir*38*s,cy-8*s],[cx+dir*46*s,cy-20*s],[cx+dir*58*s,cy-22*s],[cx+dir*70*s,cy-17*s]]]);
+ const tip=sample([[[cx+dir*58*s,cy-22*s],[cx+dir*52*s,cy-26*s],[cx+dir*46*s,cy-25*s],[cx+dir*44*s,cy-21*s]]]);
+ return `<path d="${taper(arm,t=>7.5*s*Math.pow(1-t,0.6)+2.6*s)}" ${sh}/><path d="${taper(curl,prof.out(5.5*s))}" ${sh}/><path d="${taper(counter,prof.both(3.6*s))}" ${sh}/><path d="${taper(ccurl,prof.out(3*s))}" ${sh}/><path d="${taper(leaf,prof.both(3.2*s))}" ${sh}/><path d="${taper(tip,prof.out(2*s))}" ${sh}/>`}
+function hairline(x0,x1,y,w=1.2,c=LINE){return P(taper([[x0,y],[x1,y]].flatMap((p,i,a)=>i?[p]:[p]).length?sample([[[x0,y],[x0+(x1-x0)/3,y],[x0+2*(x1-x0)/3,y],[x1,y]]]):[],prof.both(w)),c)}
+function scurl(x,y,dir,s=1){const r=5.5*s;const c=spiral(x,y-r,r,1.15,Math.PI/2,dir,0.3);return P(taper(c,prof.out(2.4*s)),LINE_HI)}
+
+
+const GQ=`<defs><linearGradient id="gq" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdb07a"/><stop offset=".5" stop-color="#9c7a48"/><stop offset="1" stop-color="#6a4c28"/></linearGradient>
+<filter id="bq" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation=".4" flood-color="#000" flood-opacity=".8"/></filter></defs>`;
+function voluteQ(cx,cy,dir,s){return volute(cx,cy,dir,s).replace(/url\(#gm\)/g,'url(#gq)').replace(/url\(#bev\)/g,'url(#bq)')}
+const HOLY="M17.488 17.883V27.1l31.72 13.17c-4.947 16.663-7.873 34.187-8.507 52.275L17.49 89.443v63.428l28.852-3.917a208 208 0 0 0 17.527 47.068l-46.38 19.193v85.652l77.298-60.297a211.3 211.3 0 0 0 36.154 31.762L17.487 419.047v74.812h79.15l80.544-197.33a208 208 0 0 0 45.746 11.35l-24.914 185.98H299.93L275.055 308.18a208 208 0 0 0 46.29-10.948l79.96 196.63h92.16v-58.548L368.043 273.34a211.3 211.3 0 0 0 35.68-30.682l89.742 69.053V221.18l-57.643-23.737a208.2 208.2 0 0 0 17.95-47.15l39.693 5.292v-68.31l-33.748 4.543a209.2 209.2 0 0 0-8.65-52.09l42.398-17.505v-4.338h-112.22l-42.282 32.527c-4.65-8.143-10.22-15.098-16.805-21.683l8.13-10.845H167.655l7.59 9.758c-6.94 6.73-12.477 14.34-17.346 22.767l-41.744-32.527zm416.22 29.012c4.37 15.116 6.913 31.006 7.392 47.43l-88.584 11.925c.04-1.177 0-2.065 0-3.254c0-7.216-.776-14.88-2.168-21.683zM66.57 47.48l78.856 32.747c-1.546 7.146-2.168 15.16-2.168 22.767c0 1.19-.04 2.075 0 3.254L59.31 95.03a190.5 190.5 0 0 1 7.262-47.55zm82.65 87.5c2.51 7.588 5.67 14.977 9.758 21.684l-77.84 32.21a189.5 189.5 0 0 1-16.204-42.446l84.287-11.448zm197.872 1.086l88.07 11.743a189.8 189.8 0 0 1-16.63 42.514l-81.74-33.658c3.9-6.395 7.833-13.4 10.3-20.6zm-171.852 41.74c5.61 5.437 11.178 10.017 17.89 14.096l-50.806 65.703a191.8 191.8 0 0 1-32.846-28.5l65.762-51.298zm144.203.003l69.49 53.47a191.7 191.7 0 0 1-32.296 27.33l-52.915-68.333c5.71-3.65 10.837-7.81 15.72-12.468zm-37.404 22.768l32.274 79.365a190 190 0 0 1-41.74 9.715L261.44 206.54c6.972-.943 14.133-3.712 20.6-5.962zm-66.138 1.084c6.534 2.07 13.58 4.128 20.6 4.88l-11.096 82.825a189.8 189.8 0 0 1-41.18-10.1z";
+function quiet(W,H,center){const cx=W/2,y=6,parts=[frame(W,H,6,0,[cx-118,cx+118])];
+ parts.push(hairline(cx-118,cx-100,y,1.4,LINE),hairline(cx+100,cx+118,y,1.4,LINE));
+ const g=center?22:8;parts.push(voluteQ(cx-g,y-3,-1,0.82),voluteQ(cx+g,y-3,1,0.82));
+ if(center){parts.push(`<circle cx="${cx}" cy="${y-6}" r="19" fill="#17110c" stroke="url(#gq)" stroke-width="2" filter="url(#bq)"/><circle cx="${cx}" cy="${y-6}" r="15.5" fill="none" stroke="#4a331a" stroke-width="1"/><svg x="${cx-11}" y="${y-17}" width="22" height="22" viewBox="0 0 512 512"><path d="${HOLY}" fill="url(#gq)"/></svg>`)}
+ else parts.push(`<path d="M${cx} ${y-12}L${cx+6} ${y-3}L${cx} ${y+6}L${cx-6} ${y-3}Z" fill="url(#gq)" stroke="${SH}" stroke-width=".8"/>`);
+ [[6,6,1,1],[W-6,6,-1,1],[6,H-6,1,-1],[W-6,H-6,-1,-1]].forEach(a=>parts.push(spur(...a,1)));
+ return O.svg(W,H,parts,GQ)}
+
+
+function plainCorners(W,H,lozenge){const cx=W/2,y=6,parts=[frame(W,H,6,0,lozenge?[cx-14,cx+14]:null)];
+ if(lozenge)parts.push(`<path d="M${cx} ${y-7}L${cx+9} ${y}L${cx} ${y+7}L${cx-9} ${y}Z" fill="none" stroke="${LINE_HI}" stroke-width="1.3"/><path d="M${cx} ${y-3}L${cx+4} ${y}L${cx} ${y+3}L${cx-4} ${y}Z" fill="${LINE_HI}"/>`,hairline(cx-70,cx-16,y,1.6,LINE_HI),hairline(cx+16,cx+70,y,1.6,LINE_HI));
+ [[6,6,1,1],[W-6,6,-1,1],[6,H-6,1,-1],[W-6,H-6,-1,-1]].forEach(a=>parts.push(spur(...a,1.1)));
+ return O.svg(W,H,parts,GOLD)}
+
+window.FolioFriezes={
+ N(W,H){return plainCorners(W,H,false)},
+ L(W,H){return plainCorners(W,H,true)},
+ Q(W,H){return quiet(W,H,false)},
+ K(W,H){return quiet(W,H,true)},
+ // A · light: double fillet with curled terminals and a centre lozenge (BG3 dividers)
+ A(W,H){const cx=W/2,y=6,parts=[frame(W,H,6,0,[cx-230,cx+230])];
+  parts.push(hairline(cx-230,cx-26,y,1.8,LINE_HI),hairline(cx+26,cx+230,y,1.8,LINE_HI),hairline(cx-190,cx-22,y+5,0.9),hairline(cx+22,cx+190,y+5,0.9));
+  parts.push(scurl(cx-236,y+1,-1,1.2),scurl(cx+236,y+1,1,1.2),scurl(cx-20,y+1,1,0.9),scurl(cx+20,y+1,-1,0.9),diamond(cx,y+1,10,15));
+  [[6,6,1,1],[W-6,6,-1,1],[6,H-6,1,-1],[W-6,H-6,-1,-1]].forEach(a=>parts.push(spur(...a,1.1)));
+  return O.svg(W,H,parts,GOLD)},
+ // B · arch: the top line rises into an arch crowned by the d20, whiplash corners (BG3 main windows)
+ B(W,H){const cx=W/2,y=6,parts=[frame(W,H,6,0,[cx-170,cx+170])];
+  parts.push(`<path d="M${cx} 0" />`);
+  parts.push(`<clipPath id="hc"><rect x="6" y="6" width="${W-12}" height="${H-12}" rx="8"/></clipPath><g opacity=".11" clip-path="url(#hc)">${[150,230,320].map(r=>`<circle cx="${cx}" cy="${y-22}" r="${r}" fill="none" stroke="${LINE}" stroke-width="1"/>`).join('')}${[-70,-40,40,70].map(a=>`<line x1="${cx}" y1="${y-22}" x2="${cx+Math.sin(a*Math.PI/180)*600}" y2="${y-22+Math.cos(a*Math.PI/180)*600}" stroke="${LINE}"/>`).join('')}</g>`);
+  parts.push(arch(cx,y,170,34),diamond(cx,y-38,6,10),d20(cx,y-8,16));
+  [[6,6,1,1],[W-6,6,-1,1]].forEach(a=>parts.push(whip(...a,1)));[[6,H-6,1,-1],[W-6,H-6,-1,-1]].forEach(a=>parts.push(spur(...a,1.1)));
+  return O.svg(W,H,parts,GOLD)},
+ // C · volutes: heavy bevelled C-scrolls flank a centre medallion (BG3 hotbar frieze)
+ C(W,H){const cx=W/2,y=6,parts=[frame(W,H,6,0,[cx-150,cx+150])];
+  parts.push(hairline(cx-150,cx-126,y,1.6,LINE_HI),hairline(cx+126,cx+150,y,1.6,LINE_HI));
+  parts.push(volute(cx-26,y-4,-1,1.05),volute(cx+26,y-4,1,1.05));
+  parts.push(`<circle cx="${cx}" cy="${y-8}" r="25" fill="url(#gm)" stroke="${SH}" stroke-width="1" filter="url(#bev)"/><circle cx="${cx}" cy="${y-8}" r="20" fill="#1a130d" stroke="#5a3c1a" stroke-width="1"/>`,d20(cx,y-8,13));
+  [[6,6,1,1],[W-6,6,-1,1],[6,H-6,1,-1],[W-6,H-6,-1,-1]].forEach(a=>parts.push(spur(...a,1.1)));
+  return O.svg(W,H,parts,GOLD)}
+};})();
+;(()=>{window.__FRZ='N';const draw=()=>{document.querySelectorAll('.hero').forEach(h=>{h.querySelectorAll(':scope>.frz').forEach(e=>e.remove());const r=h.getBoundingClientRect();if(!r.width)return;const d=document.createElement('div');d.className='frz';d.setAttribute('aria-hidden','true');d.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:2';d.innerHTML=window.FolioFriezes[window.__FRZ](r.width,r.height);h.appendChild(d)})};
+const go=()=>{draw();const h=document.querySelector('.hero');if(h&&window.ResizeObserver){let w=0,hh=0;new ResizeObserver(es=>{const r=es[0].contentRect;if(Math.abs(r.width-w)>1||Math.abs(r.height-hh)>1){w=r.width;hh=r.height;draw()}}).observe(h)}if(document.fonts)document.fonts.ready.then(draw)};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',go);else go()})();
+;/* a scrolling sheet or popover shows a fade at its bottom edge while there is more below */
+(()=>{const m=()=>document.querySelectorAll('.tabs,.f-tabs,.pills,.boxtabs').forEach(t=>t.classList.toggle(t.classList.contains('f-tabs')?'f-hmore':'hmore',t.scrollWidth>t.clientWidth+4&&t.scrollLeft+t.clientWidth<t.scrollWidth-4));document.querySelectorAll('.bd,.f-bd,.menu').forEach(e=>{const o=getComputedStyle(e).overflowY;e.classList.toggle(e.classList.contains('f-bd')?'f-more':'more',/(auto|scroll)/.test(o)&&e.scrollHeight>e.clientHeight+4&&e.scrollTop+e.clientHeight<e.scrollHeight-4)});window.__more=m;m();addEventListener('resize',m);addEventListener('load',m);document.fonts&&document.fonts.ready.then(m);document.addEventListener('scroll',m,true)})();
+;(()=>{const place=()=>{const a=document.querySelector('[data-anchor]'),p=document.querySelector('[data-pop]');if(!a||!p)return;if(innerWidth<=640){p.style.left='';p.style.top='';return}const r=a.getBoundingClientRect();const w=p.offsetWidth;let x=r.left+scrollX+(+p.dataset.dx||0);x=Math.max(16,Math.min(x,innerWidth-w-16));p.style.left=x+'px';p.style.top=(r.bottom+scrollY+12)+'px';{const bd=p.querySelector('.f-bd')||p;bd.style.maxHeight='';bd.style.overflowY='';const h=p.offsetHeight,below=innerHeight-r.bottom-28,above=r.top-28-64;p.classList.remove('f-up');if(h>below&&r.top-80>=h){p.style.top=(r.top+scrollY-12-h)+'px';p.classList.add('f-up')}else if(h>below){const extra=h-bd.offsetHeight;bd.style.maxHeight=Math.max(240,below-extra)+'px';bd.style.overflowY='auto';bd.style.overflowX='hidden'}window.__more&&window.__more()}p.style.setProperty('--ax',Math.max(16,Math.min(w-32,r.left+r.width/2-x-7))+'px')};place();addEventListener('resize',place);document.fonts&&document.fonts.ready.then(place)})();</script></body></html>
