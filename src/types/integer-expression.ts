@@ -47,6 +47,18 @@ const INTEGER_EXPRESSION_SCHEMA_DEFINITION = discriminatedUnionSchema("kind", {
     kind: literalSchema("max"),
     values: arraySchema(INTEGER_EXPRESSION_REF, 1),
   }),
+  /** A step lookup: the last row whose `atLeast` the input reaches (rows strictly increasing). */
+  table: objectSchema(
+    {
+      input: INTEGER_EXPRESSION_REF,
+      kind: literalSchema("table"),
+      rows: arraySchema(
+        objectSchema({ atLeast: SIGNED_INTEGER_SCHEMA, value: INTEGER_EXPRESSION_REF }),
+        1
+      ),
+    },
+    { below: INTEGER_EXPRESSION_REF }
+  ),
 });
 
 type IntegerExpressionSchemaShape = InferExactSchema<
@@ -56,7 +68,7 @@ type IntegerExpressionSchemaShape = InferExactSchema<
 >;
 type IntegerExpressionLeaf = Exclude<
   IntegerExpressionSchemaShape,
-  { readonly kind: "add" | "multiply" | "divide" | "min" | "max" }
+  { readonly kind: "add" | "multiply" | "divide" | "min" | "max" | "table" }
 >;
 
 /** Closed recursive output of {@link INTEGER_EXPRESSION_SCHEMA}. */
@@ -83,7 +95,18 @@ export type IntegerExpression =
   | {
       readonly kind: "max";
       readonly values: readonly [IntegerExpression, ...IntegerExpression[]];
+    }
+  | {
+      readonly kind: "table";
+      readonly input: IntegerExpression;
+      readonly rows: readonly [IntegerExpressionTableRow, ...IntegerExpressionTableRow[]];
+      readonly below?: IntegerExpression;
     };
+
+export interface IntegerExpressionTableRow {
+  readonly atLeast: number;
+  readonly value: IntegerExpression;
+}
 
 /** Values supplied by a planner; the arithmetic layer owns no domain vocabulary. */
 export type IntegerBindings = Readonly<Record<string, number>>;
