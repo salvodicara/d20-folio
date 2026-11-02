@@ -3,11 +3,9 @@
  * docs/architecture/2026-11-simplify-core.md). Pins, through the real provider, the one
  * property the sealed `commitUse` must keep for every kind of use: the use changes the
  * sheet and the turn; one undo puts both back exactly as they were; one redo replays it.
- * Ids and clocks of replayed log lines may differ. Today's undo also leaves harmless
- * traces, normalized here and gone once the undo is one whole-state seal: a restored
- * inventory row gains an `instanceId`; an undone tracker or slot spend leaves
- * `{ used: 0 }`; an empty map or list appears or vanishes (`effectTimers: {}`,
- * `activeFeatures: []`). All of these read the same as absent.
+ * Ids and clocks a replay mints again may differ (a redo's log line, the inventory row a
+ * redo splits off); everything else may not. Since each use is one causal seal (item 4,
+ * step 3), undo restores the sheet and the turn exactly.
  */
 import { act, render } from "@testing-library/react";
 import { useEffect } from "react";
@@ -128,27 +126,6 @@ function action(id: string): ResolvedAction {
   return found;
 }
 
-/** An empty map or an undefined field reads the same as an absent one. */
-function withoutEmpty(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(withoutEmpty);
-  if (typeof value !== "object" || value === null) return value;
-  const kept = Object.entries(value)
-    .map(([key, inner]) => [key, withoutEmpty(inner)] as const)
-    .filter(
-      ([, inner]) =>
-        inner !== undefined &&
-        !(Array.isArray(inner) && inner.length === 0) &&
-        !(
-          typeof inner === "object" &&
-          inner !== null &&
-          !Array.isArray(inner) &&
-          (Object.keys(inner).length === 0 ||
-            (Object.keys(inner).length === 1 && (inner as { used?: unknown }).used === 0))
-        )
-    );
-  return Object.fromEntries(kept);
-}
-
 /** The sheet and the turn, with the replay-specific ids and clocks taken out. */
 function state(): unknown {
   const doc = structuredClone(useCharacterStore.getState().character);
@@ -162,7 +139,7 @@ function state(): unknown {
   const turn = Object.fromEntries(
     Object.entries(useCombatStore.getState()).filter(([, v]) => typeof v !== "function")
   );
-  return { doc: withoutEmpty(doc), turn: withoutEmpty(structuredClone(turn)) };
+  return { doc, turn: structuredClone(turn) };
 }
 
 async function settle(run: () => void): Promise<void> {
