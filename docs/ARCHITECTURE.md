@@ -32,8 +32,8 @@ Vitest (unit) + Playwright (E2E)
 ESLint zero-warnings · Prettier · pre-commit hook · CI on every PR
 ```
 
-CI (`ci.yml`) runs **typecheck + lint zero-warnings + the unit suite + coverage floors +
-production build + budget + rules** on every pull request. Never `--no-verify`.
+CI and Verify are authoritative; local hooks only format and check the changeset. CI (`ci.yml`) runs **typecheck + lint zero-warnings + the unit
+suite + production build + budget + rules** on every pull request. Never `--no-verify`.
 
 ---
 
@@ -196,10 +196,8 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   i18n-completeness locks hold in BOTH modes; the build-time leak-lock + parity checks cover the
   pack shards whenever the pack is enabled (`scripts/i18n/catalogue-io.ts`).
 - **Tests** — `content-pack/tests/unit/**` joins the same fast/slow vitest lanes ONLY in pack mode
-  (`PACK_JSDOM_TS_TESTS` in `tests/lanes.ts` mirrors the DOM-bound rule). The full gate (coverage
-  floors included) runs in pack mode; the SRD-only lane is
-  `pnpm typecheck:srd-only && pnpm test:srd-only && pnpm build:srd-only` (`just ci-srd-only`) — no
-  coverage floors, no pack suites. Suites in `tests/unit` must pass in both modes by construction
+  (`PACK_JSDOM_TS_TESTS` in `tests/lanes.ts` mirrors the DOM-bound rule). The composed gate runs in Verify; the SRD-only lane is
+  `pnpm typecheck:srd-only && pnpm test:srd-only && pnpm build:srd-only` (`just ci-srd-only`) — no pack suites. Suites in `tests/unit` must pass in both modes by construction
   (they iterate whatever the aggregates expose; bare pack ID slugs in allowlists are permitted).
 - **Composition is a symlink; nothing assumes physical nesting.** The maintainer composes the pack
   as a gitignored symlink to a sibling checkout of the private repo
@@ -1685,8 +1683,8 @@ _now_; lock 6 additionally makes a future leak impossible to ship.
 | `character-codec.test.ts` + team fixtures     | the `{schema,build,state}` round-trip + the 6 team fixtures render identically (canonical v3)                               |
 
 The fast/slow test lanes + table-driven per-entity consolidation are documented in
-`docs/CONTRIBUTING.md` (the gate split + smart test integration); coverage gates are ≥80% lines/
-stmts/fns, ≥75% branches.
+`docs/CONTRIBUTING.md` (the gate split + smart test integration). There is no coverage floor
+(owner, docs/GOLDEN_RULES.md: the test that pins the fact counts, not a percentage).
 
 ---
 
