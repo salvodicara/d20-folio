@@ -21,7 +21,7 @@ export function spellDurationRounds(duration: SpellDuration): number | null {
 }
 
 /** The `effectTimers` key of the held Concentration's own countdown. */
-export const CONCENTRATION_TIMER_PREFIX = "concentration:";
+const CONCENTRATION_TIMER_PREFIX = "concentration:";
 
 export function concentrationTimerKey(ref: string): string {
   return `${CONCENTRATION_TIMER_PREFIX}${ref}`;

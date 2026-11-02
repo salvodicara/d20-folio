@@ -184,7 +184,7 @@ export const HOMEBREW_ITEM_FIELD_SCHEMAS: {
  * `mechanics.mastery`). Typed over every key of `HomebrewWeaponFacts`, so a new one
  * fails the type check until it is classified here.
  */
-export const HOMEBREW_WEAPON_FIELD_SCHEMAS: {
+const HOMEBREW_WEAPON_FIELD_SCHEMAS: {
   readonly [Key in keyof Required<HomebrewWeaponFacts>]: ExactSchema;
 } = {
   mastery: literals(ALL_WEAPON_MASTERIES),

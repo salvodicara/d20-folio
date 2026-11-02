@@ -1022,10 +1022,11 @@ export function setPlayLogSink(sink: PlayLogSink | null): void {
 }
 
 /**
- * Shadow mode for the play log (phase 3a step 2, docs/architecture/play-log.md): in
- * development only, every dispatched sheet event is recorded in the character's
- * shadow log and checked for parity with the live character. It changes nothing the
- * player sees; a mismatch is a console warning to investigate.
+ * The play log behind `dispatch` (docs/architecture/play-log.md, phase 3a): every
+ * dispatched sheet event is recorded in the character's log and checked for parity
+ * with the live character, so an undo goes through the log and takes back only that
+ * event (owner 2026-11-02: on in production too). A mismatch is a development
+ * warning; the undo then falls back to the sheet before the event.
  */
 const playLogShadows = new Map<string, PlayLogShadow>();
 
@@ -1034,21 +1035,21 @@ function shadowRecord(
   event: SheetEvent,
   after: CharacterDoc
 ): string | null {
-  if (!import.meta.env.DEV) return null;
   let shadow = playLogShadows.get(before.id);
   if (!shadow) {
     shadow = createPlayLogShadow("owner");
     playLogShadows.set(before.id, shadow);
   }
   const { id, parity } = shadow.record(before, event, after);
-  if (!parity) console.warn(`[play-log shadow] parity mismatch after ${event.kind}`);
+  if (!parity && import.meta.env.DEV)
+    console.warn(`[play-log shadow] parity mismatch after ${event.kind}`);
   return id;
 }
 
 function shadowUndo(restored: CharacterDoc, shadowId: string | null): void {
   if (!shadowId) return;
   const shadow = playLogShadows.get(restored.id);
-  if (shadow && !shadow.undo(shadowId, restored).parity)
+  if (shadow && !shadow.undo(shadowId, restored).parity && import.meta.env.DEV)
     console.warn("[play-log shadow] parity mismatch after an undo");
 }
 
@@ -1238,9 +1239,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character: doc,
       error: null,
       readonly: false,
-      combatActiveEffects: [],
-      combatLegacyActiveEffects: [],
-      combatPendingConcentrationSaves: [],
+      // An edit of the open sheet (coins, a prepared spell) keeps what the fight
+      // holds: its standing effects and a Concentration save still to roll. Only a
+      // load of another sheet, or closing it, starts them empty.
+      ...(editing
+        ? {}
+        : {
+            combatActiveEffects: [],
+            combatLegacyActiveEffects: [],
+            combatPendingConcentrationSaves: [],
+          }),
     });
     // An edit (not a load) may have stopped an item being held.
     if (editing) endUnheldItemStates(get);

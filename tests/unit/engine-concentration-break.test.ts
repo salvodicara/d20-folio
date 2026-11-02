@@ -34,16 +34,18 @@ import {
   boundaryCommitFacts,
   characterMaterialRef,
   characterSelfRef,
-  characterSlotDefinitionFacts,
-  characterSpellCapability,
   characterWorldState,
   commitCharacterAction,
   engineConcentrationHandle,
   mechanicsAuthorityDefinition,
   persistedWorldUid,
   planEngineConcentrationEnd,
-  type CharacterCastCapability,
 } from "@/lib/mechanics-world-store";
+import {
+  characterSlotDefinitionFacts,
+  characterSpellCapability,
+  type CharacterCastCapability,
+} from "./__helpers__/engine-spell-cast";
 import { worldStandingActiveKeys } from "@/lib/world-standing-grants";
 import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";

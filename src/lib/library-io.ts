@@ -92,7 +92,7 @@ export async function writeLibrary(
  * debounce: the sheet-side custom EDIT seams fire per keystroke / per stepper tap, and
  * each write rewrites the WHOLE library doc — one flush per edit BURST, not per key.
  */
-export const LIBRARY_WRITE_DEBOUNCE_MS = 2000;
+const LIBRARY_WRITE_DEBOUNCE_MS = 2000;
 
 /**
  * A DEBOUNCED library writer for one uid: `persist` records the latest list and arms

@@ -46,7 +46,7 @@ import {
  * Each rule's fixed priority. A bonus-action step gets {@link BONUS_SLOT_BONUS}
  * on top (it keeps the action free); a player pin adds `PIN_BONUS`.
  */
-export const RULE_PRIORITY: Readonly<Record<PlaybookRuleId, number>> = {
+const RULE_PRIORITY: Readonly<Record<PlaybookRuleId, number>> = {
   "heal-ally-down": 900,
   "self-heal-bloodied": 800,
   "area-when-grouped": 700,
@@ -68,7 +68,7 @@ export const RULE_PRIORITY: Readonly<Record<PlaybookRuleId, number>> = {
   "utility-cantrip": 400,
   "short-rest-recovery": 300,
 };
-export const BONUS_SLOT_BONUS = 50;
+const BONUS_SLOT_BONUS = 50;
 
 /** The smallest group one area spell is worth a slot for. */
 const AREA_MIN_ENEMIES = 3;
