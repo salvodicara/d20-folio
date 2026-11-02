@@ -9,15 +9,26 @@ import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { db } from "@/lib/firebase";
 import { createMemorySessionLogStore, type SessionLogStore } from "@/lib/session-log";
 import { createFirestoreSessionLogStore } from "@/lib/session-log-io";
+import { makeDevEvening } from "@/features/campaigns/dev-fixture";
+
+/** Dev bypass: an in-memory log, holding the opt-in played evening when it is asked for. */
+function devStore(): SessionLogStore {
+  const store = createMemorySessionLogStore();
+  // `import.meta.env.DEV` is a literal false in a production build, so this branch and
+  // the fixture it reads are dropped from the bundle (checked against the built JS).
+  if (import.meta.env.DEV) {
+    const evening = makeDevEvening();
+    if (evening) for (const item of evening.items) void store.append(evening.day, item);
+  }
+  return store;
+}
 
 const stores = new Map<string, SessionLogStore>();
 
 export function sessionLogStoreFor(campaignId: string): SessionLogStore {
   let store = stores.get(campaignId);
   if (!store) {
-    store = DEV_BYPASS_AUTH
-      ? createMemorySessionLogStore()
-      : createFirestoreSessionLogStore(db, campaignId);
+    store = DEV_BYPASS_AUTH ? devStore() : createFirestoreSessionLogStore(db, campaignId);
     stores.set(campaignId, store);
   }
   return store;

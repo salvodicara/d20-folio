@@ -13,4 +13,5 @@ export { ICON_NAMES, type IconName } from "./icon-names";
 export { Panel, PanelHeader, type PanelColor } from "./Panel";
 export { Room, type RoomName } from "./Room";
 export { Tabs } from "./Tabs";
+export { TextArea } from "./TextArea";
 export { Toast } from "./Toast";

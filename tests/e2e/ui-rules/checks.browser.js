@@ -546,7 +546,8 @@ window.__audit = (opts) => {
       if (
         !p ||
         !n.textContent.trim() ||
-        p.closest("svg,script,style,.frz,[aria-hidden=true],.sr,.f-sr")
+        // Text a player wrote is shown as stored: its line breaks are theirs, not our copy.
+        p.closest("svg,script,style,.frz,[aria-hidden=true],.sr,.f-sr,[data-user-text]")
       )
         continue;
       while (p && inl(p) && p.parentElement) p = p.parentElement;

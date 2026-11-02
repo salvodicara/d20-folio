@@ -25,6 +25,7 @@ import type {
   PendingTurn,
 } from "@/features/campaigns/global-combat-context";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
+import type { LogItem, PlayEvent } from "@/lib/session-log";
 import { asRaceId } from "@/data/srd-names";
 
 /** The id `makeDevCampaign` seeds by default (also a sample invite code). */
@@ -42,10 +43,9 @@ function devEmpty(): boolean {
   return window.localStorage.getItem("d20-dev-empty") === "1";
 }
 
-/** A dev-only hero portrait (figure-on-gradient SVG data URI) so the party shows the
- *  Owner-7 character-portrait path in bypass — distinct from the tinted-initial. */
-const DEV_HERO_PORTRAIT =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231f5a4f'/%3E%3Cstop offset='1' stop-color='%23a8d8b0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23h)'/%3E%3Ccircle cx='32' cy='24' r='11' fill='%23fff' opacity='0.9'/%3E%3Cpath d='M13 57c0-11 8-19 19-19s19 8 19 19z' fill='%23fff' opacity='0.9'/%3E%3C/svg%3E";
+/** A dev-only painted hero portrait: the approved prototype's own (in docs/, which the dev
+ *  server serves; nothing ships with the build), so the party shows a real portrait. */
+const DEV_HERO_PORTRAIT = "/docs/design/prototype/img/portrait-selene.webp";
 
 /**
  * Dev-bypass sessions (D28) — newest first, with a populated summary on the latest
@@ -389,6 +389,8 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
     // "Active" lines read naturally in dev + the visual suite, staying deterministic.
     createdAt: new Date("2026-03-14T18:00:00Z"),
     updatedAt: new Date("2026-05-02T22:30:00Z"),
+    // Thursday evening, so the campaign header reads like a real table's.
+    nextSessionAt: new Date("2026-11-06T20:00:00Z").getTime(),
     createdBy: "mock-uid",
     dmUid: "mock-uid",
     members: ["mock-uid", "member-mara", "member-bren"],
@@ -397,7 +399,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
       // B32 — a realistic display name, never the raw English "You" (which leaked
       // untranslated Italian-locale text via `campaignHub.narratedBy`).
       "mock-uid": {
-        displayName: "GM",
+        displayName: "Ottavio",
         characterId: null,
         role: "dm",
       },
@@ -1251,5 +1253,61 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
     initiativeBonus: 2,
     initiativeRoll: 15,
     round,
+  };
+}
+
+/** A played evening in the dev campaign's session log, on its newest session's day, so
+ *  the Diario's automatic report has something to show. Opt-in (`d20-dev-evening`), so
+ *  the specs that expect an empty log keep it. */
+export function makeDevEvening(): { day: string; items: LogItem[] } | null {
+  if (
+    typeof window === "undefined" ||
+    window.localStorage.getItem("d20-dev-evening") !== "1"
+  )
+    return null;
+  const at = (h: number, m: number) => new Date(2026, 4, 2, h, m).getTime();
+  const mara = "pc-member-mara";
+  const bren = "pc-member-bren";
+  const fight = "dev-fight-raiders";
+  let n = 0;
+  const item = (time: number, event: PlayEvent): LogItem => {
+    n += 1;
+    return { id: `dev-evening-${n}`, by: "mock-uid", at: time, type: "event", event };
+  };
+  return {
+    day: "2026-05-02",
+    items: [
+      item(at(21, 5), {
+        kind: "note",
+        text: "Orin asks us to find the stolen hammer in the Glass Crypt.",
+        actor: mara,
+      }),
+      item(at(21, 12), { kind: "time-passes", minutes: 10, actor: bren }),
+      item(at(21, 40), {
+        kind: "encounter-start",
+        encounterId: fight,
+        names: { "m-1": "Ash Raider 1", "m-2": "Ash Raider 2", "m-3": "Raider Chief" },
+      }),
+      item(at(21, 40), { kind: "round-start", round: 1 }),
+      item(at(21, 41), { kind: "damage", target: mara, amount: 9 }),
+      item(at(21, 43), { kind: "round-start", round: 2 }),
+      item(at(21, 44), { kind: "damage", actor: bren, target: "m-1", amount: 11 }),
+      item(at(21, 44), { kind: "down", target: "m-1" }),
+      item(at(21, 47), { kind: "round-start", round: 3 }),
+      item(at(21, 48), {
+        kind: "note",
+        text: "“Leave the hammer, it is cursed,” the chief shouts as it flees.",
+        actor: mara,
+      }),
+      item(at(21, 49), { kind: "encounter-end", encounterId: fight, outcome: "victory" }),
+      item(at(22, 30), { kind: "rest", rest: "short", actor: mara }),
+      item(at(22, 30), { kind: "rest", rest: "short", actor: bren }),
+      item(at(22, 31), { kind: "heal", target: mara, amount: 7 }),
+      item(at(22, 40), {
+        kind: "note",
+        text: "We head down into the crypt at dawn.",
+        actor: bren,
+      }),
+    ],
   };
 }
