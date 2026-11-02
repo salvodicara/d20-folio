@@ -8,15 +8,17 @@ import { describe, expect, it } from "vitest";
 
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { buildDevScenario } from "@/lib/dev-scenarios";
-import { resolveActions } from "@/lib/smart-tracker";
 import {
   actionCtaView,
   type ActionConditions,
   type ActionTurnState,
 } from "@/lib/views/action-cta-view";
+import { localizeActions } from "@/lib/views/combat-action-view";
 
-const doc = buildDevScenario("twf-extra-attack");
-const actions = resolveActions(doc);
+const scenario = buildDevScenario("twf-extra-attack");
+if (!scenario) throw new Error("dev scenario twf-extra-attack is missing");
+const doc = scenario;
+const actions = localizeActions(doc, "en");
 const NO_CONDITIONS: ActionConditions = {
   list: [],
   effects: resolveConditionEffects([]),
