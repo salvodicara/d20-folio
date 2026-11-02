@@ -56,20 +56,38 @@ function isKeyed(value: unknown): value is Keyed {
   return true;
 }
 
-/** JSON with sorted keys and undefined fields dropped: equal values read the same. */
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+/**
+ * An absent field, an empty list and an empty map mean the same on the sheet: its save
+ * drops empty values, so a field a commit created as `[]` can come back absent. They
+ * count as absent everywhere here, or the undo would see the save as someone's change.
+ */
+function isEmpty(value: unknown): boolean {
+  if (value === undefined || value === null) return value === undefined;
+  if (Array.isArray(value)) return value.length === 0;
+  return isPlain(value) && Object.values(value).every(isEmpty);
+}
+
+/** JSON with sorted keys and absent fields dropped (and empty ones, when they count as absent). */
+function canonical(value: unknown, emptyIsAbsent: boolean): string {
+  if (Array.isArray(value))
+    return `[${value.map((inner) => canonical(inner, emptyIsAbsent)).join(",")}]`;
   if (isPlain(value)) {
     const entries = Object.entries(value)
-      .filter(([, inner]) => inner !== undefined)
+      .filter(([, inner]) => (emptyIsAbsent ? !isEmpty(inner) : inner !== undefined))
       .sort(([a], [b]) => (a < b ? -1 : 1));
-    return `{${entries.map(([key, inner]) => `${JSON.stringify(key)}:${canonical(inner)}`).join(",")}}`;
+    return `{${entries
+      .map(([key, inner]) => `${JSON.stringify(key)}:${canonical(inner, emptyIsAbsent)}`)
+      .join(",")}}`;
   }
   return value === undefined ? "undefined" : JSON.stringify(value);
 }
 
+/** The same fact (empty = absent): what a conflict check compares. */
 const same = (left: unknown, right: unknown): boolean =>
-  canonical(left) === canonical(right);
+  canonical(left, true) === canonical(right, true);
+/** The same shape: what a recorded change keeps, so undo restores it exactly. */
+const identical = (left: unknown, right: unknown): boolean =>
+  canonical(left, false) === canonical(right, false);
 
 /** Every change from `before` to `after`, outermost first. */
 export function causalPatch(before: unknown, after: unknown): CausalPatch {
@@ -86,7 +104,7 @@ function diff(
   path: Path,
   out: PatchChange[]
 ): void {
-  if (hadBefore === hasAfter && (before === after || same(before, after))) return;
+  if (hadBefore === hasAfter && (before === after || identical(before, after))) return;
   if (hadBefore && hasAfter && isPlain(before) && isPlain(after)) {
     const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
     for (const key of keys) {
@@ -140,8 +158,8 @@ function diffList(
   path: Path,
   out: PatchChange[]
 ): void {
-  const b = before.map(canonical);
-  const a = after.map(canonical);
+  const b = before.map((item) => canonical(item, false));
+  const a = after.map((item) => canonical(item, false));
   // run(i, j): the longest common run of b[i..] and a[j..], in one flat table.
   const width = a.length + 1;
   const table = new Array<number>((b.length + 1) * width).fill(0);
@@ -226,10 +244,12 @@ function undoOne(root: Plain, change: PatchChange): boolean {
     if (!at) return false;
     const { parent, step } = at;
     if (typeof step !== "string" || !isPlain(parent)) return false;
+    // Compared as facts (empty = absent); restored exactly as it was, an empty list
+    // included, since code reads a required list without a guard.
     const now = parent[step];
-    const present = now !== undefined;
-    if (present !== change.hasAfter || (present && !same(now, change.after)))
-      return false;
+    const present = !isEmpty(now);
+    const expected = change.hasAfter && !isEmpty(change.after);
+    if (present !== expected || (present && !same(now, change.after))) return false;
     if (change.hadBefore) parent[step] = structuredClone(change.before);
     else Reflect.deleteProperty(parent, step);
     return true;

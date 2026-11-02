@@ -144,3 +144,27 @@ describe("a list without ids (the inventory, the active-state chips)", () => {
     ).toBeNull();
   });
 });
+
+describe("an empty list or map reads the same as an absent one (the save drops them)", () => {
+  it("a use that created an empty field still undoes after the save dropped it", () => {
+    // combat.spec.ts:223: the cast leaves `activeFeatures: []`; the sheet's save drops
+    // the empty list; the undo must still put the first Concentration spell back.
+    const before = { session: { concentration: "hypnotic-pattern" } } as Record<
+      string,
+      unknown
+    >;
+    const after = { session: { concentration: "bane", activeFeatures: [] } };
+    const patch = causalPatch(before, after);
+    const saved = { session: { concentration: "bane" } };
+    expect(undoPatch(saved, patch)).toEqual(before);
+  });
+
+  it("the undo restores the exact old shape, whether or not the save dropped the empty field", () => {
+    const before = { tags: [] as string[] };
+    const patch = causalPatch(before, {});
+    expect(undoPatch({}, patch)).toEqual(before);
+    const created = causalPatch({}, { tags: [] as string[] });
+    expect(undoPatch({ tags: [] }, created)).toEqual({});
+    expect(undoPatch({}, created)).toEqual({});
+  });
+});
