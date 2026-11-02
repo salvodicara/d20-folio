@@ -43,8 +43,6 @@ gha-creds-*.json
 .env.test.local
 .env.production.local
 
-# Testing
-coverage
 
 # Playwright e2e output (reports + per-run artifacts; snapshots ARE committed)
 playwright-report

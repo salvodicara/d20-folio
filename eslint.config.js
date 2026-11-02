@@ -16,7 +16,6 @@ export default tseslint.config(
       // Type-checked against the BUILT declarations by `pnpm core:build`; before a
       // build (CI's lint job) the package types do not exist yet.
       "packages/*/smoke",
-      "coverage",
       ".claude",
     ],
   },

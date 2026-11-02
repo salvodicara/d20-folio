@@ -1,7 +1,6 @@
 # Contributing
 
-> Day-to-day workflow for humans and AI agents. The pre-commit hook and CI enforce
-> almost everything below — they're not friction, they're the contract.
+> Day-to-day workflow for humans and AI agents. CI and Verify are authoritative; local hooks only format and check the changeset.
 
 ---
 
@@ -38,12 +37,12 @@ let checks slow development or deployment**. The repo is public, so GitHub Actio
 free — the heavy lanes run REMOTELY on every merge, off the local critical path. Every check still
 runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twice on one path.
 
-| Lane                       | What it runs                                                                                                                                                                           | Cost               | Where                                      |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------ |
-| **pre-commit**             | doc-guard + `lint-staged` + fast unit lane                                                                                                                                             | ~5 s               | `.githooks/pre-commit`                     |
-| **per PR — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit + coverage floors ∥ build + budget ∥ rules (emulator) as **parallel jobs**, every PR + every push to `main` | ~4 min wall, free  | `.github/workflows/ci.yml`                 |
-| **per merge — Verify**     | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners + the offline proof, every push to `main`                                | ~10 min wall, free | `.github/workflows/verify.yml`             |
-| **deploy** (owner-fired)   | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates                                                 | ~10–15 min         | `deploy.yml` (`just deploy` dispatches it) |
+| Lane                       | What it runs                                                                                                                                                         | Cost               | Where                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------ |
+| **pre-commit**             | doc-guard + `lint-staged` (format)                                                                                                                                   | ~5 s               | `.githooks/pre-commit`                     |
+| **per PR — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit ∥ build + budget ∥ rules (emulator) as **parallel jobs**, every PR + every push to `main` | ~4 min wall, free  | `.github/workflows/ci.yml`                 |
+| **per merge — Verify**     | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners + the offline proof, every push to `main`              | ~10 min wall, free | `.github/workflows/verify.yml`             |
+| **deploy** (owner-fired)   | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates                               | ~10–15 min         | `deploy.yml` (`just deploy` dispatches it) |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -204,11 +203,10 @@ and `VITE_CONTENT_PACK` ≠ `0`. Two lanes exist:
   contributor, this is your (only) mode — nothing to opt into. A tree that
   CONTAINS the pack can force this lane with `just ci-srd-only`
   (= `pnpm typecheck:srd-only` + `pnpm test:srd-only` + `pnpm build:srd-only`,
-  which pin `VITE_CONTENT_PACK=0`). No pack suites, no coverage floors.
+  which pin `VITE_CONTENT_PACK=0`). No pack suites.
 - **Pack mode** — the maintainer's composition (the default wherever
-  `content-pack/` exists): the full catalogue; the authoritative gate
-  (`just ci`: typecheck ∥ lint ∥ app tests ∥ Functions tests ∥ build) runs in this mode, and the
-  pack's own suites
+  `content-pack/` exists): the full catalogue; Verify runs the composed gate, `just ci`
+  (typecheck ∥ lint ∥ app tests ∥ Functions tests ∥ build) runs it locally, and the pack's own suites
   (`content-pack/tests/unit/**`) join the same fast/slow vitest lanes.
 
 Every suite in `tests/unit` must pass in BOTH modes.
