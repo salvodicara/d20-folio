@@ -25,11 +25,13 @@ export function Button({
       className={wide ? "f-btn f-wide" : "f-btn"}
       data-kind={kind}
       aria-disabled={disabled || undefined}
+      // an icon button keeps its name when a narrow screen hides the label
+      aria-label={icon && typeof children === "string" ? children : undefined}
       {...rest}
       onClick={disabled ? undefined : onClick}
     >
       {icon && <Icon name={icon} />}
-      {children}
+      {icon ? <span className="f-btn-lab">{children}</span> : children}
     </button>
   );
 }

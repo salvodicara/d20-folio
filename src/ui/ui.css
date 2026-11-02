@@ -789,3 +789,15 @@
   font: 600 20px var(--font-title);
   color: var(--strong);
 }
+
+/* On a narrow phone a panel header keeps its title on one line: its icon action shows only the icon
+   (its aria-label keeps the name). */
+@media (max-width: 400px) {
+  .fui .f-pnh .f-btn[aria-label]:has(.f-ic) {
+    min-width: 40px;
+    padding: 0 8px;
+  }
+  .fui .f-pnh .f-btn[aria-label]:has(.f-ic) .f-btn-lab {
+    display: none;
+  }
+}
