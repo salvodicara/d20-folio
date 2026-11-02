@@ -16,6 +16,7 @@ import {
   orderBy,
   query,
   runTransaction,
+  where,
   writeBatch,
   type DocumentReference,
 } from "firebase/firestore";
@@ -305,4 +306,28 @@ export async function collectPickups(
     }
   }
   return collected;
+}
+
+/** Follow the pickups waiting for `uid` (the sheet collects them as they arrive). */
+export function subscribeToMyPickups(
+  campaignId: string,
+  uid: string,
+  callback: (pickups: Pickup[]) => void,
+  onError?: (error: Error) => void
+): () => void {
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    const emit = () =>
+      callback(devList<Pickup>(campaignId, "pickups").filter((p) => p.ownerUid === uid));
+    devListeners.add(emit);
+    emit();
+    return () => devListeners.delete(emit);
+  }
+  return onSnapshot(
+    query(
+      collection(db, "campaigns", campaignId, "pickups"),
+      where("ownerUid", "==", uid)
+    ),
+    (snap) => callback(snap.docs.map((d) => d.data() as Pickup)),
+    (error) => onError?.(error)
+  );
 }

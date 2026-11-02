@@ -77,7 +77,10 @@
     "coinAmount": {
       "gp": "{{amount}} gp",
       "sp": "{{amount}} sp",
-      "cp": "{{amount}} cp"
-    }
+      "cp": "{{amount}} cp",
+      "pp": "{{amount}} pp",
+      "ep": "{{amount}} ep"
+    },
+    "fromChest": "From the party chest: {{what}}"
   }
 }

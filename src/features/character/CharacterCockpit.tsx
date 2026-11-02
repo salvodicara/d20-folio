@@ -55,6 +55,7 @@ import { ItemResourceCommandProvider } from "./center/ItemResourceCommandProvide
 import { LeftHud } from "./hud/LeftHud";
 import { RightHud } from "./hud/RightHud";
 import { useSessionLogPlayerRecorder } from "./useSessionLogPlayerRecorder";
+import { useCollectPickups } from "@/features/character/useCollectPickups";
 
 export function CharacterCockpit() {
   const { characterId } = useParams<{ characterId: string }>();
@@ -63,6 +64,7 @@ export function CharacterCockpit() {
   // subscription — never a fork.
   useCharacterSubscription(characterId);
   useSessionLogPlayerRecorder(characterId);
+  useCollectPickups(characterId);
   useBestiaryWarmup();
   return <CockpitView />;
 }

@@ -248,3 +248,21 @@ export function moveStillCurrent(
     })
   );
 }
+
+/** What a pickup puts on its owner's sheet: coins, and an item for the bag. */
+export function pickupForSheet(pickup: Pickup): {
+  coins: CoinPurse | null;
+  item:
+    | { srdId: string; quantity: number }
+    | { custom: true; name: string; quantity: number }
+    | null;
+} {
+  const coins = pickup.coins ? cleanPurse(pickup.coins) : {};
+  const quantity = Math.max(1, Math.floor(pickup.quantity ?? 1));
+  const item = pickup.item
+    ? "srdId" in pickup.item
+      ? { srdId: pickup.item.srdId, quantity }
+      : { custom: true as const, name: pickup.item.name, quantity }
+    : null;
+  return { coins: hasCoins(coins) ? coins : null, item };
+}
