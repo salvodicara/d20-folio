@@ -13,7 +13,6 @@
 import type { TFunction } from "i18next";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { VerdictOutcome } from "@/components/shared/UniversalCard";
-import type { GatedSlot } from "@/lib/condition-effects";
 import { chipText } from "@/lib/views/combat-action-view";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { formatModifier } from "@/lib/utils";
@@ -178,102 +177,12 @@ export function combatVerdict(
   return "";
 }
 
-/**
- * Why a card's CTA is unavailable RIGHT NOW (B2 — the BG3 at-a-glance can/cannot),
- * as a discriminated reason BEFORE any tap (the post-tap toast stays a backstop).
- * Pure + table-testable: maps the card's economy `slot`, the condition-blocked
- * slot set, and whether the action's pool is depleted to ONE reason — `null`
- * when the card is freely usable. A SPENT economy token is NOT a reason here:
- * spent-ness reads on the CTA itself (the disabled "Used" state,
- * {@link combatCtaState}), never as a duplicated inline line.
- *
- * Precedence (most specific first): a depleted resource > a condition-blocked
- * slot. `condition` carries the blocking reason as `slot` (the kind:
- * action/bonus/reaction) so PlayTab can name the culprit condition (derived
- * from the active set) for the inline line; `depleted` is self-naming. The
- * reason is a DISPLAY state, never a hard lock (override-first) — a
- * condition-blocked card stays tappable and the toast guard remains the backstop.
- */
-export type BlockedReason = { kind: "depleted" } | { kind: "condition"; slot: GatedSlot };
-
-export function blockedReasonFor(args: {
-  slot: GatedSlot;
-  blockedSlots: ReadonlySet<GatedSlot>;
-  depleted: boolean;
-}): BlockedReason | null {
-  if (args.depleted) return { kind: "depleted" };
-  if (args.blockedSlots.has(args.slot)) return { kind: "condition", slot: args.slot };
-  return null;
-}
-
-/**
- * The combat-CTA grammar (owner-ratified 2026-07-11) — ONE rule across every
- * combat card: **the CTA states usability NOW; the session undo system (5 s
- * toast · masthead Undo/Redo · ⌘Z) owns ALL reversal.** No inline cancel
- * affordance exists anywhere.
- *
- * Pure composer so every surface derives the same states by construction
- * (golden rule 6) and the grammar is pinned table-driven:
- *
- *  - `spent`    — the card's economy token is spent (this card committed it,
- *                 its slot is at budget, the Attack action is fully swung, or
- *                 the Reaction is used) → CTA DISABLED, label "Used"; the
- *                 committed occupant additionally wears the recessed treatment
- *                 (`ctaCommitted`) + the card's gold ring, so the turn story
- *                 stays legible. Mid-Attack-action (`attackLive`) the Action
- *                 slot is full but swings remain, so spent does NOT apply.
- *  - `disabled` — spent OR depleted (no uses / no cast route). A hard stop —
- *                 never a tap that toasts "already used".
- *  - `emphasis` — Extra Attack swings remain → the struck-gold live CTA.
- *  - `dimmed`   — condition-soft-blocked (Frightened, unproficient armor…) →
- *                 dimmed + the inline condition line, still TAPPABLE
- *                 (override-first; the post-tap toast is the backstop).
- */
-export interface CombatCtaState {
-  /** The CTA reads the "Used" label instead of its verb. */
-  spent: boolean;
-  disabled: boolean;
-  emphasis: boolean;
-  dimmed: boolean;
-}
-
-export function combatCtaState(args: {
-  /** This card is a committed occupant of its economy slot this turn. */
-  committed: boolean;
-  /** The card's economy slot is at budget (free slots are never full). */
-  slotFull: boolean;
-  /** Pip-attack card with swings remaining in the open Attack action. */
-  attackLive: boolean;
-  /** The backing resource is out (no uses left / no cast route). */
-  depleted: boolean;
-  /** An active condition soft-blocks the card's slot. */
-  conditionBlocked: boolean;
-}): CombatCtaState {
-  const spent = (args.committed || args.slotFull) && !args.attackLive;
-  return {
-    spent,
-    disabled: spent || args.depleted,
-    emphasis: args.attackLive && !args.depleted,
-    dimmed: !spent && !args.depleted && args.conditionBlocked,
-  };
-}
-
-/**
- * RA-13 — the TWF once-per-turn off-hand cap. The Light property grants exactly
- * ONE extra off-hand attack per turn; **Nick** only changes that attack's ECONOMY
- * (it rides the Attack action, joining the uncapped `free` slot, instead of the
- * Bonus Action). So the slot budget alone can no longer cap a mixed pair — a
- * `free` Nick off-hand + a `bonus` non-Nick off-hand sit in different slots and
- * would both be committable. The cap is enforced directly here: all `offhand`
- * rows are ONE mutually-exclusive per-turn resource — the FIRST off-hand row
- * committed (in either the free OR the bonus slot) claims the turn's extra attack,
- * and every OTHER off-hand row is then marked spent ("Used") via `slotFull`.
- * Returns that committed off-hand's id (or `null` while none is committed); undo
- * clears the commit and restores the others by construction.
- */
-export function committedOffHandId(
-  actions: ReadonlyArray<{ id: string; offhand?: boolean }>,
-  committedIds: ReadonlySet<string>
-): string | null {
-  return actions.find((a) => a.offhand && committedIds.has(a.id))?.id ?? null;
-}
+// The CTA grammar and its gates live in the shared pure view (`action-cta-view`),
+// read by the old sheet's cards and the new Play screen alike.
+export {
+  blockedReasonFor,
+  combatCtaState,
+  committedOffHandId,
+  type BlockedReason,
+  type CombatCtaState,
+} from "@/lib/views/action-cta-view";

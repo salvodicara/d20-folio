@@ -100,7 +100,6 @@ import {
   resolveCunningStrikeOptions,
   resolveReplaceAttackWithCast,
   armorDisadvantageClauses,
-  resolveActiveStateBlocker,
   type ResolvedAction,
 } from "@/lib/smart-tracker";
 
@@ -118,7 +117,13 @@ import { GlossaryTip, type GlossaryTermId } from "@/components/shared/GlossaryTi
 import { WeaponFacts } from "@/components/shared/WeaponFacts";
 import { ActionRiders, RiderSummary } from "@/components/shared/ActionRiders";
 import type { RiderVM } from "@/lib/views/rider-view";
-import type { GatedSlot, ResolvedConditionEffects } from "@/lib/condition-effects";
+import type { ResolvedConditionEffects } from "@/lib/condition-effects";
+import {
+  actionBlockReason,
+  actionCtaView,
+  type ActionCta,
+  type ActionTurnState,
+} from "@/lib/views/action-cta-view";
 import type { Locale } from "@/lib/locale";
 // D4/D8/D9 — presentation-layer view helpers extracted to a pure lib module so
 // this route file only exports a component (React Fast-Refresh) and the helpers
@@ -126,8 +131,6 @@ import type { Locale } from "@/lib/locale";
 import {
   localizeActions,
   sortActions,
-  attacksRemainingInAction,
-  isPipAttackAction,
   maxReplaceAttackSpellLevel,
   baseActionName,
   type CombatAction,
@@ -145,15 +148,13 @@ import {
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
-import { useTurnEconomy, getEconomySlot } from "../useTurnEconomy";
+import { useTurnEconomy } from "../useTurnEconomy";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
   combatVerdict,
   combatVerdictOutcome,
-  blockedReasonFor,
   combatCtaState,
-  committedOffHandId,
 } from "./combat-card-helpers";
 
 type FilterType = "pinned" | "all" | "action" | "bonus" | "reaction" | "free";
@@ -387,38 +388,64 @@ export function PlayTab() {
     [character, locale]
   );
 
-  // RAW 2024 Two-Weapon Fighting: the off-hand bonus attack only becomes
-  // available AFTER you take the Attack action with a Light weapon. Separation of
-  // concerns — the engine TAGS the off-hand rows (`offhand`) and the Light main
-  // attacks (`lightWeapon`); the UI ENFORCES the turn-state prerequisite here by
-  // surfacing the off-hand rows only while a committed Light main-hand attack
-  // exists this turn. Undo that attack and the off-hand options retract again.
-  //
-  // A committed Light MAIN-HAND attack surfaces through TWO ledgers depending on
-  // whether the character has Extra Attack:
-  //   · budget 1 — the lone attack claims the Action slot as its own
-  //     `selected.action` occupant (the id IS the weapon card's).
-  //   · Extra Attack (budget > 1) — the swing rides the Attack action and is
-  //     recorded by weapon-card id in `attackSwingIds`; `selected.action` holds
-  //     only the anonymous "attack-group" entry, so it never matches a weapon id.
-  // Reading `selected.action` alone hid the off-hand for EVERY Extra-Attack
-  // dual-wielder (the common case). Recognize a committed Light main attack in
-  // EITHER ledger — filtered to a `lightWeapon` main-hand card, so only a
-  // committed Light swing opens the gate (an uncommitted or non-Light one does not).
-  const lightAttackCommitted = useMemo(() => {
-    const isLightMain = (id: string) =>
-      allActions.some((a) => a.id === id && a.lightWeapon);
-    // B6 — a slot holds a LIST; the off-hand opens once ANY committed action is a
-    // Light-weapon attack (Action-slot occupant OR Extra-Attack swing).
-    return (
-      selected.action.some((sel) => isLightMain(sel.id)) ||
-      attackSwingIds.some(isLightMain)
-    );
-  }, [selected.action, attackSwingIds, allActions]);
+  // B2 — the self-side conditions read ONCE at the board root, so every card
+  // knows its condition-blocked state BEFORE a tap.
+  const conditions = character ? effectiveConditions(character) : EMPTY_CONDITIONS;
+  const conditionEffects: ResolvedConditionEffects = useMemo(
+    () => resolveConditionEffects(conditions),
+    [conditions]
+  );
+  // Extra Attack / War Magic: which casts ride a swing (ONE reducer, golden rule 6).
+  const warMagicMax = useMemo(
+    () =>
+      character
+        ? maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(character))
+        : -1,
+    [character]
+  );
+  // Every card's CTA (verb, spent, live swings, the off-hand gate, why it is
+  // blocked) from ONE pure view shared with the Play screen (`actionCtaView`).
+  const turn: ActionTurnState = useMemo(
+    () => ({
+      selected,
+      budget,
+      attackBudget,
+      attacksUsed,
+      attackSwingIds,
+      reactionUsed,
+      reactionUsedId,
+      movementUsedFt,
+      warMagicMax,
+    }),
+    [
+      selected,
+      budget,
+      attackBudget,
+      attacksUsed,
+      attackSwingIds,
+      reactionUsed,
+      reactionUsedId,
+      movementUsedFt,
+      warMagicMax,
+    ]
+  );
+  const actionConditions = useMemo(
+    () => ({ list: conditions, effects: conditionEffects }),
+    [conditions, conditionEffects]
+  );
+  const ctas = useMemo(
+    () =>
+      character
+        ? actionCtaView(character, allActions, turn, actionConditions)
+        : new Map<string, ActionCta>(),
+    [character, allActions, turn, actionConditions]
+  );
 
+  // RAW 2024 Two-Weapon Fighting: the off-hand attack is offered only after a
+  // committed Light main-hand attack (the view's `hidden`).
   const visibleActions = useMemo(
-    () => (lightAttackCommitted ? allActions : allActions.filter((a) => !a.offhand)),
-    [allActions, lightAttackCommitted]
+    () => allActions.filter((a) => !ctas.get(a.id)?.hidden),
+    [allActions, ctas]
   );
 
   // RA-12 — the live skill bonus for a card's flat-DC check (the Hide action's
@@ -443,18 +470,6 @@ export function PlayTab() {
     (skillId: string) => skillRows.find((r) => r.id === skillId)?.bonus ?? 0,
     [skillRows]
   );
-
-  // Extra Attack / War Magic pip inputs, hoisted above the spell gate that
-  // reads them (ONE derivation, golden rule 6 — the CTA blocks below reuse
-  // these same values).
-  const warMagicMax = useMemo(
-    () =>
-      character
-        ? maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(character))
-        : -1,
-    [character]
-  );
-  const attacksLeft = attacksRemainingInAction(attacksUsed, attackBudget);
 
   const dispatchAction = commitAction;
 
@@ -538,73 +553,30 @@ export function PlayTab() {
   // count. `warMagicMax` gates which spell cards are attack-capable (the SAME pure
   // predicate the economy provider commits through). The guard case
   // (`attackBudget <= 1`) makes every read inert.
-  const actionSlotFull = selected.action.length >= budget.action;
-  const bonusSlotFull = selected.bonus.length >= budget.bonus;
-
-  // Extra Attack — a pip-attack card is LIVE while swings remain in the open
-  // Attack action: its CTA turns struck gold with NO standing label, and the
-  // "N of M attacks remaining" count (returned here) surfaces only via the
-  // CTA's hover title + its sr-only status. `null` = not live (no Extra Attack,
-  // a non-attack card, or no action mid-swing) — the fully-swung case then
-  // falls out of the ONE slot-full rule below like any other spent action.
   const attackCountFor = useCallback(
     (action: ResolvedAction): string | null => {
-      if (attackBudget <= 1 || !isPipAttackAction(action, warMagicMax)) return null;
-      if (attacksLeft == null) return null;
-      return t("combat.attacksRemainingStatus", {
-        remaining: attacksLeft,
-        total: attackBudget,
-      });
+      const left = ctas.get(action.id)?.attacksLeft;
+      return left
+        ? t("combat.attacksRemainingStatus", {
+            remaining: left.remaining,
+            total: left.total,
+          })
+        : null;
     },
-    [attackBudget, warMagicMax, attacksLeft, t]
+    [ctas, t]
   );
 
-  // RA-13 — the TWF once-per-turn off-hand cap. The Light property grants ONE
-  // extra off-hand attack per turn; Nick only moves it into the (uncapped) free
-  // economy, so a mixed free+bonus off-hand pair can't be capped by the slot
-  // budget alone. All `offhand` rows are ONE mutually-exclusive resource: the
-  // first committed (in either slot) claims the id below, and `slotFullFor`
-  // marks every OTHER off-hand row spent ("Used"). Undo clears it → all restore.
-  const offHandCommittedId = useMemo(
-    () =>
-      committedOffHandId(
-        allActions,
-        new Set([...selected.free, ...selected.bonus].map((s) => s.id))
-      ),
-    [allActions, selected.free, selected.bonus]
-  );
-
-  // CTA grammar — is the card's economy slot at budget? Feeds `combatCtaState`
-  // (spent ⇒ disabled "Used" CTA, the reaction contract generalized). The free
-  // slot is uncapped, so free actions never spend out — EXCEPT an off-hand row
-  // once another off-hand has already spent the turn's one extra attack.
+  // CTA grammar — is the card's economy slot at budget (the off-hand cap included)?
   const slotFullFor = useCallback(
-    (action: ResolvedAction): boolean => {
-      if (action.source === "spell" || action.castPoolSourceId) return false;
-      if (
-        action.offhand &&
-        offHandCommittedId != null &&
-        offHandCommittedId !== action.id
-      ) {
-        return true;
-      }
-      return action.type === "action"
-        ? actionSlotFull
-        : action.type === "bonus"
-          ? bonusSlotFull
-          : false;
-    },
-    [actionSlotFull, bonusSlotFull, offHandCommittedId]
+    (action: ResolvedAction): boolean => ctas.get(action.id)?.slotFull ?? false,
+    [ctas]
   );
 
-  // CTA grammar — did THIS attack-capable card ride a swing of the (Extra-Attack)
-  // Attack action this turn? Only true at `attackBudget > 1`: at budget 1 a lone
-  // attack claims the Action slot through the ordinary economy and is its own
-  // `selected.action` occupant. Once the Attack action is fully swung, the swung
-  // card(s) keep the gold ring like any other spent group's occupant.
+  // CTA grammar — did THIS card ride a swing of the (Extra-Attack) Attack action?
+  // Once the action is fully swung, the swung card(s) keep the gold ring.
   const attackOccupantFor = useCallback(
-    (action: ResolvedAction): boolean => attackSwingIds.includes(action.id),
-    [attackSwingIds]
+    (action: ResolvedAction): boolean => ctas.get(action.id)?.attackOccupant ?? false,
+    [ctas]
   );
 
   // D13 — clean section partition so every action lands in EXACTLY one section
@@ -725,9 +697,7 @@ export function PlayTab() {
   // Check if an action is currently committed in its slot (B6 — a slot holds a
   // LIST under Action Surge / Haste, so test membership).
   function isSelected(action: ResolvedAction): boolean {
-    if (action.source === "spell" || action.castPoolSourceId) return false;
-    const slot = getEconomySlot(action);
-    return selected[slot].some((a) => a.id === action.id);
+    return ctas.get(action.id)?.committed ?? false;
   }
 
   // Check if an action's resource is fully depleted (grey out the card)
@@ -787,124 +757,47 @@ export function PlayTab() {
     [cunningStrikeOptions, onApplyCunningStrike]
   );
 
-  // B2 — the single self-side condition resolver read ONCE at the board root, so
-  // every card knows its condition-blocked state BEFORE a tap (today the toast
-  // only fires AFTER a wasted tap). Memoized on the session's conditions.
-  const conditions = character ? effectiveConditions(character) : EMPTY_CONDITIONS;
-  const conditionEffects: ResolvedConditionEffects = useMemo(
-    () => resolveConditionEffects(conditions),
-    [conditions]
-  );
-
   // B2 — why a card's CTA is unavailable right now, as a PERSISTENT inline reason
-  // (dimmed CTA + quiet line) the player reads at a glance — never a hard lock
-  // (the post-tap toast stays the backstop; the card stays tappable). Maps the
-  // pure `blockedReasonFor` reason to its localized line: a condition-blocked slot
-  // names the FIRST active condition that blocks it (the B1 naming pattern); the
-  // depleted reason is self-naming. `null` → freely usable. A SPENT economy
-  // token is NOT a reason line — spent-ness reads on the CTA itself (the
-  // disabled "Used" state, the CTA grammar).
-  // RA-14 — weapon-row ADVISORIES, dimmed-but-tappable (adjudicable, never a
-  // hard block — override-first): an empty TRACKED quiver, and Loading's
-  // one-shot-per-action cap once this weapon already fired a swing while swings
-  // remain in the open Attack action (the only moment a second shot could
-  // illegally happen). Untracked ammo / attackBudget 1 stay inert.
-  const weaponAdvisoryFor = useCallback(
-    (action: ResolvedAction): string | null => {
-      if (action.source !== "weapon") return null;
-      const ammo = action.summary.ammo;
-      if (ammo && ammo.remaining === 0) {
-        return t("combat.outOfAmmoReason", {
-          item: localizeSrd("equipment", ammo.itemId, "name", locale),
-        });
-      }
-      if (
-        action.summary.loading &&
-        attacksLeft != null &&
-        attackSwingIds.includes(action.id)
-      ) {
-        return t("combat.loadingOneShotReason");
-      }
-      return null;
-    },
-    [t, locale, attacksLeft, attackSwingIds]
-  );
-
+  // (dimmed CTA + quiet line), never a hard lock. The reason is the view's
+  // (`actionBlockReason`); this localizes it. A condition names the first active
+  // condition blocking the slot; a SPENT token is not a reason (the CTA reads it).
   const blockedReasonFor_ = useCallback(
     (action: ResolvedAction, depleted: boolean): string | null => {
-      if (action.source === "spell" || action.castPoolSourceId) {
-        return depleted ? t("combat.blockedReasonNoUses") : null;
-      }
-      const committed = Object.values(selected).flat();
-      if (
-        action.requiresActionThisTurn &&
-        !committed.some((entry) => entry.id === action.requiresActionThisTurn)
-      ) {
-        return t("combat.blockedReasonPrerequisiteAction");
-      }
-      if (
-        action.requiresActionCategoryThisTurn &&
-        !committed.some(
-          (entry) => entry.economyCategory === action.requiresActionCategoryThisTurn
-        )
-      ) {
-        return t("combat.blockedReasonPrerequisiteCategory");
-      }
-      if (
-        action.maxUsesPerTurn !== undefined &&
-        committed.filter((entry) => entry.id === action.id).length >=
-          action.maxUsesPerTurn
-      ) {
-        return t("combat.blockedReasonPerTurnLimit");
-      }
-      if (action.locksMovement && movementUsedFt > 0) {
-        return t("combat.blockedReasonAlreadyMoved");
-      }
-      if (character) {
-        switch (resolveActiveStateBlocker(character, action)) {
-          case "heavy-armor":
-            return t("combat.blockedReasonHeavyArmor");
-          case "incapacitated":
-            return t("combat.blockedReasonIncapacitated");
-        }
-      }
-      // The card's TRUE economy kind is `action.type` (action/bonus/reaction/free)
-      // — `getEconomySlot` folds reactions into "free", so it can't be used for
-      // the condition gate. A "free" action is never condition-blocked or spent.
-      if (action.type === "free") {
-        return depleted ? t("combat.blockedReasonNoUses") : weaponAdvisoryFor(action);
-      }
-      const slot: GatedSlot = action.type;
-      const reason = blockedReasonFor({
-        slot,
-        blockedSlots: conditionEffects.blockedSlots,
-        depleted,
-      });
-      // RA-14 — with no harder reason, a weapon row may still carry an
-      // ammunition/Loading advisory line.
-      if (!reason) return weaponAdvisoryFor(action);
+      if (!character) return null;
+      const reason = actionBlockReason(
+        character,
+        action,
+        turn,
+        actionConditions,
+        depleted
+      );
+      if (!reason) return null;
       switch (reason.kind) {
-        case "depleted":
+        case "no-uses":
           return t("combat.blockedReasonNoUses");
-        case "condition": {
-          // Name the first active condition forbidding this slot (B1 pattern).
-          const culprit = conditions.find((id) =>
-            resolveConditionEffects([id]).blockedSlots.has(reason.slot)
-          );
-          return culprit ? conditionLabel(culprit, locale) : null;
-        }
+        case "prerequisite-action":
+          return t("combat.blockedReasonPrerequisiteAction");
+        case "prerequisite-category":
+          return t("combat.blockedReasonPrerequisiteCategory");
+        case "per-turn-limit":
+          return t("combat.blockedReasonPerTurnLimit");
+        case "already-moved":
+          return t("combat.blockedReasonAlreadyMoved");
+        case "heavy-armor":
+          return t("combat.blockedReasonHeavyArmor");
+        case "incapacitated":
+          return t("combat.blockedReasonIncapacitated");
+        case "loading":
+          return t("combat.loadingOneShotReason");
+        case "out-of-ammo":
+          return t("combat.outOfAmmoReason", {
+            item: localizeSrd("equipment", reason.itemId, "name", locale),
+          });
+        case "condition":
+          return reason.condition ? conditionLabel(reason.condition, locale) : null;
       }
     },
-    [
-      character,
-      conditionEffects,
-      conditions,
-      t,
-      locale,
-      weaponAdvisoryFor,
-      movementUsedFt,
-      selected,
-    ]
+    [character, turn, actionConditions, t, locale]
   );
 
   // Chromatic slot pips beside the CTA for a slot-costing spell: { level, total,
