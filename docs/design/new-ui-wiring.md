@@ -51,6 +51,16 @@ pending"); this is the engine side's to-do for the screens.
   `summonedTurnOrder` and `mountedTurnOrder`.
 - `multiattackPlan`, `monsterMovementFeet`, monster uses / recharge (Rules session).
 
+## Tesoro (owner 2026-11-02)
+
+- Coins: `applyTreasuryDelta` / `undoTreasuryEntry`, as today.
+- Items and loot: `chest-io.ts` — `putInChest`, `takeFromChest`, `distributeLoot` (`me` /
+  `chest` / `split`); each returns its undo, refused once a share was collected or a stack
+  changed. Read: `subscribeToChest` (stacks + pickups, the named shares among them) and
+  `subscribeToChestLog` (item lines; coins stay in `treasuryLog`).
+- Nobody writes another player's sheet: what goes to a player is a pickup their own sheet
+  collects (`collectPickups`) when it loads.
+
 ## Campaign Diario (owner 2026-10-26, board q38)
 
 - One page per session, as in World Anvil / Kanka / Foundry journals: the pasted AI chronicle

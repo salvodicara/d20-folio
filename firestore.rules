@@ -1048,8 +1048,93 @@ service cloud.firestore {
       allow delete: if combatDm() || (combatMember() && takesBackTheEndedFight());
     }
 
+    // THE PARTY CHEST (Tesoro, chest-io.ts): stacks in `chest`, what waits for one
+    // player's sheet in `pickups`, the item lines of «Chi ha preso cosa» in `chestLog`.
+    // Any member moves things (owner 2026-11-02: loot is anyone's, always undoable); every
+    // document's shape is checked, nobody writes another player's sheet.
+    match /campaigns/{campId}/{chestCol}/{docId} {
+      // `{chestCol}` matches every subcollection: each grant below starts with this.
+      function isChest() {
+        return chestCol in ['chest', 'pickups', 'chestLog'];
+      }
+      function chestCampaign() {
+        return get(/databases/$(database)/documents/campaigns/$(campId)).data;
+      }
+      function chestMember() {
+        return isNotBlocked() && request.auth.uid in chestCampaign().members;
+      }
+      function chestDm() {
+        return isAdmin() || (isNotBlocked() && request.auth.uid == chestCampaign().dmUid);
+      }
+      function itemRef(item) {
+        return item is map
+          && ((item.keys().hasOnly(['srdId']) && item.srdId is string
+                && item.srdId.size() > 0 && item.srdId.size() <= 80)
+            || (item.keys().hasOnly(['custom', 'name']) && item.custom == true
+                && item.name is string && item.name.size() > 0 && item.name.size() <= 120));
+      }
+      function count(n) {
+        return n is int && n >= 1 && n <= 9999;
+      }
+      function coin(purse, unit) {
+        return !(unit in purse) || (purse[unit] is int && purse[unit] >= 0 && purse[unit] <= 1000000);
+      }
+      function coins(purse) {
+        return purse is map && purse.keys().hasOnly(['pp', 'gp', 'ep', 'sp', 'cp'])
+          && coin(purse, 'pp') && coin(purse, 'gp') && coin(purse, 'ep')
+          && coin(purse, 'sp') && coin(purse, 'cp');
+      }
+      function stamped(data) {
+        return data.id == docId && data.at is int;
+      }
+      function validStack(data) {
+        return data.keys().hasOnly(['id', 'item', 'quantity', 'note', 'addedBy', 'at'])
+          && stamped(data)
+          && itemRef(data.item)
+          && count(data.quantity)
+          && data.addedBy in chestCampaign().members
+          && (!('note' in data) || (data.note is string && data.note.size() <= 500));
+      }
+      function validPickup(data) {
+        return data.keys().hasOnly(['id', 'ownerUid', 'coins', 'item', 'quantity', 'reason', 'by', 'at'])
+          && stamped(data)
+          && data.by == request.auth.uid
+          && data.ownerUid in chestCampaign().members
+          && data.reason in ['share', 'take', 'loot']
+          && (!('coins' in data) || coins(data.coins))
+          && (!('item' in data) || itemRef(data.item))
+          && (!('quantity' in data) || count(data.quantity))
+          && ('coins' in data || 'item' in data);
+      }
+      function validLogLine(data) {
+        return data.keys().hasOnly(['id', 'kind', 'by', 'at', 'item', 'quantity', 'coins', 'to'])
+          && stamped(data)
+          && data.by == request.auth.uid
+          && data.kind in ['put', 'take', 'loot']
+          && (!('item' in data) || itemRef(data.item))
+          && (!('quantity' in data) || count(data.quantity))
+          && (!('coins' in data) || coins(data.coins))
+          && (!('to' in data) || data.to in ['me', 'chest', 'split']);
+      }
+      allow read: if isChest() && (chestMember() || isAdmin());
+      allow create: if isChest() && chestMember() && (
+        (chestCol == 'chest' && validStack(request.resource.data))
+        || (chestCol == 'pickups' && validPickup(request.resource.data))
+        || (chestCol == 'chestLog' && validLogLine(request.resource.data)));
+      // A stack only changes how many are left; pickups and log lines never change.
+      allow update: if isChest() && chestMember() && chestCol == 'chest'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['quantity'])
+        && count(request.resource.data.quantity);
+      allow delete: if isChest() && (chestDm() || (chestMember() && (
+        chestCol == 'chest'
+        || (chestCol == 'pickups'
+          && (resource.data.ownerUid == request.auth.uid || resource.data.by == request.auth.uid))
+        || (chestCol == 'chestLog' && resource.data.by == request.auth.uid))));
+    }
+
     match /campaigns/{campId}/{subcol}/{docId} {
-      allow read, write: if subcol != 'dmNotes' && subcol != 'sessionLogs' && subcol != 'combat' && isNotBlocked()
+      allow read, write: if subcol != 'dmNotes' && subcol != 'sessionLogs' && subcol != 'combat'
+        && subcol != 'chest' && subcol != 'pickups' && subcol != 'chestLog' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
     }
 

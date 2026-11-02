@@ -576,6 +576,54 @@ export interface TreasuryLogEntry {
   at: Date;
 }
 
+/** What sits in the chest: a catalogue item (SRD or pack id, as the bag stores it) or a
+ *  free-text one. */
+export type ChestItemRef = { srdId: string } | { custom: true; name: string };
+
+/** Coins by denomination, only the ones present. */
+export type CoinPurse = Partial<Record<CurrencyUnit, number>>;
+
+/** One stack in the party's shared chest: `campaigns/{id}/chest/{chestItemId}`. */
+export interface ChestItem {
+  id: string;
+  item: ChestItemRef;
+  quantity: number;
+  note?: string;
+  addedBy: string;
+  at: number;
+}
+
+/**
+ * Coins and/or an item on their way into ONE player's sheet:
+ * `campaigns/{id}/pickups/{pickupId}`. Nobody writes another player's sheet: the owner's
+ * own sheet collects its pickups when it next loads (a share of split loot, an item taken
+ * from the chest, loot kept "a me").
+ */
+export interface Pickup {
+  id: string;
+  ownerUid: string;
+  coins?: CoinPurse;
+  item?: ChestItemRef;
+  quantity?: number;
+  reason: "share" | "take" | "loot";
+  by: string;
+  at: number;
+}
+
+/** One line of «Chi ha preso cosa» for items: `campaigns/{id}/chestLog/{entryId}`. Coins
+ *  stay in `treasuryLog`, which v0.25.0 renders. */
+export interface ChestLogEntry {
+  id: string;
+  kind: "put" | "take" | "loot";
+  by: string;
+  at: number;
+  item?: ChestItemRef;
+  quantity?: number;
+  coins?: CoinPurse;
+  /** Where loot went. */
+  to?: "me" | "chest" | "split";
+}
+
 /**
  * A shared campaign note — one document at `/campaigns/{campId}/notes/{noteId}`
  * (the doc id IS {@link SharedNote.id}). Stored per-note (NOT as an array on the
