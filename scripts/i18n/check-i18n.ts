@@ -6,7 +6,7 @@
  * leak, so a leak can never reach a user. It is invoked from two seams that share
  * this ONE implementation (DRY):
  *   - the Vite `buildStart` plugin (`vite.config.ts`) — fails `vite build` (so it
- *     runs free in pre-push / `just deploy` / CI, which all run `pnpm build`);
+ *     runs free in CI and the deploy workflow, which both build);
  *   - `pnpm i18n:check` (this file run directly) — a standalone CLI the hooks / CI
  *     can call independently of a full build.
  *

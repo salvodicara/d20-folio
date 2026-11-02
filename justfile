@@ -12,7 +12,7 @@ setup:
     pnpm install
     npm --prefix functions ci --prefer-offline --no-audit
     git config core.hooksPath .githooks
-    @echo "✓ Git hooks installed (.githooks/pre-push)"
+    @echo "✓ Git hooks installed (.githooks/pre-commit)"
 
 # ─── Development ───────────────────────────────────────────
 

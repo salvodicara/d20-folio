@@ -56,6 +56,12 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      # ci.yml typechecks and lints the public tree; only here do the pack's
+      # sources join `tsc -b` and `eslint 'content-pack/**'`.
+      - name: Typecheck (composed)
+        run: pnpm typecheck
+      - name: Lint (composed)
+        run: pnpm lint --max-warnings 0
       - name: Unit tests (composed — pack suites included)
         run: pnpm test
 

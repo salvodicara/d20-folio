@@ -42,7 +42,7 @@
  * ── Why it reads `dist/` (and how the gate runs it) ──────────────────────────
  * The truth lives in the emitted bundle, not the source — a manualChunks tweak or
  * a transitive import can move weight the source doesn't reveal. The gate
- * (pre-push + CI `build` job) runs this AFTER `vite build`, so `dist/` exists. Run
+ * (CI `build` job + Verify's composed budget) runs this AFTER `vite build`, so `dist/` exists. Run
  * locally with: `pnpm build && pnpm vitest run bundle-budget`. If `dist/` is
  * absent the guard FAILS LOUDLY with that instruction rather than passing on no
  * data — a budget you can skip by not building is no budget.
