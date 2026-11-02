@@ -405,9 +405,12 @@ function actionFromActivity(
         : undefined,
     damageReduction: reduction
       ? {
-          dice: reduction.dice.dice,
+          dice: reduction.dice.dice || undefined,
           addAbility: ability(reduction.dice),
           addLevel: has(reduction.dice, "owner-level") || undefined,
+          levelMultiplier: reduction.dice.plus?.find(
+            (term) => term.kind === "owner-level"
+          )?.times,
           damageTypesByLevel: reduction.typesByLevel,
         }
       : undefined,

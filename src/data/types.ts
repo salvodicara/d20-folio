@@ -1471,10 +1471,13 @@ export interface ActionHeal {
  * supplies the rolled die and incoming amount; the engine owns every fixed
  * term, eligible damage type and the resulting HP mutation. */
 export interface ActionDamageReduction {
-  dice: string;
+  /** The physical die rolled for the reduction; absent when it is a flat amount (Slow Fall). */
+  dice?: string;
   addAbility?: AbilityCode;
   /** Add the owning class's level (Deflect Attacks). */
   addLevel?: boolean;
+  /** With `addLevel`, add that level this many times (Slow Fall: 5 × Monk level). */
+  levelMultiplier?: number;
   damageTypesByLevel: Readonly<Record<number, ReadonlyArray<DamageType>>>;
 }
 

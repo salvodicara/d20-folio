@@ -192,11 +192,13 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
   attackType: literals(["melee", "ranged"]),
   trigger: literals(ALL_REACTION_TRIGGERS),
   damageReduction: objectSchema(
+    { damageTypesByLevel: recordSchema("number", DAMAGE_TYPES) },
     {
       dice: stringSchema,
-      damageTypesByLevel: recordSchema("number", DAMAGE_TYPES),
-    },
-    { addAbility: ABILITY, addLevel: booleanSchema }
+      addAbility: ABILITY,
+      addLevel: booleanSchema,
+      levelMultiplier: numberSchema,
+    }
   ),
   heal: objectSchema(
     {},

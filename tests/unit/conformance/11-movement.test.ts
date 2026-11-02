@@ -7,6 +7,8 @@ import { jumpDistance } from "@/lib/compute";
 import { CONDITION_RULES } from "@/lib/condition";
 import type { Grant } from "@/lib/grants";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { resolveActions } from "@/lib/smart-tracker";
+import { makeCharacterDoc } from "../_helpers";
 import { takeDamage } from "@/lib/play/damage";
 import {
   DIFFICULT_TERRAIN_COST_PER_FOOT,
@@ -233,14 +235,27 @@ describe("conformance · 11. movement and mounts", () => {
   );
 
   rule(
-    { category: 11, case: "Falling", source: "GLOSS; WIKI monk:main", status: "data" },
+    { category: 11, case: "Falling", source: "GLOSS; WIKI monk:main", status: "works" },
     () => {
       expect(fallDamageDice(25, "ft")).toBe(2);
       expect(fallDamageDice(500, "ft")).toBe(20);
       expect(fallLandsProne(0)).toBe(false);
       expect(fallLandsProne(3)).toBe(true);
-      // Slow Fall reduces the damage by 5 × Monk level.
-      expect(featureJson("monk-slow-fall")).toContain("damageReduction");
+      // Slow Fall reduces falling (Bludgeoning) damage by 5 × Monk level.
+      for (const level of [4, 9, 20]) {
+        const monk = makeCharacterDoc({
+          classId: "monk",
+          level,
+          features: [{ srdId: "monk-slow-fall" }],
+        });
+        const slowFall = resolveActions(monk, "combat").find((a) =>
+          a.id.startsWith("monk-slow-fall")
+        );
+        expect(slowFall?.summary.damageReduction).toMatchObject({
+          bonus: 5 * level,
+          damageTypes: ["bludgeoning"],
+        });
+      }
     }
   );
 
