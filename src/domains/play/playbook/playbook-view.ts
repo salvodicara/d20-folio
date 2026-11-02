@@ -345,7 +345,14 @@ export function playbookView(
   const facts: Facts = {
     doc,
     locale,
-    actions: new Map(resolveActions(doc).map((action) => [action.id, action])),
+    // The playbook also picks from the spellbook (a Wizard's unprepared rituals,
+    // Ritual Adept), so names and facts resolve over both.
+    actions: new Map(
+      [...resolveActions(doc, "spellbook"), ...resolveActions(doc)].map((action) => [
+        action.id,
+        action,
+      ])
+    ),
   };
   const picked = new Map(playbook.plan.picks.map((pick) => [pick.stepId, pick.actionId]));
   const line = (step: PlaybookStep): PlaybookLine => {

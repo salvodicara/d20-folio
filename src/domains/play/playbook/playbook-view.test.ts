@@ -90,6 +90,28 @@ describe("playbookView", () => {
     );
   });
 
+  it("a Wizard's ritual from the spellbook, not prepared, is named (Ritual Adept)", () => {
+    const wizard = makeCharacterDoc({
+      classId: "wizard",
+      level: 3,
+      abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 16, WIS: 12, CHA: 10 },
+      spells: [
+        { srdId: "find-familiar", prepared: false },
+        { srdId: "magic-missile", prepared: true },
+      ],
+      spellSlots: [
+        { level: 1, total: 4 },
+        { level: 2, total: 2 },
+      ],
+    });
+    const line = find(
+      playbookView(wizard, "it", { mode: "exploration", round: 1 }).steps,
+      "ritual-no-slot"
+    );
+    expect(line?.strong).toBe("Trova Famiglio");
+    expect(line?.before).not.toContain("*");
+  });
+
   it("healing a downed ally: who gets up, then what you spend", () => {
     const line = find(playbookView(cleric(), "it").steps, "heal-ally-down");
     expect(line?.why).toBe(
