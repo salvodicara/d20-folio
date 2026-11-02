@@ -751,6 +751,7 @@
 }
 .fui .f-row-s {
   font-size: var(--fs-sm);
+  text-wrap: balance;
   color: var(--muted);
 }
 .fui .f-row-end {
@@ -1336,4 +1337,31 @@
 }
 .fui .f-toast > span {
   text-wrap: balance;
+}
+
+/* ---------- notes ---------- */
+.fui .f-mark {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  background: var(--sunk);
+  color: var(--muted);
+  font: 700 var(--fs-md) var(--font-title);
+}
+.fui .f-mark[data-kind="important"] {
+  color: var(--hp-y);
+}
+.fui .f-mark[data-kind="person"] {
+  color: var(--c-abi);
+}
+.fui .f-mark[data-kind="place"] {
+  color: var(--c-cmp);
+}
+/* a plain note keeps the column, without an empty box */
+.fui .f-mark[data-kind="note"] {
+  background: transparent;
 }
