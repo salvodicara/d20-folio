@@ -78,6 +78,17 @@ const CONDITION_LIFETIME = unionSchema([
   ),
 ]);
 
+/** An early end of a condition (`ConditionEnd`, data/types). */
+const CONDITION_END = unionSchema([
+  objectSchema({ on: literalSchema("target-damaged") }),
+  objectSchema({
+    on: literalSchema("repeat-save"),
+    ability: ABILITY,
+    at: literalSchema("target-turn-end"),
+  }),
+  objectSchema({ on: literalSchema("actor-incapacitated") }),
+]);
+
 /** A condition an action or spell applies, with its lifetime (shared with homebrew spells). */
 export const CONDITION_APPLICATION_SCHEMA: ExactSchema = objectSchema(
   {
@@ -88,6 +99,7 @@ export const CONDITION_APPLICATION_SCHEMA: ExactSchema = objectSchema(
     max: numberSchema,
     lifetime: CONDITION_LIFETIME,
     lifetimes: recordSchema("string", CONDITION_LIFETIME),
+    ends: arraySchema(CONDITION_END),
   }
 );
 
