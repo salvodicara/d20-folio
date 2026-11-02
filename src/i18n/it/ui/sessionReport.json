@@ -77,6 +77,8 @@
     "inspiration": {
       "gained": "{{target}} ottiene Ispirazione Eroica",
       "spent": "{{target}} spende Ispirazione Eroica"
-    }
+    },
+    "initiativeByDm": "Il Master tira per {{actor}}: {{total}}",
+    "initiative": "{{actor}} tira l'iniziativa: {{total}}"
   }
 }

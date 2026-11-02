@@ -17,8 +17,11 @@ import { db } from "@/lib/firebase";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
 
 import { advanceEncounterTurn, toCampaignDoc } from "./campaign-io";
+import { createSessionRecorder, type SessionRecorder } from "@/lib/session-log";
+
 import { useCampaignStore } from "./campaignStore";
 import { parseEncounterState } from "./encounter";
+import { sessionLogStoreFor } from "./session-log-source";
 import {
   planCancel,
   planEnd,
@@ -253,22 +256,50 @@ function cryptoD20(): number {
 export async function rollForMissing(
   campaignId: string,
   input: { uid: string; bonuses: Readonly<Record<string, number>> },
-  d20: () => number = cryptoD20
+  d20: () => number = cryptoD20,
+  /** Where the session-log lines go (the campaign's session log in the app). */
+  recorder: Pick<SessionRecorder, "record" | "retract"> = createSessionRecorder({
+    store: sessionLogStoreFor(campaignId),
+    uid: input.uid,
+  })
 ): Promise<CombatUndo | null> {
   const done = await applyMove(campaignId, (campaign) => {
     const plan = planRollForMissing(campaign, { ...input, now: Date.now(), d20 });
     return plan && { patch: plan.patch, result: plan };
   });
   if (!done) return null;
-  return async () =>
-    (await applyMove(campaignId, (campaign) => {
-      const patch = planUnrollMissing(campaign, {
-        rolled: done.rolled,
-        started: done.started,
-        epoch: done.epoch,
-        bonuses: input.bonuses,
-        now: Date.now(),
-      });
-      return patch && { patch, result: true };
-    })) === true;
+  // One report line per roll: "Il Master tira per Mandorlino: 14" (written at once; a
+  // v0.25.0 report shows it as a neutral newer-version line).
+  const lines = await Promise.all(
+    Object.entries(done.rolled).map(([uid, roll]) =>
+      recorder
+        .record({
+          kind: "initiative",
+          actor: `pc-${uid}`,
+          roll,
+          total: roll + (input.bonuses[`pc-${uid}`] ?? 0),
+          rolledBy: "dm",
+        })
+        .catch(() => null)
+    )
+  );
+  return async () => {
+    const undone =
+      (await applyMove(campaignId, (campaign) => {
+        const patch = planUnrollMissing(campaign, {
+          rolled: done.rolled,
+          started: done.started,
+          epoch: done.epoch,
+          bonuses: input.bonuses,
+          now: Date.now(),
+        });
+        return patch && { patch, result: true };
+      })) === true;
+    if (undone) {
+      await Promise.all(
+        lines.flatMap((id) => (id ? [recorder.retract(id).catch(() => null)] : []))
+      );
+    }
+    return undone;
+  };
 }
