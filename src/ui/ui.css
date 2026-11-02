@@ -1821,3 +1821,7 @@
     color: var(--strong);
   }
 }
+.fui .f-turn-t,
+.fui .f-playbook-lines span {
+  text-wrap: balance;
+}

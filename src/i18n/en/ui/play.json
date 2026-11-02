@@ -22,6 +22,7 @@
     "concentration": "concentration",
     "uses": "{{current}} of {{total}}",
     "dc": "DC {{dc}}",
-    "healing": "{{amount}} HP"
+    "healing": "{{amount}} HP",
+    "report": "Report"
   }
 }
