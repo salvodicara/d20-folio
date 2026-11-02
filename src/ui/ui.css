@@ -594,7 +594,7 @@
   color: color-mix(in srgb, var(--c, var(--gold)) 55%, var(--white));
   font: 600 var(--fs-md) / 1 var(--font-title);
   /* the letter scales with the ring (the ring sets --ring-ini from its size) */
-  font-size: var(--ring-ini, var(--fs-md));
+  font-size: var(--ring-ini);
 }
 /* A row whose sheet is still loading: quiet bars where the text will be. */
 .fui .f-skel {
