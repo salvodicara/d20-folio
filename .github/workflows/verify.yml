@@ -122,7 +122,7 @@ jobs:
   # bestiary offline. Its own build and port, so it is not part of the shards.
   offline:
     name: e2e (offline)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
