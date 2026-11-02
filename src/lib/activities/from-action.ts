@@ -239,13 +239,6 @@ export function translateAction(
   owner: ActionOwner
 ): ActivityTranslation {
   const gaps: ActivityGap[] = [];
-  if (action.mechanicsProgram) {
-    gaps.push({
-      field: "mechanicsProgram",
-      reason:
-        "a hand-written runtime program (a halving or negating reaction) the declarative effects cannot express yet",
-    });
-  }
   if (action.saveAbility && !action.saveDcAbility) {
     gaps.push({
       field: "saveAbility",

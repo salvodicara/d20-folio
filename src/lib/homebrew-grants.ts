@@ -13,10 +13,22 @@
  * sibling grants keep working.
  */
 import { conformHomebrewGrant, type Grant } from "@/lib/grants";
+import { memoByObject } from "@/lib/homebrew-conform";
 import type { CustomFeature } from "@/types/character";
 
+/** Each element the Grant schema accepts, in authored order; null for a non-list. */
+export function conformGrants(raw: unknown): Grant[] | null {
+  if (!Array.isArray(raw)) return null;
+  return raw.flatMap((grant: unknown) => {
+    const conformed = conformHomebrewGrant(grant);
+    return conformed ? [conformed] : [];
+  });
+}
+
 const EMPTY: readonly Grant[] = Object.freeze([]);
-const cache = new WeakMap<object, readonly Grant[]>();
+const featureGrants = memoByObject((authored: unknown[]) =>
+  Object.freeze(conformGrants(authored) ?? [])
+);
 
 /** The playable grants of a homebrew feature, in authored order. */
 export function homebrewFeatureGrants(
@@ -24,14 +36,5 @@ export function homebrewFeatureGrants(
 ): readonly Grant[] {
   const authored: unknown = feature.grants;
   if (!Array.isArray(authored) || authored.length === 0) return EMPTY;
-  const hit = cache.get(authored);
-  if (hit) return hit;
-  const accepted = Object.freeze(
-    authored.flatMap((raw: unknown) => {
-      const grant = conformHomebrewGrant(raw);
-      return grant ? [grant] : [];
-    })
-  );
-  cache.set(authored, accepted);
-  return accepted;
+  return featureGrants(authored) ?? EMPTY;
 }

@@ -121,7 +121,7 @@ describe("Goliath — Powerful Build → Advantage on the CHECK to end Grappled"
   });
 
   it("trait prose says 'ability check' / 'prova di caratteristica' (corrected)", () => {
-    const _k = raceTraitCatKey({ id: "goliath-powerful-build", raceId: "goliath" });
+    const _k = raceTraitCatKey({ raceId: "goliath", traitId: "powerful-build" });
     expect(srd("race", _k, "description", "en")).toContain("ability check");
     expect(srd("race", _k, "description", "en")).not.toContain("saving throw");
     expect(srd("race", _k, "description", "it")).toContain("prova di caratteristica");

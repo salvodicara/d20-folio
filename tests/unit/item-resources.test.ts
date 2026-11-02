@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ResourceSpec, SrdMagicItemData } from "@/data/types";
+import type { ItemResourceSpec, SrdMagicItemData } from "@/data/types";
 import type {
   CharacterDoc,
   ItemResourceState,
@@ -16,7 +16,7 @@ import { parseCharacter, serializeCharacter } from "@/lib/character-codec";
 import { sanitizeSession } from "@/lib/sanitize-session";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
-const CHARGES: ResourceSpec = {
+const CHARGES: ItemResourceSpec = {
   kind: "counter",
   id: "charges",
   unit: "charges",

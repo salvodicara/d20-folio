@@ -8,6 +8,7 @@ export default tseslint.config(
   {
     ignores: [
       "dist",
+      "dist-offline", // pnpm test:e2e:offline build output
       "**/dist",
       "dev-dist",
       "node_modules",

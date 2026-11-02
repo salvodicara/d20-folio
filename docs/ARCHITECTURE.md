@@ -382,7 +382,7 @@ cadence for such a pool; presenter copy names the activation trigger instead of 
 
 Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). Legacy magic items still
 derive an item-id tracker temporarily, but every migrated mutable item instead declares catalogue
-`ResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
+`ItemResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
 grants **≥ 2 free-cast spells** (Fey/Shadow/Vampire-Touched, the multi-spell heritage feats) emits ONE
 INDEPENDENT 1/rest row PER SPELL via `resolveFreeCastFeatTrackers`, keyed `${featId}:${spellId}` — so
 casting one never locks the others (the prior shared-`total:2` counter deadlocked them). The row, the
@@ -777,7 +777,7 @@ requiring the original grant to remain equipped/known; redo regenerates expectat
 This atomicity is limited to the owner character document and does not include campaign-owned effects.
 
 Physical magic-item resources use a stricter instance-owned transition seam. Catalogue
-`ResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
+`ItemResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
 depletion consequences; one durable `SrdEquipmentRef.instanceId` identifies each physical copy, and
 `session.itemResources[instanceId]` is its only mutable owner. `lib/resources.ts` plans a pure
 whole-item compare-and-swap operation from an exact command and table-entered facts. The shared
@@ -1229,6 +1229,14 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   (`encounter-world-command.undoAdversaryChronicleEvent`) and the mirror then retracts the line. The
   log carries no HP totals: the "(4/12 HP)" readout comes from the live beat (`chronicle-feed.ts`) and
   follows the monster card's `showExact` rule. Hidden (ambush) creatures stay out of a player's feed.
+
+  **The play log is the one session record (2026-11-02).** A session is its play log
+  (`campaigns/{id}/sessionLogs/{YYYY-MM-DD[-n]}`), opened by the first gesture and closed by a 6 h
+  gap; every device computes the same id. Its text (the Diario's «Cronaca della sessione») is the
+  log head's `notes` field, written whole by `saveSessionNotes` (last writer wins, never moves
+  `lastAt`; the rules let a member change only that field). The hand-made `campaigns/{id}/sessions`
+  docs are **legacy**: a read-only fallback by date for evenings older than the play log, and the
+  old Sessions page's data. No new write builds on them.
 
 - **Close** — `combat-chronicle-view.ts` localizes each feed line and `buildEncounterChapter`
   assembles the kept lines into one round-grouped markdown `##` chapter. At "End encounter" the DM's

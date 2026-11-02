@@ -1,0 +1,17 @@
+{
+  "campaignScreen": {
+    "tabsLabel": "Campaign sections",
+    "tabFight": "Fight",
+    "master": "DM: {{name}}",
+    "noNextSession": "not set",
+    "copyInvite": "Copy invite",
+    "inviteCopied": "Invite link copied: paste it into the party chat.",
+    "partyHint": "tap a character for their sheet",
+    "noCharacters": "No characters in the party yet. Whoever joins with an invite picks their character.",
+    "chest": "Shared chest",
+    "fightIdle": "No combat in progress. It starts on its own when someone rolls Initiative.",
+    "fightRunning": "Combat in progress · round {{round}}",
+    "loading": "Loading the campaign",
+    "notFound": "Campaign not found. You may no longer be part of it."
+  }
+}

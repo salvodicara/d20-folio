@@ -58,6 +58,14 @@ import {
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
 import { EFFECT_RIDER_SCHEMAS } from "@/lib/homebrew-actions";
+import {
+  ABILITY,
+  conformFields,
+  literals,
+  memoByObject,
+  plainObject,
+  TRUE,
+} from "@/lib/homebrew-conform";
 import type { LibraryEntry } from "@/lib/library";
 import { ALL_SKILLS } from "@/lib/skills";
 import { slugify } from "@/lib/utils";
@@ -68,17 +76,12 @@ import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 
 // ─── The exact shape of every structured stat-block field ────────────────────
 
-const literals = (values: ReadonlyArray<string>): ExactSchema =>
-  unionSchema(values.map((value) => literalSchema(value)));
-
-const TRUE = literalSchema(true);
 /** A whole number of at least 1 (a use count, a legendary pool, an attack count). */
 const COUNT = customSchema<"count", number>("count");
 /** "1d6+2", "2d10" or a flat "1" — the catalogue's dice grammar. */
 const DICE = customSchema<"dice", string>("dice");
 /** A stable entry id: lowercase letters, digits and hyphens. */
 const ENTRY_ID = customSchema<"entry-id", string>("entry-id");
-const ABILITY = literals(ABILITY_CODES);
 const SIZE = literals(CREATURE_SIZE_ORDER);
 const SECTION = literals([
   "traits",
@@ -316,15 +319,6 @@ export const HOMEBREW_MONSTER_FIELD_SCHEMAS: {
   legendaryActions: ENTRIES,
 };
 
-function plainObject(value: unknown): value is Readonly<Record<string, unknown>> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
-}
-
 const isEntryId = (value: unknown): value is string =>
   typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 
@@ -492,7 +486,31 @@ export type PlayableMonsterMechanics = Omit<
   readonly [Key in MonsterEntrySectionKey]?: ReadonlyArray<HomebrewMonsterEntry>;
 };
 
-const mechanicsCache = new WeakMap<object, PlayableMonsterMechanics>();
+/** The entry sections are read by `resolveEntries`, never by their schema. */
+const SKIP_SECTIONS = Object.fromEntries(
+  MONSTER_ENTRY_SECTIONS.map((section) => [section, () => null])
+);
+
+const conformMonsterMechanics = memoByObject(
+  (authored: Readonly<Record<string, unknown>>) => {
+    const accepted = conformFields(
+      HOMEBREW_MONSTER_FIELD_SCHEMAS,
+      authored,
+      CONTEXT,
+      SKIP_SECTIONS
+    );
+    const placed = resolveEntries(authored);
+    const known = resolvable(placed);
+    // A section authored as a list stays one, even empty (a genuine no-action print).
+    for (const section of MONSTER_ENTRY_SECTIONS)
+      if (Array.isArray(authored[section])) accepted[section] = [];
+    for (const { section, entry } of placed) {
+      const list = (accepted[section] ??= []) as HomebrewMonsterEntry[];
+      list.push(checked(entry, known));
+    }
+    return Object.freeze(accepted);
+  }
+);
 
 /**
  * The playable stat block of a stored homebrew monster: every known field its
@@ -503,27 +521,7 @@ export function homebrewMonsterMechanics(
   monster: Pick<CustomMonster, "mechanics">
 ): PlayableMonsterMechanics | undefined {
   const authored: unknown = monster.mechanics;
-  if (!plainObject(authored)) return undefined;
-  const hit = mechanicsCache.get(authored);
-  if (hit) return hit;
-  const accepted: Record<string, unknown> = {};
-  for (const [key, schema] of Object.entries(HOMEBREW_MONSTER_FIELD_SCHEMAS)) {
-    if (schema === ENTRIES || !Object.hasOwn(authored, key)) continue;
-    const value: unknown = conformExact(schema, authored[key], CONTEXT);
-    if (value !== null) accepted[key] = value;
-  }
-  const placed = resolveEntries(authored);
-  const known = resolvable(placed);
-  // A section authored as a list stays one, even empty (a genuine no-action print).
-  for (const section of MONSTER_ENTRY_SECTIONS)
-    if (Array.isArray(authored[section])) accepted[section] = [];
-  for (const { section, entry } of placed) {
-    const list = (accepted[section] ??= []) as HomebrewMonsterEntry[];
-    list.push(checked(entry, known));
-  }
-  const mechanics = Object.freeze(accepted) as PlayableMonsterMechanics;
-  mechanicsCache.set(authored, mechanics);
-  return mechanics;
+  return plainObject(authored) ? conformMonsterMechanics(authored) : undefined;
 }
 
 /** The stat-block id a homebrew monster answers to: `homebrew:<library entry id>`
@@ -582,7 +580,7 @@ export function homebrewMonsterStatBlock(
       ? { qualifiedDefenses: defenses.qualifiedDefenses }
       : {}),
     // A homebrew monster belongs to no book; it is the DM's own.
-    source: "Wiki",
+    source: "Homebrew",
   };
   blockCache.set(monster, { entryId, block });
   return block;

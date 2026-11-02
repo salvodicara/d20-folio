@@ -22,3 +22,13 @@ export function sessionLogStoreFor(campaignId: string): SessionLogStore {
   }
   return store;
 }
+
+/** Save a session's text (the Diario's «Cronaca della sessione») on its play log: the
+ *  one session record. `logId` is the play log's id (`2026-11-02`, `2026-11-02-2`). */
+export function saveSessionNotes(
+  campaignId: string,
+  logId: string,
+  notes: string
+): Promise<void> {
+  return sessionLogStoreFor(campaignId).saveNotes(logId, notes);
+}
