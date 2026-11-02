@@ -104,14 +104,6 @@ export const BARBARIAN_TABLE: SrdClassTable = {
         rages,
         rageDamage,
         weaponMastery,
-        // L11 Relentless Rage derived-chip inputs (read by the feature's
-        // `mechanics.rider`, only surfaced from L11): the INITIAL Constitution
-        // save DC (a flat 10 — the +5-per-use escalation + rest-reset stay in the
-        // description prose; a live use-counter→DC display is a deferred primitive)
-        // and the on-success revive Hit Points = TWICE the Barbarian level
-        // (2024 RAW: barbarian:main, Level 11). No dice (golden rule 21).
-        relentlessRageDc: 10,
-        relentlessRageHp: level * 2,
       },
     };
     if (asi) entry.asi = true;
@@ -411,25 +403,48 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-relentless-rage",
     class: "barbarian",
     level: 11,
-    // 2024 RAW (barbarian:main, Level 11 — Relentless Rage): while Raging, on
-    // dropping to 0 HP (and not dying outright) you may make a DC 10 Constitution
-    // saving throw; on a success your Hit Points become TWICE your Barbarian
-    // level. The DC starts at 10 and rises +5 for each use after the first,
-    // resetting on a Short or Long Rest. Two DERIVED chips (`mechanics.rider`,
-    // reading the class-table `classSpecific`) surface the cleanly-modelable
-    // facts: the initial CON save DC (10) and the on-success revive HP
-    // (2 × Barbarian level). The former placeholder tracker (total:1/short-rest)
-    // MISMODELED an UNLIMITED-use feature as 1/rest — dangerously implying
-    // "already used, can't survive again" — and is removed. The +5-per-use
-    // escalation + rest-reset stay in the description prose; a LIVE escalating-DC
-    // display (a use-counter→DC value) is a deferred primitive (no dice, GR21).
-    mechanics: {
-      rider: {
-        sourceKey: "relentlessRageDc",
-        format: "passthrough",
-        extra: [{ sourceKey: "relentlessRageHp", format: "passthrough" }],
+    // 2024 RAW (barbarian:main, Level 11): drop to 0 HP while your Rage is active
+    // and don't die outright → a DC 10 Constitution save; on a success your Hit
+    // Points become twice your Barbarian level. The DC rises by 5 per use and resets
+    // on a Short or Long Rest. A zero-HP saver (edge-case family M7): the fall
+    // records the Rage, so the saver is offered although falling ends the Rage.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "barbarian-rage",
+        grants: [
+          {
+            type: "at-zero-hp-interrupt",
+            save: {
+              ability: "CON",
+              dc: {
+                kind: "add",
+                terms: [
+                  { kind: "fixed", value: 10 },
+                  {
+                    kind: "multiply",
+                    factors: [
+                      { kind: "fixed", value: 5 },
+                      {
+                        kind: "binding",
+                        bindingId: "zero-hp.uses.barbarian-relentless-rage",
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+            hitPoints: {
+              kind: "multiply",
+              factors: [
+                { kind: "fixed", value: 2 },
+                { kind: "binding", bindingId: "level.class.barbarian" },
+              ],
+            },
+          },
+        ],
       },
-    },
+    ],
     source: "SRD",
   },
   {

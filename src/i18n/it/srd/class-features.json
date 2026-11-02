@@ -137,12 +137,6 @@
     "description": "La tua Ira può mantenerti in combattimento nonostante ferite gravi. Se scendi a 0 Punti Ferita mentre la tua Ira è attiva e non muori sul colpo, puoi effettuare un TS di Costituzione con CD 10. Se riesci, i tuoi Punti Ferita diventano un numero pari al doppio del tuo livello da Barbaro. Ogni volta che usi questo privilegio dopo la prima, la CD aumenta di 5. La CD si resetta a 10 dopo un Riposo Breve o Lungo.",
     "name": "Ira Implacabile"
   },
-  "barbarian-relentless-rage.mechanics.rider": {
-    "label": "CD Costituzione"
-  },
-  "barbarian-relentless-rage.mechanics.rider.relentlessRageHp": {
-    "label": "PF di Recupero"
-  },
   "barbarian-unarmored-defense": {
     "description": "Mentre non indossi alcuna armatura, la tua Classe Armatura è pari a 10 + il tuo modificatore di Destrezza + il tuo modificatore di Costituzione. Puoi usare uno scudo e beneficiare comunque di questa capacità.",
     "name": "Difesa Senza Armatura"
@@ -1404,5 +1398,8 @@
   },
   "barbarian-indomitable-might.grants.1": {
     "description": "Tiri salvezza su Forza: se il totale è inferiore al tuo punteggio di Forza, usa il punteggio"
+  },
+  "barbarian-relentless-rage.grants.0": {
+    "label": "Ira Implacabile"
   }
 }

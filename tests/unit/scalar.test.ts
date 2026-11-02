@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { conformDiceScalar, levelDice, resolveDice, resolveScalar } from "@/lib/scalar";
+import {
+  conformDiceScalar,
+  conformScalar,
+  isScalarBinding,
+  levelDice,
+  resolveDice,
+  resolveScalar,
+  SCALAR_BINDINGS,
+} from "@/lib/scalar";
 
 // The legacy `diceByLevel` table Sneak Attack carried before it moved to a Scalar
 // (rogue.ts, 2026-11-02); the 2024 rule is ceil(Rogue level / 2) d6.
@@ -105,5 +113,54 @@ describe("dice tables: dice that step with a level, die size included", () => {
         below: "1d6",
       })
     ).toBeNull();
+  });
+});
+
+describe("the zero-HP saver's use count (edge-case M7)", () => {
+  const uses = SCALAR_BINDINGS.zeroHpSaverUses("barbarian-relentless-rage");
+  // Relentless Rage: DC 10 + 5 × uses since the last rest.
+  const dc = {
+    kind: "add",
+    terms: [
+      { kind: "fixed", value: 10 },
+      {
+        kind: "multiply",
+        factors: [
+          { kind: "fixed", value: 5 },
+          { kind: "binding", bindingId: uses },
+        ],
+      },
+    ],
+  } as const;
+
+  it("is a binding the vocabulary knows, also for a race trait's id", () => {
+    expect(uses).toBe("zero-hp.uses.barbarian-relentless-rage");
+    expect(isScalarBinding(uses)).toBe(true);
+    expect(
+      isScalarBinding(SCALAR_BINDINGS.zeroHpSaverUses("race:orc:relentless-endurance"))
+    ).toBe(true);
+    expect(isScalarBinding("zero-hp.uses.")).toBe(false);
+  });
+
+  it("a Scalar or a DiceScalar reading it is accepted, and resolves", () => {
+    expect(conformScalar(dc)).toEqual(dc);
+    expect(
+      conformDiceScalar({
+        terms: [
+          {
+            kind: "dice",
+            count: { kind: "binding", bindingId: uses },
+            operation: "add",
+            sides: 6,
+            termId: "dice",
+          },
+        ],
+      })
+    ).not.toBeNull();
+    expect(resolveScalar(dc, { [uses]: 2 })?.value).toBe(20);
+  });
+
+  it("an unknown binding is rejected", () => {
+    expect(conformScalar({ kind: "binding", bindingId: "zero-hp.used.x" })).toBeNull();
   });
 });

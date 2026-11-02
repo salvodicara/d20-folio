@@ -82,3 +82,14 @@ example Disintegrate on M7, Devil's Sight on M15) land with that family.
 Each family ships test-first, with cases taken from the [verdicts](2026-11-edge-cases/verdicts.md)
 rows it covers, and retires the special cases it lists. Shape changes go through
 `live-data-migration`. Player-visible changes are shown to the coordinator before merge.
+
+## Status
+
+- **M1** done (#535): a peer's hit runs `takeDamage` in the write transaction
+  (`src/lib/play/peer-damage.ts`). States a hit consumes on the target stay for M4.
+- **M7, savers** done: one `at-zero-hp-interrupt` shape (use, save with a Scalar DC, HP left),
+  `src/lib/play/zero-hp-savers.ts`. The fall records the states that were on
+  (`session.zeroHpDrop`), so Relentless Rage works although the fall ends Rage. Still open in M7:
+  on-zero outcomes (Disintegrate's dust, knocking out), the stable 1d4-hour wake, attunement ending
+  at death, and companions at 0 (with M6). Concentration lost at the fall is not given back when a
+  saver works.

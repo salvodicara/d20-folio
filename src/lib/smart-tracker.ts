@@ -9615,47 +9615,6 @@ export function getInitiativeTrackerTopUps(character: CharacterDoc): Map<string,
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// At-0-HP interrupts (Relentless Endurance / Undying Sentinel / Misty Escape)
-// ════════════════════════════════════════════════════════════════════════════
-
-/** A resolved at-0-HP interrupt the (UI-owned) DyingBanner offers as a prompt. */
-export interface AtZeroHpInterrupt {
-  /** Source feature id (provenance — the prompt label resolves off it). */
-  sourceId: string;
-  /** The 1/rest tracker the interrupt debits. */
-  trackerId: string;
-}
-
-/**
- * Resolve every AVAILABLE at-0-HP interrupt ("drop to 1 instead": Orc Relentless
- * Endurance, Paladin Undying Sentinel, Boon of Misty Escape). Returns one entry
- * per granting source whose tracker still has an UNSPENT use (`used < total`) —
- * so a spent interrupt never offers a prompt. PURE: never mutates HP/trackers;
- * the (UI-owned) `applyAtZeroHpInterrupt` store action performs the apply.
- * Dedupes nothing (each source is a distinct interrupt the player may choose).
- */
-export function resolveAtZeroHpInterrupts(character: CharacterDoc): AtZeroHpInterrupt[] {
-  // Relentless Endurance is a RACE trait (Orc) and Misty Escape a FEAT — neither
-  // lives in `character.features` — so resolve over the FULL grant sources
-  // (race + feats + features + …), mirroring `gainsHeroicInspirationOnLongRest`.
-  const interrupts = evaluateGrants(
-    resolveAllGrantSources(character.character, character.session.itemResources),
-    sessionActiveKeys(character.session),
-    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
-  ).atZeroHpInterrupts;
-  if (interrupts.length === 0) return [];
-  const trackers = resolveTrackers(character);
-  const out: AtZeroHpInterrupt[] = [];
-  for (const { trackerId, sourceId } of interrupts) {
-    const tracker = trackers.find((t) => t.id === trackerId);
-    if (!tracker) continue;
-    if (tracker.total - tracker.used <= 0) continue; // no unspent use → no offer
-    out.push({ sourceId, trackerId });
-  }
-  return out;
-}
-
-// ════════════════════════════════════════════════════════════════════════════
 // Short-Rest Exhaustion recovery (Ranger Tireless)
 // ════════════════════════════════════════════════════════════════════════════
 

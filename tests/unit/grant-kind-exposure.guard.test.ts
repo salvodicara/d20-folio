@@ -407,7 +407,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "at-zero-hp-interrupt": {
     via: "atZeroHpInterrupts",
-    consumer: "src/lib/smart-tracker.ts",
+    consumer: "src/lib/play/zero-hp-savers.ts",
   },
   "zero-hp-floor": {
     via: "resolvePersistentDamage",

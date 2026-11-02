@@ -8,7 +8,7 @@
  *   2. data — each real SRD source (race trait / class feature / feat) carries
  *      the grant with the trackerId matching the id `resolveTrackers` keys its
  *      tracker by.
- *   3. consumer — `resolveAtZeroHpInterrupts` offers ONLY interrupts whose 1/rest
+ *   3. consumer — `zeroHpSavers` offers ONLY interrupts whose 1/rest
  *      tracker has an unspent use (a spent one never prompts), reading the FULL
  *      grant sources (race + feats), so a real Orc / Paladin / boon-holder
  *      surfaces it.
@@ -19,7 +19,7 @@ import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { foldLegacyClass } from "./_helpers";
 import { evaluateGrants, type Grant, type GrantSource } from "@/lib/grants";
-import { resolveAtZeroHpInterrupts } from "@/lib/smart-tracker";
+import { zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -79,7 +79,7 @@ describe("data — the real interrupt sources emit the grant", () => {
   // content-pack/tests/unit/at-zero-hp-interrupt.pack.test.ts.
 });
 
-// ─── 3. Consumer (resolveAtZeroHpInterrupts) ─────────────────────────────────
+// ─── 3. Consumer (zeroHpSavers) ─────────────────────────────────
 
 function mk(
   char: Partial<CharacterDoc["character"]> & {
@@ -172,22 +172,22 @@ function mk(
   };
 }
 
-describe("resolveAtZeroHpInterrupts — Orc Relentless Endurance", () => {
+describe("zeroHpSavers — Orc Relentless Endurance", () => {
   it("offers the interrupt while the 1/LR use is unspent", () => {
-    const out = resolveAtZeroHpInterrupts(mk());
+    const out = zeroHpSavers(mk());
     expect(out).toHaveLength(1);
     expect(out[0]?.trackerId).toBe("race:orc:relentless-endurance");
   });
 
   it("does NOT offer the interrupt once the use is spent", () => {
-    const out = resolveAtZeroHpInterrupts(
+    const out = zeroHpSavers(
       mk({}, { trackers: { "race:orc:relentless-endurance": { used: 1 } } })
     );
     expect(out).toEqual([]);
   });
 
   it("a non-Orc without any interrupt feature gets nothing", () => {
-    const out = resolveAtZeroHpInterrupts(mk({ race: asRaceId("elf") }));
+    const out = zeroHpSavers(mk({ race: asRaceId("elf") }));
     expect(out).toEqual([]);
   });
 });

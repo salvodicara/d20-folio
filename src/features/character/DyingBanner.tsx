@@ -40,7 +40,11 @@ import { Heart, HeartCrack, ShieldPlus, Skull } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { resolveAtZeroHpInterrupts } from "@/lib/smart-tracker";
+import {
+  zeroHpSavers,
+  type ZeroHpSaver,
+  type ZeroHpSaveResult,
+} from "@/lib/play/zero-hp-savers";
 import { isCharacterDead, diedOfExhaustion } from "@/lib/character-status";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { deathSaveD20Context, enteredD20FaceCount } from "@/lib/character-d20-tests";
@@ -62,7 +66,7 @@ export function DyingBanner() {
     s.character ? vitalHp(s.character.session).current : 1
   );
   const character = useCharacterStore((s) => s.character);
-  const applyAtZeroHpInterrupt = useCharacterStore((s) => s.applyAtZeroHpInterrupt);
+  const applyZeroHpSaver = useCharacterStore((s) => s.applyZeroHpSaver);
 
   // The same shared HP engine the header pill uses — the quick heal, the dying
   // verdict (stable/dead), and the RA-11 death-save roll consumer.
@@ -95,19 +99,22 @@ export function DyingBanner() {
     applyHeal(n);
   }
 
-  // S4 — at-0-HP interrupts ("drop to 1 instead": Relentless Endurance / Undying
-  // Sentinel / Misty Escape). Surfaced ONLY at 0 HP and only when the interrupt's
-  // 1/rest tracker still has an unspent use; one tap sets HP 1 + debits it (undoable).
-  const interrupts = useMemo(
-    () => (character && current <= 0 ? resolveAtZeroHpInterrupts(character) : []),
+  // The zero-HP savers (Relentless Endurance, Relentless Rage, Undying Sentinel):
+  // each offered once per fall, in the order the player picks. One without a save
+  // stands the character up in one tap; one with a save takes the result the player
+  // rolled. Every use is undoable from its toast.
+  const savers = useMemo(
+    () => (character && current <= 0 ? zeroHpSavers(character) : []),
     [character, current]
   );
 
-  function applyInterrupt(trackerId: string, sourceId: string) {
-    const message = t("combat.atZeroHpAppliedToast", {
-      source: grantSourceLabel(sourceId, locale),
-    });
-    registerUndoableToast({ message }, () => applyAtZeroHpInterrupt(trackerId), {
+  function trySaver(saver: ZeroHpSaver, result?: ZeroHpSaveResult) {
+    const source = grantSourceLabel(saver.sourceId, locale);
+    const message =
+      result === "failure"
+        ? t("combat.atZeroHpSaveFailedToast", { source })
+        : t("combat.atZeroHpAppliedToast", { source, hp: saver.hitPoints });
+    registerUndoableToast({ message }, () => applyZeroHpSaver(saver.sourceId, result), {
       turnScoped: false,
     });
   }
@@ -216,27 +223,56 @@ export function DyingBanner() {
         </div>
       )}
 
-      {/* S4 — at-0-HP interrupt prompt ("Stay at 1 HP — use Relentless Endurance?").
-          One tap sets HP 1 + debits the 1/rest use; undoable via the toast.
-          Surfaced only while a use is unspent (the engine consumer gates it) and
-          the character is not DEAD — RAW the interrupt fires when you are reduced
-          to 0 "but not killed outright", so instant death forecloses it. */}
+      {/* The zero-HP savers. RAW they work when you drop to 0 "but aren't killed
+          outright", so a death forecloses them; the engine offers each one once per
+          fall and only while its use is unspent. */}
       {atZero &&
         !isDead &&
-        interrupts.map((it) => (
-          <Button
-            key={it.sourceId}
-            variant="neutral"
-            size="sm"
-            className="dying-interrupt flex-shrink-0"
-            onClick={() => applyInterrupt(it.trackerId, it.sourceId)}
-          >
-            <Icon as={ShieldPlus} size="sm" decorative />
-            {t("combat.atZeroHpApply", {
-              source: grantSourceLabel(it.sourceId, locale),
-            })}
-          </Button>
-        ))}
+        savers.map((saver) =>
+          saver.save ? (
+            <div
+              key={saver.sourceId}
+              className="dying-interrupt flex flex-shrink-0 items-center gap-2"
+            >
+              <span className="text-[length:var(--text-small)] text-text-secondary">
+                {t("combat.atZeroHpSave", {
+                  source: grantSourceLabel(saver.sourceId, locale),
+                  ability: t(`abilities.${saver.save.ability}_short`),
+                  dc: saver.save.dc,
+                })}
+              </span>
+              <Button
+                variant="neutral"
+                size="sm"
+                onClick={() => trySaver(saver, "success")}
+              >
+                <Icon as={ShieldPlus} size="sm" decorative />
+                {t("combat.atZeroHpSavePassed", { hp: saver.hitPoints })}
+              </Button>
+              <Button
+                variant="neutral"
+                size="sm"
+                onClick={() => trySaver(saver, "failure")}
+              >
+                {t("combat.atZeroHpSaveFailed")}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              key={saver.sourceId}
+              variant="neutral"
+              size="sm"
+              className="dying-interrupt flex-shrink-0"
+              onClick={() => trySaver(saver)}
+            >
+              <Icon as={ShieldPlus} size="sm" decorative />
+              {t("combat.atZeroHpApply", {
+                source: grantSourceLabel(saver.sourceId, locale),
+                hp: saver.hitPoints,
+              })}
+            </Button>
+          )
+        )}
 
       {/* Quick Heal — a mate's ordinary heal is one field + one tap (Enter
           applies) while the hero is still alive and making death saves. A death

@@ -4,7 +4,8 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { concentrationSaveDc } from "@/lib/compute";
 import { enteredD20FaceCount } from "@/lib/character-d20-tests";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { reduceHpDelta, sessionToCombatState } from "@/lib/combat-state";
+import { sessionToCombatState } from "@/lib/combat-state";
+import { peerDamageState } from "@/lib/play/peer-damage";
 import {
   initialTrayRow,
   rowAmount,
@@ -23,7 +24,7 @@ import { spells } from "@/data/spells";
 import { getMagicItem } from "@/data/magic-items";
 import { asRaceId } from "@/data/srd-names";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, SessionState } from "@/types/character";
 import { makeCharacterDoc } from "../_helpers";
 import { rule } from "./rule";
 
@@ -31,14 +32,25 @@ const lyra = (session: Partial<CharacterDoc["session"]> = {}): CharacterDoc => (
   ...MOCK_CHARACTER,
   session: { ...MOCK_CHARACTER.session, conditions: [], ...session },
 });
-const pcState = (current: number) =>
-  sessionToCombatState({
-    ...MOCK_CHARACTER.session,
-    hp: { current, temp: 0 },
-    conditions: [],
-    deathSucc: 0,
-    deathFail: 0,
-  });
+/** Someone else's hit on the PC, through the PC's own damage rule (edge-case M1). */
+const peerHit = (
+  current: number,
+  amount: number,
+  session: Partial<SessionState> = {}
+) => {
+  const doc: CharacterDoc = {
+    ...MOCK_CHARACTER,
+    session: {
+      ...MOCK_CHARACTER.session,
+      hp: { current, temp: 0 },
+      conditions: [],
+      deathSucc: 0,
+      deathFail: 0,
+      ...session,
+    },
+  };
+  return peerDamageState(doc, sessionToCombatState(doc.session), amount);
+};
 
 describe("conformance · 17. at-the-table gaps", () => {
   rule(
@@ -145,11 +157,11 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Area spells that hit allies",
       source: "SAC #91; WIKI rogue:main",
-      status: "M1",
+      status: "works",
     },
     () => {
       // A PC already at 0 caught in the caster's Fireball suffers a death-save failure.
-      const after = reduceHpDelta(pcState(0), { kind: "damage", amount: 12 }, 62);
+      const after = peerHit(0, 12, { conditions: ["unconscious"] });
       expect(after.deathSaves.failures).toBe(1);
     }
   );

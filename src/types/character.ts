@@ -1124,6 +1124,18 @@ export interface SessionState {
    */
   fadingPenalties?: Record<string, number>;
   /**
+   * Uses of a zero-HP saver whose save DC grows with each use (Relentless Rage:
+   * DC 10 + 5 per use), keyed by the granting source id. Either rest clears it.
+   * Absent when none was used since the last rest.
+   */
+  zeroHpSaverUses?: Record<string, number>;
+  /**
+   * The latest drop to 0 HP: the states on as the character fell (a saver they
+   * enable is still offered after the fall ends them) and the savers already tried
+   * on this drop. Read only while at 0 HP; regaining Hit Points clears it.
+   */
+  zeroHpDrop?: { activeKeys: string[]; tried?: string[] };
+  /**
    * PLAY-NO-EDIT — defenses gained DURING play (a Potion of Fire Resistance,
    * Protection from Energy, a curse's vulnerability, Heroes' Feast's Frightened
    * immunity), layered ADDITIVELY on top of the build's permanent defenses

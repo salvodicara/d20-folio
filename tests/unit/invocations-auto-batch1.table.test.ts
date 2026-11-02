@@ -12,7 +12,8 @@
 import { describe, expect, it } from "vitest";
 import enInvocations from "@/i18n/en/srd/invocations.json";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import { resolveAtZeroHpInterrupts, resolveTrackers } from "@/lib/smart-tracker";
+import { zeroHpSavers } from "@/lib/play/zero-hp-savers";
+import { resolveTrackers } from "@/lib/smart-tracker";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -64,11 +65,18 @@ describe("Gift of the Protectors — the once-per-Long-Rest counter", () => {
   });
 });
 
+/** The doc at 0 HP: the savers are offered only there. */
+const atZero = (doc: CharacterDoc): CharacterDoc => ({
+  ...doc,
+  session: { ...doc.session, hp: { ...doc.session.hp, current: 0 } },
+});
+
 describe("Gift of the Protectors — drops to 1 Hit Point instead", () => {
   it("the 0-HP prompt offers it while the use is unspent", () => {
-    expect(resolveAtZeroHpInterrupts(withGift())).toContainEqual({
+    expect(zeroHpSavers(atZero(withGift()))).toContainEqual({
       sourceId: "gift-of-the-protectors",
       trackerId: GIFT,
+      hitPoints: 1,
     });
   });
 
@@ -83,6 +91,6 @@ describe("Gift of the Protectors — drops to 1 Hit Point instead", () => {
     const spent = warlock(["pact-of-the-tome", "gift-of-the-protectors"], {
       trackers: { [GIFT]: { used: 1 } },
     });
-    expect(resolveAtZeroHpInterrupts(spent)).toEqual([]);
+    expect(zeroHpSavers(atZero(spent))).toEqual([]);
   });
 });

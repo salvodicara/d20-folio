@@ -35,6 +35,7 @@ import {
   removeLogEntry as removeLogEntryById,
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
+import { spendZeroHpSaver, type ZeroHpSaveResult } from "@/lib/play/zero-hp-savers";
 import { longRestFadeEvents, longRestFades, omitStateKeys } from "@/lib/play/rests";
 import { topUpUsed } from "@/lib/play/tracker-rolls";
 import { prepareStudy } from "@/lib/play/study-command";
@@ -70,6 +71,7 @@ import { removeCondition as removeConditionFrom } from "@/lib/play/conditions";
 import {
   setDeathSaves as setDeathSavesTo,
   UNCONSCIOUS_CONDITION_ID,
+  zeroHpDropOf,
 } from "@/lib/play/vitals";
 import {
   cellWith,
@@ -723,12 +725,14 @@ interface CharacterState {
    */
   recoverTrackerByMinSlot: (trackerId: string, minLevel: number) => (() => void) | null;
   /**
-   * S4 — at-0-HP interrupt (Relentless Endurance / Undying Sentinel / Boon of
-   * Misty Escape): set current HP to 1 and debit the interrupt's tracker by 1,
-   * returning an undo applier that restores the prior HP + tracker. The UI gates
-   * the offer on an unspent interrupt; this performs the apply.
+   * Use a zero-HP saver (Relentless Endurance, Relentless Rage, Undying Sentinel):
+   * a save-gated one takes the result the player rolled. Returns the use's undo, or
+   * null when the saver is not on offer (see `zeroHpSavers`).
    */
-  applyAtZeroHpInterrupt: (trackerId: string) => () => void;
+  applyZeroHpSaver: (
+    sourceId: string,
+    result?: ZeroHpSaveResult
+  ) => (() => boolean) | null;
   /**
    * S4 — Arcane Recovery: restore the chosen expended spell slots (validated by
    * the caller against the ⌈level/2⌉ cap) and debit the feature's 1/LR tracker.
@@ -915,6 +919,18 @@ interface D20CommandSnapshot {
   pendingConcentrationSaves: PendingConcentrationSave[];
   encounterEffectProjection: CharacterState["encounterEffectProjection"];
   damageTakenThisRound: boolean;
+}
+
+/**
+ * Gaining a condition of the Incapacitated family ends the states that declare it
+ * (Rage): a hand-applied chip, a fall to 0 HP from your own hit or someone else's.
+ */
+function endIncapacitatedStates(get: () => CharacterState): void {
+  const current = get().character;
+  if (!current) return;
+  for (const key of resolveActiveStatesEndingOn(current, "incapacitated")) {
+    get().setActiveFeature(key, false);
+  }
 }
 
 function captureD20Command(state: CharacterState): D20CommandSnapshot | null {
@@ -1379,6 +1395,24 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       return;
     }
     set({ ...projection, error: null });
+    // A hit from another device dropped this sheet to 0 HP (edge-case M7): record
+    // the fall as the owner's own hit does (the states on as it fell, for the
+    // zero-HP savers), then end what incapacitation ends (Rage).
+    const landed = get().character;
+    if (
+      !get().readonly &&
+      landed &&
+      character.session.hp.current > 0 &&
+      landed.session.hp.current === 0
+    ) {
+      set({
+        character: {
+          ...landed,
+          session: { ...landed.session, zeroHpDrop: zeroHpDropOf(character) },
+        },
+      });
+      endIncapacitatedStates(get);
+    }
     // A hit from another device can leave this sheet at 0 HP while it still holds
     // Concentration, which only its owner may end (edge-case M1): 2024 RAW, dropping to
     // 0 HP ends it outright. The same teardown the owner's own hit runs (spell, keys,
@@ -1511,6 +1545,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       persistCombat(get);
       return finishDamage();
     }
+    const fell = transition.events.some(
+      (event) =>
+        event.kind === "condition-gain" && conditionBreaksConcentration(event.conditionId)
+    );
 
     // USE-APPLIES (Task 2, RAGE-MAINTAIN) — "taking damage" MAINTAINS a Rage-style
     // state for another round (2024 RAW). This is the real HP-reduction path (the
@@ -1607,6 +1645,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character: afterForm,
     });
     logTransitionEvents();
+    // Falling unconscious ends what incapacitation ends (Rage); the fall recorded
+    // them first, so a zero-HP saver they enable is still offered.
+    if (fell) endIncapacitatedStates(get);
     if (concentrationBreaks) {
       // ONE authoritative teardown owns every concentration-bound fact. Keep the
       // already-resolved depleted-form Temp HP instead of restoring its prior pool.
@@ -2330,14 +2371,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Active states use the same data-owned immediate-drop vocabulary. The
     // Incapacitated family ends Rage (and any future state declaring the same
     // trigger) at the condition mutation seam — never in a feature-id branch.
-    if (conditionBreaksConcentration(condition)) {
-      const current = get().character;
-      if (current) {
-        for (const key of resolveActiveStatesEndingOn(current, "incapacitated")) {
-          get().setActiveFeature(key, false);
-        }
-      }
-    }
+    if (conditionBreaksConcentration(condition)) endIncapacitatedStates(get);
     // Persist the whole resulting combat state (offline-safe).
     persistCombat(get);
   },
@@ -3323,88 +3357,57 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     return commit ? applyPlayCommit(get, character, commit) : null;
   },
 
-  applyAtZeroHpInterrupt: (trackerId) => {
-    if (get().readonly) return () => {};
+  applyZeroHpSaver: (sourceId, result) => {
+    if (get().readonly) return null;
     const character = get().character;
-    if (
-      !character ||
-      character.session.hp.current !== 0 ||
-      !isCharacterAlive(character.status, character.session)
-    ) {
-      return () => {};
-    }
-    // A spent interrupt (Gift of the Protectors already triggered, Relentless
-    // Endurance used) saves no one until it recovers, whoever calls.
-    const pool = resolveTrackers(character).find((tracker) => tracker.id === trackerId);
-    if (!pool || pool.used >= pool.total) return () => {};
-    const priorHp = character.session.hp;
-    const priorTracker = character.session.trackers[trackerId];
-    const priorUsed = priorTracker?.used ?? 0;
-    const priorConditions = character.session.conditions;
-    // WORLD-FIRST: hp → 1, the zero-HP track clears, and the interrupt's pool
-    // debits in ONE journal action (atomic — a pool the world cannot debit
-    // fails the whole engine leg closed to the legacy write).
-    const engine = commitWorldVitals(character, "zero-hp-interrupt", (state) => {
-      const cell = state.resources.pools[trackerId];
-      if (cell?.kind !== "count" || cell.current < 1) return null;
-      state.resources.pools[trackerId] = cellWith(cell, cell.current - 1);
-      state.vitals = {
-        hitPoints: { current: 1, temporary: state.vitals.hitPoints.temporary },
-        zeroHitPoints: null,
-      };
-      return state;
-    });
+    if (!character) return null;
+    const use = spendZeroHpSaver(character, sourceId, result);
+    if (!use) return null;
+    const seal = beginCausalUndo();
+    const { trackerId } = use.saver;
+    // WORLD-FIRST: the HP it leaves, the cleared zero-HP track and the spent use move
+    // in ONE journal action (a pool the world cannot debit fails the whole engine leg
+    // closed to the legacy write).
+    const engine =
+      use.hitPoints !== null || trackerId !== undefined
+        ? commitWorldVitals(character, "zero-hp-interrupt", (state) => {
+            if (trackerId !== undefined) {
+              const cell = state.resources.pools[trackerId];
+              if (cell?.kind !== "count" || cell.current < 1) return null;
+              state.resources.pools[trackerId] = cellWith(cell, cell.current - 1);
+            }
+            if (use.hitPoints !== null) {
+              state.vitals = {
+                hitPoints: {
+                  current: use.hitPoints,
+                  temporary: state.vitals.hitPoints.temporary,
+                },
+                zeroHitPoints: null,
+              };
+            }
+            return state;
+          })
+        : null;
+    const next = use.session;
     set({
       character: {
         ...character,
         session: {
-          ...(engine
-            ? engine.session
-            : {
-                ...character.session,
-                trackers: {
-                  ...character.session.trackers,
-                  [trackerId]: { used: priorUsed + 1 },
-                },
-              }),
-          hp: { ...priorHp, current: 1 },
-          // Standing back up from 0 HP clears any in-progress death saves.
-          deathSucc: 0,
-          deathFail: 0,
-          // RA-10 — RAW the interrupt means the character never fell ("drop to 1
-          // instead"), so the knockout's auto-applied Unconscious is retracted
-          // with the rest of the dying state.
-          conditions: priorConditions.filter((c) => c !== UNCONSCIOUS_CONDITION_ID),
+          ...(engine ? engine.session : next),
+          hp: next.hp,
+          deathSucc: next.deathSucc,
+          deathFail: next.deathFail,
+          conditions: next.conditions,
+          zeroHpSaverUses: next.zeroHpSaverUses,
+          zeroHpDrop: next.zeroHpDrop,
         },
       },
     });
-    // Compound trio change (HP → 1, death saves → 0): persist the whole resulting state.
+    // The saver worked "instead": the character never stayed down, so what the fall
+    // ended comes back (Rage).
+    for (const key of use.restoredStates) get().setActiveFeature(key, true);
     persistCombat(get);
-    return () => {
-      // Journal reverse first (world hp/track/pool restored through the
-      // mirror), then the surgical legacy restore composes on top with the
-      // same values plus the legacy-only conditions revert.
-      if (engine) undoWorldAction(get, engine.actionId);
-      const cur = get().character;
-      if (!cur) return;
-      const reverted = restoreTrackerEntry(cur.session.trackers, trackerId, priorTracker);
-      set({
-        character: {
-          ...cur,
-          session: {
-            ...cur.session,
-            hp: priorHp,
-            trackers: reverted,
-            deathSucc: character.session.deathSucc,
-            deathFail: character.session.deathFail,
-            conditions: priorConditions,
-          },
-        },
-      });
-      // Re-persist the restored trio (HP + death saves back to their pre-interrupt
-      // values) so the subdoc converges with the undo.
-      persistCombat(get);
-    };
+    return seal?.() ?? null;
   },
 
   applyArcaneRecovery: (slotLevels, trackerId) => {

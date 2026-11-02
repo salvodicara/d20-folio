@@ -53,10 +53,12 @@ export const SCALAR_BINDINGS = {
   castBaseLevel: "cast.base-level",
   /** Uses spent from a tracker (Relentless Rage's DC = 10 + 5 × uses). */
   trackerUsed: (trackerId: string) => `tracker.used.${trackerId}`,
+  /** Uses of a zero-HP saver since the last rest (Relentless Rage: DC 10 + 5 × uses). */
+  zeroHpSaverUses: (sourceId: string) => `zero-hp.uses.${sourceId}`,
 } as const;
 
 const BINDING_PATTERN =
-  /^(level\.total|pb|cast\.level|cast\.base-level|level\.class\.[a-z0-9-]+|ability\.(mod|score)\.(STR|DEX|CON|INT|WIS|CHA)|tracker\.used\.[a-z0-9-]+)$/;
+  /^(level\.total|pb|cast\.level|cast\.base-level|level\.class\.[a-z0-9-]+|ability\.(mod|score)\.(STR|DEX|CON|INT|WIS|CHA)|tracker\.used\.[a-z0-9-]+|zero-hp\.uses\.[a-z0-9:-]+)$/;
 
 /** Whether a binding id belongs to the vocabulary. */
 export function isScalarBinding(bindingId: string): boolean {
@@ -78,6 +80,15 @@ function termsOf(
     const value = bindings[bindingId];
     return value === undefined ? [] : [{ bindingId, value }];
   });
+}
+
+/** A catalogue Scalar as authored, or `null` when malformed or reading an unknown binding. */
+export function conformScalar(value: unknown): Scalar | null {
+  if (typeof value === "number") return Number.isSafeInteger(value) ? value : null;
+  const expression = conformIntegerExpression(value);
+  return expression && integerExpressionBindingIds(expression).every(isScalarBinding)
+    ? expression
+    : null;
 }
 
 /** Resolve a Scalar; `null` when it is malformed or reads a missing binding. */

@@ -46,6 +46,8 @@ export interface CompactSessionState extends Record<string, unknown> {
   provisions?: NonNullable<SessionState["provisions"]>;
   burning?: true;
   fadingPenalties?: NonNullable<SessionState["fadingPenalties"]>;
+  zeroHpSaverUses?: NonNullable<SessionState["zeroHpSaverUses"]>;
+  zeroHpDrop?: NonNullable<SessionState["zeroHpDrop"]>;
   sessionDefenses?: SessionState["sessionDefenses"];
   pinnedActions?: string[];
   unpinnedActions?: string[];
@@ -104,6 +106,8 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "provisions",
   "burning",
   "fadingPenalties",
+  "zeroHpSaverUses",
+  "zeroHpDrop",
   "sessionDefenses",
   "pinnedActions",
   "unpinnedActions",
@@ -311,6 +315,10 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (isNonEmptyRecord(session.fadingPenalties)) {
     state.fadingPenalties = session.fadingPenalties;
   }
+  if (isNonEmptyRecord(session.zeroHpSaverUses)) {
+    state.zeroHpSaverUses = session.zeroHpSaverUses;
+  }
+  if (session.zeroHpDrop) state.zeroHpDrop = session.zeroHpDrop;
   if (isNonEmptyRecord(session.sessionDefenses)) {
     state.sessionDefenses = session.sessionDefenses;
   }
@@ -444,6 +452,24 @@ function parseFadingPenalties(value: unknown): SessionState["fadingPenalties"] {
       typeof entry[1] === "number" && Number.isFinite(entry[1])
   );
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function parseZeroHpSaverUses(value: unknown): SessionState["zeroHpSaverUses"] {
+  if (!isRecord(value)) return undefined;
+  const entries = Object.entries(value).filter(
+    (entry): entry is [string, number] =>
+      typeof entry[1] === "number" && Number.isInteger(entry[1]) && entry[1] > 0
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+function parseZeroHpDrop(value: unknown): SessionState["zeroHpDrop"] {
+  if (!isRecord(value) || !Array.isArray(value.activeKeys)) return undefined;
+  const tried = Array.isArray(value.tried) ? stringArray(value.tried) : [];
+  return {
+    activeKeys: stringArray(value.activeKeys),
+    ...(tried.length > 0 ? { tried } : {}),
+  };
 }
 
 function parseCompanionHp(value: unknown): SessionState["companionHp"] {
@@ -761,6 +787,10 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   if (provisions) session.provisions = provisions;
   if (state.burning === true) session.burning = true;
   session.fadingPenalties = parseFadingPenalties(state.fadingPenalties);
+  const zeroHpSaverUses = parseZeroHpSaverUses(state.zeroHpSaverUses);
+  if (zeroHpSaverUses) session.zeroHpSaverUses = zeroHpSaverUses;
+  const zeroHpDrop = parseZeroHpDrop(state.zeroHpDrop);
+  if (zeroHpDrop) session.zeroHpDrop = zeroHpDrop;
   session.sessionDefenses = parseSessionDefenses(state.sessionDefenses);
   session.pinnedActions = stringArray(state.pinnedActions);
   if (Array.isArray(state.unpinnedActions)) {
