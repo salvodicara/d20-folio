@@ -162,6 +162,9 @@
   "roll.ability-checks": {
     "name": "Prove di caratteristica"
   },
+  "roll.initiative": {
+    "name": "Tiri per l'Iniziativa"
+  },
   "roll.dex-saves": {
     "name": "Tiri salvezza su Destrezza"
   },

@@ -111,7 +111,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
       category: 9,
       case: "Invisible is relative to the observer",
       source: "GLOSS",
-      status: "data",
+      status: "works",
     },
     () => {
       expect(attacksAgainstSelf("invisible")).toContainEqual({
@@ -172,7 +172,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
     }
   );
 
-  rule({ category: 9, case: "Incapacitated", source: "GLOSS", status: "data" }, () => {
+  rule({ category: 9, case: "Incapacitated", source: "GLOSS", status: "works" }, () => {
     const gate = resolveConditionEffects(["incapacitated"]);
     expect([...gate.blockedSlots].sort()).toEqual(["action", "bonus", "reaction"]);
     expect(gate.breaksConcentration).toBe(true);

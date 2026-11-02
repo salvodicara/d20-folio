@@ -193,7 +193,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Initiative triggers when rolled physically",
       source: "WIKI barbarian:main; WIKI monk:main; WIKI feat:alert",
-      status: "data",
+      status: "M8",
     },
     () => {
       // Incapacitated rolls Initiative with Disadvantage.
@@ -202,6 +202,12 @@ describe("conformance · 17. at-the-table gaps", () => {
           (d) => d.rollType === "initiative"
         )
       ).toBe(true);
+      // Persistent Rage refills Rage when Initiative is rolled, once per Long Rest:
+      // the trigger carries its own limit (M8 trigger rules).
+      const persistent = classFeatures.find((f) => f.id === "barbarian-persistent-rage");
+      expect(persistent?.grants?.[0]).toMatchObject({
+        limit: { per: "long-rest", max: 1 },
+      });
     }
   );
 

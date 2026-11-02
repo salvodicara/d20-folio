@@ -10,6 +10,10 @@ import {
   hasConcentrationSaveAdvantage,
 } from "@/lib/condition-effects";
 import { litText } from "@/lib/loc-text";
+import { CONDITION_RULES, withImpliedConditions } from "@/lib/condition";
+import { initiativeRollState } from "@/lib/compute";
+
+const NO_GRANTS = { advantages: [], disadvantages: [] };
 import type { AdvantageClause } from "@/lib/grants";
 import enConditions from "@/i18n/en/srd/conditions.json";
 import itConditions from "@/i18n/it/srd/conditions.json";
@@ -103,10 +107,9 @@ describe("resolveConditionEffects — single conditions", () => {
     expect(r.blockedSlots.has("reaction")).toBe(true);
   });
 
-  it("invisible → self-side advantage on attacks", () => {
+  it("invisible → self-side advantage on attacks and Initiative", () => {
     const r = resolveConditionEffects(["invisible"]);
-    expect(r.advantages).toHaveLength(1);
-    expect(r.advantages[0]?.rollType).toBe("attack");
+    expect(r.advantages.map((a) => a.rollType)).toEqual(["attack", "initiative"]);
   });
 
   it("restrained → speed 0 + disadvantage on attacks and DEX saves", () => {
@@ -190,5 +193,47 @@ describe("srd/conditions.json reference text — 2024 wording (M12, M23, M24 + S
       ...itConditions.stunned.effects,
     ].join(" ");
     expect(itJoined).not.toMatch(/non può muoversi/i);
+  });
+});
+
+describe("initiative from conditions (2024: Invisible rolls with Advantage, Incapacitated with Disadvantage)", () => {
+  // The cases come from the engine's authoritative table: every condition whose
+  // CONDITION_RULES carries a self initiative roll mode must reach the roll.
+  const initiativeModes = Object.entries(CONDITION_RULES).flatMap(([id, rule]) =>
+    ("effects" in rule ? rule.effects : [])
+      .filter(
+        (e) =>
+          e.kind === "roll-mode" && e.perspective === "self" && e.test === "initiative"
+      )
+      .map((e) => ({ id, mode: (e as { mode: "advantage" | "disadvantage" }).mode }))
+  );
+
+  it("finds the 2024 initiative conditions in the authoritative table", () => {
+    expect(initiativeModes).toEqual(
+      expect.arrayContaining([
+        { id: "invisible", mode: "advantage" },
+        { id: "incapacitated", mode: "disadvantage" },
+      ])
+    );
+  });
+
+  it.each(initiativeModes)("$id gives $mode on the Initiative roll", ({ id, mode }) => {
+    const effects = resolveConditionEffects([id]);
+    expect(initiativeRollState(NO_GRANTS, null, effects)).toBe(mode);
+  });
+
+  it("an implied Incapacitated (Stunned) also reaches the roll", () => {
+    const effects = resolveConditionEffects(withImpliedConditions(["stunned"]));
+    expect(initiativeRollState(NO_GRANTS, null, effects)).toBe("disadvantage");
+  });
+
+  it("Invisible and Incapacitated together cancel to a straight roll", () => {
+    const effects = resolveConditionEffects(["invisible", "incapacitated"]);
+    expect(initiativeRollState(NO_GRANTS, null, effects)).toBe("none");
+  });
+
+  it("a manual override still wins over conditions", () => {
+    const effects = resolveConditionEffects(["incapacitated"]);
+    expect(initiativeRollState(NO_GRANTS, "advantage", effects)).toBe("advantage");
   });
 });
