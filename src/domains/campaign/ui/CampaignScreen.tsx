@@ -90,7 +90,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
         {tab === "party" ? (
           <PartyTab campaign={campaign} locale={locale} />
         ) : tab === "fight" ? (
-          <FightTab campaign={campaign} locale={locale} />
+          <FightTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : tab === "treasure" ? (
           <TreasuryTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : (
