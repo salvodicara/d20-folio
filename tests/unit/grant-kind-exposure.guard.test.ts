@@ -409,6 +409,14 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "atZeroHpInterrupts",
     consumer: "src/lib/play/zero-hp-savers.ts",
   },
+  "incoming-damage-scale": {
+    via: "incomingDamageScales",
+    consumer: "src/lib/play/damage.ts",
+  },
+  "damage-absorb-pool": {
+    via: "damageAbsorbPools",
+    consumer: "src/lib/play/damage.ts",
+  },
   "zero-hp-floor": {
     via: "resolvePersistentDamage",
     consumer: "src/lib/combat-transition.ts",

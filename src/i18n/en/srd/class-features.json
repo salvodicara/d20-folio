@@ -1401,5 +1401,8 @@
   },
   "barbarian-relentless-rage.grants.0": {
     "label": "Relentless Rage"
+  },
+  "rogue-uncanny-dodge.grants.0": {
+    "label": "Uncanny Dodge"
   }
 }
