@@ -360,12 +360,8 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 8. `pnpm changeset`. Commit; converge + merge at the finish line.
 ```
 
-> **Automation-coverage guard.** `tests/unit/automation-coverage.guard.test.ts` fails if a class
-> feature has NO `grants`/`mechanics` and isn't a system-handled marker or a listed deliberate
-> residual. So a NEW feature must be **automated** (grant/mechanic), match the system pattern, or be
-> consciously added to `DELIBERATE_RESIDUALS` **with a reason** — coverage can only go up. This is the
-> objective "everything automatable is automated" check; ~71% of features are automated today and the
-> rest are accounted for.
+> **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`, checked by the
+> `rules-coverage-*` tests; a new feature lands with its row.
 
 ### I'm fixing a bug
 
