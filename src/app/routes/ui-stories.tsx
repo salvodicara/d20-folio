@@ -1,5 +1,6 @@
 // DEV and preview only: every design-system piece on one page, pinned by Playwright screenshots
 // (tests/e2e/ui-slice.spec.ts). Query: ?lang=en, ?room=study|sanctum|war-room|library|armoury, ?dialog=1, ?toast=1.
+import { asLocale } from "@/lib/locale";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import {
@@ -104,13 +105,14 @@ const row = { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" } 
 
 export function UiStoriesPage() {
   const [q] = useSearchParams();
-  const t = T[q.get("lang") === "en" ? "en" : "it"];
+  const lang = asLocale(q.get("lang") ?? "it");
+  const t = T[lang];
   const room = (q.get("room") ?? "study") as RoomName;
   const [tab, setTab] = useState("0");
   const [pick, setPick] = useState(1);
   const [open, setOpen] = useState(q.get("dialog") === "1");
   return (
-    <div className="fui" lang={q.get("lang") === "en" ? "en" : "it"}>
+    <div className="fui" lang={lang}>
       <Room room={room} />
       <main className="f-page">
         <header>

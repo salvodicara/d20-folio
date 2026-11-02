@@ -28,7 +28,14 @@ export function HpRing({
         />
       )}
       <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
-        <circle cx="32" cy="32" r={r} fill="none" stroke="#120a07" strokeWidth="6" />
+        <circle
+          cx="32"
+          cy="32"
+          r={r}
+          fill="none"
+          style={{ stroke: "var(--ring-track)" }}
+          strokeWidth="6"
+        />
         <circle
           cx="32"
           cy="32"

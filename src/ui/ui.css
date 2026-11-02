@@ -6,41 +6,6 @@
 @import "@fontsource/cormorant-garamond/latin-600.css";
 @import "@fontsource/cormorant-garamond/latin-700.css";
 
-/* Google's Alegreya and Cormorant ship old-style digits; digits come from faces with full-height figures. */
-@font-face {
-  font-family: "Folio Text Figures";
-  font-weight: 400 500;
-  font-display: swap;
-  ascent-override: 102%;
-  descent-override: 35%;
-  line-gap-override: 0%;
-  src: url("../../node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-400-normal.woff2")
-    format("woff2");
-  unicode-range: U+0030-0039;
-}
-@font-face {
-  font-family: "Folio Text Figures";
-  font-weight: 600 900;
-  font-display: swap;
-  ascent-override: 102%;
-  descent-override: 35%;
-  line-gap-override: 0%;
-  src: url("../../node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2")
-    format("woff2");
-  unicode-range: U+0030-0039;
-}
-@font-face {
-  font-family: "Folio Title Figures";
-  font-weight: 400 900;
-  font-display: swap;
-  ascent-override: 92%;
-  descent-override: 29%;
-  line-gap-override: 0%;
-  src: url("../../node_modules/@fontsource/cormorant-infant/files/cormorant-infant-latin-600-normal.woff2")
-    format("woff2");
-  unicode-range: U+0030-0039;
-}
-
 /* ---------- tokens ---------- */
 .fui {
   --font-title: "Folio Title Figures", "Cormorant Garamond", Georgia, serif;
@@ -83,9 +48,28 @@
   --danger-line: #c0392b;
   --turn: #33a6ff;
 
+  --white: #fff;
+  --shade: #000;
+  --shade-80: #000c;
+  --glass: #ffffff14;
+  --raised: #241d16;
+  --danger-bg: #3a1410;
+  --danger-text: #ffd9d2;
+  --error-text: #ffb3a8;
+  --conc-bg: #2a1a3e;
+  --cond-bg: #3a0f26;
+  --buff-bg: #0f2a36;
+  --ring-track: #120a07;
+  --scrim: rgb(4 3 2 / 0.72);
+  --toast-bg: rgb(26 22 17 / 0.95);
+
+  --fs-sm: 14px;
+  --fs-md: 16px;
+
   --r-sm: 6px;
   --r: 8px;
   --r-lg: 12px;
+  --r-pill: 20px;
 
   background: var(--bg);
   color: var(--text);
@@ -156,15 +140,23 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(rgb(11 9 7 / 0.4), rgb(11 9 7 / 0.6) 55%, rgb(11 9 7 / 0.68)),
-    radial-gradient(90% 70% at 50% 40%, transparent 50%, rgb(11 9 7 / 0.45) 100%);
+    linear-gradient(
+      color-mix(in srgb, var(--bg) 40%, transparent),
+      color-mix(in srgb, var(--bg) 60%, transparent) 55%,
+      color-mix(in srgb, var(--bg) 68%, transparent)
+    ),
+    radial-gradient(
+      90% 70% at 50% 40%,
+      transparent 50%,
+      color-mix(in srgb, var(--bg) 45%, transparent) 100%
+    );
 }
 .fui .f-room {
   position: relative;
   height: clamp(300px, 30vw, 440px);
   margin-bottom: -104px;
   background: center 46% / cover no-repeat;
-  mask: linear-gradient(#000 55%, transparent 100%);
+  mask: linear-gradient(var(--shade) 55%, transparent 100%);
 }
 .fui .f-room::after {
   content: "";
@@ -172,10 +164,10 @@
   inset: 0;
   background: linear-gradient(
     90deg,
-    rgb(11 9 7 / 0.55),
+    color-mix(in srgb, var(--bg) 55%, transparent),
     transparent 22%,
     transparent 78%,
-    rgb(11 9 7 / 0.55)
+    color-mix(in srgb, var(--bg) 55%, transparent)
   );
 }
 .fui .f-room.f-sm {
@@ -193,7 +185,7 @@
 /* ---------- panel: one box, one header ---------- */
 .fui .f-pn {
   min-width: 0;
-  background: rgb(26 22 17 / 0.95);
+  background: var(--toast-bg);
   border: 1px solid var(--line);
   border-radius: var(--r);
   overflow: clip;
@@ -210,14 +202,14 @@
   border-top: 3px solid var(--c, var(--c-act));
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--c, var(--c-act)) 55%, #000) 0%,
-    color-mix(in srgb, var(--c, var(--c-act)) 40%, #000) 55%,
-    color-mix(in srgb, var(--c, var(--c-act)) 26%, #000) 100%
+    color-mix(in srgb, var(--c, var(--c-act)) 55%, var(--shade)) 0%,
+    color-mix(in srgb, var(--c, var(--c-act)) 40%, var(--shade)) 55%,
+    color-mix(in srgb, var(--c, var(--c-act)) 26%, var(--shade)) 100%
   );
   font: 700 18px/1.2 var(--font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--white);
 }
 .fui .f-pnh > .f-x {
   margin-left: auto;
@@ -227,7 +219,7 @@
   font: 400 14px var(--font-text);
   letter-spacing: 0;
   text-transform: none;
-  color: #e8dcc4;
+  color: var(--text);
 }
 .fui .f-pnb {
   padding: 16px 24px 24px;
@@ -243,7 +235,7 @@
 @media (max-width: 640px) {
   .fui .f-pnh {
     padding: 4px 16px 8px;
-    font-size: 16px;
+    font-size: var(--fs-md);
     letter-spacing: 0.04em;
   }
   .fui .f-pnb {
@@ -306,7 +298,7 @@
     transform 0.06s;
 }
 .fui .f-btn[data-kind="primary"] {
-  background: #2a2219;
+  background: var(--line-soft);
   border-color: var(--gold-line);
   color: var(--strong);
 }
@@ -318,9 +310,9 @@
   padding: 0 12px;
 }
 .fui .f-btn[data-kind="danger"] {
-  background: #3a1410;
+  background: var(--danger-bg);
   border-color: var(--danger-line);
-  color: #ffd9d2;
+  color: var(--danger-text);
 }
 .fui .f-btn:hover {
   filter: brightness(1.18);
@@ -345,10 +337,10 @@
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid #ffffff14;
+  border-bottom: 1px solid var(--glass);
 }
 .fui .f-tabs[data-more="true"] {
-  mask-image: linear-gradient(90deg, #000 calc(100% - 56px), transparent);
+  mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
 }
 .fui .f-tabs > button {
   flex: none;
@@ -364,10 +356,10 @@
   cursor: pointer;
 }
 .fui .f-tabs > button:hover {
-  color: #fff;
+  color: var(--white);
 }
 .fui .f-tabs > button[aria-selected="true"] {
-  color: #fff;
+  color: var(--white);
   box-shadow: inset 0 -2px 0 var(--text);
 }
 .fui .f-chips {
@@ -382,7 +374,7 @@
   min-height: 40px;
   padding: 0 16px;
   border: 1px solid var(--line-strong);
-  border-radius: 20px;
+  border-radius: var(--r-pill);
   background: none;
   color: var(--text);
   font: 600 14px var(--font-text);
@@ -390,24 +382,24 @@
   cursor: pointer;
 }
 .fui .f-chip[aria-pressed="true"] {
-  border-color: #e8dcc4;
-  background: #ffffff14;
-  color: #fff;
+  border-color: var(--text);
+  background: var(--glass);
+  color: var(--white);
 }
 .fui .f-chip[data-kind="conc"] {
   border-color: var(--conc);
-  background: #2a1a3e;
-  color: #fff;
+  background: var(--conc-bg);
+  color: var(--white);
 }
 .fui .f-chip[data-kind="cond"] {
   border-color: var(--cond);
-  background: #3a0f26;
-  color: #fff;
+  background: var(--cond-bg);
+  color: var(--white);
 }
 .fui .f-chip[data-kind="buff"] {
   border-color: var(--buff);
-  background: #0f2a36;
-  color: #fff;
+  background: var(--buff-bg);
+  color: var(--white);
 }
 
 /* ---------- fields ---------- */
@@ -438,12 +430,12 @@
   border-color: var(--gold-line);
 }
 .fui .f-help {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 .fui .f-err {
-  font-size: 14px;
-  color: #ffb3a8;
+  font-size: var(--fs-sm);
+  color: var(--error-text);
 }
 
 /* ---------- note (callout) ---------- */
@@ -470,8 +462,8 @@
   padding: 8px 8px 8px 20px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r);
-  background: #241d16;
-  box-shadow: 0 16px 48px #000;
+  background: var(--raised);
+  box-shadow: 0 16px 48px var(--shade);
   color: var(--strong);
 }
 .fui .f-toast > span {
@@ -500,7 +492,7 @@
   border-radius: var(--r-lg);
   background: var(--panel);
   color: var(--text);
-  box-shadow: 0 30px 80px #000;
+  box-shadow: 0 30px 80px var(--shade);
   overflow: clip;
   overflow-clip-margin: border-box;
 }
@@ -509,7 +501,7 @@
   flex-direction: column;
 }
 .fui dialog.f-dlg::backdrop {
-  background: rgb(4 3 2 / 0.72);
+  background: var(--scrim);
 }
 .fui dialog.f-dlg .f-pnh {
   flex-wrap: nowrap;
@@ -554,7 +546,7 @@
   }
   .fui dialog.f-dlg .f-pn-foot {
     flex-direction: column-reverse;
-    box-shadow: 0 -12px 16px -8px #000c;
+    box-shadow: 0 -12px 16px -8px var(--shade-80);
   }
   .fui dialog.f-dlg .f-pn-foot > .f-btn {
     width: 100%;
