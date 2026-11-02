@@ -1,16 +1,25 @@
 /**
- * The campaign's Scontro tab (approved prototype camp-fight / camp-fight-idle): while a
- * fight runs, the initiative list with the round always in sight and whose turn it is,
- * and what has happened so far; otherwise how a fight starts and the past fights from
- * the play logs. The rows follow the engine's turn order (frozen once turns begin).
- * Read side only: the turn actions arrive with the combat lifecycle.
+ * The campaign's Scontro tab (approved prototype camp-fight / camp-fight-idle) on the
+ * owner's combat lifecycle: the first roll starts a fight, anyone passes or steps back a
+ * turn, ends it and reopens it, each with its undo. While a fight runs: the initiative
+ * list with the round always in sight and whose turn it is (the engine's order, frozen
+ * once turns begin), and what has happened so far. Otherwise: how a fight starts, the
+ * last fight to reopen, and the past fights from the play logs.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { PartyChip } from "@/domains/campaign/party-rows-view";
+import { fightControls, type FightControls } from "@/domains/combat/fight-controls";
 import { fightRows, type FightRow } from "@/domains/combat/fight-rows-view";
 import { pastFights } from "@/domains/combat/past-fights-view";
+import { RollDialog } from "@/domains/combat/ui/FightActions";
+import {
+  moves,
+  useEndedCombat,
+  useFightMove,
+  type Toaster,
+} from "@/domains/combat/ui/fight-moves";
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { encounterRollFor } from "@/features/campaigns/encounter";
@@ -31,50 +40,181 @@ import { localizePlayEvent } from "@/lib/views/session-report-view";
 import { concentrationLabel } from "@/lib/views/tracker-view";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
-import { Chip, Panel } from "@/ui";
+import { Button, Chip, Panel } from "@/ui";
 
 const FEED_LINES = 8;
 
 export function FightTab({
   campaign,
   locale,
+  onToast,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
+  onToast: Toaster;
 }) {
-  const encounter = campaign.encounter;
-  return encounter ? (
-    <LiveFight campaign={campaign} encounter={encounter} locale={locale} />
-  ) : (
-    <IdleFight campaign={campaign} />
+  const { t } = useTranslation();
+  const uid = useAuthStore((s) => s.user?.uid);
+  const isDm = uid === campaign.dmUid;
+  const encounter = campaign.encounter ?? null;
+  const now = useMinute();
+  const ended = useEndedCombat(campaign.id);
+  const party = useParty(campaign, encounter, locale);
+  const move = useFightMove(onToast);
+  const [rolling, setRolling] = useState(false);
+  if (!uid) return null;
+  const myId = `pc-${uid}`;
+  const controls = fightControls(
+    encounter,
+    ended,
+    {
+      uid,
+      isDm,
+      hasCharacter: Boolean(campaign.memberDetails[uid]?.characterId),
+      rolled: campaign.encounterInit?.[uid] != null,
+    },
+    now
   );
+  const bonuses = Object.fromEntries(
+    Object.entries(party.pcs).map(([id, pc]) => [id, pc.initiativeBonus])
+  );
+  const roll = rolling && (
+    <RollDialog
+      bonus={bonuses[myId] ?? 0}
+      onClose={() => setRolling(false)}
+      onRoll={(d20) =>
+        move(
+          moves.roll(campaign.id, uid, d20, bonuses),
+          t("fight.rollDone", { total: d20 + (bonuses[myId] ?? 0) })
+        )
+      }
+    />
+  );
+  const actions = {
+    roll: () => setRolling(true),
+    pass: () =>
+      move(
+        moves.pass(campaign.id, uid, isDm, encounter?.currentCombatantId ?? null),
+        t("fight.passDone")
+      ),
+    back: () =>
+      move(
+        moves.back(campaign.id, uid, isDm, encounter?.currentCombatantId ?? null),
+        t("fight.backDone")
+      ),
+    end: (reason?: FightControls["suggestEnd"]) =>
+      move(moves.end(campaign.id, reason ?? undefined), t("fight.endDone")),
+    reopen: () => move(moves.reopen(campaign.id), t("fight.reopenDone")),
+  };
+  return (
+    <>
+      {encounter ? (
+        <LiveFight
+          campaign={campaign}
+          encounter={encounter}
+          party={party}
+          controls={controls}
+          actions={actions}
+          isDm={isDm}
+          uid={uid}
+          locale={locale}
+        />
+      ) : (
+        <IdleFight campaign={campaign} controls={controls} actions={actions} />
+      )}
+      {roll}
+    </>
+  );
+}
+
+/** The time, refreshed every minute: enough for "nobody has touched the fight for an hour". */
+function useMinute(): number {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return now;
+}
+
+interface Actions {
+  roll: () => void;
+  pass: () => void;
+  back: () => void;
+  end: (reason?: FightControls["suggestEnd"]) => void;
+  reopen: () => void;
 }
 
 function LiveFight({
   campaign,
   encounter,
+  party,
+  controls,
+  actions,
+  isDm,
+  uid,
   locale,
 }: {
   campaign: CampaignDoc;
   encounter: EncounterState;
+  party: Party;
+  controls: FightControls;
+  actions: Actions;
+  isDm: boolean;
+  uid: string;
   locale: Locale;
 }) {
   const { t } = useTranslation();
-  const uid = useAuthStore((s) => s.user?.uid);
-  const isDm = uid === campaign.dmUid;
-  const { view, concentration } = useFightView(campaign, encounter, isDm, locale);
-  const rows = fightRows(view.rows, view.currentId, concentration, locale);
+  const view = useMemo(
+    () => buildEncounterView(encounter, party.pcs, isDm),
+    [encounter, party.pcs, isDm]
+  );
+  const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
+  const suggest = controls.suggestEnd;
   return (
     <div className="f-split">
-      <Panel
-        color="ini"
-        title={t("fight.listTitle", { round: encounter.round })}
-        aside={t("fight.fighters", { count: view.rows.length })}
-      >
-        {rows.map((row) => (
-          <FightLine key={row.ids.join("+")} row={row} />
-        ))}
-      </Panel>
+      <div className="f-stack">
+        {suggest && (
+          <div className="f-note f-suggest" role="status">
+            <span>{t(`fight.suggest.${suggest}`)}</span>
+            <Button onClick={() => actions.end(suggest)}>{t("fight.end")}</Button>
+          </div>
+        )}
+        <Panel
+          color="ini"
+          title={t("fight.listTitle", { round: encounter.round })}
+          aside={t("fight.fighters", { count: view.rows.length })}
+          foot={
+            <>
+              {controls.pass && (
+                <Button kind="primary" wide icon="u-next" onClick={actions.pass}>
+                  {t("campaignHub.encounterNextTurn")}
+                </Button>
+              )}
+              {controls.back && (
+                <Button icon="u-back" onClick={actions.back}>
+                  {t("fight.back")}
+                </Button>
+              )}
+              {controls.roll && (
+                <Button onClick={actions.roll}>
+                  {t("campaignHub.encounterRollInitiative")}
+                </Button>
+              )}
+              {controls.end && (
+                <Button kind="quiet" onClick={() => actions.end()}>
+                  {t("fight.end")}
+                </Button>
+              )}
+            </>
+          }
+        >
+          {rows.map((row) => (
+            <FightLine key={row.ids.join("+")} row={row} />
+          ))}
+        </Panel>
+        <p className="f-quiet">{t("fight.anyonePasses")}</p>
+      </div>
       <Feed
         campaign={campaign}
         encounter={encounter}
@@ -86,25 +226,34 @@ function LiveFight({
   );
 }
 
-/** The live fight assembled exactly as the old hub does it: the encounter plus each
- *  character's live sheet and combat state (`derivePcLive` → `buildEncounterView`). */
-function useFightView(
+interface Party {
+  pcs: Record<string, PcLive>;
+  concentration: Record<string, PartyChip[]>;
+}
+
+/** Every character's live facts (the old hub's assembly: their sheet and combat state
+ *  through `derivePcLive`): the fight's characters while one runs, else the party, whose
+ *  initiative bonuses the first roll needs. */
+function useParty(
   campaign: CampaignDoc,
-  encounter: EncounterState,
-  isDm: boolean,
+  encounter: EncounterState | null,
   locale: Locale
-) {
+): Party {
   const refs = useMemo(
     () =>
-      encounter.combatants.flatMap((c) =>
-        c.kind === "pc" ? [{ uid: c.memberUid, characterId: c.characterId }] : []
-      ),
-    [encounter.combatants]
+      encounter
+        ? encounter.combatants.flatMap((c) =>
+            c.kind === "pc" ? [{ uid: c.memberUid, characterId: c.characterId }] : []
+          )
+        : Object.entries(campaign.memberDetails).flatMap(([uid, m]) =>
+            m.characterId ? [{ uid, characterId: m.characterId }] : []
+          ),
+    [encounter, campaign.memberDetails]
   );
   const docs = useMemberCharacterDocs(refs);
   const states = usePartyCombatStates(refs);
   const encounterInit = campaign.encounterInit;
-  const live = useMemo(() => {
+  return useMemo(() => {
     const pcs: Record<string, PcLive> = {};
     const concentration: Record<string, PartyChip[]> = {};
     for (const ref of refs) {
@@ -125,11 +274,6 @@ function useFightView(
     }
     return { pcs, concentration };
   }, [refs, docs, states, encounterInit, locale]);
-  const view = useMemo(
-    () => buildEncounterView(encounter, live.pcs, isDm),
-    [encounter, live.pcs, isDm]
-  );
-  return { view, concentration: live.concentration };
 }
 
 function FightLine({ row }: { row: FightRow }) {
@@ -235,7 +379,15 @@ function Feed({
   );
 }
 
-function IdleFight({ campaign }: { campaign: CampaignDoc }) {
+function IdleFight({
+  campaign,
+  controls,
+  actions,
+}: {
+  campaign: CampaignDoc;
+  controls: FightControls;
+  actions: Actions;
+}) {
   const { t } = useTranslation();
   const reports = useSessionReports(campaign.id);
   const fights = useMemo(() => {
@@ -247,7 +399,26 @@ function IdleFight({ campaign }: { campaign: CampaignDoc }) {
   }, [reports.logs, campaign.dmUid]);
   return (
     <div className="f-split">
-      <Panel color="ini" title={t("campaignScreen.tabFight")}>
+      <Panel
+        color="ini"
+        title={t("campaignScreen.tabFight")}
+        foot={
+          (controls.roll || controls.reopen) && (
+            <>
+              {controls.roll && (
+                <Button kind="primary" onClick={actions.roll}>
+                  {t("campaignHub.encounterRollInitiative")}
+                </Button>
+              )}
+              {controls.reopen && (
+                <Button icon="u-back" onClick={actions.reopen}>
+                  {t("fight.reopen")}
+                </Button>
+              )}
+            </>
+          )
+        }
+      >
         <div className="f-empty">
           <b>{t("fight.idleTitle")}</b>
           <p>{t("fight.idleHelp")}</p>
