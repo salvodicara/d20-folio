@@ -1041,7 +1041,7 @@ declare the same shape.
    where a per-entity family exists). Then emit the grant from every SRD data row that should carry it
    (this step may be its own per-category release).
 
-Steps 1-4 are usually one commit. `docs/AUTOMATION_COVERAGE.md` tracks per-entity coverage; the
+Steps 1-4 are usually one commit. `docs/RULES_COVERAGE.md` tracks coverage; the
 override always remains (golden rule 8).
 
 ---
@@ -1056,7 +1056,7 @@ override always remains (golden rule 8).
 > is folded into that list in migration Phase 5.
 
 > A mechanic here is **not a gap** — it is a triaged decision. Re-auditing should treat each as
-> already-settled. (The live-campaign frontier view is `docs/AUTOMATION_BACKLOG.md`; this is the
+> already-settled. (The coverage view is `docs/RULES_COVERAGE.md`; this is the
 > standing taxonomy record.) Most former entries have since SHIPPED as PRIM grant kinds — those are
 > noted in git / `CHANGELOG.md` and are NOT residuals.
 
@@ -1108,7 +1108,7 @@ The structural reasons the declarative-grant model is intentionally not the righ
   the Companions rail section).
 - **Cast-level-scaling summons.** The feature-declared companions (Steel Defender / Eldritch Cannon
   / Beast Master Primal Companion / pack Homunculus) AND the Find Familiar summon are now modeled +
-  rendered (the Companions rail; `docs/AUTOMATION_COVERAGE.md`). The SRD summon spells with a
+  rendered (the Companions rail; `docs/RULES_COVERAGE.md`). The SRD summon spells with a
   printed stat block (Find Steed, Phantom Steed, Giant Insect, Summon Dragon, Arcane Hand) declare
   it as the spell's `companion`; `spellLevel` scales AC / HP / damage with the cast level when the
   session knows it (a Concentration spell's `concentrationCastLevel`), the spell's own level
@@ -1121,4 +1121,4 @@ The structural reasons the declarative-grant model is intentionally not the righ
   Gate, Awaken) declares `bestiaryPick` (types / size / Intelligence / CR from its text); the rail
   offers the bestiary picker filtered by it and stores the chosen monster id in
   `session.companionVariant`. Residual (Conjure Fey's stale text) tracked in
-  `docs/AUTOMATION_BACKLOG.md`.
+  `docs/RULES_COVERAGE.md`.

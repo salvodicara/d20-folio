@@ -262,8 +262,7 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
    data, the product brief (`docs/strategy/2026-10-16-product-brief.md`)/Design for UI, or the
    relevant operations runbook. Verify claims against code, config, git, and runtime evidence
    before acting.
-3. **`docs/AUTOMATION_COVERAGE.md`** for per-entity automation coverage.
-   `docs/AUTOMATION_BACKLOG.md` is the closed audit record, not a default reading assignment.
+3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage (its counts are test-pinned).
 
 ### Claude Code and Codex parity
 
@@ -550,7 +549,7 @@ fixture route `/characters/team-<name>` (`src/lib/dev-fixtures.ts`).
   `D20_EMIT_NEW=1` to also (re)write the v3 files to `~/Documents/d20-team/new/`. A field that survives
   minimization but is inferable is a shrink target — chase the export size down while the sheet stays fixed.
 
-This is the JSON-grounded verification loop defined in `docs/AUTOMATION_BACKLOG.md → "⭑ CURRENT CAMPAIGN"`.
+This is the JSON-grounded verification loop.
 For breadth (all 6 at once, or the long tail), fan it out with a verification workflow: one agent per
 character finds discrepancies, an adversarial pass confirms each is real, then fix serially.
 
