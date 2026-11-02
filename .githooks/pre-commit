@@ -23,4 +23,4 @@ fi
 # ── Lint + format staged files only (fast) ────────────────────────────────────
 pnpm lint-staged
 
-echo "==> Pre-commit OK. (The sole full gate runs for the finished push to main.)"
+echo "==> Pre-commit OK. (The full gate runs in CI on the pull request.)"
