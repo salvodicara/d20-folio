@@ -15,6 +15,7 @@
  * read FROM this aggregate — they no longer parse English.
  */
 
+import { conformDiceScalar, type DiceScalar } from "@/lib/scalar";
 import type {
   AbilityCode,
   ActionEconomyCategory,
@@ -124,6 +125,7 @@ function conformProficiencyToken(value: unknown): ProficiencyToken | null {
 const GRANT_SCHEMA_CONTEXT: ExactSchemaContext<GrantSchemaCustomTypes, GrantSchemaRefs> =
   {
     customs: {
+      "dice-scalar": conformDiceScalar,
       "locale-text": conformLocaleText,
       "proficiency-token": conformProficiencyToken,
       "resource-spec": conformResourceSpec,
@@ -1733,7 +1735,7 @@ export interface AggregatedGrants {
    * character's level.
    */
   damageRiders: ReadonlyArray<{
-    dice?: string;
+    dice?: DiceScalar;
     diceByLevel?: Readonly<Record<number, string>>;
     /** Flat PB extra-damage sentinel (a species revelation form) — the consumer
      *  resolves it to a `+N` flat amount; mutually exclusive with `dice`. */

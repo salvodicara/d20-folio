@@ -25,6 +25,7 @@ import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 import { ALL_REACTION_TRIGGERS, type LocaleText } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
+import type { DiceScalar } from "@/lib/scalar";
 import { LOCALES, type Locale } from "@/lib/locale";
 import { DETECTION_TARGETS } from "@/lib/rules/detection-targets";
 
@@ -37,6 +38,8 @@ const RESOURCE_SPEC_SCHEMA = customSchema<"resource-spec", ResourceSpec>("resour
  * rest through `homebrewText`'s fallback (`homebrewFeatureGrants`).
  */
 const LOCALE_TEXT_SCHEMA = customSchema<"locale-text", LocaleText>("locale-text");
+/** A literal dice string ("2d6") or a DiceFormula whose counts scale (`@/lib/scalar`). */
+const DICE_SCALAR_SCHEMA = customSchema<"dice-scalar", DiceScalar>("dice-scalar");
 
 /** Text in every registered language, as the catalogue authors it; else null. */
 export function conformLocaleText(value: unknown): LocaleText | null {
@@ -1335,7 +1338,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
             kind: literalSchema("class-level"),
           }),
         ]),
-        dice: stringSchema,
+        dice: DICE_SCALAR_SCHEMA,
         diceByLevel: recordSchema("number", stringSchema),
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
@@ -1392,7 +1395,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
             kind: literalSchema("class-level"),
           }),
         ]),
-        dice: stringSchema,
+        dice: DICE_SCALAR_SCHEMA,
         diceByLevel: recordSchema("number", stringSchema),
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
@@ -2595,6 +2598,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
 });
 
 export type GrantSchemaCustomTypes = {
+  readonly "dice-scalar": DiceScalar;
   readonly "locale-text": LocaleText;
   readonly "proficiency-token": ProficiencyToken;
   readonly "resource-spec": ResourceSpec;

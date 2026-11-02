@@ -6,7 +6,7 @@
  * on your turn with a Strength-based attack takes extra d6s equal to your Rage
  * Damage bonus — +2 at L1, +3 at L9, +4 at L16 (matching the Barbarian table) —
  * of the weapon's damage type. Modelled via the `damage-rider` grant's dynamic
- * `diceByLevel` count, resolved at the character's level by `resolveRiderDice`
+ * level-table `dice` (`levelDice`), resolved at the Barbarian level by `resolveRiderDice`
  * and surfaced as `summary.extraDamage` on melee weapon attack rows.
  */
 import { describe, expect, it } from "vitest";
@@ -33,8 +33,6 @@ describe("Frenzy is the 2024 dynamic damage rider (no 2014 attack/exhaustion)", 
         : undefined;
     expect(rider).toMatchObject({
       type: "damage-rider",
-      dice: "2d6",
-      diceByLevel: { 1: "2d6", 9: "3d6", 16: "4d6" },
       damageType: "slashing",
       appliesTo: "melee-weapon",
       oncePerTurn: true,

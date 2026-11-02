@@ -1,36 +1,34 @@
 import { describe, expect, it } from "vitest";
 
-import { getClassFeatures } from "@/data/classes";
 import { resolveDice, resolveScalar, scalarFromLevelTable } from "@/lib/scalar";
 
-// The cases come from the catalogue the Scalar replaces: Sneak Attack's
-// `diceByLevel` (rogue.ts) must resolve to the same dice at every level.
-const sneakAttack = getClassFeatures("rogue")
-  .find((f) => f.id === "rogue-sneak-attack")
-  ?.grants?.find((g) => g.type === "damage-rider") as
-  | { dice: string; diceByLevel: Record<number, string> }
-  | undefined;
-
-function legacyDiceAt(level: number): string {
-  if (!sneakAttack) throw new Error("Sneak Attack damage rider not found");
-  let dice = sneakAttack.dice;
-  for (const [at, d] of Object.entries(sneakAttack.diceByLevel)) {
-    if (level >= Number(at)) dice = d;
-  }
-  return dice;
-}
+// The legacy `diceByLevel` table Sneak Attack carried before it moved to a Scalar
+// (rogue.ts, 2026-11-02); the 2024 rule is ceil(Rogue level / 2) d6.
+const SNEAK_ATTACK_LEGACY = {
+  dice: "1d6",
+  diceByLevel: {
+    3: "2d6",
+    5: "3d6",
+    7: "4d6",
+    9: "5d6",
+    11: "6d6",
+    13: "7d6",
+    15: "8d6",
+    17: "9d6",
+    19: "10d6",
+  },
+};
 
 describe("scalar: one language for scaled catalogue numbers", () => {
-  it("a level table reproduces Sneak Attack's diceByLevel at every level 1-20", () => {
-    if (!sneakAttack) throw new Error("Sneak Attack damage rider not found");
+  it("a level table turns the legacy Sneak Attack table into ceil(level / 2) d6, levels 1-20", () => {
     const dice = scalarFromLevelTable(
       "level.class.rogue",
-      sneakAttack.dice,
-      sneakAttack.diceByLevel
+      SNEAK_ATTACK_LEGACY.dice,
+      SNEAK_ATTACK_LEGACY.diceByLevel
     );
     for (let level = 1; level <= 20; level += 1) {
       expect(resolveDice(dice, { "level.class.rogue": level })?.formula).toBe(
-        legacyDiceAt(level)
+        `${Math.ceil(level / 2)}d6`
       );
     }
   });

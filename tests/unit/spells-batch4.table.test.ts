@@ -189,7 +189,7 @@ function factsOf(agg: AggregatedGrants): Required<LitFacts> {
     incomingAdv: agg.incomingAttackAdvantages.length,
     incomingDis: agg.incomingAttackDisadvantages.length,
     riders: agg.damageRiders.map((r) => ({
-      dice: r.dice ?? "",
+      dice: typeof r.dice === "string" ? r.dice : "",
       types: r.damageTypeChoices ?? [r.damageType],
     })),
     notes: agg.defenseNotes.length,
