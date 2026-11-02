@@ -15,6 +15,46 @@
     "note": "Note (optional)",
     "putDone": "{{amount}} in the chest.",
     "takeDone": "You took {{amount}} from the chest.",
-    "held": "In the chest: {{count}}"
+    "held": "In the chest: {{count}}",
+    "loot": "Loot",
+    "lootFound": "Found",
+    "lootWhere": "Where does it go?",
+    "lootTo": {
+      "me": "To me, in my pack",
+      "chest": "To the party chest",
+      "split": "Split in equal shares"
+    },
+    "lootSplit": "{{names}} get {{share}} each.",
+    "lootRemainder": "The rest ({{coins}}) goes into the chest.",
+    "lootItemsToChest": "The objects go into the chest.",
+    "lootToChest": "It all goes into the party chest.",
+    "lootToMe": "It all comes to your sheet.",
+    "lootNothing": "Write what you found.",
+    "lootLogged": "It is all written in «Who took what».",
+    "lootDone": {
+      "me": "Your loot: it comes to your sheet.",
+      "chest": "Loot in the chest.",
+      "split": "Loot split: everyone finds their share on their sheet."
+    },
+    "lootLine": {
+      "me": "{{who}} keeps the loot: {{what}}",
+      "chest": "Loot into the chest: {{what}}",
+      "split": "Loot split in equal shares: {{what}}"
+    },
+    "objects_one": "{{count}} object",
+    "objects_other": "{{count}} objects",
+    "itemsTitle": "Objects in the chest",
+    "itemsEmpty": "No objects in the chest.",
+    "itemName": "Object",
+    "putItem": "Put in an object",
+    "putItemDone": "{{item}} in the chest.",
+    "tookItem": "You took {{item}}: it comes to your sheet.",
+    "putItemLine": "{{who}} puts {{count}} {{item}} in the chest",
+    "takeItemLine": "{{who}} takes {{count}} {{item}} from the chest",
+    "shareOf": "{{name}}: {{coins}}",
+    "shareMine": "Your share: it comes to your sheet.",
+    "shareWaiting": "Waiting on their sheet.",
+    "moved": "The chest has already changed: look again and retry.",
+    "tooLate": "Too late to undo: it is already on the sheet."
   }
 }
