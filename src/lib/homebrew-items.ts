@@ -54,6 +54,15 @@ import {
 } from "@/lib/exact-schema";
 import { conformHomebrewGrant, type Grant } from "@/lib/grants";
 import {
+  conformFields,
+  GRANT,
+  literals,
+  memoByObject,
+  OBJECT,
+  plainObject,
+} from "@/lib/homebrew-conform";
+import { conformGrants } from "@/lib/homebrew-grants";
+import {
   conformResourceRecoveryTrigger,
   isValidItemInstanceId,
   isValidResourceItemSpec,
@@ -67,9 +76,6 @@ import type {
 } from "@/types/character";
 
 // ─── The exact shape of every structured catalogue magic-item field ──────────
-
-const literals = (values: ReadonlyArray<string>): ExactSchema =>
-  unionSchema(values.map((value) => literalSchema(value)));
 
 const ENTERED_ROLL = objectSchema(
   { dice: numberSchema, sides: numberSchema },
@@ -122,21 +128,6 @@ const RESOURCE = objectSchema(
     ]),
   }
 );
-
-/** A plain JSON object whose inner shape is the catalogue's own nested dialect (a
- *  summoned stat block, a bestiary rule): checked to be an object here, read by the
- *  same consumer the catalogue's goes through. */
-const OBJECT = customSchema<"object", Readonly<Record<string, unknown>>>("object");
-const GRANT = customSchema<"grant", Grant>("grant");
-
-function plainObject(value: unknown): value is Readonly<Record<string, unknown>> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
-}
 
 const CONTEXT: ExactSchemaContext<
   {
@@ -204,7 +195,15 @@ function conformResources(raw: unknown): ReadonlyArray<ItemResourceSpec> | null 
 
 type HomebrewItem = CustomEquipment | CustomWeapon;
 
-const mechanicsCache = new WeakMap<object, HomebrewItemMechanics>();
+const conformItemMechanics = memoByObject(
+  (authored: Readonly<Record<string, unknown>>) =>
+    Object.freeze(
+      conformFields(HOMEBREW_ITEM_FIELD_SCHEMAS, authored, CONTEXT, {
+        grants: conformGrants,
+        resources: conformResources,
+      })
+    ) as HomebrewItemMechanics
+);
 
 /**
  * The playable mechanics of a stored homebrew weapon or item: every known field
@@ -221,30 +220,8 @@ export function homebrewItemMechanics(
     !Object.keys(HOMEBREW_ITEM_FIELD_SCHEMAS).some((key) => Object.hasOwn(authored, key))
   )
     return undefined;
-  const hit = mechanicsCache.get(authored);
-  if (hit) return hit;
-  const accepted: Record<string, unknown> = {};
-  for (const [key, schema] of Object.entries(HOMEBREW_ITEM_FIELD_SCHEMAS)) {
-    if (!Object.hasOwn(authored, key)) continue;
-    const raw = authored[key];
-    if (key === "grants") {
-      if (!Array.isArray(raw)) continue;
-      accepted.grants = raw.flatMap((grant: unknown) => {
-        const conformed = conformHomebrewGrant(grant);
-        return conformed ? [conformed] : [];
-      });
-      continue;
-    }
-    const value: unknown =
-      key === "resources" ? conformResources(raw) : conformExact(schema, raw, CONTEXT);
-    if (value !== null) accepted[key] = value;
-  }
-  const mechanics = Object.freeze(accepted) as HomebrewItemMechanics;
-  mechanicsCache.set(authored, mechanics);
-  return mechanics;
+  return conformItemMechanics(authored);
 }
-
-const dataCache = new WeakMap<object, SrdMagicItemData>();
 
 /**
  * A homebrew weapon or item as catalogue magic-item data — the one shape the item
@@ -253,29 +230,31 @@ const dataCache = new WeakMap<object, SrdMagicItemData>();
  * text-only homebrew item (no `mechanics`), and for an id that is not a valid copy
  * id or that a catalogue item already owns (never lend a catalogue item's state).
  */
-export function homebrewItemData(item: HomebrewItem): SrdMagicItemData | undefined {
-  const hit = dataCache.get(item);
-  if (hit) return hit;
-  const mechanics = homebrewItemMechanics(item);
-  if (!mechanics) return undefined;
-  if (!isValidItemInstanceId(item.instanceId) || MAGIC_ITEMS_BY_ID.has(item.instanceId)) {
-    return undefined;
+export const homebrewItemData = memoByObject(
+  (item: HomebrewItem): SrdMagicItemData | undefined => {
+    const mechanics = homebrewItemMechanics(item);
+    if (!mechanics) return undefined;
+    if (
+      !isValidItemInstanceId(item.instanceId) ||
+      MAGIC_ITEMS_BY_ID.has(item.instanceId)
+    ) {
+      return undefined;
+    }
+    const isWeapon = "damageDie" in item;
+    const potionFormula = isWeapon ? undefined : item.potionFormula;
+    const data: SrdMagicItemData = {
+      ...mechanics,
+      id: item.instanceId,
+      rarity: mechanics.rarity ?? "common",
+      type: mechanics.type ?? (isWeapon ? "weapon" : "wondrous"),
+      attunement: mechanics.attunement ?? false,
+      ...(potionFormula !== undefined ? { potionFormula } : {}),
+      // A homebrew item belongs to no book; it is the player's own.
+      source: "Wiki",
+    };
+    return data;
   }
-  const isWeapon = "damageDie" in item;
-  const potionFormula = isWeapon ? undefined : item.potionFormula;
-  const data: SrdMagicItemData = {
-    ...mechanics,
-    id: item.instanceId,
-    rarity: mechanics.rarity ?? "common",
-    type: mechanics.type ?? (isWeapon ? "weapon" : "wondrous"),
-    attunement: mechanics.attunement ?? false,
-    ...(potionFormula !== undefined ? { potionFormula } : {}),
-    // A homebrew item belongs to no book; it is the player's own.
-    source: "Wiki",
-  };
-  dataCache.set(item, data);
-  return data;
-}
+);
 
 /** One physical copy that can own an item's state: an equipment row, or a
  *  homebrew weapon (which IS its own magic item). */
