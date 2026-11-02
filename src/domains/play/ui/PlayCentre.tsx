@@ -157,10 +157,7 @@ function Playbook({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
     mode: fight ? "combat" : "exploration",
     round,
   });
-  // A line whose action name came back empty would read "**** …": leave it out (reported).
-  const lines = (open ? view.steps : view.plan).filter(
-    (l) => !`${l.before}${l.after}`.includes("**")
-  );
+  const lines = open ? view.steps : view.plan;
   if (lines.length === 0) return null;
   return (
     <div className="f-playbook">

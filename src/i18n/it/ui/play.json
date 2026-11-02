@@ -23,6 +23,18 @@
     "uses": "{{current}} su {{total}}",
     "dc": "CD {{dc}}",
     "healing": "{{amount}} PF",
-    "report": "Resoconto"
+    "report": "Resoconto",
+    "ask": {
+      "whichSlot": "Con quale slot?",
+      "onWhomMany": "Su chi? (fino a {{count}})",
+      "slotTile": "{{level}}°",
+      "spendSlot": "Spendi uno slot di {{level}}°.",
+      "spendPact": "Spendi uno slot del patto di {{level}}°.",
+      "spendFree": "Lo lanci con {{source}}, senza slot.",
+      "noSlot": "Non spendi slot.",
+      "charges": "{{remaining}} cariche su {{total}}",
+      "whichSpell": "Quale incantesimo?",
+      "castTitle": "Lancia {{name}}"
+    }
   }
 }

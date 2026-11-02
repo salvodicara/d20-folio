@@ -18,7 +18,11 @@ import type {
 import { attunementSatisfied } from "@/lib/attunement";
 import { isCopyAtHand, itemCopies } from "@/lib/homebrew-items";
 import { resolveItemResources, type ItemResourceOmission } from "@/lib/item-resources";
-import { makeItemResourceIdentity, type ItemResourceIdentity } from "@/lib/resources";
+import {
+  makeItemResourceIdentity,
+  type ItemResourceIdentity,
+  type ResourceInputRequest,
+} from "@/lib/resources";
 import type { CharacterDoc } from "@/types/character";
 
 export type ItemResourceLabelTranslationKey =
@@ -206,4 +210,31 @@ export function buildItemResourceViewModels(
       };
     }),
   };
+}
+
+/** The die a typed magic-item resource asks for ("2d6 + 1", "d20"). */
+export function enteredRollLabel(request: ResourceInputRequest): string | null {
+  if (request.kind === "depletion-d20") return "d20";
+  const { dice, sides, modifier = 0 } = request.roll;
+  if (modifier === 0) return `${dice}d${sides}`;
+  return `${dice}d${sides} ${modifier > 0 ? "+" : "−"} ${Math.abs(modifier)}`;
+}
+
+/** Where the amount starts before the player enters the roll. */
+export function initialValue(request: ResourceInputRequest): number {
+  return request.kind === "depletion-d20" ? 10 : request.min;
+}
+
+/** The label key for one entered roll (capacity, starting amount, recovery, last charge). */
+export function inputLabelKey(request: ResourceInputRequest): string {
+  switch (request.kind) {
+    case "capacity-roll":
+      return "magicItems.resourceCapacityRoll";
+    case "initial-roll":
+      return "magicItems.resourceInitialRoll";
+    case "recovery-roll":
+      return "magicItems.resourceRecoveryRoll";
+    case "depletion-d20":
+      return "magicItems.resourceDepletionRoll";
+  }
 }

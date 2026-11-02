@@ -14,9 +14,9 @@
  * math lives in `lib/arcane-recovery.ts`; this is presentation + commit only.
  */
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { arcaneRecoveryCap, ARCANE_RECOVERY_MAX_SLOT_LEVEL } from "@/lib/arcane-recovery";
+import { arcaneRecoveryPicker } from "@/lib/arcane-recovery";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { NumberStepper } from "@/components/ui/input";
@@ -46,38 +46,14 @@ export function ArcaneRecoveryModal({
   // One restore-count per eligible slot level (keyed by level), starting at 0.
   const [counts, setCounts] = useState<Record<number, number>>({});
 
-  const cap = arcaneRecoveryCap(request.wizardLevel);
-  // Eligible levels: expended AND ≤ the RAW max (5th). Sorted ascending.
-  const rows = useMemo(
-    () =>
-      request.expended
-        .filter((e) => e.expended > 0 && e.level <= ARCANE_RECOVERY_MAX_SLOT_LEVEL)
-        .sort((a, b) => a.level - b.level),
-    [request]
-  );
-
-  const usedLevels = rows.reduce((sum, r) => sum + r.level * (counts[r.level] ?? 0), 0);
-  const remainingBudget = cap - usedLevels;
-  const chosenAny = usedLevels > 0;
-
-  /** Max count selectable at a level: bounded by expended AND the remaining budget. */
-  function maxAt(level: number, expended: number): number {
-    const current = counts[level] ?? 0;
-    // How many MORE of this level fit in the remaining budget, plus the current.
-    const fitsInBudget = Math.floor(remainingBudget / level) + current;
-    return Math.max(current, Math.min(expended, fitsInBudget));
-  }
+  // The budget rule is the engine's, shared with the Play screen's picker.
+  const pick = arcaneRecoveryPicker(request.wizardLevel, request.expended, counts);
+  const { cap, rows } = pick;
+  const remainingBudget = pick.remaining;
+  const chosenAny = pick.slotLevels.length > 0;
 
   function setCount(level: number, value: number): void {
     setCounts((prev) => ({ ...prev, [level]: value }));
-  }
-
-  function confirm(): void {
-    const slotLevels: number[] = [];
-    for (const r of rows) {
-      for (let i = 0; i < (counts[r.level] ?? 0); i++) slotLevels.push(r.level);
-    }
-    onConfirm(slotLevels);
   }
 
   return (
@@ -112,7 +88,7 @@ export function ArcaneRecoveryModal({
                   value={counts[r.level] ?? 0}
                   onChange={(v) => setCount(r.level, v)}
                   min={0}
-                  max={maxAt(r.level, r.expended)}
+                  max={r.max}
                   ariaLabel={t("combat.arcaneRecoverySlotLevel", { level: r.level })}
                   decrementLabel={t("common.decrease")}
                   incrementLabel={t("common.increase")}
@@ -126,7 +102,11 @@ export function ArcaneRecoveryModal({
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t("common.cancel")}
         </Button>
-        <Button size="sm" disabled={!chosenAny} onClick={confirm}>
+        <Button
+          size="sm"
+          disabled={!chosenAny}
+          onClick={() => onConfirm(pick.slotLevels)}
+        >
           {t("combat.arcaneRecoveryConfirm")}
         </Button>
       </ModalFoot>

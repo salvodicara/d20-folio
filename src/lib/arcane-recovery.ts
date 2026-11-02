@@ -58,3 +58,41 @@ export function validateArcaneRecoveryPlan(
     };
   return { ok: true, usedLevels: sum, cap };
 }
+
+export interface ArcaneRecoveryPick {
+  cap: number;
+  /** Slot levels still free to recover after the picks. */
+  remaining: number;
+  /** Each expended slot level up to 5th, lowest first, with how many may be picked. */
+  rows: { level: number; expended: number; count: number; max: number }[];
+  /** The picks flattened (one 2nd + one 1st = [1, 2]). */
+  slotLevels: number[];
+}
+
+/**
+ * The Arcane Recovery picker: which expended slots can be recovered and how many of
+ * each still fit the ⌈level/2⌉ budget given the counts already picked.
+ */
+export function arcaneRecoveryPicker(
+  wizardLevel: number,
+  expended: ReadonlyArray<{ level: number; expended: number }>,
+  counts: Readonly<Record<number, number>>
+): ArcaneRecoveryPick {
+  const cap = arcaneRecoveryCap(wizardLevel);
+  const eligible = expended
+    .filter((e) => e.expended > 0 && e.level <= ARCANE_RECOVERY_MAX_SLOT_LEVEL)
+    .sort((a, b) => a.level - b.level);
+  const used = eligible.reduce((sum, e) => sum + e.level * (counts[e.level] ?? 0), 0);
+  const remaining = cap - used;
+  const rows = eligible.map((e) => {
+    const count = counts[e.level] ?? 0;
+    const fits = Math.floor(remaining / e.level) + count;
+    return { ...e, count, max: Math.max(count, Math.min(e.expended, fits)) };
+  });
+  return {
+    cap,
+    remaining,
+    rows,
+    slotLevels: rows.flatMap((r) => Array.from({ length: r.count }, () => r.level)),
+  };
+}

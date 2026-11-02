@@ -23,6 +23,18 @@
     "uses": "{{current}} of {{total}}",
     "dc": "DC {{dc}}",
     "healing": "{{amount}} HP",
-    "report": "Report"
+    "report": "Report",
+    "ask": {
+      "whichSlot": "Which slot?",
+      "onWhomMany": "On whom? (up to {{count}})",
+      "slotTile": "Lv {{level}}",
+      "spendSlot": "Spends one level {{level}} slot.",
+      "spendPact": "Spends one level {{level}} pact slot.",
+      "spendFree": "Cast with {{source}}, no slot spent.",
+      "noSlot": "No slot spent.",
+      "charges": "{{remaining}} of {{total}} charges",
+      "whichSpell": "Which spell?",
+      "castTitle": "Cast {{name}}"
+    }
   }
 }
