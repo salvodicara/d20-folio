@@ -43,16 +43,16 @@ describe("Gift of the Protectors", () => {
 
   it("at 0 HP the warlock drops to 1 HP instead, and the gift is spent", () => {
     warlockAtZero();
-    store().applyAtZeroHpInterrupt(GIFT);
+    store().applyZeroHpSaver("gift-of-the-protectors");
     expect(store().character?.session.hp.current).toBe(1);
     expect(store().character?.session.trackers[GIFT]?.used).toBe(1);
   });
 
   it("once triggered, it can't save anyone again until a Long Rest", () => {
     warlockAtZero();
-    store().applyAtZeroHpInterrupt(GIFT);
+    store().applyZeroHpSaver("gift-of-the-protectors");
     store().setHP(0);
-    store().applyAtZeroHpInterrupt(GIFT);
+    store().applyZeroHpSaver("gift-of-the-protectors");
     expect(store().character?.session.hp.current).toBe(0);
     // Back on their feet, a Long Rest brings it back.
     store().setHP(5);

@@ -21,6 +21,7 @@ vi.mock("@/lib/firebase", () => ({
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { asRaceId } from "@/data/srd-names";
 import { prepareMechanicsCommand, type MechanicsCommand } from "@/lib/mechanics-command";
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
 import { playLogShadowStats, useCharacterStore } from "@/stores/characterStore";
@@ -551,10 +552,11 @@ describe("composite recoveries", () => {
     expect(liveDoc().session.trackers["wizard-arcane-recovery"]?.used).toBe(0);
   });
 
-  it("applyAtZeroHpInterrupt commits hp + pool as one action; undo restores both sides", () => {
+  it("applyZeroHpSaver commits hp + pool as one action; undo restores both sides", () => {
+    const ENDURANCE = "race:orc:relentless-endurance";
     load(
       docWithWorld(
-        { classId: "monk", level: 5, features: [{ srdId: "monk-focus" }] },
+        { race: asRaceId("orc"), features: [{ srdId: "orc-relentless-endurance" }] },
         {
           hp: { current: 0, temp: 0 },
           conditions: ["unconscious"],
@@ -563,17 +565,18 @@ describe("composite recoveries", () => {
         }
       )
     );
-    const undo = useCharacterStore.getState().applyAtZeroHpInterrupt("monk-focus");
+    const undo = useCharacterStore.getState().applyZeroHpSaver(ENDURANCE);
+    if (!undo) throw new Error("the saver was not offered");
     expect(liveWorld().vitals.hitPoints.current).toBe(1);
     expect(liveWorld().vitals.zeroHitPoints).toBeNull();
-    expect(liveWorld().resources.pools["monk-focus"]).toMatchObject({ current: 4 });
+    expect(liveWorld().resources.pools[ENDURANCE]).toMatchObject({ current: 0 });
     expect(liveDoc().session.hp.current).toBe(1);
-    expect(liveDoc().session.trackers["monk-focus"]?.used).toBe(1);
+    expect(liveDoc().session.trackers[ENDURANCE]?.used).toBe(1);
     expect(liveDoc().session.conditions).not.toContain("unconscious");
 
     undo();
     expect(liveWorld().vitals.hitPoints.current).toBe(0);
-    expect(liveWorld().resources.pools["monk-focus"]).toMatchObject({ current: 5 });
+    expect(liveWorld().resources.pools[ENDURANCE]).toMatchObject({ current: 1 });
     expect(liveDoc().session.hp.current).toBe(0);
     expect(liveDoc().session.conditions).toContain("unconscious");
     expect(liveDoc().session).toMatchObject({ deathSucc: 1, deathFail: 1 });

@@ -25,7 +25,7 @@ import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 import { ALL_REACTION_TRIGGERS, type LocaleText } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
-import type { DiceScalar } from "@/lib/scalar";
+import type { DiceScalar, Scalar } from "@/lib/scalar";
 import { LOCALES, type Locale } from "@/lib/locale";
 import { DETECTION_TARGETS } from "@/lib/rules/detection-targets";
 
@@ -40,6 +40,9 @@ const RESOURCE_SPEC_SCHEMA = customSchema<"resource-spec", ResourceSpec>("resour
 const LOCALE_TEXT_SCHEMA = customSchema<"locale-text", LocaleText>("locale-text");
 /** A literal dice string ("2d6") or a DiceFormula whose counts scale (`@/lib/scalar`). */
 const DICE_SCALAR_SCHEMA = customSchema<"dice-scalar", DiceScalar>("dice-scalar");
+
+/** A catalogue number: a plain integer or an expression over `SCALAR_BINDINGS`. */
+const SCALAR_SCHEMA = customSchema<"scalar", Scalar>("scalar");
 
 /** Text in every registered language, as the catalogue authors it; else null. */
 export function conformLocaleText(value: unknown): LocaleText | null {
@@ -597,13 +600,24 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     type: literalSchema("heroic-inspiration-on-rest"),
   }),
   /**
-   * At-0-HP interrupt: when the character would drop to 0 HP they may instead
-   * drop to 1, debiting the named 1/rest tracker (Orc Relentless Endurance).
+   * A zero-HP saver (edge-case family M7): when the character drops to 0 HP and
+   * isn't killed outright, they may use this to stand back up. It can spend a use
+   * (`trackerId`: Relentless Endurance's 1/Long Rest), ask a saving throw the player
+   * rolls (`save`: Relentless Rage's CON save, whose DC may read
+   * `zero-hp.uses.<sourceId>`), and sets the Hit Points it leaves (`hitPoints`,
+   * default 1). A saver that needs a state on (Rage) sits inside `while-active`:
+   * the drop records which states were on when the character fell.
    */
-  "at-zero-hp-interrupt": objectSchema({
-    trackerId: stringSchema,
-    type: literalSchema("at-zero-hp-interrupt"),
-  }),
+  "at-zero-hp-interrupt": objectSchema(
+    {
+      type: literalSchema("at-zero-hp-interrupt"),
+    },
+    {
+      hitPoints: SCALAR_SCHEMA,
+      save: objectSchema({ ability: CASTING_ABILITY_SCHEMA, dc: SCALAR_SCHEMA }),
+      trackerId: stringSchema,
+    }
+  ),
   "zero-hp-floor": objectSchema({
     hitPoints: numberSchema,
     type: literalSchema("zero-hp-floor"),
@@ -2602,6 +2616,7 @@ export type GrantSchemaCustomTypes = {
   readonly "locale-text": LocaleText;
   readonly "proficiency-token": ProficiencyToken;
   readonly "resource-spec": ResourceSpec;
+  readonly scalar: Scalar;
 };
 
 type GrantSchemaShape = InferExactSchema<typeof GRANT_SCHEMA_DEFINITION>;

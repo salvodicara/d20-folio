@@ -137,12 +137,6 @@
     "description": "Your Rage can keep you fighting despite grievous wounds. If you drop to 0 Hit Points while your Rage is active and don't die outright, you can make a DC 10 Constitution saving throw. If you succeed, your Hit Points instead change to a number equal to twice your Barbarian level. Each time you use this feature after the first, the DC increases by 5. When you finish a Short or Long Rest, the DC resets to 10.",
     "name": "Relentless Rage"
   },
-  "barbarian-relentless-rage.mechanics.rider": {
-    "label": "CON save DC"
-  },
-  "barbarian-relentless-rage.mechanics.rider.relentlessRageHp": {
-    "label": "Recovery HP"
-  },
   "barbarian-unarmored-defense": {
     "description": "While you are not wearing any armor, your Armor Class equals 10 + your Dexterity modifier + your Constitution modifier. You can use a shield and still gain this benefit.",
     "name": "Unarmored Defense"
@@ -1404,5 +1398,8 @@
   },
   "barbarian-indomitable-might.grants.1": {
     "description": "Strength saving throws: if the total is lower than your Strength score, use the score"
+  },
+  "barbarian-relentless-rage.grants.0": {
+    "label": "Relentless Rage"
   }
 }

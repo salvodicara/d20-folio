@@ -156,6 +156,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     ...(session.burning ? { burning: true as const } : {}),
     // A D20 Test penalty fading by one each Long Rest (Raise Dead).
     fadingPenalties: session.fadingPenalties,
+    ...(session.zeroHpSaverUses ? { zeroHpSaverUses: session.zeroHpSaverUses } : {}),
+    ...(session.zeroHpDrop ? { zeroHpDrop: session.zeroHpDrop } : {}),
     pinnedActions: session.pinnedActions ?? [],
     unpinnedActions: session.unpinnedActions ?? [],
     notes: session.notes ?? "",

@@ -81,6 +81,7 @@ import {
   type ItemResourceIdentity,
 } from "@/lib/resources";
 import type { ResourceSpec } from "@/types/resource";
+import { conformScalar, type Scalar } from "@/lib/scalar";
 
 /**
  * PS-J — the closed vocabulary of scopes an attack-side effect can target.
@@ -129,6 +130,7 @@ const GRANT_SCHEMA_CONTEXT: ExactSchemaContext<GrantSchemaCustomTypes, GrantSche
       "locale-text": conformLocaleText,
       "proficiency-token": conformProficiencyToken,
       "resource-spec": conformResourceSpec,
+      scalar: conformScalar,
     },
     refs: { grant: GRANT_SCHEMA },
   };
@@ -1312,6 +1314,14 @@ export interface SourceConditionImmunity {
 }
 
 /** The normalised view a renderer/consumer reads. */
+/** One zero-HP saver as granted: what it spends, asks and leaves (see `zero-hp-savers`). */
+export interface AtZeroHpSaverGrant {
+  sourceId: string;
+  trackerId?: string;
+  save?: { ability: AbilityCode; dc: Scalar };
+  hitPoints?: Scalar;
+}
+
 export interface AggregatedGrants {
   // Senses
   darkvisionFt: number;
@@ -1572,13 +1582,8 @@ export interface AggregatedGrants {
     upTo: number;
     sourceId: string;
   }>;
-  /**
-   * At-0-HP interrupts ("drop to 1 instead": Relentless Endurance / Undying
-   * Sentinel / Boon of Misty Escape). One entry per granting source, carrying
-   * the 1/rest `trackerId` it debits. Consumed by `resolveAtZeroHpInterrupts`,
-   * which offers the prompt only when the tracker has an unspent use.
-   */
-  atZeroHpInterrupts: ReadonlyArray<{ trackerId: string; sourceId: string }>;
+  /** The zero-HP savers, one per granting source (read by `play/zero-hp-savers`). */
+  atZeroHpInterrupts: ReadonlyArray<AtZeroHpSaverGrant>;
   /** Resource declarations contributed by effective grant sources. */
   resources: ReadonlyArray<{ sourceId: string; spec: ResourceSpec }>;
   /** Persistent one-shot HP floors, carrying the active key so the owning effect can
@@ -2868,7 +2873,12 @@ export function evaluateGrants(
         });
         break;
       case "at-zero-hp-interrupt":
-        atZeroHpInterrupts.push({ trackerId: g.trackerId, sourceId });
+        atZeroHpInterrupts.push({
+          sourceId,
+          ...(g.trackerId !== undefined ? { trackerId: g.trackerId } : {}),
+          ...(g.save ? { save: g.save } : {}),
+          ...(g.hitPoints !== undefined ? { hitPoints: g.hitPoints } : {}),
+        });
         break;
       case "zero-hp-floor":
         if (activeKey) {

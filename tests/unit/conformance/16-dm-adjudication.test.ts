@@ -9,7 +9,7 @@ import { setSurprised } from "@/lib/play/surprise";
 import { breathHoldRounds, holdBreath, passBreathRounds } from "@/lib/play/suffocation";
 import { takeDamage } from "@/lib/play/damage";
 import { setExhaustion } from "@/lib/play/vitals";
-import { resolveAtZeroHpInterrupts } from "@/lib/smart-tracker";
+import { zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import { withOverride, isHandSet, termPart, breakdownTotal } from "@/lib/value-breakdown";
 import { levelUp } from "@/lib/level-up";
 import { classFeatures } from "@/data/classes";
@@ -178,8 +178,11 @@ describe("conformance · 16. DM adjudication", () => {
     },
     () => {
       // At-0 savers are offered for the player to pick, never auto-applied.
-      const orc = makeCharacterDoc({ race: asRaceId("orc") });
-      const offers = resolveAtZeroHpInterrupts(orc);
+      const orc = makeCharacterDoc(
+        { race: asRaceId("orc") },
+        { hp: { current: 0, temp: 0 } }
+      );
+      const offers = zeroHpSavers(orc);
       expect(offers.length).toBeGreaterThan(0);
       expect(offers[0]?.sourceId).toContain("relentless-endurance");
     }

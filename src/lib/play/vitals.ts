@@ -13,6 +13,7 @@ import { slotUsageKey } from "@/lib/cast-options";
 import { applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
 import { isCharacterAlive } from "@/lib/character-status";
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
+import { sessionActiveKeys } from "@/lib/world-standing-grants";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { ExhaustionLevel } from "@/types/condition";
 import {
@@ -29,6 +30,25 @@ import {
  * chip stays hand-removable like any condition (override-first).
  */
 export const UNCONSCIOUS_CONDITION_ID = "unconscious";
+
+/**
+ * What a drop to 0 HP records: the states on as the character fell, so a saver they
+ * enable (Relentless Rage while raging) is still offered after the fall ends them.
+ */
+export function zeroHpDropOf(doc: CharacterDoc): NonNullable<SessionState["zeroHpDrop"]> {
+  return { activeKeys: [...sessionActiveKeys(doc.session)].sort() };
+}
+
+/** The drop record after Hit Points move from `before` to `after`. */
+function zeroHpDropAfter(
+  doc: CharacterDoc,
+  before: number,
+  after: number
+): Pick<SessionState, "zeroHpDrop"> | Record<string, never> {
+  if (before > 0 && after === 0) return { zeroHpDrop: zeroHpDropOf(doc) };
+  if (before === 0 && after > 0) return { zeroHpDrop: undefined };
+  return {};
+}
 
 /**
  * Set current HP, clamped to the EFFECTIVE max (base + hp-flat boons + Aid). Regaining
@@ -55,9 +75,12 @@ export function setHp(doc: CharacterDoc, current: number): SessionState {
     };
     return state;
   });
-  const base = engine
-    ? engine.session
-    : { ...doc.session, hp: { ...doc.session.hp, current: clamped }, ...deathReset };
+  const base = {
+    ...(engine
+      ? engine.session
+      : { ...doc.session, hp: { ...doc.session.hp, current: clamped }, ...deathReset }),
+    ...zeroHpDropAfter(doc, doc.session.hp.current, clamped),
+  };
   return sheddingUnconscious
     ? {
         ...base,

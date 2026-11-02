@@ -13,6 +13,7 @@ import {
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import { ruleFlag } from "@/lib/rules";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { zeroHpDropOf } from "./vitals";
 import { commitWorldVitals, drainedTemporary } from "./world-commit";
 
 export interface DamageTaken {
@@ -107,6 +108,10 @@ export function takeDamage(
       conditions: [...transition.state.conditions],
       deathSucc: deathSaves.successes,
       deathFail: deathSaves.failures,
+      // The fall records what was on as the character dropped (Relentless Rage).
+      ...(transition.crossedZero && !transition.instantDeath
+        ? { zeroHpDrop: zeroHpDropOf(doc) }
+        : {}),
       ...(consumedEffectIds.size > 0
         ? {
             encounterEffects: persistentEffects.filter(

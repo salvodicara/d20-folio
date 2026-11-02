@@ -18,7 +18,10 @@ import {
   toggleSaved,
   type DamageTrayPlan,
 } from "@/lib/play/damage-tray";
-import { reduceHpDelta, sessionToCombatState } from "@/lib/combat-state";
+import { sessionToCombatState } from "@/lib/combat-state";
+import { concentrationValue } from "@/lib/concentration";
+import { peerDamageState } from "@/lib/play/peer-damage";
+import type { CharacterDoc, SessionState } from "@/types/character";
 import { COVER_STATES } from "@/lib/cover-states";
 import { spells } from "@/data/spells";
 import { classFeatures } from "@/data/classes";
@@ -60,14 +63,25 @@ const AREA: DamageTrayPlan = {
   targets: FOES,
 };
 /** A PC the DM's area spell reaches (the peer write path). */
-const pcState = (current: number) =>
-  sessionToCombatState({
-    ...MOCK_CHARACTER.session,
-    hp: { current, temp: 0 },
-    conditions: [],
-    deathSucc: 0,
-    deathFail: 0,
-  });
+/** Someone else's hit on the PC, through the PC's own damage rule (edge-case M1). */
+const peerHit = (
+  current: number,
+  amount: number,
+  session: Partial<SessionState> = {}
+) => {
+  const doc: CharacterDoc = {
+    ...MOCK_CHARACTER,
+    session: {
+      ...MOCK_CHARACTER.session,
+      hp: { current, temp: 0 },
+      conditions: [],
+      deathSucc: 0,
+      deathFail: 0,
+      ...session,
+    },
+  };
+  return peerDamageState(doc, sessionToCombatState(doc.session), amount);
+};
 
 describe("conformance · 15. multi-target and area damage", () => {
   rule(
@@ -142,10 +156,10 @@ describe("conformance · 15. multi-target and area damage", () => {
   );
 
   rule(
-    { category: 15, case: "Allies inside the area", source: "SAC #91", status: "M1" },
+    { category: 15, case: "Allies inside the area", source: "SAC #91", status: "works" },
     () => {
       // Friendly fire drops the ally to 0: their own rules make them Unconscious.
-      const after = reduceHpDelta(pcState(10), { kind: "damage", amount: 24 }, 62);
+      const after = peerHit(10, 24);
       expect(after.hp.current).toBe(0);
       expect(after.conditions).toContain("unconscious");
     }
@@ -298,12 +312,14 @@ describe("conformance · 15. multi-target and area damage", () => {
       category: 15,
       case: "Concentration saves from area damage",
       source: "GLOSS",
-      status: "M1",
+      status: "works",
     },
     () => {
       // Lyra concentrates on Hypnotic Pattern; a 24-damage Fireball from the DM queues
       // her own save at DC 12.
-      const after = reduceHpDelta(pcState(38), { kind: "damage", amount: 24 }, 62);
+      const after = peerHit(38, 24, {
+        concentration: concentrationValue("hypnotic-pattern"),
+      });
       expect(after.pendingConcentrationSaves?.[0]?.difficultyClass).toBe(12);
     }
   );

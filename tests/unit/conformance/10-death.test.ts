@@ -20,6 +20,7 @@ import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { setCompanionHp, summonFamiliar } from "@/lib/play/companions";
 import { takeDamage } from "@/lib/play/damage";
+import { spendZeroHpSaver, zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import {
   FADING_PENALTIES,
   fadingPenaltiesAfterLongRest,
@@ -39,6 +40,7 @@ import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { EncounterState } from "@/types/campaign";
+import { makeCharacterDoc } from "../_helpers";
 import { rule } from "./rule";
 
 const withSession = (session: Partial<SessionState>): CharacterDoc => ({
@@ -185,13 +187,30 @@ describe("conformance · 10. death and revival", () => {
       category: 10,
       case: "Relentless Rage",
       source: "WIKI barbarian:main",
-      status: "M7",
+      status: "works",
     },
     () => {
-      // An ordered "drop to 0" saver: CON save (DC 10, +5 per use), HP = 2 × level.
-      expect(JSON.stringify(getSrdFeatureSource("barbarian-relentless-rage"))).toContain(
-        '"type":"at-zero-hp"'
+      // A raging Barbarian 11 drops to 0: a CON save (DC 10, +5 per use), HP = 2 × level.
+      const doc = makeCharacterDoc(
+        { classId: "barbarian", level: 11 },
+        { hp: { current: 5, temp: 0 }, activeFeatures: ["barbarian-rage"] }
       );
+      doc.character.hp = { max: 120 };
+      doc.character.features = [
+        { srdId: "barbarian-rage" },
+        { srdId: "barbarian-relentless-rage" },
+      ];
+      const fall = takeDamage(doc, 15);
+      const down = { ...doc, session: fall?.session ?? doc.session };
+      const saver = zeroHpSavers(down).find(
+        (s) => s.sourceId === "barbarian-relentless-rage"
+      );
+      expect(saver).toMatchObject({ save: { ability: "CON", dc: 10 }, hitPoints: 22 });
+      const used = spendZeroHpSaver(down, "barbarian-relentless-rage", "success");
+      expect(used?.session.hp.current).toBe(22);
+      const again = takeDamage({ ...down, session: used?.session ?? down.session }, 30);
+      const second = { ...down, session: again?.session ?? down.session };
+      expect(zeroHpSavers(second)[0]?.save?.dc).toBe(15);
     }
   );
 

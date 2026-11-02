@@ -805,7 +805,7 @@ describe("recoverTrackerFromSpellSlot — S4 Font of Inspiration wiring", () => 
   });
 });
 
-describe("applyAtZeroHpInterrupt — S4 at-0-HP wiring", () => {
+describe("applyZeroHpSaver — S4 at-0-HP wiring", () => {
   it("sets HP to 1, debits the interrupt tracker, and clears death saves", () => {
     store().setCharacter(
       mk(
@@ -818,7 +818,8 @@ describe("applyAtZeroHpInterrupt — S4 at-0-HP wiring", () => {
         }
       )
     );
-    const restore = store().applyAtZeroHpInterrupt("race:orc:relentless-endurance");
+    const restore = store().applyZeroHpSaver("race:orc:relentless-endurance");
+    if (!restore) throw new Error("the saver was not offered");
     expect(store().character?.session.hp.current).toBe(1);
     expect(store().character?.session.trackers["race:orc:relentless-endurance"]).toEqual({
       used: 1,
@@ -845,7 +846,8 @@ describe("applyAtZeroHpInterrupt — S4 at-0-HP wiring", () => {
         }
       )
     );
-    const restore = store().applyAtZeroHpInterrupt("race:orc:relentless-endurance");
+    const restore = store().applyZeroHpSaver("race:orc:relentless-endurance");
+    if (!restore) throw new Error("the saver was not offered");
     expect(store().character?.session.conditions).toEqual(["prone"]);
     restore();
     expect(store().character?.session.conditions).toEqual(["unconscious", "prone"]);

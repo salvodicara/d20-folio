@@ -132,6 +132,7 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
         character.session.exhaustion - exhaustionRemoved
       ),
       fadingPenalties: fadingPenaltiesAfterLongRest(character.session.fadingPenalties),
+      zeroHpSaverUses: undefined,
       inspiration: gainsInspiration,
       // A Bardic Inspiration die lasts at most 1 hour; a Long Rest always
       // outlasts it, so the combat-state SSOT clears deterministically.
@@ -216,6 +217,8 @@ export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
       ),
       // A Short Rest lasts 1 hour, exhausting the held die's maximum duration.
       bardicInspirationDie: "",
+      // A Short Rest resets the escalating zero-HP saves (Relentless Rage's DC).
+      zeroHpSaverUses: undefined,
     },
   };
 }

@@ -482,6 +482,8 @@ function restFinalizedSession(
     effectBoundaries: omitKeys(mirrored.effectBoundaries, endedActiveKeys),
     // Either rest outlasts a held Bardic Inspiration die's 1-hour maximum.
     bardicInspirationDie: "",
+    // Either rest resets the escalating zero-HP saves (Relentless Rage's DC).
+    zeroHpSaverUses: undefined,
     ...(kind === "long"
       ? {
           // The rest ends a Hit Point maximum reduction (the legacy rest's law).
