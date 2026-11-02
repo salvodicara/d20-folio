@@ -28,7 +28,6 @@ import {
 import {
   arraySchema,
   booleanSchema,
-  conformExact,
   customSchema,
   literalSchema,
   numberSchema,
@@ -40,28 +39,33 @@ import {
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
 import { conformHomebrewGrant, type Grant } from "@/lib/grants";
+import {
+  ABILITY,
+  conformFields,
+  DAMAGE_TYPES,
+  GRANT,
+  literals,
+  memoByObject,
+  OBJECT,
+  plainObject,
+  TRUE,
+} from "@/lib/homebrew-conform";
+import { conformGrants } from "@/lib/homebrew-grants";
 import { CONDITION_APPLICATION_SCHEMA, homebrewActionDef } from "@/lib/homebrew-actions";
 import { classifySpellCastingTime } from "@/lib/cast-options";
 import {
   CUSTOM_CONCENTRATION_PREFIX,
   holdsCustomSpellConcentration,
 } from "@/lib/concentration";
-import { ABILITY_CODES } from "@/types/ability";
 import { CONDITION_ID_SCHEMA } from "@/types/condition";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 import type { ActionData, CustomSpell, SrdSpellRef } from "@/types/character";
 
 // ─── The exact shape of every structured catalogue-spell field ───────────────
 
-const literals = (values: ReadonlyArray<string>): ExactSchema =>
-  unionSchema(values.map((value) => literalSchema(value)));
-
-const ABILITY = literals(ABILITY_CODES);
 const CREATURE_TYPES = arraySchema(literals(ALL_CREATURE_TYPES));
-const DAMAGE_TYPES = arraySchema(DAMAGE_TYPE_SCHEMA);
 const GATE = literals(["attack", "save", "automatic"]);
 const HALF = literalSchema("half");
-const TRUE = literalSchema(true);
 
 const SPELL_DURATION = unionSchema([
   objectSchema({
@@ -78,25 +82,11 @@ const SPELL_DURATION = unionSchema([
   }),
 ]);
 
-/** A plain JSON object whose inner shape is the catalogue's own nested dialect
- *  (an action, a stat block): checked to be an object here, read by the same
- *  translator the catalogue's goes through. */
-const OBJECT = customSchema<"object", Readonly<Record<string, unknown>>>("object");
-const GRANT = customSchema<"grant", Grant>("grant");
 /** A follow-up action: a known action economy, each field held to the homebrew
  *  action's own schema (`homebrewActionDef`); a rejected field is out of play. */
 const ACTION_DEF = customSchema<"action-def", Readonly<Record<string, unknown>>>(
   "action-def"
 );
-
-function plainObject(value: unknown): value is Readonly<Record<string, unknown>> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
-}
 
 const CONTEXT: ExactSchemaContext<
   {
@@ -233,7 +223,14 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
 
 // ─── Reading a stored homebrew spell ─────────────────────────────────────────
 
-const mechanicsCache = new WeakMap<object, HomebrewSpellMechanics>();
+const conformSpellMechanics = memoByObject(
+  (authored: Readonly<Record<string, unknown>>) =>
+    Object.freeze(
+      conformFields(HOMEBREW_SPELL_FIELD_SCHEMAS, authored, CONTEXT, {
+        grants: conformGrants,
+      })
+    ) as HomebrewSpellMechanics
+);
 
 /**
  * The playable mechanics of a stored homebrew spell: every known field its schema
@@ -244,27 +241,7 @@ export function homebrewSpellMechanics(
   spell: Pick<CustomSpell, "mechanics">
 ): HomebrewSpellMechanics | undefined {
   const authored: unknown = spell.mechanics;
-  if (!plainObject(authored)) return undefined;
-  const hit = mechanicsCache.get(authored);
-  if (hit) return hit;
-  const accepted: Record<string, unknown> = {};
-  for (const [key, schema] of Object.entries(HOMEBREW_SPELL_FIELD_SCHEMAS)) {
-    if (!Object.hasOwn(authored, key)) continue;
-    const raw = authored[key];
-    if (key === "grants") {
-      if (!Array.isArray(raw)) continue;
-      accepted.grants = raw.flatMap((grant: unknown) => {
-        const conformed = conformHomebrewGrant(grant);
-        return conformed ? [conformed] : [];
-      });
-      continue;
-    }
-    const value: unknown = conformExact(schema, raw, CONTEXT);
-    if (value !== null) accepted[key] = value;
-  }
-  const mechanics = Object.freeze(accepted) as HomebrewSpellMechanics;
-  mechanicsCache.set(authored, mechanics);
-  return mechanics;
+  return plainObject(authored) ? conformSpellMechanics(authored) : undefined;
 }
 
 /** The engine id of a homebrew spell: its activity, grant source and action key. */
@@ -280,7 +257,6 @@ function catalogueCastingTime(castingTime: string): string {
 }
 
 const SPECIAL: SpellDuration = { kind: "special" };
-const dataCache = new WeakMap<object, SrdSpellData>();
 
 /**
  * A homebrew spell as catalogue spell data — the one shape the spell engine reads.
@@ -288,41 +264,40 @@ const dataCache = new WeakMap<object, SrdSpellData>();
  * text-only play. The top-level homebrew facts (level, school, casting time,
  * Concentration, V/S/M) are its own; everything else is its accepted mechanics.
  */
-export function homebrewSpellData(spell: CustomSpell): SrdSpellData | undefined {
-  const hit = dataCache.get(spell);
-  if (hit) return hit;
-  const mechanics = homebrewSpellMechanics(spell);
-  if (!mechanics) return undefined;
-  const { components: cost, ...rest } = mechanics;
-  const duration = rest.duration ?? SPECIAL;
-  const data: SrdSpellData = {
-    ...rest,
-    id: homebrewSpellId(spell),
-    level: spell.level,
-    school: spell.school,
-    classes: [],
-    castingTime: catalogueCastingTime(spell.castingTime),
-    ritual: rest.ritual ?? false,
-    components: {
-      v: spell.components.v,
-      s: spell.components.s,
-      m: spell.components.m,
-      ...(spell.components.m && cost?.costGp !== undefined
-        ? { costGp: cost.costGp }
+export const homebrewSpellData = memoByObject(
+  (spell: CustomSpell): SrdSpellData | undefined => {
+    const mechanics = homebrewSpellMechanics(spell);
+    if (!mechanics) return undefined;
+    const { components: cost, ...rest } = mechanics;
+    const duration = rest.duration ?? SPECIAL;
+    const data: SrdSpellData = {
+      ...rest,
+      id: homebrewSpellId(spell),
+      level: spell.level,
+      school: spell.school,
+      classes: [],
+      castingTime: catalogueCastingTime(spell.castingTime),
+      ritual: rest.ritual ?? false,
+      components: {
+        v: spell.components.v,
+        s: spell.components.s,
+        m: spell.components.m,
+        ...(spell.components.m && cost?.costGp !== undefined
+          ? { costGp: cost.costGp }
+          : {}),
+        ...(spell.components.m && cost?.consumed ? { consumed: true } : {}),
+      },
+      concentration: spell.concentration,
+      duration,
+      ...((rest.instantaneous ?? duration.kind === "instantaneous")
+        ? { instantaneous: true }
         : {}),
-      ...(spell.components.m && cost?.consumed ? { consumed: true } : {}),
-    },
-    concentration: spell.concentration,
-    duration,
-    ...((rest.instantaneous ?? duration.kind === "instantaneous")
-      ? { instantaneous: true }
-      : {}),
-    // A homebrew spell belongs to no book; it is the player's own.
-    source: "Homebrew",
-  };
-  dataCache.set(spell, data);
-  return data;
-}
+      // A homebrew spell belongs to no book; it is the player's own.
+      source: "Homebrew",
+    };
+    return data;
+  }
+);
 
 /**
  * The spell data behind a held Concentration: the catalogue spell for an id, or the
