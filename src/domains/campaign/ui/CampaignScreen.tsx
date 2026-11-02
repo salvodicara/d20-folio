@@ -2,6 +2,8 @@
 // It reads the core only: the campaign store, the members' live docs and pure view models.
 import { DiaryTab } from "@/domains/chronicle/ui/DiaryTab";
 import { FightTab } from "@/domains/combat/ui/FightTab";
+import { Coins } from "@/domains/treasury/ui/Coins";
+import { TreasuryTab } from "@/domains/treasury/ui/TreasuryTab";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "react-router";
@@ -27,7 +29,7 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 
 import { partyRows, type PartyRow } from "../party-rows-view";
 
-type Tab = "party" | "fight" | "journal";
+type Tab = "party" | "fight" | "journal" | "treasure";
 
 export function CampaignScreen() {
   const { campaignId } = useParams();
@@ -47,7 +49,10 @@ function Campaign({ campaignId }: { campaignId: string }) {
   useSessionLogMirror(campaignId, uid, campaign?.dmUid);
   useDocumentTitle(campaign?.name);
   const [tab, setTab] = useState<Tab>("party");
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToastState] = useState<{ text: string; undo?: () => void } | null>(
+    null
+  );
+  const setToast = (text: string, undo?: () => void) => setToastState({ text, undo });
 
   if (!campaign || campaign.id !== campaignId) {
     return (
@@ -77,6 +82,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
             { id: "party" as const, label: t("campaignHub.party") },
             { id: "fight" as const, label: t("campaignScreen.tabFight") },
             { id: "journal" as const, label: t("campaignHub.workspaceJournal") },
+            { id: "treasure" as const, label: t("campaignHub.treasury") },
           ]}
           value={tab}
           onChange={setTab}
@@ -85,11 +91,23 @@ function Campaign({ campaignId }: { campaignId: string }) {
           <PartyTab campaign={campaign} locale={locale} />
         ) : tab === "fight" ? (
           <FightTab campaign={campaign} locale={locale} />
+        ) : tab === "treasure" ? (
+          <TreasuryTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : (
           <DiaryTab campaign={campaign} locale={locale} onToast={setToast} />
         )}
       </main>
-      {toast && <Toast>{toast}</Toast>}
+      {toast && (
+        <Toast
+          action={toast.undo && t("common.undo")}
+          onAction={() => {
+            toast.undo?.();
+            setToastState(null);
+          }}
+        >
+          {toast.text}
+        </Toast>
+      )}
     </>
   );
 }
@@ -174,9 +192,6 @@ function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale 
   const { t } = useTranslation();
   const live = useLiveDocs(campaign);
   const rows = partyRows(campaign, live, locale);
-  const coins = (["pp", "gp", "ep", "sp", "cp"] as const).filter(
-    (c) => campaign.treasury[c] > 0 || c === "gp" || c === "sp" || c === "cp"
-  );
   const encounter = campaign.encounter;
   return (
     <div className="f-split">
@@ -198,14 +213,7 @@ function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale 
           ))}
         </Panel>
         <Panel color="tes" title={t("campaignScreen.chest")}>
-          <div className="f-coins">
-            {coins.map((c) => (
-              <span key={c} className="f-coin" data-coin={c}>
-                <b>{campaign.treasury[c]}</b>
-                <span className="f-lbl">{t(`equipment.currencyAbbr.${c}`)}</span>
-              </span>
-            ))}
-          </div>
+          <Coins treasury={campaign.treasury} />
         </Panel>
       </div>
       <Panel color="ini" title={t("campaignScreen.tabFight")}>
