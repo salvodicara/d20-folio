@@ -772,14 +772,16 @@ service cloud.firestore {
         return validMemberApplyOperation(operation) || validMemberRevokeOperation(operation);
       }
 
+      // Read directly, not through get(): a missing field errors, which refuses the write
+      // just the same, at a fraction of the expression budget per operation (a batch of 8
+      // runs this 8 times).
       function validMemberBulkRevokeOperation(operation) {
-        return operation is map
-          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
-          && operation.get('kind', '') == 'revoke'
-          && operation.get('id', null) is string
-          && operation.get('effectId', null) is string
-          && operation.get('actorId', null) is string
-          && operation.get('targetId', null) is string;
+        return operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && operation.kind == 'revoke'
+          && operation.id is string
+          && operation.effectId is string
+          && operation.actorId is string
+          && operation.targetId is string;
       }
 
       // An end-state lifecycle pair is always `revoke + data-derived successor`. Keep
@@ -975,7 +977,14 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged())
+      // The members' combat-effect write comes first and alone: its effect-op batch check is
+      // the costliest member path, and the per-request expression budget is shared by every
+      // check evaluated on the way to it (measured 2026-11-02: with the effect path first and
+      // the slim bulk-revoke validator, a batch of 8 revokes keeps a margin of about 30 trivial
+      // checks; before, under 5). Keep new member checks OFF this path; see
+      // docs/architecture/2026-11-simplify-core.md for the per-operation-document follow-up.
+      allow update: if isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && combatEffectFieldsOnlyChanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged();
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged())
         || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged() && memberStartsFight())
         || isDm()
         || isAdmin()
