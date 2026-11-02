@@ -12,20 +12,11 @@
  * are also SRD names ("Fly", "Aid", "Light", "Shield", "Bless") have too many legitimate
  * uses to flag without false positives — the multi-word constraint keeps it precise.
  *
- * RATCHET: `ALLOWLIST` holds the pre-existing violations. The campaign is COMPLETE —
- * every tracked site has been refactored to speak ids, so the allowlist is now EMPTY.
- * The guard fails on a NEW literal AND on a STALE allowlist entry (a fixed site MUST be
- * removed), so the debt can only shrink, never grow, and no new leak can be introduced.
+ * There is no allowlist: every site speaks ids, so any hit fails the build.
  */
 import ts from "typescript";
 import { describe, it, expect } from "vitest";
 import { srcFileMap, SRC_ROOT } from "./__helpers__/src-files";
-
-/** Pre-existing SRD-name literals in the runtime path — tracked debt that must only
- *  shrink. The leak-eradication campaign is COMPLETE: every site now speaks stable ids
- *  and resolves its display from i18n, so this allowlist is EMPTY. A NEW literal fails
- *  the guard (it cannot be added here without a deliberate refactor entry). */
-const ALLOWLIST: ReadonlySet<string> = new Set([]);
 
 /** Every MULTI-WORD EN SRD display name, lowercased → its `kind:id` (for the message). */
 function srdMultiWordNames(): Map<string, string> {
@@ -53,9 +44,9 @@ function srdMultiWordNames(): Map<string, string> {
  * template's static parts never equal a full name (documented residual — the branded
  * id types are the backstop for runtime-constructed names, golden rule 7).
  */
-function findViolations(): { key: string; id: string; loc: string }[] {
+function findViolations(): { lit: string; id: string; loc: string }[] {
   const names = srdMultiWordNames();
-  const out: { key: string; id: string; loc: string }[] = [];
+  const out: { lit: string; id: string; loc: string }[] = [];
   for (const [path, content] of srcFileMap()) {
     if (!/\.tsx?$/.test(path)) continue;
     if (
@@ -79,7 +70,7 @@ function findViolations(): { key: string; id: string; loc: string }[] {
         const id = names.get(lit.toLowerCase());
         if (id) {
           const line = sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
-          out.push({ key: `${rel}::${lit}`, id, loc: `${rel}:${line}` });
+          out.push({ lit, id, loc: `${rel}:${line}` });
         }
       }
       ts.forEachChild(node, visit);
@@ -92,21 +83,11 @@ function findViolations(): { key: string; id: string; loc: string }[] {
 describe("guard: no hardcoded SRD display-name literals in the runtime path (GR7)", () => {
   const violations = findViolations();
 
-  it("introduces NO new SRD-name literal (every hit is a tracked allowlist entry)", () => {
-    const fresh = violations.filter((v) => !ALLOWLIST.has(v.key));
+  it("finds NO SRD-name literal in the runtime path", () => {
     expect(
-      fresh,
-      `New hardcoded SRD display name(s) in code — store an id and localize from i18n ` +
-        `(golden rule 7):\n${fresh.map((v) => `  ${v.loc}  "${v.key.split("::")[1]}" → ${v.id}`).join("\n")}`
-    ).toEqual([]);
-  });
-
-  it("has no STALE allowlist entries (a fixed site must be removed so the debt only shrinks)", () => {
-    const present = new Set(violations.map((v) => v.key));
-    const stale = [...ALLOWLIST].filter((k) => !present.has(k));
-    expect(
-      stale,
-      `Allowlisted sites no longer present — delete these entries:\n  ${stale.join("\n  ")}`
+      violations,
+      `Hardcoded SRD display name(s) in code — store an id and localize from i18n ` +
+        `(golden rule 7):\n${violations.map((v) => `  ${v.loc}  "${v.lit}" → ${v.id}`).join("\n")}`
     ).toEqual([]);
   });
 

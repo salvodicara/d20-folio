@@ -2064,6 +2064,19 @@ export interface CompanionUpgrade {
   minLevel: number;
 }
 
+/** Movement modes in feet — the one shape companions, Wild Shape Beasts and monsters share. */
+export type CreatureSpeeds = Readonly<
+  Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>
+>;
+
+/** Senses beyond ordinary sight, in feet (Passive Perception is not a sense here). */
+export type CreatureSenses = {
+  darkvisionFt?: number;
+  blindsightFt?: number;
+  tremorsenseFt?: number;
+  truesightFt?: number;
+};
+
 /** A summoned companion's resolvable stat block (Artificer constructs). */
 export interface CompanionStatBlock {
   /** AC = `base` (+ the owner's `ability` modifier, if set). */
@@ -2101,9 +2114,7 @@ export interface CompanionStatBlock {
    * (kept for the existing Artificer constructs). When set, the resolver
    * exposes the full map AND derives a `speed` summary string from `walk`.
    */
-  speeds?: Readonly<
-    Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>
-  >;
+  speeds?: CreatureSpeeds;
   /**
    * Fixed ability scores (Beast Master beasts). The resolver derives each
    * modifier and a save bonus — when `pbToChecks` is set (Primal Bond), the
@@ -2146,12 +2157,7 @@ export interface CompanionStatBlock {
    * present are listed. Passive Perception is fixed in the stat block (10) so
    * it isn't modeled here.
    */
-  senses?: {
-    darkvisionFt?: number;
-    blindsightFt?: number;
-    tremorsenseFt?: number;
-    truesightFt?: number;
-  };
+  senses?: CreatureSenses;
   /**
    * `true` when the companion adds the OWNER's Proficiency Bonus to every
    * ability check and saving throw it makes (Steel Defender's "Steel Bond",
@@ -2235,7 +2241,7 @@ export interface BeastStatBlock {
    * {@link CompanionStatBlock.speeds} record shape. Stamped into the character's
    * `speedOverride` (walk) + `speedOverrides` (fly/swim/climb/burrow).
    */
-  speeds: Readonly<Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>>;
+  speeds: CreatureSpeeds;
   /** The Beast's six ability scores — stamped into `abilityScores` (STR/DEX/CON
    *  replace yours; the presenter's effective-score family reads from that field). */
   abilityScores: Readonly<Record<AbilityCode, number>>;
@@ -2243,12 +2249,7 @@ export interface BeastStatBlock {
   attacks: ReadonlyArray<BeastAttack>;
   /** The Beast's own senses beyond ordinary sight (mirrors {@link CompanionStatBlock.senses});
    *  rendered on the read-only reference card. */
-  senses?: {
-    darkvisionFt?: number;
-    blindsightFt?: number;
-    tremorsenseFt?: number;
-    truesightFt?: number;
-  };
+  senses?: CreatureSenses;
   /** Stable ids of the Beast's always-on traits (`trait.pack-tactics`); names in
    *  the `beasts` catalogue. Reference-card display only — narrative, never a grant. */
   traits?: ReadonlyArray<string>;
@@ -2707,7 +2708,7 @@ export interface MonsterStatBlock {
   initiative?: number;
   hp: { average: number; formula: string }; // formula compact: "9d8+18"
   /** Movement in feet; reuses the Beast/Companion record shape + hover. */
-  speeds: Readonly<Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>>;
+  speeds: CreatureSpeeds;
   /** "Fly 60 ft. (hover)". */
   hover?: true;
   /**
@@ -2734,11 +2735,7 @@ export interface MonsterStatBlock {
   conditionImmunities?: ReadonlyArray<MonsterConditionImmunity>;
   qualifiedDefenses?: ReadonlyArray<QualifiedDefense | QualifiedDefenseNote>;
 
-  senses?: {
-    darkvisionFt?: number;
-    blindsightFt?: number;
-    tremorsenseFt?: number;
-    truesightFt?: number;
+  senses?: CreatureSenses & {
     /** "blindsight 60 ft. (blind beyond this radius)". */
     blindBeyond?: true;
     /** Darkvision "(unimpeded by magical Darkness)" — the recurring 2024
@@ -3497,6 +3494,3 @@ export type HomebrewWeaponFacts = Pick<SrdEquipmentData, "mastery">;
 export type HomebrewWeaponMechanics = HomebrewItemMechanics & {
   readonly [Key in keyof HomebrewWeaponFacts]?: HomebrewWeaponFacts[Key];
 };
-
-/** Map of SRD entity types by ID for fast lookup */
-export type SrdIndex<T extends { id: string }> = Map<string, T>;

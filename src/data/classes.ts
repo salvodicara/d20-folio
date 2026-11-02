@@ -93,9 +93,7 @@ export function getClassTable(id: string): SrdClassTable | undefined {
 // string lives in the SRD-FREE `@/data/srd-names` (`resolveClassId` /
 // `resolveSubclassId`): id resolution must not pull the multi-megabyte class data,
 // and after R3 the class display names live in the i18n catalogues, not on the
-// class table. The old `getCharacterClassId` / `getCharacterSubclassId` (which
-// matched on the class table's `name.en`/`name.it`) were unused and were removed
-// in R6+R3 SLICE 7b.
+// class table.
 
 /** Get all features for a specific class */
 export function getClassFeatures(classId: string): SrdClassFeatureData[] {
@@ -117,11 +115,6 @@ export function getSubclassFeatures(
 ): SrdClassFeatureData[] {
   return classFeatures.filter((f) => f.class === classId && f.subclass === subclassId);
 }
-
-// `searchFeatures` (name-substring search over class features) was unused and
-// read the class-feature `name.en`/`name.it` LocaleText that R3 moved into the i18n
-// catalogues — removed in R6+R3 SLICE 7b. A feature search, if needed, belongs in
-// a view that resolves names via `localizeSrd`.
 
 // Re-export only the symbols consumed THROUGH this barrel: BARD_TABLE / MONK_TABLE
 // (the class-table consistency tests) and pactSlotLevel (slot-cost-scaled pact-weapon
