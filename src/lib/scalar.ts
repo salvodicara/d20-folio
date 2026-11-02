@@ -18,10 +18,25 @@ import {
   type IntegerExpression,
 } from "@/lib/integer-expression";
 import type { DiceFormula } from "@/types/dice-formula";
-import type { IntegerExpressionTableRow } from "@/types/integer-expression";
 
 export type Scalar = number | IntegerExpression;
-export type DiceScalar = string | DiceFormula;
+export type DiceScalar = string | DiceFormula | DiceTable;
+
+/**
+ * Dice that step with a value (a class level, the cast level): the last row whose
+ * `atLeast` the input reaches, else `below`. Each step is a dice string, so a step
+ * can change the die size ("1d6" to "1d8") or carry a term ("1d8+WIS").
+ */
+export interface DiceTable {
+  readonly kind: "dice-table";
+  readonly input: IntegerExpression;
+  readonly rows: readonly [DiceTableRow, ...DiceTableRow[]];
+  readonly below: string;
+}
+export interface DiceTableRow {
+  readonly atLeast: number;
+  readonly dice: string;
+}
 
 type Ability = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
 
@@ -85,6 +100,7 @@ export function resolveScalar(
  */
 export function conformDiceScalar(value: unknown): DiceScalar | null {
   if (typeof value === "string") return value;
+  if (isDiceTableShape(value)) return conformDiceTable(value);
   const formula = conformDiceFormula(value);
   if (!formula) return null;
   const ids = formula.terms.flatMap((t) =>
@@ -93,12 +109,51 @@ export function conformDiceScalar(value: unknown): DiceScalar | null {
   return ids.every(isScalarBinding) ? formula : null;
 }
 
+function isDiceTableShape(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as { kind?: unknown }).kind === "dice-table"
+  );
+}
+
+function conformDiceTable(value: Record<string, unknown>): DiceTable | null {
+  const keys = Object.keys(value).sort().join(",");
+  if (keys !== "below,input,kind,rows") return null;
+  const input = conformIntegerExpression(value.input);
+  if (!input || !integerExpressionBindingIds(input).every(isScalarBinding)) return null;
+  if (typeof value.below !== "string" || !Array.isArray(value.rows)) return null;
+  const rows: DiceTableRow[] = [];
+  for (const row of value.rows as unknown[]) {
+    if (typeof row !== "object" || row === null) return null;
+    const { atLeast, dice, ...rest } = row as Record<string, unknown>;
+    if (Object.keys(rest).length > 0) return null;
+    if (!Number.isSafeInteger(atLeast) || typeof dice !== "string") return null;
+    const previous = rows[rows.length - 1];
+    if (previous && (atLeast as number) <= previous.atLeast) return null;
+    rows.push({ atLeast: atLeast as number, dice });
+  }
+  const [first, ...more] = rows;
+  return first
+    ? { kind: "dice-table", input, rows: [first, ...more], below: value.below }
+    : null;
+}
+
 /** Resolve a DiceScalar to a plain dice string ("3d6", "1d8+2"). */
 export function resolveDice(
   dice: DiceScalar,
   bindings: IntegerBindings
 ): { formula: string; terms: ScalarTerm[] } | null {
   if (typeof dice === "string") return { formula: dice, terms: [] };
+  if (isDiceTableShape(dice)) {
+    const table = conformDiceTable(dice);
+    if (!table) return null;
+    const input = evaluateIntegerExpression(table.input, bindings);
+    if (input === null) return null;
+    let chosen = table.below;
+    for (const row of table.rows) if (input >= row.atLeast) chosen = row.dice;
+    return { formula: chosen, terms: termsOf([table.input], bindings) };
+  }
   const formula = conformDiceFormula(dice);
   if (!formula) return null;
   let text = "";
@@ -116,62 +171,24 @@ export function resolveDice(
   return { formula: text === "" ? "0" : text, terms: termsOf(expressions, bindings) };
 }
 
-const DICE_STRING = /^(\d+)d(\d+)$/;
-
 /**
- * Convert the legacy `dice` + `diceByLevel` pair (one die size, a count that steps
- * with a level) into a DiceScalar whose count is a level table.
+ * Catalogue shorthand: dice that step with one class's level. `base` applies
+ * below the first step; a step equal to `base` is dropped as redundant.
  */
-export function scalarFromLevelTable(
-  bindingId: string,
-  base: string,
-  byLevel: Readonly<Record<number, string>>
-): DiceScalar {
-  const parse = (d: string): { count: number; sides: number } => {
-    const m = DICE_STRING.exec(d);
-    if (!m) throw new Error(`not a plain dice string: ${d}`);
-    return { count: Number(m[1]), sides: Number(m[2]) };
-  };
-  const first = parse(base);
-  const steps = Object.entries(byLevel)
-    .map(([level, d]) => ({ atLeast: Number(level), ...parse(d) }))
-    .sort((a, b) => a.atLeast - b.atLeast);
-  if (steps.some((s) => s.sides !== first.sides)) {
-    throw new Error("diceByLevel changes the die size; write the DiceFormula by hand");
-  }
-  const rows = steps.map(
-    (s): IntegerExpressionTableRow => ({
-      atLeast: s.atLeast,
-      value: { kind: "fixed", value: s.count },
-    })
-  );
-  const count: IntegerExpression =
-    rows.length === 0
-      ? { kind: "fixed", value: first.count }
-      : {
-          kind: "table",
-          input: { kind: "binding", bindingId },
-          rows: rows as [IntegerExpressionTableRow, ...IntegerExpressionTableRow[]],
-          below: { kind: "fixed", value: first.count },
-        };
-  return {
-    terms: [
-      {
-        kind: "dice",
-        count,
-        operation: "add",
-        sides: first.sides as never,
-        termId: "dice",
-      },
-    ],
-  };
-}
-
-/** Catalogue shorthand: dice whose count steps with one class's level. */
 export function levelDice(
   classId: string,
   base: string,
   byLevel: Readonly<Record<number, string>>
-): DiceScalar {
-  return scalarFromLevelTable(SCALAR_BINDINGS.classLevel(classId), base, byLevel);
+): DiceTable {
+  const steps = Object.entries(byLevel)
+    .map(([level, dice]) => ({ atLeast: Number(level), dice }))
+    .sort((a, b) => a.atLeast - b.atLeast)
+    .filter((row, i, all) => row.dice !== (i === 0 ? base : all[i - 1]?.dice));
+  const [first, ...more] = steps;
+  return {
+    kind: "dice-table",
+    input: { kind: "binding", bindingId: SCALAR_BINDINGS.classLevel(classId) },
+    rows: first ? [first, ...more] : [{ atLeast: 1, dice: base }],
+    below: base,
+  };
 }
