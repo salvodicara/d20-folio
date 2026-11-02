@@ -14,6 +14,11 @@ import { NumberStepper } from "@/components/ui/input";
 import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { ModalShell } from "@/components/shared/ModalShell";
 import type { ResourceInputRequest } from "@/lib/resources";
+import {
+  enteredRollLabel,
+  initialValue,
+  inputLabelKey,
+} from "@/lib/views/item-resource-view";
 
 export interface ItemResourceInputRequest {
   sourceName: string;
@@ -26,36 +31,12 @@ export interface ItemResourceInputModalProps {
   onCancel: () => void;
 }
 
-function enteredRollLabel(request: ResourceInputRequest): string | null {
-  if (request.kind === "depletion-d20") return "d20";
-  const { dice, sides, modifier = 0 } = request.roll;
-  if (modifier === 0) return `${dice}d${sides}`;
-  return `${dice}d${sides} ${modifier > 0 ? "+" : "−"} ${Math.abs(modifier)}`;
-}
-
-function initialValue(request: ResourceInputRequest): number {
-  return request.kind === "depletion-d20" ? 10 : request.min;
-}
-
 function initialAnswers(
   request: ItemResourceInputRequest | null
 ): Map<ResourceInputRequest["kind"], number> {
   return new Map(
     request?.requests.map((input) => [input.kind, initialValue(input)] as const) ?? []
   );
-}
-
-function inputLabelKey(request: ResourceInputRequest): string {
-  switch (request.kind) {
-    case "capacity-roll":
-      return "magicItems.resourceCapacityRoll";
-    case "initial-roll":
-      return "magicItems.resourceInitialRoll";
-    case "recovery-roll":
-      return "magicItems.resourceRecoveryRoll";
-    case "depletion-d20":
-      return "magicItems.resourceDepletionRoll";
-  }
 }
 
 export function ItemResourceInputModal({

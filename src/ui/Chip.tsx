@@ -4,11 +4,16 @@ import type { ReactNode } from "react";
 export function Chip({
   pressed,
   kind,
+  disabled,
+  title,
   onClick,
   children,
 }: {
   pressed?: boolean;
   kind?: "conc" | "cond" | "buff";
+  /** A choice that cannot be taken now (it stays visible, with `title` saying why). */
+  disabled?: boolean;
+  title?: string;
   onClick?: () => void;
   children: ReactNode;
 }) {
@@ -26,7 +31,9 @@ export function Chip({
       className="f-chip"
       data-kind={kind}
       aria-pressed={pressed}
-      onClick={onClick}
+      aria-disabled={disabled || undefined}
+      title={title}
+      onClick={disabled ? undefined : onClick}
     >
       {children}
     </button>

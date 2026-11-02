@@ -31,6 +31,7 @@ import {
 // the resolver produces it, this modal only renders it. Importing it from the
 // engine keeps the dependency direction one-way (UI → engine, never reverse).
 import {
+  metamagicChipStates,
   toggleMetamagicSelection,
   type CastLevelOption,
   type CastRecoveryCadence,
@@ -133,19 +134,14 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
     setSelectedMetamagic([]);
   }
 
-  // SP already committed to the current selection — used to gate FURTHER picks
-  // against the remaining pool (golden rule 20: can't over-spend). The base
-  // `affordable` flag the engine stamped assumed a zero-selection start; once
-  // some SP is earmarked, an option is affordable only if its cost fits what's
-  // left after the current selection.
+  // The chips' state (one primary per cast, stackers on top, never overspend) is
+  // the engine's rule, shared with the Play screen's cast dialog.
   const metamagicRows = request?.metamagic ?? [];
-  const spentSp = metamagicRows
-    .filter((m) => selectedMetamagic.includes(m.id))
-    .reduce((sum, m) => sum + m.cost, 0);
-
-  // BUG-6 — the one-primary-per-cast + additive-stackers rule lives in the pure
-  // engine reducer `toggleMetamagicSelection` (so the Spells + Combat modals and
-  // its unit test all share ONE implementation).
+  const chipStates = metamagicChipStates(
+    metamagicRows,
+    selectedMetamagic,
+    request?.sorceryRemaining ?? 0
+  );
   const stackerIds = new Set(
     metamagicRows.filter((m) => m.stacksWithPrimary).map((m) => m.id)
   );
@@ -266,36 +262,17 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                   <span className="cl-mm-title">{t("metamagic.section")}</span>
                   <span className="cl-mm-budget">
                     {t("metamagic.sorceryRemaining", {
-                      count: Math.max(0, (request.sorceryRemaining ?? 0) - spentSp),
+                      count: chipStates.remaining,
                     })}
                   </span>
                 </div>
                 {/* BUG-6 — one primary per cast; Empowered/Seeking stack on top. */}
                 <p className="cl-mm-rule">{t("metamagic.onePrimaryRule")}</p>
                 <div className="cl-mm-chips">
-                  {metamagicRows.map((m) => {
-                    const selected = selectedMetamagic.includes(m.id);
-                    // BUG-6 — a PRIMARY (non-stacker) tap that isn't already
-                    // selected SWAPS the current primary out, so the SP it would
-                    // free is available to it; a STACKER simply adds on top.
-                    const currentPrimary = selectedMetamagic.find((x) => {
-                      const row = metamagicRows.find((r) => r.id === x);
-                      return row != null && !row.stacksWithPrimary;
-                    });
-                    const freedBySwap =
-                      !m.stacksWithPrimary && currentPrimary != null
-                        ? (metamagicRows.find((r) => r.id === currentPrimary)?.cost ?? 0)
-                        : 0;
-                    const remainingAfter =
-                      (request.sorceryRemaining ?? 0) - spentSp + freedBySwap;
-                    // An unselected chip is pickable only if it both applies to
-                    // this spell AND (after any primary swap) its cost fits what's
-                    // left; a selected chip is always togglable OFF.
-                    const wouldSwap =
-                      !selected && !m.stacksWithPrimary && currentPrimary != null;
-                    const enabled =
-                      selected ||
-                      (m.appliesToSpell && m.affordable && m.cost <= remainingAfter);
+                  {metamagicRows.map((m, i) => {
+                    const chip = chipStates.chips[i];
+                    const selected = chip?.selected ?? false;
+                    const enabled = chip?.enabled ?? false;
                     return (
                       <button
                         key={m.id}
@@ -305,11 +282,11 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                         data-selected={selected ? "true" : undefined}
                         disabled={!enabled}
                         title={
-                          !m.appliesToSpell
+                          chip?.why === "not-applicable"
                             ? t("metamagic.notApplicable")
-                            : !m.affordable || m.cost > remainingAfter
+                            : chip?.why === "not-enough"
                               ? t("metamagic.notEnoughSp")
-                              : wouldSwap
+                              : chip?.why === "swaps"
                                 ? t("metamagic.swapsPrimary")
                                 : undefined
                         }

@@ -285,6 +285,56 @@ export function toggleMetamagicSelection(
   return [...selected.filter((x) => stackerIds.has(x)), id];
 }
 
+/** One per-cast Metamagic option as the cast dialog offers it (ids, costs, gates). */
+export interface MetamagicChipInput {
+  id: string;
+  cost: number;
+  /** The remaining Sorcery Points cover it with nothing picked. */
+  affordable: boolean;
+  appliesToSpell: boolean;
+  /** Empowered/Seeking: adds on top of a primary instead of replacing it. */
+  stacksWithPrimary: boolean;
+}
+
+export interface MetamagicChipState {
+  id: string;
+  selected: boolean;
+  enabled: boolean;
+  /** Why it is closed, or that picking it replaces the current primary. */
+  why: "not-applicable" | "not-enough" | "swaps" | null;
+}
+
+/**
+ * What each Metamagic chip of a cast offers given what is already picked: one
+ * primary per cast (picking another swaps it, so the points it frees count), the
+ * stackers add on top, and a pick never spends more Sorcery Points than are left.
+ * A picked chip can always be unpicked. `remaining` is what the picks leave.
+ */
+export function metamagicChipStates(
+  rows: ReadonlyArray<MetamagicChipInput>,
+  selected: ReadonlyArray<string>,
+  sorceryRemaining: number
+): { remaining: number; chips: MetamagicChipState[] } {
+  const spent = rows
+    .filter((m) => selected.includes(m.id))
+    .reduce((sum, m) => sum + m.cost, 0);
+  const currentPrimary = rows.find(
+    (m) => selected.includes(m.id) && !m.stacksWithPrimary
+  );
+  const chips = rows.map((m): MetamagicChipState => {
+    const on = selected.includes(m.id);
+    if (on) return { id: m.id, selected: true, enabled: true, why: null };
+    const swaps = !m.stacksWithPrimary && currentPrimary !== undefined;
+    const left = sorceryRemaining - spent + (swaps ? currentPrimary.cost : 0);
+    if (!m.appliesToSpell)
+      return { id: m.id, selected: false, enabled: false, why: "not-applicable" };
+    if (!m.affordable || m.cost > left)
+      return { id: m.id, selected: false, enabled: false, why: "not-enough" };
+    return { id: m.id, selected: false, enabled: true, why: swaps ? "swaps" : null };
+  });
+  return { remaining: Math.max(0, sorceryRemaining - spent), chips };
+}
+
 /**
  * Resolve a `scoped-extra-spell-slot` grant's declarative level formula against
  * the character's total level into a concrete slot level (1–9).

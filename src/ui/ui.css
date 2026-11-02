@@ -398,6 +398,10 @@
   white-space: nowrap;
   cursor: pointer;
 }
+.fui .f-chip[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
 .fui .f-chip[aria-pressed="true"] {
   border-color: var(--text);
   background: var(--glass);
@@ -462,6 +466,138 @@
   border-left: 3px solid var(--nc, var(--gold));
   background: color-mix(in srgb, var(--nc, var(--gold)) 9%, transparent);
   color: var(--strong);
+}
+
+.fui .f-note[data-c] {
+  --nc: var(--c);
+}
+
+/* ---------- choices: one option of a pick-one question (approved prototype cast-bless) ---------- */
+.fui .f-choices {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 8px;
+}
+.fui .f-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.fui .f-choice:hover {
+  border-color: var(--line-strong);
+}
+.fui .f-choice[aria-pressed="true"] {
+  border-color: var(--c);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+}
+.fui .f-choice[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.fui .f-choice[data-tile] {
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 88px;
+  text-align: center;
+}
+.fui .f-choice > b {
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--white);
+}
+/* in a row (not a tile) the leading label is a small column: a spell's level */
+.fui .f-choice:not([data-tile]) > b {
+  min-width: 88px;
+  font: 600 var(--fs-sm) var(--font-text);
+  color: var(--muted);
+}
+.fui .f-choice-main {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.fui .f-choice-s {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-wrap: balance;
+}
+.fui .f-choice-n {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fui .f-choice-pips {
+  display: flex;
+  gap: 4px;
+}
+.fui .f-choice-pips > i {
+  width: 8px;
+  height: 8px;
+  rotate: 45deg;
+  background: var(--c);
+}
+.fui .f-choice-pips > i[data-used] {
+  background: none;
+  outline: 1px solid var(--line-strong);
+}
+.fui .f-ask {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-ask + .f-ask {
+  margin-top: 24px;
+}
+.fui .f-ask-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.fui .f-ask-row > :first-child {
+  flex: 1 1 160px;
+  text-wrap: balance;
+}
+
+/* ---------- stepper: a whole number with − and + ---------- */
+.fui .f-stepper {
+  display: inline-grid;
+  grid-template-columns: 40px 72px 40px;
+  align-items: center;
+  gap: 8px;
+}
+.fui .f-stepper > button {
+  height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--strong);
+  font-size: var(--fs-lg);
+  cursor: pointer;
+}
+.fui .f-stepper > button[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.fui .f-stepper > .f-in {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  appearance: textfield;
 }
 
 /* ---------- toast: undo lives here; full width on phone, above the bottom bar ---------- */

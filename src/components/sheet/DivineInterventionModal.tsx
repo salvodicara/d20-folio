@@ -26,12 +26,10 @@ import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { SearchField } from "@/components/shared/SearchField";
 import { spellLevelVar } from "@/components/shared/folio-colors";
-import { matchesSearch } from "@/lib/search";
-import { spellIndex } from "@/data/spells";
 import { localizeSrd } from "@/i18n/resolver";
-import { srdEn } from "@/i18n/srd-en";
 import type { Locale } from "@/lib/locale";
 import type { FreeCastFromListPool } from "@/lib/smart-tracker";
+import { freeCastListRows } from "@/lib/views/free-cast-list-view";
 
 export interface DivineInterventionModalProps {
   /** When non-null, the modal is open with this resolved free-cast-from-list pool. */
@@ -69,22 +67,11 @@ export function DivineInterventionModal({
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
 
-  // The eligible spells as { id, name, level }, localized + sorted by level then name.
-  const rows = useMemo(() => {
-    if (!pool) return [];
-    return pool.spellIds
-      .map((id) => {
-        const data = spellIndex.get(id);
-        return {
-          id,
-          level: data?.level ?? 0,
-          name: localizeSrd("spell", id, "name", locale),
-          nameEn: srdEn("spell", id, "name"),
-        };
-      })
-      .filter((r) => matchesSearch(query, r.name, r.nameEn))
-      .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name));
-  }, [pool, locale, query]);
+  // The eligible spells, shared with the Play screen's picker.
+  const rows = useMemo(
+    () => (pool ? freeCastListRows(pool, locale, query) : []),
+    [pool, locale, query]
+  );
 
   if (!pool) return null;
 
@@ -158,8 +145,8 @@ export function DivineInterventionModal({
               // S9 — per-spell charge cost (item pools only). The row disables when
               // the pool can't afford this spell (Wand of Binding at 4 charges →
               // Hold Monster costs 5 → disabled; Hold Person costs 2 → enabled).
-              const cost = pool.costBySpell[r.id] ?? 1;
-              const disabled = isItemPool && pool.remaining < cost;
+              const cost = r.cost;
+              const disabled = !r.affordable;
               return (
                 <button
                   key={r.id}
