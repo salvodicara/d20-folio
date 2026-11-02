@@ -42,10 +42,9 @@ function devEmpty(): boolean {
   return window.localStorage.getItem("d20-dev-empty") === "1";
 }
 
-/** A dev-only hero portrait (figure-on-gradient SVG data URI) so the party shows the
- *  Owner-7 character-portrait path in bypass — distinct from the tinted-initial. */
-const DEV_HERO_PORTRAIT =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231f5a4f'/%3E%3Cstop offset='1' stop-color='%23a8d8b0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' fill='url(%23h)'/%3E%3Ccircle cx='32' cy='24' r='11' fill='%23fff' opacity='0.9'/%3E%3Cpath d='M13 57c0-11 8-19 19-19s19 8 19 19z' fill='%23fff' opacity='0.9'/%3E%3C/svg%3E";
+/** A dev-only painted hero portrait: the approved prototype's own (in docs/, which the dev
+ *  server serves; nothing ships with the build), so the party shows a real portrait. */
+const DEV_HERO_PORTRAIT = "/docs/design/prototype/img/portrait-selene.webp";
 
 /**
  * Dev-bypass sessions (D28) — newest first, with a populated summary on the latest
@@ -389,6 +388,8 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
     // "Active" lines read naturally in dev + the visual suite, staying deterministic.
     createdAt: new Date("2026-03-14T18:00:00Z"),
     updatedAt: new Date("2026-05-02T22:30:00Z"),
+    // Thursday evening, so the campaign header reads like a real table's.
+    nextSessionAt: new Date("2026-11-06T20:00:00Z").getTime(),
     createdBy: "mock-uid",
     dmUid: "mock-uid",
     members: ["mock-uid", "member-mara", "member-bren"],
@@ -397,7 +398,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
       // B32 — a realistic display name, never the raw English "You" (which leaked
       // untranslated Italian-locale text via `campaignHub.narratedBy`).
       "mock-uid": {
-        displayName: "GM",
+        displayName: "Ottavio",
         characterId: null,
         role: "dm",
       },
