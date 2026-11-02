@@ -25,6 +25,7 @@ import type {
   PendingTurn,
 } from "@/features/campaigns/global-combat-context";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
+import { sortByInitiative } from "@/features/campaigns/encounter";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 import { asRaceId } from "@/data/srd-names";
 
@@ -38,6 +39,15 @@ export const DEV_CAMPAIGN_ID = "DEVCAMPAIGN24";
  * EMPTY state (the teach-and-act blanks) without a second fixture. Dev-bypass only —
  * every caller is behind `DEV_BYPASS_AUTH`, so this is tree-shaken from production.
  */
+/** The dev campaign speaks the dev session's language, as a real table's data does: Italian
+ *  when the app runs in Italian (the owner's videos), English otherwise (every spec). */
+function devItalian(): boolean {
+  if (typeof window === "undefined") return false;
+  const lng = window.localStorage.getItem("i18nextLng") ?? window.navigator.language;
+  return lng.startsWith("it");
+}
+const L = (en: string, it: string): string => (devItalian() ? it : en);
+
 function devEmpty(): boolean {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem("d20-dev-empty") === "1";
@@ -66,7 +76,18 @@ export function makeDevSessions(): SessionLogDoc[] {
   // A summary FAR past the reading cap (min(420px,55vh)) at every viewport, so
   // the expanded row exercises the clamp in dev + e2e (desktop lines wrap little —
   // be generous, not borderline).
-  const longRecap = `### Down the well
+  const longRecap = devItalian()
+    ? `### Giù nel pozzo
+
+Il gruppo è sceso nel pozzo asciutto dietro il santuario. ${"Il passaggio scendeva più a fondo di quanto qualsiasi torcia promettesse, e ogni svolta ripeteva lo stesso buio gocciolante. ".repeat(30)}
+
+### Il guardiano
+
+${"Una statua di ferro sbarrava la porta della cripta e ripeté il suo indovinello tre volte, finché Bren rispose con l’inno dipinto sul muro della cappella. ".repeat(30)}
+
+- Nella cripta c’era il registro dei coboldi.
+- Mara si è intascata un sigillo di cera che nessuno ha riconosciuto.`
+    : `### Down the well
 
 The party descended the dry well behind the shrine. ${"The passage twisted deeper than any torch could promise, and every turn repeated the same dripping dark. ".repeat(30)}
 
@@ -81,51 +102,65 @@ ${"An iron statue barred the vault door and asked its riddle three times before 
       ...base,
       id: "sess-7",
       date: new Date("2026-05-02T19:00:00Z"),
-      label: "Session 7",
-      notes:
+      label: L("Session 7", "Sessione 7"),
+      notes: L(
         "### The bridge\n\nThe party crossed at dawn and met a **goblin scout**. Mara talked it down for the price of a torch.\n\n- Found a sealed door, dwarven make.\n- Bren sensed undeath below.",
+        "### Il ponte\n\nIl gruppo ha attraversato all’alba e ha incontrato un **esploratore goblin**. Mara l’ha convinto a lasciarli passare per il prezzo di una torcia.\n\n- Trovata una porta sigillata, fattura nanica.\n- Bren ha percepito dei non morti più in basso."
+      ),
     },
     {
       ...base,
       id: "sess-6",
       date: new Date("2026-04-25T19:00:00Z"),
-      label: "Session 6",
+      label: L("Session 6", "Sessione 6"),
       notes: "",
     },
     {
       ...base,
       id: "sess-5",
       date: new Date("2026-04-18T19:00:00Z"),
-      label: "Session 5",
+      label: L("Session 5", "Sessione 5"),
       notes: longRecap,
     },
     {
       ...base,
       id: "sess-4",
       date: new Date("2026-04-11T19:00:00Z"),
-      label: "Session 4",
-      notes: "Shopping day in Duskwell; sold the goblin blades.",
+      label: L("Session 4", "Sessione 4"),
+      notes: L(
+        "Shopping day in Duskwell; sold the goblin blades.",
+        "Giornata di acquisti a Valfosca; vendute le lame dei goblin."
+      ),
     },
     {
       ...base,
       id: "sess-3",
       date: new Date("2026-04-04T19:00:00Z"),
-      label: "Session 3",
-      notes: "Met Edran's sister at the inn; took the rescue job.",
+      label: L("Session 3", "Sessione 3"),
+      notes: L(
+        "Met Edran's sister at the inn; took the rescue job.",
+        "Incontrata la sorella di Edran alla locanda; accettato il lavoro di soccorso."
+      ),
     },
     {
       ...base,
       id: "sess-2",
       date: new Date("2026-03-28T19:00:00Z"),
-      label: "Session 2",
-      notes: "Mapped the ravine rim and marked the rope anchors.",
+      label: L("Session 2", "Sessione 2"),
+      notes: L(
+        "Mapped the ravine rim and marked the rope anchors.",
+        "Mappato il ciglio del burrone e segnati gli ancoraggi delle corde."
+      ),
     },
     {
       ...base,
       id: "sess-1",
       date: new Date("2026-03-21T19:00:00Z"),
-      label: "Session 1",
-      notes: "Character introductions at the Grey Gable Inn.",
+      label: L("Session 1", "Sessione 1"),
+      notes: L(
+        "Character introductions at the Grey Gable Inn.",
+        "Presentazione dei personaggi alla locanda del Frontone Grigio."
+      ),
     },
   ];
 }
@@ -182,7 +217,31 @@ export function makeDevChronicle(): ChronicleDoc {
   // (min(420px,55vh)) so the chronicle's NoteClamp renders engaged at rest on the
   // hub (dev + a11y/visual suites) — a heading-less wall of prose is exactly the
   // case the chapter clamp guards.
-  const text = `# Session 1 — Into the Keep
+  const text = devItalian()
+    ? `# Sessione 1 · Dentro la rocca
+
+Il gruppo si è riunito alla locanda del **Frontone Grigio** e ha accettato il patto dei Fennick: scendere
+nel burrone, trovare i cercatori scomparsi e riportare *una sola scheggia di ferro stellare*.
+
+${"La strada verso sud era deserta e le torri di segnalazione spente, e ogni fattoria lungo il cammino aveva sbarrato le finestre contro qualcosa di peggio del freddo. ".repeat(12)}
+
+## Il burrone
+
+Un ponte di corda attraversava il buio. Mara è andata avanti e ha trovato il primo sigillo:
+la runa diceva \`lux aeterna\`. ~~Nessuna trappola~~ Due trappole, in realtà.
+
+### Cosa abbiamo scoperto
+
+- La rocca è sprofondata secoli fa, torri comprese.
+- **Morweth la druida** custodisce una fiamma fredda alle sue radici.
+- Due fazioni si combattono tra le rovine: goblin sopra, coboldi sotto.
+
+---
+
+### Dove ci siamo fermati
+
+Accampati sul ponte, torce basse, lo sgocciolio sempre più forte sotto di noi.`
+    : `# Session 1 — Into the Keep
 
 The party gathered at the **Grey Gable Inn** and took the Fennicks' bargain: descend
 the ravine, find the missing prospectors, and bring back *a single shard of star-iron*.
@@ -272,8 +331,11 @@ export function makeDevNotes(): SharedNote[] {
   return [
     {
       id: "note-morweth",
-      title: "Morweth the druid",
-      content: "Tends a cold flame below the keep; wants the star-iron left unmined.",
+      title: L("Morweth the druid", "Morweth la druida"),
+      content: L(
+        "Tends a cold flame below the keep; wants the star-iron left unmined.",
+        "Custodisce una fiamma fredda sotto la rocca; vuole che il ferro stellare resti nella roccia. @Morweth"
+      ),
       pinned: true,
       createdBy: "mock-uid",
       updatedAt: at,
@@ -285,20 +347,30 @@ export function makeDevNotes(): SharedNote[] {
       // the bounded preview (fade + "Show more") renders at rest in dev + the
       // suites.
       id: "note-rumors",
-      title: "Rumors heard in Duskwell",
-      content:
+      title: L("Rumors heard in Duskwell", "Voci sentite a Valfosca"),
+      content: L(
         "Things the table has picked up around town, unsorted:\n\n" +
-        "Star-iron surfaces at the spring and autumn thaws, one shard each — keeps a blade keen forever, they say, and the Fennick family pays in gold for a sliver.\n" +
-        "A pale boy was seen on the ravine rim at dusk; the miller swears he cast no shadow.\n" +
-        "The kobolds below trade fair if you bring polished copper; they call the dragon wyrmling 'Vexrix' and want it back.\n" +
-        "Edran and Liss went down a month ago with the ranger Hale. None came back up.\n" +
-        "The old druid grove south of town went silent in winter; the birds avoid it still.\n" +
-        "Petra at the Grey Gable waters the ale on festival days but knows every traveler's business — worth a friendly coin.\n" +
-        "Someone is buying torches in bulk. The chandler won't say who.\n" +
-        "Grellak the kobold quartermaster owes Mara a favor after the copper trade; he marks safe tunnels with a smudge of chalk at knee height.\n" +
-        "The Fennick signet rings are the proof the family wants — gold won't be paid without them, shard or no shard.\n" +
-        "Bren's order keeps records of the keep from before it sank; a letter to the abbey at Harrowmere might take weeks but could name the lower vaults.\n" +
-        "The thaw market is in five weeks. If the cold flame below is to be doused, the druid's buyers arrive before then.",
+          "Star-iron surfaces at the spring and autumn thaws, one shard each — keeps a blade keen forever, they say, and the Fennick family pays in gold for a sliver.\n" +
+          "A pale boy was seen on the ravine rim at dusk; the miller swears he cast no shadow.\n" +
+          "The kobolds below trade fair if you bring polished copper; they call the dragon wyrmling 'Vexrix' and want it back.\n" +
+          "Edran and Liss went down a month ago with the ranger Hale. None came back up.\n" +
+          "The old druid grove south of town went silent in winter; the birds avoid it still.\n" +
+          "Petra at the Grey Gable waters the ale on festival days but knows every traveler's business — worth a friendly coin.\n" +
+          "Someone is buying torches in bulk. The chandler won't say who.\n" +
+          "Grellak the kobold quartermaster owes Mara a favor after the copper trade; he marks safe tunnels with a smudge of chalk at knee height.\n" +
+          "The Fennick signet rings are the proof the family wants — gold won't be paid without them, shard or no shard.\n" +
+          "Bren's order keeps records of the keep from before it sank; a letter to the abbey at Harrowmere might take weeks but could name the lower vaults.\n" +
+          "The thaw market is in five weeks. If the cold flame below is to be doused, the druid's buyers arrive before then.",
+        "Cose sentite in paese, alla rinfusa:\n\n" +
+          "Il ferro stellare affiora alla sorgente col disgelo, una scheggia per stagione: tiene una lama affilata per sempre, dicono, e i Fennick pagano in oro anche una scaglia.\n" +
+          "Al tramonto un ragazzo pallido è stato visto sul ciglio del burrone; il mugnaio giura che non faceva ombra.\n" +
+          "I coboldi di sotto commerciano onestamente se porti rame lucidato; chiamano il cucciolo di drago «Vexrix» e lo rivogliono.\n" +
+          "Edran e Liss sono scesi un mese fa con la ranger Hale. Nessuno è risalito.\n" +
+          "Il vecchio boschetto dei druidi a sud del paese è muto dall’inverno; gli uccelli lo evitano ancora.\n" +
+          "Petra al Frontone Grigio annacqua la birra nei giorni di festa, ma sa tutto di ogni viaggiatore: vale una moneta gentile.\n" +
+          "Qualcuno compra torce all’ingrosso. Il candelaio non dice chi.\n" +
+          "Grellak, il quartiermastro coboldo, deve un favore a Mara dopo lo scambio di rame; segna i cunicoli sicuri con un baffo di gesso all’altezza del ginocchio. #Valfosca"
+      ),
       pinned: false,
       createdBy: "member-mara",
       updatedAt: new Date("2026-05-01T20:00:00Z"),
@@ -308,10 +380,13 @@ export function makeDevNotes(): SharedNote[] {
       // Staged-but-hidden lore: the DM sees it (badge + toggle); a player never
       // does (server-gated in prod, render-filtered in dev).
       id: "note-traitor",
-      title: "The pale boy is Morweth's thrall",
-      content:
+      title: L("The pale boy is Morweth's thrall", "Il ragazzo pallido serve Morweth"),
+      content: L(
         "Not for the players yet: the shadowless boy on the ravine rim answers to " +
-        "Morweth. Reveal once they meet him below.",
+          "Morweth. Reveal once they meet him below.",
+        "Non ancora per i giocatori: il ragazzo senz’ombra sul ciglio del burrone obbedisce a " +
+          "Morweth. Da rivelare quando lo incontrano di sotto. @Morweth"
+      ),
       pinned: false,
       createdBy: "mock-uid",
       updatedAt: new Date("2026-05-02T09:00:00Z"),
@@ -333,7 +408,9 @@ function devEncounterInitSeed(): Record<string, number> {
   const mode = encounterDemo();
   if (mode === "reflexes") return { "member-bren": 3, "member-mara": 15 };
   if (mode === "table")
-    return { "member-mara": 14, "member-bren": 9, "member-ila": 17, "member-lu": 12 };
+    // The characters start without a roll: the DM's «Tira per chi manca» (or each
+    // player's own roll) slots them in with their real bonuses.
+    return {};
   if (mode !== "begun") return {};
   return { "member-bren": 8, "member-mara": 6 };
 }
@@ -345,7 +422,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
     // section renders its teach-and-act empty state.
     return {
       id,
-      name: "The Starless Keep",
+      name: L("The Starless Keep", "La Rocca Senza Stelle"),
       createdAt: new Date("2026-05-02T18:00:00Z"),
       updatedAt: new Date("2026-05-02T18:00:00Z"),
       createdBy: "mock-uid",
@@ -365,7 +442,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
   }
   return {
     id,
-    name: "The Starless Keep",
+    name: L("The Starless Keep", "La Rocca Senza Stelle"),
     // CUSTOM-ART DEMO (dev-only, flag-gated): set the `d20-dev-banner` flag to give
     // the dev campaign a custom `bannerUrl` + an OFF-CENTRE 16:9 `bannerCrop`, so the
     // throwaway hub-shot harness can prove the CampaignHubPage backdrop renders the
@@ -511,7 +588,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 200,
         currency: "gp",
         type: "add",
-        note: "Goblin hoard",
+        note: L("Goblin hoard", "Tesoro dei goblin"),
         by: "mock-uid",
         at: new Date("2026-04-18T21:00:00Z"),
       },
@@ -519,7 +596,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 2,
         currency: "pp",
         type: "add",
-        note: "Sold the dragon statuette",
+        note: L("Sold the dragon statuette", "Venduta la statuetta del drago"),
         by: "member-mara",
         at: new Date("2026-04-19T18:30:00Z"),
       },
@@ -527,7 +604,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 60,
         currency: "gp",
         type: "remove",
-        note: "Healing potions ×3",
+        note: L("Healing potions ×3", "Pozioni curative ×3"),
         by: "member-bren",
         at: new Date("2026-04-25T20:10:00Z"),
       },
@@ -535,7 +612,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 30,
         currency: "sp",
         type: "add",
-        note: "Kobold toll, refunded",
+        note: L("Kobold toll, refunded", "Pedaggio dei coboldi, rimborsato"),
         by: "member-mara",
         at: new Date("2026-04-26T19:00:00Z"),
       },
@@ -543,7 +620,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 20,
         currency: "gp",
         type: "add",
-        note: "Fennick advance",
+        note: L("Fennick advance", "Anticipo dei Fennick"),
         by: "mock-uid",
         at: new Date("2026-05-01T17:45:00Z"),
       },
@@ -551,7 +628,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 15,
         currency: "gp",
         type: "remove",
-        note: "Inn & stabling",
+        note: L("Inn & stabling", "Locanda e stalla"),
         by: "member-bren",
         at: new Date("2026-05-01T22:20:00Z"),
       },
@@ -559,7 +636,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 5,
         currency: "gp",
         type: "remove",
-        note: "Temple donation",
+        note: L("Temple donation", "Offerta al tempio"),
         by: "member-mara",
         at: new Date("2026-05-02T11:00:00Z"),
       },
@@ -567,7 +644,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         amount: 5,
         currency: "gp",
         type: "add",
-        note: "Won a wager",
+        note: L("Won a wager", "Vinta una scommessa"),
         by: "mock-uid",
         at: new Date("2026-05-02T22:30:00Z"),
       },
@@ -1036,14 +1113,16 @@ function devTableMembers(): CampaignDoc["memberDetails"] {
   };
 }
 
-/** The `table` demo's fight: four players and three groups of invented creatures, every
- *  roll in, round 2, started by a roll (it has a clock, so anyone passes the turn). */
-function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
+/** The `table` demo's fight: four players and three groups of invented creatures. The
+ *  creatures have rolled and the characters are still to roll; the order is the engine's
+ *  own sort of what has been rolled (never written by hand), and turns haven't begun, so
+ *  every roll that comes in re-sorts it. Started by a roll: anyone passes the turn. */
+export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
   const now = Date.now();
   const raider = (n: number, current: number) => ({
     kind: "monster" as const,
     id: `monster-${n}`,
-    name: `Ash Raider ${n}`,
+    name: `${L("Ash Raider", "Predone delle Ceneri")} ${n}`,
     ac: 13,
     initiative: 15,
     conditions: [],
@@ -1053,7 +1132,7 @@ function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
   const hound = (n: number) => ({
     kind: "monster" as const,
     id: `monster-${n + 3}`,
-    name: `Cinder Hound ${n}`,
+    name: `${L("Cinder Hound", "Segugio di Brace")} ${n}`,
     ac: 13,
     initiative: 11,
     conditions: [],
@@ -1079,7 +1158,7 @@ function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
     {
       kind: "monster" as const,
       id: "monster-6",
-      name: "Raider Chief",
+      name: L("Raider Chief", "Capo dei Predoni"),
       ac: 16,
       initiative: 6,
       conditions: [],
@@ -1087,10 +1166,15 @@ function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
       creatureType: "humanoid" as const,
     },
   ];
+  const order = sortByInitiative(
+    combatants.flatMap((c) =>
+      c.kind === "monster" ? [{ id: c.id, initiative: c.initiative }] : []
+    )
+  ).map((c) => c.id);
   return {
-    round: 2,
-    currentCombatantId: "pc-member-mara",
-    order: combatants.map((c) => c.id),
+    round: 1,
+    currentCombatantId: order[0] ?? null,
+    order,
     nextMonsterOrdinal: 7,
     epoch: 7,
     status: "active",
@@ -1099,7 +1183,7 @@ function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
       startedAt: now - 6 * 60_000,
       lastActivityAt: now - 30_000,
       turnStartedAt: now - 30_000,
-      turnsBegun: true,
+      turnsBegun: false,
     },
   };
 }
@@ -1391,14 +1475,21 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
     items: [
       item(at(21, 5), {
         kind: "note",
-        text: "Orin asks us to find the stolen hammer in the Glass Crypt.",
+        text: L(
+          "Orin asks us to find the stolen hammer in the Glass Crypt.",
+          "Orin ci chiede di ritrovare il martello rubato nella Cripta di Vetro."
+        ),
         actor: mara,
       }),
       item(at(21, 12), { kind: "time-passes", minutes: 10, actor: bren }),
       item(at(21, 40), {
         kind: "encounter-start",
         encounterId: fight,
-        names: { "m-1": "Ash Raider 1", "m-2": "Ash Raider 2", "m-3": "Raider Chief" },
+        names: {
+          "m-1": L("Ash Raider 1", "Predone delle Ceneri 1"),
+          "m-2": L("Ash Raider 2", "Predone delle Ceneri 2"),
+          "m-3": L("Raider Chief", "Capo dei Predoni"),
+        },
       }),
       item(at(21, 40), { kind: "round-start", round: 1 }),
       item(at(21, 41), { kind: "damage", target: mara, amount: 9 }),
@@ -1408,7 +1499,10 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
       item(at(21, 47), { kind: "round-start", round: 3 }),
       item(at(21, 48), {
         kind: "note",
-        text: "“Leave the hammer, it is cursed,” the chief shouts as it flees.",
+        text: L(
+          "“Leave the hammer, it is cursed,” the chief shouts as it flees.",
+          "«Lasciate il martello, è maledetto», grida il capo mentre fugge."
+        ),
         actor: mara,
       }),
       item(at(21, 49), { kind: "encounter-end", encounterId: fight, outcome: "victory" }),
@@ -1417,7 +1511,10 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
       item(at(22, 31), { kind: "heal", target: mara, amount: 7 }),
       item(at(22, 40), {
         kind: "note",
-        text: "We head down into the crypt at dawn.",
+        text: L(
+          "We head down into the crypt at dawn.",
+          "All’alba scendiamo nella cripta."
+        ),
         actor: bren,
       }),
     ],

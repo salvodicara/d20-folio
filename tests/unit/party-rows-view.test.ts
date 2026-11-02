@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildMemberSnapshot } from "@/features/campaigns/member-snapshot";
 import { derivePartyMemberStats } from "@/features/campaigns/party-stats";
-import { partyRows } from "@/domains/campaign/party-rows-view";
+import { partyNames, partyRows } from "@/domains/campaign/party-rows-view";
 import { concentrationValue } from "@/lib/concentration";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import type { CampaignDoc } from "@/types/campaign";
@@ -99,5 +99,19 @@ describe("partyRows", () => {
     const [loading, ready] = partyRows(campaign, { b: rogue }, "en");
     expect(loading).toMatchObject({ uid: "a", loading: true });
     expect(ready).toMatchObject({ uid: "b", loading: false, name: "Kaela" });
+  });
+});
+
+describe("partyNames", () => {
+  it("each character's name as the Gruppo panel shows it: the live sheet's, else the party card's", () => {
+    const renamed = makeCharacterDoc({
+      classId: "cleric",
+      level: 5,
+      name: "Selene la Saggia" as never,
+    });
+    expect(partyNames(campaign, { a: renamed })).toEqual({
+      a: "Selene la Saggia",
+      b: "Kaela",
+    });
   });
 });

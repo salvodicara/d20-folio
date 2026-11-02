@@ -16,6 +16,7 @@ import {
   treasuryAndChestHistory,
   type HistoryLine,
 } from "@/domains/treasury/chest-view";
+import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { useChest, useChestMove, type Toaster } from "@/domains/treasury/ui/chest-moves";
 import { CoinDialog } from "@/domains/treasury/ui/CoinDialog";
 import { Coins } from "@/domains/treasury/ui/Coins";
@@ -50,15 +51,8 @@ export function TreasuryTab({
       ),
     [campaign.memberDetails]
   );
-  const heroes = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(campaign.memberDetails).flatMap(([id, m]) =>
-          m.character ? [[id, m.character.name as string]] : []
-        )
-      ),
-    [campaign.memberDetails]
-  );
+  // Each share is named as Gruppo names the character.
+  const heroes = usePartyNames(campaign);
   const money = (p: CoinPurse) =>
     COINS.flatMap((c) =>
       p[c] ? [String(p[c]) + " " + t(`equipment.currencyAbbr.${c}`)] : []

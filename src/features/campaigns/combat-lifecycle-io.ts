@@ -12,6 +12,7 @@
 import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
 
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
+import { updateDevDocument } from "@/lib/dev-document-store";
 import { db } from "@/lib/firebase";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
 
@@ -72,6 +73,12 @@ async function applyMove<T>(campaignId: string, plan: Planner<T>): Promise<T | n
     if (!planned) return null;
     const { endedEncounter, ...fields } = planned.patch;
     useCampaignStore.getState().setCampaign({ ...campaign, ...fields });
+    // The local replica too: any other local campaign write re-emits it, and a replica
+    // without the move would bring the old rolls back over the store.
+    updateDevDocument<CampaignDoc>("campaign", campaignId, campaign, (current) => ({
+      ...current,
+      ...fields,
+    }));
     if ("endedEncounter" in planned.patch)
       setDevKeptFight(campaignId, endedEncounter ?? null);
     return planned.result;

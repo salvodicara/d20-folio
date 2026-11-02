@@ -10,13 +10,16 @@ import type { CampaignDoc } from "@/types/campaign";
 /** How the report names people, conditions, spells and sources, in the reader's language. */
 export function useReportNames(
   campaign: CampaignDoc,
-  locale: Locale
+  locale: Locale,
+  /** The party's names as Gruppo shows them (`usePartyNames`): one name per character. */
+  party: Readonly<Record<string, string>>
 ): SessionReportNames {
   return useMemo(
     () => ({
       pc: (id) => {
-        const member = campaign.memberDetails[id.replace(/^pc-/, "")];
-        return member?.character?.name || member?.displayName || undefined;
+        const uid = id.replace(/^pc-/, "");
+        const member = campaign.memberDetails[uid];
+        return party[uid] || member?.character?.name || member?.displayName || undefined;
       },
       condition: (id) =>
         hasSrd("condition", id, "name", locale)
@@ -27,6 +30,6 @@ export function useReportNames(
       source: (id) => grantSourceLabel(id, locale),
       locale,
     }),
-    [campaign.memberDetails, locale]
+    [campaign.memberDetails, locale, party]
   );
 }
