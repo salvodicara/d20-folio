@@ -55,16 +55,6 @@ export const SRD_CONDITIONS: SrdConditionData[] = [
   },
 ];
 
-/** Condition lookup by ID */
-export const CONDITIONS_BY_ID: ReadonlyMap<string, SrdConditionData> = new Map(
-  SRD_CONDITIONS.map((c) => [c.id, c])
-);
-
-/** Get a condition by ID (case-insensitive — ids are canonically lowercase). */
-export function getCondition(id: string): SrdConditionData | undefined {
-  return CONDITIONS_BY_ID.get(id) ?? CONDITIONS_BY_ID.get(id.toLowerCase());
-}
-
 /** Get all condition IDs */
 export function getAllConditionIds(): string[] {
   return SRD_CONDITIONS.map((c) => c.id);

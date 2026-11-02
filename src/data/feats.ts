@@ -389,11 +389,6 @@ export function getFightingStyleFeats(): SrdFeatData[] {
   return SRD_FEATS.filter((feat) => feat.category === "fighting-style");
 }
 
-/** Get all Epic Boon feats */
-export function getEpicBoonFeats(): SrdFeatData[] {
-  return SRD_FEATS.filter((feat) => feat.category === "epic-boon");
-}
-
 /** Fast ID lookup for feats */
 export const FEATS_BY_ID: ReadonlyMap<string, SrdFeatData> = new Map(
   SRD_FEATS.map((f) => [f.id, f])

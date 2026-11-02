@@ -137,10 +137,6 @@ export function getBackground(id: string): SrdBackgroundData | undefined {
   return BACKGROUNDS_BY_ID.get(id);
 }
 
-export function getAllBackgroundIds(): string[] {
-  return SRD_BACKGROUNDS.map((bg) => bg.id);
-}
-
 /**
  * Resolve a background's EFFECTIVE Origin feat slug — the single seam every
  * consumer (creation wizard, `character-io` import, `bgFeatFromBackground`)
