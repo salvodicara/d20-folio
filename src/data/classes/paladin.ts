@@ -213,7 +213,7 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     level: 2,
     // The Defense fighting style's +1 AC, only while wearing armor. NOTE
     // (follow-up): the fighting style should be a player CHOICE rather than
-    // Defense being auto-assigned — tracked in docs/AUTOMATION_BACKLOG.md.
+    // Defense being auto-assigned.
     grants: [{ type: "ac-bonus", amount: 1, condition: "armored" }],
     source: "SRD",
   },

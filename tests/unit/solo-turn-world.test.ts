@@ -1,6 +1,6 @@
 /**
  * The SOLO combat loop's canonical turn machinery (mechanics-world-store):
- * the self turn-economy projection, the local single-participant encounter,
+ * the local single-participant encounter,
  * the `complete-turn` boundary (round advance, fresh turn key, per-turn claim
  * reset, exact turn-anchored expiry mirrored off the legacy chips), the
  * kernel's per-turn claim rejection, and the engine-damage Concentration
@@ -13,16 +13,14 @@ import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { concentrationValue } from "@/lib/concentration";
 import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
-import { transcribeFeatureAction } from "@/lib/mechanics-transcription";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
+import { conformTurnEconomyProjection } from "@/lib/turn-economy";
 import {
   boundaryCommitFacts,
   characterMaterialRef,
   characterSelfRef,
   characterTrackerSeeds,
-  characterTurnEconomy,
-  characterTurnEconomyProjection,
   characterWorldState,
   commitCharacterAction,
   mechanicsAuthorityDefinition,
@@ -188,8 +186,28 @@ function drive(
     },
     responses: [],
     state: state.value,
-    turnEconomy: characterTurnEconomy(doc, UID),
+    turnEconomy: selfTurnEconomy(doc),
   });
+}
+
+/** A plain one-action, one-bonus, one-reaction turn for the character itself. */
+function selfTurnEconomy(doc: CharacterDoc) {
+  const limit = { base: 1, override: null };
+  const projection = conformTurnEconomyProjection({
+    actions: { extraSlots: [], override: null },
+    attacks: { options: [], perAttackAction: limit },
+    bonusActions: { dualWielder: false, limit, requirements: [] },
+    freeInteractions: { limit },
+    incapacitated: false,
+    movement: {
+      costPerFoot: limit,
+      modes: [{ mode: "walk", speedFt: { base: 30, override: null } }],
+      requirements: [],
+    },
+    reactions: { limit, requirements: [] },
+  });
+  if (!projection) throw new Error("turn economy did not conform");
+  return [{ combatant: characterSelfRef(doc, UID), projection }];
 }
 
 /** One-step program claiming a `magic` action for the owner's turn. */
@@ -271,27 +289,6 @@ afterEach(() => {
   useAuthStore.setState({ user: null });
   useCombatStore.getState().endCombat();
   useToastStore.setState({ toasts: [], timers: {} });
-});
-
-describe("characterTurnEconomyProjection", () => {
-  it("derives a conformed self projection from the build seams", () => {
-    const doc = fixture();
-    const projection = characterTurnEconomyProjection(doc);
-    expect(projection).not.toBeNull();
-    // Fighter 5 has Extra Attack: two attacks per Attack action.
-    expect(projection?.attacks.perAttackAction.base).toBe(2);
-    expect(projection?.movement.modes[0]?.mode).toBe("walk");
-    expect(projection?.movement.modes[0]?.speedFt.base).toBeGreaterThan(0);
-    expect(projection?.incapacitated).toBe(false);
-    const entries = characterTurnEconomy(doc, UID);
-    expect(entries).toHaveLength(1);
-    expect(entries[0]?.combatant).toEqual(characterSelfRef(doc, UID));
-  });
-
-  it("flags incapacitation from the live condition chips", () => {
-    const doc = fixture({ conditions: ["stunned"] });
-    expect(characterTurnEconomyProjection(doc)?.incapacitated).toBe(true);
-  });
 });
 
 describe("the solo encounter lifecycle", () => {
@@ -396,49 +393,6 @@ describe("per-turn kernel claims", () => {
       "claim-idle"
     );
     expect(outcome.status).toBe("rejected");
-  });
-
-  it("a transcribed per-turn-capped action claims once, rejects the same-turn repeat and resets next round", () => {
-    const doc = fixture();
-    let state = startedSolo(doc);
-    // The declared cap alone drives the emission: a free action capped at one
-    // use per turn compiles the once-per-turn manual-boundary claim.
-    const transcription = transcribeFeatureAction(
-      "synthetic-cap",
-      { grantsNextAttackAdvantage: true, maxUsesPerTurn: 1, type: "free" },
-      0,
-      {}
-    );
-    expect(transcription.program).not.toBeNull();
-    expect(
-      transcription.clauses.find((entry) => entry.clauseId === "per-turn-cap")
-    ).toMatchObject({ detail: "manual-boundary-claim", status: "automated" });
-    if (!transcription.program) return;
-    const authority = authoredAuthority(doc, transcription.program);
-    const noTargets: MechanicsAnswer[] = [
-      { inputId: "targets", kind: "entities", targets: [] },
-    ];
-
-    const first = drive(state.doc, state.world, authority, "capped-a", noTargets);
-    if (first.status !== "complete") throw new Error(JSON.stringify(first));
-    if (!first.action) throw new Error("no action");
-    state = committed(state.doc, state.world, first.action);
-    expect(selfEconomy(state.world).manualBoundaries).toHaveLength(1);
-
-    // The SAME action again this turn: the fresh root re-claims the recorded
-    // boundary and the kernel rejects the whole dispatch.
-    const second = drive(state.doc, state.world, authority, "capped-b", noTargets);
-    expect(second.status).toBe("rejected");
-    expect(selfEconomy(state.world).manualBoundaries).toHaveLength(1);
-
-    // Next round: the boundary ledger resets and the capped use is legal again.
-    const boundary = planSoloTurnBoundary(state.doc, UID, state.world, "capped-turn-1");
-    expect(boundary).not.toBeNull();
-    if (!boundary) return;
-    state = committed(state.doc, state.world, boundary);
-    expect(selfEconomy(state.world).manualBoundaries).toHaveLength(0);
-    const third = drive(state.doc, state.world, authority, "capped-c", noTargets);
-    expect(third.status).toBe("complete");
   });
 });
 

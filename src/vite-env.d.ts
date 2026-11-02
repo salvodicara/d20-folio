@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MESSAGING_SENDER_ID: string;
   readonly VITE_FIREBASE_APP_ID: string;
   readonly VITE_USE_EMULATORS: string;
+  /** "1" shows the new UI (design-system stories at /ui, then the new screens). */
+  readonly VITE_NEW_UI?: string;
   /** `runtime` in the production build: the pack is downloaded, not bundled. */
   readonly VITE_CONTENT_PACK?: string;
   /** The runtime pack's content hash (its Storage folder), set by the deploy. */
