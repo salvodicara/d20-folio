@@ -44,59 +44,35 @@ import type {
   SrdWeaponRef,
   CustomWeapon,
 } from "@/types/character";
-import type { AbilityCode, CurrencyUnit, MagicItemType } from "@/data/types";
+import type { CurrencyUnit, MagicItemType } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import type { ProficiencyToken } from "@/types/ids";
 import { WEAPONS_BY_ID } from "@/data/weapons";
 import { GEAR_BY_ID } from "@/data/gear";
 import { ARMOR_BY_ID } from "@/data/armor";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
-import { homebrewItemData } from "@/lib/homebrew-items";
 import { requiresAttunement } from "@/lib/attunement";
-import { getClassTable } from "@/data/classes";
-import { totalLevel, primaryClassId, allEntryPicks } from "@/lib/classes";
 import {
-  abilityModifier,
-  effectiveProficiencyBonus,
-  isWeaponProficient,
   isArmorProficient,
-  resolveWeaponAttackStat,
-  type ResolvedWeaponAttackStat,
-  type ResolvedWeaponDie,
   resolveItemBoundWeaponBonus,
   resolveItemBoundDamageRiders,
-  exhaustionPenalty,
   carryingCapacity,
-  effectiveWeaponDie,
-  heavyWeaponDisadvantage,
   aggregateAbilityScores,
 } from "@/lib/compute";
 import { evaluateGrants, type AggregatedGrants } from "@/lib/grants";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import {
-  buildWeaponDamageBreakdown,
-  resolveWeaponDamageBonuses,
-  buildWeaponAttackBreakdown,
-  resolveWeaponAttackBonuses,
-  isMonkMeleeWeapon,
-  featureClassRow,
-  attackStatWhy,
-  weaponDieWhy,
-  magicItemChargeMax,
-  masteryNumbers,
-} from "@/lib/smart-tracker";
-import { breakdownTotal } from "@/lib/value-breakdown";
+import { magicItemChargeMax } from "@/lib/smart-tracker";
 import {
   localizeDamageBreakdown,
   localizeBreakdown,
 } from "@/lib/views/combat-action-view";
-// LocText constructors for the breakdown composer (aliased — this module has
-// its own string-returning `srdText` helper below).
-import { srdText as srdTextRef, customText as customTextRef } from "@/lib/loc-text";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
-import { fadingPenaltyParts } from "@/lib/play/fading-penalties";
 import { effectiveArmorProficiencies } from "@/lib/feat-prereq";
-import { buildWeaponRange } from "@/lib/smart-tracker";
+import {
+  buildWeaponRange,
+  resolveActions,
+  type RawActionSummary,
+} from "@/lib/smart-tracker";
 import { appendAbilityModToDice } from "@/lib/utils";
 import { buildWeaponFacts, type WeaponFactsVM } from "@/lib/views/weapon-facts-view";
 import { resolveItemConsumable } from "@/lib/srd-resolve";
@@ -351,40 +327,11 @@ function buildWeaponVM(
   ctx: {
     doc: CharacterDoc;
     locale: Locale;
-    /** The EFFECTIVE ability scores (set-score item floors + additive item bonuses
-     *  — Gauntlets of Ogre Power → STR 19, Belt of Giant Strength) — the SAME
-     *  derivation the combat attack row resolves against, so the inventory to-hit /
-     *  damage / attack-stat choice can never disagree with the Play card (rule 6). */
-    effectiveScores: Record<AbilityCode, number>;
-    effectivePB: number;
-    exPenalty: number;
-    classProficiencies: ProficiencyToken[];
-    /** The SRD weapon ids the character has MASTERED (`classes[].weaponMasteries`
-     *  union) — the ONE ownership truth the mastery chip gates on. */
-    masteredIds: ReadonlySet<string>;
-    /** The flat weapon-damage bonuses currently up (`weapon-damage-bonus` —
-     *  Rage Damage while raging); the SAME resolver the combat row uses so the
-     *  inventory figure can never disagree with the Play card. */
-    weaponDamageBonuses: AggregatedGrants["weaponDamageBonuses"];
-    /** The flat weapon to-hit bonuses (`weapon-attack-bonus` — Archery & other
-     *  fighting styles); the SAME resolver the combat row uses so the inventory
-     *  to-hit + its breakdown can never disagree with the Play card (#94). */
-    weaponAttackBonuses: AggregatedGrants["weaponAttackBonuses"];
-    /** Weapon-attack-ability grants (Monk Martial Arts) carrying the optional
-     *  die upgrade; the SAME `effectiveWeaponDie` the combat row uses so the
-     *  inventory printed die matches the Play card (a Monk weapon's MA die). */
-    weaponAttackAbilities: AggregatedGrants["weaponAttackAbilities"];
+    /** Each carried weapon's own attack row, by its place in `weapons[]`. */
+    rows: ReadonlyMap<number, RawActionSummary>;
   }
 ): WeaponRowVM {
-  const {
-    doc,
-    locale,
-    effectiveScores,
-    effectivePB,
-    exPenalty,
-    classProficiencies,
-    masteredIds,
-  } = ctx;
+  const { locale } = ctx;
   const isCustom = "custom" in ref;
   const srdWeapon = isCustom ? undefined : WEAPONS_BY_ID.get(ref.srdId);
 
@@ -403,139 +350,26 @@ function buildWeaponVM(
     ? splitCustomProperties(ref.properties)
     : (srdWeapon?.properties ?? []);
 
-  // Resolve the attack stat through the SAME authority the Combat row uses
-  // (finesse STR-vs-DEX + the Monk Martial-Arts DEX swap on Monk weapons), so the
-  // inventory to-hit can NEVER disagree with the Play card (golden rule 6). The
-  // previous call missed the monk-melee swap, so a Monk's inventory weapon showed
-  // a STR to-hit while Combat showed DEX — the divergence this fix closes.
-  const statResolution: ResolvedWeaponAttackStat = isCustom
-    ? { ability: ref.attackStat, reason: "default" }
-    : resolveWeaponAttackStat({
-        weaponType: srdWeapon?.weaponType,
-        properties: rawProperties,
-        scores: effectiveScores,
-        weaponAttackAbilities: ctx.weaponAttackAbilities,
-        isMonkMelee: isMonkMeleeWeapon(srdWeapon),
-      });
-  const stat: AbilityCode = statResolution.ability;
-  // Why THIS ability won (Finesse best-of, the Monk swap) — the SAME composer the
-  // combat row uses, so both weapon surfaces explain identically (golden rule 6).
-  const abilityWhy = attackStatWhy(statResolution);
-  const mod = abilityModifier(effectiveScores[stat]);
-
-  const isProficient = isCustom
-    ? true
-    : isWeaponProficient(
-        srdWeapon?.weaponCategory,
-        // The stable SRD id anchors group-proficiency (`longswords` → `longsword`),
-        // never the localized name (golden rule 7).
-        srdWeapon ? ref.srdId : undefined,
-        srdWeapon?.weaponType,
-        rawProperties,
-        classProficiencies
-      );
-
-  // PRIM-item-bound-bonus — the +N of the magic item bound to THIS weapon
-  // (`enchantItemId`), auto-folded into to-hit + damage. Override-first: a
-  // pinned attackBonusOverride/damageOverride replaces the whole figure, so
-  // the enchant is NOT re-added on top (mirrors the combat weapon row).
+  // The numbers are the weapon's own attack row (smart-tracker `resolveWeaponActions`):
+  // the SAME stat, proficiency, to-hit, die, damage modifier, range and mastery the Play
+  // card shows, a spell bound to the weapon (Magic Weapon, Shillelagh) and grants from
+  // invocations and spells included. Nothing is recomputed here, so the two cards
+  // cannot disagree (simplify-core item 7; `weapon-attack-parity.test.ts`).
+  const row = ctx.rows.get(idx);
+  const parts = row?.weaponParts;
+  const attackBonus = row?.attackBonus ?? 0;
+  const damageMod = parts?.damageMod ?? 0;
+  const damageDie =
+    parts?.die ?? (isCustom ? ref.damageDie : (srdWeapon?.damage?.die ?? "1d8"));
+  const versatileDie = parts?.versatileDie ?? null;
+  const isProficient = parts?.proficient ?? true;
+  const damageType: DamageType =
+    (row?.damageType as DamageType | undefined) ??
+    (isCustom ? ref.damageType : (srdWeapon?.damage?.type ?? "slashing"));
+  // The bound magic item's own +N, for the card's enchant line (already in the numbers).
   const enchantItemId = isCustom ? undefined : ref.enchantItemId;
   const enchantItem = enchantItemId ? MAGIC_ITEMS_BY_ID.get(enchantItemId) : undefined;
-  // A structured homebrew weapon IS its own magic item (the combat row's rule).
-  const homebrewWeapon = isCustom ? homebrewItemData(ref) : undefined;
-  const enchantBonus = resolveItemBoundWeaponBonus(
-    homebrewWeapon ? homebrewWeapon.grants : enchantItem?.grants
-  );
-  const enchantNameRef =
-    isCustom && homebrewWeapon
-      ? customTextRef(ref.name)
-      : enchantItem
-        ? srdTextRef("magic-item", enchantItem.id, "name")
-        : undefined;
-  const isRangedWeapon = !isCustom && srdWeapon?.weaponType === "ranged";
-  // Flat to-hit bonuses (`weapon-attack-bonus` — Archery & other fighting
-  // styles), resolved with provenance so the to-hit breakdown NAMES each by its
-  // feat's canonical key (#94, golden rule 6). The SAME resolver the combat
-  // attack row uses — so the inventory to-hit (previously missing these) now
-  // matches the Play card exactly (golden rule 6).
-  const attackFeatureBonuses = resolveWeaponAttackBonuses(ctx.weaponAttackBonuses, {
-    isRanged: isRangedWeapon,
-    scores: effectiveScores,
-  });
-  // Per-source to-hit composition for the tooltip (+ the manual adjustment under an
-  // override).
-  const attackBreakdownParts = buildWeaponAttackBreakdown({
-    attackStat: stat,
-    abilityMod: mod,
-    ...(abilityWhy ? { abilityWhy } : {}),
-    proficiencyBonus: isProficient ? effectivePB : 0,
-    enchantBonus,
-    ...(enchantNameRef && enchantBonus !== 0 ? { enchantName: enchantNameRef } : {}),
-    featureBonuses: attackFeatureBonuses,
-    exhaustionPenalty: exPenalty,
-    fadingParts: fadingPenaltyParts(doc.session.fadingPenalties),
-    override: ref.attackBonusOverride,
-  });
-  // The to-hit DERIVES from the breakdown (golden rule 6; the AC pattern), so
-  // the figure and the tip are the same arithmetic, a hand-set to-hit included.
-  const attackBonus = breakdownTotal(attackBreakdownParts);
-  const attackBreakdown = localizeBreakdown(attackBreakdownParts, locale);
-  // Flat damage bonuses currently up (`weapon-damage-bonus` — Rage Damage while
-  // raging, issue #27): the SAME resolver the combat attack row uses, so the
-  // inventory figure and the Play card can never disagree (golden rule 6).
-  const isHeavyWeapon = rawProperties.some((p) => /\bheavy\b/i.test(p));
-  // RA-17 — the Heavy-property attack-roll Disadvantage advisory (relevant
-  // EFFECTIVE score < 13: STR for Melee, DEX for Ranged) — the SAME derivation
-  // the combat row uses, so both weapon surfaces agree (golden rule 6).
-  const heavyDisadvantage = heavyWeaponDisadvantage(
-    isHeavyWeapon,
-    isRangedWeapon,
-    effectiveScores
-  );
-  const featureBonuses = resolveWeaponDamageBonuses(ctx.weaponDamageBonuses, doc, {
-    attackStat: stat,
-    isRanged: isRangedWeapon,
-    isHeavy: isHeavyWeapon,
-  });
-  const featureDmgBonus = featureBonuses.reduce((s, b) => s + b.amount, 0);
-  // Monk Martial Arts die upgrade (a Monk weapon's printed die is replaced by the
-  // larger MA die) — the SAME `effectiveWeaponDie` the combat row uses, resolved
-  // against the Monk's own level via `featureClassRow` (golden rule 6).
-  const printedDie = isCustom ? ref.damageDie : (srdWeapon?.damage?.die ?? "1d8");
-  const dieResolution: ResolvedWeaponDie = isCustom
-    ? { die: printedDie }
-    : effectiveWeaponDie(
-        printedDie,
-        isMonkMeleeWeapon(srdWeapon),
-        ctx.weaponAttackAbilities,
-        (sid, key) => (sid ? featureClassRow(sid, doc)?.[key] : undefined)
-      );
-  const damageDie = dieResolution.die;
-  // The feature that REPLACED the printed die (Martial Arts) — the SAME composer
-  // the combat row uses, so the inventory tip explains it identically.
-  const dieWhy = weaponDieWhy(dieResolution, doc);
-  const damageType: DamageType = isCustom
-    ? ref.damageType
-    : (srdWeapon?.damage?.type ?? "slashing");
-
-  // Parse "Versatile (1d10)" out of the properties for the two-handed die, then
-  // run it through the SAME `effectiveWeaponDie` the one-handed `damageDie` uses
-  // — the Monk Martial Arts die replaces a Monk weapon's die in EITHER grip, so
-  // a Quarterstaff (Versatile (1d8), a Monk weapon) two-handed at Monk L11+ shows
-  // the larger MA die. A non-Monk versatile weapon (Longsword) is unaffected.
-  const rawVersatileDie =
-    rawProperties
-      .map((p) => /Versatile\s*\(([^)]+)\)/i.exec(p)?.[1])
-      .find((m): m is string => !!m) ?? null;
-  const versatileDie =
-    rawVersatileDie && !isCustom
-      ? effectiveWeaponDie(
-          rawVersatileDie,
-          isMonkMeleeWeapon(srdWeapon),
-          ctx.weaponAttackAbilities,
-          (sid, key) => (sid ? featureClassRow(sid, doc)?.[key] : undefined)
-        ).die
-      : rawVersatileDie;
+  const enchantBonus = resolveItemBoundWeaponBonus(enchantItem?.grants);
 
   const description = isCustom
     ? ref.description
@@ -545,78 +379,29 @@ function buildWeaponVM(
       ? srdText("equipment", ref.srdId, "description", locale)
       : "";
 
-  // The unified weapon facts block — the SAME `buildWeaponFacts` recipe the
-  // combat presenter runs for this weapon, so both surfaces are identical by
-  // construction. Override-first: a pinned `damageOverride` replaces the whole
-  // formula (no versatile split — the player owns the figure), mirroring the
-  // combat resolver. The mastery chip is gated on OWNERSHIP (a
-  // `classes[].weaponMasteries` pick covering this weapon), never on the mere
-  // presence of a mastery on the weapon. The while-active flat bonuses
-  // (`featureDmgBonus` — Rage Damage) fold into the SAME modifier as the STR/
-  // enchant bonus, so both the one-handed AND the two-handed (Versatile)
-  // formulas carry the full bonus — skipped entirely under `damageOverride`.
-  const hasDamageOverride = ref.damageOverride != null && ref.damageOverride !== "";
-  const damageMod = mod + enchantBonus + featureDmgBonus;
-
-  // Per-source damage composition for the damage tooltip — composed by the ONE
-  // engine builder the combat row uses, localized here (SRD names only), then
-  // carried on `facts.breakdown` so the shared `WeaponFacts` component attaches
-  // it to the damage label (golden rule 6: combat card and inventory card read
-  // identically). Empty under override — the breakdown is then suppressed.
-  const damageBreakdown = localizeDamageBreakdown(
-    buildWeaponDamageBreakdown({
-      damageDie,
-      ...(dieResolution.replaced ? { replacedDie: dieResolution.replaced } : {}),
-      ...(dieWhy ? { dieWhy } : {}),
-      weaponName: isCustom
-        ? customTextRef(ref.name)
-        : srdTextRef("equipment", ref.srdId, "name"),
-      attackStat: stat,
-      abilityMod: mod,
-      ...(abilityWhy ? { abilityWhy } : {}),
-      enchantBonus,
-      ...(enchantNameRef ? { enchantName: enchantNameRef } : {}),
-      featureBonuses,
-      hasOverride: hasDamageOverride,
-    }),
-    locale
-  );
-
-  // The weapon's OWNED mastery — surfaced ONLY when the character mastered THIS
-  // weapon (the chip is gated by construction). Resolved ONCE and reused for both
-  // the mastery chip and its resolved numbers, so the two can't drift.
-  const ownedMastery =
-    !isCustom && srdWeapon?.mastery && masteredIds.has(ref.srdId)
-      ? srdWeapon.mastery
-      : null;
-
   const facts = buildWeaponFacts(
     {
-      damage: hasDamageOverride
-        ? (ref.damageOverride ?? "")
-        : appendAbilityModToDice(damageDie, damageMod),
-      versatileDamage:
-        versatileDie && !hasDamageOverride
-          ? appendAbilityModToDice(versatileDie, damageMod)
-          : null,
+      damage: row?.damage ?? appendAbilityModToDice(damageDie, damageMod),
+      versatileDamage: row?.versatileDamage ?? null,
       damageType,
       attackBonus,
-      rangeSpec: buildWeaponRange(rawProperties, {
-        isRanged: srdWeapon?.weaponType === "ranged",
-      }),
+      rangeSpec:
+        row?.weaponRange ??
+        buildWeaponRange(rawProperties, {
+          isRanged: srdWeapon?.weaponType === "ranged",
+        }),
       properties: rawProperties,
       category: srdWeapon?.weaponCategory,
-      mastery: ownedMastery,
-      // RA-13 — the resolved Topple DC / Graze number, through the SAME
-      // `masteryNumbers` seam (and the SAME stat + PB) the combat row uses, so
-      // the two surfaces' chips are identical by construction (golden rule 6).
-      masteryDetail: ownedMastery
-        ? masteryNumbers([ownedMastery], mod, effectivePB)
-        : undefined,
-      breakdown: damageBreakdown,
-      attackBreakdown,
-      // RA-17 — the Heavy-property attack-roll Disadvantage advisory.
-      heavyDisadvantage,
+      mastery: row?.weaponMastery ?? null,
+      extraMasteries: row?.extraMasteries,
+      masteryDetail: row?.masteryDetail,
+      breakdown: row?.damageBreakdown
+        ? localizeDamageBreakdown(row.damageBreakdown, locale)
+        : null,
+      attackBreakdown: row?.attackBreakdown
+        ? localizeBreakdown(row.attackBreakdown, locale)
+        : null,
+      heavyDisadvantage: row?.heavyDisadvantage ?? false,
     },
     locale
   );
@@ -806,16 +591,13 @@ export function buildInventoryViewModel(
   locale: Locale
 ): InventoryViewModel {
   const { character } = doc;
-  const classId = primaryClassId(character);
-  const classData = getClassTable(classId);
   const grants = grantAggregates(character, doc.session.activeFeatures ?? []);
 
   // The EFFECTIVE ability scores — the SAME chokepoint the COMBAT attack row and the
   // cockpit display resolve against (set-score item floors + additive item bonuses:
   // Gauntlets of Ogre Power → STR 19, Belt of Giant Strength, Belt of Dwarvenkind +2).
-  // Feeds the weapon to-hit / damage / attack-stat choice AND carrying capacity, so
-  // the inventory weapon list and the Play card can never disagree, and capacity uses
-  // the equipped STR (rule 6). The floors/bonuses come from the WHOLE-character
+  // Feeds carrying capacity, which uses the equipped STR (rule 6); the weapon numbers
+  // come from the weapons' own attack rows. The floors/bonuses come from the WHOLE-character
   // aggregate (`resolveAllGrantSources` — it sees EQUIPPED items, which `grantAggregates`
   // above deliberately does not), threading the session toggles like the combat path.
   // Behaviour-preserving with no ability-score item (floors/bonus empty → an equal-
@@ -827,16 +609,6 @@ export function buildInventoryViewModel(
     character.abilityScoreOverrides
   );
 
-  const level = totalLevel(character);
-  const effectivePB = effectiveProficiencyBonus(
-    level,
-    character.proficiencyBonusOverride
-  );
-  const exPenalty = exhaustionPenalty(doc.session.exhaustion);
-  const classProficiencies = [
-    ...(classData?.weaponProficiencies ?? []),
-    ...grants.weapon,
-  ];
   // The EFFECTIVE armor-proficiency set — the SAME multiclass-aware + override-first
   // resolver the combat unproficient-armor Disadvantage clause reads (rule 6), so
   // the per-item "Untrained" gloss and that clause are identical by construction (a
@@ -853,19 +625,14 @@ export function buildInventoryViewModel(
     resourcesByInstance.set(resource.identity.instanceId, owned);
   }
 
+  // Each weapon's numbers are its own attack row: resolved once, read by index.
+  const rows = new Map<number, RawActionSummary>();
+  for (const action of resolveActions(doc)) {
+    const index = action.summary.weaponParts?.index;
+    if (index !== undefined && !rows.has(index)) rows.set(index, action.summary);
+  }
   const weapons = character.weapons.map((ref, idx) =>
-    buildWeaponVM(ref, idx, {
-      doc,
-      locale,
-      effectiveScores,
-      effectivePB,
-      exPenalty,
-      classProficiencies,
-      masteredIds: new Set(allEntryPicks(character, "weaponMasteries")),
-      weaponDamageBonuses: grants.weaponDamageBonuses,
-      weaponAttackBonuses: grants.weaponAttackBonuses,
-      weaponAttackAbilities: grants.weaponAttackAbilities,
-    })
+    buildWeaponVM(ref, idx, { doc, locale, rows })
   );
 
   const items = character.equipment.map((ref, idx) =>

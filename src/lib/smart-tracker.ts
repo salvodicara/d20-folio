@@ -1315,6 +1315,20 @@ export interface RawActionSummary extends Omit<
    */
   heavyDisadvantage?: boolean;
   /**
+   * A carried weapon's own attack row only: which weapon it is (its place in
+   * `weapons[]`) and the raw parts of its numbers — the effective die in each grip
+   * (Martial Arts, Shillelagh), the flat damage modifier (ability, enchant and bound
+   * spell, active grants), and proficiency. The inventory card and the printed sheet
+   * read the weapon from this row, so they show what the Play card shows.
+   */
+  weaponParts?: {
+    index: number;
+    die: string;
+    versatileDie: string | null;
+    damageMod: number;
+    proficient: boolean;
+  };
+  /**
    * STRUCTURED heal amount for a feature/trait action chip, EVALUATED against
    * the owning character (Second Wind on a Fighter 5: `{ dice: "1d10",
    * bonus: 5, term: { kind: "class-level", classId: "fighter" } }`). The
@@ -7798,6 +7812,13 @@ function resolveWeaponActions(
       ...(Object.keys(masteryDetail).length > 0 ? { masteryDetail } : {}),
       // RA-17 — the Heavy-property attack-roll Disadvantage advisory flag.
       ...(heavyDisadvantage ? { heavyDisadvantage: true as const } : {}),
+      weaponParts: {
+        index: weaponIndex,
+        die: damageDie,
+        versatileDie: versatileDie ?? null,
+        damageMod,
+        proficient,
+      },
       // RA-14 — tracked ammo (id + live count) + the Loading advisory flag.
       ...(ammoItemId != null && ammoRemaining != null
         ? { ammo: { itemId: ammoItemId, remaining: ammoRemaining } }
