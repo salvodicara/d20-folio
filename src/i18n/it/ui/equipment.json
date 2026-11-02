@@ -77,7 +77,10 @@
     "coinAmount": {
       "gp": "{{amount}} mo",
       "sp": "{{amount}} ma",
-      "cp": "{{amount}} mr"
-    }
+      "cp": "{{amount}} mr",
+      "pp": "{{amount}} mp",
+      "ep": "{{amount}} me"
+    },
+    "fromChest": "Dalla cassa del gruppo: {{what}}"
   }
 }

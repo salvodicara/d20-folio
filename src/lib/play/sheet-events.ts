@@ -5,11 +5,18 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import { addEquipmentRef } from "@/lib/equipment-add";
 import type { CoverStateLevel } from "@/lib/cover-states";
 import type { LightLevel } from "@/lib/light-states";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import type { SituationId } from "@/lib/situational-states";
-import type { CharacterDoc, SessionDefenseKind, SessionState } from "@/types/character";
+import type {
+  CharacterDoc,
+  CustomEquipment,
+  SessionDefenseKind,
+  SessionState,
+  SrdEquipmentRef,
+} from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import {
   dismissFamiliar,
@@ -112,6 +119,8 @@ export type SheetEvent =
     }
   | { kind: "set-surprised"; surprised: boolean }
   | { kind: "adjust-currency"; delta: CurrencyDelta }
+  /** An item into the bag (from the party chest), stacking as the Add-Item picker does. */
+  | { kind: "receive-item"; ref: SrdEquipmentRef | CustomEquipment }
   | { kind: "set-wish-stress"; stressed: boolean }
   | {
       kind: "set-situation";
@@ -245,6 +254,17 @@ export function applySheetEvent(
       return withSession(setSurprised(doc, event.surprised));
     case "adjust-currency":
       return withSession(adjustCurrency(doc.session, event.delta));
+    case "receive-item":
+      return {
+        ...doc,
+        character: {
+          ...doc.character,
+          equipment:
+            "custom" in event.ref
+              ? [...doc.character.equipment, event.ref]
+              : addEquipmentRef(doc.character.equipment, event.ref),
+        },
+      };
     case "set-wish-stress":
       return withSession(setWishStress(doc, event.stressed));
     case "set-situation":
