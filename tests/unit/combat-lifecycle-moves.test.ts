@@ -9,7 +9,8 @@ import {
   planUnrollMissing,
   type CombatPatch,
 } from "@/features/campaigns/combat-lifecycle";
-import type { CampaignDoc } from "@/types/campaign";
+import { addMonster, setInitiative } from "@/features/campaigns/encounter";
+import type { CampaignDoc, EncounterState } from "@/types/campaign";
 
 const member = (characterId: string | null) => ({
   displayName: "x",
@@ -254,5 +255,93 @@ describe("the DM rolls for whoever has not rolled", () => {
         now: 2000,
       })
     ).toEqual({ encounter: null, encounterInit: {} });
+  });
+});
+
+describe("the turn order of a fight a roll started, as creatures join (Scontro report)", () => {
+  // Three players roll 19, 15 and 15; the DM then adds creatures with their own initiative.
+  const party = () =>
+    ({
+      id: "camp",
+      memberDetails: {
+        dm: member(null),
+        ana: member("char-ana"),
+        ben: member("char-ben"),
+        cid: member("char-cid"),
+      },
+      encounterInit: {},
+    }) as unknown as CampaignDoc;
+  const rolled = (): CampaignDoc => {
+    let campaign = party();
+    for (const [uid, value] of [
+      ["ana", 19],
+      ["ben", 15],
+      ["cid", 15],
+    ] as const) {
+      campaign = apply(
+        campaign,
+        planRoll(campaign, { uid, roll: value, bonuses: {}, now: 1 })?.patch
+      );
+    }
+    return campaign;
+  };
+  const raider = { name: "Ash Raider", ac: 13, maxHp: 11, count: 2, initiative: 17 };
+  const totals = (fight: EncounterState): Array<number | null> =>
+    (fight.order ?? []).map((id) => {
+      const c = fight.combatants.find((x) => x.id === id);
+      return c?.kind === "monster" ? c.initiative : (fight.initiatives?.[id] ?? null);
+    });
+
+  it("before the first pass, every creature takes its place by initiative, groups together", () => {
+    let fight = rolled().encounter as EncounterState;
+    fight = addMonster(fight, raider);
+    fight = addMonster(fight, { ...raider, name: "Goblin", count: 2, initiative: 11 });
+    fight = addMonster(fight, {
+      ...raider,
+      name: "Goblin Boss",
+      count: 1,
+      initiative: 8,
+    });
+    expect(totals(fight)).toEqual([19, 17, 17, 15, 15, 11, 11, 8]);
+    expect(fight.currentCombatantId).toBe("pc-ana");
+  });
+
+  it("a creature's initiative set later moves it to its place", () => {
+    let fight = addMonster(rolled().encounter as EncounterState, {
+      ...raider,
+      initiative: null,
+    });
+    fight = setInitiative(fight, "monster-1", 20);
+    expect(totals(fight)[0]).toBe(20);
+  });
+
+  it("after the first pass, a newcomer slots in by initiative and the turn stays", () => {
+    const fight = rolled().encounter as EncounterState;
+    const begun: EncounterState = {
+      ...fight,
+      ...(fight.clock ? { clock: { ...fight.clock, turnsBegun: true } } : {}),
+      currentCombatantId: "pc-ben",
+    };
+    const next = addMonster(begun, { ...raider, count: 1, initiative: 16 });
+    expect(totals(next)).toEqual([19, 16, 15, 15]);
+    expect(next.currentCombatantId).toBe("pc-ben");
+  });
+
+  it("a fight the DM runs by hand keeps the DM's order (the creature is appended)", () => {
+    const handRun: EncounterState = {
+      combatants: [
+        { kind: "pc", id: "pc-ana", memberUid: "ana", characterId: "char-ana" },
+      ],
+      nextMonsterOrdinal: 1,
+      round: 1,
+      currentCombatantId: "pc-ana",
+      order: ["pc-ana"],
+      epoch: 1,
+      status: "active",
+    };
+    expect(addMonster(handRun, { ...raider, count: 1, initiative: 30 }).order).toEqual([
+      "pc-ana",
+      "monster-1",
+    ]);
   });
 });

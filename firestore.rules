@@ -599,7 +599,8 @@ service cloud.firestore {
         let fight = request.resource.data.get('encounter', null);
         return resource.data.get('encounter', null) == null
           && fight != null
-          && fight.keys().hasOnly(['combatants', 'nextMonsterOrdinal', 'round', 'currentCombatantId', 'order', 'epoch', 'status', 'clock'])
+          && fight.keys().hasOnly(['combatants', 'nextMonsterOrdinal', 'round', 'currentCombatantId', 'order', 'epoch', 'status', 'clock', 'initiatives'])
+          && fight.get('initiatives', {}) is map
           && fight.nextMonsterOrdinal == 1
           && fight.round == 1
           && fight.status == 'active'
@@ -624,7 +625,8 @@ service cloud.firestore {
         let before = resource.data.get('encounter', null);
         let after = request.resource.data.get('encounter', null);
         return before != null && after != null
-          && after.diff(before).affectedKeys().hasOnly(['combatants', 'order', 'currentCombatantId', 'clock'])
+          && after.diff(before).affectedKeys().hasOnly(['combatants', 'order', 'currentCombatantId', 'clock', 'initiatives'])
+          && after.get('initiatives', {}) is map
           && (after.combatants == before.combatants
             || (after.combatants.size() == before.combatants.size() + 1
               && after.combatants[0:before.combatants.size()] == before.combatants

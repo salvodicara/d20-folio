@@ -399,6 +399,13 @@ export interface EncounterState {
    */
   clock?: EncounterClock;
   /**
+   * In a fight a roll started (one with a `clock`): each PC's initiative total the order
+   * was sorted by, by combatant id, so a creature that joins later takes its place by
+   * initiative (`lifecycleOrdered`). A creature's own is `EncounterMonster.initiative`.
+   * Additive; a client that predates it ignores it.
+   */
+  initiatives?: Record<string, number>;
+  /**
    * The fight is over but kept, so ending it is never a disaster (owner,
    * 2026-10-24): it says why and when, reopening removes it, and the next initiative
    * roll starts a fresh fight. Absent while the fight goes on.
