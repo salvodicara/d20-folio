@@ -1580,3 +1580,82 @@
     font-size: var(--fs-lg);
   }
 }
+
+/* ---------- Play: the three columns (left · centre · right) ---------- */
+.fui .f-play {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) 400px;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 1280px) {
+  .fui .f-play {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+}
+@media (max-width: 960px) {
+  .fui .f-play {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* a pool: its name, what is left as pips, and the count */
+.fui .f-res {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+}
+.fui .f-res-t {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--strong);
+}
+.fui .f-res-n {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.fui .f-pips {
+  display: flex;
+  gap: 4px;
+}
+.fui .f-pips i {
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  border: 1px solid var(--pip, var(--c-res));
+}
+.fui .f-pips i[data-on] {
+  background: var(--pip, var(--c-res));
+}
+/* colour with a meaning (gold is the identity's): class resources amber, Hit Dice heal */
+.fui .f-res[data-kind="class-resource"] {
+  --pip: var(--c-tes);
+}
+.fui .f-res[data-kind="hit-dice"] {
+  --pip: var(--hp);
+}
+.fui .f-res[data-kind="item-charges"] {
+  --pip: var(--c-cmp);
+}
+/* a skill: the ability, the name, the bonus */
+.fui .f-skill {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--divider);
+}
+.fui .f-skill-t {
+  color: var(--text);
+}
+.fui .f-skill b {
+  color: var(--strong);
+  font-variant-numeric: tabular-nums;
+}
+.fui .f-skill[data-prof] .f-skill-t {
+  color: var(--strong);
+  font-weight: 600;
+}

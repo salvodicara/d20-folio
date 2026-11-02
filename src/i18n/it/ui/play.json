@@ -4,6 +4,10 @@
     "temp": "+{{count}} temporanei",
     "proficiency": "Competenza",
     "effects": "Effetti",
-    "concentrating": "Concentrazione: {{spell}}"
+    "concentrating": "Concentrazione: {{spell}}",
+    "slot": "Slot di {{level}}°",
+    "pactSlot": "Slot del patto di {{level}}°",
+    "allSkills": "Tutte le {{count}} abilità",
+    "fewerSkills": "Solo le principali"
   }
 }
