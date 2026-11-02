@@ -16,6 +16,12 @@ pending"); this is the engine side's to-do for the screens.
 - `activateActionState(action, level, { weapon, damageType })`: the weapon the cast names
   (Magic Weapon, Shillelagh); the picker comes from `eligibleBindingWeapons` (#426).
 - `resourcesView`, `restPreview`, `actionFilterCounts` (#411–#413).
+- Mid-move questions: mount `ItemResourceCommandProvider` and `TurnEconomyProvider` with
+  `renderPrompts={false}`, then draw each open question from `usePlayPrompt(kind)`
+  (`src/features/character/center/playPromptStore.ts`): `cast-level`, `pool-spend`, `target`, `payment`,
+  `arcane-recovery`, `divine-intervention`, `form-picker`, `item-resource-input`. Each holds the
+  request plus its answer callbacks; it disappears once answered. The damage tray stays
+  `useDamageTrayStore`; with `renderPrompts={false}` the provider doesn't draw it either.
 
 ## Damage tray and turn
 

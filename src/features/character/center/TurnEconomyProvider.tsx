@@ -162,6 +162,10 @@ import {
   type ArcaneRecoveryRequest,
 } from "@/components/sheet/ArcaneRecoveryModal";
 import { DivineInterventionModal } from "@/components/sheet/DivineInterventionModal";
+import {
+  usePublishPlayPrompt,
+  type PlayPrompts,
+} from "@/features/character/center/playPromptStore";
 import { localizeSrd } from "@/i18n/resolver";
 import { classEntryLevel, totalLevel } from "@/lib/classes";
 import {
@@ -254,7 +258,14 @@ const TransformFormPicker = lazy(() =>
   }))
 );
 
-export function TurnEconomyProvider({ children }: { children: ReactNode }) {
+export function TurnEconomyProvider({
+  children,
+  renderPrompts = true,
+}: {
+  children: ReactNode;
+  /** Draw the old sheet's dialogs; false when the screen draws its own (playPromptStore). */
+  renderPrompts?: boolean;
+}) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const itemResourceCommands = useOptionalItemResourceCommands();
@@ -2608,145 +2619,196 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     duplicateWithWish,
   };
 
+  // Each open question, published for any screen to draw (src/features/character/center/playPromptStore).
+  const castLevelRequest = castRequest
+    ? {
+        spellName: castRequest.action.name,
+        baseLevel: castRequest.baseLevel,
+        options: castRequest.options,
+        metamagic: castRequest.metamagic,
+        sorceryRemaining: castRequest.sorceryRemaining,
+        upcast: castRequest.upcast,
+      }
+    : null;
+  const confirmCastLevel: PlayPrompts["cast-level"]["onConfirm"] = (
+    level,
+    opt,
+    metamagicIds
+  ) => {
+    if (
+      castRequest &&
+      castRequest.characterId === useCharacterStore.getState().character?.id &&
+      !useCharacterStore.getState().readonly
+    ) {
+      const finalAction = actionForCastOption(castRequest.action, opt, level);
+      if (castRequest.onConfigured)
+        castRequest.onConfigured(finalAction, opt, metamagicIds);
+      else
+        void commitCastOption(
+          finalAction,
+          castRequest.slot,
+          opt,
+          metamagicIds,
+          castRequest.ridesPip ?? false,
+          castRequest.execution
+        );
+    }
+    setCastRequest(null);
+  };
+  const targetPickRequest = targetRequest
+    ? {
+        actionName: targetRequest.action.name,
+        isSpell: targetRequest.action.source === "spell",
+        step: targetRequest.step,
+      }
+    : null;
+  const confirmTarget: PlayPrompts["target"]["onConfirm"] = (targets) => {
+    const request = targetRequest;
+    setTargetRequest(null);
+    if (!request || !canUseCharacter(request.characterId)) return;
+    const outcomeOccurrenceId = attackOccurrenceId(request.action, targets);
+    request.commit(() => undefined, {
+      action: request.action,
+      targets,
+      ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
+    });
+  };
+  const paymentPickRequest = paymentRequest
+    ? {
+        actionName: paymentRequest.action.name,
+        rows: paymentRequest.options.map((opt, index) => ({
+          index,
+          label: paymentOptionLabel(opt.cost),
+          remaining: paymentOptionRemaining(opt.cost),
+          affordable: paymentAffordable(opt.cost),
+          primary: opt.kind === "primary",
+        })),
+      }
+    : null;
+  const confirmPayment: PlayPrompts["payment"]["onConfirm"] = (index) => {
+    const opt = paymentRequest?.options[index];
+    if (paymentRequest && opt && canUseCharacter(paymentRequest.characterId)) {
+      commitPayment(
+        paymentRequest.action,
+        paymentRequest.slot,
+        opt.cost,
+        paymentRequest.execution
+      );
+    }
+    setPaymentRequest(null);
+  };
+  const castLevelPrompt: PlayPrompts["cast-level"] | null = castLevelRequest
+    ? {
+        request: castLevelRequest,
+        onConfirm: confirmCastLevel,
+        onCancel: () => setCastRequest(null),
+      }
+    : null;
+  const poolSpendPrompt: PlayPrompts["pool-spend"] | null = poolSpendRequest
+    ? {
+        request: poolSpendRequest,
+        onConfirm: handlePoolSpendConfirm,
+        onCancel: handlePoolSpendCancel,
+      }
+    : null;
+  const targetPrompt: PlayPrompts["target"] | null = targetPickRequest
+    ? {
+        request: targetPickRequest,
+        onConfirm: confirmTarget,
+        onCancel: () => setTargetRequest(null),
+      }
+    : null;
+  const paymentPrompt: PlayPrompts["payment"] | null = paymentPickRequest
+    ? {
+        request: paymentPickRequest,
+        onConfirm: confirmPayment,
+        onCancel: () => setPaymentRequest(null),
+      }
+    : null;
+  const arcaneRecoveryPrompt: PlayPrompts["arcane-recovery"] | null =
+    arcaneRecoveryRequest
+      ? {
+          request: arcaneRecoveryRequest,
+          onConfirm: handleArcaneRecoveryConfirm,
+          onCancel: () => setArcaneRecoveryRequest(null),
+        }
+      : null;
+  const divineInterventionPrompt: PlayPrompts["divine-intervention"] | null =
+    freeCastFromListRequest
+      ? {
+          pool: freeCastFromListRequest.pool,
+          locale,
+          onCast: handleDivineInterventionCast,
+          onCancel: () => setFreeCastFromListRequest(null),
+        }
+      : null;
+  const formPickerPrompt: PlayPrompts["form-picker"] | null =
+    formPickerSpellId !== null
+      ? { spellId: formPickerSpellId, onClose: () => setFormPickerSpellId(null) }
+      : null;
+  usePublishPlayPrompt("cast-level", castLevelPrompt);
+  usePublishPlayPrompt("pool-spend", poolSpendPrompt);
+  usePublishPlayPrompt("target", targetPrompt);
+  usePublishPlayPrompt("payment", paymentPrompt);
+  usePublishPlayPrompt("arcane-recovery", arcaneRecoveryPrompt);
+  usePublishPlayPrompt("divine-intervention", divineInterventionPrompt);
+  usePublishPlayPrompt("form-picker", formPickerPrompt);
+
   return (
     <TurnEconomyContext.Provider value={api}>
       {children}
 
-      {/* Pool spend modal (Lay on Hands, etc.) — mounts fresh on each new request */}
-      {poolSpendRequest && (
-        <PoolSpendModal
-          request={poolSpendRequest}
-          onConfirm={handlePoolSpendConfirm}
-          onCancel={handlePoolSpendCancel}
-        />
-      )}
-
-      {/* Rich in-combat cast-level picker (upcast / free cast) — commits the
-          chosen option immediately with undo. */}
-      <CastLevelModal
-        request={
-          castRequest
-            ? {
-                spellName: castRequest.action.name,
-                baseLevel: castRequest.baseLevel,
-                options: castRequest.options,
-                metamagic: castRequest.metamagic,
-                sorceryRemaining: castRequest.sorceryRemaining,
-                upcast: castRequest.upcast,
-              }
-            : null
-        }
-        onConfirm={(level, opt, metamagicIds) => {
-          if (
-            castRequest &&
-            castRequest.characterId === useCharacterStore.getState().character?.id &&
-            !useCharacterStore.getState().readonly
-          ) {
-            const finalAction = actionForCastOption(castRequest.action, opt, level);
-            if (castRequest.onConfigured)
-              castRequest.onConfigured(finalAction, opt, metamagicIds);
-            else
-              void commitCastOption(
-                finalAction,
-                castRequest.slot,
-                opt,
-                metamagicIds,
-                castRequest.ridesPip ?? false,
-                castRequest.execution
-              );
-          }
-          setCastRequest(null);
-        }}
-        onCancel={() => setCastRequest(null)}
-      />
-
-      {/* The optional "On whom?" step: a pick (or Skip) commits; closing spends nothing. */}
-      <TargetPickerModal
-        request={
-          targetRequest
-            ? {
-                actionName: targetRequest.action.name,
-                isSpell: targetRequest.action.source === "spell",
-                step: targetRequest.step,
-              }
-            : null
-        }
-        onConfirm={(targets) => {
-          const request = targetRequest;
-          setTargetRequest(null);
-          if (!request || !canUseCharacter(request.characterId)) return;
-          const outcomeOccurrenceId = attackOccurrenceId(request.action, targets);
-          request.commit(() => undefined, {
-            action: request.action,
-            targets,
-            ...(outcomeOccurrenceId ? { outcomeOccurrenceId } : {}),
-          });
-        }}
-        onCancel={() => setTargetRequest(null)}
-      />
-
-      {formPickerSpellId !== null && (
-        <Suspense fallback={null}>
-          <TransformFormPicker
-            spellId={formPickerSpellId}
-            onClose={() => setFormPickerSpellId(null)}
+      {/* The old sheet's dialogs. A screen that draws its own passes
+          renderPrompts={false} and reads the questions from usePlayPromptStore. */}
+      {renderPrompts && (
+        <>
+          {poolSpendRequest && (
+            <PoolSpendModal
+              request={poolSpendRequest}
+              onConfirm={handlePoolSpendConfirm}
+              onCancel={handlePoolSpendCancel}
+            />
+          )}
+          <CastLevelModal
+            request={castLevelRequest}
+            onConfirm={confirmCastLevel}
+            onCancel={() => setCastRequest(null)}
           />
-        </Suspense>
+          <TargetPickerModal
+            request={targetPickRequest}
+            onConfirm={confirmTarget}
+            onCancel={() => setTargetRequest(null)}
+          />
+          {formPickerSpellId !== null && (
+            <Suspense fallback={null}>
+              <TransformFormPicker
+                spellId={formPickerSpellId}
+                onClose={() => setFormPickerSpellId(null)}
+              />
+            </Suspense>
+          )}
+          {/* The damage tray right after the use: one rolled total, one row per target. */}
+          <DamageTray />
+          {arcaneRecoveryRequest && (
+            <ArcaneRecoveryModal
+              request={arcaneRecoveryRequest}
+              onConfirm={handleArcaneRecoveryConfirm}
+              onCancel={() => setArcaneRecoveryRequest(null)}
+            />
+          )}
+          <PaymentPickerModal
+            request={paymentPickRequest}
+            onConfirm={confirmPayment}
+            onCancel={() => setPaymentRequest(null)}
+          />
+          <DivineInterventionModal
+            pool={freeCastFromListRequest?.pool ?? null}
+            locale={locale}
+            onCast={handleDivineInterventionCast}
+            onCancel={() => setFreeCastFromListRequest(null)}
+          />
+        </>
       )}
-
-      {/* The damage tray right after the use: one rolled total, one row per target. */}
-      <DamageTray />
-
-      {/* S4 — Arcane Recovery guided picker (enforces the ⌈level/2⌉ cap).
-          Conditional mounting gives every use a fresh, cancel-safe draft. */}
-      {arcaneRecoveryRequest && (
-        <ArcaneRecoveryModal
-          request={arcaneRecoveryRequest}
-          onConfirm={handleArcaneRecoveryConfirm}
-          onCancel={() => setArcaneRecoveryRequest(null)}
-        />
-      )}
-
-      {/* S6 — alternate-payment picker: every legal way to pay for an action, the
-          primary cost + any `alternateCost`. Commits the chosen payment with undo. */}
-      <PaymentPickerModal
-        request={
-          paymentRequest
-            ? {
-                actionName: paymentRequest.action.name,
-                rows: paymentRequest.options.map((opt, index) => ({
-                  index,
-                  label: paymentOptionLabel(opt.cost),
-                  remaining: paymentOptionRemaining(opt.cost),
-                  affordable: paymentAffordable(opt.cost),
-                  primary: opt.kind === "primary",
-                })),
-              }
-            : null
-        }
-        onConfirm={(index) => {
-          const opt = paymentRequest?.options[index];
-          if (paymentRequest && opt && canUseCharacter(paymentRequest.characterId)) {
-            commitPayment(
-              paymentRequest.action,
-              paymentRequest.slot,
-              opt.cost,
-              paymentRequest.execution
-            );
-          }
-          setPaymentRequest(null);
-        }}
-        onCancel={() => setPaymentRequest(null)}
-      />
-
-      {/* D4 — Cleric Divine Intervention guided spell picker (any Cleric spell ≤ 5th,
-          1/LR, no slot). Choosing a spell casts it + debits the tracker, with undo. */}
-      <DivineInterventionModal
-        pool={freeCastFromListRequest?.pool ?? null}
-        locale={locale}
-        onCast={handleDivineInterventionCast}
-        onCancel={() => setFreeCastFromListRequest(null)}
-      />
     </TurnEconomyContext.Provider>
   );
 }

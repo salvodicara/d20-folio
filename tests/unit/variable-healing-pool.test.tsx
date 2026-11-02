@@ -16,6 +16,7 @@ import { useCombatStore } from "@/stores/combatStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { usePlayPromptStore } from "@/features/character/center/playPromptStore";
 import { makeCharacterDoc } from "./_helpers";
 import { customInstanceId } from "./__helpers__/custom-items";
 import type { ResolvedAction } from "@/lib/smart-tracker";
@@ -114,6 +115,29 @@ describe("variable healing pools", () => {
     useConfirmStore.setState({ open: false, options: null, _resolve: null });
     useToastStore.setState({ toasts: [], timers: {} });
     useUndoStore.setState({ characterId: null, past: [], future: [] });
+  });
+
+  it("a screen that draws its own dialogs reads the question from the store and answers it there", async () => {
+    usePlayPromptStore.setState({ open: {} });
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider renderPrompts={false}>
+          <PoolProbe />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Start vitality" }));
+    // No old dialog: the question is in the store, with its pool facts.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    const question = usePlayPromptStore.getState().open["pool-spend"];
+    expect(question?.request).toMatchObject({ unit: "dice", max: 10 });
+
+    act(() => question?.onConfirm(3));
+    expect(await screen.findByText("3d10")).toBeInTheDocument();
+    expect(preparedAction?.trackerCost).toBe(3);
+    // Answered: the question is gone.
+    expect(usePlayPromptStore.getState().open["pool-spend"]).toBeUndefined();
   });
 
   it("chooses dice before target resolution, spends only on commit, and rechecks redo", async () => {

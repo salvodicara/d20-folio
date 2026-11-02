@@ -23,10 +23,21 @@ import {
 import { localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
 import { useCharacterStore } from "@/stores/characterStore";
+import {
+  usePublishPlayPrompt,
+  type PlayPrompts,
+} from "@/features/character/center/playPromptStore";
 import { useToastStore } from "@/stores/toastStore";
 import { ItemResourceCommandContext } from "./useItemResourceCommands";
 
-export function ItemResourceCommandProvider({ children }: { children: ReactNode }) {
+export function ItemResourceCommandProvider({
+  children,
+  renderPrompts = true,
+}: {
+  children: ReactNode;
+  /** Draw the old sheet's input dialog; false when the screen draws its own (playPromptStore). */
+  renderPrompts?: boolean;
+}) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const [prompt] = useState(createItemResourceInputPrompt);
@@ -62,22 +73,33 @@ export function ItemResourceCommandProvider({ children }: { children: ReactNode 
     [locale, prompt, t]
   );
 
+  const inputPrompt: PlayPrompts["item-resource-input"] | null = useMemo(
+    () =>
+      pendingInput
+        ? {
+            request: {
+              sourceName: pendingInput.sourceName,
+              requests: pendingInput.requests,
+            },
+            onConfirm: (answers) => prompt.settle(answers),
+            onCancel: () => prompt.settle(null),
+          }
+        : null,
+    [pendingInput, prompt]
+  );
+  usePublishPlayPrompt("item-resource-input", inputPrompt);
+
   return (
     <ItemResourceCommandContext.Provider value={value}>
       {children}
-      <ItemResourceInputModal
-        key={pendingInput?.key ?? "closed"}
-        request={
-          pendingInput
-            ? {
-                sourceName: pendingInput.sourceName,
-                requests: pendingInput.requests,
-              }
-            : null
-        }
-        onConfirm={(answers) => prompt.settle(answers)}
-        onCancel={() => prompt.settle(null)}
-      />
+      {renderPrompts && (
+        <ItemResourceInputModal
+          key={pendingInput?.key ?? "closed"}
+          request={inputPrompt?.request ?? null}
+          onConfirm={(answers) => prompt.settle(answers)}
+          onCancel={() => prompt.settle(null)}
+        />
+      )}
     </ItemResourceCommandContext.Provider>
   );
 }
