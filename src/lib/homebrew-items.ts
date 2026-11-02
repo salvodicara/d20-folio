@@ -271,7 +271,7 @@ export function homebrewItemData(item: HomebrewItem): SrdMagicItemData | undefin
     attunement: mechanics.attunement ?? false,
     ...(potionFormula !== undefined ? { potionFormula } : {}),
     // A homebrew item belongs to no book; it is the player's own.
-    source: "Wiki",
+    source: "Homebrew",
   };
   dataCache.set(item, data);
   return data;

@@ -419,6 +419,10 @@ describe("the stored mechanics", () => {
     expect(homebrewItemData(back)?.rarity).toBe("common");
   });
 
+  it("belongs to no book: its source is Homebrew", () => {
+    expect(homebrewItemData(EMBER_WAND)?.source).toBe("Homebrew");
+  });
+
   it("a malformed pool is left out whole (its charges never half-play)", () => {
     const bad = homebrewItem({
       mechanics: {

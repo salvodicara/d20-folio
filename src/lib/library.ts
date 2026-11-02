@@ -95,10 +95,18 @@ export function libraryEntryName(entry: LibraryDraft): string {
   return homebrewTextKey(entry.kind === "feature" ? entry.item.title : entry.item.name);
 }
 
+/** The character array each sheet kind's items live in. */
+export const SHEET_ARRAY = {
+  spell: "spells",
+  feature: "features",
+  equipment: "equipment",
+  weapon: "weapons",
+} as const satisfies Record<SheetLibraryKind, keyof CharacterData>;
+
 /**
  * The stored HOMEBREW item of `kind` whose `instanceId` is `instanceId`, as a draft —
  * or `null` when no such row exists (an SRD reference, a stale id, or the item is
- * gone). The one place the four arrays are mapped to their kinds, so every auto-upsert
+ * gone). Read through {@link SHEET_ARRAY}, so every auto-upsert
  * seam (the create forms, the sheet-side edit handlers) mirrors exactly what is
  * stored, never a stale copy held in a prop. Id-keyed, not index-keyed, so it survives
  * whatever reordering happens between the read that captured the id and this lookup.
@@ -108,32 +116,11 @@ export function customDraftById(
   kind: SheetLibraryKind,
   instanceId: string
 ): SheetLibraryDraft | null {
-  switch (kind) {
-    case "spell": {
-      const ref = data.spells.find(
-        (r): r is CustomSpell => "custom" in r && r.instanceId === instanceId
-      );
-      return ref ? { kind: "spell", item: ref } : null;
-    }
-    case "feature": {
-      const ref = data.features.find(
-        (r): r is CustomFeature => "custom" in r && r.instanceId === instanceId
-      );
-      return ref ? { kind: "feature", item: ref } : null;
-    }
-    case "equipment": {
-      const ref = data.equipment.find(
-        (r): r is CustomEquipment => "custom" in r && r.instanceId === instanceId
-      );
-      return ref ? { kind: "equipment", item: ref } : null;
-    }
-    case "weapon": {
-      const ref = data.weapons.find(
-        (r): r is CustomWeapon => "custom" in r && r.instanceId === instanceId
-      );
-      return ref ? { kind: "weapon", item: ref } : null;
-    }
-  }
+  const rows: ReadonlyArray<object> = data[SHEET_ARRAY[kind]];
+  const item = rows.find(
+    (r) => "custom" in r && "instanceId" in r && r.instanceId === instanceId
+  );
+  return item ? ({ kind, item } as SheetLibraryDraft) : null;
 }
 
 /**

@@ -318,7 +318,7 @@ export function homebrewSpellData(spell: CustomSpell): SrdSpellData | undefined 
       ? { instantaneous: true }
       : {}),
     // A homebrew spell belongs to no book; it is the player's own.
-    source: "Wiki",
+    source: "Homebrew",
   };
   dataCache.set(spell, data);
   return data;

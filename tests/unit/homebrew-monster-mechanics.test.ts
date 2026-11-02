@@ -121,6 +121,10 @@ const BRUTE: CustomMonster = {
 describe("a homebrew brute written as text", () => {
   const brute = block("brute-entry", BRUTE);
 
+  it("belongs to no book: its source is Homebrew", () => {
+    expect(brute.source).toBe("Homebrew");
+  });
+
   it("reads its print into the catalogue's own entries", () => {
     expect(brute.id).toBe(homebrewMonsterBlockId("brute-entry"));
     expect(brute).toMatchObject({
