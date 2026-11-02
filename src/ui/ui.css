@@ -73,6 +73,10 @@
 
   --fs-sm: 14px;
   --fs-md: 16px;
+  --fs-nav: 13px;
+  --fs-lg: 18px;
+  --fs-title-bar-m: 22px;
+  --fs-title-bar: 24px;
   --fs-xl: 28px;
 
   --r-sm: 6px;
@@ -573,6 +577,27 @@
   border-radius: 50%;
   object-fit: cover;
 }
+/* No portrait: the initial in the panel's colour. */
+.fui .f-ring .f-ring-ini {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--c, var(--gold)) 16%, var(--sunk));
+  color: var(--c, var(--gold));
+  font: 600 var(--fs-md) / 1 var(--font-title);
+}
+/* A row whose sheet is still loading: quiet bars where the text will be. */
+.fui .f-skel {
+  display: block;
+  height: 12px;
+  border-radius: var(--r-sm);
+  background: var(--line-soft);
+}
+.fui .f-skel + .f-skel {
+  margin-top: 8px;
+}
 .fui .f-ring svg {
   position: absolute;
   inset: 0;
@@ -799,5 +824,290 @@
   }
   .fui .f-pnh .f-btn[aria-label]:has(.f-ic) .f-btn-lab {
     display: none;
+  }
+}
+
+/* ---------- app frame: top bar (D&D Beyond model), phone menu sheet, legal line ---------- */
+.fui.f-app {
+  display: flex;
+  flex-direction: column;
+}
+.fui.f-app > main {
+  flex: 1 0 auto;
+  width: 100%;
+}
+.fui .f-skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 50;
+  padding: 8px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  color: var(--strong);
+  transform: translateY(-200%);
+}
+.fui .f-skip:focus {
+  transform: none;
+}
+.fui .f-tb {
+  position: relative;
+  z-index: 5;
+  height: 64px;
+  padding: 0 32px;
+  background: var(--bar);
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fui .f-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 48px;
+  padding: 0 4px;
+  margin-right: 32px;
+  font: 600 var(--fs-title-bar) var(--font-title);
+  color: var(--strong);
+  text-decoration: none;
+}
+.fui .f-tb-nav {
+  display: flex;
+  align-self: stretch;
+}
+.fui .f-tb-nav a {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font: 700 var(--fs-nav) var(--font-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+}
+.fui .f-tb-nav a:hover {
+  color: var(--white);
+  background: var(--hover);
+}
+.fui .f-tb-nav a.active {
+  color: var(--white);
+  box-shadow: inset 0 -2px 0 var(--gold);
+}
+.fui .f-tb-nav a:focus-visible,
+.fui .f-menu-nav a:focus-visible,
+.fui .f-menu-it:focus-visible {
+  outline-offset: -3px;
+}
+.fui .f-tb-r {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.fui .f-srch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--sunk);
+  color: var(--muted);
+}
+.fui .f-srch:focus-within {
+  border-color: var(--gold-line);
+}
+.fui .f-srch input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--strong);
+  font: var(--fs-sm) var(--font-text);
+  outline: none;
+}
+.fui .f-srch input::placeholder {
+  color: var(--muted);
+}
+.fui .f-av,
+.fui .f-burger {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: none;
+  color: var(--gold);
+  cursor: pointer;
+}
+.fui .f-av {
+  border: 1px solid var(--gold-line);
+  border-radius: 50%;
+  font: 600 var(--fs-md) var(--font-title);
+}
+.fui .f-burger {
+  display: none;
+}
+.fui .f-burger .f-ic {
+  width: 24px;
+  height: 24px;
+}
+.fui .f-foot {
+  margin: 64px 24px 0;
+  padding: 24px 0 32px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  color: var(--faint);
+  font-size: var(--fs-sm);
+}
+.fui .f-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 4px;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* menu: a popover under the top bar on laptop, a bottom sheet on phone */
+.fui dialog.f-menu {
+  position: fixed;
+  inset: 72px 24px auto auto;
+  margin: 0;
+  min-width: 240px;
+  max-width: calc(100vw - 32px);
+  padding: 8px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 12px 24px var(--shade-80);
+}
+.fui dialog.f-menu::backdrop {
+  background: transparent;
+}
+.fui .f-menu-head {
+  padding: 8px 16px 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--strong);
+}
+.fui .f-menu-head b {
+  display: block;
+  font-weight: 600;
+}
+.fui .f-menu-sub {
+  display: block;
+  color: var(--muted);
+}
+.fui .f-menu-it,
+.fui .f-menu-nav a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.fui .f-menu-it:hover,
+.fui .f-menu-nav a:hover {
+  background: var(--hover);
+}
+.fui .f-menu-nav a.active {
+  color: var(--white);
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+.fui .f-menu-srch {
+  padding: 8px 16px;
+}
+.fui .f-menu-srch .f-srch {
+  width: 100%;
+  height: 48px;
+}
+.fui .f-menu-srch .f-srch input {
+  font-size: var(--fs-md);
+}
+@media (max-width: 960px) {
+  .fui .f-tb {
+    padding: 0 16px;
+  }
+  .fui .f-tb-srch {
+    display: none;
+  }
+  .fui .f-brand {
+    margin-right: 16px;
+  }
+  .fui .f-tb-nav a {
+    padding: 0 12px;
+  }
+}
+@media (max-width: 760px) {
+  .fui .f-tb-nav {
+    display: none;
+  }
+  .fui .f-burger {
+    display: flex;
+  }
+  .fui .f-brand {
+    margin-right: 0;
+  }
+}
+@media (min-width: 761px) {
+  .fui .f-menu-srch {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .fui .f-tb {
+    height: 56px;
+  }
+  .fui .f-brand {
+    font-size: var(--fs-title-bar-m);
+  }
+  .fui dialog.f-menu {
+    inset: auto 0 0 0;
+    max-width: none;
+    width: 100%;
+    padding-bottom: 16px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+  .fui dialog.f-menu::backdrop {
+    background: var(--scrim);
+  }
+  .fui .f-menu-head {
+    position: relative;
+    padding: 20px 16px 8px;
+    font: 600 var(--fs-lg) var(--font-title);
+  }
+  .fui .f-menu-head::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: var(--r-pill);
+    background: var(--line-strong);
+  }
+  .fui .f-foot {
+    margin: 48px 16px 0;
   }
 }

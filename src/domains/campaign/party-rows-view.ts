@@ -6,6 +6,8 @@
  * Name, classes and live numbers come from the member's hydrated character doc (`hydrateMemberDoc`), the
  * same derivation as their own sheet. Without it the row falls back to the party card
  * the member's app keeps in the campaign, and HP stays unknown (null), never guessed.
+ * While the doc is still loading the row is marked `loading`, so the screen shows a
+ * placeholder instead of card values that would change a moment later.
  */
 import { derivePartyMemberStats } from "@/features/campaigns/party-stats";
 import { memberCardView } from "@/features/campaigns/member-card-view";
@@ -23,6 +25,7 @@ export interface PartyChip {
 
 export interface PartyRow {
   uid: string;
+  loading: boolean;
   name: string;
   player: string;
   portraitUrl: string | null;
@@ -35,6 +38,7 @@ export interface PartyRow {
 
 export function partyRows(
   campaign: Pick<CampaignDoc, "members" | "memberDetails">,
+  /** The member's hydrated doc; null when it can't be read, missing while it loads. */
   live: Record<string, CharacterDoc | null | undefined>,
   locale: Locale
 ): PartyRow[] {
@@ -48,6 +52,7 @@ export function partyRows(
     const concentration = doc?.session.concentration;
     rows.push({
       uid,
+      loading: doc === undefined,
       name: doc ? doc.character.name : card.name,
       player: member.displayName,
       portraitUrl: card.portraitUrl,

@@ -49,13 +49,11 @@ function Campaign({ campaignId }: { campaignId: string }) {
 
   if (!campaign || campaign.id !== campaignId) {
     return (
-      <div className="fui">
-        <main className="f-page">
-          <p role="status">
-            {t(error ? "campaignScreen.notFound" : "campaignScreen.loading")}
-          </p>
-        </main>
-      </div>
+      <main id="main" className="f-page">
+        <p role="status">
+          {t(error ? "campaignScreen.notFound" : "campaignScreen.loading")}
+        </p>
+      </main>
     );
   }
 
@@ -68,8 +66,8 @@ function Campaign({ campaignId }: { campaignId: string }) {
   };
 
   return (
-    <div className="fui">
-      <main className="f-page">
+    <>
+      <main id="main" className="f-page">
         <Header campaign={campaign} locale={locale} onCopyInvite={copyInvite} />
         <Tabs
           label={t("campaignScreen.tabsLabel")}
@@ -80,7 +78,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
         <PartyTab campaign={campaign} locale={locale} />
       </main>
       {toast && <Toast>{toast}</Toast>}
-    </div>
+    </>
   );
 }
 
@@ -138,7 +136,7 @@ function Header({
   );
 }
 
-/** Every member's character doc with its live combat state folded in (null while loading). */
+/** Every member's character doc with its live combat state folded in: missing while it loads, null when it can't be read. */
 function useLiveDocs(campaign: CampaignDoc): Record<string, CharacterDoc | null> {
   const refs = useMemo<MemberCharacterRef[]>(
     () =>
@@ -153,7 +151,8 @@ function useLiveDocs(campaign: CampaignDoc): Record<string, CharacterDoc | null>
     const out: Record<string, CharacterDoc | null> = {};
     for (const { uid } of refs) {
       const st = docs[uid];
-      out[uid] = st?.status === "ready" ? hydrateMemberDoc(st.doc, combat[uid]) : null;
+      if (st?.status === "ready") out[uid] = hydrateMemberDoc(st.doc, combat[uid]);
+      else if (st?.status === "error") out[uid] = null;
     }
     return out;
   }, [refs, docs, combat]);
@@ -212,6 +211,18 @@ function PartyLine({ row, href }: { row: PartyRow; href: string }) {
   const { t } = useTranslation();
   const hp = row.hp;
   const share = hp && hp.max > 0 ? hp.current / hp.max : 1;
+  if (row.loading) {
+    return (
+      <Link className="f-row" to={href} aria-busy="true">
+        <HpRing hp={0} max={0} size={48} />
+        <div className="f-row-main">
+          <span className="f-skel" style={{ width: "50%" }} />
+          <span className="f-skel" style={{ width: "30%" }} />
+          <span className="f-sr">{t("character.loading")}</span>
+        </div>
+      </Link>
+    );
+  }
   return (
     <Link className="f-row" to={href}>
       <HpRing
@@ -220,6 +231,7 @@ function PartyLine({ row, href }: { row: PartyRow; href: string }) {
         temp={hp?.temp}
         size={48}
         portrait={row.portraitUrl ?? undefined}
+        name={row.name}
       />
       <div className="f-row-main">
         <div className="f-row-t">{row.name}</div>
