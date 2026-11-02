@@ -241,7 +241,7 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Portent has no range limit** — It works on any creature you can see, at any distance, even on another plane. "Can see" doesn't mean "within range". [SAC #75]
 - **Illusion Wizard fake cover** — Minor Illusion can create an object to hide behind, so you can hide every turn. Minor Illusion's objects don't move and can't be fog or other atmosphere. [KIBBLES #27; SAC #131; SAC #132]
 - **Mirror Image uses your AC** — The duplicates use the caster's AC, so a high-AC caster gets far more from them. [KIBBLES #37]
-- **Divine Sense** — It doesn't detect Aasimar or Tieflings, because they are Humanoids. Detection goes by creature type, not by flavour. [SAC #57]
+- **Divine Sense** — It doesn't detect player species with a celestial or fiendish heritage, because they are Humanoids. Detection goes by creature type, not by flavour. [SAC #57]
 
 ## 13. Items: attunement, charges, cursed items, artifacts
 
@@ -272,7 +272,7 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Potions: house rule reversed** — The popular "potions as a Bonus Action" house rule became the official rule in 2024, so some tables now house-rule the opposite (drink yourself as a Bonus Action, feed an ally as an action). [https://www.enworld.org/threads/weird-potion-house-rule-idea.714249/; https://rpgbot.net/openvideo/v/potions-are-a-bonus-action-in-dnd-now]
 - **Gritty rests and long-term timers** — Variant rest lengths (a week for a Long Rest, overnight for a Short Rest) change every "per rest" counter. Rest length must be a setting, not a constant. [GLOSS (rest definitions); https://www.enworld.org/threads/2024-house-rules-fixes.706402/]
 - **Tracking exhaustion your own way** — Tables use the 10-level playtest exhaustion or another homebrew scale, so Foundry modules let you replace the built-in track. [https://github.com/Larkinabout/fvtt-dnd5e-custom-counters/releases/tag/1.2.0]
-- **Mixed 2014 and 2024 content** — Older material that the 2024 books didn't replace (Silvery Barbs, Absorb Elements, Tasha's content) can still be used. Same-named 2014 and 2024 versions must not both apply. [https://www.dndbeyond.com/forums/d-d-beyond-general/bugs-support/234299-question-about-2024-rules-compatibility-for-tashas; https://rpgbot.net/dnd-2024-5e-transition-guide-and-change-log-everything-thats-different-in-the-new-players-handbook/]
+- **Mixed 2014 and 2024 content** — Older material that the 2024 books didn't replace (spells and options from 2014-era supplements) can still be used. Same-named 2014 and 2024 versions must not both apply. [https://rpgbot.net/dnd-2024-5e-transition-guide-and-change-log-everything-thats-different-in-the-new-players-handbook/]
 - **Custom spells that scale** — Homebrew spells copy 2024 patterns (stat blocks scaling with level, extra targets when upcast for Twinned, emanations). Custom content needs the same templates as official content. [WIKI spell:summon-beast; https://www.dndbeyond.com/posts/1769-2024-sorcerer-vs-2014-sorcerer-whats-new]
 - **Custom monsters and partial shape-change** — Homebrew shape-changers need to choose which stats change, which Foundry can't do. [FVTT#7153]
 - **Familiars that can attack** — Some DMs allow it, so Foundry asks for an option instead of a fixed rule. [FVTT#4009]
