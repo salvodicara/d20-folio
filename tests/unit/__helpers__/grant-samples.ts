@@ -46,6 +46,10 @@ export function sample(schema: ExactSchema): unknown {
       switch (schema.name) {
         case "proficiency-token":
           return "x";
+        case "scalar":
+          return 1;
+        case "dice-scalar":
+          return "1d6";
         case "resource-selector":
           return { kind: "pool", owner: "owner", resourceId: "x" };
         case "resource-spec":

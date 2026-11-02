@@ -203,3 +203,46 @@ export function levelDice(
     below: base,
   };
 }
+
+/**
+ * Catalogue shorthand: an amount that grows with the slot level (Aid: 5, +5 per
+ * slot level above 2nd). Below `baseLevel`, and when no slot level is known, it is
+ * `base`.
+ */
+export function castScaled(
+  base: number,
+  baseLevel: number,
+  perLevel: number
+): IntegerExpression {
+  const castLevel: IntegerExpression = {
+    kind: "binding",
+    bindingId: SCALAR_BINDINGS.castLevel,
+  };
+  return {
+    kind: "table",
+    input: castLevel,
+    rows: [
+      {
+        atLeast: baseLevel,
+        value: {
+          kind: "add",
+          terms: [
+            { kind: "fixed", value: base - perLevel * baseLevel },
+            {
+              kind: "multiply",
+              factors: [{ kind: "fixed", value: perLevel }, castLevel],
+            },
+          ],
+        },
+      },
+    ],
+    below: { kind: "fixed", value: base },
+  };
+}
+
+/** An amount at a slot level; with no slot level known (0), the base amount. */
+export function amountAtCastLevel(amount: Scalar, castLevel: number | undefined): number {
+  return (
+    resolveScalar(amount, { [SCALAR_BINDINGS.castLevel]: castLevel ?? 0 })?.value ?? 0
+  );
+}

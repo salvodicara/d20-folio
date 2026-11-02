@@ -211,7 +211,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
   }),
   "damage-retaliation": objectSchema(
     {
-      amount: numberSchema,
+      amount: SCALAR_SCHEMA,
       damageType: DAMAGE_TYPE_SCHEMA,
       type: literalSchema("damage-retaliation"),
     },
@@ -624,7 +624,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
   }),
   "hp-flat": objectSchema(
     {
-      amount: numberSchema,
+      amount: SCALAR_SCHEMA,
       type: literalSchema("hp-flat"),
     },
     {

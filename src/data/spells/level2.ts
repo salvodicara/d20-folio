@@ -1,3 +1,4 @@
+import { castScaled } from "@/lib/scalar";
 import { ENLARGE_EFFECT_GRANTS, REDUCE_EFFECT_GRANTS } from "../enlarge-effect";
 import type { SrdSpellData } from "../types";
 import { OTHERWORLDLY_STEED } from "./companions";
@@ -31,8 +32,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
         grants: [
           {
             type: "hp-flat",
-            amount: 5,
-            castLevelScaling: { baseLevel: 2, perLevel: 5 },
+            amount: castScaled(5, 2, 5),
             adjustsCurrentHp: true,
           },
         ],
