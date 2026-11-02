@@ -2682,6 +2682,31 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
     );
   });
 
+  it("any member writes the session's text, and nothing else with it", async () => {
+    await seed();
+    const member = testEnv.authenticatedContext("member").firestore();
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(
+      updateDoc(doc(member, ...logPath), { notes: "We reached Cragmaw." })
+    );
+    await assertSucceeds(updateDoc(doc(dm, ...logPath), { notes: "" }));
+    await assertFails(updateDoc(doc(member, ...logPath), { notes: "x", lastAt: 9 }));
+    await assertFails(
+      updateDoc(doc(member, ...logPath), {
+        notes: "x",
+        log: arrayUnion(item("m1", "member")),
+      })
+    );
+    await assertFails(updateDoc(doc(member, ...logPath), { notes: 3 }));
+    await assertFails(updateDoc(doc(member, ...logPath), { notes: "x".repeat(20_001) }));
+  });
+
+  it("an outsider never writes the session's text", async () => {
+    await seed();
+    const outsider = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(updateDoc(doc(outsider, ...logPath), { notes: "x" }));
+  });
+
   it("nobody rewrites history: no shrink, no edit, no item in someone else's name", async () => {
     await seed();
     const member = testEnv.authenticatedContext("member").firestore();

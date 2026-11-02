@@ -952,7 +952,14 @@ service cloud.firestore {
       }
       allow read: if isAdmin() || logMember();
       allow create: if logMember() && validLog() && newLog();
-      allow update: if logMember() && validLog() && appendedOne();
+      // The session's own text (the Diario's «Cronaca della sessione»): any member
+      // replaces it whole, last writer wins, and touches nothing else in the same write.
+      function notesOnly() {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['notes'])
+          && request.resource.data.notes is string
+          && request.resource.data.notes.size() <= 20000;
+      }
+      allow update: if logMember() && ((validLog() && appendedOne()) || notesOnly());
       allow delete: if isAdmin() || logDm();
 
       // Phase 3b (docs/architecture/session-log-per-event.md): one document per item,

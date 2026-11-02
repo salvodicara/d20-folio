@@ -2375,6 +2375,11 @@ export async function appendChronicleChapter(
 
 // ─── Sessions subcollection (one-shot read on open; NOT a listener) ────────────
 //
+// LEGACY (2026-11-02): the hand-made session list predates the session log. The play
+// log (`sessionLogs/{id}`) is now the one session record and holds the session's text
+// (`saveSessionNotes`, session-log-source.ts). These docs stay only as a read-only
+// fallback for old evenings and for the old Sessions page; build no new write on them.
+//
 // The session list lives at `/campaigns/{campId}/sessions/{sessId}` (member-gated
 // by the rules). Per NFR it is read on-open + cached (a bounded one-shot query,
 // never a standing collection listener) and appended to; the rich per-participant

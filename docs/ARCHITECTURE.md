@@ -1230,6 +1230,14 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   log carries no HP totals: the "(4/12 HP)" readout comes from the live beat (`chronicle-feed.ts`) and
   follows the monster card's `showExact` rule. Hidden (ambush) creatures stay out of a player's feed.
 
+  **The play log is the one session record (2026-11-02).** A session is its play log
+  (`campaigns/{id}/sessionLogs/{YYYY-MM-DD[-n]}`), opened by the first gesture and closed by a 6 h
+  gap; every device computes the same id. Its text (the Diario's «Cronaca della sessione») is the
+  log head's `notes` field, written whole by `saveSessionNotes` (last writer wins, never moves
+  `lastAt`; the rules let a member change only that field). The hand-made `campaigns/{id}/sessions`
+  docs are **legacy**: a read-only fallback by date for evenings older than the play log, and the
+  old Sessions page's data. No new write builds on them.
+
 - **Close** — `combat-chronicle-view.ts` localizes each feed line and `buildEncounterChapter`
   assembles the kept lines into one round-grouped markdown `##` chapter. At "End encounter" the DM's
   editable entry (`EndEncounterDialog`: title, note, state-inferred outcome, removable lines) appends

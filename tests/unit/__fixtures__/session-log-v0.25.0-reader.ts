@@ -153,3 +153,14 @@ export function foldSession(
   }
   return entries;
 }
+
+/** The v0.25.0 head read (`recent()` in session-log-io.ts on 9bb9a60c): only `lastAt` and
+ *  `log` are read from a session document. */
+export function readHead(id: string, data: Record<string, unknown>) {
+  const log: unknown = data.log;
+  return {
+    id,
+    lastAt: Number(data.lastAt),
+    items: Array.isArray(log) ? log.filter(isLogItem) : [],
+  };
+}
