@@ -10,7 +10,10 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
+import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
+import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
+import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
@@ -45,9 +48,16 @@ export function PlayScreen() {
   return (
     <main id="main" className="f-page">
       <PlayHeader view={playHeaderView(doc, locale)} locale={locale} />
-      <div className="f-play">
-        <PlayLeft doc={doc} locale={locale} />
-      </div>
+      {/* The engine's turn context (no UI of its own beyond its dialogs): the same
+          one the cockpit mounts, so a turn is committed one way only. */}
+      <ItemResourceCommandProvider>
+        <TurnEconomyProvider>
+          <div className="f-play">
+            <PlayLeft doc={doc} locale={locale} />
+            <PlayCentre doc={doc} locale={locale} />
+          </div>
+        </TurnEconomyProvider>
+      </ItemResourceCommandProvider>
     </main>
   );
 }

@@ -8,6 +8,20 @@
     "slot": "Slot di {{level}}°",
     "pactSlot": "Slot del patto di {{level}}°",
     "allSkills": "Tutte le {{count}} abilità",
-    "fewerSkills": "Solo le principali"
+    "fewerSkills": "Solo le principali",
+    "filterLabel": "Filtra le azioni",
+    "filter": {
+      "all": "Tutto",
+      "limited": "Uso limitato"
+    },
+    "group": {
+      "bonus": "Azioni bonus"
+    },
+    "playbookTitle": "Cosa ti conviene fare",
+    "spellLevel": "{{level}}° livello",
+    "concentration": "concentrazione",
+    "uses": "{{current}} su {{total}}",
+    "dc": "CD {{dc}}",
+    "healing": "{{amount}} PF"
   }
 }
