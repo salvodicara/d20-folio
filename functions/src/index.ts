@@ -49,7 +49,6 @@ import { resolveMailConfig, type MailConfig, type MailMessage } from "./owner-ma
 import { formatOwnerDigest, type DigestReport } from "./owner-digest";
 import {
   planCampaignUpdate,
-  coMemberAclTargets,
   emailMatches,
   authorizeAccountDeletion,
   type CampaignLike,
@@ -286,9 +285,8 @@ export const onUserRoleWritten = onDocumentWritten("users/{uid}", async (event) 
  *      `combat/` + `snapshots/` subdocs go with it);
  *   b. purge the target's Storage prefix `users/{uid}/` (portraits);
  *   c. for every campaign the target belongs to: strip them from `members` +
- *      `memberDetails`, PROMOTE a remaining member if they were the DM (or delete the
- *      campaign if no members remain), AND remove them from every co-member's
- *      character `campaignReaders` / `dmReaders` ACL;
+ *      `memberDetails`, and PROMOTE a remaining member if they were the DM (or delete
+ *      the campaign if no members remain);
  *   d. delete their `diagnostics` and `bug_reports` docs and bug-report screenshots;
  *   e. recursive-delete the `/users/{uid}` doc with its subcollections (library, …);
  *   f. write the immutable `/admin_audit` record (who deleted whom, when, + counts;
@@ -334,7 +332,6 @@ export const deleteUser = onCall(async (request) => {
     characters: 0,
     campaignsUpdated: 0,
     campaignsDeleted: 0,
-    aclsCleaned: 0,
   };
 
   // ── 3a. Characters subcollection (recursive — combat/ + snapshots/ go too) ───
@@ -354,36 +351,13 @@ export const deleteUser = onCall(async (request) => {
     logger.warn("deleteUser: storage purge failed (non-fatal)", err);
   }
 
-  // ── 3c. Campaigns — membership, DM-orphaning, and co-member ACL cleanup ──────
+  // ── 3c. Campaigns — membership and DM-orphaning ─────────────────────────────
   const campaignsSnap = await db
     .collection("campaigns")
     .where("members", "array-contains", targetUid)
     .get();
   for (const campDoc of campaignsSnap.docs) {
-    const camp = campDoc.data() as CampaignLike;
-
-    // Remove the leaver from every co-member's character ACLs FIRST (before the
-    // campaign doc itself changes), so a re-run after a partial failure still finds
-    // them. Each is a field-only arrayRemove (idempotent).
-    for (const target of coMemberAclTargets(camp, targetUid)) {
-      try {
-        await db
-          .collection("users")
-          .doc(target.ownerUid)
-          .collection("characters")
-          .doc(target.charId)
-          .update({
-            campaignReaders: FieldValue.arrayRemove(targetUid),
-            dmReaders: FieldValue.arrayRemove(targetUid),
-          });
-        counts.aclsCleaned++;
-      } catch (err) {
-        // The co-member's char may be gone — tolerate it (idempotent cascade).
-        logger.warn("deleteUser: ACL cleanup skipped a missing char", err);
-      }
-    }
-
-    const plan = planCampaignUpdate(camp, targetUid);
+    const plan = planCampaignUpdate(campDoc.data() as CampaignLike, targetUid);
     if (plan.kind === "delete") {
       await db.recursiveDelete(campDoc.ref);
       counts.campaignsDeleted++;

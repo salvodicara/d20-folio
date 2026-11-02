@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import {
   authorizeAccountDeletion,
   planCampaignUpdate,
-  coMemberAclTargets,
   emailMatches,
   type CampaignLike,
 } from "./delete-user-plan";
@@ -55,20 +54,6 @@ describe("planCampaignUpdate — membership + DM-orphaning", () => {
     if (plan.kind !== "update") return;
     expect(plan.members).toEqual(["dm", "alice", "bob"]);
     expect(plan.dmUid).toBe("dm");
-  });
-});
-
-describe("coMemberAclTargets — cross-user ACL cleanup set", () => {
-  it("lists every OTHER member's ATTACHED character (skips the leaver + unattached)", () => {
-    const targets = coMemberAclTargets(camp(), "dm");
-    // alice has a char; bob has none; dm is the leaver → excluded.
-    expect(targets).toEqual([{ ownerUid: "alice", charId: "alice-char" }]);
-  });
-
-  it("excludes the leaver's own character", () => {
-    const targets = coMemberAclTargets(camp(), "alice");
-    expect(targets.find((t) => t.ownerUid === "alice")).toBeUndefined();
-    expect(targets).toContainEqual({ ownerUid: "dm", charId: "dm-char" });
   });
 });
 
