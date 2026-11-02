@@ -1,0 +1,23 @@
+{
+  "diary": {
+    "allChronicle": "Tutta la cronaca",
+    "sessionCount_one": "{{count}} sessione",
+    "sessionCount_other": "{{count}} sessioni",
+    "pickSession": "Sessione",
+    "sessionChronicle": "Cronaca della sessione",
+    "storyTitle": "Trasforma il resoconto in racconto",
+    "storyHelp": "Premi «Copia», trasforma il resoconto in racconto con lo strumento che preferisci, poi incolla qui il testo.",
+    "copyReport": "Copia il resoconto",
+    "autoReport": "Resoconto automatico e note",
+    "noReport": "Nessun evento registrato in questa serata.",
+    "explore": "Esplorazione",
+    "fightWith": "Scontro con {{foes}}",
+    "rounds_one": "{{count}} round",
+    "rounds_other": "{{count}} round",
+    "noteBy": "nota di {{name}}",
+    "copyAll": "Copia tutto",
+    "chronicleEmpty": "La cronaca è ancora vuota.",
+    "noSessions": "Nessuna sessione ancora. La prima compare quando il gruppo gioca.",
+    "copied": "Copiato: incollalo dove vuoi."
+  }
+}

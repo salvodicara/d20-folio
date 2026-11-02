@@ -1,0 +1,23 @@
+{
+  "diary": {
+    "allChronicle": "The whole chronicle",
+    "sessionCount_one": "{{count}} session",
+    "sessionCount_other": "{{count}} sessions",
+    "pickSession": "Session",
+    "sessionChronicle": "Session chronicle",
+    "storyTitle": "Turn the report into a story",
+    "storyHelp": "Press “Copy”, turn the report into a story with the tool you like, then paste the text here.",
+    "copyReport": "Copy the report",
+    "autoReport": "Automatic report and notes",
+    "noReport": "Nothing was recorded on this evening.",
+    "explore": "Exploration",
+    "fightWith": "Fight with {{foes}}",
+    "rounds_one": "{{count}} round",
+    "rounds_other": "{{count}} rounds",
+    "noteBy": "note by {{name}}",
+    "copyAll": "Copy all",
+    "chronicleEmpty": "The chronicle is still empty.",
+    "noSessions": "No sessions yet. The first appears when the group plays.",
+    "copied": "Copied: paste it wherever you like."
+  }
+}

@@ -16,6 +16,8 @@ export type DiaryBlock =
       rounds: number;
       /** The fight's creatures by name, once each ("Goblin 2" reads as "Goblin"). */
       foes: string[];
+      /** Each creature's own name, for its lines. */
+      names: Record<string, string>;
       outcome?: "victory" | "ended";
     };
 
@@ -43,6 +45,7 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
         at: first.at,
         entries,
         rounds: Math.max(0, ...section.rounds.map((r) => r.round ?? 0)),
+        names: section.names,
         foes: [
           ...new Set(Object.values(section.names).map((n) => n.replace(/\s+\d+$/, ""))),
         ],

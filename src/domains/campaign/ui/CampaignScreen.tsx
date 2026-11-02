@@ -1,5 +1,6 @@
 // The new campaign page (approved prototype camp-*.html, 2026-11-02), behind VITE_NEW_UI.
 // It reads the core only: the campaign store, the members' live docs and pure view models.
+import { DiaryTab } from "@/domains/chronicle/ui/DiaryTab";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "react-router";
@@ -25,7 +26,7 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 
 import { partyRows, type PartyRow } from "../party-rows-view";
 
-type Tab = "party";
+type Tab = "party" | "journal";
 
 export function CampaignScreen() {
   const { campaignId } = useParams();
@@ -71,11 +72,18 @@ function Campaign({ campaignId }: { campaignId: string }) {
         <Header campaign={campaign} locale={locale} onCopyInvite={copyInvite} />
         <Tabs
           label={t("campaignScreen.tabsLabel")}
-          items={[{ id: "party" as const, label: t("campaignHub.party") }]}
+          items={[
+            { id: "party" as const, label: t("campaignHub.party") },
+            { id: "journal" as const, label: t("campaignHub.workspaceJournal") },
+          ]}
           value={tab}
           onChange={setTab}
         />
-        <PartyTab campaign={campaign} locale={locale} />
+        {tab === "party" ? (
+          <PartyTab campaign={campaign} locale={locale} />
+        ) : (
+          <DiaryTab campaign={campaign} locale={locale} onToast={setToast} />
+        )}
       </main>
       {toast && <Toast>{toast}</Toast>}
     </>

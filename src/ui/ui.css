@@ -75,6 +75,7 @@
   --fs-md: 16px;
   --fs-nav: 13px;
   --fs-lg: 18px;
+  --fs-prose: 17px;
   --fs-title-bar-m: 22px;
   --fs-title-bar: 24px;
   --fs-xl: 28px;
@@ -1110,4 +1111,155 @@
   .fui .f-foot {
     margin: 48px 16px 0;
   }
+}
+
+/* ---------- list beside a page (Diario): sessions left, the chosen one right ---------- */
+.fui .f-split-l {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.fui .f-sticky {
+  position: sticky;
+  top: 24px;
+}
+.fui .f-show-m {
+  display: none;
+}
+@media (max-width: 960px) {
+  .fui .f-split-l {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-sticky {
+    position: static;
+  }
+}
+@media (max-width: 640px) {
+  .fui .f-split-l {
+    gap: 16px;
+  }
+  .fui .f-show-m {
+    display: block;
+  }
+  .fui .f-hide-m {
+    display: none;
+  }
+}
+.fui select.f-in {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+/* a row that picks what the page shows; the picked one carries the panel's colour */
+.fui a.f-pick {
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+}
+.fui a.f-pick[aria-current] {
+  background: var(--hover);
+  box-shadow: inset 3px 0 0 var(--c, var(--gold));
+}
+.fui a.f-pick:focus-visible {
+  outline-offset: -3px;
+}
+.fui .f-quiet {
+  margin: 0;
+  color: var(--muted);
+}
+.fui .f-row-main > .f-row-t,
+.fui .f-row-main > .f-row-s {
+  display: block;
+}
+.fui .f-sub {
+  margin: 0;
+  font: 600 var(--fs-lg) / 1.3 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-lbl-gap {
+  margin: 16px 0 8px;
+}
+.fui .f-lbl-rule {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.fui .f-prose {
+  max-width: 72ch;
+  color: var(--strong);
+  font-size: var(--fs-prose);
+  line-height: 1.75;
+}
+.fui .f-prose > * {
+  margin: 0 0 16px;
+}
+.fui .f-prose > :last-child {
+  margin-bottom: 0;
+}
+.fui .f-prose h1,
+.fui .f-prose h2,
+.fui .f-prose h3,
+.fui .f-prose h4 {
+  font: 600 var(--fs-lg) / 1.3 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-prose ul,
+.fui .f-prose ol {
+  padding-left: 24px;
+  gap: 4px;
+}
+.fui .f-prose code {
+  padding: 0 4px;
+}
+.fui .f-empty {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r);
+}
+.fui .f-empty p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 60ch;
+}
+.fui .f-tl-block {
+  margin-top: 16px;
+}
+.fui .f-tl-block > h4 {
+  margin: 0 0 4px;
+}
+.fui .f-tl {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 8px 0;
+}
+.fui .f-tl::before {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+.fui .f-tl[data-note]::before {
+  background: var(--text);
+}
+.fui .f-tl i {
+  color: var(--strong);
+}
+.fui .f-tl-by {
+  color: var(--muted);
+  white-space: nowrap;
 }
