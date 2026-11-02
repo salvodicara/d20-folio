@@ -58,4 +58,12 @@ describe("the catalogue uses one language for scaled numbers", () => {
         .map(({ path }) => path)
     ).toEqual([]);
   });
+
+  it("no amount uses the legacy `castLevelScaling` (use `castScaled`)", () => {
+    expect(
+      [...grantsOfKind("hp-flat"), ...grantsOfKind("damage-retaliation")]
+        .filter(({ grant }) => "castLevelScaling" in grant)
+        .map(({ path }) => path)
+    ).toEqual([]);
+  });
 });
