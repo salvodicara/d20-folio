@@ -4,12 +4,7 @@
  * aimed at a missing entry, must THROW at module init (never half-merge).
  */
 import { describe, expect, it } from "vitest";
-import {
-  mergeCatalogue,
-  mergePack,
-  mergePackRecord,
-  overlayPackRecord,
-} from "@/lib/pack-merge";
+import { mergeCatalogue, mergePack, mergePackRecord } from "@/lib/pack-merge";
 
 describe("mergePack", () => {
   it("concatenates pack entries after the public ones", () => {
@@ -75,16 +70,5 @@ describe("mergeCatalogue", () => {
     expect(() =>
       mergeCatalogue("spell", { a: { name: "x" } }, undefined, { gone: { name: "y" } })
     ).toThrow(/overlay patches missing spell entry "gone"/);
-  });
-});
-
-describe("overlayPackRecord", () => {
-  it("lets a pack entry REPLACE the public one, and adds its own keys", () => {
-    // The deliberate opposite of mergePackRecord's throw: the public entry is a
-    // licensing fallback the pack's full-game twin supersedes.
-    const base = { a: "public", b: "public" };
-    const merged = overlayPackRecord(base, { a: "pack", z: "pack" });
-    expect(merged).toEqual({ a: "pack", b: "public", z: "pack" });
-    expect(merged).not.toBe(base);
   });
 });

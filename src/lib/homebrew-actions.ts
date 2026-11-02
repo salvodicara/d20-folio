@@ -137,7 +137,7 @@ export const EFFECT_RIDER_SCHEMAS: {
 };
 
 /** The action fields a homebrew action keeps at its own top level, not as mechanics. */
-export type HomebrewActionTopLevelKey = "id" | "type" | "mechanicsProgram";
+export type HomebrewActionTopLevelKey = "id" | "type";
 
 /**
  * Every structured catalogue-action field → its exact schema. Typed over every key

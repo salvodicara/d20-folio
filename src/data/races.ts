@@ -1,10 +1,4 @@
-import type {
-  SrdRaceData,
-  SrdRaceTrait,
-  SrdIndex,
-  TrackerSpec,
-  SrdActionDef,
-} from "./types";
+import type { SrdRaceData, SrdRaceTrait, TrackerSpec, SrdActionDef } from "./types";
 import { DAMAGE_TYPES } from "@/types/damage";
 import { mergePack } from "@/lib/pack-merge";
 import { withPackGrantExtensions } from "@/lib/pack-grant-extensions";
@@ -936,7 +930,7 @@ export const SRD_RACES: SrdRaceData[] = mergePack(
 
 // ─── Lookup Map ───────────────────────────────────────────────
 
-export const RACES_BY_ID: SrdIndex<SrdRaceData> = new Map(
+export const RACES_BY_ID: ReadonlyMap<string, SrdRaceData> = new Map(
   SRD_RACES.map((r) => [r.id, r])
 );
 
@@ -944,10 +938,6 @@ export const RACES_BY_ID: SrdIndex<SrdRaceData> = new Map(
 
 export function getRace(id: string): SrdRaceData | undefined {
   return RACES_BY_ID.get(id);
-}
-
-export function getAllRaceIds(): string[] {
-  return SRD_RACES.map((r) => r.id);
 }
 
 // ─── Race Feature Index ───────────────────────────────────────

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ResourceSpec } from "@/data/types";
+import type { ItemResourceSpec } from "@/data/types";
 import {
   answerItemResourceInputs,
   itemResourceRecovery,
@@ -13,7 +13,7 @@ import {
   type ResourceItemSpec,
 } from "@/lib/resources";
 
-const volatile: ResourceSpec = {
+const volatile: ItemResourceSpec = {
   kind: "counter",
   id: "charges",
   unit: "charges",

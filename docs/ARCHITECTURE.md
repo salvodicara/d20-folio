@@ -385,7 +385,7 @@ cadence for such a pool; presenter copy names the activation trigger instead of 
 
 Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). Legacy magic items still
 derive an item-id tracker temporarily, but every migrated mutable item instead declares catalogue
-`ResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
+`ItemResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
 grants **≥ 2 free-cast spells** (Fey/Shadow/Vampire-Touched, the multi-spell heritage feats) emits ONE
 INDEPENDENT 1/rest row PER SPELL via `resolveFreeCastFeatTrackers`, keyed `${featId}:${spellId}` — so
 casting one never locks the others (the prior shared-`total:2` counter deadlocked them). The row, the
@@ -780,7 +780,7 @@ requiring the original grant to remain equipped/known; redo regenerates expectat
 This atomicity is limited to the owner character document and does not include campaign-owned effects.
 
 Physical magic-item resources use a stricter instance-owned transition seam. Catalogue
-`ResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
+`ItemResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
 depletion consequences; one durable `SrdEquipmentRef.instanceId` identifies each physical copy, and
 `session.itemResources[instanceId]` is its only mutable owner. `lib/resources.ts` plans a pure
 whole-item compare-and-swap operation from an exact command and table-entered facts. The shared

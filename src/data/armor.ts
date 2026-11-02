@@ -162,20 +162,3 @@ export const SRD_ARMOR: SrdEquipmentData[] = [
 export const ARMOR_BY_ID: ReadonlyMap<string, SrdEquipmentData> = new Map(
   SRD_ARMOR.map((a) => [a.id, a])
 );
-
-/** Get an armor by ID */
-export function getArmor(id: string): SrdEquipmentData | undefined {
-  return ARMOR_BY_ID.get(id);
-}
-
-/** Get armor by category */
-export function getArmorByCategory(
-  category: "light" | "medium" | "heavy" | "shield"
-): SrdEquipmentData[] {
-  return SRD_ARMOR.filter((a) => a.armorCategory === category);
-}
-
-/** Get all wearable armor (excludes shields) */
-export function getWearableArmor(): SrdEquipmentData[] {
-  return SRD_ARMOR.filter((a) => a.category === "armor");
-}

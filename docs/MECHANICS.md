@@ -317,7 +317,7 @@ not at all and emits a serializable receipt; its inverse is exact and causal, wh
 choice but obtains fresh expectations. The low-level cost engine remains a compiler inside this planner,
 not an independently mutating execution path for the rail.
 
-**Magic-item resources** are catalogue data plus exact physical-copy state. `ResourceSpec` declares
+**Magic-item resources** are catalogue data plus exact physical-copy state. `ItemResourceSpec` declares
 a scalar counter's unit, fixed or table-entered capacity, initial amount, exact recovery boundaries
 and optional last-unit consequences. `SrdEquipmentRef.instanceId` addresses one physical copy;
 `session.itemResources[instanceId]` owns every counter and the copy's magical/nonmagical/consumed/
@@ -794,7 +794,7 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   Equipped magic items use the same seam without inventing `mechanics.actions`: an optional
   `while-active.activation.resourceCost` addresses a typed resource on the exact physical copy.
   The shared item bridge emits the normal action with `activatesKey`; combat, Resources, Inventory,
-  rests and the timer all commit through the same item-resource command provider. `ResourceSpec`
+  rests and the timer all commit through the same item-resource command provider. `ItemResourceSpec`
   declares fixed or table-entered capacity, initial state, exact recovery triggers/amounts and optional
   last-unit outcomes. Dawn/Dusk are explicit Table Clock events, never Long-Rest or device-time aliases;
   entered recovery dice are requested before the whole boundary commits. A copy can own several
