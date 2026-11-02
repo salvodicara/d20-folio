@@ -1,4 +1,5 @@
 import type { SrdClassTable, SrdClassFeatureData, SrdClassLevel } from "../types";
+import { levelDice } from "@/lib/scalar";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { proficiencyBonus } from "@/lib/proficiency";
 
@@ -144,8 +145,7 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     grants: [
       {
         type: "damage-rider",
-        dice: "1d6",
-        diceByLevel: {
+        dice: levelDice("rogue", "1d6", {
           3: "2d6",
           5: "3d6",
           7: "4d6",
@@ -155,7 +155,7 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
           15: "8d6",
           17: "9d6",
           19: "10d6",
-        },
+        }),
         damageType: "same-as-weapon",
         appliesTo: "finesse-or-ranged-weapon",
         oncePerTurn: true,

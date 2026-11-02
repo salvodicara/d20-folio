@@ -29,7 +29,7 @@ import type { ClassEntry } from "@/types/character";
 import { classNameById, subclassNameById } from "@/data/srd-names";
 
 /** The shape `getClasses` reads. `classes[]` is the SOLE source of truth. */
-type ClassBearer = {
+export type ClassBearer = {
   classes?: ClassEntry[];
 };
 

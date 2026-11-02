@@ -15,6 +15,9 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { resolveDice, type DiceScalar } from "@/lib/scalar";
+import { characterScalarBindings } from "@/lib/scalar-bindings";
+import type { IntegerBindings } from "@/lib/integer-expression";
 import { baseActionState, baseActionText } from "@/lib/base-action-states";
 import { HELP_ACTION_ID } from "@/lib/play/help";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
@@ -1112,7 +1115,7 @@ function resolveActiveFormRiders(
                 charData.proficiencyBonusOverride
               )
             )
-          : (g.dice ?? "");
+          : resolveRiderDice(g, totalLevel(charData), characterScalarBindings(charData));
       const damageType =
         g.damageTypeChoices?.[0] ??
         (g.damageType === "same-as-weapon" ? "radiant" : g.damageType);
@@ -3971,9 +3974,13 @@ export function resolveSlotAltRecovery(
  * order is irrelevant.
  */
 export function resolveRiderDice(
-  rider: { dice?: string; diceByLevel?: Readonly<Record<number, string>> },
-  level: number
+  rider: { dice?: DiceScalar; diceByLevel?: Readonly<Record<number, string>> },
+  level: number,
+  bindings: IntegerBindings = {}
 ): string {
+  if (rider.dice !== undefined && typeof rider.dice !== "string") {
+    return resolveDice(rider.dice, bindings)?.formula ?? "";
+  }
   // A flat `amount: "PB"` rider (a species revelation form) carries no `dice`;
   // it never reaches the weapon consumer (it's an "attack-or-spell" rider), so the
   // empty fallback here is defensive — every weapon rider declares `dice`.
@@ -4066,7 +4073,11 @@ export function resolveAttackDamageRiders(
           : undefined;
       const dice = appendAbilityModToDice(
         fixedAmount === undefined
-          ? resolveRiderDice(r, featureScalingLevel(r.sourceId, character))
+          ? resolveRiderDice(
+              r,
+              featureScalingLevel(r.sourceId, character),
+              characterScalarBindings(character.character)
+            )
           : String(fixedAmount),
         r.addAbilityMod === undefined
           ? undefined
@@ -4143,7 +4154,11 @@ export function resolveSpellAttackMarkedRiders(
     if (r.vsMarkedTarget == null || r.damageType === "same-as-weapon") return [];
     return [
       {
-        dice: resolveRiderDice(r, featureScalingLevel(r.sourceId, character)),
+        dice: resolveRiderDice(
+          r,
+          featureScalingLevel(r.sourceId, character),
+          characterScalarBindings(character.character)
+        ),
         damageType: r.damageType,
         oncePerTurn: r.oncePerTurn,
         // The "vs marked / cursed target" label the render edge shows so the

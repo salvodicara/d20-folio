@@ -1,4 +1,5 @@
 import type { SrdClassTable, SrdClassFeatureData, SrdClassLevel } from "../types";
+import { levelDice } from "@/lib/scalar";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { proficiencyBonus } from "@/lib/proficiency";
 
@@ -385,8 +386,7 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     grants: [
       {
         type: "damage-rider",
-        dice: "1d10",
-        diceByLevel: { 17: "2d10" },
+        dice: levelDice("barbarian", "1d10", { 17: "2d10" }),
         damageType: "same-as-weapon",
         appliesTo: "melee-weapon",
         oncePerTurn: true,
@@ -492,8 +492,7 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         grants: [
           {
             type: "damage-rider",
-            dice: "2d6",
-            diceByLevel: { 1: "2d6", 9: "3d6", 16: "4d6" },
+            dice: levelDice("barbarian", "2d6", { 1: "2d6", 9: "3d6", 16: "4d6" }),
             damageType: "slashing",
             appliesTo: "melee-weapon",
             oncePerTurn: true,

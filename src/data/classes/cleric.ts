@@ -1,4 +1,5 @@
 import type { SrdClassTable, SrdClassFeatureData, SrdClassLevel } from "../types";
+import { levelDice } from "@/lib/scalar";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { proficiencyBonus } from "@/lib/proficiency";
 
@@ -350,8 +351,7 @@ export const CLERIC_FEATURES: SrdClassFeatureData[] = [
             grants: [
               {
                 type: "damage-rider",
-                dice: "1d8",
-                diceByLevel: { 7: "1d8", 14: "2d8" },
+                dice: levelDice("cleric", "1d8", { 7: "1d8", 14: "2d8" }),
                 damageType: "radiant",
                 appliesTo: "weapon",
                 oncePerTurn: true,

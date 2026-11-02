@@ -79,6 +79,20 @@ export function resolveScalar(
   return value === null ? null : { value, terms: termsOf([expression], bindings) };
 }
 
+/**
+ * The catalogue boundary for a DiceScalar: any dice string (as before), or a
+ * well-formed DiceFormula that reads only vocabulary bindings.
+ */
+export function conformDiceScalar(value: unknown): DiceScalar | null {
+  if (typeof value === "string") return value;
+  const formula = conformDiceFormula(value);
+  if (!formula) return null;
+  const ids = formula.terms.flatMap((t) =>
+    integerExpressionBindingIds(t.kind === "integer" ? t.value : t.count)
+  );
+  return ids.every(isScalarBinding) ? formula : null;
+}
+
 /** Resolve a DiceScalar to a plain dice string ("3d6", "1d8+2"). */
 export function resolveDice(
   dice: DiceScalar,
@@ -151,4 +165,13 @@ export function scalarFromLevelTable(
       },
     ],
   };
+}
+
+/** Catalogue shorthand: dice whose count steps with one class's level. */
+export function levelDice(
+  classId: string,
+  base: string,
+  byLevel: Readonly<Record<number, string>>
+): DiceScalar {
+  return scalarFromLevelTable(SCALAR_BINDINGS.classLevel(classId), base, byLevel);
 }
