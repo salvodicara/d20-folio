@@ -268,7 +268,7 @@ export async function rollForMissing(
     return plan && { patch: plan.patch, result: plan };
   });
   if (!done) return null;
-  // One report line per roll: "Il Master tira per Mandorlino: 14" (written at once; a
+  // One report line per roll: "Il Master tira per Lyra: 14" (written at once; a
   // v0.25.0 report shows it as a neutral newer-version line).
   const lines = await Promise.all(
     Object.entries(done.rolled).map(([uid, roll]) =>
