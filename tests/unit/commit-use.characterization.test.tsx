@@ -5,8 +5,9 @@
  * sheet and the turn; one undo puts both back exactly as they were; one redo replays it.
  * Ids and clocks of replayed log lines may differ. Today's undo also leaves harmless
  * traces, normalized here and gone once the undo is one whole-state seal: a restored
- * inventory row gains an `instanceId`, an undone tracker spend leaves `{ used: 0 }`, and
- * an empty map (`effectTimers: {}`) comes back absent.
+ * inventory row gains an `instanceId`; an undone tracker or slot spend leaves
+ * `{ used: 0 }`; an empty map or list appears or vanishes (`effectTimers: {}`,
+ * `activeFeatures: []`). All of these read the same as absent.
  */
 import { act, render } from "@testing-library/react";
 import { useEffect } from "react";
@@ -26,12 +27,14 @@ import {
 } from "@/features/campaigns/global-combat-context";
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import { litText } from "@/lib/loc-text";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { makeCharacterDoc } from "./_helpers";
 
 const SCORES = { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 } as const;
 const rogue: ScenarioSpec = {
@@ -134,11 +137,13 @@ function withoutEmpty(value: unknown): unknown {
     .filter(
       ([, inner]) =>
         inner !== undefined &&
+        !(Array.isArray(inner) && inner.length === 0) &&
         !(
           typeof inner === "object" &&
           inner !== null &&
           !Array.isArray(inner) &&
-          Object.keys(inner).length === 0
+          (Object.keys(inner).length === 0 ||
+            (Object.keys(inner).length === 1 && (inner as { used?: unknown }).used === 0))
         )
     );
   return Object.fromEntries(kept);
@@ -153,13 +158,6 @@ function state(): unknown {
   }
   for (const row of doc?.character.equipment ?? [])
     delete (row as { instanceId?: string }).instanceId;
-  if (doc) {
-    doc.session.trackers = Object.fromEntries(
-      Object.entries(doc.session.trackers).filter(
-        ([, tracker]) => !(Object.keys(tracker).length === 1 && tracker.used === 0)
-      )
-    );
-  }
   // Every data field of the turn (the store's functions are not state).
   const turn = Object.fromEntries(
     Object.entries(useCombatStore.getState()).filter(([, v]) => typeof v !== "function")
@@ -170,7 +168,7 @@ function state(): unknown {
 async function settle(run: () => void): Promise<void> {
   await act(async () => {
     run();
-    for (let i = 0; i < 5; i++) await Promise.resolve();
+    for (let i = 0; i < 3; i++) await new Promise((resolve) => setTimeout(resolve, 0));
   });
 }
 
@@ -243,6 +241,76 @@ describe("a use today: it changes the sheet and the turn, one undo restores, one
     await settle(() => api?.handleUseReaction(action("base-opportunity-attack")));
     const after = state();
     expect(useCombatStore.getState().reactionUsed).toBe(true);
+
+    await settle(() => void useUndoStore.getState().undo());
+    expect(state()).toEqual(before);
+
+    await settle(() => void useUndoStore.getState().redo());
+    expect(state()).toEqual(after);
+  });
+});
+
+/** A spell as the cast seam receives it (no catalogue id: the cast commits without a picker). */
+function spell(
+  id: string,
+  type: "action" | "reaction",
+  level: number,
+  concentration = false
+): ResolvedAction {
+  return {
+    id,
+    name: id,
+    nameLoc: litText({ en: id, it: id }),
+    type,
+    source: "spell",
+    spellLevel: level,
+    ...(level > 0 ? { slotLevel: level } : {}),
+    concentration,
+    summary: {},
+    costsSlot: level > 0,
+    pinned: false,
+    defaultPinned: false,
+  };
+}
+
+/** Slots of one level only, so a cast has one option and commits without a picker. */
+function mountWizard(slotLevel: number): void {
+  const doc = makeCharacterDoc({
+    classId: "wizard",
+    level: 5,
+    spellSlots: [{ level: Math.max(1, slotLevel), total: 2 }],
+  });
+  doc.id = "test-char";
+  doc.session.logEntries = [];
+  useCharacterStore.setState({
+    character: doc,
+    readonly: false,
+    loading: false,
+    error: null,
+  });
+  render(
+    <MemoryRouter>
+      <TurnEconomyProvider>
+        <Probe />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+}
+
+describe("a cast today: it changes the sheet and the turn, one undo restores, one redo replays", () => {
+  it.each([
+    ["a 1st-level spell, solo", spell("magic-dart", "action", 1), false],
+    ["a 2nd-level spell on your turn in a fight", spell("scorch", "action", 2), true],
+    ["a Concentration spell", spell("focus-ward", "action", 1, true), false],
+    ["a cantrip", spell("spark", "action", 0), true],
+    ["a reaction spell in a fight", spell("quick-shield", "reaction", 1), true],
+  ])("%s", async (_name, cast, inFight) => {
+    mountWizard(cast.spellLevel ?? 0);
+    if (inFight) useCombatStatusStore.getState().set(fight, null);
+    const before = state();
+    await settle(() => api?.executeAction(cast));
+    const after = state();
+    expect(after).not.toEqual(before);
 
     await settle(() => void useUndoStore.getState().undo());
     expect(state()).toEqual(before);
