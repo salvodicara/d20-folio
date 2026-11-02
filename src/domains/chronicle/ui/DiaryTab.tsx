@@ -19,6 +19,7 @@ import {
   type DiaryBlock,
 } from "@/domains/chronicle/diary-view";
 import { SessionStory } from "@/domains/chronicle/ui/SessionStory";
+import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { listSessions } from "@/features/campaigns/campaign-io";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
@@ -28,7 +29,6 @@ import {
   useSessionReports,
   type SessionLog,
 } from "@/features/campaigns/useSessionReports";
-import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { intlTag, type Locale } from "@/lib/locale";
 import { buildReport, foldSession, type SessionEntry } from "@/lib/session-log";
 import { diagnosticsLog } from "@/lib/diagnostics";
@@ -37,8 +37,6 @@ import {
   renderSessionReport,
   type SessionReportNames,
 } from "@/lib/views/session-report-view";
-import { localizeText } from "@/lib/views/srd-i18n";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
 import type { CampaignDoc, SessionLogDoc } from "@/types/campaign";
 import { Button, Panel } from "@/ui";
 
@@ -346,26 +344,5 @@ function TimelineLine({
     <p className="f-tl">
       <span>{text}</span>
     </p>
-  );
-}
-
-/** How the report names people, conditions, spells and sources, in the reader's language. */
-function useReportNames(campaign: CampaignDoc, locale: Locale): SessionReportNames {
-  return useMemo(
-    () => ({
-      pc: (id) => {
-        const member = campaign.memberDetails[id.replace(/^pc-/, "")];
-        return member?.character?.name || member?.displayName || undefined;
-      },
-      condition: (id) =>
-        hasSrd("condition", id, "name", locale)
-          ? localizeSrd("condition", id, "name", locale)
-          : id,
-      action: (text) => localizeText(text, locale),
-      spell: (ref) => concentrationLabel(ref, locale),
-      source: (id) => grantSourceLabel(id, locale),
-      locale,
-    }),
-    [campaign.memberDetails, locale]
   );
 }

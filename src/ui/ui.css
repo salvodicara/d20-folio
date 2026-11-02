@@ -71,6 +71,7 @@
   --coin-cp: #c47a45;
   --toast-bg: rgb(26 22 17 / 0.95);
 
+  --fs-xs: 12px;
   --fs-sm: 14px;
   --fs-md: 16px;
   --fs-nav: 13px;
@@ -587,7 +588,8 @@
   align-items: center;
   justify-content: center;
   background: color-mix(in srgb, var(--c, var(--gold)) 16%, var(--sunk));
-  color: var(--c, var(--gold));
+  /* the panel's colour, lifted toward white so the letter reads on any panel (AA) */
+  color: color-mix(in srgb, var(--c, var(--gold)) 55%, var(--white));
   font: 600 var(--fs-md) / 1 var(--font-title);
 }
 /* A row whose sheet is still loading: quiet bars where the text will be. */
@@ -1273,4 +1275,44 @@
   min-height: 200px;
   resize: vertical;
   line-height: 1.6;
+}
+
+/* ---------- fight: the initiative list ---------- */
+/* every row carries the same inset, so the current one never shifts its columns */
+.fui .f-fight {
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: var(--r-sm);
+}
+.fui .f-fight[data-current] {
+  background: color-mix(in srgb, var(--turn) 10%, transparent);
+  box-shadow: inset 3px 0 0 var(--turn);
+}
+.fui .f-init {
+  flex: none;
+  width: 32px;
+  text-align: center;
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-count {
+  color: var(--muted);
+  font-weight: 400;
+}
+.fui .f-now {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: var(--r-pill);
+  background: var(--turn);
+  color: var(--bg);
+  font: 700 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fui .f-row-s[data-band="bloodied"] {
+  color: var(--hp-y);
+}
+.fui .f-row-s[data-band="nearDeath"],
+.fui .f-row-s[data-band="down"] {
+  color: var(--hp-r);
 }

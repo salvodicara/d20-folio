@@ -1,0 +1,18 @@
+{
+  "fight": {
+    "listTitle": "Initiative · round {{round}}",
+    "fighters_one": "{{count}} combatant",
+    "fighters_other": "{{count}} combatants",
+    "now": "Now",
+    "down": "Down",
+    "feedTitle": "In this fight",
+    "feedEmpty": "Nothing yet: actions show up here as you play.",
+    "roundLine": "Round {{n}} · {{line}}",
+    "idleTitle": "No fight running",
+    "idleHelp": "It starts by itself when the first player rolls initiative from their sheet. Anyone who comes later joins anyway.",
+    "pastTitle": "Past fights",
+    "pastEmpty": "Fights you play show up here, with their rounds and how they ended.",
+    "victory": "won",
+    "ended": "closed"
+  }
+}
