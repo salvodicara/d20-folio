@@ -86,6 +86,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Unit tests
         run: pnpm test
+      # The rules conformance count (docs/architecture/2026-11-edge-cases.md):
+      # one test per corpus case; a "works" case that fails turns this red.
+      - name: Rules conformance count
+        run: |
+          pnpm exec vitest run --project fast tests/unit/conformance content-pack/tests/unit/conformance \
+            --reporter=json --outputFile=conformance.json > /dev/null || true
+          node --import ./scripts/alias-loader.mjs scripts/conformance-count.ts conformance.json
 
   build:
     name: build + budget
