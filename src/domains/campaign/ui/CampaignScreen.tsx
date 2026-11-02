@@ -2,6 +2,7 @@
 // It reads the core only: the campaign store, the members' live docs and pure view models.
 import { DiaryTab } from "@/domains/chronicle/ui/DiaryTab";
 import { FightTab } from "@/domains/combat/ui/FightTab";
+import { NotesTab } from "@/domains/notes/ui/NotesTab";
 import { Coins } from "@/domains/treasury/ui/Coins";
 import { TreasuryTab } from "@/domains/treasury/ui/TreasuryTab";
 import { useMemo, useState } from "react";
@@ -29,7 +30,7 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 
 import { partyRows, type PartyRow } from "../party-rows-view";
 
-type Tab = "party" | "fight" | "journal" | "treasure";
+type Tab = "party" | "fight" | "journal" | "treasure" | "notes";
 
 export function CampaignScreen() {
   const { campaignId } = useParams();
@@ -83,6 +84,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
             { id: "fight" as const, label: t("campaignScreen.tabFight") },
             { id: "journal" as const, label: t("campaignHub.workspaceJournal") },
             { id: "treasure" as const, label: t("campaignHub.treasury") },
+            { id: "notes" as const, label: t("notes.combatRubric") },
           ]}
           value={tab}
           onChange={setTab}
@@ -93,6 +95,8 @@ function Campaign({ campaignId }: { campaignId: string }) {
           <FightTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : tab === "treasure" ? (
           <TreasuryTab campaign={campaign} locale={locale} onToast={setToast} />
+        ) : tab === "notes" ? (
+          <NotesTab campaign={campaign} onToast={setToast} />
         ) : (
           <DiaryTab campaign={campaign} locale={locale} onToast={setToast} />
         )}

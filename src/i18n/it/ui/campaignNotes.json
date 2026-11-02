@@ -1,0 +1,23 @@
+{
+  "campaignNotes": {
+    "filter": "Filtra",
+    "important": "Importanti",
+    "people": "Persone",
+    "places": "Luoghi",
+    "mine": "Solo le mie",
+    "newNote": "Nuova nota",
+    "search": "Cerca nelle note",
+    "hidden": "Solo il Master la vede",
+    "text": "Testo",
+    "textHelp": "Scrivi @nome per una persona e #luogo per un posto: la nota finisce nei filtri giusti.",
+    "saved": "Nota salvata.",
+    "deleted": "Nota eliminata.",
+    "empty": "Nessuna nota ancora: scrivi la prima, la vede tutto il gruppo.",
+    "noMatch": "Nessuna nota corrisponde.",
+    "kind": {
+      "important": "Importante",
+      "person": "Persona",
+      "place": "Luogo"
+    }
+  }
+}

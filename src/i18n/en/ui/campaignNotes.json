@@ -1,0 +1,23 @@
+{
+  "campaignNotes": {
+    "filter": "Filter",
+    "important": "Important",
+    "people": "People",
+    "places": "Places",
+    "mine": "Only mine",
+    "newNote": "New note",
+    "search": "Search the notes",
+    "hidden": "Only the DM sees it",
+    "text": "Text",
+    "textHelp": "Write @name for a person and #place for a place: the note lands in the right filters.",
+    "saved": "Note saved.",
+    "deleted": "Note deleted.",
+    "empty": "No notes yet: write the first, the whole group sees it.",
+    "noMatch": "No note matches.",
+    "kind": {
+      "important": "Important",
+      "person": "Person",
+      "place": "Place"
+    }
+  }
+}
