@@ -5,6 +5,16 @@
     "putIn": "{{who}} puts {{amount}} in the chest",
     "tookOut": "{{who}} takes {{amount}} from the chest",
     "cameIn": "{{amount}} goes into the chest",
-    "wentOut": "{{amount}} leaves the chest"
+    "wentOut": "{{amount}} leaves the chest",
+    "put": "Put in",
+    "take": "Take",
+    "putTitle": "Put coins in the chest",
+    "takeTitle": "Take coins from the chest",
+    "coin": "Coin",
+    "amount": "How many",
+    "note": "Note (optional)",
+    "putDone": "{{amount}} in the chest.",
+    "takeDone": "You took {{amount}} from the chest.",
+    "held": "In the chest: {{count}}"
   }
 }

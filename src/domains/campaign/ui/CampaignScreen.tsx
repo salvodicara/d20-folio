@@ -49,7 +49,10 @@ function Campaign({ campaignId }: { campaignId: string }) {
   useSessionLogMirror(campaignId, uid, campaign?.dmUid);
   useDocumentTitle(campaign?.name);
   const [tab, setTab] = useState<Tab>("party");
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToastState] = useState<{ text: string; undo?: () => void } | null>(
+    null
+  );
+  const setToast = (text: string, undo?: () => void) => setToastState({ text, undo });
 
   if (!campaign || campaign.id !== campaignId) {
     return (
@@ -89,12 +92,22 @@ function Campaign({ campaignId }: { campaignId: string }) {
         ) : tab === "fight" ? (
           <FightTab campaign={campaign} locale={locale} />
         ) : tab === "treasure" ? (
-          <TreasuryTab campaign={campaign} locale={locale} />
+          <TreasuryTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : (
           <DiaryTab campaign={campaign} locale={locale} onToast={setToast} />
         )}
       </main>
-      {toast && <Toast>{toast}</Toast>}
+      {toast && (
+        <Toast
+          action={toast.undo && t("common.undo")}
+          onAction={() => {
+            toast.undo?.();
+            setToastState(null);
+          }}
+        >
+          {toast.text}
+        </Toast>
+      )}
     </>
   );
 }
