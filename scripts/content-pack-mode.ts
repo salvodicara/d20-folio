@@ -32,10 +32,6 @@ export const CONTENT_PACK_ENTRY = path.join(ROOT, "content-pack", "index.ts");
 export const PACK_EMPTY_ENTRY = path.join(ROOT, "src", "data", "pack-empty.ts");
 
 /**
- * Absolute path of the pack's LAZY monster sub-entry (may not exist) — the
- * `@pack/monsters` alias target in pack mode.
- */
-/**
  * Absolute path of the pack's LAZY English prose sub-entry (may not exist): the
  * `description` text of the pack's catalogue, kept off the eager `@pack` barrel.
  */
@@ -46,6 +42,7 @@ export const CONTENT_PACK_EN_PROSE_ENTRY = path.join(
   "en-prose.ts"
 );
 
+/** Absolute path of the pack's LAZY monster sub-entry (may not exist). */
 export const CONTENT_PACK_MONSTERS_ENTRY = path.join(
   ROOT,
   "content-pack",
@@ -92,57 +89,39 @@ export function contentPackEnabled(): boolean {
   return existsSync(CONTENT_PACK_ENTRY);
 }
 
-/** The module the `@pack` alias resolves to for this run. */
-export function packAliasTarget(): string {
-  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
-  return contentPackEnabled() ? CONTENT_PACK_ENTRY : PACK_EMPTY_ENTRY;
-}
-
 /**
- * The module the `@pack/monsters` alias resolves to for this run — the pack's
- * lazy bestiary-data sub-entry (docs/ARCHITECTURE.md → "The content-pack seam").
+ * The `@pack` alias map for this run: Vite, both Vitest configs and the Node
+ * script loader (`scripts/alias-hooks.mjs`) all use THIS map, so they cannot drift.
  *
- * The bestiary corpus must never enter the eager startup closure, and the
- * `@pack` BARREL is eager-reachable (the always-eager Grant engine reads
- * `packFeats`/`packSpells`/… through it), so Rolldown places anything that
- * barrel re-exports in the eager chunk — no `manualChunks` bucket can pull it
- * back out. Serving `packMonsters` from its own alias keeps the corpus
- * reachable ONLY from the lazy `src/data/monsters/index.ts`.
+ * Sub-entries come first: string aliases match by prefix, so `@pack` would
+ * swallow them otherwise. `@pack/monsters` keeps the bestiary corpus off the
+ * eager-reachable `@pack` barrel (the always-eager Grant engine reads
+ * `packFeats`/`packSpells`/… through it, and Rolldown puts whatever that barrel
+ * re-exports in the eager chunk), so the corpus is reachable ONLY from the lazy
+ * `src/data/monsters/index.ts` (docs/ARCHITECTURE.md → "The content-pack seam").
+ * `@pack/i18n-en-prose` is the pack's lazy English prose (the catalogue
+ * `description` text); a pack from before the facts/prose split has no such
+ * file, and its descriptions stay in the eager `packSrdEn`.
  *
- * SRD-only resolves to the SAME typed-empty stub as `@pack` (it exports
- * `packMonsters: []` too) — one stub, no second empty file to keep in step.
- *
- * NOTE for the alias maps: string aliases match by prefix, so this entry MUST
- * be listed BEFORE `@pack` or `@pack` swallows it.
+ * SRD-only resolves every entry to the SAME typed-empty stub (it exports
+ * `packMonsters: []` etc. too): one stub, no second empty file to keep in step.
  */
-export function packMonstersAliasTarget(): string {
-  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
-  return contentPackEnabled() ? CONTENT_PACK_MONSTERS_ENTRY : PACK_EMPTY_ENTRY;
-}
-
-/**
- * The module the `@pack/i18n-en-prose` alias resolves to for this run: the pack's lazy
- * English prose (the catalogue `description` text, ~70% of the pack's EN bytes) when
- * the pack ships it, else the typed-empty stub. A pack from before the facts/prose
- * split has no such file, and its descriptions stay in the eager `packSrdEn`.
- */
-export function packEnProseAliasTarget(): string {
-  if (packRuntimeMode()) return PACK_RUNTIME_PROSE_ENTRY;
-  return contentPackEnabled() && existsSync(CONTENT_PACK_EN_PROSE_ENTRY)
-    ? CONTENT_PACK_EN_PROSE_ENTRY
-    : PACK_EMPTY_ENTRY;
-}
-
-/** The module the `@pack/monster-art` alias resolves to for this run. */
-export function packMonsterArtAliasTarget(): string {
-  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
-  return contentPackEnabled() ? CONTENT_PACK_MONSTER_ART_ENTRY : PACK_EMPTY_ENTRY;
-}
-
-/** The module the `@pack/item-art` alias resolves to for this run. */
-export function packItemArtAliasTarget(): string {
-  if (packRuntimeMode()) return PACK_RUNTIME_ENTRY;
-  return contentPackEnabled() ? CONTENT_PACK_ITEM_ART_ENTRY : PACK_EMPTY_ENTRY;
+export function packAliases(): Record<string, string> {
+  const runtime = packRuntimeMode();
+  const pack = contentPackEnabled();
+  const entry = (packEntry: string): string =>
+    runtime ? PACK_RUNTIME_ENTRY : pack ? packEntry : PACK_EMPTY_ENTRY;
+  return {
+    "@pack/item-art": entry(CONTENT_PACK_ITEM_ART_ENTRY),
+    "@pack/monster-art": entry(CONTENT_PACK_MONSTER_ART_ENTRY),
+    "@pack/monsters": entry(CONTENT_PACK_MONSTERS_ENTRY),
+    "@pack/i18n-en-prose": runtime
+      ? PACK_RUNTIME_PROSE_ENTRY
+      : pack && existsSync(CONTENT_PACK_EN_PROSE_ENTRY)
+        ? CONTENT_PACK_EN_PROSE_ENTRY
+        : PACK_EMPTY_ENTRY,
+    "@pack": entry(CONTENT_PACK_ENTRY),
+  };
 }
 
 /**

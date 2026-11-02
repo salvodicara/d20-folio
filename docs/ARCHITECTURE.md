@@ -104,7 +104,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   allowlisted account a failed download retries behind a "loading content" notice, never a
   stripped pack. `just e2e-pack` proves it on the emulators. Dev and tests keep composing
   `content-pack/` directly.
-- **`@pack/monsters` — the lazy bestiary-data sub-entry** (`packMonstersAliasTarget()`; pack mode →
+- **`@pack/monsters` — the lazy bestiary-data sub-entry** (`packAliases()`; pack mode →
   `content-pack/data/monsters/index.ts` — the barrel over the eight alphabetical tranche files
   `a-b.ts … t-z.ts`, mirroring the public `src/data/monsters/` split for parallel-safe authoring;
   SRD-only → the SAME `src/data/pack-empty.ts` stub, which exports
@@ -126,7 +126,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   KB gz across the same 14 chunks, `cockpit-engine` 387.7 → 386.3, entry unchanged at 61.81,
   precache flat at ~9044 KiB / 301 entries (the corpus moved chunks, it was never written twice).
 - **`@pack/monster-art` — canonical private portrait URLs**
-  (`packMonsterArtAliasTarget()`; pack mode → `content-pack/data/monster-art.ts`, SRD-only →
+  (`packAliases()`; pack mode → `content-pack/data/monster-art.ts`, SRD-only →
   `pack-empty.ts`). The public aggregate `src/data/monster-art.ts` merges public + private
   URL maps by stable id; the exact-id/dimension/weight guard
   (`tests/unit/monster-art.guard.test.ts`) requires one 672×840 WebP per database row at
@@ -136,7 +136,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   enter a one-year CacheFirst runtime cache only when viewed. Database art is derived at render
   from `srdId`, never copied into Firestore; custom monster uploads remain encounter/library data.
 - **`@pack/item-art` — private item-illustration URLs behind a corpus gate**
-  (`packItemArtAliasTarget()`; pack mode → `content-pack/data/item-art.ts`, SRD-only →
+  (`packAliases()`; pack mode → `content-pack/data/item-art.ts`, SRD-only →
   `pack-empty.ts`). The public aggregate `src/data/item-art.ts` keys every plate by
   **typed corpus id** (`equipment:<id>` / `magic:<id>`) so identically named mundane and magic
   objects cannot collide. Public files live as `{kind}--{id}.webp` in

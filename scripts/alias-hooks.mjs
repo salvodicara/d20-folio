@@ -33,24 +33,12 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join, relative, resolve as resolvePath } from "node:path";
 
-import {
-  packAliasTarget,
-  packEnProseAliasTarget,
-  packItemArtAliasTarget,
-  packMonsterArtAliasTarget,
-  packMonstersAliasTarget,
-} from "./content-pack-mode.ts";
+import { packAliases } from "./content-pack-mode.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = resolvePath(HERE, "..", "src");
-/** The `@pack` aliases, mirroring vite.config.ts. */
-const PACK_ALIASES = {
-  "@pack": packAliasTarget,
-  "@pack/monsters": packMonstersAliasTarget,
-  "@pack/monster-art": packMonsterArtAliasTarget,
-  "@pack/item-art": packItemArtAliasTarget,
-  "@pack/i18n-en-prose": packEnProseAliasTarget,
-};
+/** The `@pack` aliases: the same map vite.config.ts uses. */
+const PACK_ALIASES = packAliases();
 
 /** Append a `.ts`/`.tsx`/`index.ts` extension to an extension-less file path. */
 function withExt(abs) {
@@ -66,7 +54,7 @@ export async function resolve(specifier, context, next) {
   // (0) the Vite "@pack" aliases, resolved by the ONE mode switch
   //     (`content-pack-mode.ts`) so a sub-entry lands where Vite puts it.
   if (specifier in PACK_ALIASES) {
-    return next(pathToFileURL(PACK_ALIASES[specifier]()).href, context);
+    return next(pathToFileURL(PACK_ALIASES[specifier]).href, context);
   }
   // (1) the Vite "@/" alias → <repo>/src/…
   if (specifier.startsWith("@/")) {
