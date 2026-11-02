@@ -5,30 +5,24 @@ import { FightTab } from "@/domains/combat/ui/FightTab";
 import { NotesTab } from "@/domains/notes/ui/NotesTab";
 import { Coins } from "@/domains/treasury/ui/Coins";
 import { TreasuryTab } from "@/domains/treasury/ui/TreasuryTab";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "react-router";
 
 import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { inviteLinkFromCode } from "@/features/campaigns/invite-code";
-import { hydrateMemberDoc } from "@/features/campaigns/party-stats";
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
-import {
-  useMemberCharacterDocs,
-  type MemberCharacterRef,
-} from "@/features/campaigns/useMemberCharacterDocs";
-import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
 import { useSessionLogMirror } from "@/features/campaigns/useSessionLogMirror";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { asLocale, intlTag, type Locale } from "@/lib/locale";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
-import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 
 import { partyRows, type PartyRow } from "../party-rows-view";
+import { useLiveDocs } from "./use-party";
 
 type Tab = "party" | "fight" | "journal" | "treasure" | "notes";
 
@@ -168,28 +162,6 @@ function Header({
       </div>
     </section>
   );
-}
-
-/** Every member's character doc with its live combat state folded in: missing while it loads, null when it can't be read. */
-function useLiveDocs(campaign: CampaignDoc): Record<string, CharacterDoc | null> {
-  const refs = useMemo<MemberCharacterRef[]>(
-    () =>
-      Object.entries(campaign.memberDetails).flatMap(([uid, m]) =>
-        m.characterId ? [{ uid, characterId: m.characterId }] : []
-      ),
-    [campaign.memberDetails]
-  );
-  const docs = useMemberCharacterDocs(refs);
-  const combat = usePartyCombatStates(refs);
-  return useMemo(() => {
-    const out: Record<string, CharacterDoc | null> = {};
-    for (const { uid } of refs) {
-      const st = docs[uid];
-      if (st?.status === "ready") out[uid] = hydrateMemberDoc(st.doc, combat[uid]);
-      else if (st?.status === "error") out[uid] = null;
-    }
-    return out;
-  }, [refs, docs, combat]);
 }
 
 function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale }) {

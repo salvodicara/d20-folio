@@ -1,8 +1,9 @@
 /**
  * The Scontro tab's initiative list (approved prototype camp-fight, 2026-11-02): one row
  * per turn in order, the current one marked. Characters show their HP numbers; creatures
- * show only how hurt they look (the shared `hpBand`), never a number. The same creature
- * acting one after another in the same state reads as one row («Goblin ×3»). Status chips
+ * show only how hurt they look (the shared `hpBand`), never a number. The same creature on
+ * the same initiative is always one row («Goblin ×3»), whatever state each is in (counted
+ * by state) and even on its turn: no half grouping (owner review, 2026-11-02). Status chips
  * as on the Gruppo panel: Concentration first, then conditions.
  */
 import { describe, expect, it } from "vitest";
@@ -65,7 +66,6 @@ describe("fightRows", () => {
       "Hobgoblin Captain",
       "Kaela",
       "Raider",
-      "Raider",
       "Selene",
       "Raider",
     ]);
@@ -73,33 +73,33 @@ describe("fightRows", () => {
   });
 
   it("a character shows HP numbers, a creature only how hurt it looks", () => {
-    expect(list[1]).toMatchObject({ hp: { current: 17, max: 38 }, band: null });
-    expect(list[0]).toMatchObject({ hp: null, band: "healthy" });
+    expect(list[1]).toMatchObject({ hp: { current: 17, max: 38 }, bands: [] });
+    expect(list[0]).toMatchObject({ hp: null, bands: [{ band: "healthy", count: 1 }] });
   });
 
-  it("the same creature in a row and in the same state is one line with a count", () => {
+  it("the same creature on the same initiative is one line, its states counted", () => {
     expect(list[2]).toMatchObject({
       name: "Raider",
-      count: 2,
-      ids: ["m2", "m3"],
-      band: "healthy",
+      count: 3,
+      ids: ["m2", "m3", "m4"],
+      bands: [
+        { band: "healthy", count: 2 },
+        { band: "nearDeath", count: 1 },
+      ],
     });
-    expect(list[3]).toMatchObject({ count: 1, ids: ["m4"], band: "nearDeath" });
-    expect(list[5]).toMatchObject({ count: 1, ids: ["m5"] });
+    // Another initiative is another turn: its own line.
+    expect(list[4]).toMatchObject({ count: 1, ids: ["m5"] });
   });
 
   it("chips: Concentration first, then conditions, localized", () => {
-    expect(list[4]?.chips).toEqual([{ kind: "conc", label: "Bless" }]);
+    expect(list[3]?.chips).toEqual([{ kind: "conc", label: "Bless" }]);
     expect(list[1]?.chips).toEqual([{ kind: "cond", label: "Prone" }]);
   });
 
-  it("a creature whose turn it is stays on its own line", () => {
+  it("a group whose creature's turn it is stays whole and is marked as the current turn", () => {
     const now = fightRows(rows, "m3", {}, "en");
-    expect(now.slice(2, 5).map((r) => [r.ids, r.current])).toEqual([
-      [["m2"], false],
-      [["m3"], true],
-      [["m4"], false],
-    ]);
+    expect(now.map((r) => [r.ids, r.current])[2]).toEqual([["m2", "m3", "m4"], true]);
+    expect(now.filter((r) => r.current)).toHaveLength(1);
   });
 
   it("a character who hasn't rolled is never hidden: under the rolled ones, marked to roll", () => {

@@ -20,6 +20,7 @@ import {
 } from "@/domains/chronicle/diary-view";
 import { SessionStory } from "@/domains/chronicle/ui/SessionStory";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
+import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { listSessions } from "@/features/campaigns/campaign-io";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
@@ -215,7 +216,7 @@ function SessionPage({
   onSaved: () => void;
 }) {
   const { t } = useTranslation();
-  const names = useReportNames(campaign, locale);
+  const names = useReportNames(campaign, locale, usePartyNames(campaign));
   const entries = useMemo(
     () => foldSession(log.items, { dmUid: campaign.dmUid }),
     [log.items, campaign.dmUid]

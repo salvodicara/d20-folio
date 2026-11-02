@@ -22,6 +22,7 @@ import {
 } from "@/domains/combat/ui/fight-moves";
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
+import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { encounterRollFor } from "@/features/campaigns/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
@@ -297,7 +298,14 @@ function FightLine({ row }: { row: FightRow }) {
   const { t } = useTranslation();
   const hp = row.hp;
   const share = hp && hp.max > 0 ? hp.current / hp.max : 1;
-  const band = row.band;
+  const bandLabel = (band: FightRow["bands"][number]["band"]) =>
+    band === "down"
+      ? t("fight.down")
+      : band === "bloodied"
+        ? t("character.health.bloodied")
+        : t(`campaignHub.hpBand.${band}`);
+  // The worst state colours the line; each state is counted when the row is a group.
+  const worst = row.bands.at(-1)?.band;
   return (
     <div className="f-row f-fight" data-current={row.current || undefined}>
       <span className="f-init">{row.initiative ?? ""}</span>
@@ -308,13 +316,11 @@ function FightLine({ row }: { row: FightRow }) {
             <span className="f-count">{`\u00a0×\u2060${row.count}`}</span>
           )}
         </div>
-        {band && (
-          <div className="f-row-s" data-band={band}>
-            {band === "down"
-              ? t("fight.down")
-              : band === "bloodied"
-                ? t("character.health.bloodied")
-                : t(`campaignHub.hpBand.${band}`)}
+        {worst && (
+          <div className="f-row-s" data-band={worst}>
+            {row.bands
+              .map((b) => (row.count > 1 ? `${b.count} ` : "") + bandLabel(b.band))
+              .join("\u00a0· ")}
           </div>
         )}
       </div>
@@ -359,7 +365,7 @@ function Feed({
   locale: Locale;
 }) {
   const { t } = useTranslation();
-  const names = useReportNames(campaign, locale);
+  const names = useReportNames(campaign, locale, usePartyNames(campaign));
   const log = useSessionLog(campaign.id, uid, campaign.dmUid, encounter.epoch);
   const encounterId = String(encounter.epoch);
   const lines = useMemo(() => {

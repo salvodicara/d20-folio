@@ -77,3 +77,19 @@ export function partyRows(
   }
   return rows;
 }
+
+/** Each character's name as the Gruppo panel shows it, by member: the live sheet's, else
+ *  the party card's. Every tab names the party this way (the loot split, the chest's
+ *  shares, the Diario's report), so one character never carries two names on screen. */
+export function partyNames(
+  campaign: Pick<CampaignDoc, "members" | "memberDetails">,
+  live: Record<string, CharacterDoc | null | undefined>
+): Record<string, string> {
+  const names: Record<string, string> = {};
+  for (const uid of campaign.members) {
+    const member = campaign.memberDetails[uid];
+    if (!member?.character) continue;
+    names[uid] = live[uid]?.character.name ?? memberCardView(member).name;
+  }
+  return names;
+}

@@ -8,6 +8,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { CurrencyUnit } from "@/data/types";
+import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { lootSummary } from "@/domains/treasury/chest-view";
 import { planLoot, type LootDestination } from "@/features/campaigns/chest";
 import type { CampaignDoc, ChestItemRef, CoinPurse } from "@/types/campaign";
@@ -44,12 +45,14 @@ export function LootDialog({
   const [itemName, setItemName] = useState("");
   const [itemQty, setItemQty] = useState("1");
   const [to, setTo] = useState<LootDestination>("split");
+  // The party as Gruppo names it; who shares is the engine's rule (an attached character).
+  const names = usePartyNames(campaign);
   const sharers = useMemo(
     () =>
       Object.entries(campaign.memberDetails).flatMap(([id, m]) =>
-        m.characterId && m.character ? [{ id, name: m.character.name }] : []
+        m.characterId && m.character ? [{ id, name: names[id] ?? m.character.name }] : []
       ),
-    [campaign.memberDetails]
+    [campaign.memberDetails, names]
   );
   const purse: CoinPurse = Object.fromEntries(
     COINS.flatMap((c) => {
