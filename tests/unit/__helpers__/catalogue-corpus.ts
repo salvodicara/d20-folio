@@ -1,4 +1,8 @@
-/** Test-only composition adapter for the exact automation corpus. */
+/**
+ * Every catalogue entity with its composed English and Italian record, for the tests
+ * that sweep the whole catalogue (grant conformance, conditional AC bonuses). Test-only.
+ * (It was the automation corpus's input; the corpus and its compiler are gone.)
+ */
 
 import { STARTING_EQUIPMENT_BY_BG } from "@/data/background-equipment";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
@@ -22,14 +26,6 @@ import { TRAVEL_PACE_REFERENCE, travelPaceKey } from "@/data/travel-pace";
 import type { MonsterEntry, MonsterStatBlock } from "@/data/types";
 import { loadLazySrdKind, loadSrdCatalogues } from "@/i18n/loaders";
 import {
-  compileAutomationCorpus,
-  type AutomationCorpusAudit,
-  type AutomationCorpusEntity,
-  type AutomationCorpusManualPresenter,
-  type AutomationCorpusPresenter,
-  type AutomationCorpusSchema,
-} from "@/lib/automation-corpus";
-import {
   srdCatalogues,
   type EagerSrdKind,
   type SrdCatalogue,
@@ -38,6 +34,31 @@ import {
 } from "@/i18n/srd-en";
 
 type CatalogueKind = EagerSrdKind | "monster";
+
+/** The entity's kind ("spell", "feat", "monster", …). */
+type AutomationCorpusSchema = string;
+
+interface AutomationCorpusPresenter {
+  /** Stable catalogue address without the terminal field path. */
+  keyPrefix: string;
+  /** Resolved catalogue records in the fixed [English, Italian] order. */
+  localized: readonly [english: unknown, italian: unknown];
+}
+
+interface AutomationCorpusManualPresenter {
+  key: string;
+  resolvedLocales: ReadonlyArray<"en" | "it">;
+}
+
+export interface AutomationCorpusEntity {
+  entityKey: string;
+  schema: AutomationCorpusSchema;
+  data: Readonly<Record<string, unknown>>;
+  /** The entity's composed EN/IT catalogue record, when it has one. */
+  presenters?: ReadonlyArray<AutomationCorpusPresenter>;
+  /** Evidence for manual data leaves whose prose lives at another key. */
+  manualPresenters?: Readonly<Record<string, AutomationCorpusManualPresenter>>;
+}
 type CatalogueRecord = Record<string, SrdLeaf>;
 
 interface CatalogueClaims {
@@ -448,13 +469,4 @@ export async function buildCurrentAutomationCorpus(): Promise<AutomationCorpusEn
 
   assertEveryCatalogueEntryClaimed(claims);
   return entities;
-}
-
-let currentAudit: Promise<AutomationCorpusAudit> | undefined;
-
-export function auditCurrentAutomationCorpus(): Promise<AutomationCorpusAudit> {
-  if (currentAudit === undefined) {
-    currentAudit = buildCurrentAutomationCorpus().then(compileAutomationCorpus);
-  }
-  return currentAudit;
 }

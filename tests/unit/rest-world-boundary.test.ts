@@ -25,7 +25,6 @@ import {
   characterMaterialRef,
   characterSelfRef,
   characterTrackerSeeds,
-  characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
   mechanicsAuthorityDefinition,
@@ -169,7 +168,7 @@ function driveAndCommit(
     },
     responses: [],
     state: state.value,
-    turnEconomy: characterTurnEconomy(doc, UID),
+    turnEconomy: [],
   });
   if (outcome.status !== "complete" || !outcome.action) {
     throw new Error(`dispatch: ${JSON.stringify(outcome)}`);

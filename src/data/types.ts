@@ -1026,16 +1026,6 @@ export interface SrdSpellData {
   /** The target's current Hit Points pick the outcome (Power Word Kill, Power Word
    * Stun): at or below `max` the threshold outcome, otherwise the rest of the spell. */
   hitPointThreshold?: SpellHitPointThreshold;
-  /**
-   * A hand-authored deterministic-runtime program in the CANONICAL
-   * MechanicsProgram format, for the few spells whose semantics exceed the
-   * declarative fields (Fire Shield's retaliation, Contagion's stages). The
-   * transcriber conforms and serves it VERBATIM — the executable truth — and
-   * derives the honest clause classification from the program's own inputs
-   * and steps. Validated by `conformMechanicsProgram` at transcription time;
-   * an unconformable program is a corpus-guard failure.
-   */
-  mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** School of magic */
   school: SpellSchool;
   /** Class IDs that have access to this spell */
@@ -1356,15 +1346,6 @@ export type HomebrewSpellTopLevelKey =
   | "components";
 
 /**
- * A catalogue spell's hand-written runtime program (`mechanicsProgram`). Not a
- * homebrew field: no play path reads a spell's program today (only the
- * transcriber's `characterSpellCapability`, which no surface calls), and a homebrew
- * feature action does not take one either. A homebrew spell that stored one (#436)
- * keeps it verbatim and inert, like any unknown field.
- */
-export type CatalogueSpellRuntimeKey = "mechanicsProgram";
-
-/**
  * A homebrew spell's structured mechanics (`CustomSpell.mechanics`): every
  * structured {@link SrdSpellData} field, in the catalogue's own shape, so a homebrew
  * spell plays exactly as a catalogue spell does. Derived from `SrdSpellData`, so a
@@ -1375,7 +1356,7 @@ export type CatalogueSpellRuntimeKey = "mechanicsProgram";
 export type HomebrewSpellMechanics = {
   readonly [Key in Exclude<
     keyof SrdSpellData,
-    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey | CatalogueSpellRuntimeKey
+    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey
   >]?: SrdSpellData[Key];
 } & {
   readonly components?: Pick<SrdSpellData["components"], "costGp" | "consumed">;
@@ -1495,17 +1476,6 @@ export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "
 export interface SrdActionDef extends EffectRiders {
   /** Optional stable suffix when one feature declares several actions of the same type. */
   id?: string;
-  /**
-   * A hand-authored deterministic-runtime program in the CANONICAL
-   * MechanicsProgram format — the action-side twin of the spell channel — for
-   * the few feature/feat actions whose semantics exceed the declarative
-   * fields (Uncanny Dodge's halving reaction, Interpose Shield's negation).
-   * The transcriber conforms and serves it VERBATIM (the executable truth)
-   * and derives the honest clause classification from the program's own
-   * inputs and steps. Validated by `conformMechanicsProgram` at transcription
-   * time; an unconformable program is a corpus-guard failure.
-   */
-  mechanicsProgram?: Readonly<Record<string, unknown>>;
   /** Action economy cost */
   type: ActionType;
   /** Rules identity independent of the card id (Cunning Action Dash, Haste, etc.). */

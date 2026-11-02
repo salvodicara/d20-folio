@@ -73,7 +73,6 @@ import type {
   CatalogueItemIdentityKey,
   CatalogueMonsterIdentityKey,
   CatalogueSpellIdentityKey,
-  CatalogueSpellRuntimeKey,
   HomebrewItemMechanics,
   HomebrewItemTopLevelKey,
   HomebrewMonsterMechanics,
@@ -219,13 +218,8 @@ describe("every Grant kind is homebrew-expressible", () => {
  * a new exemption is a type change, never a silent one.
  */
 const SPELL_FIELD_EXEMPTIONS: Readonly<
-  Record<
-    CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey | CatalogueSpellRuntimeKey,
-    string
-  >
+  Record<CatalogueSpellIdentityKey | HomebrewSpellTopLevelKey, string>
 > = {
-  mechanicsProgram:
-    "a hand-written runtime program no play path reads for a spell (only the test-only characterSpellCapability), never authored by a player — as for a homebrew action",
   id: "catalogue identity: a homebrew spell is keyed by its own instanceId",
   classes: "catalogue class lists: a homebrew spell sits on no class's list",
   source: "the catalogue book: a homebrew spell is the player's own",
@@ -365,8 +359,6 @@ describe("every structured catalogue-spell field is homebrew-expressible", () =>
 const ACTION_FIELD_EXEMPTIONS: Readonly<Record<HomebrewActionTopLevelKey, string>> = {
   id: "the action's own stable suffix, stored at the homebrew action's top level",
   type: "the action economy, stored at the homebrew action's top level",
-  mechanicsProgram:
-    "a hand-written runtime program fed only by the catalogue transcriber, never authored by a player",
 };
 
 /** Samples for the action fields no public catalogue action carries today, so an
@@ -462,10 +454,7 @@ describe("every structured catalogue-action field is homebrew-expressible", () =
   it("every catalogue feature action plays unchanged as a homebrew action", () => {
     let actions = 0;
     for (const { action, owner } of catalogueActions()) {
-      const authored: Omit<SrdActionDef, "mechanicsProgram"> & Partial<SrdActionDef> = {
-        ...action,
-      };
-      delete authored.mechanicsProgram;
+      const authored: SrdActionDef = { ...action };
       const homebrew = { ...authored, label: "Use", description: "Use it." };
       const def = homebrewActionDef(homebrew);
       expect(isDeepStrictEqual({ ...def }, authored), activityId(owner)).toBe(true);

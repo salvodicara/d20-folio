@@ -309,7 +309,7 @@ describe("spell-data integrity", () => {
     const CP = /(\d+) copper pieces/i;
     for (const s of spells) {
       // SRD spells only — the pack spells' priced-material fill + a pack-side
-      // equivalence lock are a tracked FOLLOW-UP (AUTOMATION_BACKLOG.md → RA-23
+      // equivalence lock are a tracked FOLLOW-UP (RA-23
       // "PACK FOLLOW-UP"), not yet done; the M08/M10/M01 partition is where pack
       // content pins live (V/S/M + provenance today).
       if (s.source !== "SRD") continue;
@@ -983,9 +983,9 @@ describe("spell-data integrity", () => {
 
   it("models every catalogued damaging save-for-half spell as structured data", () => {
     // Storm of Vengeance's primary 2d6 Thunder has no half; its "half as much"
-    // belongs to the Turn 3 bolts, which its mechanicsProgram already halves.
+    // belongs to the Turn 3 bolts, a later turn the table runs.
     // Prismatic Spray and Prismatic Wall halve per ray / per layer (rows 1-5),
-    // never for the indigo and violet rows: their mechanicsPrograms own the half.
+    // never for the indigo and violet rows: the table runs the half per row.
     const HALF_ELSEWHERE = new Set([
       "storm-of-vengeance",
       "prismatic-spray",
