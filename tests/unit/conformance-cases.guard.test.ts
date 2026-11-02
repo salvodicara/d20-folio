@@ -39,9 +39,8 @@ describe("rules conformance covers the corpus", () => {
     expect(publicCases.map(caseKey).filter((k) => pack.has(k))).toEqual([]);
   });
 
-  // Expected to fail until the suite is complete; flips red (forcing the flip to
-  // a plain `it`) the day every corpus case has its test.
-  it.runIf(contentPackEnabled()).fails("declares every corpus case", () => {
+  // Every case needs the pack too (its non-SRD cases), so this runs composed.
+  it.runIf(contentPackEnabled())("declares every corpus case", () => {
     const declared = new Set([...publicCases, ...packCases].map(caseKey));
     expect([...corpus].filter((k) => !declared.has(k))).toEqual([]);
   });
