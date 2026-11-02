@@ -187,3 +187,6 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `popover:components/ui/popover`                                    | System     | todo   |
 | `tooltip:components/ui/tooltip`                                    | System     | todo   |
 | `picker:features/character/center/tabs/spells/TransformFormPicker` | Character  | todo   |
+| `notice:ui/Toast`                                                  | System     | todo   |
+| `route:/ui`                                                        | System     | todo   |
+| `tabs:ui/Tabs`                                                     | System     | todo   |
