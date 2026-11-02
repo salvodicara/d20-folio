@@ -11,6 +11,7 @@ import {
   endCombatNow,
   passCombatTurn,
   reopenLastCombat,
+  rollForMissing,
   rollIntoCombat,
   stepCombatTurnBack,
   subscribeToEndedCombat,
@@ -65,6 +66,8 @@ export const moves = {
   end: (campaignId: string, reason?: Exclude<EncounterEndReason, "manual">) => () =>
     endCombatNow(campaignId, reason ? { reason } : {}),
   reopen: (campaignId: string) => () => reopenLastCombat(campaignId),
+  rollMissing: (campaignId: string, uid: string, bonuses: Record<string, number>) => () =>
+    rollForMissing(campaignId, { uid, bonuses }),
   roll:
     (campaignId: string, uid: string, roll: number, bonuses: Record<string, number>) =>
     () =>

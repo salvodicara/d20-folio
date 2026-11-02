@@ -4,13 +4,15 @@
  * the DM started by hand keeps passing to the DM or whoever's turn it is. Anyone with a
  * character who hasn't rolled may roll in (the first roll starts the fight). «Riapri» is
  * offered only for a just-ended fight while none runs. The engine's reason to end is a
- * suggestion: the member ends it, nothing ends silently.
+ * suggestion: the member ends it, nothing ends silently. «Tira per chi manca» is the
+ * DM's alone (only the DM may write other players' rolls), while anyone is missing.
  */
 import { encounterEndReason } from "@/features/campaigns/encounter-lifecycle";
 import type { EncounterEndReason, EncounterState } from "@/types/campaign";
 
 export interface FightControls {
   roll: boolean;
+  rollMissing: boolean;
   pass: boolean;
   back: boolean;
   end: boolean;
@@ -21,12 +23,21 @@ export interface FightControls {
 export function fightControls(
   fight: EncounterState | null,
   ended: EncounterState | null,
-  me: { uid: string; isDm: boolean; hasCharacter: boolean; rolled: boolean },
+  me: {
+    uid: string;
+    isDm: boolean;
+    hasCharacter: boolean;
+    rolled: boolean;
+    /** How many of the fight's (or, before one, the party's) characters haven't rolled. */
+    missing: number;
+  },
   now: number
 ): FightControls {
+  const rollMissing = me.isDm && me.missing > 0;
   if (!fight)
     return {
       roll: me.hasCharacter,
+      rollMissing,
       pass: false,
       back: false,
       end: false,
@@ -37,6 +48,7 @@ export function fightControls(
   const turns = fight.clock !== undefined || me.isDm || mine;
   return {
     roll: me.hasCharacter && !me.rolled,
+    rollMissing,
     pass: turns,
     back: turns,
     end: true,
