@@ -11,6 +11,7 @@ export type DiaryBlock =
   | { kind: "rest"; at: number; entries: SessionEntry[] }
   | {
       kind: "fight";
+      encounterId: string;
       at: number;
       entries: SessionEntry[];
       rounds: number;
@@ -42,6 +43,7 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
       if (!first) continue;
       blocks.push({
         kind: "fight",
+        encounterId: section.encounterId,
         at: first.at,
         entries,
         rounds: Math.max(0, ...section.rounds.map((r) => r.round ?? 0)),
