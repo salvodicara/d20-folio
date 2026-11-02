@@ -34,6 +34,8 @@
       "rest": "The party rested. End the fight?",
       "idle": "Nobody has touched the fight for an hour. End it?"
     },
-    "mustRoll": "Must roll"
+    "mustRoll": "Must roll",
+    "rollMissing": "Roll for the missing",
+    "rollMissingDone": "Rolled for everyone missing: they're all in the order now."
   }
 }

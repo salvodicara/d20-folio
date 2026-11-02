@@ -34,6 +34,8 @@
       "rest": "Il gruppo ha riposato. Chiudiamo lo scontro?",
       "idle": "Nessuno ha toccato lo scontro da un’ora. Chiudiamolo?"
     },
-    "mustRoll": "Deve tirare"
+    "mustRoll": "Deve tirare",
+    "rollMissing": "Tira per chi manca",
+    "rollMissingDone": "Tirato per chi mancava: ora sono tutti nell’ordine."
   }
 }

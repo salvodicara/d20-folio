@@ -30,7 +30,7 @@ const fight = (extra: Partial<EncounterState> = {}) =>
     clock: { startedAt: 0, lastActivityAt: 0, turnStartedAt: 0, turnsBegun: true },
     ...extra,
   }) as unknown as EncounterState;
-const me = { uid: "u2", isDm: false, hasCharacter: true, rolled: false };
+const me = { uid: "u2", isDm: false, hasCharacter: true, rolled: false, missing: 2 };
 
 describe("fightControls", () => {
   it("no fight: roll to start it, reopen only when one just ended", () => {
@@ -86,5 +86,15 @@ describe("fightControls", () => {
       ] as never,
     });
     expect(fightControls(won, null, me, 0).suggestEnd).toBe("enemies-defeated");
+  });
+
+  it("«Tira per chi manca» is the DM's, only while someone hasn't rolled, fight or not", () => {
+    const dm = { ...me, isDm: true, hasCharacter: false };
+    expect(fightControls(fight(), null, dm, 0).rollMissing).toBe(true);
+    expect(fightControls(null, null, dm, 0).rollMissing).toBe(true);
+    expect(fightControls(fight(), null, { ...dm, missing: 0 }, 0).rollMissing).toBe(
+      false
+    );
+    expect(fightControls(fight(), null, me, 0).rollMissing).toBe(false);
   });
 });

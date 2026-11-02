@@ -72,6 +72,7 @@ export function FightTab({
       isDm,
       hasCharacter: Boolean(campaign.memberDetails[uid]?.characterId),
       rolled: campaign.encounterInit?.[uid] != null,
+      missing: missingRolls(campaign, encounter),
     },
     now
   );
@@ -105,6 +106,8 @@ export function FightTab({
     end: (reason?: FightControls["suggestEnd"]) =>
       move(moves.end(campaign.id, reason ?? undefined), t("fight.endDone")),
     reopen: () => move(moves.reopen(campaign.id), t("fight.reopenDone")),
+    rollMissing: () =>
+      move(moves.rollMissing(campaign.id, uid, bonuses), t("fight.rollMissingDone")),
   };
   return (
     <>
@@ -137,8 +140,19 @@ function useMinute(): number {
   return now;
 }
 
+/** How many characters haven't rolled: the fight's while one runs, else the party's. */
+function missingRolls(campaign: CampaignDoc, encounter: EncounterState | null): number {
+  const uids = encounter
+    ? encounter.combatants.flatMap((c) => (c.kind === "pc" ? [c.memberUid] : []))
+    : Object.entries(campaign.memberDetails).flatMap(([uid, m]) =>
+        m.characterId ? [uid] : []
+      );
+  return uids.filter((uid) => campaign.encounterInit?.[uid] == null).length;
+}
+
 interface Actions {
   roll: () => void;
+  rollMissing: () => void;
   pass: () => void;
   back: () => void;
   end: (reason?: FightControls["suggestEnd"]) => void;
@@ -200,6 +214,9 @@ function LiveFight({
                 <Button onClick={actions.roll}>
                   {t("campaignHub.encounterRollInitiative")}
                 </Button>
+              )}
+              {controls.rollMissing && (
+                <Button onClick={actions.rollMissing}>{t("fight.rollMissing")}</Button>
               )}
               {controls.end && (
                 <Button kind="quiet" onClick={() => actions.end()}>
@@ -404,11 +421,19 @@ function IdleFight({
         color="ini"
         title={t("campaignScreen.tabFight")}
         foot={
-          (controls.roll || controls.reopen) && (
+          (controls.roll || controls.rollMissing || controls.reopen) && (
             <>
               {controls.roll && (
                 <Button kind="primary" onClick={actions.roll}>
                   {t("campaignHub.encounterRollInitiative")}
+                </Button>
+              )}
+              {controls.rollMissing && (
+                <Button
+                  kind={controls.roll ? "ghost" : "primary"}
+                  onClick={actions.rollMissing}
+                >
+                  {t("fight.rollMissing")}
                 </Button>
               )}
               {controls.reopen && (
