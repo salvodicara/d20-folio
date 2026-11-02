@@ -864,7 +864,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
  * round-scoped `damageTakenThisRound` is deliberately absent: an extra turn starts
  * no new round.
  */
-export function freshTurn(): Pick<
+function freshTurn(): Pick<
   CombatState,
   | "selected"
   | "budget"

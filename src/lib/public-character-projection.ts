@@ -2,7 +2,7 @@ import type { CharacterCache } from "@/lib/character-cache";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
 import type { CharacterDoc, ClassEntry, PortraitCrop } from "@/types/character";
 
-export const PUBLIC_CHARACTER_SCHEMA = 1 as const;
+const PUBLIC_CHARACTER_SCHEMA = 1 as const;
 
 const PROJECTION_KEYS = [
   "publicSchema",
