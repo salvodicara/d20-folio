@@ -144,6 +144,8 @@ export function combatVerdict(
   // amount it takes off the hit: "−1d12+2".
   if (summary.damageReduction) {
     const { dice, bonus } = summary.damageReduction;
+    // A flat reduction (Slow Fall) has no die: "−20".
+    if (!dice) return chipText(`−${bonus}`) ?? "";
     return chipText(`−${dice}${bonus !== 0 ? formatModifier(bonus) : ""}`) ?? "";
   }
   // A no-save action whose whole effect is a condition (Hill's Tumble) names it.

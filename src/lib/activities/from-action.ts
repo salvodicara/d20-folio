@@ -173,14 +173,18 @@ function effects(action: SrdActionDef, owner: ActionOwner): ActivityEffect[] {
     out.push({
       kind: "reduce-damage",
       dice: {
-        dice: reduction.dice,
+        dice: reduction.dice ?? "",
         ...(reduction.addAbility || reduction.addLevel
           ? {
               plus: terms(
                 reduction.addAbility
                   ? { kind: "ability-mod", ability: reduction.addAbility }
                   : undefined,
-                reduction.addLevel ? { kind: "owner-level" } : undefined
+                reduction.addLevel
+                  ? reduction.levelMultiplier
+                    ? { kind: "owner-level", times: reduction.levelMultiplier }
+                    : { kind: "owner-level" }
+                  : undefined
               ),
             }
           : {}),

@@ -216,8 +216,8 @@ export type DiceTerm =
   /** The modifier of the ability the attack used (a weapon's Strength, or
    *  Dexterity when it is ranged or Finesse allows it). */
   | { kind: "attack-mod" }
-  /** The level of the class that owns the activity. */
-  | { kind: "owner-level" }
+  /** The level of the class that owns the activity, `times` over (default once). */
+  | { kind: "owner-level"; times?: number }
   /** A flat amount added per spell slot level above the base. */
   | { kind: "flat-per-upcast"; value: number };
 

@@ -5226,7 +5226,7 @@ function applySaveAttackSummary(
         bonus += abilityModifier(ctx.abilityScores[term.ability]);
         modTerm = term;
       }
-      if (term.kind === "owner-level") bonus += scalingLevel;
+      if (term.kind === "owner-level") bonus += scalingLevel * (term.times ?? 1);
     }
     if (baseDice) {
       // `appendAbilityModToDice` is the SAME flat-fold the spell/heal formulas use.
@@ -5420,15 +5420,18 @@ function applyActionEffectSummary(
   }
   const [reduction] = effectsOfKind(activity, "reduce-damage");
   if (reduction) {
-    const die = resolveActionDie(reduction.dice.dice, sourceId, character);
+    // A flat reduction (Slow Fall) has no die: "" stands for "no physical roll".
+    const die = reduction.dice.dice
+      ? resolveActionDie(reduction.dice.dice, sourceId, character)
+      : "";
     const damageTypes = pickByLevel(reduction.typesByLevel, scalingLevel);
-    if (die && damageTypes) {
+    if (die !== undefined && damageTypes) {
       let bonus = 0;
       for (const term of reduction.dice.plus ?? []) {
         if (term.kind === "ability-mod") {
           bonus += abilityModifier(ctx.abilityScores[term.ability]);
         }
-        if (term.kind === "owner-level") bonus += scalingLevel;
+        if (term.kind === "owner-level") bonus += scalingLevel * (term.times ?? 1);
       }
       summary.damageReduction = { dice: die, bonus, damageTypes };
     }

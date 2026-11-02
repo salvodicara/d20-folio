@@ -478,7 +478,20 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     level: 4,
     // PROSE-SWEPT 2026-06-10 — a real Reaction (reduce Falling damage by
     // 5 × Monk level); surfaces as an at-will reaction row.
-    mechanics: { actions: [{ type: "reaction", trigger: "takeDamage" }] },
+    mechanics: {
+      actions: [
+        {
+          type: "reaction",
+          trigger: "takeDamage",
+          damageReduction: {
+            addLevel: true,
+            levelMultiplier: 5,
+            damageTypesByLevel: { 4: ["bludgeoning"] },
+          },
+          targeting: { affinity: "self", maxTargets: 1 },
+        },
+      ],
+    },
     source: "SRD",
   },
   {
