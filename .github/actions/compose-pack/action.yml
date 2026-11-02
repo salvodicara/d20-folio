@@ -1,0 +1,29 @@
+name: Compose the content pack
+description: >-
+  Check out the private content pack and land it at ./content-pack.
+  existsSync(content-pack/index.ts) is what flips the `@pack` alias to pack
+  mode (scripts/content-pack-mode.ts).
+inputs:
+  token:
+    description: A token that can read salvodicara/d20-folio-content (CONTENT_PACK_TOKEN).
+    required: true
+  ref:
+    description: The pack commit to compose; empty means its default branch.
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Checkout the private content pack
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      with:
+        repository: salvodicara/d20-folio-content
+        ref: ${{ inputs.ref }}
+        token: ${{ inputs.token }}
+        path: .pack
+    - name: Land it at ./content-pack
+      shell: bash
+      run: |
+        mv .pack/content-pack ./content-pack
+        rm -rf .pack
+        test -f content-pack/index.ts
