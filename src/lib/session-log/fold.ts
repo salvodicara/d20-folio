@@ -1,7 +1,8 @@
-import type { LogItem, PlayEvent } from "./types";
+import type { LogItem, PlayEvent, SeenRound } from "./types";
 
 /** One effective line of the session after corrections and retractions, placed in its
- *  encounter and round by its position in the log. */
+ *  encounter by its position in the log, and in the round its device saw (else by
+ *  position too). */
 export interface SessionEntry {
   id: string;
   by: string;
@@ -66,6 +67,13 @@ const MARKER_KINDS = new Set<PlayEvent["kind"]>([
   "encounter-end",
 ]);
 
+/** A stamp is shared input: only a well-formed one may place a line. */
+function validStamp(value: unknown): value is SeenRound {
+  if (typeof value !== "object" || value === null) return false;
+  const { encounterId, round } = value as Record<string, unknown>;
+  return typeof encounterId === "string" && Number.isInteger(round) && Number(round) >= 1;
+}
+
 export function foldSession(
   items: readonly LogItem[],
   authority: SessionAuthority,
@@ -74,6 +82,7 @@ export function foldSession(
   const seen = new Set<string>();
   const hidden = new Set<string>();
   const moves: { target: string; after: string | null }[] = [];
+  const stamps = new Map<string, SeenRound>();
   const lines = new Map<
     string,
     { by: string; at: number; event: PlayEvent; corrected: boolean; corrections: number }
@@ -89,6 +98,7 @@ export function foldSession(
         corrected: false,
         corrections: 0,
       });
+      if (validStamp(item.seen)) stamps.set(item.id, item.seen);
       continue;
     }
     const line = lines.get(item.target);
@@ -114,7 +124,10 @@ export function foldSession(
   }
 
   // Moves apply in log order onto the recorded order; one whose anchor is gone (or is
-  // the line itself) changes nothing. Encounter and round then follow the position.
+  // the line itself) changes nothing. Encounter and round then follow the position,
+  // except that a line keeps the round its device saw in this encounter: the round's
+  // marker may have been written later (the DM's page was closed). A moved line goes
+  // where the DM put it.
   const order = [...lines.keys()];
   const moved = new Set<string>();
   for (const { target, after } of moves) {
@@ -125,6 +138,16 @@ export function foldSession(
     moved.add(target);
   }
 
+  const placed = (
+    id: string,
+    encounterId: string | undefined,
+    round: number | undefined
+  ): { round?: number } => {
+    const stamp = moved.has(id) ? undefined : stamps.get(id);
+    if (stamp !== undefined && stamp.encounterId === encounterId)
+      return { round: stamp.round };
+    return round === undefined ? {} : { round };
+  };
   let encounterId: string | undefined;
   let round: number | undefined;
   const entries: SessionEntry[] = [];
@@ -143,7 +166,7 @@ export function foldSession(
         id,
         ...line,
         ...(encounterId === undefined ? {} : { encounterId }),
-        ...(round === undefined ? {} : { round }),
+        ...placed(id, encounterId, round),
         ...(hidden.has(id) ? { hidden: true as const } : {}),
         ...(moved.has(id) ? { moved: true as const } : {}),
       });

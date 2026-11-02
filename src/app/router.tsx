@@ -101,6 +101,16 @@ const SharedCharacterView = lazy(() =>
 // DEV-ONLY living type specimen of the Gilded Plate system (BG3-identity
 // epic) — lazy like every route; the prod branch is a stub so Rolldown drops
 // the chunk from production builds entirely.
+// The new campaign page replaces the old hub only in the VITE_NEW_UI preview build.
+const NEW_UI = import.meta.env.VITE_NEW_UI === "1";
+const CampaignScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/campaign/ui/CampaignScreen").then((m) => ({
+        default: m.CampaignScreen,
+      }))
+    )
+  : null;
+
 // The new UI's design-system stories (/ui): dev and the VITE_NEW_UI preview only, stripped from production.
 const UiStoriesPage =
   import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1"
@@ -194,7 +204,10 @@ const router = createBrowserRouter(
             <Route path="/characters/:characterId/level-up" element={<LevelUpWizard />} />
             {/* Campaigns */}
             <Route path="/campaigns" element={<CampaignsListPage />} />
-            <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
+            <Route
+              path="/campaigns/:campaignId"
+              element={CampaignScreen ? <CampaignScreen /> : <CampaignHubPage />}
+            />
             {/* T4 — DM reads a party member's full sheet, read-only. */}
             <Route
               path="/campaigns/:campaignId/sheets/:memberUid"

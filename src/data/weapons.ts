@@ -494,28 +494,3 @@ export const SRD_WEAPONS: SrdEquipmentData[] = [
 export const WEAPONS_BY_ID: ReadonlyMap<string, SrdEquipmentData> = new Map(
   SRD_WEAPONS.map((w) => [w.id, w])
 );
-
-/** Get a weapon by ID */
-export function getWeapon(id: string): SrdEquipmentData | undefined {
-  return WEAPONS_BY_ID.get(id);
-}
-
-/** Get all simple weapons */
-export function getSimpleWeapons(): SrdEquipmentData[] {
-  return SRD_WEAPONS.filter((w) => w.weaponCategory === "simple");
-}
-
-/** Get all martial weapons */
-export function getMartialWeapons(): SrdEquipmentData[] {
-  return SRD_WEAPONS.filter((w) => w.weaponCategory === "martial");
-}
-
-/** Get all melee weapons */
-export function getMeleeWeapons(): SrdEquipmentData[] {
-  return SRD_WEAPONS.filter((w) => w.weaponType === "melee");
-}
-
-/** Get all ranged weapons */
-export function getRangedWeapons(): SrdEquipmentData[] {
-  return SRD_WEAPONS.filter((w) => w.weaponType === "ranged");
-}

@@ -7,7 +7,11 @@
  */
 import { describe, expect, it } from "vitest";
 import { getMagicItem } from "@/data/magic-items";
-import type { ResourceEnteredRoll, ResourceSpec, SrdMagicItemData } from "@/data/types";
+import type {
+  ItemResourceEnteredRoll,
+  ItemResourceSpec,
+  SrdMagicItemData,
+} from "@/data/types";
 import spellEn from "@/i18n/en/srd/spells.json";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { aggregateAbilityScores } from "@/lib/compute";
@@ -31,7 +35,7 @@ function item(id: string): SrdMagicItemData {
 }
 
 /** "1d6 + 1" / "1d3" / "1" as an entered roll or a fixed number. */
-function amountOf(written: string): ResourceEnteredRoll | number {
+function amountOf(written: string): ItemResourceEnteredRoll | number {
   const m = /^(\d+)(?:d(\d+)(?:\s*\+\s*(\d+))?)?$/.exec(written.trim());
   if (!m) throw new Error(`not an amount: ${written}`);
   if (m[2] === undefined) return Number(m[1]);
@@ -46,7 +50,7 @@ const APOS = "[’']";
 const DESTROYED_ON_ONE = /roll 1d20\. On a 1, [^.]*(?:destroyed|disappears)/;
 
 /** The one resource the text states, built from its own words. */
-function resourceStatedBy(id: string): ResourceSpec {
+function resourceStatedBy(id: string): ItemResourceSpec {
   const t = text(id);
   const charges = /(?:has|have) (\d+) charges/.exec(t);
   const regain =

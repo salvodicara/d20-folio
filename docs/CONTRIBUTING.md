@@ -245,8 +245,7 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
 2. Add an entry following the SrdSpellData shape.
 3. Bilingual EN + IT (golden rule 9 — Italian never empty; AI-translate with comment if no
    authoritative source).
-4. If the spell is on a class list, add the class id to the spell's `classes` field (resolved by
-   `getSpellsByClass` in `src/data/spells.ts`).
+4. If the spell is on a class list, add the class id to the spell's `classes` field.
 5. Write a unit test if anything non-trivial about its data (concentration flag,
    ritual tag, scaling, …).
 6. `pnpm changeset` → describe the addition.

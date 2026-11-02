@@ -61,10 +61,19 @@
   --buff-bg: #0f2a36;
   --ring-track: #120a07;
   --scrim: rgb(4 3 2 / 0.72);
+  --hero-top: #241b12;
+  --hero-mid: #15100b;
+  --hero-end: #0f0b08;
+  --hover: #ffffff08;
+  --divider: #ffffff10;
+  --coin-gp: #e9c55a;
+  --coin-sp: #c9ccd2;
+  --coin-cp: #c47a45;
   --toast-bg: rgb(26 22 17 / 0.95);
 
   --fs-sm: 14px;
   --fs-md: 16px;
+  --fs-xl: 28px;
 
   --r-sm: 6px;
   --r: 8px;
@@ -568,4 +577,227 @@
   position: absolute;
   inset: 0;
   transform: rotate(-90deg);
+}
+
+/* ---------- identity band: the page's one gold-framed header ---------- */
+.fui .f-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding: 32px 40px;
+  border: 1px solid var(--gold-line);
+  border-radius: var(--r-sm);
+  background: radial-gradient(
+    110% 160% at 50% -30%,
+    var(--hero-top) 0%,
+    var(--hero-mid) 55%,
+    var(--hero-end) 100%
+  );
+}
+.fui .f-hero::before,
+.fui .f-hero::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid color-mix(in srgb, var(--gold-line) 45%, transparent);
+  border-radius: var(--r-sm);
+  pointer-events: none;
+}
+.fui .f-hero::after {
+  inset: -4px;
+  border: 0;
+  background:
+    linear-gradient(var(--gold), var(--gold)) 0 0 / 24px 2px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 0 0 / 2px 24px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 100% 0 / 24px 2px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 100% 0 / 2px 24px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 0 100% / 24px 2px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 0 100% / 2px 24px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 100% 100% / 24px 2px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 100% 100% / 2px 24px no-repeat;
+}
+.fui .f-hero > * {
+  position: relative;
+  z-index: 1;
+}
+.fui .f-crest {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--gold-line);
+  box-shadow:
+    0 0 0 4px var(--hero-end),
+    0 0 18px color-mix(in srgb, var(--gold-line) 30%, transparent);
+}
+.fui .f-hero-id {
+  flex: 1;
+  min-width: 240px;
+}
+.fui .f-hero h1 {
+  margin: 0;
+  font: 600 36px/1.1 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-hero-sub {
+  margin-top: 4px;
+  color: var(--muted);
+}
+.fui .f-hero-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fui .f-kv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+.fui .f-kv > .f-lbl {
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .fui .f-hero {
+    padding: 24px 16px;
+    gap: 16px;
+  }
+  .fui .f-crest {
+    width: 72px;
+    height: 72px;
+  }
+  .fui .f-hero h1 {
+    font-size: var(--fs-xl);
+  }
+}
+
+/* ---------- two columns: content and a side column ---------- */
+.fui .f-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  gap: 24px;
+  align-items: start;
+}
+.fui .f-stack {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .fui .f-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------- list rows ---------- */
+.fui .f-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--divider);
+  color: inherit;
+  text-decoration: none;
+}
+.fui .f-row:last-child {
+  border-bottom: 0;
+}
+.fui a.f-row:hover {
+  background: var(--hover);
+}
+.fui .f-row-main {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.fui .f-row-t {
+  font-weight: 600;
+  text-wrap: balance;
+  color: var(--strong);
+}
+.fui .f-row-s {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fui .f-row-end {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin-left: auto;
+}
+
+/* ---------- a number with its label under it ---------- */
+.fui .f-stat {
+  min-width: 48px;
+  text-align: center;
+}
+.fui .f-stat-v {
+  font: 600 20px/1.2 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-stat-v[data-hp="ok"] {
+  color: var(--hp);
+}
+.fui .f-stat-v[data-hp="low"] {
+  color: var(--hp-y);
+}
+.fui .f-stat-v[data-hp="bad"] {
+  color: var(--hp-r);
+}
+.fui .f-stat .f-lbl {
+  margin: 0;
+}
+
+/* ---------- coins ---------- */
+.fui .f-coins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+.fui .f-coin {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.fui .f-coin::before {
+  content: "";
+  align-self: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 35%,
+    var(--white),
+    var(--coin, var(--coin-gp)) 45%,
+    color-mix(in srgb, var(--coin, var(--coin-gp)) 50%, var(--shade))
+  );
+}
+.fui .f-coin[data-coin="sp"],
+.fui .f-coin[data-coin="pp"] {
+  --coin: var(--coin-sp);
+}
+.fui .f-coin[data-coin="cp"] {
+  --coin: var(--coin-cp);
+}
+.fui .f-coin b {
+  font: 600 20px var(--font-title);
+  color: var(--strong);
+}
+
+/* On a narrow phone a panel header keeps its title on one line: its icon action shows only the icon
+   (its aria-label keeps the name). */
+@media (max-width: 400px) {
+  .fui .f-pnh .f-btn[aria-label]:has(.f-ic) {
+    min-width: 40px;
+    padding: 0 8px;
+  }
+  .fui .f-pnh .f-btn[aria-label]:has(.f-ic) .f-btn-lab {
+    display: none;
+  }
 }

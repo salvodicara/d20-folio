@@ -2,11 +2,17 @@
  * Record the owner's own sheet gestures into the session log of the campaign the
  * character is attached to. The campaign is resolved on the first gesture (no read for a
  * sheet that is only looked at); a character attached nowhere records nothing. Every
- * failure goes to diagnostics and never touches the sheet.
+ * failure goes to diagnostics and never touches the sheet. Each line carries the round of
+ * the fight this sheet is in, so it lands in that round even while the DM's page is
+ * closed and writes no round marker.
  */
 
 import { useEffect } from "react";
 
+import {
+  seenRound,
+  useCombatStatusStore,
+} from "@/features/campaigns/global-combat-context";
 import { createAttachedCampaignTracker } from "@/features/campaigns/refresh-attached-sheets";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { createCharacterLogMirror, createSessionRecorder } from "@/lib/session-log";
@@ -31,6 +37,8 @@ export function useSessionLogPlayerRecorder(characterId: string | undefined): vo
         const recorder = createSessionRecorder({
           store: sessionLogStoreFor(campaignId),
           uid,
+          seen: () =>
+            seenRound(useCombatStatusStore.getState().status, campaignId, characterId),
         });
         return createCharacterLogMirror({ recorder, characterId, actor: `pc-${uid}` });
       }));

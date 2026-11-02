@@ -410,7 +410,7 @@ export interface TrackerData {
  */
 export interface ActionData extends Omit<
   SrdActionDef,
-  "mechanicsProgram" | "tempHpRoll" | "conditionRemoval" | "cureConditions"
+  "tempHpRoll" | "conditionRemoval" | "cureConditions"
 > {
   /** Stable suffix when a homebrew feature has multiple actions of one type. */
   id?: string;

@@ -7,7 +7,10 @@
  * something) is required. Who, on whom and from what are optional; the report says only
  * what it knows. Round and encounter are NOT stamped on events: they follow from the
  * event's position after `round-start` / `encounter-start` markers, so a player's device
- * never needs to know the fight's state to record a gesture.
+ * never needs to know the fight's state to record a gesture. A device that does know it
+ * stamps the line with {@link SeenRound}, which wins over the position: only the DM's page
+ * writes markers, so a line recorded while that page was closed would otherwise land in
+ * the last round it marked.
  *
  * Order is the log's array order. The Firestore adapter appends with `arrayUnion`, which
  * gives every client the same total order (offline writes land in send order), so no
@@ -162,8 +165,15 @@ interface LogItemBase {
  *  The narrative overrides (owner, 2026-10-16) are items too: `hide` / `show` take a line
  *  out of the narrative and bring it back, `move` places it after another line (`null`:
  *  first). A reader older than them drops them, so it shows the narrative unedited. */
+/** The fight and round the recording device saw when the line was written. Optional and
+ *  additive: a v0.25.0 reader ignores it and places the line by position. */
+export interface SeenRound {
+  encounterId: string;
+  round: number;
+}
+
 export type LogItem =
-  | (LogItemBase & { type: "event"; event: PlayEvent })
+  | (LogItemBase & { type: "event"; event: PlayEvent; seen?: SeenRound })
   | (LogItemBase & { type: "correct"; target: string; event: PlayEvent })
   | (LogItemBase & { type: "retract"; target: string })
   | (LogItemBase & { type: "hide"; target: string })

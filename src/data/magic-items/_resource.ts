@@ -1,4 +1,4 @@
-import type { ResourceEnteredRoll, ResourceSpec } from "../types";
+import type { ItemResourceEnteredRoll, ItemResourceSpec } from "../types";
 
 type Disposition = "destroyed" | "nonmagical";
 
@@ -6,7 +6,7 @@ type Disposition = "destroyed" | "nonmagical";
  * "Can't be used again until the next dawn": `amount` uses (default 1) that all
  * come back at dawn.
  */
-export function DAWN_USES(amount = 1): ResourceSpec {
+export function DAWN_USES(amount = 1): ItemResourceSpec {
   return {
     kind: "counter",
     id: "uses",
@@ -24,9 +24,9 @@ export function DAWN_USES(amount = 1): ResourceSpec {
  */
 export function DAWN_CHARGES(
   amount: number,
-  regain: ResourceEnteredRoll | number,
+  regain: ItemResourceEnteredRoll | number,
   onOne?: Disposition
-): ResourceSpec {
+): ItemResourceSpec {
   return {
     kind: "counter",
     id: "charges",
@@ -67,9 +67,9 @@ export function DAWN_CHARGES(
  */
 export function FINITE_SUPPLY(
   unit: "uses" | "charges" | "beads",
-  stock: number | ResourceEnteredRoll,
+  stock: number | ItemResourceEnteredRoll,
   onEmpty?: Disposition
-): ResourceSpec {
+): ItemResourceSpec {
   return {
     kind: "counter",
     id: unit,

@@ -169,16 +169,22 @@ export function mirrorEncounter(
     ...(Object.keys(names).length > 0 ? { names } : {}),
   };
   upsert(`${prefix}:start`, start);
-  if (encounter.round >= 1)
-    add(`${prefix}:round:${encounter.round}`, {
-      kind: "round-start",
-      round: encounter.round,
-    });
+  // A line's round is the last marker before it, so every round up to a beat's own is
+  // marked before the beat: a mirror that missed rounds (the DM left the page) still
+  // puts each beat in the round it happened in when it catches up.
+  let marked = 0;
+  const markUpTo = (round: number): void => {
+    for (; marked < round; ) {
+      marked += 1;
+      add(`${prefix}:round:${marked}`, { kind: "round-start", round: marked });
+    }
+  };
 
   const present = new Set<string>();
   for (const beat of encounter.events ?? []) {
     const event = chronicleToPlayEvent(beat);
     if (!event) continue;
+    markUpTo(Math.min(beat.round, encounter.round));
     // The encounter numbers beats from its live array, so a beat appended after the
     // newest one was undone reuses that id. The mirror's own retraction (`<line>:x`)
     // marks the old line as gone for good; the new beat takes the next generation.
@@ -192,6 +198,7 @@ export function mirrorEncounter(
     // the feed, and the mirror must not revert it.
     add(id, event);
   }
+  markUpTo(encounter.round);
   for (const entry of logged) {
     if (entry.id.startsWith(`${prefix}:ev:`) && !present.has(entry.id)) {
       drafts.push({ type: "retract", id: `${entry.id}:x`, target: entry.id });
