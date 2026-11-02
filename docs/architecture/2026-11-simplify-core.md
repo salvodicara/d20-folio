@@ -40,6 +40,10 @@ are never deleted; any change to a stored shape goes through `live-data-migratio
    `combatPendingConcentrationSaves` and `combatLegacyActiveEffects` (`characterStore.ts:1241–1243`),
    so an XP edit loses a pending save. Fix the clear (test first), then make `setCharacter`
    load-only and route edits through one `editCharacter` (whole-state undo).
+   _Status (2026-11-02):_ the bug is fixed and pinned (#473: an edit keeps the pending save and
+   the standing effects), and `editCharacter` exists. The 48 `setCharacter` edit calls live in
+   today's sheet tabs, which the new UI replaces: they are not moved. New code edits through
+   `editCharacter`.
 6. **Six undo styles, nine write paths.**
    - Undo: the stack, returned closures, `dispatch` snapshots, whole-state seals, world-journal
      reverses, and fences.
@@ -56,6 +60,8 @@ are never deleted; any change to a stored shape goes through `live-data-migratio
    `resolvePactWeaponAttacks`. Replace them with one `weaponAttackProfile(doc, ref, ctx)` that all
    four read, plus a parity test (inventory to-hit and damage equal the action row for every dev
    scenario). About −500 lines.
+   _Status (2026-11-02):_ the parity test is in (`weapon-attack-parity.test.ts`: 48 weapons over
+   every dev scenario, all agreeing today); the one-profile refactor follows on it.
 8. **Numbers computed twice, once as a value and once as a breakdown, with guards checking they
    agree.** Spell, feature and maneuver DCs, proficiency, walking speed, max HP, tracker formulas,
    initiative. Keep the breakdown and make each total `breakdownTotal(parts)`; "8 + PB + mod" is then
