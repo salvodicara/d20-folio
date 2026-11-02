@@ -1,0 +1,10 @@
+{
+  "treasury": {
+    "historyTitle": "Who took what",
+    "historyEmpty": "Every coin that goes in or out of the chest is written here.",
+    "putIn": "{{who}} puts {{amount}} in the chest",
+    "tookOut": "{{who}} takes {{amount}} from the chest",
+    "cameIn": "{{amount}} goes into the chest",
+    "wentOut": "{{amount}} leaves the chest"
+  }
+}

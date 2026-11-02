@@ -1,0 +1,10 @@
+{
+  "treasury": {
+    "historyTitle": "Chi ha preso cosa",
+    "historyEmpty": "Ogni moneta che entra o esce dalla cassa resta scritta qui.",
+    "putIn": "{{who}} mette {{amount}} nella cassa",
+    "tookOut": "{{who}} prende {{amount}} dalla cassa",
+    "cameIn": "Entrano {{amount}} nella cassa",
+    "wentOut": "Escono {{amount}} dalla cassa"
+  }
+}
