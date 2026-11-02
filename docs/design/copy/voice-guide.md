@@ -3,7 +3,7 @@
 **Riferimenti.**
 
 - D&D Beyond: «Create a character», «My Campaigns», «Every Adventure Starts With a Character», «Prep Less. Play More.», catturati il 28 ottobre.
-- Baldur’s Gate 3: interfaccia asciutta, la voce narrativa resta nei testi di gioco.
+- Giochi di ruolo fantasy di fascia alta: interfaccia asciutta, la voce narrativa resta nei testi di gioco.
 
 Folio parla come quei due: frasi corte, verbi d’azione, sicuro di sé, mai chiacchierone.
 
@@ -39,7 +39,7 @@ Folio parla come quei due: frasi corte, verbi d’azione, sicuro di sé, mai chi
 **Il controllo automatico** fallisce se trova una di queste parole in un testo visibile, in italiano o in inglese:
 
 - nomi di prodotto (Owlbear, Discord, Roll20, Foundry, D&D Beyond, Fantasy Grounds, ChatGPT, GPT, Claude, «IA» / «AI»);
-- i nomi veri usati prima (Salvo, Marco, Giulia, Anna, Luca);
+- i nomi di persone reali;
 - domini reali e codici interni (esempio.it, FOL-…);
 - parole da sviluppatori (null, undefined, debug, seed, flag, writer, lorem, TODO);
 - il punto esclamativo.
