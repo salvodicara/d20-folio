@@ -68,6 +68,7 @@ function rollName(id: string): LocText {
 
 const ATTACKS = rollName("attacks");
 const ABILITY_CHECKS = rollName("ability-checks");
+const INITIATIVE = rollName("initiative");
 
 /** The Incapacitated family all forbid every action type + break Concentration. */
 const INCAPACITATED_SLOTS: ReadonlyArray<GatedSlot> = ["action", "bonus", "reaction"];
@@ -107,9 +108,15 @@ export const CONDITION_GATES: Readonly<Partial<Record<ConditionId, ConditionGate
   incapacitated: {
     blockedSlots: INCAPACITATED_SLOTS,
     breaksConcentration: true,
+    disadvantages: [
+      { rollType: "initiative", vs: "incapacitated", description: INITIATIVE },
+    ],
   },
   invisible: {
-    advantages: [{ rollType: "attack", vs: "invisible", description: ATTACKS }],
+    advantages: [
+      { rollType: "attack", vs: "invisible", description: ATTACKS },
+      { rollType: "initiative", vs: "invisible", description: INITIATIVE },
+    ],
   },
   paralyzed: {
     blockedSlots: INCAPACITATED_SLOTS,

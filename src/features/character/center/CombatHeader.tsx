@@ -52,6 +52,8 @@ import { useUIStore } from "@/stores/uiStore";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { RestModal } from "../RestModal";
 import { proficiencyBonus, initiativeRollState } from "@/lib/compute";
+import { resolveConditionEffects } from "@/lib/condition-effects";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { InitiativeAdvantageOverride } from "@/types/character";
 import {
   aggregateCharacterGrants,
@@ -259,7 +261,13 @@ export function CombatHeader() {
   // gold boon or danger-hued penalty mark in play, a corner toggle in edit) so it
   // never clutters the header. Gold = the app's boon hue (matches `.uc-verdict`).
   const initAdvOverride = charData.initiativeAdvantageOverride;
-  const initRoll = initiativeRollState(initAgg, initAdvOverride);
+  const initRoll = initiativeRollState(
+    initAgg,
+    initAdvOverride,
+    resolveConditionEffects(
+      characterDoc ? effectiveSessionConditions(characterDoc.session) : []
+    )
+  );
   function cycleInitAdvantage(): void {
     // auto (null) → advantage → disadvantage → off → auto (null)
     const next: InitiativeAdvantageOverride =

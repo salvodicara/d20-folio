@@ -2791,13 +2791,19 @@ export function hasInitiativeAdvantage(
  */
 export function initiativeRollState(
   aggregate: Pick<AggregatedGrants, "advantages" | "disadvantages">,
-  override?: InitiativeAdvantageOverride
+  override?: InitiativeAdvantageOverride,
+  /** The active conditions' clauses (`resolveConditionEffects`): 2024 Invisible and Incapacitated. */
+  conditions?: Pick<AggregatedGrants, "advantages" | "disadvantages">
 ): "advantage" | "disadvantage" | "none" {
   if (override === "advantage") return "advantage";
   if (override === "disadvantage") return "disadvantage";
   if (override === "off") return "none";
-  const hasAdv = hasInitiativeAdvantage(aggregate);
-  const hasDis = aggregate.disadvantages.some((a) => a.rollType === "initiative");
+  const isInit = (a: { rollType: string }) => a.rollType === "initiative";
+  const hasAdv =
+    hasInitiativeAdvantage(aggregate) || (conditions?.advantages.some(isInit) ?? false);
+  const hasDis =
+    aggregate.disadvantages.some(isInit) ||
+    (conditions?.disadvantages.some(isInit) ?? false);
   if (hasAdv && hasDis) return "none";
   if (hasAdv) return "advantage";
   if (hasDis) return "disadvantage";
