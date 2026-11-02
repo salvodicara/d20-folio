@@ -130,7 +130,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
       category: 9,
       case: 'Hide grants Invisible "while hidden"',
       source: "ERRATA; FVTT#7397",
-      status: "M3",
+      status: "works",
     },
     () => {
       const hidden = withSession({ conditions: ["invisible"], hiddenDc: 17 });
@@ -157,7 +157,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
       category: 9,
       case: "Blindsight and Truesight reveal hidden creatures",
       source: "SAC #4",
-      status: "M3",
+      status: "works",
     },
     () => {
       const potion = "potion:potion-of-invisibility";
