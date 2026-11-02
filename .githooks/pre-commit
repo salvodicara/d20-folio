@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Pre-commit hook (LEAN): changeset doc-guard + lint-staged only. Tests are run
-# focally while a milestone is engineered. The FULL gate (typecheck + lint
-# --max-warnings 0 + test:coverage + build + budget + rules) runs on every pull
-# request in ci.yml; verify.yml adds the composed suite and e2e after merge.
+# Pre-commit hook (LEAN): changeset doc-guard + lint-staged only.
+# CI and Verify are authoritative; local hooks only format and check the changeset.
+# ci.yml runs typecheck, lint, unit, build, budget and rules on every pull
+# request; verify.yml adds the composed suite and e2e after merge.
 # Install: git config core.hooksPath .githooks   ·   NEVER use --no-verify.
 
 set -euo pipefail
