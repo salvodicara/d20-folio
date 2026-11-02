@@ -39,7 +39,8 @@ pending"); this is the engine side's to-do for the screens.
 
 - The fight's lifecycle is anyone's (owner 2026-10-23): `combat-lifecycle-io.ts` —
   `rollIntoCombat` (the first roll starts the fight), `passCombatTurn` / `stepCombatTurnBack`,
-  `endCombatNow`, `reopenLastCombat`; each returns its undo. The last ended fight:
+  `endCombatNow`, `reopenLastCombat`, and the DM's «Tira per chi manca» `rollForMissing`; each
+  returns its undo. The last ended fight:
   `subscribeToEndedCombat`. Why a fight should end by itself: `encounterEndReason`.
   Creatures, HP and conditions stay the DM's (`setEncounter` + encounter.ts).
 

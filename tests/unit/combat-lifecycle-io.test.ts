@@ -45,6 +45,7 @@ import {
   endCombatNow,
   passCombatTurn,
   reopenLastCombat,
+  rollForMissing,
   rollIntoCombat,
 } from "@/features/campaigns/combat-lifecycle-io";
 
@@ -155,5 +156,39 @@ describe("a pass", () => {
     expect(
       await passCombatTurn("camp", { uid: "ben", isDm: false, expectedCurrentId: "x" })
     ).toBeNull();
+  });
+});
+
+describe("the DM's roll for whoever is missing", () => {
+  it("fills each missing row, and its undo empties them again", async () => {
+    store.set("campaigns/camp", { ...campaign(), dmUid: "dm" });
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    const dice = [17];
+    const undo = await rollForMissing(
+      "camp",
+      { uid: "dm", bonuses },
+      () => dice.shift() ?? 1
+    );
+    expect(campaign().encounterInit).toEqual({ ana: 13, ben: 17 });
+    expect(await undo?.()).toBe(true);
+    expect(campaign().encounterInit).toEqual({ ana: 13 });
+  });
+
+  it("is refused for a player", async () => {
+    store.set("campaigns/camp", { ...campaign(), dmUid: "dm" });
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    expect(await rollForMissing("camp", { uid: "ana", bonuses }, () => 5)).toBeNull();
+  });
+
+  it("rolls fair d20s by default", async () => {
+    store.set("campaigns/camp", { ...campaign(), dmUid: "dm" });
+    await rollForMissing("camp", { uid: "dm", bonuses });
+    for (const roll of Object.values(
+      campaign().encounterInit as Record<string, number>
+    )) {
+      expect(roll).toBeGreaterThanOrEqual(1);
+      expect(roll).toBeLessThanOrEqual(20);
+      expect(Number.isInteger(roll)).toBe(true);
+    }
   });
 });

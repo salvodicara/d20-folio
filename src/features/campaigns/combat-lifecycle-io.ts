@@ -23,6 +23,8 @@ import {
   planEnd,
   planReopen,
   planRoll,
+  planRollForMissing,
+  planUnrollMissing,
   combatPatchFields,
   type CombatFields,
   type CombatPatch,
@@ -219,6 +221,46 @@ export async function reopenLastCombat(campaignId: string): Promise<CombatUndo |
         reason: reopened.reason,
         now: Date.now(),
         epoch: reopened.epoch,
+      });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** A fair d20 from the platform's cryptographic randomness (rejection sampling). */
+function cryptoD20(): number {
+  const limit = Math.floor(0x1_0000_0000 / 20) * 20;
+  const buffer = new Uint32Array(1);
+  for (;;) {
+    crypto.getRandomValues(buffer);
+    const value = buffer[0] ?? 0;
+    if (value < limit) return (value % 20) + 1;
+  }
+}
+
+/**
+ * The DM's «Tira per chi manca»: a d20 for every PC who has not rolled, each with that
+ * PC's bonus, so a fight never stalls. The rolls are made inside the move, so its undo
+ * knows exactly which rows it filled. Null for anyone but the DM, or when nobody is
+ * missing.
+ */
+export async function rollForMissing(
+  campaignId: string,
+  input: { uid: string; bonuses: Readonly<Record<string, number>> },
+  d20: () => number = cryptoD20
+): Promise<CombatUndo | null> {
+  const done = await applyMove(campaignId, (campaign) => {
+    const plan = planRollForMissing(campaign, { ...input, now: Date.now(), d20 });
+    return plan && { patch: plan.patch, result: plan };
+  });
+  if (!done) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planUnrollMissing(campaign, {
+        rolled: done.rolled,
+        started: done.started,
+        epoch: done.epoch,
+        bonuses: input.bonuses,
+        now: Date.now(),
       });
       return patch && { patch, result: true };
     })) === true;
