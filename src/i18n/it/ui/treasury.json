@@ -15,6 +15,46 @@
     "note": "Nota (facoltativa)",
     "putDone": "{{amount}} nella cassa.",
     "takeDone": "Hai preso {{amount}} dalla cassa.",
-    "held": "Nella cassa: {{count}}"
+    "held": "Nella cassa: {{count}}",
+    "loot": "Bottino",
+    "lootFound": "Trovato",
+    "lootWhere": "Dove va?",
+    "lootTo": {
+      "me": "A me nello zaino",
+      "chest": "Alla cassa del gruppo",
+      "split": "Dividi in parti uguali"
+    },
+    "lootSplit": "{{names}} ricevono {{share}} ciascuno.",
+    "lootRemainder": "Il resto ({{coins}}) va nella cassa.",
+    "lootItemsToChest": "Gli oggetti vanno nella cassa.",
+    "lootToChest": "Tutto va nella cassa del gruppo.",
+    "lootToMe": "Tutto arriva sulla tua scheda.",
+    "lootNothing": "Scrivi cosa avete trovato.",
+    "lootLogged": "Tutto resta scritto in «Chi ha preso cosa».",
+    "lootDone": {
+      "me": "Bottino tuo: arriva sulla tua scheda.",
+      "chest": "Bottino nella cassa.",
+      "split": "Bottino diviso: ognuno trova la sua parte sulla scheda."
+    },
+    "lootLine": {
+      "me": "{{who}} tiene il bottino: {{what}}",
+      "chest": "Bottino nella cassa: {{what}}",
+      "split": "Bottino diviso in parti uguali: {{what}}"
+    },
+    "objects_one": "{{count}} oggetto",
+    "objects_other": "{{count}} oggetti",
+    "itemsTitle": "Oggetti nella cassa",
+    "itemsEmpty": "Nessun oggetto nella cassa.",
+    "itemName": "Oggetto",
+    "putItem": "Metti un oggetto",
+    "putItemDone": "{{item}} nella cassa.",
+    "tookItem": "Hai preso {{item}}: arriva sulla tua scheda.",
+    "putItemLine": "{{who}} mette {{count}} {{item}} nella cassa",
+    "takeItemLine": "{{who}} prende {{count}} {{item}} dalla cassa",
+    "shareOf": "{{name}}: {{coins}}",
+    "shareMine": "La tua parte: arriva sulla tua scheda.",
+    "shareWaiting": "In attesa sulla sua scheda.",
+    "moved": "La cassa è già cambiata: guarda di nuovo e riprova.",
+    "tooLate": "Troppo tardi per annullare: è già sulla scheda."
   }
 }

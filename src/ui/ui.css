@@ -1365,3 +1365,9 @@
 .fui .f-mark[data-kind="note"] {
   background: transparent;
 }
+/* the loot window's coin boxes: one small field per coin, wrapping on phone */
+.fui .f-coin-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 8px;
+}
