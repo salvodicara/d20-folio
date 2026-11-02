@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { initialOf } from "./initial";
 
 /**
@@ -26,7 +28,17 @@ export function HpRing({
   const color = p > 0.5 ? "var(--hp)" : p > 0.25 ? "var(--hp-y)" : "var(--hp-r)";
   const inset = size * 0.12;
   return (
-    <span className="f-ring" style={{ width: size, height: size }}>
+    <span
+      className="f-ring"
+      style={
+        {
+          width: size,
+          height: size,
+          // the initial grows with the ring, never below the base text size
+          "--ring-ini": `${String(Math.max(16, Math.round(size * 0.34)))}px`,
+        } as CSSProperties
+      }
+    >
       {portrait ? (
         <img
           src={portrait}

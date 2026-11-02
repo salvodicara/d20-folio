@@ -25,9 +25,11 @@ import {
 } from "@/features/campaigns/global-combat-context";
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import { concentrationValue } from "@/lib/concentration";
 import { litText } from "@/lib/loc-text";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useConfirmStore } from "@/stores/confirmStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -294,5 +296,35 @@ describe("a cast today: it changes the sheet and the turn, one undo restores, on
 
     await settle(() => void useUndoStore.getState().redo());
     expect(state()).toEqual(after);
+  });
+});
+
+describe("a Concentration swap and its undo (Main Verify regression, combat.spec.ts:223)", () => {
+  it("casting a second Concentration spell, then undo, gives the first one back", async () => {
+    mountWizard(1);
+    const held = useCharacterStore.getState().character;
+    if (!held) throw new Error("no character");
+    useCharacterStore.setState({
+      character: {
+        ...held,
+        session: {
+          ...held.session,
+          concentration: concentrationValue("hypnotic-pattern"),
+        },
+      },
+    });
+    const before = state();
+    await settle(() => api?.executeAction(spell("focus-ward", "action", 1, true)));
+    // The break-concentration confirm is open: cast anyway.
+    await settle(() => useConfirmStore.getState().respond(true));
+    expect(useCharacterStore.getState().character?.session.concentration).not.toBe(
+      "hypnotic-pattern"
+    );
+
+    await settle(() => void useUndoStore.getState().undo());
+    expect(useCharacterStore.getState().character?.session.concentration).toBe(
+      "hypnotic-pattern"
+    );
+    expect(state()).toEqual(before);
   });
 });

@@ -88,6 +88,17 @@ function withinComplexity(
         expression.values.length <= MAX_CHILDREN &&
         expression.values.every((child) => withinComplexity(child, depth + 1, count))
       );
+    case "table":
+      return (
+        expression.rows.length <= MAX_CHILDREN &&
+        expression.rows.every(
+          (row, i, rows) => i === 0 || row.atLeast > (rows[i - 1]?.atLeast ?? row.atLeast)
+        ) &&
+        withinComplexity(expression.input, depth + 1, count) &&
+        expression.rows.every((row) => withinComplexity(row.value, depth + 1, count)) &&
+        (expression.below === undefined ||
+          withinComplexity(expression.below, depth + 1, count))
+      );
   }
 }
 
@@ -183,7 +194,51 @@ function evaluate(
       }
       return expression.kind === "min" ? Math.min(...values) : Math.max(...values);
     }
+    case "table": {
+      const input = evaluate(expression.input, bindings);
+      if (input === null) return null;
+      let chosen = expression.below ?? null;
+      for (const row of expression.rows) if (input >= row.atLeast) chosen = row.value;
+      return chosen === null ? null : evaluate(chosen, bindings);
+    }
   }
+}
+
+/** Every binding id an expression reads, in first-seen order, without repeats. */
+export function integerExpressionBindingIds(
+  expression: IntegerExpression
+): readonly string[] {
+  const ids = new Set<string>();
+  const walk = (e: IntegerExpression): void => {
+    switch (e.kind) {
+      case "fixed":
+        return;
+      case "binding":
+        ids.add(e.bindingId);
+        return;
+      case "add":
+        e.terms.forEach(walk);
+        return;
+      case "multiply":
+        e.factors.forEach(walk);
+        return;
+      case "divide":
+        walk(e.dividend);
+        walk(e.divisor);
+        return;
+      case "min":
+      case "max":
+        e.values.forEach(walk);
+        return;
+      case "table":
+        walk(e.input);
+        e.rows.forEach((row) => walk(row.value));
+        if (e.below) walk(e.below);
+        return;
+    }
+  };
+  walk(expression);
+  return [...ids];
 }
 
 /**

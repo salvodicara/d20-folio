@@ -146,6 +146,15 @@ export type PlayEvent =
     }
   | { kind: "encounter-end"; encounterId: string; outcome?: "victory" | "ended" }
   | { kind: "round-start"; round: number }
+  | {
+      /** An initiative roll: the raw d20 and its total; `rolledBy: "dm"` when the DM
+       *  rolled it for a player who had not (the DM's «Tira per chi manca»). */
+      kind: "initiative";
+      actor: CombatantId;
+      roll: number;
+      total: number;
+      rolledBy?: "dm";
+    }
   | { kind: "note"; text: string; actor?: CombatantId };
 
 export type PlayEventKind = PlayEvent["kind"];

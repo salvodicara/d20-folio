@@ -15,7 +15,10 @@ import {
   conformDiceFormula,
 } from "@/lib/dice-formula";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
-import { conformIntegerExpression } from "@/lib/integer-expression";
+import {
+  conformIntegerExpression,
+  integerExpressionBindingIds,
+} from "@/lib/integer-expression";
 import {
   MECHANICS_PROGRAM_SCHEMA,
   MECHANICS_PROGRAM_AUTHORING_SCHEMA_REFS,
@@ -518,29 +521,8 @@ function amountSpecs(step: MechanicsStep): readonly {
   return [];
 }
 
-function integerBindingIds(expression: IntegerExpression): readonly string[] {
-  switch (expression.kind) {
-    case "fixed":
-      return [];
-    case "binding":
-      return [expression.bindingId];
-    case "add":
-      return expression.terms.flatMap(integerBindingIds);
-    case "multiply":
-      return expression.factors.flatMap(integerBindingIds);
-    case "divide":
-      return [
-        ...integerBindingIds(expression.dividend),
-        ...integerBindingIds(expression.divisor),
-      ];
-    case "min":
-    case "max":
-      return expression.values.flatMap(integerBindingIds);
-  }
-}
-
 function validAmountTransform(expression: IntegerExpression): boolean {
-  return integerBindingIds(expression).includes("input-total");
+  return integerExpressionBindingIds(expression).includes("input-total");
 }
 
 function authoredBindingIds(value: unknown): readonly string[] {
@@ -617,7 +599,7 @@ function programSemantics(program: MechanicsProgram): boolean {
             subtotal +
             (amount.spec.kind === "integer"
               ? 0
-              : integerBindingIds(amount.spec.transform).filter(
+              : integerExpressionBindingIds(amount.spec.transform).filter(
                   (bindingId) => bindingId === "input-total"
                 ).length),
           0

@@ -27,8 +27,8 @@ import type {
 import {
   advanceTurn,
   isDown,
+  lifecycleOrdered,
   prevTurn,
-  sortByInitiative,
   startEncounter,
   type EncounterPcSeed,
 } from "./encounter";
@@ -167,49 +167,26 @@ function joinPc(
   return { ...state, combatants: [...state.combatants, pc] };
 }
 
-function initiativeOf(
-  combatant: EncounterCombatant,
-  pcInitiatives: Readonly<Record<string, number>>
-): number | null {
-  if (combatant.kind === "monster") return combatant.initiative;
-  const total = pcInitiatives[combatant.id];
-  return typeof total === "number" && Number.isFinite(total) ? total : null;
-}
-
-/** Put every combatant with an initiative into the order (see the module rules). */
+/** Put every combatant with an initiative into the order (see the module rules), keeping
+ *  the PC totals it sorted by so a creature that joins later finds its place. */
 function syncOrder(
   state: EncounterState,
   pcInitiatives: Readonly<Record<string, number>>,
   now: number
 ): EncounterState {
-  const rolled = state.combatants.flatMap((c) => {
-    const initiative = initiativeOf(c, pcInitiatives);
-    return initiative === null ? [] : [{ id: c.id, initiative }];
-  });
-  const sorted = sortByInitiative(rolled).map((r) => r.id);
-  const clock = state.clock;
-  if (!clock?.turnsBegun) {
-    const current = sorted[0] ?? null;
-    const next: EncounterState = { ...state, order: sorted, currentCombatantId: current };
-    return clock && current !== state.currentCombatantId
-      ? withClock(next, { ...clock, turnStartedAt: now })
-      : next;
-  }
-  // Turns have begun: keep the order as it is (the DM may have reordered it) and slot
-  // each newcomer in before the first combatant it out-rolled.
-  const initiative = new Map(rolled.map((r) => [r.id, r.initiative]));
-  const order = [...(state.order ?? [])];
-  for (const id of sorted) {
-    if (order.includes(id)) continue;
-    const mine = initiative.get(id) ?? Number.NEGATIVE_INFINITY;
-    const at = order.findIndex(
-      (other) => (initiative.get(other) ?? Number.NEGATIVE_INFINITY) < mine
-    );
-    order.splice(at < 0 ? order.length : at, 0, id);
-  }
-  return {
-    ...state,
-    order,
-    currentCombatantId: state.currentCombatantId ?? order[0] ?? null,
-  };
+  const initiatives = Object.fromEntries(
+    state.combatants.flatMap((c) => {
+      if (c.kind !== "pc") return [];
+      const total = pcInitiatives[c.id];
+      return typeof total === "number" && Number.isFinite(total) ? [[c.id, total]] : [];
+    })
+  );
+  const next = lifecycleOrdered({ ...state, initiatives });
+  const clock = next.clock;
+  // Until a turn is passed, a new top takes the turn now.
+  return clock &&
+    !clock.turnsBegun &&
+    next.currentCombatantId !== state.currentCombatantId
+    ? withClock(next, { ...clock, turnStartedAt: now })
+    : next;
 }
