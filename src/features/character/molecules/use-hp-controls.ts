@@ -31,6 +31,7 @@ import {
   aggregateCharacterGrants,
   effectiveMaxHp,
   bloodiedFromHp,
+  effectiveConditions,
 } from "@/lib/aggregate-character";
 import {
   NO_DEFENSES,
@@ -278,7 +279,7 @@ export function useHpControls(): HpControls {
     const landsProne =
       opts?.landProne === true &&
       fallLandsProne(intake.netTotal) &&
-      !effectiveSessionConditions(character.session).includes("prone");
+      !effectiveConditions(character).includes("prone");
     const dropProne = () =>
       void useCharacterStore.getState().removeConditionSilent("prone");
     if (landsProne) {

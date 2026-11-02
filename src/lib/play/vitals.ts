@@ -8,7 +8,11 @@
  * same value; a missing or rejecting world keeps the legacy direct write (the
  * documented fail-closed degradation).
  */
-import { effectiveMaxHp } from "@/lib/aggregate-character";
+import {
+  aggregateCharacterGrants,
+  characterConditionImmunities,
+  effectiveMaxHp,
+} from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
 import { applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
 import { isCharacterAlive } from "@/lib/character-status";
@@ -303,12 +307,22 @@ export function setExhaustion(doc: CharacterDoc, level: number): SessionState | 
   if (!Number.isFinite(level)) return null;
   const target = Math.max(0, Math.min(6, Math.round(level)));
   if (doc.session.exhaustion === target) return null;
+  // An immune creature gains no level; it can still lose the ones it has.
+  if (target > doc.session.exhaustion && isImmuneTo(doc, "exhaustion")) return null;
   const engine = commitWorldVitals(doc, "exhaustion-set", (state) => {
     if (target === 6 && state.vitals.zeroHitPoints?.kind !== "dead") return null;
     state.exhaustion = target as ExhaustionLevel;
     return state;
   });
   return engine ? engine.session : { ...doc.session, exhaustion: target };
+}
+
+/** Whether the character is immune to a condition (grants, overrides, play). */
+function isImmuneTo(doc: CharacterDoc, condition: string): boolean {
+  const aggregate = aggregateCharacterGrants(doc.character, doc.session);
+  return characterConditionImmunities(doc.character, doc.session, aggregate).has(
+    condition
+  );
 }
 
 /** Heroic Inspiration held or not; null when it already is. */

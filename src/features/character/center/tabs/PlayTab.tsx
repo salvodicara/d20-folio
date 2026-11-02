@@ -64,12 +64,11 @@ import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { formatModifier, localeDistance } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
 import { canCastSpellWithSlots } from "@/lib/views/spell-cast-sources";
 import { isActionDepleted } from "@/lib/views/action-row-view";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   attackScopeReachesCard,
   deriveAdvantageChips,
@@ -433,7 +432,7 @@ export function PlayTab() {
         ? deriveSavesAndChecks(character.character, {
             exhaustion: character.session.exhaustion,
             activeFeatures: character.session.activeFeatures,
-            conditions: effectiveSessionConditions(character.session),
+            conditions: effectiveConditions(character),
             grantBundleChoices: character.session.grantBundleChoices,
             fadingPenalties: character.session.fadingPenalties,
           }).skills
@@ -468,7 +467,7 @@ export function PlayTab() {
   const baseAttackChips = useMemo<AdvantageChip[]>(() => {
     if (!character) return [];
     const aggregate = aggregateCharacterGrants(character.character, character.session);
-    const cond = resolveConditionEffects(effectiveSessionConditions(character.session));
+    const cond = resolveConditionEffects(effectiveConditions(character));
     // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
     // STR/DEX attacks (+ checks/saves); merged like the condition clauses so it
     // nets into the attack-roll state alongside Frightened/Poisoned/etc.
@@ -791,9 +790,7 @@ export function PlayTab() {
   // B2 — the single self-side condition resolver read ONCE at the board root, so
   // every card knows its condition-blocked state BEFORE a tap (today the toast
   // only fires AFTER a wasted tap). Memoized on the session's conditions.
-  const conditions = character
-    ? effectiveSessionConditions(character.session)
-    : EMPTY_CONDITIONS;
+  const conditions = character ? effectiveConditions(character) : EMPTY_CONDITIONS;
   const conditionEffects: ResolvedConditionEffects = useMemo(
     () => resolveConditionEffects(conditions),
     [conditions]

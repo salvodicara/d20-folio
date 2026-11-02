@@ -33,7 +33,7 @@ import {
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { BreakdownTip } from "@/components/shared/BreakdownTip";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
 import { deriveSensesAndSpeeds } from "@/lib/views/sheet-view";
 import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
@@ -49,7 +49,6 @@ import { RailSection } from "../RailSection";
 import { patchCharacter } from "../patch-character";
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData } from "@/types/character";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { vitalExhaustion } from "@/lib/character-vitals";
 
 type SkillProficiency = "proficient" | "expertise" | "halfProficiency";
@@ -88,9 +87,7 @@ export function LeftHud() {
   // banner consume the SAME resolver in ThisTurnTracker (one function, no
   // per-surface re-derivation — shared-seam "resolveConditionEffects single
   // consumer").
-  const conditions = characterDoc
-    ? effectiveSessionConditions(characterDoc.session)
-    : undefined;
+  const conditions = characterDoc ? effectiveConditions(characterDoc) : undefined;
   // Chosen lineage/circle bundles — feeds the FULL aggregate so a picked Elven
   // Lineage's darkvision/spells/resistances reach the Senses rail (#90).
   const grantBundleChoices = useCharacterStore(

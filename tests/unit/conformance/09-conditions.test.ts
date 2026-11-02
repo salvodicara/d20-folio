@@ -96,7 +96,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
   });
 
   rule(
-    { category: 9, case: "Exhaustion immunity", source: "FVTT#7492", status: "M3" },
+    { category: 9, case: "Exhaustion immunity", source: "FVTT#7492", status: "works" },
     () => {
       const immune = withGrants([
         { type: "condition-immunity", condition: "exhaustion" },
@@ -274,7 +274,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
       category: 9,
       case: "Frightened needs line of sight",
       source: "SAC #12; SAC #127",
-      status: "M3",
+      status: "works",
     },
     () => {
       // Immune to Frightened (Heroism) while the condition is on: suppressed.

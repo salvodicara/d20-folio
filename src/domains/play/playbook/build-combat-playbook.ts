@@ -9,9 +9,8 @@
  * average is used, so a beginner can follow every recommendation by hand.
  */
 import { getSpellById } from "@/data/spells";
-import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { effectiveMaxHp, effectiveConditions } from "@/lib/aggregate-character";
 import { getClasses } from "@/lib/classes";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { vitalSlotUsed } from "@/lib/character-vitals";
 import { hitDicePool } from "@/lib/play/hit-dice";
 import { canRitualCast } from "@/lib/ritual";
@@ -136,9 +135,7 @@ export function buildCombatPlaybook(
     context,
     trackers: new Map(resolveTrackers(character).map((t) => [t.id, t])),
     concentratingOn: character.session.concentration,
-    incapacitated: effectiveSessionConditions(character.session).includes(
-      "incapacitated"
-    ),
+    incapacitated: effectiveConditions(character).includes("incapacitated"),
   };
 
   const drafts =

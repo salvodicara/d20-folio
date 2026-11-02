@@ -53,7 +53,6 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { RestModal } from "../RestModal";
 import { proficiencyBonus, initiativeRollState } from "@/lib/compute";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { InitiativeAdvantageOverride } from "@/types/character";
 import {
   aggregateCharacterGrants,
@@ -61,6 +60,7 @@ import {
   computeCharacterAcBreakdown,
   computedInitiativeBonus,
   computedInitiativeBreakdown,
+  effectiveConditions,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
@@ -264,9 +264,7 @@ export function CombatHeader() {
   const initRoll = initiativeRollState(
     initAgg,
     initAdvOverride,
-    resolveConditionEffects(
-      characterDoc ? effectiveSessionConditions(characterDoc.session) : []
-    )
+    resolveConditionEffects(characterDoc ? effectiveConditions(characterDoc) : [])
   );
   function cycleInitAdvantage(): void {
     // auto (null) → advantage → disadvantage → off → auto (null)

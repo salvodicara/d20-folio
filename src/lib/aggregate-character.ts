@@ -62,7 +62,10 @@ import { ruleParts, type RuleOrigin } from "@/lib/rules";
 import { getEquipment } from "@/data/equipment";
 import type { AbilityCode } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import {
+  effectiveSessionConditions,
+  suppressedSessionConditions,
+} from "@/lib/effective-conditions";
 import {
   sessionActiveKeys,
   worldStandingMaxHpDeltas,
@@ -108,8 +111,42 @@ export type AggregationSession = Pick<
       | "world"
       | "hpMaxReduction"
       | "fadingPenalties"
+      | "sessionDefenses"
     >
   >;
+
+/** The aggregate plus the conditions that apply once immunities suppress some. */
+export type CharacterAggregate = AggregatedGrants & {
+  /** The conditions in effect: implied ones included, immune ones suppressed. */
+  conditions: string[];
+  /** Conditions the character has but is immune to (they return when it ends). */
+  suppressedConditions: string[];
+};
+
+/** The conditions in effect on the character: implied ones included, a condition it
+ *  is immune to suppressed (edge-case family M3). The read for anything that
+ *  applies a condition's rules or shows it as active. */
+export function effectiveConditions(
+  doc: Pick<CharacterDoc, "character" | "session">
+): string[] {
+  return aggregateCharacterGrants(doc.character, doc.session).conditions;
+}
+
+/** Every condition the character is immune to: grants, the build's overrides and
+ *  immunities gained in play. */
+export function characterConditionImmunities(
+  character: CharacterDoc["character"],
+  session: Pick<AggregationSession, "sessionDefenses">,
+  aggregate: Pick<AggregatedGrants, "conditionImmunities">
+): ReadonlySet<string> {
+  const immune = new Set<string>(aggregate.conditionImmunities);
+  for (const [id, on] of Object.entries(character.conditionImmunityOverrides ?? {})) {
+    if (on) immune.add(id);
+    else immune.delete(id);
+  }
+  for (const id of session.sessionDefenses?.conditionImmunity ?? []) immune.add(id);
+  return immune;
+}
 
 /**
  * The ONE active-key set every `while-active` grant gates on: the shared
@@ -132,6 +169,41 @@ function aggregationActiveKeys(session: AggregationSession): Set<string> {
 export function aggregateCharacterGrants(
   character: CharacterDoc["character"],
   session: AggregationSession
+): CharacterAggregate {
+  const conditionSession = {
+    conditions: session.conditions ?? [],
+    concentration: session.concentration ?? "",
+    concentrationConditions: session.concentrationConditions,
+    encounterEffects: session.encounterEffects,
+    activeFeatures: session.activeFeatures,
+  };
+  const all = aggregateWithConditions(
+    character,
+    session,
+    effectiveSessionConditions(conditionSession)
+  );
+  const immune = characterConditionImmunities(character, session, all);
+  const suppressed = suppressedSessionConditions(conditionSession, immune);
+  if (suppressed.length === 0) {
+    return {
+      ...all,
+      conditions: effectiveSessionConditions(conditionSession),
+      suppressedConditions: [],
+    };
+  }
+  // A suppressed condition's rules don't apply: evaluate again without it.
+  const conditions = effectiveSessionConditions(conditionSession, immune);
+  return {
+    ...aggregateWithConditions(character, session, conditions),
+    conditions,
+    suppressedConditions: suppressed,
+  };
+}
+
+function aggregateWithConditions(
+  character: CharacterDoc["character"],
+  session: AggregationSession,
+  conditions: readonly string[]
 ): AggregatedGrants {
   const encounterSources = resolveCombatEffectGrantSources(session.encounterEffects);
   const activeKeys = aggregationActiveKeys(session);
@@ -160,15 +232,7 @@ export function aggregateCharacterGrants(
       new Map(Object.entries(session.grantBundleChoices ?? {})),
       {
         level: totalLevel(character),
-        conditions: new Set(
-          effectiveSessionConditions({
-            conditions: session.conditions ?? [],
-            concentration: session.concentration ?? "",
-            concentrationConditions: session.concentrationConditions,
-            encounterEffects: session.encounterEffects,
-            activeFeatures: session.activeFeatures,
-          })
-        ),
+        conditions: new Set(conditions),
         // The engine world's standing-fact projections: the exact Aid amount
         // (cast level included) and Death Ward's single-use floor, both scoped
         // to SELF-owned live standings (`world-standing-grants.ts`).
