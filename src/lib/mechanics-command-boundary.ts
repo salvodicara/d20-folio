@@ -16,7 +16,6 @@ import {
   MECHANICS_COMMAND_SCHEMA,
   MECHANICS_COMMAND_SUSPENSION_SCHEMA,
   MECHANICS_EXECUTION_FRAME_SCHEMA,
-  PROGRAM_ROOT_RECEIPT_SCHEMA,
   programRootReceiptIsCoherent,
   type MechanicsCommandSchemaCustomTypes,
 } from "@/lib/mechanics-command-schema";
@@ -39,7 +38,6 @@ import type {
   MechanicsFingerprint,
   MechanicsRequesterAuthorization,
   MechanicsTrustedEngineContext,
-  ProgramRootReceipt,
   ResolvedMechanicsRequesterDefinition,
 } from "@/types/mechanics-command";
 import type { MechanicsInvocationRef } from "@/types/mechanics-authority-ref";
@@ -126,10 +124,6 @@ const conformRequesterStructure = exactConformer(
 );
 const conformExecutionFrameStructure = exactConformer(
   MECHANICS_EXECUTION_FRAME_SCHEMA,
-  COMMAND_CONTEXT
-);
-const conformProgramRootReceiptStructure = exactConformer(
-  PROGRAM_ROOT_RECEIPT_SCHEMA,
   COMMAND_CONTEXT
 );
 const conformSuspensionStructure = exactConformer(
@@ -403,14 +397,6 @@ function frameSemantics(frame: Readonly<MechanicsExecutionFrame>): boolean {
     invocation.kind === "program-root" &&
     sameCanonical(invocation.occurrence, rootReceipt.root)
   );
-}
-
-/** Exact standalone program-root allocation/CAS receipt. */
-export function conformProgramRootReceipt(
-  value: unknown
-): Readonly<ProgramRootReceipt> | null {
-  const receipt = conformProgramRootReceiptStructure(value);
-  return receipt && programRootReceiptIsCoherent(receipt) ? receipt : null;
 }
 
 /**

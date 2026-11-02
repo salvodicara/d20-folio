@@ -101,6 +101,13 @@ const SharedCharacterView = lazy(() =>
 // DEV-ONLY living type specimen of the Gilded Plate system (BG3-identity
 // epic) — lazy like every route; the prod branch is a stub so Rolldown drops
 // the chunk from production builds entirely.
+// The new UI's design-system stories (/ui): dev and the VITE_NEW_UI preview only, stripped from production.
+const UiStoriesPage =
+  import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1"
+    ? lazy(() =>
+        import("./routes/ui-stories").then((m) => ({ default: m.UiStoriesPage }))
+      )
+    : () => null;
 const SpecimensPage = import.meta.env.DEV
   ? lazy(() => import("./routes/specimens").then((m) => ({ default: m.SpecimensPage })))
   : () => null;
@@ -163,6 +170,9 @@ const router = createBrowserRouter(
           auth guard) so it can be captured without a session; stripped from
           the prod bundle by the same DEV fold as the crash probes. */}
       {import.meta.env.DEV && <Route path="/_specimens" element={<SpecimensPage />} />}
+      {(import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1") && (
+        <Route path="/ui" element={<UiStoriesPage />} />
+      )}
 
       {/* Protected — the new flat-hub shell */}
       <Route element={<AuthGuard />}>
