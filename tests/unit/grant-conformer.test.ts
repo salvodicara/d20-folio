@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { GRANT_SCHEMA } from "@/lib/grant-schema";
 import { conformGrant, conformGrants } from "@/lib/grants";
-import { buildCurrentAutomationCorpus } from "@tests/unit/__helpers__/automation-coverage";
+import { buildCurrentAutomationCorpus } from "@tests/unit/__helpers__/catalogue-corpus";
 import { sample, schemaBranches } from "@tests/unit/__helpers__/grant-samples";
 
 type GrantCandidate = {
