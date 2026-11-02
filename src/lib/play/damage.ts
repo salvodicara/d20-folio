@@ -30,6 +30,10 @@ export interface DamageTaken {
    * owed only on this, with its DC from it.
    */
   dealt: number;
+  /** What the hit spent on the sheet: each pool's absorbed amount, and the states it
+   *  ended (a claimed dodge, a Death Ward). A hit from another device records these
+   *  in the spends ledger. */
+  spent: { pools: Readonly<Record<string, number>>; endedStates: readonly string[] };
 }
 
 /** How an entered hit landed: a critical hit, or what kind of hit it was.
@@ -160,6 +164,7 @@ export function takeDamage(
     transition,
     consumedEffectIds,
     dealt,
+    spent: { pools: absorbed.pools, endedStates: [...consumedActiveKeys] },
   };
 }
 
@@ -168,10 +173,11 @@ function absorbIntoPools(
   doc: CharacterDoc,
   pools: ReadonlyArray<{ trackerId: string }>,
   amount: number
-): { total: number; trackers: SessionState["trackers"] } {
+): { total: number; trackers: SessionState["trackers"]; pools: Record<string, number> } {
   let left = amount;
   let trackers = doc.session.trackers;
-  if (pools.length === 0 || amount <= 0) return { total: 0, trackers };
+  const taken: Record<string, number> = {};
+  if (pools.length === 0 || amount <= 0) return { total: 0, trackers, pools: taken };
   const resolved = resolveTrackers(doc);
   for (const { trackerId } of pools) {
     const tracker = resolved.find((t) => t.id === trackerId);
@@ -182,9 +188,10 @@ function absorbIntoPools(
       ...trackers,
       [trackerId]: { used: (trackers[trackerId]?.used ?? 0) + take },
     };
+    taken[trackerId] = take;
     left -= take;
   }
-  return { total: amount - left, trackers };
+  return { total: amount - left, trackers, pools: taken };
 }
 
 /**

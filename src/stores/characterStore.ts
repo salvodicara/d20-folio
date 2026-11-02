@@ -36,6 +36,11 @@ import {
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
 import { spendZeroHpSaver, type ZeroHpSaveResult } from "@/lib/play/zero-hp-savers";
+import {
+  foldPeerSpends as foldPeerSpendsInto,
+  pendingPeerSpends,
+  type PeerSpend,
+} from "@/lib/play/peer-spends";
 import { longRestFadeEvents, longRestFades, omitStateKeys } from "@/lib/play/rests";
 import { topUpUsed } from "@/lib/play/tracker-rolls";
 import { prepareStudy } from "@/lib/play/study-command";
@@ -303,6 +308,13 @@ interface CharacterState {
    * from-combat guard so it never echoes back out as a save.
    */
   hydrateCombatState: (combat: CombatState | null) => void;
+  /**
+   * Fold the spends ledger (what hits from other devices spent on this sheet:
+   * docs/architecture/2026-11-cross-device-hits.md) into the sheet, once per entry,
+   * and persist it. Returns the entries now folded, for the caller to remove from
+   * the ledger. Never on a read-only sheet, never undoable.
+   */
+  foldPeerSpends: (entries: ReadonlyArray<PeerSpend>) => PeerSpend[];
   // Session state mutations (immediate, used outside combat)
   updateSession: (partial: Partial<SessionState>) => void;
   /** Set the held Heroic Inspiration token in the combat-state SSOT. */
@@ -1428,6 +1440,21 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         duration: 5000,
       });
     }
+  },
+
+  foldPeerSpends: (entries) => {
+    const character = get().character;
+    if (!character || get().readonly || entries.length === 0) return [];
+    const pending = pendingPeerSpends(character.session, entries);
+    const session = foldPeerSpendsInto(character.session, entries);
+    const before = character.session.foldedPeerSpends ?? [];
+    const after = session.foldedPeerSpends ?? [];
+    if (pending.length > 0 || before.join("\u0000") !== after.join("\u0000")) {
+      set({ character: { ...character, session } });
+      persistCombat(get);
+    }
+    const folded = new Set(after);
+    return entries.filter((entry) => folded.has(entry.id));
   },
 
   updateSession: (partial) => {

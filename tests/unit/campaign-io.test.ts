@@ -16,6 +16,9 @@ import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { defaultCombatState } from "@/lib/combat-state";
 import { concentrationValue } from "@/lib/concentration";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
+import { breadcrumbSnapshot } from "@/lib/diagnostics/logger";
+import type { CustomFeature } from "@/types/character";
 
 const {
   setDocMock,
@@ -2195,5 +2198,132 @@ describe("a hit from someone else lands through the target's own rule (edge-case
       { hp: { current: 0, temp: 0 }, updatedAt: { __serverTimestamp: true } },
       { merge: true }
     );
+  });
+});
+
+describe("a hit from another device records what it spent (the spends ledger)", () => {
+  const SPENDS = "users/a/characters/char-a/combat/spends";
+  const STATE = "users/a/characters/char-a/combat/state";
+  const wardFeature: CustomFeature = {
+    custom: true,
+    title: "Ward",
+    emoji: "*",
+    source: "Homebrew",
+    tags: [],
+    contentBlocks: [],
+    trackers: [{ id: "ward", label: "Ward", total: "15", recovery: "long-rest" }],
+    grants: [{ type: "damage-absorb-pool", trackerId: "ward" }],
+    instanceId: customInstanceId("ward-io"),
+  };
+  const warded = () => {
+    const doc = makeCharacterDoc({}, { hp: { current: 30, temp: 0 } });
+    return {
+      ...doc,
+      character: { ...doc.character, hp: { max: 30 }, features: [wardFeature] },
+    };
+  };
+  /** One transaction over the target's documents; returns its writes by path. */
+  function transaction(ledger: unknown[] | null) {
+    const writes = new Map<string, Record<string, unknown>>();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: (ref: { __doc?: unknown[] }) => {
+          const path = ref.__doc?.slice(1).join("/");
+          if (path === SPENDS) {
+            return Promise.resolve({
+              exists: () => ledger !== null,
+              data: () => ({ entries: ledger ?? [] }),
+            });
+          }
+          return Promise.resolve({
+            exists: () => true,
+            data: () =>
+              path === STATE
+                ? { ...defaultCombatState(30), hp: { current: 30, temp: 0 } }
+                : { status: "active", playStateVersion: 1 },
+          });
+        },
+        set: (ref: { __doc?: unknown[] }, data: Record<string, unknown>) => {
+          writes.set(String(ref.__doc?.slice(1).join("/")), data);
+        },
+      })
+    );
+    return writes;
+  }
+  const hit = (amount: number) =>
+    writeCampaignCombatEffect("a", "char-a", null, 30, {
+      kind: "hp",
+      operation: { kind: "damage", amount },
+    });
+
+  beforeEach(() => vi.stubEnv("VITE_PEER_SPENDS_LEDGER", "true"));
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    hydrateTarget.mockImplementation(noSheet);
+  });
+
+  it("the ward takes the DM's hit, and the hit appends the ward's use", async () => {
+    hydrateTarget.mockResolvedValueOnce(warded());
+    const writes = transaction(null);
+    const { spends } = await hit(10);
+    expect(writes.get(SPENDS)).toEqual({
+      entries: [
+        expect.objectContaining({ kind: "tracker", trackerId: "ward", amount: 10 }),
+      ],
+    });
+    expect(writes.has(STATE)).toBe(false);
+    expect(spends).toHaveLength(1);
+  });
+
+  it("a second hit reads the pending entry and appends after it", async () => {
+    const pending = { id: "p1", kind: "tracker", trackerId: "ward", amount: 10 };
+    hydrateTarget.mockResolvedValueOnce(warded());
+    const writes = transaction([pending]);
+    await hit(10);
+    expect(writes.get(SPENDS)?.entries).toEqual([
+      pending,
+      expect.objectContaining({ kind: "tracker", amount: 5 }),
+    ]);
+    expect(writes.get(STATE)).toMatchObject({ hp: { current: 25, temp: 0 } });
+  });
+
+  it("undoing the hit appends the inverse", async () => {
+    const spent = { id: "p1", kind: "tracker" as const, trackerId: "ward", amount: 10 };
+    const writes = transaction([spent]);
+    await writeCampaignCombatEffect("a", "char-a", null, 30, {
+      kind: "revert",
+      written: defaultCombatState(30),
+      previous: defaultCombatState(30),
+      spends: [spent],
+    });
+    expect(writes.get(SPENDS)?.entries).toEqual([
+      spent,
+      expect.objectContaining({ kind: "tracker", trackerId: "ward", amount: -10 }),
+    ]);
+  });
+
+  it("a full ledger: the hit lands without the ward, and it is reported", async () => {
+    const full = Array.from({ length: 128 }, (_, i) => ({
+      id: `old-${i}`,
+      kind: "state-restore",
+      key: "x",
+    }));
+    hydrateTarget.mockResolvedValueOnce(warded());
+    const writes = transaction(full);
+    await hit(10);
+    expect(writes.has(SPENDS)).toBe(false);
+    expect(writes.get(STATE)).toMatchObject({ hp: { current: 20, temp: 0 } });
+    expect(breadcrumbSnapshot().map((crumb) => crumb.event)).toContain(
+      "combat.peer-spends-full"
+    );
+  });
+
+  it("with the ledger off, the hit neither reads nor writes it", async () => {
+    vi.stubEnv("VITE_PEER_SPENDS_LEDGER", "");
+    hydrateTarget.mockResolvedValueOnce(warded());
+    const writes = transaction(null);
+    await hit(10);
+    expect(writes.has(SPENDS)).toBe(false);
+    expect(writes.get(STATE)).toMatchObject({ hp: { current: 20, temp: 0 } });
   });
 });

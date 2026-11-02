@@ -24,6 +24,8 @@ interface ImportMetaEnv {
   readonly VITE_APPCHECK_SITE_KEY?: string;
   /** Set to "true" to arm the App Check debug-token escape hatch (dev/CI/e2e only). */
   readonly VITE_APPCHECK_DEBUG?: string;
+  /** "true" once the combat/spends rules are deployed (cross-device hits ledger). */
+  readonly VITE_PEER_SPENDS_LEDGER?: string;
 }
 
 interface ImportMeta {

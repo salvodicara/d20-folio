@@ -425,6 +425,47 @@ service cloud.firestore {
       allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
     }
 
+    // The spends ledger (docs/architecture/2026-11-cross-device-hits.md): what a hit
+    // from another device spent on the character's sheet (a ward filled, a claimed
+    // dodge used up), which that device cannot write into the owner's playState. The
+    // owner (or an admin) has full control and empties it as it folds; a current
+    // attached peer may only APPEND: the new list starts with the old one, at most 128
+    // entries. Entry shapes are read defensively by the client (`parsePeerSpends`).
+    match /users/{uid}/characters/{charId}/combat/spends {
+      function spendsParentChar() {
+        return get(/databases/$(database)/documents/users/$(uid)/characters/$(charId)).data;
+      }
+      function spendsIsAttachedPeer() {
+        let parent = spendsParentChar();
+        let campaign = get(/databases/$(database)/documents/campaigns/$(parent.get("attachedCampaignId", ""))).data;
+        return request.auth.uid != uid
+          && parent.get("attachedCampaignId", "") != ""
+          && request.auth.uid in campaign.members
+          && uid in campaign.members
+          && campaign.get('memberDetails', {}).get(uid, {}).get('characterId', '') == charId;
+      }
+      function peerAppendsOnly() {
+        let before = resource == null ? [] : resource.data.get('entries', []);
+        let after = request.resource.data.get('entries', null);
+        return request.resource.data.keys().hasOnly(['entries'])
+          && after is list
+          && after.size() <= 128
+          && after.size() > before.size()
+          // A zero-length slice is an evaluation error in Rules: a new ledger
+          // has nothing to keep.
+          && (before.size() == 0 || after[0:before.size()] == before);
+      }
+      allow read: if isNotBlocked() && (
+        request.auth.uid == uid || isAdmin() || spendsIsAttachedPeer()
+      );
+      allow create, update: if isNotBlocked() && (
+        request.auth.uid == uid
+        || isAdmin()
+        || (spendsIsAttachedPeer() && peerAppendsOnly())
+      );
+      allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
+    }
+
     // Character snapshots
     match /users/{uid}/characters/{charId}/snapshots/{snapId} {
       allow read, write: if isNotBlocked() && request.auth.uid == uid;

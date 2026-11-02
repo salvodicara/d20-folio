@@ -16,8 +16,58 @@ import { damageQueuesConcentrationSave } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState, PendingConcentrationSave } from "@/types/combat-state";
 
-import { takeDamage, type DamageOptions } from "./damage";
+import { takeDamage, type DamageOptions, type DamageTaken } from "./damage";
+import { foldPeerSpends, PEER_SPENDS_CAP, type PeerSpend } from "./peer-spends";
 
+/** A hit from another device, resolved: the next combat roots, and the entries it
+ *  appends to the target's spends ledger. */
+export interface PeerHit {
+  state: CombatState;
+  spends: PeerSpend[];
+}
+
+/**
+ * Resolve a hit from another device with the spends ledger: the target's sheet is
+ * read with its pending ledger folded in, every stage runs (a ward, a claimed
+ * dodge), and what the hit spent comes back as ledger entries. When the ledger is
+ * at its cap the hit still lands, without the spending stages, and says so.
+ */
+export function peerHit(
+  doc: CharacterDoc,
+  current: CombatState,
+  ledger: ReadonlyArray<PeerSpend>,
+  amount: number,
+  opts: DamageOptions = {},
+  newId: () => string = () => crypto.randomUUID()
+): PeerHit & { ledgerFull: boolean } {
+  const ledgerFull = ledger.length + 2 > PEER_SPENDS_CAP;
+  const folded: CharacterDoc = { ...doc, session: foldPeerSpends(doc.session, ledger) };
+  const resolved = resolvePeerHit(
+    folded,
+    current,
+    amount,
+    { ...opts, fromPeer: ledgerFull },
+    newId
+  );
+  if (!resolved) return { state: current, spends: [], ledgerFull };
+  const spends: PeerSpend[] = [
+    ...Object.entries(resolved.taken.spent.pools).map(
+      ([trackerId, absorbed]): PeerSpend => ({
+        id: newId(),
+        kind: "tracker",
+        trackerId,
+        amount: absorbed,
+      })
+    ),
+    ...resolved.taken.spent.endedStates.map(
+      (key): PeerSpend => ({ id: newId(), kind: "state-end", key })
+    ),
+  ];
+  return { state: resolved.state, spends, ledgerFull };
+}
+
+/** A hit from another device without the ledger: the stages that would spend
+ *  something on the target's sheet are left out (it couldn't record them). */
 export function peerDamageState(
   doc: CharacterDoc,
   current: CombatState,
@@ -25,8 +75,21 @@ export function peerDamageState(
   opts: DamageOptions = {},
   newId: () => string = () => crypto.randomUUID()
 ): CombatState {
+  return (
+    resolvePeerHit(doc, current, amount, { ...opts, fromPeer: true }, newId)?.state ??
+    current
+  );
+}
+
+function resolvePeerHit(
+  doc: CharacterDoc,
+  current: CombatState,
+  amount: number,
+  opts: DamageOptions,
+  newId: () => string
+): { state: CombatState; taken: DamageTaken } | null {
   const damage = Math.max(0, Math.floor(amount));
-  if (damage === 0) return current;
+  if (damage === 0) return null;
   // The target as it stands now: its sheet with the fresh combat roots folded in.
   const standing: CharacterDoc = {
     ...doc,
@@ -38,8 +101,8 @@ export function peerDamageState(
       deathFail: current.deathSaves.failures,
     },
   };
-  const taken = takeDamage(standing, damage, { ...opts, fromPeer: true });
-  if (!taken) return current;
+  const taken = takeDamage(standing, damage, opts);
+  if (!taken) return null;
   const hp = { current: taken.session.hp.current, temp: taken.session.hp.temp };
   // Still standing and concentrating: the hit asks a save (DC from the damage taken,
   // temporary hit points included; a ward's share was never taken). At 0 HP,
@@ -57,7 +120,7 @@ export function peerDamageState(
           difficultyClass: concentrationSaveDc(taken.dealt),
         }
       : null;
-  return {
+  const state: CombatState = {
     ...current,
     hp,
     conditions: [...taken.session.conditions],
@@ -70,4 +133,5 @@ export function peerDamageState(
         ? { pendingConcentrationSaves: [] }
         : {}),
   };
+  return { state, taken };
 }

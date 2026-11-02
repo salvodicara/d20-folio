@@ -48,6 +48,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   fadingPenalties?: NonNullable<SessionState["fadingPenalties"]>;
   zeroHpSaverUses?: NonNullable<SessionState["zeroHpSaverUses"]>;
   zeroHpDrop?: NonNullable<SessionState["zeroHpDrop"]>;
+  foldedPeerSpends?: string[];
   sessionDefenses?: SessionState["sessionDefenses"];
   pinnedActions?: string[];
   unpinnedActions?: string[];
@@ -108,6 +109,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "fadingPenalties",
   "zeroHpSaverUses",
   "zeroHpDrop",
+  "foldedPeerSpends",
   "sessionDefenses",
   "pinnedActions",
   "unpinnedActions",
@@ -319,6 +321,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
     state.zeroHpSaverUses = session.zeroHpSaverUses;
   }
   if (session.zeroHpDrop) state.zeroHpDrop = session.zeroHpDrop;
+  if (isNonEmptyArray(session.foldedPeerSpends)) {
+    state.foldedPeerSpends = session.foldedPeerSpends;
+  }
   if (isNonEmptyRecord(session.sessionDefenses)) {
     state.sessionDefenses = session.sessionDefenses;
   }
@@ -791,6 +796,10 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   if (zeroHpSaverUses) session.zeroHpSaverUses = zeroHpSaverUses;
   const zeroHpDrop = parseZeroHpDrop(state.zeroHpDrop);
   if (zeroHpDrop) session.zeroHpDrop = zeroHpDrop;
+  if (Array.isArray(state.foldedPeerSpends)) {
+    const folded = stringArray(state.foldedPeerSpends);
+    if (folded.length > 0) session.foldedPeerSpends = folded;
+  }
   session.sessionDefenses = parseSessionDefenses(state.sessionDefenses);
   session.pinnedActions = stringArray(state.pinnedActions);
   if (Array.isArray(state.unpinnedActions)) {
