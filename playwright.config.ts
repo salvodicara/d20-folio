@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { FOLIO_SERVER_GUARD, folioServers } from "./tests/folio-server-guard";
 
 // E2E_PORT lets a PARALLEL worktree run the suite on its own port so two
 // checkouts never collide on 5174 (the SW journey then uses E2E_PORT+1).
@@ -52,6 +53,8 @@ const NEEDS_SW_SERVER =
 
 export default defineConfig({
   testDir: "./tests/e2e",
+  // Refuse a reused server that is not Folio (tests/folio-server-guard.ts).
+  globalSetup: FOLIO_SERVER_GUARD,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
@@ -115,7 +118,7 @@ export default defineConfig({
       use: { ...devices["Pixel 7"], baseURL: `http://localhost:${SW_PORT}` },
     },
   ],
-  webServer: [
+  webServer: folioServers("E2E_PORT", [
     {
       // Use port 5174 so this never collides with the owner's pnpm dev session.
       command: `pnpm vite --port ${E2E_PORT}`,
@@ -147,5 +150,5 @@ export default defineConfig({
           },
         ]
       : []),
-  ],
+  ]),
 });
