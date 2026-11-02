@@ -593,8 +593,8 @@
   /* the panel's colour, lifted toward white so the letter reads on any panel (AA) */
   color: color-mix(in srgb, var(--c, var(--gold)) 55%, var(--white));
   font: 600 var(--fs-md) / 1 var(--font-title);
-  /* the letter scales with the ring (a 48 px ring reads at the base size) */
-  font-size: max(var(--fs-md), calc(var(--ring-size) * 0.34));
+  /* the letter scales with the ring (the ring sets --ring-ini from its size) */
+  font-size: var(--ring-ini, var(--fs-md));
 }
 /* A row whose sheet is still loading: quiet bars where the text will be. */
 .fui .f-skel {

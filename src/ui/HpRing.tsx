@@ -31,7 +31,12 @@ export function HpRing({
     <span
       className="f-ring"
       style={
-        { width: size, height: size, "--ring-size": `${String(size)}px` } as CSSProperties
+        {
+          width: size,
+          height: size,
+          // the initial grows with the ring, never below the base text size
+          "--ring-ini": `${String(Math.max(16, Math.round(size * 0.34)))}px`,
+        } as CSSProperties
       }
     >
       {portrait ? (
