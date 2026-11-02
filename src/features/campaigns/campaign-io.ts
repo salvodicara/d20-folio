@@ -204,10 +204,7 @@ export function toCampaignDoc(id: string, data: Record<string, unknown>): Campai
   // Encounter state is fail-closed: reads and writes accept the current model exactly
   // and never repair persisted combatants into a different shape.
   const memberDetails = conformCampaignMembers(doc.memberDetails);
-  // The last ended fight, kept so it can reopen; one that no longer parses is dropped.
-  const endedEncounter = keptEncounter(doc.endedEncounter);
-  const base = { ...doc, memberDetails, endedEncounter };
-  if (!doc.encounter) return base;
+  if (!doc.encounter) return { ...doc, memberDetails };
   const currentEncounter = parseEncounterState(doc.encounter);
   // A stored encounter written by the deleted effect-program runtime may still
   // carry `effectLifecycles`; drop the remnant at this read boundary.
@@ -215,7 +212,8 @@ export function toCampaignDoc(id: string, data: Record<string, unknown>): Campai
     currentEncounter as EncounterState & { effectLifecycles?: unknown };
   void _legacyEffectLifecycles;
   return {
-    ...base,
+    ...doc,
+    memberDetails,
     encounter: {
       ...encounter,
       ...(encounter.effectOps
@@ -225,7 +223,7 @@ export function toCampaignDoc(id: string, data: Record<string, unknown>): Campai
   };
 }
 
-export function encounterForWrite(encounter: EncounterState): EncounterState {
+function encounterForWrite(encounter: EncounterState): EncounterState {
   const currentEncounter = parseEncounterState(encounter);
   const { effectLifecycles: _legacyEffectLifecycles, ...rest } =
     currentEncounter as EncounterState & { effectLifecycles?: unknown };
@@ -235,17 +233,6 @@ export function encounterForWrite(encounter: EncounterState): EncounterState {
 
 function storedEncounter(value: unknown): EncounterState | null {
   return value == null ? null : parseEncounterState(value);
-}
-
-/** The kept ended fight: an ended encounter, or null (absent, open, or unreadable). */
-function keptEncounter(value: unknown): EncounterState | null {
-  if (value == null) return null;
-  try {
-    const fight = parseEncounterState(value);
-    return fight.ended ? fight : null;
-  } catch {
-    return null;
-  }
 }
 
 function campaignWritableForWrite(data: CampaignWritable): CampaignWritable {

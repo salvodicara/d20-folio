@@ -4,18 +4,20 @@
  * campaign document: each returns the whole fields to write, or null when there is
  * nothing to do. `combat-lifecycle-io.ts` writes them in one transaction.
  *
- * An ended fight moves to `endedEncounter` and `encounter` goes back to null, so a client
- * that predates `ended` (v0.25.0) reads the fight as over, exactly as after a DM's end.
+ * An ended fight moves to its own document (`campaigns/{id}/combat/ended`, the "kept
+ * fight") and `encounter` goes back to null, so a client that predates `ended` (v0.25.0)
+ * reads the fight as over, exactly as after a DM's end.
  * The moves a member may make are the ones firestore.rules grants (`memberStartsFight`,
  * `memberJoinsOrResorts`, `memberCancelsFight`, `memberEndsFight`, `memberReopensFight`).
  */
 
+import { stripUndefined } from "@/lib/strip-undefined";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
 
-import type { EncounterPcSeed } from "./encounter";
+import { parseEncounterState, type EncounterPcSeed } from "./encounter";
 import { endCombat, reopenCombat, rollInitiative } from "./encounter-lifecycle";
 
-/** The campaign fields a lifecycle move writes. `endedEncounter: null` deletes it. */
+/** What a lifecycle move writes: campaign fields, and the kept fight (`null` deletes it). */
 export interface CombatPatch {
   encounter?: EncounterState | null;
   endedEncounter?: EncounterState | null;
@@ -23,10 +25,13 @@ export interface CombatPatch {
   encounterSkipped?: Record<string, boolean>;
 }
 
-type CombatFields = Pick<
+/** What a move reads: the campaign's fight fields and the kept fight, when there is one. */
+export type CombatFields = Pick<
   CampaignDoc,
-  "encounter" | "endedEncounter" | "encounterInit" | "memberDetails"
->;
+  "encounter" | "encounterInit" | "memberDetails"
+> & {
+  endedEncounter?: EncounterState | null;
+};
 
 /** The members with an attached character: who is in a fight that starts now. */
 function attached(campaign: CombatFields): {
@@ -154,4 +159,24 @@ export function planReopen(
   if (campaign.encounter || !kept?.ended) return null;
   if (input.epoch !== undefined && kept.epoch !== input.epoch) return null;
   return { encounter: reopenCombat(kept, input.now), endedEncounter: null };
+}
+
+/** The Firestore writes of a patch: the campaign's fields, and the kept-fight document
+ *  (`undefined` untouched, `null` deleted). Each fight is checked by the encounter parser
+ *  first, so a write never stores a fight readers would reject. */
+export function combatPatchFields(patch: CombatPatch): {
+  campaign: Record<string, unknown>;
+  kept?: { fight: unknown } | null;
+} {
+  const fight = (state: EncounterState) => stripUndefined(parseEncounterState(state));
+  const campaign: Record<string, unknown> = {};
+  if ("encounter" in patch)
+    campaign.encounter = patch.encounter ? fight(patch.encounter) : null;
+  if (patch.encounterInit) campaign.encounterInit = patch.encounterInit;
+  if (patch.encounterSkipped) campaign.encounterSkipped = patch.encounterSkipped;
+  if (!("endedEncounter" in patch)) return { campaign };
+  return {
+    campaign,
+    kept: patch.endedEncounter ? { fight: fight(patch.endedEncounter) } : null,
+  };
 }

@@ -37,6 +37,12 @@ pending"); this is the engine side's to-do for the screens.
 
 ## Encounter (DM)
 
+- The fight's lifecycle is anyone's (owner 2026-10-23): `combat-lifecycle-io.ts` —
+  `rollIntoCombat` (the first roll starts the fight), `passCombatTurn` / `stepCombatTurnBack`,
+  `endCombatNow`, `reopenLastCombat`; each returns its undo. The last ended fight:
+  `subscribeToEndedCombat`. Why a fight should end by itself: `encounterEndReason`.
+  Creatures, HP and conditions stay the DM's (`setEncounter` + encounter.ts).
+
 - Sanctuary on an ally: `effectIdsEndingOnAct` → revoke the effect with its undo (#418).
 - Swarms: a rule-driven monster heal (`regenerationTurnStart`, a tray heal on a monster) goes
   through `swarmHealing` / `swarmTempHp`; the DM's manual HP editor stays free (#451).

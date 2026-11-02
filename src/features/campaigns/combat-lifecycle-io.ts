@@ -9,70 +9,108 @@
  * writers in campaign-io.ts and encounter-world-command.ts.
  */
 
-import { deleteField, doc, runTransaction, serverTimestamp } from "firebase/firestore";
+import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
 
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { db } from "@/lib/firebase";
-import { stripUndefined } from "@/lib/strip-undefined";
-import type { CampaignDoc, EncounterEndReason } from "@/types/campaign";
+import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
 
-import { advanceEncounterTurn, encounterForWrite, toCampaignDoc } from "./campaign-io";
+import { advanceEncounterTurn, toCampaignDoc } from "./campaign-io";
 import { useCampaignStore } from "./campaignStore";
+import { parseEncounterState } from "./encounter";
 import {
   planCancel,
   planEnd,
   planReopen,
   planRoll,
+  combatPatchFields,
+  type CombatFields,
   type CombatPatch,
 } from "./combat-lifecycle";
 
 /** The undo of a lifecycle move: true when it was undone, false when it no longer fits. */
 export type CombatUndo = () => Promise<boolean>;
 
-type Planner<T> = (campaign: CampaignDoc) => { patch: CombatPatch; result: T } | null;
+type Planner<T> = (campaign: CampaignDoc & CombatFields) => {
+  patch: CombatPatch;
+  result: T;
+} | null;
+
+const keptFightRef = (campaignId: string) =>
+  doc(db, "campaigns", campaignId, "combat", "ended");
+
+/** The kept fight as stored: an ended encounter, or null (absent or unreadable). */
+function storedKeptFight(value: unknown): EncounterState | null {
+  if (typeof value !== "object" || value === null) return null;
+  try {
+    const fight = parseEncounterState((value as { fight?: unknown }).fight);
+    return fight.ended ? fight : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Local development: the kept fight of each campaign, in memory. */
+const devKeptFights = new Map<string, EncounterState | null>();
+const devKeptListeners = new Map<string, Set<(fight: EncounterState | null) => void>>();
+function setDevKeptFight(campaignId: string, fight: EncounterState | null): void {
+  devKeptFights.set(campaignId, fight);
+  for (const listener of devKeptListeners.get(campaignId) ?? []) listener(fight);
+}
 
 /** Apply one planned move to the campaign: a transaction in the app, the store locally. */
 async function applyMove<T>(campaignId: string, plan: Planner<T>): Promise<T | null> {
   if (import.meta.env.DEV && DEV_BYPASS) {
     const campaign = useCampaignStore.getState().campaign;
     if (!campaign || campaign.id !== campaignId) return null;
-    const planned = plan(campaign);
-    if (!planned) return null;
-    const { endedEncounter, ...rest } = planned.patch;
-    useCampaignStore.getState().setCampaign({
+    const planned = plan({
       ...campaign,
-      ...rest,
-      ...("endedEncounter" in planned.patch ? { endedEncounter } : {}),
+      endedEncounter: devKeptFights.get(campaignId) ?? null,
     });
+    if (!planned) return null;
+    const { endedEncounter, ...fields } = planned.patch;
+    useCampaignStore.getState().setCampaign({ ...campaign, ...fields });
+    if ("endedEncounter" in planned.patch)
+      setDevKeptFight(campaignId, endedEncounter ?? null);
     return planned.result;
   }
   const ref = doc(db, "campaigns", campaignId);
+  const keptRef = keptFightRef(campaignId);
   return runTransaction(db, async (txn) => {
-    const snap = await txn.get(ref);
+    const [snap, keptSnap] = [await txn.get(ref), await txn.get(keptRef)];
     if (!snap.exists()) return null;
-    const planned = plan(toCampaignDoc(snap.id, snap.data()));
+    const planned = plan({
+      ...toCampaignDoc(snap.id, snap.data()),
+      endedEncounter: storedKeptFight(keptSnap.data()),
+    });
     if (!planned) return null;
-    txn.update(ref, { ...fieldsFor(planned.patch), updatedAt: serverTimestamp() });
+    const { campaign, kept } = combatPatchFields(planned.patch);
+    txn.update(ref, { ...campaign, updatedAt: serverTimestamp() });
+    if (kept === null) txn.delete(keptRef);
+    else if (kept) txn.set(keptRef, kept);
     return planned.result;
   });
 }
 
-/** The Firestore write of a patch: whole fields, a null kept fight deleted. */
-function fieldsFor(patch: CombatPatch): Record<string, unknown> {
-  const fields: Record<string, unknown> = {};
-  if ("encounter" in patch) {
-    fields.encounter = patch.encounter
-      ? stripUndefined(encounterForWrite(patch.encounter))
-      : null;
+/** Follow the campaign's kept fight (the last ended one, `null` when there is none):
+ *  the Scontro tab offers to reopen it while no fight runs. */
+export function subscribeToEndedCombat(
+  campaignId: string,
+  callback: (fight: EncounterState | null) => void,
+  onError?: (error: Error) => void
+): () => void {
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    const listeners = devKeptListeners.get(campaignId) ?? new Set();
+    listeners.add(callback);
+    devKeptListeners.set(campaignId, listeners);
+    callback(devKeptFights.get(campaignId) ?? null);
+    return () => listeners.delete(callback);
   }
-  if ("endedEncounter" in patch) {
-    fields.endedEncounter = patch.endedEncounter
-      ? stripUndefined(encounterForWrite(patch.endedEncounter))
-      : deleteField();
-  }
-  if (patch.encounterInit) fields.encounterInit = patch.encounterInit;
-  if (patch.encounterSkipped) fields.encounterSkipped = patch.encounterSkipped;
-  return fields;
+  return onSnapshot(
+    keptFightRef(campaignId),
+    (snap) => callback(storedKeptFight(snap.data())),
+    (error) => onError?.(error)
+  );
 }
 
 /**
