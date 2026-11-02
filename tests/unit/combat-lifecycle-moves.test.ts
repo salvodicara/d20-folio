@@ -5,6 +5,8 @@ import {
   planEnd,
   planReopen,
   planRoll,
+  planRollForMissing,
+  planUnrollMissing,
   type CombatPatch,
 } from "@/features/campaigns/combat-lifecycle";
 import type { CampaignDoc } from "@/types/campaign";
@@ -158,5 +160,99 @@ describe("ending and reopening", () => {
 
   it("with no fight running, an end does nothing", () => {
     expect(planEnd(table(), { reason: "manual", now: 1 })).toBeNull();
+  });
+});
+
+describe("the DM rolls for whoever has not rolled", () => {
+  const dmTable = () => ({ ...table(), dmUid: "dm" });
+  const d20 =
+    (...rolls: number[]) =>
+    () =>
+      rolls.shift() ?? 10;
+
+  it("rolls a d20 for each missing PC, in a fight one player started", () => {
+    const started = apply(dmTable(), roll(dmTable(), "ana", 13)?.patch);
+    const plan = planRollForMissing(started, {
+      uid: "dm",
+      bonuses: { "pc-ana": 2, "pc-ben": 1 },
+      now: 2000,
+      d20: d20(17),
+    });
+    expect(plan?.rolled).toEqual({ ben: 17 });
+    expect(plan?.patch.encounterInit).toEqual({ ana: 13, ben: 17 });
+    expect(plan?.patch.encounter?.order).toEqual(["pc-ben", "pc-ana"]);
+  });
+
+  it("starts the fight when nobody has rolled yet", () => {
+    const plan = planRollForMissing(dmTable(), {
+      uid: "dm",
+      bonuses: {},
+      now: 1000,
+      d20: d20(4, 19),
+    });
+    expect(plan?.started).toBe(true);
+    expect(plan?.patch.encounterInit).toEqual({ ana: 4, ben: 19 });
+    expect(plan?.patch.encounter?.order).toEqual(["pc-ben", "pc-ana"]);
+  });
+
+  it("is the DM's alone, and does nothing when nobody is missing", () => {
+    const started = apply(dmTable(), roll(dmTable(), "ana", 13)?.patch);
+    expect(
+      planRollForMissing(started, { uid: "ana", bonuses: {}, now: 1, d20: d20(5) })
+    ).toBeNull();
+    const all = apply(started, roll(started, "ben", 9)?.patch);
+    expect(
+      planRollForMissing(all, { uid: "dm", bonuses: {}, now: 1, d20: d20(5) })
+    ).toBeNull();
+  });
+
+  it("its undo empties only the rows it filled, while they still hold its rolls", () => {
+    const started = apply(dmTable(), roll(dmTable(), "ana", 13)?.patch);
+    const plan = planRollForMissing(started, {
+      uid: "dm",
+      bonuses: {},
+      now: 2000,
+      d20: d20(17),
+    });
+    const rolled = apply(started, plan?.patch);
+    const undo = planUnrollMissing(rolled, {
+      rolled: plan?.rolled ?? {},
+      started: false,
+      epoch: plan?.epoch ?? 0,
+      bonuses: {},
+      now: 3000,
+    });
+    expect(undo?.encounterInit).toEqual({ ana: 13 });
+    expect(undo?.encounter?.order).toEqual(["pc-ana"]);
+    // Ben re-rolled his own row meanwhile: his roll stays.
+    const rerolled = apply(rolled, roll(rolled, "ben", 2)?.patch);
+    expect(
+      planUnrollMissing(rerolled, {
+        rolled: plan?.rolled ?? {},
+        started: false,
+        epoch: plan?.epoch ?? 0,
+        bonuses: {},
+        now: 3000,
+      })
+    ).toBeNull();
+  });
+
+  it("the undo of a roll that started the fight takes the fight away", () => {
+    const plan = planRollForMissing(dmTable(), {
+      uid: "dm",
+      bonuses: {},
+      now: 1000,
+      d20: d20(4, 19),
+    });
+    const rolled = apply(dmTable(), plan?.patch);
+    expect(
+      planUnrollMissing(rolled, {
+        rolled: plan?.rolled ?? {},
+        started: true,
+        epoch: plan?.epoch ?? 0,
+        bonuses: {},
+        now: 2000,
+      })
+    ).toEqual({ encounter: null, encounterInit: {} });
   });
 });

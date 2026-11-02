@@ -180,3 +180,101 @@ export function combatPatchFields(patch: CombatPatch): {
     kept: patch.endedEncounter ? { fight: fight(patch.endedEncounter) } : null,
   };
 }
+
+export interface MissingRollPlan {
+  patch: CombatPatch;
+  /** The rolls this move made, by member uid (the raw d20). */
+  rolled: Record<string, number>;
+  /** This move started the fight. */
+  started: boolean;
+  epoch: number;
+}
+
+/** Whose initiative is missing: every PC in the fight (or, with no fight yet, every
+ *  member with an attached character) without a roll. */
+function missingRollers(campaign: CombatFields): string[] {
+  const rolled = campaign.encounterInit ?? {};
+  const uids = campaign.encounter
+    ? campaign.encounter.combatants.flatMap((c) => (c.kind === "pc" ? [c.memberUid] : []))
+    : attached(campaign).uids;
+  return uids.filter((uid) => rolled[uid] === undefined);
+}
+
+/**
+ * The DM's «Tira per chi manca»: a d20 for every PC who has not rolled, each with that
+ * PC's own bonus, as if each had rolled it; the first one starts the fight when none
+ * runs. Null for anyone but the DM, or when nobody is missing.
+ */
+export function planRollForMissing(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: {
+    uid: string;
+    bonuses: Readonly<Record<string, number>>;
+    now: number;
+    /** One d20 roll (crypto-random in the app, fixed in tests). */
+    d20: () => number;
+  }
+): MissingRollPlan | null {
+  if (input.uid !== campaign.dmUid) return null;
+  const missing = missingRollers(campaign);
+  if (missing.length === 0) return null;
+  let current: CombatFields = campaign;
+  let patch: CombatPatch = {};
+  let started = false;
+  const rolled: Record<string, number> = {};
+  for (const uid of missing) {
+    const roll = input.d20();
+    const plan = planRoll(current, { uid, roll, bonuses: input.bonuses, now: input.now });
+    if (!plan) continue;
+    started ||= plan.started;
+    rolled[uid] = roll;
+    patch = { ...patch, ...plan.patch };
+    current = { ...current, ...plan.patch };
+  }
+  const epoch = current.encounter?.epoch;
+  if (Object.keys(rolled).length === 0 || epoch === undefined) return null;
+  return { patch, rolled, started, epoch };
+}
+
+/**
+ * The undo of {@link planRollForMissing}: the rows it filled empty again, while each
+ * still holds its roll in the same fight (a player who has re-rolled since keeps it, and
+ * the undo refuses). A move that started the fight takes it away, while nobody has
+ * fought in it and its rolls are still the only ones.
+ */
+export function planUnrollMissing(
+  campaign: CombatFields,
+  input: {
+    rolled: Readonly<Record<string, number>>;
+    started: boolean;
+    epoch: number;
+    bonuses: Readonly<Record<string, number>>;
+    now: number;
+  }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || fight.epoch !== input.epoch) return null;
+  const init = campaign.encounterInit ?? {};
+  const mine = Object.entries(input.rolled);
+  if (mine.some(([uid, roll]) => init[uid] !== roll)) return null;
+  if (input.started) {
+    const others = Object.keys(init).filter((uid) => input.rolled[uid] === undefined);
+    if (others.length > 0 || fight.nextMonsterOrdinal !== 1) return null;
+    if ((fight.events?.length ?? 0) > 0 || fight.clock?.turnsBegun) return null;
+    return { encounter: null, encounterInit: {} };
+  }
+  let current: CombatFields = campaign;
+  let patch: CombatPatch = {};
+  for (const [uid] of mine) {
+    const plan = planRoll(current, {
+      uid,
+      roll: null,
+      bonuses: input.bonuses,
+      now: input.now,
+    });
+    if (!plan) return null;
+    patch = { ...patch, ...plan.patch };
+    current = { ...current, ...plan.patch };
+  }
+  return patch;
+}
