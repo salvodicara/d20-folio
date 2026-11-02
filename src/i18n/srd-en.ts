@@ -86,90 +86,11 @@ import type { Locale } from "@/lib/locale";
 import { mergeCatalogue } from "@/lib/pack-merge";
 import { packSrdEn, srdOverlay } from "@pack";
 
-/**
- * Every SRD content kind whose EN catalogue is STATICALLY bundled — the engine
- * FACTS source (always loaded) AND eager display. The Grant engine parses a few
- * canonical EN facts out of these, so they can never be lazy.
- */
-export type EagerSrdKind =
-  | "spell"
-  | "feat"
-  | "race"
-  | "background"
-  | "condition"
-  | "equipment"
-  | "magic-item"
-  | "maneuver"
-  | "metamagic"
-  | "invocation"
-  | "class"
-  | "subclass"
-  | "class-feature"
-  | "weapon-mastery"
-  | "language"
-  | "proficiency"
-  | "weapon-property"
-  | "beasts"
-  | "rule";
-
-/**
- * Kinds with ZERO engine consumers — DISPLAY-only reference data loaded on demand
- * per locale (the lazy SRD-kind tier, docs/ARCHITECTURE.md). Because nothing in
- * `lib/`/`stores/` reads them synchronously, the "EN srd always loads" facts rule
- * does not apply: EVEN EN loads lazily (via {@link ensureSrdKind}), so the corpus
- * never joins the eager closure.
- */
-export type LazySrdKind = "monster";
-
-/** Every SRD content kind that carries translatable strings (eager ∪ lazy). */
-export type SrdKind = EagerSrdKind | LazySrdKind;
-
-/** A leaf catalogue value: either a single string or (condition effects) a list. */
-export type SrdLeaf = string | string[];
-export type SrdCatalogue = Record<string, Record<string, SrdLeaf>>;
-/**
- * A per-locale catalogue set: every EAGER kind is present, LAZY kinds are present
- * only once {@link ensureSrdKind} has loaded them for the locale.
- */
-export type SrdCatalogueSet = Record<EagerSrdKind, SrdCatalogue> &
-  Partial<Record<LazySrdKind, SrdCatalogue>>;
-
-/** The EAGER SRD catalogue kinds, in a stable order — drives lazy loaders + parity. */
-export const SRD_KINDS: readonly EagerSrdKind[] = [
-  "spell",
-  "feat",
-  "race",
-  "background",
-  "condition",
-  "equipment",
-  "magic-item",
-  "maneuver",
-  "metamagic",
-  "invocation",
-  "class",
-  "subclass",
-  "class-feature",
-  "weapon-mastery",
-  "language",
-  "proficiency",
-  "weapon-property",
-  "beasts",
-  "rule",
-];
-
-/** The LAZY SRD catalogue kinds (loaded on demand, display-only). */
-export const LAZY_SRD_KINDS: readonly LazySrdKind[] = ["monster"];
-
-/** Is `kind` a lazy (on-demand, display-only) SRD kind? */
-function isLazySrdKind(kind: SrdKind): kind is LazySrdKind {
-  return (LAZY_SRD_KINDS as readonly string[]).includes(kind);
-}
-
 // EN is statically bundled — it is the canonical FACTS source (always loaded).
 // Each kind composes public SRD + the content pack's EN additions + the pack's
 // EN overlay patches (PHB display-name/prose restores over public entries);
 // without the pack both are empty and the public catalogue passes through.
-const PUBLIC_EN: SrdCatalogueSet = {
+const PUBLIC_EN = {
   spell: enSpells,
   feat: enFeats,
   race: enRaces,
@@ -189,7 +110,47 @@ const PUBLIC_EN: SrdCatalogueSet = {
   "weapon-property": enWeaponProperties,
   beasts: enBeasts,
   rule: enRules,
-};
+} satisfies Record<string, SrdCatalogue>;
+
+/**
+ * Every SRD content kind whose EN catalogue is STATICALLY bundled — the engine
+ * FACTS source (always loaded) AND eager display. The Grant engine parses a few
+ * canonical EN facts out of these, so they can never be lazy.
+ */
+export type EagerSrdKind = keyof typeof PUBLIC_EN;
+
+/** The EAGER SRD catalogue kinds, in a stable order — drives lazy loaders + parity. */
+export const SRD_KINDS = Object.keys(PUBLIC_EN) as readonly EagerSrdKind[];
+
+/**
+ * Kinds with ZERO engine consumers — DISPLAY-only reference data loaded on demand
+ * per locale (the lazy SRD-kind tier, docs/ARCHITECTURE.md). Because nothing in
+ * `lib/`/`stores/` reads them synchronously, the "EN srd always loads" facts rule
+ * does not apply: EVEN EN loads lazily (via {@link ensureSrdKind}), so the corpus
+ * never joins the eager closure.
+ */
+export type LazySrdKind = (typeof LAZY_SRD_KINDS)[number];
+
+/** Every SRD content kind that carries translatable strings (eager ∪ lazy). */
+export type SrdKind = EagerSrdKind | LazySrdKind;
+
+/** A leaf catalogue value: either a single string or (condition effects) a list. */
+export type SrdLeaf = string | string[];
+export type SrdCatalogue = Record<string, Record<string, SrdLeaf>>;
+/**
+ * A per-locale catalogue set: every EAGER kind is present, LAZY kinds are present
+ * only once {@link ensureSrdKind} has loaded them for the locale.
+ */
+export type SrdCatalogueSet = Record<EagerSrdKind, SrdCatalogue> &
+  Partial<Record<LazySrdKind, SrdCatalogue>>;
+
+/** The LAZY SRD catalogue kinds (loaded on demand, display-only). */
+export const LAZY_SRD_KINDS = ["monster"] as const;
+
+/** Is `kind` a lazy (on-demand, display-only) SRD kind? */
+function isLazySrdKind(kind: SrdKind): kind is LazySrdKind {
+  return (LAZY_SRD_KINDS as readonly string[]).includes(kind);
+}
 
 const EN: SrdCatalogueSet = Object.fromEntries(
   SRD_KINDS.map((kind) => [
