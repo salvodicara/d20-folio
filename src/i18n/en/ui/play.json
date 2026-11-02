@@ -8,6 +8,20 @@
     "slot": "Level {{level}} slots",
     "pactSlot": "Level {{level}} pact slots",
     "allSkills": "All {{count}} skills",
-    "fewerSkills": "Just the main ones"
+    "fewerSkills": "Just the main ones",
+    "filterLabel": "Filter the actions",
+    "filter": {
+      "all": "All",
+      "limited": "Limited use"
+    },
+    "group": {
+      "bonus": "Bonus actions"
+    },
+    "playbookTitle": "What you should do",
+    "spellLevel": "Level {{level}}",
+    "concentration": "concentration",
+    "uses": "{{current}} of {{total}}",
+    "dc": "DC {{dc}}",
+    "healing": "{{amount}} HP"
   }
 }

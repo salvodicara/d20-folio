@@ -1659,3 +1659,165 @@
   color: var(--strong);
   font-weight: 600;
 }
+
+/* ---------- Play: the centre column ---------- */
+.fui .f-centre > .f-tabs {
+  padding: 0 24px;
+}
+/* the turn strip: round and whose turn, the four resources, «Fine turno» */
+.fui .f-turn {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 24px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--sunk);
+}
+.fui .f-turn-t {
+  font: 700 var(--fs-md) var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--strong);
+}
+.fui .f-turn-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fui .f-turn-slots li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--strong);
+}
+.fui .f-turn-slots i {
+  width: 12px;
+  height: 12px;
+  background: var(--slot);
+}
+.fui .f-turn-slots [data-kind="action"] {
+  --slot: var(--hp);
+}
+.fui .f-turn-slots [data-kind="action"] i {
+  border-radius: 50%;
+}
+.fui .f-turn-slots [data-kind="bonus"] {
+  --slot: var(--c-tes);
+}
+.fui .f-turn-slots [data-kind="bonus"] i {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.fui .f-turn-slots [data-kind="reaction"] {
+  --slot: var(--conc);
+}
+.fui .f-turn-slots [data-kind="reaction"] i {
+  transform: rotate(45deg) scale(0.85);
+}
+.fui .f-turn-slots [data-kind="move"] {
+  --slot: var(--hp-y);
+}
+.fui .f-turn-slots [data-kind="move"] i {
+  width: 20px;
+  height: 8px;
+  border-radius: var(--r-pill);
+}
+/* a spent resource: hollow, its name struck through */
+.fui .f-turn-slots [data-spent] {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.fui .f-turn-slots [data-spent] i {
+  background: none;
+  box-shadow: inset 0 0 0 2px var(--slot);
+}
+.fui .f-turn .f-btn {
+  margin-left: auto;
+}
+/* «Cosa ti conviene fare» */
+.fui .f-playbook {
+  border-bottom: 1px solid var(--line-soft);
+  padding-bottom: 8px;
+}
+.fui .f-playbook-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  background: none;
+  color: var(--strong);
+  font: 600 var(--fs-lg) var(--font-title);
+  text-align: left;
+  cursor: pointer;
+}
+.fui .f-playbook-lines {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 0 24px;
+}
+.fui .f-playbook-lines li {
+  display: grid;
+  gap: 4px;
+}
+.fui .f-playbook-lines b {
+  color: var(--strong);
+}
+.fui .f-playbook-lines [data-status="spent"],
+.fui .f-playbook-lines [data-status="blocked"] {
+  color: var(--muted);
+}
+/* the actions table */
+.fui .f-act-group > h3 {
+  margin: 8px 0 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.fui .f-act {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(72px, max-content));
+  align-items: center;
+  gap: 8px 16px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.fui .f-act-c {
+  white-space: nowrap;
+  text-align: center;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.fui .f-act-e {
+  color: var(--strong);
+  font-weight: 600;
+}
+.fui .f-act[data-blocked] {
+  opacity: 0.55;
+}
+.fui .f-row-main > .f-act-m {
+  display: none;
+}
+.fui .f-playbook-h[aria-expanded="true"] .f-ic {
+  transform: rotate(180deg);
+}
+@media (max-width: 640px) {
+  .fui .f-act {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-act-c {
+    display: none;
+  }
+  .fui .f-row-main > .f-act-m {
+    display: block;
+    color: var(--strong);
+  }
+}
