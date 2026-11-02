@@ -13,12 +13,11 @@ are never deleted; any change to a stored shape goes through `live-data-migratio
 
 ## Ranked findings
 
-1. **Undo of an older action wipes later changes (bug).** In production, `dispatch`'s undo restores
-   the whole pre-event character (`characterStore.ts:3136`); only dev builds go through the play
-   log's causal `undoFrom`. Undoing an older stack entry (`removeSessionDefense`,
-   `setCompanionVariant`, `summonFamiliar`…) rolls back everything after it, log lines included.
-   Fix: use the play log's `undoFrom` in production too (or refuse a non-causal undo). About 10
-   lines; test: dispatch A, then B, undo A, B survives.
+1. **Undo of an older action wipes later changes (owner gate).** In production, `dispatch`'s undo
+   restores the whole pre-event character (`characterStore.ts:3136`); only development uses the
+   play log's causal `undoFrom`, where only that event goes. `docs/architecture/play-log.md`
+   step 4: production keeps the snapshot "until the owner turns it on". Asked the owner
+   (2026-11-02). If yes: about 10 lines; test: dispatch A, then B, undo A, B survives.
 2. **About 6.5k source lines (plus about 8k test lines) of the mechanics stack have no production
    caller.** `mechanics-transcription.ts` (3.6k), `automation-corpus.ts` + `automation-compiler.ts`,
    and the spell, feature-action, weapon and conjured-item capability builders in
