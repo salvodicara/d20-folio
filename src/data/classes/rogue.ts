@@ -257,24 +257,28 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
     id: "rogue-uncanny-dodge",
     class: "rogue",
     level: 5,
+    // 2024 RAW (rogue:main, Level 5): when an attacker you can see hits you with an
+    // attack roll, your Reaction halves the attack's damage against you (round down).
+    // Using the Reaction lights this state; the next hit from an attack is halved
+    // and spends it (edge-case family M4). Unused, it lapses at your next turn.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "rogue-uncanny-dodge",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [
+          { type: "incoming-damage-scale", factor: "half", when: "hit-by-attack" },
+        ],
+      },
+    ],
     mechanics: {
       actions: [
         {
           type: "reaction",
-          // The click affirms the table-only visibility fact; the trigger still
-          // excludes saves, hazards, and automatic damage at the data boundary.
+          // The click affirms the attacker is seen; the trigger excludes saves,
+          // hazards and automatic damage. Using it lights the halving state above.
           trigger: "hitByAttack",
           targeting: { affinity: "self", maxTargets: 1 },
-          // The canonical-runtime authored program:
-          // declaring the reaction claims the round's Reaction slot; the
-          // damage-taken phase compiles the exact compensating reduction —
-          // reduce the triggering attack's damage by ⌈half⌉, so the rogue TAKES
-          // ⌊half⌋ (2024 RAW halving rounds down) — bounded by the triggering
-          // resolution's effective damage, then the spent reaction ends. Fired
-          // by the damage-entry runtime (`lib/damage-reaction.ts`), which
-          // composes the table-entered hit around this program so the whole
-          // exchange commits as ONE causal action; the attack-delivered fact is
-          // affirmed by the player's pick, exactly like the legacy card's click.
         },
       ],
     },

@@ -1584,6 +1584,10 @@ export interface AggregatedGrants {
   }>;
   /** The zero-HP savers, one per granting source (read by `play/zero-hp-savers`). */
   atZeroHpInterrupts: ReadonlyArray<AtZeroHpSaverGrant>;
+  /** Lit states that halve the next hit from an attack (Uncanny Dodge). */
+  incomingDamageScales: ReadonlyArray<{ sourceId: string; activeKey: string }>;
+  /** Pools that take damage before temporary HP (Arcane Ward). */
+  damageAbsorbPools: ReadonlyArray<{ sourceId: string; trackerId: string }>;
   /** Resource declarations contributed by effective grant sources. */
   resources: ReadonlyArray<{ sourceId: string; spec: ResourceSpec }>;
   /** Persistent one-shot HP floors, carrying the active key so the owning effect can
@@ -2212,6 +2216,8 @@ export function emptyAggregate(): AggregatedGrants {
     spellSlotTrackerRecoveries: [],
     initiativeTrackerTopUps: [],
     atZeroHpInterrupts: [],
+    incomingDamageScales: [],
+    damageAbsorbPools: [],
     resources: [],
     zeroHpFloors: [],
     weaponBindings: [],
@@ -2481,6 +2487,8 @@ export function evaluateGrants(
   const initiativeTrackerTopUps: AggregatedGrants["initiativeTrackerTopUps"][number][] =
     [];
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
+  const incomingDamageScales: AggregatedGrants["incomingDamageScales"][number][] = [];
+  const damageAbsorbPools: AggregatedGrants["damageAbsorbPools"][number][] = [];
   const resources: AggregatedGrants["resources"][number][] = [];
   const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
   const weaponBindings: AggregatedGrants["weaponBindings"][number][] = [];
@@ -2879,6 +2887,12 @@ export function evaluateGrants(
           ...(g.save ? { save: g.save } : {}),
           ...(g.hitPoints !== undefined ? { hitPoints: g.hitPoints } : {}),
         });
+        break;
+      case "incoming-damage-scale":
+        if (activeKey) incomingDamageScales.push({ sourceId, activeKey });
+        break;
+      case "damage-absorb-pool":
+        damageAbsorbPools.push({ sourceId, trackerId: g.trackerId });
         break;
       case "zero-hp-floor":
         if (activeKey) {
@@ -3997,6 +4011,8 @@ export function evaluateGrants(
     spellSlotTrackerRecoveries,
     initiativeTrackerTopUps,
     atZeroHpInterrupts,
+    incomingDamageScales,
+    damageAbsorbPools,
     resources,
     zeroHpFloors,
     weaponBindings,

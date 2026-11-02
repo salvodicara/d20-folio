@@ -1409,5 +1409,8 @@
   },
   "barbarian-relentless-rage.grants.0": {
     "label": "Ira Implacabile"
+  },
+  "rogue-uncanny-dodge.grants.0": {
+    "label": "Schivata Prodigiosa"
   }
 }

@@ -38,19 +38,23 @@ export function peerDamageState(
       deathFail: current.deathSaves.failures,
     },
   };
-  const taken = takeDamage(standing, damage, opts);
+  const taken = takeDamage(standing, damage, { ...opts, fromPeer: true });
   if (!taken) return current;
   const hp = { current: taken.session.hp.current, temp: taken.session.hp.temp };
-  // Still standing and concentrating: the hit asks a save (DC from the whole hit,
-  // temporary hit points included). At 0 HP, Concentration simply ends.
+  // Still standing and concentrating: the hit asks a save (DC from the damage taken,
+  // temporary hit points included; a ward's share was never taken). At 0 HP,
+  // Concentration simply ends.
   const held = standing.session.concentration;
   const save: PendingConcentrationSave | null =
-    hp.current > 0 && held !== "" && damageQueuesConcentrationSave(standing)
+    hp.current > 0 &&
+    held !== "" &&
+    taken.dealt > 0 &&
+    damageQueuesConcentrationSave(standing)
       ? {
           id: newId(),
           spell: held,
-          damage,
-          difficultyClass: concentrationSaveDc(damage),
+          damage: taken.dealt,
+          difficultyClass: concentrationSaveDc(taken.dealt),
         }
       : null;
   return {

@@ -290,7 +290,11 @@ export function useHpControls(): HpControls {
     // Delegate to the store (temp absorption + the concentration DC from the FULL
     // damage taken + the Death Ward interrupt + the 0-HP rules — RA-03/RA-10).
     const beforeDamage = logIds();
-    const undoHit = applyDamage(intake.netTotal, { crit });
+    // A fall is not an attack: a claimed Uncanny Dodge waits for the attack's hit.
+    const undoHit = applyDamage(intake.netTotal, {
+      crit,
+      ...(opts?.landProne !== undefined ? { notAnAttack: true as const } : {}),
+    });
     if (!undoHit) {
       if (landsProne) dropProne();
       return;
