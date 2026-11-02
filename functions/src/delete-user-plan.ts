@@ -66,29 +66,6 @@ export function planCampaignUpdate(c: CampaignLike, deletedUid: string): Campaig
   return { kind: "update", members, memberDetails, dmUid };
 }
 
-/** A co-member's attached character whose cross-user ACLs (`campaignReaders` /
- *  `dmReaders`) still list the leaver and must have them removed. */
-export interface AclTarget {
-  ownerUid: string;
-  charId: string;
-}
-
-/**
- * The OTHER members' attached characters in a campaign the leaver shared — each
- * still carries `deletedUid` in its `campaignReaders` (every co-member) and possibly
- * `dmReaders` (if the leaver DM'd), so the function must `arrayRemove` the leaver
- * from both arrays on each. Excludes the leaver's own characters (deleted wholesale)
- * and members with no attached character (nothing to clean).
- */
-export function coMemberAclTargets(c: CampaignLike, deletedUid: string): AclTarget[] {
-  const targets: AclTarget[] = [];
-  for (const [uid, detail] of Object.entries(c.memberDetails ?? {})) {
-    if (uid === deletedUid || !detail) continue;
-    if (detail.characterId) targets.push({ ownerUid: uid, charId: detail.characterId });
-  }
-  return targets;
-}
-
 /**
  * Typed-confirm guard: the callable payload carries the target's email; the function
  * re-reads the target `/users` doc and this asserts the stored email matches (case-
