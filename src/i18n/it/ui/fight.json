@@ -1,0 +1,18 @@
+{
+  "fight": {
+    "listTitle": "Iniziativa · round {{round}}",
+    "fighters_one": "{{count}} combattente",
+    "fighters_other": "{{count}} combattenti",
+    "now": "Ora",
+    "down": "A terra",
+    "feedTitle": "In questo scontro",
+    "feedEmpty": "Ancora niente: le azioni compaiono qui mentre si gioca.",
+    "roundLine": "Round {{n}} · {{line}}",
+    "idleTitle": "Nessuno scontro in corso",
+    "idleHelp": "Parte da solo quando il primo giocatore tira l’iniziativa dalla sua scheda. Chi arriva dopo entra lo stesso.",
+    "pastTitle": "Scontri passati",
+    "pastEmpty": "Gli scontri giocati compaiono qui, con i round e com’è finita.",
+    "victory": "vinto",
+    "ended": "chiuso"
+  }
+}
