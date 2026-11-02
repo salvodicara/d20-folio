@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
+import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
@@ -44,6 +45,9 @@ export function PlayScreen() {
   return (
     <main id="main" className="f-page">
       <PlayHeader view={playHeaderView(doc, locale)} locale={locale} />
+      <div className="f-play">
+        <PlayLeft doc={doc} locale={locale} />
+      </div>
     </main>
   );
 }

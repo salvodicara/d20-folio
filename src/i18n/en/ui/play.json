@@ -4,6 +4,10 @@
     "temp": "+{{count}} temporary",
     "proficiency": "Proficiency",
     "effects": "Effects",
-    "concentrating": "Concentration: {{spell}}"
+    "concentrating": "Concentration: {{spell}}",
+    "slot": "Level {{level}} slots",
+    "pactSlot": "Level {{level}} pact slots",
+    "allSkills": "All {{count}} skills",
+    "fewerSkills": "Just the main ones"
   }
 }
