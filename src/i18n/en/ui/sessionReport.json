@@ -77,6 +77,8 @@
     "inspiration": {
       "gained": "{{target}} gains Heroic Inspiration",
       "spent": "{{target}} spends Heroic Inspiration"
-    }
+    },
+    "initiativeByDm": "Initiative for {{actor}}, rolled by the DM: {{total}}",
+    "initiative": "{{actor}} rolls initiative: {{total}}"
   }
 }

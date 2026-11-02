@@ -194,6 +194,13 @@ export function localizePlayEvent(
       return t("combatLog.timePasses", { count: event.minutes });
     case "note":
       return event.actor ? `${who(event.actor)}: ${event.text}` : event.text;
+    case "initiative":
+      return t(
+        event.rolledBy === "dm"
+          ? "sessionReport.initiativeByDm"
+          : "sessionReport.initiative",
+        { actor: who(event.actor), total: event.total }
+      );
     case "encounter-start":
     case "encounter-end":
     case "round-start":
