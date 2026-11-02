@@ -86,10 +86,7 @@ export {
  * ONLY place the tracker's bilingual `label` / `description` are resolved to the
  * active locale (the engine carries them as DATA; docs/ARCHITECTURE.md).
  */
-export function localizeTracker(
-  tracker: RawResolvedTracker,
-  locale: Locale
-): ResolvedTracker {
+function localizeTracker(tracker: RawResolvedTracker, locale: Locale): ResolvedTracker {
   const { label, description, ...rest } = tracker;
   return {
     ...rest,

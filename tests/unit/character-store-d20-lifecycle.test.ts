@@ -254,10 +254,12 @@ describe("characterStore — entered D20 lifecycle", () => {
     const highHp = concentratingCharacter();
     highHp.character.hp.max = 200;
     highHp.session.hp.current = 200;
+    // An edit of the same sheet keeps the save still to roll; the new damage queues
+    // its own save after it (each damage asks for one).
     useCharacterStore.getState().setCharacter(highHp);
     useCharacterStore.getState().applyDamage(80);
-    expect(useCharacterStore.getState().combatPendingConcentrationSaves[0]).toMatchObject(
-      { damage: 80, difficultyClass: 30 }
-    );
+    expect(
+      useCharacterStore.getState().combatPendingConcentrationSaves.at(-1)
+    ).toMatchObject({ damage: 80, difficultyClass: 30 });
   });
 });

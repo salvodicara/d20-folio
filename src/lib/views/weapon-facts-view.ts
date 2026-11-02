@@ -191,7 +191,7 @@ const PROPERTY_TOKEN_IDS = [
 ] as const;
 
 /** Derive a property's stable token id from its raw SRD string (null = custom). */
-export function weaponPropertyTokenId(prop: string): string | null {
+function weaponPropertyTokenId(prop: string): string | null {
   const lower = prop.toLowerCase();
   return PROPERTY_TOKEN_IDS.find((id) => lower.startsWith(id)) ?? null;
 }
