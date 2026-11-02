@@ -107,18 +107,22 @@ export function GlobalCombatMount(): null {
   // screenshot / a11y harness seeds a deterministic pip via the `d20-dev-pip` flag, so
   // every pip STATE is shootable without the live combat-state plumbing. When set we skip
   // the real resolution entirely (one writer, no race).
-  const devPip = useMemo(() => (DEV_BYPASS_AUTH ? makeDevPip(devPipMode()) : null), []);
+  const devPip = useMemo(
+    () => (import.meta.env.DEV && DEV_BYPASS_AUTH ? makeDevPip(devPipMode()) : null),
+    []
+  );
   // The needs-roll pip's inline roller reads the live status; the dev seed publishes a
   // matching one (non-null only for needsroll) so the C4b shot/a11y harness can open it.
   // DEV ONLY — the turn-flicker regression harness. When set, the producer REPLAYS the
   // End-Turn reconcile sequence (see `makeTurnFlickerSteps`) instead of the live resolution,
   // so `turn-indicator-flicker.spec.ts` can prove the flash in REAL Chromium (jsdom can't).
   const replayMode = useMemo(
-    () => (DEV_BYPASS_AUTH ? turnFlickerReplayMode() : null),
+    () => (import.meta.env.DEV && DEV_BYPASS_AUTH ? turnFlickerReplayMode() : null),
     []
   );
   const devStatus = useMemo(
-    () => (DEV_BYPASS_AUTH ? makeDevGlobalCombat(devPipMode()) : null),
+    () =>
+      import.meta.env.DEV && DEV_BYPASS_AUTH ? makeDevGlobalCombat(devPipMode()) : null,
     []
   );
   // DEV ONLY — the combat-chronicle e2e/dev seam. When `d20-dev-combat-chronicle=1` is
@@ -127,7 +131,7 @@ export function GlobalCombatMount(): null {
   // encounter (`useSheetCombat` scopes on `characterId`). Takes precedence over the live
   // resolution + the pip seed below.
   const devCombat = useMemo(
-    () => (DEV_BYPASS_AUTH ? makeDevChronicleCombat() : null),
+    () => (import.meta.env.DEV && DEV_BYPASS_AUTH ? makeDevChronicleCombat() : null),
     []
   );
 
@@ -381,7 +385,7 @@ export function GlobalCombatMount(): null {
   // prove absent) the "your turn" flash. `raw` publishes the OLD direct set; `fixed` goes
   // through the same `reconcileCombatPublish` the producer uses. Tree-shaken from production.
   useEffect(() => {
-    if (!replayMode) return;
+    if (!import.meta.env.DEV || !replayMode) return;
     const steps = makeTurnFlickerSteps();
     const timers = steps.map((step, i) =>
       window.setTimeout(() => {
