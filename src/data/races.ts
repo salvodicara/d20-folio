@@ -946,10 +946,6 @@ export function getRace(id: string): SrdRaceData | undefined {
   return RACES_BY_ID.get(id);
 }
 
-export function getAllRaceIds(): string[] {
-  return SRD_RACES.map((r) => r.id);
-}
-
 // ─── Race Feature Index ───────────────────────────────────────
 
 export interface RaceFeatureEntry {

@@ -7,12 +7,7 @@
  */
 import { describe, it, expect } from "vitest";
 
-import {
-  getSpellsByLevel,
-  getSpellsByClass,
-  getSpellsBySchool,
-  getSpellById,
-} from "@/data/spells";
+import { getSpellById } from "@/data/spells";
 
 import {
   getClassTable,
@@ -22,40 +17,20 @@ import {
 } from "@/data/classes";
 import { resolveClassId } from "@/data/srd-names";
 
-import {
-  getEquipment,
-  getEquipmentByCategory,
-  getWeapon,
-  getSimpleWeapons,
-  getMartialWeapons,
-  getMeleeWeapons,
-  getRangedWeapons,
-  getArmor,
-  getArmorByCategory,
-  getWearableArmor,
-  getGear,
-  getEquipmentPacks,
-  getAdventuringGear,
-} from "@/data/equipment";
+import { getEquipment } from "@/data/equipment";
+import { SRD_WEAPONS } from "@/data/weapons";
 
-import {
-  getMagicItem,
-  getAllMagicItemIds,
-  getMagicItemsByRarity,
-  getMagicItemsByType,
-  getMagicItemsRequiringAttunement,
-} from "@/data/magic-items";
+import { getMagicItem } from "@/data/magic-items";
 
-import { getBackground, getAllBackgroundIds } from "@/data/backgrounds";
-import { getRace, getAllRaceIds, raceFeatureIndex } from "@/data/races";
-import { getCondition, getAllConditionIds } from "@/data/conditions";
+import { getBackground } from "@/data/backgrounds";
+import { getRace, raceFeatureIndex } from "@/data/races";
+import { getAllConditionIds } from "@/data/conditions";
 
 import {
   getFeat,
   getOriginFeats,
   getGeneralFeats,
   getFightingStyleFeats,
-  getEpicBoonFeats,
 } from "@/data/feats";
 
 import { spells as allSpells } from "@/data/spells";
@@ -63,50 +38,6 @@ import { spells as allSpells } from "@/data/spells";
 // ─── Spells ──────────────────────────────────────────────────────────────────
 
 describe("spells", () => {
-  describe("getSpellsByLevel", () => {
-    it("returns cantrips (level 0)", () => {
-      const cantrips = getSpellsByLevel(0);
-      expect(cantrips.length).toBeGreaterThan(0);
-      expect(cantrips.every((s) => s.level === 0)).toBe(true);
-    });
-
-    it("returns level-1 spells and includes 'alarm'", () => {
-      const level1 = getSpellsByLevel(1);
-      expect(level1.some((s) => s.id === "alarm")).toBe(true);
-    });
-
-    it("returns empty for an out-of-range level", () => {
-      expect(getSpellsByLevel(99)).toEqual([]);
-    });
-  });
-
-  describe("getSpellsByClass", () => {
-    it("returns wizard spells; every result lists wizard (case-insensitive)", () => {
-      const spells = getSpellsByClass("wizard");
-      expect(spells.length).toBeGreaterThan(0);
-      // The SRD data mixes casing ("wizard" vs "Wizard") — the function normalises it
-      expect(
-        spells.every((s) => s.classes.some((c) => c.toLowerCase() === "wizard"))
-      ).toBe(true);
-    });
-
-    it("is case-insensitive", () => {
-      expect(getSpellsByClass("Wizard").length).toBe(getSpellsByClass("wizard").length);
-    });
-
-    it("returns empty for an unknown class", () => {
-      expect(getSpellsByClass("unknown-class")).toEqual([]);
-    });
-  });
-
-  describe("getSpellsBySchool", () => {
-    it("returns abjuration spells only", () => {
-      const spells = getSpellsBySchool("abjuration");
-      expect(spells.length).toBeGreaterThan(0);
-      expect(spells.every((s) => s.school === "abjuration")).toBe(true);
-    });
-  });
-
   describe("getSpellById", () => {
     it("returns a known cantrip", () => {
       const spell = getSpellById("acid-splash");
@@ -241,74 +172,9 @@ describe("equipment", () => {
     });
   });
 
-  describe("getEquipmentByCategory", () => {
-    it("returns weapons", () => {
-      const items = getEquipmentByCategory("weapon");
-      expect(items.length).toBeGreaterThan(0);
-      expect(items.every((i) => i.category === "weapon")).toBe(true);
-    });
-
-    it("returns armor only", () => {
-      const items = getEquipmentByCategory("armor");
-      expect(items.every((i) => i.category === "armor")).toBe(true);
-    });
-  });
-
-  // ── Weapon sub-helpers ──
-
-  describe("getWeapon", () => {
-    it("returns a known weapon", () => {
-      expect(getWeapon("club")?.id).toBe("club");
-    });
-
-    it("returns undefined for an unknown ID", () => {
-      expect(getWeapon("no-weapon")).toBeUndefined();
-    });
-  });
-
-  describe("getSimpleWeapons", () => {
-    it("returns only simple weapons", () => {
-      const weapons = getSimpleWeapons();
-      expect(weapons.length).toBeGreaterThan(0);
-      expect(weapons.every((w) => w.weaponCategory === "simple")).toBe(true);
-    });
-  });
-
-  describe("getMartialWeapons", () => {
-    it("returns only martial weapons", () => {
-      const weapons = getMartialWeapons();
-      expect(weapons.length).toBeGreaterThan(0);
-      expect(weapons.every((w) => w.weaponCategory === "martial")).toBe(true);
-    });
-
-    it("includes the battleaxe", () => {
-      expect(getMartialWeapons().some((w) => w.id === "battleaxe")).toBe(true);
-    });
-  });
-
-  describe("getMeleeWeapons", () => {
-    it("returns only melee weapons", () => {
-      const weapons = getMeleeWeapons();
-      expect(weapons.length).toBeGreaterThan(0);
-      expect(weapons.every((w) => w.weaponType === "melee")).toBe(true);
-    });
-  });
-
-  describe("getRangedWeapons", () => {
-    it("returns only ranged weapons", () => {
-      const weapons = getRangedWeapons();
-      expect(weapons.length).toBeGreaterThan(0);
-      expect(weapons.every((w) => w.weaponType === "ranged")).toBe(true);
-    });
-
-    it("includes the shortbow", () => {
-      expect(getRangedWeapons().some((w) => w.id === "shortbow")).toBe(true);
-    });
-  });
-
   describe("weapon mastery", () => {
     it("every weapon has a mastery property", () => {
-      const weapons = getEquipmentByCategory("weapon");
+      const weapons = SRD_WEAPONS;
       const missing = weapons.filter((w) => !w.mastery);
       expect(missing.map((w) => w.id)).toEqual([]);
     });
@@ -324,89 +190,13 @@ describe("equipment", () => {
         "Topple",
         "Vex",
       ]);
-      const weapons = getEquipmentByCategory("weapon");
+      const weapons = SRD_WEAPONS;
       weapons.forEach((w) => {
         expect(
           valid.has(w.mastery ?? ""),
           `${w.id} has invalid mastery: ${w.mastery}`
         ).toBe(true);
       });
-    });
-  });
-
-  // ── Armor sub-helpers ──
-
-  describe("getArmor", () => {
-    it("returns padded armor", () => {
-      expect(getArmor("padded-armor")?.id).toBe("padded-armor");
-    });
-
-    it("returns undefined for an unknown ID", () => {
-      expect(getArmor("no-armor")).toBeUndefined();
-    });
-  });
-
-  describe("getArmorByCategory", () => {
-    it("returns light armor", () => {
-      const armor = getArmorByCategory("light");
-      expect(armor.length).toBeGreaterThan(0);
-      expect(armor.every((a) => a.armorCategory === "light")).toBe(true);
-    });
-
-    it("returns heavy armor including chain mail", () => {
-      expect(getArmorByCategory("heavy").some((a) => a.id === "chain-mail")).toBe(true);
-    });
-
-    it("returns the shield when requesting 'shield' category", () => {
-      expect(getArmorByCategory("shield").some((a) => a.id === "shield")).toBe(true);
-    });
-  });
-
-  describe("getWearableArmor", () => {
-    it("returns only items with category === 'armor' (excludes shield)", () => {
-      const armor = getWearableArmor();
-      expect(armor.every((a) => a.category === "armor")).toBe(true);
-      expect(armor.every((a) => a.id !== "shield")).toBe(true);
-    });
-
-    it("includes padded armor", () => {
-      expect(getWearableArmor().some((a) => a.id === "padded-armor")).toBe(true);
-    });
-  });
-
-  // ── Gear sub-helpers ──
-
-  describe("getGear", () => {
-    it("returns a known gear item", () => {
-      expect(getGear("acid")?.id).toBe("acid");
-    });
-
-    it("returns undefined for an unknown ID", () => {
-      expect(getGear("zzz-unknown")).toBeUndefined();
-    });
-  });
-
-  describe("getEquipmentPacks", () => {
-    it("returns only pack items", () => {
-      const packs = getEquipmentPacks();
-      expect(packs.length).toBeGreaterThan(0);
-      expect(packs.every((p) => p.category === "pack")).toBe(true);
-    });
-
-    it("includes the burglar's pack", () => {
-      expect(getEquipmentPacks().some((p) => p.id === "burglars-pack")).toBe(true);
-    });
-  });
-
-  describe("getAdventuringGear", () => {
-    it("returns only gear items (category === 'gear')", () => {
-      const gear = getAdventuringGear();
-      expect(gear.length).toBeGreaterThan(0);
-      expect(gear.every((g) => g.category === "gear")).toBe(true);
-    });
-
-    it("includes acid", () => {
-      expect(getAdventuringGear().some((g) => g.id === "acid")).toBe(true);
     });
   });
 });
@@ -423,50 +213,6 @@ describe("magic-items", () => {
       expect(getMagicItem("no-item")).toBeUndefined();
     });
   });
-
-  describe("getAllMagicItemIds", () => {
-    it("returns a non-empty array of strings", () => {
-      const ids = getAllMagicItemIds();
-      expect(ids.length).toBeGreaterThan(0);
-      expect(ids.every((id) => typeof id === "string")).toBe(true);
-    });
-
-    it("includes potion-of-healing", () => {
-      expect(getAllMagicItemIds()).toContain("potion-of-healing");
-    });
-  });
-
-  describe("getMagicItemsByRarity", () => {
-    it("returns common items only", () => {
-      const items = getMagicItemsByRarity("common");
-      expect(items.length).toBeGreaterThan(0);
-      expect(items.every((i) => i.rarity === "common")).toBe(true);
-    });
-
-    it("returns uncommon items", () => {
-      expect(getMagicItemsByRarity("uncommon").length).toBeGreaterThan(0);
-    });
-  });
-
-  describe("getMagicItemsByType", () => {
-    it("returns potions only", () => {
-      const items = getMagicItemsByType("potion");
-      expect(items.length).toBeGreaterThan(0);
-      expect(items.every((i) => i.type === "potion")).toBe(true);
-    });
-
-    it("returns weapon magic items", () => {
-      expect(getMagicItemsByType("weapon").length).toBeGreaterThan(0);
-    });
-  });
-
-  describe("getMagicItemsRequiringAttunement", () => {
-    it("returns only items that require attunement", () => {
-      const items = getMagicItemsRequiringAttunement();
-      expect(items.length).toBeGreaterThan(0);
-      expect(items.every((i) => i.attunement)).toBe(true);
-    });
-  });
 });
 
 // ─── Backgrounds ─────────────────────────────────────────────────────────────
@@ -481,14 +227,6 @@ describe("backgrounds", () => {
       expect(getBackground("no-background")).toBeUndefined();
     });
   });
-
-  describe("getAllBackgroundIds", () => {
-    it("returns a non-empty list containing 'acolyte'", () => {
-      const ids = getAllBackgroundIds();
-      expect(ids.length).toBeGreaterThan(0);
-      expect(ids).toContain("acolyte");
-    });
-  });
 });
 
 // ─── Races ───────────────────────────────────────────────────────────────────
@@ -501,14 +239,6 @@ describe("races", () => {
 
     it("returns undefined for an unknown ID", () => {
       expect(getRace("no-race")).toBeUndefined();
-    });
-  });
-
-  describe("getAllRaceIds", () => {
-    it("returns a non-empty list containing 'human'", () => {
-      const ids = getAllRaceIds();
-      expect(ids.length).toBeGreaterThan(0);
-      expect(ids).toContain("human");
     });
   });
 
@@ -553,16 +283,6 @@ describe("races", () => {
 // ─── Conditions ──────────────────────────────────────────────────────────────
 
 describe("conditions", () => {
-  describe("getCondition", () => {
-    it("returns the Blinded condition", () => {
-      expect(getCondition("blinded")?.id).toBe("blinded");
-    });
-
-    it("returns undefined for an unknown ID", () => {
-      expect(getCondition("no-condition")).toBeUndefined();
-    });
-  });
-
   describe("getAllConditionIds", () => {
     it("returns all 15 standard conditions", () => {
       const ids = getAllConditionIds();
@@ -621,25 +341,11 @@ describe("feats", () => {
       expect(getFightingStyleFeats().some((f) => f.id === "archery")).toBe(true);
     });
   });
-
-  describe("getEpicBoonFeats", () => {
-    it("returns only epic-boon feats", () => {
-      const feats = getEpicBoonFeats();
-      expect(feats.length).toBeGreaterThan(0);
-      expect(feats.every((f) => f.category === "epic-boon")).toBe(true);
-    });
-
-    it("includes Boon of Dimensional Travel", () => {
-      expect(getEpicBoonFeats().some((f) => f.id === "boon-of-dimensional-travel")).toBe(
-        true
-      );
-    });
-  });
 });
 
 // ─── Class Spell Lists (data consistency, M-A) ────────────────────────────────
 // The app derives class→spell membership directly from each spell's own
-// `classes` field (SpellAddModal + getSpellsByClass), so these assertions guard
+// `classes` field (SpellAddModal), so these assertions guard
 // that canonical source rather than a duplicate lookup table.
 
 describe("spell class membership (M-A)", () => {
