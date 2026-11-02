@@ -228,7 +228,7 @@ The party took the Fennicks' bargain and set out for the ravine.`,
 }
 
 /** The dev encounter modes the Party section can seed (dev-bypass only). */
-type EncounterDemoMode = "begun" | "gathering" | "reflexes" | null;
+type EncounterDemoMode = "begun" | "gathering" | "reflexes" | "table" | null;
 
 /**
  * Which encounter the dev campaign should seed in the Party section. The DEFAULT is the
@@ -247,6 +247,9 @@ function encounterDemo(): EncounterDemoMode {
   // Thief's Reflexes: gathering with every roll in and Mara's hero a level-17 Thief
   // (`scn-thief-reflexes`), so Begin turns slots her second turn at Initiative − 10.
   if (flag === "reflexes") return "reflexes";
+  // A full table for the campaign video: four players and three groups of creatures,
+  // everyone rolled, mid-fight in round 2, started by a roll (the combat lifecycle).
+  if (flag === "table") return "table";
   return null;
 }
 
@@ -329,6 +332,8 @@ export function makeDevNotes(): SharedNote[] {
 function devEncounterInitSeed(): Record<string, number> {
   const mode = encounterDemo();
   if (mode === "reflexes") return { "member-bren": 3, "member-mara": 15 };
+  if (mode === "table")
+    return { "member-mara": 14, "member-bren": 9, "member-ila": 17, "member-lu": 12 };
   if (mode !== "begun") return {};
   return { "member-bren": 8, "member-mara": 6 };
 }
@@ -393,7 +398,12 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
     nextSessionAt: new Date("2026-11-06T20:00:00Z").getTime(),
     createdBy: "mock-uid",
     dmUid: "mock-uid",
-    members: ["mock-uid", "member-mara", "member-bren"],
+    members: [
+      "mock-uid",
+      "member-mara",
+      "member-bren",
+      ...(encounterDemo() === "table" ? ["member-ila", "member-lu"] : []),
+    ],
     memberDetails: {
       // The DM (you) hasn't attached a character — shows the "attach" state.
       // B32 — a realistic display name, never the raw English "You" (which leaked
@@ -441,6 +451,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
                 portraitUrl: DEV_HERO_PORTRAIT,
               },
             },
+      ...(encounterDemo() === "table" ? devTableMembers() : {}),
       "member-bren": {
         displayName: "Bren",
         characterId: "team-mandorlino-paladin",
@@ -993,8 +1004,109 @@ export function resolveDevCampaign(id: string): CampaignDoc {
  *     Goblin Chief is left UN-ROLLED (`initiative: null`), so the Begin-turns gate renders
  *     DISABLED with its "X/Y rolled" reason (C3 item 1).
  */
+/** The two extra players of the `table` demo, on the team fixtures' real sheets. */
+function devTableMembers(): CampaignDoc["memberDetails"] {
+  return {
+    "member-ila": {
+      displayName: "Ilaria",
+      characterId: "team-santaera-barbarian",
+      role: "player",
+      character: {
+        name: assertNonEmptyString("Santaera"),
+        race: asRaceId("orc"),
+        class: "Barbarian",
+        level: 5,
+        ac: 14,
+        hpMax: 55,
+      },
+    },
+    "member-lu": {
+      displayName: "Ludovica",
+      characterId: "team-chiaviddu-rogue",
+      role: "player",
+      character: {
+        name: assertNonEmptyString("Chiaviddu"),
+        race: asRaceId("elf"),
+        class: "Rogue",
+        level: 5,
+        ac: 15,
+        hpMax: 38,
+      },
+    },
+  };
+}
+
+/** The `table` demo's fight: four players and three groups of invented creatures, every
+ *  roll in, round 2, started by a roll (it has a clock, so anyone passes the turn). */
+function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
+  const now = Date.now();
+  const raider = (n: number, current: number) => ({
+    kind: "monster" as const,
+    id: `monster-${n}`,
+    name: `Ash Raider ${n}`,
+    ac: 13,
+    initiative: 15,
+    conditions: [],
+    hp: { current, temp: 0, max: 11 },
+    creatureType: "humanoid" as const,
+  });
+  const hound = (n: number) => ({
+    kind: "monster" as const,
+    id: `monster-${n + 3}`,
+    name: `Cinder Hound ${n}`,
+    ac: 13,
+    initiative: 11,
+    conditions: [],
+    hp: { current: 19, temp: 0, max: 19 },
+    creatureType: "beast" as const,
+  });
+  const pc = (uid: string, characterId: string) => ({
+    kind: "pc" as const,
+    id: `pc-${uid}`,
+    memberUid: uid,
+    characterId,
+  });
+  const combatants = [
+    pc("member-ila", "team-santaera-barbarian"),
+    raider(1, 11),
+    raider(2, 11),
+    raider(3, 4),
+    pc("member-mara", "team-catalion-bard"),
+    pc("member-lu", "team-chiaviddu-rogue"),
+    hound(1),
+    hound(2),
+    pc("member-bren", "team-mandorlino-paladin"),
+    {
+      kind: "monster" as const,
+      id: "monster-6",
+      name: "Raider Chief",
+      ac: 16,
+      initiative: 6,
+      conditions: [],
+      hp: { current: 30, temp: 0, max: 45 },
+      creatureType: "humanoid" as const,
+    },
+  ];
+  return {
+    round: 2,
+    currentCombatantId: "pc-member-mara",
+    order: combatants.map((c) => c.id),
+    nextMonsterOrdinal: 7,
+    epoch: 7,
+    status: "active",
+    combatants,
+    clock: {
+      startedAt: now - 6 * 60_000,
+      lastActivityAt: now - 30_000,
+      turnStartedAt: now - 30_000,
+      turnsBegun: true,
+    },
+  };
+}
+
 function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
   if (mode === null) return null;
+  if (mode === "table") return makeDevTableFight();
   const gathering = mode === "gathering" || mode === "reflexes";
   return {
     round: gathering ? 1 : 2,
