@@ -81,11 +81,23 @@ describe("partyRows", () => {
   });
 
   it("the class line names each class with its level", () => {
-    expect(partyRows(campaign, {}, "en")[1]?.classLine).toBe("Rogue 5");
+    expect(partyRows(campaign, { b: null }, "en")[1]?.classLine).toBe("Rogue 5");
   });
 
-  it("without the live doc: AC and Perception from the party card, HP unknown, no chips", () => {
-    const row = partyRows(campaign, {}, "it")[0];
-    expect(row).toMatchObject({ hp: null, ac: 1, perception: 1, chips: [] });
+  it("when the live doc can't be read: AC and Perception from the party card, HP unknown, no chips", () => {
+    const row = partyRows(campaign, { a: null }, "it")[0];
+    expect(row).toMatchObject({
+      loading: false,
+      hp: null,
+      ac: 1,
+      perception: 1,
+      chips: [],
+    });
+  });
+
+  it("while the live doc is loading the row says so, so the screen never shows a name that then changes", () => {
+    const [loading, ready] = partyRows(campaign, { b: rogue }, "en");
+    expect(loading).toMatchObject({ uid: "a", loading: true });
+    expect(ready).toMatchObject({ uid: "b", loading: false, name: "Kaela" });
   });
 });
