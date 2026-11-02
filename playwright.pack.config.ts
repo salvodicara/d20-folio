@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { FOLIO_SERVER_GUARD, folioServers } from "./tests/folio-server-guard";
 
 /**
  * The runtime content pack, end to end, against the Firebase emulators
@@ -15,26 +16,28 @@ const EMULATOR_CLIENT_ENV = {
   VITE_FIREBASE_MESSAGING_SENDER_ID: "000000000000",
   VITE_FIREBASE_APP_ID: "demo-app",
 };
-export const COMPOSED_URL = "http://127.0.0.1:5181";
-export const RUNTIME_URL = "http://127.0.0.1:5182";
+const PACK_PORT = Number(process.env.E2E_PACK_PORT ?? 5181);
+export const COMPOSED_URL = `http://127.0.0.1:${PACK_PORT}`;
+export const RUNTIME_URL = `http://127.0.0.1:${PACK_PORT + 1}`;
 
 export default defineConfig({
   testDir: "./tests/e2e-pack",
+  globalSetup: FOLIO_SERVER_GUARD,
   workers: 1,
   retries: 0,
   reporter: "list",
   timeout: 120_000,
   use: { ...devices["Desktop Chrome"], trace: "retain-on-failure" },
-  webServer: [
+  webServer: folioServers("E2E_PACK_PORT", [
     {
-      command: "pnpm vite --host 127.0.0.1 --port 5181 --strictPort",
+      command: `pnpm vite --host 127.0.0.1 --port ${PACK_PORT} --strictPort`,
       url: COMPOSED_URL,
       // No HMR socket: it reloads a page by itself mid-test (see vite.config.ts).
       env: { ...EMULATOR_CLIENT_ENV, VITE_E2E_NO_HMR: "true" },
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: "pnpm vite --host 127.0.0.1 --port 5182 --strictPort",
+      command: `pnpm vite --host 127.0.0.1 --port ${PACK_PORT + 1} --strictPort`,
       url: RUNTIME_URL,
       env: {
         ...EMULATOR_CLIENT_ENV,
@@ -44,5 +47,5 @@ export default defineConfig({
       },
       reuseExistingServer: !process.env.CI,
     },
-  ],
+  ]),
 });

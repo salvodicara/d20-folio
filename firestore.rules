@@ -966,7 +966,13 @@ service cloud.firestore {
             && item.id == itemId
             && item.at is number
             && item.serverAt == request.time
-            && item.keys().hasOnly(['id', 'by', 'at', 'type', 'event', 'target', 'after', 'serverAt'])
+            && item.keys().hasOnly(['id', 'by', 'at', 'type', 'event', 'target', 'after', 'seen', 'serverAt'])
+            // A line may carry the fight and round its device saw (SeenRound).
+            && (!('seen' in item) || (item.type == 'event'
+              && item.seen is map
+              && item.seen.keys().hasOnly(['encounterId', 'round'])
+              && item.seen.encounterId is string
+              && item.seen.round is int))
             && (item.type == 'event' || item.get('target', null) is string)
             // A line or its correction carries the event; the overrides carry none.
             && (!(item.type in ['event', 'correct']) || item.get('event', null) is map)

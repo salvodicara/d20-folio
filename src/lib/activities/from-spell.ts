@@ -215,13 +215,6 @@ function spellEffects(spell: SrdSpellData): ActivityEffect[] {
 /** Spell fields the Activity does not carry yet, each with its reason. */
 function spellGaps(spell: SrdSpellData): ActivityGap[] {
   const gaps: ActivityGap[] = [];
-  if (spell.mechanicsProgram) {
-    gaps.push({
-      field: "mechanicsProgram",
-      reason:
-        "a hand-written runtime program (retaliation, staged effects) the declarative effects cannot express yet",
-    });
-  }
   if (spell.weaponAttackCantrip) {
     gaps.push({
       field: "weaponAttackCantrip",

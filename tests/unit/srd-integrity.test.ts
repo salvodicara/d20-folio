@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { spells, spellIndex } from "@/data/spells";
 import { classFeatures, classTables } from "@/data/classes";
-import { getAllBackgroundIds, getBackground } from "@/data/backgrounds";
+import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { FEATS_BY_ID, SRD_FEATS } from "@/data/feats";
 
 /** Guards against duplicate IDs that silently shadow each other (e.g. the old
@@ -61,13 +61,7 @@ describe("SRD data integrity", () => {
   // (a feat CATEGORY, not an id). Asserting id resolution catches both and
   // guards against future regressions.
   describe("background Origin feat references", () => {
-    const backgrounds = getAllBackgroundIds()
-      .map((id) => getBackground(id))
-      .filter((bg): bg is NonNullable<typeof bg> => bg !== undefined);
-
-    it("every background resolves to a real SRD background", () => {
-      expect(backgrounds.length).toBe(getAllBackgroundIds().length);
-    });
+    const backgrounds = SRD_BACKGROUNDS;
 
     it.each(backgrounds.map((bg) => ({ id: bg.id, feat: bg.feat })))(
       "background $id grants a non-empty feat slug",

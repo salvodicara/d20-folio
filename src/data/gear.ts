@@ -868,18 +868,3 @@ export const SRD_GEAR: SrdEquipmentData[] = [
 export const GEAR_BY_ID: ReadonlyMap<string, SrdEquipmentData> = new Map(
   SRD_GEAR.map((g) => [g.id, g])
 );
-
-/** Get a gear item by ID */
-export function getGear(id: string): SrdEquipmentData | undefined {
-  return GEAR_BY_ID.get(id);
-}
-
-/** Get all equipment packs */
-export function getEquipmentPacks(): SrdEquipmentData[] {
-  return SRD_GEAR.filter((g) => g.category === "pack");
-}
-
-/** Get all adventuring gear (excludes packs) */
-export function getAdventuringGear(): SrdEquipmentData[] {
-  return SRD_GEAR.filter((g) => g.category === "gear");
-}

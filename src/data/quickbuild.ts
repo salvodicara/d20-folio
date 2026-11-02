@@ -34,7 +34,6 @@
  * (docs/ARCHITECTURE.md → "The content-pack seam"); EVERY composed class must
  * have one — the guard fails if a class is left without.
  */
-import { overlayPackRecord } from "@/lib/pack-merge";
 import type { AbilityCode } from "@/data/types";
 import type { FeatureChoiceSlots } from "@/lib/feature-choices";
 import { packQuickbuildPresets } from "@pack";
@@ -220,14 +219,16 @@ const SRD_QUICKBUILD_PRESETS = {
  * Every composed class's quickbuild preset, keyed by class id.
  *
  * The pack may REPLACE a public preset, not just add its own classes
- * (`overlayPackRecord`): the public set is the SRD-legal projection — it can
+ * (a plain spread, never `mergePackRecord`'s collision throw): the public set is the SRD-legal projection — it can
  * only reach for the SRD's four backgrounds, so several classes fall back on
  * the Acolyte — while the composed build hands the player the background the
  * class is actually known by (golden rule D11: the split is licensing, never
  * scope).
  */
-export const QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> =
-  overlayPackRecord<QuickbuildPreset>(SRD_QUICKBUILD_PRESETS, packQuickbuildPresets);
+export const QUICKBUILD_PRESETS: Readonly<Record<string, QuickbuildPreset>> = {
+  ...SRD_QUICKBUILD_PRESETS,
+  ...packQuickbuildPresets,
+};
 
 /**
  * The build the creation page OPENS with, so Quick Start is never a blank form.

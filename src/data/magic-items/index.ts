@@ -26,25 +26,3 @@ export const MAGIC_ITEMS_BY_ID: ReadonlyMap<string, SrdMagicItemData> = new Map(
 export function getMagicItem(id: string): SrdMagicItemData | undefined {
   return MAGIC_ITEMS_BY_ID.get(id);
 }
-
-/** Get all magic item IDs */
-export function getAllMagicItemIds(): string[] {
-  return SRD_MAGIC_ITEMS.map((item) => item.id);
-}
-
-/** Filter magic items by rarity */
-export function getMagicItemsByRarity(
-  rarity: SrdMagicItemData["rarity"]
-): SrdMagicItemData[] {
-  return SRD_MAGIC_ITEMS.filter((item) => item.rarity === rarity);
-}
-
-/** Filter magic items by type */
-export function getMagicItemsByType(type: SrdMagicItemData["type"]): SrdMagicItemData[] {
-  return SRD_MAGIC_ITEMS.filter((item) => item.type === type);
-}
-
-/** Filter magic items that require attunement */
-export function getMagicItemsRequiringAttunement(): SrdMagicItemData[] {
-  return SRD_MAGIC_ITEMS.filter((item) => item.attunement);
-}

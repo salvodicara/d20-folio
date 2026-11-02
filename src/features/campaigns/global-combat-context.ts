@@ -19,6 +19,7 @@ import { setEncounterRoundSource } from "@/stores/characterStore";
 import type { EncounterView } from "@/features/campaigns/encounter-view";
 import type { ViewerEncounter } from "@/features/campaigns/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
+import type { SeenRound } from "@/lib/session-log";
 
 /** The live combat status of THIS USER (resolved from the auth UID, not any open sheet),
  *  or `null` when they are in no running encounter (the common case). */
@@ -299,3 +300,15 @@ export const usePinStore = create<PinStore>((set) => ({
     set({ pin: campaignId });
   },
 }));
+
+/** The fight and round a session-log line from a sheet belongs to: that character's
+ *  running encounter in the campaign the line goes to, else none (the log position
+ *  decides). */
+export function seenRound(
+  status: GlobalCombat | null,
+  campaignId: string,
+  characterId: string
+): SeenRound | undefined {
+  if (status?.campaignId !== campaignId || status.characterId !== characterId) return;
+  return { encounterId: String(status.encounter.epoch), round: status.round };
+}

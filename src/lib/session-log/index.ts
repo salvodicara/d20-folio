@@ -4,6 +4,7 @@ export type {
   PlayEvent,
   PlayEventKind,
   RollProvenance,
+  SeenRound,
 } from "./types";
 export {
   foldSession,

@@ -41,10 +41,15 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
       continue;
     }
     if (entry.encounterId !== undefined && section?.kind === "encounter") {
+      // By number, not by position: a line recorded before its round's marker (or a
+      // beat the DM's page caught up on later) still joins its own round.
       const round = entry.round ?? null;
-      const last = section.rounds[section.rounds.length - 1];
-      if (last?.round === round) last.entries.push(entry);
-      else section.rounds.push({ round, entries: [entry] });
+      const existing = section.rounds.find((r) => r.round === round);
+      if (existing) existing.entries.push(entry);
+      else {
+        section.rounds.push({ round, entries: [entry] });
+        section.rounds.sort((a, b) => (a.round ?? 0) - (b.round ?? 0));
+      }
     } else if (section?.kind === "outside") {
       section.entries.push(entry);
     } else {

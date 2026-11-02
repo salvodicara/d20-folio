@@ -12,7 +12,7 @@ import { exactItemCopy } from "@/lib/item-copies";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import type {
   ResourceRecoveryTrigger,
-  ResourceSpec,
+  ItemResourceSpec,
   SrdMagicItemData,
 } from "@/data/types";
 import { attunementSatisfied } from "@/lib/attunement";
@@ -86,7 +86,7 @@ export interface ItemResourceViewResult {
   omissions: ItemResourceOmission[];
 }
 
-function labelKey(unit: ResourceSpec["unit"]): ItemResourceLabelTranslationKey {
+function labelKey(unit: ItemResourceSpec["unit"]): ItemResourceLabelTranslationKey {
   switch (unit) {
     case "charges":
       return "equipment.charges";
@@ -99,7 +99,7 @@ function labelKey(unit: ResourceSpec["unit"]): ItemResourceLabelTranslationKey {
   }
 }
 
-function unitKey(unit: ResourceSpec["unit"]): ItemResourceUnitTranslationKey {
+function unitKey(unit: ItemResourceSpec["unit"]): ItemResourceUnitTranslationKey {
   switch (unit) {
     case "charges":
       return "units.charges";

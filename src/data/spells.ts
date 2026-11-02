@@ -42,27 +42,6 @@ export const spells: SrdSpellData[] = mergePack(
 /** Index for fast lookup by ID */
 export const spellIndex = new Map<string, SrdSpellData>(spells.map((s) => [s.id, s]));
 
-/** Get spells by level */
-export function getSpellsByLevel(level: number): SrdSpellData[] {
-  return spells.filter((s) => s.level === level);
-}
-
-/** Get spells by class */
-export function getSpellsByClass(className: string): SrdSpellData[] {
-  const lower = className.toLowerCase();
-  return spells.filter((s) => s.classes.some((c) => c.toLowerCase() === lower));
-}
-
-/** Get spells by school */
-export function getSpellsBySchool(school: SrdSpellData["school"]): SrdSpellData[] {
-  return spells.filter((s) => s.school === school);
-}
-
-// `searchSpells` (name-substring search) was unused and read the spell
-// `name.en`/`name.it` LocaleText that R3 moved into the i18n catalogues — removed in
-// R6+R3 SLICE 7b. The live spell pickers search via `localizeSrd`-resolved labels
-// in the view layer, not over the data.
-
 /** Get a single spell by ID, or undefined */
 export function getSpellById(id: string): SrdSpellData | undefined {
   return spellIndex.get(id);

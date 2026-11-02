@@ -77,6 +77,14 @@ export const SRD_FILE: Record<SrdKind, string> = {
   monster: "monsters",
 };
 
+/** One locale's public shard of one SRD kind, before the pack composes over it. */
+async function loadSrdShard(locale: Locale, kind: SrdKind): Promise<SrdCatalogue> {
+  const path = `./${locale}/srd/${SRD_FILE[kind]}.json`;
+  const loader = SRD_GLOB[path];
+  if (!loader) throw new Error(`[i18n] missing srd catalogue ${path}`);
+  return (await loader()).default as unknown as SrdCatalogue;
+}
+
 /**
  * Load + merge ALL of a locale's `ui/*.json` shards into one flat resource object
  * (the runtime `common` namespace). Each shard is `{ <group>: { … } }`, so a
@@ -107,16 +115,11 @@ export async function loadUiResources(locale: Locale): Promise<Record<string, un
  * (`spells.json` → `spell`, `magic-items.json` → `magic-item`).
  */
 export async function loadSrdCatalogues(locale: Locale): Promise<SrdCatalogueSet> {
-  const prefix = `./${locale}/srd/`;
   const packCats = await loadPackSrdCatalogues(locale);
   const overlay = srdOverlay[locale];
   const entries = await Promise.all(
     SRD_KINDS.map(async (kind) => {
-      const path = `${prefix}${SRD_FILE[kind]}.json`;
-      const loader = SRD_GLOB[path];
-      if (!loader) throw new Error(`[i18n] missing srd catalogue ${path}`);
-      const mod = await loader();
-      const base = mod.default as unknown as SrdCatalogue;
+      const base = await loadSrdShard(locale, kind);
       // Compose public + the pack's additions + the pack's overlay patches
       // (PHB display-name/prose restores) — identity when no pack.
       return [kind, mergeCatalogue(kind, base, packCats[kind], overlay?.[kind])] as const;
@@ -136,10 +139,7 @@ export async function loadLazySrdKind(
   locale: Locale,
   kind: LazySrdKind
 ): Promise<SrdCatalogue> {
-  const path = `./${locale}/srd/${SRD_FILE[kind]}.json`;
-  const loader = SRD_GLOB[path];
-  if (!loader) throw new Error(`[i18n] missing lazy srd catalogue ${path}`);
-  const base = (await loader()).default as unknown as SrdCatalogue;
+  const base = await loadSrdShard(locale, kind);
   const additions = await loadPackLazySrd(locale, kind);
   return mergeCatalogue(kind, base, additions, srdOverlay[locale]?.[kind]);
 }

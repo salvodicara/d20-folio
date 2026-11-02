@@ -5,7 +5,7 @@
  * make the parsers unit-testable in isolation.
  */
 
-import type { ResourceEnteredRoll, SrdMagicItemData } from "@/data/types";
+import type { ItemResourceEnteredRoll, SrdMagicItemData } from "@/data/types";
 
 /**
  * Parse an "AC +N" / "+N AC" hint from the properties list of a magic item
@@ -28,7 +28,7 @@ export function parseMagicItemAcBonus(
 /** "7" or a dice count "1d6+3" (captures: count, sides, sign, modifier). */
 const COUNT = String.raw`(\d+)(?:d(\d+)(?:\s*([+-])\s*(\d+))?)?`;
 
-function enteredRoll(m: RegExpExecArray): ResourceEnteredRoll {
+function enteredRoll(m: RegExpExecArray): ItemResourceEnteredRoll {
   const modifier = m[4] === undefined ? 0 : Number(m[4]) * (m[3] === "-" ? -1 : 1);
   return {
     dice: Number(m[1]),
@@ -73,7 +73,7 @@ export function parseMagicItemCharges(
 /** What an item regains daily at dawn: a fixed amount or a roll the table makes. */
 export type MagicItemDawnRecharge =
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
 /**
  * Parse a "recharge: 1d6+1 / dawn" / "recharge: 1 / dawn" tag. Undefined means
