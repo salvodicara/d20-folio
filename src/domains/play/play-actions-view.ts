@@ -5,8 +5,8 @@
  * filter chips' counts. Rows read the engine's own facts (`actionRowFacts`): a
  * condition that blocks a slot marks its rows blocked.
  */
+import { effectiveConditions } from "@/lib/aggregate-character";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { Locale } from "@/lib/locale";
 import {
   actionFilterCounts,
@@ -51,9 +51,7 @@ export interface PlayActionsView {
 const ORDER: readonly ActionGroup[] = ["actions", "bonus", "reactions", "other"];
 
 export function playActionsView(doc: CharacterDoc, locale: Locale): PlayActionsView {
-  const blocked = resolveConditionEffects(
-    effectiveSessionConditions(doc.session)
-  ).blockedSlots;
+  const blocked = resolveConditionEffects(effectiveConditions(doc)).blockedSlots;
   const actions = sortActions(localizeActions(doc, locale));
   const facts = actions.map((a) => actionRowFacts(doc, a, blocked));
   const rows = actions.map((a, i): { group: ActionGroup; row: PlayActionRow } => {

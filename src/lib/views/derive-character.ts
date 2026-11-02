@@ -44,7 +44,6 @@ import {
   type SpeedEntry,
 } from "@/lib/views/sheet-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { DamageDefenses } from "@/lib/damage-intake";
 import type { SourceConditionImmunity } from "@/lib/grants";
 import type { ConditionId } from "@/data/types";
@@ -85,8 +84,11 @@ export interface CharacterSheet {
   detections: DetectionEntry[];
   /** The primary caster's DC and attack (override-first), or null for a non-caster. */
   spellcasting: { ability: AbilityCode; saveDc: number; attackBonus: number } | null;
-  /** Active condition ids, including those riding concentration and encounter effects. */
+  /** Active condition ids, including those riding concentration and encounter effects;
+   *  a condition the character is immune to is left out (see `suppressedConditions`). */
   conditions: string[];
+  /** Conditions the character has but is immune to: suppressed until the immunity ends. */
+  suppressedConditions: string[];
   defenses: DamageDefenses;
   conditionImmunities: ReadonlySet<ConditionId>;
   sourceConditionImmunities: readonly SourceConditionImmunity[];
@@ -101,6 +103,12 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     fadingPenalties: session.fadingPenalties,
     // A play-reduced maximum (Life Drain) lowers max HP here exactly as on the sheet.
     hpMaxReduction: session.hpMaxReduction,
+    // The conditions in effect, immunities applied (`aggregate.conditions`).
+    conditions: session.conditions,
+    concentration: session.concentration,
+    concentrationConditions: session.concentrationConditions,
+    encounterEffects: session.encounterEffects,
+    sessionDefenses: session.sessionDefenses,
   };
   const aggregate = aggregateCharacterGrants(character, aggSession);
   const level = totalLevel(character);
@@ -175,7 +183,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     session.sessionDefenses,
     pb,
     isHeavyArmorEquipped(character.equipment, getEquipment),
-    effectiveSessionConditions(session)
+    aggregate.conditions
   );
   const conditionImmunities = new Set(
     deriveDefenseKind(
@@ -219,7 +227,8 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     unlimitedSenses: derived.unlimitedSenses,
     detections: derived.detections,
     spellcasting,
-    conditions: effectiveSessionConditions(session),
+    conditions: aggregate.conditions,
+    suppressedConditions: aggregate.suppressedConditions,
     defenses,
     conditionImmunities,
     sourceConditionImmunities: aggregate.sourceConditionImmunities,

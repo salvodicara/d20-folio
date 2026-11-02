@@ -24,6 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { effectiveConditions } from "@/lib/aggregate-character";
 import { runEndTurn } from "@/lib/play/end-turn";
 import {
   lazy,
@@ -72,7 +73,6 @@ import { DamageTray } from "@/features/character/center/DamageTray";
 import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
 import { useLocale } from "@/hooks/useLocale";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import {
   resolveTrackers,
   getActionCostOptions,
@@ -327,9 +327,7 @@ export function TurnEconomyProvider({
     const slot = getEconomySlot(action);
     if (
       slot !== "free" &&
-      resolveConditionEffects(effectiveSessionConditions(live.session)).blockedSlots.has(
-        slot
-      )
+      resolveConditionEffects(effectiveConditions(live)).blockedSlots.has(slot)
     ) {
       return t("combat.slotBlockedByCondition");
     }

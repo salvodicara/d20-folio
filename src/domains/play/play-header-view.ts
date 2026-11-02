@@ -5,8 +5,8 @@
  * (`sheetNumbers`), HP with temporary points, and what is going on (Concentration,
  * effects, conditions). Pure: every label is localized here.
  */
+import { effectiveConditions } from "@/lib/aggregate-character";
 import { abilityModifier } from "@/lib/ability";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { Locale } from "@/lib/locale";
 import { effectChipsView } from "@/lib/views/effect-chips-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
@@ -65,6 +65,6 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
     },
     concentration: concentration ? concentrationLabel(concentration, locale) : null,
     effects: effectChipsView(doc, locale).length,
-    conditions: effectiveSessionConditions(doc.session).length,
+    conditions: effectiveConditions(doc).length,
   };
 }

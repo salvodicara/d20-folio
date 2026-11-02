@@ -93,3 +93,8 @@ rows it covers, and retires the special cases it lists. Shape changes go through
   on-zero outcomes (Disintegrate's dust, knocking out), the stable 1d4-hour wake, attunement ending
   at death, and companions at 0 (with M6). Concentration lost at the fall is not given back when a
   saver works.
+- **M3, immunity** done: `aggregateCharacterGrants` returns the conditions in effect with
+  immune ones suppressed (`conditions`, `suppressedConditions`), and `effectiveConditions(doc)`
+  is the read for rules; an immune creature gains no Exhaustion. Still open in M3: end rules
+  (Hide's acts, on damage, repeat saves, the grappler incapacitated), Knock Out and Abjure Foes
+  data, unseen sources.

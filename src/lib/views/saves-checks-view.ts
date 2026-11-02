@@ -45,7 +45,6 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { mergeSkillProficiencies, mergeSaveProficiencies } from "@/lib/views/sheet-view";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 
 /**
  * The narrow slice of session state the derivation reads — a structural subset
@@ -63,6 +62,7 @@ export interface SavesChecksSession {
   grantBundleChoices?: Record<string, string>;
   itemResources?: SessionState["itemResources"];
   fadingPenalties?: SessionState["fadingPenalties"];
+  sessionDefenses?: SessionState["sessionDefenses"];
 }
 
 /** One saving-throw row (STR…CHA), engine-computed + override-first. */
@@ -189,13 +189,6 @@ export function deriveSavesAndChecks(
 ): SavesAndChecks {
   const { exhaustion } = session;
   const activeFeatures = session.activeFeatures;
-  const conditions = effectiveSessionConditions({
-    conditions: session.conditions ?? [],
-    concentration: session.concentration ?? "",
-    concentrationConditions: session.concentrationConditions,
-    encounterEffects: session.encounterEffects,
-    activeFeatures,
-  });
   const pbOverride = charData.proficiencyBonusOverride;
   const level = totalLevel(charData);
 
@@ -213,7 +206,15 @@ export function deriveSavesAndChecks(
     grantBundleChoices: session.grantBundleChoices,
     itemResources: session.itemResources,
     fadingPenalties: session.fadingPenalties,
+    conditions: session.conditions ?? [],
+    concentration: session.concentration ?? "",
+    concentrationConditions: session.concentrationConditions,
+    encounterEffects: session.encounterEffects,
+    sessionDefenses: session.sessionDefenses,
   });
+  // The conditions in effect, immunities applied (a suppressed Frightened is no
+  // Disadvantage).
+  const conditions = fullAggregate.conditions;
 
   const effectiveScores = aggregateAbilityScores(
     charData.abilityScores,

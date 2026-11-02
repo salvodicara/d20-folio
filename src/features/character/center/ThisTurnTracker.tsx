@@ -35,6 +35,7 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
   aggregateCharacterGrants,
   computedInitiativeBonus,
+  effectiveConditions,
 } from "@/lib/aggregate-character";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import {
@@ -44,7 +45,6 @@ import {
 } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { vitalConcentration, vitalExhaustion } from "@/lib/character-vitals";
 import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
@@ -562,7 +562,7 @@ export function ThisTurnTracker({
   // function in LeftHud. Derived FRESH from session.conditions; the slider stays
   // manually editable (override-first — a feature may let the player move anyway),
   // so the speed-0 state is an informational note, never a hard lock.
-  const conditions = effectiveSessionConditions(character.session);
+  const conditions = effectiveConditions(character);
   const conditionEffects = resolveConditionEffects(conditions);
   // RA-19 — SRD Prone "Restricted Movement": standing up costs half your Speed
   // (the BASE walking Speed — Dash extends movement, not Speed — so NOT
@@ -585,7 +585,7 @@ export function ThisTurnTracker({
     const cs = useCharacterStore.getState();
     const live = cs.character;
     if (!live || !isCharacterAlive(live.status, live.session)) return;
-    const liveConditions = effectiveSessionConditions(live.session);
+    const liveConditions = effectiveConditions(live);
     const liveConditionEffects = resolveConditionEffects(liveConditions);
     const combat = useCombatStore.getState();
     const liveSpeedFt =
