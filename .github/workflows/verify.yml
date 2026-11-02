@@ -2,7 +2,8 @@ name: Verify
 
 # The COMPOSED behavioural verdict, once per merge to main (golden rule 14):
 # the full Playwright e2e matrix (chromium + mobile + portrait-sw) sharded
-# across parallel runners, plus the composed unit suite — both against the same
+# across parallel runners, the offline proof, plus the composed unit suite — all
+# against the same
 # composition that deploys (the private content pack checked out and landed at
 # ./content-pack, the seam deploy.yml uses). Public-repo Actions minutes are
 # free, so every main SHA carries a full verdict AMBIENTLY; `deploy.yml` then
@@ -116,6 +117,42 @@ jobs:
   # artifact to open when Verify goes red. Short retention: the repo is public,
   # and failure screenshots can show composed (pack) content — same exposure
   # class as the deployed app itself (owner-accepted, soft-launch charter).
+  # The offline proof (playwright.offline.config.ts): a production-shaped build with
+  # the service worker, one online visit in Italian, then the sheet, spells and
+  # bestiary offline. Its own build and port, so it is not part of the shards.
+  offline:
+    name: e2e (offline)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
+        with:
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Offline e2e
+        run: pnpm test:e2e:offline
+      - name: Upload the failure trace
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-offline-trace
+          path: test-results
+          retention-days: 3
+
   report:
     name: merged e2e report
     if: ${{ failure() }}
