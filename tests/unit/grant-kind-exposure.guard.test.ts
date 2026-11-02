@@ -11,9 +11,8 @@
  *    Renaming the seam or deleting the consumer fails here.
  *  - `{ plumbing }` — deliberately NON-rendered, with the written justification
  *    (a choice-engine seam, an equivalent code path, a dormant duplicate).
- *  - `{ open }` — a KNOWN exposure gap, recorded as a ranked OPEN item in
- *    docs/AUTOMATION_COVERAGE.md (the doc must mention the kind, so the gap
- *    can't silently vanish from the backlog).
+ *  - `{ open }` — a KNOWN exposure gap, with what is missing written in the
+ *    row: this table is the backlog, so a gap can't silently vanish.
  *
  * Adding a NEW Grant kind without registering it here fails CI; so does a
  * stale row for a removed kind.
@@ -654,12 +653,10 @@ describe("grant-kind exposure guard — no Grant kind ships invisible", () => {
     expect(failures).toEqual([]);
   });
 
-  it("every OPEN gap is recorded in docs/AUTOMATION_COVERAGE.md (the backlog can't lose it)", () => {
-    const doc = read("docs/AUTOMATION_COVERAGE.md");
-    const missing = Object.entries(EXPOSURE)
-      .filter((e): e is [string, { open: string }] => "open" in e[1])
-      .map(([kind]) => kind)
-      .filter((kind) => !doc.includes(`\`${kind}\``));
-    expect(missing).toEqual([]);
+  it("every OPEN gap states what is missing (this table is the backlog)", () => {
+    const unexplained = Object.entries(EXPOSURE)
+      .filter(([, e]) => "open" in e && e.open.trim().length < 20)
+      .map(([kind]) => kind);
+    expect(unexplained).toEqual([]);
   });
 });
