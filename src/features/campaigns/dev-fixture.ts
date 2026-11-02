@@ -1268,7 +1268,7 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
   const at = (h: number, m: number) => new Date(2026, 4, 2, h, m).getTime();
   const mara = "pc-member-mara";
   const bren = "pc-member-bren";
-  const fight = "dev-fight-goblins";
+  const fight = "dev-fight-raiders";
   let n = 0;
   const item = (time: number, event: PlayEvent): LogItem => {
     n += 1;
@@ -1286,7 +1286,7 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
       item(at(21, 40), {
         kind: "encounter-start",
         encounterId: fight,
-        names: { "m-1": "Goblin 1", "m-2": "Goblin 2", "m-3": "Goblin Boss" },
+        names: { "m-1": "Ash Raider 1", "m-2": "Ash Raider 2", "m-3": "Raider Chief" },
       }),
       item(at(21, 40), { kind: "round-start", round: 1 }),
       item(at(21, 41), { kind: "damage", target: mara, amount: 9 }),
@@ -1296,7 +1296,7 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
       item(at(21, 47), { kind: "round-start", round: 3 }),
       item(at(21, 48), {
         kind: "note",
-        text: "“Leave the hammer, it is cursed,” the boss shouts as it flees.",
+        text: "“Leave the hammer, it is cursed,” the chief shouts as it flees.",
         actor: mara,
       }),
       item(at(21, 49), { kind: "encounter-end", encounterId: fight, outcome: "victory" }),
