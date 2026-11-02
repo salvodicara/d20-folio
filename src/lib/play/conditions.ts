@@ -54,10 +54,13 @@ export function removeCondition(
     (uid, world, id) => planSelfConditionEnd(doc, uid, world, condition, id),
     givenActionId
   );
-  // A condition a lit potion state gives (Invisibility) ends with that state.
+  // Removing a chip ends that chip only: being found ends a Hide, not the Potion of
+  // Invisibility running under it. With no chip of its own, the condition comes from
+  // a lit potion state, which ends with it.
+  const ownChip = doc.session.conditions.includes(condition);
   const base = endStateKeys(
     engine ? engine.session : doc.session,
-    potionStatesGiving(doc.session.activeFeatures ?? [], condition)
+    ownChip ? [] : potionStatesGiving(doc.session.activeFeatures ?? [], condition)
   );
   const clearsHiddenDc = condition === "invisible" && doc.session.hiddenDc !== undefined;
   return {

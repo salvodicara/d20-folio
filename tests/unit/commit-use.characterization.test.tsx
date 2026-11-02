@@ -181,6 +181,26 @@ describe("a use today: it changes the sheet and the turn, one undo restores, one
     expect(state()).toEqual(after);
   });
 
+  it("a shot from hiding ends the Hide's Invisible; undo brings it back (edge-case M3)", async () => {
+    mount(rogue);
+    const hidden = useCharacterStore.getState().character;
+    if (!hidden) throw new Error("no sheet");
+    useCharacterStore.setState({
+      character: {
+        ...hidden,
+        session: { ...hidden.session, conditions: ["invisible"], hiddenDc: 16 },
+      },
+    });
+    const before = state();
+    await settle(() => api?.handleSelect(action("weapon-shortbow")));
+    const shot = useCharacterStore.getState().character?.session;
+    expect(shot?.conditions).not.toContain("invisible");
+    expect(shot?.hiddenDc).toBeUndefined();
+
+    await settle(() => void useUndoStore.getState().undo());
+    expect(state()).toEqual(before);
+  });
+
   it("an Opportunity Attack outside a fight (logged only, the reaction stays free)", async () => {
     mount(rogue);
     const before = state();

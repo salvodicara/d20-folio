@@ -26,6 +26,7 @@
 
 import { effectiveConditions } from "@/lib/aggregate-character";
 import { runEndTurn } from "@/lib/play/end-turn";
+import { actsOfUse } from "@/lib/play/states";
 import {
   lazy,
   Suspense,
@@ -882,6 +883,17 @@ export function TurnEconomyProvider({
         action.summary.trackerTopUp.trackerId,
         action.summary.trackerTopUp.upTo
       );
+    }
+    // What the use does ends what those acts end: an attack roll or a Verbal spell
+    // ends a Hide, a potion's Invisibility ends on an attack or a spell. Inside the
+    // use's own undo, so undoing the use brings them back.
+    for (const act of actsOfUse(action)) {
+      const ended = useCharacterStore.getState().performAct(act)?.ended ?? [];
+      if (ended.includes("hide")) {
+        useCharacterStore
+          .getState()
+          .logEvent({ kind: "condition-loss", conditionId: "invisible" });
+      }
     }
     // A STRUCTURED action-use line (no localized text): effect → glyph, slot → colour.
     const loggedId = cs.logEvent({

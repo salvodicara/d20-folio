@@ -2,7 +2,9 @@
  * Pure play transitions for the character's active states (Rage, Bless lit on
  * yourself, a potion's timer): the character in, the next session out.
  */
+import { getSpellById } from "@/data/spells";
 import type { SrdSpellData } from "@/data/types";
+import { combatResolutionSpec } from "@/lib/combat-resolution";
 import type { Grant } from "@/lib/grants";
 import {
   drunkPotionId,
@@ -14,6 +16,7 @@ import {
 import {
   resolveActiveTimedEffects,
   resolvePerTurnRecoveryTrackerIds,
+  type ResolvedAction,
 } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState, TrackerState } from "@/types/character";
 import { restoreTrackerEntry } from "./recoveries";
@@ -92,20 +95,60 @@ export function endStateKeys(
 }
 
 /** Something you do that ends a state early ("The effect ends early if you make an
- *  attack roll, deal damage, or cast a spell"). */
-export type StateEndingAct = "attack-roll" | "deal-damage" | "cast-spell";
+ *  attack roll, deal damage, or cast a spell"; Hide also ends on a spell with a Verbal
+ *  component and on a sound louder than a whisper). */
+export type StateEndingAct =
+  | "attack-roll"
+  | "deal-damage"
+  | "cast-spell"
+  | "verbal-spell"
+  | "loud-noise";
+
+/** The acts that end a Hide (2024 Hide; being found is `removeCondition`). */
+const HIDE_ENDING_ACTS: ReadonlySet<StateEndingAct> = new Set([
+  "attack-roll",
+  "verbal-spell",
+  "loud-noise",
+]);
+
+/** What a committed use does that can end a state: its attack roll, its spell cast
+ *  and the spell's Verbal component. Dealing damage is the tray's, after the roll. */
+export function actsOfUse(action: ResolvedAction): StateEndingAct[] {
+  const acts: StateEndingAct[] = [];
+  const kind = combatResolutionSpec(action).kind;
+  if (kind === "attack" || kind === "attack-save") acts.push("attack-roll");
+  if (action.source === "spell") {
+    acts.push("cast-spell");
+    const spell =
+      action.homebrewSpell ?? (action.spellId ? getSpellById(action.spellId) : undefined);
+    if (spell?.components.v) acts.push("verbal-spell");
+  }
+  return acts;
+}
 
 /**
  * End every lit state whose duration ends early on `act` (Potion of Invisibility),
- * with the keys it ended for the caller's notice; null when nothing ends.
+ * and a Hide on the acts that end it, with what ended for the caller's notice
+ * (`"hide"` for the Hide); null when nothing ends.
  */
 export function endStatesOnAct(
   doc: CharacterDoc,
   act: StateEndingAct
 ): { session: SessionState; ended: string[] } | null {
-  const ended = potionStatesEndingOn(doc.session.activeFeatures ?? [], act);
-  if (ended.length === 0) return null;
-  return { session: endStateKeys(doc.session, ended), ended };
+  const states = potionStatesEndingOn(doc.session.activeFeatures ?? [], act);
+  const hide = doc.session.hiddenDc !== undefined && HIDE_ENDING_ACTS.has(act);
+  if (states.length === 0 && !hide) return null;
+  const session = endStateKeys(doc.session, states);
+  return {
+    session: hide
+      ? {
+          ...session,
+          conditions: session.conditions.filter((c) => c !== "invisible"),
+          hiddenDc: undefined,
+        }
+      : session,
+    ended: hide ? [...states, "hide"] : states,
+  };
 }
 
 /** Record (or clear, with no level) the slot level an active spell state was cast at. */
