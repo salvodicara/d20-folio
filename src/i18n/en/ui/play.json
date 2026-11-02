@@ -1,0 +1,9 @@
+{
+  "play": {
+    "hpTitle": "Hit points",
+    "temp": "+{{count}} temporary",
+    "proficiency": "Proficiency",
+    "effects": "Effects",
+    "concentrating": "Concentration: {{spell}}"
+  }
+}

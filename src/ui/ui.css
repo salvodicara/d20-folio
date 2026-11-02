@@ -80,6 +80,7 @@
   --fs-title-bar-m: 22px;
   --fs-title-bar: 24px;
   --fs-xl: 28px;
+  --fs-hp: 56px;
 
   --r-sm: 6px;
   --r: 8px;
@@ -116,6 +117,7 @@
 /* The page column: content centred up to 1440 px, 24 px gutters (16 on phone). */
 .fui .f-page {
   position: relative;
+  align-content: start;
   max-width: 1440px;
   margin: 0 auto;
   padding: 24px;
@@ -591,6 +593,8 @@
   /* the panel's colour, lifted toward white so the letter reads on any panel (AA) */
   color: color-mix(in srgb, var(--c, var(--gold)) 55%, var(--white));
   font: 600 var(--fs-md) / 1 var(--font-title);
+  /* the letter scales with the ring (a 48 px ring reads at the base size) */
+  font-size: max(var(--fs-md), calc(var(--ring-size) * 0.34));
 }
 /* A row whose sheet is still loading: quiet bars where the text will be. */
 .fui .f-skel {
@@ -1370,4 +1374,209 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
   gap: 8px;
+}
+
+/* ---------- the character's identity band (Play) ---------- */
+.fui .f-char {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "medal id stats hp"
+    "medal abil stats hp";
+  align-items: center;
+  gap: 16px 32px;
+}
+.fui .f-char-medal {
+  grid-area: medal;
+}
+.fui .f-char-id {
+  grid-area: id;
+}
+.fui .f-char-abil {
+  grid-area: abil;
+}
+.fui .f-char-stats {
+  grid-area: stats;
+}
+.fui .f-char-hp {
+  grid-area: hp;
+}
+.fui .f-char-id {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.fui .f-char-id h1 {
+  margin: 0;
+}
+.fui .f-char-id .f-hero-sub {
+  margin: 0;
+}
+.fui .f-abilities {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 8px;
+  max-width: min(480px, 100%);
+  margin: 0;
+}
+.fui .f-ability {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.fui .f-ability dd {
+  margin: 0;
+  display: grid;
+  justify-items: center;
+}
+.fui .f-ability b {
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-ability dd span {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+/* a proficient save: a dot before the score */
+.fui .f-ability[data-save] dd span::before {
+  content: "• ";
+  color: var(--gold);
+}
+.fui .f-char-stats {
+  display: flex;
+  gap: 16px;
+}
+.fui .f-badge {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+.fui .f-badge-frame {
+  position: relative;
+  width: 56px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+}
+.fui .f-badge[data-shape="shield"] .f-badge-frame {
+  width: 72px;
+  height: 80px;
+}
+/* the frame: a gold shape with the same shape, 2 px smaller, dark on top */
+.fui .f-badge-frame::before,
+.fui .f-badge-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  clip-path: var(--badge-shape);
+}
+.fui .f-badge-frame::before {
+  background: var(--gold-line);
+}
+.fui .f-badge-frame::after {
+  inset: 2px;
+  background: color-mix(in srgb, var(--gold) 6%, var(--sunk));
+}
+.fui .f-badge {
+  --badge-shape: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.fui .f-badge[data-shape="shield"] {
+  --badge-shape: polygon(
+    50% 0,
+    100% 12%,
+    100% 52%,
+    88% 78%,
+    50% 100%,
+    12% 78%,
+    0 52%,
+    0 12%
+  );
+}
+.fui .f-badge-frame b {
+  position: relative;
+  z-index: 1;
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-badge[data-shape="shield"] .f-badge-frame b {
+  font-size: var(--fs-xl);
+}
+.fui .f-char-hp {
+  display: grid;
+  gap: 8px;
+  min-width: 200px;
+}
+.fui .f-char-hp-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.fui .f-char-temp {
+  color: var(--temp);
+  font-size: var(--fs-sm);
+}
+.fui .f-char-hp-v {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--muted);
+}
+.fui .f-char-hp-v b {
+  font-size: var(--fs-hp);
+  line-height: 1;
+}
+.fui .f-char-hp-v > * {
+  display: block;
+}
+.fui .f-char-hp-v b[data-hp="ok"] {
+  color: var(--hp);
+}
+.fui .f-char-hp-v b[data-hp="low"] {
+  color: var(--hp-y);
+}
+.fui .f-char-hp-v b[data-hp="bad"] {
+  color: var(--hp-r);
+}
+@media (max-width: 1100px) {
+  .fui .f-char {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "medal id"
+      "medal abil"
+      "stats hp";
+  }
+}
+/* phone (D&D Beyond's model): portrait beside the name, then HP, the numbers, the abilities */
+@media (max-width: 800px) {
+  .fui .f-char {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "medal id"
+      "hp hp"
+      "stats stats"
+      "abil abil";
+    gap: 16px;
+  }
+  .fui .f-char-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-items: center;
+  }
+  .fui .f-char-id h1 {
+    font-size: var(--fs-title-bar-m);
+  }
+  .fui .f-abilities {
+    width: 100%;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .fui .f-char-stats {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 400px) {
+  .fui .f-char-id h1 {
+    font-size: var(--fs-lg);
+  }
 }

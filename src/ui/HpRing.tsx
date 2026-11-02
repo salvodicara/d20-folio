@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { initialOf } from "./initial";
 
 /**
@@ -26,7 +28,12 @@ export function HpRing({
   const color = p > 0.5 ? "var(--hp)" : p > 0.25 ? "var(--hp-y)" : "var(--hp-r)";
   const inset = size * 0.12;
   return (
-    <span className="f-ring" style={{ width: size, height: size }}>
+    <span
+      className="f-ring"
+      style={
+        { width: size, height: size, "--ring-size": `${String(size)}px` } as CSSProperties
+      }
+    >
       {portrait ? (
         <img
           src={portrait}

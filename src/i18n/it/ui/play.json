@@ -1,0 +1,9 @@
+{
+  "play": {
+    "hpTitle": "Punti ferita",
+    "temp": "+{{count}} temporanei",
+    "proficiency": "Competenza",
+    "effects": "Effetti",
+    "concentrating": "Concentrazione: {{spell}}"
+  }
+}
