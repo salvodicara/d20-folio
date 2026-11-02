@@ -173,5 +173,5 @@ doc tweaks, lint/format passes (those live in git history).
 ## Reproducibility
 
 Given a tag `vX.Y.Z`: `package.json` pins exact deps (via `pnpm-lock.yaml`), the `CHANGELOG.md`
-section gives the rationale, the tag pins the commit, and `pre-push` guaranteed the gate was green
-there. Enough to bisect a regression to a single release.
+section gives the rationale, the tag pins the commit, and CI + Verify carry the gate's verdict for
+it. Enough to bisect a regression to a single release.

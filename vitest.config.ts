@@ -64,8 +64,7 @@ export default defineConfig({
     globalSetup: ["./scripts/pack/pack-freshness-setup.ts"],
     // ── Fast / slow lanes (docs/ARCHITECTURE.md) ──────────────────────────
     // Two Vitest projects share one coverage run:
-    //   • fast — `node` env, jsdom-free pure-logic `.test.ts`. Pre-commit smoke
-    //            + pre-push. The fast lane's whole point is sub-second-per-file
+    //   • fast — `node` env, jsdom-free pure-logic `.test.ts`. The fast lane's whole point is sub-second-per-file
     //            feedback, so it never loads jsdom or the jest-dom matchers.
     //   • slow — `jsdom` env: every `.test.tsx` (render) + the DOM-bound
     //            `.test.ts` listed in `tests/lanes.ts`.
@@ -95,7 +94,7 @@ export default defineConfig({
         // ── Budget lane (P3) ─────────────────────────────────────────────────────
         // The bundle-budget guard reads the PRODUCTION build. It is NOT in the
         // `fast`/`slow` lanes (which run before build); the gate runs it AFTER
-        // `vite build` with `pnpm test:budget` (CI build job + pre-push hook).
+        // `vite build` with `pnpm test:budget` (CI build job + Verify's composed budget).
         extends: true,
         test: {
           name: "budget",

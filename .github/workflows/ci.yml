@@ -1,7 +1,7 @@
 name: CI
 
 # The SRD-only ambient gate: every push to main and every pull request runs
-# typecheck + lint, the unit suite, the production build, the security rules against the
+# typecheck + lint, the unit suite with its coverage floors, the production build, the security rules against the
 # Firebase emulators, and independent Functions lint/test/build jobs — as PARALLEL jobs so the wall clock is the slowest lane (the unit suite), not the sum.
 #
 # SRD-only by construction: the public tree has no `content-pack/`, and the
@@ -72,7 +72,7 @@ jobs:
   unit:
     name: unit (SRD-only)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -81,8 +81,9 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Unit tests
-        run: pnpm test
+      # The coverage floors (vitest.config.ts → thresholds) fail the job.
+      - name: Unit tests + coverage floors
+        run: pnpm test:coverage
 
   build:
     name: build + budget

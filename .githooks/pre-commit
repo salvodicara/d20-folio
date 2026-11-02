@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # Pre-commit hook (LEAN): changeset doc-guard + lint-staged only. Tests are run
-# focally while a milestone is engineered; no branch checkpoint runs a suite.
-# The FULL gate (typecheck + lint --max-warnings 0 + test:coverage over BOTH
-# lanes + build + budget) runs exactly once when finished work targets main
-# (see .githooks/pre-push; ci.yml mirrors main remotely).
-# Owner decision 2026-08-12 (golden rule 14).
+# focally while a milestone is engineered. The FULL gate (typecheck + lint
+# --max-warnings 0 + test:coverage + build + budget + rules) runs on every pull
+# request in ci.yml; verify.yml adds the composed suite and e2e after merge.
 # Install: git config core.hooksPath .githooks   ·   NEVER use --no-verify.
 
 set -euo pipefail

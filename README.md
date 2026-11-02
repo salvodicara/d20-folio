@@ -137,9 +137,8 @@ Configuration goes in `.env.local` (uncommitted; copy from `.env.example`). The 
 pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build
 ```
 
-Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plus a changeset
-doc-guard), branch checkpoint pushes are immediate, and pre-push runs the full gate only for the
-finished push to `main`. A `justfile` collects common recipes.
+A pre-commit hook in `.githooks/` keeps commits clean (staged-file lint plus a changeset
+doc-guard); the full gate runs in CI on every pull request. A `justfile` collects common recipes.
 
 ### Deployment
 
@@ -156,7 +155,7 @@ The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web
 
 ## Contributing
 
-Contributions are welcome — start with [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) (first-time setup, the gate split, and the common recipes). The short version: `asdf install`, `pnpm install`, `git config core.hooksPath .githooks`, and the pre-commit/pre-push hooks enforce the rest.
+Contributions are welcome — start with [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) (first-time setup, the gate split, and the common recipes). The short version: `asdf install`, `pnpm install`, `git config core.hooksPath .githooks`, then the pre-commit hook and CI enforce the rest.
 
 ## How this was built
 

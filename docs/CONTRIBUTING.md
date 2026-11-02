@@ -1,6 +1,6 @@
 # Contributing
 
-> Day-to-day workflow for humans and AI agents. The pre-commit + pre-push hooks enforce
+> Day-to-day workflow for humans and AI agents. The pre-commit hook and CI enforce
 > almost everything below — they're not friction, they're the contract.
 
 ---
@@ -25,7 +25,7 @@ required). Install asdf + its `nodejs`/`java` plugins first if you don't have th
 uses **pnpm**; the standalone `functions/` package uses **npm** (`npm --prefix functions ci`),
 deployed via `firebase deploy --only functions`.
 
-That `git config` line installs the project's strict pre-commit + pre-push hooks. **Never bypass
+That `git config` line installs the project's pre-commit hook. **Never bypass
 them with `--no-verify`** — if they fail, the issue gets fixed in the same commit, not
 deferred.
 
@@ -38,14 +38,12 @@ let checks slow development or deployment**. The repo is public, so GitHub Actio
 free — the heavy lanes run REMOTELY on every merge, off the local critical path. Every check still
 runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twice on one path.
 
-| Lane                          | What it runs                                                                                                                                      | Cost                           | Where                                      |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------ |
-| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                                        | ~5 s                           | `.githooks/pre-commit`                     |
-| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                                       | instant                        | `.githooks/pre-push`                       |
-| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**                  | ~3 min (max of three, not sum) | `.githooks/pre-push`                       |
-| **per merge — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR | ~4 min wall, free              | `.github/workflows/ci.yml`                 |
-| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`               | ~10 min wall, free             | `.github/workflows/verify.yml`             |
-| **deploy** (owner-fired)      | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates            | ~10–15 min                     | `deploy.yml` (`just deploy` dispatches it) |
+| Lane                       | What it runs                                                                                                                                                                           | Cost               | Where                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------ |
+| **pre-commit**             | doc-guard + `lint-staged` + fast unit lane                                                                                                                                             | ~5 s               | `.githooks/pre-commit`                     |
+| **per PR — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit + coverage floors ∥ build + budget ∥ rules (emulator) as **parallel jobs**, every PR + every push to `main` | ~4 min wall, free  | `.github/workflows/ci.yml`                 |
+| **per merge — Verify**     | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`                                                    | ~10 min wall, free | `.github/workflows/verify.yml`             |
+| **deploy** (owner-fired)   | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates                                                 | ~10–15 min         | `deploy.yml` (`just deploy` dispatches it) |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -79,7 +77,7 @@ trimmed of provable waste:
   It fails toward booting (anything not provably SW-free still gets the server), so the SW journey is
   never starved of its origin.
 
-**Why e2e is the per-merge REMOTE lane, not the pre-push gate.** The full matrix is ~1,450 tests —
+**Why e2e is the per-merge REMOTE lane, not a PR gate.** The full matrix is ~1,450 tests —
 48 min unsharded on a CI runner (measured 2026-08-03), far beyond any local critical path. A push
 lands on `origin`, which is **not user-facing** — nothing deploys off a push (deploys are ALWAYS
 explicitly owner-triggered, golden rule 22). So the matrix runs remotely on EVERY merge to `main`
@@ -104,8 +102,7 @@ newer merge).
 parallel jobs so the wall clock is the slowest lane) on every push to `main` and every PR. `verify.yml` verifies what actually DEPLOYS (the composed build: it
 checks out the private pack via `CONTENT_PACK_TOKEN`, runs the composed unit suite and the full
 sharded e2e matrix) on every push to `main`. Both green = both build modes green, remotely, per
-merge (golden rule 28). The local pre-push hook remains the last line of defence BEFORE a merge
-lands; the remote lanes are the standing verdict every SHA carries after.
+merge (golden rule 28).
 
 Tests that read `content-pack/fixtures/` or assert private catalogue facts live under
 `content-pack/tests/`, never under the public `tests/` tree. This keeps a fresh public checkout
@@ -128,7 +125,7 @@ detectors over EN + IT and every `srd/` catalogue and **fails the build (non-zer
   English (the `STRONG_EN` heuristic; loanwords / proper nouns / abbreviations never trip it),
 - a **static `t("…")` literal** in `src/` whose key is absent from the catalogue.
 
-It's free on `pnpm build` (so it runs in pre-push, the deploy workflow, and CI automatically), and you can
+It's free on `pnpm build` (so it runs in CI and the deploy workflow automatically), and you can
 run it standalone with **`pnpm i18n:check`** (prints each problem + a non-zero exit). When it fails,
 **fix the leak** — translate via the IT SRD 5.2.1 cascade (never leave IT == EN-English), or add the
 missing key to BOTH `src/i18n/{en,it}/ui/<group>.json` shards. Do NOT weaken the detector to make it
@@ -224,8 +221,7 @@ ln -s ../d20-folio-content/content-pack content-pack
 ```
 
 **Worktrees link the pack by hand** (the same `ln -s` with the pack's absolute
-path); `.githooks/pre-push` prints a loud WARNING if a worktree gates SRD-only
-while the main checkout has the pack. Because the pack's files
+path); without the link a worktree runs SRD-only. Because the pack's files
 REALLY live outside the repo root, pack tests import public-root helpers only
 through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
 `../../../` escapes), the vitest lanes resolve with `preserveSymlinks`, and the
@@ -346,8 +342,8 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).
-4. Every commit ships its own `.changeset/*.md`; the branch passes the full `main`
-   pre-push CI (incl. the axe a11y surface gate, light + dark).
+4. Every commit ships its own `.changeset/*.md`; the PR passes CI, and Verify runs
+   the axe a11y surface gate (light + dark) after merge.
 ```
 
 ### I'm adding a new page / form / wizard step / modal (visual surface coverage)
@@ -382,7 +378,7 @@ viewport captures: the viewport is the modal/menu/popover's composition frame, w
 full-page shot would mostly record obscured content beneath it. `overlay: false` keeps a
 variant-limited inline state (such as an unfolded wizard step) on the full-page path.
 
-> **The final gate (design / i18n / surface work):** the pre-push hook does not run e2e — the
+> **The final gate (design / i18n / surface work):** CI does not run e2e — the
 > full matrix runs remotely on the merge (`verify.yml`, see "The gate split"). So before you
 > MERGE design / i18n / surface work, run the affected e2e specs locally (`pnpm test:e2e` for
 > the chromium leg, `pnpm test:e2e:all` for chromium **and** the Pixel-7 mobile project) and
@@ -517,17 +513,11 @@ The `/campaigns` security rules (`firestore.rules`) are verified by an emulator-
 — `tests/rules/firestore-rules.test.ts`, run via its own `vitest.rules.config.ts` and kept
 OUT of the plain unit suite (which never boots an emulator).
 
-**The gate is LOCAL-FIRST — independent of GitHub Actions minutes:**
-
 - **`pnpm test:rules`** runs the full `/campaigns` matrix against the Firestore emulator on a
   `demo-` project (emulator-only — no real Firebase, no cost). Run it whenever you touch the
   rules.
-- **The `main` pre-push hook is the real gate.** It runs `pnpm test:rules` automatically, but ONLY
-  when the integration push changes the rules surface (`firestore.rules` or `tests/rules/**`);
-  other `main` pushes skip it (no emulator boot → fast). Topic branches are checkpoints; a rules
-  change cannot enter `main` unverified, with zero Actions minutes.
-- **There is no remote rules job.** The `main` pre-push hook is the whole gate (it needs a JDK, which
-  `asdf install` provides); `deploy.yml`'s e2e-gated deploy ships the rules files themselves.
+- **CI's `rules (emulator)` job is the gate**: it runs the suite on every PR and every push to
+  `main`; `deploy.yml` ships the rules files themselves.
 
 **Requires a JDK** (the Firestore emulator is a JVM process) plus the Firebase CLI. The JDK is
 auto-managed via **asdf** — `.tool-versions` at the repo root pins a Temurin LTS, so `asdf install`
@@ -538,11 +528,6 @@ asdf install                     # installs the Node + Java versions pinned in .
 npm install -g firebase-tools    # the emulator runner (already present if you deploy)
 pnpm test:rules
 ```
-
-The pre-push hook uses `java` from your PATH (asdf's Temurin) and, when the asdf shims aren't on
-PATH (e.g. an IDE's git), resolves the JDK pinned in `.tool-versions` directly from
-`~/.asdf/installs/java/`. If no JDK is found on a rules-changing push it fails with an `asdf install`
-hint rather than letting an unverified rules change through — no Homebrew JDK required.
 
 ---
 
@@ -565,9 +550,8 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
   canonical census entry (`tests/e2e/surface-census/index.ts` or an owned fragment) plus the
   temporary `surfaces.ts` runtime adapter. The route-coverage guard
   fails CI otherwise. See "I'm adding a new page / form / wizard step / modal" above.
-- **Rules change → emulator tests.** Touching `firestore.rules` / `tests/rules/**` runs
-  `pnpm test:rules` at pre-push (needs a JDK; emulator-only `demo-` project, no cost). See
-  "Firestore security rules".
+- **Rules change → emulator tests.** CI's `rules (emulator)` job runs `pnpm test:rules` on
+  every PR; run it locally when you touch the rules. See "Firestore security rules".
 
 ---
 
@@ -611,8 +595,7 @@ no release workflow in CI) and deployed separately, only on explicit owner go, t
 ## CI/CD pipeline (three workflows: verify ambiently, promote on demand)
 
 **The model: every merge to `main` is fully verified remotely and ambiently (free on the public
-runners); a deploy PROMOTES a verified SHA.** The local pre-push hook is the last line of defence
-BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
+runners); a deploy PROMOTES a verified SHA.** Exactly three workflows live in `.github/workflows/`:
 
 - **CI** (`ci.yml`) — the SRD-only gate on every push to `main` and every pull request, as three
   PARALLEL jobs (typecheck + lint ∥ unit ∥ build + budget) so the wall clock is the slowest lane.
@@ -637,7 +620,7 @@ BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
-baselines — see "Visual baselines" above), and the rules-emulator suite gates on the `main` pre-push.
+baselines — see "Visual baselines" above).
 
 Conventions every workflow keeps: `node-version-file: .tool-versions` (single-source Node version —
 the asdf pin the app ships from), least-privilege `permissions` (`contents: read`, plus

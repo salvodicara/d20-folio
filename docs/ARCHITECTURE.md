@@ -29,12 +29,11 @@ Zustand (client state) + React Router v7
 Firebase (Auth Google · Firestore + offline persistence · Storage · Hosting)
 Vitest (unit) + Playwright (E2E)
 @changesets/cli (SemVer + CHANGELOG)
-ESLint zero-warnings · Prettier · pre-commit + pre-push hooks (mandatory CI)
+ESLint zero-warnings · Prettier · pre-commit hook · CI on every PR
 ```
 
-Branch checkpoint pushes deliberately run no verification. The pre-push hook runs **typecheck +
-lint zero-warnings + the unit suite + coverage ≥ 80% + production build** exactly once, when the
-finished branch targets `main`. Never `--no-verify`.
+CI (`ci.yml`) runs **typecheck + lint zero-warnings + the unit suite + coverage floors +
+production build + budget + rules** on every pull request. Never `--no-verify`.
 
 ---
 
@@ -3108,7 +3107,7 @@ incident is visible in the admin inbox without the player having to file a bug r
 
 > The app's value depends on a fast first paint on a phone. This is the **measured baseline +
 > enforced ceilings**. A static guard (`tests/unit/bundle-budget.guard.test.ts`, run by `pnpm
-test:budget` AFTER `vite build`, in the CI `build` job + the pre-push hook) FAILS the build if any
+test:budget` AFTER `vite build`, in the CI `build` job and Verify's composed budget) FAILS the build if any
 > ceiling is crossed. Update BOTH the ceiling constant and this table in the same commit when a
 > ceiling is deliberately raised.
 
