@@ -69,7 +69,7 @@ export function useChronicleSubscription(campaignId: string | undefined): void {
   // version history render locally and in the visual/a11y suite (mirrors the
   // campaign fixture). Only seeds an empty store, so dev edits aren't clobbered.
   const loadDevBypass = useCallback(() => {
-    if (!DEV_BYPASS_AUTH) return;
+    if (!import.meta.env.DEV || !DEV_BYPASS_AUTH) return;
     if ((useChronicleStore.getState().chronicle?.text ?? "") === "") {
       setChronicle(makeDevChronicle());
     }

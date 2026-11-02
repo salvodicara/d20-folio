@@ -42,7 +42,10 @@ import {
   type Transaction,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
+// Every dev-bypass branch reads `import.meta.env.DEV && DEV_BYPASS` inline: production
+// builds see a literal false there and drop the branch with its fixtures (a helper
+// function hid the literal from the optimizer). Tests keep the live, mockable binding.
+import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { removeCombatant, parseEncounterState } from "@/features/campaigns/encounter";
 import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
@@ -102,11 +105,6 @@ import type {
 import type { PortraitCrop } from "@/types/character";
 import { isCharacterAlive } from "@/lib/character-status";
 
-// Preserve the mockable live binding in dev/tests, while giving the production
-// optimizer a literal `false` so the local-replica branches and fixtures disappear.
-function devBypassEnabled(): boolean {
-  return import.meta.env.PROD ? false : IMPORTED_DEV_BYPASS_AUTH;
-}
 import { type LocText } from "@/lib/loc-text";
 import type {
   ActiveCombatEffect,
@@ -284,7 +282,7 @@ export async function createCampaign(
   const code = generateInviteCode();
   // Dev bypass persists nothing (no real auth → a real write would be denied);
   // the hub seeds a fixture for the returned code. Mirrors `updateCampaign`.
-  if (devBypassEnabled()) return code;
+  if (import.meta.env.DEV && DEV_BYPASS) return code;
   const payload = {
     name: opts.name,
     createdBy: uid,
@@ -358,7 +356,7 @@ export async function joinCampaign(
   photoURL: string | null = null
 ): Promise<string> {
   // Dev bypass persists nothing; the hub seeds a fixture for this code.
-  if (devBypassEnabled()) return inviteCode;
+  if (import.meta.env.DEV && DEV_BYPASS) return inviteCode;
   // Safeguard 1 — no-op for an already-joined member (an existing member can
   // read; a new joiner's read is denied → caught → treated as a first join).
   const snap = await getDoc(campaignDoc(inviteCode)).catch(() => null);
@@ -392,7 +390,7 @@ export async function setMemberCharacter(
   characterId: string | null,
   snapshot: MemberCharacterSnapshot | null
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     [`memberDetails.${uid}.characterId`]: characterId,
     // Strip undefined first — the snapshot's optional fields (subclass / ac / hpMax)
@@ -436,7 +434,7 @@ export async function attachMemberCharacter(
   nextCharacterId: string | null,
   snapshot: MemberCharacterSnapshot | null
 ): Promise<AttachOutcome> {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     // Dev-bypass mirror of the transaction below, so a local session behaves like the
     // real app (the attached sheet records into the campaign's session log).
     updateDevDocument(
@@ -497,7 +495,7 @@ export async function yieldDmRole(
   oldDmUid: string,
   newDmUid: string
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     dmUid: newDmUid,
     [`memberDetails.${newDmUid}.role`]: "dm",
@@ -529,7 +527,7 @@ export async function yieldDmRole(
  * caller prunes the store optimistically).
  */
 export async function removeMember(campaignId: string, uid: string): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const ref = campaignDoc(campaignId);
   const combatantId = `pc-${uid}`;
   await runTransaction(db, async (txn) => {
@@ -567,7 +565,7 @@ export async function removeMember(campaignId: string, uid: string): Promise<voi
  * clears it. No-op under dev bypass (the caller updates the store optimistically).
  */
 export async function setJoinsLocked(campaignId: string, locked: boolean): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     joinsLocked: locked,
     updatedAt: serverTimestamp(),
@@ -583,7 +581,7 @@ export async function setNextSession(
   campaignId: string,
   at: number | null
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     nextSessionAt: at,
     updatedAt: serverTimestamp(),
@@ -601,7 +599,7 @@ export async function setCampaignBanner(
   bannerUrl: string | null,
   bannerCrop: PortraitCrop | null
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     bannerUrl,
     bannerCrop,
@@ -648,7 +646,7 @@ export async function advanceEncounterTurn(
   caller: { uid: string | undefined; isDm: boolean },
   expectedCurrentId: string | null
 ): Promise<void> {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     const encounter = currentDevEncounter(campaignId);
     if (!encounter || encounter.currentCombatantId !== expectedCurrentId) return;
     if (!caller.isDm && encounter.currentCombatantId !== `pc-${caller.uid}`) return;
@@ -972,7 +970,7 @@ export async function writeCampaignCombatEffect(
   mutation: CampaignCombatMutation
 ): Promise<{ before: CombatState; after: CombatState }> {
   const fallback = preview ?? defaultCombatState(maxHp);
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     let before = fallback;
     const after = updateDevCombatState(uid, characterId, fallback, (current) => {
       before = current;
@@ -1049,7 +1047,7 @@ export async function deliverQueuedMemberEffects(args: {
   targetId: string;
   maxHp: number;
 }): Promise<void> {
-  if (devBypassEnabled() || args.maxHp <= 0) return;
+  if ((import.meta.env.DEV && DEV_BYPASS) || args.maxHp <= 0) return;
   const campaignRef = campaignDoc(args.campaignId);
   const combatRef = combatStateRef(args.uid, args.characterId);
   const characterRef = memberCharacterDoc(args.uid, args.characterId);
@@ -1179,7 +1177,7 @@ export async function revokePersistentCombatEffect(
   campaignId: string,
   effectId: string
 ): Promise<void> {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     const encounter = currentDevEncounter(campaignId);
     if (!encounter) return;
     const operation = makeRevokeCombatEffectOp(encounter.effectOps, effectId);
@@ -1207,7 +1205,7 @@ export async function revokePersistentCombatEffectsBySource(
   campaignId: string,
   owner: { actorId: string; sourceId: string }
 ): Promise<void> {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     for (;;) {
       const encounter = currentDevEncounter(campaignId);
       if (!encounter) return;
@@ -1271,7 +1269,7 @@ async function appendPersistentCombatEffectOp(
   campaignId: string,
   operation: CombatEffectOp
 ): Promise<void> {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     appendPersistentCombatEffectOpOptimistic(campaignId, operation);
     return;
   }
@@ -1590,7 +1588,7 @@ export async function persistBeginTurns(
     extraTurns?: EncounterState["extraTurns"];
   }
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     "encounter.order": turn.order,
     "encounter.currentCombatantId": turn.currentCombatantId,
@@ -1609,7 +1607,7 @@ export async function setEncounterParticipation(
   uid: string,
   participating: boolean
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     [`encounterSkipped.${uid}`]: participating ? deleteField() : true,
     updatedAt: serverTimestamp(),
@@ -1638,7 +1636,7 @@ export async function setEncounterInitiative(
   memberUid: string,
   roll: number | null
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     [`encounterInit.${memberUid}`]: roll === null ? deleteField() : Math.round(roll),
     updatedAt: serverTimestamp(),
@@ -1662,7 +1660,7 @@ export async function persistStartEncounter(
   campaignId: string,
   encounter: EncounterState
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     encounter: stripUndefined(
       encounterForWrite(encounter) as unknown as Record<string, unknown>
@@ -1680,7 +1678,7 @@ export async function persistStartEncounter(
  * clears the store optimistically.
  */
 export async function persistEndEncounter(campaignId: string): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     encounter: null,
     encounterInit: {},
@@ -1706,7 +1704,7 @@ export async function applyTreasuryDelta(
   campaignId: string,
   entry: TreasuryLogEntry
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const signed = entry.type === "add" ? entry.amount : -entry.amount;
   await updateDoc(campaignDoc(campaignId), {
     [`treasury.${entry.currency}`]: increment(signed),
@@ -1728,7 +1726,7 @@ export async function undoTreasuryEntry(
   campaignId: string,
   entry: TreasuryLogEntry
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   // Reverse of the original movement: undoing an "add" removes coins, undoing a
   // "remove" returns them.
   const reversed = entry.type === "add" ? -entry.amount : entry.amount;
@@ -1749,7 +1747,7 @@ export async function updateCampaign(
   campaignId: string,
   data: CampaignWritable
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(campaignDoc(campaignId), {
     ...(stripUndefined(campaignWritableForWrite(data)) as Record<string, unknown>),
     updatedAt: serverTimestamp(),
@@ -1842,7 +1840,7 @@ export function subscribeToCampaign(
   callback: (doc: CampaignDoc | null) => void,
   onError?: (err: Error) => void
 ): () => void {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     return subscribeDevDocument<CampaignDoc>(
       DEV_CAMPAIGN_COLLECTION,
       campaignId,
@@ -1871,7 +1869,7 @@ export function subscribeToCampaign(
  * way to test campaigns"); clicking it opens the hub the same fixture seeds.
  */
 export async function listSharedCampaigns(uid: string): Promise<CampaignDoc[]> {
-  if (devBypassEnabled()) return [readDevCampaign(makeDevCampaign().id)];
+  if (import.meta.env.DEV && DEV_BYPASS) return [readDevCampaign(makeDevCampaign().id)];
   const q = query(collection(db, "campaigns"), where("members", "array-contains", uid));
   // Both reads are BOUNDED: a wedged Firestore local layer (the 2026-07-09 "Clear
   // site data" incident) can hang either one indefinitely, and every caller must get
@@ -1911,7 +1909,7 @@ export function subscribeToSharedCampaigns(
   callback: (campaigns: CampaignDoc[]) => void,
   onError?: (err: Error) => void
 ): () => void {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     // A seeded pip roll-state scenario (the `combat-pip-needs-roll` e2e) overrides the
     // standard dev campaign with fixtures where the viewer is a PC, so the REAL pip
     // resolution runs; otherwise the normal single dev campaign.
@@ -1950,7 +1948,7 @@ export function subscribeToSharedCampaigns(
  * stranding its members behind stale `attachedCampaignId` indexes.
  */
 export async function deleteCampaign(campaignId: string): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const campaignRef = campaignDoc(campaignId);
   const attachedCharacters = (
     data: Record<string, unknown> | undefined
@@ -2089,7 +2087,7 @@ export function subscribeToCampaignNotes(
   callback: (notes: SharedNote[]) => void,
   onError?: (err: Error) => void
 ): () => void {
-  if (devBypassEnabled()) {
+  if (import.meta.env.DEV && DEV_BYPASS) {
     const seed = makeDevNotes();
     callback(dmView ? seed : seed.filter((n) => !n.dmOnly));
     return () => {};
@@ -2147,7 +2145,7 @@ export async function setCampaignNote(
   campaignId: string,
   note: SharedNote
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await setDoc(noteRef(campaignId, note.id, note.dmOnly === true), noteWriteData(note));
 }
 
@@ -2163,7 +2161,7 @@ export async function setCampaignNoteHidden(
   note: SharedNote,
   hidden: boolean
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const batch = writeBatch(db);
   batch.delete(noteRef(campaignId, note.id, !hidden));
   batch.set(noteRef(campaignId, note.id, hidden), noteWriteData(note));
@@ -2180,7 +2178,7 @@ export async function deleteCampaignNote(
   noteId: string,
   hidden: boolean
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await deleteDoc(noteRef(campaignId, noteId, hidden));
 }
 
@@ -2199,7 +2197,7 @@ export async function deleteCampaignNote(
  * with `scripts/migrate-shared-notes.ts`. No-op under dev bypass.
  */
 export async function evictLegacyNote(campaignId: string, noteId: string): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const ref = campaignDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
@@ -2296,7 +2294,7 @@ export async function commitChronicleEdit(
   campaignId: string,
   edit: { text: string; editedBy: string }
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const ref = chronicleDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
@@ -2346,7 +2344,7 @@ export async function appendChronicleChapter(
   campaignId: string,
   append: { chapter: string; editedBy: string }
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   const ref = chronicleDoc(campaignId);
   await runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
@@ -2422,7 +2420,7 @@ const SESSIONS_LIMIT = 100;
  *  so none is excluded by the ordered query. The client-side sort is kept as a
  *  belt-and-braces tiebreak on the (already newest-100) result. */
 export async function listSessions(campaignId: string): Promise<SessionLogDoc[]> {
-  if (devBypassEnabled()) return makeDevSessions();
+  if (import.meta.env.DEV && DEV_BYPASS) return makeDevSessions();
   const snap = await getDocs(
     query(sessionsCollection(campaignId), orderBy("date", "desc"), limit(SESSIONS_LIMIT))
   );
@@ -2438,7 +2436,7 @@ export async function updateSession(
   sessionId: string,
   data: { label?: string; date?: Date; notes?: string }
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await updateDoc(
     doc(sessionsCollection(campaignId), sessionId),
     stripUndefined(data) as Record<string, unknown>
@@ -2451,7 +2449,7 @@ export async function deleteSession(
   campaignId: string,
   sessionId: string
 ): Promise<void> {
-  if (devBypassEnabled()) return;
+  if (import.meta.env.DEV && DEV_BYPASS) return;
   await deleteDoc(doc(sessionsCollection(campaignId), sessionId));
 }
 
@@ -2461,7 +2459,7 @@ export async function createSession(
   opts: { label: string; date: Date }
 ): Promise<string> {
   const ref = doc(sessionsCollection(campaignId));
-  if (devBypassEnabled()) return ref.id;
+  if (import.meta.env.DEV && DEV_BYPASS) return ref.id;
   await setDoc(
     ref,
     stripUndefined({
