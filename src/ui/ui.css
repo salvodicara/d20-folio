@@ -1919,7 +1919,7 @@
 }
 .fui .f-act {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(72px, max-content));
+  grid-template-columns: minmax(0, 1fr) repeat(3, minmax(72px, max-content)) 104px;
   align-items: center;
   gap: 8px 16px;
   min-height: 56px;
@@ -1939,6 +1939,25 @@
 .fui .f-act[data-blocked] {
   opacity: 0.55;
 }
+/* the row's button: Attacca · Lancia · Usa · Reagisci (spent reads «Usata») */
+.fui .f-act > .f-btn {
+  width: 100%;
+}
+/* Extra Attack: swings left in the open Attack action */
+.fui .f-act > .f-btn[data-live] {
+  border-color: var(--strong);
+  color: var(--white);
+}
+/* a reason line dims the button; it stays tappable (the table may rule otherwise) */
+.fui .f-act > .f-btn[data-dim] {
+  opacity: 0.7;
+}
+.fui .f-act .f-row-t {
+  text-wrap: pretty;
+}
+.fui .f-act-why {
+  color: var(--cond);
+}
 .fui .f-row-main > .f-act-m {
   display: none;
 }
@@ -1947,7 +1966,7 @@
 }
 @media (max-width: 640px) {
   .fui .f-act {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) 96px;
   }
   .fui .f-act-c {
     display: none;
@@ -1955,6 +1974,17 @@
   .fui .f-row-main > .f-act-m {
     display: block;
     color: var(--strong);
+  }
+}
+/* the narrowest phones (320): the name takes the whole line, the button sits under it */
+@media (max-width: 359px) {
+  .fui .f-act {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-act > .f-btn {
+    justify-self: start;
+    width: auto;
+    min-width: 96px;
   }
 }
 .fui .f-turn-t,

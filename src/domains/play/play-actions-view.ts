@@ -19,7 +19,25 @@ import {
   sortActions,
   type CombatAction,
 } from "@/lib/views/combat-action-view";
+import {
+  actionCtaView,
+  type ActionCta,
+  type ActionTurnState,
+} from "@/lib/views/action-cta-view";
 import type { CharacterDoc } from "@/types/character";
+
+/** A turn with nothing taken yet (outside a fight every action is open). */
+export const FRESH_TURN: ActionTurnState = {
+  selected: { action: [], bonus: [], free: [] },
+  budget: { action: 1, bonus: 1 },
+  attackBudget: 1,
+  attacksUsed: 0,
+  attackSwingIds: [],
+  reactionUsed: false,
+  reactionUsedId: null,
+  movementUsedFt: 0,
+  warMagicMax: -1,
+};
 
 export interface PlayActionRow {
   id: string;
@@ -41,6 +59,8 @@ export interface PlayActionRow {
   attack: boolean;
   limited: boolean;
   blocked: boolean;
+  /** Its button this turn: verb, spent or live, why it is blocked. */
+  cta: ActionCta;
 }
 
 export interface PlayActionsView {
@@ -50,13 +70,25 @@ export interface PlayActionsView {
 
 const ORDER: readonly ActionGroup[] = ["actions", "bonus", "reactions", "other"];
 
-export function playActionsView(doc: CharacterDoc, locale: Locale): PlayActionsView {
-  const blocked = resolveConditionEffects(effectiveConditions(doc)).blockedSlots;
-  const actions = sortActions(localizeActions(doc, locale));
+export function playActionsView(
+  doc: CharacterDoc,
+  locale: Locale,
+  turn: ActionTurnState = FRESH_TURN
+): PlayActionsView {
+  const conditions = effectiveConditions(doc);
+  const effects = resolveConditionEffects(conditions);
+  const blocked = effects.blockedSlots;
+  const all = sortActions(localizeActions(doc, locale));
+  const ctas = actionCtaView(doc, all, turn, { list: conditions, effects });
+  // Two-Weapon Fighting: an off-hand attack is not offered (nor counted) yet.
+  const actions = all.filter((a) => !ctas.get(a.id)?.hidden);
   const facts = actions.map((a) => actionRowFacts(doc, a, blocked));
   const rows = actions.map((a, i): { group: ActionGroup; row: PlayActionRow } => {
     const f = facts[i] ?? actionRowFacts(doc, a, blocked);
     const s = a.summary;
+    // actionCtaView keys every action it was given.
+    const cta = ctas.get(a.id);
+    if (!cta) throw new Error(`no button state for action ${a.id}`);
     const row: PlayActionRow = {
       id: a.id,
       action: a,
@@ -76,6 +108,7 @@ export function playActionsView(doc: CharacterDoc, locale: Locale): PlayActionsV
       attack: f.attack,
       limited: f.limitedUse,
       blocked: f.availability.kind === "blocked",
+      cta,
     };
     return { group: f.group, row };
   });

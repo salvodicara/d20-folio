@@ -285,7 +285,7 @@ describe("resolveActions — dual-wield", () => {
     const offHand = actions.filter((a) => a.id.includes("-offhand"));
     expect(offHand).toHaveLength(2);
     offHand.forEach((a) => {
-      expect(a.name).toMatch(/\(mano secondaria\)$/);
+      expect(a.name).toMatch(/\(mano\u00a0secondaria\)$/);
     });
   });
 

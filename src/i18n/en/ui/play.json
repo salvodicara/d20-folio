@@ -35,6 +35,7 @@
       "charges": "{{remaining}} of {{total}} charges",
       "whichSpell": "Which spell?",
       "castTitle": "Cast {{name}}"
-    }
+    },
+    "react": "React"
   }
 }

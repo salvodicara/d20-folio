@@ -12,6 +12,8 @@ import { sortActions, localizeActions } from "@/lib/views/combat-action-view";
 import { actionFilterCounts, actionRowFacts } from "@/lib/views/action-row-view";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
+import { buildDevScenario } from "@/lib/dev-scenarios";
+import type { ActionTurnState } from "@/lib/views/action-cta-view";
 import { makeCharacterDoc } from "./_helpers";
 
 const wizard = (session = {}) =>
@@ -95,5 +97,50 @@ describe("playActionsView", () => {
         .sort()
     ).toEqual(engineBlocked.sort());
     expect(view.groups.flatMap((g) => g.rows).some((r) => r.blocked)).toBe(false);
+  });
+});
+
+// Each row carries its button (the shared `actionCtaView`) for the turn passed in:
+// an off-hand attack is not offered, nor counted, until a Light main-hand attack.
+describe("playActionsView — the buttons", () => {
+  const scenario = buildDevScenario("twf-extra-attack");
+  if (!scenario) throw new Error("dev scenario twf-extra-attack is missing");
+  const dual = scenario;
+  const fresh: ActionTurnState = {
+    selected: { action: [], bonus: [], free: [] },
+    budget: { action: 1, bonus: 1 },
+    attackBudget: 2,
+    attacksUsed: 0,
+    attackSwingIds: [],
+    reactionUsed: false,
+    reactionUsedId: null,
+    movementUsedFt: 0,
+    warMagicMax: -1,
+  };
+  const rowsOf = (v: ReturnType<typeof playActionsView>) =>
+    v.groups.flatMap((g) => g.rows);
+
+  it("leaves the off-hand rows out of the table and its counts before the main attack", () => {
+    const view = playActionsView(dual, "en", fresh);
+    const rows = rowsOf(view);
+    expect(rows.some((r) => r.action.offhand)).toBe(false);
+    expect(view.counts.all).toBe(rows.length);
+    expect(rows.find((r) => r.id === "weapon-dagger")?.cta.verb).toBe("attack");
+  });
+
+  it("offers them once a Light swing lands, with the swing left live", () => {
+    const view = playActionsView(dual, "en", {
+      ...fresh,
+      selected: { action: [{ id: "attack-group" }], bonus: [], free: [] },
+      attacksUsed: 1,
+      attackSwingIds: ["weapon-dagger"],
+    });
+    const rows = rowsOf(view);
+    expect(rows.some((r) => r.action.offhand)).toBe(true);
+    expect(view.counts.all).toBe(rows.length);
+    expect(rows.find((r) => r.id === "weapon-dagger")?.cta.attacksLeft).toEqual({
+      remaining: 1,
+      total: 2,
+    });
   });
 });

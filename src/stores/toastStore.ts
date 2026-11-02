@@ -59,8 +59,14 @@ interface ToastState {
   toasts: UndoToast[];
   /** Timer IDs for auto-dismiss */
   timers: Record<string, ReturnType<typeof setTimeout>>;
+  /**
+   * The new UI's shell is on screen and draws these toasts itself, so the old
+   * toast region stays empty (one renderer at a time).
+   */
+  newUiHost: boolean;
 
   // Actions
+  setNewUiHost: (on: boolean) => void;
   showToast: (toast: Omit<UndoToast, "id" | "createdAt">) => string;
   dismissToast: (id: string) => void;
   undoToast: (id: string) => void;
@@ -92,6 +98,8 @@ function scheduleRemoval(
 
 export const useToastStore = create<ToastState>()((set, get) => ({
   toasts: [],
+  newUiHost: false,
+  setNewUiHost: (on) => set({ newUiHost: on }),
   timers: {},
 
   showToast: (toast) => {

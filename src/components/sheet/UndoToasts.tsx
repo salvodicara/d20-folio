@@ -26,8 +26,10 @@ export function UndoToasts() {
   const dismissToast = useToastStore((s) => s.dismissToast);
   const undoToast = useToastStore((s) => s.undoToast);
   const { toastMessage } = useToasts();
+  // The new UI's shell draws the same toasts in its own style.
+  const hosted = useToastStore((s) => s.newUiHost);
 
-  if (toasts.length === 0) return null;
+  if (hosted || toasts.length === 0) return null;
 
   return (
     <div className="wb toast-region" role="status" aria-live="polite">
