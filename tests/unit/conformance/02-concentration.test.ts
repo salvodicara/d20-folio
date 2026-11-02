@@ -445,7 +445,7 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "Hex and Hunter's Mark can be moved",
       source: "WIKI spell:hex",
-      status: "data",
+      status: "works",
     },
     () => {
       // While each is running, a Bonus Action moves the mark to a new creature.
