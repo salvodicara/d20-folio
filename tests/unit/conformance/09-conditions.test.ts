@@ -325,7 +325,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
   );
 
   rule(
-    { category: 9, case: "Rogue Knock Out", source: "WIKI rogue:main", status: "M3" },
+    { category: 9, case: "Rogue Knock Out", source: "WIKI rogue:main", status: "works" },
     () => {
       const source = getSrdFeatureSource("rogue-devious-strikes");
       const grants = source && "grants" in source ? (source.grants ?? []) : [];
@@ -341,7 +341,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
   );
 
   rule(
-    { category: 9, case: "Abjure Foes", source: "WIKI paladin:main", status: "M3" },
+    { category: 9, case: "Abjure Foes", source: "WIKI paladin:main", status: "works" },
     () => {
       const abjure = getSrdFeatureSource("paladin-abjure-foes");
       expect(abjure).toBeDefined();

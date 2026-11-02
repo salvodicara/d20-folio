@@ -375,6 +375,13 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
         cost: 6,
         save: "CON",
         condition: "unconscious",
+        // 2024 RAW (rogue:main, Devious Strikes): Unconscious "for 1 minute or until
+        // it takes any damage"; it repeats the save at the end of each of its turns.
+        lifetime: { kind: "timed", minutes: 1, maxRounds: 10 },
+        ends: [
+          { on: "target-damaged" },
+          { on: "repeat-save", ability: "CON", at: "target-turn-end" },
+        ],
       },
       {
         type: "cunning-strike-option",
