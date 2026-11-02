@@ -293,7 +293,7 @@ export const homebrewSpellData = memoByObject(
         ? { instantaneous: true }
         : {}),
       // A homebrew spell belongs to no book; it is the player's own.
-      source: "Wiki",
+      source: "Homebrew",
     };
     return data;
   }

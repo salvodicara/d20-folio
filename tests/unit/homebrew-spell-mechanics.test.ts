@@ -132,6 +132,10 @@ const glowId = `custom-spell-${WARDING_GLOW.instanceId}`;
 describe("a homebrew damage spell with a save", () => {
   const doc = wizard([{ srdId: "fireball", prepared: true }, EMBER_BURST]);
 
+  it("belongs to no book: its source is Homebrew", () => {
+    expect(homebrewSpellData(EMBER_BURST)?.source).toBe("Homebrew");
+  });
+
   it("takes its save DC from the caster, exactly as the catalogue spell", () => {
     const homebrew = actionOf(doc, emberId);
     const fireball = actionOf(doc, "spell-fireball");

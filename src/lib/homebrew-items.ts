@@ -250,7 +250,7 @@ export const homebrewItemData = memoByObject(
       attunement: mechanics.attunement ?? false,
       ...(potionFormula !== undefined ? { potionFormula } : {}),
       // A homebrew item belongs to no book; it is the player's own.
-      source: "Wiki",
+      source: "Homebrew",
     };
     return data;
   }

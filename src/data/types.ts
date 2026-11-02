@@ -23,8 +23,12 @@ import type { Locale } from "@/lib/locale";
  * other members are non-SRD provenance tags — they drive the licensing
  * partition. (Everything in `src/data` is tagged `"SRD"` — the enforced public
  * invariant; the other members exist for the content pack's provenance tags.)
+ * `"Homebrew"` marks a player's or DM's own content read as catalogue data; it
+ * belongs to no book.
  */
-export type SrdSource = "SRD" | "Wiki" | "Faerun" | "Eberron" | "Exotic" | "Lorwyn";
+// One line on purpose: the partition guard sanctions the book names on this line only.
+// prettier-ignore
+export type SrdSource = "SRD" | "Wiki" | "Faerun" | "Eberron" | "Exotic" | "Lorwyn" | "Homebrew";
 
 // ============================================================
 // Shared Primitives

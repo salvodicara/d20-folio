@@ -580,7 +580,7 @@ export function homebrewMonsterStatBlock(
       ? { qualifiedDefenses: defenses.qualifiedDefenses }
       : {}),
     // A homebrew monster belongs to no book; it is the DM's own.
-    source: "Wiki",
+    source: "Homebrew",
   };
   blockCache.set(monster, { entryId, block });
   return block;

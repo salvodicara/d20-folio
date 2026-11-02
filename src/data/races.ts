@@ -943,10 +943,12 @@ export function getRace(id: string): SrdRaceData | undefined {
 // ─── Race Feature Index ───────────────────────────────────────
 
 export interface RaceFeatureEntry {
+  /** The engine id, `<raceId>-<traitId>` (e.g. "orc-adrenaline-rush"). */
   id: string;
   raceId: string;
-  // name / description live in the SRD catalogue (`race` kind), keyed
-  // `<raceId>.traits.<trait.id>` (derive via `raceTraitCatKey`).
+  /** The trait's own id ({@link SrdRaceTrait.id}); name / description live in the
+   *  SRD catalogue (`race` kind) under `<raceId>.traits.<traitId>` (`raceTraitCatKey`). */
+  traitId: string;
   mechanics?: {
     tracker?: TrackerSpec;
     actions?: SrdActionDef[];
@@ -956,23 +958,15 @@ export interface RaceFeatureEntry {
 }
 
 /**
- * Generate a canonical ID for a race trait: `"${raceId}-${trait.id}"`. The trait's
- * own `id` is its stable `slug(name.en)` (the catalogue-key segment), so this reads
- * NO LocaleText and survives the data strip unchanged.
- */
-function traitId(raceId: string, trait: SrdRaceTrait): string {
-  return `${raceId}-${trait.id}`;
-}
-
-/**
  * Flat list of all race traits with generated IDs.
  * Used for display lookups when the UI needs to render SrdFeatureRefs
  * that point to race features.
  */
 export const raceFeatureEntries: RaceFeatureEntry[] = SRD_RACES.flatMap((race) =>
   race.traits.map((trait) => ({
-    id: traitId(race.id, trait),
+    id: `${race.id}-${trait.id}`,
     raceId: race.id,
+    traitId: trait.id,
     ...(trait.mechanics ? { mechanics: trait.mechanics } : {}),
     ...(trait.grants ? { grants: trait.grants } : {}),
   }))
@@ -987,18 +981,13 @@ export const raceFeatureIndex: Map<string, RaceFeatureEntry> = new Map(
 );
 
 /**
- * The STABLE i18n-catalogue key for a race trait — `"<raceId>.traits.<slug>"`,
- * the path the R3 codemod wrote into `src/i18n/<locale>/srd/races.json`. The slug
- * is recovered from the entry's generated id (`"<raceId>-<slug>"`) by stripping the
- * `"<raceId>-"` prefix, so it carries NO `name.en` read — a guard test pins that
- * this derivation matches the catalogue for every trait. Consumers localize a trait
- * via `localizeSrd("race", raceTraitCatKey(entry), field, locale)`.
+ * The STABLE i18n-catalogue key for a race trait — `"<raceId>.traits.<traitId>"`,
+ * the path in `src/i18n/<locale>/srd/races.json`; a guard test pins that it
+ * resolves for every trait. Consumers localize a trait via
+ * `localizeSrd("race", raceTraitCatKey(entry), field, locale)`.
  */
-export function raceTraitCatKey(entry: { id: string; raceId: string }): string {
-  const slug = entry.id.startsWith(`${entry.raceId}-`)
-    ? entry.id.slice(entry.raceId.length + 1)
-    : entry.id;
-  return `${entry.raceId}.traits.${slug}`;
+export function raceTraitCatKey(entry: { raceId: string; traitId: string }): string {
+  return `${entry.raceId}.traits.${entry.traitId}`;
 }
 
 /**
@@ -1009,5 +998,5 @@ export function raceTraitCatKey(entry: { id: string; raceId: string }): string {
  * action strings off the catalogue (R6+R3 SLICE 7c/7d).
  */
 export function rawRaceTraitCatKey(raceId: string, trait: SrdRaceTrait): string {
-  return `${raceId}.traits.${trait.id}`;
+  return raceTraitCatKey({ raceId, traitId: trait.id });
 }

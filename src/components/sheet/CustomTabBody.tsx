@@ -63,6 +63,7 @@ import {
   entryToCharacterItem,
   LIBRARY_KIND_LABEL_KEY,
   libraryEntryName,
+  SHEET_ARRAY,
   type LibraryDraft,
   type LibraryEntry,
   type SheetLibraryEntry,
@@ -96,33 +97,11 @@ function addEntryToCharacter(entry: SheetLibraryEntry, quantity: number): void {
     )
   );
   const landed = entryToCharacterItem(entry, quantity, takenIds);
-  // The switch narrows `landed.item` to the exact type of the array it joins.
-  switch (landed.kind) {
-    case "spell":
-      store.setCharacter({
-        ...doc,
-        character: { ...data, spells: [...data.spells, landed.item] },
-      });
-      return;
-    case "feature":
-      store.setCharacter({
-        ...doc,
-        character: { ...data, features: [...data.features, landed.item] },
-      });
-      return;
-    case "equipment":
-      store.setCharacter({
-        ...doc,
-        character: { ...data, equipment: [...data.equipment, landed.item] },
-      });
-      return;
-    case "weapon":
-      store.setCharacter({
-        ...doc,
-        character: { ...data, weapons: [...data.weapons, landed.item] },
-      });
-      return;
-  }
+  const key = SHEET_ARRAY[landed.kind];
+  store.setCharacter({
+    ...doc,
+    character: { ...data, [key]: [...data[key], landed.item] },
+  });
 }
 
 export function CustomTabBody({
