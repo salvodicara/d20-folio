@@ -63,6 +63,13 @@ const EXEMPT_ROUTES: { route: string; reason: string }[] = [
       "visual baseline. It reuses the already-covered read-only CockpitView render path.",
   },
   {
+    route: "/ui",
+    reason:
+      "Design-system story page (src/ui), present only in dev or with VITE_NEW_UI=1. " +
+      "Not a product surface: tests/e2e/ui-slice.spec.ts checks it at six viewports and " +
+      "pins its pixels in the VISUAL lane.",
+  },
+  {
     route: "/_specimens",
     reason:
       "Dev-only typography specimen page for the BG3-identity epic (owner picks a font " +

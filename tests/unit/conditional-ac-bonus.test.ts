@@ -19,7 +19,7 @@ import { getMagicItem } from "@/data/magic-items";
 import { createMagicItemEquipmentRefs } from "@/lib/magic-item-equipment";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
-import { buildCurrentAutomationCorpus } from "@tests/unit/__helpers__/automation-coverage";
+import { buildCurrentAutomationCorpus } from "@tests/unit/__helpers__/catalogue-corpus";
 
 type Condition = "no-armor-no-shield" | "armored";
 type Loadout = "unarmored" | "armored" | "shield";

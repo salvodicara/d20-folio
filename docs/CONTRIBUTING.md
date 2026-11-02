@@ -226,6 +226,16 @@ through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
 dev server allows the pack's real directory (`fsAllowRoots()`,
 `scripts/content-pack-mode.ts`).
 
+## Reading order (especially for AI agents)
+
+1. **`CLAUDE.md` / `AGENTS.md`** — the short shared router, authority model, invariants, and tool
+   routing.
+2. Read the **one document that owns the task's fact**: Architecture/Mechanics/Schema for engine or
+   data, the product brief (`docs/strategy/2026-10-16-product-brief.md`)/Design for UI, or the
+   relevant operations runbook. Verify claims against code, config, git, and runtime evidence
+   before acting.
+3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage (its counts are test-pinned).
+
 ## Common recipes
 
 ### I want to add a new spell
@@ -293,12 +303,8 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
 8. `pnpm changeset`. Commit; open a pull request.
 ```
 
-> **Automation-coverage guard.** `tests/unit/automation-coverage.guard.test.ts` fails if a class
-> feature has NO `grants`/`mechanics` and isn't a system-handled marker or a listed deliberate
-> residual. So a NEW feature must be **automated** (grant/mechanic), match the system pattern, or be
-> consciously added to `DELIBERATE_RESIDUALS` **with a reason** — coverage can only go up. This is the
-> objective "everything automatable is automated" check; ~71% of features are automated today and the
-> rest are accounted for.
+> **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`, checked by the
+> `rules-coverage-*` tests; a new feature lands with its row.
 
 ### I'm fixing a bug
 
@@ -487,7 +493,7 @@ fixture route `/characters/team-<name>` (`src/lib/dev-fixtures.ts`).
   `D20_EMIT_NEW=1` to also (re)write the v3 files to `~/Documents/d20-team/new/`. A field that survives
   minimization but is inferable is a shrink target — chase the export size down while the sheet stays fixed.
 
-This is the JSON-grounded verification loop defined in `docs/AUTOMATION_BACKLOG.md → "⭑ CURRENT CAMPAIGN"`.
+This is the JSON-grounded verification loop.
 For breadth (all 6 at once, or the long tail), fan it out with a verification workflow: one agent per
 character finds discrepancies, an adversarial pass confirms each is real, then fix serially.
 

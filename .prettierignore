@@ -16,3 +16,7 @@ tests/fixtures/team-v2/
 
 # Archify-generated diagrams (rendered from docs/architecture/*.architecture.json).
 docs/architecture/*.html
+
+# The approved design prototype (generated pages; their exact markup is what was reviewed).
+docs/design/prototype/
+docs/design/copy/*.json

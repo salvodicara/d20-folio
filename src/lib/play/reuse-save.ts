@@ -17,7 +17,7 @@ type WhileActive = Extract<Grant, { type: "while-active" }>;
 export type ReuseSave = NonNullable<NonNullable<WhileActive["activation"]>["reuseSave"]>;
 
 /** The session tracker entry that counts an activation's uses since a Long Rest. */
-export function activationUsesKey(activeKey: string): string {
+function activationUsesKey(activeKey: string): string {
   return `uses:${activeKey}`;
 }
 
@@ -25,10 +25,7 @@ export function activationUsesKey(activeKey: string): string {
  * The reuse save an owned item declares for this state key (the authored key, or
  * the per-copy `<copy>:<authored>` form), or null when none does.
  */
-export function declaredReuseSave(
-  doc: CharacterDoc,
-  activeKey: string
-): ReuseSave | null {
+function declaredReuseSave(doc: CharacterDoc, activeKey: string): ReuseSave | null {
   for (const ref of doc.character.equipment) {
     if (!("srdId" in ref)) continue;
     for (const grant of getMagicItem(ref.srdId)?.grants ?? []) {

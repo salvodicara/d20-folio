@@ -199,18 +199,6 @@ export const OCCURRENCE_REF_SCHEMA = objectSchema({
 
 export type OccurrenceRefSchemaShape = InferExactSchema<typeof OCCURRENCE_REF_SCHEMA>;
 
-const conformOccurrenceRefStructure = exactConformer(
-  OCCURRENCE_REF_SCHEMA,
-  ENTITY_REF_SCHEMA_CONTEXT
-);
-
-/** Strict universal occurrence-reference boundary, independent of occurrence state. */
-export function conformOccurrenceRef(
-  value: unknown
-): Readonly<OccurrenceRefSchemaShape> | null {
-  return conformOccurrenceRefStructure(value);
-}
-
 /**
  * Exact identity of one active generation occupying an occurrence address.
  * `OccurrenceRef` alone is only a logical slot and must never authorize a

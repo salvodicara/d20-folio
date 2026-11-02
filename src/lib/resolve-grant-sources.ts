@@ -226,7 +226,7 @@ function homebrewItemSource(
  * aggregate — they ride its own row (`resolveItemBoundWeaponBonus`); the rest
  * (resistances, senses, while-active states) apply like a worn item's.
  */
-export function resolveGrantSourcesForWeapons(
+function resolveGrantSourcesForWeapons(
   weapons: ReadonlyArray<SrdWeaponRef | CustomWeapon>,
   itemResources?: Readonly<Record<string, ItemResourceState>>
 ): GrantSource[] {
@@ -361,7 +361,7 @@ const OCCURRENCE_CHOICE_SEPARATOR = "@";
  * cast on you by an ally): the pick belongs to that cast only, so a new occurrence,
  * or your own cast of the spell, asks again instead of reusing it.
  */
-export function occurrenceBundleKey(bundleKey: string, effectId: string): string {
+function occurrenceBundleKey(bundleKey: string, effectId: string): string {
   return `${bundleKey}${OCCURRENCE_CHOICE_SEPARATOR}${effectId}`;
 }
 

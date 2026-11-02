@@ -24,7 +24,7 @@ import { localeDistance } from "@/lib/utils";
 const MASTERY_DISTANCE_FT = 10;
 
 /** The masteries that ride an attack as a declarable effect, in display order. */
-export const MASTERY_RIDER_IDS = [
+const MASTERY_RIDER_IDS = [
   "graze",
   "topple",
   "push",
