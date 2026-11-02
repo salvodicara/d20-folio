@@ -6,6 +6,7 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
+import { causalPatch, undoPatch } from "@/lib/play/causal-patch";
 import { create } from "zustand";
 import type {
   CharacterDoc,
@@ -934,6 +935,29 @@ function sameD20CommandSnapshot(
   return left !== null && JSON.stringify(left) === JSON.stringify(right);
 }
 
+/** Put an owner-combat snapshot back as the live state, and persist it. */
+function restoreD20Command(
+  snapshot: D20CommandSnapshot,
+  get: () => CharacterState
+): void {
+  const restoredCharacter = structuredClone(snapshot.character);
+  const restoredLegacyEffects = structuredClone(snapshot.legacyActiveEffects);
+  const restoredEffects = effectiveCombatEffects(restoredLegacyEffects);
+  const restoredProjection = structuredClone(snapshot.encounterEffectProjection);
+  attachEncounterEffects(restoredCharacter, restoredProjection, restoredEffects);
+  useCharacterStore.setState({
+    character: restoredCharacter,
+    combatActiveEffects: restoredEffects,
+    combatLegacyActiveEffects: restoredLegacyEffects,
+    combatPendingConcentrationSaves: structuredClone(snapshot.pendingConcentrationSaves),
+    encounterEffectProjection: restoredProjection,
+  });
+  useCombatStore.setState({ damageTakenThisRound: snapshot.damageTakenThisRound });
+  persistCombat(get);
+  flushParentPersistence(get);
+  void saveLogToIDB(restoredCharacter.id, restoredCharacter.session.logEntries);
+}
+
 /** Restore one exact owner-combat receipt only while its post-state is still current. */
 function causalD20CommandUndo(
   before: D20CommandSnapshot,
@@ -942,22 +966,7 @@ function causalD20CommandUndo(
 ): () => boolean {
   return () => {
     if (!sameD20CommandSnapshot(captureD20Command(get()), after)) return false;
-    const restoredCharacter = structuredClone(before.character);
-    const restoredLegacyEffects = structuredClone(before.legacyActiveEffects);
-    const restoredEffects = effectiveCombatEffects(restoredLegacyEffects);
-    const restoredProjection = structuredClone(before.encounterEffectProjection);
-    attachEncounterEffects(restoredCharacter, restoredProjection, restoredEffects);
-    useCharacterStore.setState({
-      character: restoredCharacter,
-      combatActiveEffects: restoredEffects,
-      combatLegacyActiveEffects: restoredLegacyEffects,
-      combatPendingConcentrationSaves: structuredClone(before.pendingConcentrationSaves),
-      encounterEffectProjection: restoredProjection,
-    });
-    useCombatStore.setState({ damageTakenThisRound: before.damageTakenThisRound });
-    persistCombat(get);
-    flushParentPersistence(get);
-    void saveLogToIDB(restoredCharacter.id, restoredCharacter.session.logEntries);
+    restoreD20Command(before, get);
     return true;
   };
 }
@@ -1098,6 +1107,59 @@ export function beginWholeStateUndo(): (() => (() => boolean) | null) | null {
     return () => {
       if (!restore()) return false;
       for (const id of added) notifyPlayLog((sink) => sink.removed(characterId, id));
+      return true;
+    };
+  };
+}
+
+/** The sheet and the turn a use may change: the owner-combat snapshot plus every data
+ *  field of the turn store. */
+interface UseSnapshot {
+  d20: D20CommandSnapshot;
+  turn: Record<string, unknown>;
+}
+
+function captureUse(state: CharacterState): UseSnapshot | null {
+  const d20 = captureD20Command(state);
+  if (!d20) return null;
+  const turn = Object.fromEntries(
+    Object.entries(useCombatStore.getState()).filter(([, v]) => typeof v !== "function")
+  );
+  return { d20, turn: structuredClone(turn) };
+}
+
+/**
+ * Photograph the sheet and the turn before a use. After it, `seal()` returns the use's
+ * causal undo: it takes back exactly the fields the use changed (a field someone else
+ * changed meanwhile is kept), and refuses when someone changed one of those same fields
+ * (docs/architecture/2026-11-simplify-core.md, item 4). Every log line the use added is
+ * also taken back out of the campaign session log. `seal()` returns null when the use
+ * changed nothing.
+ */
+export function beginCausalUndo(): (() => (() => boolean) | null) | null {
+  const get = useCharacterStore.getState;
+  const before = captureUse(get());
+  if (!before) return null;
+  return () => {
+    const after = captureUse(get());
+    if (!after) return null;
+    const patch = causalPatch(before, after);
+    if (patch.length === 0) return null;
+    const characterId = after.d20.character.id;
+    return () => {
+      const current = captureUse(get());
+      if (!current || current.d20.character.id !== characterId) return false;
+      const restored = undoPatch(current, patch);
+      if (!restored) return false;
+      const linesBefore = new Set(
+        current.d20.character.session.logEntries.map((e) => e.id)
+      );
+      restoreD20Command(restored.d20, get);
+      useCombatStore.setState(restored.turn);
+      const kept = new Set(restored.d20.character.session.logEntries.map((e) => e.id));
+      for (const id of linesBefore) {
+        if (!kept.has(id)) notifyPlayLog((sink) => sink.removed(characterId, id));
+      }
       return true;
     };
   };

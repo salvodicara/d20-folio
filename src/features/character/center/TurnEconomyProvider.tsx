@@ -36,7 +36,7 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { validateArcaneRecoveryPlan } from "@/lib/arcane-recovery";
-import { useCharacterStore } from "@/stores/characterStore";
+import { beginCausalUndo, useCharacterStore } from "@/stores/characterStore";
 import {
   useCombatStore,
   type EconomySlot,
@@ -817,100 +817,48 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     occurrenceId?: string
   ): () => void {
     action = withSelfRecipient(action, targets, selfCombatantId());
+    // One causal undo for the whole use (simplify-core item 4): it takes back exactly what
+    // the steps below change on the sheet and the turn, and keeps anyone else's change.
+    const seal = beginCausalUndo();
     const cs = useCharacterStore.getState();
-    const characterId = cs.character?.id;
-    let restoreEquipment: (() => boolean) | null = null;
     // A bare slot cost (no cast-option pool pick — a feature/custom-spell commit)
-    // resolves its pool ONCE, so spend + undo target the SAME counter (B3).
+    // resolves its pool ONCE.
     const bareSpend = bareActionSpend(
       cs.character?.character.spellSlots ?? [],
       action,
       trackerAmount
     );
-    const spends = bareSpend ? [bareSpend] : [];
-    paySpends(spends);
-    // S9 — a CONSUMED buff potion (Speed / Giant Strength / …) arms its
-    // self-sustaining round countdown when drunk, so its duration ticks at each
-    // End Turn and auto-expires. No-op for an instant potion / non-item cost.
-    // Armed BEFORE the bottle is used: a homebrew potion reads its mechanics from
-    // its own row, which the last bottle's use removes.
-    const restorePotionTimer = action.costEquipment
-      ? cs.consumePotionBuff(action.costEquipment)
-      : null;
-    if (!bareSpend && action.costEquipment) {
-      restoreEquipment = cs.useEquipmentItem(action.costEquipment);
-    }
-    // RA-14 — a ranged attack with TRACKED ammunition debits one unit (SRD
-    // "Ammunition": each attack expends one piece). The engine stamps
-    // `summary.ammo` only when a matching inventory row exists, and the store
-    // debits only while stock remains — no row / empty quiver = nothing spent,
-    // never a block (override-first). Undo credits the exact unit back.
+    paySpends(bareSpend ? [bareSpend] : []);
+    // S9 — a CONSUMED buff potion arms its round countdown when drunk (before the bottle
+    // is used: a homebrew potion reads its mechanics from its own row).
+    if (action.costEquipment) cs.consumePotionBuff(action.costEquipment);
+    if (!bareSpend && action.costEquipment) cs.useEquipmentItem(action.costEquipment);
+    // RA-14 — a ranged attack with TRACKED ammunition debits one unit, only while stock
+    // remains (no row / empty quiver = nothing spent, never a block).
     const ammoItemId =
       action.source === "weapon" ? action.summary.ammo?.itemId : undefined;
-    const ammoDebited =
-      ammoItemId != null ? cs.adjustEquipmentQuantity(ammoItemId, -1) : false;
-    // RA-09 — the Dash action grants extra movement equal to your Speed: extend
-    // the turn's movement budget by one Speed (undoable, per-turn — resets at the
-    // turn boundary). Future speed riders (Tactical Shift, Cunning-Strike speed)
-    // route through the SAME `commitDash` seam.
-    const restoreDash =
-      economyActionCategory(action) === "dash"
-        ? useCombatStore.getState().commitDash()
-        : null;
+    if (ammoItemId != null) cs.adjustEquipmentQuantity(ammoItemId, -1);
+    // RA-09 — Dash extends the turn's movement budget by one Speed.
+    if (economyActionCategory(action) === "dash") useCombatStore.getState().commitDash();
     const combat = useCombatStore.getState();
-    // Turn-scoped action effects share the durable combat store, so route changes
-    // cannot reopen movement or lose the pending roll state. An attack consumes
-    // the pending Advantage exactly once; every mutation carries its own inverse.
-    const restoreConsumedAttackAdvantage =
-      action.source === "weapon" || action.summary.attackBonus !== undefined
-        ? combat.consumeNextAttackAdvantage()
-        : null;
-    const restoreGrantedAttackAdvantage = action.grantsNextAttackAdvantage
-      ? combat.grantNextAttackAdvantage()
-      : null;
-    const restoreMovementLock = action.locksMovement ? combat.lockMovement() : null;
-    // Store the spell's STABLE id (golden rule 7); custom spells carry no id, so
-    // custom spells stamp their name behind the `custom:` marker — never a bare SRD
-    // name (which would leak the English title in IT).
-    const restoreConcentration = applyActionConcentration(
-      action,
-      action.slotLevel ?? action.spellLevel ?? undefined
-    );
-    // Activation seam (issue #27 dogfood) — an action that ESTABLISHES a
-    // while-active state (Rage, Bladesong, Innate Sorcery) lights it now: the
-    // rail chip activates automatically and every while-active grant (Rage's
-    // damage bonus, resistances, advantage) flows into the sheet. Only flipped
-    // when it was OFF, so undo never clears a state the player set by hand;
-    // the player taps the lit chip when the state ends (toggleActiveFeature).
-    const activation = activateActionState(
-      action,
-      action.slotLevel ?? action.spellLevel ?? undefined
-    );
-    // USE-APPLIES (Task 1 + S8) — auto-apply the action's deterministic, dice-free
-    // side-effects now (Orc Adrenaline Rush → PB temp HP; S8: every slot-LESS
-    // temp-HP card — Dark One's Blessing, Celestial Resilience, Vitality of the
-    // Tree, Inspiring Leader). The engine already resolved each to a number; route
-    // the apply through the store `gainTempHp` seam so the MAX-WINS rule lives in
-    // ONE place (golden rule 6 — no fourth copy of `max(prev, granted)`). It logs
-    // a structured `temp-hp-gain` event (events-as-data); each grant's undo restores
-    // the exact prior pool and its log line. Override-first — the temp-HP field stays editable.
-    // (Currently the register's only kind is `temp-hp`; the `kind` discriminant
-    // is read when a second kind lands — for now every entry is a temp-HP grant.)
-    const undoUseEffects = (action.useEffects ?? [])
-      .map((eff) => cs.gainTempHp(eff.amount))
-      .filter((undo): undo is () => void => undo !== null);
-    const undoTrackerTopUp = action.summary.trackerTopUp
-      ? cs.topUpTracker(
-          action.summary.trackerTopUp.trackerId,
-          action.summary.trackerTopUp.upTo
-        )
-      : null;
-    // Log a STRUCTURED action-use event (no localized text): the semantic effect
-    // (drives the GLYPH SHAPE) + the economy slot `action.type` (drives the row
-    // COLOUR — action=green, bonus=blue, reaction=red — matching the cockpit
-    // cards). The presenter localizes at render, so the row re-localizes on a
-    // language switch. Capture the new entry's id so undo removes EXACTLY this
-    // line — never a whole-array snapshot.
+    // An attack consumes the pending Advantage exactly once.
+    if (action.source === "weapon" || action.summary.attackBonus !== undefined)
+      combat.consumeNextAttackAdvantage();
+    if (action.grantsNextAttackAdvantage) combat.grantNextAttackAdvantage();
+    if (action.locksMovement) combat.lockMovement();
+    // Concentration stores the spell's STABLE id (custom spells: `custom:` + name).
+    applyActionConcentration(action, action.slotLevel ?? action.spellLevel ?? undefined);
+    // An action that ESTABLISHES a while-active state (Rage, Bladesong) lights it now.
+    activateActionState(action, action.slotLevel ?? action.spellLevel ?? undefined);
+    // USE-APPLIES — the action's dice-free temp HP, through the one max-wins seam.
+    for (const eff of action.useEffects ?? []) cs.gainTempHp(eff.amount);
+    if (action.summary.trackerTopUp) {
+      cs.topUpTracker(
+        action.summary.trackerTopUp.trackerId,
+        action.summary.trackerTopUp.upTo
+      );
+    }
+    // A STRUCTURED action-use line (no localized text): effect → glyph, slot → colour.
     const loggedId = cs.logEvent({
       kind: "action-use",
       action: action.nameLoc,
@@ -921,34 +869,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       ...(action.checkResult ? { check: action.checkResult } : {}),
     });
     offerFollowUps(action, targets, loggedId, occurrenceId);
+    const undo = seal?.() ?? null;
     return () => {
-      const c2 = useCharacterStore.getState();
-      if (c2.readonly || c2.character?.id !== characterId) return;
-      refundSpends(spends);
-      restoreEquipment?.();
-      // S9 — revert the armed potion countdown (restores the exact prior timers).
-      restorePotionTimer?.();
-      // RA-14 — credit the fired ammunition unit back (exact inverse op).
-      if (ammoDebited && ammoItemId != null) {
-        c2.adjustEquipmentQuantity(ammoItemId, 1);
-      }
-      // RA-09 — undo the Dash's movement-budget extension.
-      restoreDash?.();
-      restoreMovementLock?.();
-      restoreGrantedAttackAdvantage?.();
-      restoreConsumedAttackAdvantage?.();
-      undoTrackerTopUp?.();
-      // Clear the state THIS commit lit (never a hand-set one); compute the hand-lit
-      // concentration chips the upcoming `setConcentration(prevConc)` LEG-2 clear is
-      // about to strip; restore concentration (strips them); then re-add ONLY those —
-      // a SURGICAL restore that can't resurrect a DIFFERENT chip the player toggled
-      // OFF during the undo window (the cast's own auto-lit key is excluded).
-      activation.restore();
-      restoreConcentration(activation.activated);
-      // USE-APPLIES — each temp-HP grant's own undo restores the pool it overwrote
-      // and drops its log line, newest first, so the undone action leaves no trace.
-      undoUseEffects.reverse().forEach((undo) => undo());
-      c2.removeLogEntry(loggedId);
+      if (useCharacterStore.getState().readonly || !undo?.()) return;
       useDamageTrayStore.getState().withdraw(loggedId);
     };
   }
