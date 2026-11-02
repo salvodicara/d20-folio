@@ -76,7 +76,7 @@ are never deleted; any change to a stored shape goes through `live-data-migratio
 
 **The members' campaign write rule and the expression budget (Coordinator, 2026-11-02).** Measured
 in the emulator by adding trivial checks to the effect path until the 8-revoke batch test fails:
-the margin was under 5. Two safe cuts (#TBD): the effect write is its own first `allow update`, so
+the margin was under 5. Two safe cuts (#520): the effect write is its own first `allow update`, so
 the turn and lifecycle checks no longer run on its way, and the bulk-revoke validator reads fields
 directly. The margin is now about 30. The cost does not grow with the ledger (8 revokes over a
 400-entry ledger pass), but it grows with the batch: 2 revokes keep a margin above 60. What is left
