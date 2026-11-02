@@ -56,7 +56,7 @@ function addressAt(weapon: CarriedWeapon, index: number): WeaponAddress {
 }
 
 /** Where the addressed weapon sits in `weapons[]` now, or -1 when it is gone. */
-export function weaponIndexOf(
+function weaponIndexOf(
   weapons: ReadonlyArray<CarriedWeapon>,
   address: WeaponAddress
 ): number {
@@ -96,7 +96,7 @@ function weaponRejection(
 }
 
 /** The `weapon-binding` grants a spell's states carry, each with its state's key. */
-export function spellWeaponBindings(
+function spellWeaponBindings(
   spell: Pick<SrdSpellData, "grants">
 ): Array<{ activeKey: string; grant: WeaponBindingGrant }> {
   return (spell.grants ?? []).flatMap((g) =>

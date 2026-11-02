@@ -1056,7 +1056,7 @@ function parseMaterialEntityBase(
 }
 
 /** Exact structural boundary for one non-self material entity generation. */
-export function conformMaterialEntity(value: unknown): MaterialEntity | null {
+function conformMaterialEntity(value: unknown): MaterialEntity | null {
   const commonKeys = [
     "kind",
     "template",

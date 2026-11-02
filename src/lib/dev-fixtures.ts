@@ -18,7 +18,7 @@ import { applyCombatToSession } from "@/lib/combat-state";
 import { packFixtures } from "@pack";
 
 /** Route-id prefix that maps to a team fixture (`team-<fixture-name>`). */
-export const DEV_FIXTURE_PREFIX = "team-";
+const DEV_FIXTURE_PREFIX = "team-";
 
 /**
  * The fixture ids (without the prefix), for menus / harnesses. The fixture

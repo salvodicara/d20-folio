@@ -188,70 +188,67 @@ const ENTRY_NAME = { id: ENTRY_ID, name: stringSchema };
 
 /** One structured homebrew entry — a catalogue `MonsterEntry` plus its name and
  *  text — discriminated on `kind` exactly as the catalogue's. */
-export const HOMEBREW_MONSTER_ENTRY_SCHEMA: ExactSchema = discriminatedUnionSchema(
-  "kind",
-  {
-    narrative: objectSchema(
-      { ...ENTRY_NAME, kind: literalSchema("narrative") },
-      {
-        ...ENTRY_BASE,
-        fact: FACT,
-        damage: arraySchema(DAMAGE, 1),
-        performs: objectSchema({ section: SECTION, entryId: ENTRY_ID }),
-        multiattack: MULTIATTACK,
-        movement: MOVEMENT,
-        breathes: literals(["air-and-water", "water-only"]),
-      }
-    ),
-    attack: objectSchema(
-      {
-        ...ENTRY_NAME,
-        kind: literalSchema("attack"),
-        attack: literals(["melee", "ranged", "melee-or-ranged"]),
-        toHit: numberSchema,
-        damage: arraySchema(DAMAGE, 1),
-      },
-      {
-        ...ENTRY_BASE,
-        reachFt: COUNT,
-        rangeFt: objectSchema({ near: COUNT }, { far: COUNT }),
-        conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
-        conditionsIf: TRUE,
-        conditionSave: objectSchema({ save: ABILITY, dc: COUNT }),
-        bloodiedDamage: DAMAGE,
-        ...EFFECT_RIDER_SCHEMAS,
-      }
-    ),
-    save: objectSchema(
-      {
-        ...ENTRY_NAME,
-        kind: literalSchema("save"),
-        save: ABILITY,
-        dc: COUNT,
-        onSuccess: literals(["half", "none", "special"]),
-      },
-      {
-        ...ENTRY_BASE,
-        damage: arraySchema(DAMAGE, 1),
-        conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
-        ...EFFECT_RIDER_SCHEMAS,
-      }
-    ),
-    spellcasting: objectSchema(
-      { ...ENTRY_NAME, kind: literalSchema("spellcasting"), ability: ABILITY },
-      {
-        ...ENTRY_BASE,
-        dc: COUNT,
-        toHit: numberSchema,
-        atWill: arraySchema(stringSchema, 1),
-        perDay: arraySchema(
-          objectSchema({ count: COUNT, spellIds: arraySchema(stringSchema, 1) }),
-          1
-        ),
-      }
-    ),
-  }
-);
+const HOMEBREW_MONSTER_ENTRY_SCHEMA: ExactSchema = discriminatedUnionSchema("kind", {
+  narrative: objectSchema(
+    { ...ENTRY_NAME, kind: literalSchema("narrative") },
+    {
+      ...ENTRY_BASE,
+      fact: FACT,
+      damage: arraySchema(DAMAGE, 1),
+      performs: objectSchema({ section: SECTION, entryId: ENTRY_ID }),
+      multiattack: MULTIATTACK,
+      movement: MOVEMENT,
+      breathes: literals(["air-and-water", "water-only"]),
+    }
+  ),
+  attack: objectSchema(
+    {
+      ...ENTRY_NAME,
+      kind: literalSchema("attack"),
+      attack: literals(["melee", "ranged", "melee-or-ranged"]),
+      toHit: numberSchema,
+      damage: arraySchema(DAMAGE, 1),
+    },
+    {
+      ...ENTRY_BASE,
+      reachFt: COUNT,
+      rangeFt: objectSchema({ near: COUNT }, { far: COUNT }),
+      conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
+      conditionsIf: TRUE,
+      conditionSave: objectSchema({ save: ABILITY, dc: COUNT }),
+      bloodiedDamage: DAMAGE,
+      ...EFFECT_RIDER_SCHEMAS,
+    }
+  ),
+  save: objectSchema(
+    {
+      ...ENTRY_NAME,
+      kind: literalSchema("save"),
+      save: ABILITY,
+      dc: COUNT,
+      onSuccess: literals(["half", "none", "special"]),
+    },
+    {
+      ...ENTRY_BASE,
+      damage: arraySchema(DAMAGE, 1),
+      conditions: arraySchema(CONDITION_ID_SCHEMA, 1),
+      ...EFFECT_RIDER_SCHEMAS,
+    }
+  ),
+  spellcasting: objectSchema(
+    { ...ENTRY_NAME, kind: literalSchema("spellcasting"), ability: ABILITY },
+    {
+      ...ENTRY_BASE,
+      dc: COUNT,
+      toHit: numberSchema,
+      atWill: arraySchema(stringSchema, 1),
+      perDay: arraySchema(
+        objectSchema({ count: COUNT, spellIds: arraySchema(stringSchema, 1) }),
+        1
+      ),
+    }
+  ),
+});
 
 const OPTIONAL_FEET = (keys: ReadonlyArray<string>) =>
   Object.fromEntries(keys.map((key) => [key, numberSchema]));
@@ -355,7 +352,7 @@ const CONTEXT: ExactSchemaContext<
   refs: {},
 };
 
-export const MONSTER_ENTRY_SECTIONS: ReadonlyArray<MonsterEntrySectionKey> = [
+const MONSTER_ENTRY_SECTIONS: ReadonlyArray<MonsterEntrySectionKey> = [
   "traits",
   "actions",
   "bonusActions",
@@ -531,7 +528,7 @@ export function homebrewMonsterMechanics(
 
 /** The stat-block id a homebrew monster answers to: `homebrew:<library entry id>`
  *  (a catalogue slug never holds a colon, so the two can never meet). */
-export const HOMEBREW_MONSTER_ID_PREFIX = "homebrew:";
+const HOMEBREW_MONSTER_ID_PREFIX = "homebrew:";
 
 export function homebrewMonsterBlockId(entryId: string): string {
   return `${HOMEBREW_MONSTER_ID_PREFIX}${entryId}`;

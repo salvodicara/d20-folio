@@ -48,7 +48,7 @@ export interface CharacterPdfExport {
  * lazy-imported here so pdf-lib + the SRD-resolving views never weigh on the
  * roster/cockpit initial bundle (a deliberate click pays the one-time fetch).
  */
-export async function buildCharacterPdf(
+async function buildCharacterPdf(
   doc: CharacterDoc,
   locale: Locale,
   t: Translate

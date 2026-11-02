@@ -63,7 +63,7 @@ log hears it too. Hand-written narrow restores stay only where an existing undo 
 
 1. **Types and fold.** `src/lib/play/play-log.ts`: the entry union, `effectiveEvents` and
    `foldPlayLog`, with tests. No wiring.
-2. **Shadow mode.** The store appends an entry next to every write it already does. A dev-only
+2. **Shadow mode.** The store appends an entry next to every write it already does. A
    check asserts `foldPlayLog(checkpoint, entries)` equals the live session. Parity first.
    Done: `src/lib/play/play-log-shadow.ts`, wired into `characterStore.dispatch` in dev only.
    A write outside `dispatch` starts a new checkpoint; a snapshot undo of an older event (it
@@ -76,7 +76,7 @@ log hears it too. Hand-written narrow restores stay only where an existing undo 
    `dispatch` in development: its undo appends an `undo` entry and the sheet becomes the fold,
    but only when the log reproduces the live sheet (the shadow's parity); otherwise it restores
    today's snapshot. The difference shows on an older action's undo: only that event goes,
-   later ones stay. Production keeps the snapshot until the owner turns it on. The log lives
+   later ones stay. On in production too since 2026-11-02 (the owner's yes). The log lives
    in memory: undo does not survive a reload, by the owner's choice (2026-10-16).
 5. **Storage: not planned.** The owner chose to keep the play log in memory (2026-10-16).
    For the record, the cost it would have had: one write per sheet action, at most doubling a

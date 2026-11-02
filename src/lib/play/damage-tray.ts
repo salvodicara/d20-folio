@@ -223,7 +223,7 @@ export function parseRolledTotal(text: string): number | null {
 export type TargetDefense = "immune" | "resistant" | "vulnerable";
 
 /** The target's own known defense against this damage type (immunity wins). */
-export function targetDefense(
+function targetDefense(
   defenses: DamageDefenses | undefined,
   type: DamageType | undefined
 ): TargetDefense | null {
@@ -244,7 +244,7 @@ const FACTOR: Record<TrayMultiplier, number> = {
   "2": 2,
 };
 
-export function defenseMultiplier(defense: TargetDefense): TrayMultiplier {
+function defenseMultiplier(defense: TargetDefense): TrayMultiplier {
   return defense === "immune" ? "0" : defense === "resistant" ? "0.5" : "2";
 }
 
@@ -375,7 +375,7 @@ export function onRoll20Lines(
  * damage, then the target's defense halves, doubles or cancels it (SRD order). Saved
  * and resistant is ¼; saved and vulnerable is ×1.
  */
-export function factsMultiplier(
+function factsMultiplier(
   row: Pick<TrayRow, "saved" | "defense" | "defenseOn" | "attack">,
   plan: DamageTrayPlan
 ): TrayMultiplier {

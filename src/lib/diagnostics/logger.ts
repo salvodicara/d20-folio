@@ -7,7 +7,7 @@ import type {
   DiagnosticsReport,
 } from "./types";
 
-export const BREADCRUMB_CAPACITY = 500;
+const BREADCRUMB_CAPACITY = 500;
 export const REPORT_MAX_BYTES = 32 * 1024;
 const MAX_MESSAGE_CHARS = 2000;
 

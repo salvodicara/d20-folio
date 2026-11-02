@@ -30,7 +30,7 @@ export type RiderTranslate = (
 ) => string;
 
 /** The lines one rider shows, in order, through the given translator. */
-export function riderEffectLines(
+function riderEffectLines(
   effect: RiderEffect,
   translate: RiderTranslate,
   locale: Locale

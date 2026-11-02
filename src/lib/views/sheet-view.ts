@@ -703,7 +703,7 @@ export function resolveNonWalkingSpeed(
 }
 
 /** The aggregate's value for one non-walking speed kind. */
-export function nonWalkingSpeedOf(
+function nonWalkingSpeedOf(
   aggregate: AggregatedGrants,
   kind: SpeedKind
 ): NonWalkingSpeed | null {

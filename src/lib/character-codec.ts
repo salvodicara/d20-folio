@@ -183,7 +183,7 @@ const SPELL_SCHOOLS: SpellSchool[] = [
   "necromancy",
   "transmutation",
 ];
-export function isSpellSchool(val: unknown): val is SpellSchool {
+function isSpellSchool(val: unknown): val is SpellSchool {
   return typeof val === "string" && (SPELL_SCHOOLS as string[]).includes(val);
 }
 
@@ -210,7 +210,7 @@ export function isRecovery(val: unknown): val is Recovery {
  * raw display string can never re-enter the codec. Reuses the ONE `TRACKER_UNITS`
  * source (golden rule 6).
  */
-export function isTrackerUnit(val: unknown): val is TrackerUnit {
+function isTrackerUnit(val: unknown): val is TrackerUnit {
   return typeof val === "string" && (TRACKER_UNITS as readonly string[]).includes(val);
 }
 
@@ -219,7 +219,7 @@ function isAbilityCode(val: unknown): val is AbilityCode {
   return typeof val === "string" && (ABILITY_CODES as string[]).includes(val);
 }
 
-export function isTagArray(val: unknown): val is CharacterTag[] {
+function isTagArray(val: unknown): val is CharacterTag[] {
   return (
     Array.isArray(val) &&
     val.every(
@@ -807,7 +807,7 @@ const VALID_STATUSES: CharacterDoc["status"][] = [
   "archived",
 ];
 
-export function parseStatus(value: unknown): CharacterDoc["status"] {
+function parseStatus(value: unknown): CharacterDoc["status"] {
   if (
     typeof value === "string" &&
     VALID_STATUSES.includes(value as CharacterDoc["status"])
