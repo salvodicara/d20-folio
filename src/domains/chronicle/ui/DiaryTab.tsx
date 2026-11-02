@@ -200,6 +200,13 @@ function SessionPage({
   const sections = useMemo(() => buildReport(entries), [entries]);
   const blocks = useMemo(() => diaryBlocks(sections), [sections]);
   const notes = session.notes.trim();
+  const players = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(campaign.memberDetails).map(([uid, m]) => [uid, m.displayName])
+      ),
+    [campaign.memberDetails]
+  );
   const heading = [title, session.label, dayLabel].filter(Boolean).join(" · ");
   const report = () =>
     renderSessionReport(sections, heading, t, names, { notes: session.notes });
@@ -246,7 +253,12 @@ function SessionPage({
       {blocks.map((block) => (
         <section key={`${block.kind}-${block.at}`} className="f-tl-block">
           <h4 className="f-lbl">
-            {[blockTitle(block, t), ...blockMeta(block, t), time(block.at)].join(" · ")}
+            {
+              // the separator never starts a line
+              [blockTitle(block, t), ...blockMeta(block, t), time(block.at)].join(
+                "\u00a0· "
+              )
+            }
           </h4>
           {block.entries.map((entry) => (
             <TimelineLine
@@ -254,6 +266,7 @@ function SessionPage({
               entry={entry}
               names={names}
               foes={block.kind === "fight" ? block.names : {}}
+              players={players}
             />
           ))}
         </section>
@@ -282,14 +295,18 @@ function TimelineLine({
   entry,
   names,
   foes,
+  players,
 }: {
   entry: SessionEntry;
   names: SessionReportNames;
   foes: Record<string, string>;
+  players: Record<string, string>;
 }) {
   const { t } = useTranslation();
   const who = (id: string | undefined): string =>
     (id && (foes[id] ?? names.pc(id))) || t("combatChronicle.someone");
+  // A note is signed by the player who wrote it, as at the table.
+  const writer = (id: string): string => players[id.replace(/^pc-/, "")] ?? who(id);
   const { event } = entry;
   if (event.kind === "note") {
     return (
@@ -297,10 +314,7 @@ function TimelineLine({
         <span>
           <i>{event.text}</i>
           {event.actor && (
-            <span className="f-tl-by">
-              {" "}
-              — {t("diary.noteBy", { name: who(event.actor) })}
-            </span>
+            <span className="f-tl-by">{`\u00a0—\u00a0${t("diary.noteBy", { name: writer(event.actor) })}`}</span>
           )}
         </span>
       </p>

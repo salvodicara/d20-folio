@@ -25,6 +25,7 @@ import type {
   PendingTurn,
 } from "@/features/campaigns/global-combat-context";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
+import type { LogItem, PlayEvent } from "@/lib/session-log";
 import { asRaceId } from "@/data/srd-names";
 
 /** The id `makeDevCampaign` seeds by default (also a sample invite code). */
@@ -1252,5 +1253,61 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
     initiativeBonus: 2,
     initiativeRoll: 15,
     round,
+  };
+}
+
+/** A played evening in the dev campaign's session log, on its newest session's day, so
+ *  the Diario's automatic report has something to show. Opt-in (`d20-dev-evening`), so
+ *  the specs that expect an empty log keep it. */
+export function makeDevEvening(): { day: string; items: LogItem[] } | null {
+  if (
+    typeof window === "undefined" ||
+    window.localStorage.getItem("d20-dev-evening") !== "1"
+  )
+    return null;
+  const at = (h: number, m: number) => new Date(2026, 4, 2, h, m).getTime();
+  const mara = "pc-member-mara";
+  const bren = "pc-member-bren";
+  const fight = "dev-fight-goblins";
+  let n = 0;
+  const item = (time: number, event: PlayEvent): LogItem => {
+    n += 1;
+    return { id: `dev-evening-${n}`, by: "mock-uid", at: time, type: "event", event };
+  };
+  return {
+    day: "2026-05-02",
+    items: [
+      item(at(21, 5), {
+        kind: "note",
+        text: "Orin asks us to find the stolen hammer in the Glass Crypt.",
+        actor: mara,
+      }),
+      item(at(21, 12), { kind: "time-passes", minutes: 10, actor: bren }),
+      item(at(21, 40), {
+        kind: "encounter-start",
+        encounterId: fight,
+        names: { "m-1": "Goblin 1", "m-2": "Goblin 2", "m-3": "Goblin Boss" },
+      }),
+      item(at(21, 40), { kind: "round-start", round: 1 }),
+      item(at(21, 41), { kind: "damage", target: mara, amount: 9 }),
+      item(at(21, 43), { kind: "round-start", round: 2 }),
+      item(at(21, 44), { kind: "damage", actor: bren, target: "m-1", amount: 11 }),
+      item(at(21, 44), { kind: "down", target: "m-1" }),
+      item(at(21, 47), { kind: "round-start", round: 3 }),
+      item(at(21, 48), {
+        kind: "note",
+        text: "“Leave the hammer, it is cursed,” the boss shouts as it flees.",
+        actor: mara,
+      }),
+      item(at(21, 49), { kind: "encounter-end", encounterId: fight, outcome: "victory" }),
+      item(at(22, 30), { kind: "rest", rest: "short", actor: mara }),
+      item(at(22, 30), { kind: "rest", rest: "short", actor: bren }),
+      item(at(22, 31), { kind: "heal", target: mara, amount: 7 }),
+      item(at(22, 40), {
+        kind: "note",
+        text: "We head down into the crypt at dawn.",
+        actor: bren,
+      }),
+    ],
   };
 }
