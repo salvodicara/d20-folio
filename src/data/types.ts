@@ -145,6 +145,8 @@ export type ReactionTrigger =
   | "allyFailsSave"
   | "creatureCastsSpell"
   | "creatureEntersReach"
+  // An Opportunity Attack moment: a creature you can see leaves your reach (War Caster).
+  | "creatureLeavesReach"
   | "creatureHitsOther"
   | "creatureSucceedsRollOrDealsDamage"
   // Barbarian World Tree "Branches of the Tree": a creature you can see starts
@@ -169,6 +171,7 @@ export const ALL_REACTION_TRIGGERS = [
   "allyFailsSave",
   "creatureCastsSpell",
   "creatureEntersReach",
+  "creatureLeavesReach",
   "creatureHitsOther",
   "creatureSucceedsRollOrDealsDamage",
   "creatureStartsTurnNear",
@@ -187,6 +190,7 @@ export const ALL_REACTION_TRIGGERS = [
     "allyFailsSave",
     "creatureCastsSpell",
     "creatureEntersReach",
+    "creatureLeavesReach",
     "creatureHitsOther",
     "creatureSucceedsRollOrDealsDamage",
     "creatureStartsTurnNear",

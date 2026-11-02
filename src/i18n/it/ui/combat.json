@@ -189,6 +189,7 @@
     "reactionTrigger_allyFailsSave": "alleato fallisce TS",
     "reactionTrigger_creatureCastsSpell": "creatura lancia incantesimo",
     "reactionTrigger_creatureEntersReach": "creatura entra nella tua portata",
+    "reactionTrigger_creatureLeavesReach": "creatura esce dalla tua portata",
     "reactionTrigger_creatureHitsOther": "creatura colpisce un altro bersaglio",
     "reactionTrigger_creatureSucceedsRollOrDealsDamage": "creatura supera una prova o un attacco, oppure tira i danni",
     "reactionTrigger_creatureStartsTurnNear": "una creatura inizia il turno vicino a te",

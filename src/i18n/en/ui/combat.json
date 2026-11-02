@@ -189,6 +189,7 @@
     "reactionTrigger_allyFailsSave": "ally fails save",
     "reactionTrigger_creatureCastsSpell": "creature casts spell",
     "reactionTrigger_creatureEntersReach": "creature enters your reach",
+    "reactionTrigger_creatureLeavesReach": "creature leaves your reach",
     "reactionTrigger_creatureHitsOther": "creature hits another target",
     "reactionTrigger_creatureSucceedsRollOrDealsDamage": "creature succeeds on a check or attack, or rolls damage",
     "reactionTrigger_creatureStartsTurnNear": "creature starts its turn near you",
