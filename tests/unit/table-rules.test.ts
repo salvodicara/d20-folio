@@ -3,7 +3,10 @@
  * the default. Expected RAW values come from the 2024 rules, and each must match
  * the constant the engine uses today, so the seam can replace them one by one.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The campaign read boundary lives in campaign-io, which starts Firebase on import.
+vi.mock("@/lib/firebase", () => ({ db: {}, auth: {} }));
 import {
   conformTableRules,
   effectiveTableRules,
@@ -11,6 +14,7 @@ import {
 } from "@/lib/table-rules";
 import { DEATH_FAIL_LIMIT, DEATH_SUCCESS_LIMIT } from "@/lib/character-status";
 import { consumableActionSlot } from "@/lib/srd-resolve";
+import { toCampaignDoc } from "@/features/campaigns/campaign-io";
 
 describe("RAW table rules are the 2024 rules", () => {
   it("rests: Short Rest 1 hour, Long Rest 8 hours", () => {
@@ -92,8 +96,7 @@ describe("stored table rules are read field by field, never trusted whole", () =
 });
 
 describe("the campaign read boundary", () => {
-  it("toCampaignDoc keeps valid table rules and drops the rest", async () => {
-    const { toCampaignDoc } = await import("@/features/campaigns/campaign-io");
+  it("toCampaignDoc keeps valid table rules and drops the rest", () => {
     const doc = toCampaignDoc("c1", {
       memberDetails: {},
       tableRules: { flanking: "advantage", fumbles: 3 },
