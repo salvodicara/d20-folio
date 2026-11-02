@@ -42,7 +42,7 @@ describe("an item received into the bag", () => {
       kind: "receive-item",
       ref: { srdId: "potion-of-healing", quantity: 2 },
     });
-    expect(next.character.equipment).toEqual([
+    expect(next?.character.equipment).toEqual([
       { srdId: "potion-of-healing", quantity: 3 },
     ]);
   });
@@ -51,10 +51,10 @@ describe("an item received into the bag", () => {
     const doc = makeCharacterDoc({ equipment: [] });
     const next = applySheetEvent(doc, {
       kind: "receive-item",
-      ref: { custom: true, name: "Gemma", quantity: 2 },
+      ref: { custom: true, instanceId: "g1", name: "Gemma", quantity: 2 },
     });
-    expect(next.character.equipment).toEqual([
-      { custom: true, name: "Gemma", quantity: 2 },
+    expect(next?.character.equipment).toEqual([
+      { custom: true, instanceId: "g1", name: "Gemma", quantity: 2 },
     ]);
   });
 });

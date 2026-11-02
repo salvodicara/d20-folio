@@ -17,6 +17,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import type { Pickup } from "@/types/campaign";
+import type { CustomEquipment, SrdEquipmentRef } from "@/types/character";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -63,10 +64,15 @@ export function useCollectPickups(characterId: string | undefined): void {
         }
       }
       if (item) {
-        const ref =
+        const ref: SrdEquipmentRef | CustomEquipment =
           "srdId" in item
             ? { srdId: item.srdId, quantity: item.quantity }
-            : { custom: true as const, name: item.name, quantity: item.quantity };
+            : {
+                custom: true,
+                instanceId: crypto.randomUUID(),
+                name: item.name,
+                quantity: item.quantity,
+              };
         store.dispatch({ kind: "receive-item", ref });
         const name = "srdId" in item ? catalogueName(item.srdId, locale) : item.name;
         parts.push(item.quantity > 1 ? `${item.quantity} × ${name}` : name);

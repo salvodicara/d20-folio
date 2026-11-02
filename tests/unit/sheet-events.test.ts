@@ -2,6 +2,7 @@
  * `applySheetEvent`: every play event runs exactly its `lib/play` transition. Each case
  * names the direct call the event must equal, so a miswired branch fails by name.
  */
+import { addEquipmentRef } from "@/lib/equipment-add";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({
@@ -195,6 +196,19 @@ const CASES: {
   "adjust-currency": [
     { kind: "adjust-currency", delta: { gp: 3 } },
     () => at(material.adjustCurrency(doc.session, { gp: 3 })),
+  ],
+  "receive-item": [
+    { kind: "receive-item", ref: { srdId: "potion-of-healing", quantity: 1 } },
+    () => ({
+      ...doc,
+      character: {
+        ...doc.character,
+        equipment: addEquipmentRef(doc.character.equipment, {
+          srdId: "potion-of-healing",
+          quantity: 1,
+        }),
+      },
+    }),
   ],
   "set-wish-stress": [
     { kind: "set-wish-stress", stressed: true },
