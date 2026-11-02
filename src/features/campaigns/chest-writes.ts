@@ -17,6 +17,9 @@ import { stripUndefined } from "@/lib/strip-undefined";
 
 import type { ChestCollection, ChestMove } from "./chest";
 
+/** A document without its undefined fields (Firestore refuses them). */
+const clean = (data: object): object => stripUndefined(data) as object;
+
 const docRef = (db: Firestore, campaignId: string, name: ChestCollection, id: string) =>
   doc(db, "campaigns", campaignId, name, id);
 
@@ -34,14 +37,11 @@ export function writeChestMove(
   move: ChestMove
 ): void {
   for (const created of move.created) {
-    txn.set(
-      docRef(db, campaignId, created.collection, created.id),
-      stripUndefined(created.data)
-    );
+    txn.set(docRef(db, campaignId, created.collection, created.id), clean(created.data));
   }
   for (const change of move.changed) {
     const ref = docRef(db, campaignId, "chest", change.id);
-    if (change.after) txn.set(ref, stripUndefined(change.after));
+    if (change.after) txn.set(ref, clean(change.after));
     else txn.delete(ref);
   }
   if (move.treasury) {
@@ -68,7 +68,7 @@ export function unwriteChestMove(
     txn.delete(docRef(db, campaignId, created.collection, created.id));
   for (const change of move.changed) {
     const ref = docRef(db, campaignId, "chest", change.id);
-    if (change.before) txn.set(ref, stripUndefined(change.before));
+    if (change.before) txn.set(ref, clean(change.before));
     else txn.delete(ref);
   }
   if (move.treasury) {
