@@ -1,13 +1,22 @@
 /**
  * The Play screen's centre column (approved prototype x-play): the turn strip (round,
  * whose turn, Action · Bonus · Reaction · Movement, «Fine turno»), «Cosa ti conviene
- * fare», and the actions table with D&D Beyond's filters. Read side: the row buttons
- * (Attack, Cast, Use) arrive with the damage tray and the cast dialog.
+ * fare», and the actions table with D&D Beyond's filters. Each row's button (Attacca,
+ * Lancia, Usa, Reagisci) commits through the engine's one turn flow (`executeAction`);
+ * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
+import { useSheetReadonly } from "@/hooks/useSheetReadonly";
+import { resolveReplaceAttackWithCast } from "@/lib/smart-tracker";
+import {
+  blockReasonLine,
+  type ActionCtaVerb,
+  type ActionTurnState,
+} from "@/lib/views/action-cta-view";
+import { maxReplaceAttackSpellLevel } from "@/lib/views/combat-action-view";
 import { playbookView } from "@/domains/play/playbook/playbook-view";
 import { useTurnState, useSheetCombat } from "@/features/character/center/turn-state";
 import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
@@ -48,10 +57,51 @@ const GROUP_KEY: Record<ActionGroup, string> = {
 };
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 
+/** This turn as the combat store holds it, in the shape the button view reads. */
+function usePlayTurn(doc: CharacterDoc): ActionTurnState {
+  const selected = useCombatStore((s) => s.selected);
+  const budget = useCombatStore((s) => s.budget);
+  const attackBudget = useCombatStore((s) => s.attackBudget);
+  const attacksUsed = useCombatStore((s) => s.attacksUsed);
+  const attackSwings = useCombatStore((s) => s.attackSwings);
+  const reactionUsed = useCombatStore((s) => s.reactionUsed);
+  const reactionUsedId = useCombatStore((s) => s.reactionUsedId);
+  const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
+  const warMagicMax = useMemo(
+    () => maxReplaceAttackSpellLevel(resolveReplaceAttackWithCast(doc)),
+    [doc]
+  );
+  return useMemo(
+    () => ({
+      selected,
+      budget,
+      attackBudget,
+      attacksUsed,
+      attackSwingIds: attackSwings.map((s) => s.actionId),
+      reactionUsed,
+      reactionUsedId,
+      movementUsedFt,
+      warMagicMax,
+    }),
+    [
+      selected,
+      budget,
+      attackBudget,
+      attacksUsed,
+      attackSwings,
+      reactionUsed,
+      reactionUsedId,
+      movementUsedFt,
+      warMagicMax,
+    ]
+  );
+}
+
 export function PlayCentre({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>("all");
-  const actions = playActionsView(doc, locale);
+  const turn = usePlayTurn(doc);
+  const actions = playActionsView(doc, locale, turn);
   const keep = (group: ActionGroup, row: PlayActionRow) =>
     filter === "all" ||
     (filter === "attacks" && row.attack) ||
@@ -82,7 +132,7 @@ export function PlayCentre({ doc, locale }: { doc: CharacterDoc; locale: Locale 
             <section key={group} className="f-act-group" data-group={group}>
               <h3 className="f-lbl">{t(GROUP_KEY[group])}</h3>
               {shown.map((row) => (
-                <ActionLine key={row.id} row={row} />
+                <ActionLine key={row.id} row={row} locale={locale} />
               ))}
             </section>
           );
@@ -186,8 +236,19 @@ function Playbook({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   );
 }
 
-function ActionLine({ row }: { row: PlayActionRow }) {
+const VERB_KEY: Record<ActionCtaVerb, string> = {
+  attack: "combat.attack",
+  cast: "spells.cast",
+  use: "common.use",
+  react: "play.react",
+};
+
+function ActionLine({ row, locale }: { row: PlayActionRow; locale: Locale }) {
   const { t } = useTranslation();
+  const { executeAction } = useTurnEconomy();
+  const readonly = useSheetReadonly();
+  const { cta } = row;
+  const reason = cta.reason ? blockReasonLine(cta.reason, t, locale) : null;
   const sub = [
     row.level === 0
       ? t("spells.cantrip")
@@ -228,10 +289,31 @@ function ActionLine({ row }: { row: PlayActionRow }) {
             {[hit, effect].filter(Boolean).join("\u00a0· ")}
           </div>
         )}
+        {reason && !cta.state.spent && <div className="f-row-s f-act-why">{reason}</div>}
       </div>
       <span className="f-act-c">{row.range ?? ""}</span>
       <span className="f-act-c">{hit}</span>
       <span className="f-act-c f-act-e">{effect}</span>
+      {!readonly && (
+        <Button
+          kind="ghost"
+          disabled={cta.state.disabled}
+          data-live={cta.state.emphasis || undefined}
+          data-dim={cta.state.dimmed || undefined}
+          title={
+            cta.attacksLeft
+              ? t("combat.attacksRemainingStatus", {
+                  remaining: cta.attacksLeft.remaining,
+                  total: cta.attacksLeft.total,
+                })
+              : undefined
+          }
+          aria-label={`${cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}: ${row.name}`}
+          onClick={() => executeAction(row.action)}
+        >
+          {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
+        </Button>
+      )}
     </div>
   );
 }

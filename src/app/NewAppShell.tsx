@@ -9,6 +9,7 @@ import { Link, Outlet, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/ui/AppShell";
 import { initialOf } from "@/ui/initial";
+import { NewToasts } from "./NewToasts";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { useAuthStore } from "@/stores/authStore";
 import { signOut } from "@/lib/auth";
@@ -73,6 +74,7 @@ export function NewAppShell() {
       <Suspense fallback={null}>
         <Outlet />
       </Suspense>
+      <NewToasts />
     </AppShell>
   );
 }

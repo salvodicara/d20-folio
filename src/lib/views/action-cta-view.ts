@@ -12,8 +12,11 @@ import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { ActionEconomyCategory } from "@/data/types";
 import { resolveActiveStateBlocker, type ResolvedAction } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
+import { localizeSrd } from "@/i18n/resolver";
+import type { Locale } from "@/lib/locale";
 import { isActionDepleted } from "./action-row-view";
 import { attacksRemainingInAction, isPipAttackAction } from "./combat-action-view";
+import { conditionLabel } from "./tracker-view";
 
 /** The button's verb, as a stable id; each screen renders the label. */
 export type ActionCtaVerb = "attack" | "cast" | "use" | "react";
@@ -307,4 +310,38 @@ export function actionCtaView(
     });
   }
   return out;
+}
+
+type Translate = (key: string, opts?: Record<string, unknown>) => string;
+
+/** The reason line under a button, in the reader's language (null = say nothing). */
+export function blockReasonLine(
+  reason: ActionBlockReason,
+  t: Translate,
+  locale: Locale
+): string | null {
+  switch (reason.kind) {
+    case "no-uses":
+      return t("combat.blockedReasonNoUses");
+    case "prerequisite-action":
+      return t("combat.blockedReasonPrerequisiteAction");
+    case "prerequisite-category":
+      return t("combat.blockedReasonPrerequisiteCategory");
+    case "per-turn-limit":
+      return t("combat.blockedReasonPerTurnLimit");
+    case "already-moved":
+      return t("combat.blockedReasonAlreadyMoved");
+    case "heavy-armor":
+      return t("combat.blockedReasonHeavyArmor");
+    case "incapacitated":
+      return t("combat.blockedReasonIncapacitated");
+    case "loading":
+      return t("combat.loadingOneShotReason");
+    case "out-of-ammo":
+      return t("combat.outOfAmmoReason", {
+        item: localizeSrd("equipment", reason.itemId, "name", locale),
+      });
+    case "condition":
+      return reason.condition ? conditionLabel(reason.condition, locale) : null;
+  }
 }

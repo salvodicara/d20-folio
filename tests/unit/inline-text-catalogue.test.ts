@@ -23,7 +23,7 @@ describe("presenter words read the ui catalogue", () => {
   it("an off-hand weapon row keeps its suffix in both languages", () => {
     if (!offhand) throw new Error("mock yields no off-hand dagger action");
     expect(localizeAction(offhand, "en").name).toBe("Dagger (off-hand)");
-    expect(localizeAction(offhand, "it").name).toBe("Pugnale (mano secondaria)");
+    expect(localizeAction(offhand, "it").name).toBe("Pugnale (mano\u00a0secondaria)");
   });
 
   it("a Pact-of-the-Blade Prone rider composes its note", () => {

@@ -121,6 +121,7 @@ import type { ResolvedConditionEffects } from "@/lib/condition-effects";
 import {
   actionBlockReason,
   actionCtaView,
+  blockReasonLine,
   type ActionCta,
   type ActionTurnState,
 } from "@/lib/views/action-cta-view";
@@ -771,31 +772,7 @@ export function PlayTab() {
         actionConditions,
         depleted
       );
-      if (!reason) return null;
-      switch (reason.kind) {
-        case "no-uses":
-          return t("combat.blockedReasonNoUses");
-        case "prerequisite-action":
-          return t("combat.blockedReasonPrerequisiteAction");
-        case "prerequisite-category":
-          return t("combat.blockedReasonPrerequisiteCategory");
-        case "per-turn-limit":
-          return t("combat.blockedReasonPerTurnLimit");
-        case "already-moved":
-          return t("combat.blockedReasonAlreadyMoved");
-        case "heavy-armor":
-          return t("combat.blockedReasonHeavyArmor");
-        case "incapacitated":
-          return t("combat.blockedReasonIncapacitated");
-        case "loading":
-          return t("combat.loadingOneShotReason");
-        case "out-of-ammo":
-          return t("combat.outOfAmmoReason", {
-            item: localizeSrd("equipment", reason.itemId, "name", locale),
-          });
-        case "condition":
-          return reason.condition ? conditionLabel(reason.condition, locale) : null;
-      }
+      return reason ? blockReasonLine(reason, t, locale) : null;
     },
     [character, turn, actionConditions, t, locale]
   );

@@ -286,7 +286,7 @@ function TargetStep({ prompt }: { prompt: Prompts["target"] }) {
       title={
         request.isSpell
           ? t("play.ask.castTitle", { name: request.actionName })
-          : t("combat.targetStepTitle", { name: request.actionName })
+          : request.actionName
       }
       closeLabel={t("common.close")}
       actions={
@@ -302,7 +302,7 @@ function TargetStep({ prompt }: { prompt: Prompts["target"] }) {
             disabled={picked.length === 0}
             onClick={() => prompt.onConfirm(picked)}
           >
-            {request.isSpell ? t("spells.cast") : t("common.use")}
+            {request.isSpell ? t("spells.cast") : t("common.confirm")}
           </Button>
         </>
       }
