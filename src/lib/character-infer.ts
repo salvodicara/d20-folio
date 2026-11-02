@@ -244,7 +244,7 @@ export function inferSpellcasting(entry: ClassEntry): SpellcastingConfig | null 
  * (they live outside `features[]`). A character with chosen feats / custom features
  * deviates and is KEPT verbatim.
  */
-export function inferFeaturesForEntry(entry: ClassEntry): SrdFeatureRef[] {
+function inferFeaturesForEntry(entry: ClassEntry): SrdFeatureRef[] {
   return buildGrantedFeatures({
     classId: entry.classId,
     level: entry.level,

@@ -512,7 +512,7 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
   return parts;
 }
 
-export function combatDamagePartApplies(
+function combatDamagePartApplies(
   part: CombatDamagePartSpec,
   outcome: CombatTargetOutcome,
   damageOnSave: SaveDamageOutcome

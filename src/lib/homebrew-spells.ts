@@ -268,7 +268,7 @@ export function homebrewSpellMechanics(
 }
 
 /** The engine id of a homebrew spell: its activity, grant source and action key. */
-export function homebrewSpellId(spell: Pick<CustomSpell, "instanceId">): string {
+function homebrewSpellId(spell: Pick<CustomSpell, "instanceId">): string {
   return `custom-spell-${spell.instanceId}`;
 }
 

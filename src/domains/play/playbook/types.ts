@@ -12,7 +12,7 @@ import type { CombatAlgorithmStep } from "@/types/character";
 /** The action-economy slot a step fills. Movement first, reaction last. */
 export type EconomySlot = "movement" | "action" | "bonus" | "free" | "reaction";
 
-export const ECONOMY_SLOTS: ReadonlyArray<EconomySlot> = [
+const ECONOMY_SLOTS: ReadonlyArray<EconomySlot> = [
   "movement",
   "action",
   "bonus",
