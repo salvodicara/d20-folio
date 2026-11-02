@@ -332,12 +332,15 @@ describe("conformance · 7. effects that modify other effects", () => {
       category: 7,
       case: "Indomitable and Disciplined Survivor",
       source: "WIKI fighter:main; WIKI monk:main",
-      status: "data",
+      status: "works",
     },
     () => {
       // Indomitable is a reroll of a failed save, + Fighter level, spending a use.
       const actions = resolveActions(pc("fighter", 9), "combat");
       expect(actions.some((a) => a.id.startsWith("fighter-indomitable"))).toBe(true);
+      // Disciplined Survivor: the same reroll for 1 Focus Point.
+      const monk = resolveActions(pc("monk", 14), "combat");
+      expect(monk.some((a) => a.id.startsWith("monk-disciplined-survivor"))).toBe(true);
     }
   );
 

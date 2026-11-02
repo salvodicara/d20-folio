@@ -470,6 +470,10 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       { type: "save-proficiency", ability: "WIS" },
       { type: "save-proficiency", ability: "CHA" },
     ],
+    // A failed save is rerolled for 1 Focus Point: a free use, paid and logged.
+    mechanics: {
+      actions: [{ type: "free", costTracker: "monk-focus", trackerCost: 1 }],
+    },
     source: "SRD",
   },
   {

@@ -522,6 +522,10 @@
     "description": "Se fallisci un tiro salvezza, puoi ripeterlo con un bonus pari al tuo livello da Guerriero. Devi usare il nuovo risultato e non puoi usare questo privilegio di nuovo fino a un Riposo Lungo. Puoi usarlo due volte dal livello 13 e tre volte dal livello 17.",
     "name": "Indomabile"
   },
+  "fighter-indomitable.mechanics.actions.0": {
+    "description": "Ritira un tiro salvezza fallito + livello da Guerriero.",
+    "label": "Indomabile"
+  },
   "fighter-second-wind": {
     "description": "Come Azione Bonus, puoi recuperare Punti Ferita pari a 1d10 + il tuo livello da Guerriero. Puoi usare questo privilegio due volte. Recuperi un uso con un Riposo Breve e tutti con un Riposo Lungo. Gli usi aumentano ai livelli superiori.",
     "name": "Recuperare Energie"
@@ -592,6 +596,10 @@
   "monk-disciplined-survivor": {
     "description": "La tua disciplina fisica e mentale ti concede competenza in tutti i tiri salvezza. Inoltre, ogni volta che effettui un tiro salvezza e fallisci, puoi spendere 1 Punto Concentrazione per ritirarlo, e devi usare il nuovo risultato.",
     "name": "Esperto di Sopravvivenza Disciplinato"
+  },
+  "monk-disciplined-survivor.mechanics.actions.0": {
+    "description": "1 Punto Concentrazione: ritira un tiro salvezza fallito.",
+    "label": "Esperto di Sopravvivenza Disciplinato"
   },
   "monk-empowered-strikes": {
     "description": "Ogni volta che infliggi danni con il tuo Colpo Senz'Armi, esso può infliggere danni da Forza a tua scelta oppure il suo normale tipo di danno.",
