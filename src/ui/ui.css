@@ -1323,3 +1323,17 @@
   justify-content: space-between;
   gap: 8px 16px;
 }
+/* a character who hasn't rolled initiative yet: never hidden, marked to roll */
+.fui .f-must {
+  flex: none;
+  padding: 4px 8px;
+  border: 1px solid var(--hp-y);
+  border-radius: var(--r-pill);
+  color: var(--hp-y);
+  font: 700 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.fui .f-toast > span {
+  text-wrap: balance;
+}

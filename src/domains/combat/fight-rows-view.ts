@@ -3,7 +3,8 @@
  * A character shows HP numbers; a creature shows only how hurt it looks (`hpBand`),
  * never a number, so a player can't read the DM's monster sheet off the list. The same
  * creature acting one after another in the same state reads as one row with a count;
- * the creature whose turn it is always stands alone.
+ * the creature whose turn it is always stands alone. A character who hasn't rolled is
+ * never hidden: they sit under the rolled ones, marked to roll (owner, 2026-11-02).
  */
 import type { PartyChip } from "@/domains/campaign/party-rows-view";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
@@ -19,6 +20,8 @@ export interface FightRow {
   count: number;
   initiative: number | null;
   current: boolean;
+  /** A character who hasn't rolled initiative yet. */
+  mustRoll: boolean;
   hp: { current: number; max: number; temp: number } | null;
   band: HpBandValue | null;
   chips: PartyChip[];
@@ -35,6 +38,7 @@ export function fightRows(
   locale: Locale
 ): FightRow[] {
   const out: FightRow[] = [];
+  const waiting: FightRow[] = [];
   for (const c of rows) {
     const current = c.id === currentId;
     const chips = [
@@ -45,13 +49,15 @@ export function fightRows(
       })),
     ];
     if (c.kind === "pc") {
-      out.push({
+      const mustRoll = c.initiative === null;
+      (mustRoll ? waiting : out).push({
         ids: [c.id],
         kind: "pc",
         name: c.name,
         count: 1,
         initiative: c.initiative,
         current,
+        mustRoll,
         hp: { current: c.currentHp, max: c.maxHp, temp: c.tempHp },
         band: null,
         chips,
@@ -82,10 +88,11 @@ export function fightRows(
       count: 1,
       initiative: c.initiative,
       current,
+      mustRoll: false,
       hp: null,
       band,
       chips,
     });
   }
-  return out;
+  return [...out, ...waiting];
 }

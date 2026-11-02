@@ -101,4 +101,15 @@ describe("fightRows", () => {
       [["m4"], false],
     ]);
   });
+
+  it("a character who hasn't rolled is never hidden: under the rolled ones, marked to roll", () => {
+    const late = fightRows(
+      [pc("pc-tib", "Tib", null as never, [7, 33]), ...rows],
+      "pc-kaela",
+      {},
+      "en"
+    );
+    expect(late.at(-1)).toMatchObject({ name: "Tib", mustRoll: true, initiative: null });
+    expect(late.slice(0, -1).every((r) => !r.mustRoll)).toBe(true);
+  });
 });
