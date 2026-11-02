@@ -2,11 +2,15 @@
  * The Diario's automatic report (approved prototype camp-diary, 2026-11-02): the evening in
  * blocks — exploration, each fight with its rounds and foes, each rest with what it
  * restored — every block stamped with the time of its first line. Notes stay where they
- * were written. Sessions are numbered by date, oldest first.
+ * were written. Evenings are numbered by their play log's id (its local day), oldest first.
  */
 import { describe, expect, it } from "vitest";
 
-import { diaryBlocks, sessionNumbers } from "@/domains/chronicle/diary-view";
+import {
+  diaryBlocks,
+  oldPageTitle,
+  sessionNumbers,
+} from "@/domains/chronicle/diary-view";
 import { buildReport, type PlayEvent, type SessionEntry } from "@/lib/session-log";
 
 let n = 0;
@@ -94,12 +98,32 @@ describe("diaryBlocks", () => {
 });
 
 describe("sessionNumbers", () => {
-  it("numbers sessions by date, the oldest is 1, whatever the list order", () => {
-    const sessions = [
-      { id: "c", date: new Date(2026, 9, 23) },
-      { id: "a", date: new Date(2026, 8, 4) },
-      { id: "b", date: new Date(2026, 8, 11) },
-    ];
-    expect(sessionNumbers(sessions)).toEqual({ a: 1, b: 2, c: 3 });
+  it("numbers the evenings by their play log, the oldest is 1, a second sitting after the first", () => {
+    expect(
+      sessionNumbers(["2026-10-23", "2026-09-04", "2026-10-23-2", "2026-09-11"])
+    ).toEqual({
+      "2026-09-04": 1,
+      "2026-09-11": 2,
+      "2026-10-23": 3,
+      "2026-10-23-2": 4,
+    });
+  });
+
+  it("a tenth sitting on one day stays after the second", () => {
+    expect(sessionNumbers(["2026-10-23-10", "2026-10-23-2"])).toEqual({
+      "2026-10-23-2": 1,
+      "2026-10-23-10": 2,
+    });
+  });
+});
+
+describe("oldPageTitle", () => {
+  it("keeps a title the table gave the evening", () => {
+    expect(oldPageTitle("Il martello rubato")).toBe("Il martello rubato");
+  });
+  it("drops the old page's default name, which would contradict the evening's number", () => {
+    expect(oldPageTitle("Session 7")).toBeUndefined();
+    expect(oldPageTitle(" sessione 12 ")).toBeUndefined();
+    expect(oldPageTitle("")).toBeUndefined();
   });
 });

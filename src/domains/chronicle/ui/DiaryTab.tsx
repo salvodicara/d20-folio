@@ -1,7 +1,10 @@
 /**
- * The campaign's Diario tab (approved prototype camp-diary, 2026-11-02): the sessions on
+ * The campaign's Diario tab (approved prototype camp-diary, 2026-11-02): the evenings on
  * the left (a picker on phone), and for the chosen one its written chronicle and the
- * automatic report of the evening in blocks. «Tutta la cronaca» shows the campaign's
+ * automatic report in blocks. An evening is its play log (`sessionLogs/{id}`): the report
+ * and the text both come from that one record, keyed by its id. The old session pages
+ * (`sessions/*`, legacy) only lend their title and, when the evening has no text of its
+ * own, their text read-only, matched by day. «Tutta la cronaca» shows the campaign's
  * existing chronicle exactly as it is stored, read-only.
  */
 import { useEffect, useMemo, useState } from "react";
@@ -11,13 +14,17 @@ import { Link, useSearchParams } from "react-router";
 import { BlockMarkdown } from "@/components/shared/BlockMarkdown";
 import {
   diaryBlocks,
+  oldPageTitle,
   sessionNumbers,
   type DiaryBlock,
 } from "@/domains/chronicle/diary-view";
+import { SessionStory } from "@/domains/chronicle/ui/SessionStory";
 import { listSessions } from "@/features/campaigns/campaign-io";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { useChronicleSubscription } from "@/features/campaigns/useChronicleSubscription";
 import {
+  dayKey,
+  dayOfLog,
   useSessionReports,
   type SessionLog,
 } from "@/features/campaigns/useSessionReports";
@@ -47,8 +54,8 @@ export function DiaryTab({
   onToast: (message: string) => void;
 }) {
   const { t } = useTranslation();
-  const [sessions, setSessions] = useState<SessionLogDoc[] | null>(null);
-  // The picked session lives in the address (?session=…), so Back and a shared link work.
+  const [legacy, setLegacy] = useState<SessionLogDoc[] | null>(null);
+  // The picked evening lives in the address (?session=…), so Back and a shared link work.
   const [params, setParams] = useSearchParams();
   const picked = params.get("session");
   const setPicked = (id: string) => {
@@ -58,28 +65,38 @@ export function DiaryTab({
     });
   };
   const reports = useSessionReports(campaign.id);
+  const evenings = reports.logs;
   useChronicleSubscription(campaign.id);
   const chronicle = useChronicleStore((s) => s.chronicle?.text ?? "");
 
   useEffect(() => {
     listSessions(campaign.id)
-      .then(setSessions)
+      .then(setLegacy)
       .catch((error: unknown) => {
         diagnosticsLog("warn", "diary.sessions-read-failed", { message: String(error) });
-        setSessions([]);
+        setLegacy([]);
       });
   }, [campaign.id]);
 
-  const numbers = useMemo(() => sessionNumbers(sessions ?? []), [sessions]);
-  if (!sessions) return <p role="status">{t("campaignScreen.loading")}</p>;
+  const numbers = useMemo(() => sessionNumbers(evenings.map((e) => e.id)), [evenings]);
+  // An old session page lends its title and text to the evening played on its day.
+  const legacyByDay = useMemo(() => {
+    const out = new Map<string, SessionLogDoc>();
+    for (const s of legacy ?? [])
+      if (!out.has(dayKey(s.date))) out.set(dayKey(s.date), s);
+    return out;
+  }, [legacy]);
+  if (!legacy) return <p role="status">{t("campaignScreen.loading")}</p>;
 
-  // The newest session opens first; with none, the chronicle.
-  const current = picked ?? sessions[0]?.id ?? ALL;
-  const session = sessions.find((s) => s.id === current);
+  // The newest evening opens first; with none, the chronicle.
+  const current = picked ?? evenings[0]?.id ?? ALL;
+  const evening = evenings.find((e) => e.id === current);
+  const dayOf = (log: SessionLog) => dayOfLog(log.id) ?? new Date(log.lastAt);
   const day = (d: Date) =>
     d.toLocaleDateString(intlTag(locale), { day: "numeric", month: "long" });
-  const sessionTitle = (s: SessionLogDoc) =>
-    t("campaignHub.sessionN", { n: numbers[s.id] ?? "" });
+  const titleOf = (log: SessionLog) =>
+    t("campaignHub.sessionN", { n: numbers[log.id] ?? "" });
+  const oldPage = (log: SessionLog) => legacyByDay.get(dayKey(dayOf(log)));
   const copy = (text: string, message: string) => {
     void navigator.clipboard.writeText(text).then(() => onToast(message));
   };
@@ -94,9 +111,9 @@ export function DiaryTab({
             value={current}
             onChange={(e) => setPicked(e.target.value)}
           >
-            {sessions.map((s) => (
-              <option key={s.id} value={s.id}>
-                {[sessionTitle(s), s.label].filter(Boolean).join(" · ")}
+            {evenings.map((e) => (
+              <option key={e.id} value={e.id}>
+                {[titleOf(e), day(dayOf(e))].join(" · ")}
               </option>
             ))}
             <option value={ALL}>{t("diary.allChronicle")}</option>
@@ -112,36 +129,42 @@ export function DiaryTab({
           <span className="f-row-main">
             <span className="f-row-t">{t("diary.allChronicle")}</span>
             <span className="f-row-s">
-              {t("diary.sessionCount", { count: sessions.length })}
+              {t("diary.sessionCount", { count: evenings.length })}
             </span>
           </span>
         </Link>
-        {sessions.map((s) => (
+        {evenings.map((e) => (
           <Link
-            key={s.id}
+            key={e.id}
             className="f-row f-pick"
-            to={`?session=${encodeURIComponent(s.id)}`}
-            aria-current={current === s.id ? "page" : undefined}
+            to={`?session=${encodeURIComponent(e.id)}`}
+            aria-current={current === e.id ? "page" : undefined}
           >
             <span className="f-row-main">
-              <span className="f-row-t">{sessionTitle(s)}</span>
+              <span className="f-row-t">{titleOf(e)}</span>
               <span className="f-row-s">
-                {[day(s.date), s.label].filter(Boolean).join(" · ")}
+                {[day(dayOf(e)), oldPageTitle(oldPage(e)?.label ?? "")]
+                  .filter(Boolean)
+                  .join(" · ")}
               </span>
             </span>
           </Link>
         ))}
       </Panel>
-      {session ? (
+      {evening ? (
         <SessionPage
-          key={session.id}
-          session={session}
-          title={sessionTitle(session)}
-          dayLabel={day(session.date)}
-          logs={reports.logsOn(session.date)}
+          key={evening.id}
+          log={evening}
+          legacy={oldPage(evening)}
+          title={titleOf(evening)}
+          dayLabel={day(dayOf(evening))}
           campaign={campaign}
           locale={locale}
           onCopy={copy}
+          onSaved={() => {
+            reports.reload();
+            onToast(t("diary.saved"));
+          }}
         />
       ) : (
         <Panel
@@ -165,7 +188,7 @@ export function DiaryTab({
             </div>
           ) : (
             <p className="f-quiet">
-              {t(sessions.length ? "diary.chronicleEmpty" : "diary.noSessions")}
+              {t(evenings.length ? "diary.chronicleEmpty" : "diary.noSessions")}
             </p>
           )}
         </Panel>
@@ -175,31 +198,34 @@ export function DiaryTab({
 }
 
 function SessionPage({
-  session,
+  log,
+  legacy,
   title,
   dayLabel,
-  logs,
   campaign,
   locale,
   onCopy,
+  onSaved,
 }: {
-  session: SessionLogDoc;
+  log: SessionLog;
+  legacy?: SessionLogDoc;
   title: string;
   dayLabel: string;
-  logs: SessionLog[];
   campaign: CampaignDoc;
   locale: Locale;
   onCopy: (text: string, message: string) => void;
+  onSaved: () => void;
 }) {
   const { t } = useTranslation();
   const names = useReportNames(campaign, locale);
   const entries = useMemo(
-    () => logs.flatMap((log) => foldSession(log.items, { dmUid: campaign.dmUid })),
-    [logs, campaign.dmUid]
+    () => foldSession(log.items, { dmUid: campaign.dmUid }),
+    [log.items, campaign.dmUid]
   );
   const sections = useMemo(() => buildReport(entries), [entries]);
   const blocks = useMemo(() => diaryBlocks(sections), [sections]);
-  const notes = session.notes.trim();
+  // The evening's own text; an old evening falls back to its old page's, read-only.
+  const [story, setStory] = useState(log.notes ?? legacy?.notes);
   const players = useMemo(
     () =>
       Object.fromEntries(
@@ -207,9 +233,12 @@ function SessionPage({
       ),
     [campaign.memberDetails]
   );
-  const heading = [title, session.label, dayLabel].filter(Boolean).join(" · ");
+  const subtitle = [oldPageTitle(legacy?.label ?? ""), dayLabel]
+    .filter(Boolean)
+    .join(" · ");
   const report = () =>
-    renderSessionReport(sections, heading, t, names, { notes: session.notes });
+    renderSessionReport(sections, `${title} · ${subtitle}`, t, names, { notes: story });
+  const copyReport = () => onCopy(report(), t("sessionReport.copied"));
   const time = (at: number) =>
     new Date(at).toLocaleTimeString(intlTag(locale), {
       hour: "2-digit",
@@ -221,33 +250,24 @@ function SessionPage({
       color="log"
       title={title}
       aside={
-        <Button
-          kind="primary"
-          icon="u-copy"
-          onClick={() => onCopy(report(), t("sessionReport.copied"))}
-        >
+        <Button kind="primary" icon="u-copy" onClick={copyReport}>
           {t("common.copy")}
         </Button>
       }
     >
-      <h3 className="f-sub">{[session.label, dayLabel].filter(Boolean).join(" · ")}</h3>
+      <h3 className="f-sub">{subtitle}</h3>
       <div className="f-lbl f-lbl-gap">{t("diary.sessionChronicle")}</div>
-      {notes ? (
-        <div data-user-text="">
-          <BlockMarkdown className="f-prose" text={notes} />
-        </div>
-      ) : (
-        <div className="f-empty">
-          <b>{t("diary.storyTitle")}</b>
-          <p>{t("diary.storyHelp")}</p>
-          <Button
-            icon="u-copy"
-            onClick={() => onCopy(report(), t("sessionReport.copied"))}
-          >
-            {t("diary.copyReport")}
-          </Button>
-        </div>
-      )}
+      <SessionStory
+        campaignId={campaign.id}
+        logId={log.id}
+        notes={log.notes}
+        legacy={legacy?.notes}
+        onCopyReport={copyReport}
+        onSaved={(text) => {
+          setStory(text);
+          onSaved();
+        }}
+      />
       <div className="f-lbl f-lbl-rule">{t("diary.autoReport")}</div>
       {blocks.length === 0 && <p className="f-quiet">{t("diary.noReport")}</p>}
       {blocks.map((block) => (

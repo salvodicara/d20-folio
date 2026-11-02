@@ -16,6 +16,8 @@ export interface SessionLog {
   id: string;
   lastAt: number;
   items: LogItem[];
+  /** The evening's own text (the Diario's «Cronaca della sessione»), when written. */
+  notes?: string;
 }
 
 /** The local day a log id names (`2026-10-08-2` → 8 Oct 2026), or null. */

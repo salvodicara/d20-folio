@@ -67,13 +67,19 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
   return blocks;
 }
 
-/** Each session's number: by date, the oldest is 1. */
-export function sessionNumbers(
-  sessions: readonly { id: string; date: Date }[]
-): Record<string, number> {
+/** Each evening's number from its play log id (`2026-10-23`, a second sitting
+ *  `2026-10-23-2`): in day order, the oldest is 1. */
+export function sessionNumbers(logIds: readonly string[]): Record<string, number> {
   return Object.fromEntries(
-    [...sessions]
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .map((s, i) => [s.id, i + 1])
+    [...logIds]
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+      .map((id, i) => [id, i + 1])
   );
+}
+
+/** An old session page's title, kept only when the table named the evening: its default
+ *  "Session 7" / "Sessione 7" would contradict the evening's own number. */
+export function oldPageTitle(label: string): string | undefined {
+  const title = label.trim();
+  return title && !/^sessione?\s*\d+$/i.test(title) ? title : undefined;
 }

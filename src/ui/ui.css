@@ -440,8 +440,9 @@
 .fui .f-in::placeholder {
   color: var(--faint);
 }
+/* the gold focus ring marks the field; its border stays neutral (gold borders are for identity) */
 .fui .f-in:focus-visible {
-  border-color: var(--gold-line);
+  border-color: var(--line-strong);
 }
 .fui .f-help {
   font-size: var(--fs-sm);
@@ -837,8 +838,9 @@
   flex: 1 0 auto;
   width: 100%;
 }
+/* above the page, not the screen: hidden off the top, it never sits over scrolled content */
 .fui .f-skip {
-  position: fixed;
+  position: absolute;
   top: 8px;
   left: 8px;
   z-index: 50;
@@ -1261,4 +1263,14 @@
 }
 .fui .f-tl-by {
   color: var(--muted);
+}
+.fui .f-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fui textarea.f-area {
+  min-height: 200px;
+  resize: vertical;
+  line-height: 1.6;
 }

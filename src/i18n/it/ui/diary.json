@@ -18,6 +18,9 @@
     "copyAll": "Copia tutto",
     "chronicleEmpty": "La cronaca è ancora vuota.",
     "noSessions": "Nessuna sessione ancora. La prima compare quando il gruppo gioca.",
-    "copied": "Copiato: incollalo dove vuoi."
+    "copied": "Copiato: incollalo dove vuoi.",
+    "pasteChronicle": "Incolla la cronaca",
+    "saveFailed": "Non salvata: controlla la connessione e riprova.",
+    "saved": "Cronaca della sessione salvata."
   }
 }
