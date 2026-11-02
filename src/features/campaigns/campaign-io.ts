@@ -18,6 +18,7 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { conformTableRules } from "@/lib/table-rules";
 import {
   arrayRemove,
   arrayUnion,
@@ -204,6 +205,12 @@ export function toCampaignDoc(id: string, data: Record<string, unknown>): Campai
   // Encounter state is fail-closed: reads and writes accept the current model exactly
   // and never repair persisted combatants into a different shape.
   const memberDetails = conformCampaignMembers(doc.memberDetails);
+  // Table rules are read field by field: an invalid value falls back to RAW.
+  if (doc.tableRules !== undefined) {
+    const tableRules = conformTableRules(doc.tableRules);
+    if (Object.keys(tableRules).length > 0) doc.tableRules = tableRules;
+    else delete doc.tableRules;
+  }
   if (!doc.encounter) return { ...doc, memberDetails };
   const currentEncounter = parseEncounterState(doc.encounter);
   // A stored encounter written by the deleted effect-program runtime may still

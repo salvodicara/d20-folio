@@ -5,6 +5,7 @@
  * stored in Firestore.
  */
 
+import type { TableRulesOverrides } from "@/lib/table-rules";
 import type {
   CreatureType,
   CurrencyUnit,
@@ -476,6 +477,8 @@ export interface CampaignDoc {
   >;
   status: "active" | "archived";
   inviteCode: string;
+  /** Rules this table varies from RAW (`effectiveTableRules`); absent = RAW. */
+  tableRules?: TableRulesOverrides;
   treasury: CampaignTreasury;
   treasuryLog: TreasuryLogEntry[];
   /**
