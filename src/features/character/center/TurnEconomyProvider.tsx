@@ -1322,19 +1322,19 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           !metamagicAffordable(metamagicIds)
         )
           return null;
+        // One causal undo for the cast (item 4): it takes back what the steps below change
+        // on the sheet and the turn, the item's charge included.
+        const seal = beginCausalUndo();
         const resourceCommit = resourceCycle?.apply() ?? null;
         if (resourceCycle && !resourceCommit) return null;
         const cs = useCharacterStore.getState();
         const spends = castOptionSpends(opt, metamagicIds);
         paySpends(spends);
-        const restoreConcentration = applyActionConcentration(heldAction, opt.level);
+        applyActionConcentration(heldAction, opt.level);
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
-        // activate with one tap and expire by themselves). Only flips when OFF, so undo
-        // never clears a hand-set state; arms the round countdown. A readied spell has
-        // no effect until its release.
-        const activation = readies
-          ? { activated: false, restore: () => {} }
-          : activateActionState(castAction, opt.level);
+        // activate with one tap and expire by themselves); a readied spell has no effect
+        // until its release.
+        if (!readies) activateActionState(castAction, opt.level);
         const loggedId = cs.logEvent({
           kind: "action-use",
           action: action.nameLoc,
@@ -1343,15 +1343,13 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
           ...(readies ? { readied: true as const } : {}),
         });
-        const undoRegains = applyOnCastRegains(
-          action.spellId,
-          expendedSlotLevel(opt, spends)
-        );
-        const undoHold = readies
-          ? useCharacterStore
-              .getState()
-              .setReadiedSpell(readiedHold(currentRound(), loggedId || null))
-          : null;
+        applyOnCastRegains(action.spellId, expendedSlotLevel(opt, spends));
+        if (readies) {
+          useCharacterStore
+            .getState()
+            .setReadiedSpell(readiedHold(currentRound(), loggedId || null));
+        }
+        const undo = seal?.() ?? null;
         if (!readies) offerFollowUps(action, targets, loggedId);
         const picksForm =
           !readies &&
@@ -1364,21 +1362,9 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ? null
           : offerMaterialCost(action, t, locale);
         return () => {
-          if (!canCommit()) return false;
-          if (
-            resourceCommit &&
-            itemResourceCommands &&
-            !itemResourceCommands.revert(resourceCommit)
-          )
-            return false;
+          if (!canCommit() || (undo && !undo())) return false;
           if (materialToastId) useToastStore.getState().dismissToast(materialToastId);
           if (picksForm) setFormPickerSpellId(null);
-          undoHold?.();
-          undoRegains();
-          activation.restore();
-          restoreConcentration(activation.activated);
-          refundSpends(spends);
-          useCharacterStore.getState().removeLogEntry(loggedId);
           useDamageTrayStore.getState().withdraw(loggedId);
           return true;
         };
