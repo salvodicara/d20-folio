@@ -2994,3 +2994,55 @@ describe("characterStore — an edit keeps the fight's pending state", () => {
     expect(useCharacterStore.getState().combatPendingConcentrationSaves).toEqual([]);
   });
 });
+
+describe("characterStore — a 0-HP state from another device ends Concentration (edge-case M1)", () => {
+  /** The sheet concentrating on Bless, and the combat state a peer just wrote. */
+  function concentrating(): { doc: CharacterDoc; combat: CombatState } {
+    const doc = mockCharacter();
+    const session = { ...doc.session, concentration: concentrationValue("bless") };
+    const pending = [
+      { id: "s1", spell: concentrationValue("bless"), damage: 4, difficultyClass: 10 },
+    ];
+    return {
+      doc: { ...doc, session },
+      combat: {
+        hp: { current: 0, temp: 0 },
+        conditions: ["unconscious"],
+        initiativeRoll: null,
+        deathSaves: { successes: 0, failures: 0 },
+        round: 2,
+        pendingConcentrationSaves: pending,
+        playState: sessionToPlayStateV1(session),
+      },
+    };
+  }
+
+  beforeEach(() => {
+    useToastStore.setState({ toasts: [], timers: {} });
+    useCharacterStore.setState({ encounterEffectProjection: null, readonly: false });
+    useCharacterStore.getState().setCombatPersistence(null);
+  });
+
+  it("the owner's sheet drops Concentration and its pending save, with the notice", () => {
+    const { doc, combat } = concentrating();
+    useCharacterStore.getState().setCharacter(doc);
+    useCharacterStore.getState().hydrateCombatState(combat);
+    const state = useCharacterStore.getState();
+    expect(state.character?.session.hp.current).toBe(0);
+    expect(state.character?.session.concentration).toBe("");
+    expect(state.combatPendingConcentrationSaves).toEqual([]);
+    expect(useToastStore.getState().toasts.at(-1)?.intent).toMatchObject({
+      kind: "concentration-dropped",
+    });
+  });
+
+  it("a read-only view changes nothing", () => {
+    const { doc, combat } = concentrating();
+    useCharacterStore.getState().setCharacter(doc);
+    useCharacterStore.setState({ readonly: true });
+    useCharacterStore.getState().hydrateCombatState(combat);
+    expect(useCharacterStore.getState().character?.session.concentration).toBe(
+      concentrationValue("bless")
+    );
+  });
+});

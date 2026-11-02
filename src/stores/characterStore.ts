@@ -1379,6 +1379,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       return;
     }
     set({ ...projection, error: null });
+    // A hit from another device can leave this sheet at 0 HP while it still holds
+    // Concentration, which only its owner may end (edge-case M1): 2024 RAW, dropping to
+    // 0 HP ends it outright. The same teardown the owner's own hit runs (spell, keys,
+    // timers, effects, the pending-save queue), with the same notice.
+    const held = get().character?.session;
+    if (!get().readonly && held && held.hp.current === 0 && held.concentration !== "") {
+      const spell = held.concentration;
+      get().setConcentration("", { undoable: false });
+      useToastStore.getState().showToast({
+        intent: { kind: "concentration-dropped", spell },
+        duration: 5000,
+      });
+    }
   },
 
   updateSession: (partial) => {
