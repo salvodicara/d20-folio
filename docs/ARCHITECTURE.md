@@ -1230,6 +1230,14 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   log carries no HP totals: the "(4/12 HP)" readout comes from the live beat (`chronicle-feed.ts`) and
   follows the monster card's `showExact` rule. Hidden (ambush) creatures stay out of a player's feed.
 
+  **The combat lifecycle is anyone's (2026-11-02).** A fight starts on the first initiative
+  roll, anyone passes or steps back a turn, ends it or reopens it (`combat-lifecycle.ts` plans
+  each move over the pure engine `encounter-lifecycle.ts`; `combat-lifecycle-io.ts` writes it
+  in one transaction and returns its undo). An ended fight moves to
+  `campaigns/{id}/combat/ended` and `encounter` goes back to null, so an older client reads it
+  as over. The rules grant each member move as its own narrow diff; the fight's contents stay
+  the DM's. A fight the DM started by hand (no `clock`) keeps the DM's order.
+
   **The play log is the one session record (2026-11-02).** A session is its play log
   (`campaigns/{id}/sessionLogs/{YYYY-MM-DD[-n]}`), opened by the first gesture and closed by a 6 h
   gap; every device computes the same id. Its text (the Diario's «Cronaca della sessione») is the

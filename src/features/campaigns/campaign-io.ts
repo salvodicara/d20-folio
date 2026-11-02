@@ -47,6 +47,7 @@ import { db } from "@/lib/firebase";
 // function hid the literal from the optimizer). Tests keep the live, mockable binding.
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { removeCombatant, parseEncounterState } from "@/features/campaigns/encounter";
+import { passTurn, turnBack } from "@/features/campaigns/encounter-lifecycle";
 import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
@@ -198,7 +199,7 @@ function memberCharacterDoc(uid: string, charId: string) {
  * Firestore self-heals on the member's next save (`buildMemberSnapshot` re-stamps a
  * guaranteed-non-empty name). We never write the dropped value back (read-only).
  */
-function toCampaignDoc(id: string, data: Record<string, unknown>): CampaignDoc {
+export function toCampaignDoc(id: string, data: Record<string, unknown>): CampaignDoc {
   const doc = { ...timestampsToDates(data), id } as CampaignDoc;
   // Encounter state is fail-closed: reads and writes accept the current model exactly
   // and never repair persisted combatants into a different shape.
@@ -645,14 +646,16 @@ export async function advanceEncounterTurn(
   dir: "next" | "prev",
   caller: { uid: string | undefined; isDm: boolean },
   expectedCurrentId: string | null
-): Promise<void> {
+): Promise<string | null | undefined> {
   if (import.meta.env.DEV && DEV_BYPASS) {
     const encounter = currentDevEncounter(campaignId);
     if (!encounter || encounter.currentCombatantId !== expectedCurrentId) return;
-    if (!caller.isDm && encounter.currentCombatantId !== `pc-${caller.uid}`) return;
+    if (!mayStepTurn(encounter, caller)) return;
     // ENGINE-FIRST stepping: advancing off a rolled adversary fires the kernel's
     // complete-turn boundary and mirrors the expiries in the same value.
-    const next = stepEncounterTurn(encounter, campaignId, dir);
+    const stepped = stepEncounterTurn(encounter, campaignId, dir);
+    const clock = steppedClock(encounter, dir, Date.now());
+    const next = clock ? { ...stepped, clock } : stepped;
     useCampaignStore.getState().setEncounter(next);
     if (dir === "next") {
       const position = encounterPosition(next);
@@ -672,10 +675,10 @@ export async function advanceEncounterTurn(
         }
       }
     }
-    return;
+    return next.currentCombatantId;
   }
   const ref = campaignDoc(campaignId);
-  await runTransaction(db, async (txn) => {
+  return runTransaction(db, async (txn) => {
     const snap = await txn.get(ref);
     const encounter = storedEncounter(snap.data()?.encounter);
     if (!encounter) return; // tolerant: a member can't conjure a turn
@@ -685,8 +688,7 @@ export async function advanceEncounterTurn(
     // Re-validate against the FRESH pointer: the DM always may; a player only when their
     // PC is the current combatant. Coarse rules let any member move the pointer, so this
     // is the authoritative who-is-current check (tolerant no-op otherwise).
-    const ownsCurrentTurn = encounter.currentCombatantId === `pc-${caller.uid}`;
-    if (!caller.isDm && !ownsCurrentTurn) return;
+    if (!mayStepTurn(encounter, caller)) return;
     // ENGINE-FIRST stepping: advancing off a rolled adversary fires the kernel's
     // complete-turn boundary over the derived `encounter.world`, expiring the
     // lifetimes booked against that turn's boundaries and mirroring the chip
@@ -697,7 +699,10 @@ export async function advanceEncounterTurn(
     // (off a monster) carry the wider engine fields, on the unconstrained DM
     // branch.
     const next = stepEncounterTurn(encounter, campaignId, dir);
+    const clock = steppedClock(encounter, dir, Date.now());
     const engineFields: Record<string, unknown> = {
+      // A lifecycle fight's clock: this turn starts now, and a pass begins the turns.
+      ...(clock ? { "encounter.clock": clock } : {}),
       ...(next.combatants !== encounter.combatants
         ? { "encounter.combatants": next.combatants }
         : {}),
@@ -741,7 +746,7 @@ export async function advanceEncounterTurn(
         ...engineFields,
         updatedAt: serverTimestamp(),
       });
-      return;
+      return next.currentCombatantId;
     }
     // The mirrored `next` is the base the legacy effect-op deltas compose onto,
     // so an engine chip release and a persistent HP tick land in ONE write.
@@ -750,7 +755,27 @@ export async function advanceEncounterTurn(
       "encounter.round": next.round,
       ...engineFields,
     });
+    return next.currentCombatantId;
   });
+}
+
+/** Who may move the turn: the DM, the player whose turn it is, and in a lifecycle fight
+ *  (one with a clock, owner 2026-10-23) anyone at the table. */
+function mayStepTurn(
+  encounter: EncounterState,
+  caller: { uid: string | undefined; isDm: boolean }
+): boolean {
+  if (caller.isDm || encounter.clock !== undefined) return true;
+  return encounter.currentCombatantId === `pc-${caller.uid}`;
+}
+
+/** A lifecycle fight's clock after a pass or a step back (none for a hand-run fight). */
+function steppedClock(
+  encounter: EncounterState,
+  dir: "next" | "prev",
+  now: number
+): EncounterState["clock"] {
+  return (dir === "next" ? passTurn(encounter, now) : turnBack(encounter, now)).clock;
 }
 
 /** Shared numeric shape for reviewed monster HP changes. */

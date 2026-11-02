@@ -1014,6 +1014,34 @@ describe("campaign-io — advanceEncounterTurn (P2 scoped turn write)", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
+  it("in a lifecycle fight (with a clock) anyone passes, the clock follows, the new turn is returned", async () => {
+    const clock = {
+      startedAt: 1,
+      lastActivityAt: 1,
+      turnStartedAt: 1,
+      turnsBegun: false,
+    };
+    const { update } = runWith({ ...encounter, clock });
+    const landed = await advanceEncounterTurn(
+      "camp1",
+      "next",
+      { uid: "b", isDm: false },
+      "pc-a"
+    );
+    expect(landed).toBe("monster-1");
+    const data = update.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(data["encounter.clock"]).toMatchObject({ turnsBegun: true });
+    expect((data["encounter.clock"] as typeof clock).turnStartedAt).toBeGreaterThan(1);
+  });
+
+  it("a stepped-back lifecycle turn starts again, and its clock never un-begins", async () => {
+    const clock = { startedAt: 1, lastActivityAt: 1, turnStartedAt: 1, turnsBegun: true };
+    const { update } = runWith({ ...encounter, clock });
+    await advanceEncounterTurn("camp1", "prev", { uid: "b", isDm: false }, "pc-a");
+    const data = update.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(data["encounter.clock"]).toMatchObject({ turnsBegun: true });
+  });
+
   it("the DM may advance any turn", async () => {
     const { update } = runWith(encounter);
     await advanceEncounterTurn("camp1", "next", { uid: "dm", isDm: true }, "pc-a");
