@@ -2056,8 +2056,6 @@ they were implemented in different eras.
    family, one confirm family, one document-sync status and one mobile-sheet adaptation.
 5. A redesign is evaluated from rendered screenshots and motion frames in the complete visual atlas,
    not from class names, historical prose or a single happy-path desktop capture.
-   The preserved native atlas and its implementation contract live in
-   [`docs/design/tactical-codex-atlas/`](docs/design/tactical-codex-atlas/README.md).
 6. A shipped choice may be challenged by evidence from Taste, Impeccable, UI/UX review, accessibility,
    browser QA or user observation. The review must improve the whole system rather than locally polish
    one screen.
