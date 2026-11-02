@@ -1274,10 +1274,6 @@ export function parseMechanicsWorld(value: unknown): MechanicsWorldParseResult {
   return invalid ? { ok: false, reason: invalid } : { ok: true, value: world };
 }
 
-export function isMechanicsWorld(value: unknown): value is MechanicsWorld {
-  return parseMechanicsWorld(value).ok;
-}
-
 function rejected(
   world: Readonly<MechanicsWorld>,
   reason: MechanicsWorldSimulationRejection

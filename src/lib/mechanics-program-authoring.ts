@@ -17,7 +17,6 @@ import {
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import { conformIntegerExpression } from "@/lib/integer-expression";
 import {
-  MECHANICS_PREDICATE_SCHEMA,
   MECHANICS_PROGRAM_SCHEMA,
   MECHANICS_PROGRAM_AUTHORING_SCHEMA_REFS,
   mechanicsProgramStepChildKind,
@@ -205,14 +204,8 @@ const PROGRAM_SCHEMA_CONTEXT: ExactSchemaContext<
   refs: MECHANICS_PROGRAM_AUTHORING_SCHEMA_REFS,
 };
 
-export const MECHANICS_PROGRAM_AUTHORING_SCHEMA_CONTEXT = PROGRAM_SCHEMA_CONTEXT;
-
 const conformProgramStructure = exactConformer(
   MECHANICS_PROGRAM_SCHEMA,
-  PROGRAM_SCHEMA_CONTEXT
-);
-const conformPredicateStructure = exactConformer(
-  MECHANICS_PREDICATE_SCHEMA,
   PROGRAM_SCHEMA_CONTEXT
 );
 
@@ -360,41 +353,6 @@ function collectPredicateReferences(
     );
   }
   return true;
-}
-
-function predicateReadsEvolvingState(predicate: MechanicsPredicate): boolean {
-  if (predicate.kind === "not") {
-    return predicateReadsEvolvingState(predicate.predicate);
-  }
-  if (predicate.kind === "all" || predicate.kind === "any") {
-    return predicate.predicates.some(predicateReadsEvolvingState);
-  }
-  return [
-    "condition-present",
-    "entity-hit-points",
-    "entity-kind",
-    "landed-damage",
-    "register",
-    "resource",
-    "standing-present",
-  ].includes(predicate.kind);
-}
-
-export function mechanicsPhaseOrderedDependencies(
-  phase: MechanicsProgramPhase
-): readonly string[] {
-  const dependent: string[] = [];
-  for (let index = 0; index < phase.steps.length; index += 1) {
-    const step = phase.steps[index];
-    if (!step || index === 0) continue;
-    if (
-      (step.when !== null && predicateReadsEvolvingState(step.when)) ||
-      amountSpecs(step).some(({ spec }) => spec.kind === "landed-damage")
-    ) {
-      dependent.push(step.stepId);
-    }
-  }
-  return dependent;
 }
 
 function answerPredicateKind(
@@ -946,16 +904,6 @@ export function conformMechanicsProgram(
 ): Readonly<MechanicsProgram> | null {
   const program = conformProgramStructure(value);
   return program && programSemantics(program) ? program : null;
-}
-
-/** Standalone predicate conformance for data tooling and tests. */
-export function conformMechanicsPredicate(
-  value: unknown
-): Readonly<MechanicsPredicate> | null {
-  const predicate = conformPredicateStructure(value);
-  return predicate && predicateWithinBounds(predicate, 0, { value: 0 })
-    ? predicate
-    : null;
 }
 
 function exactEqual(left: unknown, right: unknown): boolean {

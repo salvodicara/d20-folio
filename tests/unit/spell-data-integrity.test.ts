@@ -309,7 +309,7 @@ describe("spell-data integrity", () => {
     const CP = /(\d+) copper pieces/i;
     for (const s of spells) {
       // SRD spells only — the pack spells' priced-material fill + a pack-side
-      // equivalence lock are a tracked FOLLOW-UP (AUTOMATION_BACKLOG.md → RA-23
+      // equivalence lock are a tracked FOLLOW-UP (RA-23
       // "PACK FOLLOW-UP"), not yet done; the M08/M10/M01 partition is where pack
       // content pins live (V/S/M + provenance today).
       if (s.source !== "SRD") continue;

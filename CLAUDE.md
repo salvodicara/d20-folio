@@ -25,7 +25,7 @@ one at a time onto `main`, never a base to resume. Its docs describe that branch
   Commands live in the `justfile` (`just dev`, `just test`, `just ci`).
 - Small Conventional Commits, the owner as sole author. The pre-commit hook requires a staged
   `.changeset/*.md` (an empty `---\n---` one is fine for docs-only work) and formats with Prettier.
-  The `main` pre-push gate is authoritative; run every hook.
+  CI and Verify are authoritative; local hooks only format and check the changeset.
 - Behaviour changes are test-first (`tdd`); bugs go through `diagnosing-bugs`. A test takes its
   cases from the thing it checks and is proven by breaking the code on purpose.
 - UI is verified in a real browser (`playwright-cli`), with before/after screenshots shown in chat.
