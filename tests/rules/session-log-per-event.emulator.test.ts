@@ -182,6 +182,24 @@ describe("firestore.rules: sessionLogs/{sessionId}/items/{itemId}", () => {
     );
   });
 
+  it("accepts a line stamped with the round its device saw, and only a well-formed one", async () => {
+    const seen = { encounterId: "7", round: 3 };
+    await assertSucceeds(write("ana", { ...event("a", "ana", 3), seen } as LogItem));
+    await assertFails(
+      write("ana", { ...event("b", "ana", 3), seen: { round: 3 } } as LogItem)
+    );
+    await assertFails(
+      write("ana", {
+        id: "r",
+        by: "ana",
+        at: 1,
+        type: "retract",
+        target: "a",
+        seen,
+      } as LogItem)
+    );
+  });
+
   it("accepts the narrative overrides as items: hide, show, move", async () => {
     for (const item of [
       { id: "h", by: "ana", at: 1, type: "hide", target: "a" },

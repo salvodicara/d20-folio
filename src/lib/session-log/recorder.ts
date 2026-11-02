@@ -1,4 +1,4 @@
-import type { LogItem, PlayEvent } from "./types";
+import type { LogItem, PlayEvent, SeenRound } from "./types";
 
 /** The newest session of a table: its id and when its last item was appended. */
 export interface SessionHead {
@@ -77,6 +77,8 @@ export function createSessionRecorder(deps: {
   uid: string;
   now?: () => Date;
   newId?: () => string;
+  /** The fight this device sees right now, stamped on every recorded event. */
+  seen?: () => SeenRound | undefined;
 }): SessionRecorder {
   const now = deps.now ?? (() => new Date());
   const newId = deps.newId ?? (() => crypto.randomUUID());
@@ -85,7 +87,14 @@ export function createSessionRecorder(deps: {
     const named = options?.sessionId;
     const sessionId = named ?? nextSessionId(await deps.store.latest(), at);
     const id = options?.id ?? newId();
-    const item: LogItem = { ...draft, id, by: deps.uid, at: at.getTime() };
+    const seen = draft.type === "event" ? deps.seen?.() : undefined;
+    const item: LogItem = {
+      ...draft,
+      id,
+      by: deps.uid,
+      at: at.getTime(),
+      ...(seen ? { seen: { encounterId: seen.encounterId, round: seen.round } } : {}),
+    };
     await deps.store.append(
       sessionId,
       item,
