@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { ResourceSpec } from "@/data/types";
+import type { ItemResourceSpec } from "@/data/types";
 import type { CharacterDoc, ItemResourceState } from "@/types/character";
 import {
   planResourceCommand,
@@ -17,7 +17,7 @@ const charges = {
   capacity: { kind: "fixed", amount: 3 },
   initial: { kind: "full" },
   recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
-} satisfies ResourceSpec;
+} satisfies ItemResourceSpec;
 
 const item: ResourceItemSpec = { itemId: "test-wand", resources: [charges] };
 const binding = (instanceId: string): ResourceItemBinding => ({

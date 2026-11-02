@@ -4,7 +4,7 @@
  * that data. Nothing in this module reads or parses display prose.
  */
 
-import type { ResourceSpec } from "@/data/types";
+import type { ItemResourceSpec } from "@/data/types";
 import type {
   CharacterDoc,
   ItemResourceCounterState,
@@ -93,7 +93,7 @@ export interface ResolvedItemResource {
   instanceId: string;
   resourceId: string;
   key: ItemResourceKey;
-  spec: ResourceSpec;
+  spec: ItemResourceSpec;
   /** Whole-item ownership state, including revision and disposition. */
   itemState?: ItemResourceState;
   /** Stored counter, absent when this resource still has its catalogue default. */
@@ -125,7 +125,7 @@ export interface ResolvedItemResources {
   omissions: ItemResourceOmission[];
 }
 
-function catalogueDefault(spec: ResourceSpec): {
+function catalogueDefault(spec: ItemResourceSpec): {
   capacity?: number;
   current?: number;
 } {
@@ -298,7 +298,7 @@ export type ItemResourceMigrationResult =
 
 function counterFromCharges(
   ref: SrdEquipmentRef,
-  spec: ResourceSpec
+  spec: ItemResourceSpec
 ): ItemResourceCounterState | undefined {
   const charges = ref.charges;
   if (
@@ -324,7 +324,7 @@ function counterFromCharges(
 
 function counterFromTracker(
   tracker: unknown,
-  spec: ResourceSpec
+  spec: ItemResourceSpec
 ): ItemResourceCounterState | undefined {
   if (
     !isRecord(tracker) ||

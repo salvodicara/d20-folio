@@ -12,10 +12,10 @@ import {
   type DiceRollRequirement,
 } from "@/lib/dice-formula";
 import type {
-  ResourceDepletionOutcome,
-  ResourceEnteredRoll,
-  ResourceSpec as CatalogueResourceSpec,
-  ResourceUnit,
+  ItemResourceDepletionOutcome,
+  ItemResourceEnteredRoll,
+  ItemResourceSpec,
+  ItemResourceUnit,
 } from "@/data/types";
 import { exactConformer, type ExactSchemaContext } from "@/lib/exact-schema";
 import {
@@ -969,7 +969,7 @@ export function reduceResource(
 
 // ── Physical-item resource persistence ──────────────────────────────────────
 
-const ITEM_RESOURCE_UNITS: readonly ResourceUnit[] = [
+const ITEM_RESOURCE_UNITS: readonly ItemResourceUnit[] = [
   "charges",
   "uses",
   "beads",
@@ -1043,7 +1043,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
   );
 }
 
-function isValidEnteredRoll(roll: ResourceEnteredRoll): boolean {
+function isValidEnteredRoll(roll: ItemResourceEnteredRoll): boolean {
   const modifier = roll.modifier ?? 0;
   return (
     Number.isSafeInteger(roll.dice) &&
@@ -1059,22 +1059,22 @@ function isValidEnteredRoll(roll: ResourceEnteredRoll): boolean {
 }
 
 /** The lowest total an entered roll can make (every die a 1). */
-export function enteredRollMinimum(roll: ResourceEnteredRoll): number {
+export function enteredRollMinimum(roll: ItemResourceEnteredRoll): number {
   return roll.dice + (roll.modifier ?? 0);
 }
 
 /** The highest total an entered roll can make (every die its top face). */
-export function enteredRollMaximum(roll: ResourceEnteredRoll): number {
+export function enteredRollMaximum(roll: ItemResourceEnteredRoll): number {
   return roll.dice * roll.sides + (roll.modifier ?? 0);
 }
 
 function isValidDepletionOutcomes(
-  outcomes: ReadonlyArray<ResourceDepletionOutcome>
+  outcomes: ReadonlyArray<ItemResourceDepletionOutcome>
 ): boolean {
   return outcomes.length <= 8;
 }
 
-function isValidDepletionRule(rule: NonNullable<CatalogueResourceSpec["onEmpty"]>) {
+function isValidDepletionRule(rule: NonNullable<ItemResourceSpec["onEmpty"]>) {
   if (rule.kind === "deterministic") {
     return isValidDepletionOutcomes(rule.outcomes);
   }
@@ -1096,7 +1096,7 @@ function isValidDepletionRule(rule: NonNullable<CatalogueResourceSpec["onEmpty"]
   return expectedMin === 21;
 }
 
-function isValidCatalogueResourceSpec(spec: CatalogueResourceSpec): boolean {
+function isValidCatalogueResourceSpec(spec: ItemResourceSpec): boolean {
   if (!isValidItemResourceId(spec.id)) return false;
   if (!ITEM_RESOURCE_UNITS.includes(spec.unit)) return false;
   if (spec.capacity.kind === "fixed") {
@@ -1134,7 +1134,7 @@ function isValidCatalogueResourceSpec(spec: CatalogueResourceSpec): boolean {
  */
 export interface ResourceItemSpec {
   itemId: string;
-  resources: ReadonlyArray<CatalogueResourceSpec>;
+  resources: ReadonlyArray<ItemResourceSpec>;
 }
 
 /** The physical address one command binds to: catalogue id + item copy. */
@@ -1419,7 +1419,7 @@ export function decodeItemResourceState(
 
 function counterConformsToSpec(
   counter: ItemResourceCounterState,
-  spec: CatalogueResourceSpec
+  spec: ItemResourceSpec
 ): boolean {
   if (spec.capacity.kind === "fixed") return counter.capacity === spec.capacity.amount;
   return (
@@ -1479,7 +1479,7 @@ export type ResourceInputRequest =
   | {
       kind: "capacity-roll" | "initial-roll" | "recovery-roll";
       resourceId: string;
-      roll: ResourceEnteredRoll;
+      roll: ItemResourceEnteredRoll;
       min: number;
       max: number;
     }
@@ -1535,7 +1535,7 @@ export interface ResourceReceipt {
   before: number;
   after: number;
   /** Present only when this spend consumed the last unit and consulted d20 bands. */
-  depletionOutcomes?: ReadonlyArray<ResourceDepletionOutcome>;
+  depletionOutcomes?: ReadonlyArray<ItemResourceDepletionOutcome>;
 }
 
 /** Player-facing facts of one planned semantic revert. */
@@ -1581,7 +1581,7 @@ function planRejected(reason: ResourceRejection): ResourcePlanResult {
 function rollInputRequest(
   kind: "capacity-roll" | "initial-roll" | "recovery-roll",
   resourceId: string,
-  roll: ResourceEnteredRoll
+  roll: ItemResourceEnteredRoll
 ): ResourceInputRequest {
   return {
     kind,
@@ -1612,7 +1612,7 @@ interface ItemResourceDerivation {
   before: number;
   after: number;
   disposition: ItemResourceDisposition;
-  depletionOutcomes: ReadonlyArray<ResourceDepletionOutcome> | null;
+  depletionOutcomes: ReadonlyArray<ItemResourceDepletionOutcome> | null;
 }
 
 type ItemResourceDeriveResult =
@@ -1626,7 +1626,7 @@ type ItemResourceDeriveResult =
  * bands. Planning, application, and revert verification all re-run it.
  */
 function deriveItemResourceTransition(
-  spec: CatalogueResourceSpec,
+  spec: ItemResourceSpec,
   logical: ItemResourceLogicalState,
   intent: ItemResourceTransitionIntent
 ): ItemResourceDeriveResult {
@@ -1692,7 +1692,7 @@ function deriveItemResourceTransition(
 
   let next: number;
   let disposition: ItemResourceDisposition = logical.disposition;
-  let depletionOutcomes: ReadonlyArray<ResourceDepletionOutcome> | null = null;
+  let depletionOutcomes: ReadonlyArray<ItemResourceDepletionOutcome> | null = null;
   if (intent.kind === "spend") {
     if (intent.amount > current) return { reason: "overdraw", status: "rejected" };
     next = current - intent.amount;

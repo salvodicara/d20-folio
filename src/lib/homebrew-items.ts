@@ -29,7 +29,7 @@ import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
 import type {
   HomebrewItemMechanics,
   HomebrewWeaponFacts,
-  ResourceSpec,
+  ItemResourceSpec,
   SrdMagicItemData,
   WeaponMastery,
 } from "@/data/types";
@@ -83,7 +83,7 @@ const OUTCOME = objectSchema({
   disposition: literals(["destroyed", "nonmagical"]),
 });
 
-/** One typed charge pool, in the catalogue's `ResourceSpec` dialect. */
+/** One typed charge pool, in the catalogue's `ItemResourceSpec` dialect. */
 const RESOURCE = objectSchema(
   {
     kind: literalSchema("counter"),
@@ -191,10 +191,10 @@ export const HOMEBREW_WEAPON_FIELD_SCHEMAS: {
 };
 
 /** A typed pool list the catalogue itself would accept, or null. */
-function conformResources(raw: unknown): ReadonlyArray<ResourceSpec> | null {
+function conformResources(raw: unknown): ReadonlyArray<ItemResourceSpec> | null {
   const value = conformExact(HOMEBREW_ITEM_FIELD_SCHEMAS.resources, raw, CONTEXT);
   if (!Array.isArray(value)) return null;
-  const resources = value as ReadonlyArray<ResourceSpec>;
+  const resources = value as ReadonlyArray<ItemResourceSpec>;
   return isValidResourceItemSpec({ itemId: "homebrew-item", resources })
     ? resources
     : null;
