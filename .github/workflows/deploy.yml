@@ -1,6 +1,6 @@
 name: Deploy
 
-# Owner-fired, dispatch-ONLY — never on push (golden rule 22: deploys are always
+# Owner-fired, dispatch-ONLY — never on push (GOLDEN_RULES Vincoli #2: deploys are always
 # explicitly owner-triggered):  gh workflow run deploy.yml --ref main
 #
 # PROMOTE, don't re-verify: every merge to main already runs the SRD-only gate

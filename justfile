@@ -97,7 +97,7 @@ budget-pack: pack-fresh
     pnpm build
     pnpm test:budget
 
-# ─── Deploy (dispatch the sole production path — golden rules 14 + 22) ────────
+# ─── Deploy (dispatch the sole production path — GOLDEN_RULES Vincoli #2) ─────
 # CI + Verify prove main ambiently; deploy.yml promotes that exact SHA, backs up
 # Firestore, deploys Functions + Hosting + rules, and checks Functions/SAFE-01.
 # There is deliberately no local Firebase-deploy twin to drift from the workflow.
@@ -117,11 +117,11 @@ deploy:
 
 # ─── Release (owner-triggered, agent-executed — THE release flow, permanently) ─
 # There is no release workflow in CI: the changelog section is SYNTHESIZED —
-# curated grouped entries (golden rule 17), a judgment step no version-PR bot
+# curated grouped entries (docs/RELEASE.md), a judgment step no version-PR bot
 # can perform — so the agent runs the whole ritual locally on the owner's go.
 # This recipe encodes the MECHANICAL steps; the two judgment gates — SYNTHESIZING
-# the changelog (golden rule 17, agent-written; the owner may review wording) and
-# DEPLOYING (golden rule 22 — never without explicit owner permission) — are
+# the changelog (docs/RELEASE.md, agent-written; the owner may review wording) and
+# DEPLOYING (GOLDEN_RULES Vincoli #2 — never without explicit owner permission) — are
 # explicit echoed prompts, NOT automated. Full flow: docs/RELEASE.md.
 #
 #   just release          bump via changesets, then PAUSE for the changelog
@@ -137,7 +137,7 @@ release:
     pnpm changeset:version
     version="v$(node -p "require('./package.json').version")"
     echo ""
-    echo "⏸  SYNTHESIZE NOW (golden rule 17): rewrite the freshly-prepended CHANGELOG.md"
+    echo "⏸  SYNTHESIZE NOW (docs/RELEASE.md): rewrite the freshly-prepended CHANGELOG.md"
     echo "    section into curated, grouped professional entries — never ship the"
     echo "    verbose auto-dump. Then commit package.json + CHANGELOG.md + pnpm-lock.yaml:"
     echo "      git commit -am \"chore(release): $version\""
@@ -152,7 +152,7 @@ release:
     gh release create "$version" --title "$version" --notes-file "$notes_file"
     echo ""
     echo "✓ $version tagged + released. FINAL STEP (separate): deploy ONLY with explicit"
-    echo "  owner permission (golden rule 22) — 'just deploy'."
+    echo "  owner permission (GOLDEN_RULES Vincoli #2) — 'just deploy'."
 
 # ─── SAFE-01 billing kill-switch (arm · status · restore) ─────────────────────
 # One script (scripts/safe-01.sh) wraps the whole £15-cap lifecycle. Every recipe is
@@ -177,19 +177,6 @@ safe-status:
 # Run this when it FIRES (billing detached); safe to run anytime, it no-ops if nothing fired.
 safe-restore:
     scripts/safe-01.sh restore
-
-# ─── Data ─────────────────────────────────────────────────
-
-# Count all SRD entries
-stats:
-    @echo "=== SRD Data Stats ==="
-    @echo -n "Spells:      " && grep -c '"id":' src/data/spells/*.ts 2>/dev/null || echo "0"
-    @echo -n "Feats:       " && grep -c '"id":' src/data/feats.ts 2>/dev/null || echo "0"
-    @echo -n "Species:     " && grep -c '"id":' src/data/races.ts 2>/dev/null || echo "0"
-    @echo -n "Backgrounds: " && grep -c '"id":' src/data/backgrounds.ts 2>/dev/null || echo "0"
-    @echo -n "Magic Items: " && grep -c '"id":' src/data/magic-items.ts 2>/dev/null || echo "0"
-    @echo -n "Classes:     " && ls src/data/classes/*.ts 2>/dev/null | wc -l | tr -d ' '
-    @echo ""
 
 # ─── Parallel worktrees (branch off main → agent merge, NO PRs) ─────────────
 # The repo standard for every change (docs/WORKTREES.md, golden rule 11). Each
