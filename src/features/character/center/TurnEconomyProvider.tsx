@@ -260,7 +260,6 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
   const itemResourceCommands = useOptionalItemResourceCommands();
   const character = useCharacterStore((s) => s.character);
   const appendSelectedAction = useCombatStore((s) => s.selectAction);
-  const deselectAction = useCombatStore((s) => s.deselectAction);
   const setBudget = useCombatStore((s) => s.setBudget);
   const setAttackBudget = useCombatStore((s) => s.setAttackBudget);
   const markReactionUsed = useCombatStore((s) => s.useReaction);
@@ -816,10 +815,27 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
     targets: ReadonlyArray<string> = [],
     occurrenceId?: string
   ): () => void {
-    action = withSelfRecipient(action, targets, selfCombatantId());
     // One causal undo for the whole use (simplify-core item 4): it takes back exactly what
-    // the steps below change on the sheet and the turn, and keeps anyone else's change.
+    // the use changes on the sheet and the turn, and keeps anyone else's change.
     const seal = beginCausalUndo();
+    const loggedId = applyUse(action, trackerAmount, attackOf, targets, occurrenceId);
+    const undo = seal?.() ?? null;
+    return () => {
+      if (useCharacterStore.getState().readonly || !undo?.()) return;
+      useDamageTrayStore.getState().withdraw(loggedId);
+    };
+  }
+
+  /** The steps of a use on the sheet and the turn, unsealed (the caller seals them);
+   *  returns the use's log line id. */
+  function applyUse(
+    action: ResolvedAction,
+    trackerAmount?: number,
+    attackOf?: { n: number; total: number },
+    targets: ReadonlyArray<string> = [],
+    occurrenceId?: string
+  ): string | null {
+    action = withSelfRecipient(action, targets, selfCombatantId());
     const cs = useCharacterStore.getState();
     // A bare slot cost (no cast-option pool pick — a feature/custom-spell commit)
     // resolves its pool ONCE.
@@ -869,11 +885,7 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
       ...(action.checkResult ? { check: action.checkResult } : {}),
     });
     offerFollowUps(action, targets, loggedId, occurrenceId);
-    const undo = seal?.() ?? null;
-    return () => {
-      if (useCharacterStore.getState().readonly || !undo?.()) return;
-      useDamageTrayStore.getState().withdraw(loggedId);
-    };
+    return loggedId;
   }
 
   /** "Search: Perception 17 vs DC 15, success": the toast of a use with its check. */
@@ -1189,63 +1201,38 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
               : undefined;
             if (!tracker || tracker.total - tracker.used < cost) return null;
           }
-          const resourceCommit = resourceCycle?.apply() ?? null;
-          if (resourceCycle && !resourceCommit) return null;
-          const restoreSlotCast = expendsSpellSlot ? commitSpellSlotExpenditure() : null;
-          if (expendsSpellSlot && !restoreSlotCast) {
-            if (resourceCommit && itemResourceCommands) {
-              itemResourceCommands.revert(resourceCommit);
-            }
+          // One causal undo for the whole commit (item 4): the payment, the slot-cast
+          // count, the use itself and its place in the turn's economy slot.
+          const seal = beginCausalUndo();
+          const rollback = (): null => {
+            seal?.()?.();
             return null;
-          }
-          const undoCost = commitAction(
+          };
+          const resourceCommit = resourceCycle?.apply() ?? null;
+          if (resourceCycle && !resourceCommit) return rollback();
+          if (expendsSpellSlot && !commitSpellSlotExpenditure()) return rollback();
+          const loggedId = applyUse(
             action,
             trackerAmount,
             undefined,
             applyResolution?.targets,
             outcomeOccurrenceId
           );
-          const revertPaymentBoundary =
-            restoreSlotCast || (resourceCommit && itemResourceCommands)
-              ? () => {
-                  if (restoreSlotCast && !restoreSlotCast()) return false;
-                  return resourceCommit && itemResourceCommands
-                    ? itemResourceCommands.revert(resourceCommit)
-                    : true;
-                }
-              : undefined;
-          if (!execution.consumesTurnEconomy) {
-            return withResolutionUndo(undoCost, applyResolution, revertPaymentBoundary);
-          }
           if (
+            execution.consumesTurnEconomy &&
             !appendWithinActionRules(
               toSelectedAction(action, slot, undefined, outcomeOccurrenceId),
               applyResolution?.outcomes
             )
           ) {
-            if (revertPaymentBoundary && !revertPaymentBoundary()) return null;
-            undoCost();
-            return null;
+            useDamageTrayStore.getState().withdraw(loggedId);
+            return rollback();
           }
+          const undo = seal?.() ?? null;
           return withResolutionUndo(
-            () => {
-              // Occupant-checked (idempotent): a no-op if this action already left its
-              // slot, so a stray reverse can never double-refund (§5.2).
-              if (
-                !useCombatStore.getState().selected[slot].some((a) => a.id === action.id)
-              )
-                return;
-              undoCost();
-              deselectAction(action.id);
-            },
+            () => useDamageTrayStore.getState().withdraw(loggedId),
             applyResolution,
-            () => {
-              const stillSelected = useCombatStore
-                .getState()
-                .selected[slot].some((entry) => entry.id === action.id);
-              if (!stillSelected) return false;
-              return revertPaymentBoundary?.() ?? true;
-            }
+            () => (undo ? undo() : true)
           );
         },
         { turnScoped: execution.turnScoped }
@@ -1801,32 +1788,26 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           ) {
             return null;
           }
-          const resourceCommit = resourceCycle?.apply() ?? null;
-          if (resourceCycle && !resourceCommit) return null;
-          const restoreSlotCast = expendsSpellSlot ? commitSpellSlotExpenditure() : null;
-          if (expendsSpellSlot && !restoreSlotCast) {
-            if (resourceCommit && itemResourceCommands) {
-              itemResourceCommands.revert(resourceCommit);
-            }
+          // One causal undo for the reaction (item 4): payment, slot-cast count, the
+          // spent reaction, concentration, the lit state and the log line. A step that
+          // refuses half-way rolls back through the same seal.
+          const seal = beginCausalUndo();
+          const rollback = (): null => {
+            seal?.()?.();
             return null;
-          }
-          const revertPaymentBoundary = () => {
-            if (restoreSlotCast && !restoreSlotCast()) return false;
-            return resourceCommit && itemResourceCommands
-              ? itemResourceCommands.revert(resourceCommit)
-              : true;
           };
+          const resourceCommit = resourceCycle?.apply() ?? null;
+          if (resourceCycle && !resourceCommit) return rollback();
+          if (expendsSpellSlot && !commitSpellSlotExpenditure()) return rollback();
           if (
             fight &&
             !markReactionUsed(action.id, outcomeOccurrenceId, applyResolution?.outcomes)
           ) {
-            revertPaymentBoundary();
-            return null;
+            return rollback();
           }
           const characterStore = useCharacterStore.getState();
-          // Resolve the slot pool once (normal vs Pact for a pure Warlock) so the
-          // spend and the reverse hit the SAME counter (B3). A bare tracker cost an
-          // item resource already pays is not spent twice.
+          // Resolve the slot pool once (normal vs Pact for a pure Warlock). A bare
+          // tracker cost an item resource already pays is not spent twice.
           const bareSpend = cast
             ? null
             : bareActionSpend(
@@ -1843,48 +1824,30 @@ export function TurnEconomyProvider({ children }: { children: ReactNode }) {
           // name behind the `custom:` marker, never a bare SRD name.
           const castLevel =
             cast?.option.level ?? action.slotLevel ?? action.spellLevel ?? undefined;
-          const restoreConcentration = applyActionConcentration(action, castLevel);
+          applyActionConcentration(action, castLevel);
           // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
-          // its standing state on use. Only flips when OFF so undo never clears a
-          // hand-set state; arms the round countdown. Read state FRESH.
+          // its standing state on use.
           const targets = applyResolution?.targets ?? [];
-          const activation = activateActionState(
+          activateActionState(
             withMetamagicDuration(
               withSelfRecipient(action, targets, selfCombatantId()),
               cast?.metamagicIds ?? []
             ),
             castLevel
           );
-          // Log a STRUCTURED reaction-use event (always the reaction slot → red row).
-          // Capture the id so the reverse removes only this line.
-          const loggedId = characterStore.logEvent({
+          // A STRUCTURED reaction-use line (always the reaction slot → red row).
+          characterStore.logEvent({
             kind: "reaction-use",
             action: action.nameLoc,
             effect: logTypeForAction(action),
             ...(targets.length > 0 ? { targets: [...targets] } : {}),
           });
-          const undoRegains = applyOnCastRegains(
-            action.spellId,
-            expendedSlotLevel(cast?.option, spends)
-          );
+          applyOnCastRegains(action.spellId, expendedSlotLevel(cast?.option, spends));
+          const undo = seal?.() ?? null;
           return withResolutionUndo(
-            () => {
-              undoRegains();
-              // Only undo reaction status — selections are unaffected (resetReaction).
-              if (fight) resetReaction();
-              // Restore EXACTLY what was deducted (the same amount).
-              refundSpends(spends);
-              // SURGICAL concentration restore (mirrors `commitCastOption`'s reverse).
-              activation.restore();
-              restoreConcentration(activation.activated);
-              useCharacterStore.getState().removeLogEntry(loggedId);
-            },
+            () => {},
             applyResolution,
-            () => {
-              if (fight && useCombatStore.getState().reactionUsedId !== action.id)
-                return false;
-              return revertPaymentBoundary();
-            }
+            () => (undo ? undo() : true)
           );
         },
         { turnScoped: fight }
