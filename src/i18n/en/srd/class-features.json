@@ -522,6 +522,10 @@
     "description": "If you fail a saving throw, you can reroll it with a bonus equal to your Fighter level. You must use the new roll, and you can't use this feature again until you finish a Long Rest. You can use it twice starting at level 13 and three times starting at level 17.",
     "name": "Indomitable"
   },
+  "fighter-indomitable.mechanics.actions.0": {
+    "description": "Reroll a failed save, + your Fighter level.",
+    "label": "Indomitable"
+  },
   "fighter-second-wind": {
     "description": "As a Bonus Action, you can regain Hit Points equal to 1d10 plus your Fighter level. You can use this feature twice. You regain one expended use on a Short Rest and all uses on a Long Rest. Uses increase at higher levels.",
     "name": "Second Wind"
@@ -592,6 +596,10 @@
   "monk-disciplined-survivor": {
     "description": "Your physical and mental discipline grant you proficiency in all saving throws. Additionally, whenever you make a saving throw and fail, you can spend 1 Focus Point to reroll it, and you must use the new roll.",
     "name": "Disciplined Survivor"
+  },
+  "monk-disciplined-survivor.mechanics.actions.0": {
+    "description": "Spend 1 Focus Point: reroll a failed save.",
+    "label": "Disciplined Survivor"
   },
   "monk-empowered-strikes": {
     "description": "Whenever you deal damage with your Unarmed Strike, it can deal your choice of Force damage or its normal damage type.",
