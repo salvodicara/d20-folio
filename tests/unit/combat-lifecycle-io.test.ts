@@ -8,6 +8,11 @@ const store = new Map<string, Record<string, unknown>>();
 const advance = vi.fn();
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+// The session log, in memory (the lines a move records go here).
+const sessionLog = createMemorySessionLogStore();
+vi.mock("@/features/campaigns/session-log-source", () => ({
+  sessionLogStoreFor: () => sessionLog,
+}));
 vi.mock("firebase/firestore", () => ({
   doc: (_db: unknown, ...path: string[]) => ({ path: path.join("/") }),
   serverTimestamp: () => "now",
@@ -41,6 +46,11 @@ vi.mock("@/features/campaigns/campaign-io", () => ({
   toCampaignDoc: (id: string, data: Record<string, unknown>) => ({ ...data, id }),
 }));
 
+import {
+  createMemorySessionLogStore,
+  createSessionRecorder,
+  foldSession,
+} from "@/lib/session-log";
 import {
   endCombatNow,
   passCombatTurn,
@@ -164,14 +174,27 @@ describe("the DM's roll for whoever is missing", () => {
     store.set("campaigns/camp", { ...campaign(), dmUid: "dm" });
     await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
     const dice = [17];
+    const recorder = createSessionRecorder({
+      store: sessionLog,
+      uid: "dm",
+      now: () => new Date(2026, 10, 2, 21),
+    });
     const undo = await rollForMissing(
       "camp",
       { uid: "dm", bonuses },
-      () => dice.shift() ?? 1
+      () => dice.shift() ?? 1,
+      recorder
     );
     expect(campaign().encounterInit).toEqual({ ana: 13, ben: 17 });
+    // One report line per roll, the total with Ben's bonus, rolled by the DM.
+    const lines = () =>
+      foldSession(sessionLog.items("2026-11-02"), { dmUid: "dm" }).map((e) => e.event);
+    expect(lines()).toEqual([
+      { kind: "initiative", actor: "pc-ben", roll: 17, total: 18, rolledBy: "dm" },
+    ]);
     expect(await undo?.()).toBe(true);
     expect(campaign().encounterInit).toEqual({ ana: 13 });
+    expect(lines()).toEqual([]);
   });
 
   it("is refused for a player", async () => {

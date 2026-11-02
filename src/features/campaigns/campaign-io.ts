@@ -18,6 +18,7 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { conformTableRules } from "@/lib/table-rules";
 import {
   arrayRemove,
   arrayUnion,
@@ -48,6 +49,9 @@ import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { removeCombatant, parseEncounterState } from "@/features/campaigns/encounter";
 import { passTurn, turnBack } from "@/features/campaigns/encounter-lifecycle";
+import { diagnosticsLog } from "@/lib/diagnostics";
+import { hydrateStoredCharacter } from "@/lib/firestore";
+import { peerDamageState } from "@/lib/play/peer-damage";
 import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
@@ -204,6 +208,12 @@ export function toCampaignDoc(id: string, data: Record<string, unknown>): Campai
   // Encounter state is fail-closed: reads and writes accept the current model exactly
   // and never repair persisted combatants into a different shape.
   const memberDetails = conformCampaignMembers(doc.memberDetails);
+  // Table rules are read field by field: an invalid value falls back to RAW.
+  if (doc.tableRules !== undefined) {
+    const tableRules = conformTableRules(doc.tableRules);
+    if (Object.keys(tableRules).length > 0) doc.tableRules = tableRules;
+    else delete doc.tableRules;
+  }
   if (!doc.encounter) return { ...doc, memberDetails };
   const currentEncounter = parseEncounterState(doc.encounter);
   // A stored encounter written by the deleted effect-program runtime may still
@@ -996,12 +1006,19 @@ export async function writeCampaignCombatEffect(
 ): Promise<{ before: CombatState; after: CombatState }> {
   const fallback = preview ?? defaultCombatState(maxHp);
   if (import.meta.env.DEV && DEV_BYPASS) {
+    // The same target rule as the app, on the dev replica's sheet.
+    const target =
+      mutation.kind === "hp" && mutation.operation.kind === "damage"
+        ? await import("./useMemberCharacterDocs").then(({ resolveDevDoc }) =>
+            resolveDevDoc(characterId, uid)
+          )
+        : null;
     let before = fallback;
     const after = updateDevCombatState(uid, characterId, fallback, (current) => {
       before = current;
-      return reduceCampaignCombatMutation(current, mutation, maxHp, {
-        status: "active",
-      });
+      return target && mutation.kind === "hp"
+        ? peerDamageState(target, current, mutation.operation.amount)
+        : reduceCampaignCombatMutation(current, mutation, maxHp, { status: "active" });
     });
     return { before, after };
   }
@@ -1013,11 +1030,27 @@ export async function writeCampaignCombatEffect(
       txn.get(parentRef),
     ]);
     const parentData = parentSnap.exists() ? parentSnap.data() : null;
-    const current = storedTargetCombatState(
-      combatSnap.exists() ? combatSnap.data() : null,
-      parentData
-    );
-    const next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
+    const rawCombat = combatSnap.exists() ? combatSnap.data() : null;
+    const current = storedTargetCombatState(rawCombat, parentData);
+    // A hit lands through the TARGET's own damage rule (edge-case M1): its sheet is
+    // rebuilt from the documents this transaction just read.
+    const target =
+      mutation.kind === "hp" && mutation.operation.kind === "damage" && parentData
+        ? await hydrateStoredCharacter(characterId, parentData, rawCombat).catch(
+            (error: unknown) => {
+              // A sheet that no longer decodes must not stall the table: the hit lands
+              // as a plain subtraction, and the broken document is reported.
+              diagnosticsLog("warn", "combat.peer-damage-target-unreadable", {
+                message: String(error),
+              });
+              return null;
+            }
+          )
+        : null;
+    const next =
+      target && mutation.kind === "hp"
+        ? peerDamageState(target, current, mutation.operation.amount)
+        : reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
     writePeerCombatEffect(txn, combatRef, current, next);
     return { before: current, after: next };
   });

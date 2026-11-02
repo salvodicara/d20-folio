@@ -111,6 +111,13 @@ const CampaignScreen = NEW_UI
     )
   : null;
 
+// The new character sheet's Play screen replaces the cockpit in the VITE_NEW_UI build.
+const PlayScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/play/ui/PlayScreen").then((m) => ({ default: m.PlayScreen }))
+    )
+  : null;
+
 // The new UI's frame, mounted only around the screens already rebuilt (same flag).
 const NewAppShell = NEW_UI
   ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
@@ -202,6 +209,9 @@ const router = createBrowserRouter(
           >
             <Route errorElement={<RouteErrorBoundary variant="region" />}>
               <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
+              {PlayScreen && (
+                <Route path="/characters/:characterId" element={<PlayScreen />} />
+              )}
             </Route>
           </Route>
         )}
@@ -217,7 +227,9 @@ const router = createBrowserRouter(
             {/* Creation — static `new` ranks above the dynamic `:characterId`. */}
             <Route path="/characters/new" element={<CreationWizard />} />
             {/* Character cockpit — tab is in-view state, not a sub-route. */}
-            <Route path="/characters/:characterId" element={<CharacterCockpit />} />
+            {!PlayScreen && (
+              <Route path="/characters/:characterId" element={<CharacterCockpit />} />
+            )}
             {/* Level-up — the full-screen wizard-F flow (own route so it gets the
                 useBlocker leave-confirm + beforeunload, like creation). */}
             <Route path="/characters/:characterId/level-up" element={<LevelUpWizard />} />

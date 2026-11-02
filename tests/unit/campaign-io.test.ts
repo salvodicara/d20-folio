@@ -14,6 +14,8 @@
  */
 import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
 import { defaultCombatState } from "@/lib/combat-state";
+import { concentrationValue } from "@/lib/concentration";
+import { makeCharacterDoc } from "./_helpers";
 
 const {
   setDocMock,
@@ -115,6 +117,17 @@ vi.mock("firebase/firestore", () => ({
   },
 }));
 // Stub Storage so deleteCampaign's banner cascade runs Firebase-free.
+// The target's sheet, as the peer-damage transaction rebuilds it (null: unreadable).
+const noSheet = () => Promise.reject(new TypeError("no stored sheet in this test"));
+const hydrateTarget = vi.hoisted(() =>
+  vi.fn<(...args: unknown[]) => Promise<unknown>>(() =>
+    Promise.reject(new TypeError("no stored sheet in this test"))
+  )
+);
+vi.mock("@/lib/firestore", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/firestore")>()),
+  hydrateStoredCharacter: (...args: unknown[]) => hydrateTarget(...args),
+}));
 vi.mock("@/lib/storage", () => ({
   deleteCampaignBanner: vi.fn(() => Promise.resolve()),
 }));
@@ -2110,5 +2123,77 @@ describe("revertPeerEffect — undoing one peer write", () => {
       hp: { current: 4, temp: 0 },
       conditions: [],
     });
+  });
+});
+
+describe("a hit from someone else lands through the target's own rule (edge-case M1)", () => {
+  function transaction(hp: { current: number; temp: number }) {
+    const set = vi.fn();
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: (ref: { __doc?: unknown[] }) => {
+          const path = ref.__doc?.slice(1).join("/");
+          return Promise.resolve({
+            exists: () => true,
+            data: () =>
+              path === "users/a/characters/char-a"
+                ? { status: "active", playStateVersion: 1 }
+                : { ...defaultCombatState(44), hp, round: 3 },
+          });
+        },
+        set,
+      })
+    );
+    return set;
+  }
+  const sheet = (hp: number, concentrating = false) =>
+    makeCharacterDoc(
+      { classId: "fighter", level: 5 },
+      {
+        hp: { current: hp, temp: 0 },
+        ...(concentrating ? { concentration: concentrationValue("bless") } : {}),
+      }
+    );
+  const hit = (amount: number) =>
+    writeCampaignCombatEffect("a", "char-a", null, 44, {
+      kind: "hp",
+      operation: { kind: "damage", amount },
+    });
+
+  afterEach(() => hydrateTarget.mockImplementation(noSheet));
+
+  it("the DM's hit that drops a PC to 0 writes Unconscious", async () => {
+    hydrateTarget.mockResolvedValueOnce(sheet(5));
+    const set = transaction({ current: 5, temp: 0 });
+    await hit(9);
+    const written = set.mock.calls[0]?.[1] as { hp: unknown; conditions: string[] };
+    expect(written.hp).toEqual({ current: 0, temp: 0 });
+    expect(written.conditions).toContain("unconscious");
+  });
+
+  it("a hit on a concentrating PC still standing writes the save to roll", async () => {
+    hydrateTarget.mockResolvedValueOnce(sheet(30, true));
+    const set = transaction({ current: 30, temp: 0 });
+    await hit(24);
+    expect(set).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        pendingConcentrationSaves: [
+          expect.objectContaining({ damage: 24, difficultyClass: 12 }),
+        ],
+      }),
+      { merge: true }
+    );
+  });
+
+  it("a sheet that no longer decodes still takes the hit, as a plain subtraction", async () => {
+    hydrateTarget.mockRejectedValueOnce(new TypeError("Invalid character document"));
+    const set = transaction({ current: 5, temp: 0 });
+    await hit(9);
+    expect(set).toHaveBeenCalledWith(
+      expect.anything(),
+      { hp: { current: 0, temp: 0 }, updatedAt: { __serverTimestamp: true } },
+      { merge: true }
+    );
   });
 });

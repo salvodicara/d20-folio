@@ -1,0 +1,79 @@
+/**
+ * The Play screen's character header (approved prototype x-play, the identity band):
+ * name, the identity line (each class with its level, subclass, species, background),
+ * the six abilities in order with modifier, score and save proficiency, the four header
+ * numbers exactly as the sheet derives them (`sheetNumbers`), HP with its temporary
+ * points, and what is going on (Concentration, effects, conditions).
+ */
+import { describe, expect, it } from "vitest";
+
+import { playHeaderView } from "@/domains/play/play-header-view";
+import { concentrationValue } from "@/lib/concentration";
+import { sheetNumbers } from "@/lib/views/sheet-numbers";
+import { makeCharacterDoc } from "./_helpers";
+
+const selene = makeCharacterDoc(
+  {
+    classId: "cleric",
+    subclassId: "life-domain",
+    level: 5,
+    name: "Selene" as never,
+    race: "human" as never,
+    background: "acolyte",
+    abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 17, CHA: 13 },
+    savingThrows: ["WIS", "CHA"],
+  },
+  {
+    hp: { current: 31, temp: 5 },
+    concentration: concentrationValue("bless"),
+    conditions: ["prone"],
+  }
+);
+
+describe("playHeaderView", () => {
+  const view = playHeaderView(selene, "it");
+
+  it("names the character and lists class with level, subclass, species and background", () => {
+    expect(view.name).toBe("Selene");
+    expect(view.identity).toEqual([
+      "Chierico 5",
+      "Dominio della Vita",
+      "Umano",
+      "Accolito",
+    ]);
+  });
+
+  it("the six abilities in order, with modifier, score and save proficiency", () => {
+    expect(view.abilities.map((a) => [a.id, a.mod, a.score, a.save])).toEqual([
+      ["STR", 3, 16, false],
+      ["DEX", 1, 12, false],
+      ["CON", 2, 14, false],
+      ["INT", 0, 10, false],
+      ["WIS", 3, 17, true],
+      ["CHA", 1, 13, true],
+    ]);
+  });
+
+  it("the header numbers are the sheet's own", () => {
+    const n = sheetNumbers(selene);
+    expect(view.numbers).toEqual({
+      ac: n.ac.total,
+      initiative: n.initiative.total,
+      speedFt: n.speed.total,
+      proficiency: n.proficiencyBonus.total,
+    });
+  });
+
+  it("HP: current and temporary from the session, max as the sheet derives it", () => {
+    expect(view.hp).toEqual({
+      current: 31,
+      max: sheetNumbers(selene).maxHp.total,
+      temp: 5,
+    });
+  });
+
+  it("what is going on: Concentration, and how many conditions", () => {
+    expect(view.concentration).toBe("Benedizione");
+    expect(view.conditions).toBe(1);
+  });
+});

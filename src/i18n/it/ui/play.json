@@ -1,0 +1,13 @@
+{
+  "play": {
+    "hpTitle": "Punti ferita",
+    "temp": "+{{count}} temporanei",
+    "proficiency": "Competenza",
+    "effects": "Effetti",
+    "concentrating": "Concentrazione: {{spell}}",
+    "slot": "Slot di {{level}}°",
+    "pactSlot": "Slot del patto di {{level}}°",
+    "allSkills": "Tutte le {{count}} abilità",
+    "fewerSkills": "Solo le principali"
+  }
+}

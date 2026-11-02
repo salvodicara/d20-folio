@@ -321,14 +321,27 @@ export function parseEncounterState(value: unknown): EncounterState {
     value.extraTurns !== undefined && !validExtraTurns(value.extraTurns);
   const badClock = value.clock !== undefined && !validClock(value.clock);
   const badEnded = value.ended !== undefined && !validEnded(value.ended);
-  if (badExtraTurns || badClock || badEnded) {
+  const badInitiatives =
+    value.initiatives !== undefined && !validInitiatives(value.initiatives);
+  if (badExtraTurns || badClock || badEnded || badInitiatives) {
     const rest: Record<string, unknown> = { ...value };
     if (badExtraTurns) delete rest.extraTurns;
     if (badClock) delete rest.clock;
     if (badEnded) delete rest.ended;
+    if (badInitiatives) delete rest.initiatives;
     return rest as unknown as EncounterState;
   }
   return value as unknown as EncounterState;
+}
+
+function validInitiatives(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(
+      ([id, total]) =>
+        nonEmptyString(id) && typeof total === "number" && Number.isFinite(total)
+    )
+  );
 }
 
 /** Build a PC combatant REFERENCE — uid + character id only (no statline copy). */
@@ -511,11 +524,17 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     ...(count > 1 ? { groupId, groupIndex: index + 1, groupSize: count } : {}),
   }));
   const combatants = [...state.combatants, ...monsters];
-  // REINFORCEMENT auto-join: once the order is FROZEN (turns have begun), a monster added
-  // mid-combat must enter the turn order or it would never act — append its id so it is
-  // never orphaned. (The feature layer may re-freeze to slot it by initiative; correctness
-  // over auto-slot polish here.) Before turns begin (no/empty order) the order is set fresh
-  // at Begin-turns, so it is left untouched.
+  // A fight a roll started keeps its order by initiative: the newcomers take their place.
+  if (state.clock) {
+    return lifecycleOrdered({
+      ...state,
+      combatants,
+      nextMonsterOrdinal: firstOrdinal + count,
+    });
+  }
+  // A fight the DM runs by hand: once the order is FROZEN (turns have begun), a monster
+  // added mid-combat must enter it or it would never act — append it (the DM reorders).
+  // Before turns begin (no/empty order) the order is set fresh at Begin-turns.
   if (state.order && state.order.length > 0) {
     return {
       ...state,
@@ -635,9 +654,55 @@ export function setInitiative(
   value: number | null
 ): EncounterState {
   if (value !== null && !Number.isFinite(value)) return state;
-  return mapCombatant(state, id, (c) =>
+  const next = mapCombatant(state, id, (c) =>
     c.kind === "pc" ? c : { ...c, initiative: value === null ? null : Math.round(value) }
   );
+  return next.clock ? lifecycleOrdered(next) : next;
+}
+
+/** A combatant's initiative in a fight a roll started: a creature's own, a PC's total. */
+function lifecycleInitiative(
+  state: EncounterState,
+  combatant: EncounterCombatant
+): number | null {
+  if (combatant.kind === "monster") return combatant.initiative;
+  const total = state.initiatives?.[combatant.id];
+  return typeof total === "number" && Number.isFinite(total) ? total : null;
+}
+
+/**
+ * The turn order of a fight a roll started (owner 2026-10-23, encounter-lifecycle.ts):
+ * until a turn has been passed, every combatant with an initiative in order (highest
+ * first, a group's creatures together by their ids) and the current turn on top; after,
+ * the order stands and each newcomer slots in before the first combatant it out-rolled,
+ * the current turn unmoved. A fight with no clock is returned as it is.
+ */
+export function lifecycleOrdered(state: EncounterState): EncounterState {
+  const clock = state.clock;
+  if (!clock) return state;
+  const rolled = state.combatants.flatMap((c) => {
+    const initiative = lifecycleInitiative(state, c);
+    return initiative === null ? [] : [{ id: c.id, initiative }];
+  });
+  const sorted = sortByInitiative(rolled).map((r) => r.id);
+  if (!clock.turnsBegun) {
+    return { ...state, order: sorted, currentCombatantId: sorted[0] ?? null };
+  }
+  const initiative = new Map(rolled.map((r) => [r.id, r.initiative]));
+  const order = [...(state.order ?? [])];
+  for (const id of sorted) {
+    if (order.includes(id)) continue;
+    const mine = initiative.get(id) ?? Number.NEGATIVE_INFINITY;
+    const at = order.findIndex(
+      (other) => (initiative.get(other) ?? Number.NEGATIVE_INFINITY) < mine
+    );
+    order.splice(at < 0 ? order.length : at, 0, id);
+  }
+  return {
+    ...state,
+    order,
+    currentCombatantId: state.currentCombatantId ?? order[0] ?? null,
+  };
 }
 
 /** Record or replace one Alert holder's willing-ally Initiative Swap. The encounter

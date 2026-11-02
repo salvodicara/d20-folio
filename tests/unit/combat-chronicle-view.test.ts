@@ -76,6 +76,13 @@ const SAMPLES: Record<
   rest: { kind: "rest", rest: "short", actor: "pc-mara" },
   "time-passes": { kind: "time-passes", minutes: 10 },
   note: { kind: "note", text: "The bridge collapses." },
+  initiative: {
+    kind: "initiative",
+    actor: "pc-mara",
+    roll: 12,
+    total: 15,
+    rolledBy: "dm",
+  },
   status: { kind: "status", sourceId: "rage", started: false, actor: "pc-mara" },
 };
 
