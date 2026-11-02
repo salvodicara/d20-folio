@@ -1238,9 +1238,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character: doc,
       error: null,
       readonly: false,
-      combatActiveEffects: [],
-      combatLegacyActiveEffects: [],
-      combatPendingConcentrationSaves: [],
+      // An edit of the open sheet (coins, a prepared spell) keeps what the fight
+      // holds: its standing effects and a Concentration save still to roll. Only a
+      // load of another sheet, or closing it, starts them empty.
+      ...(editing
+        ? {}
+        : {
+            combatActiveEffects: [],
+            combatLegacyActiveEffects: [],
+            combatPendingConcentrationSaves: [],
+          }),
     });
     // An edit (not a load) may have stopped an item being held.
     if (editing) endUnheldItemStates(get);
