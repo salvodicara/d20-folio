@@ -304,7 +304,7 @@ describe("conformance · 6. reactions and timing", () => {
       category: 6,
       case: '"When hit" vs "when targeted" vs "when damaged"',
       source: "SAC #59; WIKI monk:main; WIKI rogue:main",
-      status: "M4",
+      status: "works",
     },
     () => {
       // The three windows exist as triggers.
@@ -327,7 +327,7 @@ describe("conformance · 6. reactions and timing", () => {
           ...rogue.session,
           activeFeatures: [
             ...(rogue.session.activeFeatures ?? []),
-            "rogue-uncanny-dodge-reaction",
+            "rogue-uncanny-dodge",
           ],
         },
       };

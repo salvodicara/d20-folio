@@ -618,6 +618,23 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       trackerId: stringSchema,
     }
   ),
+  /**
+   * Inside a lit state: the next hit from an attack is halved (rounding down) before
+   * anything else, and spends the state (Uncanny Dodge's claimed Reaction).
+   */
+  "incoming-damage-scale": objectSchema({
+    factor: literalSchema("half"),
+    type: literalSchema("incoming-damage-scale"),
+    when: literalSchema("hit-by-attack"),
+  }),
+  /**
+   * A pool that takes damage instead of the character, after defenses and before
+   * temporary Hit Points (Arcane Ward): the tracker's `used` is what it has absorbed.
+   */
+  "damage-absorb-pool": objectSchema({
+    trackerId: stringSchema,
+    type: literalSchema("damage-absorb-pool"),
+  }),
   "zero-hp-floor": objectSchema({
     hitPoints: numberSchema,
     type: literalSchema("zero-hp-floor"),

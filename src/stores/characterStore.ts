@@ -358,6 +358,8 @@ interface CharacterState {
     opts?: {
       crit?: boolean;
       hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
+      /** Damage known not to be an attack's hit (a fall): no Uncanny Dodge halving. */
+      notAnAttack?: true;
     }
   ) => (() => boolean) | null;
   /**
@@ -1596,14 +1598,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           intent: { kind: "concentration-dropped", spell: concentrating },
           duration: 5000,
         });
-      } else if (damageQueuesConcentrationSave(character)) {
+      } else if (taken.dealt > 0 && damageQueuesConcentrationSave(character)) {
         // Relentless Hunter: damage can't break Concentration on Hunter's Mark, so
         // that held spell asks no save (0 HP above still ends it outright).
-        const dc = concentrationSaveDc(amount);
+        // The damage that reached the caster: an Arcane Ward's or Uncanny Dodge's
+        // share was never taken.
+        const dc = concentrationSaveDc(taken.dealt);
         const pending: PendingConcentrationSave = {
           id: crypto.randomUUID(),
           spell: concentrating,
-          damage: amount,
+          damage: taken.dealt,
           difficultyClass: dc,
         };
         nextPendingConcentrationSaves = [...nextPendingConcentrationSaves, pending];
