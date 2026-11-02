@@ -88,6 +88,7 @@ function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
   const options = request.options.filter((o) => o.kind !== "cantrip");
   const usable = (o: CastLevelOption) =>
     o.kind === "mastery" ||
+    o.kind === "cantrip" ||
     (o.kind === "free-cast" ? o.remaining >= o.cost : o.remaining > 0);
   const base = options.findIndex(
     (o) => (o.kind ?? "slot") === "slot" && o.level === request.baseLevel && usable(o)
@@ -113,7 +114,7 @@ function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
         ? t("play.ask.spendFree", { source: option.sourceName })
         : option.kind === "mastery"
           ? t("play.ask.noSlot")
-          : option.kind !== "cantrip" && option.pactMagic
+          : option.pactMagic
             ? t("play.ask.spendPact", { level: option.level })
             : t("play.ask.spendSlot", { level: option.level });
   return (
