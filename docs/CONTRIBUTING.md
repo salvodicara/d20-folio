@@ -16,6 +16,9 @@ npm --prefix functions ci --prefer-offline --no-audit  # standalone Functions de
 git config core.hooksPath .githooks   # or `just setup`
 ```
 
+`scripts/program-supervisor/bootstrap-worktree.sh` does the same three installs after checking
+the exact Node and pnpm pins; use it in a fresh checkout or worktree.
+
 The toolchain is pinned via **asdf** (`.tool-versions`): **Node 24.16.0** (matches the Cloud
 Functions runtime) and **Temurin 25** (the JDK the Firestore emulator needs — no Homebrew JDK
 required). Install asdf + its `nodejs`/`java` plugins first if you don't have them. The root app
@@ -43,13 +46,6 @@ runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twi
 | **per merge — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR | ~4 min wall, free              | `.github/workflows/ci.yml`                 |
 | **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`               | ~10 min wall, free             | `.github/workflows/verify.yml`             |
 | **deploy** (owner-fired)      | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates            | ~10–15 min                     | `deploy.yml` (`just deploy` dispatches it) |
-
-The SRD-only and composed unit jobs provision every executable dependency their tests exercise:
-root pnpm dependencies, standalone `functions/` npm dependencies, and pinned Just `1.50.0`.
-Program Supervisor store validation checks the exact canonical HEAD and ref layout itself; on Git
-2.50+ its strict `fsck` object-graph pass therefore uses `--no-references`, avoiding a second,
-platform-dependent interpretation of the intentional non-branch event ref. Older supported Git
-versions keep the same object check and predate that reference-database mode.
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -119,18 +115,6 @@ Verify still runs those live-user conformance contracts in the composed build.
 > **Never add a slow check to a hook "to be safe."** If a check is slow, it belongs in the
 > per-merge remote lane (`ci.yml` / `verify.yml`), not on every push. Keep `--cache` everywhere it
 > helps (eslint `.eslintcache`, tsc incremental) so a no-op re-run is seconds.
-
-### The review step (before every merge — golden rule 12)
-
-Superpowers owns the generic review lifecycle: request a correctness/requirements review, process
-the findings with technical rigor, and re-run verification on the final diff. Add
-`ponytail-review` when the change carries meaningful abstraction or dependency risk; that pass asks
-only what can be deleted, reused, or replaced with a simpler native seam. Review findings are
-evidence, not commands: apply each actionable finding or record the concrete reason it does not fit.
-
-After review, run the relevant gate on the final tree, rebase onto current `origin/main`, and
-integrate from the worktree with `git push origin HEAD:main`. The exact repository adapter remains
-in `docs/WORKTREES.md`; review replaces PR review, never tests or owner visual approval.
 
 ### The i18n build-time leak-lock (lock 6)
 
@@ -239,59 +223,14 @@ checkout of the private pack repo (`salvodicara/d20-folio-content`):
 ln -s ../d20-folio-content/content-pack content-pack
 ```
 
-**Task worktrees are composed automatically.** `just wt-new` replicates that
-same relative symlink into each new worktree whenever the pack sibling exists,
-so the pack-mode gate runs composed there **by default** — closing the gap where
-a pack-absent worktree would silently gate SRD-only and let a public API change
-break the pack undetected. When no pack sibling exists (external contributors),
-`wt-new` skips the link and the worktree gates SRD-only, unchanged (that is the
-correct, complete build for a public tree). As a backstop, `.githooks/pre-push`
-prints a loud WARNING if a worktree gates SRD-only while the pack actually
-exists on disk. Because the pack's files
+**Worktrees link the pack by hand** (the same `ln -s` with the pack's absolute
+path); `.githooks/pre-push` prints a loud WARNING if a worktree gates SRD-only
+while the main checkout has the pack. Because the pack's files
 REALLY live outside the repo root, pack tests import public-root helpers only
 through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
 `../../../` escapes), the vitest lanes resolve with `preserveSymlinks`, and the
 dev server allows the pack's real directory (`fsAllowRoots()`,
 `scripts/content-pack-mode.ts`).
-
-## Reading order (especially for AI agents)
-
-1. **`CLAUDE.md` / `AGENTS.md`** — the short shared router, authority model, invariants, and tool
-   routing.
-2. Read the **one document that owns the task's fact**: Architecture/Mechanics/Schema for engine or
-   data, the product brief (`docs/strategy/2026-10-16-product-brief.md`)/Design for UI, or the
-   relevant operations runbook. Verify claims against code, config, git, and runtime evidence
-   before acting.
-3. **`docs/AUTOMATION_COVERAGE.md`** for per-entity automation coverage.
-   `docs/AUTOMATION_BACKLOG.md` is the closed audit record, not a default reading assignment.
-
-### Claude Code and Codex parity
-
-The two agent harnesses intentionally read the same project contract and the same Impeccable skill.
-`AGENTS.md` is a tracked symlink to `CLAUDE.md`; `.agents/skills/impeccable` is a tracked symlink to
-the canonical `.claude/skills/impeccable` directory. Update only the canonical targets. This keeps
-instructions and UI craft behavior identical without vendoring a second skill copy that can drift.
-
-### AI agent tool stack and conflict policy
-
-One tool owns each layer; overlap is resolved by evidence and the weaker workflow is removed rather
-than stacked:
-
-| Layer                 | Canonical tool           | Repository use                                                                                                                                                                                                                                   |
-| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Development lifecycle | **Superpowers**          | Brainstorm/spec → plan → worktree → TDD → systematic debugging → review → verification. `just wt-new`, the no-PR integration flow, changesets, and owner gates are repository adapters.                                                          |
-| Specialist operations | **Selective ECC skills** | Living-doc governance, workspace/context audits, product/competition analysis, automation audits, browser QA, security reviews, and eval harnesses. The monolithic plugin stays disabled because its always-on context cost is disproportionate. |
-| Capability discovery  | **Find Skills**          | Search the public ecosystem, then verify installs/adoption, publisher reputation, freshness, security, and overlap before recommending or installing.                                                                                            |
-| Session recall        | **claude-mem**           | Retrieve context and possible prior decisions, then verify them against the current request and operational evidence. Memory never overrides the fact owner; cloud sync is opt-in and secrets are forbidden.                                     |
-| Process improvement   | **Task Observer**        | Log skill/process observations outside worktrees at `~/.agents/state/d20-folio/skill-observations/log.md`; review them in batches so delivery is not interrupted.                                                                                |
-
-Project specialists remain on demand: `impeccable` for UI/UX, `graphify` for structural navigation,
-`ponytail`/`ponytail-review` for simplicity, and `grill-me` for genuinely ambiguous product intent.
-No tool wins because of branding or popularity alone; documented behavior, behavioral evaluations,
-security, maintenance, context cost, and fit to this repository decide. Technical conflicts are agent
-work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
-
----
 
 ## Common recipes
 
@@ -307,7 +246,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 5. Write a unit test if anything non-trivial about its data (concentration flag,
    ritual tag, scaling, …).
 6. `pnpm changeset` → describe the addition.
-7. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+7. Commit; open a pull request.
 ```
 
 ### I want to add a new feat
@@ -325,7 +264,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 4. Add a unit test in tests/unit/feat-asi.test.ts (or a relevant file) if the feat
    carries a Grant.
 5. `pnpm changeset` → "Add Feat X".
-6. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+6. Commit; open a pull request.
 ```
 
 ### I want to add a new mechanic (new Grant kind)
@@ -341,7 +280,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 6. Add a unit test in tests/unit/grants-phase-c.test.ts pinning the new branch.
 7. Document the new kind in docs/MECHANICS.md.
 8. `pnpm changeset` (minor — schema add).
-9. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+9. Commit; open a pull request.
 ```
 
 ### I want to add a new SRD class subclass
@@ -357,7 +296,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 5. If a feature has a tracker, declare `mechanics.tracker`.
 6. If a feature has a rider, declare `mechanics.rider`.
 7. Add tests.
-8. `pnpm changeset`. Commit; converge + merge at the finish line.
+8. `pnpm changeset`. Commit; open a pull request.
 ```
 
 > **Automation-coverage guard.** `tests/unit/automation-coverage.guard.test.ts` fails if a class
@@ -375,7 +314,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 3. Fix the code so the test passes.
 4. Run the full suite locally: `pnpm test`.
 5. `pnpm changeset` (patch — bug fix).
-6. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+6. Commit; open a pull request.
 ```
 
 ### Build & data-file conventions
@@ -407,7 +346,7 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).
-4. Every commit ships its own `.changeset/*.md`; the converged branch passes the full `main`
+4. Every commit ships its own `.changeset/*.md`; the branch passes the full `main`
    pre-push CI (incl. the axe a11y surface gate, light + dark).
 ```
 
@@ -611,17 +550,15 @@ hint rather than letting an unverified rules change through — no Homebrew JDK 
 
 - **TypeScript strict.** No `any`. No `!` (non-null assertion). No `eslint-disable`.
 - **Zero lint warnings.** `pnpm lint --max-warnings 0` must pass.
-- **Tests are mandatory for behavior.** Use Superpowers TDD and the cheapest lane that observes the
+- **Tests are mandatory for behavior.** Test-first (`tdd`), in the cheapest lane that observes the
   fact. Delete obsolete or duplicate tests with the behavior they no longer protect; test count is
   not a quality metric.
 - **Bilingual.** Every user-visible string is EN + IT. Italian never empty (golden rule 9).
 - **No `--no-verify`.** Ever. If a hook fails, fix the issue in the same commit.
 - **No dice rolling.** `Math.random()` is banned. Show formulas; the player rolls externally.
 - **Override-first.** Every derived value can be manually overridden.
-- **Small commits; sparse milestone pushes.** Each commit is one coherent step with its
-  `.changeset/*.md`; a topic branch may reach `origin` at genuine recoverable milestones, while
-  the converged `HEAD:main` integration remains the only push that runs the full local gate
-  (`docs/WORKTREES.md` — no PRs, never a bare push).
+- **Small commits, one branch, one pull request.** Each commit is one coherent step with its
+  `.changeset/*.md`; push the branch with an explicit refspec, never a bare push.
 - **Co-update docs.** A `.changeset/*.md` must be staged on every commit (the pre-commit hook
   enforces it; it feeds `CHANGELOG.md` at release time).
 - **New surface → new screenshot.** Adding a page / form / wizard step / modal means adding its
@@ -652,17 +589,6 @@ Releases are owner-triggered and agent-executed with `just release` (the changel
 synthesized thematic section, never the raw changeset dump — golden rule 17; there is deliberately
 no release workflow in CI) and deployed separately, only on explicit owner go, through
 `gh workflow run deploy.yml --ref main` (`just deploy` dispatches that same workflow).
-
----
-
-## Asking the owner questions
-
-Resolve implementation details, tool conflicts, and discoverable facts autonomously. Ask only at the
-decision boundary in `docs/GOLDEN_RULES.md`: genuine product/taste, cost/privacy, new external
-authority, irreversible/destructive action, or a durable decision conflict that evidence cannot
-resolve. Explain the recommendation in plain language and avoid technical questionnaires. When a
-product interview is genuinely useful, use Superpowers brainstorming or `grill-me` and keep each
-round focused.
 
 ---
 

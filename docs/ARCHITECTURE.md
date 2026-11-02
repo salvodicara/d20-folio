@@ -3599,9 +3599,8 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 ## Branch layout
 
 - `main` — release branch; tagged on every release (see `CHANGELOG.md` for the current version).
-- Per-task work lands via **one worktree + a branch-off-`main`, converged and merged to `main`
-  by the agent — no PRs** (the repo standard — see `docs/WORKTREES.md`); `main` stays the
-  integration branch.
+- Per-task work lands on a branch off `main` through a pull request; `main` stays the integration
+  branch.
 
 Each work item gets a `.changeset/*.md` describing its bump (`pnpm changeset`); releases
 are minted via `pnpm changeset:version` + a `vX.Y.Z` git tag.
