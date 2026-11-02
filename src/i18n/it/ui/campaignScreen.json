@@ -1,0 +1,17 @@
+{
+  "campaignScreen": {
+    "tabsLabel": "Sezioni della campagna",
+    "tabFight": "Scontro",
+    "master": "Master: {{name}}",
+    "noNextSession": "da decidere",
+    "copyInvite": "Copia invito",
+    "inviteCopied": "Link d’invito copiato: incollalo nella chat del gruppo.",
+    "partyHint": "tocca un personaggio per la sua scheda",
+    "noCharacters": "Nessun personaggio nel gruppo. Chi entra con un invito sceglie il suo personaggio.",
+    "chest": "Cassa comune",
+    "fightIdle": "Nessuno scontro in corso. Parte da solo quando qualcuno tira l’iniziativa.",
+    "fightRunning": "Scontro in corso · round {{round}}",
+    "loading": "Carico la campagna",
+    "notFound": "Campagna non trovata. Forse non ne fai più parte."
+  }
+}
