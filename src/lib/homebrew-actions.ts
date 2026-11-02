@@ -25,7 +25,6 @@ import {
 import {
   arraySchema,
   booleanSchema,
-  conformExact,
   literalSchema,
   numberSchema,
   objectSchema,
@@ -35,17 +34,20 @@ import {
   type ExactSchema,
   type ExactSchemaContext,
 } from "@/lib/exact-schema";
+import {
+  ABILITY,
+  conformFields,
+  DAMAGE_TYPES,
+  literals,
+  memoByObject,
+  plainObject,
+  TRUE,
+} from "@/lib/homebrew-conform";
 import { ABILITY_CODES } from "@/types/ability";
 import { CONDITION_ID_SCHEMA } from "@/types/condition";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 import type { ActionData } from "@/types/character";
 
-const literals = (values: ReadonlyArray<string>): ExactSchema =>
-  unionSchema(values.map((value) => literalSchema(value)));
-
-const ABILITY = literals(ABILITY_CODES);
-const TRUE = literalSchema(true);
-const DAMAGE_TYPES = arraySchema(DAMAGE_TYPE_SCHEMA);
 const DICE_COUNT = literals(["PB", ...ABILITY_CODES]);
 const HEAL_TERM = unionSchema([
   objectSchema({ kind: literalSchema("class-level"), classId: literals(ALL_CLASS_IDS) }),
@@ -288,27 +290,9 @@ const CONTEXT: ExactSchemaContext<Record<never, never>, Record<never, never>> = 
   refs: {},
 };
 
-function plainObject(value: unknown): value is Readonly<Record<string, unknown>> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    Object.getPrototypeOf(value) === Object.prototype
-  );
-}
-
-const cache = new WeakMap<object, SrdActionDef>();
-
 /** Every structured field of `authored` its schema accepts, in schema order. */
-function acceptedFields(authored: Readonly<Record<string, unknown>>) {
-  const accepted: Record<string, unknown> = {};
-  for (const [key, schema] of Object.entries(HOMEBREW_ACTION_FIELD_SCHEMAS)) {
-    if (!Object.hasOwn(authored, key)) continue;
-    const value: unknown = conformExact(schema, authored[key], CONTEXT);
-    if (value !== null) accepted[key] = value;
-  }
-  return accepted;
-}
+const acceptedFields = (authored: Readonly<Record<string, unknown>>) =>
+  conformFields(HOMEBREW_ACTION_FIELD_SCHEMAS, authored, CONTEXT);
 
 const isActionType = (value: unknown): value is SrdActionDef["type"] =>
   (ALL_ACTION_TYPES as ReadonlyArray<unknown>).includes(value);
@@ -317,7 +301,16 @@ const isActionType = (value: unknown): value is SrdActionDef["type"] =>
 export type HomebrewActionOverride = Partial<SrdActionDef> &
   Partial<Pick<ActionData, "label" | "description">>;
 
-const overrideCache = new WeakMap<object, HomebrewActionOverride>();
+const conformOverride = memoByObject(
+  (raw: Readonly<Record<string, unknown>>) =>
+    Object.freeze({
+      ...(typeof raw.id === "string" ? { id: raw.id } : {}),
+      ...(isActionType(raw.type) ? { type: raw.type } : {}),
+      ...(typeof raw.label === "string" ? { label: raw.label } : {}),
+      ...(typeof raw.description === "string" ? { description: raw.description } : {}),
+      ...acceptedFields(raw),
+    }) as HomebrewActionOverride
+);
 
 /**
  * A stored `actionOverrides` element (a player's change to a catalogue feature
@@ -327,19 +320,17 @@ const overrideCache = new WeakMap<object, HomebrewActionOverride>();
  * catalogue's own value keeps playing; the stored override is never touched.
  */
 export function homebrewActionOverride(raw: unknown): HomebrewActionOverride {
-  if (!plainObject(raw)) return {};
-  const hit = overrideCache.get(raw);
-  if (hit) return hit;
-  const override = Object.freeze({
-    ...(typeof raw.id === "string" ? { id: raw.id } : {}),
-    ...(isActionType(raw.type) ? { type: raw.type } : {}),
-    ...(typeof raw.label === "string" ? { label: raw.label } : {}),
-    ...(typeof raw.description === "string" ? { description: raw.description } : {}),
-    ...acceptedFields(raw),
-  }) as HomebrewActionOverride;
-  overrideCache.set(raw, override);
-  return override;
+  return plainObject(raw) ? (conformOverride(raw) ?? {}) : {};
 }
+
+const conformActionDef = memoByObject((action: ActionData) => {
+  const authored: unknown = action;
+  return Object.freeze({
+    ...(plainObject(authored) ? acceptedFields(authored) : {}),
+    type: action.type,
+    ...(typeof action.id === "string" ? { id: action.id } : {}),
+  });
+});
 
 /**
  * A stored homebrew feature action as a catalogue action — the one shape the action
@@ -347,15 +338,5 @@ export function homebrewActionOverride(raw: unknown): HomebrewActionOverride {
  * field the schema rejects is out of play; the stored action is never touched.
  */
 export function homebrewActionDef(action: ActionData): SrdActionDef {
-  const hit = cache.get(action);
-  if (hit) return hit;
-  const authored: unknown = action;
-  const accepted = plainObject(authored) ? acceptedFields(authored) : {};
-  const def = Object.freeze({
-    ...accepted,
-    type: action.type,
-    ...(typeof action.id === "string" ? { id: action.id } : {}),
-  }) as SrdActionDef;
-  cache.set(action, def);
-  return def;
+  return conformActionDef(action) as SrdActionDef;
 }
