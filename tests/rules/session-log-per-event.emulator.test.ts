@@ -141,6 +141,29 @@ describe("session-log readers accept one document per item", () => {
   });
 });
 
+describe("a session's text on its play log", () => {
+  it("a member saves it through the adapter and every member reads it back", async () => {
+    await seed([event("x", "ana", 1)], []);
+    await createFirestoreSessionLogStore(dbOf("ana"), "camp1").saveNotes(
+      SESSION,
+      "Cragmaw."
+    );
+    const [session] = await createFirestoreSessionLogStore(dbOf("dm"), "camp1").recent(1);
+    expect(session?.notes).toBe("Cragmaw.");
+    expect(session?.lastAt).toBe(5000);
+    expect(session?.items.map((item) => item.id)).toEqual(["x"]);
+  });
+
+  it("an outsider or a blocked member cannot save it", async () => {
+    await seed([event("x", "ana", 1)], []);
+    for (const uid of ["out", "banned"]) {
+      await assertFails(
+        createFirestoreSessionLogStore(dbOf(uid), "camp1").saveNotes(SESSION, "x")
+      );
+    }
+  });
+});
+
 describe("firestore.rules: sessionLogs/{sessionId}/items/{itemId}", () => {
   const write = (uid: string, item: LogItem, id = item.id) =>
     setDoc(doc(dbOf(uid), ...itemPath(id)), perEventItemDoc(item));
@@ -179,6 +202,24 @@ describe("firestore.rules: sessionLogs/{sessionId}/items/{itemId}", () => {
         ...perEventItemDoc(event("a", "ana", 3)),
         type: "rewrite",
       })
+    );
+  });
+
+  it("accepts a line stamped with the round its device saw, and only a well-formed one", async () => {
+    const seen = { encounterId: "7", round: 3 };
+    await assertSucceeds(write("ana", { ...event("a", "ana", 3), seen } as LogItem));
+    await assertFails(
+      write("ana", { ...event("b", "ana", 3), seen: { round: 3 } } as LogItem)
+    );
+    await assertFails(
+      write("ana", {
+        id: "r",
+        by: "ana",
+        at: 1,
+        type: "retract",
+        target: "a",
+        seen,
+      } as LogItem)
     );
   });
 

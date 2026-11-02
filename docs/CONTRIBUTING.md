@@ -1,7 +1,6 @@
 # Contributing
 
-> Day-to-day workflow for humans and AI agents. The pre-commit + pre-push hooks enforce
-> almost everything below — they're not friction, they're the contract.
+> Day-to-day workflow for humans and AI agents. CI and Verify are authoritative; local hooks only format and check the changeset.
 
 ---
 
@@ -16,13 +15,16 @@ npm --prefix functions ci --prefer-offline --no-audit  # standalone Functions de
 git config core.hooksPath .githooks   # or `just setup`
 ```
 
+`scripts/program-supervisor/bootstrap-worktree.sh` does the same three installs after checking
+the exact Node and pnpm pins; use it in a fresh checkout or worktree.
+
 The toolchain is pinned via **asdf** (`.tool-versions`): **Node 24.16.0** (matches the Cloud
 Functions runtime) and **Temurin 25** (the JDK the Firestore emulator needs — no Homebrew JDK
 required). Install asdf + its `nodejs`/`java` plugins first if you don't have them. The root app
 uses **pnpm**; the standalone `functions/` package uses **npm** (`npm --prefix functions ci`),
 deployed via `firebase deploy --only functions`.
 
-That `git config` line installs the project's strict pre-commit + pre-push hooks. **Never bypass
+That `git config` line installs the project's pre-commit hook. **Never bypass
 them with `--no-verify`** — if they fail, the issue gets fixed in the same commit, not
 deferred.
 
@@ -35,21 +37,12 @@ let checks slow development or deployment**. The repo is public, so GitHub Actio
 free — the heavy lanes run REMOTELY on every merge, off the local critical path. Every check still
 runs MANDATORILY before code reaches a USER, each in exactly ONE lane, never twice on one path.
 
-| Lane                          | What it runs                                                                                                                                      | Cost                           | Where                                      |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ------------------------------------------ |
-| **pre-commit**                | doc-guard + `lint-staged` + fast unit lane                                                                                                        | ~5 s                           | `.githooks/pre-commit`                     |
-| **pre-push → topic branch**   | no gate — topic branches are recoverable remote checkpoints                                                                                       | instant                        | `.githooks/pre-push`                       |
-| **pre-push → `main`**         | typecheck ∥ lint (`--cache`) ∥ unit + coverage **concurrently**, then `vite build` · budget · rules (change-scoped) — **NO e2e**                  | ~3 min (max of three, not sum) | `.githooks/pre-push`                       |
-| **per merge — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit ∥ build + budget as **parallel jobs**, every push to `main` + every PR | ~4 min wall, free              | `.github/workflows/ci.yml`                 |
-| **per merge — Verify**        | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners, every push to `main`               | ~10 min wall, free             | `.github/workflows/verify.yml`             |
-| **deploy** (owner-fired)      | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates            | ~10–15 min                     | `deploy.yml` (`just deploy` dispatches it) |
-
-The SRD-only and composed unit jobs provision every executable dependency their tests exercise:
-root pnpm dependencies, standalone `functions/` npm dependencies, and pinned Just `1.50.0`.
-Program Supervisor store validation checks the exact canonical HEAD and ref layout itself; on Git
-2.50+ its strict `fsck` object-graph pass therefore uses `--no-references`, avoiding a second,
-platform-dependent interpretation of the intentional non-branch event ref. Older supported Git
-versions keep the same object check and predate that reference-database mode.
+| Lane                       | What it runs                                                                                                                                                         | Cost               | Where                                      |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------------------------ |
+| **pre-commit**             | doc-guard + `lint-staged` (format)                                                                                                                                   | ~5 s               | `.githooks/pre-commit`                     |
+| **per PR — CI** (`ci.yml`) | the SRD-only gate: Functions lint + test + build ∥ typecheck + lint ∥ unit ∥ build + budget ∥ rules (emulator) as **parallel jobs**, every PR + every push to `main` | ~4 min wall, free  | `.github/workflows/ci.yml`                 |
+| **per merge — Verify**     | the COMPOSED verdict: pack unit suite + the **full Playwright e2e matrix sharded 8×** across parallel runners + the offline proof, every push to `main`              | ~10 min wall, free | `.github/workflows/verify.yml`             |
+| **deploy** (owner-fired)   | **PROMOTES a verified SHA** in Actions: green CI + Verify → build/budget → Firestore export → Functions → Hosting/rules → health gates                               | ~10–15 min         | `deploy.yml` (`just deploy` dispatches it) |
 
 > **Why `workers: 1` in CI, not 2.** A 2nd Playwright worker was measured and REJECTED: on the
 > 2-vCPU `ubuntu-latest` runner one worker already saturates the cores (a full-page Chromium render
@@ -83,7 +76,7 @@ trimmed of provable waste:
   It fails toward booting (anything not provably SW-free still gets the server), so the SW journey is
   never starved of its origin.
 
-**Why e2e is the per-merge REMOTE lane, not the pre-push gate.** The full matrix is ~1,450 tests —
+**Why e2e is the per-merge REMOTE lane, not a PR gate.** The full matrix is ~1,450 tests —
 48 min unsharded on a CI runner (measured 2026-08-03), far beyond any local critical path. A push
 lands on `origin`, which is **not user-facing** — nothing deploys off a push (deploys are ALWAYS
 explicitly owner-triggered, golden rule 22). So the matrix runs remotely on EVERY merge to `main`
@@ -108,8 +101,7 @@ newer merge).
 parallel jobs so the wall clock is the slowest lane) on every push to `main` and every PR. `verify.yml` verifies what actually DEPLOYS (the composed build: it
 checks out the private pack via `CONTENT_PACK_TOKEN`, runs the composed unit suite and the full
 sharded e2e matrix) on every push to `main`. Both green = both build modes green, remotely, per
-merge (golden rule 28). The local pre-push hook remains the last line of defence BEFORE a merge
-lands; the remote lanes are the standing verdict every SHA carries after.
+merge (golden rule 28).
 
 Tests that read `content-pack/fixtures/` or assert private catalogue facts live under
 `content-pack/tests/`, never under the public `tests/` tree. This keeps a fresh public checkout
@@ -119,18 +111,6 @@ Verify still runs those live-user conformance contracts in the composed build.
 > **Never add a slow check to a hook "to be safe."** If a check is slow, it belongs in the
 > per-merge remote lane (`ci.yml` / `verify.yml`), not on every push. Keep `--cache` everywhere it
 > helps (eslint `.eslintcache`, tsc incremental) so a no-op re-run is seconds.
-
-### The review step (before every merge — golden rule 12)
-
-Superpowers owns the generic review lifecycle: request a correctness/requirements review, process
-the findings with technical rigor, and re-run verification on the final diff. Add
-`ponytail-review` when the change carries meaningful abstraction or dependency risk; that pass asks
-only what can be deleted, reused, or replaced with a simpler native seam. Review findings are
-evidence, not commands: apply each actionable finding or record the concrete reason it does not fit.
-
-After review, run the relevant gate on the final tree, rebase onto current `origin/main`, and
-integrate from the worktree with `git push origin HEAD:main`. The exact repository adapter remains
-in `docs/WORKTREES.md`; review replaces PR review, never tests or owner visual approval.
 
 ### The i18n build-time leak-lock (lock 6)
 
@@ -144,7 +124,7 @@ detectors over EN + IT and every `srd/` catalogue and **fails the build (non-zer
   English (the `STRONG_EN` heuristic; loanwords / proper nouns / abbreviations never trip it),
 - a **static `t("…")` literal** in `src/` whose key is absent from the catalogue.
 
-It's free on `pnpm build` (so it runs in pre-push, the deploy workflow, and CI automatically), and you can
+It's free on `pnpm build` (so it runs in CI and the deploy workflow automatically), and you can
 run it standalone with **`pnpm i18n:check`** (prints each problem + a non-zero exit). When it fails,
 **fix the leak** — translate via the IT SRD 5.2.1 cascade (never leave IT == EN-English), or add the
 missing key to BOTH `src/i18n/{en,it}/ui/<group>.json` shards. Do NOT weaken the detector to make it
@@ -223,11 +203,10 @@ and `VITE_CONTENT_PACK` ≠ `0`. Two lanes exist:
   contributor, this is your (only) mode — nothing to opt into. A tree that
   CONTAINS the pack can force this lane with `just ci-srd-only`
   (= `pnpm typecheck:srd-only` + `pnpm test:srd-only` + `pnpm build:srd-only`,
-  which pin `VITE_CONTENT_PACK=0`). No pack suites, no coverage floors.
+  which pin `VITE_CONTENT_PACK=0`). No pack suites.
 - **Pack mode** — the maintainer's composition (the default wherever
-  `content-pack/` exists): the full catalogue; the authoritative gate
-  (`just ci`: typecheck ∥ lint ∥ app tests ∥ Functions tests ∥ build) runs in this mode, and the
-  pack's own suites
+  `content-pack/` exists): the full catalogue; Verify runs the composed gate, `just ci`
+  (typecheck ∥ lint ∥ app tests ∥ Functions tests ∥ build) runs it locally, and the pack's own suites
   (`content-pack/tests/unit/**`) join the same fast/slow vitest lanes.
 
 Every suite in `tests/unit` must pass in BOTH modes.
@@ -239,15 +218,8 @@ checkout of the private pack repo (`salvodicara/d20-folio-content`):
 ln -s ../d20-folio-content/content-pack content-pack
 ```
 
-**Task worktrees are composed automatically.** `just wt-new` replicates that
-same relative symlink into each new worktree whenever the pack sibling exists,
-so the pack-mode gate runs composed there **by default** — closing the gap where
-a pack-absent worktree would silently gate SRD-only and let a public API change
-break the pack undetected. When no pack sibling exists (external contributors),
-`wt-new` skips the link and the worktree gates SRD-only, unchanged (that is the
-correct, complete build for a public tree). As a backstop, `.githooks/pre-push`
-prints a loud WARNING if a worktree gates SRD-only while the pack actually
-exists on disk. Because the pack's files
+**Worktrees link the pack by hand** (the same `ln -s` with the pack's absolute
+path); without the link a worktree runs SRD-only. Because the pack's files
 REALLY live outside the repo root, pack tests import public-root helpers only
 through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
 `../../../` escapes), the vitest lanes resolve with `preserveSymlinks`, and the
@@ -264,34 +236,6 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
    before acting.
 3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage (its counts are test-pinned).
 
-### Claude Code and Codex parity
-
-The two agent harnesses intentionally read the same project contract and the same Impeccable skill.
-`AGENTS.md` is a tracked symlink to `CLAUDE.md`; `.agents/skills/impeccable` is a tracked symlink to
-the canonical `.claude/skills/impeccable` directory. Update only the canonical targets. This keeps
-instructions and UI craft behavior identical without vendoring a second skill copy that can drift.
-
-### AI agent tool stack and conflict policy
-
-One tool owns each layer; overlap is resolved by evidence and the weaker workflow is removed rather
-than stacked:
-
-| Layer                 | Canonical tool           | Repository use                                                                                                                                                                                                                                   |
-| --------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Development lifecycle | **Superpowers**          | Brainstorm/spec → plan → worktree → TDD → systematic debugging → review → verification. `just wt-new`, the no-PR integration flow, changesets, and owner gates are repository adapters.                                                          |
-| Specialist operations | **Selective ECC skills** | Living-doc governance, workspace/context audits, product/competition analysis, automation audits, browser QA, security reviews, and eval harnesses. The monolithic plugin stays disabled because its always-on context cost is disproportionate. |
-| Capability discovery  | **Find Skills**          | Search the public ecosystem, then verify installs/adoption, publisher reputation, freshness, security, and overlap before recommending or installing.                                                                                            |
-| Session recall        | **claude-mem**           | Retrieve context and possible prior decisions, then verify them against the current request and operational evidence. Memory never overrides the fact owner; cloud sync is opt-in and secrets are forbidden.                                     |
-| Process improvement   | **Task Observer**        | Log skill/process observations outside worktrees at `~/.agents/state/d20-folio/skill-observations/log.md`; review them in batches so delivery is not interrupted.                                                                                |
-
-Project specialists remain on demand: `impeccable` for UI/UX, `graphify` for structural navigation,
-`ponytail`/`ponytail-review` for simplicity, and `grill-me` for genuinely ambiguous product intent.
-No tool wins because of branding or popularity alone; documented behavior, behavioral evaluations,
-security, maintenance, context cost, and fit to this repository decide. Technical conflicts are agent
-work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
-
----
-
 ## Common recipes
 
 ### I want to add a new spell
@@ -301,12 +245,11 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 2. Add an entry following the SrdSpellData shape.
 3. Bilingual EN + IT (golden rule 9 — Italian never empty; AI-translate with comment if no
    authoritative source).
-4. If the spell is on a class list, add the class id to the spell's `classes` field (resolved by
-   `getSpellsByClass` in `src/data/spells.ts`).
+4. If the spell is on a class list, add the class id to the spell's `classes` field.
 5. Write a unit test if anything non-trivial about its data (concentration flag,
    ritual tag, scaling, …).
 6. `pnpm changeset` → describe the addition.
-7. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+7. Commit; open a pull request.
 ```
 
 ### I want to add a new feat
@@ -324,7 +267,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 4. Add a unit test in tests/unit/feat-asi.test.ts (or a relevant file) if the feat
    carries a Grant.
 5. `pnpm changeset` → "Add Feat X".
-6. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+6. Commit; open a pull request.
 ```
 
 ### I want to add a new mechanic (new Grant kind)
@@ -340,7 +283,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 6. Add a unit test in tests/unit/grants-phase-c.test.ts pinning the new branch.
 7. Document the new kind in docs/MECHANICS.md.
 8. `pnpm changeset` (minor — schema add).
-9. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+9. Commit; open a pull request.
 ```
 
 ### I want to add a new SRD class subclass
@@ -356,7 +299,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 5. If a feature has a tracker, declare `mechanics.tracker`.
 6. If a feature has a rider, declare `mechanics.rider`.
 7. Add tests.
-8. `pnpm changeset`. Commit; converge + merge at the finish line.
+8. `pnpm changeset`. Commit; open a pull request.
 ```
 
 > **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`, checked by the
@@ -370,7 +313,7 @@ work. Escalate only the decision boundary in `docs/GOLDEN_RULES.md`.
 3. Fix the code so the test passes.
 4. Run the full suite locally: `pnpm test`.
 5. `pnpm changeset` (patch — bug fix).
-6. Commit; at the task's finish line, converge + merge (`docs/WORKTREES.md`).
+6. Commit; open a pull request.
 ```
 
 ### Build & data-file conventions
@@ -402,8 +345,8 @@ in `DESIGN.md` (the single design + UX system of record) + the canonical tokens 
 2. Build from the DESIGN.md system + its shared primitives ONLY; never re-invent a surface.
 3. Reuse the shared design-system primitives so a fix propagates (one component per job; a
    bespoke restyle of an existing job is a defect).
-4. Every commit ships its own `.changeset/*.md`; the converged branch passes the full `main`
-   pre-push CI (incl. the axe a11y surface gate, light + dark).
+4. Every commit ships its own `.changeset/*.md`; the PR passes CI, and Verify runs
+   the axe a11y surface gate (light + dark) after merge.
 ```
 
 ### I'm adding a new page / form / wizard step / modal (visual surface coverage)
@@ -438,7 +381,7 @@ viewport captures: the viewport is the modal/menu/popover's composition frame, w
 full-page shot would mostly record obscured content beneath it. `overlay: false` keeps a
 variant-limited inline state (such as an unfolded wizard step) on the full-page path.
 
-> **The final gate (design / i18n / surface work):** the pre-push hook does not run e2e — the
+> **The final gate (design / i18n / surface work):** CI does not run e2e — the
 > full matrix runs remotely on the merge (`verify.yml`, see "The gate split"). So before you
 > MERGE design / i18n / surface work, run the affected e2e specs locally (`pnpm test:e2e` for
 > the chromium leg, `pnpm test:e2e:all` for chromium **and** the Pixel-7 mobile project) and
@@ -573,17 +516,11 @@ The `/campaigns` security rules (`firestore.rules`) are verified by an emulator-
 — `tests/rules/firestore-rules.test.ts`, run via its own `vitest.rules.config.ts` and kept
 OUT of the plain unit suite (which never boots an emulator).
 
-**The gate is LOCAL-FIRST — independent of GitHub Actions minutes:**
-
 - **`pnpm test:rules`** runs the full `/campaigns` matrix against the Firestore emulator on a
   `demo-` project (emulator-only — no real Firebase, no cost). Run it whenever you touch the
   rules.
-- **The `main` pre-push hook is the real gate.** It runs `pnpm test:rules` automatically, but ONLY
-  when the integration push changes the rules surface (`firestore.rules` or `tests/rules/**`);
-  other `main` pushes skip it (no emulator boot → fast). Topic branches are checkpoints; a rules
-  change cannot enter `main` unverified, with zero Actions minutes.
-- **There is no remote rules job.** The `main` pre-push hook is the whole gate (it needs a JDK, which
-  `asdf install` provides); `deploy.yml`'s e2e-gated deploy ships the rules files themselves.
+- **CI's `rules (emulator)` job is the gate**: it runs the suite on every PR and every push to
+  `main`; `deploy.yml` ships the rules files themselves.
 
 **Requires a JDK** (the Firestore emulator is a JVM process) plus the Firebase CLI. The JDK is
 auto-managed via **asdf** — `.tool-versions` at the repo root pins a Temurin LTS, so `asdf install`
@@ -595,37 +532,29 @@ npm install -g firebase-tools    # the emulator runner (already present if you d
 pnpm test:rules
 ```
 
-The pre-push hook uses `java` from your PATH (asdf's Temurin) and, when the asdf shims aren't on
-PATH (e.g. an IDE's git), resolves the JDK pinned in `.tool-versions` directly from
-`~/.asdf/installs/java/`. If no JDK is found on a rules-changing push it fails with an `asdf install`
-hint rather than letting an unverified rules change through — no Homebrew JDK required.
-
 ---
 
 ## Mandatory rules summary
 
 - **TypeScript strict.** No `any`. No `!` (non-null assertion). No `eslint-disable`.
 - **Zero lint warnings.** `pnpm lint --max-warnings 0` must pass.
-- **Tests are mandatory for behavior.** Use Superpowers TDD and the cheapest lane that observes the
+- **Tests are mandatory for behavior.** Test-first (`tdd`), in the cheapest lane that observes the
   fact. Delete obsolete or duplicate tests with the behavior they no longer protect; test count is
   not a quality metric.
 - **Bilingual.** Every user-visible string is EN + IT. Italian never empty (golden rule 9).
 - **No `--no-verify`.** Ever. If a hook fails, fix the issue in the same commit.
 - **No dice rolling.** `Math.random()` is banned. Show formulas; the player rolls externally.
 - **Override-first.** Every derived value can be manually overridden.
-- **Small commits; sparse milestone pushes.** Each commit is one coherent step with its
-  `.changeset/*.md`; a topic branch may reach `origin` at genuine recoverable milestones, while
-  the converged `HEAD:main` integration remains the only push that runs the full local gate
-  (`docs/WORKTREES.md` — no PRs, never a bare push).
+- **Small commits, one branch, one pull request.** Each commit is one coherent step with its
+  `.changeset/*.md`; push the branch with an explicit refspec, never a bare push.
 - **Co-update docs.** A `.changeset/*.md` must be staged on every commit (the pre-commit hook
   enforces it; it feeds `CHANGELOG.md` at release time).
 - **New surface → new screenshot.** Adding a page / form / wizard step / modal means adding its
   canonical census entry (`tests/e2e/surface-census/index.ts` or an owned fragment) plus the
   temporary `surfaces.ts` runtime adapter. The route-coverage guard
   fails CI otherwise. See "I'm adding a new page / form / wizard step / modal" above.
-- **Rules change → emulator tests.** Touching `firestore.rules` / `tests/rules/**` runs
-  `pnpm test:rules` at pre-push (needs a JDK; emulator-only `demo-` project, no cost). See
-  "Firestore security rules".
+- **Rules change → emulator tests.** CI's `rules (emulator)` job runs `pnpm test:rules` on
+  every PR; run it locally when you touch the rules. See "Firestore security rules".
 
 ---
 
@@ -650,17 +579,6 @@ no release workflow in CI) and deployed separately, only on explicit owner go, t
 
 ---
 
-## Asking the owner questions
-
-Resolve implementation details, tool conflicts, and discoverable facts autonomously. Ask only at the
-decision boundary in `docs/GOLDEN_RULES.md`: genuine product/taste, cost/privacy, new external
-authority, irreversible/destructive action, or a durable decision conflict that evidence cannot
-resolve. Explain the recommendation in plain language and avoid technical questionnaires. When a
-product interview is genuinely useful, use Superpowers brainstorming or `grill-me` and keep each
-round focused.
-
----
-
 ## What this repo doesn't accept
 
 - **Math.random() anywhere.** Use deterministic formulas.
@@ -680,8 +598,7 @@ round focused.
 ## CI/CD pipeline (three workflows: verify ambiently, promote on demand)
 
 **The model: every merge to `main` is fully verified remotely and ambiently (free on the public
-runners); a deploy PROMOTES a verified SHA.** The local pre-push hook is the last line of defence
-BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
+runners); a deploy PROMOTES a verified SHA.** Exactly three workflows live in `.github/workflows/`:
 
 - **CI** (`ci.yml`) — the SRD-only gate on every push to `main` and every pull request, as three
   PARALLEL jobs (typecheck + lint ∥ unit ∥ build + budget) so the wall clock is the slowest lane.
@@ -706,7 +623,7 @@ BEFORE a merge lands. Exactly three workflows live in `.github/workflows/`:
 There is deliberately **no release workflow** — releases are owner-triggered, agent-executed
 (`just release`, synthesized changelog — golden rule 17). There is no remote pixel-diff or
 baseline-regen workflow either: the visual lane is on-demand and local (`VISUAL=1`, no committed
-baselines — see "Visual baselines" above), and the rules-emulator suite gates on the `main` pre-push.
+baselines — see "Visual baselines" above).
 
 Conventions every workflow keeps: `node-version-file: .tool-versions` (single-source Node version —
 the asdf pin the app ships from), least-privilege `permissions` (`contents: read`, plus

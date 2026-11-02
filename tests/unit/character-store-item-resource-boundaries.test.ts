@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ResourceSpec, SrdMagicItemData } from "@/data/types";
+import type { ItemResourceSpec, SrdMagicItemData } from "@/data/types";
 import {
   prepareItemResourceBoundary,
   prepareItemResourceBoundaryRevert,
@@ -20,7 +20,7 @@ const charges = {
   capacity: { kind: "fixed", amount: 5 },
   initial: { kind: "full" },
   recoveries: [{ trigger: { kind: "dawn" }, amount: { kind: "full" } }],
-} satisfies ResourceSpec;
+} satisfies ItemResourceSpec;
 
 const item = { id: "batch-wand", resources: [charges] } satisfies CatalogueItem;
 

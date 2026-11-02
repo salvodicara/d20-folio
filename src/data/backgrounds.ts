@@ -1,6 +1,6 @@
 import type { Grant } from "@/lib/grants";
 import { skillNameToId } from "@/lib/compute";
-import type { SrdBackgroundData, SrdIndex, BackgroundEquipmentOption } from "./types";
+import type { SrdBackgroundData, BackgroundEquipmentOption } from "./types";
 import {
   STARTING_EQUIPMENT_BY_BG,
   resolveStartingEquipment,
@@ -111,7 +111,7 @@ export const SRD_BACKGROUNDS: SrdBackgroundData[] = mergePack(
   startingEquipment: STARTING_EQUIPMENT_BY_BG[raw.id],
 }));
 
-export const BACKGROUNDS_BY_ID: SrdIndex<SrdBackgroundData> = new Map(
+export const BACKGROUNDS_BY_ID: ReadonlyMap<string, SrdBackgroundData> = new Map(
   SRD_BACKGROUNDS.map((bg) => [bg.id, bg])
 );
 
@@ -135,10 +135,6 @@ export function findBackground(value: string): SrdBackgroundData | undefined {
 
 export function getBackground(id: string): SrdBackgroundData | undefined {
   return BACKGROUNDS_BY_ID.get(id);
-}
-
-export function getAllBackgroundIds(): string[] {
-  return SRD_BACKGROUNDS.map((bg) => bg.id);
 }
 
 /**

@@ -79,7 +79,7 @@ const {
   // wiring tests still observe the resulting pointer/round without a real Firestore txn).
   advanceEncounterTurnMock: vi.fn<
     typeof import("@/features/campaigns/campaign-io").advanceEncounterTurn
-  >(() => Promise.resolve()),
+  >(() => Promise.resolve(undefined)),
   alertFixtureEnabled: { value: false },
 }));
 
@@ -271,9 +271,10 @@ beforeEach(() => {
         // orderedIds any more), exactly as the real transaction does.
         const next = dir === "next" ? advanceTurn(enc) : prevTurn(enc);
         useCampaignStore.getState().setEncounter(next);
+        return Promise.resolve(next.currentCombatantId);
       }
     }
-    return Promise.resolve();
+    return Promise.resolve(undefined);
   });
   useToastStore.setState({ toasts: [], timers: {} });
 });

@@ -42,7 +42,7 @@
  * ── Why it reads `dist/` (and how the gate runs it) ──────────────────────────
  * The truth lives in the emitted bundle, not the source — a manualChunks tweak or
  * a transitive import can move weight the source doesn't reveal. The gate
- * (pre-push + CI `build` job) runs this AFTER `vite build`, so `dist/` exists. Run
+ * (CI `build` job + Verify's composed budget) runs this AFTER `vite build`, so `dist/` exists. Run
  * locally with: `pnpm build && pnpm vitest run bundle-budget`. If `dist/` is
  * absent the guard FAILS LOUDLY with that instruction rather than passing on no
  * data — a budget you can skip by not building is no budget.
@@ -306,7 +306,7 @@ const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see A
 // `manualChunks` bucket the source module claims. So the pack corpus sat in the eager
 // `cockpit-engine` chunk while the lazy `srd-monsters` chunk merely imported it back.
 // The fix: `packMonsters` now arrives through the pack's ONE sub-entry alias,
-// `@pack/monsters` (`scripts/content-pack-mode.ts` → `packMonstersAliasTarget()`, mirrored
+// `@pack/monsters` (`scripts/content-pack-mode.ts` → `packAliases()`, mirrored
 // in the vite/vitest alias maps + the three tsconfig `paths`), and is REMOVED from the
 // barrel — so the corpus is reachable only from the lazy aggregate. SRD-only resolves the
 // sub-entry to the same typed-empty stub. docs/ARCHITECTURE.md → "The content-pack seam".

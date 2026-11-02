@@ -90,6 +90,9 @@ export function createFirestoreSessionLogStore(
         snap.docs.map(async (d) => ({
           id: d.id,
           lastAt: Number(d.data().lastAt),
+          ...(typeof d.data().notes === "string"
+            ? { notes: String(d.data().notes) }
+            : {}),
           items: [
             ...arrayItems(d.data().log),
             ...perEventItems(await getDocs(items(d.id))),
@@ -109,6 +112,9 @@ export function createFirestoreSessionLogStore(
         { schema: 1, log: arrayUnion(item), lastAt: item.at },
         { merge: true }
       );
+    },
+    async saveNotes(sessionId, notes) {
+      await updateDoc(doc(logs, sessionId), { notes });
     },
     subscribe(sessionId, onItems, onError) {
       // Two listeners, one log: emit once both have answered, then on every change.

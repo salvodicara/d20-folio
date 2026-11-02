@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router";
-import { lazy } from "react";
+import { lazy, Suspense } from "react";
 import { AppShell } from "./AppShell";
 import { importCockpit, importCampaigns } from "./route-prefetch";
 import { ensureSrdKind } from "@/i18n";
@@ -101,6 +101,21 @@ const SharedCharacterView = lazy(() =>
 // DEV-ONLY living type specimen of the Gilded Plate system (BG3-identity
 // epic) — lazy like every route; the prod branch is a stub so Rolldown drops
 // the chunk from production builds entirely.
+// The new campaign page replaces the old hub only in the VITE_NEW_UI preview build.
+const NEW_UI = import.meta.env.VITE_NEW_UI === "1";
+const CampaignScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/campaign/ui/CampaignScreen").then((m) => ({
+        default: m.CampaignScreen,
+      }))
+    )
+  : null;
+
+// The new UI's frame, mounted only around the screens already rebuilt (same flag).
+const NewAppShell = NEW_UI
+  ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
+  : null;
+
 // The new UI's design-system stories (/ui): dev and the VITE_NEW_UI preview only, stripped from production.
 const UiStoriesPage =
   import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1"
@@ -176,6 +191,20 @@ const router = createBrowserRouter(
 
       {/* Protected — the new flat-hub shell */}
       <Route element={<AuthGuard />}>
+        {/* VITE_NEW_UI: the rebuilt screens live in the new frame. */}
+        {NewAppShell && CampaignScreen && (
+          <Route
+            element={
+              <Suspense fallback={null}>
+                <NewAppShell />
+              </Suspense>
+            }
+          >
+            <Route errorElement={<RouteErrorBoundary variant="region" />}>
+              <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
+            </Route>
+          </Route>
+        )}
         <Route element={<AppShell />}>
           {/* In-shell error net — a render crash on any surface (e.g. a malformed
               character doc) shows a recoverable panel in the content area while the
@@ -194,7 +223,9 @@ const router = createBrowserRouter(
             <Route path="/characters/:characterId/level-up" element={<LevelUpWizard />} />
             {/* Campaigns */}
             <Route path="/campaigns" element={<CampaignsListPage />} />
-            <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
+            {!CampaignScreen && (
+              <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
+            )}
             {/* T4 — DM reads a party member's full sheet, read-only. */}
             <Route
               path="/campaigns/:campaignId/sheets/:memberUid"

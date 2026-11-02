@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Pre-commit hook (LEAN): changeset doc-guard + lint-staged only. Tests are run
-# focally while a milestone is engineered; no branch checkpoint runs a suite.
-# The FULL gate (typecheck + lint --max-warnings 0 + test:coverage over BOTH
-# lanes + build + budget) runs exactly once when finished work targets main
-# (see .githooks/pre-push; ci.yml mirrors main remotely).
-# Owner decision 2026-08-12 (golden rule 14).
+# Pre-commit hook (LEAN): changeset doc-guard + lint-staged only.
+# CI and Verify are authoritative; local hooks only format and check the changeset.
+# ci.yml runs typecheck, lint, unit, build, budget and rules on every pull
+# request; verify.yml adds the composed suite and e2e after merge.
 # Install: git config core.hooksPath .githooks   ·   NEVER use --no-verify.
 
 set -euo pipefail
@@ -25,4 +23,4 @@ fi
 # ── Lint + format staged files only (fast) ────────────────────────────────────
 pnpm lint-staged
 
-echo "==> Pre-commit OK. (The sole full gate runs for the finished push to main.)"
+echo "==> Pre-commit OK. (The full gate runs in CI on the pull request.)"

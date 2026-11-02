@@ -1,7 +1,7 @@
 {
   "name": "d20-folio-functions",
   "version": "0.1.0",
-  "description": "Cloud Functions for d20 Folio — bug-report → GitHub issue (OWN-37) and new-user signup email (OWN-38).",
+  "description": "Cloud Functions for d20 Folio: bug reports to GitHub issues, the owner digest mail, account deletion, role claims, the billing kill switch, and link previews.",
   "private": true,
   "type": "commonjs",
   "main": "lib/index.js",
@@ -13,14 +13,10 @@
     "build:watch": "tsc --watch",
     "gcp-build": "node -e \"const fs=require('node:fs');for(const file of ['lib/index.js']){const stat=fs.statSync(file,{throwIfNoEntry:false});if(!stat?.isFile()||stat.size===0)throw new Error('Missing Functions runtime artifact: '+file)}\"",
     "lint": "eslint .",
-    "test": "vitest run",
-    "serve": "npm run build && firebase emulators:start --only functions",
-    "shell": "npm run build && firebase functions:shell",
-    "deploy": "firebase deploy --only functions"
+    "test": "vitest run"
   },
   "dependencies": {
     "@google-cloud/billing": "^5.1.2",
-    "@google-cloud/functions-framework": "^5.0.2",
     "@octokit/rest": "^22.0.1",
     "@resvg/resvg-js": "^2.6.2",
     "firebase-admin": "^13.10.0",
@@ -30,7 +26,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/nodemailer": "^8.0.0",
-    "esbuild": "0.28.2",
     "eslint": "^10.4.1",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.60.1",

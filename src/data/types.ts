@@ -23,8 +23,12 @@ import type { Locale } from "@/lib/locale";
  * other members are non-SRD provenance tags — they drive the licensing
  * partition. (Everything in `src/data` is tagged `"SRD"` — the enforced public
  * invariant; the other members exist for the content pack's provenance tags.)
+ * `"Homebrew"` marks a player's or DM's own content read as catalogue data; it
+ * belongs to no book.
  */
-export type SrdSource = "SRD" | "Wiki" | "Faerun" | "Eberron" | "Exotic" | "Lorwyn";
+// One line on purpose: the partition guard sanctions the book names on this line only.
+// prettier-ignore
+export type SrdSource = "SRD" | "Wiki" | "Faerun" | "Eberron" | "Exotic" | "Lorwyn" | "Homebrew";
 
 // ============================================================
 // Shared Primitives
@@ -228,65 +232,65 @@ export type { ResourceRecoveryTrigger } from "@/types/resource";
 import type { ResourceRecoveryTrigger } from "@/types/resource";
 
 /** One physical dice instruction the table resolves (e.g. `1d6 + 1`). */
-export interface ResourceEnteredRoll {
+export interface ItemResourceEnteredRoll {
   dice: number;
   sides: number;
   modifier?: number;
 }
 
 /** Display unit of one typed item resource; keys the i18n label pair. */
-export type ResourceUnit = "charges" | "uses" | "beads" | "rounds";
+export type ItemResourceUnit = "charges" | "uses" | "beads" | "rounds";
 
-export type ResourceCapacitySpec =
+export type ItemResourceCapacitySpec =
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
-export type ResourceInitialSpec =
+export type ItemResourceInitialSpec =
   | { kind: "full" }
   | { kind: "empty" }
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
-export type ResourceRecoveryAmount =
+export type ItemResourceRecoveryAmount =
   | { kind: "full" }
   | { kind: "fixed"; amount: number }
-  | { kind: "entered-roll"; roll: ResourceEnteredRoll };
+  | { kind: "entered-roll"; roll: ItemResourceEnteredRoll };
 
-export interface ResourceRecoverySpec {
+export interface ItemResourceRecoverySpec {
   trigger: ResourceRecoveryTrigger;
-  amount: ResourceRecoveryAmount;
+  amount: ItemResourceRecoveryAmount;
 }
 
 /** Structured consequence of a depletion band; never free-text prose. */
-export interface ResourceDepletionOutcome {
+export interface ItemResourceDepletionOutcome {
   kind: "set-item-disposition";
   disposition: "destroyed" | "nonmagical";
 }
 
 /** One inclusive d20 band; a valid rule's bands cover 1–20 without overlap. */
-export interface ResourceDepletionBand {
+export interface ItemResourceDepletionBand {
   min: number;
   max: number;
-  outcomes: ReadonlyArray<ResourceDepletionOutcome>;
+  outcomes: ReadonlyArray<ItemResourceDepletionOutcome>;
 }
 
 /**
  * Consequence of spending the last unit: either an entered-d20 table the
  * player resolves physically, or a deterministic outcome that always fires.
  */
-export type ResourceDepletionRule =
-  | { kind: "entered-d20"; bands: ReadonlyArray<ResourceDepletionBand> }
-  | { kind: "deterministic"; outcomes: ReadonlyArray<ResourceDepletionOutcome> };
+export type ItemResourceDepletionRule =
+  | { kind: "entered-d20"; bands: ReadonlyArray<ItemResourceDepletionBand> }
+  | { kind: "deterministic"; outcomes: ReadonlyArray<ItemResourceDepletionOutcome> };
 
 /** Typed, instance-owned mutable pool declared by one catalogue item. */
-export interface ResourceSpec {
+export interface ItemResourceSpec {
   kind: "counter";
   id: string;
-  unit: ResourceUnit;
-  capacity: ResourceCapacitySpec;
-  initial: ResourceInitialSpec;
-  recoveries?: ReadonlyArray<ResourceRecoverySpec>;
-  onEmpty?: ResourceDepletionRule;
+  unit: ItemResourceUnit;
+  capacity: ItemResourceCapacitySpec;
+  initial: ItemResourceInitialSpec;
+  recoveries?: ReadonlyArray<ItemResourceRecoverySpec>;
+  onEmpty?: ItemResourceDepletionRule;
 }
 
 /** Level-gated override for a tracker — applied when character level ≥ `from` */
@@ -2064,6 +2068,19 @@ export interface CompanionUpgrade {
   minLevel: number;
 }
 
+/** Movement modes in feet — the one shape companions, Wild Shape Beasts and monsters share. */
+export type CreatureSpeeds = Readonly<
+  Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>
+>;
+
+/** Senses beyond ordinary sight, in feet (Passive Perception is not a sense here). */
+export type CreatureSenses = {
+  darkvisionFt?: number;
+  blindsightFt?: number;
+  tremorsenseFt?: number;
+  truesightFt?: number;
+};
+
 /** A summoned companion's resolvable stat block (Artificer constructs). */
 export interface CompanionStatBlock {
   /** AC = `base` (+ the owner's `ability` modifier, if set). */
@@ -2101,9 +2118,7 @@ export interface CompanionStatBlock {
    * (kept for the existing Artificer constructs). When set, the resolver
    * exposes the full map AND derives a `speed` summary string from `walk`.
    */
-  speeds?: Readonly<
-    Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>
-  >;
+  speeds?: CreatureSpeeds;
   /**
    * Fixed ability scores (Beast Master beasts). The resolver derives each
    * modifier and a save bonus — when `pbToChecks` is set (Primal Bond), the
@@ -2146,12 +2161,7 @@ export interface CompanionStatBlock {
    * present are listed. Passive Perception is fixed in the stat block (10) so
    * it isn't modeled here.
    */
-  senses?: {
-    darkvisionFt?: number;
-    blindsightFt?: number;
-    tremorsenseFt?: number;
-    truesightFt?: number;
-  };
+  senses?: CreatureSenses;
   /**
    * `true` when the companion adds the OWNER's Proficiency Bonus to every
    * ability check and saving throw it makes (Steel Defender's "Steel Bond",
@@ -2235,7 +2245,7 @@ export interface BeastStatBlock {
    * {@link CompanionStatBlock.speeds} record shape. Stamped into the character's
    * `speedOverride` (walk) + `speedOverrides` (fly/swim/climb/burrow).
    */
-  speeds: Readonly<Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>>;
+  speeds: CreatureSpeeds;
   /** The Beast's six ability scores — stamped into `abilityScores` (STR/DEX/CON
    *  replace yours; the presenter's effective-score family reads from that field). */
   abilityScores: Readonly<Record<AbilityCode, number>>;
@@ -2243,12 +2253,7 @@ export interface BeastStatBlock {
   attacks: ReadonlyArray<BeastAttack>;
   /** The Beast's own senses beyond ordinary sight (mirrors {@link CompanionStatBlock.senses});
    *  rendered on the read-only reference card. */
-  senses?: {
-    darkvisionFt?: number;
-    blindsightFt?: number;
-    tremorsenseFt?: number;
-    truesightFt?: number;
-  };
+  senses?: CreatureSenses;
   /** Stable ids of the Beast's always-on traits (`trait.pack-tactics`); names in
    *  the `beasts` catalogue. Reference-card display only — narrative, never a grant. */
   traits?: ReadonlyArray<string>;
@@ -2707,7 +2712,7 @@ export interface MonsterStatBlock {
   initiative?: number;
   hp: { average: number; formula: string }; // formula compact: "9d8+18"
   /** Movement in feet; reuses the Beast/Companion record shape + hover. */
-  speeds: Readonly<Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>>;
+  speeds: CreatureSpeeds;
   /** "Fly 60 ft. (hover)". */
   hover?: true;
   /**
@@ -2734,11 +2739,7 @@ export interface MonsterStatBlock {
   conditionImmunities?: ReadonlyArray<MonsterConditionImmunity>;
   qualifiedDefenses?: ReadonlyArray<QualifiedDefense | QualifiedDefenseNote>;
 
-  senses?: {
-    darkvisionFt?: number;
-    blindsightFt?: number;
-    tremorsenseFt?: number;
-    truesightFt?: number;
+  senses?: CreatureSenses & {
     /** "blindsight 60 ft. (blind beyond this radius)". */
     blindBeyond?: true;
     /** Darkvision "(unimpeded by magical Darkness)" — the recurring 2024
@@ -3425,7 +3426,7 @@ export interface SrdMagicItemData {
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /** Typed, instance-owned mutable pools. Prose and grants may consume a
    * resource by id, but never redeclare its capacity or recovery. */
-  resources?: ReadonlyArray<ResourceSpec>;
+  resources?: ReadonlyArray<ItemResourceSpec>;
   /**
    * S9 — a CONSUMED buff potion's timed duration, in COMBAT ROUNDS (1 round =
    * 6 seconds, so 1 minute = 10, 1 hour = 600). When set, drinking the potion
@@ -3497,6 +3498,3 @@ export type HomebrewWeaponFacts = Pick<SrdEquipmentData, "mastery">;
 export type HomebrewWeaponMechanics = HomebrewItemMechanics & {
   readonly [Key in keyof HomebrewWeaponFacts]?: HomebrewWeaponFacts[Key];
 };
-
-/** Map of SRD entity types by ID for fast lookup */
-export type SrdIndex<T extends { id: string }> = Map<string, T>;

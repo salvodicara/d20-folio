@@ -74,6 +74,17 @@ are never deleted; any change to a stored shape goes through `live-data-migratio
 
 ## Next, after the top ten
 
+**Scheduled right after item 4 (Coordinator, 2026-11-02): the members' campaign write rule is at
+the rules' expression budget.** One `allow update` evaluates every member move in a chain, and
+the 8-revoke effect-op batch already spends nearly the whole per-request budget: one extra
+check on that path made a passing test fail (found in #505, which moved the kept fight to its own
+document to avoid it). The next small feature will hit the same wall. Fix: split the path, so
+no rule sits near the limit. Each member move gets its own small `allow update` alternative,
+gated first by which top-level keys it touches. Or move bulk validation into the data's shape:
+for example, effect operations as one document each, as the session log's per-item documents.
+Same emulator coverage, plus a budget test that runs each move at its largest legal size.
+Ships with the deploy (rules).
+
 11. **Split `smart-tracker.ts` (9.7k lines, 139 functions)** into `trackers/`, `weapon-attacks/`,
     `actions/`, `lifecycle/` and `turn-economy/`, behind a re-export barrel. This is a move only.
 12. **Shared helpers** replace the scattered copies: `dice-expr` (parse, mean, max: four copies

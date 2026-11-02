@@ -1,4 +1,4 @@
-import type { LogItem, PlayEvent } from "./types";
+import type { LogItem, PlayEvent, SeenRound } from "./types";
 
 /** The newest session of a table: its id and when its last item was appended. */
 export interface SessionHead {
@@ -12,8 +12,10 @@ export interface SessionHead {
  */
 export interface SessionLogStore {
   latest(): Promise<SessionHead | null>;
-  /** The newest sessions first, with their items (a one-shot read). */
-  recent(limit: number): Promise<Array<SessionHead & { items: LogItem[] }>>;
+  /** The newest sessions first, with their items and their text (a one-shot read). */
+  recent(
+    limit: number
+  ): Promise<Array<SessionHead & { items: LogItem[]; notes?: string }>>;
   /** `touch: false` appends without moving the session's `lastAt`: a fix written into
    *  an older session must not make it the latest, or tonight's gestures would land
    *  there. */
@@ -23,6 +25,10 @@ export interface SessionLogStore {
     onItems: (items: LogItem[]) => void,
     onError?: (error: unknown) => void
   ): () => void;
+  /** Replace the session's text (the Diario's «Cronaca della sessione»), last writer
+   *  wins. The play log is the one session record, so the text lives on it. Never moves
+   *  `lastAt`; rejects when the session does not exist. */
+  saveNotes(sessionId: string, notes: string): Promise<void>;
 }
 
 /** A session closes by itself after this much silence; the next gesture opens a new one. */
@@ -77,6 +83,8 @@ export function createSessionRecorder(deps: {
   uid: string;
   now?: () => Date;
   newId?: () => string;
+  /** The fight this device sees right now, stamped on every recorded event. */
+  seen?: () => SeenRound | undefined;
 }): SessionRecorder {
   const now = deps.now ?? (() => new Date());
   const newId = deps.newId ?? (() => crypto.randomUUID());
@@ -85,7 +93,14 @@ export function createSessionRecorder(deps: {
     const named = options?.sessionId;
     const sessionId = named ?? nextSessionId(await deps.store.latest(), at);
     const id = options?.id ?? newId();
-    const item: LogItem = { ...draft, id, by: deps.uid, at: at.getTime() };
+    const seen = draft.type === "event" ? deps.seen?.() : undefined;
+    const item: LogItem = {
+      ...draft,
+      id,
+      by: deps.uid,
+      at: at.getTime(),
+      ...(seen ? { seen: { encounterId: seen.encounterId, round: seen.round } } : {}),
+    };
     await deps.store.append(
       sessionId,
       item,
@@ -108,7 +123,7 @@ export function createSessionRecorder(deps: {
 export function createMemorySessionLogStore(): SessionLogStore & {
   items(sessionId: string): LogItem[];
 } {
-  const logs = new Map<string, { items: LogItem[]; lastAt: number }>();
+  const logs = new Map<string, { items: LogItem[]; lastAt: number; notes?: string }>();
   const listeners = new Map<string, Set<(items: LogItem[]) => void>>();
   return {
     latest() {
@@ -123,6 +138,7 @@ export function createMemorySessionLogStore(): SessionLogStore & {
         id,
         lastAt: log.lastAt,
         items: [...log.items],
+        ...(log.notes === undefined ? {} : { notes: log.notes }),
       }));
       heads.sort((a, b) => b.lastAt - a.lastAt);
       return Promise.resolve(heads.slice(0, limit));
@@ -141,6 +157,12 @@ export function createMemorySessionLogStore(): SessionLogStore & {
       listeners.set(sessionId, set);
       onItems([...(logs.get(sessionId)?.items ?? [])]);
       return () => set.delete(onItems);
+    },
+    saveNotes(sessionId, notes) {
+      const log = logs.get(sessionId);
+      if (!log) return Promise.reject(new Error(`no session ${sessionId}`));
+      log.notes = notes;
+      return Promise.resolve();
     },
     items: (sessionId) => [...(logs.get(sessionId)?.items ?? [])],
   };

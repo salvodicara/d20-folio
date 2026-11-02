@@ -88,7 +88,7 @@ describe("magic-item activation wiring", () => {
     expect(restored?.itemResources?.[BOOTS_INSTANCE_ID]?.resources.charges?.current).toBe(
       4
     );
-    expect(restored?.activeFeatures).not.toContain(BOOTS_ACTIVE_KEY);
+    expect(restored?.activeFeatures ?? []).not.toContain(BOOTS_ACTIVE_KEY);
     expect(restored?.effectTimers?.[BOOTS_ACTIVE_KEY]).toBeUndefined();
   });
 });

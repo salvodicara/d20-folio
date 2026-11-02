@@ -1,0 +1,39 @@
+{
+  "fight": {
+    "listTitle": "Initiative · round {{round}}",
+    "fighters_one": "{{count}} combatant",
+    "fighters_other": "{{count}} combatants",
+    "now": "Now",
+    "down": "Down",
+    "feedTitle": "In this fight",
+    "feedEmpty": "Nothing yet: actions show up here as you play.",
+    "roundLine": "Round {{n}} · {{line}}",
+    "idleTitle": "No fight running",
+    "idleHelp": "It starts by itself when the first player rolls initiative from their sheet. Anyone who comes later joins anyway.",
+    "pastTitle": "Past fights",
+    "pastEmpty": "Fights you play show up here, with their rounds and how they ended.",
+    "victory": "won",
+    "ended": "closed",
+    "rollLabel": "Your d20",
+    "rollHelp": "Type the number the die shows: the sheet adds your bonus ({{bonus}}).",
+    "rollTotal": "With your bonus ({{bonus}}): {{total}}.",
+    "rollDone": "Initiative {{total}}: you're in the fight.",
+    "back": "Back one turn",
+    "end": "End fight",
+    "reopen": "Reopen the last fight",
+    "passDone": "Turn passed.",
+    "backDone": "Turn stepped back.",
+    "endDone": "Fight ended.",
+    "reopenDone": "Fight reopened where it stopped.",
+    "moved": "The fight has already changed: look again and retry.",
+    "tooLate": "Too late to undo: the fight has moved on.",
+    "failed": "That didn't go through: try again in a moment.",
+    "anyonePasses": "Anyone can pass the turn: if someone is distracted, the fight doesn't stall.",
+    "suggest": {
+      "enemies-defeated": "Every enemy is down. End the fight?",
+      "rest": "The party rested. End the fight?",
+      "idle": "Nobody has touched the fight for an hour. End it?"
+    },
+    "mustRoll": "Must roll"
+  }
+}

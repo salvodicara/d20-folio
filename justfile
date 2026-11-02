@@ -12,7 +12,7 @@ setup:
     pnpm install
     npm --prefix functions ci --prefer-offline --no-audit
     git config core.hooksPath .githooks
-    @echo "✓ Git hooks installed (.githooks/pre-push)"
+    @echo "✓ Git hooks installed (.githooks/pre-commit)"
 
 # ─── Development ───────────────────────────────────────────
 
@@ -90,7 +90,7 @@ pack-fresh:
 
 # The bundle budget on the COMPOSED build, the one `deploy.yml` ships. CI's `build +
 # budget` job builds SRD-only, so the private pack's growth (its EN text rides the
-# eager closure) is measured here, in Verify's `budget (composed)` job and at deploy
+# eager closure) is measured here, in Verify's `unit + budget (composed)` job and at deploy
 # time. Needs `content-pack` linked to the pack's origin/main.
 budget-pack: pack-fresh
     @test -e content-pack/index.ts || { echo "✗ content-pack is not linked: link the pack (its origin/main) first."; exit 1; }

@@ -128,6 +128,7 @@ export function useCampaignSubscription(campaignId: string | undefined): void {
     storeSubscribe: campaignStoreSubscribe,
     selectSave: selectCampaignSave,
     subscribeDevBypass: subscribeToCampaign,
-    createDevBypassSave: createDevCampaignSave,
+    // Development builds only: a production build drops the dev writer and its fixtures.
+    ...(import.meta.env.DEV ? { createDevBypassSave: createDevCampaignSave } : {}),
   });
 }

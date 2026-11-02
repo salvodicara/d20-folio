@@ -38,16 +38,18 @@ export function Panel({
   title,
   aside,
   foot,
+  className,
   children,
 }: {
   color?: PanelColor;
+  className?: string;
   title: ReactNode;
   aside?: ReactNode;
   foot?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section className="f-pn" data-c={color}>
+    <section className={className ? `f-pn ${className}` : "f-pn"} data-c={color}>
       <PanelHeader title={title} aside={aside} />
       <div className="f-pnb">{children}</div>
       {foot && <div className="f-pn-foot">{foot}</div>}

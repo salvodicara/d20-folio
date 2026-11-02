@@ -2,7 +2,8 @@ name: Verify
 
 # The COMPOSED behavioural verdict, once per merge to main:
 # the full Playwright e2e matrix (chromium + mobile + portrait-sw) sharded
-# across parallel runners, plus the composed unit suite — both against the same
+# across parallel runners, the offline proof, plus the composed unit suite — all
+# against the same
 # composition that deploys (the private content pack checked out and landed at
 # ./content-pack, the seam deploy.yml uses). Public-repo Actions minutes are
 # free, so every main SHA carries a full verdict AMBIENTLY; `deploy.yml` then
@@ -11,8 +12,12 @@ name: Verify
 # ci.yml is the SRD-only twin (the public tree's own composition, push + PR);
 # this workflow is the composed one. Both must stay green (GOLDEN_RULES Vincoli #3).
 #
-# workflow_dispatch exists to re-verify a SHA whose push run was superseded
-# (concurrency cancels an in-flight run when a newer merge lands).
+# workflow_dispatch exists to re-verify a SHA (for example with a newer pack).
+#
+# On main a running Verify always finishes: with several lanes merging,
+# cancelling the in-flight run meant main never got a full verdict. GitHub keeps
+# at most one pending run per group and replaces older pending ones, so each
+# finished run is a full verdict on a recent SHA. Any other ref still cancels.
 
 on:
   push:
@@ -24,82 +29,79 @@ permissions:
 
 concurrency:
   group: verify-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  # The pack commit this run composes, resolved ONCE, so every job tests the same
+  # composition even if a pack merge lands mid-run (or while the run is pending).
+  # deploy.yml reads the `verified-pack` artifact to deploy exactly that commit.
+  pack:
+    name: pin the pack commit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      sha: ${{ steps.pin.outputs.sha }}
+    steps:
+      - id: pin
+        env:
+          GH_TOKEN: ${{ secrets.CONTENT_PACK_TOKEN }}
+        run: |
+          set -euo pipefail
+          sha="$(gh api repos/salvodicara/d20-folio-content/commits/main --jq .sha)"
+          echo "Composing pack $sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "$sha" > verified-pack.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: verified-pack
+          path: verified-pack.txt
+          retention-days: 90
+
   # No Firebase env here ON PURPOSE: the unit suite must pass with
   # VITE_FIREBASE_API_KEY unset (docs/CONTRIBUTING.md — unit tests never reach
   # Firebase), and an ambient env would silently mask a test that starts to.
   unit:
-    name: unit (composed)
+    name: unit + budget (composed)
+    needs: pack
     # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Checkout the private content pack
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
         with:
-          repository: salvodicara/d20-folio-content
           token: ${{ secrets.CONTENT_PACK_TOKEN }}
-          path: .pack
-      # existsSync(content-pack/index.ts) is what flips the `@pack` alias to
-      # pack mode (scripts/content-pack-mode.ts).
-      - name: Compose the content pack
-        run: |
-          mv .pack/content-pack ./content-pack
-          rm -rf .pack
-          test -f content-pack/index.ts
+          ref: ${{ needs.pack.outputs.sha }}
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: ".tool-versions"
           cache: "pnpm"
-      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
-        with:
-          just-version: "1.50.0"
       - run: pnpm install --frozen-lockfile
-      - name: Install Functions dependencies
-        run: npm ci
-        working-directory: functions
+      # ci.yml typechecks and lints the public tree; only here do the pack's
+      # sources join `tsc -b` and `eslint 'content-pack/**'`.
+      - name: Typecheck (composed)
+        run: pnpm typecheck
+      - name: Lint (composed)
+        run: pnpm lint --max-warnings 0
       - name: Unit tests (composed — pack suites included)
         run: pnpm test
-
-  # The composed bundle budget. ci.yml measures the SRD-only build; only this job
-  # and deploy.yml measure what actually ships (app + pack). Without it, three
-  # release reviews in a row met an over-budget precache on deploy day, long after
-  # the PR that grew it (2026-10-13 and 2026-10-16).
-  budget:
-    name: budget (composed)
-    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Checkout the private content pack
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          repository: salvodicara/d20-folio-content
-          token: ${{ secrets.CONTENT_PACK_TOKEN }}
-          path: .pack
-      - name: Compose the content pack
-        run: |
-          mv .pack/content-pack ./content-pack
-          rm -rf .pack
-          test -f content-pack/index.ts
-      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version-file: ".tool-versions"
-          cache: "pnpm"
-      - run: pnpm install --frozen-lockfile
-      # The same build command deploy.yml runs before its own budget gate.
+      # The composed bundle budget. ci.yml measures the SRD-only build; only this
+      # job and deploy.yml measure what actually ships (app + pack). Without it,
+      # three release reviews in a row met an over-budget precache on deploy day,
+      # long after the PR that grew it (2026-10-13 and 2026-10-16). It runs even
+      # when the unit step fails, so both verdicts always report. The same build
+      # command deploy.yml runs before its own budget gate.
       - name: Build (composed)
+        if: ${{ !cancelled() }}
         run: pnpm build
       - name: Bundle budget (composed)
+        if: ${{ !cancelled() }}
         run: pnpm test:budget
+
   e2e:
     name: e2e (shard ${{ matrix.shard }}/8)
+    needs: pack
     # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -116,17 +118,10 @@ jobs:
       VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - name: Checkout the private content pack
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
         with:
-          repository: salvodicara/d20-folio-content
           token: ${{ secrets.CONTENT_PACK_TOKEN }}
-          path: .pack
-      - name: Compose the content pack
-        run: |
-          mv .pack/content-pack ./content-pack
-          rm -rf .pack
-          test -f content-pack/index.ts
+          ref: ${{ needs.pack.outputs.sha }}
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -157,6 +152,44 @@ jobs:
   # artifact to open when Verify goes red. Short retention: the repo is public,
   # and failure screenshots can show composed (pack) content — same exposure
   # class as the deployed app itself (owner-accepted, soft-launch charter).
+  # The offline proof (playwright.offline.config.ts): a production-shaped build with
+  # the service worker, one online visit in Italian, then the sheet, spells and
+  # bestiary offline. Its own build and port, so it is not part of the shards.
+  offline:
+    name: e2e (offline)
+    needs: pack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
+        with:
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+          ref: ${{ needs.pack.outputs.sha }}
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Offline e2e
+        run: pnpm test:e2e:offline
+      - name: Upload the failure trace
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-offline-trace
+          path: test-results
+          retention-days: 3
+
   report:
     name: merged e2e report
     if: ${{ failure() }}

@@ -72,7 +72,7 @@ Try it at [d20-folio.web.app](https://d20-folio.web.app). It requires a free Goo
 | Functions     | Cloud Functions in `functions/` (2nd-gen, Node 24, region `europe-west1`), a standalone npm package                                                                                                   |
 | Offline / PWA | vite-plugin-pwa / Workbox                                                                                                                                                                             |
 | i18n          | react-i18next / i18next (single `common` namespace, EN + IT)                                                                                                                                          |
-| Testing       | Vitest 4 (unit + v8 coverage), Playwright (E2E, chromium; @axe-core/playwright for a11y)                                                                                                              |
+| Testing       | Vitest 4 (unit), Playwright (E2E, chromium; @axe-core/playwright for a11y)                                                                                                                            |
 | Tooling       | ESLint 10 + typescript-eslint, Prettier, @changesets/cli                                                                                                                                              |
 
 ### SRD-only by design
@@ -137,9 +137,8 @@ Configuration goes in `.env.local` (uncommitted; copy from `.env.example`). The 
 pnpm tsc -b && pnpm lint --max-warnings 0 && pnpm test --run && pnpm build
 ```
 
-Git hooks in `.githooks/` enforce this: pre-commit is fast (staged-file lint plus a changeset
-doc-guard), branch checkpoint pushes are immediate, and pre-push runs the full gate only for the
-finished push to `main`. A `justfile` collects common recipes.
+CI and Verify are authoritative; local hooks only format and check the changeset. The pre-commit hook in `.githooks/` runs
+staged-file lint and the changeset doc-guard; the full gate runs in CI on every pull request. A `justfile` collects common recipes.
 
 ### Deployment
 
@@ -156,7 +155,7 @@ The app deploys to Firebase Hosting at [d20-folio.web.app](https://d20-folio.web
 
 ## Contributing
 
-Contributions are welcome — start with [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) (first-time setup, the gate split, and the common recipes). The short version: `asdf install`, `pnpm install`, `git config core.hooksPath .githooks`, and the pre-commit/pre-push hooks enforce the rest.
+Contributions are welcome — start with [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) (first-time setup, the gate split, and the common recipes). The short version: `asdf install`, `pnpm install`, `git config core.hooksPath .githooks`, then the pre-commit hook and CI enforce the rest.
 
 ## How this was built
 
@@ -165,7 +164,7 @@ d20 Folio is 100% AI-written. Application code, tests, and most docs are produce
 and supervised by the maintainer ([@salvodicara](https://github.com/salvodicara)), who sets product
 direction, makes the decisions, and reviews the behavior without writing the code by hand.
 
-There is no human code review. The only quality gate is automated: TypeScript strict, ESLint at zero warnings, Vitest unit coverage thresholds, a production build, and a Playwright accessibility gate (`tests/e2e/a11y.spec.ts`) that runs axe across every surface in both themes and fails on any serious or critical issue. If it is green, it ships. The complete development journey lives in git history.
+There is no human code review. The only quality gate is automated: TypeScript strict, ESLint at zero warnings, the Vitest unit suite, a production build, and a Playwright accessibility gate (`tests/e2e/a11y.spec.ts`) that runs axe across every surface in both themes and fails on any serious or critical issue. If it is green, it ships. The complete development journey lives in git history.
 
 ## Attribution and license
 

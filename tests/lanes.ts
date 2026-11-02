@@ -5,7 +5,7 @@
  *
  *   • **fast** — `node` environment, jsdom-free. Pure-logic `.test.ts`
  *     (compute / grants / codec / smart-tracker / data). Seconds-per-file
- *     feedback; wired into the pre-commit hook (a quick smoke) and pre-push.
+ *     feedback; the lane to run while iterating (`pnpm test:fast`).
  *   • **slow** — `jsdom` environment. Every `.test.tsx` (render) PLUS the small
  *     set of `.test.ts` below that genuinely need a DOM (React hooks via
  *     `renderHook`, canvas, `localStorage`, `window`/`document` globals).

@@ -254,6 +254,29 @@ describe("mirrorEncounter", () => {
     expect(sync(log, ambush(true, [struck]))).toEqual(log);
   });
 
+  it("a mirror that missed rounds puts each beat under its own round on catch-up", () => {
+    // The DM's device stops mirroring after round 1 (it left the campaign page) and
+    // comes back in round 4: every beat must still land in the round it happened in.
+    const at = (id: string, round: number): CombatChronicleEvent => ({
+      ...hit,
+      id,
+      round,
+    });
+    const beats = [at("0", 1), at("1", 2), at("2", 3), at("3", 4)];
+    const log = sync(sync([], fight(1, beats.slice(0, 1))), fight(4, beats));
+    const rounds = buildReport(foldSession(log, { dmUid: DM })).flatMap((section) =>
+      "rounds" in section
+        ? section.rounds.map((r) => [r.round, r.entries.map((e) => e.id)])
+        : []
+    );
+    expect(rounds).toEqual([
+      [1, ["enc:77:ev:0"]],
+      [2, ["enc:77:ev:1"]],
+      [3, ["enc:77:ev:2"]],
+      [4, ["enc:77:ev:3"]],
+    ]);
+  });
+
   it("records each new round as the DM advances", () => {
     const log = sync(sync([], fight(1, [])), fight(2, []));
     expect(log.map((i) => i.id)).toEqual([

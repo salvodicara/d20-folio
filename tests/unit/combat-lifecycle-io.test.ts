@@ -1,0 +1,159 @@
+/**
+ * The combat lifecycle's writes and their undos, over an in-memory stand-in for the
+ * Firestore transaction (the rules side runs in tests/rules/combat-lifecycle.emulator).
+ */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const store = new Map<string, Record<string, unknown>>();
+const advance = vi.fn();
+
+vi.mock("@/lib/firebase", () => ({ db: {} }));
+vi.mock("firebase/firestore", () => ({
+  doc: (_db: unknown, ...path: string[]) => ({ path: path.join("/") }),
+  serverTimestamp: () => "now",
+  onSnapshot: vi.fn(),
+  runTransaction: async (
+    _db: unknown,
+    run: (txn: unknown) => Promise<unknown>
+  ): Promise<unknown> =>
+    run({
+      get: (ref: { path: string }) => {
+        const data = store.get(ref.path);
+        return Promise.resolve({
+          id: ref.path.split("/").at(-1),
+          exists: () => data !== undefined,
+          data: () => (data ? structuredClone(data) : undefined),
+        });
+      },
+      update: (ref: { path: string }, fields: Record<string, unknown>) => {
+        store.set(ref.path, { ...store.get(ref.path), ...fields });
+      },
+      set: (ref: { path: string }, data: Record<string, unknown>) => {
+        store.set(ref.path, structuredClone(data));
+      },
+      delete: (ref: { path: string }) => {
+        store.delete(ref.path);
+      },
+    }),
+}));
+vi.mock("@/features/campaigns/campaign-io", () => ({
+  advanceEncounterTurn: (...args: unknown[]) => Promise.resolve(advance(...args)),
+  toCampaignDoc: (id: string, data: Record<string, unknown>) => ({ ...data, id }),
+}));
+
+import {
+  endCombatNow,
+  passCombatTurn,
+  reopenLastCombat,
+  rollIntoCombat,
+} from "@/features/campaigns/combat-lifecycle-io";
+
+const member = (characterId: string | null) => ({
+  displayName: "x",
+  role: "player",
+  characterId,
+  character: characterId ? { name: characterId } : null,
+});
+const campaign = () => store.get("campaigns/camp") ?? {};
+const kept = () => store.get("campaigns/camp/combat/ended");
+const bonuses = { "pc-ana": 2, "pc-ben": 1 };
+
+beforeEach(() => {
+  store.clear();
+  advance.mockReset();
+  store.set("campaigns/camp", {
+    memberDetails: { dm: member(null), ana: member("char-ana"), ben: member("char-ben") },
+    encounterInit: {},
+  });
+});
+
+describe("a roll", () => {
+  it("starts the fight, and its undo takes the fight away", async () => {
+    const undo = await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    expect(campaign().encounter).toMatchObject({ currentCombatantId: "pc-ana" });
+    expect(await undo?.()).toBe(true);
+    expect(campaign().encounter).toBeNull();
+    expect(campaign().encounterInit).toEqual({});
+  });
+
+  it("that started the fight is not undone once someone else rolled", async () => {
+    const undo = await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    await rollIntoCombat("camp", { uid: "ben", roll: 18, bonuses });
+    expect(await undo?.()).toBe(false);
+    expect(campaign().encounter).not.toBeNull();
+  });
+
+  it("into a running fight is undone back to the previous roll", async () => {
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    await rollIntoCombat("camp", { uid: "ben", roll: 18, bonuses });
+    const undo = await rollIntoCombat("camp", { uid: "ben", roll: 4, bonuses });
+    expect(campaign().encounterInit).toEqual({ ana: 13, ben: 4 });
+    expect(await undo?.()).toBe(true);
+    expect(campaign().encounterInit).toEqual({ ana: 13, ben: 18 });
+    expect((campaign().encounter as { order: string[] }).order).toEqual([
+      "pc-ben",
+      "pc-ana",
+    ]);
+  });
+
+  it("taken back with no fight running does nothing", async () => {
+    expect(await rollIntoCombat("camp", { uid: "ana", roll: null, bonuses })).toBeNull();
+  });
+});
+
+describe("ending and reopening", () => {
+  it("an end keeps the fight; its undo reopens it", async () => {
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    const undo = await endCombatNow("camp");
+    expect(campaign().encounter).toBeNull();
+    expect(kept()).toMatchObject({ fight: { ended: { reason: "manual" } } });
+    expect(await undo?.()).toBe(true);
+    expect(campaign().encounter).toMatchObject({ currentCombatantId: "pc-ana" });
+    expect(kept()).toBeUndefined();
+  });
+
+  it("a reopen's undo ends the fight again for the same reason", async () => {
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    await endCombatNow("camp", { reason: "idle" });
+    const undo = await reopenLastCombat("camp");
+    expect(kept()).toBeUndefined();
+    expect(await undo?.()).toBe(true);
+    expect(kept()).toMatchObject({ fight: { ended: { reason: "idle" } } });
+  });
+
+  it("with no fight running, nothing ends; with nothing kept, nothing reopens", async () => {
+    expect(await endCombatNow("camp")).toBeNull();
+    expect(await reopenLastCombat("camp")).toBeNull();
+  });
+});
+
+describe("a pass", () => {
+  it("steps the turn, and its undo steps it back from where it landed", async () => {
+    advance.mockReturnValueOnce("monster-1").mockReturnValueOnce("pc-ana");
+    const undo = await passCombatTurn("camp", {
+      uid: "ben",
+      isDm: false,
+      expectedCurrentId: "pc-ana",
+    });
+    expect(advance).toHaveBeenLastCalledWith(
+      "camp",
+      "next",
+      { uid: "ben", isDm: false },
+      "pc-ana"
+    );
+    expect(await undo?.()).toBe(true);
+    expect(advance).toHaveBeenLastCalledWith(
+      "camp",
+      "prev",
+      { uid: "ben", isDm: false },
+      "monster-1"
+    );
+  });
+
+  it("that changed nothing has no undo", async () => {
+    advance.mockReturnValueOnce(undefined);
+    expect(
+      await passCombatTurn("camp", { uid: "ben", isDm: false, expectedCurrentId: "x" })
+    ).toBeNull();
+  });
+});

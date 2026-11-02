@@ -8,11 +8,7 @@ import path from "path";
 import { runI18nChecks } from "./scripts/i18n/check-i18n.ts";
 import {
   fsAllowRoots,
-  packAliasTarget,
-  packItemArtAliasTarget,
-  packMonsterArtAliasTarget,
-  packEnProseAliasTarget,
-  packMonstersAliasTarget,
+  packAliases,
   packRuntimeMode,
 } from "./scripts/content-pack-mode.ts";
 
@@ -378,17 +374,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@pack/item-art": packItemArtAliasTarget(),
-      "@pack/monster-art": packMonsterArtAliasTarget(),
-      // The pack's lazy bestiary-data sub-entry, kept OFF the
-      // eager-reachable `@pack` barrel (docs/ARCHITECTURE.md → the content-pack
-      // seam). MUST precede "@pack": string aliases match by prefix.
-      "@pack/monsters": packMonstersAliasTarget(),
-      // The pack's lazy English prose (descriptions), loaded after first paint.
-      "@pack/i18n-en-prose": packEnProseAliasTarget(),
       // The content-pack seam (docs/ARCHITECTURE.md): the private pack when
       // present/enabled, else the typed-empty stub (the SRD-only build).
-      "@pack": packAliasTarget(),
+      ...packAliases(),
     },
   },
   // The dev server serves modules by REAL path; allow the pack's real

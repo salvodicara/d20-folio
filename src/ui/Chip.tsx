@@ -12,6 +12,14 @@ export function Chip({
   onClick?: () => void;
   children: ReactNode;
 }) {
+  // A chip that only shows a state is not a control (it may sit inside a link row).
+  if (!onClick && pressed === undefined) {
+    return (
+      <span className="f-chip" data-kind={kind}>
+        {children}
+      </span>
+    );
+  }
   return (
     <button
       type="button"

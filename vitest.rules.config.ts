@@ -12,26 +12,17 @@
  */
 import { defineConfig } from "vitest/config";
 import path from "path";
-import {
-  packAliasTarget,
-  packItemArtAliasTarget,
-  packMonsterArtAliasTarget,
-  packMonstersAliasTarget,
-} from "./scripts/content-pack-mode";
+import { packAliases } from "./scripts/content-pack-mode";
 
 export default defineConfig({
   // The emulator suites drive the one-off migration scripts, and the parent-cutover
   // migration reuses the app's play codec + character codec + SRD aggregate — so this
-  // lane needs the SAME module aliases as `vitest.config.ts`. String aliases match by
-  // prefix, so the `@pack` sub-entries stay ahead of `@pack`; `preserveSymlinks` keeps
+  // lane needs the SAME module aliases as `vitest.config.ts`; `preserveSymlinks` keeps
   // the pack's modules at their symlink path inside this repo root.
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "@pack/item-art": packItemArtAliasTarget(),
-      "@pack/monster-art": packMonsterArtAliasTarget(),
-      "@pack/monsters": packMonstersAliasTarget(),
-      "@pack": packAliasTarget(),
+      ...packAliases(),
       "@tests": path.resolve(__dirname, "./tests"),
       "@scripts": path.resolve(__dirname, "./scripts"),
     },

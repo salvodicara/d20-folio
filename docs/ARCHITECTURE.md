@@ -29,12 +29,11 @@ Zustand (client state) + React Router v7
 Firebase (Auth Google · Firestore + offline persistence · Storage · Hosting)
 Vitest (unit) + Playwright (E2E)
 @changesets/cli (SemVer + CHANGELOG)
-ESLint zero-warnings · Prettier · pre-commit + pre-push hooks (mandatory CI)
+ESLint zero-warnings · Prettier · pre-commit hook · CI on every PR
 ```
 
-Branch checkpoint pushes deliberately run no verification. The pre-push hook runs **typecheck +
-lint zero-warnings + the unit suite + coverage ≥ 80% + production build** exactly once, when the
-finished branch targets `main`. Never `--no-verify`.
+CI and Verify are authoritative; local hooks only format and check the changeset. CI (`ci.yml`) runs **typecheck + lint zero-warnings + the unit
+suite + production build + budget + rules** on every pull request. Never `--no-verify`.
 
 ---
 
@@ -105,7 +104,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   allowlisted account a failed download retries behind a "loading content" notice, never a
   stripped pack. `just e2e-pack` proves it on the emulators. Dev and tests keep composing
   `content-pack/` directly.
-- **`@pack/monsters` — the lazy bestiary-data sub-entry** (`packMonstersAliasTarget()`; pack mode →
+- **`@pack/monsters` — the lazy bestiary-data sub-entry** (`packAliases()`; pack mode →
   `content-pack/data/monsters/index.ts` — the barrel over the eight alphabetical tranche files
   `a-b.ts … t-z.ts`, mirroring the public `src/data/monsters/` split for parallel-safe authoring;
   SRD-only → the SAME `src/data/pack-empty.ts` stub, which exports
@@ -127,7 +126,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   KB gz across the same 14 chunks, `cockpit-engine` 387.7 → 386.3, entry unchanged at 61.81,
   precache flat at ~9044 KiB / 301 entries (the corpus moved chunks, it was never written twice).
 - **`@pack/monster-art` — canonical private portrait URLs**
-  (`packMonsterArtAliasTarget()`; pack mode → `content-pack/data/monster-art.ts`, SRD-only →
+  (`packAliases()`; pack mode → `content-pack/data/monster-art.ts`, SRD-only →
   `pack-empty.ts`). The public aggregate `src/data/monster-art.ts` merges public + private
   URL maps by stable id; the exact-id/dimension/weight guard
   (`tests/unit/monster-art.guard.test.ts`) requires one 672×840 WebP per database row at
@@ -137,7 +136,7 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   enter a one-year CacheFirst runtime cache only when viewed. Database art is derived at render
   from `srdId`, never copied into Firestore; custom monster uploads remain encounter/library data.
 - **`@pack/item-art` — private item-illustration URLs behind a corpus gate**
-  (`packItemArtAliasTarget()`; pack mode → `content-pack/data/item-art.ts`, SRD-only →
+  (`packAliases()`; pack mode → `content-pack/data/item-art.ts`, SRD-only →
   `pack-empty.ts`). The public aggregate `src/data/item-art.ts` keys every plate by
   **typed corpus id** (`equipment:<id>` / `magic:<id>`) so identically named mundane and magic
   objects cannot collide. Public files live as `{kind}--{id}.webp` in
@@ -197,10 +196,8 @@ setting content, the personal team fixtures, the pack dev scenarios) lives in th
   i18n-completeness locks hold in BOTH modes; the build-time leak-lock + parity checks cover the
   pack shards whenever the pack is enabled (`scripts/i18n/catalogue-io.ts`).
 - **Tests** — `content-pack/tests/unit/**` joins the same fast/slow vitest lanes ONLY in pack mode
-  (`PACK_JSDOM_TS_TESTS` in `tests/lanes.ts` mirrors the DOM-bound rule). The full gate (coverage
-  floors included) runs in pack mode; the SRD-only lane is
-  `pnpm typecheck:srd-only && pnpm test:srd-only && pnpm build:srd-only` (`just ci-srd-only`) — no
-  coverage floors, no pack suites. Suites in `tests/unit` must pass in both modes by construction
+  (`PACK_JSDOM_TS_TESTS` in `tests/lanes.ts` mirrors the DOM-bound rule). The composed gate runs in Verify; the SRD-only lane is
+  `pnpm typecheck:srd-only && pnpm test:srd-only && pnpm build:srd-only` (`just ci-srd-only`) — no pack suites. Suites in `tests/unit` must pass in both modes by construction
   (they iterate whatever the aggregates expose; bare pack ID slugs in allowlists are permitted).
 - **Composition is a symlink; nothing assumes physical nesting.** The maintainer composes the pack
   as a gitignored symlink to a sibling checkout of the private repo
@@ -385,7 +382,7 @@ cadence for such a pool; presenter copy names the activation trigger instead of 
 
 Some tracker rows are **DERIVED, not hand-declared** (golden rules 2 + 6). Legacy magic items still
 derive an item-id tracker temporarily, but every migrated mutable item instead declares catalogue
-`ResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
+`ItemResourceSpec` data and stores state under its physical `SrdEquipmentRef.instanceId`; and a feat/feature that
 grants **≥ 2 free-cast spells** (Fey/Shadow/Vampire-Touched, the multi-spell heritage feats) emits ONE
 INDEPENDENT 1/rest row PER SPELL via `resolveFreeCastFeatTrackers`, keyed `${featId}:${spellId}` — so
 casting one never locks the others (the prior shared-`total:2` counter deadlocked them). The row, the
@@ -780,7 +777,7 @@ requiring the original grant to remain equipped/known; redo regenerates expectat
 This atomicity is limited to the owner character document and does not include campaign-owned effects.
 
 Physical magic-item resources use a stricter instance-owned transition seam. Catalogue
-`ResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
+`ItemResourceSpec` data declares each counter, capacity/initial facts, exact recovery triggers and
 depletion consequences; one durable `SrdEquipmentRef.instanceId` identifies each physical copy, and
 `session.itemResources[instanceId]` is its only mutable owner. `lib/resources.ts` plans a pure
 whole-item compare-and-swap operation from an exact command and table-entered facts. The shared
@@ -1232,6 +1229,22 @@ false` separates placement from the first later trigger; `recurrence` covers rep
   (`encounter-world-command.undoAdversaryChronicleEvent`) and the mirror then retracts the line. The
   log carries no HP totals: the "(4/12 HP)" readout comes from the live beat (`chronicle-feed.ts`) and
   follows the monster card's `showExact` rule. Hidden (ambush) creatures stay out of a player's feed.
+
+  **The combat lifecycle is anyone's (2026-11-02).** A fight starts on the first initiative
+  roll, anyone passes or steps back a turn, ends it or reopens it (`combat-lifecycle.ts` plans
+  each move over the pure engine `encounter-lifecycle.ts`; `combat-lifecycle-io.ts` writes it
+  in one transaction and returns its undo). An ended fight moves to
+  `campaigns/{id}/combat/ended` and `encounter` goes back to null, so an older client reads it
+  as over. The rules grant each member move as its own narrow diff; the fight's contents stay
+  the DM's. A fight the DM started by hand (no `clock`) keeps the DM's order.
+
+  **The play log is the one session record (2026-11-02).** A session is its play log
+  (`campaigns/{id}/sessionLogs/{YYYY-MM-DD[-n]}`), opened by the first gesture and closed by a 6 h
+  gap; every device computes the same id. Its text (the Diario's «Cronaca della sessione») is the
+  log head's `notes` field, written whole by `saveSessionNotes` (last writer wins, never moves
+  `lastAt`; the rules let a member change only that field). The hand-made `campaigns/{id}/sessions`
+  docs are **legacy**: a read-only fallback by date for evenings older than the play log, and the
+  old Sessions page's data. No new write builds on them.
 
 - **Close** — `combat-chronicle-view.ts` localizes each feed line and `buildEncounterChapter`
   assembles the kept lines into one round-grouped markdown `##` chapter. At "End encounter" the DM's
@@ -1686,8 +1699,8 @@ _now_; lock 6 additionally makes a future leak impossible to ship.
 | `character-codec.test.ts` + team fixtures     | the `{schema,build,state}` round-trip + the 6 team fixtures render identically (canonical v3)                               |
 
 The fast/slow test lanes + table-driven per-entity consolidation are documented in
-`docs/CONTRIBUTING.md` (the gate split + smart test integration); coverage gates are ≥80% lines/
-stmts/fns, ≥75% branches.
+`docs/CONTRIBUTING.md` (the gate split + smart test integration). There is no coverage floor
+(owner, docs/GOLDEN_RULES.md: the test that pins the fact counts, not a percentage).
 
 ---
 
@@ -3058,7 +3071,7 @@ incident is visible in the admin inbox without the player having to file a bug r
 
 > The app's value depends on a fast first paint on a phone. This is the **measured baseline +
 > enforced ceilings**. A static guard (`tests/unit/bundle-budget.guard.test.ts`, run by `pnpm
-test:budget` AFTER `vite build`, in the CI `build` job + the pre-push hook) FAILS the build if any
+test:budget` AFTER `vite build`, in the CI `build` job and Verify's composed budget) FAILS the build if any
 > ceiling is crossed. Update BOTH the ceiling constant and this table in the same commit when a
 > ceiling is deliberately raised.
 
@@ -3549,9 +3562,8 @@ Two contracts keep this fast and leak-free under the free-tier NFR:
 ## Branch layout
 
 - `main` — release branch; tagged on every release (see `CHANGELOG.md` for the current version).
-- Per-task work lands via **one worktree + a branch-off-`main`, converged and merged to `main`
-  by the agent — no PRs** (the repo standard — see `docs/WORKTREES.md`); `main` stays the
-  integration branch.
+- Per-task work lands on a branch off `main` through a pull request; `main` stays the integration
+  branch.
 
 Each work item gets a `.changeset/*.md` describing its bump (`pnpm changeset`); releases
 are minted via `pnpm changeset:version` + a `vX.Y.Z` git tag.
