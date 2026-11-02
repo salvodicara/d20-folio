@@ -61,7 +61,7 @@ export function eligibleNewClasses(character: CharacterData): string[] {
 }
 
 /** The 2024 multiclass prerequisite floor — 13+ in a class's primary ability. */
-export const MULTICLASS_MIN_SCORE = 13;
+const MULTICLASS_MIN_SCORE = 13;
 
 /** One unmet prerequisite: the ability, the 13+ floor, the character's score. */
 export interface UnmetAbilityRequirement {

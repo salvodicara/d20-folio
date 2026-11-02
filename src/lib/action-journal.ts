@@ -22,7 +22,7 @@ import type {
 } from "@/types/action-journal";
 
 export const ACTION_JOURNAL_MAX_ACTIONS = 20;
-export const ACTION_JOURNAL_MAX_BYTES = 256 * 1024;
+const ACTION_JOURNAL_MAX_BYTES = 256 * 1024;
 export const ACTION_JOURNAL_MAX_PATH_DEPTH = 16;
 
 const MAX_COLLECTION_LENGTH = 1_024;
@@ -536,11 +536,11 @@ function actionBody(action: JournalAction | JournalActionDraft): string {
   });
 }
 
-export function actionJournalCanonicalJson(journal: ActionJournal): string {
+function actionJournalCanonicalJson(journal: ActionJournal): string {
   return canonicalJson(journal);
 }
 
-export function actionJournalByteLength(journal: ActionJournal): number {
+function actionJournalByteLength(journal: ActionJournal): number {
   return new TextEncoder().encode(actionJournalCanonicalJson(journal)).byteLength;
 }
 

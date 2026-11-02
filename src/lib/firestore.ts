@@ -121,7 +121,7 @@ function charDoc(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId);
 }
 
-export function publicCharacterProjectionRef(uid: string, charId: string) {
+function publicCharacterProjectionRef(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId, "public", "sheet");
 }
 

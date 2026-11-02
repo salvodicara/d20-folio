@@ -94,7 +94,7 @@ export function changeConcentration(
  * that very action. Null when the
  * world holds no matching engine concentration (the sheet's teardown is then complete).
  */
-export function endEngineConcentration(
+function endEngineConcentration(
   doc: CharacterDoc,
   droppedSpell: StoredConcentration,
   actionId: string

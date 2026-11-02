@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { concentrationValue } from "@/lib/concentration";
 import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
@@ -2936,5 +2937,60 @@ describe("characterStore — engine world across subscription echoes", () => {
     expect(JSON.stringify(useCharacterStore.getState().character?.session.world)).toBe(
       JSON.stringify(world)
     );
+  });
+});
+
+// Owner bug report path (lane-1 review, 2026-11-02): a sheet edit (coins, a prepared
+// spell, the header's vitals — `patchCharacter` → `setCharacter` on the same id) must
+// not drop what the fight is holding. A load (another id) or closing still clears it.
+describe("characterStore — an edit keeps the fight's pending state", () => {
+  beforeEach(() => {
+    useCharacterStore.setState({
+      character: null,
+      readonly: false,
+      combatPersistence: null,
+      combatActiveEffects: [],
+      combatLegacyActiveEffects: [],
+      combatPendingConcentrationSaves: [],
+    });
+  });
+
+  it("a pending Concentration save survives an edit of the same sheet", () => {
+    const doc = mockCharacter();
+    doc.session.concentration = concentrationValue("bless");
+    useCharacterStore.getState().setCharacter(doc);
+    useCharacterStore.getState().queueConcentrationSaveForDamage(12);
+    expect(useCharacterStore.getState().combatPendingConcentrationSaves).toHaveLength(1);
+    const live = useCharacterStore.getState().character as CharacterDoc;
+    useCharacterStore.getState().setCharacter({
+      ...live,
+      character: { ...live.character },
+    });
+    expect(useCharacterStore.getState().combatPendingConcentrationSaves).toHaveLength(1);
+  });
+
+  it("standing effects survive an edit; a load of another sheet clears them", () => {
+    const legacy = projectedEffect();
+    useCharacterStore.getState().setCharacter(mockCharacter());
+    useCharacterStore.getState().hydrateCombatState({
+      hp: { current: 20, temp: 0 },
+      conditions: [],
+      initiativeRoll: null,
+      deathSaves: { successes: 0, failures: 0 },
+      round: 2,
+      activeEffects: [legacy],
+      playState: mockPlayState(),
+    });
+    const live = useCharacterStore.getState().character as CharacterDoc;
+    useCharacterStore.getState().setCharacter({
+      ...live,
+      character: { ...live.character },
+    });
+    expect(useCharacterStore.getState().combatLegacyActiveEffects).toEqual([legacy]);
+    expect(useCharacterStore.getState().combatActiveEffects).toEqual([legacy]);
+
+    useCharacterStore.getState().setCharacter(mockCharacter({ id: "another-sheet" }));
+    expect(useCharacterStore.getState().combatLegacyActiveEffects).toEqual([]);
+    expect(useCharacterStore.getState().combatPendingConcentrationSaves).toEqual([]);
   });
 });

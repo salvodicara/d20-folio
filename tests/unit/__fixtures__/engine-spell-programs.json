@@ -1,0 +1,803 @@
+{
+  "bless": {
+    "id": "spell:bless",
+    "lifetime": [
+      {
+        "kind": "manual"
+      }
+    ],
+    "phases": [
+      {
+        "inputs": [
+          {
+            "inputId": "slot",
+            "kind": "resource",
+            "term": {
+              "amount": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "selector": {
+                "kind": "spell-slot",
+                "level": {
+                  "kind": "minimum",
+                  "value": 1
+                },
+                "owner": "caster",
+                "pool": "either"
+              }
+            },
+            "when": null
+          },
+          {
+            "eligibility": "creature",
+            "inputId": "targets",
+            "kind": "entities",
+            "maximum": {
+              "kind": "fixed",
+              "value": 3
+            },
+            "minimum": {
+              "kind": "fixed",
+              "value": 0
+            },
+            "multiplicity": "slots",
+            "when": null
+          }
+        ],
+        "phaseId": "resolve",
+        "steps": [
+          {
+            "fact": {
+              "key": "spell-bless",
+              "kind": "active-key"
+            },
+            "kind": "standing",
+            "lifetime": {
+              "kind": "source-end"
+            },
+            "operation": "start",
+            "stepId": "standing-spell-bless",
+            "target": {
+              "inputId": "targets",
+              "kind": "input"
+            },
+            "when": null
+          },
+          {
+            "kind": "concentration",
+            "lifetime": {
+              "kind": "manual"
+            },
+            "operation": "start",
+            "stepId": "hold-concentration",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "invocation"
+        }
+      },
+      {
+        "inputs": [],
+        "phaseId": "release",
+        "steps": [
+          {
+            "kind": "end-program",
+            "stepId": "release-spell",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "source-end"
+        }
+      }
+    ],
+    "registers": [],
+    "version": 1
+  },
+  "blur": {
+    "id": "spell:blur",
+    "lifetime": [
+      {
+        "kind": "manual"
+      }
+    ],
+    "phases": [
+      {
+        "inputs": [
+          {
+            "inputId": "slot",
+            "kind": "resource",
+            "term": {
+              "amount": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "selector": {
+                "kind": "spell-slot",
+                "level": {
+                  "kind": "minimum",
+                  "value": 2
+                },
+                "owner": "caster",
+                "pool": "either"
+              }
+            },
+            "when": null
+          },
+          {
+            "eligibility": "creature",
+            "inputId": "targets",
+            "kind": "entities",
+            "maximum": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "minimum": {
+              "kind": "fixed",
+              "value": 0
+            },
+            "multiplicity": "slots",
+            "when": null
+          }
+        ],
+        "phaseId": "resolve",
+        "steps": [
+          {
+            "fact": {
+              "key": "spell-blur",
+              "kind": "active-key"
+            },
+            "kind": "standing",
+            "lifetime": {
+              "kind": "source-end"
+            },
+            "operation": "start",
+            "stepId": "standing-spell-blur",
+            "target": {
+              "kind": "role",
+              "role": "caster"
+            },
+            "when": null
+          },
+          {
+            "kind": "concentration",
+            "lifetime": {
+              "kind": "manual"
+            },
+            "operation": "start",
+            "stepId": "hold-concentration",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "invocation"
+        }
+      },
+      {
+        "inputs": [],
+        "phaseId": "release",
+        "steps": [
+          {
+            "kind": "end-program",
+            "stepId": "release-spell",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "source-end"
+        }
+      }
+    ],
+    "registers": [],
+    "version": 1
+  },
+  "cure-wounds": {
+    "id": "spell:cure-wounds",
+    "phases": [
+      {
+        "inputs": [
+          {
+            "inputId": "slot",
+            "kind": "resource",
+            "term": {
+              "amount": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "selector": {
+                "kind": "spell-slot",
+                "level": {
+                  "kind": "minimum",
+                  "value": 1
+                },
+                "owner": "caster",
+                "pool": "either"
+              }
+            },
+            "when": null
+          },
+          {
+            "eligibility": "creature",
+            "inputId": "targets",
+            "kind": "entities",
+            "maximum": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "minimum": {
+              "kind": "fixed",
+              "value": 0
+            },
+            "multiplicity": "slots",
+            "when": null
+          },
+          {
+            "acceptancePolicy": [],
+            "expansion": {
+              "binding": "caster",
+              "kind": "single"
+            },
+            "formula": {
+              "terms": [
+                {
+                  "count": {
+                    "kind": "add",
+                    "terms": [
+                      {
+                        "kind": "fixed",
+                        "value": 2
+                      },
+                      {
+                        "factors": [
+                          {
+                            "kind": "fixed",
+                            "value": 2
+                          },
+                          {
+                            "kind": "max",
+                            "values": [
+                              {
+                                "kind": "fixed",
+                                "value": 0
+                              },
+                              {
+                                "kind": "add",
+                                "terms": [
+                                  {
+                                    "bindingId": "input.slot.level",
+                                    "kind": "binding"
+                                  },
+                                  {
+                                    "kind": "fixed",
+                                    "value": -1
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ],
+                        "kind": "multiply"
+                      }
+                    ]
+                  },
+                  "kind": "dice",
+                  "operation": "add",
+                  "sides": 8,
+                  "termId": "heal-roll-die"
+                }
+              ]
+            },
+            "inputId": "heal-roll",
+            "kind": "dice",
+            "payments": [],
+            "replacementPolicy": [],
+            "when": null
+          }
+        ],
+        "phaseId": "resolve",
+        "steps": [
+          {
+            "amount": {
+              "cardinality": "shared",
+              "inputId": "heal-roll",
+              "kind": "dice-input",
+              "transform": {
+                "kind": "add",
+                "terms": [
+                  {
+                    "bindingId": "input-total",
+                    "kind": "binding"
+                  },
+                  {
+                    "bindingId": "spellcasting-modifier",
+                    "kind": "binding"
+                  }
+                ]
+              }
+            },
+            "kind": "heal",
+            "stepId": "heal-apply",
+            "target": {
+              "inputId": "targets",
+              "kind": "input"
+            },
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "invocation"
+        }
+      }
+    ],
+    "registers": [],
+    "version": 1
+  },
+  "hex": {
+    "id": "spell:hex",
+    "lifetime": [
+      {
+        "kind": "manual"
+      }
+    ],
+    "phases": [
+      {
+        "inputs": [
+          {
+            "inputId": "slot",
+            "kind": "resource",
+            "term": {
+              "amount": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "selector": {
+                "kind": "spell-slot",
+                "level": {
+                  "kind": "minimum",
+                  "value": 1
+                },
+                "owner": "caster",
+                "pool": "either"
+              }
+            },
+            "when": null
+          },
+          {
+            "eligibility": "creature",
+            "inputId": "targets",
+            "kind": "entities",
+            "maximum": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "minimum": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "multiplicity": "slots",
+            "when": null
+          }
+        ],
+        "phaseId": "resolve",
+        "steps": [
+          {
+            "fact": {
+              "key": "spell-hex",
+              "kind": "active-key"
+            },
+            "kind": "standing",
+            "lifetime": {
+              "kind": "source-end"
+            },
+            "operation": "start",
+            "stepId": "standing-spell-hex",
+            "target": {
+              "kind": "role",
+              "role": "caster"
+            },
+            "when": null
+          },
+          {
+            "fact": {
+              "kind": "target-mark",
+              "markId": "cursed",
+              "marked": {
+                "inputId": "targets",
+                "kind": "input"
+              }
+            },
+            "kind": "standing",
+            "lifetime": {
+              "kind": "source-end"
+            },
+            "operation": "start",
+            "stepId": "mark-cursed",
+            "target": {
+              "kind": "role",
+              "role": "caster"
+            },
+            "when": null
+          },
+          {
+            "kind": "concentration",
+            "lifetime": {
+              "kind": "manual"
+            },
+            "operation": "start",
+            "stepId": "hold-concentration",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "invocation"
+        }
+      },
+      {
+        "inputs": [],
+        "phaseId": "release",
+        "steps": [
+          {
+            "kind": "end-program",
+            "stepId": "release-spell",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "source-end"
+        }
+      }
+    ],
+    "registers": [],
+    "version": 1
+  },
+  "moonbeam": {
+    "id": "spell:moonbeam",
+    "lifetime": [
+      {
+        "kind": "manual"
+      }
+    ],
+    "phases": [
+      {
+        "inputs": [
+          {
+            "inputId": "slot",
+            "kind": "resource",
+            "term": {
+              "amount": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "selector": {
+                "kind": "spell-slot",
+                "level": {
+                  "kind": "minimum",
+                  "value": 2
+                },
+                "owner": "caster",
+                "pool": "either"
+              }
+            },
+            "when": null
+          }
+        ],
+        "phaseId": "resolve",
+        "steps": [
+          {
+            "kind": "register",
+            "operation": {
+              "kind": "set-integer",
+              "value": {
+                "bindingId": "input.slot.level",
+                "kind": "binding"
+              }
+            },
+            "registerId": "cast-level",
+            "stepId": "record-cast-level",
+            "when": null
+          },
+          {
+            "kind": "concentration",
+            "lifetime": {
+              "kind": "manual"
+            },
+            "operation": "start",
+            "stepId": "hold-concentration",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "invocation"
+        }
+      },
+      {
+        "inputs": [
+          {
+            "eligibility": "creature",
+            "inputId": "pulse-targets",
+            "kind": "entities",
+            "maximum": {
+              "kind": "fixed",
+              "value": 20
+            },
+            "minimum": {
+              "kind": "fixed",
+              "value": 0
+            },
+            "multiplicity": "slots",
+            "when": null
+          },
+          {
+            "expansion": {
+              "bind": "actor",
+              "inputId": "pulse-targets",
+              "kind": "entities"
+            },
+            "inputId": "pulse-saves",
+            "kind": "d20",
+            "payments": [],
+            "request": {
+              "ability": "CON",
+              "actor": "target",
+              "difficultyClass": {
+                "bindingId": "spell-save-dc",
+                "kind": "binding"
+              },
+              "enteredModifiers": [],
+              "kind": "saving-throw",
+              "modifiers": [],
+              "resolution": {
+                "kind": "rolled"
+              },
+              "rollRules": {
+                "advantageSourceIds": [],
+                "disadvantageSourceIds": [],
+                "extraD20SourceIds": [],
+                "faceFloors": [],
+                "replacements": [],
+                "substitutions": [],
+                "totalFloors": []
+              },
+              "target": "caster",
+              "testId": "spell-save"
+            },
+            "when": null
+          },
+          {
+            "acceptancePolicy": [],
+            "expansion": {
+              "binding": "caster",
+              "kind": "single"
+            },
+            "formula": {
+              "terms": [
+                {
+                  "count": {
+                    "kind": "add",
+                    "terms": [
+                      {
+                        "kind": "fixed",
+                        "value": 2
+                      },
+                      {
+                        "factors": [
+                          {
+                            "kind": "fixed",
+                            "value": 1
+                          },
+                          {
+                            "kind": "max",
+                            "values": [
+                              {
+                                "kind": "fixed",
+                                "value": 0
+                              },
+                              {
+                                "kind": "add",
+                                "terms": [
+                                  {
+                                    "bindingId": "register.cast-level",
+                                    "kind": "binding"
+                                  },
+                                  {
+                                    "kind": "fixed",
+                                    "value": -2
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ],
+                        "kind": "multiply"
+                      }
+                    ]
+                  },
+                  "kind": "dice",
+                  "operation": "add",
+                  "sides": 10,
+                  "termId": "pulse-damage-roll-die"
+                }
+              ]
+            },
+            "inputId": "pulse-damage-roll",
+            "kind": "dice",
+            "payments": [],
+            "replacementPolicy": [],
+            "when": null
+          }
+        ],
+        "phaseId": "pulse",
+        "steps": [
+          {
+            "delivery": "saving-throw",
+            "kind": "damage",
+            "parts": [
+              {
+                "amount": {
+                  "cardinality": "shared",
+                  "inputId": "pulse-damage-roll",
+                  "kind": "dice-input",
+                  "transform": {
+                    "bindingId": "input-total",
+                    "kind": "binding"
+                  }
+                },
+                "damageType": "radiant",
+                "partId": "pulse-damage-roll-full"
+              }
+            ],
+            "stepId": "pulse-damage-roll-apply",
+            "target": {
+              "cardinality": "per-request",
+              "inputId": "pulse-saves",
+              "kind": "d20-outcome",
+              "outcomeIds": ["failure"],
+              "quantifier": "any"
+            },
+            "traits": ["spell"],
+            "when": null
+          },
+          {
+            "delivery": "saving-throw",
+            "kind": "damage",
+            "parts": [
+              {
+                "amount": {
+                  "cardinality": "shared",
+                  "inputId": "pulse-damage-roll",
+                  "kind": "dice-input",
+                  "transform": {
+                    "dividend": {
+                      "bindingId": "input-total",
+                      "kind": "binding"
+                    },
+                    "divisor": {
+                      "kind": "fixed",
+                      "value": 2
+                    },
+                    "kind": "divide",
+                    "rounding": "floor"
+                  }
+                },
+                "damageType": "radiant",
+                "partId": "pulse-damage-roll-half"
+              }
+            ],
+            "stepId": "pulse-damage-roll-apply-half",
+            "target": {
+              "cardinality": "per-request",
+              "inputId": "pulse-saves",
+              "kind": "d20-outcome",
+              "outcomeIds": ["success"],
+              "quantifier": "any"
+            },
+            "traits": ["spell"],
+            "when": null
+          }
+        ],
+        "trigger": {
+          "eventId": "pulse",
+          "kind": "root-pulse"
+        }
+      },
+      {
+        "inputs": [],
+        "phaseId": "release",
+        "steps": [
+          {
+            "kind": "end-program",
+            "stepId": "release-spell",
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "source-end"
+        }
+      }
+    ],
+    "registers": [
+      {
+        "initial": 2,
+        "registerId": "cast-level"
+      }
+    ],
+    "version": 1
+  },
+  "shield": {
+    "id": "spell:shield",
+    "phases": [
+      {
+        "inputs": [
+          {
+            "inputId": "slot",
+            "kind": "resource",
+            "term": {
+              "amount": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "selector": {
+                "kind": "spell-slot",
+                "level": {
+                  "kind": "minimum",
+                  "value": 1
+                },
+                "owner": "caster",
+                "pool": "either"
+              }
+            },
+            "when": null
+          },
+          {
+            "eligibility": "creature",
+            "inputId": "targets",
+            "kind": "entities",
+            "maximum": {
+              "kind": "fixed",
+              "value": 1
+            },
+            "minimum": {
+              "kind": "fixed",
+              "value": 0
+            },
+            "multiplicity": "slots",
+            "when": null
+          }
+        ],
+        "phaseId": "resolve",
+        "steps": [
+          {
+            "fact": {
+              "key": "spell-shield",
+              "kind": "active-key"
+            },
+            "kind": "standing",
+            "lifetime": {
+              "combatant": "caster",
+              "kind": "turn-boundary",
+              "offsetTurns": {
+                "kind": "fixed",
+                "value": 1
+              },
+              "phase": "start"
+            },
+            "operation": "start",
+            "stepId": "standing-spell-shield",
+            "target": {
+              "kind": "role",
+              "role": "caster"
+            },
+            "when": null
+          }
+        ],
+        "trigger": {
+          "kind": "invocation"
+        }
+      }
+    ],
+    "registers": [],
+    "version": 1
+  }
+}

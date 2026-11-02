@@ -91,12 +91,6 @@ type ObjectOutput<
   readonly [Key in keyof Optional]?: SchemaOutput<Optional[Key]>;
 };
 
-type TupleOutput<Items extends readonly ExactSchema[]> = {
-  readonly [Index in keyof Items]: Items[Index] extends ExactSchema
-    ? SchemaOutput<Items[Index]>
-    : never;
-};
-
 export const stringSchema = { kind: "string" } as SchemaWithOutput<
   { readonly kind: "string" },
   string
@@ -145,29 +139,6 @@ export function arraySchema(item: ExactSchema, minItems?: number): ExactSchema {
     item,
     ...(minItems === undefined ? {} : { minItems }),
   };
-}
-
-export function tupleSchema<const Items extends readonly ExactSchema[]>(
-  items: Items
-): SchemaWithOutput<
-  { readonly kind: "tuple"; readonly items: Items },
-  TupleOutput<Items>
->;
-export function tupleSchema<
-  const Items extends readonly ExactSchema[],
-  const Rest extends ExactSchema,
->(
-  items: Items,
-  rest: Rest
-): SchemaWithOutput<
-  { readonly kind: "tuple"; readonly items: Items; readonly rest: Rest },
-  readonly [...TupleOutput<Items>, ...SchemaOutput<Rest>[]]
->;
-export function tupleSchema(
-  items: readonly ExactSchema[],
-  rest?: ExactSchema
-): ExactSchema {
-  return { kind: "tuple", items, ...(rest ? { rest } : {}) };
 }
 
 export function recordSchema<

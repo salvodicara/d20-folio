@@ -37,7 +37,6 @@ import {
   characterMaterialRef,
   characterSelfRef,
   characterTrackerSeeds,
-  characterTurnEconomy,
   characterWorldState,
   commitCharacterAction,
   mechanicsAuthorityDefinition,
@@ -210,7 +209,7 @@ function castCommitted(
     },
     responses: [],
     state: state.value,
-    turnEconomy: characterTurnEconomy(doc, UID),
+    turnEconomy: [],
   });
   if (outcome.status !== "complete" || !outcome.action) {
     throw new Error(`cast did not complete: ${JSON.stringify(outcome.status)}`);

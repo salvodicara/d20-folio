@@ -42,8 +42,8 @@ Diagrams (archify, open in a browser): [today](architecture/today.html) ·
   - Beast/Companion attacks
   - the prototype `Mechanic`
 
-  `mechanics-transcription.ts` (3.6k lines) translates two of them into a third, whose cast UI is no
-  longer mounted.
+  A transcriber that translated two of them into a third was deleted on 2026-11-02 (its cast UI was
+  no longer mounted).
 
 - **Monsters:** the 330 stat blocks are structured (AC, HP, scores, defenses, 422 attacks, 184
   saves). They are only displayed; nothing executes them.
@@ -211,18 +211,11 @@ There are six parallel records. The same hit can land in four of them.
 - The K1 kernel: `src/lib/command/*`, `types/command.ts`, `rule-definition.ts` and the functions
   bundle (about 1.5k lines). Removing its export from `functions/` takes effect at the next deploy
   the owner approves.
-- Not `automation-compiler`/`automation-corpus`: test-only, but they are the live guard that
-  every mechanic in the data is handled or marked manual in both languages (kept 2026-10-12).
 - `src/lib/combat/*`, `combat-io.ts` and `prototype-catalogue.ts` (about 4.5k lines) _after_ the
   session log lifts its id/fold ideas.
 - Later:
-  - `mechanics-transcription` and the `mechanicsProgram` fields. Mapped 2026-10-09: no
-    `mechanicsProgram` affects what a user sees or stores (the damage-reaction prompt that
-    ran Uncanny Dodge's was deleted, #86); the transcriber and the world-store
-    capabilities (`characterSpellCapability`, `characterFeatureActionCapability`, …) are
-    reached only by tests, where they generate the programs the LIVE coordinator tests
-    run. They go together with the mechanics world (vitals, conditions, concentration,
-    rest, DM adversary actions), not before.
+  - Done 2026-11-02: `mechanics-transcription`, `automation-corpus`/`automation-compiler` and the
+    world-store capability builders. The catalogue `mechanicsProgram` fields go next (Rules lane).
   - **Retiring the mechanics world (mapped 2026-10-12).** The world is now a mirror: every
     value the sheet shows from it is also in the plain session fields
     (`character-vitals.ts`'s `reconciled()` always returns the session's). Only four facts

@@ -79,14 +79,6 @@ export function itemResourceSpend(
   return { kind: "spend", identity, amount, inputs: {} };
 }
 
-/** Create the only legal gain recipe: an exact physical-item address. */
-export function itemResourceGain(
-  identity: ItemResourceIdentity,
-  amount: number
-): ItemResourceCommandRecipe {
-  return { kind: "gain", identity, amount, inputs: {} };
-}
-
 /** Create the only legal recovery recipe: an exact physical-item address. */
 export function itemResourceRecovery(
   identity: ItemResourceIdentity,

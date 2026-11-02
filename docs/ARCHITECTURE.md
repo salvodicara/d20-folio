@@ -732,7 +732,7 @@ coordinator already resolves the effect barriers, runs trigger/subscriber/source
 kernel/model prerequisites that remain open: a separately authorized table-override path,
 source-specific Temporary-HP replacement cleanup, guarded effective defense/healing/immunity facts, and
 closed entity/item materializations in capability snapshots. No second executor, compatibility planner
-or final register-write lump is permitted. Persistence adapters and corpus transcription remain open; the
+or final register-write lump is permitted. Persistence adapters remain open; the
 existing combat executors are migration inputs only and are deleted as their consumers move.
 
 The action economy is **immediate-commit-per-action-with-undo** (the owner's binding decision —
@@ -1160,7 +1160,7 @@ from their sheet (the auto-narrated capture below), and drama still belongs in t
   `max-hp-delta` / `damage-transfer` standing facts with their kernel consumers (the damage
   compiler's `remain-at-one` selector consumes a fired floor's whole source atomically; the heal
   path carries same-cast max headroom; the transfer fact records the payer for the table), and
-  `transcribeSpell`'s standing block binds `recipient: "selected"` buffs to the SELECTED target
+  an engine program's standing block binds `recipient: "selected"` buffs to the SELECTED target
   entities — gated like the condition suite on attack/save spells — so a self-selected Death
   Ward / Aid / Heroism rides the caster's world end to end. What still keeps the ledger alive is
   exactly the CROSS-DOCUMENT carrier: a buff landing on ANOTHER member's document has no canonical
@@ -1829,35 +1829,12 @@ the rest boundary, and the condition arrays a transition consumes as overlays (t
 Unconscious chip, `restoreHpSnapshot`'s conditions revert) — session wins on their drift by the
 projection's arbitration.
 
-The executable authority for a cast is closed at build level: `characterSpellCapability` seals the
-transcribed program (see `src/lib/mechanics-transcription.ts`) into a capability snapshot anchored
-on the caster, carrying build-derived truths the world does not hold — the spell save DC and
-casting modifier as static bindings, the maximum hit points and per-slot resource definitions as
-caller-guarded facts the kernel re-emits and the commit validates. A conjuring cast (Goodberry)
-additionally carries its consumable's `NewInventoryInstance` template on the snapshot's closed
-blueprint channel (`src/data/conjured-items.ts` → `CONJURED_ITEM_BLUEPRINTS`, the only source the
-compiler's `inventory-create` instantiates from); the conjured batch lands in the WORLD's
-inventory with its authored expiry lifetime, surfaces as the Spells tab's conjured-items strip
-(`EngineConsumablesStrip`, localized from the creating spell's catalogue name), and each consume
-runs the item's canonical program (`CONJURED_ITEM_PROGRAMS`) through
-`characterConjuredItemCapability` — an item-sourced authority whose payment debits THIS instance's
-own quantity.
-
-Feature-action capabilities close their SESSION-derived transcription context through
-`resolveFeatureActionRuntime`, from the exact seams the sheet reads: the `classSpecific:*` die of
-a heal/Temp-HP/granted-die term from the owning class's progression row at the character's level
-in that class (`featureClassRow` — the monk's Martial Arts die, the bard's Inspiration tier), a
-`trackerTopUp` target's full-recovery rest from the one tracker resolver, and a dynamic
-PB/ability-derived `targeting.maxTargets` collapsed to the row summary's already-resolved concrete
-count. The corpus census (`mechanics-transcription.guard.test.ts`) deliberately omits these
-session facts, so rows like Uncanny Metabolism and Patient Defense's Heightened Focus report an
-honest census boundary while the RUNTIME capability executes them. Tracker pools seed into the
-world as DERIVED-capacity count cells (the resolved total from the one tracker resolver; a world
-persisted before this shape upgrades its capacity metadata once at read, current value preserved)
-because the kernel's full-recovery law is only lawful against a finite cell — the capability
-emits each touched pool's resource-definition fact as a bounded spec mirroring that capacity,
-plus the top-up target's full-recovery boundary, so Uncanny Metabolism's Focus refill commits as
-a real `resource-recover` transition.
+No production surface builds a spell, feature-action or weapon capability any more: the
+catalogue transcriber and the world-store capability builders were deleted on 2026-11-02 (they
+were reached only by tests). The kernel's cast, commit and concentration readers are tested with
+hand-authored programs and with spell programs recorded once in
+`tests/unit/__fixtures__/engine-spell-programs.json`. Tracker pools still seed into the world as
+derived-capacity count cells.
 
 **The encounter/adversary seam (`src/lib/encounter-world-store.ts` +
 `src/features/campaigns/encounter-world-command.ts`).** The same runtime serves DM-run
@@ -1928,18 +1905,9 @@ encounter starts LAZILY on the first advance, so out-of-combat casts keep the
 While the solo encounter runs, turn-anchored lifetimes freeze to EXACT turn-boundary end rules
 and expire precisely when the tracker steps — fail-closed and one-way exactly like the adversary
 boundary (a rejected plan leaves lifetimes standing; undoing an End Turn rewinds only the legacy
-round). Every character dispatch (`useMechanicsEngineAction` / `useMechanicsPulse`) feeds the
-coordinator the character's live **turn-economy projection**
-(`characterTurnEconomyProjection` — attacks per Attack action, walking Speed and
-condition-gated incapacitation from the same build seams the sheet reads), so an authored
-`turn-claim` step compiles for solo dispatches and its claim commits against the participant's
-own-turn ledger: a per-turn-capped program is REJECTED by the kernel on a second same-turn
-dispatch and allowed again after the boundary opens the next turn. The transcriber emits those
-`turn-claim` steps from declared once-per-turn caps, and the Play gate dispatches such a row
-(Redirect Attack) to the engine exactly while a solo world encounter is running in its "turns"
-phase — the claim needs the participant's ledger to commit against; outside one, and for an
-unmet turn-outcome prerequisite or an already-used cap, the legacy layered gates keep the row
-and own its feedback. Being in solo combat never forces the legacy path:
+round). Character dispatches pass an empty turn economy today (the self projection builder was
+deleted on 2026-11-02, unused in production); the kernel's per-turn `turn-claim` rejection is
+tested with a hand-built projection. Being in solo combat never forces the legacy path:
 engine-executable casts/actions dispatch through `EngineCastFlow`/`EngineActionFlow` mid-combat,
 and each commit mirrors the EXACT legacy turn-economy entry (slot occupant with its rules
 category and "attack" turn event, the one-slot-per-turn claim on the solo turn key, and — for an
@@ -1980,37 +1948,19 @@ that survives audience-driven rebasing, since every subscriber dispatch is a pha
 moves the world basis) and `finalizeMechanicsCausalEndWave` grants the live frame stack's
 one-ahead provenance permits through the finalization's closed-boundary check, so the held
 occurrence, its root and its standings end mid-cast and the suspended frame resumes over the
-swept world (proven by the coordinator suite's transcribed hex-over-hex replacement and the
-spells-page flow test). ONE journal entry commits old-end + new-cast; the commit's transition
+swept world. ONE journal entry commits old-end + new-cast; the commit's transition
 mirror restamps `session.concentration`, the flow logs the end/start story beats and clears the
 dropped spell's now-moot pending-save queue, and the replacement toast IS the undo affordance —
 its undo is the exact journal reverse that restores the OLD spell whole (occurrence, standings,
 slot, session field). Backing out of the cast modal after confirming commits nothing — the old
 spell stays held. A LEGACY-held concentration keeps the legacy swap flow, which owns that
 teardown.
-The SPELL rows of the Play board dispatch through the SAME
-shared gate as the Spells tab (`engine-spell-gate.ts` → `engineSpellCastRequest` — one dispatch
-truth for both surfaces, Shield's reaction card included). PACT-SLOT casts dispatch engine: the
-transcriber's slot payment is a pool-"either" `spell-slot` selector, the world seeds the pact
-pool as its own cell, `characterSlotDefinitionFacts` guards its definition beside the standard
-levels, the cast modal offers the pact slot with its level shown (enforcing the selector's level
-floor on both pools), and the commit mirrors the debit onto the legacy `pact-<level>` usage
-counter exactly. CASTER-OWNED standing casts dispatch engine too — Hex included: the cast lands
-the active key + the target mark as world standings (see the read-migration section above), which
-is observably the legacy solo collapse (light the key on the caster; the mark is table-abstract).
-Honest boundaries that stay legacy, each documented at its exclusion site: an `excludeSelf`
-standing (Warding Bond — the buff's mechanics belong to a selected creature the solo world does
-not model); MAINTAINER rows (they re-run an established recurring effect without paying — a new
-engine cast would double-cast; the engine twin is the armed root-pulse phase on the world's own
-occurrence, `EnginePulseStrip`/`useMechanicsPulse`, which exists exactly when the cast itself went
-engine); and USE-APPLIES (the deterministic side effect is a sibling GRANT the transcriber's
-`SrdActionDef` input cannot see yet). The legacy effect-program runtime is DELETED (the
+Spell, pact-slot and caster-owned standing casts do not dispatch to the engine today: the engine
+spell gate was deleted in #28 and the transcriber in 2026-11. The legacy effect-program runtime is DELETED (the
 combat-automation-gaps cutover): the authored `effectProgram` data field, its interpreter
 (`combat-effect-program`), the planning/command/atomic/lifecycle execution stack, and the outer
 `action-command` kernel are gone — the canonical MechanicsProgram runtime is the ONE executable
-truth. `tests/unit/effect-program-dispatch.guard.test.ts` pins the regression contract: every
-public spell the legacy runtime used to own (16, pinned literally) still transcribes and gates
-ENGINE, and Uncanny Dodge's reaction fires through the damage-entry reaction runtime. Stored
+truth. Stored
 remnants of the deleted runtime (`effectOps` entries with `programOwner`/`program-standing`
 payloads, `effectLifecycles`, `actionRevision`/`actionHead`/`actionLifecycles`) are ignored at
 every read boundary and shed by the next full write.
