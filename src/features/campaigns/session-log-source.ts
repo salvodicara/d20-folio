@@ -14,8 +14,12 @@ import { makeDevEvening } from "@/features/campaigns/dev-fixture";
 /** Dev bypass: an in-memory log, holding the opt-in played evening when it is asked for. */
 function devStore(): SessionLogStore {
   const store = createMemorySessionLogStore();
-  const evening = makeDevEvening();
-  if (evening) for (const item of evening.items) void store.append(evening.day, item);
+  // `import.meta.env.DEV` is a literal false in a production build, so this branch and
+  // the fixture it reads are dropped from the bundle (checked against the built JS).
+  if (import.meta.env.DEV) {
+    const evening = makeDevEvening();
+    if (evening) for (const item of evening.items) void store.append(evening.day, item);
+  }
   return store;
 }
 
