@@ -54,7 +54,7 @@ describe("conformance · 16. DM adjudication", () => {
       category: 16,
       case: "Surprise 2024",
       source: "GLOSS; rpgbot 2024 transition guide",
-      status: "data",
+      status: "works",
     },
     () => {
       // Surprised: Disadvantage on Initiative (no lost turn).
