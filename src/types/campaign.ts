@@ -519,6 +519,12 @@ export interface CampaignDoc {
    */
   encounter?: EncounterState | null;
   /**
+   * The last fight that ended (marked `ended`), kept so anyone can reopen it until the
+   * next roll starts a new one (combat-lifecycle-io.ts). Kept beside `encounter`, not in
+   * it, so a client that predates `ended` reads the fight as over (`encounter` null).
+   */
+  endedEncounter?: EncounterState | null;
+  /**
    * THE ENCOUNTER-INITIATIVE TABLE (the initiative single source of truth) — each
    * member's RAW d20 initiative roll for the CURRENT encounter, keyed by member uid
    * (`uid → raw roll`; never the total — every consumer derives `total = roll +

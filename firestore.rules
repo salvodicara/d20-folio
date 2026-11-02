@@ -523,7 +523,7 @@ service cloud.firestore {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['currentCombatantId', 'round', 'extraTurns'])
+               .affectedKeys().hasOnly(['currentCombatantId', 'round', 'extraTurns', 'clock'])
           && validEncounterRound();
       }
 
@@ -554,7 +554,7 @@ service cloud.firestore {
         return resource.data.get('encounter', null) != null
           && request.resource.data.get('encounter', null) != null
           && request.resource.data.encounter.diff(resource.data.encounter)
-               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round', 'extraTurns', 'world'])
+               .affectedKeys().hasOnly(['combatants', 'events', 'memberEffects', 'effectOps', 'currentCombatantId', 'round', 'extraTurns', 'world', 'clock'])
           && request.resource.data.encounter.combatants.size()
                == resource.data.encounter.combatants.size()
           && request.resource.data.encounter.get('events', []).size()
@@ -563,6 +563,100 @@ service cloud.firestore {
                >= resource.data.encounter.get('memberEffects', []).size()
           && validEncounterRound()
           && validCombatEffectOpsChange();
+      }
+
+      // THE COMBAT LIFECYCLE (owner 2026-10-23, encounter-lifecycle.ts): any member starts
+      // a fight with their initiative roll, joins it, passes or steps back a turn, ends it
+      // and reopens it. Each move is its own narrow diff; the fight's CONTENTS (monsters,
+      // HP, conditions, the frozen DM order edits) stay DM-only. An ended fight is kept
+      // in `endedEncounter` with `encounter` back to null, which is exactly what a v0.25.0
+      // client reads after any end.
+      function endedUnchanged() {
+        return request.resource.data.get('endedEncounter', null)
+          == resource.data.get('endedEncounter', null);
+      }
+      function ownPcRef(ref) {
+        return ref is map
+          && ref.keys().hasOnly(['kind', 'id', 'memberUid', 'characterId'])
+          && ref.kind == 'pc'
+          && ref.memberUid == request.auth.uid
+          && ref.id == 'pc-' + request.auth.uid
+          && ref.characterId is string;
+      }
+      // A roll starts a fight: a fresh one, PCs only (no monster can exist below
+      // ordinal 1), round 1, and the roll table reset to the roller's own row.
+      function memberStartsFight() {
+        let fight = request.resource.data.get('encounter', null);
+        return resource.data.get('encounter', null) == null
+          && fight != null
+          && fight.keys().hasOnly(['combatants', 'nextMonsterOrdinal', 'round', 'currentCombatantId', 'order', 'epoch', 'status', 'clock'])
+          && fight.nextMonsterOrdinal == 1
+          && fight.round == 1
+          && fight.status == 'active'
+          && fight.epoch is int
+          && fight.clock is map
+          && fight.combatants.size() <= request.resource.data.members.size()
+          && request.resource.data.get('encounterInit', {}).keys().hasOnly([request.auth.uid])
+          && request.resource.data.get('encounterSkipped', {}).keys().hasOnly([request.auth.uid]);
+      }
+      // A late roller joins (one own PC appended) and the order follows the rolls. Until
+      // the first turn is passed in a lifecycle fight (one with a `clock`), the order
+      // re-sorts: the same ids plus the joiner. Once turns have begun, or in a fight the
+      // DM runs by hand (no clock), the only change is the joiner slotted in: the DM's
+      // order stays and the current turn does not move.
+      function lifecycleSorting(fight) {
+        return fight.get('clock', null) is map
+          && fight.clock.get('turnsBegun', false) == false;
+      }
+      function memberJoinsOrResorts() {
+        let before = resource.data.get('encounter', null);
+        let after = request.resource.data.get('encounter', null);
+        return before != null && after != null
+          && after.diff(before).affectedKeys().hasOnly(['combatants', 'order', 'currentCombatantId', 'clock'])
+          && (after.combatants == before.combatants
+            || (after.combatants.size() == before.combatants.size() + 1
+              && after.combatants[0:before.combatants.size()] == before.combatants
+              && ownPcRef(after.combatants[before.combatants.size()])))
+          && (lifecycleSorting(before)
+            ? (after.get('order', []).toSet().hasAll(before.get('order', []).toSet())
+              && after.get('order', []).size() <= before.get('order', []).size() + 1)
+            : (after.get('order', []).removeAll(['pc-' + request.auth.uid])
+                == before.get('order', []).removeAll(['pc-' + request.auth.uid])
+              && after.get('currentCombatantId', null) == before.get('currentCombatantId', null)));
+      }
+      // The undo of a start: a fight nobody has fought in yet (no monster, no beat, no
+      // turn passed) whose only roll is the writer's own.
+      function memberCancelsFight() {
+        let before = resource.data.get('encounter', null);
+        return before != null
+          && request.resource.data.get('encounter', null) == null
+          && before.nextMonsterOrdinal == 1
+          && before.get('events', []).size() == 0
+          && before.get('clock', {}).get('turnsBegun', false) == false
+          && resource.data.get('encounterInit', {}).keys().hasOnly([request.auth.uid]);
+      }
+      // End: the fight moves whole into `endedEncounter`, stamped with why and when.
+      function memberEndsFight() {
+        let before = resource.data.get('encounter', null);
+        let kept = request.resource.data.get('endedEncounter', null);
+        return before != null
+          && request.resource.data.get('encounter', null) == null
+          && kept != null
+          && kept.diff(before).affectedKeys().hasOnly(['ended'])
+          && kept.ended.keys().hasOnly(['reason', 'at'])
+          && kept.ended.reason in ['enemies-defeated', 'rest', 'idle', 'manual']
+          && kept.ended.at is int;
+      }
+      // Reopen: the kept fight comes back as it was (its clock touched), the keep empties.
+      function memberReopensFight() {
+        let kept = resource.data.get('endedEncounter', null);
+        let after = request.resource.data.get('encounter', null);
+        return resource.data.get('encounter', null) == null
+          && kept != null
+          && after != null
+          && request.resource.data.get('endedEncounter', null) == null
+          && after.diff(kept).affectedKeys().hasOnly(['ended', 'clock'])
+          && !('ended' in after);
       }
 
       function nonEmptyEffectString(value) {
@@ -873,7 +967,11 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged())
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged()
+          && ((endedUnchanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly()
+                && (encounterUnchanged() || turnFieldsOnlyChanged() || combatEffectFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight()))
+            || (endedUnchanged() && memberStartsFight())
+            || ((memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly())))
         || isDm()
         || isAdmin()
         || isSelfJoin();
