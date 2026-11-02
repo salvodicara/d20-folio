@@ -48,28 +48,6 @@ export function toolEnNameById(id: string): string | undefined {
 }
 
 /**
- * The inverse of {@link toolEnNameById}: a catalogue tool's stable EN NAME → its
- * STABLE ID (locale-AGNOSTIC, the FACT anchor) — `"Smith's Tools"` →
- * `"smiths-tools"`. Used when an engine fact carries a tool by its EN name (a
- * multiclass entry-grant's `mc.toolProficiencies`) and we must store the player's
- * MANUAL pick as an ID, not a localized string (golden rule 7). Case- and
- * punctuation-tolerant (folds apostrophes / accents). Returns `undefined` for an
- * unknown name OR an UMBRELLA phrase ("One Musical Instrument of your choice") —
- * the caller skips it (an umbrella is a CHOICE, never a finished proficiency).
- */
-export function toolIdByEnName(name: string): string | undefined {
-  const folded = name.trim().toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
-  if (!folded) return undefined;
-  for (const id of TOOL_IDS) {
-    const en = srdEn("equipment", id, "name");
-    if (en && en.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "") === folded) {
-      return id;
-    }
-  }
-  return undefined;
-}
-
-/**
  * The generic UMBRELLA tool ids — a grant surfaces one ("a Musical Instrument of
  * your choice") as a CHOICE PLACEHOLDER that must NEVER survive into a final
  * created character (neither as a proficiency nor as an equipment item). Derived

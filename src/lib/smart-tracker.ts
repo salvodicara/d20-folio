@@ -2883,7 +2883,7 @@ export function resolveItemResourceAvailability(
   };
 }
 
-export const CAST_SOURCE_ACTIVE_PREFIX = "cast-source:";
+const CAST_SOURCE_ACTIVE_PREFIX = "cast-source:";
 
 /** Stable active/timer key for a source-specific persistent spell cast. */
 export function castSourceActiveKey(sourceId: string, spellId: string): string {
@@ -3185,7 +3185,7 @@ function resolveEquipmentTrackers(character: CharacterDoc): RawResolvedTracker[]
  * display, so the two surfaces can never disagree (golden rule 6). Returns 0
  * when the grants carry no pool.
  */
-export function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined): number {
+function freeCastItemChargeMax(grants: ReadonlyArray<Grant> | undefined): number {
   let charges = 0;
   for (const g of grants ?? []) {
     // A single-fixed-spell wand's `free-cast-spell` pool OR a multi-spell item's

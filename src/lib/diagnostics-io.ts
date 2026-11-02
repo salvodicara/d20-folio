@@ -30,7 +30,7 @@ export const MAX_REPORTS_PER_USER_BUILD = 50;
 export const MAX_REPORTS_PER_SESSION = 10;
 const STORAGE_PREFIX = "d20-folio-diagnostics";
 
-export function writeDiagnosticsReport(report: DiagnosticsReport): Promise<void> {
+function writeDiagnosticsReport(report: DiagnosticsReport): Promise<void> {
   return setDoc(doc(collection(db, "diagnostics")), {
     ...report,
     createdAt: serverTimestamp(),
