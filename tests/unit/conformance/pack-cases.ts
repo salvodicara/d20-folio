@@ -20,4 +20,8 @@ export const PACK_CASES: ReadonlyArray<string> = [
   "6:Ready and Charger",
   "7:Elemental Adept",
   "8:Moonlight Step uses",
+  // 9-17
+  "11:Compelled Duel leash",
+  "11:Mounted feats and redirects",
+  "12:Portent has no range limit",
 ];
