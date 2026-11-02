@@ -1,6 +1,6 @@
 {
   "diary": {
-    "allChronicle": "The whole chronicle",
+    "allChronicle": "Full chronicle",
     "sessionCount_one": "{{count}} session",
     "sessionCount_other": "{{count}} sessions",
     "pickSession": "Session",
