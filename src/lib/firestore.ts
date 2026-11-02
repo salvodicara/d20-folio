@@ -616,6 +616,20 @@ export async function getPublicCharacter(
   return parsePublicCharacterProjection(uid, charId, snap.data());
 }
 
+/**
+ * A stored character as its full in-memory sheet: the parent document parsed by the
+ * shared codec, its `combat/state` child folded in (the same hydration the owner's load
+ * runs). For a peer write that must run the target's own rules inside its transaction
+ * (campaign-io `writeCampaignCombatEffect`). Throws on an invalid document.
+ */
+export async function hydrateStoredCharacter(
+  id: string,
+  parentData: Record<string, unknown>,
+  rawCombat: unknown
+): Promise<CharacterDoc> {
+  return hydrateCompleteCharacter(await parseStoredCharacter(id, parentData), rawCombat);
+}
+
 async function hydrateCompleteCharacter(
   parent: CharacterDoc,
   rawCombat: unknown
