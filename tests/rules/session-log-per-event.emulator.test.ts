@@ -141,6 +141,29 @@ describe("session-log readers accept one document per item", () => {
   });
 });
 
+describe("a session's text on its play log", () => {
+  it("a member saves it through the adapter and every member reads it back", async () => {
+    await seed([event("x", "ana", 1)], []);
+    await createFirestoreSessionLogStore(dbOf("ana"), "camp1").saveNotes(
+      SESSION,
+      "Cragmaw."
+    );
+    const [session] = await createFirestoreSessionLogStore(dbOf("dm"), "camp1").recent(1);
+    expect(session?.notes).toBe("Cragmaw.");
+    expect(session?.lastAt).toBe(5000);
+    expect(session?.items.map((item) => item.id)).toEqual(["x"]);
+  });
+
+  it("an outsider or a blocked member cannot save it", async () => {
+    await seed([event("x", "ana", 1)], []);
+    for (const uid of ["out", "banned"]) {
+      await assertFails(
+        createFirestoreSessionLogStore(dbOf(uid), "camp1").saveNotes(SESSION, "x")
+      );
+    }
+  });
+});
+
 describe("firestore.rules: sessionLogs/{sessionId}/items/{itemId}", () => {
   const write = (uid: string, item: LogItem, id = item.id) =>
     setDoc(doc(dbOf(uid), ...itemPath(id)), perEventItemDoc(item));

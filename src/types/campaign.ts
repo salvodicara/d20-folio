@@ -630,7 +630,9 @@ export interface ChronicleVersion {
 // Session Log Document
 // ============================================================
 
-/** /campaigns/{campId}/sessions/{sessId} */
+/** /campaigns/{campId}/sessions/{sessId}.
+ *  LEGACY, read-only fallback (2026-11-02): the play log (`sessionLogs/{id}`) is the one
+ *  session record and holds the session's text. Build no new write on this doc. */
 export interface SessionLogDoc {
   id: string;
   /** Session date (for listing) */
