@@ -351,8 +351,6 @@ const NOT_MECHANICS = new Set([
   "castingTime",
   "concentration",
   "components",
-  // The catalogue's runtime program: not a homebrew field (`CatalogueSpellRuntimeKey`).
-  "mechanicsProgram",
 ]);
 
 /** The catalogue spell's structured fields, as a homebrew spell would store them. */

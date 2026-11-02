@@ -44,6 +44,8 @@ const WHITELIST = new Set(
     "lib/smart-tracker.ts",
     // a local bilingual-literal label map (`labels[cat][locale]`), not SRD data.
     "features/character/center/tabs/FeaturesTab.tsx",
+    // the dev-only design-system story page's local IT/EN sample copy (`T[lang]`).
+    "app/routes/ui-stories.tsx",
   ].map((p) => p.split("/").join(sep))
 );
 

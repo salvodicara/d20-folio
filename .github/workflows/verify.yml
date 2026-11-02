@@ -32,7 +32,8 @@ jobs:
   # Firebase), and an ambient env would silently mask a test that starts to.
   unit:
     name: unit (composed)
-    runs-on: ubuntu-latest
+    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -70,7 +71,8 @@ jobs:
   # the PR that grew it (2026-10-13 and 2026-10-16).
   budget:
     name: budget (composed)
-    runs-on: ubuntu-latest
+    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -98,7 +100,8 @@ jobs:
         run: pnpm test:budget
   e2e:
     name: e2e (shard ${{ matrix.shard }}/8)
-    runs-on: ubuntu-latest
+    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -158,7 +161,8 @@ jobs:
     name: merged e2e report
     if: ${{ failure() }}
     needs: [e2e]
-    runs-on: ubuntu-latest
+    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

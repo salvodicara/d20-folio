@@ -49,7 +49,6 @@ import {
 
 /** The only source fields an Activity may leave out, and why. */
 const KNOWN_GAPS: Readonly<Record<string, string>> = {
-  mechanicsProgram: "hand-written runtime program",
   weaponAttackCantrip: "wielded-weapon damage with a type swap",
   companion: "a summoned entity, not an activity",
   summonedMonsters: "raised bestiary creatures, each a monster stat block",
@@ -447,7 +446,6 @@ function actionMechanics(
   owner: ActionOwner
 ): Partial<SrdActionDef> {
   const out: Record<string, unknown> = { ...action };
-  delete out.mechanicsProgram;
   // The resolver spends the owner's own tracker first; a costTracker it would
   // never read is not a fact of the action.
   if (owner.trackerId && !action.costTrackerOverride) delete out.costTracker;
