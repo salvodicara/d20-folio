@@ -33,6 +33,7 @@
       "enemies-defeated": "Every enemy is down. End the fight?",
       "rest": "The party rested. End the fight?",
       "idle": "Nobody has touched the fight for an hour. End it?"
-    }
+    },
+    "mustRoll": "Must roll"
   }
 }

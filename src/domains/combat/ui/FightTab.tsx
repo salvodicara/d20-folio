@@ -302,6 +302,7 @@ function FightLine({ row }: { row: FightRow }) {
         )}
       </div>
       {row.current && <span className="f-now">{t("fight.now")}</span>}
+      {row.mustRoll && <span className="f-must">{t("fight.mustRoll")}</span>}
       {row.chips.length > 0 && (
         <div className="f-chips">
           {row.chips.map((c) => (

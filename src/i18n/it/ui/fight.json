@@ -33,6 +33,7 @@
       "enemies-defeated": "Tutti i nemici sono a terra. Chiudiamo lo scontro?",
       "rest": "Il gruppo ha riposato. Chiudiamo lo scontro?",
       "idle": "Nessuno ha toccato lo scontro da un’ora. Chiudiamolo?"
-    }
+    },
+    "mustRoll": "Deve tirare"
   }
 }
