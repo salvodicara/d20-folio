@@ -1,6 +1,6 @@
 name: Verify
 
-# The COMPOSED behavioural verdict, once per merge to main (golden rule 14):
+# The COMPOSED behavioural verdict, once per merge to main:
 # the full Playwright e2e matrix (chromium + mobile + portrait-sw) sharded
 # across parallel runners, the offline proof, plus the composed unit suite — all
 # against the same
@@ -10,7 +10,7 @@ name: Verify
 # PROMOTES a verified SHA instead of re-running a ~48-minute unsharded matrix.
 #
 # ci.yml is the SRD-only twin (the public tree's own composition, push + PR);
-# this workflow is the composed one. Both must stay green (golden rule 28).
+# this workflow is the composed one. Both must stay green (GOLDEN_RULES Vincoli #3).
 #
 # workflow_dispatch exists to re-verify a SHA (for example with a newer pack).
 #

@@ -20,11 +20,9 @@
     "lint": "eslint . 'content-pack/**/*.{ts,tsx}' --no-error-on-unmatched-pattern --cache",
     "i18n:check": "node scripts/i18n/check-i18n.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"content-pack/**/*.{ts,tsx,json}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,css,json}\" \"content-pack/**/*.{ts,tsx,json}\"",
     "test": "vitest run --project fast --project slow",
     "test:budget": "vitest run --project budget",
     "test:fast": "vitest run --project fast",
-    "test:slow": "vitest run --project slow",
     "test:watch": "vitest",
     "test:functions": "npm --prefix functions test",
     "test:srd-only": "VITE_CONTENT_PACK=0 vitest run --project fast --project slow",
@@ -33,7 +31,6 @@
     "srd:catalogue": "VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs scripts/export-srd-catalogue.ts dist/srd/v1",
     "build:srd-only": "pnpm typecheck:srd-only && VITE_CONTENT_PACK=0 vite build",
     "test:e2e": "playwright test --project=chromium",
-    "test:e2e:visual": "VISUAL=1 playwright test --project=chromium visual",
     "test:e2e:all": "playwright test",
     "test:e2e:offline": "playwright test --config playwright.offline.config.ts",
     "test:e2e:all:visual": "VISUAL=1 playwright test visual",
@@ -44,8 +41,7 @@
     "typecheck": "tsc -b",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "changeset:version": "changeset version && pnpm install --lockfile-only",
-    "changeset:tag": "changeset tag"
+    "changeset:version": "changeset version && pnpm install --lockfile-only"
   },
   "dependencies": {
     "@fontsource-variable/alegreya": "^5.2.8",

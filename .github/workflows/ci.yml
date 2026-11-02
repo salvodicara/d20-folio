@@ -114,7 +114,7 @@ jobs:
       # the fixture exports in plain Node.
       - name: Folio Core package
         run: pnpm core:build
-      # The eager-bundle/precache ceilings guard (golden rule 24) reads dist/,
+      # The eager-bundle/precache ceilings guard reads dist/,
       # so it runs after the build, in this same job.
       - name: Bundle budget
         run: pnpm test:budget
@@ -172,8 +172,9 @@ jobs:
           cache: "pnpm"
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
+          # The JDK pinned in .tool-versions (Temurin 25).
           distribution: "temurin"
-          java-version: "21"
+          java-version: "25"
       - run: pnpm install --frozen-lockfile
       # The same pin the deploy uses (deploy.yml).
       - name: Install Firebase CLI
