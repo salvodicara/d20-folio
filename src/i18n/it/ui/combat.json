@@ -14,7 +14,7 @@
       "swallowDamage": "{{dice}} all'inizio di ogni turno di chi lo ha inghiottito"
     },
     "title": "Combattimento",
-    "spellEndFalls": "{{spell}} è finito: un bersaglio ancora in volo cade, a meno che possa volare in altro modo.",
+    "spellEndFalls": "{{spell}} è finito: chi è ancora in aria cade, se non vola in altro modo.",
     "declareApplyFailed": "Impossibile applicare l'effetto. Il DM può correggerlo dallo scontro.",
     "resolveNextRollAdjustment": "Prossimo {{roll}} {{sign}}{{dice}}",
     "resolveRoll_attack": "attacco",
