@@ -31,7 +31,11 @@ const NOT_A_SUMMON: Readonly<Record<string, string>> = {
   shapechange: "the caster takes another creature's stat block, no summon",
 };
 
-const summonSpellIds = spells
+// The SRD spells, read against the SRD text; the pack checks its own spells the
+// same way against its own catalogue (content-pack/tests/unit/summon-spirits.test.ts).
+const srdSpells = spells.filter((spell) => spell.source === "SRD");
+
+const summonSpellIds = srdSpells
   .filter((spell) => !(spell.id in NOT_A_SUMMON))
   .filter((spell) => PRINTS_A_STAT_BLOCK.test(en[spell.id]?.description ?? ""))
   .map((spell) => spell.id)
@@ -70,7 +74,7 @@ describe("spell companions — declared from the catalogue text", () => {
   it("declares a companion on exactly the spells whose text prints a stat block", () => {
     // A printed block is the spell's `companion`; bestiary creatures (Animate
     // Dead's Skeleton) are its `summonedMonsters`.
-    const declared = spells
+    const declared = srdSpells
       .filter((spell) => spell.companion || spell.summonedMonsters)
       .map((spell) => spell.id)
       .sort();
@@ -79,7 +83,7 @@ describe("spell companions — declared from the catalogue text", () => {
 
   it("names every companion, variant and attack in English and Italian", () => {
     const missing: string[] = [];
-    for (const spell of spells) {
+    for (const spell of srdSpells) {
       const block = spell.companion;
       if (!block) continue;
       for (const variant of block.variants ?? [block]) {
