@@ -3357,9 +3357,9 @@ get(campaigns/{attachedCampaignId}).members)`). The char-doc `write` stays owner
 stored reader list and NO client-side ACL maintenance: a DM transfer, roster change, or removal is
 effective on the very next request, so the old `dmReaders`/`campaignReaders` recompute/self-reconcile
 machinery (and its convergence-failure class) is deleted entirely. A dangling pointer (campaign
-deleted) fails CLOSED for peers; the owner always keeps access. The one-off
-`scripts/backfill-attached-campaign.ts` backfills the pointer for any pre-B07 attachment at deploy
-time and sweeps the dead ACL fields (rule 22; deleted once run).
+deleted) fails CLOSED for peers; the owner always keeps access. Every live attachment carries its
+pointer (checked 2026-11-03); the one-off `scripts/clear-acl-residue.ts` sweeps the dead ACL fields
+at the v0.26.0 deploy (rule 22; deleted once run).
 
 **The auto-save fan-out (free-tier-safe).** When the owner's character auto-saves, the feature-layer
 orchestrator `features/campaigns/refresh-attached-sheets.ts` refreshes the lite party snapshot
