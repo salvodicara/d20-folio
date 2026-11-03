@@ -111,6 +111,15 @@
       "manage": "Gestisci incantesimi",
       "always": "sempre preparato",
       "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo."
+    },
+    "inv": {
+      "pack": "Zaino",
+      "attuned": "In sintonia",
+      "weight": "Peso {{carried}} · puoi portarne {{capacity}}",
+      "ac": "Classe Armatura {{ac}}",
+      "acBonus": "+{{bonus}} Classe Armatura",
+      "charges": "{{current}} cariche su {{max}}",
+      "stealth": "svantaggio a Furtività"
     }
   }
 }

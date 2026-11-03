@@ -111,6 +111,15 @@
       "manage": "Manage spells",
       "always": "always prepared",
       "overLimit": "That's more than your class allows: fine if your DM agrees."
+    },
+    "inv": {
+      "pack": "Pack",
+      "attuned": "Attuned",
+      "weight": "Weight {{carried}} · you can carry {{capacity}}",
+      "ac": "Armor Class {{ac}}",
+      "acBonus": "+{{bonus}} Armor Class",
+      "charges": "{{current}} of {{max}} charges",
+      "stealth": "Disadvantage on Stealth"
     }
   }
 }
