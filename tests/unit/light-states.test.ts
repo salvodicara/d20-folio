@@ -67,13 +67,13 @@ describe("what you see under each light level", () => {
   });
 
   it("without Darkvision: Dim Light is lightly obscured, Darkness heavily", () => {
-    expect(sightUnder("dim", 0)).toBe("lightly-obscured");
-    expect(sightUnder("darkness", 0)).toBe("heavily-obscured");
+    expect(sightUnder("dim", { darkvisionFt: 0 })).toBe("lightly-obscured");
+    expect(sightUnder("darkness", { darkvisionFt: 0 })).toBe("heavily-obscured");
   });
 
   it("with Darkvision: Dim Light as Bright Light, Darkness as Dim Light", () => {
-    expect(sightUnder("dim", 60)).toBeNull();
-    expect(sightUnder("darkness", 60)).toBe("lightly-obscured");
+    expect(sightUnder("dim", { darkvisionFt: 60 })).toBeNull();
+    expect(sightUnder("darkness", { darkvisionFt: 60 })).toBe("lightly-obscured");
   });
 });
 

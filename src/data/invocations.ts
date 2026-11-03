@@ -106,10 +106,9 @@ const PUBLIC_INVOCATIONS: SrdEldritchInvocation[] = [
   {
     id: "devils-sight",
     prerequisite: "Level 2+ Warlock",
-    // Functionally darkvision (see in darkness within range); the closest
-    // existing sense grant. The magical-darkness nuance stays in the prose —
-    // there is no separate "sees-in-magical-darkness" sense in the model.
-    grants: [{ type: "darkvision", range: 120 }],
+    // 2024 RAW: "You can see normally in Dim Light and Darkness—both magical and
+    // nonmagical—within 120 feet of yourself."
+    grants: [{ type: "darkvision", range: 120, penetratesMagicalDarkness: true }],
   },
   {
     id: "devouring-blade",

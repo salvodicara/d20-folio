@@ -602,7 +602,7 @@ export function lightChipsView(locale: Locale, darkvisionFt: number): LightChipV
         ? { text: reference(level === "dim" ? "dim-light" : "darkness") }
         : {
             key:
-              sightUnder(level, darkvisionFt) === null
+              sightUnder(level, { darkvisionFt }) === null
                 ? ("combat.lightDarkvisionDim" as const)
                 : ("combat.lightDarkvisionDark" as const),
           },

@@ -256,8 +256,15 @@ function aggregateWithConditions(
   if (!anyLightLit(activeKeys)) return unlit;
   // A lit light level's rules depend on the Darkvision the rest of the sheet grants
   // (a hand-set range wins), so it joins in a second pass.
-  const darkvisionFt = character.senseRangeOverrides?.darkvision ?? unlit.darkvisionFt;
-  return evaluate(resolveLightStateSources(activeKeys, darkvisionFt));
+  const overrides = character.senseRangeOverrides;
+  return evaluate(
+    resolveLightStateSources(activeKeys, {
+      darkvisionFt: overrides?.darkvision ?? unlit.darkvisionFt,
+      blindsightFt: overrides?.blindsight ?? unlit.blindsightFt,
+      truesightFt: overrides?.truesight ?? unlit.truesightFt,
+      magicalDarknessSightFt: unlit.magicalDarknessSightFt,
+    })
+  );
 }
 
 /**
