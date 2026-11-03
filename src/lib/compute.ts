@@ -192,6 +192,39 @@ export function computeAC(
 }
 
 /**
+ * The best self-contained AC formula that competes with (doesn't add onto) the
+ * body's AC, or null: a `while-active` form total (Circle of the Moon: 13 + WIS) or
+ * an `always` floor (Barkskin: 17). Its parts sum to its total. The caller takes
+ * the higher of this and the AC it competes with: the normal AC, or an assumed
+ * form's natural AC ("if that total is higher than the Beast's AC").
+ */
+export function competingAcFormula(
+  activeAcFormulas: ReadonlyArray<AcFormula>,
+  abilityScores: Record<AbilityCode, number>
+): { ac: number; parts: RawBreakdownPart[] } | null {
+  let best: { ac: number; parts: RawBreakdownPart[] } | null = null;
+  for (const g of activeAcFormulas) {
+    if (g.condition !== "while-active" && g.condition !== "always") continue;
+    let candidate = g.base + g.shieldBonus;
+    for (const ability of g.bonuses) {
+      candidate += abilityModifier(abilityScores[ability]);
+    }
+    if (best && candidate <= best.ac) continue;
+    // A `while-active` form sets a "Form base"; an `always` floor (Barkskin)
+    // reads as an "AC floor" so the tip explains WHY the AC jumped to 17.
+    const baseTerm =
+      g.condition === "always" ? "breakdown.ac.floor" : "breakdown.ac.formBase";
+    const parts = [termPart(baseTerm, g.base)];
+    if (g.shieldBonus > 0) parts.push(termPart("equipment.shield", g.shieldBonus));
+    for (const ability of g.bonuses) {
+      parts.push(abilityPart(ability, abilityModifier(abilityScores[ability])));
+    }
+    best = { ac: candidate, parts };
+  }
+  return best;
+}
+
+/**
  * The structured AC computation — the SAME formula as {@link computeAC}, but it
  * records the per-source {@link RawBreakdownPart}s of the WINNING composition so
  * the cockpit can render the AC breakdown tip ("10 base · +2 DEX · +2 Shield").
@@ -471,29 +504,8 @@ export function computeACDetailed(
   // (`no-armor`/`no-armor-no-shield` are NOT here — they joined the unarmored
   // selection above, under the armour gate.) Each candidate's parts are self-
   // contained so `breakdownTotal(parts) === ac` holds for the winning branch.
-  let formAC = 0;
-  let formParts: RawBreakdownPart[] = [];
-  for (const g of activeAcFormulas) {
-    if (g.condition !== "while-active" && g.condition !== "always") continue;
-    let candidate = g.base + g.shieldBonus;
-    for (const ability of g.bonuses) {
-      candidate += abilityModifier(abilityScores[ability]);
-    }
-    if (candidate > formAC) {
-      formAC = candidate;
-      // A `while-active` form sets a "Form base"; an `always` floor (Barkskin)
-      // reads as an "AC floor" so the tip explains WHY the AC jumped to 17.
-      const baseTerm =
-        g.condition === "always" ? "breakdown.ac.floor" : "breakdown.ac.formBase";
-      formParts = [termPart(baseTerm, g.base)];
-      if (g.shieldBonus > 0) formParts.push(termPart("equipment.shield", g.shieldBonus));
-      for (const ability of g.bonuses) {
-        formParts.push(abilityPart(ability, abilityModifier(abilityScores[ability])));
-      }
-    }
-  }
-
-  if (formAC > normalAC) return { ac: formAC, parts: formParts };
+  const competing = competingAcFormula(activeAcFormulas, abilityScores);
+  if (competing && competing.ac > normalAC) return competing;
 
   // Compose the WINNING normal-branch parts. base + DEX (capped note when
   // reduced) + any UD formula abilities + shield + item bonuses + feature flat +

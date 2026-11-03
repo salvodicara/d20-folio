@@ -6,8 +6,11 @@
  * Concentration that sustains the form stays the store's orchestration.
  */
 import type { BeastStatBlock } from "@/data/types";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { revertBuildFromPrior, selfFormRule } from "@/lib/polymorph";
-import type { CharacterDoc } from "@/types/character";
+import { resolveTempHp } from "@/lib/smart-tracker";
+import type { CharacterDoc, SessionState } from "@/types/character";
 import { commitWorldVitals, drainedTemporary, vitalsWithTemporary } from "./world-commit";
 
 /** The character with its temporary HP set to `temp` (world pool included). */
@@ -51,7 +54,7 @@ export function assumeBeastForm(
     : (doc.session.polymorphForm?.prior.tempHp ?? doc.session.hp.temp);
   const tempHp = reshift
     ? base.session.hp.temp
-    : Math.max(base.session.hp.temp, beast.hp);
+    : Math.max(base.session.hp.temp, formTempHp(base, beast, spellId));
   return {
     doc: {
       ...base,
@@ -70,17 +73,32 @@ export function assumeBeastForm(
   };
 }
 
-/** Drop the active Beast form and restore the caster's own Temporary HP. Null without
- *  a form. `tempHp` keeps what a form that ran out of its Temporary HP was left with,
+/** The Temporary HP assuming the form grants: the form's Hit Points, or (Wild Shape)
+ *  the best of the character's grants for this form (Druid level; a Moon Druid's
+ *  3 × level). Temporary HP don't stack: the caller keeps the larger pool. */
+function formTempHp(doc: CharacterDoc, beast: BeastStatBlock, sourceId: string): number {
+  if (selfFormRule(sourceId).tempHp !== "grants") return beast.hp;
+  const grants = aggregateCharacterGrants(doc.character, doc.session).tempHpGrants;
+  let best = 0;
+  for (const g of grants) {
+    if (g.sourceId !== sourceId && g.forForm !== sourceId) continue;
+    best = Math.max(best, resolveTempHp(g.formula, doc));
+  }
+  return best;
+}
+
+/** Drop the active Beast form and restore the caster's own Temporary HP (a rule whose
+ *  Temporary HP outlast the form, Wild Shape, keeps them). Null without a form.
+ *  `tempHp` keeps what a form that ran out of its Temporary HP was left with,
  *  instead of the caster's own pool. A form a v0.25 client stamped also gets its
  *  build back from `prior`. */
 export function dropBeastForm(doc: CharacterDoc, tempHp?: number): CharacterDoc | null {
   const active = doc.session.activeForm;
   if (active) {
-    const { activeForm: _dropped, ...restSession } = withTemp(
-      doc,
-      tempHp ?? active.tempHpBefore
-    );
+    const kept = selfFormRule(active.sourceId).tempHpOutlastsForm
+      ? doc.session.hp.temp
+      : active.tempHpBefore;
+    const { activeForm: _dropped, ...restSession } = withTemp(doc, tempHp ?? kept);
     void _dropped;
     return { ...doc, session: restSession };
   }
@@ -96,4 +114,27 @@ export function dropBeastForm(doc: CharacterDoc, tempHp?: number): CharacterDoc 
     character: { ...doc.character, ...revertBuildFromPrior(form.prior) },
     session: restSession,
   };
+}
+
+/**
+ * The session after a play step, with the form ended when that step ends it
+ * (edge-case family M2): its Temporary HP ran out and its rule ends with them
+ * (Polymorph: the rest of the hit already reached the caster's HP), or the
+ * character gained a condition its rule ends on, implied ones included (Wild Shape
+ * ends on Incapacitated, so at 0 HP too). The play functions that apply a hit or a
+ * condition (`takeDamage`, `addCondition`) call it, so every path ends the form.
+ * The Concentration that may hold the form stays the store's to end. A form a v0.25
+ * client stamped is left to the store, which also gives the build back.
+ */
+export function endFormIfDue(doc: CharacterDoc, next: SessionState): SessionState {
+  // A form a v0.25 client stamped needs its build back: the store ends that one.
+  const form = next.activeForm;
+  if (!form) return next;
+  const rule = selfFormRule(form.sourceId);
+  const outOfTempHp = rule.endsWithoutTempHp && next.hp.temp === 0;
+  const conditions = rule.endsOn?.length ? effectiveSessionConditions(next) : [];
+  const ended = outOfTempHp || (rule.endsOn ?? []).some((c) => conditions.includes(c));
+  if (!ended) return next;
+  const after = { ...doc, session: next };
+  return (dropBeastForm(after, outOfTempHp ? 0 : undefined) ?? after).session;
 }

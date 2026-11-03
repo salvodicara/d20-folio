@@ -151,12 +151,14 @@ export function worldStandingZeroHpFloors(
 export interface ActiveKeySession {
   readonly activeFeatures?: readonly string[];
   readonly world?: unknown;
+  readonly activeForm?: { readonly sourceId: string };
 }
 
 /**
  * The ONE active-key set every `while-active` gate reads: the legacy
  * `session.activeFeatures` chips UNIONED with the LIVE `active-key` standings
- * of the character's persisted engine world. Every GATING read (grant
+ * of the character's persisted engine world, plus the source of an assumed form.
+ * Every GATING read (grant
  * aggregation, action-row riders, maintainer visibility) goes through this, so
  * an engine-cast buff lights exactly what a legacy chip lights — rule 6, one
  * truth. The legacy chip LIFECYCLE machinery (timers, rest/trigger expiry,
@@ -167,5 +169,8 @@ export interface ActiveKeySession {
 export function sessionActiveKeys(session: ActiveKeySession): Set<string> {
   const keys = new Set(session.activeFeatures ?? []);
   for (const key of worldStandingActiveKeys(session.world)) keys.add(key);
+  // An assumed form lights what made it (edge-case family M2): a rule that holds
+  // "while in a Wild Shape form" is a `while-active` keyed to `druid-wild-shape`.
+  if (session.activeForm) keys.add(session.activeForm.sourceId);
   return keys;
 }

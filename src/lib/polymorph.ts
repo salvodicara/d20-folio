@@ -25,6 +25,7 @@ import {
 import type { AbilityCode } from "@/types/ability";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { beastsByMaxCR, getBeast } from "@/data/beasts";
+import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import { totalLevel } from "@/lib/classes";
 
@@ -44,9 +45,19 @@ export function isSelfFormSpell(spellId: string): boolean {
   return getSpellById(spellId)?.formRule !== undefined;
 }
 
-/** The spell's form rule (Polymorph's for a spell without one). */
-export function selfFormRule(spellId: string): SelfFormRule {
-  return getSpellById(spellId)?.formRule ?? POLYMORPH_RULE;
+/** The form rule of the spell or class feature that makes the form (Polymorph's
+ *  for an id that carries none). */
+export function selfFormRule(sourceId: string): SelfFormRule {
+  return (
+    getSpellById(sourceId)?.formRule ??
+    classFeatureIndex.get(sourceId)?.formRule ??
+    POLYMORPH_RULE
+  );
+}
+
+/** Which catalogue names what made the form: a spell, or a class feature (Wild Shape). */
+export function formSourceKind(sourceId: string): "spell" | "class-feature" {
+  return classFeatureIndex.get(sourceId)?.formRule ? "class-feature" : "spell";
 }
 
 /** The active form's stat block: the bestiary block it carries, else the Beast. */

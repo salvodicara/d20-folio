@@ -1251,6 +1251,8 @@ export interface IncomingAttackClause {
 export interface TempHpEntry {
   sourceId: string;
   formula: string;
+  /** The form whose assuming grants these, besides the source's own form (M2). */
+  forForm?: string;
   trigger?: LocText;
   slot?: ActionType;
 }
@@ -3856,6 +3858,7 @@ export function evaluateGrants(
         tempHpGrants.push({
           sourceId,
           formula: g.formula,
+          ...(g.forForm ? { forForm: g.forForm } : {}),
           ...(hasGrantField(gref, "trigger", g.trigger)
             ? { trigger: grantField(gref, "trigger", g.trigger) }
             : {}),

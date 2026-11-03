@@ -46,6 +46,7 @@ import {
   effectiveProficiencyBonus,
   abilityAcBonus,
   aggregateAbilityScores,
+  competingAcFormula,
 } from "@/lib/compute";
 import { inferHpContributions } from "@/lib/character-infer";
 import { getClasses, totalLevel } from "@/lib/classes";
@@ -66,7 +67,7 @@ import {
   effectiveSessionConditions,
   suppressedSessionConditions,
 } from "@/lib/effective-conditions";
-import { formFacts } from "@/lib/polymorph";
+import { formFacts, formSourceKind } from "@/lib/polymorph";
 import {
   sessionActiveKeys,
   worldStandingMaxHpDeltas,
@@ -372,14 +373,14 @@ export function abilityScoreBreakdown(
 
 /**
  * A number an assumed form supplies (M2): labelled by what made the form
- * ("Polymorph"), and explaining on tap whose statistics the character took.
+ * ("Polymorph", "Wild Shape"), and explaining on tap whose statistics the character took.
  */
 export function formBreakdownPart(
   form: NonNullable<CharacterAggregate["form"]>,
   value: number
 ): RawBreakdownPart {
   return {
-    ...locPart(srdText("spell", form.sourceId, "name"), value),
+    ...locPart(srdText(formSourceKind(form.sourceId), form.sourceId, "name"), value),
     why: {
       term: "breakdown.why.form",
       params: { form: { loc: srdText(form.nameKind, form.beastId, "name") } },
@@ -409,9 +410,9 @@ export function computeCharacterAcBreakdown(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): RawBreakdownPart[] {
-  // An assumed form's natural AC replaces the character's (see acFromAggregate).
+  // An assumed form's AC replaces the character's (see acFromAggregate).
   const form = (agg as { form?: CharacterAggregate["form"] }).form;
-  if (form) return [formBreakdownPart(form, form.ac)];
+  if (form) return formAc(form, agg).parts;
   const scores = aggregateAbilityScores(
     character.abilityScores,
     agg,
@@ -454,12 +455,27 @@ export function acFromAggregate(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  // An assumed form's natural AC replaces the computed one (M2); a hand-set AC
-  // still wins, as a hand-set score does.
-  const form = (agg as { form?: { ac: number } | null }).form;
+  // An assumed form's AC replaces the computed one (M2); a hand-set AC still
+  // wins, as a hand-set score does.
+  const form = (agg as { form?: CharacterAggregate["form"] }).form;
   return (
-    character.acOverride ?? form?.ac ?? computeCharacterAC(character, agg, itemResources)
+    character.acOverride ??
+    (form ? formAc(form, agg).ac : computeCharacterAC(character, agg, itemResources))
   );
+}
+
+/**
+ * An assumed form's AC: its natural AC, unless an active formula that ignores the
+ * body's armor gives more (a Moon Druid's 13 + WIS, Barkskin's floor of 17), read
+ * with the form's scores. Worn armor and its bonuses don't apply to the form.
+ */
+function formAc(
+  form: NonNullable<CharacterAggregate["form"]>,
+  agg: Pick<AggregatedGrants, "acFormulas">
+): { ac: number; parts: RawBreakdownPart[] } {
+  const natural = { ac: form.ac, parts: [formBreakdownPart(form, form.ac)] };
+  const competing = competingAcFormula(agg.acFormulas, form.abilityScores);
+  return competing && competing.ac > natural.ac ? competing : natural;
 }
 
 /**

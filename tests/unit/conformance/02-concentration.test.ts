@@ -195,7 +195,7 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "Shape-shifting doesn't end concentration",
       source: "WIKI druid:main; SAC #134; WIKI druid:moon",
-      status: "M2",
+      status: "works",
     },
     () => {
       const doc = wildShapedDruid();
@@ -462,7 +462,7 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "Wild Shape ends on Incapacitated, but concentration is separate",
       source: "WIKI druid:main",
-      status: "M2",
+      status: "works",
     },
     () => {
       // Stunned: the form ends, and (separately) so does Concentration.

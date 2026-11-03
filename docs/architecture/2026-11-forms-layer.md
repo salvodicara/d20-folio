@@ -50,10 +50,22 @@ never written into the build.
 1. Form rules as catalogue data (#569).
 2. The layer (done) for the Transform spells: a new form records `activeForm` and stamps nothing; the
    aggregate carries `form`; the readers' tests pin the same numbers as today's stamping.
-3. Wild Shape as a form (it keeps INT/WIS/CHA), plus the casting block and Moon's exceptions,
-   and the form's end in the engine: today only the store ends a form when its Temporary HP
-   run out or the character is Incapacitated, so the play functions (`takeDamage`,
-   `addCondition`) leave it running.
+3. Wild Shape as a form, in parts:
+   - **Engine (done).** `druid-wild-shape` carries a `formRule`, and `selfFormRule` reads
+     features as well as spells. The druid keeps INT/WIS/CHA. The Temporary HP are the
+     best of the form's grants: the Druid level, or a grant marked `forForm`, such as a
+     Moon Druid's 3 × level. They stay when the form ends. The form ends on Incapacitated
+     (`endsOn`). `formPool` caps the CR from the class table's `wildShapeMaxCR` and allows
+     a Fly Speed only from level 8.
+   - **The engine ends forms.** `takeDamage` and `addCondition` end a form through
+     `endFormIfDue`, so every path ends it: at 0 Temporary HP for Polymorph, and on
+     Incapacitated (0 HP included) for Wild Shape.
+   - **The form's AC** is the higher of its own AC and an active formula that ignores
+     armor (Moon's 13 + WIS, Barkskin's 17).
+   - **Gates.** An assumed form lights its source as an active key, so "while in a Wild
+     Shape form" is a `while-active` keyed to `druid-wild-shape`.
+   - **Next.** The casting block and its exceptions (Beast Spells; Moon's circle spells),
+     the picker and revert in both UIs, and moving the Moon grants onto the form's key.
 4. When no stored character holds a stamped form (a read-only survey), the stamping code and
    `prior` readers can go. That is an owner-gated cleanup, not part of this work.
 

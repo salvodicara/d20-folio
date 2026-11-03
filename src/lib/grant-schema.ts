@@ -2361,6 +2361,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("temp-hp"),
     },
     {
+      /** The form whose assuming grants these (a Moon Druid's 3 × level pool on
+       *  Wild Shape): the Transform flow takes the best of them (M2). */
+      forForm: stringSchema,
       slot: unionSchema([
         literalSchema("action"),
         literalSchema("bonus"),

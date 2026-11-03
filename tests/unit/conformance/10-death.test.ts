@@ -35,7 +35,6 @@ import {
 } from "@/lib/play/magic-jar";
 import { longRestCharacter } from "@/lib/play/rests";
 import { healBy, setDeathSaves } from "@/lib/play/vitals";
-import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { EncounterState } from "@/types/campaign";
@@ -218,13 +217,18 @@ describe("conformance · 10. death and revival", () => {
       category: 10,
       case: "Wild Shape at 0",
       source: "WIKI druid:main; FVTT#833",
-      status: "M2",
+      status: "works",
     },
     () => {
       // Wild Shape is a form that ends at 0 HP (the druid falls Unconscious).
-      expect(JSON.stringify(getSrdFeatureSource("druid-wild-shape"))).toContain(
-        "assume-form"
-      );
+      const doc = withSession({
+        hp: { ...MOCK_CHARACTER.session.hp, current: 10, temp: 0 },
+      });
+      const shaped = assumeBeastForm(doc, must(getBeast("wolf")), "druid-wild-shape").doc;
+      expect(shaped.session.activeForm?.beastId).toBe("wolf");
+      const hit = must(takeDamage(shaped, 40));
+      expect(hit.session.hp.current).toBe(0);
+      expect(hit.session.activeForm).toBeUndefined();
     }
   );
 
@@ -371,7 +375,7 @@ describe("conformance · 10. death and revival", () => {
       category: 10,
       case: "Polymorph at 0 temp HP",
       source: "WIKI spell:polymorph; SAC #136",
-      status: "M2",
+      status: "works",
     },
     () => {
       const doc = withSession({

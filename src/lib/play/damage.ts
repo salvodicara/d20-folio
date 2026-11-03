@@ -14,6 +14,7 @@ import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import { ruleFlag } from "@/lib/rules";
 import { resolveTrackers } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { endFormIfDue } from "./forms";
 import { zeroHpDropOf } from "./vitals";
 import { commitWorldVitals, drainedTemporary } from "./world-commit";
 
@@ -130,37 +131,39 @@ export function takeDamage(
     return state;
   });
 
-  return {
-    session: {
-      ...(engine ? engine.session : doc.session),
-      hp: {
-        ...doc.session.hp,
-        current: transition.state.hp.current,
-        temp: transition.state.hp.temp,
-      },
-      conditions: [...transition.state.conditions],
-      deathSucc: deathSaves.successes,
-      deathFail: deathSaves.failures,
-      ...(absorbed.total > 0 ? { trackers: absorbed.trackers } : {}),
-      // The fall records what was on as the character dropped (Relentless Rage).
-      ...(transition.crossedZero && !transition.instantDeath
-        ? { zeroHpDrop: zeroHpDropOf(doc) }
-        : {}),
-      ...(consumedEffectIds.size > 0
-        ? {
-            encounterEffects: persistentEffects.filter(
-              (effect) => !consumedEffectIds.has(effect.id)
-            ),
-          }
-        : {}),
-      ...(consumedActiveKeys.size > 0
-        ? {
-            activeFeatures: (doc.session.activeFeatures ?? []).filter(
-              (key) => !consumedActiveKeys.has(key)
-            ),
-          }
-        : {}),
+  const session: SessionState = {
+    ...(engine ? engine.session : doc.session),
+    hp: {
+      ...doc.session.hp,
+      current: transition.state.hp.current,
+      temp: transition.state.hp.temp,
     },
+    conditions: [...transition.state.conditions],
+    deathSucc: deathSaves.successes,
+    deathFail: deathSaves.failures,
+    ...(absorbed.total > 0 ? { trackers: absorbed.trackers } : {}),
+    // The fall records what was on as the character dropped (Relentless Rage).
+    ...(transition.crossedZero && !transition.instantDeath
+      ? { zeroHpDrop: zeroHpDropOf(doc) }
+      : {}),
+    ...(consumedEffectIds.size > 0
+      ? {
+          encounterEffects: persistentEffects.filter(
+            (effect) => !consumedEffectIds.has(effect.id)
+          ),
+        }
+      : {}),
+    ...(consumedActiveKeys.size > 0
+      ? {
+          activeFeatures: (doc.session.activeFeatures ?? []).filter(
+            (key) => !consumedActiveKeys.has(key)
+          ),
+        }
+      : {}),
+  };
+  return {
+    // The hit can end a form: its Temporary HP ran out, or the fall incapacitates.
+    session: endFormIfDue(doc, session),
     transition,
     consumedEffectIds,
     dealt,
