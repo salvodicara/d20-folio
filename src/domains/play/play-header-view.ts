@@ -11,7 +11,7 @@ import { effectiveConditions } from "@/lib/aggregate-character";
 import { abilityModifier } from "@/lib/ability";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
-import { currentForm, formNameKind } from "@/lib/polymorph";
+import { currentForm, formNameKind, formSourceKind } from "@/lib/polymorph";
 import { effectChipsView } from "@/lib/views/effect-chips-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import {
@@ -80,7 +80,7 @@ function formNames(doc: CharacterDoc, locale: Locale): PlayHeaderView["form"] {
   const form = currentForm(doc.session);
   if (!form) return null;
   return {
-    source: localizeSrd("spell", form.sourceId, "name", locale),
+    source: localizeSrd(formSourceKind(form.sourceId), form.sourceId, "name", locale),
     beast: localizeSrd(formNameKind(form), form.beastId, "name", locale),
   };
 }

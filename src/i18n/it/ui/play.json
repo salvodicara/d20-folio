@@ -54,6 +54,9 @@
       "tempOnly": "I punti ferita temporanei li assorbono tutti: i tuoi restano {{from}}.",
       "plain": "Passi da {{from}} a {{to}} punti ferita.",
       "concentration": "Tiri per la concentrazione su {{spell}} (CD {{dc}})."
+    },
+    "form": {
+      "tempHp": "Ottieni {{amount}} punti ferita temporanei, che restano quando torni alla tua forma."
     }
   }
 }

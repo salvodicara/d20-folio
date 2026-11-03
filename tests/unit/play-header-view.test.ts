@@ -112,6 +112,20 @@ describe("playHeaderView — in a form", () => {
     expect(view.abilities.find((a) => a.id === "STR")?.score).not.toBe(8);
   });
 
+  it("names Wild Shape, a class feature, the same way", () => {
+    const wolf = makeCharacterDoc(
+      { classId: "druid", level: 4 },
+      {
+        activeForm: { sourceId: "druid-wild-shape", beastId: "wolf", tempHpBefore: 0 },
+      }
+    );
+    expect(playHeaderView(wolf, "en").form).toEqual({
+      source: "Wild Shape",
+      beast: "Wolf",
+    });
+    expect(playHeaderView(wolf, "it").form?.source).toBe("Forma Selvatica");
+  });
+
   it("no form, no band", () => {
     expect(playHeaderView(selene, "en").form).toBeNull();
   });
