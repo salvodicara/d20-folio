@@ -44,6 +44,9 @@ type Ability = "STR" | "DEX" | "CON" | "INT" | "WIS" | "CHA";
 export const SCALAR_BINDINGS = {
   totalLevel: "level.total",
   classLevel: (classId: string) => `level.class.${classId}`,
+  /** The level the value's own feature scales on: its owning-class level, or the
+   *  total level for a feat, species trait, item or homebrew entry. */
+  featureLevel: "level.feature",
   proficiencyBonus: "pb",
   abilityModifier: (ability: Ability) => `ability.mod.${ability}`,
   abilityScore: (ability: Ability) => `ability.score.${ability}`,
@@ -58,7 +61,7 @@ export const SCALAR_BINDINGS = {
 } as const;
 
 const BINDING_PATTERN =
-  /^(level\.total|pb|cast\.level|cast\.base-level|level\.class\.[a-z0-9-]+|ability\.(mod|score)\.(STR|DEX|CON|INT|WIS|CHA)|tracker\.used\.[a-z0-9-]+|zero-hp\.uses\.[a-z0-9:-]+)$/;
+  /^(level\.total|level\.feature|pb|cast\.level|cast\.base-level|level\.class\.[a-z0-9-]+|ability\.(mod|score)\.(STR|DEX|CON|INT|WIS|CHA)|tracker\.used\.[a-z0-9-]+|zero-hp\.uses\.[a-z0-9:-]+)$/;
 
 /** Whether a binding id belongs to the vocabulary. */
 export function isScalarBinding(bindingId: string): boolean {

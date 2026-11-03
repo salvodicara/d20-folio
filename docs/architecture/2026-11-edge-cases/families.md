@@ -228,6 +228,10 @@ Ranked by severity, where severity = how often it comes up at the table × how w
   Each numeric field accepts `Scalar`, and one `bindScalars(ctx)` resolves it. The breakdown shows the bound terms ("2 + castLevel(5)"), and a homebrew validator reuses the existing exact-schema conformer.
 - **Stored shape:** no (catalogue only). Stored tracker overrides are unaffected.
 - **Retires:** `diceByLevel`, `castLevelScaling`, `byCastLevel`, `spellLevel.acPer/hpPer`, `damage(Dice)PerSpellLevel`, `TrackerSpec.levels[]`, string tracker formulas, and the `classSpecific.relentlessRageDc` / `relentlessRageHp` style columns.
+- **Status (2026-11-03):**
+  - Done and deleted: `diceByLevel` and `castLevelScaling`.
+  - Compiled, not deleted: tracker formulas stay strings in data and homebrew, but `compileTrackerFormula` (`src/lib/tracker-formula.ts`) turns them into the Scalar tree. Their `level` term is the `level.feature` binding.
+  - Left: the companion fields, which move with M6, and `levels[]`.
 
 ---
 
