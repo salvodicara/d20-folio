@@ -11,6 +11,7 @@
 // dependency on the (pure) cost-engine module. `CostSpec` is the canonical,
 // serializable cost shape shared with the immediate-commit combat path.
 import type { CostSpec } from "@/lib/cost-engine";
+import type { Scalar } from "@/lib/scalar";
 import type { CombatAbilityCode, CombatOutcomePredicate } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
@@ -2151,6 +2152,11 @@ export type CreatureSpeeds = Readonly<
   Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", number>>
 >;
 
+/** A companion's speeds, each a Scalar (Otherworldly Steed: Fly 60 ft. from a 4th-level slot). */
+export type CompanionSpeeds = Readonly<
+  Partial<Record<"walk" | "climb" | "fly" | "swim" | "burrow", Scalar>>
+>;
+
 /** Senses beyond ordinary sight, in feet (Passive Perception is not a sense here). */
 export type CreatureSenses = {
   darkvisionFt?: number;
@@ -2201,14 +2207,17 @@ export interface CompanionLifecycle {
 export interface CompanionStatBlock {
   /** When the companion ends, and how it comes back (see {@link CompanionLifecycle}). */
   lifecycle?: CompanionLifecycle;
-  /** AC = `base` (+ the owner's `ability` modifier, if set). */
-  ac: { base: number; ability?: AbilityCode };
+  /**
+   * AC = `base` (+ the owner's `ability` modifier, if set). `base` is a Scalar on
+   * `cast.level`, `level.feature`, `pb` and the owner's `ability.mod.*`.
+   */
+  ac: { base: Scalar; ability?: AbilityCode };
   /**
    * Max HP = `base` + `perLevel` × owner's class level. `ownerMax` replaces the
    * sum with the owner's own Hit Point maximum (Arcane Hand: "Hit Points equal to
    * your Hit Point maximum").
    */
-  hp: { base: number; perLevel: number; ownerMax?: true };
+  hp: { base: Scalar; perLevel: number; ownerMax?: true };
   /**
    * A spell-summoned block whose printed numbers use the spell's level ("AC 11 +
    * the spell's level"). `ac.base` / `hp.base` and each attack's `dice` hold the
@@ -2236,7 +2245,7 @@ export interface CompanionStatBlock {
    * (kept for the existing Artificer constructs). When set, the resolver
    * exposes the full map AND derives a `speed` summary string from `walk`.
    */
-  speeds?: CreatureSpeeds;
+  speeds?: CompanionSpeeds;
   /**
    * Fixed ability scores (Beast Master beasts). The resolver derives each
    * modifier and a save bonus — when `pbToChecks` is set (Primal Bond), the

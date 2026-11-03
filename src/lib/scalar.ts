@@ -208,6 +208,19 @@ export function levelDice(
 }
 
 /**
+ * Catalogue shorthand: a value the creature or effect gains from a slot level on
+ * (Otherworldly Steed: Fly 60 ft. from a 4th-level slot); 0 below it.
+ */
+export function fromCastLevel(level: number, value: number): IntegerExpression {
+  return {
+    kind: "table",
+    input: { kind: "binding", bindingId: SCALAR_BINDINGS.castLevel },
+    rows: [{ atLeast: level, value: { kind: "fixed", value } }],
+    below: { kind: "fixed", value: 0 },
+  };
+}
+
+/**
  * Catalogue shorthand: an amount that grows with the slot level (Aid: 5, +5 per
  * slot level above 2nd). Below `baseLevel`, and when no slot level is known, it is
  * `base`.
