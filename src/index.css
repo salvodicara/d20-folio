@@ -16,7 +16,7 @@
 }
 @font-face {
   font-family: "Folio Text Figures";
-  font-weight: 600 900;
+  font-weight: 600;
   font-display: swap;
   ascent-override: 102%;
   descent-override: 35%;
@@ -27,12 +27,35 @@
 }
 @font-face {
   font-family: "Folio Title Figures";
-  font-weight: 400 900;
+  font-weight: 400 600;
   font-display: swap;
   ascent-override: 92%;
   descent-override: 29%;
   line-gap-override: 0%;
   src: url("../node_modules/@fontsource/cormorant-infant/files/cormorant-infant-latin-600-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039;
+}
+/* Bold digits get their own bold files: one 600 file stretched to 900 reads light. */
+@font-face {
+  font-family: "Folio Text Figures";
+  font-weight: 700 900;
+  font-display: swap;
+  ascent-override: 102%;
+  descent-override: 35%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-700-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039;
+}
+@font-face {
+  font-family: "Folio Title Figures";
+  font-weight: 700 900;
+  font-display: swap;
+  ascent-override: 92%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource/cormorant-infant/files/cormorant-infant-latin-700-normal.woff2")
     format("woff2");
   unicode-range: U+0030-0039;
 }

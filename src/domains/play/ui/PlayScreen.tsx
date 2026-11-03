@@ -48,13 +48,13 @@ export function PlayScreen() {
 
   if (!doc || doc.id !== characterId) {
     return (
-      <main id="main" className="f-page">
+      <main id="main" className="f-page f-sheet">
         <p role="status">{t(error ? "campaignScreen.notFound" : "character.loading")}</p>
       </main>
     );
   }
   return (
-    <main id="main" className="f-page">
+    <main id="main" className="f-page f-sheet">
       <PlayHeader doc={doc} view={playHeaderView(doc, locale)} locale={locale} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
