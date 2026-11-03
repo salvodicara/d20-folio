@@ -2,7 +2,8 @@
  * Wild Shape as a form in a real browser (edge-case family M2): a level-7 Druid uses
  * Wild Shape on the Play tab, the picker offers only Beasts of CR 1/2 or lower with
  * no Fly Speed (no Giant Eagle), the Wolf form takes the Druid level in Temporary
- * HP and keeps the Druid's Wisdom, and Revert brings the Druid back with the
+ * HP and keeps the Druid's Wisdom, its spells say "In beast form" and can't be cast,
+ * and Revert brings the Druid back with the
  * Temporary HP kept. Review shots land under REVIEW_SHOTS when set, else in the
  * test output.
  */
@@ -53,13 +54,19 @@ test("Wild Shape: pick a Wolf on the Play tab, then revert (en, dark, desktop)",
       : null;
   }, DOC_KEY);
   expect(temp).toBe(7);
+  // No spellcasting in beast form (no Beast Spells at level 7): the card says why.
+  await expect(page.getByText("In beast form")).toHaveCount(2);
+  await expect(page.getByText("No uses left")).toHaveCount(0);
   await shot(page, "wild-shape-play");
 
   await page.goto("/characters/scn-potent-druid?tab=spells");
   const banner = page.locator(".polymorph-banner");
   await expect(banner).toContainText("Wild Shape: Wolf", { timeout: 60_000 });
   await banner.scrollIntoViewIfNeeded();
+  const flame = page.getByRole("button", { name: "In beast form" }).first();
+  await expect(flame).toBeDisabled();
   await shot(page, "wild-shape-banner");
   await page.getByRole("button", { name: "Revert form" }).click();
   await expect(page.locator(".polymorph-banner")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "In beast form" })).toHaveCount(0);
 });

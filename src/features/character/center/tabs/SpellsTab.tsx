@@ -37,6 +37,7 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { SpellAddModal } from "@/components/sheet/SpellAddModal";
 import { formNameKind, formSourceKind, currentForm } from "@/lib/polymorph";
+import { spellcastingBlocker } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { ensureSrdKind } from "@/i18n";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -607,6 +608,11 @@ export function SpellsTab() {
                     vm={vm}
                     isEdit={isEdit}
                     slotsRemaining={castAvailability}
+                    castBlocked={
+                      vm.kind === "custom"
+                        ? spellcastingBlocker(character)
+                        : spellcastingBlocker(character, vm.data?.id)
+                    }
                     expanded={expandedSpellId === vm.key}
                     familiarSummoned={character.session.familiar != null}
                     {...cardCallbacks}

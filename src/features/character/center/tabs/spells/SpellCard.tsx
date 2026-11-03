@@ -98,6 +98,8 @@ export interface SpellCardProps extends SpellCardCallbacks {
   isEdit: boolean;
   /** Remaining slots at this spell's level (cast-disabled / library gate). */
   slotsRemaining: number;
+  /** Why the spell can't be cast now (a state such as Rage, or a beast form), or null. */
+  castBlocked?: "state" | "form" | null;
   expanded: boolean;
   /** True when a familiar is already summoned — flips the Find Familiar CTA to
    *  "Change form" (RAW One Familiar Only: re-cast adopts a new form). */
@@ -108,6 +110,7 @@ export const SpellCard = memo(function SpellCard({
   vm,
   isEdit,
   slotsRemaining,
+  castBlocked = null,
   expanded,
   familiarSummoned,
   onToggle,
@@ -189,7 +192,14 @@ export const SpellCard = memo(function SpellCard({
   // Cast CTA gating: an un-prepared (and not always-prepared) prepared-caster
   // leveled spell can't be cast; no remaining slots disables it too.
   const unpreparedBlock = !isCustom && vm.showPrep && !vm.isPrepared && !vm.prepLocked;
-  const castDisabled = slotsRemaining === 0 || unpreparedBlock;
+  const castDisabled = slotsRemaining === 0 || unpreparedBlock || castBlocked !== null;
+  // A state or a form that blocks casting says so on the button itself.
+  const blockedLabel =
+    castBlocked === "form"
+      ? t("combat.blockedReasonInForm")
+      : castBlocked === "state"
+        ? t("combat.blockedReasonSpellcasting")
+        : null;
   // Verb + object (DESIGN.md §7 hard ban on verb-less buttons): the primary CTA
   // reads "Cast · Lv 3", never the bare slot-row label "Level 3 (base)".
   const castLabelText = vm.isCantrip
@@ -324,23 +334,30 @@ export const SpellCard = memo(function SpellCard({
                 onClick={() => onCast(vm)}
                 disabled={castDisabled}
                 title={
-                  castDisabled && unpreparedBlock
+                  blockedLabel ??
+                  (castDisabled && unpreparedBlock
                     ? t("spellPrep.notPreparedHint")
                     : castDisabled && slotsRemaining === 0
                       ? t("spells.noSlotsLeft")
-                      : undefined
+                      : undefined)
                 }
               >
-                {castDisabled && unpreparedBlock
-                  ? t("spells.prepareToCast")
-                  : castDisabled && slotsRemaining === 0
-                    ? t("spells.noSlotsLeft")
-                    : castLabelText}
+                {blockedLabel ??
+                  (castDisabled && unpreparedBlock
+                    ? t("spells.prepareToCast")
+                    : castDisabled && slotsRemaining === 0
+                      ? t("spells.noSlotsLeft")
+                      : castLabelText)}
               </Button>
             )}
             {vm.isCantrip && (
-              <Button size="sm" onClick={() => onCast(vm)}>
-                {t("spells.cast")}
+              <Button
+                size="sm"
+                onClick={() => onCast(vm)}
+                disabled={castBlocked !== null}
+                title={blockedLabel ?? undefined}
+              >
+                {blockedLabel ?? t("spells.cast")}
               </Button>
             )}
           </span>

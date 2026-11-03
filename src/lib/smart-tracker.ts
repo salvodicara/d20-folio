@@ -8829,8 +8829,29 @@ export function isSpellcastingBlocked(
   character: CharacterDoc,
   spellId?: string
 ): boolean {
-  const aggregate = aggregateCharacterGrants(character.character, character.session);
-  return aggregate.spellcastingBlocked || formBlocksSpell(aggregate, spellId);
+  return spellcastingBlocker(character, spellId) !== null;
+}
+
+/** The aggregate the cast law reads, once per character snapshot (a list of spell
+ *  cards asks for each spell). */
+const castLawAggregates = new WeakMap<
+  CharacterDoc,
+  ReturnType<typeof aggregateCharacterGrants>
+>();
+
+/** Why `spellId` can't be cast now: a state (Rage) or the assumed form (Wild Shape),
+ *  or null when it can. */
+export function spellcastingBlocker(
+  character: CharacterDoc,
+  spellId?: string
+): "state" | "form" | null {
+  let aggregate = castLawAggregates.get(character);
+  if (!aggregate) {
+    aggregate = aggregateCharacterGrants(character.character, character.session);
+    castLawAggregates.set(character, aggregate);
+  }
+  if (aggregate.spellcastingBlocked) return "state";
+  return formBlocksSpell(aggregate, spellId) ? "form" : null;
 }
 
 /**

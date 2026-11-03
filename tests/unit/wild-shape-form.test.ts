@@ -21,7 +21,7 @@ import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { sessionActiveKeys } from "@/lib/world-standing-grants";
-import { resolveActions } from "@/lib/smart-tracker";
+import { resolveActions, spellcastingBlocker } from "@/lib/smart-tracker";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -119,6 +119,12 @@ describe("Wild Shape is a form", () => {
     expect(sessionActiveKeys(shaped.session).has(WILD_SHAPE)).toBe(true);
     const back = dropBeastForm(shaped);
     expect(back && sessionActiveKeys(back.session).has(WILD_SHAPE)).toBe(false);
+  });
+
+  it("says the form is why a spell can't be cast", () => {
+    const { doc: shaped } = assumeBeastForm(druid(5), beast("wolf"), WILD_SHAPE);
+    expect(spellcastingBlocker(shaped, "produce-flame")).toBe("form");
+    expect(spellcastingBlocker(druid(5), "produce-flame")).toBeNull();
   });
 
   it("the breakdown names Wild Shape as the source", () => {
