@@ -171,7 +171,9 @@ export function foldSession(
         ...(moved.has(id) ? { moved: true as const } : {}),
       });
     }
-    if (event.kind === "encounter-end") {
+    // Only the running encounter's own end closes it: a stray end (a log written
+    // before a fix, another encounter's late beat) leaves it open.
+    if (event.kind === "encounter-end" && event.encounterId === encounterId) {
       encounterId = undefined;
       round = undefined;
     }

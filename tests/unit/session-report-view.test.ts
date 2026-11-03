@@ -310,3 +310,32 @@ describe("localizePlayEvent: a monster's stat change", () => {
     );
   });
 });
+
+describe("an encounter end without its start (a log from before a fix, 2026-10-14)", () => {
+  it("an end with no encounter running is dropped: the lines around it stay outside", () => {
+    const orphan: LogItem[] = [
+      ev("ana", { kind: "damage", amount: 3, target: "pc-ana" }),
+      ev("dm", { kind: "encounter-end", encounterId: "lost", outcome: "victory" }),
+      ev("ana", { kind: "rest", rest: "short", actor: "pc-ana" }),
+    ];
+    const report = buildReport(foldSession(orphan, { dmUid: "dm" }));
+    expect(report.map((section) => section.kind)).toEqual(["outside"]);
+    expect(report[0]?.kind === "outside" && report[0].entries).toHaveLength(2);
+  });
+
+  it("an end for another encounter neither closes nor rewrites the one running", () => {
+    const mixed: LogItem[] = [
+      ev("dm", { kind: "encounter-start", encounterId: "9", names: {} }),
+      ev("dm", { kind: "round-start", round: 1 }),
+      ev("dm", { kind: "encounter-end", encounterId: "old", outcome: "victory" }),
+      ev("dm", { kind: "damage", amount: 4, target: "pc-ana" }),
+    ];
+    const entries = foldSession(mixed, { dmUid: "dm" });
+    // The damage after the stray end still belongs to encounter 9.
+    expect(entries.at(-1)?.encounterId).toBe("9");
+    const report = buildReport(entries);
+    expect(report).toHaveLength(1);
+    expect(report[0]).toMatchObject({ kind: "encounter", encounterId: "9" });
+    expect(report[0]?.kind === "encounter" && report[0].outcome).toBeFalsy();
+  });
+});

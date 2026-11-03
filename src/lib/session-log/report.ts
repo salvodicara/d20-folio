@@ -37,7 +37,12 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
     if (event.kind === "round-start") continue;
     const section = current();
     if (event.kind === "encounter-end") {
-      if (section?.kind === "encounter" && event.outcome) section.outcome = event.outcome;
+      if (
+        section?.kind === "encounter" &&
+        section.encounterId === event.encounterId &&
+        event.outcome
+      )
+        section.outcome = event.outcome;
       continue;
     }
     if (entry.encounterId !== undefined && section?.kind === "encounter") {
