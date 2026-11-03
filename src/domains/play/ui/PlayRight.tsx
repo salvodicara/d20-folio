@@ -115,17 +115,18 @@ function Initiative({
             <span className="f-ir-n">
               <span className="f-ir-name">
                 {row.name}
-                {row.count > 1 && `\u00a0×\u2060${String(row.count)}`}
                 {row.mine && `\u00a0${t("play.initiativeYou")}`}
               </span>
+              {row.count > 1 && <span className="f-ir-x">{`×${String(row.count)}`}</span>}
               {row.current && <span className="f-ir-now">{t("fight.now")}</span>}
-            </span>
-            <span className="f-ir-s">
-              {row.mustRoll
-                ? t("fight.mustRoll")
-                : row.state.kind === "hp"
-                  ? `${String(row.state.current)}/${String(row.state.max)}`
-                  : bandLabel(row.state.band)}
+              {/* inside the name's flow: a crowded row wraps «ORA» and this, never the name */}
+              <span className="f-ir-s">
+                {row.mustRoll
+                  ? t("fight.mustRoll")
+                  : row.state.kind === "hp"
+                    ? `${String(row.state.current)}/${String(row.state.max)}`
+                    : bandLabel(row.state.band)}
+              </span>
             </span>
           </div>
         );

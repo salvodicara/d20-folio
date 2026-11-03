@@ -81,6 +81,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
     );
     close();
   };
+  const rubric = trayRubric(plan, t, locale);
   const update = (row: TrayRow) => setEdited((m) => new Map(m).set(row.targetId, row));
   return (
     <Dialog
@@ -100,7 +101,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
         </>
       }
     >
-      <p className="f-help f-ask">{trayRubric(plan, t, locale)}</p>
+      {rubric && <p className="f-help f-ask">{rubric}</p>}
       {types.length > 0 ? (
         <div className="f-ask f-tray-types">
           {types.map((type, i) => (
@@ -251,7 +252,7 @@ function TrayTargetRow({
         </div>
       )}
       {outcome?.kind === "revive" && (
-        <p className="f-note" data-c="ini" role="status">
+        <p className="f-help" role="status">
           {[
             outcome.eligibility.kind === "alive"
               ? t("play.tray.alive")
@@ -391,6 +392,17 @@ function Preview({
 }) {
   const { t } = useTranslation();
   const { effect } = plan;
+  // A revival: the Hit Points it comes back with, as a heal reads.
+  if (effect === null && plan.revive && hp && hp.current === 0) {
+    const back =
+      plan.revive.hitPoints === "all" ? hp.max : Math.min(plan.revive.hitPoints, hp.max);
+    return (
+      <span className="f-tray-amt" data-effect="heal">
+        <b>{`+${String(back)}`}</b>
+        {` → ${String(back)}/${String(hp.max)}`}
+      </span>
+    );
+  }
   if (effect === null)
     return conditions.length > 0 ? null : (
       <span className="f-tray-amt">{t("combat.damageTray.noEffect")}</span>
