@@ -37,6 +37,7 @@ import { resolveGrantSourcesForSpells } from "@/lib/resolve-grant-sources";
 import { concentrationValue } from "@/lib/concentration";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { advanceEffectTimers, resolveActions } from "@/lib/smart-tracker";
+import { ruleValue } from "@/lib/rules";
 import type { CharacterDoc } from "@/types/character";
 import EN_SPELLS from "@/i18n/en/srd/spells.json";
 import IT_SPELLS from "@/i18n/it/srd/spells.json";
@@ -57,6 +58,8 @@ interface LitFacts {
   checkBonus?: ReadonlyArray<readonly [appliesTo: string, value: number]>;
   incomingDis?: number;
   notes?: number;
+  /** A once-per-turn leap's distance in feet (Jump). */
+  leap?: number;
   blocksCasting?: true;
   waterBreathing?: true;
 }
@@ -189,7 +192,7 @@ const ROWS: ReadonlyArray<Row> = [
     targeting: { affinity: "ally", maxTargets: 1, maxTargetsPerUpcast: 1 },
     minutes: 1,
     concentration: false,
-    lit: { notes: 1 },
+    lit: { leap: 30 },
   },
   {
     id: "comprehend-languages",
@@ -307,6 +310,7 @@ function factsOf(agg: AggregatedGrants): Required<LitFacts> {
     ),
     incomingDis: agg.incomingAttackDisadvantages.length,
     notes: agg.defenseNotes.length,
+    leap: ruleValue(agg.values, "jump:leap") ?? 0,
     blocksCasting: agg.spellcastingBlocked as true,
     waterBreathing: agg.airAndWaterBreathing as true,
   };
@@ -323,6 +327,7 @@ function expected(facts: LitFacts): Required<LitFacts> {
     checkBonus: facts.checkBonus ?? [],
     incomingDis: facts.incomingDis ?? 0,
     notes: facts.notes ?? 0,
+    leap: facts.leap ?? 0,
     blocksCasting: (facts.blocksCasting ?? false) as true,
     waterBreathing: (facts.waterBreathing ?? false) as true,
   };

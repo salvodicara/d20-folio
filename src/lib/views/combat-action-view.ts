@@ -187,7 +187,9 @@ export function localizeHealBreakdown(
  */
 export function localizeBreakdown(
   parts: ReadonlyArray<RawBreakdownPart>,
-  locale: Locale
+  locale: Locale,
+  /** How a numeric part reads; a signed modifier ("+3") by default. */
+  format: (value: number) => string = formatModifier
 ): BreakdownLine[] {
   return parts.map((p) => {
     const extras = {
@@ -207,7 +209,7 @@ export function localizeBreakdown(
         ...extras,
       };
     }
-    const value = formatModifier(p.value);
+    const value = format(p.value);
     if ("term" in p.label) {
       return { kind: "term", value, term: p.label.term, ...extras };
     }

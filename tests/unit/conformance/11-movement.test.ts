@@ -3,9 +3,10 @@ import { describe, expect } from "vitest";
 import { getSpellById } from "@/data/spells";
 import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
 import { addMonster } from "@/features/campaigns/encounter";
-import { jumpDistance } from "@/lib/compute";
 import { CONDITION_RULES } from "@/lib/condition";
 import type { Grant } from "@/lib/grants";
+import { deriveJumps } from "@/lib/jump";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { resolveActions } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "../_helpers";
@@ -161,7 +162,14 @@ describe("conformance · 11. movement and mounts", () => {
     },
     () => {
       // STR 15: long jump 15 ft, high jump 3 + 2 = 5 ft (with a run-up).
-      expect(jumpDistance(15)).toEqual({ long: 15, high: 5 });
+      const doc = makeCharacterDoc({
+        abilityScores: { STR: 15, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+      });
+      const agg = aggregateCharacterGrants(doc.character, doc.session);
+      expect(deriveJumps(doc.character.abilityScores, agg)).toMatchObject({
+        long: 15,
+        high: 5,
+      });
       // Step of the Wind doubles the jump distance for the turn.
       expect(featureJson("monk-step-of-the-wind")).toContain("jump");
     }

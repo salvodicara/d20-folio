@@ -11,6 +11,7 @@ import {
   advanceEffectTimers as advanceEffectTimersEngine,
   resolveActiveBoundaryEffects,
 } from "@/lib/smart-tracker";
+import { startPotionAftereffects } from "@/lib/potion-states";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 export type BoundaryPhase = "turn-start" | "turn-end";
@@ -72,10 +73,14 @@ export function advanceEffectTimers(
 } {
   const { timers, expired } = advanceEffectTimersEngine(doc, forRound);
   const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
-  return {
-    session: withoutKeys({ ...doc.session, effectTimers: timers }, expiredKeys),
-    expired,
-  };
+  const ticked = withoutKeys({ ...doc.session, effectTimers: timers }, expiredKeys);
+  // A potion that ran out at this End Turn may leave an after-effect for the next
+  // turn (Speed's lethargy); out of combat there is no next turn to hold it.
+  const session =
+    forRound === undefined
+      ? ticked
+      : (startPotionAftereffects(ticked, expiredKeys, forRound) ?? ticked);
+  return { session, expired };
 }
 
 /** The boundary states that have expired at `position`. */

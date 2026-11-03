@@ -13,9 +13,10 @@ import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { spells } from "@/data/spells";
 import type { SrdMagicItemData } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
+import type { SessionState } from "@/types/character";
 import type { GrantSource } from "@/lib/grants";
 import { homebrewItemData, type ItemCopy } from "@/lib/homebrew-items";
-import { customText } from "@/lib/loc-text";
+import { customText, srdText } from "@/lib/loc-text";
 
 /** The `effectTimers` / `activeFeatures` key prefix of a drunk potion. */
 export const POTION_TIMER_PREFIX = "potion:";
@@ -23,6 +24,14 @@ export const POTION_TIMER_PREFIX = "potion:";
 /** The key of a drunk potion's countdown and of the state it lights. */
 export function potionTimerKey(itemId: string): string {
   return `${POTION_TIMER_PREFIX}${itemId}`;
+}
+
+/** The suffix of the key a potion's after-effect (Speed's lethargy) is lit under. */
+export const POTION_AFTEREFFECT_SUFFIX = ":aftereffect";
+
+/** The key of a potion's after-effect, lit when its countdown runs out. */
+export function potionAftereffectKey(itemId: string): string {
+  return `${potionTimerKey(itemId)}${POTION_AFTEREFFECT_SUFFIX}`;
 }
 
 /**
@@ -204,6 +213,34 @@ export function resolvePotionStateSources(
   const sources: GrantSource[] = [];
   for (const key of activeKeys) {
     if (!key.startsWith(POTION_TIMER_PREFIX)) continue;
+    if (key.endsWith(POTION_AFTEREFFECT_SUFFIX)) {
+      const itemId = key.slice(
+        POTION_TIMER_PREFIX.length,
+        -POTION_AFTEREFFECT_SUFFIX.length
+      );
+      const after = potionStateGrant(itemId)?.afterEffect;
+      // Its own source and chip ("Lethargy"), held while the key is lit; the
+      // turn edge it ends at is the key's stored boundary.
+      if (after) {
+        sources.push({
+          id: key,
+          label: srdText("rule", "potion.lethargy", "name"),
+          grants: [
+            {
+              type: "while-active",
+              activeKey: key,
+              duration: {
+                kind: "turn-boundary",
+                phase: after.duration.phase,
+                turns: after.duration.turns,
+              },
+              grants: [...after.grants],
+            },
+          ],
+        });
+      }
+      continue;
+    }
     const itemId = key.slice(POTION_TIMER_PREFIX.length);
     const grant = potionStateGrant(itemId, copies);
     if (!grant) continue;
@@ -217,4 +254,36 @@ export function resolvePotionStateSources(
     });
   }
   return sources;
+}
+
+/**
+ * Light the after-effect of each potion whose countdown just ran out at the end of
+ * the owner's turn in `round` (Potion of Speed: Haste's lethargy, no actions and a
+ * Speed of 0 until the end of the next turn). Each one ends at its declared turn
+ * edge, counted from that next turn. Null when no expired potion declares one.
+ */
+export function startPotionAftereffects(
+  session: SessionState,
+  expiredKeys: Iterable<string>,
+  round: number
+): SessionState | null {
+  let next: SessionState | null = null;
+  for (const key of expiredKeys) {
+    if (!key.startsWith(POTION_TIMER_PREFIX)) continue;
+    const itemId = key.slice(POTION_TIMER_PREFIX.length);
+    const after = potionStateGrant(itemId)?.afterEffect;
+    if (!after) continue;
+    const base: SessionState = next ?? session;
+    const afterKey = potionAftereffectKey(itemId);
+    const active = base.activeFeatures ?? [];
+    next = {
+      ...base,
+      activeFeatures: active.includes(afterKey) ? active : [...active, afterKey],
+      effectBoundaries: {
+        ...(base.effectBoundaries ?? {}),
+        [afterKey]: { round: round + after.duration.turns, phase: after.duration.phase },
+      },
+    };
+  }
+  return next;
 }
