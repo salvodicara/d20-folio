@@ -67,7 +67,7 @@ describe("a burrow speed is a speed like fly, swim and climb", () => {
       { type: "burrow-speed", amount: 20 },
       { type: "climb-speed", amount: 30 },
     ]);
-    const { speeds } = deriveSensesAndSpeeds(aggregateOf(doc), 30);
+    const { speeds } = deriveSensesAndSpeeds(aggregateOf(doc), 30, 0);
     expect(speeds).toEqual([
       { kind: "climb", rangeFt: 30 },
       { kind: "burrow", rangeFt: 20 },

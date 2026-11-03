@@ -222,8 +222,11 @@ describe("Ring of X-ray Vision", () => {
   }
 
   function senses(doc: CharacterDoc) {
-    return deriveSensesAndSpeeds(aggregateCharacterGrants(doc.character, doc.session), 30)
-      .senses;
+    return deriveSensesAndSpeeds(
+      aggregateCharacterGrants(doc.character, doc.session),
+      30,
+      0
+    ).senses;
   }
 
   it("is a Magic action that lights the ring's state for 1 minute", () => {
@@ -288,8 +291,11 @@ describe("Gem of Seeing", () => {
   }
 
   function senses(doc: CharacterDoc) {
-    return deriveSensesAndSpeeds(aggregateCharacterGrants(doc.character, doc.session), 30)
-      .senses;
+    return deriveSensesAndSpeeds(
+      aggregateCharacterGrants(doc.character, doc.session),
+      30,
+      0
+    ).senses;
   }
 
   it("holds its charges and regains a rolled 1d3 at dawn", () => {

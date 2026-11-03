@@ -128,7 +128,7 @@ const lit = (id: string): AggregatedGrants =>
   evaluateGrants(sourcesOf(id), new Set([keyOf(id)]));
 
 function factsOf(agg: AggregatedGrants): Required<LitFacts> {
-  const view = deriveSensesAndSpeeds(agg, 30);
+  const view = deriveSensesAndSpeeds(agg, 30, 0);
   return {
     unlimitedSenses: view.unlimitedSenses,
     detections: view.detections,
@@ -243,7 +243,7 @@ describe("utility spells batch 3: the sheet's own numbers", () => {
     const agg = evaluateGrants([
       { id: "lantern", grants: [{ type: "see-invisible", range: 30 }] },
     ]);
-    const view = deriveSensesAndSpeeds(agg, 30);
+    const view = deriveSensesAndSpeeds(agg, 30, 0);
     expect(view.senses).toContainEqual({ kind: "see-invisible", rangeFt: 30 });
     expect(view.unlimitedSenses).toEqual([]);
   });
@@ -253,7 +253,7 @@ describe("utility spells batch 3: the sheet's own numbers", () => {
       { id: "lantern", grants: [{ type: "see-invisible", range: 30 }] },
       { id: "homebrew", grants: [{ type: "see-invisible" }] },
     ]);
-    const view = deriveSensesAndSpeeds(agg, 30);
+    const view = deriveSensesAndSpeeds(agg, 30, 0);
     expect(view.senses.map((s) => s.kind)).not.toContain("see-invisible");
     expect(view.unlimitedSenses).toEqual(["see-invisible"]);
   });
@@ -274,7 +274,7 @@ describe("utility spells batch 3: the sheet's own numbers", () => {
         ],
       },
     ]);
-    expect(deriveSensesAndSpeeds(agg, 30).detections).toEqual([
+    expect(deriveSensesAndSpeeds(agg, 30, 0).detections).toEqual([
       { what: "magic", rangeFt: 60 },
       { what: "poison-and-disease", rangeFt: 10 },
     ]);
