@@ -265,6 +265,15 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "a total the live effect spends before it ends (damage dealt), an encounter fact, not an activity",
     });
   }
+  for (const field of ["onEnd", "counter", "effects", "perTargetChoice"] as const) {
+    if (spell[field]) {
+      gaps.push({
+        field,
+        reason:
+          "an authored effect hook (edge-case M12) the spell's Activity doesn't carry yet",
+      });
+    }
+  }
   if (spell.bestiaryPick) {
     gaps.push({
       field: "bestiaryPick",

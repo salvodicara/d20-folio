@@ -15,6 +15,7 @@
  * SAME path as a catalogue feature action: `translateAction` → Activity, and the
  * resolver's card facts.
  */
+import { CATALOGUE_EFFECTS_SCHEMA } from "@/lib/catalogue-effects";
 import type { EffectRiders, SrdActionDef } from "@/data/types";
 import {
   ALL_ACTION_TYPES,
@@ -165,6 +166,7 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
 } = {
   economyCategory: literals(["attack", "dash", "disengage", "hide", "utilize"]),
   skillCheck: objectSchema({ dc: numberSchema, skill: stringSchema }),
+  effects: CATALOGUE_EFFECTS_SCHEMA,
   grantsNextAttackAdvantage: TRUE,
   locksMovement: TRUE,
   requiresActionThisTurn: stringSchema,

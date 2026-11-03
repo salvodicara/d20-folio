@@ -161,6 +161,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     instantaneous: true,
     saveAbility: "CON",
     effectTag: "control",
+    // A countered spell wastes its action, Bonus Action or Reaction, but not the slot.
+    counter: { slot: "kept" },
     source: "SRD",
   },
   {
@@ -292,6 +294,8 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
         grants: [{ type: "fly-speed", amount: 60 }],
       },
     ],
+    // "If the spell ends while the target is still aloft, it falls" (unless it can stay up otherwise).
+    onEnd: [{ kind: "fall-if-aloft" }],
     source: "SRD",
   },
   {

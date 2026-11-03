@@ -17,6 +17,7 @@
  * resolver, the cast-level scaling, the grant sources its while-active states light,
  * and the Concentration it holds (its duration on the clock and the states it ends).
  */
+import { CATALOGUE_EFFECTS_SCHEMA } from "@/lib/catalogue-effects";
 import { getSpellById } from "@/data/spells";
 import type { HomebrewSpellMechanics, SrdSpellData, SpellDuration } from "@/data/types";
 import {
@@ -223,6 +224,12 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     }
   ),
   budget: objectSchema({ max: numberSchema, counts: literalSchema("damage-dealt") }),
+  onEnd: CATALOGUE_EFFECTS_SCHEMA,
+  counter: objectSchema({ slot: literalSchema("kept") }),
+  effects: CATALOGUE_EFFECTS_SCHEMA,
+  perTargetChoice: arraySchema(
+    objectSchema({ id: stringSchema, effects: CATALOGUE_EFFECTS_SCHEMA })
+  ),
   resolveOnCast: literalSchema(false),
   followUp: ACTION_DEF,
   endsOnSuccessfulSave: booleanSchema,

@@ -413,11 +413,14 @@ describe("conformance · 2. concentration", () => {
       source: "GLOSS (Shape-Shifting)",
       status: "M12",
     },
-    () => {
+    async () => {
       // Fly ends while the target is aloft: it falls. The end of the spell must carry
       // that consequence, not just remove the fly speed.
-      const fly = getSpellById("fly")?.grants?.find((g) => g.type === "while-active");
-      expect(fly && "afterEffect" in fly && fly.afterEffect).toBeTruthy();
+      expect(getSpellById("fly")?.onEnd).toContainEqual({ kind: "fall-if-aloft" });
+      // The data is in; the case works once the end-of-spell runtime applies it.
+      const id = "@/lib/activities/read";
+      const runtime = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof runtime.spellEndEffects).toBe("function");
     }
   );
 

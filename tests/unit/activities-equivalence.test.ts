@@ -444,7 +444,10 @@ function actionRowFromActivity(
     trackerCost: tracker?.kind === "tracker" ? tracker.amount : undefined,
     alternateCost: cost.orPay,
     maintainsActiveKey: effectsOf(activity, "maintain")[0]?.key,
-    grantsNextAttackAdvantage: effectsOf(activity, "next-attack-advantage").length > 0,
+    // The bare effect is the flag; one with fields is authored (Stunning Strike).
+    grantsNextAttackAdvantage: effectsOf(activity, "next-attack-advantage").some(
+      (e) => Object.keys(e).length === 1
+    ),
     locksMovement: effectsOf(activity, "speed-zero").length > 0,
     activatesKey: state?.key,
     activeTurnBoundary:

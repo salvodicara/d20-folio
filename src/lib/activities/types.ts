@@ -258,10 +258,23 @@ export interface DamageTypes {
   fromBundle?: string;
 }
 
+/** A turn boundary of the user (`actor`) or the target that ends an effect. */
+export interface EffectUntil {
+  phase: "turn-start" | "turn-end";
+  anchor: "actor" | "target";
+}
+
 /** Fields every effect may carry. */
 interface EffectBase {
   /** The owner's class level from which this effect is available. */
   fromLevel?: number;
+  /** Applies only when the target SUCCEEDS on the save (Stunning Strike's half
+   *  Speed). Absent: it applies on a failed save, as before. */
+  saveOutcome?: "success";
+  /** Only against creatures of these types (Divine Smite vs Fiends). */
+  vsCreatureTypes?: ReadonlyArray<CreatureType>;
+  /** Never against creatures of these types (an area that spares Undead). */
+  notVsCreatureTypes?: ReadonlyArray<CreatureType>;
 }
 
 /** What happens. */
@@ -278,8 +291,6 @@ export type ActivityEffect =
         onMiss?: "half";
         /** This component can reach several creatures even when the activity cannot. */
         area?: true;
-        /** Only against creatures of these types (Divine Smite vs Fiends). */
-        vsCreatureTypes?: ReadonlyArray<CreatureType>;
         /** The same total may be applied as healing instead (Divine Spark). */
         orHeal?: true;
         /** The die when the weapon is held in two hands (Versatile). */
@@ -370,7 +381,26 @@ export type ActivityEffect =
       typesByLevel: Readonly<Record<number, ReadonlyArray<DamageType>>>;
     })
   | (EffectBase & { kind: "check-bonus"; dice: string; refundOnFail?: true })
-  | (EffectBase & { kind: "next-attack-advantage" })
+  /** The next attack roll gains Advantage: by the user, or, with `against:
+   *  "target"`, against the target (Stunning Strike on a success), until `until`. */
+  | (EffectBase & {
+      kind: "next-attack-advantage";
+      against?: "target";
+      until?: EffectUntil;
+    })
+  /** The target's Speed is halved until `until` (Stunning Strike on a success). */
+  | (EffectBase & { kind: "speed-halved"; until?: EffectUntil })
+  /** A flying target with no other way to stay aloft falls (Fly ending). The engine
+   *  decides whether it is aloft. */
+  | (EffectBase & { kind: "fall-if-aloft" })
+  /** Expended spell slots of combined level up to `totalLevels` (+ `perUpcast` per
+   *  slot level above the spell's), none above `maxSlotLevel`, come back. */
+  | (EffectBase & {
+      kind: "recover-slots";
+      totalLevels: number;
+      perUpcast?: number;
+      maxSlotLevel?: number;
+    })
   /** The target's Speed is 0, until a turn boundary of the user (`actor`) or the
    *  target (Web Bolt: until the start of the insect's next turn). Absent `until`:
    *  the text says how long. */
