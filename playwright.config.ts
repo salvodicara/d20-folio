@@ -6,6 +6,8 @@ import { FOLIO_SERVER_GUARD, folioServers } from "./tests/folio-server-guard";
 // Defaults to the canonical 5174 / 5175 pair. Set both ends together.
 const E2E_PORT = Number(process.env.E2E_PORT ?? 5174);
 const SW_PORT = E2E_PORT + 1;
+// The new UI's preview build (VITE_NEW_UI), for the specs that check its screens.
+const NEW_UI_PORT = E2E_PORT + 2;
 
 // ── S4: gate the SW dev-server (:5175) behind the portrait-sw projects ──────────
 // Only `portrait-sw` / `portrait-sw-mobile` use the SW-enabled server; the chromium
@@ -22,6 +24,7 @@ const SELECTED_PROJECTS = process.argv.flatMap((arg, i) => {
   return eq ? [eq] : [];
 });
 const SW_PROJECTS = ["portrait-sw", "portrait-sw-mobile"];
+const NEW_UI_PROJECTS = ["new-ui"];
 
 // Two lanes run only on request: the polish screenshot harness (POLISH_SHOT_DIR) and
 // the pixel-baseline suite (VISUAL, or --update-snapshots; `tests/e2e/visual-gate.ts`).
@@ -47,6 +50,9 @@ const OFF_LANES = [
   ...(process.env.SHOT_DIR ? [] : [/_identity-shots\.spec\.ts/]),
 ];
 // Boot the SW server unless the run is explicitly filtered to non-SW projects only.
+const NEEDS_NEW_UI_SERVER =
+  SELECTED_PROJECTS.length === 0 ||
+  SELECTED_PROJECTS.some((p) => NEW_UI_PROJECTS.includes(p));
 const NEEDS_SW_SERVER =
   SELECTED_PROJECTS.length === 0 ||
   SELECTED_PROJECTS.some((p) => SW_PROJECTS.includes(p));
@@ -83,7 +89,11 @@ export default defineConfig({
       // The SW-dependent portrait-export spec runs ONLY under the dedicated
       // `portrait-sw` project (its own SW-enabled server + base URL); exclude it
       // here so the normal chromium run (no SW) never picks it up.
-      testIgnore: [/portrait-export-journey\.spec\.ts/, ...OFF_LANES],
+      testIgnore: [
+        /portrait-export-journey\.spec\.ts/,
+        /ui-play-fidelity\.spec\.ts/,
+        ...OFF_LANES,
+      ],
     },
     {
       name: "mobile",
@@ -105,6 +115,12 @@ export default defineConfig({
     // owner's bug is an opaque SW-cache entry). Its own server registers the REAL
     // Workbox SW (VITE_PWA_DEV) on a separate port so it never disturbs the SW-free
     // runs above. `serviceWorkers: "allow"` is Playwright's default, kept explicit.
+    {
+      // The rebuilt screens, on the VITE_NEW_UI preview server (own port).
+      name: "new-ui",
+      testMatch: /ui-play-fidelity\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${NEW_UI_PORT}` },
+    },
     {
       name: "portrait-sw",
       testMatch: /portrait-export-journey\.spec\.ts/,
@@ -134,6 +150,21 @@ export default defineConfig({
     // real `/src` export code). Separate port + cwd-clean env so the SW only ever
     // lives on this origin. S4: ONLY booted when an SW project is in the run (see
     // NEEDS_SW_SERVER above) — the chromium/mobile legs skip this whole `vite` boot.
+    // The VITE_NEW_UI preview, booted only when the new-ui project is in the run.
+    ...(NEEDS_NEW_UI_SERVER
+      ? [
+          {
+            command: `pnpm vite --port ${NEW_UI_PORT}`,
+            url: `http://localhost:${NEW_UI_PORT}`,
+            reuseExistingServer: !process.env.CI,
+            env: {
+              VITE_DEV_BYPASS_AUTH: "true",
+              VITE_E2E_NO_HMR: "true",
+              VITE_NEW_UI: "1",
+            },
+          },
+        ]
+      : []),
     ...(NEEDS_SW_SERVER
       ? [
           {
