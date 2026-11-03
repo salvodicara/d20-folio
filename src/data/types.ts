@@ -1281,6 +1281,11 @@ export interface SrdSpellData {
   recurrence?: SpellRecurrence;
   /** The persistent area the spell leaves, when it leaves one (see {@link SpellZone}). */
   zone?: SpellZone;
+  /**
+   * A total the spell's effect may spend before it ends (Guardian of Faith vanishes
+   * once it has dealt 60 damage: the damage targets actually take).
+   */
+  budget?: { max: number; counts: "damage-dealt" };
   /** False when casting only creates the persistent effect and its first damage/save
    * happens later (for example Flaming Sphere at end of turn). */
   resolveOnCast?: false;

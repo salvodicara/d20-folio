@@ -388,6 +388,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageType: "radiant",
     saveAbility: "DEX",
     damageOnSave: "half",
+    // "The guardian vanishes when it has dealt a total of 60 damage."
+    budget: { max: 60, counts: "damage-dealt" },
     source: "SRD",
   },
   {

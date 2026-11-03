@@ -25,6 +25,8 @@ import { spells } from "@/data/spells";
 import { getMagicItem } from "@/data/magic-items";
 import { asRaceId } from "@/data/srd-names";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { firedTriggerOffers } from "@/lib/smart-tracker";
+import { concentrationValue } from "@/lib/concentration";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { makeCharacterDoc } from "../_helpers";
 import { rule } from "./rule";
@@ -133,12 +135,28 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Monster kills and who dealt them",
       source: "WIKI spell:hex",
-      status: "M8",
+      status: "works",
     },
     () => {
-      // Hunter's Mark moves when its target drops to 0: a reduce-to-zero trigger.
-      const mark = spells.find((s) => s.id === "hunters-mark");
-      expect(JSON.stringify(mark)).toMatch(/reduced-to-zero|marked-target-at-zero/);
+      // Hunter's Mark moves when its marked target drops to 0: the drop offers the
+      // Bonus Action that moves it, and only for the marked creature.
+      const ranger: CharacterDoc = {
+        ...MOCK_CHARACTER,
+        character: {
+          ...MOCK_CHARACTER.character,
+          spells: [{ srdId: "hunters-mark", prepared: true }],
+        },
+        session: {
+          ...MOCK_CHARACTER.session,
+          concentration: concentrationValue("hunters-mark"),
+        },
+      };
+      expect(
+        firedTriggerOffers(ranger, "reduced-to-zero", { targetMarked: true })
+      ).toEqual([expect.objectContaining({ actionId: "move-mark" })]);
+      expect(
+        firedTriggerOffers(ranger, "reduced-to-zero", { targetMarked: false })
+      ).toEqual([]);
     }
   );
 

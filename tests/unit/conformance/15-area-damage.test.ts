@@ -50,6 +50,13 @@ function zoneOf(spellId: string, castLevel: number, spared: string[] = []) {
   return zone;
 }
 
+/** The zone runtime (edge-case M9), which lands with the engine's family. Until
+ *  then the data alone doesn't make these cases work. */
+async function zoneRuntime(): Promise<Record<string, unknown>> {
+  const id = "@/lib/zones";
+  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+}
+
 const ME = "pc-me";
 const FOES = ["monster-1", "monster-2"];
 
@@ -317,8 +324,10 @@ describe("conformance · 15. multi-target and area damage", () => {
       source: "SAC #125",
       status: "M8",
     },
-    () => {
-      // The guardian vanishes after dealing 60 total damage (damage actually taken).
+    async () => {
+      // The guardian vanishes after dealing 60 total damage (damage actually taken):
+      // the data is in; the case works once the effect runtime spends the budget.
+      expect(typeof (await zoneRuntime()).budgetSpent).toBe("function");
       const guardian = spells.find((s) => s.id === "guardian-of-faith");
       expect(guardian).toHaveProperty("budget", expect.objectContaining({ max: 60 }));
     }
