@@ -325,7 +325,8 @@ describe("L6 — deriveSensesAndSpeeds", () => {
   it("includes only senses with a positive range", () => {
     const view = deriveSensesAndSpeeds(
       aggregateWith({ darkvisionFt: 60, blindsightFt: 0, truesightFt: 120 }),
-      30
+      30,
+      0
     );
     expect(view.senses).toEqual([
       { kind: "darkvision", rangeFt: 60 },
@@ -341,7 +342,8 @@ describe("L6 — deriveSensesAndSpeeds", () => {
         tremorsenseFt: 30,
         truesightFt: 120,
       }),
-      30
+      30,
+      0
     );
     expect(view.senses.map((s) => s.kind)).toEqual([
       "darkvision",
@@ -354,7 +356,8 @@ describe("L6 — deriveSensesAndSpeeds", () => {
   it("resolves equal-to-walking swim speed against the character's walking speed", () => {
     const view = deriveSensesAndSpeeds(
       aggregateWith({ swimSpeed: "equal-to-walking" }),
-      35
+      35,
+      0
     );
     expect(view.speeds).toEqual([{ kind: "swim", rangeFt: 35 }]);
   });
@@ -362,7 +365,8 @@ describe("L6 — deriveSensesAndSpeeds", () => {
   it("renders numeric fly / swim / climb speeds", () => {
     const view = deriveSensesAndSpeeds(
       aggregateWith({ flySpeed: 60, swimSpeed: 30, climbSpeed: 20 }),
-      30
+      30,
+      0
     );
     expect(view.speeds).toEqual([
       { kind: "fly", rangeFt: 60 },
@@ -372,7 +376,7 @@ describe("L6 — deriveSensesAndSpeeds", () => {
   });
 
   it("omits speeds and senses entirely when nothing is granted", () => {
-    const view = deriveSensesAndSpeeds(emptyAggregate(), 30);
+    const view = deriveSensesAndSpeeds(emptyAggregate(), 30, 0);
     expect(view.senses).toEqual([]);
     expect(view.speeds).toEqual([]);
     expect(view.airAndWaterBreathing).toBe(false);
@@ -380,7 +384,7 @@ describe("L6 — deriveSensesAndSpeeds", () => {
 
   it("carries amphibious breathing as a surfaced capability", () => {
     expect(
-      deriveSensesAndSpeeds(aggregateWith({ airAndWaterBreathing: true }), 30)
+      deriveSensesAndSpeeds(aggregateWith({ airAndWaterBreathing: true }), 30, 0)
         .airAndWaterBreathing
     ).toBe(true);
   });

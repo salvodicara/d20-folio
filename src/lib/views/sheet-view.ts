@@ -739,7 +739,7 @@ export function nonWalkingSpeedBreakdown(
   aggregate: AggregatedGrants,
   kind: SpeedKind,
   walkingSpeedFt: number,
-  exhaustionLevel = 0
+  exhaustionLevel: number
 ): RawBreakdownPart[] {
   const value = nonWalkingSpeedOf(aggregate, kind);
   const rangeFt = resolveNonWalkingSpeed(value, walkingSpeedFt);
@@ -778,7 +778,8 @@ export function deriveSensesAndSpeeds(
     form?: { speeds: Partial<Record<(typeof SPEED_KINDS)[number], number>> } | null;
   },
   walkingSpeedFt: number,
-  exhaustionLevel = 0
+  /** Required, so no caller can show a speed without Exhaustion's reduction. */
+  exhaustionLevel: number
 ): SensesSpeedsView {
   const senses: SenseEntry[] = [];
   if (aggregate.darkvisionFt > 0)

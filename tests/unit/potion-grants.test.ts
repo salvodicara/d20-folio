@@ -56,7 +56,7 @@ function current(): CharacterDoc {
 
 function view(doc: CharacterDoc) {
   const aggregate = aggregateCharacterGrants(doc.character, doc.session);
-  return { aggregate, ...deriveSensesAndSpeeds(aggregate, 30) };
+  return { aggregate, ...deriveSensesAndSpeeds(aggregate, 30, 0) };
 }
 
 describe("timed potions declare their standing effect", () => {
