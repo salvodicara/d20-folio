@@ -254,7 +254,8 @@ export function LeftHud() {
     : 0;
   const { senses, speeds, airAndWaterBreathing } = deriveSensesAndSpeeds(
     fullAggregate,
-    walkingSpeedFt
+    walkingSpeedFt,
+    characterDoc?.session.exhaustion ?? 0
   );
   // RA-26 — jump distances (2024 PHB, running start): long = STR SCORE ft,
   // high = 3 + STR MOD ft (min 0). Pure STR-derived — no SRD grant modifies it —

@@ -197,7 +197,12 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
           rangeFt,
           aggregate.form?.speeds[kind] != null
             ? [formBreakdownPart(aggregate.form, aggregate.form.speeds[kind])]
-            : nonWalkingSpeedBreakdown(aggregate, kind, sheet.walkingSpeedFt),
+            : nonWalkingSpeedBreakdown(
+                aggregate,
+                kind,
+                sheet.walkingSpeedFt,
+                session.exhaustion
+              ),
           character.speedOverrides?.[kind] != null
         ),
       ])
