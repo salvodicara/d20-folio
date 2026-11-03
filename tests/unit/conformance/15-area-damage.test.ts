@@ -322,14 +322,26 @@ describe("conformance · 15. multi-target and area damage", () => {
       category: 15,
       case: "Guardian of Faith counts damage dealt",
       source: "SAC #125",
-      status: "M8",
+      status: "works",
     },
     async () => {
-      // The guardian vanishes after dealing 60 total damage (damage actually taken):
-      // the data is in; the case works once the effect runtime spends the budget.
-      expect(typeof (await zoneRuntime()).budgetSpent).toBe("function");
+      // The guardian vanishes after dealing 60 total damage: the damage targets
+      // actually take (after resistance), not the rolled total.
       const guardian = spells.find((s) => s.id === "guardian-of-faith");
       expect(guardian).toHaveProperty("budget", expect.objectContaining({ max: 60 }));
+      const { budgetSpent } = (await zoneRuntime()) as {
+        budgetSpent: (
+          budget: { max: number },
+          spent: number,
+          taken: number
+        ) => { spent: number; ends: boolean };
+      };
+      // 20 rolled, a resistant target takes 10: 10 counts.
+      expect(budgetSpent({ max: 60 }, 0, 10)).toEqual({ spent: 10, ends: false });
+      // 55 spent, a hit for 20: the hit lands whole, then the guardian vanishes.
+      expect(budgetSpent({ max: 60 }, 55, 20)).toEqual({ spent: 60, ends: true });
+      // A creature that takes nothing (immune) spends nothing.
+      expect(budgetSpent({ max: 60 }, 30, 0)).toEqual({ spent: 30, ends: false });
     }
   );
 
