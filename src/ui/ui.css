@@ -91,6 +91,10 @@
   color: var(--text);
   font: 15px/1.5 var(--font-text);
   font-variant-numeric: lining-nums;
+  /* The old app's body pins tabular figures and antialiased smoothing; the
+     prototype has neither (Play turns smoothing back on below). */
+  font-feature-settings: normal;
+  -webkit-font-smoothing: auto;
   text-wrap: pretty;
   min-height: 100vh;
   position: relative;
@@ -104,6 +108,8 @@
 .fui :focus-visible {
   outline: 2px solid var(--gold-hi);
   outline-offset: 2px;
+  /* the old app's focus wash (index.css) is not the prototype's */
+  box-shadow: none;
 }
 .fui h1,
 .fui h2,
@@ -601,14 +607,14 @@
   flex: 1;
 }
 /* the header's Hit Points open «Danni e cure» */
-.fui button.f-char-hp {
+.fui button.f-char-hp-open {
   border: 0;
   background: none;
   color: inherit;
   text-align: inherit;
   cursor: pointer;
 }
-.fui button.f-char-hp:hover .f-char-hp-v > b {
+.fui button.f-char-hp-open:hover .f-char-hp-v > b {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 6px;
@@ -1155,11 +1161,24 @@
   flex: 1;
   min-width: 0;
   height: 100%;
+  /* the input fills the whole field (the icon sits on it), so its focus ring is the field's */
+  margin: 0 -12px 0 -36px;
+  padding: 0 12px 0 36px;
   border: 0;
+  border-radius: inherit;
   background: none;
   color: var(--strong);
   font: var(--fs-sm) var(--font-text);
   outline: none;
+}
+.fui .f-srch input:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 1px;
+}
+.fui .f-srch > .f-ic {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
 }
 .fui .f-srch input::placeholder {
   color: var(--muted);
@@ -1996,11 +2015,6 @@
   color: var(--muted);
 }
 /* the actions table */
-.fui .f-act-group > h3 {
-  margin: 8px 0 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-}
 .fui .f-act {
   display: grid;
   grid-template-columns: minmax(0, 1fr) repeat(3, minmax(72px, max-content)) 104px;
@@ -2074,4 +2088,495 @@
 .fui .f-turn-t,
 .fui .f-playbook-lines span {
   text-wrap: balance;
+}
+
+/* ---------- the Play family (approved prototype x-play: tokens.css, components.css,
+   layout.css, shared-*.css). The campaign pages follow site.css (above); the Play page
+   and its dialogs (.f-sheet) follow these values, read from the prototype's computed
+   styles. ---------- */
+.fui .f-sheet {
+  --sh-panel-c: rgb(0 0 0 / 0.45);
+  --btn-top: #251e17;
+  --btn-bottom: #211b15;
+  --btn-rim-hi: rgb(255 240 210 / 0.06);
+  --glow-gold-rim: rgb(240 194 78 / 0.4);
+  --glow-gold: rgb(240 194 78 / 0.67);
+  --row-meta: #b3a58c;
+  --temp-quiet: #9fb7c9;
+  --sh-hero-c: rgb(0 0 0 / 0.55);
+  --frz: #a98250;
+  --glow-ac: rgb(212 175 102 / 0.53);
+  --glow-hp: rgb(70 240 74 / 0.53);
+  --band-quiet: rgb(255 255 255 / 0.024);
+  --lit-hi: #6fd3f2;
+  --lit-mid: #4fb6dc;
+  --lit-deep: #0f3a4b;
+  --lit-glow: rgb(42 141 176 / 0.53);
+  --lit-glow-hi: #5fb3e6;
+  --advice: #c9bba3;
+  --rule-quiet: rgb(255 255 255 / 0.07);
+  --row-rule: rgb(255 255 255 / 0.06);
+  --plate-text: #ece3d0;
+  --row-hover-text: #ffe7a8;
+  --fs-text: 15px;
+  --fs-ac: 34px;
+  --fs-hp-big: 64px;
+  --fs-title-phone: 26px;
+  --frz-hi: #d9b878;
+  --muted: #bcae93;
+  --label: #a89a82;
+  --frame: #6a5130;
+  --hover-gold: #f0c24e;
+  font-size: var(--fs-md);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+.fui .f-sheet .f-lbl {
+  line-height: 1.2;
+  color: var(--label);
+}
+/* panels: one opaque box with depth */
+.fui .f-sheet .f-pn {
+  background: var(--panel);
+  box-shadow: 0 8px 20px var(--sh-panel-c);
+}
+.fui .f-sheet .f-pnh {
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line-soft);
+  line-height: normal;
+}
+.fui .f-sheet .f-pnb {
+  padding: 16px 20px;
+}
+/* buttons: BG3's dark capsule with a bronze rim, a gold glow on hover, a press */
+.fui .f-sheet .f-btn {
+  font-weight: 700;
+  line-height: 1.45;
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    filter 0.12s ease,
+    color 0.12s ease;
+}
+.fui .f-sheet .f-btn[data-kind="ghost"],
+.fui .f-sheet .f-btn[data-kind="primary"] {
+  border-color: var(--frame);
+  background: linear-gradient(180deg, var(--btn-top), var(--btn-bottom));
+  box-shadow: inset 0 1px 0 var(--btn-rim-hi);
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+.fui .f-sheet .f-btn:not([aria-disabled="true"]):hover,
+.fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover {
+  border-color: var(--hover-gold);
+  box-shadow:
+    0 0 0 1px var(--glow-gold-rim),
+    0 0 16px -2px var(--glow-gold);
+  transform: translateY(-1px);
+  filter: brightness(1.18);
+}
+.fui .f-sheet .f-btn:not([aria-disabled="true"]):active,
+.fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):active {
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(0.82);
+  box-shadow: inset 0 2px 6px var(--shade);
+}
+/* state chips: bold, tighter */
+.fui .f-sheet .f-chip {
+  padding: 0 12px;
+  font-weight: 700;
+}
+/* resources: the name white and bold, the count a small label */
+.fui .f-sheet .f-res-t {
+  font-size: var(--fs-text);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--white);
+}
+.fui .f-sheet .f-res-n {
+  text-align: right;
+  letter-spacing: 0.08em;
+  color: var(--label);
+}
+/* the row button is a small capsule (14 px): the prototype's 92 px column, on the grid */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-act {
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(72px, max-content)) 96px;
+    column-gap: 12px;
+  }
+}
+.fui .f-sheet .f-act .f-row-s {
+  color: var(--row-meta);
+}
+.fui .f-sheet .f-char-temp {
+  font-weight: 700;
+  color: var(--temp-quiet);
+}
+/* the header (prototype .hero): no box line, depth, the generated frame */
+.fui .f-sheet .f-char {
+  gap: 32px 24px;
+  padding: 36px 56px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 14px 30px var(--sh-hero-c);
+}
+.fui .f-sheet .f-char::before,
+.fui .f-sheet .f-char::after {
+  display: none;
+}
+.fui .f-hero > .f-frz {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.fui .f-frz::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--frz);
+}
+.fui .f-frz-c {
+  fill: var(--frz);
+  position: absolute;
+  width: 55px;
+  height: 55px;
+}
+.fui .f-frz-c path[data-tone="light"] {
+  fill: var(--frz-hi);
+}
+.fui .f-frz-c[data-at="tl"] {
+  left: -5px;
+  top: -5px;
+}
+.fui .f-frz-c[data-at="tr"] {
+  right: -5px;
+  top: -5px;
+  transform: scaleX(-1);
+}
+.fui .f-frz-c[data-at="bl"] {
+  left: -5px;
+  bottom: -5px;
+  transform: scaleY(-1);
+}
+.fui .f-frz-c[data-at="br"] {
+  right: -5px;
+  bottom: -5px;
+  transform: scale(-1);
+}
+.fui .f-sheet .f-char-id h1 {
+  font: 700 36px/1 var(--font-title);
+  color: var(--text);
+}
+/* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
+.fui .f-sheet .f-ability b {
+  font: 700 26px/1.15 var(--font-title);
+  color: var(--text);
+}
+.fui .f-sheet .f-ability dd span {
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.fui .f-sheet .f-badge-frame b {
+  font: 700 24px/1 var(--font-title);
+  color: var(--text);
+}
+.fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 8px var(--glow-ac));
+}
+.fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame b {
+  font-size: var(--fs-ac);
+  color: var(--white);
+}
+.fui .f-sheet .f-badge[data-shape="shield"] > .f-lbl {
+  margin-top: 8px;
+  letter-spacing: 0.03em;
+}
+@media (min-width: 801px) {
+  .fui .f-sheet .f-char-hp {
+    width: 300px;
+  }
+}
+.fui .f-sheet .f-char-hp-v {
+  font: 700 22px var(--font-title);
+}
+.fui .f-sheet .f-char-hp-v b {
+  font-size: var(--fs-hp-big);
+  text-shadow: 0 0 14px var(--glow-hp);
+}
+.fui .f-char-hp-open {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+}
+.fui .f-char-hp-acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.fui .f-sheet .f-char-hp-acts > .f-btn {
+  font-size: var(--fs-text);
+  border-color: var(--line-strong);
+  background: var(--line-soft);
+  box-shadow: none;
+}
+/* the action types' colours and shapes (BG3), for the turn strip, filters and groups */
+.fui .f-sheet {
+  --t-action: #6cc04a;
+  --t-bonus: #ee9a3c;
+  --t-reaction: #c27be6;
+  --t-move: #e2c24e;
+}
+.fui .f-sheet .f-turn-slots [data-kind="action"],
+.fui .f-shape[data-kind="action"] {
+  --slot: var(--t-action, var(--hp));
+}
+.fui .f-sheet .f-turn-slots [data-kind="bonus"],
+.fui .f-shape[data-kind="bonus"] {
+  --slot: var(--t-bonus, var(--c-tes));
+}
+.fui .f-sheet .f-turn-slots [data-kind="reaction"],
+.fui .f-shape[data-kind="reaction"] {
+  --slot: var(--t-reaction, var(--conc));
+}
+.fui .f-sheet .f-turn-slots [data-kind="move"] {
+  --slot: var(--t-move, var(--hp-y));
+}
+.fui .f-shape {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: var(--slot);
+}
+.fui .f-shape[data-kind="action"] {
+  border-radius: 50%;
+}
+.fui .f-shape[data-kind="bonus"] {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.fui .f-shape[data-kind="reaction"] {
+  transform: rotate(45deg) scale(0.85);
+}
+/* the centre's tab band (prototype .boxtabs): the panel's head, its tabs in Cinzel */
+.fui .f-sheet .f-centre {
+  --c: #c9d1dc;
+}
+.fui .f-sheet .f-centre > .f-tabs {
+  gap: 4px;
+  align-items: stretch;
+  min-height: 56px;
+  margin: -1px -1px 0;
+  padding: 0 20px;
+  border-top: 3px solid var(--c);
+  border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--c) 55%, var(--shade)) 0%,
+    color-mix(in srgb, var(--c) 40%, var(--shade)) 55%,
+    color-mix(in srgb, var(--c) 26%, var(--shade)) 100%
+  );
+}
+.fui .f-sheet .f-centre > .f-tabs > button {
+  gap: 8px;
+  padding: 16px 16px 12px;
+  font: 700 14px var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fui .f-sheet .f-centre > .f-tabs > button[aria-selected="true"] {
+  color: var(--white);
+  box-shadow: inset 0 -3px 0 var(--c);
+}
+/* the turn strip (prototype .bn): a quiet band, the round in Cinzel, «Fine turno» lit */
+.fui .f-sheet .f-turn {
+  min-height: 72px;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 0;
+  background: var(--band-quiet);
+  font: 600 18px var(--font-text);
+  color: var(--white);
+}
+.fui .f-sheet .f-turn-t {
+  font: 900 18px var(--font-label);
+  text-transform: none;
+  letter-spacing: 0.06em;
+  color: var(--white);
+}
+.fui .f-sheet .f-turn-slots {
+  gap: 12px;
+}
+.fui .f-sheet .f-turn-slots li {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--white);
+}
+.fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 2px solid var(--lit-hi);
+  background: radial-gradient(circle at 50% 35%, var(--lit-mid), var(--lit-deep) 78%);
+  box-shadow: 0 0 14px var(--lit-glow);
+  color: var(--white);
+}
+.fui .f-sheet .f-turn .f-btn[data-kind="primary"]:hover {
+  border-color: var(--lit-hi);
+  box-shadow: 0 0 22px var(--lit-glow-hi);
+  filter: brightness(1.2);
+}
+/* «Cosa ti conviene fare»: a quiet line, not a title */
+.fui .f-sheet .f-playbook-h {
+  gap: 12px;
+  min-height: 48px;
+  padding: 4px 0;
+  font: 400 16px/1.45 var(--font-text);
+  color: var(--advice);
+}
+/* filters: underlined tabs with the type shapes */
+.fui .f-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--rule-quiet);
+}
+.fui .f-filters > .f-chip {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: 700 14px/1.45 var(--font-text);
+  color: var(--label, var(--muted));
+}
+.fui .f-filters > .f-chip[aria-pressed="true"] {
+  background: none;
+  color: var(--white);
+  box-shadow: inset 0 -2px 0 var(--text);
+}
+.fui .f-sheet .f-filters > .f-chip:not([aria-disabled="true"]):hover {
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--white);
+}
+.fui .f-sheet .f-filters > .f-chip[aria-pressed="true"]:hover {
+  box-shadow: inset 0 -2px 0 var(--text);
+}
+/* the table: column names, then each group under its coloured rule */
+.fui .f-act-head {
+  min-height: 0;
+  padding: 0 8px 8px;
+  border: 0;
+}
+.fui .f-act-head > span {
+  font: 700 12px/1.2 var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--label, var(--muted));
+  white-space: nowrap;
+}
+.fui .f-act-gh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 8px 0;
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--gc, var(--line-strong)) 40%, transparent);
+  font: 700 16px/1.45 var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--white);
+}
+.fui .f-act-group[data-group="actions"] {
+  --gc: var(--t-action);
+}
+.fui .f-act-group[data-group="bonus"] {
+  --gc: var(--t-bonus);
+}
+.fui .f-act-group[data-group="reactions"] {
+  --gc: var(--t-reaction);
+}
+.fui .f-sheet .f-act {
+  min-height: 64px;
+  padding: 8px;
+  border-bottom-color: var(--row-rule);
+}
+.fui .f-sheet .f-act .f-row-t {
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--white);
+}
+.fui .f-sheet .f-act .f-row-s {
+  font-size: var(--fs-sm);
+}
+.fui .f-sheet .f-act-c {
+  font: 600 17px/1 var(--font-text);
+  color: var(--plate-text);
+}
+@media (min-width: 641px) {
+  .fui .f-sheet .f-act-c {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 4px;
+  }
+}
+.fui .f-sheet .f-act:not(.f-act-head):hover {
+  background-color: var(--row-rule);
+}
+.fui .f-sheet .f-act:not(.f-act-head):hover .f-row-t {
+  color: var(--row-hover-text);
+}
+@media (max-width: 640px) {
+  .fui .f-act-head {
+    display: none;
+  }
+}
+/* the three columns (prototype .play): 290 | the centre | 330 */
+@media (min-width: 1281px) {
+  .fui .f-sheet .f-play {
+    grid-template-columns: 290px minmax(0, 1fr) 330px;
+  }
+}
+@media (min-width: 961px) and (max-width: 1280px) {
+  .fui .f-sheet .f-play {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+/* out of a fight with no campaign the right column has nothing: the centre takes it */
+@media (min-width: 1281px) {
+  .fui .f-sheet .f-play:has(> .f-right:empty) {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+.fui .f-play > .f-right:empty {
+  display: none;
+}
+/* phone (prototype x-play-m): the name 26 px, the abilities a compact row */
+@media (max-width: 800px) {
+  .fui .f-sheet .f-char {
+    padding: 24px 20px;
+  }
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-title-phone);
+  }
+  .fui .f-sheet .f-ability b {
+    font-size: var(--fs-lg);
+  }
+}
+@media (max-width: 400px) {
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-title-bar-m);
+  }
+  .fui .f-sheet .f-char-stats .f-lbl,
+  .fui .f-sheet .f-ability dt {
+    letter-spacing: 0.02em;
+  }
 }

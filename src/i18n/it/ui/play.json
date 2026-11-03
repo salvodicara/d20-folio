@@ -57,6 +57,10 @@
     },
     "form": {
       "tempHp": "Ottieni {{amount}} punti ferita temporanei, che restano quando torni alla tua forma."
+    },
+    "table": {
+      "hit": "TxC / CD",
+      "effect": "Effetto"
     }
   }
 }
