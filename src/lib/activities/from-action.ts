@@ -227,6 +227,8 @@ function effects(action: SrdActionDef, owner: ActionOwner): ActivityEffect[] {
     out.push({ kind: "hp-threshold", ...action.hitPointThreshold });
   }
   out.push(...riderEffects(action));
+  // The effects the catalogue writes itself (Stunning Strike's success rider).
+  out.push(...(action.effects ?? []));
   if (action.maintainsActiveKey) {
     out.push({ kind: "maintain", key: action.maintainsActiveKey });
   } else {

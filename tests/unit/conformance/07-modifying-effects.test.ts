@@ -392,7 +392,7 @@ describe("conformance · 7. effects that modify other effects", () => {
       category: 7,
       case: "Stunning Strike on a success",
       source: "WIKI monk:main; KIBBLES #10",
-      status: "M12",
+      status: "works",
     },
     () => {
       // On a successful save: half speed and Advantage on the next attack against it.
@@ -406,6 +406,7 @@ describe("conformance · 7. effects that modify other effects", () => {
         (e) => e.kind
       );
       expect(kinds).toContain("next-attack-advantage");
+      expect(kinds).toContain("speed-halved");
     }
   );
 

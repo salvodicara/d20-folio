@@ -12,6 +12,7 @@
 // serializable cost shape shared with the immediate-commit combat path.
 import type { CostSpec } from "@/lib/cost-engine";
 import type { Scalar } from "@/lib/scalar";
+import type { CatalogueEffect } from "@/lib/catalogue-effects";
 import type { CombatAbilityCode, CombatOutcomePredicate } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
 // Type-only — the stable weapon/armor proficiency token brand (golden rule 7 +
@@ -1286,6 +1287,17 @@ export interface SrdSpellData {
    * once it has dealt 60 damage: the damage targets actually take).
    */
   budget?: { max: number; counts: "damage-dealt" };
+  /** What happens when the spell ends (Fly: a target still aloft falls). */
+  onEnd?: ReadonlyArray<CatalogueEffect>;
+  /** Counterspell's rule for the spell it stops: the caster keeps the slot. */
+  counter?: { slot: "kept" };
+  /** Effects the flat fields can't state (a slot recovery), added to the derived ones. */
+  effects?: ReadonlyArray<CatalogueEffect>;
+  /** The caster picks, per target, one of these effect lists. */
+  perTargetChoice?: ReadonlyArray<{
+    id: string;
+    effects: ReadonlyArray<CatalogueEffect>;
+  }>;
   /** False when casting only creates the persistent effect and its first damage/save
    * happens later (for example Flaming Sphere at end of turn). */
   resolveOnCast?: false;
@@ -1606,6 +1618,9 @@ export interface SrdActionDef extends EffectRiders {
   skillCheck?: { dc: number; skill: string };
   /** This use grants Advantage on the actor's next attack roll this turn. */
   grantsNextAttackAdvantage?: true;
+  /** Effects the flat fields can't state (Stunning Strike's success rider), added to
+   *  the derived ones. */
+  effects?: ReadonlyArray<CatalogueEffect>;
   /** This use sets the actor's Speed to 0 for the rest of the current turn. */
   locksMovement?: true;
   /** Another stable action id that must already have been committed this turn.

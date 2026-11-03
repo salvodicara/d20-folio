@@ -285,6 +285,11 @@ const PACK_ONLY_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
   tempHpPool: 120,
   damageOnMiss: "half",
   primaryTargetOnly: true,
+  effects: [{ kind: "recover-slots", totalLevels: 5, perUpcast: 1, maxSlotLevel: 5 }],
+  perTargetChoice: [
+    { id: "harm", effects: [{ kind: "speed-halved" }] },
+    { id: "help", effects: [{ kind: "next-attack-advantage" }] },
+  ],
 };
 
 /** Each structured field a catalogue spell uses, with the value of its first
@@ -532,6 +537,11 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
   stabilize: { action: { ...base, stabilize: true } },
   "check-bonus": { action: { ...base, checkBonus: { dice: "1d4" } } },
   "next-attack-advantage": { action: { ...base, grantsNextAttackAdvantage: true } },
+  "speed-halved": { action: { ...base, effects: [{ kind: "speed-halved" }] } },
+  "fall-if-aloft": { action: { ...base, effects: [{ kind: "fall-if-aloft" }] } },
+  "recover-slots": {
+    action: { ...base, effects: [{ kind: "recover-slots", totalLevels: 3 }] },
+  },
   "speed-zero": { action: { ...base, locksMovement: true } },
   revive: { action: { ...base, revives: { hitPoints: 1 } } },
   "hp-threshold": {

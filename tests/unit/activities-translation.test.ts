@@ -56,6 +56,10 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   summonTurn: "where a summoned creature acts, an encounter fact",
   zone: "the persistent area the spell leaves, an encounter zone (M9), not an activity",
   budget: "a total the live effect spends before it ends, an encounter fact",
+  onEnd: "an authored end hook (M12), not yet carried by the Activity",
+  counter: "Counterspell's rule for the countered spell (M12)",
+  effects: "authored effects (M12), not yet carried by a spell's Activity",
+  perTargetChoice: "a per-target effect choice (M12), not yet carried by the Activity",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   performs: "a stat-block entry that uses another one, resolved on the block",
@@ -452,7 +456,23 @@ function actionFromActivity(
           refundOnFail: must(effect("check-bonus")).refundOnFail,
         }
       : undefined,
-    grantsNextAttackAdvantage: effect("next-attack-advantage") ? true : undefined,
+    // The bare effect is the flag; any other authored kind (or one with fields) is
+    // the action's own `effects` list (Stunning Strike's success rider).
+    grantsNextAttackAdvantage: activity.effects.some(
+      (e) => e.kind === "next-attack-advantage" && Object.keys(e).length === 1
+    )
+      ? true
+      : undefined,
+    effects: (() => {
+      const authored = activity.effects.filter(
+        (e) =>
+          e.kind === "speed-halved" ||
+          e.kind === "fall-if-aloft" ||
+          e.kind === "recover-slots" ||
+          (e.kind === "next-attack-advantage" && Object.keys(e).length > 1)
+      );
+      return authored.length > 0 ? authored : undefined;
+    })(),
     locksMovement: effect("speed-zero") ? true : undefined,
     maintainsActiveKey: effect("maintain")?.key,
   });

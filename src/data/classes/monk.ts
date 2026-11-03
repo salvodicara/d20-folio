@@ -403,6 +403,22 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
           saveDcAbility: "WIS",
           conditionApplication: { options: ["stunned"], on: "failed-save" },
           targeting: { affinity: "enemy", maxTargets: 1 },
+          // 2024 RAW, on a successful save: "the target's Speed is halved until the
+          // start of your next turn, and the next attack roll made against the target
+          // before then has Advantage."
+          effects: [
+            {
+              kind: "speed-halved",
+              saveOutcome: "success",
+              until: { phase: "turn-start", anchor: "actor" },
+            },
+            {
+              kind: "next-attack-advantage",
+              against: "target",
+              saveOutcome: "success",
+              until: { phase: "turn-start", anchor: "actor" },
+            },
+          ],
         },
       ],
     },
