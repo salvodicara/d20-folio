@@ -102,8 +102,12 @@ function PlayHeader({
       <div className="f-char-id">
         <h1>{view.name}</h1>
         <p className="f-hero-sub">{view.identity.join(" · ")}</p>
-        {(view.concentration || view.effects > 0 || view.conditions > 0) && (
+        {(view.form || view.concentration || view.effects > 0 || view.conditions > 0) && (
           <div className="f-chips">
+            {/* In a form the sheet is the beast's: say so first (the source, then it). */}
+            {view.form && (
+              <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
+            )}
             {view.concentration && <Chip kind="conc">{view.concentration}</Chip>}
             {view.effects > 0 && (
               <Chip kind="buff">{`${t("play.effects")} ${String(view.effects)}`}</Chip>

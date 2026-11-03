@@ -3,11 +3,15 @@
  * subclass, species, background), the six abilities with modifier, score and save
  * proficiency, the four header numbers exactly as the sheet derives them
  * (`sheetNumbers`), HP with temporary points, and what is going on (Concentration,
- * effects, conditions). Pure: every label is localized here.
+ * effects, conditions). In a form (Polymorph, Wild Shape) the sheet becomes the beast:
+ * `sheetNumbers` already carries the form's numbers, and `form` names it (the source,
+ * then the beast, as the breakdowns do). Pure: every label is localized here.
  */
 import { effectiveConditions } from "@/lib/aggregate-character";
 import { abilityModifier } from "@/lib/ability";
+import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
+import { currentForm, formNameKind } from "@/lib/polymorph";
 import { effectChipsView } from "@/lib/views/effect-chips-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import {
@@ -30,6 +34,8 @@ export interface PlayHeaderView {
   concentration: string | null;
   effects: number;
   conditions: number;
+  /** The form the character is in, or null. */
+  form: { source: string; beast: string } | null;
 }
 
 export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderView {
@@ -66,5 +72,15 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
     concentration: concentration ? concentrationLabel(concentration, locale) : null,
     effects: effectChipsView(doc, locale).length,
     conditions: effectiveConditions(doc).length,
+    form: formNames(doc, locale),
+  };
+}
+
+function formNames(doc: CharacterDoc, locale: Locale): PlayHeaderView["form"] {
+  const form = currentForm(doc.session);
+  if (!form) return null;
+  return {
+    source: localizeSrd("spell", form.sourceId, "name", locale),
+    beast: localizeSrd(formNameKind(form), form.beastId, "name", locale),
   };
 }

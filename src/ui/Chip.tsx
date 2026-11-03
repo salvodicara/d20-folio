@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** A chip: a single choice (pressed) or a state with its colour (concentration, condition, effect). */
+/** A chip: a single choice (pressed) or a state with its colour (concentration, condition, effect, a form). */
 export function Chip({
   pressed,
   kind,
@@ -10,7 +10,7 @@ export function Chip({
   children,
 }: {
   pressed?: boolean;
-  kind?: "conc" | "cond" | "buff";
+  kind?: "conc" | "cond" | "buff" | "form";
   /** A choice that cannot be taken now (it stays visible, with `title` saying why). */
   disabled?: boolean;
   title?: string;
