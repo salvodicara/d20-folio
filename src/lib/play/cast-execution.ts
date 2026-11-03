@@ -4,6 +4,7 @@
  */
 import { getSpellById } from "@/data/spells";
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import type { WeaponBindingCast } from "@/lib/weapon-binding";
 
 export interface ActionExecution {
   consumesTurnEconomy: boolean;
@@ -11,6 +12,9 @@ export interface ActionExecution {
   ritual: boolean;
   /** Cast without its components (Wish's duplicate): no material cost to offer. */
   withoutComponents?: true;
+  /** The weapon a weapon-binding cast names (Magic Weapon, Shillelagh), and the
+   *  damage type picked when the spell offers one. */
+  weaponBinding?: Omit<WeaponBindingCast, "spell">;
 }
 
 /** An ordinary turn action: it claims the turn's economy and is undone with the turn. */
