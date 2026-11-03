@@ -145,6 +145,10 @@
       "packed": "in the pack",
       "bonus": "+{{bonus}} to attack and damage",
       "ability": "attacks with {{ability}}"
+    },
+    "spare": {
+      "which": "Whom does it spare?",
+      "hint": "Whoever you pick is unaffected by it. Your allies are already picked."
     }
   }
 }

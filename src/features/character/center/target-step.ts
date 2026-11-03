@@ -23,7 +23,7 @@ export interface TargetRosterRow {
 }
 
 /** Dead: a monster at 0 Hit Points, a PC with three failed death saves. */
-function isDead(row: TargetRosterRow): boolean {
+export function isDead(row: TargetRosterRow): boolean {
   return row.kind === "pc" ? (row.deathSaves?.failures ?? 0) >= 3 : row.down === true;
 }
 

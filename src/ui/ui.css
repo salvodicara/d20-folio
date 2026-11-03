@@ -2225,7 +2225,10 @@
 /* the row button is a small capsule (14 px): the prototype's 92 px column, on the grid */
 @media (min-width: 641px) {
   .fui .f-sheet .f-act {
-    grid-template-columns: 46px minmax(0, 1fr) repeat(3, minmax(72px, max-content)) 96px;
+    /* the name keeps 160 px: a long value (a range in words) wraps in its own cell */
+    grid-template-columns:
+      46px minmax(160px, 1fr) repeat(3, minmax(72px, max-content))
+      96px;
     column-gap: 12px;
   }
 }
@@ -2519,6 +2522,8 @@
     justify-content: center;
     min-height: 40px;
     padding: 0 4px;
+    text-align: center;
+    white-space: normal;
   }
 }
 .fui .f-sheet .f-act:not(.f-act-head):hover {
