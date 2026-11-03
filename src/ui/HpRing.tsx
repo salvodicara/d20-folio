@@ -78,7 +78,7 @@ export function HpRing({
               <stop offset="1" style={{ stopColor: "var(--rim-lo)" }} />
             </linearGradient>
             <filter id={`${id}-glow`} x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="b" />
+              <feGaussianBlur stdDeviation="2.5" result="b" />
               <feMerge>
                 <feMergeNode in="b" />
                 <feMergeNode in="SourceGraphic" />
@@ -92,7 +92,7 @@ export function HpRing({
           r={r}
           fill="none"
           style={{ stroke: "var(--ring-track)" }}
-          strokeWidth="6"
+          strokeWidth={ornate ? 7 : 6}
         />
         <circle
           cx="32"
@@ -100,7 +100,7 @@ export function HpRing({
           r={r}
           fill="none"
           stroke={color}
-          strokeWidth="4"
+          strokeWidth={ornate ? 5 : 4}
           strokeLinecap="round"
           strokeDasharray={`${c * p} ${c}`}
           filter={glow}
@@ -112,7 +112,7 @@ export function HpRing({
             r={r}
             fill="none"
             stroke={tempColor}
-            strokeWidth="4"
+            strokeWidth={ornate ? 5 : 4}
             strokeDasharray={`${c * t} ${c}`}
             strokeDashoffset={-c * p}
             filter={glow}

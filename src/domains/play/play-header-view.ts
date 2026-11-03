@@ -28,8 +28,6 @@ export interface PlayHeaderView {
   name: string;
   portraitUrl: string | null;
   identity: string[];
-  /** The phone bar's short line: each class with its level, then species. */
-  brief: string[];
   abilities: { id: AbilityCode; mod: number; score: number; save: boolean }[];
   numbers: { ac: number; initiative: number; speedFt: number; proficiency: number };
   hp: { current: number; max: number; temp: number };
@@ -55,12 +53,6 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
       ]),
       ...(c.race ? [localizeRaceName(c.race, locale)] : []),
       ...(c.background ? [localizeBackgroundName(c.background, locale)] : []),
-    ],
-    brief: [
-      ...c.classes.map(
-        (entry) => `${localizeClassName(entry.classId, locale)} ${entry.level}`
-      ),
-      ...(c.race ? [localizeRaceName(c.race, locale)] : []),
     ],
     abilities: ABILITY_CODES.map((id) => {
       const score = n.abilities[id].total;

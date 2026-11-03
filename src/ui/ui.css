@@ -2406,7 +2406,7 @@
 }
 .fui .f-sheet .f-turn-t {
   font: 900 18px var(--font-label);
-  text-transform: none;
+  text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--white);
 }
@@ -2631,17 +2631,8 @@
   border-radius: var(--r-sm);
   color: var(--gold);
 }
-.fui .f-tb-who {
-  display: grid;
-  min-width: 0;
-}
-.fui .f-tb-who > b {
-  font: 700 var(--fs-md) / 1.2 var(--font-text);
-  color: var(--strong);
-}
-.fui .f-tb-who > span {
-  font-size: var(--fs-sm);
-  color: var(--muted);
+.fui .f-tb-gap {
+  flex: 1;
 }
 @media (max-width: 760px) {
   .fui .f-tb:has(> .f-tb-page:not(:empty)) {
@@ -2705,7 +2696,6 @@
     grid-template-areas:
       "medal name"
       "medal sub"
-      "medal acts2"
       "hp hp"
       "stats stats"
       "acts acts"
@@ -2728,9 +2718,9 @@
     align-self: start;
     font-size: var(--fs-sm);
   }
+  /* the phone header has no header buttons (prototype x-play-m) */
   .fui .f-sheet .f-char-acts {
-    grid-area: acts2;
-    margin-top: 8px;
+    display: none;
   }
   .fui .f-sheet .f-char-id > .f-chips {
     grid-area: chips;
@@ -2833,13 +2823,9 @@
 .fui .f-char-hp-acts > .f-btn:last-child .f-ic {
   color: var(--heal-icon);
 }
-.fui .f-secbar .f-ic {
-  width: 20px;
-  height: 20px;
-}
 .fui .f-secbar > button > .f-ic {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 /* laptop (prototype: D&D Beyond's model): the columns fill the screen and the centre
    scrolls inside its box, its filters held at the top */
@@ -2929,5 +2915,38 @@
   }
   .fui .f-sheet dialog.f-menu .f-menu-it[aria-current] {
     border-color: var(--text);
+  }
+}
+/* a state pill's count (prototype .sg .n): a small disc in the pill's colour */
+.fui .f-chip-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--chip-n, var(--text));
+  color: var(--shade);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1;
+}
+.fui .f-chip[data-kind="buff"] {
+  --chip-n: var(--buff);
+}
+.fui .f-chip[data-kind="cond"] {
+  --chip-n: var(--cond);
+}
+.fui .f-tb-back > .f-ic {
+  width: 20px;
+  height: 20px;
+}
+/* phone turn strip (prototype x-play-m .bn): the resources on one line, «Fine turno» across */
+@media (max-width: 640px) {
+  .fui .f-sheet .f-turn-slots {
+    gap: 8px 12px;
+  }
+  .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+    width: 100%;
   }
 }

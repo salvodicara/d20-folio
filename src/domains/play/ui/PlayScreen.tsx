@@ -41,6 +41,7 @@ import {
   type IconName,
   Menu,
   PhoneBar,
+  useShellMenu,
   StatBadge,
   Toast,
 } from "@/ui";
@@ -72,6 +73,7 @@ export function PlayScreen() {
   const error = useCharacterStore((s) => s.error);
   useDocumentTitle(doc?.character.name);
   const campaign = useAttachedCampaign(characterId ?? "");
+  const openMenu = useShellMenu();
   const fight = useSheetCombat();
   // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
   const [section, setSection] = useState<Section>("actions");
@@ -94,12 +96,18 @@ export function PlayScreen() {
     <main id="main" className="f-page f-sheet">
       <PhoneBar>
         <Link className="f-tb-back" to="/characters" aria-label={t("nav.characters")}>
-          <Icon name="u-back" />
+          <Icon name="u-back" size={20} />
         </Link>
-        <span className="f-tb-who">
-          <b>{view.name}</b>
-          <span>{view.brief.join(" · ")}</span>
-        </span>
+        <span className="f-tb-gap" />
+        <button
+          type="button"
+          className="f-tb-back"
+          aria-label={t("shell.menu")}
+          aria-haspopup="dialog"
+          onClick={openMenu}
+        >
+          <Icon name="u-more" size={20} />
+        </button>
       </PhoneBar>
       <PlayHeader doc={doc} view={view} locale={locale} campaign={campaign} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
@@ -120,7 +128,7 @@ export function PlayScreen() {
           aria-haspopup="dialog"
           onClick={() => setSectionsOpen(true)}
         >
-          <Icon name="u-sections" />
+          <Icon name="u-sections" size={24} />
           {t("palette.groupSections")}
         </button>
       </nav>
@@ -200,12 +208,18 @@ function PlayHeader({
               <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
             )}
             {view.form && !readonly && <RevertForm />}
-            {view.concentration && <Chip kind="conc">{view.concentration}</Chip>}
+            {view.concentration && <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>}
             {view.effects > 0 && (
-              <Chip kind="buff">{`${t("play.effects")} ${String(view.effects)}`}</Chip>
+              <Chip kind="buff">
+                {`✦ ${t("play.effects")}`}
+                <span className="f-chip-n">{view.effects}</span>
+              </Chip>
             )}
             {view.conditions > 0 && (
-              <Chip kind="cond">{`${t("combat.effectReview.conditions")} ${String(view.conditions)}`}</Chip>
+              <Chip kind="cond">
+                {`⚠ ${t("combat.effectReview.conditions")}`}
+                <span className="f-chip-n">{view.conditions}</span>
+              </Chip>
             )}
           </div>
         )}
