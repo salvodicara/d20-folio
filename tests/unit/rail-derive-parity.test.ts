@@ -55,7 +55,7 @@ function railView(doc: CharacterDoc) {
     return row ? (row.override ?? row.computed) : 10;
   };
   const walkingSpeedFt = shownWalkingSpeedFt(doc, getEquipment);
-  const { senses, speeds } = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
+  const { senses, speeds } = deriveSensesAndSpeeds(aggregate, walkingSpeedFt, exhaustion);
   return {
     saves: rows.saves.map((s) => ({
       ability: s.id,
