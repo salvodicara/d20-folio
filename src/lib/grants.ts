@@ -1248,6 +1248,14 @@ export interface IncomingAttackClause {
  * (`smart-tracker`) resolves it to a concrete number and surfaces a manual
  * "Gain N temporary HP" entry. Override-first — never auto-applied.
  */
+/** Spells castable in a form that blocks casting (see the `form-casting` grant). */
+export interface FormCastingEntry {
+  sourceId: string;
+  form: string;
+  exceptCostlyMaterial?: true;
+  spells?: "subclass";
+}
+
 export interface TempHpEntry {
   sourceId: string;
   formula: string;
@@ -2123,6 +2131,8 @@ export interface AggregatedGrants {
    * Override-first — the engine never auto-applies temp HP.
    */
   tempHpGrants: ReadonlyArray<TempHpEntry>;
+  /** Spells castable in a form that blocks casting (Beast Spells, Moon). */
+  formCasting: ReadonlyArray<FormCastingEntry>;
 
   /**
    * Rogue Cunning Strike catalogue — every option an effective character knows
@@ -2302,6 +2312,7 @@ export function emptyAggregate(): AggregatedGrants {
     familiarEnhancements: [],
     familiarFormIds: new Set(),
     tempHpGrants: [],
+    formCasting: [],
     cunningStrikeOptions: [],
     trackerAltRecoveries: [],
     pendingChoices: [],
@@ -2603,6 +2614,7 @@ export function evaluateGrants(
 
   // Temporary-HP grants (override-first — never auto-applied)
   const tempHpGrants: TempHpEntry[] = [];
+  const formCasting: FormCastingEntry[] = [];
 
   // Cross-feature alternate-recovery grants (Sorcery Incarnate → Innate Sorcery)
   const trackerAltRecoveries: TrackerAltRecoveryEntry[] = [];
@@ -3853,6 +3865,16 @@ export function evaluateGrants(
         }
         break;
 
+      // ── Spells castable in a form that blocks casting (M2) ──────────────
+      case "form-casting":
+        formCasting.push({
+          sourceId,
+          form: g.form,
+          ...(g.exceptCostlyMaterial ? { exceptCostlyMaterial: true as const } : {}),
+          ...(g.spells ? { spells: g.spells } : {}),
+        });
+        break;
+
       // ── Temporary HP grant (override-first — never auto-applied) ──────
       case "temp-hp":
         tempHpGrants.push({
@@ -4115,6 +4137,7 @@ export function evaluateGrants(
     familiarEnhancements,
     familiarFormIds,
     tempHpGrants,
+    formCasting,
     cunningStrikeOptions,
     trackerAltRecoveries,
     pendingChoices,

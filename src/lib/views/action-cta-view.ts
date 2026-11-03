@@ -10,7 +10,11 @@
 import type { GatedSlot, ResolvedConditionEffects } from "@/lib/condition-effects";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { ActionEconomyCategory } from "@/data/types";
-import { resolveActiveStateBlocker, type ResolvedAction } from "@/lib/smart-tracker";
+import {
+  resolveActiveStateBlocker,
+  spellcastingBlocker,
+  type ResolvedAction,
+} from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
@@ -32,7 +36,10 @@ export type ActionBlockReason =
         | "already-moved"
         | "heavy-armor"
         | "incapacitated"
-        | "loading";
+        | "loading"
+        /** A state (Rage) or the assumed form (Wild Shape) keeps the spell from being cast. */
+        | "spellcasting-blocked"
+        | "in-form";
     }
   /** A condition forbids the slot; `condition` names the first one that does. */
   | { kind: "condition"; condition: string | undefined }
@@ -145,7 +152,13 @@ export function actionBlockReason(
   conditions: ActionConditions,
   depleted: boolean
 ): ActionBlockReason | null {
-  if (castsSpell(action)) return depleted ? { kind: "no-uses" } : null;
+  if (castsSpell(action)) {
+    // A blocked spell has no cast routes, so it also reads depleted: the block is why.
+    const blocker = spellcastingBlocker(doc, action.spellId);
+    if (blocker === "form") return { kind: "in-form" };
+    if (blocker === "state") return { kind: "spellcasting-blocked" };
+    return depleted ? { kind: "no-uses" } : null;
+  }
   const committed = [
     ...turn.selected.action,
     ...turn.selected.bonus,
@@ -335,6 +348,10 @@ export function blockReasonLine(
       return t("combat.blockedReasonHeavyArmor");
     case "incapacitated":
       return t("combat.blockedReasonIncapacitated");
+    case "spellcasting-blocked":
+      return t("combat.blockedReasonSpellcasting");
+    case "in-form":
+      return t("combat.blockedReasonInForm");
     case "loading":
       return t("combat.loadingOneShotReason");
     case "out-of-ammo":

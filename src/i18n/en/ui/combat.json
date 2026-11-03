@@ -356,6 +356,7 @@
     "blockedReasonNoConcentration": "Can't concentrate",
     "blockedReasonSpellcasting": "An active state prevents spellcasting",
     "blockedReasonHeavyArmor": "Heavy armor prevents this state",
+    "blockedReasonInForm": "In beast form",
     "blockedReasonIncapacitated": "Incapacitated prevents this state",
     "blockedReasonDead": "A dead character can't act. Revive them or use the manual override first.",
     "blockedReasonAlreadyMoved": "Unavailable after moving this turn",

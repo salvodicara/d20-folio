@@ -1,7 +1,8 @@
 /**
  * TransformFormPicker — the one form picker of the self-transformation spells
- * (Polymorph, True Polymorph, Shapechange, Animal Shapes): the Beast catalogue or
- * the lazy bestiary, per the spell's rule. Choosing a form applies it with an
+ * (Polymorph, True Polymorph, Shapechange, Animal Shapes) and of Wild Shape: the
+ * Beast catalogue (Wild Shape's capped by the druid's level) or the lazy bestiary,
+ * per the source's rule. Choosing a form applies it with an
  * undoable toast; closing it changes nothing. It never spends a slot: the cast
  * that opened it already paid, and the Spells tab's Transform reopens it later.
  */
@@ -10,7 +11,8 @@ import { BeastFormPicker } from "@/components/sheet/BeastFormPicker";
 import { ensureSrdKind } from "@/i18n";
 import { useLocale } from "@/hooks/useLocale";
 import { totalLevel } from "@/lib/classes";
-import { resolvePolymorphForms, selfFormRule } from "@/lib/polymorph";
+import { formPool } from "@/lib/form-pool";
+import { selfFormRule } from "@/lib/polymorph";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { BeastStatBlock } from "@/data/types";
 import { useFormActions } from "./use-form-actions";
@@ -24,7 +26,8 @@ const BestiaryFormPicker = lazy(() =>
 );
 
 export interface TransformFormPickerProps {
-  /** The spell whose form is being chosen; null keeps the picker closed. */
+  /** The spell or feature (Wild Shape) whose form is being chosen; null keeps the
+   *  picker closed. */
   spellId: string | null;
   onClose: () => void;
 }
@@ -55,8 +58,9 @@ export function TransformFormPicker({ spellId, onClose }: TransformFormPickerPro
   return (
     <BeastFormPicker
       open={spellId !== null}
-      forms={resolvePolymorphForms(character, spellId ?? "polymorph")}
+      forms={formPool(character, spellId ?? "polymorph")}
       keepsMind={selfFormRule(spellId ?? "polymorph").keepsMind}
+      selfOnly={selfFormRule(spellId ?? "polymorph").selfOnly ?? false}
       locale={locale}
       onAssume={handleAssume}
       onClose={onClose}

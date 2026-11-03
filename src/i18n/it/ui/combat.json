@@ -356,6 +356,7 @@
     "blockedReasonNoConcentration": "Non puoi concentrarti",
     "blockedReasonSpellcasting": "Uno stato attivo impedisce di lanciare incantesimi",
     "blockedReasonHeavyArmor": "L'armatura pesante impedisce questo stato",
+    "blockedReasonInForm": "In forma bestiale",
     "blockedReasonIncapacitated": "Incapacitato impedisce questo stato",
     "blockedReasonDead": "Un personaggio morto non può agire. Rianimalo o usa prima la modifica manuale.",
     "blockedReasonAlreadyMoved": "Non disponibile dopo esserti mosso in questo turno",

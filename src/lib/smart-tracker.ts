@@ -106,6 +106,7 @@ import {
   formNameKind,
   formStatBlock,
 } from "@/lib/polymorph";
+import { formBlocksSpell } from "@/lib/form-casting";
 import {
   totalLevel,
   classEntryLevel,
@@ -8814,10 +8815,36 @@ export function resolveActiveStatesEndingOnRest(
   return [...ended];
 }
 
-/** One cast-law query shared by the Play and Spells surfaces. */
-export function isSpellcastingBlocked(character: CharacterDoc): boolean {
-  return aggregateCharacterGrants(character.character, character.session)
-    .spellcastingBlocked;
+/** One cast-law query shared by the Play and Spells surfaces: a state that blocks
+ *  casting (Rage), or a form that blocks `spellId` (Wild Shape, with its
+ *  exceptions; any spell when no id is given). */
+export function isSpellcastingBlocked(
+  character: CharacterDoc,
+  spellId?: string
+): boolean {
+  return spellcastingBlocker(character, spellId) !== null;
+}
+
+/** The aggregate the cast law reads, once per character snapshot (a list of spell
+ *  cards asks for each spell). */
+const castLawAggregates = new WeakMap<
+  CharacterDoc,
+  ReturnType<typeof aggregateCharacterGrants>
+>();
+
+/** Why `spellId` can't be cast now: a state (Rage) or the assumed form (Wild Shape),
+ *  or null when it can. */
+export function spellcastingBlocker(
+  character: CharacterDoc,
+  spellId?: string
+): "state" | "form" | null {
+  let aggregate = castLawAggregates.get(character);
+  if (!aggregate) {
+    aggregate = aggregateCharacterGrants(character.character, character.session);
+    castLawAggregates.set(character, aggregate);
+  }
+  if (aggregate.spellcastingBlocked) return "state";
+  return formBlocksSpell(aggregate, spellId) ? "form" : null;
 }
 
 /**

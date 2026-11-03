@@ -94,7 +94,7 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import { currentForm, selfFormRule } from "@/lib/polymorph";
+import { currentForm, formSourceKind, selfFormRule } from "@/lib/polymorph";
 import type { BeastStatBlock } from "@/data/types";
 import { getSpellById } from "@/data/spells";
 import { getBeast } from "@/data/beasts";
@@ -3213,7 +3213,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return null;
     const active = currentForm(character.session);
     const reshift = active?.sourceId === spellId && selfFormRule(spellId).reshift;
-    if (active && !reshift) return null; // already transformed
+    // Using a transforming feature again (Wild Shape) takes a new form in place.
+    const again =
+      active?.sourceId === spellId && formSourceKind(spellId) === "class-feature";
+    if (active && !reshift && !again) return null; // already transformed
     const beast = statBlock?.id === beastId ? statBlock : getBeast(beastId);
     if (!beast) return null;
 

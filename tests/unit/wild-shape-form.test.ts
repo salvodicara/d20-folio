@@ -7,10 +7,11 @@
  * Incapacitated condition or die. The engine ends a form itself (`takeDamage`,
  * `addCondition`), so every path that applies a hit or a condition ends it.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { getBeast } from "@/data/beasts";
 import type { BeastStatBlock } from "@/data/types";
+import { concentrationValue } from "@/lib/concentration";
 import { buildScenario } from "@/lib/dev-scenarios";
 import { formPool } from "@/lib/form-pool";
 import { selfFormRule } from "@/lib/polymorph";
@@ -20,6 +21,8 @@ import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { sessionActiveKeys } from "@/lib/world-standing-grants";
+import { resolveActions, spellcastingBlocker } from "@/lib/smart-tracker";
+import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 const WILD_SHAPE = "druid-wild-shape";
@@ -118,6 +121,12 @@ describe("Wild Shape is a form", () => {
     expect(back && sessionActiveKeys(back.session).has(WILD_SHAPE)).toBe(false);
   });
 
+  it("says the form is why a spell can't be cast", () => {
+    const { doc: shaped } = assumeBeastForm(druid(5), beast("wolf"), WILD_SHAPE);
+    expect(spellcastingBlocker(shaped, "produce-flame")).toBe("form");
+    expect(spellcastingBlocker(druid(5), "produce-flame")).toBeNull();
+  });
+
   it("the breakdown names Wild Shape as the source", () => {
     const { doc: shaped } = assumeBeastForm(druid(5), beast("wolf"), WILD_SHAPE);
     const numbers = sheetNumbers(shaped);
@@ -205,5 +214,35 @@ describe("AC in a form", () => {
     expect(deriveCharacter(shaped).ac).toBe(17);
     const numbers = sheetNumbers(shaped);
     expect(numbers.ac.total).toBe(17);
+  });
+});
+
+describe("the store: Wild Shape through the Transform flow", () => {
+  afterEach(() => {
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  it("needs no Concentration, takes a new form when used again, and Stunned ends it", () => {
+    const doc = druid(5, { concentration: concentrationValue("moonbeam") });
+    useCharacterStore.getState().setCharacter(doc);
+    useCharacterStore.getState().assumePolymorphForm("wolf", WILD_SHAPE);
+    let after = useCharacterStore.getState().character;
+    expect(after?.session.activeForm?.beastId).toBe("wolf");
+    expect(after?.session.concentration).toBe(concentrationValue("moonbeam"));
+    expect(after?.session.hp.temp).toBe(5);
+
+    useCharacterStore.getState().assumePolymorphForm("panther", WILD_SHAPE);
+    after = useCharacterStore.getState().character;
+    expect(after?.session.activeForm?.beastId).toBe("panther");
+
+    useCharacterStore.getState().addCondition("stunned");
+    after = useCharacterStore.getState().character;
+    expect(after?.session.activeForm).toBeUndefined();
+    expect(after?.session.hp.temp).toBe(5);
+  });
+
+  it("the Wild Shape action opens the form picker", () => {
+    const action = resolveActions(druid(5)).find((a) => a.assumesForm === WILD_SHAPE);
+    expect(action?.costTracker).toBe(WILD_SHAPE);
   });
 });
