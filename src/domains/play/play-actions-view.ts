@@ -73,12 +73,14 @@ const ORDER: readonly ActionGroup[] = ["actions", "bonus", "reactions", "other"]
 export function playActionsView(
   doc: CharacterDoc,
   locale: Locale,
-  turn: ActionTurnState = FRESH_TURN
+  turn: ActionTurnState = FRESH_TURN,
+  /** "spellbook" keeps the spells that aren't prepared too (the Spells tab). */
+  scope: "combat" | "spellbook" = "combat"
 ): PlayActionsView {
   const conditions = effectiveConditions(doc);
   const effects = resolveConditionEffects(conditions);
   const blocked = effects.blockedSlots;
-  const all = sortActions(localizeActions(doc, locale));
+  const all = sortActions(localizeActions(doc, locale, scope));
   const ctas = actionCtaView(doc, all, turn, { list: conditions, effects });
   // Two-Weapon Fighting: an off-hand attack is not offered (nor counted) yet.
   const actions = all.filter((a) => !ctas.get(a.id)?.hidden);

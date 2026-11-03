@@ -20,6 +20,14 @@ import {
   DamageSlashingIcon,
   DamageThunderIcon,
   ManaclesIcon,
+  SchoolAbjurationIcon,
+  SchoolConjurationIcon,
+  SchoolDivinationIcon,
+  SchoolEnchantmentIcon,
+  SchoolEvocationIcon,
+  SchoolIllusionIcon,
+  SchoolNecromancyIcon,
+  SchoolTransmutationIcon,
   UnarmedFistIcon,
   WeaponSpearIcon,
 } from "@/components/shared/fantasy-icons";
@@ -52,6 +60,7 @@ import {
 } from "@/components/shared/folio-icons";
 import { weaponSealIcon } from "@/components/shared/item-icons";
 import type { ActionIconKey } from "@/domains/play/action-icon";
+import type { SpellSchool } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 
 type Glyph = ComponentType<SVGProps<SVGSVGElement>>;
@@ -70,6 +79,17 @@ const DAMAGE: Record<DamageType, Glyph> = {
   radiant: DamageRadiantIcon,
   slashing: DamageSlashingIcon,
   thunder: DamageThunderIcon,
+};
+
+const SCHOOL: Record<SpellSchool, Glyph> = {
+  abjuration: SchoolAbjurationIcon,
+  conjuration: SchoolConjurationIcon,
+  divination: SchoolDivinationIcon,
+  enchantment: SchoolEnchantmentIcon,
+  evocation: SchoolEvocationIcon,
+  illusion: SchoolIllusionIcon,
+  necromancy: SchoolNecromancyIcon,
+  transmutation: SchoolTransmutationIcon,
 };
 
 const CLASS: Record<string, Glyph> = {
@@ -124,6 +144,8 @@ function glyphOf(key: ActionIconKey): Glyph {
       return CLASS[key.id] ?? FolioFeatIcon;
     case "base":
       return BASE[key.id] ?? FolioCombatIcon;
+    case "school":
+      return SCHOOL[key.id];
     case "spell":
       return FolioSpellIcon;
     case "feature":

@@ -30,8 +30,12 @@ describe("actionIcon", () => {
     expect(icon("spell-produce-flame")).toEqual({ kind: "damage", type: "fire" });
   });
 
-  it("a spell without damage or healing is a spell", () => {
-    expect(icon("spell-speak-with-animals")).toEqual({ kind: "spell" });
+  it("a spell without damage or healing shows its school", () => {
+    // Speak with Animals is Divination.
+    expect(icon("spell-speak-with-animals")).toEqual({
+      kind: "school",
+      id: "divination",
+    });
   });
 
   it("a class feature shows its class", () => {

@@ -9,6 +9,11 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
+import {
+  playSpellsView,
+  type PlaySpell,
+  type PlaySpellsView,
+} from "@/domains/play/play-spells-view";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { resolveReplaceAttackWithCast } from "@/lib/smart-tracker";
 import {
@@ -117,8 +122,45 @@ export function PlayCentre({
   onShortRest?: () => void;
 }) {
   const { t } = useTranslation();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [tab, setTab] = useState<"actions" | "spells">("actions");
   const turn = usePlayTurn(doc);
+  const spells = playSpellsView(doc, locale, turn);
+  // A tab lands with its content: Spells only for a character with spells.
+  const items = [
+    { id: "actions" as const, label: t("combat.actions") },
+    ...(spells.groups.length > 0
+      ? [{ id: "spells" as const, label: t("character.tabs.spells") }]
+      : []),
+  ];
+  const shown = items.some((i) => i.id === tab) ? tab : "actions";
+  return (
+    <section className="f-pn f-centre" data-c="act" aria-label={t("combat.actions")}>
+      <Tabs label={t("combat.actions")} items={items} value={shown} onChange={setTab} />
+      <div className="f-pnb f-stack">
+        <TurnStrip doc={doc} locale={locale} />
+        {shown === "actions" ? (
+          <ActionsPane doc={doc} locale={locale} turn={turn} onShortRest={onShortRest} />
+        ) : (
+          <SpellsPane view={spells} locale={locale} />
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ActionsPane({
+  doc,
+  locale,
+  turn,
+  onShortRest,
+}: {
+  doc: CharacterDoc;
+  locale: Locale;
+  turn: ReturnType<typeof usePlayTurn>;
+  onShortRest?: () => void;
+}) {
+  const { t } = useTranslation();
+  const [filter, setFilter] = useState<Filter>("all");
   const actions = playActionsView(doc, locale, turn);
   const keep = (group: ActionGroup, row: PlayActionRow) =>
     filter === "all" ||
@@ -126,53 +168,142 @@ export function PlayCentre({
     (filter === "limited" && row.limited) ||
     filter === group;
   return (
-    <section className="f-pn f-centre" data-c="act" aria-label={t("combat.actions")}>
-      <Tabs
-        label={t("combat.actions")}
-        items={[{ id: "actions" as const, label: t("combat.actions") }]}
-        value="actions"
-        onChange={() => undefined}
-      />
-      <div className="f-pnb f-stack">
-        <TurnStrip doc={doc} locale={locale} />
-        <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
-        <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
-          {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
-            <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
-              {SHAPE[f] && (
-                <i className="f-shape" data-kind={SHAPE[f]} aria-hidden="true" />
-              )}
-              {t(FILTER_KEY[f])}
-            </Chip>
-          ))}
-        </div>
-        <div className="f-act f-act-head" aria-hidden="true">
-          <span />
-          <span>{t("common.name")}</span>
-          <span>{t("spells.range")}</span>
-          <span>{t("play.table.hit")}</span>
-          <span>{t("play.table.effect")}</span>
-          <span />
-        </div>
-        {actions.groups.map(({ group, rows }) => {
-          const shown = rows.filter((r) => keep(group, r));
-          if (shown.length === 0) return null;
-          return (
-            <section key={group} className="f-act-group" data-group={group}>
-              <h3 className="f-act-gh">
-                {SHAPE[group] && (
-                  <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
-                )}
-                {t(GROUP_KEY[group])}
-              </h3>
-              {shown.map((row) => (
-                <ActionLine key={row.id} row={row} locale={locale} />
-              ))}
-            </section>
-          );
-        })}
+    <>
+      <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
+      <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+        {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
+          <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
+            {SHAPE[f] && (
+              <i className="f-shape" data-kind={SHAPE[f]} aria-hidden="true" />
+            )}
+            {t(FILTER_KEY[f])}
+          </Chip>
+        ))}
       </div>
-    </section>
+      <TableHead />
+      {actions.groups.map(({ group, rows }) => {
+        const kept = rows.filter((r) => keep(group, r));
+        if (kept.length === 0) return null;
+        return (
+          <section key={group} className="f-act-group" data-group={group}>
+            <h3 className="f-act-gh">
+              {SHAPE[group] && (
+                <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
+              )}
+              {t(GROUP_KEY[group])}
+            </h3>
+            {kept.map((row) => (
+              <ActionLine key={row.id} row={row} locale={locale} />
+            ))}
+          </section>
+        );
+      })}
+    </>
+  );
+}
+
+function TableHead() {
+  const { t } = useTranslation();
+  return (
+    <div className="f-act f-act-head" aria-hidden="true">
+      <span />
+      <span>{t("common.name")}</span>
+      <span>{t("spells.range")}</span>
+      <span>{t("play.table.hit")}</span>
+      <span>{t("play.table.effect")}</span>
+      <span />
+    </div>
+  );
+}
+
+type SpellFilter = "all" | number | "ritual" | "concentration";
+
+/** «Incantesimi» (prototype x-play-spells): the casting numbers, the spells by level
+ *  with each level's slots, the same rows and cast buttons as the actions. */
+function SpellsPane({ view, locale }: { view: PlaySpellsView; locale: Locale }) {
+  const { t } = useTranslation();
+  const [filter, setFilter] = useState<SpellFilter>("all");
+  const all = view.groups.flatMap((g) => g.spells);
+  const filters: SpellFilter[] = [
+    "all",
+    ...view.groups.map((g) => g.level),
+    ...(all.some((s) => s.row.ritual) ? (["ritual"] as const) : []),
+    ...(all.some((s) => s.row.concentration) ? (["concentration"] as const) : []),
+  ];
+  const filterLabel = (f: SpellFilter) =>
+    f === "all"
+      ? t("play.filter.all")
+      : f === "ritual"
+        ? t("spells.ritual")
+        : f === "concentration"
+          ? t("spells.concentration")
+          : f === 0
+            ? t("spells.cantrips")
+            : t("spells.level", { level: f });
+  const keep = (level: number, spell: PlaySpell) =>
+    filter === "all" ||
+    filter === level ||
+    (filter === "ritual" && spell.row.ritual) ||
+    (filter === "concentration" && spell.row.concentration);
+  const summary = view.summary;
+  return (
+    <>
+      {summary && (
+        <p className="f-spell-sum">
+          {[
+            summary.saveDc !== null ? t("play.dc", { dc: summary.saveDc }) : null,
+            summary.attack !== null
+              ? t("play.spells.attack", { bonus: signed(summary.attack) })
+              : null,
+            summary.prepared
+              ? t("play.spells.prepared", {
+                  count: summary.prepared.count,
+                  max: summary.prepared.max,
+                })
+              : null,
+          ]
+            .filter(Boolean)
+            .join("\u00a0· ")}
+        </p>
+      )}
+      <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+        {filters.map((f) => (
+          <Chip key={String(f)} pressed={filter === f} onClick={() => setFilter(f)}>
+            {filterLabel(f)}
+          </Chip>
+        ))}
+      </div>
+      <TableHead />
+      {view.groups.map(({ level, slots, spells }) => {
+        const kept = spells.filter((s) => keep(level, s));
+        if (kept.length === 0) return null;
+        return (
+          <section key={level} className="f-act-group" data-group="spells">
+            <h3 className="f-act-gh">
+              {level === 0 ? t("spells.cantrips") : t("spells.level", { level })}
+              {slots && (
+                <span className="f-gh-slots">
+                  <span className="f-pips" aria-hidden="true">
+                    {Array.from({ length: slots.total }, (_, i) => (
+                      <i key={i} data-on={i < slots.left || undefined} />
+                    ))}
+                  </span>
+                  {t("play.rest.slotsLeft", { left: slots.left, total: slots.total })}
+                </span>
+              )}
+            </h3>
+            {kept.map((s) => (
+              <ActionLine
+                key={s.row.id}
+                row={s.row}
+                locale={locale}
+                spell={{ prepared: s.prepared, ritual: s.ritual }}
+              />
+            ))}
+          </section>
+        );
+      })}
+    </>
   );
 }
 
@@ -297,7 +428,16 @@ const VERB_KEY: Record<ActionCtaVerb, string> = {
   react: "play.react",
 };
 
-function ActionLine({ row, locale }: { row: PlayActionRow; locale: Locale }) {
+function ActionLine({
+  row,
+  locale,
+  spell,
+}: {
+  row: PlayActionRow;
+  locale: Locale;
+  /** On the Spells tab: an unprepared spell is not cast, or is cast as a Ritual. */
+  spell?: { prepared: boolean; ritual: boolean };
+}) {
   const { t } = useTranslation();
   const { executeAction } = useTurnEconomy();
   const readonly = useSheetReadonly();
@@ -310,6 +450,7 @@ function ActionLine({ row, locale }: { row: PlayActionRow; locale: Locale }) {
         ? t("play.spellLevel", { level: row.level })
         : null,
     row.concentration ? t("play.concentration") : null,
+    spell && !spell.prepared ? t("play.unprepared") : null,
     row.uses
       ? t("play.uses", { current: row.uses.current, total: row.uses.total })
       : null,
@@ -349,25 +490,37 @@ function ActionLine({ row, locale }: { row: PlayActionRow; locale: Locale }) {
       <span className="f-act-c">{row.range ?? ""}</span>
       <span className="f-act-c">{hit}</span>
       <span className="f-act-c f-act-e">{effect}</span>
-      {!readonly && (
+      {!readonly && spell && !spell.prepared ? (
+        // not prepared: only a Ritual casts it (no slot), else nothing to cast
         <Button
           kind="ghost"
-          disabled={cta.state.disabled}
-          data-live={cta.state.emphasis || undefined}
-          data-dim={cta.state.dimmed || undefined}
-          title={
-            cta.attacksLeft
-              ? t("combat.attacksRemainingStatus", {
-                  remaining: cta.attacksLeft.remaining,
-                  total: cta.attacksLeft.total,
-                })
-              : undefined
-          }
-          aria-label={`${cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}: ${row.name}`}
-          onClick={() => executeAction(row.action)}
+          disabled={!spell.ritual || cta.state.disabled}
+          aria-label={`${t(spell.ritual ? "spells.castRitual" : VERB_KEY[cta.verb])}: ${row.name}`}
+          onClick={() => executeAction(row.action, { ritual: true })}
         >
-          {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
+          {t(spell.ritual ? "spells.castRitual" : VERB_KEY[cta.verb])}
         </Button>
+      ) : (
+        !readonly && (
+          <Button
+            kind="ghost"
+            disabled={cta.state.disabled}
+            data-live={cta.state.emphasis || undefined}
+            data-dim={cta.state.dimmed || undefined}
+            title={
+              cta.attacksLeft
+                ? t("combat.attacksRemainingStatus", {
+                    remaining: cta.attacksLeft.remaining,
+                    total: cta.attacksLeft.total,
+                  })
+                : undefined
+            }
+            aria-label={`${cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}: ${row.name}`}
+            onClick={() => executeAction(row.action)}
+          >
+            {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
+          </Button>
+        )
       )}
     </div>
   );
