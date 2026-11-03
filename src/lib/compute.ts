@@ -2354,38 +2354,6 @@ export function carryingCapacityBreakdown(
 }
 
 /**
- * Jump distances (2024 PHB), in feet, with a running start (≥10 ft):
- *  - long jump = your Strength SCORE (feet)
- *  - high jump = 3 + your Strength MODIFIER (feet, min 0)
- * Standing jumps are half these — the UI can note that. A hand-set distance
- * (`pins`, the character's `jumpOverrides`) replaces its computed one.
- */
-export function jumpDistance(
-  strScore: number,
-  pins?: { long?: number; high?: number }
-): { long: number; high: number } {
-  return {
-    long: pins?.long ?? strScore,
-    high: pins?.high ?? Math.max(0, 3 + abilityModifier(strScore)),
-  };
-}
-
-/** The lines of {@link jumpDistance}, each summing to its distance (pins included). */
-export function jumpBreakdown(
-  strScore: number,
-  pins?: { long?: number; high?: number }
-): { long: RawBreakdownPart[]; high: RawBreakdownPart[] } {
-  const long = [termPart("breakdown.jump.strengthScore", strScore)];
-  const mod = abilityModifier(strScore);
-  const high = [termPart("breakdown.base", 3), abilityPart("STR", mod)];
-  if (3 + mod < 0) high.push(termPart("breakdown.jump.minimum", -(3 + mod)));
-  return {
-    long: pins?.long !== undefined ? withOverride(long, pins.long) : long,
-    high: pins?.high !== undefined ? withOverride(high, pins.high) : high,
-  };
-}
-
-/**
  * The DC a target rolls against when you use your Unarmed Strike's Grapple or
  * Shove option (2024 PHB): 8 + Strength modifier + Proficiency Bonus.
  */

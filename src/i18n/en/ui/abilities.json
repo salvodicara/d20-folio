@@ -106,6 +106,8 @@
     "defenseKindVulnerability": "VULN",
     "none": "None",
     "autoBlankHint": "Auto-computed · clear a field to revert to auto",
-    "abilityScoreAria": "{{ability}} {{modifier}}, score {{score}}; saving throw {{saveBonus}}, {{saveState}}; tap for saving-throw math"
+    "abilityScoreAria": "{{ability}} {{modifier}}, score {{score}}; saving throw {{saveBonus}}, {{saveState}}; tap for saving-throw math",
+    "leap": "Leap, once per turn",
+    "leapValue": "{{distance}} for {{cost}}"
   }
 }

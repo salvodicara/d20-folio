@@ -39,7 +39,8 @@
         "down": "{{value}} ÷ {{divisor}}, arrotondato per difetto."
       },
       "maneuverBestAbility": "La CD di una manovra usa il modificatore di Forza o di Destrezza, il più alto dei due.",
-      "carryStrength": "Puoi trasportare 15 volte il tuo punteggio di Forza ({{score}})."
+      "carryStrength": "Puoi trasportare 15 volte il tuo punteggio di Forza ({{score}}).",
+      "jumpStanding": "Con una rincorsa di almeno 3 metri. Da fermo salti la metà di questa distanza."
     },
     "speed": {
       "multiplier": "Moltiplicatore di velocità",

@@ -2755,6 +2755,8 @@ export function evaluateGrants(
       case "speed-multiplier":
       case "speed-floor":
       case "speed-cap":
+      case "jump-ability":
+      case "jump-leap":
         rules.push(...(compileGrant(g) ?? []));
         break;
 

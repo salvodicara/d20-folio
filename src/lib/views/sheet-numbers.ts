@@ -31,14 +31,13 @@ import {
   buildSpellSaveDcBreakdown,
   carryingCapacity,
   carryingCapacityBreakdown,
-  jumpBreakdown,
-  jumpDistance,
   proficiencyBonusBreakdown,
   resolveCastingModifier,
 } from "@/lib/compute";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { effectiveWalkingSpeedBreakdown } from "@/lib/smart-tracker";
 import { withOverride, type RawBreakdownPart } from "@/lib/value-breakdown";
+import { deriveJumps } from "@/lib/jump";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { nonWalkingSpeedBreakdown, type SpeedKind } from "@/lib/views/sheet-view";
@@ -134,8 +133,7 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
     asLargerSize: aggregate.carryAsLargerSize,
     pin: character.carryingCapacityOverride,
   };
-  const jump = jumpDistance(scores.STR, character.jumpOverrides);
-  const jumpParts = jumpBreakdown(scores.STR, character.jumpOverrides);
+  const jump = deriveJumps(scores, aggregate, character.jumpOverrides);
   const casterClass = primaryClassId(character);
   const spellcasting =
     sc && sheet.spellcasting
@@ -236,8 +234,8 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
       parts: carryingCapacityBreakdown(scores.STR, carryOptions),
     },
     jump: {
-      long: { total: jump.long, parts: jumpParts.long },
-      high: { total: jump.high, parts: jumpParts.high },
+      long: { total: jump.long, parts: jump.longParts },
+      high: { total: jump.high, parts: jump.highParts },
     },
   };
 }
