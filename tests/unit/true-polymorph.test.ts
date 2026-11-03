@@ -16,7 +16,7 @@ import {
   bestiaryNameKey,
   polymorphPriorSnapshot,
   selfFormRule,
-  SELF_FORM_SPELL_IDS,
+  isSelfFormSpell,
 } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -77,7 +77,7 @@ describe("the True Polymorph forms (any creature of CR ≤ your level)", () => {
 
 describe("the True Polymorph rule", () => {
   it("draws from the bestiary, replaces the mind, and ends at 0 Temp HP", () => {
-    expect(SELF_FORM_SPELL_IDS).toContain("true-polymorph");
+    expect(isSelfFormSpell("true-polymorph")).toBe(true);
     expect(selfFormRule("true-polymorph")).toMatchObject({
       pool: "bestiary",
       keepsMind: false,

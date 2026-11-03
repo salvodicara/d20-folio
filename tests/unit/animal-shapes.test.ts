@@ -17,7 +17,7 @@ import {
   polymorphPriorSnapshot,
   resolvePolymorphForms,
   selfFormRule,
-  SELF_FORM_SPELL_IDS,
+  isSelfFormSpell,
 } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { concentrationValue } from "@/lib/concentration";
@@ -73,7 +73,7 @@ describe("the Animal Shapes forms (Large or smaller Beast, CR 4 or lower)", () =
 
 describe("the Animal Shapes rule", () => {
   it("keeps the mind, reshifts, and ends when its Temporary HP run out", () => {
-    expect(SELF_FORM_SPELL_IDS).toContain("animal-shapes");
+    expect(isSelfFormSpell("animal-shapes")).toBe(true);
     expect(selfFormRule("animal-shapes")).toMatchObject({
       pool: "beasts",
       keepsMind: true,

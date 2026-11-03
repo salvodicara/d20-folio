@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import { POLYMORPH_SPELL_IDS } from "@/lib/polymorph";
+import { selfFormRule } from "@/lib/polymorph";
 
 /** "Polymorphed: Brown Bear", or "Shapechange: Adult Red Dragon" for the others. */
 export function transformFormLabel(
@@ -8,7 +8,8 @@ export function transformFormLabel(
   formName: string,
   spellName: string
 ): string {
-  return POLYMORPH_SPELL_IDS.includes(spellId)
+  // A form that takes the mind too (Polymorph, True Polymorph) reads "Polymorphed".
+  return !selfFormRule(spellId).keepsMind
     ? t("polymorph.activeForm", { name: formName })
     : t("polymorph.formOf", { spell: spellName, name: formName });
 }

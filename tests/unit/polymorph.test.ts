@@ -16,7 +16,7 @@ import {
   polymorphBuildPatch,
   polymorphPriorSnapshot,
   revertBuildFromPrior,
-  POLYMORPH_SPELL_IDS,
+  isSelfFormSpell,
 } from "@/lib/polymorph";
 import { CREATURE_SIZE_ORDER, type AbilityCode } from "@/data/types";
 import { DAMAGE_TYPES } from "@/types/damage";
@@ -122,8 +122,8 @@ describe("resolvePolymorphForms — the CR gate (form CR ≤ caster level)", () 
   });
 
   it("the two spell ids that engage a form are catalogued", () => {
-    expect(POLYMORPH_SPELL_IDS).toContain("polymorph");
-    expect(POLYMORPH_SPELL_IDS).toContain("true-polymorph");
+    expect(isSelfFormSpell("polymorph")).toBe(true);
+    expect(isSelfFormSpell("true-polymorph")).toBe(true);
   });
 });
 
