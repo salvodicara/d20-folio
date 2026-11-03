@@ -21,7 +21,6 @@ import { longRestCharacter } from "@/lib/play/rests";
 import { withOverride, isHandSet, termPart } from "@/lib/value-breakdown";
 import { deriveDamageDefenses } from "@/lib/views/sheet-view";
 import { classFeatures } from "@/data/classes";
-import { spells } from "@/data/spells";
 import { getMagicItem } from "@/data/magic-items";
 import { asRaceId } from "@/data/srd-names";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -135,7 +134,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Monster kills and who dealt them",
       source: "WIKI spell:hex",
-      status: "works",
+      status: "M8",
     },
     () => {
       // Hunter's Mark moves when its marked target drops to 0: the drop offers the
@@ -149,6 +148,8 @@ describe("conformance · 17. at-the-table gaps", () => {
         session: {
           ...MOCK_CHARACTER.session,
           concentration: concentrationValue("hunters-mark"),
+          // Casting lights the spell's state (`spell-hunters-mark`).
+          activeFeatures: ["spell-hunters-mark"],
         },
       };
       expect(
