@@ -10,7 +10,7 @@
  * that counts.
  */
 import { getSpellById } from "@/data/spells";
-import type { SpellZone } from "@/data/types";
+import type { SpellZone, SrdSpellData } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /** One area on the field. */
@@ -177,4 +177,19 @@ export function defaultSpared(
         (row.side ?? (row.kind === "pc" ? "ally" : "enemy")) === "ally"
     )
     .map((row) => row.id);
+}
+
+/**
+ * A spell's effect that ends once it has spent a total (Guardian of Faith "vanishes
+ * when it has dealt a total of 60 damage"). `taken` is the damage the creature
+ * actually took, after resistance and immunity; the last hit lands whole and the
+ * effect ends after it.
+ */
+export function budgetSpent(
+  budget: Pick<NonNullable<SrdSpellData["budget"]>, "max">,
+  spent: number,
+  taken: number
+): { spent: number; ends: boolean } {
+  const total = Math.min(budget.max, spent + Math.max(0, taken));
+  return { spent: total, ends: total >= budget.max };
 }
