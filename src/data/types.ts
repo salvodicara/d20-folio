@@ -1057,6 +1057,8 @@ export interface SelfFormRule {
   /** The character can't cast spells in the form, except what a `form-casting`
    *  grant allows (Wild Shape: Beast Spells, a Moon Druid's circle spells). */
   blocksCasting?: boolean;
+  /** Held for its full duration, the form lasts until dispelled (True Polymorph). */
+  permanentWhenHeld?: true;
 }
 
 export interface SrdSpellData {

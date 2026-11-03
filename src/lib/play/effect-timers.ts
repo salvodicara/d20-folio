@@ -12,6 +12,8 @@ import {
   resolveActiveBoundaryEffects,
 } from "@/lib/smart-tracker";
 import { startPotionAftereffects } from "@/lib/potion-states";
+import { selfFormRule } from "@/lib/polymorph";
+import { concentrationTimerKey } from "@/lib/spell-duration";
 import { endExpiredSummons } from "./companions";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -81,8 +83,18 @@ export function advanceEffectTimers(
     forRound === undefined
       ? ticked
       : (startPotionAftereffects(ticked, expiredKeys, forRound) ?? ticked);
+  // A form held for its spell's full duration lasts until dispelled (True Polymorph,
+  // M12): its Concentration ends next, and the form stays.
+  const form = session.activeForm;
+  const heldInFull =
+    form !== undefined &&
+    selfFormRule(form.sourceId).permanentWhenHeld === true &&
+    expiredKeys.has(concentrationTimerKey(form.sourceId));
+  const settled: SessionState = heldInFull
+    ? { ...session, activeForm: { ...form, permanent: true } }
+    : session;
   // A summon whose countdown ran out leaves the field (M6).
-  return { session: endExpiredSummons(session, expiredKeys), expired };
+  return { session: endExpiredSummons(settled, expiredKeys), expired };
 }
 
 /** The boundary states that have expired at `position`. */

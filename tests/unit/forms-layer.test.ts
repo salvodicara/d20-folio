@@ -124,3 +124,56 @@ describe("a form is read, not stamped", () => {
     expect(back?.session.polymorphForm).toBeUndefined();
   });
 });
+
+describe("True Polymorph held for its full duration (M12)", () => {
+  it("the hour running out makes the form last until dispelled", async () => {
+    const { changeConcentration } = await import("@/lib/play/concentration");
+    const { advanceEffectTimers } = await import("@/lib/play/effect-timers");
+    const { concentrationValue } = await import("@/lib/concentration");
+    const { concentrationTimerKey } = await import("@/lib/spell-duration");
+    const wizard: CharacterDoc = makeCharacterDoc(
+      {
+        classId: "wizard",
+        level: 17,
+        spells: [{ srdId: "true-polymorph", prepared: true }],
+      },
+      {
+        hp: { current: 40, temp: 0 },
+        concentration: concentrationValue("true-polymorph"),
+        effectTimers: { [concentrationTimerKey("true-polymorph")]: { roundsLeft: 1 } },
+      }
+    );
+    const { doc: shaped } = assumeBeastForm(
+      wizard,
+      beast("brown-bear"),
+      "true-polymorph"
+    );
+    const ticked = { ...shaped, session: advanceEffectTimers(shaped).session };
+    expect(ticked.session.activeForm?.permanent).toBe(true);
+    const dropped = changeConcentration(ticked, concentrationValue("")).doc;
+    expect(dropped.session.activeForm?.beastId).toBe("brown-bear");
+  });
+
+  it("dropped before the hour is up, the form ends", async () => {
+    const { changeConcentration } = await import("@/lib/play/concentration");
+    const { concentrationValue } = await import("@/lib/concentration");
+    const wizard: CharacterDoc = makeCharacterDoc(
+      {
+        classId: "wizard",
+        level: 17,
+        spells: [{ srdId: "true-polymorph", prepared: true }],
+      },
+      {
+        hp: { current: 40, temp: 0 },
+        concentration: concentrationValue("true-polymorph"),
+      }
+    );
+    const { doc: shaped } = assumeBeastForm(
+      wizard,
+      beast("brown-bear"),
+      "true-polymorph"
+    );
+    const dropped = changeConcentration(shaped, concentrationValue("")).doc;
+    expect(dropped.session.activeForm).toBeUndefined();
+  });
+});

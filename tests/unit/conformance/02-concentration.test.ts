@@ -376,7 +376,7 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "What survives when concentration ends",
       source: "WIKI spell:true-polymorph",
-      status: "M12",
+      status: "works",
     },
     () => {
       // A Wizard True Polymorphed into a Brown Bear holds it for the full hour: the

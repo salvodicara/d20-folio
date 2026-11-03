@@ -742,6 +742,7 @@ function parseActiveForm(value: unknown): SessionState["activeForm"] {
   }
   const statBlock = parseFormStatBlock(value.statBlock);
   return {
+    ...(value.permanent === true ? { permanent: true as const } : {}),
     sourceId: value.sourceId,
     beastId: value.beastId,
     ...(statBlock ? { statBlock } : {}),

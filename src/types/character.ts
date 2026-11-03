@@ -1311,6 +1311,8 @@ export interface SessionState {
    * the Temporary HP the character had, restored when the form ends.
    */
   activeForm?: {
+    /** Held for the spell's full duration: it lasts until dispelled (M12). */
+    permanent?: true;
     sourceId: string;
     beastId: string;
     statBlock?: BeastStatBlock;

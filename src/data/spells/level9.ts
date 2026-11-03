@@ -267,6 +267,9 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       keepsMind: false,
       reshift: false,
       endsWithoutTempHp: true,
+      // "If you maintain Concentration on this spell for the full duration, the
+      // transformation lasts until it is dispelled."
+      permanentWhenHeld: true,
     },
     level: 9,
     school: "transmutation",

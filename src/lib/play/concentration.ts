@@ -5,7 +5,7 @@
  * `endStatuses` patch) and, when the dropped spell sustains a self Beast form, the
  * form too (body restored, Beast Temp HP retracted).
  */
-import { revertBuildFromPrior } from "@/lib/polymorph";
+import { revertBuildFromPrior, selfFormRule } from "@/lib/polymorph";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import { concentrationStatusKeys, endStatuses } from "@/lib/status";
 import { concentrationValue } from "@/lib/concentration";
@@ -41,8 +41,16 @@ export function changeConcentration(
   const layered = session.activeForm;
   // A self form ends when its sustaining spell is dropped or swapped (never on a
   // self-assume, which sets concentration before recording the form).
+  // Held for its full duration (its countdown ran out), a form that then lasts until
+  // dispelled stays when the Concentration goes (True Polymorph, M12).
+  const heldInFull =
+    layered !== undefined &&
+    (layered.permanent === true ||
+      (selfFormRule(layered.sourceId).permanentWhenHeld === true &&
+        (session.effectTimers?.[concentrationTimerKey(layered.sourceId)]?.roundsLeft ??
+          1) <= 0));
   const retractLayered =
-    layered !== undefined && prev === layered.sourceId && prev !== spell;
+    layered !== undefined && prev === layered.sourceId && prev !== spell && !heldInFull;
   const retractForm = form !== undefined && prev === form.spellId && prev !== spell;
   const revertBuild = retractForm ? revertBuildFromPrior(form.prior) : undefined;
   // The dropped spell's statuses end, and its own countdown with them.
@@ -79,6 +87,9 @@ export function changeConcentration(
                 temp: opts.retractedFormTempHp ?? form.prior.tempHp,
               },
             }
+          : {}),
+        ...(heldInFull && !layered.permanent && prev !== spell
+          ? { activeForm: { ...layered, permanent: true as const } }
           : {}),
         ...(retractLayered
           ? {
