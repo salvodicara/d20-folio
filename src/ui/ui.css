@@ -2958,6 +2958,18 @@
     flex-wrap: wrap;
     gap: 12px;
   }
+  .fui .f-sheet .f-turn {
+    padding: 16px;
+  }
+  .fui .f-sheet .f-turn .f-turn-slots {
+    gap: 8px;
+  }
+  .fui .f-sheet .f-turn-t {
+    letter-spacing: 0.04em;
+  }
+  .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+    padding: 8px 12px;
+  }
   .fui .f-sheet .f-turn-t,
   .fui .f-sheet .f-turn-slots {
     flex-wrap: nowrap;
@@ -3105,4 +3117,15 @@
   .fui .f-sheet .f-char-id h1 {
     font-size: var(--fs-lg);
   }
+}
+/* the fight's own moves under the order (prototype .iact): a turn back, end the fight */
+.fui .f-ir-acts {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fui .f-sheet .f-ir-acts > .f-btn[data-kind="quiet"] {
+  color: var(--advice);
+  font-size: var(--fs-sm);
 }

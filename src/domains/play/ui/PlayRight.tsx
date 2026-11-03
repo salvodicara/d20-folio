@@ -4,7 +4,7 @@
  * the campaign's latest evening as the Diario tells it (blocks, times, signed notes),
  * with «Copia il resoconto». A character attached to no campaign shows neither.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
@@ -12,12 +12,16 @@ import { diaryBlocks } from "@/domains/chronicle/diary-view";
 import { ReportBlocks } from "@/domains/chronicle/ui/ReportBlocks";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { fightRows } from "@/domains/combat/fight-rows-view";
+import { fightControls } from "@/domains/combat/fight-controls";
+import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import { playInitiativeRows } from "@/domains/play/play-initiative-view";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import { useSheetCombat } from "@/features/character/center/turn-state";
 import type { Locale } from "@/lib/locale";
 import { buildReport, foldSession } from "@/lib/session-log";
 import { renderSessionReport } from "@/lib/views/session-report-view";
+import { useAuthStore } from "@/stores/authStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { Button, Icon, initialOf, Panel } from "@/ui";
 import type { HpBandValue } from "@/lib/hp-band";
@@ -48,7 +52,31 @@ function Initiative({
 }) {
   const { t } = useTranslation();
   const fight = useSheetCombat();
+  const uid = useAuthStore((st) => st.user?.uid) ?? "";
+  // The time only feeds the "end the fight?" suggestion, which Play doesn't show.
+  const [now] = useState(Date.now);
+  const move = useFightMove((message, undo) =>
+    useToastStore
+      .getState()
+      .showToast({ message, duration: 5000, ...(undo ? { onUndo: undo } : {}) })
+  );
   if (!fight) return null;
+  const isDm = campaign?.dmUid === uid;
+  // The combat lifecycle (owner, #505): anyone at the table steps a turn back and
+  // ends the fight, each with its undo; the same rule as the campaign's Scontro.
+  const controls = fightControls(
+    fight.encounter,
+    null,
+    {
+      uid,
+      isDm,
+      hasCharacter: true,
+      rolled: fight.initiativeRoll !== null,
+      missing: 0,
+    },
+    now
+  );
+  const current = fight.encounter.currentCombatantId;
   const rows = playInitiativeRows(
     fightRows(fight.view.rows, fight.view.currentId, {}, locale),
     fight.myId
@@ -102,6 +130,32 @@ function Initiative({
           </div>
         );
       })}
+      {(controls.back || controls.end) && (
+        <div className="f-ir-acts">
+          {controls.back && (
+            <Button
+              kind="quiet"
+              icon="u-back"
+              onClick={() =>
+                move(
+                  moves.back(fight.campaignId, uid, isDm, current),
+                  t("fight.backDone")
+                )
+              }
+            >
+              {t("fight.back")}
+            </Button>
+          )}
+          {controls.end && (
+            <Button
+              wide
+              onClick={() => move(moves.end(fight.campaignId), t("fight.endDone"))}
+            >
+              {t("fight.end")}
+            </Button>
+          )}
+        </div>
+      )}
     </Panel>
   );
 }
