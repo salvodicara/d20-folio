@@ -30,11 +30,6 @@ describe("deriveCharacter", () => {
     const sheet = deriveCharacter(doc);
     const { character, session } = doc;
     const rail = deriveSavesAndChecks(character, session);
-    const aggSession = {
-      activeFeatures: session.activeFeatures,
-      grantBundleChoices: session.grantBundleChoices,
-      itemResources: session.itemResources,
-    };
 
     expect(sheet.saves.map((s) => [s.ability, s.bonus, s.proficient])).toEqual(
       rail.saves.map((s) => [s.id, s.bonus, s.proficient])
@@ -45,8 +40,8 @@ describe("deriveCharacter", () => {
     expect(sheet.passives).toEqual(
       Object.fromEntries(rail.passives.map((p) => [p.id, p.override ?? p.computed]))
     );
-    expect(sheet.ac).toBe(effectiveAC(character, aggSession));
-    expect(sheet.hp.max).toBe(effectiveMaxHp(character, aggSession));
+    expect(sheet.ac).toBe(effectiveAC(character, session));
+    expect(sheet.hp.max).toBe(effectiveMaxHp(character, session));
 
     const spells = buildSpellsViewModel(doc, primaryClassId(character), "en", false);
     expect(sheet.spellcasting?.saveDc ?? null).toBe(spells.castSummary?.saveDC ?? null);

@@ -19,9 +19,9 @@ import {
   releaseKeepsConcentration,
   setReadiedSpell,
 } from "@/lib/play/ready";
-import { polymorphPriorSnapshot } from "@/lib/polymorph";
 import { resolveGrantSourcesForSpells } from "@/lib/resolve-grant-sources";
 import { concentrationTimerKey } from "@/lib/spell-duration";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CharacterDoc } from "@/types/character";
 import type {
   ActiveCombatEffect,
@@ -64,8 +64,7 @@ function wildShapedDruid(): CharacterDoc {
   );
   const bear = getBeast("brown-bear");
   if (!bear) throw new Error("brown-bear missing from the beast catalogue");
-  return assumeBeastForm(druid, bear, "druid-wild-shape", polymorphPriorSnapshot(druid))
-    .doc;
+  return assumeBeastForm(druid, bear, "druid-wild-shape").doc;
 }
 
 const pc = (id: string): CombatantRef => ({
@@ -205,6 +204,7 @@ describe("conformance · 2. concentration", () => {
       expect(saveModifier(doc)).toBe(2);
       // …and the Druid keeps its own Wisdom (a Moon Druid adds it at level 6+).
       expect(doc.character.abilityScores.WIS).toBe(16);
+      expect(deriveCharacter(doc).abilities.WIS.score).toBe(16);
     }
   );
 
@@ -392,12 +392,7 @@ describe("conformance · 2. concentration", () => {
       );
       const bear = getBeast("brown-bear");
       if (!bear) throw new Error("brown-bear missing from the beast catalogue");
-      const formed = assumeBeastForm(
-        wizard,
-        bear,
-        "true-polymorph",
-        polymorphPriorSnapshot(wizard)
-      ).doc;
+      const formed = assumeBeastForm(wizard, bear, "true-polymorph").doc;
       const completed: CharacterDoc = {
         ...formed,
         session: {
@@ -406,7 +401,7 @@ describe("conformance · 2. concentration", () => {
         },
       };
       const after = changeConcentration(completed, concentrationValue("")).doc;
-      expect(after.session.polymorphForm?.beastId).toBe("brown-bear");
+      expect(after.session.activeForm?.beastId).toBe("brown-bear");
       expect(after.session.hp.current).toBe(completed.session.hp.current);
     }
   );
@@ -472,8 +467,9 @@ describe("conformance · 2. concentration", () => {
     () => {
       // Stunned: the form ends, and (separately) so does Concentration.
       const doc = wildShapedDruid();
+      expect(doc.session.activeForm?.beastId).toBe("brown-bear");
       expect(conditionBreaksConcentration("stunned")).toBe(true);
-      expect(addCondition(doc, "stunned")?.polymorphForm).toBeUndefined();
+      expect(addCondition(doc, "stunned")?.activeForm).toBeUndefined();
     }
   );
 });

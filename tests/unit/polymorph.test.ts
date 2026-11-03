@@ -9,6 +9,7 @@
  *    Concentration CON-save, and a Beast attack → a rendered Play row;
  *  - Temp HP = the Beast's HP applied on assume, retracted on drop, undoable.
  */
+import { deriveCharacter } from "@/lib/views/derive-character";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { BEASTS, getBeast, beastsByMaxCR } from "@/data/beasts";
 import {
@@ -157,7 +158,7 @@ describe("assume/drop the self-swap (store)", () => {
     useCharacterStore.getState().setCharacter(doc);
   };
 
-  it("stamps AC / speed / scores / temp HP + engages concentration", () => {
+  it("reads AC / speed / scores from the form, takes its temp HP + engages concentration", () => {
     setUp();
     const bear = getBeast("brown-bear");
     if (!bear) throw new Error("brown-bear missing");
@@ -167,17 +168,19 @@ describe("assume/drop the self-swap (store)", () => {
 
     // AC → the effective-AC consumer.
     expect(effectiveAC(doc.character, doc.session)).toBe(bear.ac);
-    // speed → the walk override (+ any non-walk modes).
-    expect(doc.character.speedOverride).toBe(bear.speeds.walk);
-    expect(doc.character.speedOverrides?.climb).toBe(bear.speeds.climb);
-    // scores → the stored ability scores (all replaced).
-    expect(doc.character.abilityScores).toEqual(bear.abilityScores);
+    // speed and scores → read from the form (M2), the stored build untouched.
+    const sheet = deriveCharacter(doc);
+    expect(sheet.walkingSpeedFt).toBe(bear.speeds.walk);
+    expect(
+      Object.fromEntries(Object.entries(sheet.abilities).map(([id, a]) => [id, a.score]))
+    ).toEqual(bear.abilityScores);
+    expect(doc.character.speedOverride ?? null).toBeNull();
     // Temp HP = the Beast's HP.
     expect(doc.session.hp.temp).toBe(bear.hp);
     // Concentration engaged by spell id.
     expect(doc.session.concentration).toBe("polymorph");
     // The active form is recorded on the session.
-    expect(doc.session.polymorphForm?.beastId).toBe("brown-bear");
+    expect(doc.session.activeForm?.beastId).toBe("brown-bear");
   });
 
   it("renders the Beast's attack rows on the Play board", () => {
@@ -219,7 +222,7 @@ describe("assume/drop the self-swap (store)", () => {
     expect(doc.character.acOverride ?? null).toBe(bodyAc);
     expect(doc.session.hp.temp).toBe(0); // beast temp HP retracted
     expect(doc.session.concentration).toBe("");
-    expect(doc.session.polymorphForm).toBeUndefined();
+    expect(doc.session.activeForm).toBeUndefined();
   });
 
   it("the swap is undoable (assume → undo restores the pre-form state)", () => {
@@ -231,7 +234,7 @@ describe("assume/drop the self-swap (store)", () => {
     undo?.();
     const doc = useCharacterStore.getState().character;
     if (!doc) throw new Error("no doc");
-    expect(doc.session.polymorphForm).toBeUndefined();
+    expect(doc.session.activeForm).toBeUndefined();
     expect(doc.session.hp.temp).toBe(before.session.hp.temp);
     expect(doc.character.abilityScores).toEqual(before.character.abilityScores);
     expect(doc.session.concentration).toBe(before.session.concentration);
@@ -267,7 +270,7 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
     useCharacterStore.getState().setConcentration(concentrationValue("haste"));
     const after = useCharacterStore.getState().character;
     if (!after) throw new Error("no doc");
-    expect(after.session.polymorphForm).toBeUndefined();
+    expect(after.session.activeForm).toBeUndefined();
     expect(after.character.abilityScores).toEqual(bodyScores);
     expect(after.character.acOverride ?? null).toBe(bodyAc);
     expect(after.session.hp.temp).toBe(bodyTemp); // beast Temp HP retracted
@@ -308,7 +311,7 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
     });
     restore?.();
     const after = useCharacterStore.getState().character;
-    expect(after?.session.polymorphForm?.beastId).toBe("brown-bear");
+    expect(after?.session.activeForm?.beastId).toBe("brown-bear");
     expect(after?.session.hp.temp).toBe(bearHp);
     expect(after?.session.itemResources?.wand?.resources.charges?.current).toBe(7);
     expect(after?.session.itemResources?.wand?.revision).toBe(2);
@@ -319,7 +322,7 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
     useCharacterStore.getState().setConcentration("");
     const after = useCharacterStore.getState().character;
     if (!after) throw new Error("no doc");
-    expect(after.session.polymorphForm).toBeUndefined();
+    expect(after.session.activeForm).toBeUndefined();
     expect(after.character.abilityScores).toEqual(bodyScores);
     expect(after.character.acOverride ?? null).toBe(bodyAc);
     expect(after.session.hp.temp).toBe(bodyTemp);
@@ -333,7 +336,7 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
     undo?.onUndo?.();
     const restored = useCharacterStore.getState().character;
     if (!restored) throw new Error("no doc");
-    expect(restored.session.polymorphForm?.beastId).toBe("brown-bear");
+    expect(restored.session.activeForm?.beastId).toBe("brown-bear");
     expect(restored.session.hp.temp).toBe(bearHp);
     expect(restored.session.concentration).toBe("polymorph");
   });
@@ -345,7 +348,7 @@ describe("C1 — losing Concentration ends the Polymorph form", () => {
 
     const after = useCharacterStore.getState().character;
     if (!after) throw new Error("no doc");
-    expect(after.session.polymorphForm).toBeUndefined();
+    expect(after.session.activeForm).toBeUndefined();
     expect(after.character.abilityScores).toEqual(bodyScores);
     expect(after.character.acOverride ?? null).toBe(bodyAc);
     expect(after.session.concentration).toBe("");
@@ -381,7 +384,7 @@ describe("C2 — depleting the Beast Temp HP ends the form (no CON maintenance s
 
     const after = useCharacterStore.getState().character;
     if (!after) throw new Error("no doc");
-    expect(after.session.polymorphForm).toBeUndefined();
+    expect(after.session.activeForm).toBeUndefined();
     expect(after.character.abilityScores).toEqual(bodyScores);
     expect(after.character.acOverride ?? null).toBe(bodyAc);
     expect(after.session.concentration).toBe("");

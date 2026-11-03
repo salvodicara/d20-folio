@@ -13,16 +13,12 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { BEASTS, getBeast } from "@/data/beasts";
 import { CREATURE_SIZE_ORDER, type BeastStatBlock } from "@/data/types";
-import {
-  polymorphPriorSnapshot,
-  resolvePolymorphForms,
-  selfFormRule,
-  isSelfFormSpell,
-} from "@/lib/polymorph";
+import { resolvePolymorphForms, selfFormRule, isSelfFormSpell } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { concentrationValue } from "@/lib/concentration";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
+import { shown } from "./_shown";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -88,32 +84,22 @@ describe("assumeBeastForm with Animal Shapes (doc in, doc out)", () => {
     const doc = druid();
     const frozen = structuredClone(doc);
     const bear = beast("brown-bear");
-    const first = assumeBeastForm(
-      doc,
-      bear,
-      "animal-shapes",
-      polymorphPriorSnapshot(doc)
-    );
+    const first = assumeBeastForm(doc, bear, "animal-shapes");
     expect(doc).toEqual(frozen);
-    expect(first.doc.character.abilityScores).toEqual({
+    expect(shown(first.doc).scores).toEqual({
       ...bear.abilityScores,
       INT: 13,
       WIS: 18,
       CHA: 11,
     });
     expect(first.doc.session.hp.temp).toBe(bear.hp);
-    expect(first.doc.session.polymorphForm?.statBlock).toBeUndefined();
+    expect(first.doc.session.activeForm?.statBlock).toBeUndefined();
 
     const wolf = beast("dire-wolf");
-    const second = assumeBeastForm(
-      first.doc,
-      wolf,
-      "animal-shapes",
-      polymorphPriorSnapshot(first.doc)
-    );
+    const second = assumeBeastForm(first.doc, wolf, "animal-shapes");
     expect(second.reshift).toBe(true);
     expect(second.doc.session.hp.temp).toBe(bear.hp);
-    expect(second.doc.character.acOverride).toBe(wolf.ac);
+    expect(shown(second.doc).ac).toBe(wolf.ac);
 
     const dropped = dropBeastForm(second.doc);
     expect(dropped?.character.abilityScores).toEqual(doc.character.abilityScores);
@@ -122,12 +108,7 @@ describe("assumeBeastForm with Animal Shapes (doc in, doc out)", () => {
 
   it("a depleted form drops with the Temp HP it was left with", () => {
     const doc = druid();
-    const formed = assumeBeastForm(
-      doc,
-      beast("brown-bear"),
-      "animal-shapes",
-      polymorphPriorSnapshot(doc)
-    ).doc;
+    const formed = assumeBeastForm(doc, beast("brown-bear"), "animal-shapes").doc;
     const depleted: CharacterDoc = {
       ...formed,
       session: { ...formed.session, hp: { ...formed.session.hp, temp: 0 } },
@@ -136,7 +117,7 @@ describe("assumeBeastForm with Animal Shapes (doc in, doc out)", () => {
     const dropped = dropBeastForm(depleted, 0);
     expect(depleted).toEqual(frozen);
     expect(dropped?.session.hp.temp).toBe(0);
-    expect(dropped?.session.polymorphForm).toBeUndefined();
+    expect(dropped?.session.activeForm).toBeUndefined();
     expect(dropped?.character.abilityScores).toEqual(doc.character.abilityScores);
   });
 });
@@ -154,12 +135,12 @@ describe("the store: Animal Shapes through the Transform flow", () => {
     const bear = beast("brown-bear");
     useCharacterStore.getState().assumePolymorphForm(bear.id, "animal-shapes");
     let after = useCharacterStore.getState().character;
-    expect(after?.session.polymorphForm?.beastId).toBe("brown-bear");
+    expect(after?.session.activeForm?.beastId).toBe("brown-bear");
     expect(after?.session.concentration).toBe("barkskin");
 
     useCharacterStore.getState().applyDamage(bear.hp);
     after = useCharacterStore.getState().character;
-    expect(after?.session.polymorphForm).toBeUndefined();
+    expect(after?.session.activeForm).toBeUndefined();
     expect(after?.session.hp.temp).toBe(0);
     expect(after?.session.hp.current).toBe(40);
     expect(after?.character.abilityScores).toEqual(doc.character.abilityScores);

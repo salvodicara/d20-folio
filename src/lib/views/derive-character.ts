@@ -34,7 +34,7 @@ import {
   effectiveAC,
   effectiveMaxHp,
 } from "@/lib/aggregate-character";
-import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
+import { shownWalkingSpeedFt } from "@/lib/smart-tracker";
 import {
   deriveSensesAndSpeeds,
   deriveDamageDefenses,
@@ -96,21 +96,7 @@ export interface CharacterSheet {
 
 export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
   const { character, session } = doc;
-  const aggSession = {
-    activeFeatures: session.activeFeatures,
-    grantBundleChoices: session.grantBundleChoices,
-    itemResources: session.itemResources,
-    fadingPenalties: session.fadingPenalties,
-    // A play-reduced maximum (Life Drain) lowers max HP here exactly as on the sheet.
-    hpMaxReduction: session.hpMaxReduction,
-    // The conditions in effect, immunities applied (`aggregate.conditions`).
-    conditions: session.conditions,
-    concentration: session.concentration,
-    concentrationConditions: session.concentrationConditions,
-    encounterEffects: session.encounterEffects,
-    sessionDefenses: session.sessionDefenses,
-  };
-  const aggregate = aggregateCharacterGrants(character, aggSession);
+  const aggregate = aggregateCharacterGrants(character, session);
   const level = totalLevel(character);
   const pbOverride = character.proficiencyBonusOverride;
   const pb = effectiveProficiencyBonus(level, pbOverride);
@@ -133,8 +119,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     return row ? (row.override ?? row.computed) : 10;
   };
 
-  const walkingSpeedFt =
-    character.speedOverride ?? effectiveWalkingSpeedFt(doc, getEquipment);
+  const walkingSpeedFt = shownWalkingSpeedFt(doc, getEquipment);
   const derived = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
   // A hand-set range wins (override-first), exactly as the sheet's rail shows it.
   const senses = derived.senses.map((sense) => ({
@@ -143,7 +128,10 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
   }));
   const speeds = derived.speeds.map((speed) => ({
     ...speed,
-    rangeFt: character.speedOverrides?.[speed.kind] ?? speed.rangeFt,
+    rangeFt:
+      character.speedOverrides?.[speed.kind] ??
+      aggregate.form?.speeds[speed.kind as "fly"] ??
+      speed.rangeFt,
   }));
 
   const initiativeBonus =
@@ -214,10 +202,10 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
       insight: passive("insight"),
       investigation: passive("investigation"),
     },
-    ac: effectiveAC(character, aggSession),
+    ac: effectiveAC(character, session),
     hp: {
       current: session.hp.current,
-      max: effectiveMaxHp(character, aggSession),
+      max: effectiveMaxHp(character, session),
       temp: session.hp.temp,
     },
     initiativeBonus,

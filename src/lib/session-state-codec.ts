@@ -67,6 +67,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
   pactWeaponRiderTypes?: NonNullable<SessionState["pactWeaponRiderTypes"]>;
   polymorphForm?: NonNullable<SessionState["polymorphForm"]>;
+  activeForm?: NonNullable<SessionState["activeForm"]>;
   magicJar?: NonNullable<SessionState["magicJar"]>;
   /**
    * The character's persisted mechanics world (`session.world`) — OPAQUE to
@@ -128,6 +129,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "pactWeaponConfig",
   "pactWeaponRiderTypes",
   "polymorphForm",
+  "activeForm",
   "magicJar",
   "bardicInspirationDie",
   "world",
@@ -367,6 +369,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
     state.pactWeaponRiderTypes = session.pactWeaponRiderTypes;
   }
   if (session.polymorphForm) state.polymorphForm = session.polymorphForm;
+  if (session.activeForm) state.activeForm = session.activeForm;
   if (session.magicJar) state.magicJar = session.magicJar;
   if (isNonEmptyString(session.bardicInspirationDie)) {
     state.bardicInspirationDie = session.bardicInspirationDie;
@@ -700,6 +703,25 @@ function parseMagicJar(value: unknown): SessionState["magicJar"] {
   };
 }
 
+function parseActiveForm(value: unknown): SessionState["activeForm"] {
+  if (
+    !isRecord(value) ||
+    typeof value.sourceId !== "string" ||
+    typeof value.beastId !== "string" ||
+    typeof value.tempHpBefore !== "number" ||
+    !Number.isFinite(value.tempHpBefore)
+  ) {
+    return undefined;
+  }
+  const statBlock = parseFormStatBlock(value.statBlock);
+  return {
+    sourceId: value.sourceId,
+    beastId: value.beastId,
+    ...(statBlock ? { statBlock } : {}),
+    tempHpBefore: value.tempHpBefore,
+  };
+}
+
 function parsePolymorphForm(value: unknown): SessionState["polymorphForm"] {
   if (!isRecord(value) || !isRecord(value.prior)) return undefined;
   const prior = value.prior;
@@ -888,6 +910,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   );
   session.pactWeaponRiderTypes = parsePactWeaponRiderTypes(state.pactWeaponRiderTypes);
   session.polymorphForm = parsePolymorphForm(state.polymorphForm);
+  const activeForm = parseActiveForm(state.activeForm);
+  if (activeForm) session.activeForm = activeForm;
   const magicJar = parseMagicJar(state.magicJar);
   if (magicJar) session.magicJar = magicJar;
   if (isNonEmptyString(state.bardicInspirationDie)) {

@@ -66,6 +66,7 @@ import {
   effectiveSessionConditions,
   suppressedSessionConditions,
 } from "@/lib/effective-conditions";
+import { formFacts } from "@/lib/polymorph";
 import {
   sessionActiveKeys,
   worldStandingMaxHpDeltas,
@@ -112,6 +113,8 @@ export type AggregationSession = Pick<
       | "hpMaxReduction"
       | "fadingPenalties"
       | "sessionDefenses"
+      | "activeForm"
+      | "polymorphForm"
     >
   >;
 
@@ -121,6 +124,8 @@ export type CharacterAggregate = AggregatedGrants & {
   conditions: string[];
   /** Conditions the character has but is immune to (they return when it ends). */
   suppressedConditions: string[];
+  /** The assumed form the sheet reads its scores, AC and speeds from (M2), or null. */
+  form: ReturnType<typeof formFacts>;
 };
 
 /** The conditions in effect on the character: implied ones included, a condition it
@@ -184,11 +189,16 @@ export function aggregateCharacterGrants(
   );
   const immune = characterConditionImmunities(character, session, all);
   const suppressed = suppressedSessionConditions(conditionSession, immune);
+  const form = formFacts(
+    { activeForm: session.activeForm, polymorphForm: session.polymorphForm },
+    character.abilityScores
+  );
   if (suppressed.length === 0) {
     return {
       ...all,
       conditions: effectiveSessionConditions(conditionSession),
       suppressedConditions: [],
+      form,
     };
   }
   // A suppressed condition's rules don't apply: evaluate again without it.
@@ -197,6 +207,7 @@ export function aggregateCharacterGrants(
     ...aggregateWithConditions(character, session, conditions),
     conditions,
     suppressedConditions: suppressed,
+    form,
   };
 }
 
@@ -323,13 +334,17 @@ function sourcePart(
  */
 export function abilityScoreBreakdown(
   base: Record<AbilityCode, number>,
-  aggregate: AggregatedGrants,
+  aggregate: AggregatedGrants & { form?: CharacterAggregate["form"] },
   ability: AbilityCode,
   pin?: number
 ): RawBreakdownPart[] {
   const origins = aggregate.ruleOrigins;
-  const parts: RawBreakdownPart[] = [termPart("breakdown.base", base[ability])];
-  let score = base[ability];
+  const { form } = aggregate;
+  const replaced = form?.replaces.includes(ability) ? form : null;
+  let score = replaced ? replaced.abilityScores[ability] : base[ability];
+  const parts: RawBreakdownPart[] = [
+    replaced ? formBreakdownPart(replaced, score) : termPart("breakdown.base", score),
+  ];
   const floor = aggregate.abilityScoreFloors[ability];
   if (floor != null && floor > score) {
     const source = ruleParts(origins, `ability:floor:${ability}`)[0]?.source;
@@ -356,6 +371,23 @@ export function abilityScoreBreakdown(
 }
 
 /**
+ * A number an assumed form supplies (M2): labelled by what made the form
+ * ("Polymorph"), and explaining on tap whose statistics the character took.
+ */
+export function formBreakdownPart(
+  form: NonNullable<CharacterAggregate["form"]>,
+  value: number
+): RawBreakdownPart {
+  return {
+    ...locPart(srdText("spell", form.sourceId, "name"), value),
+    why: {
+      term: "breakdown.why.form",
+      params: { form: { loc: srdText(form.nameKind, form.beastId, "name") } },
+    },
+  };
+}
+
+/**
  * The per-source {@link RawBreakdownPart}s of a character's COMPUTED AC (NO
  * override applied) — the SAME `computeACDetailed` call as {@link
  * computeCharacterAC}, so `breakdownTotal(parts) === computeCharacterAC(...)` by
@@ -377,6 +409,9 @@ export function computeCharacterAcBreakdown(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): RawBreakdownPart[] {
+  // An assumed form's natural AC replaces the character's (see acFromAggregate).
+  const form = (agg as { form?: CharacterAggregate["form"] }).form;
+  if (form) return [formBreakdownPart(form, form.ac)];
   const scores = aggregateAbilityScores(
     character.abilityScores,
     agg,
@@ -419,7 +454,12 @@ export function acFromAggregate(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  return character.acOverride ?? computeCharacterAC(character, agg, itemResources);
+  // An assumed form's natural AC replaces the computed one (M2); a hand-set AC
+  // still wins, as a hand-set score does.
+  const form = (agg as { form?: { ac: number } | null }).form;
+  return (
+    character.acOverride ?? form?.ac ?? computeCharacterAC(character, agg, itemResources)
+  );
 }
 
 /**

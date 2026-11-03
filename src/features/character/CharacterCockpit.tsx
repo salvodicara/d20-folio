@@ -123,7 +123,9 @@ export function CockpitView() {
   // A Shapechange form from the bestiary names itself and its attacks from the lazy
   // monster catalogue: load it before the sheet renders those names.
   const bestiaryForm = useCharacterStore(
-    (s) => s.character?.session.polymorphForm?.statBlock !== undefined
+    (s) =>
+      (s.character?.session.activeForm ?? s.character?.session.polymorphForm)
+        ?.statBlock !== undefined
   );
   const bestiaryReady = useLazySrdKind("monster", bestiaryForm);
   if (booting && (loading || hasCharacter || error !== null)) {

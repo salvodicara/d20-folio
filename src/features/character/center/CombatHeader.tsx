@@ -57,13 +57,14 @@ import type { InitiativeAdvantageOverride } from "@/types/character";
 import {
   aggregateCharacterGrants,
   computeCharacterAC,
+  acFromAggregate,
   computeCharacterAcBreakdown,
   computedInitiativeBonus,
   computedInitiativeBreakdown,
   effectiveConditions,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
-import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
+import { effectiveWalkingSpeedFt, shownWalkingSpeedFt } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import { InlineEditable } from "@/components/shared/InlineEditable";
 import { StatBadge } from "@/components/shared/StatBadge";
@@ -119,6 +120,8 @@ export function CombatHeader() {
   );
   const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
   const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
+  // An assumed form changes the scores the aggregate derives (M2).
+  const activeForm = useCharacterStore((s) => s.character?.session.activeForm);
   const cover = useCharacterStore((s) =>
     s.character ? litCoverLevel(s.character.session) : null
   );
@@ -184,9 +187,17 @@ export function CombatHeader() {
             grantBundleChoices,
             itemResources,
             fadingPenalties,
+            activeForm,
           })
         : null,
-    [charData, activeFeatures, grantBundleChoices, itemResources, fadingPenalties]
+    [
+      charData,
+      activeFeatures,
+      grantBundleChoices,
+      itemResources,
+      fadingPenalties,
+      activeForm,
+    ]
   );
 
   // Esc exits edit mode (parity with the pre-rewrite sheet; the pill's hint
@@ -232,7 +243,8 @@ export function CombatHeader() {
   // Single AC formula shared with the persisted snapshot the roster reads (6b):
   // computed default (for the inline-edit hint + reset) and the override-aware value.
   const computedAc = computeCharacterAC(charData, initAgg, itemResources);
-  const acValue = charData.acOverride ?? computedAc;
+  // An assumed form's natural AC replaces the character's (M2).
+  const acValue = acFromAggregate(charData, initAgg, itemResources);
   const computedInitiative = computedInitiativeBonus(charData, initAgg, exhaustion);
   const initValue = charData.initiativeBonusOverride ?? computedInitiative;
 
@@ -318,7 +330,7 @@ export function CombatHeader() {
   const computedSpeedFt = characterDoc
     ? effectiveWalkingSpeedFt(characterDoc, getEquipment)
     : 0;
-  const speedFt = charData.speedOverride ?? computedSpeedFt;
+  const speedFt = characterDoc ? shownWalkingSpeedFt(characterDoc, getEquipment) : 0;
   const toLocaleNum = (ft: number): number =>
     parseFloat(speedToLocaleValue(ft, locale).replace(",", ".")) || 0;
   const speedEditValue = toLocaleNum(speedFt);

@@ -36,7 +36,7 @@ import { WizardSpellChoices } from "./WizardSpellChoices";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { SpellAddModal } from "@/components/sheet/SpellAddModal";
-import { formNameKind } from "@/lib/polymorph";
+import { formNameKind, currentForm } from "@/lib/polymorph";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { ensureSrdKind } from "@/i18n";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -491,6 +491,7 @@ export function SpellsTab() {
 
   if (!character || !view) return null;
   const { castSummary, slots } = view;
+  const activeForm = currentForm(character.session);
 
   return (
     <div>
@@ -527,14 +528,10 @@ export function SpellsTab() {
         </Suspense>
       )}
 
-      {character.session.polymorphForm && (
+      {activeForm && (
         <div className="polymorph-banner" role="status">
           <span>
-            {formLabel(
-              character.session.polymorphForm.spellId,
-              formNameKind(character.session.polymorphForm),
-              character.session.polymorphForm.beastId
-            )}
+            {formLabel(activeForm.sourceId, formNameKind(activeForm), activeForm.beastId)}
           </span>
           <Button size="sm" variant="secondary" onClick={handleRevertForm}>
             {t("polymorph.revert")}

@@ -41,7 +41,7 @@ import { grantSourceLabel } from "@/lib/views/tracker-view";
 import {
   resolveStartOfTurnRegen,
   resolveRound1DamageDoubles,
-  effectiveWalkingSpeedFt,
+  shownWalkingSpeedFt,
 } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import { resolveConditionEffects } from "@/lib/condition-effects";
@@ -175,6 +175,8 @@ export function ThisTurnTracker({
   );
   const itemResources = useCharacterStore((s) => s.character?.session.itemResources);
   const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
+  // An assumed form changes the scores the aggregate derives (M2).
+  const activeForm = useCharacterStore((s) => s.character?.session.activeForm);
 
   // S4 — rolling Initiative tops up the listed trackers (Persistent Rage, Battle
   // Master Relentless, Superior Inspiration, Archdruid, Perfect Focus). Fires when
@@ -362,6 +364,7 @@ export function ThisTurnTracker({
       grantBundleChoices,
       itemResources,
       fadingPenalties,
+      activeForm,
     });
     return computedInitiativeBonus(charData, initAgg, exhaustion);
   }, [
@@ -371,6 +374,7 @@ export function ThisTurnTracker({
     grantBundleChoices,
     itemResources,
     fadingPenalties,
+    activeForm,
   ]);
 
   if (!character || !charData) return null;
@@ -549,8 +553,7 @@ export function ThisTurnTracker({
   // first turn's movement bar and auto-clear from round 2+. The MovementSlider
   // owns the segmented visual + the drag / arrow-key / type interaction; this just
   // feeds it the speed + used feet.
-  const speedFt =
-    charData.speedOverride ?? effectiveWalkingSpeedFt(character, getEquipment, round);
+  const speedFt = shownWalkingSpeedFt(character, getEquipment, round);
   // RA-09 — a committed Dash grants extra movement equal to Speed, so the turn's
   // movement budget is speed × (1 + dashes). The meter's total readout reflects
   // the extension (30 ft → 60 ft after one Dash); the base Speed is unchanged.
@@ -588,8 +591,7 @@ export function ThisTurnTracker({
     const liveConditions = effectiveConditions(live);
     const liveConditionEffects = resolveConditionEffects(liveConditions);
     const combat = useCombatStore.getState();
-    const liveSpeedFt =
-      live.character.speedOverride ?? effectiveWalkingSpeedFt(live, getEquipment, round);
+    const liveSpeedFt = shownWalkingSpeedFt(live, getEquipment, round);
     const liveStandCostFt = Math.floor(liveSpeedFt / 2);
     const liveBudgetFt = liveSpeedFt * (1 + combat.dashesThisTurn);
     if (

@@ -139,7 +139,7 @@ describe("dropping Concentration ends what it holds", () => {
     const restored = liveDoc().session;
     expect(restored.concentration).toBe(concentrationValue("polymorph"));
     expect(restored.concentrationCastLevel).toBe(5);
-    expect(restored.polymorphForm?.beastId).toBe("brown-bear");
+    expect(restored.activeForm?.beastId).toBe("brown-bear");
     expect(restored.logEntries).toHaveLength(logBefore);
   });
 });

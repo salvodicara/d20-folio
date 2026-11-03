@@ -17,14 +17,14 @@ import { describe, expect, it, vi } from "vitest";
 import { getEquipment } from "@/data/equipment";
 import { buildDevScenario, DEV_SCENARIOS } from "@/lib/dev-scenarios";
 import {
+  acFromAggregate,
   aggregateCharacterGrants,
-  computeCharacterAC,
   computedInitiativeBonus,
 } from "@/lib/aggregate-character";
 import { vitalExhaustion } from "@/lib/character-vitals";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
+import { shownWalkingSpeedFt } from "@/lib/smart-tracker";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { deriveSensesAndSpeeds } from "@/lib/views/sheet-view";
@@ -33,13 +33,14 @@ import type { CharacterDoc } from "@/types/character";
 /** What the rail computes (LeftHud + CombatHeader), in deriveCharacter's vocabulary. */
 function railView(doc: CharacterDoc) {
   const charData = doc.character;
-  const { activeFeatures, grantBundleChoices, itemResources } = doc.session;
+  const { activeFeatures, grantBundleChoices, itemResources, activeForm } = doc.session;
   const exhaustion = vitalExhaustion(doc.session);
   const conditions = effectiveSessionConditions(doc.session);
   const aggregate = aggregateCharacterGrants(charData, {
     activeFeatures,
     grantBundleChoices,
     itemResources,
+    activeForm,
   });
   const rows = deriveSavesAndChecks(charData, {
     exhaustion,
@@ -47,13 +48,13 @@ function railView(doc: CharacterDoc) {
     conditions,
     grantBundleChoices,
     itemResources,
+    activeForm,
   });
   const passive = (id: string) => {
     const row = rows.passives.find((p) => p.id === id);
     return row ? (row.override ?? row.computed) : 10;
   };
-  const walkingSpeedFt =
-    charData.speedOverride ?? effectiveWalkingSpeedFt(doc, getEquipment);
+  const walkingSpeedFt = shownWalkingSpeedFt(doc, getEquipment);
   const { senses, speeds } = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
   return {
     saves: rows.saves.map((s) => ({
@@ -80,9 +81,12 @@ function railView(doc: CharacterDoc) {
     })),
     speeds: speeds.map((speed) => ({
       ...speed,
-      rangeFt: charData.speedOverrides?.[speed.kind] ?? speed.rangeFt,
+      rangeFt:
+        charData.speedOverrides?.[speed.kind] ??
+        aggregate.form?.speeds[speed.kind as "fly"] ??
+        speed.rangeFt,
     })),
-    ac: charData.acOverride ?? computeCharacterAC(charData, aggregate, itemResources),
+    ac: acFromAggregate(charData, aggregate, itemResources),
     initiativeBonus:
       charData.initiativeBonusOverride ??
       computedInitiativeBonus(charData, aggregate, exhaustion),

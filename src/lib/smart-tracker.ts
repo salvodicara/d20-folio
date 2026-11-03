@@ -94,7 +94,13 @@ import type {
 import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
-import { formAttackNameKey, formNameKind, formStatBlock } from "@/lib/polymorph";
+import {
+  currentForm,
+  formAttackNameKey,
+  formFacts,
+  formNameKind,
+  formStatBlock,
+} from "@/lib/polymorph";
 import {
   totalLevel,
   classEntryLevel,
@@ -4740,7 +4746,7 @@ export function resolveBeastFormAttacks(
   session: CharacterDoc["session"],
   unpinnedSet: ReadonlySet<string>
 ): RawResolvedAction[] {
-  const form = session.polymorphForm;
+  const form = currentForm(session);
   if (!form) return [];
   const beast = formStatBlock(form);
   if (!beast) return [];
@@ -9246,6 +9252,22 @@ export function isTurnEconomyBlocked(character: CharacterDoc): boolean {
  * out-of-combat / later-round Speed (no first-turn bonus) — the persistent
  * stat-block surfaces leave it off; a combat-aware surface passes `round`.
  */
+/**
+ * The walking Speed the sheet shows: a hand-set one, else an assumed form's (M2),
+ * else the computed one.
+ */
+export function shownWalkingSpeedFt(
+  doc: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined,
+  round?: number
+): number {
+  return (
+    doc.character.speedOverride ??
+    formFacts(doc.session, doc.character.abilityScores)?.walkFt ??
+    effectiveWalkingSpeedFt(doc, resolveSrd, round)
+  );
+}
+
 export function effectiveWalkingSpeedFt(
   character: CharacterDoc,
   resolveSrd?: (id: string) => SrdEquipmentData | undefined,

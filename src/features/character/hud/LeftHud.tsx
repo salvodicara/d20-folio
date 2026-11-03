@@ -35,7 +35,7 @@ import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { BreakdownTip } from "@/components/shared/BreakdownTip";
 import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
 import { deriveSensesAndSpeeds } from "@/lib/views/sheet-view";
-import { effectiveWalkingSpeedFt } from "@/lib/smart-tracker";
+import { shownWalkingSpeedFt } from "@/lib/smart-tracker";
 import { getEquipment } from "@/data/equipment";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { StatCard } from "@/components/shared/StatCard";
@@ -95,6 +95,8 @@ export function LeftHud() {
   );
   const itemResources = characterDoc?.session.itemResources;
   const fadingPenalties = characterDoc?.session.fadingPenalties;
+  // An assumed form changes the scores and saves the rail derives (M2).
+  const activeForm = characterDoc?.session.activeForm;
 
   // Full aggregate → ability-score floors + senses/speeds (grants), threading the
   // chosen grant-bundle so a picked lineage's senses/floors apply. The save /
@@ -109,9 +111,17 @@ export function LeftHud() {
             grantBundleChoices,
             itemResources,
             fadingPenalties,
+            activeForm,
           })
         : null,
-    [charData, activeFeatures, grantBundleChoices, itemResources, fadingPenalties]
+    [
+      charData,
+      activeFeatures,
+      grantBundleChoices,
+      itemResources,
+      fadingPenalties,
+      activeForm,
+    ]
   );
   const savesChecks = useMemo(
     () =>
@@ -123,6 +133,7 @@ export function LeftHud() {
             grantBundleChoices,
             itemResources,
             fadingPenalties,
+            activeForm,
           })
         : null,
     [
@@ -133,6 +144,7 @@ export function LeftHud() {
       grantBundleChoices,
       itemResources,
       fadingPenalties,
+      activeForm,
     ]
   );
 
@@ -238,7 +250,7 @@ export function LeftHud() {
   // grants + Boots × exhaustion − armor penalty), so a doubled/penalized walking
   // Speed flows through to the derived swim/fly/climb ranges (rule 6).
   const walkingSpeedFt = characterDoc
-    ? (charData.speedOverride ?? effectiveWalkingSpeedFt(characterDoc, getEquipment))
+    ? shownWalkingSpeedFt(characterDoc, getEquipment)
     : 0;
   const { senses, speeds, airAndWaterBreathing } = deriveSensesAndSpeeds(
     fullAggregate,
@@ -558,8 +570,10 @@ export function LeftHud() {
               but DROPPED here; now surfaced + overridable (the walking speed is the
               editable header vital). Honest blank when the character has none. */}
           {speeds.map((speed) => {
+            // An assumed form's speed replaces the character's (M2).
+            const formFt = fullAggregate.form?.speeds[speed.kind as "fly"];
             const override = charData.speedOverrides?.[speed.kind];
-            const rangeFt = override ?? speed.rangeFt;
+            const rangeFt = override ?? formFt ?? speed.rangeFt;
             return (
               <div key={speed.kind} className="flex items-center justify-between gap-2">
                 <span className="text-text-secondary">
