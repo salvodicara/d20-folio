@@ -3,7 +3,12 @@
  * The store ends Concentration first where the rest does (sleep), then applies these,
  * logs the rest, persists, and fences the undo stack.
  */
-import { endSummonsOn } from "./companions";
+import { endSummonsOn, endSummonsOutlastedBy } from "./companions";
+
+/** A rest's length on the game clock, in minutes (SRD 5.2.1: a Short Rest is 1
+ *  hour, a Long Rest 8). */
+const SHORT_REST_MINUTES = 60;
+const LONG_REST_MINUTES = 480;
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
@@ -105,7 +110,10 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
   const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "long"));
   // A summon that lasts until its owner's Long Rest leaves the field (M6).
   const restedSummons = character.session.summons
-    ? (endSummonsOn(character.session, "long-rest") ?? character.session)
+    ? endSummonsOutlastedBy(
+        endSummonsOn(character.session, "long-rest") ?? character.session,
+        LONG_REST_MINUTES
+      )
     : character.session;
   return {
     ...character,
@@ -126,7 +134,7 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
         character.session.activeSpellCastLevels,
         endedActiveKeys
       ),
-      effectTimers: omitStateKeys(character.session.effectTimers, endedActiveKeys),
+      effectTimers: omitStateKeys(restedSummons.effectTimers, endedActiveKeys),
       effectBoundaries: omitStateKeys(
         character.session.effectBoundaries,
         endedActiveKeys
@@ -210,10 +218,14 @@ export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
   // session.concentration which silently broke active concentration
   // spells whose duration outlasts an hour (Find Familiar, Hex,
   // Tiny Hut, etc.).
+  // A summon the hour outlasts leaves the field (M6).
+  const restedSession = character.session.summons
+    ? endSummonsOutlastedBy(character.session, SHORT_REST_MINUTES)
+    : character.session;
   return {
     ...character,
     session: {
-      ...character.session,
+      ...restedSession,
       trackers: newTrackers,
       spellSlots: newSpellSlots,
       exhaustion: newExhaustion,
@@ -224,7 +236,7 @@ export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
         character.session.activeSpellCastLevels,
         endedActiveKeys
       ),
-      effectTimers: omitStateKeys(character.session.effectTimers, endedActiveKeys),
+      effectTimers: omitStateKeys(restedSession.effectTimers, endedActiveKeys),
       effectBoundaries: omitStateKeys(
         character.session.effectBoundaries,
         endedActiveKeys

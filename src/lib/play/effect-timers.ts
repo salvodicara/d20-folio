@@ -12,6 +12,7 @@ import {
   resolveActiveBoundaryEffects,
 } from "@/lib/smart-tracker";
 import { startPotionAftereffects } from "@/lib/potion-states";
+import { endExpiredSummons } from "./companions";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 export type BoundaryPhase = "turn-start" | "turn-end";
@@ -80,7 +81,8 @@ export function advanceEffectTimers(
     forRound === undefined
       ? ticked
       : (startPotionAftereffects(ticked, expiredKeys, forRound) ?? ticked);
-  return { session, expired };
+  // A summon whose countdown ran out leaves the field (M6).
+  return { session: endExpiredSummons(session, expiredKeys), expired };
 }
 
 /** The boundary states that have expired at `position`. */

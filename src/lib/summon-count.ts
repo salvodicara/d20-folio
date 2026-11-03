@@ -48,3 +48,12 @@ export function summonInstanceNumber(key: string, groupId: string): number | nul
   const n = Number(key.slice(groupId.length + 1));
   return Number.isInteger(n) && n >= 1 ? n : null;
 }
+
+/** The `effectTimers` key prefix of a summon that lasts a while (M6: Phantom Steed's
+ *  hour). The countdown runs on game time: rounds, time passing, rests. */
+export const SUMMON_TIMER_PREFIX = "summon:";
+
+/** The countdown key of the summon from `sourceId`. */
+export function summonTimerKey(sourceId: string): string {
+  return `${SUMMON_TIMER_PREFIX}${sourceId}`;
+}

@@ -165,3 +165,32 @@ describe("step 2: revive, a steed that ends when hurt, Antimagic", () => {
     expect(steed(doc)).not.toHaveProperty("suppressed");
   });
 });
+
+describe("a summon that lasts a while counts down on game time", () => {
+  it("Phantom Steed lasts an hour: rounds, time passing and rests end it", async () => {
+    const { passTime } = await import("@/lib/play/time");
+    const { shortRestCharacter } = await import("@/lib/play/rests");
+    const doc = paladin();
+    const summoned = withSession(doc, summonCompanion(doc.session, "phantom-steed", 3));
+    expect(summoned.session.effectTimers?.["summon:phantom-steed"]).toEqual({
+      roundsLeft: 600,
+    });
+    // Half an hour passes: still there.
+    const half = passTime(summoned, 30);
+    expect(half?.session.summons?.["phantom-steed"]).toBeDefined();
+    // The hour runs out.
+    const gone = passTime(half ?? summoned, 30);
+    expect(gone?.session.summons?.["phantom-steed"]).toBeUndefined();
+    expect(gone?.session.effectTimers?.["summon:phantom-steed"]).toBeUndefined();
+    // A Short Rest is an hour: it outlasts the steed too.
+    expect(
+      shortRestCharacter(summoned).session.summons?.["phantom-steed"]
+    ).toBeUndefined();
+  });
+
+  it("Find Steed has no timer", () => {
+    const doc = paladin();
+    const summoned = summonCompanion(doc.session, "find-steed", 2);
+    expect(summoned.effectTimers?.["summon:find-steed"]).toBeUndefined();
+  });
+});

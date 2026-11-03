@@ -16,6 +16,7 @@ import { advanceEffectTimers, resolveActiveMaintainedEffects } from "@/lib/smart
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import { endStatuses, endsConcentration } from "@/lib/status";
 import type { CharacterDoc } from "@/types/character";
+import { endExpiredSummons } from "./companions";
 import { changeConcentration } from "./concentration";
 import { passBreathRounds } from "./suffocation";
 
@@ -79,7 +80,8 @@ function passTimers(
   };
   const next: CharacterDoc = {
     ...doc,
-    session: { ...session, ...endStatuses(session, ended) },
+    // A summon whose countdown ran out leaves the field (M6).
+    session: endExpiredSummons({ ...session, ...endStatuses(session, ended) }, ended),
   };
   return endsConcentration(doc.session.concentration, ended, doc.character.spells)
     ? changeConcentration(next, "").doc
