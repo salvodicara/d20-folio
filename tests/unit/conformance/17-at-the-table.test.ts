@@ -134,7 +134,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Monster kills and who dealt them",
       source: "WIKI spell:hex",
-      status: "M8",
+      status: "works",
     },
     () => {
       // Hunter's Mark moves when its marked target drops to 0: the drop offers the

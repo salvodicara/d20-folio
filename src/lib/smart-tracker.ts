@@ -8540,11 +8540,7 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
   // sources (race + features + …), or a real Human's trait never reaches the
   // consumer. `resolveAllGrantSources` is the same fan-in the other CharacterDoc
   // consumers (`resolveActiveMaintainedEffects`) already use.
-  return evaluateGrants(
-    resolveAllGrantSources(character.character, character.session.itemResources),
-    sessionActiveKeys(character.session),
-    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
-  ).heroicInspirationOnLongRest;
+  return aggregateForCharacter(character).heroicInspirationOnLongRest;
 }
 
 /**
@@ -8563,11 +8559,7 @@ export function gainsHeroicInspirationOnLongRest(character: CharacterDoc): boole
  * score item equipped (floors/bonus empty → an equal-valued copy of stored scores).
  */
 function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, number> {
-  const agg = evaluateGrants(
-    resolveAllGrantSources(character.character, character.session.itemResources),
-    sessionActiveKeys(character.session),
-    new Map(Object.entries(character.session.grantBundleChoices ?? {}))
-  );
+  const agg = aggregateForCharacter(character);
   return aggregateAbilityScores(
     character.character.abilityScores,
     agg,
@@ -8576,12 +8568,14 @@ function combatAbilityScores(character: CharacterDoc): Record<AbilityCode, numbe
 }
 
 /**
- * Aggregate a character's feature grants, honouring the session's active-feature
- * toggles and choice bundles. Shared by the CharacterDoc-level consumers below.
+ * Aggregate every grant the character holds (species, features, items, spells,
+ * picks), honouring the session's active-feature toggles and choice bundles. Shared
+ * by the CharacterDoc-level consumers below: a trigger on a spell (Hunter's Mark) or
+ * an item fires like one on a feature.
  */
 function aggregateForCharacter(character: CharacterDoc) {
   return evaluateGrants(
-    resolveGrantSourcesForFeatures(character.character.features),
+    resolveAllGrantSources(character.character, character.session.itemResources),
     sessionActiveKeys(character.session),
     new Map(Object.entries(character.session.grantBundleChoices ?? {}))
   );
