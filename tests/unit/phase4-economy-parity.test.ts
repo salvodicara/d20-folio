@@ -64,6 +64,7 @@ function makeCommitStore(): CommitStore {
   return {
     useSpellSlot: (l) => cs().useSpellSlot(l),
     restoreSpellSlot: (l) => cs().restoreSpellSlot(l),
+    createSpellSlot: (l) => cs().createSpellSlot(l),
     useTracker: (id, a) => cs().useTracker(id, a),
     restoreTracker: (id, a) => cs().restoreTracker(id, a),
     useEquipmentItem: (k) => {

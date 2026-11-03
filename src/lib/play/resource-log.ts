@@ -70,6 +70,7 @@ const LOGGED_KINDS: ReadonlySet<SheetEvent["kind"]> = new Set([
   "set-exhaustion",
   "spend-slot",
   "restore-slot",
+  "create-slot",
   "set-inspiration",
 ]);
 

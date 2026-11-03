@@ -60,13 +60,15 @@ export function resourcesView(doc: CharacterDoc, locale: Locale): ResourceRow[] 
   const slots: ResourceRow[] = character.spellSlots.map((slot) => {
     const key = slotUsageKey(slot);
     const pact = slot.pactMagic === true;
+    // A used count below zero is slots Font of Magic created above the maximum.
+    const used = session.spellSlots[key]?.used ?? 0;
     return {
       kind: "spell-slot",
       id: `slot:${key}`,
       level: slot.level,
       pact,
-      used: session.spellSlots[key]?.used ?? 0,
-      max: slot.total,
+      used: Math.max(0, used),
+      max: slot.total + Math.max(0, -used),
       recharge: pact ? "short-rest" : "long-rest",
     };
   });

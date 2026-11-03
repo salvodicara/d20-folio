@@ -66,6 +66,7 @@ import { passTime } from "./time";
 import { setWishStress } from "./wish";
 import {
   restoreSpellSlot,
+  createSpellSlot,
   restoreTracker,
   gainTempHp,
   healBy,
@@ -89,6 +90,8 @@ export type SheetEvent =
   | { kind: "set-hp-max-reduction"; total: number }
   | { kind: "spend-slot"; level: number; pactMagic: boolean }
   | { kind: "restore-slot"; level: number; pactMagic: boolean }
+  /** Font of Magic: one more normal slot, above the maximum if need be. */
+  | { kind: "create-slot"; level: number }
   | { kind: "spend-tracker"; trackerId: string; amount: number }
   | { kind: "restore-tracker"; trackerId: string; amount: number }
   | { kind: "set-tracker-roll"; trackerId: string; index: number; value: number | null }
@@ -218,6 +221,8 @@ export function applySheetEvent(
       return withSession(spendSpellSlot(doc, event.level, event.pactMagic));
     case "restore-slot":
       return withSession(restoreSpellSlot(doc, event.level, event.pactMagic));
+    case "create-slot":
+      return withSession(createSpellSlot(doc, event.level));
     case "spend-tracker":
       return withSession(spendTracker(doc, event.trackerId, event.amount));
     case "restore-tracker":

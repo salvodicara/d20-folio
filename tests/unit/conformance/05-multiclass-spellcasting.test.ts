@@ -66,6 +66,7 @@ function sheetStore(start: CharacterDoc): {
         on({ kind: "spend-slot", level, pactMagic }),
       restoreSpellSlot: (level, pactMagic = false) =>
         on({ kind: "restore-slot", level, pactMagic }),
+      createSpellSlot: (level) => on({ kind: "create-slot", level }),
       useTracker: (trackerId, amount = 1) =>
         on({ kind: "spend-tracker", trackerId, amount }),
       restoreTracker: (trackerId, amount = 1) =>
@@ -319,7 +320,7 @@ describe("conformance · 5. multiclass and spellcasting", () => {
       category: 5,
       case: "Font of Magic slots vanish",
       source: "WIKI sorcerer:main",
-      status: "M8",
+      status: "works",
     },
     () => {
       // Sorcerer 3 with every slot unspent creates a level-1 slot for 2 points.

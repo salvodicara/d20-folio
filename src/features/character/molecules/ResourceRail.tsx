@@ -1694,8 +1694,9 @@ function RailSlot({
   const { t } = useTranslation();
   const spendSlot = useCharacterStore((s) => s.useSpellSlot);
   const restoreSlot = useCharacterStore((s) => s.restoreSpellSlot);
-  const total = slot.total;
-  const available = Math.max(0, total - used);
+  // A used count below zero is slots Font of Magic created above the maximum.
+  const total = slot.total + Math.max(0, -used);
+  const available = Math.max(0, total - Math.max(0, used));
 
   function spend() {
     if (available <= 0) return;

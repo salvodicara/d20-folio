@@ -417,6 +417,8 @@ interface CharacterState {
    */
   useSpellSlot: (level: number, pactMagic?: boolean) => void;
   restoreSpellSlot: (level: number, pactMagic?: boolean) => void;
+  /** Font of Magic: one more normal slot, above the maximum if need be. */
+  createSpellSlot: (level: number) => void;
   useTracker: (trackerId: string, amount?: number) => void;
   restoreTracker: (trackerId: string, amount?: number) => void;
   /** Commit one preflighted mechanics plan as a single whole-character CAS. */
@@ -1815,6 +1817,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().dispatch({ kind: "restore-slot", level, pactMagic })) {
       flushParentPersistence(get);
     }
+  },
+
+  createSpellSlot: (level) => {
+    if (get().dispatch({ kind: "create-slot", level })) flushParentPersistence(get);
   },
 
   useTracker: (trackerId, amount = 1) => {

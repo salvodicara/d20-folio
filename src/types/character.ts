@@ -1053,7 +1053,8 @@ export interface SessionState {
   trackers: Record<string, TrackerState>;
   /** Instance-owned item resources, keyed by strict `SrdEquipmentRef.instanceId`. */
   itemResources?: Record<string, ItemResourceState>;
-  /** Spell slot usage state, keyed by slot level */
+  /** Spell slot usage state, keyed by slot level. A `used` below zero is the slots
+   *  Font of Magic created above the table's maximum; the Long Rest clears them. */
   spellSlots: Record<string, { used: number }>;
   currency: {
     pp: number;
