@@ -4,7 +4,12 @@
  * per-level increments when the session knows a higher cast level. Names, kinds
  * and riders live in the spell catalogue under `<spellId>.companion…`.
  */
-import type { CompanionStatBlock } from "../types";
+import type { CompanionLifecycle, CompanionStatBlock } from "../types";
+
+/** A Concentration summon that disappears at 0 Hit Points. */
+const CONCENTRATION_SUMMON: CompanionLifecycle = {
+  endsOn: ["concentration", "0-hp:vanish"],
+};
 
 // Find Steed (level 2) — Otherworldly Steed: AC 10 + 1 per spell level, HP 5 + 10
 // per spell level, Speed 60 ft. (Fly 60 ft. from level 4, noted in the rider).
@@ -14,6 +19,8 @@ const otherworldlySteed = (
   damageType: "radiant" | "psychic" | "necrotic"
 ): CompanionStatBlock => ({
   variantId,
+  // "The steed disappears if it drops to 0 Hit Points or if you die."
+  lifecycle: { endsOn: ["0-hp:vanish", "owner-death"] },
   ac: { base: 12 },
   hp: { base: 25, perLevel: 0 },
   spellLevel: { base: 2, acPer: 1, hpPer: 10 },
@@ -46,6 +53,8 @@ export const OTHERWORLDLY_STEED: CompanionStatBlock = {
 // Its Hooves (+5, printed) is left out: the shape derives to-hit from the owner,
 // and the spell ends as soon as the steed takes damage — it is a mount.
 export const PHANTOM_STEED: CompanionStatBlock = {
+  // One hour; "the spell ends early if the steed takes any damage."
+  lifecycle: { endsOn: ["timer", "damaged"] },
   ac: { base: 11 },
   hp: { base: 13, perLevel: 0 },
   speeds: { walk: 100 },
@@ -69,6 +78,7 @@ const giantInsect = (
   extra: Partial<CompanionStatBlock> = {}
 ): CompanionStatBlock => ({
   variantId,
+  lifecycle: CONCENTRATION_SUMMON,
   ac: { base: 15 },
   hp: { base: 30, perLevel: 0 },
   spellLevel: { base: 4, acPer: 1, hpPer: 10 },
@@ -104,11 +114,13 @@ export const GIANT_INSECT: CompanionStatBlock = {
 // Summon Dragon (level 5) — Draconic Spirit: AC 14 + the spell's level, HP 50 +
 // 10 per level above 5, Rend 1d6 + 4 + the spell's level.
 export const DRACONIC_SPIRIT: CompanionStatBlock = {
+  lifecycle: CONCENTRATION_SUMMON,
   ac: { base: 19 },
   hp: { base: 50, perLevel: 0 },
   spellLevel: { base: 5, acPer: 1, hpPer: 10 },
   speeds: { walk: 30, fly: 60, swim: 30 },
   abilityScores: { STR: 19, DEX: 14, CON: 17, INT: 10, WIS: 14, CHA: 14 },
+  damageResistances: ["acid", "cold", "fire", "lightning", "poison"],
   conditionImmunities: ["charmed", "frightened", "poisoned"],
   senses: { blindsightFt: 30, darkvisionFt: 60 },
   attacks: [
@@ -127,6 +139,8 @@ export const DRACONIC_SPIRIT: CompanionStatBlock = {
 // caster's Hit Point maximum. Its Clenched Fist / Forceful / Grasping /
 // Interposing effects are the spell's own (the spell row), not the hand's.
 export const ARCANE_HAND: CompanionStatBlock = {
+  // "If it drops to 0 Hit Points, the spell ends."
+  lifecycle: CONCENTRATION_SUMMON,
   ac: { base: 20 },
   hp: { base: 0, perLevel: 0, ownerMax: true },
 };
@@ -145,6 +159,8 @@ const animatedObject = (
   spellModPer: number
 ): CompanionStatBlock => ({
   variantId,
+  // At 0 Hit Points it reverts to its object form: the animated creature is gone.
+  lifecycle: CONCENTRATION_SUMMON,
   ac: { base: 15 },
   hp: { base: hp, perLevel: 0 },
   spellLevel: { base: 5 },

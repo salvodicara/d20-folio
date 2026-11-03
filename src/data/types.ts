@@ -2146,7 +2146,45 @@ export type CreatureSenses = {
 };
 
 /** A summoned companion's resolvable stat block (Artificer constructs). */
+/**
+ * What ends a companion (edge-case M6, `session.summons[]` reads it). Dismissing
+ * one is always possible and never listed; a new summon replacing the old one
+ * (Find Steed, a Long Rest's new primal beast) is the source's own rule.
+ *   - `concentration`: the spell's Concentration ends.
+ *   - `0-hp:vanish`: it disappears at 0 Hit Points (an animated object reverts).
+ *   - `0-hp:dies`: it dies at 0 Hit Points and leaves a body `revive` can use.
+ *   - `owner-death`: it vanishes when its owner dies.
+ *   - `damaged`: any damage ends it (Phantom Steed).
+ *   - `timer`: it lasts `timerMinutes` (a feature) or the spell's duration.
+ */
+export type CompanionEnd =
+  | "concentration"
+  | "0-hp:vanish"
+  | "0-hp:dies"
+  | "owner-death"
+  | "damaged"
+  | "timer";
+
+export interface CompanionLifecycle {
+  readonly endsOn: readonly [CompanionEnd, ...CompanionEnd[]];
+  /** How long a `timer` companion from a feature lasts (Eldritch Cannon: 60). */
+  readonly timerMinutes?: number;
+  /**
+   * Bringing a dead companion back (Beast Master, Steel Defender): within
+   * `withinMinutes` of its death, a Magic action and `cost`; it returns after
+   * `returnsAfterMinutes` with all its Hit Points.
+   */
+  readonly revive?: {
+    readonly withinMinutes: number;
+    readonly action: "magic";
+    readonly cost: CostSpec;
+    readonly returnsAfterMinutes: number;
+  };
+}
+
 export interface CompanionStatBlock {
+  /** When the companion ends, and how it comes back (see {@link CompanionLifecycle}). */
+  lifecycle?: CompanionLifecycle;
   /** AC = `base` (+ the owner's `ability` modifier, if set). */
   ac: { base: number; ability?: AbilityCode };
   /**
