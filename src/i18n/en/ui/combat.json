@@ -200,6 +200,7 @@
     "reactionTrigger_savedVsCharmOrFear": "creature resists charm or fear",
     "reactionTrigger_succeedDexSaveForHalf": "you succeed on a Dexterity save for half damage",
     "reactionTrigger_targetAttacks": "it attacks",
+    "reactionTrigger_creatureAttacksYou": "a creature attacks you",
     "reactionTrigger_takeDamage": "take damage",
     "filterByType": "Filter actions by type",
     "groupAction": "Actions",

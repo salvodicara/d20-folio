@@ -134,6 +134,9 @@ const CORRECTED_TRIGGERS: Record<string, string> = {
   // Reactive Spell answers an Opportunity Attack, not a spell being cast (the parser
   // matched "cast a spell" in its own wording).
   "war-caster": "creature leaves your reach",
+  // Instinctive Charm answers an attack roll against you, before it hits (the parser
+  // read "fails a save" from its own wording).
+  "wizard-enchanter-instinctive-charm": "a creature attacks you",
 };
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {

@@ -200,6 +200,7 @@
     "reactionTrigger_savedVsCharmOrFear": "una creatura resiste ad Affascinato o Spaventato",
     "reactionTrigger_succeedDexSaveForHalf": "superi un TS su Destrezza per dimezzare i danni",
     "reactionTrigger_targetAttacks": "il bersaglio attacca",
+    "reactionTrigger_creatureAttacksYou": "una creatura ti attacca",
     "reactionTrigger_takeDamage": "subisci danno",
     "filterByType": "Filtra azioni per tipo",
     "groupAction": "Azioni",
