@@ -120,6 +120,11 @@ vi.mock("@/lib/combat-state-io", () => ({
   writeCombatState: writeCombatStateMock,
   writeCombatTurnEconomy: vi.fn(() => Promise.resolve()),
 }));
+// The spends ledger: empty here (its fold is pinned in peer-spends-store.test.ts).
+vi.mock("@/lib/peer-spends-io", () => ({
+  subscribePeerSpends: vi.fn(() => () => {}),
+  removeFoldedPeerSpends: vi.fn(() => Promise.resolve()),
+}));
 vi.mock("@/features/campaigns/refresh-attached-sheets", () => ({
   createAttachedCampaignTracker: createTrackerMock,
   refreshAttachedSheets: refreshAttachedSheetsMock,
