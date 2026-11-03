@@ -58,6 +58,7 @@ import {
   MAX_UNDO_DEPTH,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
@@ -1372,6 +1373,8 @@ export function TurnEconomyProvider({
         }
         const undo = seal?.() ?? null;
         if (!readies) offerFollowUps(action, targets, loggedId);
+        // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
+        const undoZone = readies ? null : leaveZone(action, opt.level);
         const picksForm =
           !readies &&
           !execution.ritual &&
@@ -1386,6 +1389,7 @@ export function TurnEconomyProvider({
           if (!canCommit() || (undo && !undo())) return false;
           if (materialToastId) useToastStore.getState().dismissToast(materialToastId);
           if (picksForm) setFormPickerSpellId(null);
+          undoZone?.();
           useDamageTrayStore.getState().withdraw(loggedId);
           return true;
         };
@@ -1393,6 +1397,55 @@ export function TurnEconomyProvider({
       { turnScoped: false }
     );
     clearPendingResolution(action);
+  }
+
+  /**
+   * Put the area a cast leaves on the live encounter (edge-case M9), when the open
+   * sheet is this player's PC in it; returns the undo that takes it back. Outside a
+   * fight there is no encounter to hold it.
+   */
+  function leaveZone(action: ResolvedAction, castLevel: number): (() => void) | null {
+    const spell = action.spellId ? getSpellById(action.spellId) : undefined;
+    const status = useCombatStatusStore.getState().status;
+    const uid = useAuthStore.getState().user?.uid;
+    if (!spell?.zone || !status || !uid || status.characterId !== character?.id) {
+      return null;
+    }
+    const effect = zoneEffectForCast({
+      effectId: crypto.randomUUID(),
+      spellId: spell.id,
+      actionId: action.id,
+      castLevel,
+      caster: {
+        kind: "pc",
+        combatantId: status.myId,
+        memberUid: uid,
+        characterId: status.characterId,
+      },
+      concentration: spell.concentration,
+    });
+    const failed = () =>
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+    const written = import("@/features/campaigns/campaign-io")
+      .then(({ appendPersistentCombatEffect }) =>
+        appendPersistentCombatEffect(status.campaignId, effect)
+      )
+      .then(() => true)
+      .catch(() => {
+        failed();
+        return false;
+      });
+    return () => {
+      void written.then((ok) =>
+        ok
+          ? import("@/features/campaigns/campaign-io")
+              .then(({ revokePersistentCombatEffect }) =>
+                revokePersistentCombatEffect(status.campaignId, effect.id)
+              )
+              .catch(failed)
+          : undefined
+      );
+    };
   }
 
   // S6 — the picker disables the payments the character cannot afford right now.
