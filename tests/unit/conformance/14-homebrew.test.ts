@@ -41,7 +41,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Optional rules dropped from the 2024 DMG",
       source: "wargamer.com axed-optional-rules",
-      status: "M16",
+      status: "works",
     },
     async () => {
       // The table can switch on rules no 2024 book has; RAW leaves them off.
@@ -67,7 +67,7 @@ describe("conformance · 14. homebrew", () => {
   );
 
   rule(
-    { category: 14, case: "Critical fumbles", source: "SAC #3", status: "M16" },
+    { category: 14, case: "Critical fumbles", source: "SAC #3", status: "works" },
     async () => {
       // RAW: a 1 on a check or save isn't an automatic failure, a 1 on an attack is a
       // miss; a table may add a fumble.
@@ -229,7 +229,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Fixing the hide rules",
       source: "enworld; dndbeyond",
-      status: "M16",
+      status: "works",
     },
     async () => {
       // The Hide/Invisible model is a table policy with RAW as its default.
@@ -242,7 +242,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Other optional rules in the 2024 books",
       source: "WIKI home",
-      status: "M16",
+      status: "works",
     },
     async () => {
       // Bastions, Circle Magic, Factions and evolving items are systems a table
