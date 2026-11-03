@@ -39,7 +39,13 @@ import type {
   CustomFeature,
   InitiativeAdvantageOverride,
 } from "@/types/character";
-import type { SrdEquipmentData, SrdClassTable, CompanionStatBlock } from "@/data/types";
+import type {
+  SrdEquipmentData,
+  SrdClassTable,
+  CompanionSpeeds,
+  CompanionStatBlock,
+} from "@/data/types";
+import { resolveScalar, SCALAR_BINDINGS, type Scalar } from "@/lib/scalar";
 import type { ProficiencyToken } from "@/types/ids";
 import type { AcBonusCondition } from "@/lib/rules";
 
@@ -2093,26 +2099,52 @@ export function resolveCompanion(
   spellAttackMod?: number,
   spell?: { castLevel?: number; ownerMaxHp?: number; spellMod?: number }
 ): ResolvedCompanion {
-  const steps = block.spellLevel
-    ? Math.max(0, (spell?.castLevel ?? block.spellLevel.base) - block.spellLevel.base)
-    : 0;
+  const baseLevel = block.spellLevel?.base;
+  const castLevel =
+    baseLevel === undefined
+      ? undefined
+      : Math.max(spell?.castLevel ?? baseLevel, baseLevel);
+  const steps =
+    castLevel === undefined || baseLevel === undefined ? 0 : castLevel - baseLevel;
+  const pb = effectiveProficiencyBonus(level, pbOverride);
+  // The block's Scalars read the slot level, the owner's level in the feature, PB
+  // and the owner's modifiers.
+  const bindings: Record<string, number> = {
+    [SCALAR_BINDINGS.castLevel]: castLevel ?? 0,
+    [SCALAR_BINDINGS.featureLevel]: level,
+    [SCALAR_BINDINGS.proficiencyBonus]: pb,
+  };
+  for (const code of ABILITY_CODES) {
+    bindings[SCALAR_BINDINGS.abilityModifier(code)] = abilityModifier(
+      abilityScores[code]
+    );
+  }
+  const at = (value: Scalar): number => resolveScalar(value, bindings)?.value ?? 0;
   const ac =
-    block.ac.base +
+    at(block.ac.base) +
     (block.ac.ability ? abilityModifier(abilityScores[block.ac.ability]) : 0) +
     (block.spellLevel?.acPer ?? 0) * steps;
   const hpMax = Math.max(
     1,
     block.hp.ownerMax
       ? (spell?.ownerMaxHp ?? 1)
-      : block.hp.base + block.hp.perLevel * level + (block.spellLevel?.hpPer ?? 0) * steps
+      : at(block.hp.base) +
+          block.hp.perLevel * level +
+          (block.spellLevel?.hpPer ?? 0) * steps
   );
-  const pb = effectiveProficiencyBonus(level, pbOverride);
   const pbToChecks = block.pbToChecks ? pb : null;
 
-  // Multi-mode speeds → also derive a `speed` summary string from walk.
-  const speeds = block.speeds ?? {};
-  const speed =
-    block.speed ?? (block.speeds?.walk != null ? `${block.speeds.walk} ft` : undefined);
+  // Multi-mode speeds (a mode worth 0 at this slot level is absent) → also derive
+  // a `speed` summary string from walk.
+  const speeds: Partial<Record<keyof CompanionSpeeds, number>> = {};
+  for (const [mode, value] of Object.entries(block.speeds ?? {}) as [
+    keyof CompanionSpeeds,
+    Scalar,
+  ][]) {
+    const feet = at(value);
+    if (feet > 0) speeds[mode] = feet;
+  }
+  const speed = block.speed ?? (speeds.walk != null ? `${speeds.walk} ft` : undefined);
 
   // Ability scores → modifier + (Primal-Bond) save.
   const abilities: Partial<Record<AbilityCode, ResolvedCompanionAbility>> = {};
