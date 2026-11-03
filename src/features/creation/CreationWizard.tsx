@@ -16,6 +16,7 @@
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
  */
 
+import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useBlocker } from "react-router";
@@ -809,7 +810,16 @@ export function CreationWizard() {
                   selectedBgData?.feat
                 )
               ),
-              { level }
+              {
+                level,
+                maxSlotLevel: highestSpellSlotLevel([
+                  {
+                    classId: selectedClass,
+                    level,
+                    ...(selectedSubclass ? { subclassId: selectedSubclass } : {}),
+                  },
+                ]),
+              }
             )
           );
           // Origin-feat cantrip/spell picks are applied below via the unified
