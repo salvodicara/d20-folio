@@ -6,7 +6,7 @@
  * Concentration that sustains the form stays the store's orchestration.
  */
 import type { BeastStatBlock } from "@/data/types";
-import { revertBuildFromPrior, selfFormRule, type PolymorphPrior } from "@/lib/polymorph";
+import { revertBuildFromPrior, selfFormRule } from "@/lib/polymorph";
 import type { CharacterDoc } from "@/types/character";
 import { commitWorldVitals, drainedTemporary, vitalsWithTemporary } from "./world-commit";
 
@@ -39,12 +39,8 @@ function withTemp(doc: CharacterDoc, temp: number): CharacterDoc["session"] {
 export function assumeBeastForm(
   doc: CharacterDoc,
   beast: BeastStatBlock,
-  spellId: string,
-  /** Unused since forms stopped stamping (M2): accepted until the pack's own tests
-   *  drop the argument, then removed. */
-  legacyPrior?: PolymorphPrior
+  spellId: string
 ): { doc: CharacterDoc; tempHp: number; reshift: boolean } {
-  void legacyPrior;
   const rule = selfFormRule(spellId);
   // A stamped form: give the build back first, then read the new form as a layer.
   const base = doc.session.polymorphForm ? (dropBeastForm(doc) ?? doc) : doc;
