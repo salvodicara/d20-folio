@@ -40,6 +40,10 @@ export interface DamageTrayPlan {
   effect: TrayEffect | null;
   /** The one damage type, when the action deals exactly one (for defenses). */
   damageType?: DamageType;
+  /** Every damage type, when the action deals more than one (a fire + radiant smite):
+   *  the tray can then take one total per type, each meeting its own defense
+   *  ({@link rowAmountByType}). */
+  damageTypes?: DamageType[];
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
@@ -169,6 +173,7 @@ export function damageTrayPlan(
     effect,
     ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
+    ...(types.size > 1 ? { damageTypes: [...types] } : {}),
     ...(hasSave && (saveGovernsDamage || condition)
       ? {
           save: {
@@ -273,6 +278,9 @@ export interface TrayRow {
   onRoll20Defense?: Partial<Record<DamageType, TargetDefense>>;
   /** What the spell does to this target from its own Hit Points, when it hangs on them. */
   outcome?: TrayOutcome;
+  /** The target's own defense against each part's type, when the hit has several
+   *  ({@link DamageTrayPlan.damageTypes}). Counted while the defense chip is on. */
+  partDefense?: Partial<Record<DamageType, TargetDefense>>;
 }
 
 /** Whether an on-a-20 rider reaches a target of this type. An unknown type meets
@@ -431,10 +439,18 @@ export function initialTrayRow(
 ): TrayRow {
   const defense =
     plan.effect === "damage" ? targetDefense(defenses, plan.damageType) : null;
+  const partDefense: Partial<Record<DamageType, TargetDefense>> = {};
+  if (plan.effect === "damage") {
+    for (const type of plan.damageTypes ?? []) {
+      const own = targetDefense(defenses, type);
+      if (own) partDefense[type] = own;
+    }
+  }
+  const hasPartDefense = Object.keys(partDefense).length > 0;
   const facts = {
     saved: false,
     defense,
-    defenseOn: defense !== null,
+    defenseOn: defense !== null || hasPartDefense,
     ...(plan.attack ? { attack: "hit" as const } : {}),
   };
   const onRoll20Defense: Partial<Record<DamageType, TargetDefense>> = {};
@@ -448,6 +464,7 @@ export function initialTrayRow(
     ...facts,
     ...(creatureType ? { creatureType } : {}),
     ...(Object.keys(onRoll20Defense).length > 0 ? { onRoll20Defense } : {}),
+    ...(hasPartDefense ? { partDefense } : {}),
     ...trayOutcome(plan, hp),
     multiplier: factsMultiplier(facts, plan),
     conditions:
@@ -507,6 +524,28 @@ export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): nu
   );
 }
 
+/**
+ * What this row applies from one total per damage type (a hit of several types):
+ * each part takes the row's multiplier (a save, a miss), then its own type's
+ * defense while the chip is on, every halving rounded down. Parts not entered count
+ * as nothing.
+ */
+export function rowAmountByType(
+  totals: Partial<Record<DamageType, number>>,
+  row: TrayRow,
+  plan: DamageTrayPlan
+): number {
+  if (plan.effect !== "damage") return 0;
+  let sum = 0;
+  for (const [type, total] of Object.entries(totals) as Array<[DamageType, number]>) {
+    const amount = Math.max(0, Math.floor(total));
+    const afterRow = applyMultiplier(amount, row.multiplier);
+    const own = row.defenseOn ? row.partDefense?.[type] : undefined;
+    sum += own ? applyMultiplier(afterRow, defenseMultiplier(own)) : afterRow;
+  }
+  return sum;
+}
+
 /** The conditions this row lands: none once the target saved or the attack missed. */
 export function rowConditions(row: TrayRow): string[] {
   return row.saved || row.attack === "miss" ? [] : row.conditions;
@@ -564,7 +603,7 @@ export function toggleSaved(row: TrayRow, plan: DamageTrayPlan): TrayRow {
 
 /** Toggle the defense chip: on, it counts in the multiplier; off, it does not. */
 export function toggleDefense(row: TrayRow, plan: DamageTrayPlan): TrayRow {
-  if (!row.defense) return row;
+  if (!row.defense && !row.partDefense) return row;
   const next = { ...row, defenseOn: !row.defenseOn };
   return { ...next, multiplier: factsMultiplier(next, plan) };
 }
