@@ -1,6 +1,7 @@
 /** Conformance, category 14: homebrew and table rules (corpus.md § 14). */
 import { describe, expect } from "vitest";
 import { clampExhaustion } from "@/lib/compute";
+import { effectiveTableRules } from "@/lib/table-rules";
 import { diedInPlay } from "@/lib/character-status";
 import { evaluateGrants } from "@/lib/grants";
 import { homebrewSpellData } from "@/lib/homebrew-spells";
@@ -19,11 +20,11 @@ import type { CustomSpell } from "@/types/character";
 import { customInstanceId } from "../__helpers__/custom-items";
 import { rule } from "./rule";
 
-/** The campaign's table rules (B-F11), RAW by default; the module doesn't exist yet. */
+/** The campaign's table rules (B-F11): RAW by default. */
 async function defaultTableRules(): Promise<Record<string, unknown>> {
   const id = "@/lib/table-rules";
   const mod = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-  return mod.DEFAULT_TABLE_RULES as Record<string, unknown>;
+  return mod.RAW_TABLE_RULES as Record<string, unknown>;
 }
 
 /** Call a pure function with the table rules it should take as a last argument. */
@@ -81,15 +82,14 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Potions: house rule reversed",
       source: "enworld; rpgbot",
-      status: "M16",
+      status: "works",
     },
     () => {
       const potion = { isPotion: true, isConsumable: true };
       expect(consumableActionSlot(potion)).toBe("bonus");
       // A table that makes drinking a potion an action.
-      expect(
-        withRules(consumableActionSlot, potion, { potions: { self: "action" } })
-      ).toBe("action");
+      const rules = effectiveTableRules({ tableRules: { potions: { drink: "action" } } });
+      expect(consumableActionSlot(potion, rules)).toBe("action");
     }
   );
 
@@ -98,13 +98,16 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Gritty rests and long-term timers",
       source: "GLOSS; enworld",
-      status: "M16",
+      status: "works",
     },
     () => {
       const eightHours = { kind: "timed", minutes: 480 } as const;
       expect(undatedLifetime(eightHours)).toEqual({ kind: "rest", rest: "long" });
       // Gritty realism: a Short Rest is a night, so it outlasts an 8-hour effect.
-      expect(withRules(undatedLifetime, eightHours, { rest: "gritty" })).toEqual({
+      const gritty = effectiveTableRules({
+        tableRules: { rest: { shortMinutes: 8 * 60, longMinutes: 7 * 24 * 60 } },
+      });
+      expect(undatedLifetime(eightHours, gritty)).toEqual({
         kind: "rest",
         rest: "short",
       });
@@ -116,12 +119,15 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Tracking exhaustion your own way",
       source: "fvtt-dnd5e-custom-counters",
-      status: "M16",
+      status: "works",
     },
     () => {
       expect(clampExhaustion(8)).toBe(6);
       // A 10-level track keeps level 8.
-      expect(withRules(clampExhaustion, 8, { exhaustion: { max: 10 } })).toBe(8);
+      const tenLevels = effectiveTableRules({
+        tableRules: { exhaustion: { maxLevel: 10 } },
+      });
+      expect(clampExhaustion(8, tenLevels)).toBe(8);
     }
   );
 
@@ -210,7 +216,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Familiars that can attack",
       source: "FVTT#4009",
-      status: "M16",
+      status: "works",
     },
     async () => {
       // RAW a familiar can't attack; the table can allow it.

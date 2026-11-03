@@ -15,6 +15,7 @@
  * below remained in use.
  */
 
+import { RAW_TABLE_RULES, type TableRules } from "@/lib/table-rules";
 import type { ActionType } from "@/data/types";
 import type { SrdEquipmentRef, CustomEquipment } from "@/types/character";
 import { isCustomEquipment as checkCustomEquipment } from "@/types/character";
@@ -68,11 +69,14 @@ export function resolveItemConsumable(ref: SrdEquipmentRef | CustomEquipment): {
  * identically and can never disagree (golden rule 6) — the border colour is keyed
  * universally off the slot, so emitting the right slot IS following the economy.
  */
-export function consumableActionSlot(c: {
-  isPotion: boolean;
-  isConsumable: boolean;
-}): ActionType {
-  if (c.isPotion) return "bonus";
+export function consumableActionSlot(
+  c: {
+    isPotion: boolean;
+    isConsumable: boolean;
+  },
+  rules: TableRules = RAW_TABLE_RULES
+): ActionType {
+  if (c.isPotion) return rules.potions.drink;
   if (c.isConsumable) return "action";
   return "free";
 }
