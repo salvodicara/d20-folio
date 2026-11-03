@@ -7,7 +7,13 @@
 import { describe, expect, it } from "vitest";
 
 import { isActiveCombatEffect } from "@/lib/combat-effect-io";
-import { activeZones, zoneLight, zonePayload, zoneTriggers } from "@/lib/zones";
+import {
+  activeZones,
+  defaultSpared,
+  zoneLight,
+  zonePayload,
+  zoneTriggers,
+} from "@/lib/zones";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 const caster = { kind: "monster" as const, combatantId: "cleric" };
@@ -134,5 +140,23 @@ describe("light where zones overlap", () => {
       "magical-darkness"
     );
     expect(zoneLight(activeZones([zoneEffect("s", "spirit-guardians", 3)]))).toBeNull();
+  });
+});
+
+describe("whom a designate-creatures zone spares by default", () => {
+  const rows = [
+    { id: "pc-me", kind: "pc" as const },
+    { id: "pc-ally", kind: "pc" as const },
+    { id: "wolf", kind: "monster" as const, side: "ally" as const },
+    { id: "goblin", kind: "monster" as const },
+  ];
+  it("Spirit Guardians: every ally, never the enemies", () => {
+    expect(defaultSpared({ spares: "chosen" }, rows, "pc-me")).toEqual([
+      "pc-ally",
+      "wolf",
+    ]);
+  });
+  it("Moonbeam spares no one", () => {
+    expect(defaultSpared({}, rows, "pc-me")).toEqual([]);
   });
 });

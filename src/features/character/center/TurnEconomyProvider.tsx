@@ -58,7 +58,7 @@ import {
   MAX_UNDO_DEPTH,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
-import { zoneEffectForCast } from "@/lib/zones";
+import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
@@ -1374,7 +1374,7 @@ export function TurnEconomyProvider({
         const undo = seal?.() ?? null;
         if (!readies) offerFollowUps(action, targets, loggedId);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
-        const undoZone = readies ? null : leaveZone(action, opt.level);
+        const undoZone = readies ? null : leaveZone(action, opt.level, execution.spared);
         const picksForm =
           !readies &&
           !execution.ritual &&
@@ -1404,7 +1404,11 @@ export function TurnEconomyProvider({
    * sheet is this player's PC in it; returns the undo that takes it back. Outside a
    * fight there is no encounter to hold it.
    */
-  function leaveZone(action: ResolvedAction, castLevel: number): (() => void) | null {
+  function leaveZone(
+    action: ResolvedAction,
+    castLevel: number,
+    chosenSpared?: ReadonlyArray<string>
+  ): (() => void) | null {
     const spell = action.spellId ? getSpellById(action.spellId) : undefined;
     const status = useCombatStatusStore.getState().status;
     const uid = useAuthStore.getState().user?.uid;
@@ -1423,6 +1427,8 @@ export function TurnEconomyProvider({
         characterId: status.characterId,
       },
       concentration: spell.concentration,
+      // Whom it spares: the caster's pick, else every ally (never none).
+      spared: chosenSpared ?? defaultSpared(spell.zone, status.view.rows, status.myId),
     });
     const failed = () =>
       showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
@@ -2556,16 +2562,19 @@ export function TurnEconomyProvider({
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
     const base = executionFor(action, intent?.ritual === true, inEncounter());
     if (!base) return;
-    // The weapon the cast names rides the execution down to the state it lights.
-    const execution = intent?.weapon
-      ? {
-          ...base,
-          weaponBinding: {
-            weapon: intent.weapon,
-            ...(intent.damageType ? { damageType: intent.damageType } : {}),
-          },
-        }
-      : base;
+    // The weapon the cast names, and whom its area spares, ride the execution down.
+    const execution = {
+      ...base,
+      ...(intent?.weapon
+        ? {
+            weaponBinding: {
+              weapon: intent.weapon,
+              ...(intent.damageType ? { damageType: intent.damageType } : {}),
+            },
+          }
+        : {}),
+      ...(intent?.spared ? { spared: intent.spared } : {}),
+    };
     const executable = execution.ritual ? asRitualAction(action) : action;
     prepareResolution(
       executable,

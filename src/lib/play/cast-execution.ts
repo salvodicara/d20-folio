@@ -15,6 +15,8 @@ export interface ActionExecution {
   /** The weapon a weapon-binding cast names (Magic Weapon, Shillelagh), and the
    *  damage type picked when the spell offers one. */
   weaponBinding?: Omit<WeaponBindingCast, "spell">;
+  /** The creatures a "designate creatures" zone spares, as the caster chose. */
+  spared?: ReadonlyArray<string>;
 }
 
 /** An ordinary turn action: it claims the turn's economy and is undone with the turn. */
