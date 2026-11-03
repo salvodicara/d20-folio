@@ -159,7 +159,7 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
       - name: Design rules
-        run: pnpm exec playwright test tests/e2e/ui- --project=chromium
+        run: pnpm exec playwright test tests/e2e/ui- --project=chromium --project=new-ui
 
   # firestore.rules and storage.rules against the real emulators (`pnpm test:rules`,
   # vitest.rules.config.ts): the access matrix, the migration kit's apply path and the
