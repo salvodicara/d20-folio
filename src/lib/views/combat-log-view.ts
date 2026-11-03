@@ -22,6 +22,7 @@ import { resolveLogStyle, type LogStyle } from "@/lib/action-log-style";
 import { SOURCE_LOCALE, type Locale } from "@/lib/locale";
 import { riderEffectClause } from "@/lib/views/effect-rider-view";
 import type { PlayEvent } from "@/lib/session-log";
+import { coinsText } from "@/lib/play/purchase";
 
 /**
  * The minimal `t` shape this presenter needs — the i18next translator. Kept as a
@@ -141,6 +142,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       );
     case "inspiration-change":
       return resolveLogStyle("tracker-use");
+    case "item-trade":
+      return resolveLogStyle("generic");
     case "effect-given":
       return resolveLogStyle(
         event.effect === "damage"
@@ -407,6 +410,11 @@ export function localizeCombatEvent(
         t(event.gained ? "combatLog.inspirationGained" : "combatLog.inspirationSpent"),
         event.source
       );
+    case "item-trade":
+      return t(event.trade === "buy" ? "combatLog.itemBought" : "combatLog.itemSold", {
+        name: resolveActionRef(event.item),
+        price: coinsText(event.cp, t),
+      });
     case "effect-given":
       return event.effect === "condition"
         ? t("combatLog.givenCondition", {

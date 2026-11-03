@@ -25,6 +25,8 @@
     "fadingPenaltyEnd": "{{name}}: d20 Test penalty ended",
     "trackerRegain": "{{name}} regained {{amount}}",
     "slotRegain": "Regained a level {{level}} spell slot",
+    "itemBought": "Bought {{name}} for {{price}}",
+    "itemSold": "Sold {{name}} for {{price}}",
     "givenHeal": "Healed {{target}} {{amount}} HP",
     "givenDamage": "{{target}} took {{amount}} damage",
     "givenAttackDamage": "{{target}}: {{outcome}}, {{amount}} damage",
