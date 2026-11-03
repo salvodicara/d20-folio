@@ -82,6 +82,7 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Putrid Spirit paralysis** — The summoned spirit can paralyse an already-poisoned creature on a hit with no save. Summon riders depend on the target's current conditions. [KIBBLES #16]
 - **Summon placement and range** — Range limits where a summon appears, and Foundry's summon activity doesn't enforce a maximum range. [FVTT#6032]
 - **One familiar at a time** — Casting the spell again changes the existing familiar's form instead of adding a second one. [WIKI spell:find-familiar]
+- **Feats that change your familiar** — Some feats make your familiar tougher or give it a power: more Hit Points per level, a damage Resistance, its own Reaction to protect an ally. The feat modifies the summon instance, not the character. [WIKI feat:familiar-friend; WIKI feat:warlike-familiar]
 
 ## 5. Multiclass and spellcasting
 
@@ -102,6 +103,7 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Wild Magic in multiclass casters** — Only spells prepared through Sorcerer features trigger Wild Magic Surges, so the engine must track which class a spell was cast through. [SAC #45]
 - **Nature Magician converts uses into slots** — At level 20, unused Wild Shape uses become one spell slot (2 levels per use), once per Long Rest. One resource becomes another. [WIKI druid:main]
 - **Spell attacks aren't weapon attacks** — A spell attack can't replace an attack in the Attack action or Extra Attack, or be an Opportunity Attack. True Strike can't be used with Extra Attack, but its attack can trigger Sneak Attack. [SAC #98; SAC #99; SAC #144]
+- **Always-prepared spells gated by slot level** — The school "Adept" feats add a spell of each level once you can cast spells of that level, so a half-caster gets them later than a full caster. The gate is the highest spell slot you have, not your character level. [WIKI feat:evocation-adept]
 
 ## 6. Reactions and timing
 
@@ -123,6 +125,7 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Legendary actions** — They happen right after another creature's turn. Each costs one use (no more multi-cost actions), uses return at the start of the monster's turn, and the monster gets an extra use in its lair. (2024 change) [https://www.dndbeyond.com/posts/1890-preview-the-new-stat-block-design-in-the-2024]
 - **Alert initiative swap** — Right after initiative is rolled, you can swap results with a willing ally, unless either of you is Incapacitated. The initiative order changes after it has been computed. [WIKI feat:alert http://dnd2024.wikidot.com/feat:alert]
 - **Ready and Charger** — Charger's attack needs movement and an attack on the same turn, so a readied action can't use it. [SAC #24]
+- **Reacting to another creature's failed D20 Test** — Some reaction spells trigger when a creature you can see within 60 ft fails a D20 Test, and then change the roll or its result. The trigger is another creature's roll, not an attack on you. [WIKI spell:reweave-fate; WIKI spell:moment-of-prescience]
 
 ## 7. Effects that modify other effects
 
@@ -144,6 +147,8 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Stunning Strike on a success** — Even on a successful save the target's speed is halved and the next attack against it has advantage. A successful save still has an effect. (2024 change) [WIKI monk:main; KIBBLES #10]
 - **Shillelagh and other die swaps** — Shillelagh changes your weapon's die, but not the d4 bonus attack from Polearm Master. That attack still adds your ability modifier. [SAC #140; SAC #86]
 - **Bless and Bane** — They add or subtract a d4 on attack rolls and saves. They stack with other differently named dice (see section 1). [SAC #48]
+- **An effect that lowers the target's damage rolls** — A spell can make an enemy subtract a die from every damage roll it makes while the effect lasts. The penalty lives on the enemy's side of the roll. [WIKI spell:grave-ground]
+- **Spending Hit Point Dice to boost a spell** — Some feats and spells let you spend your own (or an ally's) Hit Point Dice for extra damage or healing when the spell lands. One resource pays into another effect's numbers. [WIKI feat:necromancy-adept; WIKI spell:wither-and-bloom]
 
 ## 8. Resource economy and rests
 
@@ -165,6 +170,8 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Exhaustion recovery** — A Long Rest removes one level, and Greater Restoration removes one. The Ranger's Tireless removes one on a Short Rest. [GLOSS; SAC #10; https://arcaneeye.com/mechanic-overview/exhaustion-5e/]
 - **Temp HP expire on a Long Rest** — Unless the source gives a duration, temp HP end at a Long Rest. This ties True Polymorph and Wild Shape leftovers to rest processing. [GLOSS]
 - **Heroic Inspiration** — You hold at most one. Humans gain it on each Long Rest, and the Champion's Heroic Warrior grants it at the start of each turn if you have none. (2024 change) [https://rpgbot.net/dnd-2024-5e-transition-guide-and-change-log-everything-thats-different-in-the-new-players-handbook/]
+- **A spell that recovers spell slots** — A 5th-level wizard spell recovers expended slots whose total level grows with the slot used to cast it. A spell can be a recovery feature. [WIKI spell list]
+- **Casting a spell of a school refills a use** — A school feat regains its use whenever you cast a spell of that school with a spell slot. The trigger is your own cast, filtered by school. [WIKI feat:divination-adept]
 
 ## 9. Conditions and exhaustion
 
@@ -186,6 +193,8 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Rogue Knock Out** — Unconscious for 1 minute or until it takes damage, with a save at the end of each of its turns. The condition has two ending conditions. [WIKI rogue:main]
 - **Abjure Foes** — Frightened, and on its turns limited to one of movement, an action or a Bonus Action. It ends on damage. A rider limits the action economy. [WIKI paladin:main]
 - **Sanctuary breaking** — It ends only if the warded creature attacks, casts a spell or deals damage. Grapples and shoves don't end it. [SAC #139]
+- **Exhaustion capped by its source** — A spell adds Exhaustion levels on failed saves but can't push a creature past level 4. The cap belongs to the source, not to Exhaustion. [WIKI spell:waves-of-exhaustion]
+- **A failed repeat save adds Exhaustion** — Each failed save to end a spell's effect also adds an Exhaustion level, so the effect gets worse the longer it lasts. [WIKI spell:vision-of-elapsing-eons]
 
 ## 10. Death and revival
 
@@ -301,6 +310,8 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Cleave and Nick** — Cleave (once per turn) hits a second creature next to the first, without your ability modifier to damage. Nick folds the Light-weapon extra attack into the Attack action, once per turn. These are multi-target weapon riders. [KIBBLES #1; KIBBLES #2; SAC #39; SAC #81]
 - **Topple and Polearm Master saves** — Topple forces a save on every hit, which adds up to many saves per turn with bonus-action attacks. [KIBBLES #11]
 - **Objects in the area** — Objects use AC and HP tables, are immune to poison and psychic damage, may have a damage threshold, and fail every save. [GLOSS]
+- **One area, a different effect per creature type** — An area spell damages the living but gives Undead Temporary Hit Points instead. The outcome branches on each target's creature type. [WIKI spell:negative-energy-flood]
+- **The caster picks the effect per target** — An area spell lets the caster choose, for each creature, between harming it and helping it (more Speed). The choice is per target, not per cast. [WIKI spell:distorted-distance]
 
 ## 16. DM adjudication
 
