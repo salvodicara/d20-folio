@@ -2285,6 +2285,8 @@ export interface CompanionStatBlock {
   damageImmunities?: ReadonlyArray<DamageType>;
   /** Damage types the companion resists (Construct Spirit → Poison), beside its immunities. */
   damageResistances?: ReadonlyArray<DamageType>;
+  /** Damage types the companion is vulnerable to (a plant spirit → Fire). */
+  damageVulnerabilities?: ReadonlyArray<DamageType>;
   /**
    * Conditions the companion is immune to (Steel Defender → Charmed,
    * Exhaustion, Poisoned). Set-union with no character context.
