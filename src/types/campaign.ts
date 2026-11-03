@@ -489,23 +489,6 @@ export interface CampaignDoc {
   treasury: CampaignTreasury;
   treasuryLog: TreasuryLogEntry[];
   /**
-   * LEGACY (transitional — rule 10). The pre-soft-reveal home of shared notes: an
-   * inline array on the campaign doc. Shared notes now live as per-note documents in
-   * the `/campaigns/{campId}/notes` (revealed) + `/campaigns/{campId}/dmNotes`
-   * (hidden) subcollections (see {@link SharedNote}), so `firestore.rules` can
-   * READ-gate each note's `dmOnly` — a flag on an array element of THIS doc could
-   * never be read-gated (a rule grants a whole document, never one array element).
-   *
-   * This optional field survives ONLY as a transitional READ-FALLBACK so the live
-   * users' EXISTING notes (still in the array at deploy, before the migration runs)
-   * surface immediately with zero migration: {@link mergeSharedNotes} unions it with
-   * the subcollection notes (the subcollection copy wins on an id collision). New
-   * notes are NEVER written here. Removed once `scripts/migrate-shared-notes.ts` has
-   * copied every array note into the `notes` subcollection and `deleteField`-ed this
-   * array. Read live notes via `subscribeToCampaignNotes`.
-   */
-  sharedNotes?: SharedNote[];
-  /**
    * N4 — a custom campaign banner any member can upload + crop. The original is
    * stored once at quality in Storage (`campaigns/{id}/banner.jpeg`); `bannerCrop`
    * is the % rectangle (`{x,y,width,height}` of the original) the cropper produces

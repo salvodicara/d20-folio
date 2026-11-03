@@ -18,6 +18,14 @@ supplies at run time; never stored in the repo, logs or docs).
 `survey-dead-effect-fields` ran on production 2026-11-03: every field 0. The script and its test are
 gone; the engine keeps the readers, because the v0.25.0 client and main still write those fields.
 
+**Result, 2026-11-03 (production, read-only):** `backfill-campaign-created` 4/4 valid,
+`drop-playerhandle` 0, `migrate-shared-notes` 0: those three scripts, their tests and
+`mergeSharedNotes` (with `evictLegacyNote` and `CampaignDoc.sharedNotes`) are deleted.
+`backfill-attached-campaign --check`: 0 to backfill, 0 conflicts, 0 dangling, but 11/12 characters
+still carry the dead `dmReaders` / `campaignReaders` fields (nothing reads or writes them). The
+script stays: its phase 2 is the only tool that clears them, and running it is the owner's call.
+`migrate-item-resources` dry-run: 38 docs, 0 to change.
+
 If any check is not green, nothing is deleted for that script; we report the counts and the owner
 decides whether the pending migration runs (owner-gated, snapshot → dry-run → yes → apply → verify).
 

@@ -2282,38 +2282,6 @@ export async function deleteCampaignNote(
   await deleteDoc(noteRef(campaignId, noteId, hidden));
 }
 
-/**
- * Transitional (rule 10) — durably remove ONE note from the LEGACY
- * `campaign.sharedNotes` array, the pre-soft-reveal home that the read-fallback
- * still surfaces. Called when a legacy (not-yet-migrated) note is DELETED or HIDDEN:
- * both must drop the everyone-readable campaign-doc copy (an edit or pin leaves the
- * note visible, so the promoted subcollection copy simply shadows it via
- * {@link mergeSharedNotes} — no eviction needed). A transaction reads the RAW array
- * (Timestamps preserved, no Date round-trip) and writes back the filtered array, or
- * `deleteField()` when it empties. No-op if the id isn't present or the array is
- * already gone (post-migration). The member-update rule lets any member write
- * `sharedNotes` (a shared artifact), so a player deleting a revealed legacy note is
- * permitted; hiding is DM-only (the unconstrained `isDm()` branch). Deleted together
- * with `scripts/migrate-shared-notes.ts`. No-op under dev bypass.
- */
-export async function evictLegacyNote(campaignId: string, noteId: string): Promise<void> {
-  if (import.meta.env.DEV && DEV_BYPASS) return;
-  const ref = campaignDoc(campaignId);
-  await runTransaction(db, async (txn) => {
-    const snap = await txn.get(ref);
-    // Read the RAW array (its `updatedAt`s are still wire Timestamps) and write the
-    // filtered array straight back, so no element is round-tripped through a Date.
-    const raw = (snap.data() as Partial<CampaignDoc> | undefined)?.sharedNotes;
-    if (!raw || raw.length === 0) return;
-    const next = raw.filter((n) => n.id !== noteId);
-    if (next.length === raw.length) return; // not present → nothing to write
-    txn.update(ref, {
-      sharedNotes: next.length > 0 ? next : deleteField(),
-      updatedAt: serverTimestamp(),
-    });
-  });
-}
-
 // ─── Chronicle subcollection (single doc, real-time via the §7.1 abstraction) ──
 //
 // The shared campaign log lives at `/campaigns/{campId}/chronicle/main` — a single

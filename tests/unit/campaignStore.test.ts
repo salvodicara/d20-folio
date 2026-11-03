@@ -8,7 +8,6 @@ import {
   useCampaignStore,
   campaignMemberCount,
   campaignPartySize,
-  mergeSharedNotes,
   reverseTreasuryEntry,
   treasuryTotalCp,
   treasuryTotalGp,
@@ -198,19 +197,6 @@ describe("campaignStore — state + mutations", () => {
     expect(useCampaignStore.getState().notes).toHaveLength(0);
   });
 
-  it("removeNote also drops a LEGACY note from the campaign.sharedNotes read-fallback array", () => {
-    // A not-yet-migrated note lives ONLY in the legacy array (not the slice); deleting
-    // it must remove it there too, or the read-fallback union would resurrect it.
-    useCampaignStore
-      .getState()
-      .setCampaign(
-        campaign({ sharedNotes: [note("leg1", "Legacy"), note("leg2", "Keep")] })
-      );
-    useCampaignStore.getState().removeNote("leg1");
-    const after = useCampaignStore.getState().campaign;
-    expect(after?.sharedNotes?.map((n) => n.id)).toEqual(["leg2"]);
-  });
-
   it("setEncounter stores a NEW campaign reference and clears with null", () => {
     useCampaignStore.getState().setCampaign(campaign());
     const before = useCampaignStore.getState().campaign;
@@ -245,35 +231,6 @@ describe("campaignStore — state + mutations", () => {
       status: "active",
     });
     expect(useCampaignStore.getState().campaign).toBeNull();
-  });
-});
-
-describe("campaignStore — mergeSharedNotes (legacy read-fallback)", () => {
-  it("surfaces legacy array notes (visible) when the subscription is empty — zero migration", () => {
-    const legacy = [note("leg1", "Old quest"), { ...note("leg2", "Held"), dmOnly: true }];
-    const merged = mergeSharedNotes([], legacy);
-    expect(merged.map((n) => n.id)).toEqual(["leg1", "leg2"]);
-    // Every legacy note is forced VISIBLE — the hide flag is net-new, so a stray
-    // persisted dmOnly:true must never hide a pre-migration note.
-    expect(merged.every((n) => n.dmOnly === false)).toBe(true);
-  });
-
-  it("dedupes a note present in BOTH the subcollection and the legacy array — subcollection WINS", () => {
-    const sub = [{ ...note("dup", "From subcollection"), pinned: true }];
-    const legacy = [note("dup", "Stale legacy twin"), note("legOnly", "Only legacy")];
-    const merged = mergeSharedNotes(sub, legacy);
-    // The id appears once; the subcollection copy (pinned, fresh title) wins; the
-    // legacy-only note is still unioned in.
-    expect(merged.map((n) => n.id)).toEqual(["dup", "legOnly"]);
-    const dup = merged.find((n) => n.id === "dup");
-    expect(dup?.title).toBe("From subcollection");
-    expect(dup?.pinned).toBe(true);
-  });
-
-  it("returns the subscription notes untouched when there is no legacy array (post-migration)", () => {
-    const sub = [note("n1", "A")];
-    expect(mergeSharedNotes(sub, undefined)).toBe(sub);
-    expect(mergeSharedNotes(sub, [])).toBe(sub);
   });
 });
 
