@@ -12,6 +12,7 @@ import { useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
+import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
@@ -23,9 +24,11 @@ import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { asLocale } from "@/lib/locale";
+import { useSheetReadonly } from "@/hooks/useSheetReadonly";
+import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
+import type { CharacterDoc } from "@/types/character";
 import { Chip, HpRing, StatBadge, Toast } from "@/ui";
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
@@ -51,7 +54,7 @@ export function PlayScreen() {
   }
   return (
     <main id="main" className="f-page">
-      <PlayHeader view={playHeaderView(doc, locale)} locale={locale} />
+      <PlayHeader doc={doc} view={playHeaderView(doc, locale)} locale={locale} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
       <ItemResourceCommandProvider renderPrompts={false}>
@@ -69,12 +72,21 @@ export function PlayScreen() {
   );
 }
 
-function PlayHeader({ view, locale }: { view: PlayHeaderView; locale: string }) {
+function PlayHeader({
+  doc,
+  view,
+  locale,
+}: {
+  doc: CharacterDoc;
+  view: PlayHeaderView;
+  locale: Locale;
+}) {
   const { t } = useTranslation();
+  const readonly = useSheetReadonly();
+  const [hpOpen, setHpOpen] = useState(false);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
   const tiny = useMediaQuery("(max-width: 400px)");
-  const share = view.hp.max > 0 ? view.hp.current / view.hp.max : 0;
   return (
     <section className="f-hero f-char" data-identity="" aria-label={view.name}>
       <div className="f-char-medal">
@@ -134,20 +146,46 @@ function PlayHeader({ view, locale }: { view: PlayHeaderView; locale: string }) 
           />
         )}
       </div>
-      <div className="f-char-hp">
-        <div className="f-char-hp-head">
-          <span className="f-lbl">{t("play.hpTitle")}</span>
-          {view.hp.temp > 0 && (
-            <span className="f-char-temp">{t("play.temp", { count: view.hp.temp })}</span>
-          )}
+      {/* The Hit Points open «Danni e cure» (a read-only sheet only shows them). */}
+      {readonly ? (
+        <div className="f-char-hp">
+          <HpReadout view={view} />
         </div>
-        <div className="f-char-hp-v">
-          <b data-hp={share > 0.5 ? "ok" : share > 0.25 ? "low" : "bad"}>
-            {view.hp.current}
-          </b>
-          <span>{"/ " + String(view.hp.max)}</span>
-        </div>
-      </div>
+      ) : (
+        <button
+          type="button"
+          className="f-char-hp"
+          aria-haspopup="dialog"
+          aria-label={`${t("play.hp.title")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
+          onClick={() => setHpOpen(true)}
+        >
+          <HpReadout view={view} />
+        </button>
+      )}
+      {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
     </section>
+  );
+}
+
+/** The header's Hit Points: label, temporary HP, current / max (phrasing only, so it
+ *  can sit inside the button that opens «Danni e cure»). */
+function HpReadout({ view }: { view: PlayHeaderView }) {
+  const { t } = useTranslation();
+  const share = view.hp.max > 0 ? view.hp.current / view.hp.max : 0;
+  return (
+    <>
+      <span className="f-char-hp-head">
+        <span className="f-lbl">{t("play.hpTitle")}</span>
+        {view.hp.temp > 0 && (
+          <span className="f-char-temp">{t("play.temp", { count: view.hp.temp })}</span>
+        )}
+      </span>
+      <span className="f-char-hp-v">
+        <b data-hp={share > 0.5 ? "ok" : share > 0.25 ? "low" : "bad"}>
+          {view.hp.current}
+        </b>
+        <span>{"/ " + String(view.hp.max)}</span>
+      </span>
+    </>
   );
 }

@@ -37,6 +37,23 @@
       "castTitle": "Lancia {{name}}"
     },
     "react": "Reagisci",
-    "trayTotalHint": "Quanto hai tirato al tavolo, per esempio 8+6+3"
+    "trayTotalHint": "Quanto hai tirato al tavolo, per esempio 8+6+3",
+    "hp": {
+      "title": "Danni e cure",
+      "amount": "Quanti punti ferita?",
+      "otherType": "Altro tipo",
+      "temp": "Punti ferita temporanei",
+      "tempHelp": "Non si sommano: tieni il più alto",
+      "setTemp": "Imposta",
+      "resisted": "Con la resistenza ne subisci {{net}}.",
+      "immune": "Sei immune: nessun danno.",
+      "doubled": "Sei vulnerabile: ne subisci {{net}}.",
+      "reduced": "Ridotti a {{net}}.",
+      "absorbed": "Una protezione ne assorbe {{amount}}.",
+      "fromTemp": "Tolgono prima {{temp}} punti ferita temporanei, poi passi da {{from}} a {{to}}.",
+      "tempOnly": "I punti ferita temporanei li assorbono tutti: i tuoi restano {{from}}.",
+      "plain": "Passi da {{from}} a {{to}} punti ferita.",
+      "concentration": "Tiri per la concentrazione su {{spell}} (CD {{dc}})."
+    }
   }
 }

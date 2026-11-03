@@ -574,6 +574,39 @@
   text-wrap: balance;
 }
 
+/* ---------- Danni e cure: the big amount, the two verbs, temporary HP ---------- */
+.fui .f-in.f-in-big {
+  font: 600 var(--fs-title-bar) var(--font-title);
+}
+.fui .f-ask-row > .f-in.f-in-short {
+  flex: 0 0 88px;
+  width: 88px;
+  text-align: center;
+}
+.fui .f-ask-row > .f-help {
+  flex: 1 1 160px;
+}
+.fui .f-hp-acts {
+  display: flex;
+  gap: 8px;
+}
+.fui .f-hp-acts > .f-btn {
+  flex: 1;
+}
+/* the header's Hit Points open «Danni e cure» */
+.fui button.f-char-hp {
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.fui button.f-char-hp:hover .f-char-hp-v > b {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
 /* ---------- the damage tray: one block per target ---------- */
 .fui .f-tray-types {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));

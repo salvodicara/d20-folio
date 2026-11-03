@@ -37,6 +37,23 @@
       "castTitle": "Cast {{name}}"
     },
     "react": "React",
-    "trayTotalHint": "What you rolled at the table, for example 8+6+3"
+    "trayTotalHint": "What you rolled at the table, for example 8+6+3",
+    "hp": {
+      "title": "Damage and healing",
+      "amount": "How many hit points?",
+      "otherType": "Other type",
+      "temp": "Temporary hit points",
+      "tempHelp": "They don't add up: keep the higher",
+      "setTemp": "Set",
+      "resisted": "With your resistance you take {{net}}.",
+      "immune": "You are immune: no damage.",
+      "doubled": "You are vulnerable: you take {{net}}.",
+      "reduced": "Reduced to {{net}}.",
+      "absorbed": "A ward absorbs {{amount}} of it.",
+      "fromTemp": "It takes {{temp}} temporary hit points first, then you go from {{from}} to {{to}}.",
+      "tempOnly": "Your temporary hit points take it all: you stay at {{from}}.",
+      "plain": "You go from {{from}} to {{to}} hit points.",
+      "concentration": "Make a concentration save for {{spell}} (DC {{dc}})."
+    }
   }
 }
