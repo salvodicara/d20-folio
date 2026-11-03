@@ -32,12 +32,22 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import type { DamageType } from "@/types/damage";
 import { makeCharacterDoc } from "../_helpers";
 import { rule } from "./rule";
+import { activeZones, zonePayload, zoneTriggers } from "@/lib/zones";
 
-/** The zone runtime (edge-case M9), which lands with the engine's family. Until
- *  then the data alone doesn't make these cases work. */
-async function zoneRuntime(): Promise<Record<string, unknown>> {
-  const id = "@/lib/zones";
-  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+/** A zone the caster left on the field, as the encounter stores it (edge-case M9). */
+function zoneOf(spellId: string, castLevel: number, spared: string[] = []) {
+  const [zone] = activeZones([
+    {
+      id: `zone-${spellId}`,
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "caster" },
+      source: { kind: "spell", id: spellId, actionId: `spell-${spellId}`, castLevel },
+      payload: zonePayload(spellId, spared),
+      duration: { kind: "encounter" },
+    },
+  ]);
+  if (!zone) throw new Error(`no zone for ${spellId}`);
+  return zone;
 }
 
 const ME = "pc-me";
@@ -319,14 +329,24 @@ describe("conformance · 15. multi-target and area damage", () => {
       category: 15,
       case: "Spirit Guardians picks who it ignores",
       source: "enworld spirit-guardians",
-      status: "M9",
+      status: "works",
     },
-    async () => {
-      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
-      // A zone with spared creatures and a once-per-turn ledger per creature.
-      const guardians = spells.find((s) => s.id === "spirit-guardians");
-      expect(guardians?.recurrence).toBe("on-enter-or-end-turn");
-      expect(guardians).toHaveProperty("zone");
+    () => {
+      // The caster's chosen allies are spared; an enemy is hit once per turn.
+      const guardians = zoneOf("spirit-guardians", 3, ["fighter"]);
+      const turn = { round: 1, combatantId: "goblin" };
+      expect(
+        zoneTriggers(guardians, { kind: "enter", creatureId: "fighter", turn })
+      ).toEqual({ fires: false, reason: "spared" });
+      const hit = zoneTriggers(guardians, { kind: "enter", creatureId: "goblin", turn });
+      expect(hit.fires).toBe(true);
+      expect(
+        zoneTriggers(
+          guardians,
+          { kind: "end-turn", creatureId: "goblin", turn },
+          hit.fires ? hit.ledger : {}
+        )
+      ).toEqual({ fires: false, reason: "already-this-turn" });
     }
   );
 

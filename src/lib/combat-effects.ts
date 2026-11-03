@@ -48,6 +48,15 @@ function stackingKey(effect: ActiveCombatEffect): string {
       effect.payload.conditionId,
     ].join("\u0000");
   }
+  if (effect.payload.kind === "zone") {
+    // One zone per caster and spell: casting it again replaces the area.
+    return [
+      combatantStackingKey(effect.actor),
+      effect.source.kind,
+      effect.source.id,
+      effect.payload.kind,
+    ].join("\u0000");
+  }
   return [
     combatantStackingKey(effect.target),
     effect.source.kind,
