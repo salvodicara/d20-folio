@@ -77,3 +77,42 @@ describe("playHeaderView", () => {
     expect(view.conditions).toBe(1);
   });
 });
+
+// In a form (Polymorph into a Brown Bear), the sheet becomes the beast: the header
+// says so, and its numbers are the beast's (the engine's form layer, `sheetNumbers`).
+describe("playHeaderView — in a form", () => {
+  const bear = makeCharacterDoc(
+    {
+      classId: "wizard",
+      level: 9,
+      abilityScores: { STR: 8, DEX: 14, CON: 13, INT: 18, WIS: 12, CHA: 10 },
+    },
+    {
+      concentration: concentrationValue("polymorph"),
+      activeForm: { sourceId: "polymorph", beastId: "brown-bear", tempHpBefore: 0 },
+    }
+  );
+
+  it("names the form: the spell, then the beast", () => {
+    expect(playHeaderView(bear, "en").form).toEqual({
+      source: "Polymorph",
+      beast: "Brown Bear",
+    });
+    expect(playHeaderView(bear, "it").form).toEqual({
+      source: "Metamorfosi",
+      beast: "Orso bruno",
+    });
+  });
+
+  it("shows the beast's numbers, as the sheet derives them", () => {
+    const view = playHeaderView(bear, "en");
+    const n = sheetNumbers(bear);
+    expect(view.numbers.ac).toBe(n.ac.total);
+    expect(view.abilities.find((a) => a.id === "STR")?.score).toBe(n.abilities.STR.total);
+    expect(view.abilities.find((a) => a.id === "STR")?.score).not.toBe(8);
+  });
+
+  it("no form, no band", () => {
+    expect(playHeaderView(selene, "en").form).toBeNull();
+  });
+});

@@ -417,6 +417,13 @@
   background: var(--cond-bg);
   color: var(--white);
 }
+/* in a form (Wild Shape, Polymorph): the beast arrives as temporary HP, so its colour */
+.fui .f-chip[data-kind="form"] {
+  border-color: var(--temp);
+  background: var(--buff-bg);
+  color: var(--white);
+  font-weight: 700;
+}
 .fui .f-chip[data-kind="buff"] {
   border-color: var(--buff);
   background: var(--buff-bg);
