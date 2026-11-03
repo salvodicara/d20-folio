@@ -130,9 +130,17 @@ function pickSpellInFeat(fid: string, name: string): void {
 /** Choose a feat through the wizard-F morph list: open the row (read), then
  *  commit via the explicit "Choose <name>" CTA (read-then-choose). */
 function chooseFeat(name: string): void {
-  const row = screen
-    .getAllByRole("button")
-    .find((b) => b.classList.contains("wiz-row") && b.textContent.includes(name));
+  const findRow = () =>
+    screen
+      .getAllByRole("button")
+      .find((b) => b.classList.contains("wiz-row") && b.textContent.includes(name));
+  // The unfiltered list shows its first rows; a player reaches the rest with
+  // "Show more", as here.
+  if (!findRow()) {
+    const more = screen.queryByRole("button", { name: "Show more" });
+    if (more) fireEvent.click(more);
+  }
+  const row = findRow();
   if (!row) throw new Error(`feat row not found: ${name}`);
   fireEvent.click(row);
   fireEvent.click(screen.getByRole("button", { name: `Choose ${name}` }));
