@@ -30,10 +30,10 @@ export function PlayTime({
   const span = (m: number) =>
     m % 60 === 0
       ? t("play.time.hours", { count: m / 60 })
-      : t("play.time.minutes", { count: m });
+      : t("equipment.armorTimeMinutes", { count: m });
   const lines = view
     ? [
-        ...view.ends.map((name) => t("play.time.ends", { name })),
+        ...view.ends.map((name) => t("play.rest.ends", { name })),
         ...(view.concentration
           ? [t("play.time.concentrationEnds", { spell: view.concentration })]
           : []),
@@ -78,7 +78,7 @@ export function PlayTime({
             </Choice>
           ))}
           <Choice tile on={step === "other"} onClick={() => setStep("other")}>
-            <b>{t("play.time.other")}</b>
+            <b>{t("report.types.other")}</b>
           </Choice>
         </div>
         {step === "other" && (
