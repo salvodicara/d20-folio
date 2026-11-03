@@ -833,7 +833,9 @@ export function TurnEconomyProvider({
     trackerAmount?: number,
     attackOf?: { n: number; total: number },
     targets: ReadonlyArray<string> = [],
-    occurrenceId?: string
+    occurrenceId?: string,
+    /** The weapon a weapon-binding cast names (Shillelagh). */
+    weaponBinding?: ActionExecution["weaponBinding"]
   ): string | null {
     action = withSelfRecipient(action, targets, selfCombatantId());
     const cs = useCharacterStore.getState();
@@ -864,8 +866,13 @@ export function TurnEconomyProvider({
     if (action.locksMovement) combat.lockMovement();
     // Concentration stores the spell's STABLE id (custom spells: `custom:` + name).
     applyActionConcentration(action, action.slotLevel ?? action.spellLevel ?? undefined);
-    // An action that ESTABLISHES a while-active state (Rage, Bladesong) lights it now.
-    activateActionState(action, action.slotLevel ?? action.spellLevel ?? undefined);
+    // An action that ESTABLISHES a while-active state (Rage, Bladesong) lights it now,
+    // binding the weapon a cantrip like Shillelagh names.
+    activateActionState(
+      action,
+      action.slotLevel ?? action.spellLevel ?? undefined,
+      weaponBinding
+    );
     // USE-APPLIES — the action's dice-free temp HP, through the one max-wins seam.
     for (const eff of action.useEffects ?? []) cs.gainTempHp(eff.amount);
     if (action.summary.trackerTopUp) {
@@ -1229,7 +1236,8 @@ export function TurnEconomyProvider({
             trackerAmount,
             undefined,
             applyResolution?.targets,
-            outcomeOccurrenceId
+            outcomeOccurrenceId,
+            execution.weaponBinding
           );
           if (
             execution.consumesTurnEconomy &&
@@ -1337,7 +1345,7 @@ export function TurnEconomyProvider({
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
         // activate with one tap and expire by themselves); a readied spell has no effect
         // until its release.
-        if (!readies) activateActionState(castAction, opt.level);
+        if (!readies) activateActionState(castAction, opt.level, execution.weaponBinding);
         // A summon that isn't held by Concentration (Find Steed) comes onto the field
         // at the level it was cast with (M6); a Concentration one shows while held.
         const summoned = action.spellId ? getSpellById(action.spellId) : undefined;
@@ -2493,8 +2501,18 @@ export function TurnEconomyProvider({
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
-    const execution = executionFor(action, intent?.ritual === true, inEncounter());
-    if (!execution) return;
+    const base = executionFor(action, intent?.ritual === true, inEncounter());
+    if (!base) return;
+    // The weapon the cast names rides the execution down to the state it lights.
+    const execution = intent?.weapon
+      ? {
+          ...base,
+          weaponBinding: {
+            weapon: intent.weapon,
+            ...(intent.damageType ? { damageType: intent.damageType } : {}),
+          },
+        }
+      : base;
     const executable = execution.ritual ? asRitualAction(action) : action;
     prepareResolution(
       executable,

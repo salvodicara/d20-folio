@@ -10,6 +10,7 @@
  * Fast-Refresh), mirroring the `use-hp-controls` / `HpBar` split.
  */
 
+import type { WeaponAddress } from "@/lib/weapon-binding";
 import { createContext, useContext } from "react";
 import type { EconomySlot } from "@/stores/combatStore";
 import type { ResolvedAction, ActiveMaintainedEffect } from "@/lib/smart-tracker";
@@ -36,6 +37,10 @@ export type PreparedCommit = (
 export interface ExecuteActionIntent {
   /** Cast this eligible spell as a ritual: no slot/source payment and no turn slot. */
   ritual?: true;
+  /** The weapon a weapon-binding cast names (Magic Weapon, Shillelagh), from
+   *  `bindingWeaponChoices`, and the damage type picked when the spell offers one. */
+  weapon?: WeaponAddress;
+  damageType?: string;
 }
 
 /** The economy commit surface shared by the center meter + the Play-tab cards. */
