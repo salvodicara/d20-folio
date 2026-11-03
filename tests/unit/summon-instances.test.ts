@@ -9,7 +9,13 @@ import { describe, expect, it } from "vitest";
 
 import { buildScenario } from "@/lib/dev-scenarios";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
-import { setCompanionHp, summonCompanion, summonFamiliar } from "@/lib/play/companions";
+import {
+  reviveCompanion,
+  setCompanionHp,
+  summonCompanion,
+  summonFamiliar,
+} from "@/lib/play/companions";
+import { concentrationValue } from "@/lib/concentration";
 import { longRestCharacter } from "@/lib/play/rests";
 import { takeDamage } from "@/lib/play/damage";
 import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
@@ -115,5 +121,47 @@ describe("a companion that dies stays, fallen", () => {
     const back = summonCompanion(down, dies.id);
     expect(back.summons?.[dies.id]).toEqual({});
     expect(back.companionHp?.[dies.id]).toBeUndefined();
+  });
+});
+
+describe("step 2: revive, a steed that ends when hurt, Antimagic", () => {
+  it("reviving a fallen companion brings it back at full HP", () => {
+    const fallen: SessionState = {
+      ...paladin().session,
+      summons: { "steel-defender": { fallen: true } },
+      companionHp: { "steel-defender": { current: 0 } },
+    };
+    const back = reviveCompanion(fallen, "steel-defender");
+    expect(back?.summons?.["steel-defender"]).toEqual({});
+    expect(back?.companionHp?.["steel-defender"]).toBeUndefined();
+    expect(reviveCompanion(paladin().session, "steel-defender")).toBeNull();
+  });
+
+  it("Phantom Steed ends as soon as it takes any damage", () => {
+    const doc = paladin();
+    const summoned = summonCompanion(doc.session, "phantom-steed", 3);
+    const hit = setCompanionHp(summoned, "phantom-steed", 12);
+    expect(hit.summons?.["phantom-steed"]).toBeUndefined();
+  });
+
+  it("a steed inside its caster's Antimagic Field winks out (suppressed, not gone)", () => {
+    const doc = buildScenario({
+      name: "Paladin",
+      raceId: "human",
+      classId: "paladin",
+      level: 15,
+      background: "acolyte",
+      abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 10, WIS: 12, CHA: 16 },
+      spells: [
+        { srdId: "find-steed", prepared: true },
+        { srdId: "antimagic-field", prepared: true },
+      ],
+    });
+    const held = withSession(doc, {
+      ...doc.session,
+      concentration: concentrationValue("antimagic-field"),
+    });
+    expect(steed(held)).toHaveProperty("suppressed", true);
+    expect(steed(doc)).not.toHaveProperty("suppressed");
   });
 });

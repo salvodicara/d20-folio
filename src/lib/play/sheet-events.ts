@@ -25,6 +25,7 @@ import {
   setCompanionHp,
   setCompanionVariant,
   setFamiliarDismissed,
+  reviveCompanion,
   summonCompanion,
   summonFamiliar,
   withSummonsRecorded,
@@ -137,6 +138,8 @@ export type SheetEvent =
   | { kind: "set-companion-hp"; featureId: string; current: number }
   /** A summoning spell cast (M6): its creature comes onto the field at full HP. */
   | { kind: "summon-companion"; sourceId: string; castLevel?: number }
+  /** A fallen companion brought back with all its HP (M6). */
+  | { kind: "revive-companion"; sourceId: string }
   | { kind: "set-companion-variant"; featureId: string; variantId: string }
   | { kind: "set-companion-count"; groupId: string; count: number }
   | { kind: "release-companion"; featureId: string }
@@ -285,6 +288,8 @@ export function applySheetEvent(
       return withSession(
         setCompanionHp(withSummonsRecorded(doc), event.featureId, event.current)
       );
+    case "revive-companion":
+      return withSession(reviveCompanion(doc.session, event.sourceId));
     case "summon-companion":
       return withSession(
         summonCompanion(withSummonsRecorded(doc), event.sourceId, event.castLevel)

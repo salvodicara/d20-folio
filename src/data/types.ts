@@ -1062,6 +1062,9 @@ export interface SelfFormRule {
 export interface SrdSpellData {
   /** The spell transforms the caster (Polymorph, Shapechange): how the form works. */
   formRule?: SelfFormRule;
+  /** Magic is suppressed inside it (Antimagic Field): while the caster holds it, the
+   *  caster's magical summons wink out (M6). */
+  suppressesMagic?: true;
   /** Unique slug ID: "fireball", "cure-wounds" */
   id: string;
   /** 0 = cantrip, 1-9 for leveled spells */

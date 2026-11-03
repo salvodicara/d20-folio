@@ -196,7 +196,7 @@ describe("conformance · 4. summons and companions", () => {
       category: 4,
       case: "Antimagic and summons",
       source: "FVTT#7684",
-      status: "M6",
+      status: "works",
     },
     () => {
       // A Find Steed steed inside the caster's Antimagic Field winks out until the

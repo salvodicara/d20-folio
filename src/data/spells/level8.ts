@@ -38,6 +38,9 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "hours", amount: 1 },
+    // "Creatures and objects created or conjured by magic wink out of existence"
+    // inside the Emanation while it lasts.
+    suppressesMagic: true,
     source: "SRD",
   },
   {

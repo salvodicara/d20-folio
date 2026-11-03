@@ -93,6 +93,9 @@ export interface CompanionCardView {
   selectedVariantId?: string;
   /** The companion died and can be brought back (`0-hp:dies`, M6). */
   fallen?: true;
+  /** A magical summon inside its caster's Antimagic Field: winked out until the
+   *  field ends (M6). */
+  suppressed?: true;
 }
 
 type Ns = "class-feature" | "spell";
@@ -328,6 +331,11 @@ export function buildCompanionCardViews(
   // `summons` record, at the level it was cast with. A session written before
   // summons were recorded keeps the older rule (prepared = shown).
   const summons = doc.session.summons;
+  // A held Antimagic Field winks out the caster's magical summons (a spell's).
+  const held = doc.session.concentration
+    ? getSpellById(doc.session.concentration)
+    : undefined;
+  const suppressed = held?.suppressesMagic === true;
   for (const spellId of spellIds) {
     const spell = getSpellById(spellId);
     if (!spell?.companion) continue;
@@ -354,7 +362,7 @@ export function buildCompanionCardViews(
           ownerMaxHp,
           spellMod,
         }
-      )
+      ).map((view) => (suppressed ? { ...view, suppressed: true as const } : view))
     );
   }
 
