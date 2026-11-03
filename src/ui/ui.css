@@ -2600,6 +2600,7 @@
   --heal-icon: #6fcf8a;
   --sheet-bg: #15110d;
   --card-bg: #1d1712;
+  --r-card: 10px;
   --c-act-band: #c9d1dc;
 }
 .fui .f-sheet .f-ring svg {
@@ -2918,7 +2919,7 @@
     min-height: 54px;
     padding: 16px 12px;
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: var(--r-card);
     background: var(--card-bg);
     font: 700 var(--fs-text) var(--font-text);
     color: var(--strong);
