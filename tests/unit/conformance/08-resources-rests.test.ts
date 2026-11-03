@@ -8,10 +8,11 @@ import { enteredRollMaximum, enteredRollMinimum } from "@/lib/resources";
 import {
   gainsHeroicInspirationOnLongRest,
   getInitiativeTrackerTopUps,
-  resolveFeatureRider,
   resolveTrackers,
 } from "@/lib/smart-tracker";
 import { longRestCharacter, shortRestCharacter } from "@/lib/play/rests";
+import { takeDamage } from "@/lib/play/damage";
+import { zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import { unmaintainedStates } from "@/lib/play/end-turn";
 import {
   addMonster,
@@ -42,6 +43,8 @@ function pc(
   });
   return { ...doc, session: { ...doc.session, ...session } };
 }
+
+const RELENTLESS_RAGE = "barbarian-relentless-rage";
 
 const used = (doc: CharacterDoc, id: string) => doc.session.trackers[id]?.used ?? 0;
 const tracker = (doc: CharacterDoc, id: string) =>
@@ -222,21 +225,33 @@ describe("conformance · 8. resource economy and rests", () => {
       category: 8,
       case: "Relentless Rage escalating DC",
       source: "WIKI barbarian:main",
-      status: "M11",
+      status: "works",
     },
     () => {
       // DC 10, +5 per use, back to 10 after a Short or Long Rest.
-      const dc = (doc: CharacterDoc) =>
-        resolveFeatureRider("barbarian-relentless-rage", doc)?.value;
-      expect(dc(pc("barbarian", 11))).toBe("10");
+      const raging = (doc: CharacterDoc): CharacterDoc => ({
+        ...doc,
+        session: {
+          ...doc.session,
+          hp: { current: 5, temp: 0 },
+          activeFeatures: ["barbarian-rage"],
+        },
+      });
+      const dcAtZero = (doc: CharacterDoc) => {
+        const taken = takeDamage(raging(doc), 15);
+        const down = { ...doc, session: taken?.session ?? doc.session };
+        return zeroHpSavers(down).find((s) => s.sourceId === RELENTLESS_RAGE)?.save?.dc;
+      };
+      expect(dcAtZero(pc("barbarian", 11))).toBe(10);
       const onceUsed = pc(
         "barbarian",
         11,
         {},
-        { trackers: { "barbarian-relentless-rage": { used: 1 } } }
+        { zeroHpSaverUses: { [RELENTLESS_RAGE]: 1 } }
       );
-      expect(dc(onceUsed)).toBe("15");
-      expect(dc(shortRestCharacter(onceUsed))).toBe("10");
+      expect(dcAtZero(onceUsed)).toBe(15);
+      expect(dcAtZero(shortRestCharacter(onceUsed))).toBe(10);
+      expect(dcAtZero(longRestCharacter(onceUsed))).toBe(10);
     }
   );
 
