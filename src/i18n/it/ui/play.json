@@ -84,7 +84,8 @@
       "hitDiceLine": "Dadi Vita +{{count}} ({{total}} su {{total}})",
       "exhaustionLine": "Indebolimento {{from}} → {{to}}",
       "trackerLine": "{{name}} +{{count}}",
-      "nothing": "Niente da recuperare"
+      "nothing": "Niente da recuperare",
+      "slotsLeft": "{{left}} su {{total}}"
     },
     "time": {
       "title": "Passa il tempo",
@@ -102,6 +103,11 @@
     "res": {
       "spendLabel": "{{name}}: {{left}} su {{max}}. Tocca per spenderne uno",
       "spent": "{{name}}: {{left}} su {{max}}"
+    },
+    "unprepared": "non preparato",
+    "spells": {
+      "attack": "tiro {{bonus}}",
+      "prepared": "preparati {{count}} su {{max}}"
     }
   }
 }

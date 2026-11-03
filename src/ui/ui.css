@@ -2051,7 +2051,8 @@
   opacity: 0.7;
 }
 .fui .f-act .f-row-t {
-  text-wrap: pretty;
+  /* balanced, so a long name never leaves its last word alone */
+  text-wrap: balance;
 }
 .fui .f-act-why {
   color: var(--cond);
@@ -3237,4 +3238,20 @@
 }
 .fui button.f-res:hover {
   background-color: var(--hover);
+}
+/* «Incantesimi» (prototype x-play-spells): the casting numbers, a level's slots in its head */
+.fui .f-spell-sum {
+  margin: 0;
+  font-weight: 700;
+  color: var(--strong);
+}
+.fui .f-gh-slots {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  font: 600 var(--fs-sm) var(--font-text);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
 }

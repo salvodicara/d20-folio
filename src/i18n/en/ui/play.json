@@ -84,7 +84,8 @@
       "hitDiceLine": "Hit Point Dice +{{count}} ({{total}} of {{total}})",
       "exhaustionLine": "Exhaustion {{from}} → {{to}}",
       "trackerLine": "{{name}} +{{count}}",
-      "nothing": "Nothing to recover"
+      "nothing": "Nothing to recover",
+      "slotsLeft": "{{left}} of {{total}}"
     },
     "time": {
       "title": "Let time pass",
@@ -102,6 +103,11 @@
     "res": {
       "spendLabel": "{{name}}: {{left}} of {{max}}. Tap to spend one",
       "spent": "{{name}}: {{left}} of {{max}}"
+    },
+    "unprepared": "not prepared",
+    "spells": {
+      "attack": "attack {{bonus}}",
+      "prepared": "{{count}} of {{max}} prepared"
     }
   }
 }
