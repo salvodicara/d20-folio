@@ -205,6 +205,29 @@ export function restoreSpellSlot(
   };
 }
 
+/** One more normal slot of `level`, above the table's maximum if need be (Font of
+ *  Magic). A used count below zero is the slots created above the maximum; the Long
+ *  Rest's reset to zero is what makes them vanish. */
+export function createSpellSlot(doc: CharacterDoc, level: number): SessionState {
+  const row = doc.character.spellSlots.find(
+    (slot) => slot.level === level && !slot.pactMagic
+  );
+  if (!row) return doc.session;
+  const engine = commitWorldVitals(doc, "slot-restore", (state) => {
+    const cell = state.resources.standardSpellSlots[String(level)];
+    if (!cell) return null;
+    state.resources.standardSpellSlots[String(level)] = cellWith(cell, cell.current + 1);
+    return state;
+  });
+  if (engine) return engine.session;
+  const key = slotUsageKey({ level, pactMagic: false });
+  const used = doc.session.spellSlots[key]?.used ?? 0;
+  return {
+    ...doc.session,
+    spellSlots: { ...doc.session.spellSlots, [key]: { used: used - 1 } },
+  };
+}
+
 /** Spend uses of a tracker. A pool the world cannot afford degrades to the legacy
  *  counter, which keeps any recorded rolls. */
 export function spendTracker(

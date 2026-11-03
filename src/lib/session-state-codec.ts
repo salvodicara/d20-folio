@@ -226,8 +226,13 @@ function recordedRolls(value: unknown): Array<number | null> {
   );
 }
 
-/** Keep ordinary counters compact while preserving optional table-recorded rolls. */
-function flattenUsed(map: unknown): Record<string, CompactTrackerState> {
+/** Keep ordinary counters compact while preserving optional table-recorded rolls.
+ *  `belowZero`: spell slots, where a used count below zero is the slots Font of
+ *  Magic created above the maximum, until the Long Rest. */
+function flattenUsed(
+  map: unknown,
+  belowZero = false
+): Record<string, CompactTrackerState> {
   const out: Record<string, CompactTrackerState> = {};
   if (!isRecord(map)) return out;
   for (const [key, value] of Object.entries(map)) {
@@ -235,7 +240,7 @@ function flattenUsed(map: unknown): Record<string, CompactTrackerState> {
     const rolls = recordedRolls(isRecord(value) ? value.rolls : undefined);
     if (rolls.some((roll) => typeof roll === "number")) {
       out[key] = { ...(used > 0 ? { used } : {}), rolls };
-    } else if (used > 0) {
+    } else if (used > 0 || (belowZero && used < 0)) {
       out[key] = used;
     }
   }
@@ -291,7 +296,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
     state.itemResources = parsedItemResources.value;
   }
 
-  const usedSlots = flattenUsed(session.spellSlots);
+  const usedSlots = flattenUsed(session.spellSlots, true);
   if (Object.keys(usedSlots).length > 0) state.usedSlots = usedSlots;
 
   const currency: NonNullable<CompactSessionState["currency"]> = {};

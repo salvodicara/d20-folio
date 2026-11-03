@@ -56,9 +56,11 @@ export type CommitOp =
    * Spell Slots, Nature Magician; `pactMagic` un-expends a Pact-Magic slot for
    * Warlock Magical Cunning / Eldritch Master); `gain-tracker` credits `amount`
    * uses back to a pool (Font of Magic Converting Spell Slots → Sorcery
-   * Points). Their undo spends the produced resource back.
+   * Points). Their undo spends the produced resource back. `created`: Font of
+   * Magic makes a new slot, which may go above the table's maximum and vanishes at
+   * a Long Rest (2024); without it the gain only un-expends.
    */
-  | { op: "gain-spell-slot"; level: number; pactMagic?: boolean }
+  | { op: "gain-spell-slot"; level: number; pactMagic?: boolean; created?: true }
   | { op: "gain-tracker"; trackerId: string; amount: number }
   | { op: "noop" };
 
@@ -76,6 +78,9 @@ export interface CommitOptions {
 export interface CommitStore {
   useSpellSlot: (level: number, pactMagic?: boolean) => void;
   restoreSpellSlot: (level: number, pactMagic?: boolean) => void;
+  /** One more normal slot of `level`, above the maximum if need be (Font of Magic).
+   *  A store without it only un-expends. */
+  createSpellSlot?: (level: number) => void;
   useTracker: (trackerId: string, amount?: number) => void;
   restoreTracker: (trackerId: string, amount?: number) => void;
   useEquipmentItem: (key: string) => void;
@@ -210,7 +215,7 @@ export function planResourceConversion(
         if (!row) break;
         if (spec.maxSlotLevel != null && level > spec.maxSlotLevel) break;
         ops.push({ op: "spend-tracker", trackerId: spec.fromTracker, amount: row.cost });
-        ops.push({ op: "gain-spell-slot", level });
+        ops.push({ op: "gain-spell-slot", level, created: true });
       }
       break;
     }
@@ -275,8 +280,10 @@ export function applyCommitOps(ops: CommitOp[], store: CommitStore): () => void 
         break;
       }
       case "gain-spell-slot": {
-        // Producing a slot = un-expending one of that level; undo re-expends it.
-        store.restoreSpellSlot(op.level, op.pactMagic);
+        // Producing a slot = un-expending one of that level (or, for a created
+        // slot, one more); undo re-expends it.
+        if (op.created && store.createSpellSlot) store.createSpellSlot(op.level);
+        else store.restoreSpellSlot(op.level, op.pactMagic);
         reverses.push(() => store.useSpellSlot(op.level, op.pactMagic));
         break;
       }

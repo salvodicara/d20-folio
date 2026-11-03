@@ -105,6 +105,10 @@ const CASES: {
     { kind: "restore-slot", level: 2, pactMagic: false },
     () => at(vitals.restoreSpellSlot(doc, 2, false)),
   ],
+  "create-slot": [
+    { kind: "create-slot", level: 2 },
+    () => at(vitals.createSpellSlot(doc, 2)),
+  ],
   "spend-tracker": [
     { kind: "spend-tracker", trackerId: "arcane-recovery", amount: 1 },
     () => at(vitals.spendTracker(doc, "arcane-recovery", 1)),

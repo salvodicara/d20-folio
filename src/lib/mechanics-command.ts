@@ -269,7 +269,9 @@ export function conversionOptionVMs(
               (!positiveSafeInteger(entry.maxSlotLevel) ||
                 row.slotLevel > entry.maxSlotLevel)) ||
             row.cost > budget ||
-            !positiveSafeInteger(ctx.slotsExpended(row.slotLevel))
+            // Font of Magic creates a slot whether or not one is spent; the
+            // character only needs slots of that level (available + expended).
+            ctx.slotsAvailable(row.slotLevel) + ctx.slotsExpended(row.slotLevel) < 1
           ) {
             continue;
           }
@@ -406,6 +408,32 @@ function opDelta(op: CommitOp): number | undefined {
 
 type ResolvedOwner = { total: number; used: number };
 
+/** A slot's used count: at most its total, and below zero for the slots Font of
+ *  Magic created above the maximum (they vanish at the Long Rest). */
+function slotUsedIsValid(used: number, total: number): boolean {
+  return Number.isSafeInteger(used) && used <= total;
+}
+
+/** Whether a conversion creates new slots (Font of Magic's cost table) rather than
+ *  un-expending spent ones (Nature Magician). */
+function createsSlot(entry: ResourceConversionEntry): boolean {
+  return entry.produces === "spell-slot" && entry.costTable != null;
+}
+
+/** An owner's used count after a change: within its total, and below zero only for a
+ *  spell slot a conversion may create above the maximum. */
+function ownerUsedIsValid(
+  address: ResourceOwnerAddress,
+  used: number,
+  total: number,
+  slotsMayBeCreated: boolean
+): boolean {
+  if (address.kind === "spell-slot" && slotsMayBeCreated) {
+    return slotUsedIsValid(used, total);
+  }
+  return nonNegativeSafeInteger(used) && used <= total;
+}
+
 function resolveOwner(
   character: CharacterDoc,
   address: ResourceOwnerAddress
@@ -419,7 +447,7 @@ function resolveOwner(
     const owner = owners[0];
     if (!owner || !positiveSafeInteger(owner.total)) return { status: "invalid" };
     const used = character.session.spellSlots[slotUsageKey(owner)]?.used ?? 0;
-    return nonNegativeSafeInteger(used) && used <= owner.total
+    return slotUsedIsValid(used, owner.total)
       ? { status: "resolved", owner: { total: owner.total, used } }
       : { status: "invalid" };
   }
@@ -487,7 +515,7 @@ export function prepareMechanicsCommand(
       return { status: "rejected", reason: "invalid-resource-state" };
     }
     const nextUsed = resolved.owner.used + delta;
-    if (!nonNegativeSafeInteger(nextUsed) || nextUsed > resolved.owner.total) {
+    if (!ownerUsedIsValid(address, nextUsed, resolved.owner.total, createsSlot(entry))) {
       return { status: "rejected", reason: "resource-unavailable" };
     }
     ownerOperations.push({
@@ -594,10 +622,18 @@ export function applyMechanicsPlanToCharacter(
     if (
       seen.has(key) ||
       !positiveSafeInteger(operation.expectedTotal) ||
-      !nonNegativeSafeInteger(operation.expectedUsed) ||
-      !nonNegativeSafeInteger(operation.nextUsed) ||
-      operation.expectedUsed > operation.expectedTotal ||
-      operation.nextUsed > operation.expectedTotal ||
+      !ownerUsedIsValid(
+        operation.address,
+        operation.expectedUsed,
+        operation.expectedTotal,
+        true
+      ) ||
+      !ownerUsedIsValid(
+        operation.address,
+        operation.nextUsed,
+        operation.expectedTotal,
+        true
+      ) ||
       operation.expectedUsed === operation.nextUsed
     ) {
       return { status: "rejected", reason: "invalid-plan" };

@@ -77,6 +77,7 @@ function mockStore() {
     conc: "",
     useSpellSlot: vi.fn(),
     restoreSpellSlot: vi.fn(),
+    createSpellSlot: vi.fn(),
     useTracker: vi.fn(),
     restoreTracker: vi.fn(),
     useEquipmentItem: vi.fn(),

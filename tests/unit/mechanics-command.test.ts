@@ -8,6 +8,8 @@ import {
   type ResourceConversionSelection,
 } from "@/lib/mechanics-command";
 import type { CharacterDoc } from "@/types/character";
+import { longRestCharacter } from "@/lib/play/rests";
+import { sessionToState, stateToSession } from "@/lib/session-state-codec";
 import { makeCharacterDoc } from "./_helpers";
 
 function command(
@@ -445,5 +447,42 @@ describe("MechanicsCommand resource conversions", () => {
       status: "rejected",
       reason: "stale-plan",
     });
+  });
+
+  it("creates a Font of Magic slot above the table's maximum, gone at a Long Rest", () => {
+    // Every level-2 slot unspent: the created slot is one more than the table gives.
+    const doc = fontDoc();
+    const prepared = prepareMechanicsCommand(
+      doc,
+      command(doc, "sorcerer-font-of-magic", "font-creating-spell-slots", {
+        kind: "create-slot",
+        via: "cost-table",
+        slotLevel: 2,
+      })
+    );
+    expect(prepared.status).toBe("planned");
+    if (prepared.status !== "planned") return;
+    const applied = applyMechanicsPlanToCharacter(doc, prepared.plan);
+    expect(applied.status).toBe("applied");
+    if (applied.status !== "applied") return;
+    const after = applied.character;
+    // A used count below zero is the slot above the maximum: 3 − (−1) = 4 left.
+    expect(after.session.spellSlots["2"]?.used).toBe(-1);
+    // It survives a save and a reload...
+    const reloaded = stateToSession(
+      JSON.parse(JSON.stringify(sessionToState(after.session))) as Record<string, unknown>
+    );
+    expect(reloaded.spellSlots?.["2"]?.used).toBe(-1);
+    // ...undo takes it back...
+    const reverted = applyMechanicsPlanToCharacter(
+      after,
+      planMechanicsRevert(applied.receipt)
+    );
+    expect(reverted.status).toBe("applied");
+    if (reverted.status === "applied") {
+      expect(reverted.character.session.spellSlots["2"]).toBeUndefined();
+    }
+    // ...and it vanishes at the Long Rest.
+    expect(longRestCharacter(after).session.spellSlots["2"]).toBeUndefined();
   });
 });

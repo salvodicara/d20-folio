@@ -134,6 +134,17 @@ describe("slots family: useSpellSlot / restoreSpellSlot", () => {
     expect(liveDoc().session.world).toEqual(worldBefore);
   });
 
+  it("creates a slot above the maximum on the world (Font of Magic); spending it comes back to full", () => {
+    load(fixture());
+    useCharacterStore.getState().createSpellSlot(2);
+    expect(liveWorld().resources.standardSpellSlots["2"]?.current).toBe(4);
+    expect(liveDoc().session.spellSlots["2"]?.used).toBe(-1);
+
+    useCharacterStore.getState().useSpellSlot(2);
+    expect(liveWorld().resources.standardSpellSlots["2"]?.current).toBe(3);
+    expect(liveDoc().session.spellSlots["2"]?.used).toBe(0);
+  });
+
   it("stays purely legacy when no persisted world exists", () => {
     load(
       makeCharacterDoc({

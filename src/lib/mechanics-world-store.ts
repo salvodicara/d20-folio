@@ -964,7 +964,8 @@ function mirroredCommit(
     if (!before || before.current === cell.current) continue;
     const key = slotUsageKey({ level: Number(level), pactMagic: false });
     const used = doc.session.spellSlots[key]?.used ?? 0;
-    usedSlots[key] = { used: Math.max(0, used + (before.current - cell.current)) };
+    // Below zero: slots created above the maximum (Font of Magic).
+    usedSlots[key] = { used: used + (before.current - cell.current) };
   }
   // Pact mirror: a pact-cell debit/restore moves the legacy `pact-<level>`
   // usage counter exactly. The cell itself is level-free (a bare count); the
