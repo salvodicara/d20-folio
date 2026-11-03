@@ -256,6 +256,7 @@ const SPELL_NOT_ROUND_TRIPPED = new Set([
   "grants", // the statuses a spell lights: activities-equivalence.test.ts
   "followUp", // round-tripped as an action below
   "formRule", // read by the Transform flow (lib/polymorph `selfFormRule`)
+  "suppressesMagic", // read by the summon view (a held Antimagic Field, M6)
 ]);
 
 function spellMechanics(
