@@ -2156,6 +2156,7 @@ export type CreatureSenses = {
  *   - `owner-death`: it vanishes when its owner dies.
  *   - `damaged`: any damage ends it (Phantom Steed).
  *   - `timer`: it lasts `timerMinutes` (a feature) or the spell's duration.
+ *   - `long-rest`: it lasts until its owner finishes a Long Rest (Reanimated Companion).
  */
 export type CompanionEnd =
   | "concentration"
@@ -2163,7 +2164,8 @@ export type CompanionEnd =
   | "0-hp:dies"
   | "owner-death"
   | "damaged"
-  | "timer";
+  | "timer"
+  | "long-rest";
 
 export interface CompanionLifecycle {
   readonly endsOn: readonly [CompanionEnd, ...CompanionEnd[]];
