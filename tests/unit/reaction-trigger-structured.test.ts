@@ -131,6 +131,9 @@ const CORRECTED_TRIGGERS: Record<string, string> = {
   "monk-deflect-attacks": "an attack hits you",
   "rogue-uncanny-dodge": "an attack hits you",
   "shield-master": "you succeed on a Dexterity save for half damage",
+  // Reactive Spell answers an Opportunity Attack, not a spell being cast (the parser
+  // matched "cast a spell" in its own wording).
+  "war-caster": "creature leaves your reach",
 };
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {
