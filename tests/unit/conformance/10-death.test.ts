@@ -18,7 +18,7 @@ import { reducePcDamage, type PcDamageState } from "@/lib/combat-transition";
 import { isMassiveDamageDeath, NO_DEFENSES } from "@/lib/damage-intake";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import { setCompanionHp, summonFamiliar } from "@/lib/play/companions";
+import { setCompanionHp, summonCompanion, summonFamiliar } from "@/lib/play/companions";
 import { takeDamage } from "@/lib/play/damage";
 import { spendZeroHpSaver, zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import {
@@ -332,13 +332,18 @@ describe("conformance · 10. death and revival", () => {
       category: 10,
       case: "Familiar and steed at 0",
       source: "WIKI spell:find-familiar; WIKI spell:find-steed",
-      status: "M7",
+      status: "works",
     },
     () => {
       const withFamiliar = summonFamiliar(MOCK_CHARACTER.session, "owl", "fey", 1);
       // At 0 the familiar vanishes (leaving its gear), it doesn't lie there at 0.
       const after = setCompanionHp(withFamiliar, FIND_FAMILIAR_SPELL_ID, 0);
       expect(after.familiar).toBeUndefined();
+      // So does the steed: its summon and its HP go.
+      const steed = summonCompanion(MOCK_CHARACTER.session, "find-steed", 2);
+      const gone = setCompanionHp(steed, "find-steed", 0);
+      expect(gone.summons?.["find-steed"]).toBeUndefined();
+      expect(gone.companionHp?.["find-steed"]).toBeUndefined();
     }
   );
 
