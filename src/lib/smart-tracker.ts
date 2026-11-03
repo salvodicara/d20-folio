@@ -770,9 +770,6 @@ export interface ResolvedAction {
   type: ActionType;
   /** Source: "spell", "weapon", "feature" */
   source: "spell" | "weapon" | "feature";
-  /** Using it assumes a form through this source's form rule (Wild Shape, M2): the
-   *  Transform picker opens with it. */
-  assumesForm?: string;
   /** Spell level (null for non-spells) */
   spellLevel: number | null;
   /** SRD spell id (set for SRD spell actions) — lets the Combat page build the
@@ -5916,10 +5913,6 @@ function resolveFeatureActions(
         summary,
         costsSlot: false,
         costTracker: actionCostTracker,
-<<<<<<< HEAD
-=======
-        // A feature that transforms the character (Wild Shape) opens the form picker.
->>>>>>> dfe33467 (feat(rules): no spellcasting in a Wild Shape form, with its exceptions; the action opens the beast picker (edge-case M2, step 3b))
         ...("formRule" in srdFeature && srdFeature.formRule
           ? { assumesForm: srdFeature.id }
           : {}),
