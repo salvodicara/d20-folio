@@ -152,22 +152,7 @@ export const useCampaignStore = create<CampaignState>()((set, get) => ({
   },
 
   removeNote: (noteId) => {
-    // Drop the note from the subscription-fed slice AND — when present — from the
-    // LEGACY `campaign.sharedNotes` read-fallback array, so deleting a not-yet-
-    // migrated note disappears instantly (the durable array eviction rides
-    // `evictLegacyNote`). A no-op on the array when it's absent (post-migration).
-    const { notes, campaign } = get();
-    set({
-      notes: notes.filter((n) => n.id !== noteId),
-      ...(campaign?.sharedNotes
-        ? {
-            campaign: {
-              ...campaign,
-              sharedNotes: campaign.sharedNotes.filter((n) => n.id !== noteId),
-            },
-          }
-        : {}),
-    });
+    set({ notes: get().notes.filter((n) => n.id !== noteId) });
   },
 
   setEncounter: (encounter) => {
@@ -178,28 +163,6 @@ export const useCampaignStore = create<CampaignState>()((set, get) => ({
 }));
 
 // ─── Client-side derivation (NFR §4 — derive in the browser) ──────────────────
-
-/**
- * Transitional READ-FALLBACK (rule 10). Union the live subscription notes (the new
- * `notes` / `dmNotes` subcollections) with the LEGACY `campaign.sharedNotes` array so
- * the live users' pre-migration notes render with ZERO migration. The subcollection
- * copy WINS on an id collision (a note that was migrated, or edited/pinned/hidden into
- * the subcollection, shadows its stale legacy twin). Every surviving legacy note is
- * forced VISIBLE (`dmOnly: false`): the hide flag is net-new, so no live note is
- * hidden — a stray persisted flag must never hide one. Pure; deleted with
- * `scripts/migrate-shared-notes.ts` once the array is gone everywhere.
- */
-export function mergeSharedNotes(
-  subscriptionNotes: SharedNote[],
-  legacy: SharedNote[] | undefined
-): SharedNote[] {
-  if (!legacy || legacy.length === 0) return subscriptionNotes;
-  const seen = new Set(subscriptionNotes.map((n) => n.id));
-  const legacyVisible = legacy
-    .filter((n) => !seen.has(n.id))
-    .map((n) => ({ ...n, dmOnly: false }));
-  return [...subscriptionNotes, ...legacyVisible];
-}
 
 /**
  * Pure: the treasury after REVERSING one logged transaction (an "add" takes its

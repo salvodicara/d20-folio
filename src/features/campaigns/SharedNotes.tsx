@@ -29,13 +29,12 @@ import { useAuthStore } from "@/stores/authStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useConfirmStore } from "@/stores/confirmStore";
 import type { SharedNote } from "@/types/campaign";
-import { useCampaignStore, mergeSharedNotes } from "@/features/campaigns/campaignStore";
+import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCampaignNotesSubscription } from "@/features/campaigns/useCampaignNotesSubscription";
 import {
   setCampaignNote,
   setCampaignNoteHidden,
   deleteCampaignNote,
-  evictLegacyNote,
 } from "@/features/campaigns/campaign-io";
 
 /** Notes shown at a glance; the rest sit behind "View all" (the Treasury-log
@@ -87,23 +86,12 @@ export function SharedNotes() {
   // note + the reveal/hide control; a player never even sees a dmOnly note.
   const isDm = campaign.dmUid === uid || isAdmin;
 
-  // Transitional read-fallback (rule 10): union the subscription notes (the new
-  // subcollections) with the LEGACY `campaign.sharedNotes` array, so the live users'
-  // pre-migration notes render with zero migration (subcollection copy wins on a
-  // collision; every legacy note is visible). The set of legacy ids drives the
-  // durable eviction below — when a legacy note is deleted/hidden, drop the
-  // everyone-readable campaign-doc copy too.
-  const mergedNotes = mergeSharedNotes(storeNotes, campaign.sharedNotes);
-  const legacyNoteIds = campaign.sharedNotes
-    ? new Set(campaign.sharedNotes.map((n) => n.id))
-    : null;
-
   // Pinned first, then most-recently-touched — so a slice of the top of this
   // order is exactly "what the table cares about right now" (a freshly added or
   // edited note can never land hidden below the fold). The `!n.dmOnly` filter for
   // a non-DM is defense-in-depth: the SERVER already withholds hidden notes from a
   // player's subscription, so this only ever matters to the DM (who keeps all).
-  const notes = [...mergedNotes]
+  const notes = [...storeNotes]
     .sort((a, b) => Number(b.pinned) - Number(a.pinned) || noteMillis(b) - noteMillis(a))
     .filter((n) => isDm || !n.dmOnly);
   // The most-recent (pinned-or-freshest) note is the FIXED at-a-glance signal; the
@@ -120,17 +108,6 @@ export function SharedNotes() {
   function persist(note: SharedNote): void {
     void setCampaignNote(campaignId, note).catch((err: unknown) =>
       console.error("Failed to save shared note", err)
-    );
-  }
-
-  // Durably remove a LEGACY (not-yet-migrated) note from the everyone-readable
-  // `campaign.sharedNotes` array — invoked when such a note is deleted or hidden
-  // (the two acts that must drop the campaign-doc copy). A no-op for a note that
-  // already lives only in the subcollections (post-migration / never legacy).
-  function evictIfLegacy(noteId: string): void {
-    if (!legacyNoteIds?.has(noteId)) return;
-    void evictLegacyNote(campaignId, noteId).catch((err: unknown) =>
-      console.error("Failed to evict legacy shared note", err)
     );
   }
 
@@ -172,10 +149,6 @@ export function SharedNotes() {
     void setCampaignNoteHidden(campaignId, note, nextHidden).catch((err: unknown) =>
       console.error("Failed to reveal/hide shared note", err)
     );
-    // Hiding a LEGACY note must also remove its visible campaign-doc copy, or the
-    // (members-readable) `sharedNotes` array would keep leaking it to players even
-    // though the soft-reveal moved it to `dmNotes`.
-    if (nextHidden) evictIfLegacy(note.id);
   }
 
   function startEdit(note: SharedNote): void {
@@ -212,9 +185,6 @@ export function SharedNotes() {
       void deleteCampaignNote(campaignId, note.id, note.dmOnly === true).catch(
         (err: unknown) => console.error("Failed to delete shared note", err)
       );
-      // A legacy note also lives in the campaign-doc array — drop it there too, or
-      // the next campaign snapshot would resurrect the "deleted" note.
-      evictIfLegacy(note.id);
     }
   }
 

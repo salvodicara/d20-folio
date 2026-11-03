@@ -4,13 +4,13 @@
  * «#» a place. Filters and a search on the left; any member writes and edits, the DM
  * may keep a note hidden from the players. Every save and delete has its undo.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { notesView, type NoteFilter, type NoteRow } from "@/domains/notes/notes-view";
 import { NoteDialog } from "@/domains/notes/ui/NoteDialog";
 import { removeNote, saveNote } from "@/domains/notes/ui/note-moves";
-import { mergeSharedNotes, useCampaignStore } from "@/features/campaigns/campaignStore";
+import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCampaignNotesSubscription } from "@/features/campaigns/useCampaignNotesSubscription";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc, SharedNote } from "@/types/campaign";
@@ -34,11 +34,7 @@ export function NotesTab({
   const [filter, setFilter] = useState<NoteFilter>("all");
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<SharedNote | "new" | null>(null);
-  const all = useMemo(
-    () => mergeSharedNotes(stored, campaign.sharedNotes),
-    [stored, campaign.sharedNotes]
-  );
-  const rows = notesView(all, { filter, query }, { uid, isDm });
+  const rows = notesView(stored, { filter, query }, { uid, isDm });
   const players = campaign.memberDetails;
   const label = (f: NoteFilter) =>
     f === "all" ? t("common.allF") : t(`campaignNotes.${f}`);
@@ -94,7 +90,7 @@ export function NotesTab({
         />
         {rows.length === 0 && (
           <p className="f-quiet f-lbl-gap">
-            {t(all.length ? "campaignNotes.noMatch" : "campaignNotes.empty")}
+            {t(stored.length ? "campaignNotes.noMatch" : "campaignNotes.empty")}
           </p>
         )}
         {rows.map((note) => (
