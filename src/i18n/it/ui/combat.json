@@ -341,6 +341,7 @@
     "attackScope_vowed": "sul bersaglio del voto",
     "attackScope_missed": "sulla creatura mancata",
     "attackScope_untaken": "sulle creature che non hanno ancora avuto un turno",
+    "attackScope_mounted": "in sella, contro una creatura non in sella più piccola della cavalcatura",
     "attackScope_strength": "agli attacchi con Forza",
     "attackScope_strDex": "agli attacchi con Forza e Destrezza",
     "attackScope_sorcery": "agli attacchi con incantesimi da Stregone",

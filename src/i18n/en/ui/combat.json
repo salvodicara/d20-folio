@@ -341,6 +341,7 @@
     "attackScope_vowed": "vs vowed target",
     "attackScope_missed": "vs the creature you missed",
     "attackScope_untaken": "vs creatures that haven't taken a turn",
+    "attackScope_mounted": "while mounted, vs a smaller unmounted creature",
     "attackScope_strength": "on Strength attacks",
     "attackScope_strDex": "on Strength and Dexterity attacks",
     "attackScope_sorcery": "on Sorcerer spell attacks",
