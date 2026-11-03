@@ -182,6 +182,6 @@ describe("declaring a mastery rider", () => {
     ).toBe("Rovesciamento (Bastone Ferrato)");
     expect(
       i18n.t("combatLog.riderUse", { rider: "Attacco Furtivo", name: "Pugnale" })
-    ).toBe("Attacco Furtivo speso su Pugnale");
+    ).toBe("Speso: Attacco Furtivo su Pugnale");
   });
 });

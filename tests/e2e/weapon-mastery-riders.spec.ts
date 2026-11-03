@@ -60,7 +60,7 @@ for (const size of ["desktop", "mobile"] as const) {
 
     await topple.click();
     await expect(
-      page.getByText(/^Rovesciamento: TS COS CD 14 → Prono applicato a Bastone Ferrato$/)
+      page.getByText(/^Rovesciamento: TS COS CD 14 → Prono, con Bastone Ferrato$/)
     ).toBeVisible();
 
     const glaive = await expandCard(page, "Falcione");

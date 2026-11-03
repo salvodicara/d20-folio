@@ -3,7 +3,7 @@
     "actionUse": "Used {{name}}",
     "actionUseAttackOf": "Used {{name}} (attack {{n}} of {{total}})",
     "readiedSpell": "Readied {{name}}",
-    "spellCountered": "{{name}} was countered: its level {{level}} slot is kept",
+    "spellCountered": "Countered: {{name}} · its level {{level}} slot is kept",
     "releasedSpell": "Released {{name}}",
     "hpDamage": "Took {{amount}} damage ({{current}}/{{max}} HP)",
     "hpHeal": "Healed {{amount}} HP ({{current}}/{{max}} HP)",

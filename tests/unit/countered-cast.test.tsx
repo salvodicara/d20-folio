@@ -77,7 +77,7 @@ describe("the turn meter's Countered", () => {
     const live = () => useCharacterStore.getState().character;
     fireEvent.click(
       screen.getByRole("button", {
-        name: "Fireball was countered: get its level 3 slot back",
+        name: "Countered: Fireball. Get its level 3 slot back",
       })
     );
     expect(live()?.session.spellSlots["3"]?.used ?? 0).toBe(0);
