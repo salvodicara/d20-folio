@@ -15,6 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { SUMMON_TIMER_PREFIX } from "@/lib/summon-count";
 import { resolveDice, SCALAR_BINDINGS, type DiceScalar } from "@/lib/scalar";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
 import {
@@ -9121,11 +9122,18 @@ export function advanceEffectTimers(
   for (const [key, timer] of Object.entries(prev)) {
     if (next[key] !== undefined || expired.some((effect) => effect.activeKey === key))
       continue;
+    const summonId = key.startsWith(SUMMON_TIMER_PREFIX)
+      ? key.slice(SUMMON_TIMER_PREFIX.length)
+      : null;
     const sourceId = key.startsWith(POTION_TIMER_PREFIX)
       ? key.slice(POTION_TIMER_PREFIX.length)
-      : (character.session.activeFeatures ?? []).includes(key)
-        ? castSourceIdFromActiveKey(key)
-        : null;
+      : summonId !== null
+        ? character.session.summons?.[summonId]
+          ? summonId
+          : null
+        : (character.session.activeFeatures ?? []).includes(key)
+          ? castSourceIdFromActiveKey(key)
+          : null;
     if (!sourceId) continue;
     if (counted(key)) {
       next[key] = timer;

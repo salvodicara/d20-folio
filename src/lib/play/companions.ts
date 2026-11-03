@@ -7,8 +7,11 @@ import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familia
 import {
   isSummonInstanceOf,
   MAX_SUMMONED,
+  SUMMON_TIMER_PREFIX,
   summonInstanceNumber,
+  summonTimerKey,
 } from "@/lib/summon-count";
+import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 /** The familiar has no companion stat block: "when the familiar drops to 0 Hit
@@ -94,6 +97,7 @@ export function summonCompanion(
   sourceId: string,
   castLevel?: number
 ): SessionState {
+  const minutes = summonTimerMinutes(sourceId);
   return {
     ...session,
     summons: {
@@ -101,7 +105,57 @@ export function summonCompanion(
       [sourceId]: castLevel !== undefined ? { castLevel } : {},
     },
     companionHp: withoutHpOf(session.companionHp, sourceId),
+    // A summon that lasts a while counts down on game time (M6).
+    ...(minutes !== null
+      ? {
+          effectTimers: {
+            ...(session.effectTimers ?? {}),
+            [summonTimerKey(sourceId)]: { roundsLeft: minutes * ROUNDS_PER_MINUTE },
+          },
+        }
+      : {}),
   };
+}
+
+/** How long a `timer` summon lasts, in minutes: the feature's `timerMinutes`, else
+ *  the spell's duration (Phantom Steed: 1 hour). Null for one without a timer. */
+export function summonTimerMinutes(sourceId: string): number | null {
+  if (!summonEnds(sourceId).includes("timer")) return null;
+  const feature = classFeatureIndex.get(sourceId)?.companion?.lifecycle;
+  if (feature?.timerMinutes) return feature.timerMinutes;
+  const duration = getSpellById(sourceId)?.duration;
+  if (!duration || !("amount" in duration)) return null;
+  const perUnit = { rounds: 1 / ROUNDS_PER_MINUTE, minutes: 1, hours: 60, days: 1440 };
+  return duration.amount * perUnit[duration.kind];
+}
+
+/** End the summons a stretch of `minutes` outlasts (a rest: a Short Rest is an hour,
+ *  a Long Rest eight). */
+export function endSummonsOutlastedBy(
+  session: SessionState,
+  minutes: number
+): SessionState {
+  const rounds = minutes * ROUNDS_PER_MINUTE;
+  return endExpiredSummons(
+    session,
+    Object.entries(session.effectTimers ?? {}).flatMap(([key, timer]) =>
+      key.startsWith(SUMMON_TIMER_PREFIX) && timer.roundsLeft <= rounds ? [key] : []
+    )
+  );
+}
+
+/** End the summons whose countdowns ran out (`summon:<id>` among `expiredKeys`). */
+export function endExpiredSummons(
+  session: SessionState,
+  expiredKeys: Iterable<string>
+): SessionState {
+  let next = session;
+  for (const key of expiredKeys) {
+    if (key.startsWith(SUMMON_TIMER_PREFIX)) {
+      next = endSummon(next, key.slice(SUMMON_TIMER_PREFIX.length));
+    }
+  }
+  return next;
 }
 
 /** A summon leaves the field: its record and its HP go (the variant pick stays, for
@@ -109,10 +163,15 @@ export function summonCompanion(
 export function endSummon(session: SessionState, sourceId: string): SessionState {
   const { [sourceId]: _gone, ...rest } = session.summons ?? {};
   void _gone;
+  const { [summonTimerKey(sourceId)]: _timer, ...timers } = session.effectTimers ?? {};
+  void _timer;
   return {
     ...session,
     summons: rest,
     companionHp: withoutHpOf(session.companionHp, sourceId),
+    ...(session.effectTimers
+      ? { effectTimers: Object.keys(timers).length > 0 ? timers : undefined }
+      : {}),
   };
 }
 

@@ -50,8 +50,10 @@ Casting a non-Concentration summon records it at full HP with its cast level (`s
    flip in the conformance suite.
 2. Revive (`revive-companion`: a fallen companion back with all its HP; the use pays the
    catalogue's cost), the `damaged` end (Phantom Steed: any hit ends it), and Antimagic
-   (`suppressesMagic` on the held spell: the caster's spell summons show `suppressed`). Left: the
-   `timer` end, which needs the game clock (an owner choice: real or table time).
+   (`suppressesMagic` on the held spell: the caster's spell summons show `suppressed`). The `timer` end runs on game time
+   (Coordinator, RAW): a `summon:<id>` countdown in `effectTimers`, armed by `summon-companion` from
+   the feature's `timerMinutes` or the spell's duration, counted by rounds, time passing and rests
+   (a Short Rest is an hour, a Long Rest eight). Phantom Steed lasts an hour.
 3. Companion actions as Activities, once the rules session lands `CatalogueActivity`, plus the
    `speed-zero` and conditional-condition effects.
 
