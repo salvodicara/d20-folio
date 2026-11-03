@@ -136,7 +136,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Mixed 2014 and 2024 content",
       source: "rpgbot",
-      status: "M10",
+      status: "works",
     },
     () => {
       // A 2014 homebrew copy and the 2024 Shield of Faith are the same effect: only
