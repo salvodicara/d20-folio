@@ -18,6 +18,7 @@
  * class to advance plus every RAW-legal new class (13+ primary-ability rule,
  * both ways — illegal classes are FILTERED, never greyed).
  */
+import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { amountAtCastLevel } from "@/lib/scalar";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -1211,6 +1212,7 @@ export function LevelUpWizard() {
         resolveGrantSourcesForFeatures(updated.features),
         {
           level: newClassLevel,
+          maxSlotLevel: highestSpellSlotLevel(updated.classes),
           bundleChoices: new Map(
             Object.entries(character.session.grantBundleChoices ?? {})
           ),

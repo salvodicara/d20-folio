@@ -1132,6 +1132,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     },
     {
       minLevel: numberSchema,
+      /** Prepared once the character has a spell slot of this level or higher. */
+      minSlotLevel: numberSchema,
       spellAbility: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),

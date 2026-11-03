@@ -21,6 +21,7 @@ import type {
 import type { AbilityCode } from "@/data/types";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { getClasses, totalLevel } from "@/lib/classes";
+import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 
 /**
  * Resolve the list of expanded-spell IDs a subclass grants at exactly the
@@ -166,6 +167,9 @@ import type { Grant } from "@/lib/grants";
  */
 export interface AlwaysPreparedOptions {
   level?: number;
+  /** The highest spell-slot level the character has (gates `minSlotLevel`). When
+   *  omitted, `minSlotLevel` is ignored. */
+  maxSlotLevel?: number;
   bundleChoices?: ReadonlyMap<string, string>;
 }
 
@@ -173,7 +177,7 @@ export function getAlwaysPreparedFromGrants(
   grantSources: ReadonlyArray<{ grants?: ReadonlyArray<Grant> }>,
   opts: AlwaysPreparedOptions = {}
 ): AlwaysPreparedEntry[] {
-  const { level, bundleChoices } = opts;
+  const { level, maxSlotLevel, bundleChoices } = opts;
   const out: AlwaysPreparedEntry[] = [];
   const seen = new Set<string>();
 
@@ -181,6 +185,10 @@ export function getAlwaysPreparedFromGrants(
     if (seen.has(g.spellId)) return;
     // minLevel gate — skip spells the character hasn't reached yet.
     if (g.minLevel != null && level != null && level < g.minLevel) return;
+    // minSlotLevel gate — the school "Adept" feats add a spell once you can cast
+    // spells of its level, whatever your class mix.
+    if (g.minSlotLevel != null && maxSlotLevel != null && maxSlotLevel < g.minSlotLevel)
+      return;
     seen.add(g.spellId);
     if (g.spellAbility) {
       out.push({ spellId: g.spellId, spellAbility: g.spellAbility });
@@ -289,6 +297,7 @@ export function effectiveAlwaysPreparedEntries(
     resolveAllGrantSources(character, itemResources),
     {
       level: totalLevel(character),
+      maxSlotLevel: highestSpellSlotLevel(getClasses(character)),
       bundleChoices: bundleChoices ? new Map(Object.entries(bundleChoices)) : undefined,
     }
   );

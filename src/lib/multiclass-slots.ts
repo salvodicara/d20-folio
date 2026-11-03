@@ -188,6 +188,11 @@ export function deriveSpellSlots(classes: ClassEntry[]): SpellSlotEntry[] {
   return [];
 }
 
+/** The highest spell-slot level a build has, Pact Magic included; 0 for a non-caster. */
+export function highestSpellSlotLevel(classes: ClassEntry[]): number {
+  return Math.max(0, ...deriveSpellSlots(classes).map((slot) => slot.level));
+}
+
 /**
  * RA-33 — apply the durable per-level max-count overrides onto a derived slot list.
  * Overrides are keyed by {@link slotUsageKey} (`"1"`..`"9"` shared, `"pact-N"`

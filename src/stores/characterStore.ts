@@ -6,6 +6,7 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
+import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { causalPatch, undoPatch } from "@/lib/play/causal-patch";
 import { create } from "zustand";
 import type {
@@ -94,7 +95,7 @@ import {
   resolveTrackers,
   potionTimerKey,
 } from "@/lib/smart-tracker";
-import { totalLevel } from "@/lib/classes";
+import { totalLevel, getClasses } from "@/lib/classes";
 import { currentForm, formSourceKind, selfFormRule } from "@/lib/polymorph";
 import type { BeastStatBlock } from "@/data/types";
 import { getSpellById } from "@/data/spells";
@@ -3201,6 +3202,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     //    injectExpandedSpells' dedup.
     const addEntries = getAlwaysPreparedFromGrants(sources, {
       level: totalLevel(charData),
+      maxSlotLevel: highestSpellSlotLevel(getClasses(charData)),
       bundleChoices: new Map(Object.entries(choices)),
     });
     const spells = injectExpandedSpells(kept, addEntries);
