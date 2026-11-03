@@ -11,6 +11,7 @@ import {
   damageTrayPlan,
   initialTrayRow,
   rowAmount,
+  rowAmountByType,
   rowConditions,
   setAttackOutcome,
   setMultiplier,
@@ -105,16 +106,20 @@ describe("conformance · 15. multi-target and area damage", () => {
       category: 15,
       case: "Resistance per target",
       source: "SAC #36; WIKI feat:elemental-adept",
-      status: "M4",
+      status: "works",
     },
     () => {
       // A fire + radiant smite (two types, so no single plan type): 10 fire + 10 radiant
       // against a fire-resistant target is 5 + 10 = 15; a plain target takes 20.
-      const mixed: DamageTrayPlan = { effect: "damage", targets: FOES };
+      const mixed: DamageTrayPlan = {
+        effect: "damage",
+        damageTypes: ["fire", "radiant"],
+        targets: FOES,
+      };
       const resistant = initialTrayRow(mixed, "monster-1", defenses(["fire"]));
       const plain = initialTrayRow(mixed, "monster-2");
-      expect(rowAmount(20, plain, mixed)).toBe(20);
-      expect(rowAmount(20, resistant, mixed)).toBe(15);
+      expect(rowAmountByType({ fire: 10, radiant: 10 }, plain, mixed)).toBe(20);
+      expect(rowAmountByType({ fire: 10, radiant: 10 }, resistant, mixed)).toBe(15);
     }
   );
 

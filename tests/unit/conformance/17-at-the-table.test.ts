@@ -9,6 +9,7 @@ import { peerDamageState } from "@/lib/play/peer-damage";
 import {
   initialTrayRow,
   rowAmount,
+  rowAmountByType,
   setD20Face,
   type DamageTrayPlan,
 } from "@/lib/play/damage-tray";
@@ -100,7 +101,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Damage typed in without a type breakdown",
       source: "WIKI druid:main (Primal Strike); SAC #36",
-      status: "M4",
+      status: "works",
     },
     () => {
       // An infernal tiefling (fire resistance) takes 10 fire + 10 radiant: 5 + 10 = 15.
@@ -117,9 +118,13 @@ describe("conformance · 17. at-the-table gaps", () => {
         []
       );
       expect(defenses.resistances.has("fire")).toBe(true);
-      const mixed: DamageTrayPlan = { effect: "damage", targets: ["pc-tiefling"] };
+      const mixed: DamageTrayPlan = {
+        effect: "damage",
+        damageTypes: ["fire", "radiant"],
+        targets: ["pc-tiefling"],
+      };
       const row = initialTrayRow(mixed, "pc-tiefling", defenses);
-      expect(rowAmount(20, row, mixed)).toBe(15);
+      expect(rowAmountByType({ fire: 10, radiant: 10 }, row, mixed)).toBe(15);
     }
   );
 
