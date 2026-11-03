@@ -2308,6 +2308,8 @@
   font: 700 22px var(--font-title);
 }
 .fui .f-sheet .f-char-hp-v b {
+  /* a <b> is "bolder" than its 700 parent (900): the prototype's figure is 700 */
+  font-weight: 700;
   font-size: var(--fs-hp-big);
   text-shadow: 0 0 14px var(--glow-hp);
 }
