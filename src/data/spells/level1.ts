@@ -658,6 +658,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         targetScope: "cursed",
         grants: [
           { id: "move-mark", type: "granted-action", slot: "bonus" },
+          // "If the target drops to 0 Hit Points before the spell ends, you can take
+          // a Bonus Action on a later turn" to move it: offered when that happens.
+          {
+            type: "trigger",
+            on: "reduced-to-zero",
+            if: { target: "marked" },
+            do: { kind: "offer", actionId: "move-mark" },
+          },
           {
             type: "damage-rider",
             dice: "1d6",
@@ -707,6 +715,14 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
         targetScope: "marked",
         grants: [
           { id: "move-mark", type: "granted-action", slot: "bonus" },
+          // "If the target drops to 0 Hit Points before the spell ends, you can take
+          // a Bonus Action on a later turn" to move it: offered when that happens.
+          {
+            type: "trigger",
+            on: "reduced-to-zero",
+            if: { target: "marked" },
+            do: { kind: "offer", actionId: "move-mark" },
+          },
           {
             type: "damage-rider",
             dice: "1d6",

@@ -258,6 +258,13 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "the persistent area a spell leaves is an encounter zone with its own ledger (edge-case M9), not an activity",
     });
   }
+  if (spell.budget) {
+    gaps.push({
+      field: "budget",
+      reason:
+        "a total the live effect spends before it ends (damage dealt), an encounter fact, not an activity",
+    });
+  }
   if (spell.bestiaryPick) {
     gaps.push({
       field: "bestiaryPick",

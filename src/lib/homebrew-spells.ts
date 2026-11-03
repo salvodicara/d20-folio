@@ -222,6 +222,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
       spares: literalSchema("chosen"),
     }
   ),
+  budget: objectSchema({ max: numberSchema, counts: literalSchema("damage-dealt") }),
   resolveOnCast: literalSchema(false),
   followUp: ACTION_DEF,
   endsOnSuccessfulSave: booleanSchema,
