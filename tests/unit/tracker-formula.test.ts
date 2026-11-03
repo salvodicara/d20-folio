@@ -89,7 +89,8 @@ describe("tracker formulas in the Scalar language", () => {
       Object.values(record).forEach(walk);
     };
     walk([classFeatures, SRD_FEATS, SRD_MAGIC_ITEMS, SRD_RACES, SRD_BACKGROUNDS, spells]);
-    expect(formulas.size).toBeGreaterThan(10);
+    // The public SRD build alone has a handful; the pack adds the rest.
+    expect(formulas.size).toBeGreaterThan(3);
     const unknown = [...formulas].filter(
       (f) => compileTrackerFormula(f).unknown.length > 0
     );
