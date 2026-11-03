@@ -29,6 +29,18 @@ and the store's top-up (which spends the counters). The Short Rest is `shortRest
 `initiative-tracker-topup` stays readable (stored homebrew may carry it) and keeps feeding the same
 reader.
 
+## The vocabulary (authored ahead, read as families land)
+
+- `on`: initiative, short-rest, long-rest, turn-start, turn-end, reduced-to-zero, d20-test-failed,
+  cast-spell, damage-dealt.
+- `if`: school, slot (a slotted spell), target `marked` (the creature your effect marks), within
+  (feet), by `any-creature`.
+- `do`: `restore-tracker`, or `offer { actionId }` (Hunter's Mark moving).
+- `limit.per`: long-rest, short-rest, turn, round.
+
+The runtime reads only what this doc lists under "The grant". A rule using the rest of the
+vocabulary is valid data and inert until its reader lands.
+
 ## Next
 
 More events and actions as their cases come: a creature reduced to 0 (Hunter's Mark moving, kill

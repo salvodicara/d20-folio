@@ -9677,15 +9677,17 @@ export function firedTriggerRestores(
   if (rules.length === 0) return { used, limited };
   const trackers = resolveTrackers(character);
   for (const rule of rules) {
+    const action = rule.do;
+    if (action.kind !== "restore-tracker") continue;
     const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
     if (rule.limit && spent >= rule.limit.max) continue;
-    const tracker = trackers.find((t) => t.id === rule.do.trackerId);
+    const tracker = trackers.find((t) => t.id === action.trackerId);
     if (!tracker) continue;
     const current = used.get(tracker.id) ?? tracker.used;
-    const amount = rule.do.full
+    const amount = action.full
       ? current
       : resolveTrackerTotal(
-          rule.do.amount ?? "0",
+          action.amount ?? "0",
           character,
           featureScalingLevel(rule.sourceId, character)
         );
