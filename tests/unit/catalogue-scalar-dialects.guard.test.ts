@@ -1,8 +1,8 @@
 /**
  * The catalogue writes scaled dice and amounts in one language (edge-case family
- * M11, `@/lib/scalar`). The legacy dialects stay readable only because a player's
- * stored homebrew may still carry them; no catalogue entry (app or pack) may use
- * them again. Each dialect leaves this list as it is retired.
+ * M11, `@/lib/scalar`). The retired dialects are gone from the schema (production
+ * held none, 2026-11-03); this guard keeps any catalogue entry from smuggling the
+ * old field names back in.
  */
 import { describe, expect, it } from "vitest";
 import { classFeatures } from "@/data/classes";
