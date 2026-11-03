@@ -1720,6 +1720,16 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     type: literalSchema("weapon-attack-cantrip"),
     useSpellcastingAbility: booleanSchema,
   }),
+  /**
+   * Attacker-side: damage of these types from the source ignores the target's
+   * Resistance (immunity still applies). Elemental Adept: spells you cast.
+   */
+  "damage-penetration": objectSchema({
+    appliesTo: literalSchema("spell"),
+    damageTypes: arraySchema(DAMAGE_TYPE_SCHEMA, 1),
+    ignores: literalSchema("resistance"),
+    type: literalSchema("damage-penetration"),
+  }),
   "damage-die-modifier": objectSchema(
     {
       appliesTo: unionSchema([
@@ -1727,6 +1737,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("unarmed"),
         literalSchema("two-handed-melee"),
         literalSchema("light-melee"),
+        // A spell that deals `damageType` (Elemental Adept: a 1 counts as a 2).
+        literalSchema("spell"),
       ]),
       mode: unionSchema([
         literalSchema("floor"),

@@ -717,7 +717,7 @@ export interface WeaponAttackBonusEntry {
 export interface DamageDieModifierEntry {
   sourceId: string;
   mode: "floor" | "reroll-keep-higher" | "offhand-ability-mod" | "unarmed-strike";
-  appliesTo: "weapon" | "two-handed-melee" | "light-melee" | "unarmed";
+  appliesTo: "weapon" | "two-handed-melee" | "light-melee" | "unarmed" | "spell";
   /** "floor": highest die face replaced (Great Weapon Fighting → 2). */
   floorBelow?: number;
   /** "floor": value a floored face becomes (Great Weapon Fighting → 3). */
@@ -1937,6 +1937,8 @@ export interface AggregatedGrants {
    * Unarmed Strike row). The engine never rolls dice. Override-first.
    */
   damageDieModifiers: ReadonlyArray<DamageDieModifierEntry>;
+  /** Damage types whose Resistance the character's spells ignore (Elemental Adept). */
+  spellResistancePenetration: ReadonlySet<DamageType>;
 
   // Spell grants
   /** Always-prepared spell IDs (Domain spells, Magic Initiate, …). */
@@ -2270,6 +2272,7 @@ export function emptyAggregate(): AggregatedGrants {
     weaponAttackAbilities: [],
     weaponAttackBonuses: [],
     damageDieModifiers: [],
+    spellResistancePenetration: new Set(),
     alwaysPrepared: [],
     ritualSpells: new Set(),
     ritualAnyClasses: new Set(),
@@ -2528,6 +2531,7 @@ export function evaluateGrants(
   }[] = [];
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
+  const spellResistancePenetration = new Set<DamageType>();
 
   // Spell grants
   const alwaysPrepared: string[] = [];
@@ -3142,6 +3146,9 @@ export function evaluateGrants(
           sourceId,
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
+        break;
+      case "damage-penetration":
+        for (const type of g.damageTypes) spellResistancePenetration.add(type);
         break;
       case "damage-die-modifier":
         // Manipulation of a weapon's own damage dice (Great Weapon Fighting
@@ -4088,6 +4095,7 @@ export function evaluateGrants(
     weaponAttackAbilities,
     weaponAttackBonuses,
     damageDieModifiers,
+    spellResistancePenetration,
     alwaysPrepared,
     ritualSpells,
     ritualAnyClasses,
