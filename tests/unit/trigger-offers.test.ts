@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { Grant } from "@/lib/grants";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { firedTriggerOffers } from "@/lib/smart-tracker";
-import type { CharacterDoc, CustomFeature } from "@/types/character";
+import type { CharacterDoc, CustomFeature, CustomSpell } from "@/types/character";
 
 import { customInstanceId } from "./__helpers__/custom-items";
 
@@ -80,6 +80,46 @@ describe("an offer when the marked creature drops", () => {
     ).toEqual([]);
     expect(
       firedTriggerOffers(doc, "cast-spell", { school: "evocation", slot: true })
+    ).toEqual([]);
+  });
+
+  it("a spell's rule fires while the spell is lit (Hunter's Mark is a spell, not a feature)", () => {
+    const mark: CustomSpell = {
+      custom: true,
+      name: "Quarry",
+      level: 1,
+      school: "divination",
+      castingTime: "bonus action",
+      range: "90 feet",
+      components: { v: true, s: false, m: false },
+      duration: "1 hour",
+      concentration: true,
+      description: "You mark a creature.",
+      prepared: true,
+      instanceId: customInstanceId("Quarry"),
+      mechanics: {
+        grants: [
+          { type: "while-active", activeKey: "homebrew-quarry", grants: [moveMark] },
+        ],
+      },
+    };
+    const doc = (lit: boolean): CharacterDoc => ({
+      ...MOCK_CHARACTER,
+      character: {
+        ...MOCK_CHARACTER.character,
+        spells: [...MOCK_CHARACTER.character.spells, mark],
+      },
+      session: {
+        ...MOCK_CHARACTER.session,
+        trackers: {},
+        activeFeatures: lit ? ["homebrew-quarry"] : [],
+      },
+    });
+    expect(
+      firedTriggerOffers(doc(true), "reduced-to-zero", { targetMarked: true })
+    ).toEqual([expect.objectContaining({ actionId: "move-mark" })]);
+    expect(
+      firedTriggerOffers(doc(false), "reduced-to-zero", { targetMarked: true })
     ).toEqual([]);
   });
 });
