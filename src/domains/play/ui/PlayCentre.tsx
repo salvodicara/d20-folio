@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
+import { spareView, type SpareView } from "@/domains/play/spare-view";
 import { weaponPickView, type WeaponPick } from "@/domains/play/weapon-pick-view";
 import {
   playInventoryView,
@@ -37,6 +38,7 @@ import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
 import { actionIcon } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
@@ -44,6 +46,7 @@ import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
 import { PlayPrepare } from "./PlayPrepare";
+import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
 
 type Filter = "all" | "attacks" | "actions" | "bonus" | "reactions" | "other" | "limited";
@@ -597,7 +600,18 @@ function ActionLine({
   // A weapon-binding spell (Magic Weapon, Shillelagh) asks which weapon first.
   const doc = useCharacterStore((st) => st.character);
   const [picking, setPicking] = useState<WeaponPick[] | null>(null);
+  // A zone that spares whom its caster designates (Spirit Guardians) asks whom.
+  const [sparing, setSparing] = useState<SpareView | null>(null);
   const cast = () => {
+    const status = useCombatStatusStore.getState().status;
+    const spare =
+      row.spellId && status && doc && status.characterId === doc.id
+        ? spareView(row.spellId, { myId: status.myId, rows: status.view.rows })
+        : null;
+    if (spare) {
+      setSparing(spare);
+      return;
+    }
     const choices =
       doc && row.spellId ? weaponPickView(doc, row.spellId, row.level ?? 0, locale) : [];
     if (choices.length > 0) setPicking(choices);
@@ -681,6 +695,17 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {sparing && (
+        <PlaySpare
+          spellName={row.name}
+          view={sparing}
+          onClose={() => setSparing(null)}
+          onCast={(spared) => {
+            setSparing(null);
+            executeAction(row.action, { spared });
+          }}
+        />
       )}
       {picking && (
         <PlayWeaponPick

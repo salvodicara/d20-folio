@@ -145,6 +145,10 @@
       "packed": "nello zaino",
       "bonus": "+{{bonus}} al colpire e ai danni",
       "ability": "attacca con {{ability}}"
+    },
+    "spare": {
+      "which": "Chi risparmi?",
+      "hint": "Chi scegli non subisce i suoi effetti. Gli alleati sono già scelti."
     }
   }
 }
