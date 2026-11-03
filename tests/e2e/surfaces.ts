@@ -150,8 +150,7 @@ export async function readyByName(page: Page): Promise<void> {
  * gets its IT strings (the i18n sweeps), the EN regex stops matching and every IT
  * variant times out here — exactly the rot this suite accumulated. So NEVER pass
  * translated app copy to `readyText`. Pass ONLY genuinely locale-invariant text:
- * a proper noun that is never translated (the seeded "Lyra Voss" / "Starless
- * Keep"), or a numeric/symbolic token ("404"). For everything else prefer a
+ * a proper noun that is never translated (the seeded "Lyra Voss"), or a numeric/symbolic token ("404"). For everything else prefer a
  * locale-invariant STRUCTURAL anchor — a role (`readyByH1`), a stable className
  * (`readyBySelector`), or a test id — over an EN|IT regex union.
  */
@@ -168,6 +167,10 @@ export function coralinoCard(page: Page) {
 const readyCoralinoCard = async (page: Page): Promise<void> => {
   await coralinoCard(page).waitFor({ timeout: 15000 });
 };
+
+/** The seeded dev campaign's name, which the fixture localizes ("The Starless
+ *  Keep" / "La Rocca Senza Stelle"): the one fixture anchor that needs both. */
+const CAMPAIGN_NAME = /starless keep|rocca senza stelle/i;
 
 function readyText(re: RegExp): (page: Page) => Promise<void> {
   return async (page) => {
@@ -1010,14 +1013,13 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     },
   },
   // Campaigns realm: under dev-bypass the list is now populated with the seeded
-  // dev campaign (D29 — reachable in dev), so anchor on its locale-INVARIANT proper
-  // noun ("The Starless Keep") — present only after the body list paints, exactly
-  // the structural-anchor guidance for this suite.
-  campaigns: { edit: false, ready: readyText(/Starless Keep/) },
+  // dev campaign (D29 — reachable in dev), so anchor on its name in either locale
+  // (CAMPAIGN_NAME), present only after the body list paints.
+  campaigns: { edit: false, ready: readyText(CAMPAIGN_NAME) },
   "campaign-create": {
     edit: false,
     variants: OVERLAY_VARIANTS,
-    ready: readyText(/Starless Keep/),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       // The populated realm shows the header "New campaign"; match it (or the
       // empty-state "Create a campaign" if ever empty), in either locale.
@@ -1033,7 +1035,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
   "campaign-join": {
     edit: false,
     variants: OVERLAY_VARIANTS,
-    ready: readyText(/Starless Keep/),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       // The populated realm shows the header "Join" (or empty-state "Join with a link").
       const trigger = page
@@ -1045,15 +1047,14 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       await page.getByRole("dialog").first().waitFor({ timeout: 5000 });
     },
   },
-  // Campaign hub: the page <h1> IS the seeded campaign name "The Starless Keep"
-  // (a proper noun, never translated), which only renders once the fixture
-  // campaign resolves — so it is both locale-invariant and proof the hub body
-  // painted (not the loading spinner).
-  "campaign-hub": { edit: false, ready: readyText(/starless keep/i) },
+  // Campaign hub: the page <h1> IS the seeded campaign name (CAMPAIGN_NAME, in
+  // either locale), which only renders once the fixture campaign resolves — proof
+  // the hub body painted (not the loading spinner).
+  "campaign-hub": { edit: false, ready: readyText(CAMPAIGN_NAME) },
   "campaign-banner-crop": {
     edit: false,
     variants: OVERLAY_VARIANTS,
-    ready: readyText(/starless keep/i),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       await page
         .locator('input[type="file"][accept="image/*"]')
@@ -1066,7 +1067,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false,
-    ready: readyText(/starless keep/i),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       await page.getByRole("tab", { name: /^(dm tools|strumenti del dm)$/i }).click();
       await page
@@ -1078,7 +1079,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false,
-    ready: readyText(/starless keep/i),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       await page.getByRole("tab", { name: /^journal$|^diario$/i }).click();
       await page
@@ -1092,7 +1093,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false,
-    ready: readyText(/starless keep/i),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       await page.getByRole("tab", { name: /^journal$|^diario$/i }).click();
       await page
@@ -1110,7 +1111,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false,
-    ready: readyText(/starless keep/i),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       await page.getByRole("tab", { name: /^journal$|^diario$/i }).click();
       await page
@@ -1127,7 +1128,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     edit: false,
     variants: OVERLAY_VARIANTS,
     overlay: false,
-    ready: readyText(/starless keep/i),
+    ready: readyText(CAMPAIGN_NAME),
     prepare: async (page) => {
       await page
         .getByRole("tab", { name: /^(party resources|risorse del gruppo)$/i })
