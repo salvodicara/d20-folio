@@ -413,6 +413,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "incomingDamageScales",
     consumer: "src/lib/play/damage.ts",
   },
+  "damage-penetration": {
+    via: "spellResistancePenetration",
+    consumer: "src/lib/smart-tracker.ts",
+  },
   "damage-absorb-pool": {
     via: "damageAbsorbPools",
     consumer: "src/lib/play/damage.ts",

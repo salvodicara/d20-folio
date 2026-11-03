@@ -47,6 +47,8 @@ export interface DamageTrayPlan {
   /** A floor on low damage-die faces (Great Weapon Fighting: a 1 or 2 counts as a
    *  3): a screen that takes the faces typed applies it with {@link applyDieFaceFloor}. */
   dieFloor?: { floorBelow: number; floorTo: number };
+  /** Damage types whose Resistance the source ignores (Elemental Adept). */
+  ignoresResistance?: DamageType[];
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
@@ -178,6 +180,9 @@ export function damageTrayPlan(
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),
     ...dieFloorOf(action),
+    ...(s.ignoresResistance?.length
+      ? { ignoresResistance: [...s.ignoresResistance] }
+      : {}),
     ...(hasSave && (saveGovernsDamage || condition)
       ? {
           save: {
@@ -255,14 +260,18 @@ export function parseRolledTotal(text: string): number | null {
 
 export type TargetDefense = "immune" | "resistant" | "vulnerable";
 
-/** The target's own known defense against this damage type (immunity wins). */
+/** The target's own known defense against this damage type (immunity wins). A type
+ *  the source penetrates (Elemental Adept) meets no resistance. */
 function targetDefense(
   defenses: DamageDefenses | undefined,
-  type: DamageType | undefined
+  type: DamageType | undefined,
+  penetrates: ReadonlyArray<DamageType> = []
 ): TargetDefense | null {
   if (!defenses || !type) return null;
   if (defenses.immunities.has(type)) return "immune";
-  const resistant = defenses.allDamageResistance || defenses.resistances.has(type);
+  const resistant =
+    !penetrates.includes(type) &&
+    (defenses.allDamageResistance || defenses.resistances.has(type));
   const vulnerable = defenses.vulnerabilities.has(type);
   // SRD: both apply (halve, then double) — a net ×1, so nothing to pre-set.
   if (resistant && vulnerable) return null;
@@ -466,11 +475,13 @@ export function initialTrayRow(
   hp?: { current: number; max: number }
 ): TrayRow {
   const defense =
-    plan.effect === "damage" ? targetDefense(defenses, plan.damageType) : null;
+    plan.effect === "damage"
+      ? targetDefense(defenses, plan.damageType, plan.ignoresResistance)
+      : null;
   const partDefense: Partial<Record<DamageType, TargetDefense>> = {};
   if (plan.effect === "damage") {
     for (const type of plan.damageTypes ?? []) {
-      const own = targetDefense(defenses, type);
+      const own = targetDefense(defenses, type, plan.ignoresResistance);
       if (own) partDefense[type] = own;
     }
   }

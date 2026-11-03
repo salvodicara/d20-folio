@@ -400,6 +400,9 @@ export interface ActionSummary {
   /** Flat bonus that applies to exactly one damage roll of this cast. Kept separate
    * for multi-instance spells so the resolver cannot multiply it across darts/rays. */
   oneRollDamageBonus?: number;
+  /** Damage types whose Resistance this spell ignores (Elemental Adept): the tray
+   *  drops a target's resistance to them; immunity still applies. */
+  ignoresResistance?: DamageType[];
   /**
    * The TWO-HANDED damage formula for a Versatile weapon (item g) — the larger
    * die from the weapon's "Versatile (1dX)" property, with the same ability mod
@@ -6849,6 +6852,30 @@ function resolveSpellActions(
         if (oneRollBonus > 0) {
           if ((summary.instances ?? 1) > 1) summary.oneRollDamageBonus = oneRollBonus;
           else summary.damage = `${summary.damage}+${oneRollBonus}`;
+        }
+        // Elemental Adept: the chosen type ignores Resistance, and a 1 on its damage
+        // dice counts as a 2 (edge-case family M4).
+        const penetrates = spellTypes.filter((type) =>
+          spellGrantAggregate.spellResistancePenetration.has(type)
+        );
+        if (penetrates.length > 0) summary.ignoresResistance = penetrates;
+        const spellFloors = spellGrantAggregate.damageDieModifiers.filter(
+          (m) =>
+            m.mode === "floor" &&
+            m.appliesTo === "spell" &&
+            m.damageType !== undefined &&
+            spellTypes.includes(m.damageType)
+        );
+        if (spellFloors.length > 0) {
+          summary.dieModifiers = [
+            ...(summary.dieModifiers ?? []),
+            ...spellFloors.map((m) => ({
+              mode: "floor" as const,
+              ...(m.floorBelow !== undefined ? { floorBelow: m.floorBelow } : {}),
+              ...(m.floorTo !== undefined ? { floorTo: m.floorTo } : {}),
+              source: featureNameLoc(m.sourceId),
+            })),
+          ];
         }
       }
     }
