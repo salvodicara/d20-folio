@@ -120,6 +120,31 @@
       "acBonus": "+{{bonus}} Classe Armatura",
       "charges": "{{current}} cariche su {{max}}",
       "stealth": "svantaggio a Furtività"
+    },
+    "tray": {
+      "ifAtOrBelow": "Se ha {{max}} punti ferita o meno: {{then}}.",
+      "otherwise": "Altrimenti: {{then}}.",
+      "askDm": "Chiedi al master: ha {{max}} punti ferita o meno?",
+      "branch": {
+        "dies": "muore",
+        "condition": "subisce la condizione",
+        "otherwise": "subisce i danni",
+        "speed-zero": "la sua velocità diventa 0 fino al tuo prossimo turno"
+      },
+      "revive_one": "Torna in vita con {{count}} punto ferita.",
+      "revive_other": "Torna in vita con {{count}} punti ferita.",
+      "reviveUnknown": "Torna in vita.",
+      "alive": "È vivo: non serve.",
+      "deadWithin": "Morto da {{minutes}} min: entro il limite ✓",
+      "deadTooLong": "Morto da {{minutes}} min: oltre il limite.",
+      "tableDecides": "Da quanto è morto lo decide il tavolo."
+    },
+    "weapon": {
+      "which": "Su quale arma?",
+      "wielded": "impugnata",
+      "packed": "nello zaino",
+      "bonus": "+{{bonus}} al colpire e ai danni",
+      "ability": "attacca con {{ability}}"
     }
   }
 }

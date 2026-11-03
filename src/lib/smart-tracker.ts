@@ -5135,6 +5135,7 @@ function applySaveAttackSummary(
           ? { maxTargetsPerUpcast: target.countPerUpcast }
           : {}),
         ...(target.sharedAmount ? { sharedAmount: true } : {}),
+        ...(target.includesDead ? { includesDead: true as const } : {}),
       },
       ctx
     );
@@ -6996,6 +6997,7 @@ function resolveSpellActions(
           ? { maxTargetsPerUpcast: target.countPerUpcast }
           : {}),
         ...(target.sharedAmount ? { sharedAmount: true } : {}),
+        ...(target.includesDead ? { includesDead: true as const } : {}),
       };
     }
     if (heal?.full) summary.healingMode = "full";

@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
+import { weaponPickView, type WeaponPick } from "@/domains/play/weapon-pick-view";
 import {
   playInventoryView,
   type PlayInventoryView,
@@ -36,12 +37,14 @@ import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
 import { actionIcon } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
+import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
 import { PlayPrepare } from "./PlayPrepare";
+import { PlayWeaponPick } from "./PlayWeaponPick";
 
 type Filter = "all" | "attacks" | "actions" | "bonus" | "reactions" | "other" | "limited";
 const FILTERS: Filter[] = [
@@ -591,6 +594,15 @@ function ActionLine({
   const readonly = useSheetReadonly();
   const { cta } = row;
   const reason = cta.reason ? blockReasonLine(cta.reason, t, locale) : null;
+  // A weapon-binding spell (Magic Weapon, Shillelagh) asks which weapon first.
+  const doc = useCharacterStore((st) => st.character);
+  const [picking, setPicking] = useState<WeaponPick[] | null>(null);
+  const cast = () => {
+    const choices =
+      doc && row.spellId ? weaponPickView(doc, row.spellId, row.level ?? 0, locale) : [];
+    if (choices.length > 0) setPicking(choices);
+    else executeAction(row.action);
+  };
   const sub = [
     row.level === 0
       ? t("spells.cantrip")
@@ -664,11 +676,25 @@ function ActionLine({
                 : undefined
             }
             aria-label={`${cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}: ${row.name}`}
-            onClick={() => executeAction(row.action)}
+            onClick={cast}
           >
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {picking && (
+        <PlayWeaponPick
+          spellName={row.name}
+          choices={picking}
+          onClose={() => setPicking(null)}
+          onCast={(pick, damageType) => {
+            setPicking(null);
+            executeAction(row.action, {
+              weapon: pick.address,
+              ...(damageType ? { damageType } : {}),
+            });
+          }}
+        />
       )}
     </div>
   );

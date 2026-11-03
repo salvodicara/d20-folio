@@ -3057,12 +3057,20 @@
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 4px 8px;
 }
+/* never narrower than its longest word: the count and «ORA» wrap below instead */
 .fui .f-ir-name {
-  min-width: 0;
+  min-width: min-content;
   text-wrap: balance;
+}
+/* a group's count (×3) beside its name, never split from it */
+.fui .f-ir-x {
+  flex: none;
+  font: 700 var(--fs-sm) var(--font-label);
+  color: var(--phone-label);
 }
 .fui .f-ir-now {
   display: inline-flex;
@@ -3076,11 +3084,14 @@
   text-transform: uppercase;
   color: var(--text);
 }
-.fui .f-ir[data-current] .f-ir-s {
+.fui .f-ir[data-current] .f-ir-s,
+.fui .f-ir[data-current] .f-ir-x {
   color: var(--text);
 }
+/* the status sits at the row's end, or on a second line when the row is crowded */
 .fui .f-ir-s {
   flex: none;
+  margin-left: auto;
   font-size: var(--fs-sm);
   color: var(--phone-label);
   white-space: nowrap;
@@ -3285,4 +3296,9 @@
 }
 .fui .f-spell-sum[data-over] {
   color: var(--danger);
+}
+/* the DM's yes / no (Power Word): two chips, each a full target */
+.fui .f-yesno > .f-chip {
+  min-width: 56px;
+  justify-content: center;
 }
