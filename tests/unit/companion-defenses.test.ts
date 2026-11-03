@@ -26,5 +26,17 @@ describe("companion defenses", () => {
       SCORES
     );
     expect(resolved.damageResistances.size).toBe(0);
+    expect(resolved.damageVulnerabilities.size).toBe(0);
+  });
+
+  it("exposes the printed vulnerabilities", () => {
+    const block: CompanionStatBlock = {
+      ac: { base: 12 },
+      hp: { base: 30, perLevel: 0 },
+      damageVulnerabilities: ["fire"],
+    };
+    expect([...resolveCompanion(block, 5, SCORES).damageVulnerabilities]).toEqual([
+      "fire",
+    ]);
   });
 });

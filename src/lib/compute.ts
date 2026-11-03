@@ -2004,6 +2004,8 @@ export interface ResolvedCompanion {
   damageImmunities: ReadonlySet<DamageType>;
   /** Damage types the companion resists (Construct Spirit → Poison). */
   damageResistances: ReadonlySet<DamageType>;
+  /** Damage types the companion is vulnerable to. */
+  damageVulnerabilities: ReadonlySet<DamageType>;
   /** Conditions the companion is immune to (Charmed/Exhaustion/Poisoned). */
   conditionImmunities: ReadonlySet<ConditionId>;
   /** The companion's own senses, in feet (Steel Defender → Darkvision 60). */
@@ -2201,6 +2203,7 @@ export function resolveCompanion(
       block.hitDie != null ? { die: block.hitDie, count: Math.max(1, level) } : null,
     damageImmunities: new Set(block.damageImmunities ?? []),
     damageResistances: new Set(block.damageResistances ?? []),
+    damageVulnerabilities: new Set(block.damageVulnerabilities ?? []),
     conditionImmunities: new Set(block.conditionImmunities ?? []),
     senses: {
       darkvisionFt: block.senses?.darkvisionFt ?? 0,
