@@ -10,6 +10,11 @@ import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
 import {
+  playInventoryView,
+  type PlayInventoryView,
+  type PlayItem,
+} from "@/domains/play/play-inventory-view";
+import {
   playSpellsView,
   type PlaySpell,
   type PlaySpellsView,
@@ -26,7 +31,7 @@ import { playbookView } from "@/domains/play/playbook/playbook-view";
 import { useTurnState, useSheetCombat } from "@/features/character/center/turn-state";
 import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
 import type { Locale } from "@/lib/locale";
-import { localeDistance } from "@/lib/utils";
+import { formatWeight, localeDistance } from "@/lib/utils";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
 import { actionIcon } from "@/domains/play/action-icon";
@@ -123,7 +128,7 @@ export function PlayCentre({
   onShortRest?: () => void;
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<"actions" | "spells">("actions");
+  const [tab, setTab] = useState<"actions" | "spells" | "inventory">("actions");
   const turn = usePlayTurn(doc);
   const spells = playSpellsView(doc, locale, turn);
   // A tab lands with its content: Spells only for a character with spells.
@@ -132,6 +137,7 @@ export function PlayCentre({
     ...(spells.groups.length > 0
       ? [{ id: "spells" as const, label: t("character.tabs.spells") }]
       : []),
+    { id: "inventory" as const, label: t("character.tabs.inventory") },
   ];
   const shown = items.some((i) => i.id === tab) ? tab : "actions";
   return (
@@ -141,8 +147,10 @@ export function PlayCentre({
         <TurnStrip doc={doc} locale={locale} />
         {shown === "actions" ? (
           <ActionsPane doc={doc} locale={locale} turn={turn} onShortRest={onShortRest} />
-        ) : (
+        ) : shown === "spells" ? (
           <SpellsPane doc={doc} view={spells} locale={locale} />
+        ) : (
+          <InventoryPane doc={doc} locale={locale} turn={turn} />
         )}
       </div>
     </section>
@@ -199,6 +207,125 @@ function ActionsPane({
           </section>
         );
       })}
+    </>
+  );
+}
+
+/** «Inventario» (prototype x-play-inv): weight, coins, then equipped, attuned and the
+ *  pack, each item with its one line and «Usa» when the actions list has its use. */
+function InventoryPane({
+  doc,
+  locale,
+  turn,
+}: {
+  doc: CharacterDoc;
+  locale: Locale;
+  turn: ReturnType<typeof usePlayTurn>;
+}) {
+  const { t } = useTranslation();
+  const { executeAction } = useTurnEconomy();
+  const readonly = useSheetReadonly();
+  const view = playInventoryView(doc, locale);
+  const actions = new Map(
+    playActionsView(doc, locale, turn)
+      .groups.flatMap((g) => g.rows)
+      .map((r) => [r.id, r])
+  );
+  const line = (i: PlayItem) => {
+    const l = i.line;
+    if (!l) return null;
+    switch (l.kind) {
+      case "damage":
+        return `${l.dice} ${t(`srd.damage_${l.type}`)}`;
+      case "ac":
+        return t("play.inv.ac", { ac: l.base });
+      case "ac-bonus":
+        return t("play.inv.acBonus", { bonus: l.bonus });
+      case "heal":
+        // the dice and their unit stay on one line
+        return t("play.healing", { amount: l.dice }).replace(/ /g, "\u00a0");
+      case "charges":
+        return t("play.inv.charges", { current: l.current, max: l.max });
+    }
+  };
+  const groupTitle = (kind: PlayInventoryView["groups"][number]["kind"]) =>
+    kind === "equipped"
+      ? t("equipment.equipped")
+      : kind === "attuned"
+        ? t("play.inv.attuned")
+        : t("play.inv.pack");
+  const coins = (["pp", "gp", "ep", "sp", "cp"] as const).filter(
+    (c) => view.coins[c] > 0
+  );
+  return (
+    <>
+      {view.weight && (
+        <p className="f-spell-sum" data-over={view.weight.over || undefined}>
+          {t("play.inv.weight", {
+            carried: formatWeight(view.weight.carried, locale),
+            capacity: formatWeight(view.weight.capacity, locale),
+          })}
+        </p>
+      )}
+      {coins.length > 0 && (
+        <p className="f-coins">
+          {coins.map((c) => (
+            <span key={c} className="f-coin" data-c={c}>
+              <b>{view.coins[c]}</b> {t(`equipment.currencyAbbr.${c}`)}
+            </span>
+          ))}
+        </p>
+      )}
+      {view.groups.map(({ kind, items }) => (
+        <section key={kind} className="f-act-group" data-group="items">
+          <h3 className="f-act-gh">
+            {groupTitle(kind)}
+            {kind === "attuned" && (
+              <span className="f-gh-slots">
+                {t("play.rest.slotsLeft", {
+                  left: view.attunement.bonded,
+                  total: view.attunement.cap,
+                })}
+              </span>
+            )}
+          </h3>
+          {items.map((i) => {
+            const use = i.useActionId ? actions.get(i.useActionId) : undefined;
+            const sub = [
+              line(i),
+              i.stealthDisadvantage ? t("play.inv.stealth") : null,
+              i.needsAttunement ? t("magicItems.attunementRequired") : null,
+            ].filter(Boolean);
+            return (
+              <div key={i.key} className="f-act f-item">
+                <div className="f-row-main">
+                  <div className="f-row-t">
+                    {/* the last two words together: a long name never ends on one alone */}
+                    {i.name.replace(/ (\S+)$/, "\u00a0$1")}
+                    {i.quantity > 1 && `\u00a0×\u2060${String(i.quantity)}`}
+                  </div>
+                  {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
+                </div>
+                <span className="f-act-c">
+                  {formatWeight(i.weight * i.quantity, locale)}
+                </span>
+                {use && !readonly ? (
+                  <Button
+                    kind="ghost"
+                    disabled={use.cta.state.disabled}
+                    aria-label={`${t("common.use")}: ${i.name}`}
+                    onClick={() => executeAction(use.action)}
+                  >
+                    {t("common.use")}
+                  </Button>
+                ) : (
+                  <span />
+                )}
+              </div>
+            );
+          })}
+        </section>
+      ))}
     </>
   );
 }

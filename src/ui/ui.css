@@ -3264,3 +3264,25 @@
   justify-content: space-between;
   gap: 8px 16px;
 }
+/* «Inventario» (prototype x-play-inv): the coins in a row, an item row of three columns */
+.fui .f-coins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 0;
+}
+.fui .f-coin > b {
+  font: 700 var(--fs-lg) var(--font-title);
+  color: var(--white);
+}
+.fui .f-sheet .f-act.f-item {
+  grid-template-columns: minmax(0, 1fr) max-content 96px;
+}
+@media (max-width: 640px) {
+  .fui .f-sheet .f-act.f-item {
+    grid-template-columns: minmax(0, 1fr) 96px;
+  }
+}
+.fui .f-spell-sum[data-over] {
+  color: var(--danger);
+}
