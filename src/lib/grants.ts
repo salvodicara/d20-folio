@@ -95,6 +95,8 @@ export const ATTACK_CLAUSE_SCOPES = [
   "vowed",
   "missed",
   "untaken",
+  // While mounted, against an unmounted creature smaller than the mount (Mounted Strike).
+  "mounted",
   "strength",
   "strDex",
   "sorcery",
