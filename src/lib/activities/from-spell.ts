@@ -251,6 +251,13 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "where the summoned creature acts is an Initiative-order fact of the encounter (lib/play/summon-initiative), not an activity",
     });
   }
+  if (spell.zone) {
+    gaps.push({
+      field: "zone",
+      reason:
+        "the persistent area a spell leaves is an encounter zone with its own ledger (edge-case M9), not an activity",
+    });
+  }
   if (spell.bestiaryPick) {
     gaps.push({
       field: "bestiaryPick",

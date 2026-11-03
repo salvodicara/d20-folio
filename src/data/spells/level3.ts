@@ -143,6 +143,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     // creature takes 3d10 only "On a failed save" — no damage on a success.
     recurrence: "on-enter-or-end-turn",
     resolveOnCast: false,
+    zone: { anchor: "point", spellLevel: 3, triggers: ["enter", "end-turn"] },
     source: "SRD",
   },
   {
@@ -185,6 +186,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 1 },
+    zone: { anchor: "point-or-object", spellLevel: 3, light: "bright", triggers: [] },
     source: "SRD",
   },
   {
@@ -600,6 +602,12 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     // (PHB 2024); the emanation moves with the caster (a self-side cadence).
     recurrence: "on-enter-or-end-turn",
     resolveOnCast: false,
+    zone: {
+      anchor: "caster",
+      spellLevel: 3,
+      spares: "chosen",
+      triggers: ["enter", "end-turn"],
+    },
     source: "SRD",
   },
   {

@@ -211,6 +211,17 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     "bonus-action-retrigger",
     "action-retrigger",
   ]),
+  zone: objectSchema(
+    {
+      anchor: literals(["caster", "point", "point-or-object"]),
+      spellLevel: numberSchema,
+      triggers: arraySchema(literals(["enter", "start-turn", "end-turn", "move-within"])),
+    },
+    {
+      light: literals(["dim", "darkness", "magical-darkness", "bright"]),
+      spares: literalSchema("chosen"),
+    }
+  ),
   resolveOnCast: literalSchema(false),
   followUp: ACTION_DEF,
   endsOnSuccessfulSave: booleanSchema,

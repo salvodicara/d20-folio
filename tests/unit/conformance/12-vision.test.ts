@@ -14,6 +14,13 @@ import { SRD_INVOCATIONS } from "@/data/invocations";
 import { getMonster } from "@/data/monsters";
 import { rule } from "./rule";
 
+/** The zone runtime (edge-case M9), which lands with the engine's family. Until
+ *  then the data alone doesn't make these cases work. */
+async function zoneRuntime(): Promise<Record<string, unknown>> {
+  const id = "@/lib/zones";
+  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+}
+
 const sightWith = sightUnder;
 
 describe("conformance · 12. vision and light", () => {
@@ -62,7 +69,8 @@ describe("conformance · 12. vision and light", () => {
       source: "WIKI spell:darkness",
       status: "M9",
     },
-    () => {
+    async () => {
+      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
       // The Darkness spell is a zone with a spell level, so it can dispel light of
       // 2nd level or lower and be dispelled by Daylight.
       expect(getSpellById("darkness")).toHaveProperty("zone.spellLevel", 2);
@@ -77,7 +85,8 @@ describe("conformance · 12. vision and light", () => {
       source: "WIKI spell:darkness; rpgbot",
       status: "M9",
     },
-    () => {
+    async () => {
+      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
       // The zone can be anchored to an object and moves with it.
       expect(getSpellById("darkness")).toHaveProperty("zone.anchor");
     }
