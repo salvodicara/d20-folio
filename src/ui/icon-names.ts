@@ -33,6 +33,7 @@ export const ICON_NAMES = [
   "u-next",
   "u-offline",
   "u-search",
+  "u-sections",
   "u-settings",
   "u-sign-out",
   "u-time",

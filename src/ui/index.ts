@@ -1,6 +1,6 @@
 // The new UI's design system (docs/design/prototype is the reference). Screens use only these pieces.
 import "./ui.css";
-export { AppShell, type ShellAction, type ShellLink } from "./AppShell";
+export { AppShell, PhoneBar, type ShellAction, type ShellLink } from "./AppShell";
 export { Button } from "./Button";
 export { Chip } from "./Chip";
 export { Choice } from "./Choice";

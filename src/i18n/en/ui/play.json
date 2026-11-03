@@ -61,6 +61,10 @@
     "table": {
       "hit": "Hit / DC",
       "effect": "Effect"
+    },
+    "sections": {
+      "resources": "Resources and skills",
+      "fight": "Fight and report"
     }
   }
 }

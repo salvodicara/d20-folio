@@ -1,8 +1,24 @@
-import { useState, type SubmitEvent, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+  type SubmitEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router";
 import { Icon } from "./Icon";
 import { Menu } from "./Menu";
 import type { IconName } from "./icon-names";
+
+/** The top bar's slot a page fills with its own phone bar (Play: ← · name · class). */
+const PageBarSlot = createContext<HTMLElement | null>(null);
+
+/** A page's own phone top bar: on phone it replaces the logo, ☰ and the account. */
+export function PhoneBar({ children }: { children: ReactNode }) {
+  const slot = useContext(PageBarSlot);
+  return slot ? createPortal(children, slot) : null;
+}
 
 export interface ShellLink {
   to: string;
@@ -53,6 +69,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState<"nav" | "account" | null>(null);
+  const [pageBar, setPageBar] = useState<HTMLElement | null>(null);
   const close = () => setOpen(null);
   const submit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -77,6 +94,7 @@ export function AppShell({
         {skipLabel}
       </a>
       <header className="f-tb">
+        <div className="f-tb-page" ref={setPageBar} />
         <Link className="f-brand" to={home} aria-label={homeLabel}>
           <img src="/assets/brand/folio-logo.svg" alt="" width={32} height={32} />
           Folio
@@ -106,7 +124,7 @@ export function AppShell({
           </button>
         </div>
       </header>
-      {children}
+      <PageBarSlot.Provider value={pageBar}>{children}</PageBarSlot.Provider>
       <footer className="f-foot">{footer}</footer>
       <Menu open={open === "nav"} onClose={close} title={menuLabel}>
         <nav className="f-menu-nav" aria-label={navLabel}>

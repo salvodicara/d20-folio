@@ -8,7 +8,7 @@
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
@@ -16,8 +16,10 @@ import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
+import { useAttachedCampaign } from "@/domains/play/use-attached-campaign";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
+import { useSheetCombat } from "@/features/character/center/turn-state";
 import { useFormActions } from "@/features/character/center/tabs/spells/use-form-actions";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
@@ -30,7 +32,31 @@ import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, HeroFrame, HpRing, StatBadge, Toast } from "@/ui";
+import {
+  Button,
+  Chip,
+  HeroFrame,
+  HpRing,
+  Icon,
+  type IconName,
+  Menu,
+  PhoneBar,
+  StatBadge,
+  Toast,
+} from "@/ui";
+import type { CampaignDoc } from "@/types/campaign";
+
+type Section = "actions" | "resources" | "fight";
+const SECTION_KEY: Record<Section, string> = {
+  actions: "combat.actions",
+  resources: "play.sections.resources",
+  fight: "play.sections.fight",
+};
+const SECTION_ICON: Record<Section, IconName> = {
+  actions: "g-mace",
+  resources: "g-gem",
+  fight: "g-journal",
+};
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
@@ -45,6 +71,11 @@ export function PlayScreen() {
   const [toast, setToast] = useState<string | null>(null);
   const error = useCharacterStore((s) => s.error);
   useDocumentTitle(doc?.character.name);
+  const campaign = useAttachedCampaign(characterId ?? "");
+  const fight = useSheetCombat();
+  // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
+  const [section, setSection] = useState<Section>("actions");
+  const [sectionsOpen, setSectionsOpen] = useState(false);
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -53,21 +84,68 @@ export function PlayScreen() {
       </main>
     );
   }
+  const view = playHeaderView(doc, locale);
+  const sections: Section[] = [
+    "actions",
+    "resources",
+    ...(fight || campaign ? (["fight"] as const) : []),
+  ];
   return (
     <main id="main" className="f-page f-sheet">
-      <PlayHeader doc={doc} view={playHeaderView(doc, locale)} locale={locale} />
+      <PhoneBar>
+        <Link className="f-tb-back" to="/characters" aria-label={t("nav.characters")}>
+          <Icon name="u-back" />
+        </Link>
+        <span className="f-tb-who">
+          <b>{view.name}</b>
+          <span>{view.brief.join(" · ")}</span>
+        </span>
+      </PhoneBar>
+      <PlayHeader doc={doc} view={view} locale={locale} campaign={campaign} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
       <ItemResourceCommandProvider renderPrompts={false}>
         <TurnEconomyProvider renderPrompts={false}>
-          <div className="f-play">
+          <div className="f-play" data-section={section}>
             <PlayLeft doc={doc} locale={locale} />
             <PlayCentre doc={doc} locale={locale} />
-            <PlayRight characterId={doc.id} locale={locale} onToast={setToast} />
+            <PlayRight campaign={campaign} locale={locale} onToast={setToast} />
           </div>
           <PlayPrompts locale={locale} />
         </TurnEconomyProvider>
       </ItemResourceCommandProvider>
+      <nav className="f-secbar" aria-label={t("palette.groupSections")}>
+        <button
+          type="button"
+          aria-haspopup="dialog"
+          onClick={() => setSectionsOpen(true)}
+        >
+          <Icon name="u-sections" />
+          {t("palette.groupSections")}
+        </button>
+      </nav>
+      <Menu
+        open={sectionsOpen}
+        onClose={() => setSectionsOpen(false)}
+        title={t("palette.groupSections")}
+      >
+        {sections.map((id) => (
+          <button
+            key={id}
+            type="button"
+            className="f-menu-it"
+            aria-current={section === id || undefined}
+            onClick={() => {
+              setSection(id);
+              setSectionsOpen(false);
+              window.scrollTo({ top: 0 });
+            }}
+          >
+            <Icon name={SECTION_ICON[id]} />
+            {t(SECTION_KEY[id])}
+          </button>
+        ))}
+      </Menu>
       {toast && <Toast>{toast}</Toast>}
     </main>
   );
@@ -77,10 +155,12 @@ function PlayHeader({
   doc,
   view,
   locale,
+  campaign,
 }: {
   doc: CharacterDoc;
   view: PlayHeaderView;
   locale: Locale;
+  campaign: CampaignDoc | null;
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
@@ -98,11 +178,21 @@ function PlayHeader({
           size={tiny ? 64 : narrow ? 88 : 136}
           portrait={view.portraitUrl ?? undefined}
           name={view.name}
+          ornate
         />
       </div>
       <div className="f-char-id">
         <h1>{view.name}</h1>
         <p className="f-hero-sub">{view.identity.join(" · ")}</p>
+        {/* D&D Beyond's header buttons; the rests arrive with their slice. */}
+        {campaign && (
+          <div className="f-char-acts">
+            <Link className="f-btn" data-kind="ghost" to={`/campaigns/${campaign.id}`}>
+              <Icon name="g-campaign" />
+              {campaign.name}
+            </Link>
+          </div>
+        )}
         {(view.form || view.concentration || view.effects > 0 || view.conditions > 0) && (
           <div className="f-chips">
             {/* In a form the sheet is the beast's: say so first (the source, then it). */}

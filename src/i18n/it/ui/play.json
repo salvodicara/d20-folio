@@ -61,6 +61,10 @@
     "table": {
       "hit": "TxC / CD",
       "effect": "Effetto"
+    },
+    "sections": {
+      "resources": "Risorse e abilità",
+      "fight": "Scontro e resoconto"
     }
   }
 }
