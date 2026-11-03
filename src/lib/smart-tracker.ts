@@ -15,7 +15,12 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
-import { resolveDice, type DiceScalar } from "@/lib/scalar";
+import { resolveDice, SCALAR_BINDINGS, type DiceScalar } from "@/lib/scalar";
+import { evaluateIntegerExpression } from "@/lib/integer-expression";
+import {
+  compileTrackerFormula,
+  type CompiledTrackerFormula,
+} from "@/lib/tracker-formula";
 import { characterScalarBindings } from "@/lib/scalar-bindings";
 import type { IntegerBindings } from "@/lib/integer-expression";
 import { baseActionState, baseActionText } from "@/lib/base-action-states";
@@ -1773,95 +1778,33 @@ function trackerExprParts(formula: string, ctx: TrackerExprCtx): RawBreakdownPar
   return [termPart("breakdown.tracker.fixed", total)];
 }
 
+const compiledTrackerFormulas = new Map<string, CompiledTrackerFormula>();
+
 /**
- * Recursive tracker-formula evaluator. Reuses the one-shot `ctx` (level / pb /
- * abilityMap) across every recursion site so per-term object allocation stays
- * flat. Behavior is identical to the previous inline implementation, including
- * every `Math.max(1, …)` per-term floor.
+ * A tracker formula's value: the formula compiled once to the shared Scalar
+ * language (`@/lib/tracker-formula`, which keeps the grammar's minimum-1 floors),
+ * evaluated on this character's level, Proficiency Bonus and modifiers.
  */
 function resolveTrackerExpr(formula: string, ctx: TrackerExprCtx): number {
-  const { level, pb, abilityMap } = ctx;
-
-  // Pure number
-  const num = parseInt(formula, 10);
-  if (!isNaN(num) && formula === String(num)) return num;
-
-  if (formula in abilityMap) return Math.max(1, abilityMap[formula] ?? 0);
-  if (formula === "PB") return pb;
-  if (formula === "level") return level;
-
-  // max(EXPR,EXPR) — "the modifier of the ability increased by this feat"
-  // patterns where the feat offers two abilities (Inspiring Leader: character
-  // level + Wis-or-Cha modifier → "level+max(WIS,CHA)"). The higher of the two
-  // is the auto-default; override-first covers the off-stat pick.
-  const maxMatch = formula.match(/^max\(([^,()]+),([^,()]+)\)$/);
-  if (maxMatch) {
-    return Math.max(
-      resolveTrackerExpr((maxMatch[1] ?? "0").trim(), ctx),
-      resolveTrackerExpr((maxMatch[2] ?? "0").trim(), ctx)
-    );
+  let compiled = compiledTrackerFormulas.get(formula);
+  if (!compiled) {
+    compiled = compileTrackerFormula(formula);
+    compiledTrackerFormulas.set(formula, compiled);
+    // CQ5: dev-warn on fallback so data typos aren't silently masked.
+    if (compiled.unknown.length > 0 && import.meta.env.MODE !== "production") {
+      console.warn(
+        `[smart-tracker] Unknown tracker formula "${formula}" — falling back to 1`
+      );
+    }
   }
-
-  // floor(EXPR/N) / ceil(EXPR/N) — half-level and similar patterns (CQ5).
-  const roundMatch = formula.match(/^(floor|ceil)\((.+)\/(\d+)\)$/);
-  if (roundMatch) {
-    const op = roundMatch[1];
-    const inner = resolveTrackerExpr(roundMatch[2] ?? "0", ctx);
-    const divisor = parseInt(roundMatch[3] ?? "1", 10) || 1;
-    const v = inner / divisor;
-    return Math.max(1, op === "ceil" ? Math.ceil(v) : Math.floor(v));
+  const bindings: Record<string, number> = {
+    [SCALAR_BINDINGS.featureLevel]: ctx.level,
+    [SCALAR_BINDINGS.proficiencyBonus]: ctx.pb,
+  };
+  for (const [ability, mod] of Object.entries(ctx.abilityMap)) {
+    bindings[SCALAR_BINDINGS.abilityModifier(ability as AbilityCode)] = mod;
   }
-
-  // Multiplication: "level*5", "PB*2", "INT*2"
-  const mulMatch = formula.match(/^(\w+)\*(\d+)$/);
-  if (mulMatch) {
-    const base = mulMatch[1] ?? "";
-    const m = parseInt(mulMatch[2] ?? "1", 10);
-    if (base === "level") return level * m;
-    if (base === "PB") return pb * m;
-    if (base in abilityMap) return Math.max(1, (abilityMap[base] ?? 0) * m);
-  }
-
-  /** Read a bare term ("level", "PB", "CHA", or a numeric literal). */
-  function readTerm(s: string): number {
-    if (s === "level") return level;
-    if (s === "PB") return pb;
-    if (s in abilityMap) return abilityMap[s] ?? 0;
-    return parseInt(s, 10) || 0;
-  }
-
-  // Addition: "1+level", "level*2+INT", "PB+CHA", "level+INT"
-  const addMatch = formula.match(/^(.+)\+(\w+)$/);
-  if (addMatch) {
-    const left = resolveTrackerExpr(addMatch[1] ?? "0", ctx);
-    const rightVal = readTerm(addMatch[2] ?? "");
-    return Math.max(1, left + rightVal);
-  }
-
-  // Subtraction: "level-1", "PB-1" (CQ5).
-  // Matched after `+` and after `*` to avoid clashing with multiplication.
-  const subMatch = formula.match(/^(.+)-(\w+)$/);
-  if (subMatch) {
-    const left = resolveTrackerExpr(subMatch[1] ?? "0", ctx);
-    const rightVal = readTerm(subMatch[2] ?? "");
-    return Math.max(1, left - rightVal);
-  }
-
-  // Top-level division: "level/2", "PB/3" — floored (CQ5). For ceil semantics use ceil(EXPR/N).
-  const divMatch = formula.match(/^(\w+)\/(\d+)$/);
-  if (divMatch) {
-    const left = readTerm(divMatch[1] ?? "");
-    const n = parseInt(divMatch[2] ?? "1", 10) || 1;
-    return Math.max(1, Math.floor(left / n));
-  }
-
-  // CQ5 — dev-warn on fallback so SRD data typos aren't silently masked.
-  if (import.meta.env.MODE !== "production") {
-    console.warn(
-      `[smart-tracker] Unknown tracker formula "${formula}" — falling back to 1`
-    );
-  }
-  return 1;
+  return evaluateIntegerExpression(compiled.expression, bindings) ?? 1;
 }
 
 /**
