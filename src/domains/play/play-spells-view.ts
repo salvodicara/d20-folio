@@ -77,3 +77,38 @@ export function playSpellsView(
     }),
   };
 }
+
+export interface PrepareList {
+  count: number;
+  max: number;
+  overLimit: boolean;
+  levels: {
+    level: number;
+    spells: { idx: number; name: string; prepared: boolean; always: boolean }[];
+  }[];
+}
+
+/** «Gestisci incantesimi»: the levelled spells a prepared caster chooses among, by
+ *  level, each with its place in the spell list (what `togglePrepared` flips), and how
+ *  many are prepared against the most they may. Cantrips are always ready. */
+export function prepareList(doc: CharacterDoc, locale: Locale): PrepareList {
+  const model = buildSpellsViewModel(doc, primaryClassId(doc.character), locale, false);
+  const cs = model.castSummary;
+  return {
+    count: cs?.preparedCount ?? 0,
+    max: cs?.preparedMax ?? 0,
+    overLimit: cs?.overLimit ?? false,
+    levels: model.levels
+      .filter((g) => g.level > 0)
+      .map((g) => ({
+        level: g.level,
+        spells: g.spells.map((card) => ({
+          idx: card.idx,
+          name: card.name,
+          prepared: card.isPrepared || card.isAlwaysPrepared,
+          always: card.isAlwaysPrepared,
+        })),
+      }))
+      .filter((g) => g.spells.length > 0),
+  };
+}

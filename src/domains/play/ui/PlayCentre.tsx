@@ -36,6 +36,7 @@ import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
+import { PlayPrepare } from "./PlayPrepare";
 
 type Filter = "all" | "attacks" | "actions" | "bonus" | "reactions" | "other" | "limited";
 const FILTERS: Filter[] = [
@@ -141,7 +142,7 @@ export function PlayCentre({
         {shown === "actions" ? (
           <ActionsPane doc={doc} locale={locale} turn={turn} onShortRest={onShortRest} />
         ) : (
-          <SpellsPane view={spells} locale={locale} />
+          <SpellsPane doc={doc} view={spells} locale={locale} />
         )}
       </div>
     </section>
@@ -220,8 +221,18 @@ type SpellFilter = "all" | number | "ritual" | "concentration";
 
 /** «Incantesimi» (prototype x-play-spells): the casting numbers, the spells by level
  *  with each level's slots, the same rows and cast buttons as the actions. */
-function SpellsPane({ view, locale }: { view: PlaySpellsView; locale: Locale }) {
+function SpellsPane({
+  doc,
+  view,
+  locale,
+}: {
+  doc: CharacterDoc;
+  view: PlaySpellsView;
+  locale: Locale;
+}) {
   const { t } = useTranslation();
+  const readonly = useSheetReadonly();
+  const [managing, setManaging] = useState(false);
   const [filter, setFilter] = useState<SpellFilter>("all");
   const all = view.groups.flatMap((g) => g.spells);
   const filters: SpellFilter[] = [
@@ -249,22 +260,32 @@ function SpellsPane({ view, locale }: { view: PlaySpellsView; locale: Locale }) 
   return (
     <>
       {summary && (
-        <p className="f-spell-sum">
-          {[
-            summary.saveDc !== null ? t("play.dc", { dc: summary.saveDc }) : null,
-            summary.attack !== null
-              ? t("play.spells.attack", { bonus: signed(summary.attack) })
-              : null,
-            summary.prepared
-              ? t("play.spells.prepared", {
-                  count: summary.prepared.count,
-                  max: summary.prepared.max,
-                })
-              : null,
-          ]
-            .filter(Boolean)
-            .join("\u00a0· ")}
-        </p>
+        <div className="f-spell-head">
+          <p className="f-spell-sum">
+            {[
+              summary.saveDc !== null ? t("play.dc", { dc: summary.saveDc }) : null,
+              summary.attack !== null
+                ? t("play.spells.attack", { bonus: signed(summary.attack) })
+                : null,
+              summary.prepared
+                ? t("play.spells.prepared", {
+                    count: summary.prepared.count,
+                    max: summary.prepared.max,
+                  })
+                : null,
+            ]
+              .filter(Boolean)
+              .join("\u00a0· ")}
+          </p>
+          {summary.prepared && !readonly && (
+            <Button aria-haspopup="dialog" onClick={() => setManaging(true)}>
+              {t("play.spells.manage")}
+            </Button>
+          )}
+        </div>
+      )}
+      {managing && (
+        <PlayPrepare doc={doc} locale={locale} onClose={() => setManaging(false)} />
       )}
       <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
         {filters.map((f) => (
