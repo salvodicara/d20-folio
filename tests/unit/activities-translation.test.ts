@@ -54,6 +54,7 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   summonedMonsters: "raised bestiary creatures, each a monster stat block",
   bestiaryPick: "the creature the caster picks, a monster stat block",
   summonTurn: "where a summoned creature acts, an encounter fact",
+  zone: "the persistent area the spell leaves, an encounter zone (M9), not an activity",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   performs: "a stat-block entry that uses another one, resolved on the block",
