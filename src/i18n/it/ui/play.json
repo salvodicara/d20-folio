@@ -85,6 +85,23 @@
       "exhaustionLine": "Indebolimento {{from}} → {{to}}",
       "trackerLine": "{{name}} +{{count}}",
       "nothing": "Niente da recuperare"
+    },
+    "time": {
+      "title": "Passa il tempo",
+      "howMuch": "Quanto tempo passa?",
+      "hours_one": "{{count}} ora",
+      "hours_other": "{{count}} ore",
+      "otherMinutes": "Minuti",
+      "whatHappens": "Cosa succede",
+      "concentrationEnds": "{{spell}}: la concentrazione finisce",
+      "nothing": "Non finisce niente",
+      "confirm": "Fai passare",
+      "done_one": "Passa {{time}}",
+      "done_other": "Passano {{time}}"
+    },
+    "res": {
+      "spendLabel": "{{name}}: {{left}} su {{max}}. Tocca per spenderne uno",
+      "spent": "{{name}}: {{left}} su {{max}}"
     }
   }
 }

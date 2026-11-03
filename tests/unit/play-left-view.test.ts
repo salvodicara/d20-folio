@@ -6,9 +6,10 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { playLeftView } from "@/domains/play/play-left-view";
+import { playLeftView, resourceSpend } from "@/domains/play/play-left-view";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { resourcesView } from "@/lib/views/resources-view";
+import { buildDevScenario } from "@/lib/dev-scenarios";
 import { makeCharacterDoc } from "./_helpers";
 
 const cleric = makeCharacterDoc({
@@ -51,5 +52,47 @@ describe("playLeftView", () => {
 
   it("all 18 skills stay one tap away", () => {
     expect(view.allSkills).toHaveLength(18);
+  });
+});
+
+// Tapping a pool spends one (prototype x-play «Tocca per spendere»): a spell slot or a
+// class resource with something left. Hit Point Dice go through a Short Rest and an
+// item's charges through its own roll, so they are not tapped here.
+describe("resourceSpend", () => {
+  const druid = buildDevScenario("potent-druid");
+  if (!druid) throw new Error("the potent-druid scenario is missing");
+  const pools = playLeftView(druid, "it").resources;
+  const of = (kind: string) => pools.find((r) => r.row.kind === kind);
+
+  it("a spell slot spends one of its level", () => {
+    const slot = of("spell-slot");
+    if (!slot || slot.row.kind !== "spell-slot") throw new Error("no slot");
+    expect(resourceSpend(slot)).toEqual({
+      kind: "spend-slot",
+      level: slot.row.level,
+      pactMagic: false,
+    });
+  });
+
+  it("a class resource spends one use", () => {
+    const pool = of("class-resource");
+    if (!pool) throw new Error("no class resource");
+    expect(resourceSpend(pool)).toEqual({
+      kind: "spend-tracker",
+      trackerId: pool.row.id,
+      amount: 1,
+    });
+  });
+
+  it("Hit Point Dice are not tapped", () => {
+    const dice = of("hit-dice");
+    if (!dice) throw new Error("no hit dice");
+    expect(resourceSpend(dice)).toBeNull();
+  });
+
+  it("an empty pool is not tapped", () => {
+    const slot = of("spell-slot");
+    if (!slot) throw new Error("no slot");
+    expect(resourceSpend({ ...slot, left: 0 })).toBeNull();
   });
 });

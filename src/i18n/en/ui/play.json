@@ -85,6 +85,23 @@
       "exhaustionLine": "Exhaustion {{from}} → {{to}}",
       "trackerLine": "{{name}} +{{count}}",
       "nothing": "Nothing to recover"
+    },
+    "time": {
+      "title": "Let time pass",
+      "howMuch": "How much time passes?",
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "otherMinutes": "Minutes",
+      "whatHappens": "What happens",
+      "concentrationEnds": "{{spell}}: your Concentration ends",
+      "nothing": "Nothing runs out",
+      "confirm": "Let it pass",
+      "done_one": "{{time}} passes",
+      "done_other": "{{time}} pass"
+    },
+    "res": {
+      "spendLabel": "{{name}}: {{left}} of {{max}}. Tap to spend one",
+      "spent": "{{name}}: {{left}} of {{max}}"
     }
   }
 }

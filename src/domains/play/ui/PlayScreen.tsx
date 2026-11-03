@@ -16,6 +16,7 @@ import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
+import { PlayTime } from "@/domains/play/ui/PlayTime";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { useAttachedCampaign } from "@/domains/play/use-attached-campaign";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
@@ -81,6 +82,7 @@ export function PlayScreen() {
   const [section, setSection] = useState<Section>("actions");
   const [sectionsOpen, setSectionsOpen] = useState(false);
   const [resting, setResting] = useState<RestKind | null>(null);
+  const [passing, setPassing] = useState(false);
   const readonly = useSheetReadonly();
 
   if (!doc || doc.id !== characterId) {
@@ -99,6 +101,12 @@ export function PlayScreen() {
       <Button aria-haspopup="dialog" onClick={() => setResting("long")}>
         {t("play.rest.long")}
       </Button>
+      {/* In a fight the rounds keep the time (prototype: exploration only). */}
+      {!fight && (
+        <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
+          {t("play.time.title")}
+        </Button>
+      )}
     </>
   );
   const sections: Section[] = [
@@ -136,10 +144,17 @@ export function PlayScreen() {
         <TurnEconomyProvider renderPrompts={false}>
           <div className="f-play" data-section={section}>
             <PlayLeft doc={doc} locale={locale} rests={readonly ? undefined : rests} />
-            <PlayCentre doc={doc} locale={locale} />
+            <PlayCentre
+              doc={doc}
+              locale={locale}
+              onShortRest={readonly ? undefined : () => setResting("short")}
+            />
             <PlayRight campaign={campaign} locale={locale} onToast={setToast} />
           </div>
           <PlayPrompts locale={locale} />
+          {passing && (
+            <PlayTime doc={doc} locale={locale} onClose={() => setPassing(false)} />
+          )}
           {resting && (
             <PlayRest
               doc={doc}

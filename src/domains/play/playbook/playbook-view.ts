@@ -43,6 +43,8 @@ export interface PlaybookLine {
   after: string;
   /** One sentence with numbers; null when the line explains itself. */
   why: string | null;
+  /** What its bold words open, when they are a thing to do here (a Short Rest). */
+  opens?: "short-rest";
 }
 
 export interface PlaybookView {
@@ -366,6 +368,7 @@ export function playbookView(
       status: step.status,
       ...split(lineSentence(step, actionId, facts)),
       why: step.rule === "position" ? null : whySentence(step, facts),
+      ...(step.rule === "short-rest-recovery" ? { opens: "short-rest" as const } : {}),
     };
   };
   const byId = new Map(playbook.steps.map((step) => [step.id, step]));

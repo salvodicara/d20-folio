@@ -240,7 +240,7 @@ window.__audit = (opts) => {
       if (bad.length) add("abbrev", bad.join(",") + " " + label(e));
     }
     // c12 touch targets, c5 centring
-    if (e.matches(clickSel) && !e.closest("p")) {
+    if (e.matches(clickSel) && !e.closest("p,[data-prose]")) {
       let ew = r.width,
         eh = r.height;
       for (const ps of ["::before", "::after"]) {
