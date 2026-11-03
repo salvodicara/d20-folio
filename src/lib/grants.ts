@@ -1254,6 +1254,63 @@ export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "do" | "limit"> & {
   sourceId: string;
 };
 
+/**
+ * What makes two sources the same effect (edge-case family M10): the same catalogue
+ * entry (two clerics' Shield of Faith, two Rings of Protection, two paladins' Auras),
+ * or, for a source with no catalogue entry, the same name (a 2014 homebrew copy of a
+ * 2024 spell).
+ */
+function effectIdentity(source: GrantSource): string {
+  if (source.ref) return `${source.ref.kind}:${source.ref.key}`;
+  const name = source.name?.en.trim().toLowerCase();
+  return name ? `name:${name}` : `id:${source.id}`;
+}
+
+/**
+ * "Different game features stack, but the same feature doesn't" (SRD 5.2.1,
+ * Combining Game Effects): when the same effect reaches the character from more than
+ * one source, its additive numbers apply once, the most potent. Every `add` rule of
+ * such a group becomes a `max` (a penalty: a `min`) in a bucket of its own, so the
+ * fold keeps the most potent.
+ */
+function sameEffectsDontStack(
+  rules: readonly Rule[],
+  ruleSourceIds: readonly string[],
+  sources: readonly GrantSource[]
+): Rule[] {
+  const identityOf = new Map(
+    sources.map((source) => [source.id, effectIdentity(source)])
+  );
+  const sourcesOf = new Map<string, Set<string>>();
+  for (const id of new Set(ruleSourceIds)) {
+    const identity = identityOf.get(id);
+    if (identity === undefined) continue;
+    const ids = sourcesOf.get(identity) ?? new Set<string>();
+    ids.add(id);
+    sourcesOf.set(identity, ids);
+  }
+  if (![...sourcesOf.values()].some((ids) => ids.size > 1)) return [...rules];
+  return rules.map((rule, i) => {
+    const sourceId = ruleSourceIds[i];
+    const identity = sourceId === undefined ? undefined : identityOf.get(sourceId);
+    if (
+      rule.op !== "add" ||
+      typeof rule.value !== "number" ||
+      identity === undefined ||
+      (sourcesOf.get(identity)?.size ?? 0) < 2
+    )
+      return rule;
+    // The most potent: the largest bonus, or the deepest penalty.
+    return {
+      op: rule.value < 0 ? "min" : "max",
+      target: rule.target,
+      value: rule.value,
+      stack: `same:${identity}:${rule.stack ?? "add"}`,
+      ...(rule.when ? { when: rule.when } : {}),
+    };
+  });
+}
+
 export interface FormCastingEntry {
   sourceId: string;
   form: string;
@@ -2485,6 +2542,8 @@ export function evaluateGrants(
   const rules: Rule[] = [];
   /** The source of `rules[i]` (filled by `applyGrant`; a hole for a source-less rule). */
   const ruleSources: Array<{ kind: SrdKind; key: string } | undefined> = [];
+  /** The source id of `rules[i]`, for the same-effect policy below. */
+  const ruleSourceIds: string[] = [];
   /** Runtime sources' toggle names ({@link GrantSource.label}), by source id. */
   const sourceLabels = new Map(
     sources.flatMap((src) => (src.label ? [[src.id, src.label] as const] : []))
@@ -2664,6 +2723,7 @@ export function evaluateGrants(
     applyGrantRules(g, sourceId, gref, sourceRef, activeKey, runtime, item);
     for (let i = from; i < rules.length; i++) {
       if (ruleSources[i] === undefined && sourceRef) ruleSources[i] = sourceRef;
+      ruleSourceIds[i] ??= sourceId;
     }
   }
 
@@ -3969,8 +4029,9 @@ export function evaluateGrants(
     });
   }
 
-  const values = foldRules(rules);
-  const ruleOrigins: RuleOrigin[] = rules.map((rule, i) => {
+  const policed = sameEffectsDontStack(rules, ruleSourceIds, sources);
+  const values = foldRules(policed);
+  const ruleOrigins: RuleOrigin[] = policed.map((rule, i) => {
     const source = ruleSources[i];
     return source ? { rule, source } : { rule };
   });

@@ -60,7 +60,7 @@ describe("conformance · 1. stacking and ordering", () => {
       category: 1,
       case: "Same-name effects don't stack",
       source: "GLOSS",
-      status: "M10",
+      status: "works",
     },
     () => {
       // Two clerics each cast Shield of Faith on the same fighter: one +2, not +4.
@@ -268,7 +268,7 @@ describe("conformance · 1. stacking and ordering", () => {
       category: 1,
       case: "Overlapping paladin auras",
       source: "WIKI paladin:main",
-      status: "M10",
+      status: "works",
     },
     () => {
       // Two paladins' Auras of Protection (CHA +3 and +2) on one ally: only one applies.
