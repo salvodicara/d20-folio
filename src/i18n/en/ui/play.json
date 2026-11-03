@@ -107,7 +107,10 @@
     "unprepared": "not prepared",
     "spells": {
       "attack": "attack {{bonus}}",
-      "prepared": "{{count}} of {{max}} prepared"
+      "prepared": "{{count}} of {{max}} prepared",
+      "manage": "Manage spells",
+      "always": "always prepared",
+      "overLimit": "That's more than your class allows: fine if your DM agrees."
     }
   }
 }

@@ -3257,3 +3257,10 @@
   text-transform: none;
   color: var(--muted);
 }
+.fui .f-spell-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}

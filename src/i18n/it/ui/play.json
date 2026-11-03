@@ -107,7 +107,10 @@
     "unprepared": "non preparato",
     "spells": {
       "attack": "tiro {{bonus}}",
-      "prepared": "preparati {{count}} su {{max}}"
+      "prepared": "preparati {{count}} su {{max}}",
+      "manage": "Gestisci incantesimi",
+      "always": "sempre preparato",
+      "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo."
     }
   }
 }

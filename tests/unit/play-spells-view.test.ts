@@ -4,7 +4,7 @@
  * the same row and cast button as the actions, and an unprepared one shown but not cast.
  */
 import { describe, expect, it } from "vitest";
-import { playSpellsView } from "@/domains/play/play-spells-view";
+import { playSpellsView, prepareList } from "@/domains/play/play-spells-view";
 import { makeCharacterDoc } from "./_helpers";
 
 const cleric = makeCharacterDoc(
@@ -61,5 +61,25 @@ describe("playSpellsView", () => {
       .flatMap((g) => g.spells)
       .find((s) => s.row.spellId === "bless");
     expect(bless?.row.concentration).toBe(true);
+  });
+});
+
+// «Gestisci incantesimi»: the spells a prepared caster chooses among, by level, and how
+// many are prepared against the most they may.
+describe("prepareList", () => {
+  const list = prepareList(cleric, "en");
+
+  it("counts the prepared against the most", () => {
+    expect(list.count).toBe(1);
+    expect(list.max).toBeGreaterThan(0);
+    expect(list.overLimit).toBe(false);
+  });
+
+  it("lists the levelled spells, cantrips aside, each with its index and state", () => {
+    expect(list.levels.map((l) => l.level)).toEqual([1]);
+    expect(list.levels[0]?.spells.map((s) => [s.name, s.prepared, s.always])).toEqual([
+      ["Bless", true, false],
+      ["Cure Wounds", false, false],
+    ]);
   });
 });
