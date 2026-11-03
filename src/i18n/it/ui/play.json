@@ -65,6 +65,9 @@
     "sections": {
       "resources": "Risorse e abilità",
       "fight": "Scontro e resoconto"
-    }
+    },
+    "endTurn": "Fine turno",
+    "turnMine": "Tocca a te",
+    "initiativeYou": "(tu)"
   }
 }
