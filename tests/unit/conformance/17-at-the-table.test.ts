@@ -59,7 +59,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Physical dice entered by hand",
       source: "SAC #61; WIKI rogue:main",
-      status: "M4",
+      status: "works",
     },
     async () => {
       // Advantage asks for two d20 faces; one polarity each way cancels to one.
@@ -71,8 +71,8 @@ describe("conformance · 17. at-the-table gaps", () => {
       ).toBe(1);
       // Great Weapon Fighting turns typed faces [1, 2] on 2d6 into 3 + 3: the damage
       // entry needs the raw faces, not only a total.
-      const tray: Record<string, unknown> = await import("@/lib/play/damage-tray");
-      expect(tray.applyDieFaceFloor).toBeTypeOf("function");
+      const { applyDieFaceFloor } = await import("@/lib/play/damage-tray");
+      expect(applyDieFaceFloor([1, 2], { floorBelow: 2, floorTo: 3 })).toBe(6);
     }
   );
 

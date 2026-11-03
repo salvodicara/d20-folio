@@ -44,6 +44,9 @@ export interface DamageTrayPlan {
    *  the tray can then take one total per type, each meeting its own defense
    *  ({@link rowAmountByType}). */
   damageTypes?: DamageType[];
+  /** A floor on low damage-die faces (Great Weapon Fighting: a 1 or 2 counts as a
+   *  3): a screen that takes the faces typed applies it with {@link applyDieFaceFloor}. */
+  dieFloor?: { floorBelow: number; floorTo: number };
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
@@ -174,6 +177,7 @@ export function damageTrayPlan(
     ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),
+    ...dieFloorOf(action),
     ...(hasSave && (saveGovernsDamage || condition)
       ? {
           save: {
@@ -212,6 +216,30 @@ export function damageTrayPlan(
       : {}),
     targets: planTargets,
   };
+}
+
+/** The weapon's floor on low damage-die faces, when one applies. */
+function dieFloorOf(action: ResolvedAction): Pick<DamageTrayPlan, "dieFloor"> {
+  const floor = action.summary.dieModifiers?.find((m) => m.mode === "floor");
+  return floor?.floorBelow !== undefined && floor.floorTo !== undefined
+    ? { dieFloor: { floorBelow: floor.floorBelow, floorTo: floor.floorTo } }
+    : {};
+}
+
+/**
+ * The total of damage-die faces typed by hand, with a floor on low faces (Great
+ * Weapon Fighting: `{ floorBelow: 2, floorTo: 3 }`). A face below 1 is not a die
+ * face and counts as nothing. The engine never rolls.
+ */
+export function applyDieFaceFloor(
+  faces: ReadonlyArray<number>,
+  floor?: { floorBelow: number; floorTo: number }
+): number {
+  return faces.reduce((sum, raw) => {
+    const face = Math.floor(raw);
+    if (!(face >= 1)) return sum;
+    return sum + (floor && face <= floor.floorBelow ? floor.floorTo : face);
+  }, 0);
 }
 
 /**
