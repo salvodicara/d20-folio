@@ -172,6 +172,7 @@ import { sessionActiveKeys } from "@/lib/world-standing-grants";
 // the raw session mirror in one motion. `rolls` stays a session-only fact
 // (the world does not model recorded rolls).
 import { vitalTrackerUsed } from "@/lib/character-vitals";
+import { COUNTERED_SPELL_KEEPS_SLOT } from "@/lib/play/countered";
 import {
   classifySpellCastingTime,
   slotUsageKey,
@@ -843,6 +844,9 @@ export interface ResolvedAction {
   summary: ActionSummary;
   /** Whether it costs a spell slot */
   costsSlot: boolean;
+  /** A slot cast keeps its slot when countered (Counterspell 2024): the player says
+   *  so on the turn and the slot comes back (`lib/play/countered`). */
+  refund?: { on: "countered" };
   /** Spell slot level required (if costsSlot) */
   slotLevel?: number;
   /** Tracker ID consumed (if feature with tracker) */
@@ -6472,6 +6476,9 @@ function resolveSpellActions(
         concentration: customSpell.concentration,
         summary: customSummary,
         costsSlot: customSpell.level > 0,
+        ...(customSpell.level > 0 && COUNTERED_SPELL_KEEPS_SLOT
+          ? { refund: { on: "countered" as const } }
+          : {}),
         slotLevel: customSpell.level > 0 ? customSpell.level : undefined,
         pinned: pinnedSet.has(customSpellId),
         defaultPinned: false,
@@ -7093,6 +7100,9 @@ function resolveSpellActions(
       concentration: spell.concentration,
       summary,
       costsSlot: spell.level > 0,
+      ...(spell.level > 0 && COUNTERED_SPELL_KEEPS_SLOT
+        ? { refund: { on: "countered" as const } }
+        : {}),
       slotLevel: spell.level > 0 ? spell.level : undefined,
       pinned: pinnedSet.has(identity.actionId),
       defaultPinned: false,

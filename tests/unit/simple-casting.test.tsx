@@ -236,6 +236,8 @@ it("asks 'on whom?' after the slot; Me lights the state, tags the line, one undo
   expect(after.session.logEntries.at(-1)?.event).toMatchObject({
     kind: "action-use",
     targets: ["pc-test-uid"],
+    // The slot it paid, so a Counterspell can give it back.
+    paidSlot: { level: 1 },
   });
 
   act(() => {

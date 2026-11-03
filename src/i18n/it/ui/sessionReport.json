@@ -37,7 +37,7 @@
     "statusEnd": "Termina {{source}} di {{actor}}",
     "statusPenalty": "{{source}} di {{actor}}: −{{amount}} ai tiri d20",
     "down": "{{target}} scende a 0 PF",
-    "stabilized": "{{target}} viene stabilizzato",
+    "stabilized": "{{target}} è stabile",
     "resourceGrant": "{{actor}} dà a {{target}} {{resource}}",
     "resource": {
       "heroic-inspiration": "Ispirazione eroica",

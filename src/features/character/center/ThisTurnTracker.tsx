@@ -50,6 +50,12 @@ import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
 import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
+import {
+  counterableCasts,
+  counteredEvent,
+  type CounterableCast,
+} from "@/lib/play/countered";
+import { localizeText } from "@/lib/views/srd-i18n";
 import { applyFirstRollTopUps } from "./initiative-top-up";
 import { StatusLedge } from "./StatusLedge";
 import { concentrationRoundsLeft, deriveStatuses } from "@/lib/status";
@@ -471,6 +477,26 @@ export function ThisTurnTracker({
         timeStop: timeStopTurns,
       })
     : null;
+  // A countered spell keeps its slot (Counterspell 2024): each slot cast this turn
+  // offers "Countered", which gives the slot back; the action stays spent.
+  const counterable = readonly ? [] : counterableCasts(character.session.logEntries);
+  function markCountered(cast: CounterableCast) {
+    const name = localizeText(cast.action, locale);
+    registerUndoableToast(
+      { message: t("combat.counteredToast", { name, level: cast.level }) },
+      () => {
+        const store = useCharacterStore.getState();
+        store.restoreSpellSlot(cast.level, cast.pactMagic);
+        const logId = store.logEvent(counteredEvent(cast));
+        return () => {
+          const live = useCharacterStore.getState();
+          live.useSpellSlot(cast.level, cast.pactMagic);
+          live.removeLogEntry(logId);
+        };
+      },
+      { turnScoped: false }
+    );
+  }
   const askTimeStopTurns =
     soloTurns &&
     timeStopTurns?.round !== round &&
@@ -951,6 +977,28 @@ export function ThisTurnTracker({
           </div>
         </PromptedBanner>
       )}
+      {counterable.map((cast) => {
+        const name = localizeText(cast.action, locale);
+        return (
+          <div
+            key={cast.entryId}
+            className="conc-banner"
+            role="status"
+            data-testid="countered-cast"
+          >
+            <span className="conc-banner-mark" aria-hidden />
+            <span className="conc-banner-text">{name}</span>
+            <button
+              type="button"
+              className="conc-banner-drop"
+              aria-label={t("combat.counteredAria", { name, level: cast.level })}
+              onClick={() => markCountered(cast)}
+            >
+              {t("combat.countered")}
+            </button>
+          </div>
+        );
+      })}
       {askTimeStopTurns && (
         <div className="conc-banner" role="status" data-testid="time-stop-turns">
           <span className="conc-banner-mark" aria-hidden />
