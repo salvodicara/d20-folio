@@ -232,7 +232,15 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
         : undefined,
     stabilizes:
       activity.effects.some((effect) => effect.kind === "stabilize") || undefined,
-    revives: revive?.kind === "revive" ? { hitPoints: revive.hitPoints } : undefined,
+    revives:
+      revive?.kind === "revive"
+        ? {
+            hitPoints: revive.hitPoints,
+            ...(revive.withinMinutes !== undefined
+              ? { withinMinutes: revive.withinMinutes }
+              : {}),
+          }
+        : undefined,
     hitPointThreshold:
       threshold?.kind === "hp-threshold"
         ? {
