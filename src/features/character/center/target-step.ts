@@ -17,6 +17,14 @@ export interface TargetRosterRow {
   kind: "pc" | "monster";
   side?: "ally" | "enemy";
   name: string;
+  /** At 0 Hit Points (a monster there is dead; a PC is dying). */
+  down?: boolean;
+  deathSaves?: { successes: number; failures: number };
+}
+
+/** Dead: a monster at 0 Hit Points, a PC with three failed death saves. */
+function isDead(row: TargetRosterRow): boolean {
+  return row.kind === "pc" ? (row.deathSaves?.failures ?? 0) >= 3 : row.down === true;
 }
 
 export interface TargetRoster {
@@ -67,6 +75,8 @@ export function targetStepFor(
     allies.push({ id: roster.selfId, name: roster.selfName, side: "ally", self: true });
   for (const row of roster.rows) {
     if (row.id === roster.selfId) continue;
+    // Only a spell that reaches the dead (Revivify) offers them.
+    if (isDead(row) && !action.summary.targeting?.includesDead) continue;
     const side = row.side ?? (row.kind === "pc" ? "ally" : "enemy");
     const candidate = {
       id: row.id,

@@ -143,3 +143,41 @@ describe("targetStepFor — an area catches everyone in it", () => {
     }
   );
 });
+
+describe("targetStepFor — the dead", () => {
+  // SRD 5.2.1 Revivify: "A creature you touch that has died"; a dead creature is no
+  // longer a target for anything else.
+  const WAKE: TargetRoster = {
+    selfId: "pc-me",
+    selfName: "Mirovel",
+    rows: [
+      { id: "pc-me", kind: "pc", side: "ally", name: "Mirovel" },
+      {
+        id: "pc-bren",
+        kind: "pc",
+        side: "ally",
+        name: "Bren",
+        deathSaves: { successes: 0, failures: 3 },
+      },
+      {
+        id: "pc-cora",
+        kind: "pc",
+        side: "ally",
+        name: "Coralino",
+        down: true,
+        deathSaves: { successes: 1, failures: 2 },
+      },
+      { id: "m-gob1", kind: "monster", side: "enemy", name: "Goblin 1", down: true },
+      { id: "m-gob2", kind: "monster", side: "enemy", name: "Goblin 2" },
+    ],
+  };
+
+  it("a spell for the living never offers the dead (a dying ally still counts)", () => {
+    expect(ids(spellAction("bless"), WAKE)).toEqual(["pc-me", "pc-cora"]);
+    expect(ids(spellAction("fire-bolt"), WAKE)).toEqual(["m-gob2"]);
+  });
+
+  it("Revivify offers the dead ally too", () => {
+    expect(ids(spellAction("revivify"), WAKE)).toContain("pc-bren");
+  });
+});
