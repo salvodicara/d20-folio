@@ -251,6 +251,7 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
       maxTargets: unionSchema([numberSchema, DICE_COUNT]),
       maxTargetsPerUpcast: numberSchema,
       sharedAmount: booleanSchema,
+      includesDead: literalSchema(true),
     }
   ),
   area: booleanSchema,

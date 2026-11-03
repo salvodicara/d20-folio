@@ -155,6 +155,8 @@ export interface ActivityTarget {
   countPerUpcast?: number;
   /** One amount is divided among the targets (Mass Heal). */
   sharedAmount?: true;
+  /** A dead creature is a legal target too (Revivify). */
+  includesDead?: true;
   /** Only the first target takes the primary damage; the rest only riders. */
   primaryOnly?: true;
   /** Melee reach in feet. */

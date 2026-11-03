@@ -13,6 +13,7 @@ import type {
   CombatConditionLifetime,
   CreatureType,
   DamageSource,
+  SpellRevive,
 } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import {
@@ -54,7 +55,7 @@ export interface CombatResolutionSpec {
   hasHeroicInspiration: boolean;
   stabilizes: boolean;
   /** The cast returns a dead creature to life with these Hit Points. */
-  revives?: { hitPoints: number | "all" };
+  revives?: SpellRevive;
   /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
   hitPointThreshold?: NonNullable<ResolvedAction["summary"]["hitPointThreshold"]>;
   conditionRemoval?: { options: string[]; max?: number };
@@ -303,7 +304,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     hasGrantedDie,
     hasHeroicInspiration,
     stabilizes,
-    ...(revives ? { revives: { hitPoints: revives.hitPoints } } : {}),
+    ...(revives ? { revives: { ...revives } } : {}),
     ...(s.hitPointThreshold ? { hitPointThreshold: { ...s.hitPointThreshold } } : {}),
     ...(s.healingMode === "full" || s.healingMode === "maximum"
       ? { healingMode: s.healingMode }
@@ -343,6 +344,8 @@ export function shouldResolveCombatAction(action: ResolvedAction): boolean {
     spec.stabilizes ||
     spec.conditionRemoval ||
     spec.conditionApplication ||
+    spec.revives ||
+    spec.hitPointThreshold ||
     spec.standingEffect ||
     spec.kind !== "automatic"
   );

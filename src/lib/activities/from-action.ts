@@ -79,6 +79,7 @@ function target(action: SrdActionDef): ActivityTarget | undefined {
     count: targeting?.maxTargets,
     countPerUpcast: targeting?.maxTargetsPerUpcast,
     sharedAmount: targeting?.sharedAmount ? (true as const) : undefined,
+    includesDead: targeting?.includesDead,
   });
   return Object.keys(out).length > 0 ? out : undefined;
 }
