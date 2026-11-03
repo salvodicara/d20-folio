@@ -180,7 +180,10 @@ export type ReactionTrigger =
   | "savedVsCharmOrFear"
   | "succeedDexSaveForHalf"
   | "targetAttacks"
-  | "takeDamage";
+  | "takeDamage"
+  // A creature you can see makes an attack roll against you (before it's resolved):
+  // the Enchanter's Instinctive Charm.
+  | "creatureAttacksYou";
 
 /** Runtime list of every {@link ReactionTrigger} token (exhaustive by construction). */
 export const ALL_REACTION_TRIGGERS = [
@@ -200,6 +203,7 @@ export const ALL_REACTION_TRIGGERS = [
   "succeedDexSaveForHalf",
   "targetAttacks",
   "takeDamage",
+  "creatureAttacksYou",
 ] as const satisfies ExhaustiveTuple<
   ReactionTrigger,
   [
@@ -219,6 +223,7 @@ export const ALL_REACTION_TRIGGERS = [
     "succeedDexSaveForHalf",
     "targetAttacks",
     "takeDamage",
+    "creatureAttacksYou",
   ]
 >;
 
