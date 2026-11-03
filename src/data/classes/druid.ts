@@ -242,6 +242,23 @@ export const DRUID_FEATURES: SrdClassFeatureData[] = [
         formula: "level",
       },
     ],
+    // The form (edge-case family M2): a Beast from the Beast Shapes table (max CR by
+    // level, a Fly Speed only from level 8). The druid keeps its own Hit Points,
+    // Intelligence, Wisdom and Charisma, class features and proficiencies. The form
+    // lasts until the druid uses Wild Shape again, has the Incapacitated condition or
+    // dies. Its Temporary HP are the grant above; nothing removes them on reverting.
+    formRule: {
+      pool: "beasts",
+      keepsMind: true,
+      reshift: false,
+      endsWithoutTempHp: false,
+      tempHp: "grants",
+      tempHpOutlastsForm: true,
+      endsOn: ["incapacitated"],
+      crCapColumn: "wildShapeMaxCR",
+      flyFromLevel: 8,
+      selfOnly: true,
+    },
     mechanics: {
       tracker: {
         total: "2",

@@ -1024,6 +1024,21 @@ export interface SelfFormRule {
   /** The spell only ever targets the caster (Shapechange): no reference card for
    *  another creature in the picker. */
   selfOnly?: boolean;
+  /** Temporary Hit Points on assuming a form: the form's Hit Points (the default),
+   *  or the best of the character's temporary-HP grants for this form (Wild Shape:
+   *  the Druid level). */
+  tempHp?: "form-hp" | "grants";
+  /** The Temporary HP stay when the form ends (Wild Shape); otherwise the
+   *  character's own pool comes back. */
+  tempHpOutlastsForm?: boolean;
+  /** Conditions that end the form, implied ones included (Wild Shape:
+   *  Incapacitated, so also Stunned, Paralyzed, Unconscious, Petrified). */
+  endsOn?: ReadonlyArray<ConditionId>;
+  /** The Challenge Rating cap is a column of the owning class's table, read at the
+   *  class's level (Wild Shape: `wildShapeMaxCR`). */
+  crCapColumn?: string;
+  /** Forms with a Fly Speed only from this level of the owning class (Wild Shape: 8). */
+  flyFromLevel?: number;
 }
 
 export interface SrdSpellData {
@@ -1911,6 +1926,8 @@ export interface SrdClassFeatureData {
   subclass?: string;
   /** Level at which this feature is gained */
   level: number;
+  /** The feature transforms the character (Wild Shape): how the form works. */
+  formRule?: SelfFormRule;
   /** Mechanical effects (for features with trackers/actions) */
   mechanics?: {
     tracker?: TrackerSpec;

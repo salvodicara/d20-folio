@@ -11,13 +11,14 @@ import {
 } from "@/lib/mechanics-world-store";
 import { potionStatesGiving } from "@/lib/potion-states";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { endFormIfDue } from "./forms";
 import { endStateKeys } from "./states";
 import { commitWorldCondition } from "./world-commit";
 
 /**
  * Add a condition, or null when it is already on. The chip always lights: the mirror
  * only moves chips on an engine transition, and a world that still holds a condition
- * the DM's card removed sees none.
+ * the DM's card removed sees none. A form that ends on the condition ends with it.
  */
 export function addCondition(
   doc: CharacterDoc,
@@ -32,9 +33,11 @@ export function addCondition(
     worldActionId
   );
   const base = engine ? engine.session : doc.session;
-  return base.conditions.includes(condition)
+  const next = base.conditions.includes(condition)
     ? base
     : { ...base, conditions: [...base.conditions, condition] };
+  // Incapacitated ends a form whose rule ends on it (Wild Shape).
+  return endFormIfDue(doc, next);
 }
 
 /**

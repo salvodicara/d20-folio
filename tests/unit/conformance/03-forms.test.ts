@@ -109,7 +109,7 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "What Wild Shape keeps",
       source: "WIKI druid:main; FVTT#6638",
-      status: "M2",
+      status: "works",
     },
     () => {
       const doc = druid(5);
@@ -141,7 +141,7 @@ describe("conformance · 3. forms and transformations", () => {
   );
 
   rule(
-    { category: 3, case: "Wild Shape at 0 HP", source: "FVTT#833", status: "M2" },
+    { category: 3, case: "Wild Shape at 0 HP", source: "FVTT#833", status: "works" },
     () => {
       const { doc } = shift(druid(5), beast("wolf"), WILD_SHAPE);
       expect(doc.session.activeForm?.beastId).toBe("wolf");

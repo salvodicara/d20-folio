@@ -147,7 +147,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Wild Shape mid-combat",
       source: "WIKI druid:main; WIKI druid:moon; FVTT#5962",
-      status: "M2",
+      status: "works",
     },
     () => {
       // The form ends on Incapacitated and swaps the stat block (a form rule).
