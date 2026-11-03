@@ -55,6 +55,7 @@ import {
 import { SpellCard, type SpellCardCallbacks } from "./spells/SpellCard";
 import { TransformFormPicker } from "./spells/TransformFormPicker";
 import { useFormActions } from "./spells/use-form-actions";
+import { togglePrepared as togglePreparedSpell } from "@/lib/play/spell-prep";
 import { transformFormLabel } from "./spells/transform-form-label";
 import { localizeActions, type CombatAction } from "@/lib/views/combat-action-view";
 import { useTurnEconomy } from "../useTurnEconomy";
@@ -139,14 +140,9 @@ export function SpellsTab() {
   const togglePrepared = useCallback(
     (spellIdx: number) => {
       if (!character) return;
-      const store = useCharacterStore.getState();
-      const spells = [...character.character.spells];
-      const ref = spells[spellIdx];
-      if (!ref) return;
       // A2 — subclass-granted "always prepared" spells can't be unprepared.
-      if (!("custom" in ref) && ref.alwaysPrepared === true) return;
-      spells[spellIdx] = { ...ref, prepared: !ref.prepared };
-      store.setCharacter({ ...character, character: { ...character.character, spells } });
+      const next = togglePreparedSpell(character, spellIdx);
+      if (next) useCharacterStore.getState().setCharacter(next);
     },
     [character]
   );
