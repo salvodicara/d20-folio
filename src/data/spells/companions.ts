@@ -4,6 +4,7 @@
  * per-level increments when the session knows a higher cast level. Names, kinds
  * and riders live in the spell catalogue under `<spellId>.companion…`.
  */
+import { castScaled, fromCastLevel } from "@/lib/scalar";
 import type { CompanionLifecycle, CompanionStatBlock } from "../types";
 
 /** A Concentration summon that disappears at 0 Hit Points. */
@@ -12,7 +13,7 @@ const CONCENTRATION_SUMMON: CompanionLifecycle = {
 };
 
 // Find Steed (level 2) — Otherworldly Steed: AC 10 + 1 per spell level, HP 5 + 10
-// per spell level, Speed 60 ft. (Fly 60 ft. from level 4, noted in the rider).
+// per spell level, Speed 60 ft. (Fly 60 ft. from level 4).
 // The creature type (Celestial / Fey / Fiend) picks the Slam's damage type.
 const otherworldlySteed = (
   variantId: "celestial" | "fey" | "fiend",
@@ -21,10 +22,10 @@ const otherworldlySteed = (
   variantId,
   // "The steed disappears if it drops to 0 Hit Points or if you die."
   lifecycle: { endsOn: ["0-hp:vanish", "owner-death"] },
-  ac: { base: 12 },
-  hp: { base: 25, perLevel: 0 },
-  spellLevel: { base: 2, acPer: 1, hpPer: 10 },
-  speeds: { walk: 60 },
+  ac: { base: castScaled(12, 2, 1) },
+  hp: { base: castScaled(25, 2, 10), perLevel: 0 },
+  spellLevel: { base: 2 },
+  speeds: { walk: 60, fly: fromCastLevel(4, 60) },
   abilityScores: { STR: 18, DEX: 12, CON: 14, INT: 6, WIS: 12, CHA: 8 },
   attacks: [
     {
@@ -79,9 +80,9 @@ const giantInsect = (
 ): CompanionStatBlock => ({
   variantId,
   lifecycle: CONCENTRATION_SUMMON,
-  ac: { base: 15 },
-  hp: { base: 30, perLevel: 0 },
-  spellLevel: { base: 4, acPer: 1, hpPer: 10 },
+  ac: { base: castScaled(15, 4, 1) },
+  hp: { base: castScaled(30, 4, 10), perLevel: 0 },
+  spellLevel: { base: 4 },
   speeds: { walk: 40, climb: 40 },
   abilityScores: { STR: 17, DEX: 13, CON: 15, INT: 4, WIS: 14, CHA: 3 },
   senses: { darkvisionFt: 60 },
@@ -115,9 +116,9 @@ export const GIANT_INSECT: CompanionStatBlock = {
 // 10 per level above 5, Rend 1d6 + 4 + the spell's level.
 export const DRACONIC_SPIRIT: CompanionStatBlock = {
   lifecycle: CONCENTRATION_SUMMON,
-  ac: { base: 19 },
-  hp: { base: 50, perLevel: 0 },
-  spellLevel: { base: 5, acPer: 1, hpPer: 10 },
+  ac: { base: castScaled(19, 5, 1) },
+  hp: { base: castScaled(50, 5, 10), perLevel: 0 },
+  spellLevel: { base: 5 },
   speeds: { walk: 30, fly: 60, swim: 30 },
   abilityScores: { STR: 19, DEX: 14, CON: 17, INT: 10, WIS: 14, CHA: 14 },
   damageResistances: ["acid", "cold", "fire", "lightning", "poison"],
