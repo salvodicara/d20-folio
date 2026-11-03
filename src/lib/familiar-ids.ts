@@ -6,7 +6,7 @@
  * union) and a lazy side (the form picker + statblock, which join the monster
  * corpus — that lives in {@link import("./familiar")}). This module holds ONLY the
  * ids/tokens the eager side needs, so importing it can never drag `@/data/monsters`
- * into the startup closure (the {@link POLYMORPH_SPELL_IDS} precedent in
+ * into the startup closure (the Polymorph spell-id precedent in
  * `lib/polymorph.ts`).
  */
 

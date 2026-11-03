@@ -4,6 +4,16 @@ import { timedConditionLifetime, timedSpellDuration } from "./duration";
 export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
   {
     id: "animal-shapes",
+    formRule: {
+      // A Large or smaller Beast of CR 4 or lower; you keep INT, WIS, CHA, Hit Points
+      // and Hit Point Dice; it lasts until you have no Temporary HP.
+      pool: "beasts",
+      keepsMind: true,
+      reshift: true,
+      endsWithoutTempHp: true,
+      crCap: 4,
+      sizeMax: "Large",
+    },
     level: 8,
     school: "transmutation",
     classes: ["druid"],

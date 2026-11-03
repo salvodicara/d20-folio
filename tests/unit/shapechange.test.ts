@@ -20,7 +20,7 @@ import {
   formStatBlock,
   polymorphPriorSnapshot,
   selfFormRule,
-  SELF_FORM_SPELL_IDS,
+  isSelfFormSpell,
 } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { sessionToState, stateToSession } from "@/lib/session-state-codec";
@@ -83,7 +83,7 @@ describe("the Shapechange forms (CR ≤ your level, not a Construct or an Undead
 
 describe("the spell rules each self form follows", () => {
   it("Shapechange keeps the mind, reshifts, and outlasts its Temporary HP", () => {
-    expect(SELF_FORM_SPELL_IDS).toContain("shapechange");
+    expect(isSelfFormSpell("shapechange")).toBe(true);
     expect(selfFormRule("shapechange")).toMatchObject({
       pool: "bestiary",
       keepsMind: true,

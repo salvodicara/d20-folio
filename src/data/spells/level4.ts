@@ -499,6 +499,12 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "polymorph",
+    formRule: {
+      pool: "beasts",
+      keepsMind: false,
+      reshift: false,
+      endsWithoutTempHp: true,
+    },
     level: 4,
     school: "transmutation",
     classes: ["bard", "druid", "sorcerer", "wizard"],

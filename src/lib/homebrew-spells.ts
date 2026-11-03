@@ -24,6 +24,7 @@ import {
   ALL_CREATURE_TYPES,
   ALL_REACTION_TRIGGERS,
   ALL_SUMMON_TURNS,
+  CREATURE_SIZE_ORDER,
 } from "@/data/types";
 import {
   arraySchema,
@@ -125,6 +126,20 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { max: numberSchema }
   ),
   conditionApplication: CONDITION_APPLICATION_SCHEMA,
+  formRule: objectSchema(
+    {
+      endsWithoutTempHp: booleanSchema,
+      keepsMind: booleanSchema,
+      pool: literals(["beasts", "bestiary"]),
+      reshift: booleanSchema,
+    },
+    {
+      crCap: numberSchema,
+      excludedTypes: arraySchema(literals([...ALL_CREATURE_TYPES])),
+      selfOnly: TRUE,
+      sizeMax: literals([...CREATURE_SIZE_ORDER]),
+    }
+  ),
   targeting: objectSchema(
     { affinity: literals(["ally", "enemy", "self", "any"]) },
     {

@@ -177,6 +177,16 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
   },
   {
     id: "shapechange",
+    formRule: {
+      // You keep INT, WIS, CHA, Hit Points and Hit Point Dice; Temporary HP from the
+      // first form only, and running out of them does not end the spell.
+      pool: "bestiary",
+      keepsMind: true,
+      reshift: true,
+      endsWithoutTempHp: false,
+      excludedTypes: ["construct", "undead"],
+      selfOnly: true,
+    },
     level: 9,
     school: "transmutation",
     classes: ["druid", "wizard"],
@@ -252,6 +262,12 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
   },
   {
     id: "true-polymorph",
+    formRule: {
+      pool: "bestiary",
+      keepsMind: false,
+      reshift: false,
+      endsWithoutTempHp: true,
+    },
     level: 9,
     school: "transmutation",
     classes: ["bard", "warlock", "wizard"],

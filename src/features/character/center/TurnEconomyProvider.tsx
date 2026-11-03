@@ -185,7 +185,7 @@ import { advanceSoloWorldTurn } from "./solo-world-turn";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
-import { SELF_FORM_SPELL_IDS } from "@/lib/polymorph";
+import { isSelfFormSpell } from "@/lib/polymorph";
 import {
   advanceGlobalCombat,
   syncPipToStatus,
@@ -1363,7 +1363,7 @@ export function TurnEconomyProvider({
           !readies &&
           !execution.ritual &&
           !!action.spellId &&
-          SELF_FORM_SPELL_IDS.includes(action.spellId);
+          isSelfFormSpell(action.spellId);
         if (picksForm) setFormPickerSpellId(action.spellId ?? null);
         // A priced material component: "−300 mo" when consumed, else a reminder.
         const materialToastId = execution.withoutComponents

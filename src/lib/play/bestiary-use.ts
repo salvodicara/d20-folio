@@ -8,7 +8,7 @@
 import { getSpellById } from "@/data/spells";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
-import { SELF_FORM_SPELL_IDS, selfFormRule } from "@/lib/polymorph";
+import { isSelfFormSpell, selfFormRule } from "@/lib/polymorph";
 import type { CharacterDoc } from "@/types/character";
 
 export function usesBestiary(
@@ -21,8 +21,7 @@ export function usesBestiary(
   for (const ref of doc.character.spells) if ("srdId" in ref) spellIds.add(ref.srdId);
   for (const id of spellIds) {
     if (id === FIND_FAMILIAR_SPELL_ID) return true;
-    if (SELF_FORM_SPELL_IDS.includes(id) && selfFormRule(id).pool === "bestiary")
-      return true;
+    if (isSelfFormSpell(id) && selfFormRule(id).pool === "bestiary") return true;
     const spell = getSpellById(id);
     if (spell?.bestiaryPick || spell?.summonedMonsters?.options.length) return true;
   }

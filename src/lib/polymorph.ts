@@ -20,39 +20,16 @@
 import {
   CREATURE_SIZE_ORDER,
   type BeastStatBlock,
-  type CreatureSize,
-  type CreatureType,
+  type SelfFormRule,
 } from "@/data/types";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { beastsByMaxCR, getBeast } from "@/data/beasts";
+import { getSpellById } from "@/data/spells";
 import { totalLevel } from "@/lib/classes";
 
-/** The spell ids that engage a Polymorph SELF-form (concentration by id). */
-export const POLYMORPH_SPELL_IDS: readonly string[] = ["polymorph", "true-polymorph"];
+export type { SelfFormRule } from "@/data/types";
 
-/** How one self-transformation spell shapes the caster's form (its SRD 5.2.1 text). */
-export interface SelfFormRule {
-  /** Where its forms come from: the eager Beast catalogue, or the whole bestiary
-   *  (lazy; the picked block then rides the session as `statBlock`). */
-  pool: "beasts" | "bestiary";
-  /** The caster keeps their own Intelligence, Wisdom and Charisma scores. */
-  keepsMind: boolean;
-  /** The caster may shift into another form while the spell lasts; only the first
-   *  form grants Temporary Hit Points. */
-  reshift: boolean;
-  /** The form ends when its Temporary Hit Points run out. */
-  endsWithoutTempHp: boolean;
-  /** A fixed Challenge Rating cap in place of the caster's level (Animal Shapes: 4). */
-  crCap?: number;
-  /** The largest size a form may be (Animal Shapes: Large). */
-  sizeMax?: CreatureSize;
-  /** Creature types the bestiary pool never offers (Shapechange: Construct, Undead). */
-  excludedTypes?: ReadonlyArray<CreatureType>;
-  /** The spell only ever targets the caster (Shapechange): no reference card for
-   *  another creature in the picker. */
-  selfOnly?: boolean;
-}
-
+/** Polymorph's own rule: the fallback for an id that carries none. */
 const POLYMORPH_RULE: SelfFormRule = {
   pool: "beasts",
   keepsMind: false,
@@ -60,41 +37,15 @@ const POLYMORPH_RULE: SelfFormRule = {
   endsWithoutTempHp: true,
 };
 
-/** Every spell that transforms the caster through the Transform flow, by id. */
-const SELF_FORM_RULES: Readonly<Record<string, SelfFormRule>> = {
-  polymorph: POLYMORPH_RULE,
-  // Creature into Creature: any kind of CR ≤ the target's CR or level; its stat
-  // block replaces yours (mind included), Temporary HP = the new form's HP.
-  "true-polymorph": { ...POLYMORPH_RULE, pool: "bestiary" },
-  // You keep your INT, WIS, CHA, Hit Points and Hit Point Dice; Temporary HP come
-  // from the first form only, and running out of them does not end the spell.
-  shapechange: {
-    pool: "bestiary",
-    keepsMind: true,
-    reshift: true,
-    endsWithoutTempHp: false,
-    excludedTypes: ["construct", "undead"],
-    selfOnly: true,
-  },
-  // A Large or smaller Beast of CR 4 or lower; you keep your INT, WIS, CHA, Hit
-  // Points and Hit Point Dice; Temporary HP from the first form; it lasts until
-  // you have no Temporary HP, and you can transform again on later turns.
-  "animal-shapes": {
-    pool: "beasts",
-    keepsMind: true,
-    reshift: true,
-    endsWithoutTempHp: true,
-    crCap: 4,
-    sizeMax: "Large",
-  },
-};
+/** Whether the spell transforms the caster through the Transform flow: its catalogue
+ *  entry carries a `formRule` (edge-case family M2). */
+export function isSelfFormSpell(spellId: string): boolean {
+  return getSpellById(spellId)?.formRule !== undefined;
+}
 
-/** The spell ids whose card carries the Transform affordance. */
-export const SELF_FORM_SPELL_IDS: readonly string[] = Object.keys(SELF_FORM_RULES);
-
-/** The rule for `spellId` (Polymorph's for an id outside the table). */
+/** The spell's form rule (Polymorph's for a spell without one). */
 export function selfFormRule(spellId: string): SelfFormRule {
-  return SELF_FORM_RULES[spellId] ?? POLYMORPH_RULE;
+  return getSpellById(spellId)?.formRule ?? POLYMORPH_RULE;
 }
 
 type ActiveForm = SessionState["polymorphForm"];

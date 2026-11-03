@@ -1002,7 +1002,33 @@ export type SpellDuration =
     }
   | { kind: "rounds" | "minutes" | "hours" | "days"; amount: number };
 
+/** How a spell that transforms the caster shapes the form (edge-case family M2): the
+ *  spell's own catalogue fact, read by the Transform flow. */
+export interface SelfFormRule {
+  /** Where its forms come from: the eager Beast catalogue, or the whole bestiary
+   *  (lazy; the picked block then rides the session as `statBlock`). */
+  pool: "beasts" | "bestiary";
+  /** The caster keeps their own Intelligence, Wisdom and Charisma scores. */
+  keepsMind: boolean;
+  /** The caster may shift into another form while the spell lasts; only the first
+   *  form grants Temporary Hit Points. */
+  reshift: boolean;
+  /** The form ends when its Temporary Hit Points run out. */
+  endsWithoutTempHp: boolean;
+  /** A fixed Challenge Rating cap in place of the caster's level (Animal Shapes: 4). */
+  crCap?: number;
+  /** The largest size a form may be (Animal Shapes: Large). */
+  sizeMax?: CreatureSize;
+  /** Creature types the bestiary pool never offers (Shapechange: Construct, Undead). */
+  excludedTypes?: ReadonlyArray<CreatureType>;
+  /** The spell only ever targets the caster (Shapechange): no reference card for
+   *  another creature in the picker. */
+  selfOnly?: boolean;
+}
+
 export interface SrdSpellData {
+  /** The spell transforms the caster (Polymorph, Shapechange): how the form works. */
+  formRule?: SelfFormRule;
   /** Unique slug ID: "fireball", "cure-wounds" */
   id: string;
   /** 0 = cantrip, 1-9 for leveled spells */
