@@ -15,6 +15,7 @@ import {
   type PlayPrompts as Prompts,
 } from "@/features/character/center/playPromptStore";
 import { localizeSrd } from "@/i18n/resolver";
+import { selfFormRule } from "@/lib/polymorph";
 import { arcaneRecoveryPicker } from "@/lib/arcane-recovery";
 import {
   metamagicChipStates,
@@ -31,8 +32,10 @@ import {
   inputLabelKey,
 } from "@/lib/views/item-resource-view";
 import { localizeTrackerUnit } from "@/lib/views/tracker-view";
+import { useCharacterStore } from "@/stores/characterStore";
 import { Button, Chip, Choice, Dialog, Field, Stepper } from "@/ui";
 
+import { PlayFormPicker } from "./PlayFormPicker";
 import { PlayTray } from "./PlayTray";
 
 const TransformFormPicker = lazy(() =>
@@ -43,6 +46,7 @@ const TransformFormPicker = lazy(() =>
 
 export function PlayPrompts({ locale }: { locale: Locale }) {
   const formPicker = usePlayPrompt("form-picker");
+  const doc = useCharacterStore((s) => s.character);
   return (
     <>
       <CastDialogs />
@@ -51,14 +55,22 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
       <ItemInputDialog />
       <ArcaneDialog />
       <SpellListDialog locale={locale} />
-      {formPicker && (
+      {formPicker && doc && selfFormRule(formPicker.spellId).pool !== "bestiary" ? (
+        <PlayFormPicker
+          key={formPicker.spellId}
+          doc={doc}
+          sourceId={formPicker.spellId}
+          locale={locale}
+          onClose={formPicker.onClose}
+        />
+      ) : formPicker ? (
         <Suspense fallback={null}>
           <TransformFormPicker
             spellId={formPicker.spellId}
             onClose={formPicker.onClose}
           />
         </Suspense>
-      )}
+      ) : null}
       <PlayTray locale={locale} />
     </>
   );

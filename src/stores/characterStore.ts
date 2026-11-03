@@ -3223,8 +3223,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
     // A reshift is still the same spell: its Concentration simply continues. A
-    // spell without Concentration (Animal Shapes, 24 hours) leaves it untouched.
-    if (!reshift && getSpellById(spellId)?.concentration !== false) {
+    // spell without Concentration (Animal Shapes, 24 hours) leaves it untouched, and
+    // so does a class feature (Wild Shape), which is no spell at all.
+    const spell = getSpellById(spellId);
+    if (!reshift && spell?.concentration) {
       get().setConcentration(concentrationValue(spellId));
     }
 

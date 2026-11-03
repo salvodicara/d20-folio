@@ -54,6 +54,9 @@
       "tempOnly": "Your temporary hit points take it all: you stay at {{from}}.",
       "plain": "You go from {{from}} to {{to}} hit points.",
       "concentration": "Make a concentration save for {{spell}} (DC {{dc}})."
+    },
+    "form": {
+      "tempHp": "You gain {{amount}} Temporary Hit Points, and they stay when you return to your form."
     }
   }
 }

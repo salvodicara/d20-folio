@@ -18,6 +18,7 @@ import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
+import { useFormActions } from "@/features/character/center/tabs/spells/use-form-actions";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
@@ -108,6 +109,7 @@ function PlayHeader({
             {view.form && (
               <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
             )}
+            {view.form && !readonly && <RevertForm />}
             {view.concentration && <Chip kind="conc">{view.concentration}</Chip>}
             {view.effects > 0 && (
               <Chip kind="buff">{`${t("play.effects")} ${String(view.effects)}`}</Chip>
@@ -192,4 +194,11 @@ function HpReadout({ view }: { view: PlayHeaderView }) {
       </span>
     </>
   );
+}
+
+/** Back to your own form in one tap, with its undo toast. */
+function RevertForm() {
+  const { t } = useTranslation();
+  const { revert } = useFormActions();
+  return <Chip onClick={revert}>{t("polymorph.revert")}</Chip>;
 }

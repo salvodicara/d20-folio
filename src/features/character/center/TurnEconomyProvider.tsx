@@ -833,6 +833,7 @@ export function TurnEconomyProvider({
     return () => {
       if (useCharacterStore.getState().readonly || !undo?.()) return;
       useDamageTrayStore.getState().withdraw(loggedId);
+      if (action.assumesForm) setFormPickerSpellId(null);
     };
   }
 
@@ -906,6 +907,8 @@ export function TurnEconomyProvider({
       ...(action.checkResult ? { check: action.checkResult } : {}),
     });
     offerFollowUps(action, targets, loggedId, occurrenceId);
+    // A use that makes a form (Wild Shape) asks which one next.
+    if (action.assumesForm) setFormPickerSpellId(action.assumesForm);
     return loggedId;
   }
 
@@ -1251,7 +1254,10 @@ export function TurnEconomyProvider({
           }
           const undo = seal?.() ?? null;
           return withResolutionUndo(
-            () => useDamageTrayStore.getState().withdraw(loggedId),
+            () => {
+              useDamageTrayStore.getState().withdraw(loggedId);
+              if (action.assumesForm) setFormPickerSpellId(null);
+            },
             applyResolution,
             () => (undo ? undo() : true)
           );

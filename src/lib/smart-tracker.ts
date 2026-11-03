@@ -806,6 +806,9 @@ export interface ResolvedAction {
    *  ONLY while the form toggle is lit (the row retracts when toggled off); lets
    *  the board tag it as a form weapon. */
   formAttack?: boolean;
+  /** The class feature whose form this action assumes (Wild Shape): using it opens
+   *  the form picker, read from `formPool`. */
+  assumesForm?: string;
   /** Is concentration spell */
   concentration: boolean;
   /** Turn-scoped deterministic effects produced by this use. */
@@ -5966,6 +5969,9 @@ function resolveFeatureActions(
         summary,
         costsSlot: false,
         costTracker: actionCostTracker,
+        ...("formRule" in srdFeature && srdFeature.formRule
+          ? { assumesForm: srdFeature.id }
+          : {}),
         ...("grants" in srdFeature &&
         (srdFeature.grants ?? []).some(
           (grant) =>

@@ -53,6 +53,7 @@ import {
 } from "./spells/SpellCastSummary";
 import { SpellCard, type SpellCardCallbacks } from "./spells/SpellCard";
 import { TransformFormPicker } from "./spells/TransformFormPicker";
+import { useFormActions } from "./spells/use-form-actions";
 import { transformFormLabel } from "./spells/transform-form-label";
 import { localizeActions, type CombatAction } from "@/lib/views/combat-action-view";
 import { useTurnEconomy } from "../useTurnEconomy";
@@ -72,7 +73,6 @@ export function SpellsTab() {
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
   const { executeAction } = useTurnEconomy();
-  const dropPolymorphForm = useCharacterStore((s) => s.dropPolymorphForm);
 
   const [filterLevel, setFilterLevel] = useState<number | "all">("all");
   // Concentration facet (Constitution §2.5) — one tap answers "which of my
@@ -373,12 +373,7 @@ export function SpellsTab() {
     [t, locale]
   );
 
-  const handleRevertForm = useCallback(() => {
-    const message = t("polymorph.revert");
-    registerUndoableToast({ message }, () => dropPolymorphForm(), {
-      turnScoped: false,
-    });
-  }, [dropPolymorphForm, t]);
+  const { revert: handleRevertForm } = useFormActions();
 
   // Find Familiar — open the lazy form picker (the corpus-joining leaf). The commit
   // (summon / change form) + its undo live inside the picker.
