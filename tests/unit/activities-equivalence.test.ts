@@ -225,6 +225,7 @@ function spellRowFromActivity(activity: Activity) {
             maxTargets: target.count,
             maxTargetsPerUpcast: target.countPerUpcast,
             sharedAmount: target.sharedAmount,
+            includesDead: target.includesDead,
           }
         : undefined,
     healingMode: heal?.full ? "full" : heal?.consumable ? "consumable" : undefined,
@@ -481,6 +482,7 @@ function actionRowFromActivity(
             maxTargets: countOf(target.count),
             maxTargetsPerUpcast: target.countPerUpcast,
             sharedAmount: target.sharedAmount,
+            includesDead: target.includesDead,
           }
         : undefined,
     area: target?.area,
