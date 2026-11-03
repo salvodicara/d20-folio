@@ -109,7 +109,7 @@
     "removeMemberTitle": "Rimuovere questo membro?",
     "removeMemberMessage": "{{name}} viene rimosso dalla campagna e il suo personaggio viene scollegato. Potrà rientrare con il link d’invito, a meno che gli ingressi non siano bloccati.",
     "removeMemberConfirm": "Rimuovi membro",
-    "removeMemberToast": "{{name}} è stato rimosso dalla campagna",
+    "removeMemberToast": "Rimosso dalla campagna: {{name}}",
     "removeMemberError": "Impossibile rimuovere il membro. Controlla la connessione e riprova.",
     "lockJoins": "Blocca nuovi ingressi",
     "lockJoinsHint": "Attiva per impedire al link d’invito di accettare nuovi membri, escludendo un link trapelato senza cambiare il codice. I membri attuali restano; disattiva per far entrare di nuovo i giocatori.",

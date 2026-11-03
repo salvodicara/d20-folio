@@ -68,7 +68,7 @@
       "summary": "Sostituirà {{old}} con {{new}}"
     },
     "scaling": {
-      "dieUpgrade": "Dado {{feature}} potenziato: {{from}} → {{to}}",
+      "dieUpgrade": "Dado potenziato per {{feature}}: {{from}} → {{to}}",
       "extraAttack_one": "Attacco Extra: ora esegui {{count}} attacco per azione di Attacco",
       "extraAttack_other": "Attacco Extra: ora esegui {{count}} attacchi per azione di Attacco",
       "sneakAttack": "Attacco Furtivo: {{dice}}d6 (era {{prev}}d6)",
