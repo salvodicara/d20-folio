@@ -36,6 +36,7 @@
       "whichSpell": "Which spell?",
       "castTitle": "Cast {{name}}"
     },
-    "react": "React"
+    "react": "React",
+    "trayTotalHint": "What you rolled at the table, for example 8+6+3"
   }
 }

@@ -4,8 +4,9 @@
  * one row per target with ×0 · ×½ · ×1 · ×2 and the target's resistances, one Apply —
  * plus Roll20 GroupCheck/ApplyDamage's per-target "Saved" toggle. The panel itself is
  * shared with the DM's monster card ({@link DamageTrayPanel}); this file is the
- * sheet's side: which targets the player picked, and where an applied row lands. The
- * app never rolls: the player types what the table rolled.
+ * old sheet's side. Which targets the player picked is `useTrayTargets`, and where an
+ * applied row lands is `applyTray`; the new Play screen's tray uses both. The app
+ * never rolls: the player types what the table rolled.
  *
  * An attack's row also says Colpito · Mancato · Critico (Foundry dnd5e's chat card):
  * Apply writes the shared result onto the use's own log line, the per-target result
@@ -19,35 +20,16 @@
  *  - a monster → only the `effect-given` log line (players cannot write monster HP).
  * Skip (or closing) applies nothing: the use stays logged exactly as it was.
  */
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DamageTrayPanel } from "@/components/shared/DamageTrayPanel";
-import {
-  trayTargetFromRow,
-  type TrayTarget,
-} from "@/components/shared/damage-tray-target";
 import { Dialog } from "@/components/ui/dialog";
-import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
-import { useHpControls } from "@/features/character/molecules/use-hp-controls";
-import type { LocText } from "@/lib/loc-text";
-import {
-  rowAmount,
-  rowConditions,
-  sharedAttackOutcome,
-  trayOutcomeReceipts,
-  type AttackOutcome,
-  type TrayEffect,
-  type TrayRow,
-} from "@/lib/play/damage-tray";
-import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useCombatStore } from "@/stores/combatStore";
-import { useToastStore } from "@/stores/toastStore";
-import { registerUndoableToast } from "@/stores/undoStore";
-import type { CombatEvent } from "@/types/combat-log";
 
+import { applyTray } from "./apply-tray";
 import { useDamageTrayStore, type DamageTrayOffer } from "./damage-tray-store";
+import { useTrayTargets } from "./use-tray-targets";
 
 export function DamageTray() {
   const offer = useDamageTrayStore((s) => s.offer);
@@ -71,32 +53,7 @@ export function DamageTray() {
 function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
   const { t } = useTranslation();
   const { plan } = offer;
-  const hp = useHpControls();
-  const selfName = useCharacterStore((s) => s.character?.character.name ?? "");
-  const status = useCombatStatusStore((s) => s.status);
-  const uid = useAuthStore((s) => s.user?.uid);
-  // The same "me" the commit used (TurnEconomyProvider.selfCombatantId).
-  const selfId = status?.myId ?? (uid ? `pc-${uid}` : "self");
-
-  const targets = useMemo<TrayTarget[]>(
-    () =>
-      plan.targets.map((id): TrayTarget => {
-        if (id === selfId)
-          return {
-            id,
-            name: selfName,
-            kind: "self",
-            hp: { current: hp.current, max: hp.max, temp: hp.temp },
-            defenses: hp.defenses,
-          };
-        const row = status?.view.rows.find((r) => r.id === id);
-        if (!row) return { id, name: id, kind: "monster" };
-        return trayTargetFromRow(row, row.kind === "pc" || row.side === "ally");
-      }),
-    // The rows are fixed for the tray's life: the targets were picked already.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  const targets = useTrayTargets(plan);
 
   return (
     <DamageTrayPanel
@@ -110,266 +67,4 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
       onSkip={() => useDamageTrayStore.getState().close()}
     />
   );
-}
-
-type T = ReturnType<typeof useTranslation>["t"];
-
-// ── Apply ──────────────────────────────────────────────────────────────────────
-
-type SelfKind = "hp-heal" | "hp-damage" | "temp-hp-gain" | "condition-gain";
-
-function logIds(): Set<string> {
-  return new Set(
-    useCharacterStore.getState().character?.session.logEntries.map((e) => e.id) ?? []
-  );
-}
-
-/** Tag the line a self seam just logged with the action that caused it, so the
- *  session gets ONE line carrying target, amount and source. */
-function tagNewLine(before: ReadonlySet<string>, kind: SelfKind, source: LocText): void {
-  const store = useCharacterStore.getState();
-  const entry = store.character?.session.logEntries.findLast(
-    (e) => !before.has(e.id) && e.event.kind === kind
-  );
-  if (entry) store.amendLogEntry(entry.id, { ...entry.event, source } as CombatEvent);
-}
-
-interface AppliedRow {
-  target: TrayTarget;
-  amount: number;
-  conditions: string[];
-  outcome?: AttackOutcome;
-}
-
-/** Write the attack's one shared result onto the use's own log line; the returned
- *  undo puts the line back as it was. */
-function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => void {
-  const store = useCharacterStore.getState();
-  const entry = store.character?.session.logEntries.find((e) => e.id === castLogId);
-  if (
-    !entry ||
-    (entry.event.kind !== "action-use" && entry.event.kind !== "reaction-use")
-  )
-    return () => {};
-  return store.amendLogEntry(entry.id, { ...entry.event, outcome }) ?? (() => {});
-}
-
-function applyTray(
-  offer: DamageTrayOffer,
-  targets: ReadonlyArray<TrayTarget>,
-  rows: ReadonlyArray<TrayRow>,
-  totals: ReadonlyArray<number>,
-  t: T
-): void {
-  const { plan, source } = offer;
-  const effect = plan.effect;
-  const applied: AppliedRow[] = targets
-    .map((target, index) => {
-      const row = rows[index];
-      return {
-        target,
-        amount: effect && row ? rowAmount(totals[index] ?? 0, row, plan) : 0,
-        conditions: row ? rowConditions(row) : [],
-        ...(row?.attack ? { outcome: row.attack } : {}),
-      };
-    })
-    .filter((row) => row.amount > 0 || row.conditions.length > 0);
-  // Hit / Miss / Critical: the use's line says the shared result, and the turn keeps
-  // one receipt per target (a miss applies nothing, yet it is still recorded).
-  const shared = plan.attack ? sharedAttackOutcome(rows) : undefined;
-  const receipts =
-    plan.attack && offer.occurrenceId
-      ? trayOutcomeReceipts(offer.occurrenceId, offer.actionId, rows)
-      : [];
-  const declares = shared !== undefined || receipts.length > 0;
-  if (applied.length === 0 && !declares) return;
-
-  const local = applied.filter((row) => row.target.kind !== "pc");
-  const peers = applied.filter((row) => row.target.kind === "pc");
-  const label = {
-    message: t("combat.damageTray.appliedToast", { name: offer.actionName }),
-  };
-
-  if (local.length > 0 || declares || peers.length > 0) {
-    registerUndoableToast(
-      label,
-      () => {
-        const store = useCharacterStore.getState();
-        if (store.readonly || !store.character) return null;
-        const before = logIds();
-        const reversals: Array<() => void> = [];
-        if (shared) reversals.push(stampOutcome(offer.castLogId, shared));
-        const receiptIds = useCombatStore.getState().recordOutcomes(receipts);
-        reversals.push(() => useCombatStore.getState().withdrawOutcomes(receiptIds));
-        for (const { target, amount, conditions, outcome } of local) {
-          if (target.kind === "self") {
-            if (effect && amount > 0) applySelf(effect, amount, source, reversals);
-            for (const conditionId of conditions) {
-              if (
-                useCharacterStore
-                  .getState()
-                  .character?.session.conditions.includes(conditionId)
-              )
-                continue;
-              const ids = logIds();
-              useCharacterStore.getState().addCondition(conditionId);
-              tagNewLine(ids, "condition-gain", source);
-              reversals.push(() => {
-                useCharacterStore.getState().removeConditionSilent(conditionId);
-              });
-            }
-            continue;
-          }
-          // A monster: the line is the record (players cannot write monster HP).
-          const given = { target: target.id, targetName: target.name, source };
-          if (effect && amount > 0)
-            store.logEvent({
-              kind: "effect-given",
-              effect,
-              amount,
-              ...given,
-              ...(outcome && effect === "damage" ? { outcome } : {}),
-            });
-          for (const conditionId of conditions)
-            store.logEvent({
-              kind: "effect-given",
-              effect: "condition",
-              conditionId,
-              ...given,
-            });
-        }
-        // Another PC: their sheet is written through the campaign, and the write's
-        // own undo restores it (and drops its line) when the apply is taken back.
-        const peerUndos: Array<Promise<() => void>> = [];
-        for (const { target, amount, conditions, outcome } of peers) {
-          if (effect && amount > 0)
-            peerUndos.push(
-              givePeer(target, effect, amount, undefined, source, t, outcome)
-            );
-          for (const conditionId of conditions)
-            peerUndos.push(givePeer(target, "condition", 0, conditionId, source, t));
-        }
-        return () => {
-          for (const reverse of reversals.reverse()) reverse();
-          // Every line this apply wrote (and any its reversal wrote) goes with it.
-          const live = useCharacterStore.getState();
-          for (const entry of live.character?.session.logEntries ?? [])
-            if (!before.has(entry.id)) live.removeLogEntry(entry.id);
-          for (const undo of peerUndos.reverse()) void undo.then((run) => run());
-        };
-      },
-      { turnScoped: false }
-    );
-  } else {
-    useToastStore.getState().showToast({ ...label, duration: 4000 });
-  }
-}
-
-/** Me: the store's own heal / temp-HP / damage seams, the line they log tagged. */
-function applySelf(
-  effect: TrayEffect,
-  amount: number,
-  source: LocText,
-  reversals: Array<() => void>
-): void {
-  const store = useCharacterStore.getState();
-  const character = store.character;
-  if (!character) return;
-  const ids = logIds();
-  if (effect === "heal") {
-    const undo = store.applyHealing(amount);
-    if (undo) reversals.push(undo);
-    tagNewLine(ids, "hp-heal", source);
-  } else if (effect === "temp-hp") {
-    const undo = store.gainTempHp(amount);
-    if (undo) reversals.push(undo);
-    tagNewLine(ids, "temp-hp-gain", source);
-  } else {
-    const undo = store.applyDamage(amount);
-    if (undo) reversals.push(() => void undo());
-    tagNewLine(ids, "hp-damage", source);
-  }
-}
-
-/** Another PC in the live encounter: the campaign PC card's peer write, then a line.
- *  Resolves with its undo: the same peer write reverted, and its line removed. */
-function givePeer(
-  target: TrayTarget,
-  effect: TrayEffect | "condition",
-  amount: number,
-  conditionId: string | undefined,
-  source: LocText,
-  t: T,
-  outcome?: AttackOutcome
-): Promise<() => void> {
-  const row = target.row;
-  const memberUid = row?.memberUid;
-  const characterId = row?.characterId;
-  const log = () =>
-    useCharacterStore.getState().logEvent({
-      kind: "effect-given",
-      effect,
-      target: target.id,
-      targetName: target.name,
-      source,
-      ...(effect === "condition" ? { conditionId } : { amount }),
-      ...(outcome && effect === "damage" ? { outcome } : {}),
-    });
-  const unlog = (ids: ReadonlySet<string>) => () => {
-    const live = useCharacterStore.getState();
-    for (const entry of live.character?.session.logEntries ?? [])
-      if (!ids.has(entry.id)) live.removeLogEntry(entry.id);
-  };
-  if (!row || !memberUid || !characterId) {
-    const ids = logIds();
-    log();
-    return Promise.resolve(unlog(ids));
-  }
-  const mutation =
-    effect === "condition"
-      ? {
-          kind: "condition" as const,
-          operation: { kind: "add" as const, conditionId: conditionId ?? "" },
-        }
-      : effect === "temp-hp"
-        ? { kind: "temp-hp" as const, value: Math.max(row.tempHp, amount) }
-        : {
-            kind: "hp" as const,
-            operation: {
-              kind: effect === "heal" ? ("heal" as const) : ("damage" as const),
-              amount,
-            },
-          };
-  const failed = (error: unknown): void => {
-    console.error("Combat write failed", error);
-    useToastStore
-      .getState()
-      .showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
-  };
-  return import("@/features/campaigns/campaign-io")
-    .then(async ({ writeCampaignCombatEffect }) => {
-      const { before, after, spends } = await writeCampaignCombatEffect(
-        memberUid,
-        characterId,
-        null,
-        row.maxHp,
-        mutation
-      );
-      const ids = logIds();
-      log();
-      const dropLine = unlog(ids);
-      return () => {
-        dropLine();
-        void writeCampaignCombatEffect(memberUid, characterId, null, row.maxHp, {
-          kind: "revert",
-          written: after,
-          previous: before,
-          spends,
-        }).catch(failed);
-      };
-    })
-    .catch((error: unknown) => {
-      failed(error);
-      return () => {};
-    });
 }

@@ -36,6 +36,7 @@
       "whichSpell": "Quale incantesimo?",
       "castTitle": "Lancia {{name}}"
     },
-    "react": "Reagisci"
+    "react": "Reagisci",
+    "trayTotalHint": "Quanto hai tirato al tavolo, per esempio 8+6+3"
   }
 }
