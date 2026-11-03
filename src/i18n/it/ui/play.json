@@ -138,6 +138,13 @@
       "deadWithin": "Morto da {{minutes}} min: entro il limite ✓",
       "deadTooLong": "Morto da {{minutes}} min: oltre il limite.",
       "tableDecides": "Da quanto è morto lo decide il tavolo."
+    },
+    "weapon": {
+      "which": "Su quale arma?",
+      "wielded": "impugnata",
+      "packed": "nello zaino",
+      "bonus": "+{{bonus}} al colpire e ai danni",
+      "ability": "attacca con {{ability}}"
     }
   }
 }

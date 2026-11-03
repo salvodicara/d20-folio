@@ -138,6 +138,13 @@
       "deadWithin": "Dead for {{minutes}} min: within the limit ✓",
       "deadTooLong": "Dead for {{minutes}} min: past the limit.",
       "tableDecides": "How long it has been dead: the table decides."
+    },
+    "weapon": {
+      "which": "Which weapon?",
+      "wielded": "in hand",
+      "packed": "in the pack",
+      "bonus": "+{{bonus}} to attack and damage",
+      "ability": "attacks with {{ability}}"
     }
   }
 }
