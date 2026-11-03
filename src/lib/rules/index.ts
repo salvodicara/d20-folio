@@ -47,6 +47,9 @@ export type RuleTarget =
   | `sense:${SenseKind}`
   /** The sense works at any distance the character can see (See Invisibility). */
   | `sense:${SenseKind}:unlimited`
+  /** The range within which the character sees normally in any Darkness, magical
+   *  included (Devil's Sight). Not a sense of its own on the sheet. */
+  | "sight:magical-darkness"
   /** The range, in feet, within which the character senses this (Detect Magic). */
   | `detect:${DetectionTarget}`
   /** A fall slowed to this many feet per round, landing without damage. */
@@ -221,6 +224,9 @@ export function compileGrant(grant: Grant): Rule[] | null {
     case "darkvision":
       return [
         { op: "max", target: "sense:darkvision", value: grant.range, stack: "base" },
+        ...(grant.penetratesMagicalDarkness
+          ? [{ op: "max", target: "sight:magical-darkness", value: grant.range } as const]
+          : []),
       ];
     case "darkvision-bonus":
       return [

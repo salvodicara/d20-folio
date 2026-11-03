@@ -38,14 +38,39 @@ const LABELS: Record<LightLevel, LocText> = {
   darkness: referenceName("darkness"),
 };
 
-/** Dim Light reads as Bright Light with Darkvision; Darkness as Dim Light. */
+/**
+ * The light a creature looks into: a light level the player taps, or the magical
+ * Darkness a spell makes (the Darkness spell), which ordinary Darkvision can't lift.
+ */
+export type SightLevel = LightLevel | "magical-darkness";
+
+/** What a creature can see with, in feet (0 or absent: it doesn't have that sense). */
+export interface SightProfile {
+  darkvisionFt: number;
+  blindsightFt?: number;
+  truesightFt?: number;
+  /** Sees normally in any Darkness, magical included (Devil's Sight). */
+  magicalDarknessSightFt?: number;
+}
+
+/**
+ * How obscured a light level is for this sight (SRD 5.2.1 rules glossary). The sheet
+ * keeps no distances, so a sense counts as reaching what the player looks at:
+ *   - Blindsight and Truesight perceive through any Darkness;
+ *   - Devil's Sight sees normally in Dim Light and in any Darkness;
+ *   - Darkvision reads Dim Light as Bright and Darkness as Dim, but not magical Darkness.
+ */
 export function sightUnder(
-  level: LightLevel,
-  darkvisionFt: number
+  level: SightLevel,
+  profile: SightProfile
 ): SightObscurement | null {
-  const darkvision = darkvisionFt > 0;
+  const has = (feet: number | undefined) => (feet ?? 0) > 0;
+  if (has(profile.blindsightFt) || has(profile.truesightFt)) return null;
+  if (has(profile.magicalDarknessSightFt)) return null;
+  const darkvision = has(profile.darkvisionFt);
   if (level === "dim") return darkvision ? null : "lightly-obscured";
-  return darkvision ? "lightly-obscured" : "heavily-obscured";
+  if (level === "darkness") return darkvision ? "lightly-obscured" : "heavily-obscured";
+  return "heavily-obscured";
 }
 
 /**
@@ -80,14 +105,14 @@ export function anyLightLit(activeKeys: ReadonlySet<string>): boolean {
   return LIGHT_LEVELS.some((level) => activeKeys.has(lightStateKey(level)));
 }
 
-/** The lit light level as a grant source, its rules set by the Darkvision range. */
+/** The lit light level as a grant source, its rules set by the character's sight. */
 export function resolveLightStateSources(
   activeKeys: ReadonlySet<string>,
-  darkvisionFt: number
+  profile: SightProfile
 ): GrantSource[] {
   return LIGHT_LEVELS.filter((level) => activeKeys.has(lightStateKey(level))).map(
     (level) => {
-      const sight = sightUnder(level, darkvisionFt);
+      const sight = sightUnder(level, profile);
       const obscurement = sight ? OBSCUREMENT[sight] : undefined;
       return {
         id: lightStateKey(level),

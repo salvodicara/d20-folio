@@ -1344,6 +1344,9 @@ export interface AggregatedGrants {
    * illusions / shapechangers / the Ethereal Plane).
    */
   seeInvisibleFt: number;
+  /** The range within which the character sees normally in any Darkness, magical
+   *  included (Devil's Sight); 0 when not granted. */
+  magicalDarknessSightFt: number;
   /** True when any source lets the character breathe both air and water. */
   airAndWaterBreathing: boolean;
   /** True when any source counts the character as one size larger for carrying. */
@@ -2182,6 +2185,7 @@ export function emptyAggregate(): AggregatedGrants {
     tremorsenseFt: 0,
     truesightFt: 0,
     seeInvisibleFt: 0,
+    magicalDarknessSightFt: 0,
     airAndWaterBreathing: false,
     carryAsLargerSize: false,
     values: foldRules([]),
@@ -3961,6 +3965,7 @@ export function evaluateGrants(
     tremorsenseFt: ruleNumber(values, "sense:tremorsense"),
     truesightFt: ruleNumber(values, "sense:truesight"),
     seeInvisibleFt: ruleNumber(values, "sense:see-invisible"),
+    magicalDarknessSightFt: ruleNumber(values, "sight:magical-darkness"),
     airAndWaterBreathing: ruleFlag(values, "trait:air-and-water-breathing"),
     carryAsLargerSize: ruleFlag(values, "trait:carry-as-larger-size"),
     values,

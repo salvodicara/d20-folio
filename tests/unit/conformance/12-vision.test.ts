@@ -14,17 +14,7 @@ import { SRD_INVOCATIONS } from "@/data/invocations";
 import { getMonster } from "@/data/monsters";
 import { rule } from "./rule";
 
-/** The sight profile the engine should take (B-F10); today it takes a darkvision number. */
-interface SightProfile {
-  darkvisionFt: number;
-  blindsightFt?: number;
-  truesightFt?: number;
-}
-const sightWith = (level: string, profile: SightProfile) =>
-  (sightUnder as unknown as (l: string, p: SightProfile) => string | null)(
-    level,
-    profile
-  );
+const sightWith = sightUnder;
 
 describe("conformance · 12. vision and light", () => {
   rule(
@@ -36,10 +26,10 @@ describe("conformance · 12. vision and light", () => {
     },
     () => {
       // Darkness without Darkvision is Heavily Obscured: your attacks have Disadvantage.
-      expect(sightUnder("darkness", 0)).toBe("heavily-obscured");
+      expect(sightUnder("darkness", { darkvisionFt: 0 })).toBe("heavily-obscured");
       const key = lightStateKey("darkness");
       const aggregate = evaluateGrants(
-        resolveLightStateSources(new Set([key]), 0),
+        resolveLightStateSources(new Set([key]), { darkvisionFt: 0 }),
         new Set([key])
       );
       expect(aggregate.disadvantages.some((d) => d.rollType === "attack")).toBe(true);
@@ -54,7 +44,7 @@ describe("conformance · 12. vision and light", () => {
       category: 12,
       case: "Magical darkness vs darkvision",
       source: "SAC #6; WIKI spell:darkness",
-      status: "M15",
+      status: "works",
     },
     () => {
       // Darkvision 60 ft lifts ordinary darkness one step, but not the Darkness spell.
@@ -98,7 +88,7 @@ describe("conformance · 12. vision and light", () => {
       category: 12,
       case: "Devil's Sight",
       source: "rpgbot; blackcitadelrpg",
-      status: "M15",
+      status: "works",
     },
     () => {
       const devilsSight = SRD_INVOCATIONS.find((i) => i.id === "devils-sight");
@@ -112,14 +102,14 @@ describe("conformance · 12. vision and light", () => {
   );
 
   rule(
-    { category: 12, case: "Blindsight", source: "GLOSS; SAC #29", status: "M15" },
+    { category: 12, case: "Blindsight", source: "GLOSS; SAC #29", status: "works" },
     () => {
       // Within its range Blindsight perceives through darkness: no obscurement.
       expect(sightWith("darkness", { darkvisionFt: 0, blindsightFt: 10 })).toBeNull();
     }
   );
 
-  rule({ category: 12, case: "Truesight", source: "GLOSS", status: "M15" }, () => {
+  rule({ category: 12, case: "Truesight", source: "GLOSS", status: "works" }, () => {
     // Truesight sees through both kinds of darkness within range.
     expect(
       sightWith("magical-darkness", { darkvisionFt: 0, truesightFt: 120 })

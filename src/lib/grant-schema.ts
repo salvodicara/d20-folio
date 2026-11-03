@@ -161,10 +161,14 @@ const CAST_SOURCE_OVERRIDES_SCHEMA = objectSchema(
 );
 
 const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
-  darkvision: objectSchema({
-    range: numberSchema,
-    type: literalSchema("darkvision"),
-  }),
+  darkvision: objectSchema(
+    {
+      range: numberSchema,
+      type: literalSchema("darkvision"),
+    },
+    // Devil's Sight: within its range it sees normally in Darkness, magical or not.
+    { penetratesMagicalDarkness: literalSchema(true) }
+  ),
   "darkvision-bonus": objectSchema({
     amount: numberSchema,
     type: literalSchema("darkvision-bonus"),
