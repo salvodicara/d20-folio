@@ -55,6 +55,12 @@ const GROUP_KEY: Record<ActionGroup, string> = {
   reactions: "combat.reactions",
   other: "report.types.other",
 };
+/** The action types' shapes (BG3): a filter or a group of that type shows its own. */
+const SHAPE: Partial<Record<Filter | ActionGroup, string>> = {
+  actions: "action",
+  bonus: "bonus",
+  reactions: "reaction",
+};
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 
 /** This turn as the combat store holds it, in the shape the button view reads. */
@@ -118,19 +124,34 @@ export function PlayCentre({ doc, locale }: { doc: CharacterDoc; locale: Locale 
       <div className="f-pnb f-stack">
         <TurnStrip doc={doc} locale={locale} />
         <Playbook doc={doc} locale={locale} />
-        <div className="f-chips" role="group" aria-label={t("play.filterLabel")}>
-          {FILTERS.map((f) => (
+        <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+          {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
             <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
-              {`${t(FILTER_KEY[f])} ${String(actions.counts[f])}`}
+              {SHAPE[f] && (
+                <i className="f-shape" data-kind={SHAPE[f]} aria-hidden="true" />
+              )}
+              {t(FILTER_KEY[f])}
             </Chip>
           ))}
+        </div>
+        <div className="f-act f-act-head" aria-hidden="true">
+          <span>{t("common.name")}</span>
+          <span>{t("spells.range")}</span>
+          <span>{t("play.table.hit")}</span>
+          <span>{t("play.table.effect")}</span>
+          <span />
         </div>
         {actions.groups.map(({ group, rows }) => {
           const shown = rows.filter((r) => keep(group, r));
           if (shown.length === 0) return null;
           return (
             <section key={group} className="f-act-group" data-group={group}>
-              <h3 className="f-lbl">{t(GROUP_KEY[group])}</h3>
+              <h3 className="f-act-gh">
+                {SHAPE[group] && (
+                  <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
+                )}
+                {t(GROUP_KEY[group])}
+              </h3>
               {shown.map((row) => (
                 <ActionLine key={row.id} row={row} locale={locale} />
               ))}

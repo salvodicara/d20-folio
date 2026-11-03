@@ -59,7 +59,7 @@ export function PlayRight({
 }) {
   const campaign = useAttachedCampaign(characterId);
   return (
-    <div className="f-stack">
+    <div className="f-stack f-right">
       <Initiative locale={locale} />
       {campaign && <Report campaign={campaign} locale={locale} onToast={onToast} />}
     </div>

@@ -57,6 +57,10 @@
     },
     "form": {
       "tempHp": "You gain {{amount}} Temporary Hit Points, and they stay when you return to your form."
+    },
+    "table": {
+      "hit": "Hit / DC",
+      "effect": "Effect"
     }
   }
 }
