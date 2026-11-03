@@ -337,6 +337,18 @@ function localizeSummary(
       ? { effectRiders: actionRiderLines(effectRiders, locale) }
       : {}),
     ...(extraDamage?.length ? { extraDamage } : {}),
+    // The die rules stay on the summary without their source name: the tray totals
+    // typed faces with them (Great Weapon Fighting's floor).
+    ...(summary.dieModifiers?.length
+      ? {
+          dieModifiers: summary.dieModifiers.map((m) => ({
+            mode: m.mode,
+            ...(m.floorBelow !== undefined ? { floorBelow: m.floorBelow } : {}),
+            ...(m.floorTo !== undefined ? { floorTo: m.floorTo } : {}),
+            ...(m.oncePerTurn !== undefined ? { oncePerTurn: m.oncePerTurn } : {}),
+          })),
+        }
+      : {}),
     ...(weaponRange && !rest.attackMode ? { attackMode: weaponRange.kind } : {}),
     ...(weaponRange?.kind === "melee" && weaponRange.thrown
       ? { throwable: true as const }
