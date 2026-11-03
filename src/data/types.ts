@@ -813,15 +813,29 @@ export type CombatConditionLifetime =
       anchor?: "actor" | "target";
     };
 
+/**
+ * An early end of a condition occurrence (edge-case family M3): what ends it before
+ * its lifetime runs out. `repeat-save` is a prompt, not an end: the target rolls (the
+ * app never rolls) the ability against the source's own DC, and a success ends it.
+ */
+export type ConditionEnd =
+  /** It ends when the target takes any damage (Knock Out, Abjure Foes, Sleep). */
+  | { on: "target-damaged" }
+  /** The target repeats the save at the end of each of its turns. */
+  | { on: "repeat-save"; ability: AbilityCode; at: "target-turn-end" }
+  /** It ends when the one who applied it has the Incapacitated condition (a grapple). */
+  | { on: "actor-incapacitated" };
+
 export interface CombatConditionApplication {
   options: ConditionId[];
+  /** What ends the condition before its lifetime runs out. */
+  ends?: ReadonlyArray<ConditionEnd>;
   max?: number;
   /** `passed-check` gates on the SAME action's {@link SrdActionDef.skillCheck}
    *  succeeding (Hide: a passed DC 15 Stealth check grants Invisible). */
   on: "hit" | "failed-save" | "automatic" | "passed-check";
-  /** Typed maximum lifetime for this exact condition occurrence. Early exits
-   * (repeat saves, damage, assistance, leaving an area) remain explicit table
-   * corrections because this companion cannot observe them. */
+  /** Typed maximum lifetime for this exact condition occurrence; `ends` lists the
+   * early exits the engine knows (damage, repeat saves, the actor incapacitated). */
   lifetime?: CombatConditionLifetime;
   /** Per-condition overrides for spells such as Symbol whose mutually exclusive
    * outcomes have different maximum lifetimes. */

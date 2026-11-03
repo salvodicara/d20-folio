@@ -110,6 +110,17 @@ const CASTING_ABILITY_SCHEMA = unionSchema([
   literalSchema("CHA"),
 ]);
 
+/** An early end of a condition (`ConditionEnd`, data/types). */
+const CONDITION_END_SCHEMA = discriminatedUnionSchema("on", {
+  "target-damaged": objectSchema({ on: literalSchema("target-damaged") }),
+  "repeat-save": objectSchema({
+    ability: CASTING_ABILITY_SCHEMA,
+    at: literalSchema("target-turn-end"),
+    on: literalSchema("repeat-save"),
+  }),
+  "actor-incapacitated": objectSchema({ on: literalSchema("actor-incapacitated") }),
+});
+
 const CAST_SOURCE_OVERRIDES_SCHEMA = objectSchema(
   {},
   {
@@ -2324,6 +2335,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("stunned"),
         literalSchema("unconscious"),
       ]),
+      /** What ends the condition early (Knock Out: damage, a CON save each turn). */
+      ends: arraySchema(CONDITION_END_SCHEMA),
+      /** How long the condition lasts at most. */
+      lifetime: objectSchema({
+        kind: literalSchema("timed"),
+        maxRounds: numberSchema,
+        minutes: numberSchema,
+      }),
       description: LOCALE_TEXT_SCHEMA,
       name: LOCALE_TEXT_SCHEMA,
       save: unionSchema([

@@ -284,11 +284,25 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
     id: "paladin-abjure-foes",
     class: "paladin",
     level: 9,
+    // 2024 RAW (paladin:main, Level 9): Channel Divinity, a Magic action. Creatures
+    // you can see within 60 feet, up to your Charisma modifier (min 1), make a Wisdom
+    // save against your spell save DC or are Frightened for 1 minute or until they
+    // take any damage. While Frightened this way a target can do only one of move,
+    // action or bonus action on its turns (the table enforces that limit).
     mechanics: {
       actions: [
         {
           type: "action",
           costTracker: "paladin-channel-divinity",
+          saveAbility: "WIS",
+          saveDcAbility: "CHA",
+          targeting: { affinity: "enemy", maxTargets: "CHA" },
+          conditionApplication: {
+            options: ["frightened"],
+            on: "failed-save",
+            lifetime: { kind: "timed", minutes: 1, maxRounds: 10 },
+            ends: [{ on: "target-damaged" }],
+          },
         },
       ],
     },
