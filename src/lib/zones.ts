@@ -122,3 +122,37 @@ export function zonePayload(
 ): Extract<ActiveCombatEffect["payload"], { kind: "zone" }> {
   return { kind: "zone", spellId, ...(spared.length > 0 ? { spared: [...spared] } : {}) };
 }
+
+/**
+ * The zone a cast leaves on the encounter (M9): its caster's combatant, the level it
+ * was cast at, and its source's lifetime (Concentration, or the encounter).
+ */
+export function zoneEffectForCast(cast: {
+  effectId: string;
+  spellId: string;
+  actionId: string;
+  castLevel: number;
+  caster: ActiveCombatEffect["actor"];
+  concentration: boolean;
+  spared?: ReadonlyArray<string>;
+}): ActiveCombatEffect {
+  return {
+    id: cast.effectId,
+    actor: cast.caster,
+    target: cast.caster,
+    source: {
+      kind: "spell",
+      id: cast.spellId,
+      actionId: cast.actionId,
+      castLevel: cast.castLevel,
+    },
+    payload: zonePayload(cast.spellId, cast.spared),
+    duration: cast.concentration
+      ? {
+          kind: "concentration",
+          actorId: cast.caster.combatantId,
+          sourceId: cast.spellId,
+        }
+      : { kind: "encounter" },
+  };
+}
