@@ -451,13 +451,19 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-persistent-rage",
     class: "barbarian",
     level: 15,
-    // PROSE-SWEPT 2026-06-10 — "When you roll Initiative, you can regain all
-    // expended uses of Rage" (1/Long Rest): the initiative-tracker-topup
-    // consumer clamps `upTo` to the live total, so 6 (the L17+ cap) restores
-    // to FULL at any level. The once-per-Long-Rest limit on the top-up itself
-    // stays player-adjudicated (override-first); the 10-minute Rage duration
-    // is descriptive.
-    grants: [{ type: "initiative-tracker-topup", trackerId: "barbarian-rage", upTo: 6 }],
+    // "When you roll Initiative, you can regain all expended uses of Rage. After you
+    // regain uses of Rage in this way, you can't do so again until you finish a Long
+    // Rest" (a trigger rule, M8). Your Rage also lasts 10 minutes without being
+    // extended: no upkeep at End Turn.
+    grants: [
+      {
+        type: "trigger",
+        on: "initiative",
+        do: { kind: "restore-tracker", trackerId: "barbarian-rage", full: true },
+        limit: { per: "long-rest", max: 1 },
+      },
+      { type: "upkeep-waiver", activeKey: "barbarian-rage" },
+    ],
     source: "SRD",
   },
   {

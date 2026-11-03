@@ -36,9 +36,19 @@ describe("Sorcerous Restoration — H9 / IT SRD 5.2.1 page 81", () => {
     expect(feat?.mechanics?.tracker?.recovery).toBe("long-rest");
   });
 
-  it("declares an action so the combat panel can surface it", () => {
-    const actions = feat?.mechanics?.actions ?? [];
-    expect(actions.length).toBeGreaterThan(0);
+  it("is a Short Rest trigger that regains half the Sorcerer level, once per Long Rest", () => {
+    expect(feat?.grants).toEqual([
+      {
+        type: "trigger",
+        on: "short-rest",
+        do: {
+          kind: "restore-tracker",
+          trackerId: "sorcerer-font-of-magic",
+          amount: "floor(level/2)",
+        },
+        limit: { per: "long-rest", max: 1 },
+      },
+    ]);
   });
 
   it("Italian name matches the official SRD casing ('Ripristino stregonesco', not Title Case)", () => {

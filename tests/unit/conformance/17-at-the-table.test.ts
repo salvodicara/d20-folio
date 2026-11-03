@@ -210,7 +210,7 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Initiative triggers when rolled physically",
       source: "WIKI barbarian:main; WIKI monk:main; WIKI feat:alert",
-      status: "M8",
+      status: "works",
     },
     () => {
       // Incapacitated rolls Initiative with Disadvantage.

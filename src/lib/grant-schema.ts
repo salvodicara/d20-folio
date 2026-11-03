@@ -602,6 +602,38 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     type: literalSchema("initiative-tracker-topup"),
     upTo: numberSchema,
   }),
+  /** A maintained state that needs no upkeep at End Turn (Persistent Rage: Rage
+   *  lasts its full duration without attacking or extending it). */
+  "upkeep-waiver": objectSchema({
+    activeKey: stringSchema,
+    type: literalSchema("upkeep-waiver"),
+  }),
+  /**
+   * A trigger rule (edge-case family M8): on `on`, do `do`, at most `limit.max`
+   * times per `limit.per`. Its counter is the session tracker keyed by the source id
+   * (the feature's own tracker when it has one). `restore-tracker` regains uses of
+   * `trackerId`: all of them (`full`), or `amount` (a tracker formula: Sorcerous
+   * Restoration's `floor(level/2)`).
+   */
+  trigger: objectSchema(
+    {
+      do: objectSchema(
+        {
+          kind: literalSchema("restore-tracker"),
+          trackerId: stringSchema,
+        },
+        { amount: stringSchema, full: literalSchema(true) }
+      ),
+      on: unionSchema([literalSchema("initiative"), literalSchema("short-rest")]),
+      type: literalSchema("trigger"),
+    },
+    {
+      limit: objectSchema({
+        max: numberSchema,
+        per: unionSchema([literalSchema("long-rest"), literalSchema("short-rest")]),
+      }),
+    }
+  ),
   "extra-attack": objectSchema({
     count: numberSchema,
     type: literalSchema("extra-attack"),

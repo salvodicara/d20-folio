@@ -1249,6 +1249,11 @@ export interface IncomingAttackClause {
  * "Gain N temporary HP" entry. Override-first — never auto-applied.
  */
 /** Spells castable in a form that blocks casting (see the `form-casting` grant). */
+/** A trigger rule from a grant (M8), with the source whose counter limits it. */
+export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "do" | "limit"> & {
+  sourceId: string;
+};
+
 export interface FormCastingEntry {
   sourceId: string;
   form: string;
@@ -1594,6 +1599,8 @@ export interface AggregatedGrants {
     upTo: number;
     sourceId: string;
   }>;
+  /** Trigger rules (M8): on an event, an action, with an optional per-rest limit. */
+  triggers: ReadonlyArray<TriggerRule>;
   /** The zero-HP savers, one per granting source (read by `play/zero-hp-savers`). */
   atZeroHpInterrupts: ReadonlyArray<AtZeroHpSaverGrant>;
   /** Lit states that halve the next hit from an attack (Uncanny Dodge). */
@@ -2231,6 +2238,7 @@ export function emptyAggregate(): AggregatedGrants {
     weaponReachBonuses: [],
     spellSlotTrackerRecoveries: [],
     initiativeTrackerTopUps: [],
+    triggers: [],
     atZeroHpInterrupts: [],
     incomingDamageScales: [],
     damageAbsorbPools: [],
@@ -2502,6 +2510,7 @@ export function evaluateGrants(
   const weaponReachBonuses: AggregatedGrants["weaponReachBonuses"][number][] = [];
   const spellSlotTrackerRecoveries: AggregatedGrants["spellSlotTrackerRecoveries"][number][] =
     [];
+  const triggers: TriggerRule[] = [];
   const initiativeTrackerTopUps: AggregatedGrants["initiativeTrackerTopUps"][number][] =
     [];
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
@@ -2883,6 +2892,17 @@ export function evaluateGrants(
           trackerId: g.trackerId,
           usesPerSlot: g.usesPerSlot ?? 1,
           sourceId,
+        });
+        break;
+      // Read where the maintained states are resolved (`resolveActiveMaintainedEffects`).
+      case "upkeep-waiver":
+        break;
+      case "trigger":
+        triggers.push({
+          sourceId,
+          on: g.on,
+          do: g.do,
+          ...(g.limit ? { limit: g.limit } : {}),
         });
         break;
       case "initiative-tracker-topup":
@@ -4036,6 +4056,7 @@ export function evaluateGrants(
     weaponReachBonuses,
     spellSlotTrackerRecoveries,
     initiativeTrackerTopUps,
+    triggers,
     atZeroHpInterrupts,
     incomingDamageScales,
     damageAbsorbPools,
