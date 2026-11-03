@@ -736,8 +736,13 @@ window.__audit = (opts) => {
           Math.round(ref)
       );
   }
-  // c23 one panel header component: 3 px top rule in the panel colour, band starting at 50% of that colour, same height and type, flush with its panel
-  for (const h of document.querySelectorAll(".pnh,.f-pnh,.ftitle,.boxtabs")) {
+  // c23 one panel header component, flush with its panel, same height and type. The old UI
+  // caps it with a 3 px top rule in the panel colour over a band from 55% of that colour; the
+  // new UI («Lume», owner 2026-11-03) lights it instead: no top border, a fading rule in the
+  // panel colour as the first background layer, over a low tint.
+  for (const h of document.querySelectorAll(
+    ".pnh,.f-pnh,.ftitle,.boxtabs,.f-sheet .f-centre > .f-tabs"
+  )) {
     if (!vis(h) || h.closest(".pop,.f-pop,.menu")) continue;
     const cs = getComputedStyle(h);
     const box = h.parentElement;
@@ -752,11 +757,18 @@ window.__audit = (opts) => {
     if (st[1]) first = [st[1] * 255, st[2] * 255, st[3] * 255];
     else if (st[4]) first = [+st[4], +st[5], +st[6]];
     const bad = [];
-    if (Math.round(bt) !== 3) bad.push("top rule " + bt);
+    const lume = h.closest(".fui") !== null;
+    if (lume) {
+      if (bt !== 0) bad.push("top border " + bt);
+      if (!/^linear-gradient\(90deg, rgba\(0, 0, 0, 0\)/.test(cs.backgroundImage))
+        bad.push("no fading lit rule");
+    } else if (Math.round(bt) !== 3) bad.push("top rule " + bt);
     if (!/clip|hidden/.test(bcs.overflow) && !box.matches(".pop,.f-pop"))
       bad.push("panel does not clip its header");
     if (!first) bad.push("no colour band");
-    else if (Math.max(...first.map((v, i) => Math.abs(v - col[i] * 0.55))) > 8)
+    else if (lume) {
+      /* the lit rule's colour is the panel's own: checked by eye, it varies per panel */
+    } else if (Math.max(...first.map((v, i) => Math.abs(v - col[i] * 0.55))) > 8)
       bad.push("band not the panel colour");
     const r = h.getBoundingClientRect();
     if (
@@ -780,7 +792,7 @@ window.__audit = (opts) => {
       if (
         Math.abs(r.left - q.left) > 0.6 ||
         Math.abs(q.right - r.right) > 0.6 ||
-        Math.abs(r.top - q.top) > 0.6
+        Math.abs(r.top - q.top - (lume ? btw : 0)) > 0.6
       )
         bad.push("cap does not cover the panel edge");
     }

@@ -7,7 +7,7 @@ the engine seams in `docs/design/new-ui-wiring.md`, the target layout in
 `docs/strategy/2026-10-16-target-architecture.md`.
 
 **Approved so far (2026-10-25):** one panel family (one box and header type, a colour bar, no icons
-in titles); the character header with gold corners only (no frieze); the five premium rules (no box
+in titles); the character header lit by «Lume» (a hairline and a lit top edge, no corners; owner 2026-11-03); the five premium rules (no box
 in a box, two button types, colour only with a meaning, text at least 12 px, an 8 px grid); the phone
 copies D&D Beyond's phone exactly; game-icons.net icons where an icon carries a meaning; the Diario is
 one page per session (q38).

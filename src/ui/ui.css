@@ -86,6 +86,15 @@
   --r: 8px;
   --r-lg: 12px;
   --r-pill: 20px;
+  /* «Lume» (owner, 2026-11-03): one faint gold hairline, a lit top edge that fades at
+     both ends, a warm light from above, a soft vignette below. No corners anywhere. */
+  --r-frame: 4px;
+  --orn-line: rgb(169 130 80 / 0.5);
+  --orn-lit: #d9b878;
+  --orn-light: rgb(240 194 120 / 0.09);
+  --orn-glow: rgb(217 184 120 / 0.12);
+  --orn-rim: rgb(255 232 190 / 0.05);
+  --orn-shade: rgb(0 0 0 / 0.55);
 
   background: var(--bg);
   color: var(--text);
@@ -209,8 +218,8 @@
 .fui .f-pn {
   min-width: 0;
   background: var(--toast-bg);
-  border: 1px solid var(--line);
-  border-radius: var(--r);
+  border: 1px solid var(--orn-line);
+  border-radius: var(--r-frame);
   overflow: clip;
   overflow-clip-margin: border-box;
 }
@@ -220,15 +229,23 @@
   flex-wrap: wrap;
   gap: 4px 12px;
   min-height: 56px;
-  margin: -1px -1px 0;
+  margin: 0 -1px;
   padding: 4px 24px 8px;
-  border-top: 3px solid var(--c, var(--c-act));
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--c, var(--c-act)) 55%, var(--shade)) 0%,
-    color-mix(in srgb, var(--c, var(--c-act)) 40%, var(--shade)) 55%,
-    color-mix(in srgb, var(--c, var(--c-act)) 26%, var(--shade)) 100%
-  );
+  /* the category colour as the light: a fading rule on top and a low tint («Lume») */
+  border-top: 0;
+  background:
+    linear-gradient(90deg, transparent, var(--c, var(--c-act)) 30%, transparent) top /
+      100% 1px no-repeat,
+    radial-gradient(
+      70% 140% at 30% 0,
+      color-mix(in srgb, var(--c, var(--c-act)) 30%, transparent),
+      transparent 75%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
+      transparent
+    );
   font: 700 18px/1.2 var(--font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -476,7 +493,8 @@
 /* ---------- note (callout) ---------- */
 .fui .f-note {
   padding: 12px 16px;
-  border-left: 3px solid var(--nc, var(--gold));
+  border: 1px solid color-mix(in srgb, var(--nc, var(--gold)) 40%, transparent);
+  border-radius: var(--r-frame);
   background: color-mix(in srgb, var(--nc, var(--gold)) 9%, transparent);
   color: var(--strong);
 }
@@ -732,7 +750,7 @@
   width: min(600px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   padding: 0;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--orn-line);
   border-radius: var(--r-lg);
   background: var(--panel);
   color: var(--text);
@@ -838,7 +856,7 @@
   transform: rotate(-90deg);
 }
 
-/* ---------- identity band: the page's one gold-framed header ---------- */
+/* ---------- identity band: the page's one lit header («Lume») ---------- */
 .fui .f-hero {
   position: relative;
   display: flex;
@@ -846,36 +864,37 @@
   flex-wrap: wrap;
   gap: 16px 24px;
   padding: 32px 40px;
-  border: 1px solid var(--gold-line);
-  border-radius: var(--r-sm);
-  background: radial-gradient(
-    110% 160% at 50% -30%,
-    var(--hero-top) 0%,
-    var(--hero-mid) 55%,
-    var(--hero-end) 100%
-  );
+  border: 1px solid var(--orn-line);
+  border-radius: var(--r-frame);
+  background:
+    radial-gradient(55% 90% at 50% -18%, var(--orn-light), transparent 70%),
+    radial-gradient(
+      110% 160% at 50% -30%,
+      var(--hero-top) 0%,
+      var(--hero-mid) 55%,
+      var(--hero-end) 100%
+    );
+  box-shadow:
+    0 14px 30px var(--orn-shade),
+    inset 0 1px 0 var(--orn-rim),
+    inset 0 -56px 64px -48px var(--orn-shade);
 }
+/* the lit top edge, fading at both ends, and its glow */
 .fui .f-hero::before,
 .fui .f-hero::after {
   content: "";
   position: absolute;
-  inset: 6px;
-  border: 1px solid color-mix(in srgb, var(--gold-line) 45%, transparent);
-  border-radius: var(--r-sm);
   pointer-events: none;
 }
+.fui .f-hero::before {
+  inset: -1px 12% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--orn-lit) 50%, transparent);
+}
 .fui .f-hero::after {
-  inset: -4px;
-  border: 0;
-  background:
-    linear-gradient(var(--gold), var(--gold)) 0 0 / 24px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 0 0 / 2px 24px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 100% 0 / 24px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 100% 0 / 2px 24px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 0 100% / 24px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 0 100% / 2px 24px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 100% 100% / 24px 2px no-repeat,
-    linear-gradient(var(--gold), var(--gold)) 100% 100% / 2px 24px no-repeat;
+  inset: 0 24% auto;
+  height: 24px;
+  background: radial-gradient(50% 100% at 50% 0, var(--orn-glow), transparent);
 }
 .fui .f-hero > * {
   position: relative;
@@ -1683,6 +1702,7 @@
 }
 .fui .f-char-stats {
   display: flex;
+  align-items: end;
   gap: 16px;
 }
 .fui .f-badge {
@@ -2104,8 +2124,6 @@
   --glow-gold: rgb(240 194 78 / 0.67);
   --row-meta: #b3a58c;
   --temp-quiet: #9fb7c9;
-  --sh-hero-c: rgb(0 0 0 / 0.55);
-  --frz: #a98250;
   --glow-ac: rgb(212 175 102 / 0.53);
   --glow-hp: rgb(70 240 74 / 0.53);
   --band-quiet: rgb(255 255 255 / 0.024);
@@ -2119,14 +2137,13 @@
   --row-rule: rgb(255 255 255 / 0.06);
   --plate-text: #ece3d0;
   --row-hover-text: #ffe7a8;
-  --fs-text: 15px;
+  --fs-text: 16px;
   --fs-ac: 34px;
   --fs-hp-big: 64px;
   --fs-title-phone: 26px;
   --fs-name-m: 30px;
   --fs-hp-phone: 46px;
   --fs-phone-num: 22px;
-  --frz-hi: #d9b878;
   --muted: #bcae93;
   --label: #a89a82;
   --frame: #6a5130;
@@ -2219,57 +2236,10 @@
   font-weight: 700;
   color: var(--temp-quiet);
 }
-/* the header (prototype .hero): no box line, depth, the generated frame */
+/* the header (prototype .hero), framed as every hero is («Lume») */
 .fui .f-sheet .f-char {
   gap: 32px 24px;
-  padding: 36px 56px;
-  border: 0;
-  border-radius: 0;
-  box-shadow: 0 14px 30px var(--sh-hero-c);
-}
-.fui .f-sheet .f-char::before,
-.fui .f-sheet .f-char::after {
-  display: none;
-}
-.fui .f-hero > .f-frz {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-}
-.fui .f-frz::before {
-  content: "";
-  position: absolute;
-  inset: 6px;
-  border: 1px solid var(--frz);
-}
-.fui .f-frz-c {
-  fill: var(--frz);
-  position: absolute;
-  width: 55px;
-  height: 55px;
-}
-.fui .f-frz-c path[data-tone="light"] {
-  fill: var(--frz-hi);
-}
-.fui .f-frz-c[data-at="tl"] {
-  left: -5px;
-  top: -5px;
-}
-.fui .f-frz-c[data-at="tr"] {
-  right: -5px;
-  top: -5px;
-  transform: scaleX(-1);
-}
-.fui .f-frz-c[data-at="bl"] {
-  left: -5px;
-  bottom: -5px;
-  transform: scaleY(-1);
-}
-.fui .f-frz-c[data-at="br"] {
-  right: -5px;
-  bottom: -5px;
-  transform: scale(-1);
+  padding: 40px 56px;
 }
 .fui .f-sheet .f-char-id h1 {
   font: 700 36px/1 var(--font-title);
@@ -2289,6 +2259,8 @@
   color: var(--text);
 }
 .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
+  /* the scale draws 10 px past the box: room for it above the label */
+  margin-bottom: 10px;
   transform: scale(1.25);
   filter: drop-shadow(0 0 8px var(--glow-ac));
 }
@@ -2297,7 +2269,6 @@
   color: var(--white);
 }
 .fui .f-sheet .f-badge[data-shape="shield"] > .f-lbl {
-  margin-top: 8px;
   letter-spacing: 0.03em;
 }
 @media (min-width: 801px) {
@@ -2375,16 +2346,23 @@
   gap: 4px;
   align-items: stretch;
   min-height: 56px;
-  margin: -1px -1px 0;
+  margin: 0 -1px;
   padding: 0 20px;
-  border-top: 3px solid var(--c);
   border-bottom: 1px solid var(--line-soft);
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--c) 55%, var(--shade)) 0%,
-    color-mix(in srgb, var(--c) 40%, var(--shade)) 55%,
-    color-mix(in srgb, var(--c) 26%, var(--shade)) 100%
-  );
+  border-top: 0;
+  background:
+    linear-gradient(90deg, transparent, var(--c, var(--c-act)) 30%, transparent) top /
+      100% 1px no-repeat,
+    radial-gradient(
+      70% 140% at 30% 0,
+      color-mix(in srgb, var(--c, var(--c-act)) 30%, transparent),
+      transparent 75%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
+      transparent
+    );
 }
 .fui .f-sheet .f-centre > .f-tabs > button {
   gap: 8px;
@@ -2402,10 +2380,12 @@
 .fui .f-sheet .f-turn {
   min-height: 72px;
   gap: 16px;
-  padding: 16px 20px;
+  padding: 16px 0;
   border: 0;
-  background: var(--band-quiet);
-  font: 600 18px var(--font-text);
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: none;
+  font: 700 18px var(--font-text);
   color: var(--white);
 }
 .fui .f-sheet .f-turn-t {
@@ -2479,6 +2459,13 @@
   padding: 0 8px 8px;
   border: 0;
 }
+.fui .f-sheet .f-act.f-act-head {
+  min-height: 0;
+  padding: 16px 8px 0;
+}
+.fui .f-act-head > span:nth-child(n + 3) {
+  text-align: center;
+}
 .fui .f-act-head > span {
   font: 700 12px/1.2 var(--font-label);
   letter-spacing: 0.08em;
@@ -2522,7 +2509,7 @@
   font-size: var(--fs-sm);
 }
 .fui .f-sheet .f-act-c {
-  font: 600 17px/1 var(--font-text);
+  font: 700 var(--fs-md)/1 var(--font-text);
   color: var(--plate-text);
 }
 @media (min-width: 641px) {
@@ -2616,12 +2603,21 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.fui .f-char-acts {
+  margin-left: -8px;
+  gap: 0;
+}
 .fui .f-sheet .f-char-acts > .f-btn {
-  border-color: var(--line-strong);
-  background: var(--line-soft);
+  padding-inline: 8px;
+  border-color: transparent;
+  background: none;
   box-shadow: none;
   font-size: var(--fs-sm);
   text-decoration: none;
+  color: var(--muted);
+}
+.fui .f-sheet .f-char-acts > .f-btn:hover {
+  color: var(--hover-gold);
 }
 /* the phone's own top bar: back, then who */
 .fui .f-tb-page {
@@ -2678,7 +2674,7 @@
     padding: 0 24px;
     border: 0;
     background: none;
-    font: 600 var(--fs-md) var(--font-text);
+    font: 700 var(--fs-md) var(--font-text);
     color: var(--strong);
     cursor: pointer;
   }
@@ -2726,17 +2722,15 @@
   .fui .f-sheet .f-char-acts {
     display: none;
   }
+  /* the states stay chips in a row, not full-width pills */
   .fui .f-sheet .f-char-id > .f-chips {
     grid-area: chips;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-top: 12px;
   }
-  .fui .f-sheet .f-char-id > .f-chips > :first-child {
-    grid-column: 1 / -1;
-  }
   .fui .f-sheet .f-char-id > .f-chips > .f-chip {
-    justify-content: center;
     border-radius: var(--r-pill);
   }
   .fui .f-sheet .f-char-hp-open {
@@ -2755,7 +2749,7 @@
     display: none;
   }
   .fui .f-sheet .f-char-temp {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--temp);
   }
   .fui .f-sheet .f-char-hp-v {
@@ -2779,11 +2773,12 @@
   }
   /* the three numbers plain: value, then its small label */
   .fui .f-sheet .f-char-stats .f-badge {
-    gap: 0;
+    gap: 4px;
   }
   .fui .f-sheet .f-char-stats .f-badge-frame {
     width: auto;
     height: auto;
+    margin-bottom: 0;
     transform: none;
     filter: none;
   }
@@ -2798,7 +2793,7 @@
   }
   .fui .f-sheet .f-char-stats .f-lbl {
     margin: 0;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--phone-label);
   }
   .fui .f-sheet .f-char-abil {
@@ -2810,7 +2805,7 @@
   }
   .fui .f-sheet .f-ability dt {
     order: 2;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--phone-label);
   }
   .fui .f-sheet .f-ability b {
@@ -2849,6 +2844,11 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+  }
+  /* the side columns end with their content, never an empty stretch of panel */
+  .fui .f-sheet .f-play > :not(.f-centre) {
+    align-self: start;
+    max-height: 100%;
   }
   .fui .f-sheet .f-centre > .f-pnb {
     /* a row brought into view stops below the pinned filters, not under them */
@@ -3002,7 +3002,6 @@
 .fui .f-sheet {
   --ir-now-bg: #1d2a33;
   --ir-now-glow: rgb(42 141 176 / 0.27);
-  --ir-next: rgb(255 255 255 / 0.13);
   --ir-tag: rgb(232 220 196 / 0.4);
   --ir-token-bg: #2a1a12;
   --r-slot: 2px;
@@ -3017,7 +3016,7 @@
   padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
-  font: 600 var(--fs-md) var(--font-text);
+  font: 700 var(--fs-md) var(--font-text);
   color: var(--text);
 }
 .fui .f-ir[data-current] {
@@ -3025,8 +3024,9 @@
   background: var(--ir-now-bg);
   box-shadow: 0 0 10px var(--ir-now-glow);
 }
-.fui .f-ir[data-next] {
-  border: 1px dashed var(--ir-next);
+/* who comes next: the number in gold, no box inside the box */
+.fui .f-ir[data-next] .f-ir-i {
+  color: var(--gold);
 }
 .fui .f-ir-i {
   flex: none;
@@ -3263,7 +3263,7 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  font: 600 var(--fs-sm) var(--font-text);
+  font: 700 var(--fs-sm) var(--font-text);
   letter-spacing: 0;
   text-transform: none;
   color: var(--muted);
@@ -3301,4 +3301,18 @@
 .fui .f-yesno > .f-chip {
   min-width: 56px;
   justify-content: center;
+}
+/* phone: the three centre tabs fit, or scroll sideways; never cut */
+@media (max-width: 640px) {
+  .fui .f-sheet .f-centre > .f-tabs {
+    gap: 0;
+    padding: 0 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .fui .f-sheet .f-centre > .f-tabs > button {
+    flex: none;
+    padding-inline: 12px;
+    letter-spacing: 0.04em;
+  }
 }

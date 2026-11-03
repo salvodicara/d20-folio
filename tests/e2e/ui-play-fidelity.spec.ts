@@ -5,7 +5,10 @@
  * ("not as cool as the prototype", owner, 2026-11-03). This guard pins the computed
  * styles of the elements that carry Play's look to the values the prototype computes
  * at 1440 × 900 (read with Chromium from x-play.html). A change that drifts from them
- * fails here and names the element and the property. Runs on the VITE_NEW_UI preview
+ * fails here and names the element and the property. Where the owner has since moved the
+ * look on («Lume», 2026-11-03: a hairline and a lit edge instead of the filigree and the
+ * 3 px caps; the critique's text scale), the value is the new one and says so.
+ * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
 import { expect, test } from "@playwright/test";
@@ -16,8 +19,15 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["base text", ".f-sheet", "font-size", "16px"],
   ["base text", ".f-sheet", "line-height", "23.2px"],
   // the header: depth, the name, the display numbers
-  ["header", ".f-char", "box-shadow", "rgba(0, 0, 0, 0.55) 0px 14px 30px 0px"],
-  ["header", ".f-char", "border-top-width", "0px"],
+  // «Lume»: the drop, the rim light, the vignette below; one hairline
+  [
+    "header",
+    ".f-char",
+    "box-shadow",
+    "rgba(0, 0, 0, 0.55) 0px 14px 30px 0px, rgba(255, 232, 190, 0.05) 0px 1px 0px 0px inset, rgba(0, 0, 0, 0.55) 0px -56px 64px -48px inset",
+  ],
+  ["header", ".f-char", "border-top-width", "1px"],
+  ["header", ".f-char", "border-top-color", "rgba(169, 130, 80, 0.5)"],
   ["name", ".f-char-id h1", "font-size", "36px"],
   ["name", ".f-char-id h1", "font-weight", "700"],
   ["ability modifier", ".f-ability dd b", "font-size", "26px"],
@@ -41,7 +51,7 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["resource name", ".f-res-t", "font-weight", "700"],
   ["resource name", ".f-res-t", "color", "rgb(255, 255, 255)"],
   // the centre: the Cinzel tab band, the turn strip, the advice line
-  ["tab band", ".f-centre > .f-tabs", "border-top-width", "3px"],
+  ["tab band", ".f-centre > .f-tabs", "border-top-width", "0px"],
   ["tab band", ".f-centre > .f-tabs", "min-height", "56px"],
   ["tab", ".f-centre > .f-tabs > button", "text-transform", "uppercase"],
   ["tab", ".f-centre > .f-tabs > button", "font-size", "14px"],
