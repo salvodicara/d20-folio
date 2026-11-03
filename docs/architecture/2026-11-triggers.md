@@ -41,6 +41,13 @@ reader.
 The runtime reads only what this doc lists under "The grant". A rule using the rest of the
 vocabulary is valid data and inert until its reader lands.
 
+## Offers
+
+`firedTriggerOffers(doc, on, facts)` returns the actions the `offer` rules on an event put in
+front of the player: Hunter's Mark and Hex's "move-mark" when the creature that dropped is the
+marked one (`facts.targetMarked`). Every field of a rule's `if` must match a fact the caller
+gives (`targetMarked`, `school`, `slot`, `distanceFt`), and a spent limit offers nothing.
+
 ## Next
 
 More events and actions as their cases come: a creature reduced to 0 (Hunter's Mark moving, kill

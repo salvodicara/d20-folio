@@ -134,6 +134,7 @@ import {
   type FreeCastCapacityStep,
   type FreeCastEntry,
   type GrantedAction,
+  type TriggerRule,
   whileActiveDurationAtCastLevel,
   resolveGrantActiveKey,
   grantField,
@@ -9666,6 +9667,52 @@ export function getInitiativeTrackerTopUps(character: CharacterDoc): Map<string,
     out.set(trackerId, Math.min(used, out.get(trackerId) ?? used));
   }
   return out;
+}
+
+/** What the caller knows about an event, for a trigger's `if` (M8). */
+export interface TriggerFacts {
+  /** reduced-to-zero: the creature is the one your effect marks (Hunter's Mark, Hex). */
+  targetMarked?: boolean;
+  /** cast-spell: the spell's school, and whether it was cast with a slot. */
+  school?: string;
+  slot?: boolean;
+  /** d20-test-failed: how far away the creature is, in feet. */
+  distanceFt?: number;
+}
+
+/** Whether a rule's `if` holds for these facts: every field it names must match a fact
+ *  the caller gave; a field it names with no fact given does not hold. */
+function triggerHolds(rule: TriggerRule, facts: TriggerFacts): boolean {
+  const when = rule.if;
+  if (!when) return true;
+  if (when.target === "marked" && facts.targetMarked !== true) return false;
+  if (when.school !== undefined && facts.school !== when.school) return false;
+  if (when.slot === true && facts.slot !== true) return false;
+  if (
+    when.within !== undefined &&
+    (facts.distanceFt === undefined || facts.distanceFt > when.within)
+  )
+    return false;
+  return true;
+}
+
+/**
+ * The actions trigger rules offer on an event (edge-case family M8): Hunter's Mark and
+ * Hex move to a new creature when the marked one drops to 0 ("move-mark"). Only rules
+ * that hold for the facts and are within their limit; the player takes the offer.
+ */
+export function firedTriggerOffers(
+  character: CharacterDoc,
+  on: TriggerRule["on"],
+  facts: TriggerFacts = {}
+): Array<{ sourceId: string; actionId: string }> {
+  return aggregateForCharacter(character).triggers.flatMap((rule) => {
+    if (rule.on !== on || rule.do.kind !== "offer") return [];
+    const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
+    if (rule.limit && spent >= rule.limit.max) return [];
+    if (!triggerHolds(rule, facts)) return [];
+    return [{ sourceId: rule.sourceId, actionId: rule.do.actionId }];
+  });
 }
 
 /**
