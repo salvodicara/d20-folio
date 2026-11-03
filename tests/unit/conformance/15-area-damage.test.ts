@@ -238,15 +238,25 @@ describe("conformance · 15. multi-target and area damage", () => {
       category: 15,
       case: "Per-spell bonuses vs per-ray bonuses",
       source: "SAC #63; SAC #64",
-      status: "M4",
+      status: "works",
     },
     () => {
-      // Elemental Affinity adds CHA to ONE damage roll of the spell, not to every ray.
-      const affinity = classFeatures.find(
-        (f) => f.id === "sorcerer-draconic-sorcery-elemental-affinity"
+      // Elemental Affinity adds CHA to ONE damage roll of the spell, not to every ray:
+      // Scorching Ray's rays stay 2d6 each, and the +3 is a one-roll bonus.
+      const sorcerer = makeCharacterDoc(
+        {
+          classId: "sorcerer",
+          subclassId: "draconic-sorcery",
+          level: 6,
+          abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 10, CHA: 16 },
+          spells: [{ srdId: "scorching-ray", prepared: true }],
+          features: [{ srdId: "sorcerer-draconic-sorcery-elemental-affinity" }],
+        },
+        { grantBundleChoices: { "sorcerer-draconic-elemental-affinity": "fire" } }
       );
-      expect(affinity).toBeDefined();
-      expect(JSON.stringify(affinity)).toContain('"per":"cast"');
+      const ray = resolveActions(sorcerer).find((a) => a.id === "spell-scorching-ray");
+      expect(ray?.summary.oneRollDamageBonus).toBe(3);
+      expect(ray?.summary.damage).toBe("2d6");
     }
   );
 
