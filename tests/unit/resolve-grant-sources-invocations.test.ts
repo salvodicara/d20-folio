@@ -27,7 +27,9 @@ describe("resolveGrantSourcesForInvocations", () => {
   it("emits a grant source for a sense-bearing invocation", () => {
     const sources = resolveGrantSourcesForInvocations(["devils-sight"]);
     expect(sources.map((s) => s.id)).toEqual(["devils-sight"]);
-    expect(sources[0]?.grants).toEqual([{ type: "darkvision", range: 120 }]);
+    expect(sources[0]?.grants).toEqual([
+      { type: "darkvision", range: 120, penetratesMagicalDarkness: true },
+    ]);
   });
 
   it("emits nothing for a grant-less invocation (rider / prose-only)", () => {
