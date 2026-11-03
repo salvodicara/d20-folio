@@ -88,7 +88,11 @@ export function formFacts(
 ): {
   sourceId: string;
   beastId: string;
+  /** Which catalogue names the form (a Beast, or a bestiary creature). */
+  nameKind: "beasts" | "monster";
   abilityScores: Record<AbilityCode, number>;
+  /** The scores the form replaces (all six, or STR/DEX/CON when the mind stays). */
+  replaces: readonly AbilityCode[];
   ac: number;
   walkFt: number | null;
   speeds: Partial<Record<"fly" | "swim" | "climb" | "burrow", number>>;
@@ -106,6 +110,10 @@ export function formFacts(
   return {
     sourceId: form.sourceId,
     beastId: form.beastId,
+    nameKind: formNameKind(form),
+    replaces: rule.keepsMind
+      ? ["STR", "DEX", "CON"]
+      : ["STR", "DEX", "CON", "INT", "WIS", "CHA"],
     abilityScores: rule.keepsMind
       ? { ...beast.abilityScores, INT: own.INT, WIS: own.WIS, CHA: own.CHA }
       : { ...beast.abilityScores },

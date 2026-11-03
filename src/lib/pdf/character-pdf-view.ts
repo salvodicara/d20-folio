@@ -381,19 +381,13 @@ export function buildCharacterPdfViewModel(
   const session = doc.session;
   const level = totalLevel(charData);
   const pb = effectiveProficiencyBonus(level, charData.proficiencyBonusOverride);
-  const activeFeatures = session.activeFeatures;
-  const grantBundleChoices = session.grantBundleChoices;
 
   // Every number the hero's own sheet shows comes from the ONE derivation
   // (`deriveCharacter`): abilities, saves, skills, passives, senses/speeds, AC,
   // initiative, max HP — so the PDF can never print a different number. The full
   // aggregate below only feeds the PDF's text lines (languages, tools, defenses).
   const sheet = deriveCharacter(doc);
-  const fullAggregate = aggregateCharacterGrants(charData, {
-    activeFeatures,
-    grantBundleChoices,
-    itemResources: session.itemResources,
-  });
+  const fullAggregate = aggregateCharacterGrants(charData, session);
 
   // ── abilities (score + modifier + save, override-aware) ──
   const abilities: PdfAbilityVM[] = sheet.saves.map((save) => {

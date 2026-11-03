@@ -63,6 +63,7 @@ export interface SavesChecksSession {
   itemResources?: SessionState["itemResources"];
   fadingPenalties?: SessionState["fadingPenalties"];
   sessionDefenses?: SessionState["sessionDefenses"];
+  activeForm?: SessionState["activeForm"];
 }
 
 /** One saving-throw row (STR…CHA), engine-computed + override-first. */
@@ -201,17 +202,7 @@ export function deriveSavesAndChecks(
     resolveGrantSourcesForFeatures(charData.features),
     new Set(activeFeatures ?? [])
   );
-  const fullAggregate = aggregateCharacterGrants(charData, {
-    activeFeatures,
-    grantBundleChoices: session.grantBundleChoices,
-    itemResources: session.itemResources,
-    fadingPenalties: session.fadingPenalties,
-    conditions: session.conditions ?? [],
-    concentration: session.concentration ?? "",
-    concentrationConditions: session.concentrationConditions,
-    encounterEffects: session.encounterEffects,
-    sessionDefenses: session.sessionDefenses,
-  });
+  const fullAggregate = aggregateCharacterGrants(charData, session);
   // The conditions in effect, immunities applied (a suppressed Frightened is no
   // Disadvantage).
   const conditions = fullAggregate.conditions;

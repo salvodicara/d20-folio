@@ -15,6 +15,7 @@
       "bonus": "Spellcasting bonuses"
     },
     "why": {
+      "form": "While the form lasts, you use the {{form}}'s statistics in place of your own.",
       "dieUpgrade": "Your {{cls}} die ({{die}} at level {{level}}) replaces the weapon's printed die ({{printed}}) whenever it's larger.",
       "unarmedDie": "Your {{cls}} die ({{die}} at level {{level}}) replaces the base damage ({{printed}}) a plain Unarmed Strike deals.",
       "dieUpgradeFeature": "This replaces the weapon's printed die ({{printed}}) with {{die}} whenever it's larger.",

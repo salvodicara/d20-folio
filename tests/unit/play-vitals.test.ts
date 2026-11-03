@@ -36,6 +36,7 @@ import {
 } from "@/lib/play/vitals";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
+import { shown } from "./_shown";
 
 const UID = "test-uid";
 
@@ -229,10 +230,10 @@ describe("Beast forms", () => {
     if (!beast) throw new Error("no beast");
     const assumed = assumeBeastForm(doc, beast, "polymorph");
     expect(assumed.tempHp).toBe(Math.max(3, beast.hp));
-    expect(assumed.doc.character.acOverride).toBe(beast.ac);
-    expect(assumed.doc.session.polymorphForm?.beastId).toBe(beast.id);
+    expect(shown(assumed.doc).ac).toBe(beast.ac);
+    expect(assumed.doc.session.activeForm?.beastId).toBe(beast.id);
     const dropped = dropBeastForm(assumed.doc);
-    expect(dropped?.session.polymorphForm).toBeUndefined();
+    expect(dropped?.session.activeForm).toBeUndefined();
     expect(dropped?.session.hp.temp).toBe(3);
     expect(dropped?.character.acOverride ?? null).toBe(doc.character.acOverride ?? null);
     expect(dropBeastForm(doc)).toBeNull();
@@ -285,9 +286,11 @@ describe("changeConcentration", () => {
       concentrationValue("polymorph")
     ).doc;
     const cleared = changeConcentration(formed, "");
-    expect(cleared.doc.session.polymorphForm).toBeUndefined();
+    expect(formed.session.activeForm?.beastId).toBe(beast.id);
+    expect(cleared.doc.session.activeForm).toBeUndefined();
     expect(cleared.doc.session.hp.temp).toBe(2);
-    expect(cleared.revertBuild).toBeDefined();
+    // A layered form leaves the build alone: nothing to revert.
+    expect(cleared.doc.character).toEqual(doc.character);
   });
 });
 

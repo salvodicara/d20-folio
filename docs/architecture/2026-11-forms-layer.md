@@ -32,6 +32,13 @@ never written into the build.
   derivation already take the aggregate (about 20 call sites), so they read the form through
   it. Build editors keep reading the build, so they show the character's own stats, which is
   right.
+- **Precedence:** a hand-set number beats the form, and the form beats the computed number, for
+  every number (scores, AC, speeds). Stamping let a hand-set score win but overwrote a hand-set
+  AC or speed. A form shows every speed of the beast, even one the character lacks (stamping
+  showed only the kinds the character already had).
+- **One aggregation session:** the views pass the session itself to the aggregate. They used to
+  copy a different subset each, so a new session field reached some views and not others. The
+  old rail's memos still narrow it on purpose (render isolation) and list `activeForm`.
 - **Proficiency** is the better of the character's and the form's. Merged gear stops granting.
   Casting is blocked by a form grant, with the rule's exceptions (Moon).
 - **Wild Shape** declares a `formRule` like the spells (pool: the druid's beast list, CR and

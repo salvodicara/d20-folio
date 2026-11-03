@@ -52,6 +52,7 @@ import {
   resolveCastingModifier,
   aggregateAbilityScores,
 } from "@/lib/compute";
+import { formFacts } from "@/lib/polymorph";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import type { BreakdownLine } from "@/lib/value-breakdown";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
@@ -505,9 +506,10 @@ export function buildSpellsViewModel(
   // DC + spell attack derive from these, so a Headband of Intellect wizard's spell
   // DC/attack reflect INT 19, and an Ioun Stone of Intellect adds its +2 (rule 6).
   // Behaviour-preserving with no ability-score item (floors/bonus empty).
+  // An assumed form's scores replace the character's (M2), as on the sheet.
   const effectiveScores = aggregateAbilityScores(
     character.abilityScores,
-    grantAggregate,
+    { ...grantAggregate, form: formFacts(session, character.abilityScores) },
     character.abilityScoreOverrides
   );
 

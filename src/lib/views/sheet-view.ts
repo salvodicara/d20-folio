@@ -762,7 +762,9 @@ export function nonWalkingSpeedBreakdown(
  * included. `walkingSpeedFt` resolves the `equal-to-walking` sentinel.
  */
 export function deriveSensesAndSpeeds(
-  aggregate: AggregatedGrants,
+  aggregate: AggregatedGrants & {
+    form?: { speeds: Partial<Record<(typeof SPEED_KINDS)[number], number>> } | null;
+  },
   walkingSpeedFt: number
 ): SensesSpeedsView {
   const senses: SenseEntry[] = [];
@@ -788,10 +790,10 @@ export function deriveSensesAndSpeeds(
   });
 
   const speeds = SPEED_KINDS.flatMap((kind): SpeedEntry[] => {
-    const rangeFt = resolveNonWalkingSpeed(
-      nonWalkingSpeedOf(aggregate, kind),
-      walkingSpeedFt
-    );
+    // An assumed form's speeds replace the character's (M2), even one it lacks.
+    const rangeFt =
+      aggregate.form?.speeds[kind] ??
+      resolveNonWalkingSpeed(nonWalkingSpeedOf(aggregate, kind), walkingSpeedFt);
     return rangeFt !== null && rangeFt > 0 ? [{ kind, rangeFt }] : [];
   });
 

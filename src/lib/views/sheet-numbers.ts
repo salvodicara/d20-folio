@@ -20,6 +20,7 @@ import {
   abilityScoreBreakdown,
   aggregateCharacterGrants,
   computeCharacterAcBreakdown,
+  formBreakdownPart,
   computeCharacterMaxHp,
   computedInitiativeBreakdown,
   effectiveMaxHpBreakdown,
@@ -91,15 +92,8 @@ const explained = (
 export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> {
   const { character, session } = doc;
   const sheet = deriveCharacter(doc);
-  // The same aggregation session deriveCharacter and the sheet's header read.
-  const aggSession = {
-    activeFeatures: session.activeFeatures,
-    grantBundleChoices: session.grantBundleChoices,
-    itemResources: session.itemResources,
-    fadingPenalties: session.fadingPenalties,
-    hpMaxReduction: session.hpMaxReduction,
-  };
-  const aggregate = aggregateCharacterGrants(character, aggSession);
+  // The same aggregation deriveCharacter and the sheet's header read.
+  const aggregate = aggregateCharacterGrants(character, session);
   const rail = deriveSavesAndChecks(character, session);
   const level = totalLevel(character);
 
@@ -113,7 +107,7 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
   };
 
   // Only a known class has a by-the-book max HP; a stored max off it is hand-set.
-  const maxHpParts = effectiveMaxHpBreakdown(character, aggSession);
+  const maxHpParts = effectiveMaxHpBreakdown(character, session);
 
   // The same inputs deriveCharacter feeds the spell save DC and attack.
   const sc = character.spellcasting;
@@ -191,7 +185,9 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
     ),
     speed: explained(
       sheet.walkingSpeedFt,
-      effectiveWalkingSpeedBreakdown(doc, getEquipment),
+      aggregate.form?.walkFt != null
+        ? [formBreakdownPart(aggregate.form, aggregate.form.walkFt)]
+        : effectiveWalkingSpeedBreakdown(doc, getEquipment),
       character.speedOverride != null
     ),
     otherSpeeds: Object.fromEntries(
@@ -199,7 +195,9 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
         kind,
         explained(
           rangeFt,
-          nonWalkingSpeedBreakdown(aggregate, kind, sheet.walkingSpeedFt),
+          aggregate.form?.speeds[kind] != null
+            ? [formBreakdownPart(aggregate.form, aggregate.form.speeds[kind])]
+            : nonWalkingSpeedBreakdown(aggregate, kind, sheet.walkingSpeedFt),
           character.speedOverrides?.[kind] != null
         ),
       ])

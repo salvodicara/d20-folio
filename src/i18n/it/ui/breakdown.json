@@ -15,6 +15,7 @@
       "bonus": "Bonus agli incantesimi"
     },
     "why": {
+      "form": "Finché dura la forma, usi le statistiche di {{form}} al posto delle tue.",
       "dieUpgrade": "Il tuo dado da {{cls}} ({{die}} al livello {{level}}) sostituisce il dado stampato dell'arma ({{printed}}) quando è maggiore.",
       "unarmedDie": "Il tuo dado da {{cls}} ({{die}} al livello {{level}}) sostituisce il danno base ({{printed}}) di un normale colpo senz'armi.",
       "dieUpgradeFeature": "Sostituisce il dado stampato dell'arma ({{printed}}) con {{die}} quando è maggiore.",

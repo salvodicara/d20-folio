@@ -97,6 +97,7 @@ import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes"
 import {
   currentForm,
   formAttackNameKey,
+  formFacts,
   formNameKind,
   formStatBlock,
 } from "@/lib/polymorph";
@@ -9267,6 +9268,22 @@ export function isTurnEconomyBlocked(character: CharacterDoc): boolean {
  * out-of-combat / later-round Speed (no first-turn bonus) — the persistent
  * stat-block surfaces leave it off; a combat-aware surface passes `round`.
  */
+/**
+ * The walking Speed the sheet shows: a hand-set one, else an assumed form's (M2),
+ * else the computed one.
+ */
+export function shownWalkingSpeedFt(
+  doc: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined,
+  round?: number
+): number {
+  return (
+    doc.character.speedOverride ??
+    formFacts(doc.session, doc.character.abilityScores)?.walkFt ??
+    effectiveWalkingSpeedFt(doc, resolveSrd, round)
+  );
+}
+
 export function effectiveWalkingSpeedFt(
   character: CharacterDoc,
   resolveSrd?: (id: string) => SrdEquipmentData | undefined,

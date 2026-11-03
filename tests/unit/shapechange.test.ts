@@ -16,17 +16,13 @@ import { resolveBestiaryForms } from "@/lib/bestiary-forms";
 
 const resolveShapechangeForms = (level: number) =>
   resolveBestiaryForms("shapechange", level);
-import {
-  formStatBlock,
-  polymorphPriorSnapshot,
-  selfFormRule,
-  isSelfFormSpell,
-} from "@/lib/polymorph";
+import { formStatBlock, selfFormRule, isSelfFormSpell } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { sessionToState, stateToSession } from "@/lib/session-state-codec";
 import { resolveActions } from "@/lib/smart-tracker";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
+import { shown } from "./_shown";
 import type { BeastStatBlock } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
@@ -109,24 +105,25 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
     const dragon = form("adult-red-dragon");
     const { doc: next, tempHp } = assumeBeastForm(doc, dragon, "shapechange");
     expect(doc).toEqual(frozen); // never mutates its input
-    expect(next.character.acOverride).toBe(dragon.ac);
-    expect(next.character.speedOverride).toBe(dragon.speeds.walk);
-    expect(next.character.speedOverrides?.fly).toBe(dragon.speeds.fly);
-    for (const a of BODY)
-      expect(next.character.abilityScores[a]).toBe(dragon.abilityScores[a]);
-    for (const a of MIND)
-      expect(next.character.abilityScores[a]).toBe(doc.character.abilityScores[a]);
+    // The form is a layer: the sheet shows it, the build stays the druid's.
+    expect(next.character).toEqual(doc.character);
+    const sheet = shown(next);
+    expect(sheet.ac).toBe(dragon.ac);
+    expect(sheet.walk).toBe(dragon.speeds.walk);
+    expect(sheet.speed("fly")).toBe(dragon.speeds.fly);
+    for (const a of BODY) expect(sheet.scores[a]).toBe(dragon.abilityScores[a]);
+    for (const a of MIND) expect(sheet.scores[a]).toBe(doc.character.abilityScores[a]);
     // Hit Points stay yours; Temporary HP = the first form's Hit Points.
     expect(next.session.hp.current).toBe(90);
     expect(tempHp).toBe(dragon.hp);
     expect(next.session.hp.temp).toBe(dragon.hp);
     // The bestiary form rides the session (the eager sheet cannot read the bestiary).
-    expect(next.session.polymorphForm).toMatchObject({
+    expect(next.session.activeForm).toMatchObject({
       beastId: "adult-red-dragon",
-      spellId: "shapechange",
+      sourceId: "shapechange",
       statBlock: dragon,
     });
-    expect(formStatBlock(next.session.polymorphForm)).toEqual(dragon);
+    expect(formStatBlock(next.session.activeForm)).toEqual(dragon);
   });
 
   it("a second form keeps the first form's Temp HP and the caster's original body", () => {
@@ -142,26 +139,21 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
     };
     const frozen = structuredClone(hurt);
     const ape = form("giant-ape");
-    const { doc: second } = assumeBeastForm(
-      hurt,
-      ape,
-      "shapechange",
-      polymorphPriorSnapshot(hurt) // the store hands the live body; the form keeps the first
-    );
+    const { doc: second } = assumeBeastForm(hurt, ape, "shapechange");
     expect(hurt).toEqual(frozen);
     expect(second.session.hp.temp).toBe(hurt.session.hp.temp); // no new Temp HP
-    expect(second.character.acOverride).toBe(ape.ac);
-    expect(second.character.speedOverrides?.fly).toBeUndefined();
-    for (const a of BODY)
-      expect(second.character.abilityScores[a]).toBe(ape.abilityScores[a]);
-    for (const a of MIND)
-      expect(second.character.abilityScores[a]).toBe(doc.character.abilityScores[a]);
-    expect(second.session.polymorphForm?.prior).toEqual(polymorphPriorSnapshot(doc));
+    const sheet = shown(second);
+    expect(sheet.ac).toBe(ape.ac);
+    expect(sheet.speed("fly")).toBeUndefined();
+    for (const a of BODY) expect(sheet.scores[a]).toBe(ape.abilityScores[a]);
+    for (const a of MIND) expect(sheet.scores[a]).toBe(doc.character.abilityScores[a]);
+    expect(second.character).toEqual(doc.character);
+    expect(second.session.activeForm?.tempHpBefore).toBe(doc.session.hp.temp);
 
     // Dropping restores the caster's exact AC, speeds, scores and Temp HP.
     const dropped = dropBeastForm(second);
     if (!dropped) throw new Error("no form to drop");
-    expect(dropped.session.polymorphForm).toBeUndefined();
+    expect(dropped.session.activeForm).toBeUndefined();
     expect(dropped.character.abilityScores).toEqual(doc.character.abilityScores);
     expect(dropped.character.acOverride ?? null).toBe(doc.character.acOverride ?? null);
     expect(dropped.character.speedOverride ?? null).toBe(
@@ -177,8 +169,8 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
     const doc = druid(10);
     const ape = form("giant-ape");
     const next = assumeBeastForm(doc, ape, "polymorph").doc;
-    expect(next.character.abilityScores).toEqual(ape.abilityScores);
-    expect(next.session.polymorphForm?.statBlock).toBeUndefined();
+    expect(shown(next).scores).toEqual(ape.abilityScores);
+    expect(next.session.activeForm?.statBlock).toBeUndefined();
   });
 });
 
@@ -189,19 +181,20 @@ describe("a bestiary form on the sheet", () => {
     const round = stateToSession(
       JSON.parse(JSON.stringify(sessionToState(next.session))) as Record<string, unknown>
     );
-    expect(round.polymorphForm).toEqual(next.session.polymorphForm);
+    expect(round.activeForm).toEqual(next.session.activeForm);
   });
 
   it("the codec drops a malformed stat block but keeps the form, so it can still be dropped", () => {
     const doc = druid();
     const next = assumeBeastForm(doc, form("adult-red-dragon"), "shapechange").doc;
     const state = JSON.parse(JSON.stringify(sessionToState(next.session))) as {
-      polymorphForm: { statBlock: { ac: unknown } };
+      activeForm: { statBlock: { ac: unknown } };
     };
-    state.polymorphForm.statBlock.ac = "high";
-    const parsed = stateToSession(state).polymorphForm;
+    state.activeForm.statBlock.ac = "high";
+    const parsed = stateToSession(state).activeForm;
     expect(parsed?.statBlock).toBeUndefined();
-    expect(parsed?.prior).toEqual(next.session.polymorphForm?.prior);
+    expect(parsed?.beastId).toBe("adult-red-dragon");
+    expect(parsed?.tempHpBefore).toBe(next.session.activeForm?.tempHpBefore);
   });
 
   it("puts the form's attacks on the Play board, named from the bestiary", () => {
@@ -237,14 +230,14 @@ describe("the store: Shapechange through the Transform flow", () => {
       useCharacterStore.getState().assumePolymorphForm(ape.id, "shapechange", ape)
     ).not.toBeNull();
     doc = useCharacterStore.getState().character;
-    expect(doc?.session.polymorphForm?.beastId).toBe("giant-ape");
+    expect(doc?.session.activeForm?.beastId).toBe("giant-ape");
     expect(doc?.session.hp.temp).toBe(dragon.hp);
     expect(doc?.session.concentration).toBe("shapechange");
 
     // Losing every Temporary HP does not end Shapechange: a Concentration save is due.
     useCharacterStore.getState().applyDamage(dragon.hp);
     doc = useCharacterStore.getState().character;
-    expect(doc?.session.polymorphForm?.beastId).toBe("giant-ape");
+    expect(doc?.session.activeForm?.beastId).toBe("giant-ape");
     expect(doc?.session.hp.temp).toBe(0);
     const intents = useToastStore.getState().toasts.map((t) => t.intent?.kind);
     expect(intents).toContain("concentration-save");

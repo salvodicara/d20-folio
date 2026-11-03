@@ -45,6 +45,12 @@ const numbers = (doc: CharacterDoc) => {
   };
 };
 
+/** The numbers stamping also got right (it dropped speeds the caster lacked). */
+const body = (doc: CharacterDoc) => {
+  const { abilities, ac, walk } = numbers(doc);
+  return { abilities, ac, walk };
+};
+
 /** Today's stamped form, for parity. */
 function stamped(
   doc: CharacterDoc,
@@ -71,7 +77,15 @@ describe("a form is read, not stamped", () => {
       expect(formed.session.polymorphForm).toBeUndefined();
       expect(formed.character.abilityScores).toEqual(doc.character.abilityScores);
       expect(formed.character.acOverride ?? null).toBe(doc.character.acOverride ?? null);
-      expect(numbers(formed)).toEqual(numbers(stamped(doc, beast(id))));
+      expect(body(formed)).toEqual(body(stamped(doc, beast(id))));
+      const { speeds } = numbers(formed);
+      // Every non-walking speed of the beast shows, even one the caster lacks
+      // (stamping only showed the kinds the caster already had).
+      const expected = (["fly", "swim", "climb", "burrow"] as const).flatMap((kind) => {
+        const ft = beast(id).speeds[kind];
+        return typeof ft === "number" && ft > 0 ? [{ kind, rangeFt: ft }] : [];
+      });
+      expect(speeds).toEqual(expected);
     }
   );
 
@@ -82,7 +96,7 @@ describe("a form is read, not stamped", () => {
     const scores = numbers(formed).abilities;
     expect(scores.INT).toBe(18);
     expect(scores.STR).toBe(block.abilityScores.STR);
-    expect(numbers(formed)).toEqual(numbers(stamped(doc, block, true)));
+    expect(body(formed)).toEqual(body(stamped(doc, block, true)));
   });
 
   it("dropping the form gives back the caster's own sheet and Temporary HP", () => {
