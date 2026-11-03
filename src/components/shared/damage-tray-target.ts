@@ -35,7 +35,14 @@ export interface TrayTarget {
 /** The target's first tray row, with everything the tray reads from the creature:
  *  its defenses, its type and, when the viewer may see them, its Hit Points. */
 export function initialTrayRowFor(plan: DamageTrayPlan, target: TrayTarget): TrayRow {
-  return initialTrayRow(plan, target.id, target.defenses, target.creatureType, target.hp);
+  return initialTrayRow(
+    plan,
+    target.id,
+    target.defenses,
+    target.creatureType,
+    target.hp,
+    target.row?.conditions
+  );
 }
 
 /** An encounter row as a tray target; `exact` when the viewer may see its HP. */

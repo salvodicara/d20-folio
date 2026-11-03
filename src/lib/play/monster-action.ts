@@ -147,6 +147,7 @@ export function monsterTrayPlan(
   // A gated rider or one its own save decides is offered off (the tray's Topple).
   const optIn = landing.some((effect) => effect.optIn || effect.save);
   const conditionSave = landing.find((effect) => effect.save)?.save;
+  const ifTargetHas = [...new Set(landing.flatMap((effect) => effect.ifTargetHas ?? []))];
   return {
     effect: damage.length > 0 ? "damage" : null,
     ...(concrete && types.size === 1 && only ? { damageType: only } : {}),
@@ -166,6 +167,7 @@ export function monsterTrayPlan(
             pickOne: false,
             ...(optIn ? { optIn: true as const } : {}),
             ...(conditionSave ? { save: conditionSave } : {}),
+            ...(ifTargetHas.length > 0 ? { ifTargetHas } : {}),
           },
         }
       : {}),

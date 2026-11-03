@@ -315,6 +315,9 @@ export type ActivityEffect =
       /** It rides its own save, not the activity's (a hit that forces "Constitution
        *  Saving Throw: DC 10"). */
       save?: { ability: AbilityCode; dc: number };
+      /** Only on a target that already has one of these (Rotting Claw: a Poisoned
+       *  target is also Paralyzed). */
+      ifTargetHas?: ReadonlyArray<ConditionId>;
     })
   | (EffectBase & {
       kind: "end-condition";
@@ -361,7 +364,13 @@ export type ActivityEffect =
     })
   | (EffectBase & { kind: "check-bonus"; dice: string; refundOnFail?: true })
   | (EffectBase & { kind: "next-attack-advantage" })
-  | (EffectBase & { kind: "speed-zero" })
+  /** The target's Speed is 0, until a turn boundary of the user (`actor`) or the
+   *  target (Web Bolt: until the start of the insect's next turn). Absent `until`:
+   *  the text says how long. */
+  | (EffectBase & {
+      kind: "speed-zero";
+      until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+    })
   /** The target is pushed away from or pulled toward the user, up to `feet`: a
    *  fact the table plays on the map (a monster's shove, a Telekinetic push). */
   | (EffectBase & { kind: "forced-movement"; direction: "push" | "pull"; feet: number })

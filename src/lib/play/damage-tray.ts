@@ -59,6 +59,8 @@ export interface DamageTrayPlan {
     pickOne: boolean;
     optIn?: true;
     save?: { ability: string; dc: number };
+    /** On only for a target that already has one of these (Rotting Claw). */
+    ifTargetHas?: string[];
   };
   /** The action rolls to hit (a weapon, an attack-roll spell): each row says Hit,
    *  Miss or Critical. A miss deals nothing, half the total (Acid Arrow), or the
@@ -472,7 +474,9 @@ export function initialTrayRow(
   targetId: string,
   defenses?: DamageDefenses,
   creatureType?: CreatureType,
-  hp?: { current: number; max: number }
+  hp?: { current: number; max: number },
+  /** The target's conditions, when the tray knows them. */
+  targetConditions?: readonly string[]
 ): TrayRow {
   const defense =
     plan.effect === "damage"
@@ -506,13 +510,20 @@ export function initialTrayRow(
     ...(hasPartDefense ? { partDefense } : {}),
     ...trayOutcome(plan, hp),
     multiplier: factsMultiplier(facts, plan),
-    conditions:
-      plan.conditions && !plan.conditions.optIn
-        ? plan.conditions.pickOne
-          ? plan.conditions.options.slice(0, 1)
-          : [...plan.conditions.options]
-        : [],
+    conditions: initialConditions(plan.conditions, targetConditions),
   };
+}
+
+/** The conditions a row starts with: none for an opt-in rider, or for a gated one
+ *  (Rotting Claw) on a target that lacks what it needs or isn't known. */
+function initialConditions(
+  conditions: DamageTrayPlan["conditions"],
+  targetConditions: readonly string[] | undefined
+): string[] {
+  if (!conditions || conditions.optIn) return [];
+  const gate = conditions.ifTargetHas;
+  if (gate && !gate.some((id) => targetConditions?.includes(id))) return [];
+  return conditions.pickOne ? conditions.options.slice(0, 1) : [...conditions.options];
 }
 
 /** A grazing miss deals the mastery's fixed damage, not the rolled total. */
