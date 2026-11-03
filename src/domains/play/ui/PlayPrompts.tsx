@@ -3,13 +3,13 @@
  * engine's prompt store (`usePlayPrompt`): which slot (approved prototype cast-bless),
  * on whom, how to pay, how many points, the rolls a magic item needs, Arcane Recovery's
  * slots and a free cast's spell. Each dialog answers through the callbacks the flow
- * published, so the commit stays the engine's. The shape-change form picker and the
- * damage tray are still the sheet's own until their new versions land.
+ * published, so the commit stays the engine's; the damage tray after a use is
+ * `PlayTray`. The shape-change form picker is still the sheet's own until its new
+ * version lands.
  */
 import { lazy, Suspense, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { DamageTray } from "@/features/character/center/DamageTray";
 import {
   usePlayPrompt,
   type PlayPrompts as Prompts,
@@ -32,6 +32,8 @@ import {
 } from "@/lib/views/item-resource-view";
 import { localizeTrackerUnit } from "@/lib/views/tracker-view";
 import { Button, Chip, Choice, Dialog, Field, Stepper } from "@/ui";
+
+import { PlayTray } from "./PlayTray";
 
 const TransformFormPicker = lazy(() =>
   import("@/features/character/center/tabs/spells/TransformFormPicker").then((m) => ({
@@ -57,7 +59,7 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
           />
         </Suspense>
       )}
-      <DamageTray />
+      <PlayTray locale={locale} />
     </>
   );
 }
