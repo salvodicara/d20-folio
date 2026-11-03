@@ -2108,6 +2108,7 @@
   --fs-text: 15px;
   --fs-ac: 34px;
   --fs-hp-big: 64px;
+  --fs-title-phone: 26px;
   --frz-hi: #d9b878;
   --muted: #bcae93;
   --label: #a89a82;
@@ -2544,4 +2545,25 @@
 }
 .fui .f-play > .f-right:empty {
   display: none;
+}
+/* phone (prototype x-play-m): the name 26 px, the abilities a compact row */
+@media (max-width: 800px) {
+  .fui .f-sheet .f-char {
+    padding: 24px 20px;
+  }
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-title-phone);
+  }
+  .fui .f-sheet .f-ability b {
+    font-size: var(--fs-lg);
+  }
+}
+@media (max-width: 400px) {
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-title-bar-m);
+  }
+  .fui .f-sheet .f-char-stats .f-lbl,
+  .fui .f-sheet .f-ability dt {
+    letter-spacing: 0.02em;
+  }
 }
