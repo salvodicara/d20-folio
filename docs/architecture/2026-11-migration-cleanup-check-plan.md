@@ -14,7 +14,9 @@ supplies at run time; never stored in the repo, logs or docs).
 | `backfill-campaign-created`  | `node --import ./scripts/alias-loader.mjs scripts/backfill-campaign-created.ts` (dry-run is the default) | every campaign shows a real `createdAt`, planned action "none" | the script and its test                                                                                                      |
 | `drop-playerhandle`          | `node --import ./scripts/alias-loader.mjs scripts/drop-playerhandle.ts --check`                          | 0 member entries still hold `playerHandle`                     | the script and its test                                                                                                      |
 | `migrate-shared-notes`       | `node --import ./scripts/alias-loader.mjs scripts/migrate-shared-notes.ts --check`                       | 0 campaigns still hold the legacy `sharedNotes` array          | the script, its test, and the app read fallback `mergeSharedNotes` (campaign-io, campaignStore, SharedNotes, types/campaign) |
-| `survey-dead-effect-fields`  | `node --import ./scripts/alias-loader.mjs scripts/survey-dead-effect-fields.ts` (read-only by design)    | 0 stored values for each surveyed field                        | the script and its test (the engine decides the matching code cleanup)                                                       |
+
+`survey-dead-effect-fields` ran on production 2026-11-03: every field 0. The script and its test are
+gone; the engine keeps the readers, because the v0.25.0 client and main still write those fields.
 
 If any check is not green, nothing is deleted for that script; we report the counts and the owner
 decides whether the pending migration runs (owner-gated, snapshot → dry-run → yes → apply → verify).

@@ -226,8 +226,8 @@ There are six parallel records. The same hit can land in four of them.
     family reached only by tests); rename `mechanics-command.ts` (resource conversions).
     1. The 24 `character-vitals` readers read `session.*` directly (already an exact no-op).
     2. **Done (#180).** Exhaustion mirrors only a change, as the death track already did.
-    3. `sessionActiveKeys` stops reading world standings. Needs the live-data survey first
-       (`scripts/survey-dead-effect-fields.ts`, `liveStandings`).
+    3. `sessionActiveKeys` stops reading world standings. The live-data survey ran 2026-11-03:
+       0 live standings (main can still write them, so the readers stay for now).
        Slices 4–6 wait for slice 3: the world still ends its own lifetimes (an old buff
        standing "until long rest") and `sessionActiveKeys` reads them, so a sheet-only write
        would leave such a buff lit. The rest paths already leave the same sheet on every
@@ -461,13 +461,10 @@ Each needs the owner's explicit yes; agents prepare, never decide.
   core would let other apps use it freely).
 - **Statuses migration** (Phase 2 steps 3–4, #61): ship the dual-write, then backfill, `--check`,
   switch readers, delete the old fields — one yes per step.
-- **Read-only survey of live data**: approved 2026-10-13, not yet run. It needs a service-account
-  file this machine does not have:
-  `GOOGLE_APPLICATION_CREDENTIALS=<file outside the repo> node --import ./scripts/alias-loader.mjs scripts/survey-dead-effect-fields.ts`
-  (#176, #195; counts only). All zeros → delete the dead effect fields (Phase 2 step 6) and run
-  world slices 3–6; any count → a migration, which needs a fresh yes. Slice 7c also needs
-  `encounterWorldConditions`. The `combat-resolution` resolver also needs five private-pack tests
-  removed.
+- **Read-only survey of live data**: run 2026-11-03, every field 0 (12 combat states, 4 campaigns).
+  The engine keeps the readers while the v0.25.0 client and main still write those fields; world
+  slices 3–6 wait on item 16 (world vs session). The `combat-resolution` resolver also needs five
+  private-pack tests removed.
 - **Notes audiences** (campaign spec I-044–051: only me / me and the DMs / chosen people): a new
   permission model and a migration of the existing shared notes.
 - **Italian SRD text** in the public catalogue: confirm its provenance before exporting it.
