@@ -411,16 +411,18 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "Ending an effect can trigger a penalty",
       source: "GLOSS (Shape-Shifting)",
-      status: "M12",
+      status: "works",
     },
     async () => {
       // Fly ends while the target is aloft: it falls. The end of the spell must carry
-      // that consequence, not just remove the fly speed.
-      expect(getSpellById("fly")?.onEnd).toContainEqual({ kind: "fall-if-aloft" });
-      // The data is in; the case works once the end-of-spell runtime applies it.
+      // that consequence, not just remove the fly speed (the table is told when the
+      // caster's Concentration drops in a fight: global-combat.test.tsx).
       const id = "@/lib/activities/read";
-      const runtime = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-      expect(typeof runtime.spellEndEffects).toBe("function");
+      const { spellEndEffects } = (await import(/* @vite-ignore */ id)) as {
+        spellEndEffects: (spellId: string) => ReadonlyArray<{ kind: string }>;
+      };
+      expect(spellEndEffects("fly")).toContainEqual({ kind: "fall-if-aloft" });
+      expect(spellEndEffects("heroism")).toEqual([]);
     }
   );
 

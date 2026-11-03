@@ -29,6 +29,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useLocale } from "@/hooks/useLocale";
+import { localizeSrd } from "@/i18n/resolver";
+import { spellEndEffects } from "@/lib/activities/read";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -74,6 +77,7 @@ import { conditionBreaksConcentration } from "@/lib/condition-effects";
 /** Renderless: subscribes the shell-level combat status + pip model and publishes them. */
 export function GlobalCombatMount(): null {
   const { t } = useTranslation();
+  const { language: locale } = useLocale();
   const uid = useAuthStore((s) => s.user?.uid);
   const isAdmin = useIsAdmin();
   const pin = usePinStore((s) => s.pin);
@@ -314,6 +318,16 @@ export function GlobalCombatMount(): null {
     }
 
     const { campaignId, myId } = status;
+    // The spell's end can carry a consequence the table plays (Fly: a target still
+    // aloft falls).
+    if (spellEndEffects(previous.sourceId).some((e) => e.kind === "fall-if-aloft")) {
+      showToast({
+        message: t("combat.spellEndFalls", {
+          spell: localizeSrd("spell", previous.sourceId, "name", locale),
+        }),
+        duration: 8000,
+      });
+    }
     void revokePersistentCombatEffectsBySource(campaignId, {
       actorId: myId,
       sourceId: previous.sourceId,
@@ -326,7 +340,7 @@ export function GlobalCombatMount(): null {
       }
       showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
     });
-  }, [status, live, openCharacterId, concentration, showToast, t]);
+  }, [status, live, openCharacterId, concentration, showToast, t, locale]);
 
   // Transitional drain for effects queued by the previous deployed owner-client model.
   // New actions write the target's narrow combat subdoc directly and never depend on

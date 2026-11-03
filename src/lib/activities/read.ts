@@ -1,5 +1,7 @@
 /** Small, pure reads of an Activity that presenters share. */
+import { getSpellById } from "@/data/spells";
 import type { ActionType } from "@/data/types";
+import type { CatalogueEffect } from "@/lib/catalogue-effects";
 import type { DamageType } from "@/types/damage";
 import type { Activity, ActivityCost, ActivityDice, ActivityEffect } from "./types";
 
@@ -108,4 +110,13 @@ export function actionTypeOf(cost: ActivityCost): ActionType | undefined {
     economy === "free"
     ? economy
     : undefined;
+}
+
+/**
+ * What happens when a spell ends (edge-case M12): Fly's target falls if it is still
+ * aloft and can't stay up otherwise. The table knows who is aloft; the engine says
+ * the end carries the consequence.
+ */
+export function spellEndEffects(spellId: string): ReadonlyArray<CatalogueEffect> {
+  return getSpellById(spellId)?.onEnd ?? [];
 }
