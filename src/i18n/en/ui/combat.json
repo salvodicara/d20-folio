@@ -14,6 +14,7 @@
       "swallowDamage": "{{dice}} at the start of each of the swallower's turns"
     },
     "title": "Combat",
+    "spellEndFalls": "{{spell}} ended: a target still aloft falls, unless it can fly another way.",
     "declareApplyFailed": "Couldn't apply the effect. The DM can correct it from the encounter.",
     "resolveNextRollAdjustment": "Next {{roll}} {{sign}}{{dice}}",
     "resolveRoll_attack": "attack",

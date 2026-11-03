@@ -54,6 +54,7 @@ import {
 } from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
 
@@ -324,6 +325,25 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
         actorId: `pc-${UID}`,
         sourceId: "heroism",
       })
+    );
+  });
+
+  it("dropping Fly tells the table that a target still aloft falls; Heroism says nothing", async () => {
+    const toasts = () => useToastStore.getState().toasts.map((toast) => toast.message);
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    setCharacterConcentration("char-1", "heroism");
+    mount();
+    activate(campaign);
+    act(() => setCharacterConcentration("char-1", ""));
+    await waitFor(() =>
+      expect(h.revokePersistentCombatEffectsBySource).toHaveBeenCalled()
+    );
+    expect(toasts().some((m) => /falls/i.test(String(m)))).toBe(false);
+
+    act(() => setCharacterConcentration("char-1", "fly"));
+    act(() => setCharacterConcentration("char-1", ""));
+    await waitFor(() =>
+      expect(toasts().some((m) => /Fly ended.*falls/i.test(String(m)))).toBe(true)
     );
   });
 
