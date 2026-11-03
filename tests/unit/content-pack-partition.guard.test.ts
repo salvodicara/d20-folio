@@ -157,11 +157,18 @@ describe("content-pack partition — public-side licensing invariants", () => {
   it("no PI term appears anywhere in src/** (code, comments, values)", () => {
     const offenders: string[] = [];
     for (const file of walk(SRC_ROOT, [".ts", ".tsx"])) {
+      // The ONE sanctioned mention: the SrdSource provenance-union members
+      // (single proper nouns as source LABELS for pack entries, no content), from
+      // `export type SrdSource =` to the `;` that ends it.
+      let inSourceUnion = false;
       const text = readFileSync(file, "utf8")
         .split("\n")
-        // The ONE sanctioned mention: the SrdSource provenance-union members
-        // (single proper nouns as source LABELS for pack entries, no content).
-        .filter((line) => !line.includes("export type SrdSource ="))
+        .filter((line) => {
+          if (line.includes("export type SrdSource =")) inSourceUnion = true;
+          const keep = !inSourceUnion;
+          if (inSourceUnion && line.trimEnd().endsWith(";")) inSourceUnion = false;
+          return keep;
+        })
         .join("\n");
       for (const term of piHits(text)) {
         offenders.push(`${file.slice(REPO_ROOT.length + 1)}: "${term}"`);

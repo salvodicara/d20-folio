@@ -31,8 +31,7 @@ import type { Locale } from "@/lib/locale";
 /**
  * The book an entry comes from. Everything but `"SRD"` lives in the private pack;
  * a campaign's table rules may later choose which books it plays with (all on by
- * default). `"ArcanaUnleashed"` is the 2026 Arcana Unleashed; `"DdbDrops"` the
- * D&D Beyond monthly Drops (August–October 2026).
+ * default). `"DdbDrops"` is the D&D Beyond monthly Drops.
  */
 export type SrdSource =
   | "SRD"
