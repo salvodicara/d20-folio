@@ -12,6 +12,7 @@ import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import {
   applyShortRestExhaustion,
   equipmentAfterLongRest,
+  firedTriggerRestores,
   gainsHeroicInspirationOnLongRest,
   getShortRestRecoveries,
   resolveActiveStatesEndingOnRest,
@@ -169,6 +170,14 @@ export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
       // No short-rest recovery: keep as-is
       newTrackers[key] = data;
     }
+  }
+  // Trigger rules on a Short Rest (M8: Sorcerous Restoration), within their limits.
+  const fired = firedTriggerRestores(character, "short-rest");
+  for (const [id, used] of fired.used) {
+    newTrackers[id] = { used: Math.min(used, newTrackers[id]?.used ?? 0) };
+  }
+  for (const source of fired.limited) {
+    newTrackers[source] = { used: (newTrackers[source]?.used ?? 0) + 1 };
   }
 
   // Pact Magic slots recover on a short rest — and ONLY them. Pact slots now key

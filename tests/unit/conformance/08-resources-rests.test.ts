@@ -127,7 +127,7 @@ describe("conformance · 8. resource economy and rests", () => {
       category: 8,
       case: "Features that refresh on initiative",
       source: "WIKI barbarian:main; WIKI monk:main; WIKI druid:main",
-      status: "M8",
+      status: "works",
     },
     () => {
       // Persistent Rage: on Initiative, regain every Rage use, once per Long Rest.
@@ -150,7 +150,7 @@ describe("conformance · 8. resource economy and rests", () => {
       category: 8,
       case: "Once-per-rest uses of a recovery feature",
       source: "WIKI sorcerer:main",
-      status: "M8",
+      status: "works",
     },
     () => {
       // Sorcerous Restoration: a Short Rest gives back up to half the Sorcerer level
@@ -205,7 +205,7 @@ describe("conformance · 8. resource economy and rests", () => {
       category: 8,
       case: "Rage duration upkeep",
       source: "WIKI barbarian:main",
-      status: "M8",
+      status: "works",
     },
     () => {
       const raging = { activeFeatures: ["barbarian-rage"] };

@@ -238,17 +238,24 @@ export const SORCERER_FEATURES: SrdClassFeatureData[] = [
     id: "sorcerer-sorcerous-restoration",
     class: "sorcerer",
     level: 5,
-    mechanics: {
-      // 1 use per Long Rest, formula-derived label on the action so the player
-      // sees how many points they can recover. The action carries no
-      // costTracker on the sorcery-points pool — the player manually spends the
-      // recovery (we never auto-modify resource pools without explicit input).
-      tracker: { total: "1", recovery: "long-rest", unit: "use" },
-      actions: [
-        {
-          type: "action",
+    // "When you finish a Short Rest, you can regain expended Sorcery Points, but no
+    // more than a number equal to half your Sorcerer level (round down). Once you use
+    // this feature, you can't do so again until you finish a Long Rest" (a trigger
+    // rule, M8). Its own tracker is the once-per-Long-Rest counter.
+    grants: [
+      {
+        type: "trigger",
+        on: "short-rest",
+        do: {
+          kind: "restore-tracker",
+          trackerId: "sorcerer-font-of-magic",
+          amount: "floor(level/2)",
         },
-      ],
+        limit: { per: "long-rest", max: 1 },
+      },
+    ],
+    mechanics: {
+      tracker: { total: "1", recovery: "long-rest", unit: "use" },
     },
     source: "SRD",
   },

@@ -8875,9 +8875,19 @@ export function resolveActiveMaintainedEffects(
   if (active.size === 0) return [];
   const seen = new Set<string>();
   const out: ActiveMaintainedEffect[] = [];
-  for (const source of resolveLifecycleGrantSources(character)) {
+  const sources = resolveLifecycleGrantSources(character);
+  // A state a source waives the upkeep of (Persistent Rage) asks for none.
+  const waived = new Set(
+    sources.flatMap((source) =>
+      (source.grants ?? []).flatMap((g) =>
+        g.type === "upkeep-waiver" ? [g.activeKey] : []
+      )
+    )
+  );
+  for (const source of sources) {
     for (const g of source.grants ?? []) {
       if (g.type !== "while-active" || g.duration?.kind !== "maintained") continue;
+      if (waived.has(g.activeKey)) continue;
       const activeKey = resolveGrantActiveKey(source, g.activeKey);
       if (!active.has(activeKey) || seen.has(activeKey)) continue;
       seen.add(activeKey);
@@ -9616,6 +9626,10 @@ export function getSpellSlotTrackerRecovery(
 export function getInitiativeTrackerTopUps(character: CharacterDoc): Map<string, number> {
   const out = new Map<string, number>();
   const agg = aggregateForCharacter(character);
+  // Trigger rules on Initiative (M8: Persistent Rage), within their limits.
+  for (const [trackerId, used] of firedTriggerRestores(character, "initiative").used) {
+    out.set(trackerId, used);
+  }
   if (agg.initiativeTrackerTopUps.length === 0) return out;
 
   const trackers = resolveTrackers(character);
@@ -9632,9 +9646,47 @@ export function getInitiativeTrackerTopUps(character: CharacterDoc): Map<string,
     const floor = Math.min(upTo, tracker.total); // never beyond full
     const remaining = tracker.total - tracker.used;
     if (remaining >= floor) continue; // already at/above the floor → no-op
-    out.set(trackerId, tracker.total - floor); // new used count to reach the floor
+    const used = tracker.total - floor; // new used count to reach the floor
+    out.set(trackerId, Math.min(used, out.get(trackerId) ?? used));
   }
   return out;
+}
+
+/**
+ * The trigger rules (edge-case family M8) that fire on `on` and are within their
+ * limit, applied to the trackers: `used` maps each restored tracker to its new used
+ * count; `limited` lists the sources whose counter the firing spends (the session
+ * tracker keyed by the source id, reset by the rest its `limit.per` names). A rule
+ * that would restore nothing doesn't fire, so it spends nothing.
+ */
+export function firedTriggerRestores(
+  character: CharacterDoc,
+  on: "initiative" | "short-rest"
+): { used: Map<string, number>; limited: string[] } {
+  const used = new Map<string, number>();
+  const limited: string[] = [];
+  const rules = aggregateForCharacter(character).triggers.filter((r) => r.on === on);
+  if (rules.length === 0) return { used, limited };
+  const trackers = resolveTrackers(character);
+  for (const rule of rules) {
+    const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
+    if (rule.limit && spent >= rule.limit.max) continue;
+    const tracker = trackers.find((t) => t.id === rule.do.trackerId);
+    if (!tracker) continue;
+    const current = used.get(tracker.id) ?? tracker.used;
+    const amount = rule.do.full
+      ? current
+      : resolveTrackerTotal(
+          rule.do.amount ?? "0",
+          character,
+          featureScalingLevel(rule.sourceId, character)
+        );
+    const next = Math.max(0, current - amount);
+    if (next === current) continue;
+    used.set(tracker.id, next);
+    if (rule.limit) limited.push(rule.sourceId);
+  }
+  return { used, limited };
 }
 
 // ════════════════════════════════════════════════════════════════════════════

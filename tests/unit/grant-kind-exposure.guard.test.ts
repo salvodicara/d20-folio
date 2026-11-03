@@ -359,6 +359,11 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "isTurnEconomyBlocked",
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",
   },
+  trigger: { via: "firedTriggerRestores", consumer: "src/lib/smart-tracker.ts" },
+  "upkeep-waiver": {
+    via: "resolveActiveMaintainedEffects",
+    consumer: "src/lib/smart-tracker.ts",
+  },
   "spellcasting-blocked": {
     via: "isSpellcastingBlocked",
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",

@@ -87,6 +87,7 @@ import {
 import type { StoredConcentration } from "@/types/ids";
 import { saveLogToIDB, clearLogFromIDB } from "@/lib/log-persistence";
 import {
+  firedTriggerRestores,
   getInitiativeTrackerTopUps,
   resolveActiveStatesEndingOn,
   resolveActiveStatesEndingOnRest,
@@ -3348,6 +3349,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     for (const [trackerId, newUsed] of topUps) {
       prior.set(trackerId, character.session.trackers[trackerId]);
       nextTrackers[trackerId] = { used: newUsed };
+    }
+    // A limited trigger (Persistent Rage, once per Long Rest) spends its counter.
+    const { limited } = firedTriggerRestores(character, "initiative");
+    for (const source of limited) {
+      prior.set(source, character.session.trackers[source]);
+      nextTrackers[source] = {
+        used: (character.session.trackers[source]?.used ?? 0) + 1,
+      };
+      if (!sourceIds.includes(source)) sourceIds.push(source);
     }
     // Provenance for the toast: the source feature(s) granting the top-up.
     for (const c of evaluateGrants(
