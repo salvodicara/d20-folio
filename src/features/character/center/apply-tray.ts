@@ -12,7 +12,9 @@
 import type { TFunction } from "i18next";
 
 import type { TrayTarget } from "@/components/shared/damage-tray-target";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
 import type { LocText } from "@/lib/loc-text";
+import { revivalHitPoints } from "@/lib/play/spell-outcomes";
 import {
   rowConditions,
   sharedAttackOutcome,
@@ -97,6 +99,11 @@ export function applyTray(
     const outcome = rows[index]?.outcome;
     return outcome?.kind === "threshold" && outcome.branch === "dies";
   });
+  // A reviving spell (Revivify): each dead target the tray marked comes back.
+  const revive = plan.revive;
+  const revived = revive
+    ? targets.filter((_, index) => rows[index]?.outcome?.kind === "revive")
+    : [];
   // Hit / Miss / Critical: the use's line says the shared result, and the turn keeps
   // one receipt per target (a miss applies nothing, yet it is still recorded).
   const shared = plan.attack ? sharedAttackOutcome(rows) : undefined;
@@ -105,7 +112,8 @@ export function applyTray(
       ? trayOutcomeReceipts(offer.occurrenceId, offer.actionId, rows)
       : [];
   const declares = shared !== undefined || receipts.length > 0;
-  if (applied.length === 0 && killed.length === 0 && !declares) return;
+  if (applied.length === 0 && killed.length === 0 && revived.length === 0 && !declares)
+    return;
 
   const local = applied.filter((row) => row.target.kind !== "pc");
   const peers = applied.filter((row) => row.target.kind === "pc");
@@ -113,7 +121,13 @@ export function applyTray(
     message: t("combat.damageTray.appliedToast", { name: offer.actionName }),
   };
 
-  if (local.length > 0 || declares || peers.length > 0 || killed.length > 0) {
+  if (
+    local.length > 0 ||
+    declares ||
+    peers.length > 0 ||
+    killed.length > 0 ||
+    revived.length > 0
+  ) {
     registerUndoableToast(
       label,
       () => {
@@ -182,6 +196,29 @@ export function applyTray(
             });
           }
         }
+        for (const target of revive ? revived : []) {
+          if (!revive) break;
+          if (target.kind === "self") {
+            const self = useCharacterStore.getState().character;
+            const max = self ? effectiveMaxHp(self.character, self.session) : 1;
+            const undo = useCharacterStore
+              .getState()
+              .dispatch({ kind: "revive", hitPoints: revivalHitPoints(revive, max) });
+            if (undo) reversals.push(undo);
+          } else if (target.kind === "pc") {
+            const max = target.row?.maxHp ?? 1;
+            peerUndos.push(
+              givePeer(
+                target,
+                "revive",
+                revivalHitPoints(revive, max),
+                undefined,
+                source,
+                t
+              )
+            );
+          }
+        }
         for (const { target, amount, conditions, outcome } of peers) {
           if (effect && amount > 0)
             peerUndos.push(
@@ -236,7 +273,7 @@ function applySelf(
  *  Resolves with its undo: the same peer write reverted, and its line removed. */
 function givePeer(
   target: TrayTarget,
-  effect: TrayEffect | "condition" | "die",
+  effect: TrayEffect | "condition" | "die" | "revive",
   amount: number,
   conditionId: string | undefined,
   source: LocText,
@@ -249,7 +286,8 @@ function givePeer(
   const log = () =>
     useCharacterStore.getState().logEvent({
       kind: "effect-given",
-      effect: effect === "die" ? "damage" : effect,
+      // A death reads as damage; a revival as the Hit Points it gives back.
+      effect: effect === "die" ? "damage" : effect === "revive" ? "heal" : effect,
       target: target.id,
       targetName: target.name,
       source,
@@ -270,20 +308,22 @@ function givePeer(
   const mutation =
     effect === "die"
       ? { kind: "die" as const }
-      : effect === "condition"
-        ? {
-            kind: "condition" as const,
-            operation: { kind: "add" as const, conditionId: conditionId ?? "" },
-          }
-        : effect === "temp-hp"
-          ? { kind: "temp-hp" as const, value: Math.max(row.tempHp, amount) }
-          : {
-              kind: "hp" as const,
-              operation: {
-                kind: effect === "heal" ? ("heal" as const) : ("damage" as const),
-                amount,
-              },
-            };
+      : effect === "revive"
+        ? { kind: "revive" as const, hitPoints: amount }
+        : effect === "condition"
+          ? {
+              kind: "condition" as const,
+              operation: { kind: "add" as const, conditionId: conditionId ?? "" },
+            }
+          : effect === "temp-hp"
+            ? { kind: "temp-hp" as const, value: Math.max(row.tempHp, amount) }
+            : {
+                kind: "hp" as const,
+                operation: {
+                  kind: effect === "heal" ? ("heal" as const) : ("damage" as const),
+                  amount,
+                },
+              };
   const failed = (error: unknown): void => {
     console.error("Combat write failed", error);
     useToastStore

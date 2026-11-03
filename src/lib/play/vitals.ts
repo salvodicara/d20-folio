@@ -295,6 +295,9 @@ export function setDeathSaves(
       ...(engine ? engine.session : doc.session),
       deathSucc: succ,
       deathFail: fail,
+      // The third failure is the death: its game clock starts (Revivify's minute).
+      ...(fail >= 3 && prevFail < 3 ? { death: { minutesSince: 0 } } : {}),
+      ...(fail < 3 && prevFail >= 3 ? { death: undefined } : {}),
     },
     newMark: succ > prevSucc ? "success" : fail > prevFail ? "failure" : null,
   };

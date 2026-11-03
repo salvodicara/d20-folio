@@ -347,6 +347,25 @@ export function reduceHpDelta(
   };
 }
 
+/**
+ * Revive a dead creature through its play state (another device's Revivify): Hit
+ * Points to `hitPoints` (never above `max`), death saves and Unconscious cleared.
+ * A living one is left as it is.
+ */
+export function reduceRevive(
+  s: CombatState,
+  hitPoints: number,
+  max: number
+): CombatState {
+  if (s.deathSaves.failures < 3) return s;
+  return {
+    ...s,
+    hp: { ...s.hp, current: Math.min(max, Math.max(1, hitPoints)) },
+    deathSaves: { successes: 0, failures: 0 },
+    conditions: s.conditions.filter((c) => c !== "unconscious"),
+  };
+}
+
 /** Bump the NESTED death-save count by one, capped at `[0, 3]` (a 4th tick stays 3). */
 /** Killed outright through the play state (another device's Power Word Kill): 0 HP
  *  and three death-save failures. An already-dead creature is left as it is. */

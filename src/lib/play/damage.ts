@@ -143,6 +143,10 @@ export function takeDamage(
     conditions: [...transition.state.conditions],
     deathSucc: deathSaves.successes,
     deathFail: deathSaves.failures,
+    // The hit that kills starts the death's game clock (Revivify's minute).
+    ...(deathSaves.failures >= 3 && doc.session.deathFail < 3
+      ? { death: { minutesSince: 0 } }
+      : {}),
     ...(absorbed.total > 0 ? { trackers: absorbed.trackers } : {}),
     // The fall records what was on as the character dropped (Relentless Rage).
     ...(transition.crossedZero && !transition.instantDeath

@@ -885,6 +885,9 @@ export interface ActionConditionRemoval {
 /** The Hit Points a revived creature returns with: a number, or all of them. */
 export interface SpellRevive {
   hitPoints: number | "all";
+  /** How long dead the creature may have been, in game minutes (Revivify: 1).
+   *  Absent (a homebrew spell that doesn't say): the table decides. */
+  withinMinutes?: number;
 }
 
 /**

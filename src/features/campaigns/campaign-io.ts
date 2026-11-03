@@ -92,6 +92,7 @@ import {
   reduceCondition,
   reduceDeathSave,
   reduceKill,
+  reduceRevive,
   reduceHpDelta,
   reduceMemberCombatEffects,
   setTempAbsolute,
@@ -943,6 +944,8 @@ export type CampaignCombatMutation =
   | { kind: "death-save"; outcome: "success" | "failure" }
   /** Killed outright (Power Word Kill at 100 HP or fewer). */
   | { kind: "die" }
+  /** Revived (Revivify): back with these Hit Points; a living target is untouched. */
+  | { kind: "revive"; hitPoints: number }
   /** Undo one earlier peer write: every root it changed that still reads as it wrote
    *  goes back to what it was before. */
   | {
@@ -1003,6 +1006,9 @@ function reduceCampaignCombatMutation(
     return reduceDeathSave(current, mutation.outcome);
   }
   if (mutation.kind === "die") return reduceKill(current);
+  if (mutation.kind === "revive") {
+    return reduceRevive(current, mutation.hitPoints, maxHp);
+  }
   if (mutation.kind === "revert") {
     return revertPeerEffect(current, mutation.written, mutation.previous);
   }

@@ -54,6 +54,18 @@ export function timePassEndsConcentration(doc: CharacterDoc, minutes: number): b
 
 /** The character after `minutes` pass, or null when nothing on it runs out or counts. */
 export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | null {
+  const passed = passEffects(doc, minutes);
+  const dead = doc.session.death;
+  if (!dead || !(minutes > 0)) return passed;
+  // A dead character's clock runs on (Revivify reaches only the last minute).
+  const base = passed ?? doc;
+  return {
+    ...base,
+    session: { ...base.session, death: { minutesSince: dead.minutesSince + minutes } },
+  };
+}
+
+function passEffects(doc: CharacterDoc, minutes: number): CharacterDoc | null {
   const result = lapse(doc, minutes);
   if (!result) return null;
   // A held breath counts every turn of the stretch (SRD Suffocation).

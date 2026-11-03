@@ -289,9 +289,10 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
     { rolls: numberSchema, die: stringSchema },
     { plus: HEAL_TERM, multiplier: numberSchema, fromLevel: numberSchema }
   ),
-  revives: objectSchema({
-    hitPoints: unionSchema([numberSchema, literalSchema("all")]),
-  }),
+  revives: objectSchema(
+    { hitPoints: unionSchema([numberSchema, literalSchema("all")]) },
+    { withinMinutes: numberSchema }
+  ),
   hitPointThreshold: objectSchema(
     { max: numberSchema, atOrBelow: literals(["dies", "condition"]) },
     { otherwise: literalSchema("speed-zero") }
