@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useId, type CSSProperties } from "react";
 
 import { initialOf } from "./initial";
 
@@ -13,6 +13,7 @@ export function HpRing({
   size = 56,
   portrait,
   name,
+  ornate = false,
 }: {
   hp: number;
   max: number;
@@ -20,12 +21,18 @@ export function HpRing({
   size?: number;
   portrait?: string;
   name?: string;
+  /** The Play header's medal (prototype .medal): gradient arcs that glow, gold rims. */
+  ornate?: boolean;
 }) {
+  const id = `ring${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const r = 28;
   const c = 2 * Math.PI * r;
   const p = max > 0 ? Math.max(0, Math.min(1, hp / max)) : 0;
   const t = max > 0 ? Math.min(1 - p, temp / max) : 0;
-  const color = p > 0.5 ? "var(--hp)" : p > 0.25 ? "var(--hp-y)" : "var(--hp-r)";
+  const flat = p > 0.5 ? "var(--hp)" : p > 0.25 ? "var(--hp-y)" : "var(--hp-r)";
+  const color = ornate && p > 0.5 ? `url(#${id}-hp)` : flat;
+  const tempColor = ornate ? `url(#${id}-temp)` : "var(--temp)";
+  const glow = ornate ? `url(#${id}-glow)` : undefined;
   const inset = size * 0.12;
   return (
     <span
@@ -53,6 +60,32 @@ export function HpRing({
         )
       )}
       <svg viewBox="0 0 64 64" width={size} height={size} aria-hidden="true">
+        {ornate && (
+          <defs>
+            <linearGradient id={`${id}-hp`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" style={{ stopColor: "var(--ring-hp-lo)" }} />
+              <stop offset=".5" style={{ stopColor: "var(--ring-hp-mid)" }} />
+              <stop offset="1" style={{ stopColor: "var(--ring-hp-hi)" }} />
+            </linearGradient>
+            <linearGradient id={`${id}-temp`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style={{ stopColor: "var(--ring-temp-hi)" }} />
+              <stop offset=".5" style={{ stopColor: "var(--ring-temp-mid)" }} />
+              <stop offset="1" style={{ stopColor: "var(--ring-temp-lo)" }} />
+            </linearGradient>
+            <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style={{ stopColor: "var(--rim-hi)" }} />
+              <stop offset=".5" style={{ stopColor: "var(--rim-mid)" }} />
+              <stop offset="1" style={{ stopColor: "var(--rim-lo)" }} />
+            </linearGradient>
+            <filter id={`${id}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="b" />
+              <feMerge>
+                <feMergeNode in="b" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+        )}
         <circle
           cx="32"
           cy="32"
@@ -70,6 +103,7 @@ export function HpRing({
           strokeWidth="4"
           strokeLinecap="round"
           strokeDasharray={`${c * p} ${c}`}
+          filter={glow}
         />
         {t > 0 && (
           <circle
@@ -77,11 +111,32 @@ export function HpRing({
             cy="32"
             r={r}
             fill="none"
-            stroke="var(--temp)"
+            stroke={tempColor}
             strokeWidth="4"
             strokeDasharray={`${c * t} ${c}`}
             strokeDashoffset={-c * p}
+            filter={glow}
           />
+        )}
+        {ornate && (
+          <>
+            <circle
+              cx="32"
+              cy="32"
+              r="31.2"
+              fill="none"
+              stroke={`url(#${id}-rim)`}
+              strokeWidth="1"
+            />
+            <circle
+              cx="32"
+              cy="32"
+              r="24.6"
+              fill="none"
+              stroke={`url(#${id}-rim)`}
+              strokeWidth="0.7"
+            />
+          </>
         )}
       </svg>
     </span>

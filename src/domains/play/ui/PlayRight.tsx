@@ -4,7 +4,7 @@
  * the campaign's latest evening as the Diario tells it (blocks, times, signed notes),
  * with «Copia il resoconto». A character attached to no campaign shows neither.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
@@ -13,51 +13,23 @@ import { ReportBlocks } from "@/domains/chronicle/ui/ReportBlocks";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { FightLine } from "@/domains/combat/ui/FightLine";
-import { listSharedCampaigns } from "@/features/campaigns/campaign-io";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import { useSheetCombat } from "@/features/character/center/turn-state";
-import { diagnosticsLog } from "@/lib/diagnostics";
 import type { Locale } from "@/lib/locale";
 import { buildReport, foldSession } from "@/lib/session-log";
 import { renderSessionReport } from "@/lib/views/session-report-view";
-import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { Button, Panel } from "@/ui";
 
-/** The campaign this character is attached to (one read on open), or null. */
-function useAttachedCampaign(characterId: string): CampaignDoc | null {
-  const uid = useAuthStore((s) => s.user?.uid);
-  const [campaign, setCampaign] = useState<CampaignDoc | null>(null);
-  useEffect(() => {
-    if (!uid) return;
-    let live = true;
-    listSharedCampaigns(uid)
-      .then((all) => {
-        if (live)
-          setCampaign(
-            all.find((c) => c.memberDetails[uid]?.characterId === characterId) ?? null
-          );
-      })
-      .catch((error: unknown) =>
-        diagnosticsLog("warn", "play.campaign-read-failed", { message: String(error) })
-      );
-    return () => {
-      live = false;
-    };
-  }, [uid, characterId]);
-  return campaign;
-}
-
 export function PlayRight({
-  characterId,
+  campaign,
   locale,
   onToast,
 }: {
-  characterId: string;
+  campaign: CampaignDoc | null;
   locale: Locale;
   onToast: (message: string) => void;
 }) {
-  const campaign = useAttachedCampaign(characterId);
   return (
     <div className="f-stack f-right">
       <Initiative locale={locale} />

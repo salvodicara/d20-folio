@@ -43,6 +43,11 @@ describe("playHeaderView", () => {
     ]);
   });
 
+  // The phone's top bar (prototype x-play-m): each class with its level, then species.
+  it("has a brief identity for the phone bar: classes with level, then species", () => {
+    expect(view.brief).toEqual(["Chierico 5", "Umano"]);
+  });
+
   it("the six abilities in order, with modifier, score and save proficiency", () => {
     expect(view.abilities.map((a) => [a.id, a.mod, a.score, a.save])).toEqual([
       ["STR", 3, 16, false],

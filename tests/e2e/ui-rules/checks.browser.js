@@ -321,10 +321,10 @@ window.__audit = (opts) => {
         pb = getComputedStyle(b).position;
       if (
         a.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.pills,.f-filters"
         ) !==
         b.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.pills,.f-filters"
         )
       )
         continue;
