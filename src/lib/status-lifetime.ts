@@ -5,6 +5,7 @@
  * without loading the engine; `@/lib/status` re-exports it.
  */
 import type { WhileActiveDuration } from "@/lib/grants";
+import { RAW_TABLE_RULES, type TableRules } from "@/lib/table-rules";
 
 /** An owner-turn edge: the start or the end of the status owner's turn. */
 export type StatusTurnPhase = "turn-start" | "turn-end";
@@ -34,14 +35,15 @@ export type StatusEnd =
    *  "incapacitated"). Unknown homebrew tokens are kept verbatim. */
   | { kind: "trigger"; trigger: string };
 
-/** The longest rest-free span a rest can outlast, in minutes. */
-const REST_MINUTES = { short: 60, long: 8 * 60 } as const;
-
-function restEnd(duration: WhileActiveDuration | undefined): "short" | "long" | null {
+/** The shortest rest that outlasts a duration: a rest outlasts what fits in it. */
+function restEnd(
+  duration: WhileActiveDuration | undefined,
+  rules: TableRules
+): "short" | "long" | null {
   if (!duration) return null;
   if (duration.kind === "maintained" || duration.kind === "turn-boundary") return "short";
-  if (duration.minutes <= REST_MINUTES.short) return "short";
-  if (duration.minutes <= REST_MINUTES.long) return "long";
+  if (duration.minutes <= rules.rest.shortMinutes) return "short";
+  if (duration.minutes <= rules.rest.longMinutes) return "long";
   return null;
 }
 
@@ -50,10 +52,11 @@ function restEnd(duration: WhileActiveDuration | undefined): "short" | "long" | 
  * by its owner, outlasted by a rest, or ended by the player.
  */
 export function undatedLifetime(
-  duration: WhileActiveDuration | undefined
+  duration: WhileActiveDuration | undefined,
+  rules: TableRules = RAW_TABLE_RULES
 ): StatusLifetime {
   if (duration?.kind === "maintained") return { kind: "maintained" };
-  const rest = restEnd(duration);
+  const rest = restEnd(duration, rules);
   return rest ? { kind: "rest", rest } : { kind: "manual" };
 }
 
@@ -65,7 +68,8 @@ export function undatedLifetime(
  * durations with it, so a lit status and its declaration share one vocabulary.
  */
 export function startingStatusLifetime(
-  duration: WhileActiveDuration | undefined
+  duration: WhileActiveDuration | undefined,
+  rules: TableRules = RAW_TABLE_RULES
 ): StatusLifetime {
   if (duration?.kind === "turn-boundary") {
     return { kind: "turn-edge", round: duration.turns, phase: duration.phase };
@@ -73,7 +77,7 @@ export function startingStatusLifetime(
   if (duration?.maxRounds !== undefined) {
     return { kind: "rounds", roundsLeft: duration.maxRounds };
   }
-  return undatedLifetime(duration);
+  return undatedLifetime(duration, rules);
 }
 
 /**
@@ -83,7 +87,8 @@ export function startingStatusLifetime(
  */
 export function statusEndsOn(
   duration: WhileActiveDuration | undefined,
-  concentration: boolean
+  concentration: boolean,
+  rules: TableRules = RAW_TABLE_RULES
 ): StatusEnd[] {
   const endsOn: StatusEnd[] = [];
   if (concentration) endsOn.push({ kind: "concentration" });
@@ -95,7 +100,7 @@ export function statusEndsOn(
       endsOn.push({ kind: "trigger", trigger });
     }
   }
-  const rest = restEnd(duration);
+  const rest = restEnd(duration, rules);
   if (rest) endsOn.push({ kind: "rest", rest });
   return endsOn;
 }

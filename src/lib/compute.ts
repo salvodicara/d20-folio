@@ -5,6 +5,7 @@
  * No dice rolling — only formulas and deterministic calculations.
  */
 
+import { RAW_TABLE_RULES, type TableRules } from "@/lib/table-rules";
 import type {
   AbilityCode,
   ClassId,
@@ -53,11 +54,15 @@ import type { AcBonusCondition } from "@/lib/rules";
 export { abilityModifier };
 
 /**
- * Clamp an exhaustion level to the legal 0-6 range (6 = dead in 2024 rules).
+ * Clamp an exhaustion level to the legal range: 0 to the table's maximum (RAW
+ * 2024: 6, which is death).
  */
-export function clampExhaustion(level: number): number {
+export function clampExhaustion(
+  level: number,
+  rules: TableRules = RAW_TABLE_RULES
+): number {
   if (!Number.isFinite(level)) return 0;
-  return Math.max(0, Math.min(6, Math.floor(level)));
+  return Math.max(0, Math.min(rules.exhaustion.maxLevel, Math.floor(level)));
 }
 
 /**
