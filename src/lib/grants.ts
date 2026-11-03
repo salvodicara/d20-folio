@@ -188,9 +188,6 @@ export type ScopedSlotLevelFormula = GrantOf<"scoped-extra-spell-slot">["levelFo
 export type ScopedSlotSpellScope = GrantOf<"scoped-extra-spell-slot">["scope"];
 export type WhileActiveDuration = NonNullable<GrantOf<"while-active">["duration"]>;
 export type EffectBoundAmount = Exclude<GrantOf<"regen-at-turn-start">["amount"], string>;
-export type CastLevelScaling = NonNullable<
-  GrantOf<"damage-retaliation">["castLevelScaling"]
->;
 export type WhileActiveAfterEffect = NonNullable<GrantOf<"while-active">["afterEffect"]>;
 
 /** Resolve a timed state's effective lifetime from the slot that created it. */
@@ -1747,7 +1744,6 @@ export interface AggregatedGrants {
    */
   damageRiders: ReadonlyArray<{
     dice?: DiceScalar;
-    diceByLevel?: Readonly<Record<number, string>>;
     /** Flat PB extra-damage sentinel (a species revelation form) — the consumer
      *  resolves it to a `+N` flat amount; mutually exclusive with `dice`. */
     amount?: "PB" | { kind: "class-level"; classId: ClassId };
@@ -2803,17 +2799,7 @@ export function evaluateGrants(
         // legacy activations fall back to the runtime cast-level arithmetic.
         const worldExact =
           activeKey !== undefined ? context.worldMaxHpDeltas?.get(activeKey) : undefined;
-        const amount =
-          worldExact ??
-          (g.castLevelScaling
-            ? amountAtCastLevel(g.amount, runtime?.castLevel) +
-              Math.max(
-                0,
-                (runtime?.castLevel ?? g.castLevelScaling.baseLevel) -
-                  g.castLevelScaling.baseLevel
-              ) *
-                g.castLevelScaling.perLevel
-            : amountAtCastLevel(g.amount, runtime?.castLevel));
+        const amount = worldExact ?? amountAtCastLevel(g.amount, runtime?.castLevel);
         hpFlat += amount;
         // Attribute at the source of truth: the breakdown tip MAPS these instead
         // of re-walking sources, so it inherits the exact while-active descent
@@ -2942,7 +2928,6 @@ export function evaluateGrants(
         if (!damageType) break;
         damageRiders.push({
           ...(g.dice !== undefined ? { dice: g.dice } : {}),
-          ...(g.diceByLevel ? { diceByLevel: g.diceByLevel } : {}),
           ...(g.amount ? { amount: g.amount } : {}),
           ...(g.round1 ? { round1: true as const } : {}),
           ...(g.requiresRiderTrackerId

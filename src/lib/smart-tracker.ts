@@ -3966,35 +3966,19 @@ export function resolveSlotAltRecovery(
 }
 
 /**
- * Resolve a damage rider's effective dice string at a character level.
- *
- * Fixed riders (Paladin Radiant Strikes: `dice: "1d8"`, no `diceByLevel`)
- * return `dice` unchanged. Dynamic riders (Berserker Frenzy: a number of d6s
- * equal to the Rage Damage bonus) declare a level-keyed `diceByLevel` map
- * (`{ 1: "2d6", 9: "3d6", 16: "4d6" }`); we pick the entry whose threshold is
- * the highest one ≤ `level`, falling back to `dice` when no threshold applies
- * (level below the lowest key). Thresholds and ties resolve numerically — key
- * order is irrelevant.
+ * Resolve a damage rider's dice string. A dice string is fixed; a dice table or
+ * formula (`@/lib/scalar`) resolves from the character's bindings (Sneak Attack
+ * steps with the Rogue level). `_level` is kept for existing callers only.
  */
 export function resolveRiderDice(
-  rider: { dice?: DiceScalar; diceByLevel?: Readonly<Record<number, string>> },
-  level: number,
+  rider: { dice?: DiceScalar },
+  _level: number,
   bindings: IntegerBindings = {}
 ): string {
-  if (rider.dice !== undefined && typeof rider.dice !== "string") {
-    return resolveDice(rider.dice, bindings)?.formula ?? "";
-  }
-  // A flat `amount: "PB"` rider (a species revelation form) carries no `dice`;
-  // it never reaches the weapon consumer (it's an "attack-or-spell" rider), so the
-  // empty fallback here is defensive — every weapon rider declares `dice`.
-  if (!rider.diceByLevel) return rider.dice ?? "";
-  let best: { from: number; dice: string } | null = null;
-  for (const [key, dice] of Object.entries(rider.diceByLevel)) {
-    const from = Number(key);
-    if (Number.isNaN(from) || from > level) continue;
-    if (!best || from > best.from) best = { from, dice };
-  }
-  return best ? best.dice : (rider.dice ?? "");
+  if (rider.dice === undefined) return "";
+  return typeof rider.dice === "string"
+    ? rider.dice
+    : (resolveDice(rider.dice, bindings)?.formula ?? "");
 }
 
 /**

@@ -220,19 +220,11 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     to: literalSchema("effect-source"),
     type: literalSchema("damage-transfer"),
   }),
-  "damage-retaliation": objectSchema(
-    {
-      amount: SCALAR_SCHEMA,
-      damageType: DAMAGE_TYPE_SCHEMA,
-      type: literalSchema("damage-retaliation"),
-    },
-    {
-      castLevelScaling: objectSchema({
-        baseLevel: numberSchema,
-        perLevel: numberSchema,
-      }),
-    }
-  ),
+  "damage-retaliation": objectSchema({
+    amount: SCALAR_SCHEMA,
+    damageType: DAMAGE_TYPE_SCHEMA,
+    type: literalSchema("damage-retaliation"),
+  }),
   "damage-immunity": objectSchema({
     damageType: DAMAGE_TYPE_SCHEMA,
     type: literalSchema("damage-immunity"),
@@ -657,10 +649,6 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     },
     {
       adjustsCurrentHp: booleanSchema,
-      castLevelScaling: objectSchema({
-        baseLevel: numberSchema,
-        perLevel: numberSchema,
-      }),
     }
   ),
   "attunement-slots": objectSchema({
@@ -1381,7 +1369,6 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           }),
         ]),
         dice: DICE_SCALAR_SCHEMA,
-        diceByLevel: recordSchema("number", stringSchema),
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
         requiresRiderTrackerId: stringSchema,
@@ -1438,7 +1425,6 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           }),
         ]),
         dice: DICE_SCALAR_SCHEMA,
-        diceByLevel: recordSchema("number", stringSchema),
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
         requiresRiderTrackerId: stringSchema,

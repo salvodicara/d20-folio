@@ -6,7 +6,7 @@
  * two-op (apply/revoke): the former `set-active` compare-and-swap kind was
  * deleted with its never-shipped producer. */
 
-import { amountAtCastLevel, type Scalar } from "@/lib/scalar";
+import { amountAtCastLevel } from "@/lib/scalar";
 import type {
   ActiveCombatEffect,
   CombatantRef,
@@ -22,18 +22,6 @@ import { resolveDamageIntake, type DamageDefenses } from "@/lib/damage-intake";
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { conformCombatEffectOp } from "@/lib/combat-effect-io";
-
-function scaledFlatAmount(
-  amount: Scalar,
-  scaling: { baseLevel: number; perLevel: number } | undefined,
-  castLevel?: number
-): number {
-  const base = amountAtCastLevel(amount, castLevel);
-  if (!scaling) return base;
-  // Legacy `castLevelScaling`, until the pack's entries move to `castScaled`.
-  const level = castLevel ?? scaling.baseLevel;
-  return base + Math.max(0, level - scaling.baseLevel) * scaling.perLevel;
-}
 
 function combatantStackingKey(ref: CombatantRef): string {
   return ref.kind === "monster"
@@ -93,8 +81,7 @@ function scaledHpFlatForEffect(
   return resolveCombatEffectGrants(effect).reduce(
     (sum, grant) =>
       grant.type === "hp-flat" && include(grant)
-        ? sum +
-          scaledFlatAmount(grant.amount, grant.castLevelScaling, effect.source.castLevel)
+        ? sum + amountAtCastLevel(grant.amount, effect.source.castLevel)
         : sum,
     0
   );
@@ -391,11 +378,7 @@ export function resolvePersistentHit(
             {
               actor: effect.target,
               target: attacker,
-              amount: scaledFlatAmount(
-                grant.amount,
-                grant.castLevelScaling,
-                effect.source.castLevel
-              ),
+              amount: amountAtCastLevel(grant.amount, effect.source.castLevel),
               damageType: grant.damageType,
               effectId: effect.id,
               sourceId: effect.source.id,
