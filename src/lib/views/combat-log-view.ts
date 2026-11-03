@@ -416,6 +416,7 @@ export function localizeCombatEvent(
         price: coinsText(event.cp, t),
       });
     case "effect-given":
+      if (event.killed) return t("combatLog.givenKilled", { target: event.targetName });
       return event.effect === "condition"
         ? t("combatLog.givenCondition", {
             target: event.targetName,

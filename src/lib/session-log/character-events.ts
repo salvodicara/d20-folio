@@ -78,6 +78,7 @@ export function combatEventToPlayEvent(
           : {}),
       };
     case "effect-given":
+      if (event.killed) return { kind: "down", target: event.target };
       return event.effect === "condition"
         ? {
             kind: "condition",

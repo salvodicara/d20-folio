@@ -91,6 +91,7 @@ import {
   defaultCombatState,
   reduceCondition,
   reduceDeathSave,
+  reduceKill,
   reduceHpDelta,
   reduceMemberCombatEffects,
   setTempAbsolute,
@@ -940,6 +941,8 @@ export type CampaignCombatMutation =
   | { kind: "condition"; operation: { kind: "add" | "remove"; conditionId: string } }
   | { kind: "temp-hp"; value: number }
   | { kind: "death-save"; outcome: "success" | "failure" }
+  /** Killed outright (Power Word Kill at 100 HP or fewer). */
+  | { kind: "die" }
   /** Undo one earlier peer write: every root it changed that still reads as it wrote
    *  goes back to what it was before. */
   | {
@@ -999,6 +1002,7 @@ function reduceCampaignCombatMutation(
   if (mutation.kind === "death-save") {
     return reduceDeathSave(current, mutation.outcome);
   }
+  if (mutation.kind === "die") return reduceKill(current);
   if (mutation.kind === "revert") {
     return revertPeerEffect(current, mutation.written, mutation.previous);
   }

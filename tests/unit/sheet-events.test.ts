@@ -239,6 +239,7 @@ const CASES: {
     { kind: "set-readied-spell", readied: { expiresRound: 2 } },
     () => at(ready.setReadiedSpell(doc.session, { expiresRound: 2 })),
   ],
+  die: [{ kind: "die" }, () => at(vitals.killCharacter(doc))],
   "set-companion-hp": [
     { kind: "set-companion-hp", featureId: "wolf", current: 2 },
     () => at(companions.setCompanionHp(companions.withSummonsRecorded(doc), "wolf", 2)),

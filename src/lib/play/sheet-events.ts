@@ -68,6 +68,7 @@ import {
   restoreTracker,
   gainTempHp,
   healBy,
+  killCharacter,
   setDeathSaves,
   setExhaustion,
   setHp,
@@ -136,6 +137,8 @@ export type SheetEvent =
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
+  /** Killed outright (Power Word Kill): 0 HP and dead. */
+  | { kind: "die" }
   /** A summoning spell cast (M6): its creature comes onto the field at full HP. */
   | { kind: "summon-companion"; sourceId: string; castLevel?: number }
   /** A fallen companion brought back with all its HP (M6). */
@@ -284,6 +287,8 @@ export function applySheetEvent(
       return dropBeastForm(doc);
     case "set-readied-spell":
       return withSession(setReadiedSpell(doc.session, event.readied));
+    case "die":
+      return withSession(killCharacter(doc));
     case "set-companion-hp":
       return withSession(
         setCompanionHp(withSummonsRecorded(doc), event.featureId, event.current)

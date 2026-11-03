@@ -148,6 +148,8 @@ export type CombatEvent =
       source?: LocText;
       /** The attack roll's result against this target ("critical, 14 damage"). */
       outcome?: AttackOutcome;
+      /** The target was killed outright (Power Word Kill): the line says it dies. */
+      killed?: true;
     }
   /** A condition was lost / removed. */
   | { kind: "condition-loss"; conditionId: string }

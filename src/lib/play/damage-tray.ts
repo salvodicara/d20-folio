@@ -560,6 +560,10 @@ function applyMultiplier(amount: number, multiplier: TrayMultiplier): number {
  *  on-a-20 damage: of the primary type before the multiplier ({@link onRoll20Amount}),
  *  of another type as its own line with its own multiplier ({@link onRoll20Lines}). */
 export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
+  // A spell that hangs on the target's Hit Points (Power Word Kill) deals its damage
+  // only on its `otherwise` branch. Before the DM answers (`null`) the row reads as
+  // the print does; the answer narrows it.
+  if (thresholdBranch(row) !== null && thresholdBranch(row) !== "otherwise") return 0;
   const base = grazes(row, plan)
     ? (plan.attack?.graze ?? 0)
     : total + onRoll20Amount(row, plan);
@@ -596,9 +600,39 @@ export function rowAmountByType(
   return sum;
 }
 
-/** The conditions this row lands: none once the target saved or the attack missed. */
+/** The conditions this row lands: none once the target saved or the attack missed,
+ *  and for a Hit Point threshold only on its `condition` branch (Power Word Stun). */
 export function rowConditions(row: TrayRow): string[] {
+  const branch = thresholdBranch(row);
+  if (branch !== null && branch !== "condition") return [];
   return row.saved || row.attack === "miss" ? [] : row.conditions;
+}
+
+/** The answered branch of a row's Hit Point threshold, or null (none, or not yet). */
+function thresholdBranch(row: TrayRow): string | null {
+  return row.outcome?.kind === "threshold" ? row.outcome.branch : null;
+}
+
+/**
+ * The DM's answer to a Hit Point threshold the viewer can't see ("Does it have 100
+ * Hit Points or fewer?"): yes takes the spell's at-or-below branch (dies, or the
+ * condition), no its otherwise (the damage, or Speed 0). A row without a threshold
+ * is unchanged.
+ */
+export function setThresholdAnswer(
+  row: TrayRow,
+  plan: DamageTrayPlan,
+  atOrBelow: boolean
+): TrayRow {
+  const threshold = plan.hitPointThreshold;
+  if (!threshold || row.outcome?.kind !== "threshold") return row;
+  return {
+    ...row,
+    outcome: {
+      kind: "threshold",
+      branch: atOrBelow ? threshold.atOrBelow : (threshold.otherwise ?? "otherwise"),
+    },
+  };
 }
 
 /** Pick Hit, Miss or Critical: the multiplier follows (a miss cancels or halves the

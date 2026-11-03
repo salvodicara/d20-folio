@@ -348,6 +348,17 @@ export function reduceHpDelta(
 }
 
 /** Bump the NESTED death-save count by one, capped at `[0, 3]` (a 4th tick stays 3). */
+/** Killed outright through the play state (another device's Power Word Kill): 0 HP
+ *  and three death-save failures. An already-dead creature is left as it is. */
+export function reduceKill(s: CombatState): CombatState {
+  if (s.deathSaves.failures >= 3) return s;
+  return {
+    ...s,
+    hp: { ...s.hp, current: 0, temp: 0 },
+    deathSaves: { successes: s.deathSaves.successes, failures: 3 },
+  };
+}
+
 export function reduceDeathSave(
   s: CombatState,
   outcome: "success" | "failure"
