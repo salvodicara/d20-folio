@@ -17,7 +17,7 @@
  */
 
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
-import { useState, useMemo, useRef, useId } from "react";
+import { useState, useMemo, useId } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import {
@@ -31,11 +31,8 @@ import {
   Focus,
 } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
-import { useToastStore } from "@/stores/toastStore";
-import { useItemResourceCommands } from "./center/useItemResourceCommands";
-import { restThroughWorld } from "./rest-world-boundary";
+import { useRestCommit } from "./use-rest-commit";
 import { canCharacterRest } from "@/lib/character-status";
 import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
@@ -60,7 +57,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type RestPhase = "idle" | "confirm-short" | "confirm-long" | "summary";
-type RestBoundaryKind = "short-rest" | "long-rest";
 
 interface RestSummary {
   type: "short" | "long";
@@ -111,18 +107,15 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const character = useCharacterStore((s) => s.character);
-  const setHP = useCharacterStore((s) => s.setHP);
-  const updateSession = useCharacterStore((s) => s.updateSession);
   const sheetMode = useUIStore((s) => s.sheetMode);
-  const itemResourceCommands = useItemResourceCommands();
+  const rest = useRestCommit();
+  const committing = rest.committing;
 
   const [phase, setPhase] = useState<RestPhase>("idle");
   const [summary, setSummary] = useState<RestSummary | null>(null);
   const [hitDiceToSpend, setHitDiceToSpend] = useState(0);
   const [diceTotal, setDiceTotal] = useState("");
   const inputId = useId();
-  const [committing, setCommitting] = useState(false);
-  const committingRef = useRef(false);
 
   // Count spent spell slots
   const totalSlotsSpent = useMemo(() => {
@@ -194,31 +187,6 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     setDiceTotal("");
   }
 
-  /** Preflight and atomically commit one typed item-resource rest boundary.
-   * The reviewed character snapshot stays frozen across any physical-roll input. */
-  async function commitRestBoundary(kind: RestBoundaryKind) {
-    if (committingRef.current) return null;
-    if (!canCharacterRest(restCharacter.status, restCharacter.session)) return null;
-    committingRef.current = true;
-    setCommitting(true);
-    try {
-      const prepared = await itemResourceCommands.prepareBoundary({ kind });
-      if (!prepared) return null;
-      const live = useCharacterStore.getState().character;
-      if (live !== restCharacter || !canCharacterRest(live.status, live.session)) {
-        useToastStore.getState().showToast({
-          message: t("rest.stateChanged"),
-          duration: 5000,
-        });
-        return null;
-      }
-      return itemResourceCommands.commitBoundary(prepared) ? prepared : null;
-    } finally {
-      committingRef.current = false;
-      setCommitting(false);
-    }
-  }
-
   /**
    * RA-02 — finish the Short Rest, healing by `healedHp` (0 when no dice were
    * spent). The heal is the player's ENTERED roll + CON mod per die (golden rule
@@ -228,8 +196,6 @@ function RestFlow({ onClose }: { onClose: () => void }) {
    */
   async function finishShortRest(healedHp: number) {
     if (!diceCountValid) return;
-    const prepared = await commitRestBoundary("short-rest");
-    if (!prepared) return;
     const hpBefore = hpCurrent;
     const newHp = Math.min(hpCurrent + healedHp, hpMax);
 
@@ -239,21 +205,10 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     const exhaustionRemovedOnShort =
       getShortRestExhaustionRecovery(restCharacter) > 0 && session.exhaustion > 0;
 
-    // CUTOVER — the rest routes through the canonical mechanics runtime:
-    // `restThroughWorld` plans the kernel's rest boundary over the persisted
-    // world FIRST (rest-completed evidence, timed/until-rest lifetime endings,
-    // every engine-modeled recovery, the entered heal as the recorded roll),
-    // runs the wrapped legacy `shortRest()` as the write-through bridge, then
-    // commits the world action so the mirror re-asserts every world-owned
-    // field. Fail-closed: a rejected world plan degrades to the legacy rest
-    // alone, exactly the pre-cutover behavior (see rest-world-boundary.ts).
-    restThroughWorld("short", { healedHp });
-    if (healedHp > 0) setHP(newHp);
-    if (hitDiceToSpend > 0) {
-      updateSession({ hitDice: { used: hitDiceUsed + hitDiceToSpend } });
-    }
-    // A short rest ends the current fight — return combat to baseline.
-    useCombatStore.getState().endCombat();
+    // The rest routes through the canonical mechanics runtime (`useRestCommit`:
+    // the item-resource boundary, `restThroughWorld`, the heal, the dice, the fight).
+    const prepared = await rest.shortRest(restCharacter, hitDiceToSpend, healedHp);
+    if (!prepared) return;
 
     setSummary({
       type: "short",
@@ -276,8 +231,6 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   }
 
   async function handleLongRestConfirm() {
-    const prepared = await commitRestBoundary("long-rest");
-    if (!prepared) return;
     const hpBefore = hpCurrent;
     const hadExhaustion = session.exhaustion > 0;
     // RA-01 — Hit Dice regain is handled by `longRest()` (2024 RAW: regain ALL
@@ -292,15 +245,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     // Read before the rest: a fading penalty's step, a reduced maximum restored.
     const fades = longRestFades(restCharacter);
 
-    // CUTOVER — engine plans first (rest-completed evidence, until-long-rest
-    // lifetime endings, concentration end requests, a lingering solo world
-    // encounter closed, every engine-modeled recovery), the wrapped legacy
-    // `longRest()` runs as the write-through bridge, then the world action
-    // commits and mirrors. Fail-closed degradation to the legacy rest alone
-    // when the world rejects (see rest-world-boundary.ts).
-    restThroughWorld("long");
-    // A long rest ends the current fight — return combat to baseline.
-    useCombatStore.getState().endCombat();
+    // The rest routes through the canonical mechanics runtime (`useRestCommit`).
+    const prepared = await rest.longRest(restCharacter);
+    if (!prepared) return;
 
     setSummary({
       type: "long",
