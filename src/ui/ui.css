@@ -2207,7 +2207,7 @@
 /* the row button is a small capsule (14 px): the prototype's 92 px column, on the grid */
 @media (min-width: 641px) {
   .fui .f-sheet .f-act {
-    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(72px, max-content)) 96px;
+    grid-template-columns: 46px minmax(0, 1fr) repeat(3, minmax(72px, max-content)) 96px;
     column-gap: 12px;
   }
 }
@@ -3000,6 +3000,7 @@
   --ir-next: rgb(255 255 255 / 0.13);
   --ir-tag: rgb(232 220 196 / 0.4);
   --ir-token-bg: #2a1a12;
+  --r-slot: 2px;
   --r-tag: 4px;
 }
 .fui .f-ir {
@@ -3128,4 +3129,54 @@
 .fui .f-sheet .f-ir-acts > .f-btn[data-kind="quiet"] {
   color: var(--advice);
   font-size: var(--fs-sm);
+}
+/* the row's framed slot (prototype .slot): the action's glyph in a bronze square */
+.fui .f-sheet {
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+.fui .f-act-slot {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--frame);
+  border-radius: var(--r-slot);
+  background: radial-gradient(circle at 50% 35%, var(--panel-2), var(--slot-bg));
+  color: var(--slot-ink);
+}
+.fui .f-act-slot > svg {
+  width: 30px;
+  height: 30px;
+}
+.fui .f-act-head > span:first-child {
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .fui .f-sheet .f-act {
+    grid-template-columns: 40px minmax(0, 1fr) 96px;
+  }
+  .fui .f-act-slot {
+    width: 40px;
+    height: 40px;
+  }
+  .fui .f-act-slot > svg {
+    width: 26px;
+    height: 26px;
+  }
+}
+@media (max-width: 359px) {
+  .fui .f-sheet .f-act {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+  .fui .f-sheet .f-act > .f-btn {
+    grid-column: 2;
+  }
+}
+/* phone rows (prototype x-play-m .arow): edge to edge, tighter gaps, so the name keeps its line */
+@media (max-width: 640px) {
+  .fui .f-sheet .f-act:not(.f-act-head) {
+    column-gap: 8px;
+    padding: 8px 0;
+  }
 }

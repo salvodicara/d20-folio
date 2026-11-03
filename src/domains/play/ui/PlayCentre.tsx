@@ -24,10 +24,13 @@ import type { Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
+import { actionIcon } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Icon, Tabs } from "@/ui";
+
+import { ActionIcon } from "./ActionIcon";
 
 type Filter = "all" | "attacks" | "actions" | "bonus" | "reactions" | "other" | "limited";
 const FILTERS: Filter[] = [
@@ -135,6 +138,7 @@ export function PlayCentre({ doc, locale }: { doc: CharacterDoc; locale: Locale 
           ))}
         </div>
         <div className="f-act f-act-head" aria-hidden="true">
+          <span />
           <span>{t("common.name")}</span>
           <span>{t("spells.range")}</span>
           <span>{t("play.table.hit")}</span>
@@ -301,6 +305,7 @@ function ActionLine({ row, locale }: { row: PlayActionRow; locale: Locale }) {
       : "";
   return (
     <div className="f-act" data-blocked={row.blocked || undefined}>
+      <ActionIcon icon={actionIcon(row)} />
       <div className="f-row-main">
         <div className="f-row-t">{row.name}</div>
         {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
