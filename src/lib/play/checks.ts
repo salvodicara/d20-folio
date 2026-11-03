@@ -4,6 +4,7 @@
  * sheet adds the live bonus, judges the optional DC ("If the total equals or exceeds
  * the DC, the ability check succeeds") and logs it with the use.
  */
+import { RAW_TABLE_RULES, type TableRules } from "@/lib/table-rules";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 
 /** The skills each check action's SRD table lists, in the table's order. */
@@ -39,9 +40,16 @@ export interface CheckResult {
   dc?: number;
 }
 
-/** Success when the total meets the DC; no verdict without a DC. */
-export function checkSucceeded(check: CheckResult): boolean | undefined {
-  return check.dc === undefined ? undefined : check.total >= check.dc;
+/** Success when the total meets the DC; no verdict without a DC. RAW a natural 1 on
+ *  a check is no automatic failure; a table that rules it one passes its rules and
+ *  the die's face. */
+export function checkSucceeded(
+  check: CheckResult & { face?: number },
+  rules: Pick<TableRules, "nat1"> = RAW_TABLE_RULES
+): boolean | undefined {
+  if (check.dc === undefined) return undefined;
+  if (check.face === 1 && rules.nat1.checks === "fail") return false;
+  return check.total >= check.dc;
 }
 
 /** The action as used with this check: its log line carries the result. */

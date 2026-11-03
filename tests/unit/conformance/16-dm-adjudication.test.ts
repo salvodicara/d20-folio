@@ -1,4 +1,5 @@
 /** Conformance, category 16: DM adjudication (corpus.md § 16). */
+import { effectiveTableRules } from "@/lib/table-rules";
 import { describe, expect } from "vitest";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { initiativeRollState } from "@/lib/compute";
@@ -91,17 +92,15 @@ describe("conformance · 16. DM adjudication", () => {
   );
 
   rule(
-    { category: 16, case: "Natural 1 on checks", source: "SAC #3", status: "M16" },
+    { category: 16, case: "Natural 1 on checks", source: "SAC #3", status: "works" },
     () => {
       const check: CheckResult = { skill: "athletics", total: 21, dc: 15 };
       // RAW: a natural 1 on a check is not an automatic failure.
       expect(checkSucceeded(check)).toBe(true);
       // A table that rules "nat 1 fails" needs the table rule passed in.
-      const judge = checkSucceeded as (
-        c: CheckResult & { face: number },
-        rules: { nat1: { checks: "none" | "fail" } }
-      ) => boolean | undefined;
-      expect(judge({ ...check, face: 1 }, { nat1: { checks: "fail" } })).toBe(false);
+      expect(checkSucceeded({ ...check, face: 1 })).toBe(true);
+      const nat1Fails = effectiveTableRules({ tableRules: { nat1: { checks: "fail" } } });
+      expect(checkSucceeded({ ...check, face: 1 }, nat1Fails)).toBe(false);
     }
   );
 

@@ -22,6 +22,19 @@ export interface TableRules {
   /** A natural 1 on an attack also gets a fumble note. */
   readonly fumbles: boolean;
   readonly familiarsAttack: boolean;
+  /** What a natural 1 does. RAW 2024: nothing special on a check or save; an attack
+   *  roll misses. A table may rule that a 1 fails a check too. */
+  readonly nat1: { readonly checks: "none" | "fail"; readonly attacks: "miss" };
+  /** The Hide / Invisible model: RAW 2024, or the table's own ruling. */
+  readonly hide: "raw" | "table";
+  /** Hero / plot points (dropped from the 2024 DMG): off unless the table adds them. */
+  readonly heroPoints: boolean;
+  readonly plotPoints: boolean;
+  /** Optional systems the 2024 books offer, off until the table switches them on. */
+  readonly bastions: boolean;
+  readonly circleMagic: boolean;
+  readonly factions: boolean;
+  readonly evolvingItems: boolean;
 }
 
 type Overrides = {
@@ -44,6 +57,14 @@ export const RAW_TABLE_RULES: TableRules = deepFreeze({
   flanking: "off",
   fumbles: false,
   familiarsAttack: false,
+  nat1: { checks: "none", attacks: "miss" },
+  hide: "raw",
+  heroPoints: false,
+  plotPoints: false,
+  bastions: false,
+  circleMagic: false,
+  factions: false,
+  evolvingItems: false,
 });
 
 const positiveInt = (v: unknown): v is number =>
@@ -64,8 +85,23 @@ const GROUPS = {
   },
   deathSaves: { successes: positiveInt, failures: positiveInt },
   potions: { drink: slot, administer: slot },
+  nat1: {
+    checks: (v: unknown): v is "none" | "fail" => v === "none" || v === "fail",
+    attacks: (v: unknown): v is "miss" => v === "miss",
+  },
 } as const;
-const SCALARS = { flanking, fumbles: bool, familiarsAttack: bool } as const;
+const SCALARS = {
+  flanking,
+  fumbles: bool,
+  familiarsAttack: bool,
+  hide: (v: unknown): v is TableRules["hide"] => v === "raw" || v === "table",
+  heroPoints: bool,
+  plotPoints: bool,
+  bastions: bool,
+  circleMagic: bool,
+  factions: bool,
+  evolvingItems: bool,
+} as const;
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -102,5 +138,13 @@ export function effectiveTableRules(
     flanking: o.flanking ?? RAW_TABLE_RULES.flanking,
     fumbles: o.fumbles ?? RAW_TABLE_RULES.fumbles,
     familiarsAttack: o.familiarsAttack ?? RAW_TABLE_RULES.familiarsAttack,
+    nat1: { ...RAW_TABLE_RULES.nat1, ...o.nat1 },
+    hide: o.hide ?? RAW_TABLE_RULES.hide,
+    heroPoints: o.heroPoints ?? RAW_TABLE_RULES.heroPoints,
+    plotPoints: o.plotPoints ?? RAW_TABLE_RULES.plotPoints,
+    bastions: o.bastions ?? RAW_TABLE_RULES.bastions,
+    circleMagic: o.circleMagic ?? RAW_TABLE_RULES.circleMagic,
+    factions: o.factions ?? RAW_TABLE_RULES.factions,
+    evolvingItems: o.evolvingItems ?? RAW_TABLE_RULES.evolvingItems,
   };
 }
