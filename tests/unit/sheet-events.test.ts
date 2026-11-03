@@ -241,7 +241,14 @@ const CASES: {
   ],
   "set-companion-hp": [
     { kind: "set-companion-hp", featureId: "wolf", current: 2 },
-    () => at(companions.setCompanionHp(doc.session, "wolf", 2)),
+    () => at(companions.setCompanionHp(companions.withSummonsRecorded(doc), "wolf", 2)),
+  ],
+  "summon-companion": [
+    { kind: "summon-companion", sourceId: "find-steed", castLevel: 3 },
+    () =>
+      at(
+        companions.summonCompanion(companions.withSummonsRecorded(doc), "find-steed", 3)
+      ),
   ],
   "set-companion-variant": [
     { kind: "set-companion-variant", featureId: "wolf", variantId: "sea" },

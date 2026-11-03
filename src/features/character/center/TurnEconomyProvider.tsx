@@ -1338,6 +1338,16 @@ export function TurnEconomyProvider({
         // activate with one tap and expire by themselves); a readied spell has no effect
         // until its release.
         if (!readies) activateActionState(castAction, opt.level);
+        // A summon that isn't held by Concentration (Find Steed) comes onto the field
+        // at the level it was cast with (M6); a Concentration one shows while held.
+        const summoned = action.spellId ? getSpellById(action.spellId) : undefined;
+        if (!readies && summoned?.companion && !summoned.concentration) {
+          cs.dispatch({
+            kind: "summon-companion",
+            sourceId: summoned.id,
+            castLevel: opt.level,
+          });
+        }
         const loggedId = cs.logEvent({
           kind: "action-use",
           action: action.nameLoc,

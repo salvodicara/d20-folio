@@ -62,6 +62,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   companionHp?: NonNullable<SessionState["companionHp"]>;
   companionVariant?: NonNullable<SessionState["companionVariant"]>;
   companionCount?: NonNullable<SessionState["companionCount"]>;
+  summons?: NonNullable<SessionState["summons"]>;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -124,6 +125,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "companionHp",
   "companionVariant",
   "companionCount",
+  "summons",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -358,6 +360,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (isNonEmptyRecord(session.companionCount)) {
     state.companionCount = session.companionCount;
   }
+  // Written even when empty: an empty record says "summons are recorded" (a
+  // prepared steed no longer shows by itself).
+  if (session.summons) state.summons = session.summons;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -413,6 +418,28 @@ function parseCountRecord(value: unknown): Record<string, number> | undefined {
       entry[1] <= MAX_SUMMONED
   );
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+/** The summons on the field (M6). An empty record is kept: it says summons are
+ *  recorded. A malformed entry is dropped, never the record. */
+function parseSummons(value: unknown): SessionState["summons"] {
+  if (!isRecord(value)) return undefined;
+  const summons: NonNullable<SessionState["summons"]> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (!isRecord(entry)) continue;
+    const castLevel =
+      typeof entry.castLevel === "number" &&
+      Number.isInteger(entry.castLevel) &&
+      entry.castLevel >= 1 &&
+      entry.castLevel <= 9
+        ? entry.castLevel
+        : undefined;
+    summons[key] = {
+      ...(castLevel !== undefined ? { castLevel } : {}),
+      ...(entry.fallen === true ? { fallen: true as const } : {}),
+    };
+  }
+  return summons;
 }
 
 function parseSessionDefenses(value: unknown): SessionState["sessionDefenses"] {
@@ -889,6 +916,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   session.companionHp = parseCompanionHp(state.companionHp);
   session.companionVariant = parseStringRecord(state.companionVariant);
   session.companionCount = parseCountRecord(state.companionCount);
+  const summons = parseSummons(state.summons);
+  if (summons) session.summons = summons;
   if (
     isRecord(state.familiar) &&
     typeof state.familiar.monsterId === "string" &&

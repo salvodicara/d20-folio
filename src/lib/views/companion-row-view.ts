@@ -91,6 +91,8 @@ export interface CompanionCardView {
   variants?: CompanionVariantOption[];
   /** The currently-active variant id (drives the Segmented + the resolved facts). */
   selectedVariantId?: string;
+  /** The companion died and can be brought back (`0-hp:dies`, M6). */
+  fallen?: true;
 }
 
 type Ns = "class-feature" | "spell";
@@ -205,6 +207,7 @@ function buildOne(
     attacks,
     variants,
     selectedVariantId: active.variantId,
+    ...(session.summons?.[featureId]?.fallen ? { fallen: true as const } : {}),
   };
   if (!active.count) return [one];
 
@@ -321,11 +324,17 @@ export function buildCompanionCardViews(
     if ("srdId" in ref) spellIds.add(ref.srdId);
   }
   const ownerMaxHp = charData.hp.max + agg.hpFlat;
+  // A non-Concentration spell's creature is on the field once summoned (M6): its
+  // `summons` record, at the level it was cast with. A session written before
+  // summons were recorded keeps the older rule (prepared = shown).
+  const summons = doc.session.summons;
   for (const spellId of spellIds) {
     const spell = getSpellById(spellId);
     if (!spell?.companion) continue;
     const concentrating = doc.session.concentration === spellId;
     if (spell.concentration && !concentrating) continue;
+    const summoned = summons?.[spellId];
+    if (!spell.concentration && summons && (!summoned || summoned.fallen)) continue;
     views.push(
       ...buildOne(
         spellId,
@@ -339,7 +348,9 @@ export function buildCompanionCardViews(
         locale,
         t,
         {
-          castLevel: concentrating ? doc.session.concentrationCastLevel : undefined,
+          castLevel: concentrating
+            ? doc.session.concentrationCastLevel
+            : summoned?.castLevel,
           ownerMaxHp,
           spellMod,
         }

@@ -1,25 +1,134 @@
 /** Pure play transitions for companions and the familiar: the session in, the next out. */
+import { classFeatureIndex } from "@/data/classes";
+import { getSpellById } from "@/data/spells";
+import type { CompanionEnd } from "@/data/types";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import {
   isSummonInstanceOf,
   MAX_SUMMONED,
   summonInstanceNumber,
 } from "@/lib/summon-count";
-import type { SessionState } from "@/types/character";
+import type { CharacterDoc, SessionState } from "@/types/character";
 
-/** Set a companion's current HP (never below 0). */
+/** The familiar has no companion stat block: "when the familiar drops to 0 Hit
+ *  Points, it disappears" (SRD 5.2.1, Find Familiar). */
+const FAMILIAR_ENDS: readonly CompanionEnd[] = ["0-hp:vanish"];
+
+/** When a summon from `sourceId` ends (its catalogue `lifecycle.endsOn`, M6). */
+export function summonEnds(sourceId: string): readonly CompanionEnd[] {
+  if (sourceId === FIND_FAMILIAR_SPELL_ID) return FAMILIAR_ENDS;
+  const block =
+    getSpellById(sourceId)?.companion ?? classFeatureIndex.get(sourceId)?.companion;
+  return block?.lifecycle?.endsOn ?? [];
+}
+
+/**
+ * Set a companion's current HP (never below 0). At 0 its catalogue rule applies
+ * (edge-case family M6): a summon that vanishes (Find Steed, the familiar) leaves the
+ * field with its HP entry; one that dies (Beast Master's beast) is `fallen`.
+ */
 export function setCompanionHp(
   session: SessionState,
   featureId: string,
   current: number
 ): SessionState {
-  return {
+  const next: SessionState = {
     ...session,
     companionHp: {
       ...(session.companionHp ?? {}),
       [featureId]: { current: Math.max(0, current) },
     },
   };
+  if (current > 0) return next;
+  const ends = summonEnds(featureId);
+  if (featureId === FIND_FAMILIAR_SPELL_ID) return dismissFamiliar(next) ?? next;
+  if (ends.includes("0-hp:vanish")) return endSummon(next, featureId);
+  if (ends.includes("0-hp:dies")) {
+    return {
+      ...next,
+      summons: { ...(next.summons ?? {}), [featureId]: { fallen: true } },
+    };
+  }
+  return next;
+}
+
+/** The HP entries of a summon: its own and each creature's of a group. */
+function withoutHpOf(
+  companionHp: SessionState["companionHp"],
+  sourceId: string
+): NonNullable<SessionState["companionHp"]> {
+  return Object.fromEntries(
+    Object.entries(companionHp ?? {}).filter(
+      ([key]) => key !== sourceId && !isSummonInstanceOf(key, sourceId)
+    )
+  );
+}
+
+/**
+ * Summon a creature (edge-case family M6): it comes onto the field at full HP, at
+ * the level it was cast with. Casting it again replaces the one before (Find
+ * Steed: "the steed returns"), so its old HP goes; the variant pick stays.
+ */
+export function summonCompanion(
+  session: SessionState,
+  sourceId: string,
+  castLevel?: number
+): SessionState {
+  return {
+    ...session,
+    summons: {
+      ...(session.summons ?? {}),
+      [sourceId]: castLevel !== undefined ? { castLevel } : {},
+    },
+    companionHp: withoutHpOf(session.companionHp, sourceId),
+  };
+}
+
+/** A summon leaves the field: its record and its HP go (the variant pick stays, for
+ *  the next time). Recording it keeps the session "recorded" (an empty record). */
+export function endSummon(session: SessionState, sourceId: string): SessionState {
+  const { [sourceId]: _gone, ...rest } = session.summons ?? {};
+  void _gone;
+  return {
+    ...session,
+    summons: rest,
+    companionHp: withoutHpOf(session.companionHp, sourceId),
+  };
+}
+
+/**
+ * The session with its summons recorded (M6). A session written before `summons`
+ * existed shows every prepared non-Concentration summoning spell's creature (Find
+ * Steed); the first write records exactly those, so none disappears on update.
+ */
+export function withSummonsRecorded(doc: CharacterDoc): SessionState {
+  if (doc.session.summons) return doc.session;
+  const spellIds = new Set<string>(
+    aggregateCharacterGrants(doc.character, doc.session).alwaysPrepared
+  );
+  for (const ref of doc.character.spells) {
+    if ("srdId" in ref) spellIds.add(ref.srdId);
+  }
+  const summons: NonNullable<SessionState["summons"]> = {};
+  for (const id of spellIds) {
+    const spell = getSpellById(id);
+    if (spell?.companion && !spell.concentration) summons[id] = {};
+  }
+  return { ...doc.session, summons };
+}
+
+/** End every recorded summon whose catalogue rule ends on `end` (a Long Rest, the
+ *  caster's death). Null when none does. */
+export function endSummonsOn(
+  session: SessionState,
+  end: CompanionEnd
+): SessionState | null {
+  const ending = Object.keys(session.summons ?? {}).filter((id) =>
+    summonEnds(id).includes(end)
+  );
+  if (ending.length === 0) return null;
+  return ending.reduce(endSummon, session);
 }
 
 /** Pick a companion variant. A different variant is a different beast, so its HP
