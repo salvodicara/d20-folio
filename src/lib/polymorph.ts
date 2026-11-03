@@ -22,6 +22,7 @@ import {
   type BeastStatBlock,
   type SelfFormRule,
 } from "@/data/types";
+import type { AbilityCode } from "@/types/ability";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { beastsByMaxCR, getBeast } from "@/data/beasts";
 import { getSpellById } from "@/data/spells";
@@ -48,25 +49,90 @@ export function selfFormRule(spellId: string): SelfFormRule {
   return getSpellById(spellId)?.formRule ?? POLYMORPH_RULE;
 }
 
-type ActiveForm = SessionState["polymorphForm"];
-
 /** The active form's stat block: the bestiary block it carries, else the Beast. */
-export function formStatBlock(form: ActiveForm): BeastStatBlock | undefined {
+/** The form the character is in, whichever way it was recorded: the computed
+ *  `activeForm`, or a form a v0.25 client stamped (`polymorphForm`). */
+export function currentForm(
+  session: Pick<SessionState, "activeForm" | "polymorphForm">
+): {
+  sourceId: string;
+  beastId: string;
+  statBlock?: BeastStatBlock;
+  stamped: boolean;
+} | null {
+  if (session.activeForm) {
+    const { sourceId, beastId, statBlock } = session.activeForm;
+    return { sourceId, beastId, ...(statBlock ? { statBlock } : {}), stamped: false };
+  }
+  if (session.polymorphForm) {
+    const { spellId, beastId, statBlock } = session.polymorphForm;
+    return {
+      sourceId: spellId,
+      beastId,
+      ...(statBlock ? { statBlock } : {}),
+      stamped: true,
+    };
+  }
+  return null;
+}
+
+/**
+ * What a computed form replaces on the derived sheet (edge-case family M2): the
+ * scores it takes (all six, or STR/DEX/CON when its rule keeps the mind), its natural
+ * AC, its speeds. Null when there is no computed form (a stamped one is already in
+ * the build).
+ */
+export function formFacts(
+  session: Pick<SessionState, "activeForm" | "polymorphForm">,
+  own: Record<AbilityCode, number>
+): {
+  sourceId: string;
+  beastId: string;
+  abilityScores: Record<AbilityCode, number>;
+  ac: number;
+  walkFt: number | null;
+  speeds: Partial<Record<"fly" | "swim" | "climb" | "burrow", number>>;
+} | null {
+  const form = session.activeForm;
+  if (!form) return null;
+  const beast = form.statBlock ?? getBeast(form.beastId);
+  if (!beast) return null;
+  const rule = selfFormRule(form.sourceId);
+  const speeds: Partial<Record<"fly" | "swim" | "climb" | "burrow", number>> = {};
+  for (const mode of ["fly", "swim", "climb", "burrow"] as const) {
+    const v = beast.speeds[mode];
+    if (typeof v === "number") speeds[mode] = v;
+  }
+  return {
+    sourceId: form.sourceId,
+    beastId: form.beastId,
+    abilityScores: rule.keepsMind
+      ? { ...beast.abilityScores, INT: own.INT, WIS: own.WIS, CHA: own.CHA }
+      : { ...beast.abilityScores },
+    ac: beast.ac,
+    walkFt: typeof beast.speeds.walk === "number" ? beast.speeds.walk : null,
+    speeds,
+  };
+}
+
+/** Any recorded form: what the stat block and the name read from. */
+type FormRef = { readonly beastId: string; readonly statBlock?: BeastStatBlock };
+
+export function formStatBlock(
+  form: FormRef | null | undefined
+): BeastStatBlock | undefined {
   if (!form) return undefined;
   return form.statBlock ?? getBeast(form.beastId);
 }
 
 /** Where the active form's names live: the lazy bestiary or the Beast catalogue. */
-export function formNameKind(form: NonNullable<ActiveForm>): "monster" | "beasts" {
+export function formNameKind(form: FormRef): "monster" | "beasts" {
   return form.statBlock ? "monster" : "beasts";
 }
 
 /** The catalogue key of one of the form's attacks (`attack.rend` in the Beast
  *  catalogue, `adult-red-dragon.actions.rend` in the bestiary). */
-export function formAttackNameKey(
-  form: NonNullable<ActiveForm>,
-  nameKey: string
-): string {
+export function formAttackNameKey(form: FormRef, nameKey: string): string {
   return form.statBlock ? bestiaryNameKey(form.beastId, nameKey) : nameKey;
 }
 

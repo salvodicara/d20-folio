@@ -6,12 +6,7 @@
  * Concentration that sustains the form stays the store's orchestration.
  */
 import type { BeastStatBlock } from "@/data/types";
-import {
-  polymorphBuildPatch,
-  revertBuildFromPrior,
-  selfFormRule,
-  type PolymorphPrior,
-} from "@/lib/polymorph";
+import { revertBuildFromPrior, selfFormRule, type PolymorphPrior } from "@/lib/polymorph";
 import type { CharacterDoc } from "@/types/character";
 import { commitWorldVitals, drainedTemporary, vitalsWithTemporary } from "./world-commit";
 
@@ -32,40 +27,45 @@ function withTemp(doc: CharacterDoc, temp: number): CharacterDoc["session"] {
 }
 
 /**
- * Assume a Beast form: stamp its AC, speeds and scores into the override fields, take
- * Temporary HP equal to the Beast's HP (max-wins) and record the form with the body it
- * replaced. `prior` is the caster's own snapshot (`polymorphPriorSnapshot`).
+ * Assume a Beast form (edge-case family M2): record it as `activeForm`, which the sheet
+ * reads when it derives scores, AC and speeds; nothing is stamped into the build. Take
+ * Temporary HP equal to the Beast's HP (max-wins), remembering the caster's own.
  *
  * The spell's rule (`selfFormRule`) shapes it: Shapechange keeps the caster's INT /
  * WIS / CHA, carries its bestiary block on the session, and a second form while the
- * spell lasts (a reshift) keeps the first form's snapshot and Temporary HP. `reshift`
- * is true when this call shifted an active form rather than starting one.
+ * spell lasts (a reshift) keeps the first form's Temporary HP. A form a v0.25 client
+ * stamped (`polymorphForm`) is reverted first.
  */
 export function assumeBeastForm(
   doc: CharacterDoc,
   beast: BeastStatBlock,
   spellId: string,
-  prior: PolymorphPrior
+  /** Unused since forms stopped stamping (M2): accepted until the pack's own tests
+   *  drop the argument, then removed. */
+  legacyPrior?: PolymorphPrior
 ): { doc: CharacterDoc; tempHp: number; reshift: boolean } {
+  void legacyPrior;
   const rule = selfFormRule(spellId);
-  const active = doc.session.polymorphForm;
-  const reshift = rule.reshift && active?.spellId === spellId;
-  const body = reshift ? active.prior : prior;
-  const tempHp = reshift ? doc.session.hp.temp : Math.max(doc.session.hp.temp, beast.hp);
+  // A stamped form: give the build back first, then read the new form as a layer.
+  const base = doc.session.polymorphForm ? (dropBeastForm(doc) ?? doc) : doc;
+  const active = base.session.activeForm;
+  const reshift = rule.reshift && active?.sourceId === spellId;
+  const tempHpBefore = reshift
+    ? active.tempHpBefore
+    : (doc.session.polymorphForm?.prior.tempHp ?? doc.session.hp.temp);
+  const tempHp = reshift
+    ? base.session.hp.temp
+    : Math.max(base.session.hp.temp, beast.hp);
   return {
     doc: {
-      ...doc,
-      character: {
-        ...doc.character,
-        ...polymorphBuildPatch(beast, body, rule.keepsMind),
-      },
+      ...base,
       session: {
-        ...withTemp(doc, tempHp),
-        polymorphForm: {
+        ...withTemp(base, tempHp),
+        activeForm: {
+          sourceId: spellId,
           beastId: beast.id,
-          spellId,
-          prior: body,
           ...(rule.pool === "bestiary" ? { statBlock: beast } : {}),
+          tempHpBefore,
         },
       },
     },
@@ -74,17 +74,27 @@ export function assumeBeastForm(
   };
 }
 
-/** Drop the active Beast form: restore the caster's own body and Temporary HP. Null
- *  without a form. `tempHp` keeps what a form that ran out of its Temporary HP was
- *  left with, instead of the caster's own pool. */
+/** Drop the active Beast form and restore the caster's own Temporary HP. Null without
+ *  a form. `tempHp` keeps what a form that ran out of its Temporary HP was left with,
+ *  instead of the caster's own pool. A form a v0.25 client stamped also gets its
+ *  build back from `prior`. */
 export function dropBeastForm(doc: CharacterDoc, tempHp?: number): CharacterDoc | null {
+  const active = doc.session.activeForm;
+  if (active) {
+    const { activeForm: _dropped, ...restSession } = withTemp(
+      doc,
+      tempHp ?? active.tempHpBefore
+    );
+    void _dropped;
+    return { ...doc, session: restSession };
+  }
   const form = doc.session.polymorphForm;
   if (!form) return null;
-  const { polymorphForm: _dropped, ...restSession } = withTemp(
+  const { polymorphForm: _stamped, ...restSession } = withTemp(
     doc,
     tempHp ?? form.prior.tempHp
   );
-  void _dropped;
+  void _stamped;
   return {
     ...doc,
     character: { ...doc.character, ...revertBuildFromPrior(form.prior) },

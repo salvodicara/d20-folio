@@ -38,8 +38,11 @@ export function changeConcentration(
   const { readiedSpell, ...withoutReadied } = doc.session;
   const session = prev === spell || !readiedSpell ? doc.session : withoutReadied;
   const form = session.polymorphForm;
+  const layered = session.activeForm;
   // A self form ends when its sustaining spell is dropped or swapped (never on a
-  // self-assume, which sets concentration before stamping the form).
+  // self-assume, which sets concentration before recording the form).
+  const retractLayered =
+    layered !== undefined && prev === layered.sourceId && prev !== spell;
   const retractForm = form !== undefined && prev === form.spellId && prev !== spell;
   const revertBuild = retractForm ? revertBuildFromPrior(form.prior) : undefined;
   // The dropped spell's statuses end, and its own countdown with them.
@@ -74,6 +77,15 @@ export function changeConcentration(
               hp: {
                 ...session.hp,
                 temp: opts.retractedFormTempHp ?? form.prior.tempHp,
+              },
+            }
+          : {}),
+        ...(retractLayered
+          ? {
+              activeForm: undefined,
+              hp: {
+                ...session.hp,
+                temp: opts.retractedFormTempHp ?? layered.tempHpBefore,
               },
             }
           : {}),

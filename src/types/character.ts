@@ -1294,6 +1294,20 @@ export interface SessionState {
    * overwrote (AC/speed/scores/temp HP), so dropping the form restores them
    * exactly (override-first + undoable).
    */
+  /**
+   * The form the character has assumed (edge-case family M2): read when the sheet is
+   * derived, never stamped into the build (docs/architecture/2026-11-forms-layer.md).
+   * `sourceId` is the spell or feature whose `formRule` governs it; `tempHpBefore` is
+   * the Temporary HP the character had, restored when the form ends.
+   */
+  activeForm?: {
+    sourceId: string;
+    beastId: string;
+    statBlock?: BeastStatBlock;
+    tempHpBefore: number;
+  };
+  /** A form stamped into the build by a v0.25 client (kept readable until v0.25 is
+   *  retired; new forms are `activeForm`). */
   polymorphForm?: {
     beastId: string;
     spellId: string;

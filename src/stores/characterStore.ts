@@ -94,7 +94,7 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import { polymorphPriorSnapshot, selfFormRule } from "@/lib/polymorph";
+import { currentForm, selfFormRule } from "@/lib/polymorph";
 import type { BeastStatBlock } from "@/data/types";
 import { getSpellById } from "@/data/spells";
 import { getBeast } from "@/data/beasts";
@@ -1595,11 +1595,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // ends this way the spell ends OUTRIGHT — no Concentration maintenance save
     // is offered (below), and the Beast build is retracted (further below).
     // Shapechange is the exception: its form outlasts its Temporary HP.
-    const activeForm = character.session.polymorphForm;
+    const activeForm = currentForm(character.session);
     const formEnds =
-      activeForm !== undefined &&
+      activeForm !== null &&
       newTemp === 0 &&
-      selfFormRule(activeForm.spellId).endsWithoutTempHp;
+      selfFormRule(activeForm.sourceId).endsWithoutTempHp;
 
     // Concentration save uses the TOTAL damage taken — including the slice
     // absorbed by temp. 2024 PHB: "If you take damage while concentrating,
@@ -1611,7 +1611,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const concentrating = character.session.concentration;
     let nextPendingConcentrationSaves = get().combatPendingConcentrationSaves;
     // A form ends its Concentration only when that Concentration is what holds it.
-    const formHeldByConcentration = formEnds && concentrating === activeForm.spellId;
+    const formHeldByConcentration = formEnds && concentrating === activeForm.sourceId;
     const concentrationBreaks =
       concentrating !== "" && (newCurrent === 0 || formHeldByConcentration);
     if (concentrating !== "") {
@@ -2183,8 +2183,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         : {}),
     });
     const form = character.session.polymorphForm;
+    const layeredForm = character.session.activeForm;
     const { revertBuild, droppedActiveKeys } = change;
     const retractForm = revertBuild !== undefined;
+    const retractLayeredForm =
+      layeredForm !== undefined && change.doc.session.activeForm === undefined;
     const droppedActiveKeySet = new Set(droppedActiveKeys);
     const priorActive = character.session.activeFeatures ?? [];
     const priorActiveSpellCastLevels = character.session.activeSpellCastLevels;
@@ -2319,6 +2322,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
             ...(retractForm && form
               ? {
                   polymorphForm: form,
+                  hp: { ...cur.session.hp, temp: before.session.hp.temp },
+                }
+              : {}),
+            ...(retractLayeredForm
+              ? {
+                  activeForm: layeredForm,
                   hp: { ...cur.session.hp, temp: before.session.hp.temp },
                 }
               : {}),
@@ -3202,16 +3211,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    const active = character.session.polymorphForm;
-    const reshift = active?.spellId === spellId && selfFormRule(spellId).reshift;
+    const active = currentForm(character.session);
+    const reshift = active?.sourceId === spellId && selfFormRule(spellId).reshift;
     if (active && !reshift) return null; // already transformed
     const beast = statBlock?.id === beastId ? statBlock : getBeast(beastId);
     if (!beast) return null;
 
-    // Snapshot the caster's OWN fields for undo + drop-restore (the WHOLE prior
-    // doc is the atomic undo target — nothing below mutates it in place).
+    // The WHOLE prior doc is the atomic undo target (nothing below mutates it).
     const before = character;
-    const prior = polymorphPriorSnapshot(character);
 
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
@@ -3226,7 +3233,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Apply the Beast (AC/speeds/scores, Temp HP = the Beast's HP, max-wins, the
     // active form + snapshot); the whole-doc undo below restores the prior world
     // value by construction (the world rides the session).
-    const assumed = assumeBeastForm(cur, beast, spellId, prior);
+    const assumed = assumeBeastForm(cur, beast, spellId);
     set({ character: assumed.doc });
     if (!assumed.reshift)
       get().logEvent({ kind: "temp-hp-gain", amount: assumed.tempHp });
@@ -3238,7 +3245,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (get().readonly) return null;
     const { character } = get();
     if (!character) return null;
-    const form = character.session.polymorphForm;
+    const form = currentForm(character.session);
     if (!form) return null;
 
     const before = character; // undo = re-assume the exact same form
@@ -3248,7 +3255,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // concentration (only if it is still the form's spell — a prior swap would
     // already have retracted the form) then ends through the ONE concentration
     // teardown, so its held statuses, engine occurrence and log line end with it.
-    const clearConc = character.session.concentration === form.spellId;
+    const clearConc = character.session.concentration === form.sourceId;
     const dropped = dropBeastForm(character);
     if (!dropped) return null;
     set({ character: dropped });

@@ -35,7 +35,6 @@ import {
 } from "@/lib/play/magic-jar";
 import { longRestCharacter } from "@/lib/play/rests";
 import { healBy, setDeathSaves } from "@/lib/play/vitals";
-import { polymorphPriorSnapshot } from "@/lib/polymorph";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -379,16 +378,12 @@ describe("conformance · 10. death and revival", () => {
         hp: { ...MOCK_CHARACTER.session.hp, current: 40, temp: 0 },
       });
       const wolf = must(getBeast("wolf"));
-      const form = assumeBeastForm(
-        doc,
-        wolf,
-        "polymorph",
-        polymorphPriorSnapshot(doc)
-      ).doc;
+      const form = assumeBeastForm(doc, wolf, "polymorph").doc;
+      expect(form.session.activeForm?.beastId).toBe("wolf");
       // A hit larger than the form's temp HP ends the spell; the rest hits real HP.
       const hit = must(takeDamage(form, wolf.hp + 5));
       expect(hit.session.hp.current).toBe(35);
-      expect(hit.session.polymorphForm).toBeUndefined();
+      expect(hit.session.activeForm).toBeUndefined();
     }
   );
 

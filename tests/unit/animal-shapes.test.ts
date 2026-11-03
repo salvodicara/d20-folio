@@ -13,12 +13,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { BEASTS, getBeast } from "@/data/beasts";
 import { CREATURE_SIZE_ORDER, type BeastStatBlock } from "@/data/types";
-import {
-  polymorphPriorSnapshot,
-  resolvePolymorphForms,
-  selfFormRule,
-  isSelfFormSpell,
-} from "@/lib/polymorph";
+import { resolvePolymorphForms, selfFormRule, isSelfFormSpell } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { concentrationValue } from "@/lib/concentration";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -88,12 +83,7 @@ describe("assumeBeastForm with Animal Shapes (doc in, doc out)", () => {
     const doc = druid();
     const frozen = structuredClone(doc);
     const bear = beast("brown-bear");
-    const first = assumeBeastForm(
-      doc,
-      bear,
-      "animal-shapes",
-      polymorphPriorSnapshot(doc)
-    );
+    const first = assumeBeastForm(doc, bear, "animal-shapes");
     expect(doc).toEqual(frozen);
     expect(first.doc.character.abilityScores).toEqual({
       ...bear.abilityScores,
@@ -105,12 +95,7 @@ describe("assumeBeastForm with Animal Shapes (doc in, doc out)", () => {
     expect(first.doc.session.polymorphForm?.statBlock).toBeUndefined();
 
     const wolf = beast("dire-wolf");
-    const second = assumeBeastForm(
-      first.doc,
-      wolf,
-      "animal-shapes",
-      polymorphPriorSnapshot(first.doc)
-    );
+    const second = assumeBeastForm(first.doc, wolf, "animal-shapes");
     expect(second.reshift).toBe(true);
     expect(second.doc.session.hp.temp).toBe(bear.hp);
     expect(second.doc.character.acOverride).toBe(wolf.ac);
@@ -122,12 +107,7 @@ describe("assumeBeastForm with Animal Shapes (doc in, doc out)", () => {
 
   it("a depleted form drops with the Temp HP it was left with", () => {
     const doc = druid();
-    const formed = assumeBeastForm(
-      doc,
-      beast("brown-bear"),
-      "animal-shapes",
-      polymorphPriorSnapshot(doc)
-    ).doc;
+    const formed = assumeBeastForm(doc, beast("brown-bear"), "animal-shapes").doc;
     const depleted: CharacterDoc = {
       ...formed,
       session: { ...formed.session, hp: { ...formed.session.hp, temp: 0 } },

@@ -107,12 +107,7 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
     const doc = druid();
     const frozen = structuredClone(doc);
     const dragon = form("adult-red-dragon");
-    const { doc: next, tempHp } = assumeBeastForm(
-      doc,
-      dragon,
-      "shapechange",
-      polymorphPriorSnapshot(doc)
-    );
+    const { doc: next, tempHp } = assumeBeastForm(doc, dragon, "shapechange");
     expect(doc).toEqual(frozen); // never mutates its input
     expect(next.character.acOverride).toBe(dragon.ac);
     expect(next.character.speedOverride).toBe(dragon.speeds.walk);
@@ -136,12 +131,7 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
 
   it("a second form keeps the first form's Temp HP and the caster's original body", () => {
     const doc = druid();
-    const first = assumeBeastForm(
-      doc,
-      form("adult-red-dragon"),
-      "shapechange",
-      polymorphPriorSnapshot(doc)
-    ).doc;
+    const first = assumeBeastForm(doc, form("adult-red-dragon"), "shapechange").doc;
     // Hurt in dragon form: 30 of the Temp HP gone.
     const hurt: CharacterDoc = {
       ...first,
@@ -186,7 +176,7 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
   it("Polymorph still replaces all six scores", () => {
     const doc = druid(10);
     const ape = form("giant-ape");
-    const next = assumeBeastForm(doc, ape, "polymorph", polymorphPriorSnapshot(doc)).doc;
+    const next = assumeBeastForm(doc, ape, "polymorph").doc;
     expect(next.character.abilityScores).toEqual(ape.abilityScores);
     expect(next.session.polymorphForm?.statBlock).toBeUndefined();
   });
@@ -195,12 +185,7 @@ describe("assumeBeastForm with Shapechange (doc in, doc out)", () => {
 describe("a bestiary form on the sheet", () => {
   it("survives the session codec", () => {
     const doc = druid();
-    const next = assumeBeastForm(
-      doc,
-      form("adult-red-dragon"),
-      "shapechange",
-      polymorphPriorSnapshot(doc)
-    ).doc;
+    const next = assumeBeastForm(doc, form("adult-red-dragon"), "shapechange").doc;
     const round = stateToSession(
       JSON.parse(JSON.stringify(sessionToState(next.session))) as Record<string, unknown>
     );
@@ -209,12 +194,7 @@ describe("a bestiary form on the sheet", () => {
 
   it("the codec drops a malformed stat block but keeps the form, so it can still be dropped", () => {
     const doc = druid();
-    const next = assumeBeastForm(
-      doc,
-      form("adult-red-dragon"),
-      "shapechange",
-      polymorphPriorSnapshot(doc)
-    ).doc;
+    const next = assumeBeastForm(doc, form("adult-red-dragon"), "shapechange").doc;
     const state = JSON.parse(JSON.stringify(sessionToState(next.session))) as {
       polymorphForm: { statBlock: { ac: unknown } };
     };
@@ -227,12 +207,7 @@ describe("a bestiary form on the sheet", () => {
   it("puts the form's attacks on the Play board, named from the bestiary", () => {
     const doc = druid();
     const dragon = form("adult-red-dragon");
-    const next = assumeBeastForm(
-      doc,
-      dragon,
-      "shapechange",
-      polymorphPriorSnapshot(doc)
-    ).doc;
+    const next = assumeBeastForm(doc, dragon, "shapechange").doc;
     const rows = resolveActions(next).filter((r) => r.id.startsWith("beast-attack-"));
     expect(rows).toHaveLength(dragon.attacks.length);
     expect(rows[0]?.summary.attackBonus).toBe(dragon.attacks[0]?.toHit);

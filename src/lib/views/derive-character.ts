@@ -109,6 +109,8 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     concentrationConditions: session.concentrationConditions,
     encounterEffects: session.encounterEffects,
     sessionDefenses: session.sessionDefenses,
+    activeForm: session.activeForm,
+    polymorphForm: session.polymorphForm,
   };
   const aggregate = aggregateCharacterGrants(character, aggSession);
   const level = totalLevel(character);
@@ -133,8 +135,11 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
     return row ? (row.override ?? row.computed) : 10;
   };
 
+  // An assumed form's speeds replace the character's (M2), as stamping did.
   const walkingSpeedFt =
-    character.speedOverride ?? effectiveWalkingSpeedFt(doc, getEquipment);
+    aggregate.form?.walkFt ??
+    character.speedOverride ??
+    effectiveWalkingSpeedFt(doc, getEquipment);
   const derived = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
   // A hand-set range wins (override-first), exactly as the sheet's rail shows it.
   const senses = derived.senses.map((sense) => ({
@@ -143,7 +148,10 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
   }));
   const speeds = derived.speeds.map((speed) => ({
     ...speed,
-    rangeFt: character.speedOverrides?.[speed.kind] ?? speed.rangeFt,
+    rangeFt:
+      (aggregate.form ? aggregate.form.speeds[speed.kind as "fly"] : undefined) ??
+      character.speedOverrides?.[speed.kind] ??
+      speed.rangeFt,
   }));
 
   const initiativeBonus =

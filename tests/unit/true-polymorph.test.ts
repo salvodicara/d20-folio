@@ -12,13 +12,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { MONSTERS, getMonster } from "@/data/monsters";
 import { beastProjectionFromMonster } from "@/lib/beast-projection";
 import { resolveBestiaryForms } from "@/lib/bestiary-forms";
-import {
-  bestiaryNameKey,
-  polymorphPriorSnapshot,
-  selfFormRule,
-  isSelfFormSpell,
-} from "@/lib/polymorph";
+import { bestiaryNameKey, selfFormRule, isSelfFormSpell } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import type { BeastStatBlock } from "@/data/types";
@@ -92,18 +88,17 @@ describe("assumeBeastForm with True Polymorph (doc in, doc out)", () => {
     const doc = wizard();
     const frozen = structuredClone(doc);
     const golem = form("iron-golem");
-    const { doc: next, tempHp } = assumeBeastForm(
-      doc,
-      golem,
-      "true-polymorph",
-      polymorphPriorSnapshot(doc)
-    );
+    const { doc: next, tempHp } = assumeBeastForm(doc, golem, "true-polymorph");
     expect(doc).toEqual(frozen);
-    expect(next.character.abilityScores).toEqual(golem.abilityScores);
-    expect(next.character.acOverride).toBe(golem.ac);
+    const sheet = deriveCharacter(next);
+    expect(
+      Object.fromEntries(Object.entries(sheet.abilities).map(([id, a]) => [id, a.score]))
+    ).toEqual(golem.abilityScores);
+    expect(sheet.ac).toBe(golem.ac);
+    expect(next.character).toEqual(doc.character);
     expect(tempHp).toBe(golem.hp);
     expect(next.session.hp.current).toBe(40);
-    expect(next.session.polymorphForm?.statBlock).toEqual(golem);
+    expect(next.session.activeForm?.statBlock).toEqual(golem);
 
     const dropped = dropBeastForm(next);
     expect(dropped?.character.abilityScores).toEqual(doc.character.abilityScores);
@@ -124,11 +119,11 @@ describe("the store: True Polymorph through the Transform flow", () => {
     useCharacterStore.getState().assumePolymorphForm(golem.id, "true-polymorph", golem);
     let doc = useCharacterStore.getState().character;
     expect(doc?.session.concentration).toBe("true-polymorph");
-    expect(doc?.session.polymorphForm?.beastId).toBe("iron-golem");
+    expect(doc?.session.activeForm?.beastId).toBe("iron-golem");
 
     useCharacterStore.getState().applyDamage(golem.hp);
     doc = useCharacterStore.getState().character;
-    expect(doc?.session.polymorphForm).toBeUndefined();
+    expect(doc?.session.activeForm).toBeUndefined();
     expect(doc?.session.concentration).toBe("");
   });
 });

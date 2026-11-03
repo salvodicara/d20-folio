@@ -57,7 +57,6 @@ import { DEV_SCENARIO_PREFIX } from "@/lib/dev-scenario-id";
 import { slotUsageKey } from "@/lib/cast-options";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { getBeast } from "@/data/beasts";
-import { polymorphBuildPatch, polymorphPriorSnapshot } from "@/lib/polymorph";
 import { concentrationValue } from "@/lib/concentration";
 
 export interface ScenarioSpec {
@@ -151,10 +150,10 @@ export interface ScenarioSpec {
    */
   conditions?: string[];
   /**
-   * S7 — start ALREADY polymorphed into this Beast (id). Applies the SAME swap the
-   * store's `assumePolymorphForm` does: stamps the Beast's AC/speeds/scores into the
-   * override fields, sets Temp HP = the Beast's HP, engages Concentration on Polymorph,
-   * and records `session.polymorphForm`. For the transformed-cockpit + active-form-
+   * S7 — start ALREADY polymorphed into this Beast (id). Applies the SAME transition
+   * the store's `assumePolymorphForm` does: records `session.activeForm` (the sheet
+   * reads the Beast's AC/speeds/scores from it), sets Temp HP = the Beast's HP and
+   * engages Concentration on Polymorph. For the transformed-cockpit + active-form-
    * banner surfaces (the LeftHud reads the swapped AC/scores; the Spells tab shows the
    * banner). Ignored when the id isn't a catalogued Beast.
    */
@@ -194,16 +193,15 @@ export interface ScenarioSpec {
 function applyStartingForm(doc: CharacterDoc, beastId: string): CharacterDoc {
   const beast = getBeast(beastId);
   if (!beast) return doc;
-  const prior = polymorphPriorSnapshot(doc);
-  const patch = polymorphBuildPatch(beast, prior);
+  // What the store's `assumeBeastForm` records (M2: `activeForm`, read as a layer),
+  // without importing the play engine into this eager, script-safe module.
   return {
     ...doc,
-    character: { ...doc.character, ...patch },
     session: {
       ...doc.session,
       hp: { ...doc.session.hp, temp: Math.max(doc.session.hp.temp, beast.hp) },
       concentration: concentrationValue("polymorph"),
-      polymorphForm: { beastId, spellId: "polymorph", prior },
+      activeForm: { sourceId: "polymorph", beastId, tempHpBefore: doc.session.hp.temp },
     },
   };
 }

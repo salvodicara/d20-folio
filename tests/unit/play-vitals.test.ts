@@ -17,7 +17,6 @@ vi.mock("@/lib/firebase", () => ({
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
 import { addCondition, removeCondition } from "@/lib/play/conditions";
 import { BEASTS } from "@/data/beasts";
-import { polymorphPriorSnapshot } from "@/lib/polymorph";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { concentrationValue } from "@/lib/concentration";
 import { changeConcentration } from "@/lib/play/concentration";
@@ -228,7 +227,7 @@ describe("Beast forms", () => {
     const doc = wizard({ hp: { current: 20, temp: 3 } });
     const beast = BEASTS[0];
     if (!beast) throw new Error("no beast");
-    const assumed = assumeBeastForm(doc, beast, "polymorph", polymorphPriorSnapshot(doc));
+    const assumed = assumeBeastForm(doc, beast, "polymorph");
     expect(assumed.tempHp).toBe(Math.max(3, beast.hp));
     expect(assumed.doc.character.acOverride).toBe(beast.ac);
     expect(assumed.doc.session.polymorphForm?.beastId).toBe(beast.id);
@@ -283,8 +282,7 @@ describe("changeConcentration", () => {
         session: { ...doc.session, concentration: concentrationValue("polymorph") },
       },
       beast,
-      concentrationValue("polymorph"),
-      polymorphPriorSnapshot(doc)
+      concentrationValue("polymorph")
     ).doc;
     const cleared = changeConcentration(formed, "");
     expect(cleared.doc.session.polymorphForm).toBeUndefined();

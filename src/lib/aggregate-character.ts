@@ -66,6 +66,7 @@ import {
   effectiveSessionConditions,
   suppressedSessionConditions,
 } from "@/lib/effective-conditions";
+import { formFacts } from "@/lib/polymorph";
 import {
   sessionActiveKeys,
   worldStandingMaxHpDeltas,
@@ -112,6 +113,8 @@ export type AggregationSession = Pick<
       | "hpMaxReduction"
       | "fadingPenalties"
       | "sessionDefenses"
+      | "activeForm"
+      | "polymorphForm"
     >
   >;
 
@@ -121,6 +124,8 @@ export type CharacterAggregate = AggregatedGrants & {
   conditions: string[];
   /** Conditions the character has but is immune to (they return when it ends). */
   suppressedConditions: string[];
+  /** The assumed form the sheet reads its scores, AC and speeds from (M2), or null. */
+  form: ReturnType<typeof formFacts>;
 };
 
 /** The conditions in effect on the character: implied ones included, a condition it
@@ -184,11 +189,16 @@ export function aggregateCharacterGrants(
   );
   const immune = characterConditionImmunities(character, session, all);
   const suppressed = suppressedSessionConditions(conditionSession, immune);
+  const form = formFacts(
+    { activeForm: session.activeForm, polymorphForm: session.polymorphForm },
+    character.abilityScores
+  );
   if (suppressed.length === 0) {
     return {
       ...all,
       conditions: effectiveSessionConditions(conditionSession),
       suppressedConditions: [],
+      form,
     };
   }
   // A suppressed condition's rules don't apply: evaluate again without it.
@@ -197,6 +207,7 @@ export function aggregateCharacterGrants(
     ...aggregateWithConditions(character, session, conditions),
     conditions,
     suppressedConditions: suppressed,
+    form,
   };
 }
 
@@ -419,7 +430,11 @@ export function acFromAggregate(
   >,
   itemResources?: CharacterDoc["session"]["itemResources"]
 ): number {
-  return character.acOverride ?? computeCharacterAC(character, agg, itemResources);
+  // An assumed form's natural AC replaces the character's (M2), as stamping did.
+  const form = (agg as { form?: { ac: number } | null }).form;
+  return (
+    form?.ac ?? character.acOverride ?? computeCharacterAC(character, agg, itemResources)
+  );
 }
 
 /**

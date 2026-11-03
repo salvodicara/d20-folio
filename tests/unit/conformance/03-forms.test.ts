@@ -7,7 +7,6 @@ import { aggregateCharacterGrants, effectiveAC } from "@/lib/aggregate-character
 import { beastProjectionFromMonster } from "@/lib/beast-projection";
 import {
   polymorphBuildPatch,
-  polymorphPriorSnapshot,
   resolvePolymorphForms,
   selfFormRule,
 } from "@/lib/polymorph";
@@ -29,6 +28,7 @@ import { buildScenario } from "@/lib/dev-scenarios";
 import { buildSummonedMonsterGroups } from "@/lib/views/companion-row-view";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { makeCharacterDoc } from "../_helpers";
+import { deriveCharacter } from "@/lib/views/derive-character";
 import { rule } from "./rule";
 
 /** The id a Wild Shape form is assumed under (the druid feature). */
@@ -81,7 +81,7 @@ function wizard(level = 17): CharacterDoc {
 }
 
 function shift(doc: CharacterDoc, form: BeastStatBlock, spellId: string) {
-  return assumeBeastForm(doc, form, spellId, polymorphPriorSnapshot(doc));
+  return assumeBeastForm(doc, form, spellId);
 }
 
 describe("conformance · 3. forms and transformations", () => {
@@ -144,11 +144,12 @@ describe("conformance · 3. forms and transformations", () => {
     { category: 3, case: "Wild Shape at 0 HP", source: "FVTT#833", status: "M2" },
     () => {
       const { doc } = shift(druid(5), beast("wolf"), WILD_SHAPE);
+      expect(doc.session.activeForm?.beastId).toBe("wolf");
       const hit = takeDamage(withHp(doc, { current: 3, temp: 0 }), 10);
       // Your own HP drop to 0: Unconscious, so Incapacitated, so the form ends.
       expect(hit?.session.hp.current).toBe(0);
       expect(hit?.session.conditions).toContain("unconscious");
-      expect(hit?.session.polymorphForm).toBeUndefined();
+      expect(hit?.session.activeForm).toBeUndefined();
     }
   );
 
@@ -207,7 +208,10 @@ describe("conformance · 3. forms and transformations", () => {
       const bear = beast("brown-bear");
       const { doc: next, tempHp } = shift(wizard(9), bear, "polymorph");
       // The beast's statistics; your own HP; temp HP equal to the beast's HP.
-      expect(next.character.abilityScores).toEqual(bear.abilityScores);
+      const scores = deriveCharacter(next).abilities;
+      expect(
+        Object.fromEntries(Object.entries(scores).map(([id, a]) => [id, a.score]))
+      ).toEqual(bear.abilityScores);
       expect(next.session.hp.current).toBe(40);
       expect(tempHp).toBe(bear.hp);
       // The spell ends when those temp HP run out, and leftovers vanish with it.
@@ -251,7 +255,7 @@ describe("conformance · 3. forms and transformations", () => {
       // dispelled: the concentration ends, the form stays.
       const done = withSession(shifted, { effectTimers: {} });
       const after = changeConcentration(done, "").doc;
-      expect(after.session.polymorphForm?.beastId).toBe("iron-golem");
+      expect(after.session.activeForm?.beastId).toBe("iron-golem");
     }
   );
 
@@ -449,9 +453,9 @@ describe("conformance · 3. forms and transformations", () => {
       // the form, so the table can tell a Truesight observer what it sees.
       const doc = wizard(9);
       const { doc: shaped } = shift(doc, beast("brown-bear"), "polymorph");
-      expect(shaped.session.polymorphForm?.prior.abilityScores).toEqual(
-        doc.character.abilityScores
-      );
+      // The form is a layer: the build itself is the true form.
+      expect(shaped.session.activeForm?.beastId).toBe("brown-bear");
+      expect(shaped.character.abilityScores).toEqual(doc.character.abilityScores);
     }
   );
 });

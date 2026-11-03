@@ -94,7 +94,12 @@ import type {
 import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
 import { classFeatureIndex, getClassTable, pactSlotLevel } from "@/data/classes";
-import { formAttackNameKey, formNameKind, formStatBlock } from "@/lib/polymorph";
+import {
+  currentForm,
+  formAttackNameKey,
+  formNameKind,
+  formStatBlock,
+} from "@/lib/polymorph";
 import {
   totalLevel,
   classEntryLevel,
@@ -4756,7 +4761,7 @@ export function resolveBeastFormAttacks(
   session: CharacterDoc["session"],
   unpinnedSet: ReadonlySet<string>
 ): RawResolvedAction[] {
-  const form = session.polymorphForm;
+  const form = currentForm(session);
   if (!form) return [];
   const beast = formStatBlock(form);
   if (!beast) return [];

@@ -194,6 +194,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // S7 — the active Polymorph SELF-transformation. Enumerated so it round-trips a
     // reload mid-form; absent on every non-polymorph doc (back-compat, additive-only).
     polymorphForm: session.polymorphForm,
+    ...(session.activeForm ? { activeForm: session.activeForm } : {}),
     // Magic Jar's soul and the caster's own numbers it restores.
     ...(session.magicJar ? { magicJar: session.magicJar } : {}),
     // D37 — the HELD Bardic Inspiration die (a die an ally Bard gave this

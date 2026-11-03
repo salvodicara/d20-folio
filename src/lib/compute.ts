@@ -1908,11 +1908,13 @@ export function aggregateAbilityScores(
     readonly abilityScoreFloors: Partial<Record<AbilityCode, number>>;
     readonly itemAbilityScoreBonus?: Partial<Record<AbilityCode, number>>;
     readonly itemAbilityScoreCap?: Partial<Record<AbilityCode, number>>;
+    /** An assumed form (M2): its scores replace the character's own. */
+    readonly form?: { readonly abilityScores: Record<AbilityCode, number> } | null;
   },
   pins?: Partial<Record<AbilityCode, number>>
 ): Record<AbilityCode, number> {
   const scores = effectiveAbilityScores(
-    base,
+    aggregate.form?.abilityScores ?? base,
     aggregate.abilityScoreFloors,
     aggregate.itemAbilityScoreBonus,
     aggregate.itemAbilityScoreCap
