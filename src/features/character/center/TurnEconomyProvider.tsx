@@ -1364,6 +1364,7 @@ export function TurnEconomyProvider({
           slot: castEconomySlot(action.type, metamagicIds),
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
           ...(readies ? { readied: true as const } : {}),
+          ...paidSlotOf(spends),
         });
         applyOnCastRegains(action.spellId, expendedSlotLevel(opt, spends));
         if (readies) {
@@ -1500,6 +1501,17 @@ export function TurnEconomyProvider({
       paySpends(refunds);
       const live = useCharacterStore.getState();
       for (const id of logIds) live.removeLogEntry(id);
+    };
+  }
+
+  /** The slot a cast paid, for its log line (a Counterspell gives it back). */
+  function paidSlotOf(spends: ReadonlyArray<CastSpend>): {
+    paidSlot?: { level: number; pactMagic?: true };
+  } {
+    const slot = spends.find((spend) => spend.kind === "slot");
+    if (slot?.kind !== "slot") return {};
+    return {
+      paidSlot: { level: slot.level, ...(slot.pactMagic ? { pactMagic: true } : {}) },
     };
   }
 

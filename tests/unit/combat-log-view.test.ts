@@ -63,6 +63,12 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
     effect: "damage",
     slot: "action",
   },
+  "spell-countered": {
+    kind: "spell-countered",
+    action: { srd: { kind: "spell", key: "fireball", field: "name" } },
+    entryId: "cast-1",
+    level: 3,
+  },
   "reaction-use": {
     kind: "reaction-use",
     action: { srd: { kind: "spell", key: "counterspell", field: "name" } },

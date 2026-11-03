@@ -155,6 +155,17 @@ export function combatEventToPlayEvent(
         actor: me,
         ...(event.source ? { source: event.source } : {}),
       };
+    case "spell-countered":
+      // The countered cast keeps its slot: the slot comes back, Counterspell the cause.
+      return {
+        kind: "spell-slot",
+        level: event.level,
+        count: 1,
+        spent: false,
+        ...(event.pactMagic ? { pactMagic: true as const } : {}),
+        actor: me,
+        source: { srd: { kind: "spell", key: "counterspell", field: "name" } },
+      };
     case "inspiration-change":
       return {
         kind: "inspiration",

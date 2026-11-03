@@ -190,7 +190,7 @@ describe("conformance · 6. reactions and timing", () => {
       category: 6,
       case: "Counterspell 2024",
       source: "WIKI spell:counterspell",
-      status: "M12",
+      status: "works",
     },
     () => {
       // The 2024 facts: seen casting within 60 ft, a CON save, Somatic only.
@@ -200,7 +200,8 @@ describe("conformance · 6. reactions and timing", () => {
         components: { v: false, s: true, m: false },
       });
       // A countered spell wastes the action but not the slot: the cast's cost
-      // carries a refund on "countered".
+      // carries a refund on "countered" (the turn meter's "Countered" gives the slot
+      // back: countered-cast.test.tsx).
       const wizard = character({
         classId: "wizard",
         level: 5,

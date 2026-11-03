@@ -135,6 +135,7 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
     case "slot-regain":
     case "slot-spent":
     case "slot-restored":
+    case "spell-countered":
       return resolveLogStyle("spell-cast");
     case "exhaustion-change":
       return resolveLogStyle(
@@ -264,6 +265,11 @@ export function localizeCombatEvent(
       ? t("sessionReport.withSource", { line, source: resolveActionRef(source) })
       : line;
   switch (event.kind) {
+    case "spell-countered":
+      return t("combatLog.spellCountered", {
+        name: resolveActionRef(event.action),
+        level: event.level,
+      });
     case "action-use":
       // ATTACK-PIPS — an Extra-Attack swing appends its count ("… — attack 2 of 2").
       return withCheck(

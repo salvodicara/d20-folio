@@ -77,6 +77,18 @@ export type CombatEvent =
       check?: { skill: string; total: number; dc?: number };
       /** The cast readied the spell (2024 Ready): it goes off on its release. */
       readied?: true;
+      /** The spell slot the cast paid, so a Counterspell can give it back. An older
+       *  reader ignores it. */
+      paidSlot?: { level: number; pactMagic?: true };
+    }
+  /** The cast logged as `entryId` was countered: it kept its slot (Counterspell 2024),
+   *  the action stays spent. */
+  | {
+      kind: "spell-countered";
+      action: LocText;
+      entryId: string;
+      level: number;
+      pactMagic?: true;
     }
   /** A reaction was used (always the reaction slot → red). */
   | {
