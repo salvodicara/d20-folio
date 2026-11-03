@@ -48,7 +48,10 @@ Casting a non-Concentration summon records it at full HP with its cast level (`s
 
 1. Instances: the key and its codec, presence, cast, and the ends above. Find Steed and Find Familiar
    flip in the conformance suite.
-2. Revive (the catalogue's `revive`), `timer` and `damaged` ends, and Antimagic suppression.
+2. Revive (`revive-companion`: a fallen companion back with all its HP; the use pays the
+   catalogue's cost), the `damaged` end (Phantom Steed: any hit ends it), and Antimagic
+   (`suppressesMagic` on the held spell: the caster's spell summons show `suppressed`). Left: the
+   `timer` end, which needs the game clock (an owner choice: real or table time).
 3. Companion actions as Activities, once the rules session lands `CatalogueActivity`, plus the
    `speed-zero` and conditional-condition effects.
 

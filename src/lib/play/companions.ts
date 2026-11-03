@@ -40,8 +40,12 @@ export function setCompanionHp(
       [featureId]: { current: Math.max(0, current) },
     },
   };
-  if (current > 0) return next;
   const ends = summonEnds(featureId);
+  // An absent entry is full HP, so any value set from it is a hit.
+  const before = session.companionHp?.[featureId]?.current ?? Infinity;
+  // Phantom Steed: "the spell ends early if the steed takes any damage".
+  if (ends.includes("damaged") && current < before) return endSummon(next, featureId);
+  if (current > 0) return next;
   if (featureId === FIND_FAMILIAR_SPELL_ID) return dismissFamiliar(next) ?? next;
   if (ends.includes("0-hp:vanish")) return endSummon(next, featureId);
   if (ends.includes("0-hp:dies")) {
@@ -51,6 +55,21 @@ export function setCompanionHp(
     };
   }
   return next;
+}
+
+/** Bring a fallen companion back with all its Hit Points (the catalogue's `revive`:
+ *  Beast Master, Steel Defender). The cost is paid by the use that calls it. Null
+ *  when it hasn't fallen. */
+export function reviveCompanion(
+  session: SessionState,
+  sourceId: string
+): SessionState | null {
+  if (!session.summons?.[sourceId]?.fallen) return null;
+  return {
+    ...session,
+    summons: { ...session.summons, [sourceId]: {} },
+    companionHp: withoutHpOf(session.companionHp, sourceId),
+  };
 }
 
 /** The HP entries of a summon: its own and each creature's of a group. */

@@ -126,6 +126,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { max: numberSchema }
   ),
   conditionApplication: CONDITION_APPLICATION_SCHEMA,
+  suppressesMagic: TRUE,
   formRule: objectSchema(
     {
       endsWithoutTempHp: booleanSchema,
