@@ -138,6 +138,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
       crCap: numberSchema,
       excludedTypes: arraySchema(literals([...ALL_CREATURE_TYPES])),
       selfOnly: TRUE,
+      permanentWhenHeld: TRUE,
       sizeMax: literals([...CREATURE_SIZE_ORDER]),
     }
   ),
