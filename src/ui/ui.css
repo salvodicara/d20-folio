@@ -2122,6 +2122,7 @@
   --fs-ac: 34px;
   --fs-hp-big: 64px;
   --fs-title-phone: 26px;
+  --fs-name-m: 30px;
   --fs-hp-phone: 46px;
   --fs-phone-num: 22px;
   --frz-hi: #d9b878;
@@ -2406,7 +2407,7 @@
 }
 .fui .f-sheet .f-turn-t {
   font: 900 18px var(--font-label);
-  text-transform: none;
+  text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--white);
 }
@@ -2631,17 +2632,8 @@
   border-radius: var(--r-sm);
   color: var(--gold);
 }
-.fui .f-tb-who {
-  display: grid;
-  min-width: 0;
-}
-.fui .f-tb-who > b {
-  font: 700 var(--fs-md) / 1.2 var(--font-text);
-  color: var(--strong);
-}
-.fui .f-tb-who > span {
-  font-size: var(--fs-sm);
-  color: var(--muted);
+.fui .f-tb-gap {
+  flex: 1;
 }
 @media (max-width: 760px) {
   .fui .f-tb:has(> .f-tb-page:not(:empty)) {
@@ -2705,7 +2697,6 @@
     grid-template-areas:
       "medal name"
       "medal sub"
-      "medal acts2"
       "hp hp"
       "stats stats"
       "acts acts"
@@ -2728,9 +2719,9 @@
     align-self: start;
     font-size: var(--fs-sm);
   }
+  /* the phone header has no header buttons (prototype x-play-m) */
   .fui .f-sheet .f-char-acts {
-    grid-area: acts2;
-    margin-top: 8px;
+    display: none;
   }
   .fui .f-sheet .f-char-id > .f-chips {
     grid-area: chips;
@@ -2833,13 +2824,9 @@
 .fui .f-char-hp-acts > .f-btn:last-child .f-ic {
   color: var(--heal-icon);
 }
-.fui .f-secbar .f-ic {
-  width: 20px;
-  height: 20px;
-}
 .fui .f-secbar > button > .f-ic {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
 }
 /* laptop (prototype: D&D Beyond's model): the columns fill the screen and the centre
    scrolls inside its box, its filters held at the top */
@@ -2930,4 +2917,215 @@
   .fui .f-sheet dialog.f-menu .f-menu-it[aria-current] {
     border-color: var(--text);
   }
+}
+/* a state pill's count (prototype .sg .n): a small disc in the pill's colour */
+.fui .f-chip-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  background: var(--chip-n, var(--text));
+  color: var(--shade);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1;
+}
+.fui .f-chip[data-kind="buff"] {
+  --chip-n: var(--buff);
+}
+.fui .f-chip[data-kind="cond"] {
+  --chip-n: var(--cond);
+}
+.fui .f-tb-back > .f-ic {
+  width: 20px;
+  height: 20px;
+}
+/* phone turn strip (prototype x-play-m .bn): the resources on one line, «Fine turno» across */
+@media (max-width: 640px) {
+  .fui .f-sheet .f-turn-slots {
+    gap: 8px 12px;
+  }
+  .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+    width: 100%;
+  }
+}
+/* the turn strip on a laptop (prototype .bn): one line, «Fine turno» at its end; a
+   spent resource struck through */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-turn {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .fui .f-sheet .f-turn {
+    padding: 16px;
+  }
+  .fui .f-sheet .f-turn .f-turn-slots {
+    gap: 8px;
+  }
+  .fui .f-sheet .f-turn-t {
+    letter-spacing: 0.04em;
+  }
+  .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+    padding: 8px 12px;
+  }
+  .fui .f-sheet .f-turn-t,
+  .fui .f-sheet .f-turn-slots {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+    margin-left: auto;
+  }
+}
+.fui .f-sheet .f-turn-slots [data-spent] {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+.fui .f-sheet .f-turn-slots li {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .fui .f-sheet .f-turn-slots {
+    flex-wrap: nowrap;
+    gap: 12px;
+  }
+}
+/* «Iniziativa» on Play (prototype x-play .ir): one line per turn, the initiative in
+   gold, a round token, the name, how it looks on the right; the turn lit, the next dashed */
+.fui .f-sheet {
+  --ir-now-bg: #1d2a33;
+  --ir-now-glow: rgb(42 141 176 / 0.27);
+  --ir-next: rgb(255 255 255 / 0.13);
+  --ir-tag: rgb(232 220 196 / 0.4);
+  --ir-token-bg: #2a1a12;
+  --r-tag: 4px;
+}
+.fui .f-ir {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  font: 600 var(--fs-md) var(--font-text);
+  color: var(--text);
+}
+.fui .f-ir[data-current] {
+  border-color: var(--lit-hi);
+  background: var(--ir-now-bg);
+  box-shadow: 0 0 10px var(--ir-now-glow);
+}
+.fui .f-ir[data-next] {
+  border: 1px dashed var(--ir-next);
+}
+.fui .f-ir-i {
+  flex: none;
+  width: 28px;
+  text-align: center;
+  font: 700 var(--fs-lg) var(--font-label);
+  color: var(--gold);
+}
+.fui .f-ir-tok {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border: 2px solid var(--frame);
+  border-radius: 50%;
+  background: var(--ir-token-bg);
+  font: 700 var(--fs-sm) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-ir-tok > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fui .f-ir-n {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fui .f-ir-name {
+  min-width: 0;
+  text-wrap: balance;
+}
+.fui .f-ir-now {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border: 1px solid var(--ir-tag);
+  border-radius: var(--r-tag);
+  font: 700 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.fui .f-ir[data-current] .f-ir-s {
+  color: var(--text);
+}
+.fui .f-ir-s {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--phone-label);
+  white-space: nowrap;
+}
+/* a laptop narrower than the prototype's 1440: the side columns and the name give way */
+@media (min-width: 1281px) and (max-width: 1400px) {
+  .fui .f-sheet .f-play {
+    grid-template-columns: 290px minmax(0, 1fr) 320px;
+  }
+  .fui .f-sheet .f-play:has(> .f-right:empty) {
+    grid-template-columns: 290px minmax(0, 1fr);
+  }
+}
+@media (min-width: 801px) and (max-width: 1400px) {
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-name-m);
+  }
+}
+@media (max-width: 359px) {
+  .fui .f-sheet .f-turn-slots {
+    flex-wrap: wrap;
+  }
+}
+/* the narrowest phones: the name and the round title step down */
+@media (max-width: 400px) {
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-title-bar-m);
+  }
+  .fui .f-sheet .f-turn {
+    padding: 16px;
+  }
+  .fui .f-sheet .f-turn-t {
+    font-size: var(--fs-sm);
+  }
+}
+@media (max-width: 360px) {
+  .fui .f-sheet .f-char {
+    padding: 24px 16px;
+  }
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-lg);
+  }
+}
+/* the fight's own moves under the order (prototype .iact): a turn back, end the fight */
+.fui .f-ir-acts {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fui .f-sheet .f-ir-acts > .f-btn[data-kind="quiet"] {
+  color: var(--advice);
+  font-size: var(--fs-sm);
 }

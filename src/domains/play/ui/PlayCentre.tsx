@@ -185,7 +185,7 @@ function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
     : [
         t("combatChronicle.round", { n: round }),
         phase === "my-turn" || phase === "solo"
-          ? t("character.yourTurn")
+          ? t("play.turnMine")
           : (currentActorName ?? ""),
       ]
         .filter(Boolean)
@@ -211,7 +211,7 @@ function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
       </ul>
       {fight && (phase === "my-turn" || phase === "solo") && (
         <Button kind="primary" icon="u-next" onClick={handleEndTurn}>
-          {t("combat.endTurn")}
+          {t("play.endTurn")}
         </Button>
       )}
     </div>

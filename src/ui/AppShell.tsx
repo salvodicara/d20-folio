@@ -1,22 +1,14 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  type ReactNode,
-  type SubmitEvent,
-} from "react";
+import { useContext, useState, type ReactNode, type SubmitEvent } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router";
 import { Icon } from "./Icon";
 import { Menu } from "./Menu";
+import { PageBarSlot } from "./shell-bar";
 import type { IconName } from "./icon-names";
-
-/** The top bar's slot a page fills with its own phone bar (Play: ← · name · class). */
-const PageBarSlot = createContext<HTMLElement | null>(null);
 
 /** A page's own phone top bar: on phone it replaces the logo, ☰ and the account. */
 export function PhoneBar({ children }: { children: ReactNode }) {
-  const slot = useContext(PageBarSlot);
+  const { slot } = useContext(PageBarSlot);
   return slot ? createPortal(children, slot) : null;
 }
 
@@ -124,7 +116,9 @@ export function AppShell({
           </button>
         </div>
       </header>
-      <PageBarSlot.Provider value={pageBar}>{children}</PageBarSlot.Provider>
+      <PageBarSlot.Provider value={{ slot: pageBar, openMenu: () => setOpen("nav") }}>
+        {children}
+      </PageBarSlot.Provider>
       <footer className="f-foot">{footer}</footer>
       <Menu open={open === "nav"} onClose={close} title={menuLabel}>
         <nav className="f-menu-nav" aria-label={navLabel}>

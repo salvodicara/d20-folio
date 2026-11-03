@@ -4,7 +4,7 @@
  * the campaign's latest evening as the Diario tells it (blocks, times, signed notes),
  * with «Copia il resoconto». A character attached to no campaign shows neither.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
@@ -12,14 +12,19 @@ import { diaryBlocks } from "@/domains/chronicle/diary-view";
 import { ReportBlocks } from "@/domains/chronicle/ui/ReportBlocks";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { fightRows } from "@/domains/combat/fight-rows-view";
-import { FightLine } from "@/domains/combat/ui/FightLine";
+import { fightControls } from "@/domains/combat/fight-controls";
+import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
+import { playInitiativeRows } from "@/domains/play/play-initiative-view";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import { useSheetCombat } from "@/features/character/center/turn-state";
 import type { Locale } from "@/lib/locale";
 import { buildReport, foldSession } from "@/lib/session-log";
 import { renderSessionReport } from "@/lib/views/session-report-view";
+import { useAuthStore } from "@/stores/authStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";
-import { Button, Panel } from "@/ui";
+import { Button, Icon, initialOf, Panel } from "@/ui";
+import type { HpBandValue } from "@/lib/hp-band";
 
 export function PlayRight({
   campaign,
@@ -32,22 +37,125 @@ export function PlayRight({
 }) {
   return (
     <div className="f-stack f-right">
-      <Initiative locale={locale} />
+      <Initiative campaign={campaign} locale={locale} />
       {campaign && <Report campaign={campaign} locale={locale} onToast={onToast} />}
     </div>
   );
 }
 
-function Initiative({ locale }: { locale: Locale }) {
+function Initiative({
+  campaign,
+  locale,
+}: {
+  campaign: CampaignDoc | null;
+  locale: Locale;
+}) {
   const { t } = useTranslation();
   const fight = useSheetCombat();
+  const uid = useAuthStore((st) => st.user?.uid) ?? "";
+  // The time only feeds the "end the fight?" suggestion, which Play doesn't show.
+  const [now] = useState(Date.now);
+  const move = useFightMove((message, undo) =>
+    useToastStore
+      .getState()
+      .showToast({ message, duration: 5000, ...(undo ? { onUndo: undo } : {}) })
+  );
   if (!fight) return null;
-  const rows = fightRows(fight.view.rows, fight.view.currentId, {}, locale);
+  const isDm = campaign?.dmUid === uid;
+  // The combat lifecycle (owner, #505): anyone at the table steps a turn back and
+  // ends the fight, each with its undo; the same rule as the campaign's Scontro.
+  const controls = fightControls(
+    fight.encounter,
+    null,
+    {
+      uid,
+      isDm,
+      hasCharacter: true,
+      rolled: fight.initiativeRoll !== null,
+      missing: 0,
+    },
+    now
+  );
+  const current = fight.encounter.currentCombatantId;
+  const rows = playInitiativeRows(
+    fightRows(fight.view.rows, fight.view.currentId, {}, locale),
+    fight.myId
+  );
+  const portraitOf = (id: string) => {
+    const uid = fight.view.rows.find((r) => r.id === id)?.memberUid;
+    return uid ? campaign?.memberDetails[uid]?.character?.portraitUrl : undefined;
+  };
+  const bandLabel = (band: HpBandValue) =>
+    band === "down"
+      ? t("fight.down")
+      : band === "bloodied"
+        ? t("character.health.bloodied")
+        : t(`campaignHub.hpBand.${band}`);
   return (
     <Panel color="ini" title={t("fight.listTitle", { round: fight.round })}>
-      {rows.map((row) => (
-        <FightLine key={row.ids.join("+")} row={row} />
-      ))}
+      {rows.map((row) => {
+        const portrait = row.kind === "pc" ? portraitOf(row.ids[0] ?? "") : undefined;
+        return (
+          <div
+            key={row.key}
+            className="f-ir"
+            data-current={row.current || undefined}
+            data-next={row.next || undefined}
+          >
+            <span className="f-ir-i">{row.initiative ?? ""}</span>
+            <span className="f-ir-tok" aria-hidden="true">
+              {portrait ? (
+                <img src={portrait} alt="" />
+              ) : row.kind === "monster" ? (
+                <Icon name="g-combat" />
+              ) : (
+                initialOf(row.name)
+              )}
+            </span>
+            <span className="f-ir-n">
+              <span className="f-ir-name">
+                {row.name}
+                {row.count > 1 && `\u00a0×\u2060${String(row.count)}`}
+                {row.mine && `\u00a0${t("play.initiativeYou")}`}
+              </span>
+              {row.current && <span className="f-ir-now">{t("fight.now")}</span>}
+            </span>
+            <span className="f-ir-s">
+              {row.mustRoll
+                ? t("fight.mustRoll")
+                : row.state.kind === "hp"
+                  ? `${String(row.state.current)}/${String(row.state.max)}`
+                  : bandLabel(row.state.band)}
+            </span>
+          </div>
+        );
+      })}
+      {(controls.back || controls.end) && (
+        <div className="f-ir-acts">
+          {controls.back && (
+            <Button
+              kind="quiet"
+              icon="u-back"
+              onClick={() =>
+                move(
+                  moves.back(fight.campaignId, uid, isDm, current),
+                  t("fight.backDone")
+                )
+              }
+            >
+              {t("fight.back")}
+            </Button>
+          )}
+          {controls.end && (
+            <Button
+              wide
+              onClick={() => move(moves.end(fight.campaignId), t("fight.endDone"))}
+            >
+              {t("fight.end")}
+            </Button>
+          )}
+        </div>
+      )}
     </Panel>
   );
 }

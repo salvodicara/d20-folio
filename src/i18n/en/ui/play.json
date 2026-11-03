@@ -65,6 +65,9 @@
     "sections": {
       "resources": "Resources and skills",
       "fight": "Fight and report"
-    }
+    },
+    "endTurn": "End turn",
+    "turnMine": "Your turn",
+    "initiativeYou": "(you)"
   }
 }
