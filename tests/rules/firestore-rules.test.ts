@@ -198,6 +198,21 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
+  it("no member or DM may write the retired inline sharedNotes array", async () => {
+    const note = { id: "n1", title: "Old", content: "", updatedAt: new Date(0) };
+    for (const uid of ["member", "dm"]) {
+      const db = testEnv.authenticatedContext(uid).firestore();
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), { sharedNotes: [note] })
+      );
+    }
+    // The admin can still clear one (and a member's other edits still pass, above).
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(
+      updateDoc(doc(admin, "campaigns", "camp1"), { sharedNotes: [note] })
+    );
+  });
+
   it("a non-member is denied read and write", async () => {
     const db = testEnv.authenticatedContext("outsider").firestore();
     await assertFails(getDoc(doc(db, "campaigns", "camp1")));
