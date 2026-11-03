@@ -23,7 +23,8 @@ gone; the engine keeps the readers, because the v0.25.0 client and main still wr
 `mergeSharedNotes` (with `evictLegacyNote` and `CampaignDoc.sharedNotes`) are deleted.
 `backfill-attached-campaign --check`: 0 to backfill, 0 conflicts, 0 dangling, but 11/12 characters
 still carry the dead `dmReaders` / `campaignReaders` fields (nothing reads or writes them). The
-script stays: its phase 2 is the only tool that clears them, and running it is the owner's call.
+script stays: its phase 2 clears them as a v0.26.0 deploy step (snapshot, dry-run, apply,
+`--check`), and the script is deleted after.
 `migrate-item-resources` dry-run: 38 docs, 0 to change.
 
 If any check is not green, nothing is deleted for that script; we report the counts and the owner

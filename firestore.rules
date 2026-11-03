@@ -966,6 +966,14 @@ service cloud.firestore {
       // NOT flip it (it's neither roster nor memberDetails, so the guards above
       // would otherwise let a member toggle it). get(...,false) so a doc WITHOUT the
       // field (existing fixtures / pre-feature docs) validates on both sides.
+      // Shared notes live in the `notes` / `dmNotes` subcollections; the legacy
+      // inline `sharedNotes` array is retired (production holds none, 2026-11-03),
+      // so no member or DM may write it again. The admin may still clear one.
+      function sharedNotesUnchanged() {
+        return request.resource.data.get('sharedNotes', null)
+          == resource.data.get('sharedNotes', null);
+      }
+
       function joinsLockedUnchanged() {
         return request.resource.data.get('joinsLocked', false)
           == resource.data.get('joinsLocked', false);
@@ -1027,9 +1035,9 @@ service cloud.firestore {
       // checks; before, under 5). Keep new member checks OFF this path; see
       // docs/architecture/2026-11-simplify-core.md for the per-operation-document follow-up.
       allow update: if isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && combatEffectFieldsOnlyChanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged();
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged())
-        || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged() && memberStartsFight())
-        || isDm()
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && sharedNotesUnchanged())
+        || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged() && memberStartsFight() && sharedNotesUnchanged())
+        || (isDm() && sharedNotesUnchanged())
         || isAdmin()
         || isSelfJoin();
       allow delete: if isDm();
