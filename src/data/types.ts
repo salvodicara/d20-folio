@@ -789,6 +789,27 @@ export type CurrencyUnit = "gp" | "sp" | "cp" | "ep" | "pp";
  * rule 21); the note tells the player WHEN the damage recurs. Omit for a
  * once-at-cast spell.
  */
+/**
+ * The persistent area a spell leaves behind (edge-case M9; the engine keeps each
+ * live zone in `encounter.zones` with its cast level and a once-per-turn ledger per
+ * creature). Catalogue facts only:
+ *   - `anchor`: around the caster (Spirit Guardians), at a point (Spike Growth), or
+ *     at a point or on an object it then moves with (Darkness, Daylight);
+ *   - `spellLevel`: the spell's own level (the live zone stores the cast level), so
+ *     a light zone dispels another light zone of that level or lower;
+ *   - `light`: what it does to light (Darkness: magical darkness);
+ *   - `spares`: the caster chooses creatures it leaves alone;
+ *   - `triggers`: when a creature is affected (enter, start or end its turn there,
+ *     move within it). The area moving onto a creature counts as it entering.
+ */
+export interface SpellZone {
+  readonly anchor: "caster" | "point" | "point-or-object";
+  readonly spellLevel: number;
+  readonly light?: "dim" | "darkness" | "magical-darkness" | "bright";
+  readonly spares?: "chosen";
+  readonly triggers: ReadonlyArray<"enter" | "start-turn" | "end-turn" | "move-within">;
+}
+
 export type SpellRecurrence =
   | "on-enter-or-end-turn"
   | "on-enter-or-start-turn"
@@ -1251,6 +1272,8 @@ export interface SrdSpellData {
    * Omit for a once-at-cast spell.
    */
   recurrence?: SpellRecurrence;
+  /** The persistent area the spell leaves, when it leaves one (see {@link SpellZone}). */
+  zone?: SpellZone;
   /** False when casting only creates the persistent effect and its first damage/save
    * happens later (for example Flaming Sphere at end of turn). */
   resolveOnCast?: false;

@@ -230,6 +230,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    zone: {
+      anchor: "point-or-object",
+      spellLevel: 2,
+      light: "magical-darkness",
+      triggers: [],
+    },
     source: "SRD",
   },
   {
@@ -690,6 +696,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     // (2024); the beam is moved up to 60 ft with a Magic action on later turns.
     recurrence: "on-enter-or-end-turn",
     resolveOnCast: false,
+    zone: {
+      anchor: "point",
+      spellLevel: 2,
+      light: "dim",
+      triggers: ["enter", "end-turn"],
+    },
     source: "SRD",
   },
   {
@@ -882,6 +894,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     damageType: "piercing",
     damageDice: "2d4",
     resolveOnCast: false,
+    zone: { anchor: "point", spellLevel: 2, triggers: ["enter", "move-within"] },
     source: "SRD",
   },
   {

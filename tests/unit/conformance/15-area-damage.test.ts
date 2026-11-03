@@ -33,6 +33,13 @@ import type { DamageType } from "@/types/damage";
 import { makeCharacterDoc } from "../_helpers";
 import { rule } from "./rule";
 
+/** The zone runtime (edge-case M9), which lands with the engine's family. Until
+ *  then the data alone doesn't make these cases work. */
+async function zoneRuntime(): Promise<Record<string, unknown>> {
+  const id = "@/lib/zones";
+  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+}
+
 const ME = "pc-me";
 const FOES = ["monster-1", "monster-2"];
 
@@ -314,7 +321,8 @@ describe("conformance · 15. multi-target and area damage", () => {
       source: "enworld spirit-guardians",
       status: "M9",
     },
-    () => {
+    async () => {
+      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
       // A zone with spared creatures and a once-per-turn ledger per creature.
       const guardians = spells.find((s) => s.id === "spirit-guardians");
       expect(guardians?.recurrence).toBe("on-enter-or-end-turn");

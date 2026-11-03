@@ -586,6 +586,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
       targeting: { affinity: "enemy" },
       area: true,
     },
+    zone: { anchor: "point", spellLevel: 4, triggers: ["enter", "end-turn"] },
     source: "SRD",
   },
   {

@@ -33,6 +33,13 @@ import type {
 import { customInstanceId } from "../__helpers__/custom-items";
 import { rule } from "./rule";
 
+/** The zone runtime (edge-case M9), which lands with the engine's family. Until
+ *  then the data alone doesn't make these cases work. */
+async function zoneRuntime(): Promise<Record<string, unknown>> {
+  const id = "@/lib/zones";
+  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+}
+
 const withGrants = (grants: Grant[], exhaustion = 0): CharacterDoc => {
   const feature: CustomFeature = {
     custom: true,
@@ -198,7 +205,8 @@ describe("conformance · 11. movement and mounts", () => {
 
   rule(
     { category: 11, case: "Forced movement", source: "SAC; KIBBLES #17", status: "M9" },
-    () => {
+    async () => {
+      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
       // Being pushed into Spike Growth on someone else's turn triggers the area:
       // the area must be a persistent zone with a per-creature ledger.
       expect(JSON.stringify(getSpellById("spike-growth"))).toContain('"zone"');
@@ -340,7 +348,8 @@ describe("conformance · 11. movement and mounts", () => {
       source: "WIKI spell:conjure-animals",
       status: "M9",
     },
-    () => {
+    async () => {
+      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
       const pack = JSON.stringify(getSpellById("conjure-animals"));
       expect(pack).toContain('"recurrence"');
       // Moving the pack triggers each creature's save once per turn: a zone ledger.
