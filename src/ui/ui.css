@@ -607,14 +607,14 @@
   flex: 1;
 }
 /* the header's Hit Points open «Danni e cure» */
-.fui button.f-char-hp {
+.fui button.f-char-hp-open {
   border: 0;
   background: none;
   color: inherit;
   text-align: inherit;
   cursor: pointer;
 }
-.fui button.f-char-hp:hover .f-char-hp-v > b {
+.fui button.f-char-hp-open:hover .f-char-hp-v > b {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 6px;
@@ -2177,4 +2177,109 @@
 .fui .f-sheet .f-char-temp {
   font-weight: 700;
   color: #9fb7c9;
+}
+/* the header (prototype .hero): no box line, depth, the generated frame */
+.fui .f-sheet .f-char {
+  gap: 32px 24px;
+  padding: 36px 56px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 14px 30px rgb(0 0 0 / 0.55);
+}
+.fui .f-sheet .f-char::before,
+.fui .f-sheet .f-char::after {
+  display: none;
+}
+.fui .f-hero > .f-frz {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.fui .f-frz::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border: 1px solid #a98250;
+}
+.fui .f-frz-c {
+  position: absolute;
+  width: 55px;
+  height: 55px;
+}
+.fui .f-frz-c[data-at="tl"] {
+  left: -5px;
+  top: -5px;
+}
+.fui .f-frz-c[data-at="tr"] {
+  right: -5px;
+  top: -5px;
+  transform: scaleX(-1);
+}
+.fui .f-frz-c[data-at="bl"] {
+  left: -5px;
+  bottom: -5px;
+  transform: scaleY(-1);
+}
+.fui .f-frz-c[data-at="br"] {
+  right: -5px;
+  bottom: -5px;
+  transform: scale(-1);
+}
+.fui .f-sheet .f-char-id h1 {
+  font: 700 36px/1 var(--font-title);
+  color: var(--text);
+}
+/* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
+.fui .f-sheet .f-ability b {
+  font: 700 26px/1.15 var(--font-title);
+  color: var(--text);
+}
+.fui .f-sheet .f-ability dd span {
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.fui .f-sheet .f-badge-frame b {
+  font: 700 24px/1 var(--font-title);
+  color: var(--text);
+}
+.fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
+  transform: scale(1.25);
+  filter: drop-shadow(0 0 8px rgb(212 175 102 / 0.53));
+}
+.fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame b {
+  font-size: 34px;
+  color: var(--white);
+}
+.fui .f-sheet .f-badge[data-shape="shield"] > .f-lbl {
+  margin-top: 8px;
+  letter-spacing: 0.03em;
+}
+@media (min-width: 801px) {
+  .fui .f-sheet .f-char-hp {
+    width: 300px;
+  }
+}
+.fui .f-sheet .f-char-hp-v {
+  font: 700 22px var(--font-title);
+}
+.fui .f-sheet .f-char-hp-v b {
+  font-size: 64px;
+  text-shadow: 0 0 14px rgb(70 240 74 / 0.53);
+}
+.fui .f-char-hp-open {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+}
+.fui .f-char-hp-acts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.fui .f-sheet .f-char-hp-acts > .f-btn {
+  font-size: 15px;
+  border-color: var(--line-strong);
+  background: var(--line-soft);
+  box-shadow: none;
 }

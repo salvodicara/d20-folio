@@ -30,7 +30,7 @@ import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
-import { Chip, HpRing, StatBadge, Toast } from "@/ui";
+import { Button, Chip, HeroFrame, HpRing, StatBadge, Toast } from "@/ui";
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
@@ -158,17 +158,33 @@ function PlayHeader({
           <HpReadout view={view} />
         </div>
       ) : (
-        <button
-          type="button"
-          className="f-char-hp"
-          aria-haspopup="dialog"
-          aria-label={`${t("play.hp.title")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
-          onClick={() => setHpOpen(true)}
-        >
-          <HpReadout view={view} />
-        </button>
+        <div className="f-char-hp">
+          <button
+            type="button"
+            className="f-char-hp-open"
+            aria-haspopup="dialog"
+            aria-label={`${t("play.hp.title")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
+            onClick={() => setHpOpen(true)}
+          >
+            <HpReadout view={view} />
+          </button>
+          {/* D&D Beyond's two buttons under the Hit Points; both open «Danni e cure». */}
+          <div className="f-char-hp-acts">
+            <Button
+              icon="u-damage"
+              aria-haspopup="dialog"
+              onClick={() => setHpOpen(true)}
+            >
+              {t("mechanics.cast.optionDamage")}
+            </Button>
+            <Button icon="u-heal" aria-haspopup="dialog" onClick={() => setHpOpen(true)}>
+              {t("combat.heal")}
+            </Button>
+          </div>
+        </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
+      <HeroFrame />
     </section>
   );
 }

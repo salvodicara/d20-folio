@@ -6,6 +6,7 @@ export { Chip } from "./Chip";
 export { Choice } from "./Choice";
 export { Dialog } from "./Dialog";
 export { Field } from "./Field";
+export { HeroFrame } from "./HeroFrame";
 export { HpRing } from "./HpRing";
 export { Icon } from "./Icon";
 export { initialOf } from "./initial";
