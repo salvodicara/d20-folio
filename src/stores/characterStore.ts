@@ -94,7 +94,7 @@ import {
   potionTimerKey,
 } from "@/lib/smart-tracker";
 import { totalLevel } from "@/lib/classes";
-import { currentForm, selfFormRule } from "@/lib/polymorph";
+import { currentForm, formSourceKind, selfFormRule } from "@/lib/polymorph";
 import type { BeastStatBlock } from "@/data/types";
 import { getSpellById } from "@/data/spells";
 import { getBeast } from "@/data/beasts";
@@ -3213,7 +3213,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return null;
     const active = currentForm(character.session);
     const reshift = active?.sourceId === spellId && selfFormRule(spellId).reshift;
-    if (active && !reshift) return null; // already transformed
+    // Using a transforming feature again (Wild Shape) takes a new form in place.
+    const again =
+      active?.sourceId === spellId && formSourceKind(spellId) === "class-feature";
+    if (active && !reshift && !again) return null; // already transformed
     const beast = statBlock?.id === beastId ? statBlock : getBeast(beastId);
     if (!beast) return null;
 
@@ -3223,8 +3226,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Engage concentration by spell id THROUGH the store seam (clears any prior
     // spell's while-active chips + fires the swap toast, exactly like any cast).
     // A reshift is still the same spell: its Concentration simply continues. A
+<<<<<<< HEAD
     // spell without Concentration (Animal Shapes, 24 hours) leaves it untouched, and
     // so does a class feature (Wild Shape), which is no spell at all.
+=======
+    // spell without Concentration (Animal Shapes, 24 hours) leaves it untouched.
+    // A feature (Wild Shape) needs none.
+>>>>>>> dfe33467 (feat(rules): no spellcasting in a Wild Shape form, with its exceptions; the action opens the beast picker (edge-case M2, step 3b))
     const spell = getSpellById(spellId);
     if (!reshift && spell?.concentration) {
       get().setConcentration(concentrationValue(spellId));

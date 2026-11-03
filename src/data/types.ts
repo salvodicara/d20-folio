@@ -1053,6 +1053,9 @@ export interface SelfFormRule {
   crCapColumn?: string;
   /** Forms with a Fly Speed only from this level of the owning class (Wild Shape: 8). */
   flyFromLevel?: number;
+  /** The character can't cast spells in the form, except what a `form-casting`
+   *  grant allows (Wild Shape: Beast Spells, a Moon Druid's circle spells). */
+  blocksCasting?: boolean;
 }
 
 export interface SrdSpellData {

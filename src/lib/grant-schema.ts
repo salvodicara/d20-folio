@@ -290,6 +290,22 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     type: literalSchema("concentration-blocked"),
   }),
   /**
+   * Spells the character can still cast in a form that blocks casting (edge-case
+   * family M2): all of them, except those whose Material component has a cost or
+   * is consumed (Beast Spells), or only the source subclass's own spells (a Moon
+   * Druid's Circle of the Moon Spells).
+   */
+  "form-casting": objectSchema(
+    {
+      form: stringSchema,
+      type: literalSchema("form-casting"),
+    },
+    {
+      exceptCostlyMaterial: literalSchema(true),
+      spells: literalSchema("subclass"),
+    }
+  ),
+  /**
    * Taking damage can't break your Concentration on `spellId` (Relentless
    * Hunter on Hunter's Mark): damage queues no Concentration save while that
    * spell is the one held. Dropping to 0 HP still ends it.

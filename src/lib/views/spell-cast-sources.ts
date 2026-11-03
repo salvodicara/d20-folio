@@ -350,7 +350,7 @@ export function resolveSpellCastOptions(
   locale: Locale,
   labels: CastBadgeLabels
 ): CastLevelOption[] {
-  if (isSpellcastingBlocked(character)) return [];
+  if (isSpellcastingBlocked(character, spellId)) return [];
   if (baseLevel <= 0) return [];
   const ref = character.character.spells.find(
     (s) => !("custom" in s) && s.srdId === spellId

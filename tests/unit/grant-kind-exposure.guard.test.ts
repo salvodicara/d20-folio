@@ -357,6 +357,7 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "isSpellcastingBlocked",
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",
   },
+  "form-casting": { via: "formBlocksSpell", consumer: "src/lib/form-casting.ts" },
   "concentration-blocked": {
     via: "concentrationBlocked",
     consumer: "src/features/character/center/action-state-commit.ts",

@@ -64,8 +64,15 @@ never written into the build.
      armor (Moon's 13 + WIS, Barkskin's 17).
    - **Gates.** An assumed form lights its source as an active key, so "while in a Wild
      Shape form" is a `while-active` keyed to `druid-wild-shape`.
-   - **Next.** The casting block and its exceptions (Beast Spells; Moon's circle spells),
-     the picker and revert in both UIs, and moving the Moon grants onto the form's key.
+   - **Casting (done).** A rule with `blocksCasting` (Wild Shape) blocks spells in the
+     form. A `form-casting` grant lets some through: everything except a costly or
+     consumed Material component (Beast Spells), or the subclass's own spells (Moon).
+     The cast law is per spell: `isSpellcastingBlocked(doc, spellId)`. The Moon Druid's
+     in-form grants are keyed to `druid-wild-shape`.
+   - **Today's UI (done, minimal).** The Wild Shape action carries `assumesForm` and
+     opens the Transform picker with `formPool`. The Spells tab's form banner reverts with
+     undo. Using Wild Shape again takes a new form, and it never engages Concentration.
+     The new UI's picker and revert are lane A's.
 4. When no stored character holds a stamped form (a read-only survey), the stamping code and
    `prior` readers can go. That is an owner-gated cleanup, not part of this work.
 

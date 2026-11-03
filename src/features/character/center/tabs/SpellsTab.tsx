@@ -36,7 +36,7 @@ import { WizardSpellChoices } from "./WizardSpellChoices";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { SpellAddModal } from "@/components/sheet/SpellAddModal";
-import { formNameKind, currentForm } from "@/lib/polymorph";
+import { formNameKind, formSourceKind, currentForm } from "@/lib/polymorph";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { ensureSrdKind } from "@/i18n";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -368,7 +368,7 @@ export function SpellsTab() {
         t,
         spellId,
         localizeSrd(nameKind, formId, "name", locale),
-        localizeSrd("spell", spellId, "name", locale)
+        localizeSrd(formSourceKind(spellId), spellId, "name", locale)
       ),
     [t, locale]
   );

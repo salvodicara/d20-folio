@@ -258,6 +258,8 @@ export const DRUID_FEATURES: SrdClassFeatureData[] = [
       crCapColumn: "wildShapeMaxCR",
       flyFromLevel: 8,
       selfOnly: true,
+      // "You can't cast spells", though shapeshifting doesn't break Concentration.
+      blocksCasting: true,
     },
     mechanics: {
       tracker: {
@@ -384,6 +386,11 @@ export const DRUID_FEATURES: SrdClassFeatureData[] = [
     id: "druid-beast-spells",
     class: "druid",
     level: 18,
+    // In a Wild Shape form the druid can cast spells, except a spell whose Material
+    // component has a cost or is consumed.
+    grants: [
+      { type: "form-casting", form: "druid-wild-shape", exceptCostlyMaterial: true },
+    ],
     source: "SRD",
   },
   {

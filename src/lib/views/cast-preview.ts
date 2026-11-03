@@ -65,7 +65,7 @@ export function castPreview(
   // The routes leave a spent slot level out; the dialog shows it greyed ("none"), so
   // players see why they can't upcast there.
   const spent: CastLevelOption[] =
-    isSpellcastingBlocked(doc) || !canCastSpellWithSlots(doc, spellId)
+    isSpellcastingBlocked(doc, spellId) || !canCastSpellWithSlots(doc, spellId)
       ? []
       : doc.character.spellSlots
           .filter((slot) => slot.level >= spell.level)

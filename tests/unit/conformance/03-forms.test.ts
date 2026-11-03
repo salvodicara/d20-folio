@@ -22,8 +22,7 @@ import {
 } from "@/lib/play/magic-jar";
 import { longRestCharacter } from "@/lib/play/rests";
 import { gainTempHp } from "@/lib/play/vitals";
-import { ruleFlag } from "@/lib/rules";
-import { resolveTempHp } from "@/lib/smart-tracker";
+import { isSpellcastingBlocked, resolveTempHp } from "@/lib/smart-tracker";
 import { buildScenario } from "@/lib/dev-scenarios";
 import { buildSummonedMonsterGroups } from "@/lib/views/companion-row-view";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -158,16 +157,22 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "No spellcasting in beast form, with exceptions",
       source: "WIKI druid:main; WIKI druid:moon",
-      status: "M2",
+      status: "works",
     },
     () => {
-      const shaped = druid(5, { activeFeatures: [WILD_SHAPE] });
-      const agg = aggregateCharacterGrants(shaped.character, shaped.session);
-      expect(ruleFlag(agg.values, "block:spellcasting")).toBe(true);
-      // Beast Spells (level 18) lifts the block.
-      const archdruid = druid(18, { activeFeatures: [WILD_SHAPE] });
-      const late = aggregateCharacterGrants(archdruid.character, archdruid.session);
-      expect(ruleFlag(late.values, "block:spellcasting")).toBe(false);
+      const wolf = beast("wolf");
+      expect(isSpellcastingBlocked(druid(5), "moonbeam")).toBe(false);
+      const { doc: shaped } = shift(druid(5), wolf, WILD_SHAPE);
+      expect(isSpellcastingBlocked(shaped, "moonbeam")).toBe(true);
+      expect(isSpellcastingBlocked(shaped)).toBe(true);
+      // Beast Spells (level 18) lifts the block, except for a spell whose Material
+      // component has a cost or is consumed (Revivify's 300 GP diamond).
+      const { doc: late } = shift(druid(18), wolf, WILD_SHAPE);
+      expect(isSpellcastingBlocked(late, "moonbeam")).toBe(false);
+      expect(isSpellcastingBlocked(late, "revivify")).toBe(true);
+      // Leaving the form lifts the block.
+      const back = dropBeastForm(shaped);
+      expect(back && isSpellcastingBlocked(back, "moonbeam")).toBe(false);
     }
   );
 

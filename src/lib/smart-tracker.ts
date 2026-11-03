@@ -106,6 +106,7 @@ import {
   formNameKind,
   formStatBlock,
 } from "@/lib/polymorph";
+import { formBlocksSpell } from "@/lib/form-casting";
 import {
   totalLevel,
   classEntryLevel,
@@ -769,6 +770,9 @@ export interface ResolvedAction {
   type: ActionType;
   /** Source: "spell", "weapon", "feature" */
   source: "spell" | "weapon" | "feature";
+  /** Using it assumes a form through this source's form rule (Wild Shape, M2): the
+   *  Transform picker opens with it. */
+  assumesForm?: string;
   /** Spell level (null for non-spells) */
   spellLevel: number | null;
   /** SRD spell id (set for SRD spell actions) — lets the Combat page build the
@@ -5912,6 +5916,10 @@ function resolveFeatureActions(
         summary,
         costsSlot: false,
         costTracker: actionCostTracker,
+<<<<<<< HEAD
+=======
+        // A feature that transforms the character (Wild Shape) opens the form picker.
+>>>>>>> dfe33467 (feat(rules): no spellcasting in a Wild Shape form, with its exceptions; the action opens the beast picker (edge-case M2, step 3b))
         ...("formRule" in srdFeature && srdFeature.formRule
           ? { assumesForm: srdFeature.id }
           : {}),
@@ -8814,10 +8822,15 @@ export function resolveActiveStatesEndingOnRest(
   return [...ended];
 }
 
-/** One cast-law query shared by the Play and Spells surfaces. */
-export function isSpellcastingBlocked(character: CharacterDoc): boolean {
-  return aggregateCharacterGrants(character.character, character.session)
-    .spellcastingBlocked;
+/** One cast-law query shared by the Play and Spells surfaces: a state that blocks
+ *  casting (Rage), or a form that blocks `spellId` (Wild Shape, with its
+ *  exceptions; any spell when no id is given). */
+export function isSpellcastingBlocked(
+  character: CharacterDoc,
+  spellId?: string
+): boolean {
+  const aggregate = aggregateCharacterGrants(character.character, character.session);
+  return aggregate.spellcastingBlocked || formBlocksSpell(aggregate, spellId);
 }
 
 /**

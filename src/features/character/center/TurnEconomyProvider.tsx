@@ -335,7 +335,7 @@ export function TurnEconomyProvider({
     if (action.locksMovement && useCombatStore.getState().movementUsedFt > 0) {
       return t("combat.blockedReasonAlreadyMoved");
     }
-    if (action.source === "spell" && isSpellcastingBlocked(live)) {
+    if (action.source === "spell" && isSpellcastingBlocked(live, action.spellId)) {
       return t("combat.blockedReasonSpellcasting");
     }
     switch (resolveActiveStateBlocker(live, action)) {
