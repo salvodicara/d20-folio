@@ -8,7 +8,14 @@ import { describe, expect, it } from "vitest";
 import { spells } from "@/data/spells";
 import { trayForm } from "@/domains/play/tray-form";
 import { buildDevScenario } from "@/lib/dev-scenarios";
-import { damageTrayPlan, setAttackOutcome, toggleSaved } from "@/lib/play/damage-tray";
+import type { TrayTarget } from "@/components/shared/damage-tray-target";
+import { NO_DEFENSES } from "@/lib/damage-intake";
+import {
+  damageTrayPlan,
+  setAttackOutcome,
+  toggleSaved,
+  type DamageTrayPlan,
+} from "@/lib/play/damage-tray";
 import { resolveActions } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
 import { makeCharacterDoc } from "./_helpers";
@@ -130,5 +137,47 @@ describe("trayForm", () => {
     });
     expect(typo.rowInvalid).toEqual([false, true]);
     expect(typo.canApply).toBe(false);
+  });
+});
+
+// A hit of two damage types (a fire + radiant smite): one total per type, each meeting
+// the target's own defense (the engine's `rowAmountByType`).
+describe("trayForm — one total per damage type", () => {
+  const smite: DamageTrayPlan = {
+    effect: "damage",
+    damageTypes: ["fire", "radiant"],
+    targets: ["m1", "m2"],
+  };
+  const fireResistant: TrayTarget[] = [
+    { ...only(two[0]), defenses: { ...NO_DEFENSES, resistances: new Set(["fire"]) } },
+    only(two[1]),
+  ];
+  const typed = (fire: string, radiant: string) =>
+    trayForm({
+      plan: smite,
+      targets: fireResistant,
+      edited: none,
+      total: "",
+      rowTotals: none,
+      typeTotals: new Map([
+        ["fire", fire],
+        ["radiant", radiant],
+      ]),
+    });
+
+  it("each part meets each target's own defense", () => {
+    expect(typed("10", "10").amounts).toEqual([15, 20]);
+    expect(typed("10", "10").canApply).toBe(true);
+  });
+
+  it("a type left empty counts as none; nothing typed waits", () => {
+    expect(typed("10", "").amounts).toEqual([5, 10]);
+    expect(typed("", "").canApply).toBe(false);
+  });
+
+  it("a typo in one type blocks Apply and is marked", () => {
+    const form = typed("10", "x");
+    expect(form.typeInvalid).toEqual({ radiant: true });
+    expect(form.canApply).toBe(false);
   });
 });

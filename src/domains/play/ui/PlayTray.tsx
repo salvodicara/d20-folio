@@ -16,7 +16,7 @@ import {
   type DamageTrayOffer,
 } from "@/features/character/center/damage-tray-store";
 import { useTrayTargets } from "@/features/character/center/use-tray-targets";
-import { trayForm } from "@/domains/play/tray-form";
+import { totalsByType, trayForm } from "@/domains/play/tray-form";
 import type { Locale } from "@/lib/locale";
 import {
   ATTACK_OUTCOMES,
@@ -34,6 +34,7 @@ import {
 } from "@/lib/play/damage-tray";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import type { DamageType } from "@/types/damage";
 import { Button, Chip, Dialog, Field } from "@/ui";
 
 const MULTIPLIER: Record<TrayMultiplier, string> = {
@@ -62,7 +63,11 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
   const [rowTotals, setRowTotals] = useState<ReadonlyMap<string, string>>(
     () => new Map()
   );
-  const form = trayForm({ plan, targets, edited, total, rowTotals });
+  const [typeTotals, setTypeTotals] = useState<ReadonlyMap<DamageType, string>>(
+    () => new Map()
+  );
+  const form = trayForm({ plan, targets, edited, total, rowTotals, typeTotals });
+  const types = totalsByType(plan);
   const close = () => useDamageTrayStore.getState().close();
   const apply = () => {
     if (!form.canApply) return;
@@ -70,7 +75,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
       offer,
       targets,
       form.rows,
-      form.totals.map((v) => v ?? 0),
+      form.amounts.map((v) => v ?? 0),
       t
     );
     close();
@@ -95,24 +100,47 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
       }
     >
       <p className="f-help f-ask">{trayRubric(plan, t, locale)}</p>
-      {plan.effect !== null && !plan.perTarget && (
-        <div className="f-ask">
-          <Field
-            label={t("combat.damageTray.total")}
-            inputMode="tel"
-            autoComplete="off"
-            enterKeyHint="done"
-            autoFocus
-            value={total}
-            {...(form.totalInvalid
-              ? { error: t("play.trayTotalHint") }
-              : { help: t("play.trayTotalHint") })}
-            onChange={(e) => setTotal(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") apply();
-            }}
-          />
+      {types.length > 0 ? (
+        <div className="f-ask f-tray-types">
+          {types.map((type, i) => (
+            <Field
+              key={type}
+              label={t(`combat.damageTray.damageOf.${type}`)}
+              inputMode="tel"
+              autoComplete="off"
+              enterKeyHint="done"
+              autoFocus={i === 0}
+              value={typeTotals.get(type) ?? ""}
+              {...(form.typeInvalid[type] ? { error: t("play.trayTotalHint") } : {})}
+              onChange={(e) => setTypeTotals((m) => new Map(m).set(type, e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") apply();
+              }}
+            />
+          ))}
+          <p className="f-help">{t("play.trayTotalHint")}</p>
         </div>
+      ) : (
+        plan.effect !== null &&
+        !plan.perTarget && (
+          <div className="f-ask">
+            <Field
+              label={t("combat.damageTray.total")}
+              inputMode="tel"
+              autoComplete="off"
+              enterKeyHint="done"
+              autoFocus
+              value={total}
+              {...(form.totalInvalid
+                ? { error: t("play.trayTotalHint") }
+                : { help: t("play.trayTotalHint") })}
+              onChange={(e) => setTotal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") apply();
+              }}
+            />
+          </div>
+        )
       )}
       <div className="f-tray-rows f-ask">
         {targets.map((target, i) => {
@@ -234,7 +262,7 @@ function TrayTargetRow({
           ))}
         </div>
       )}
-      {(plan.save || row.defense || plan.conditions) && (
+      {(plan.save || row.defense || row.partDefense || plan.conditions) && (
         <div className="f-chips">
           {plan.save && (
             <Chip pressed={row.saved} onClick={() => onChange(toggleSaved(row, plan))}>
@@ -247,6 +275,20 @@ function TrayTargetRow({
               onClick={() => onChange(toggleDefense(row, plan))}
             >
               {t(`combat.damageTray.${row.defense}`)}
+            </Chip>
+          )}
+          {/* a hit of several types: one chip for the target's defenses, each named */}
+          {!row.defense && row.partDefense && (
+            <Chip
+              pressed={row.defenseOn}
+              onClick={() => onChange(toggleDefense(row, plan))}
+            >
+              {Object.entries(row.partDefense)
+                .map(
+                  ([type, defense]) =>
+                    `${t(`combat.damageTray.${defense}`)} · ${t(`srd.damage_${type}`)}`
+                )
+                .join(", ")}
             </Chip>
           )}
           {plan.conditions?.options.map((id) => (

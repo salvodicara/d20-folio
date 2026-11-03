@@ -14,7 +14,6 @@ import type { TFunction } from "i18next";
 import type { TrayTarget } from "@/components/shared/damage-tray-target";
 import type { LocText } from "@/lib/loc-text";
 import {
-  rowAmount,
   rowConditions,
   sharedAttackOutcome,
   trayOutcomeReceipts,
@@ -76,7 +75,8 @@ export function applyTray(
   offer: DamageTrayOffer,
   targets: ReadonlyArray<TrayTarget>,
   rows: ReadonlyArray<TrayRow>,
-  totals: ReadonlyArray<number>,
+  /** What each row applies, worked out by the tray (`rowAmount` / `rowAmountByType`). */
+  amounts: ReadonlyArray<number>,
   t: T
 ): void {
   const { plan, source } = offer;
@@ -86,7 +86,7 @@ export function applyTray(
       const row = rows[index];
       return {
         target,
-        amount: effect && row ? rowAmount(totals[index] ?? 0, row, plan) : 0,
+        amount: effect && row ? (amounts[index] ?? 0) : 0,
         conditions: row ? rowConditions(row) : [],
         ...(row?.attack ? { outcome: row.attack } : {}),
       };

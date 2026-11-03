@@ -575,6 +575,12 @@
 }
 
 /* ---------- the damage tray: one block per target ---------- */
+.fui .f-tray-types {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+.fui .f-tray-types > .f-help {
+  grid-column: 1 / -1;
+}
 .fui .f-tray-rows {
   display: grid;
   gap: 12px;
