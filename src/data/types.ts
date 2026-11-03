@@ -866,6 +866,8 @@ export interface CombatTargeting {
   maxTargets?: number;
   maxTargetsPerUpcast?: number;
   sharedAmount?: boolean;
+  /** A dead creature is a legal target too (Revivify, Raise Dead). */
+  includesDead?: true;
 }
 
 /** Authored target count for feature/homebrew actions. The runtime resolves the

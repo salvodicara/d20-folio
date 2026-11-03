@@ -172,6 +172,7 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
             maxTargets: target.count as number | undefined,
             maxTargetsPerUpcast: target.countPerUpcast,
             sharedAmount: target.sharedAmount,
+            includesDead: target.includesDead,
           }
         : undefined,
     area: target?.area,
@@ -343,6 +344,7 @@ function actionFromActivity(
             maxTargets: target.count,
             maxTargetsPerUpcast: target.countPerUpcast,
             sharedAmount: target.sharedAmount,
+            includesDead: target.includesDead,
           }
         : undefined,
     area: target?.area,

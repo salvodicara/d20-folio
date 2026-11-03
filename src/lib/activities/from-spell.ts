@@ -78,6 +78,7 @@ function spellTarget(spell: SrdSpellData): ActivityTarget | undefined {
     count: targeting?.maxTargets,
     countPerUpcast: targeting?.maxTargetsPerUpcast,
     sharedAmount: targeting?.sharedAmount ? (true as const) : undefined,
+    includesDead: targeting?.includesDead,
     primaryOnly: spell.primaryTargetOnly ? (true as const) : undefined,
   });
   return Object.keys(target).length > 0 ? target : undefined;

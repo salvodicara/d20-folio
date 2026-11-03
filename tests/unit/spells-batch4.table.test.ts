@@ -389,7 +389,7 @@ describe("spells batch 4: the cast's own consequence", () => {
       { kind: "revive", hitPoints, withinMinutes },
     ]);
     const spec = combatResolutionSpec(castOf(id));
-    expect(spec.revives).toEqual({ hitPoints });
+    expect(spec.revives).toEqual({ hitPoints, withinMinutes });
     expect(spec.targetAffinity).toBe("ally");
     expect(spec.targetCap).toBe(1);
     // A 40-HP creature comes back with 1 HP, or with all 40.

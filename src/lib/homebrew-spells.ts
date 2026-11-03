@@ -150,6 +150,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
       maxTargets: numberSchema,
       maxTargetsPerUpcast: numberSchema,
       sharedAmount: booleanSchema,
+      includesDead: literalSchema(true),
     }
   ),
   healingMode: literals(["full", "consumable"]),

@@ -12,6 +12,8 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 
 export type CastFollowUp =
   | { kind: "heal" | "temp-hp" | "damage"; targetId: string }
+  /** A dead target the spell brings back (Revivify). */
+  | { kind: "revive"; targetId: string }
   | {
       kind: "condition";
       targetId: string;
@@ -40,9 +42,12 @@ export function castFollowUps(
       : reachesMe && (spec.hasHealing || tempHp)
         ? [selfId]
         : [];
+  // A condition that lands by itself counts too when the target's Hit Points gate it
+  // (Power Word Stun: Stunned at 150 HP or fewer): the tray's branch decides.
   const application =
     spec.conditionApplication?.on === "failed-save" ||
-    spec.conditionApplication?.on === "hit"
+    spec.conditionApplication?.on === "hit" ||
+    (spec.conditionApplication?.on === "automatic" && spec.hitPointThreshold)
       ? spec.conditionApplication
       : undefined;
 
@@ -51,6 +56,9 @@ export function castFollowUps(
     ...(tempHp ? [{ kind: "temp-hp" as const, targetId }] : []),
     ...(spec.hasDamage && targets.length > 0
       ? [{ kind: "damage" as const, targetId }]
+      : []),
+    ...(spec.revives && targets.length > 0
+      ? [{ kind: "revive" as const, targetId }]
       : []),
     ...(application && targets.length > 0
       ? [

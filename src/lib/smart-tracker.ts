@@ -96,6 +96,7 @@ import type {
   SrdActionDef,
   ActionEconomyCategory,
   ResourceRecoveryTrigger,
+  SpellRevive,
 } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
@@ -387,7 +388,7 @@ export interface ActionSummary {
   /** Set the selected 0-HP creature's death-save state to Stable. */
   stabilize?: true;
   /** Return the selected dead creature to life with these Hit Points. */
-  revive?: { hitPoints: number | "all" };
+  revive?: SpellRevive;
   /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
   hitPointThreshold?: {
     max: number;
@@ -6968,7 +6969,14 @@ function resolveSpellActions(
     if (condition) summary.conditionApplication = condition.apply;
     if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
     const [revive] = effectsOfKind(activity, "revive");
-    if (revive) summary.revive = { hitPoints: revive.hitPoints };
+    if (revive) {
+      summary.revive = {
+        hitPoints: revive.hitPoints,
+        ...(revive.withinMinutes !== undefined
+          ? { withinMinutes: revive.withinMinutes }
+          : {}),
+      };
+    }
     const [threshold] = effectsOfKind(activity, "hp-threshold");
     if (threshold) {
       summary.hitPointThreshold = {
