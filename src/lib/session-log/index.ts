@@ -44,3 +44,4 @@ export {
   type FeedViewer,
 } from "./encounter-feed";
 export { combatEventToPlayEvent, createCharacterLogMirror } from "./character-events";
+export { entriesInvolving, involvesCombatant, sessionCreatureNames } from "./mine";

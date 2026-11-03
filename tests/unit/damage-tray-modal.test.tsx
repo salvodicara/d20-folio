@@ -15,7 +15,9 @@ vi.mock("@/lib/firebase", () => ({
   functions: {},
   storage: {},
 }));
-const writeCampaignCombatEffect = vi.fn(() => Promise.resolve({ before: {}, after: {} }));
+const { writeCampaignCombatEffect } = vi.hoisted(() => ({
+  writeCampaignCombatEffect: vi.fn(() => Promise.resolve({ before: {}, after: {} })),
+}));
 vi.mock("@/features/campaigns/campaign-io", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   writeCampaignCombatEffect,
