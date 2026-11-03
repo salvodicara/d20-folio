@@ -237,7 +237,7 @@ describe("conformance · 10. death and revival", () => {
     () => {
       const revivify = must(getSpellById("revivify"));
       expect(revivify.components).toMatchObject({ m: true, costGp: 300, consumed: true });
-      expect(revivify.revives).toEqual({ hitPoints: 1 });
+      expect(revivify.revives).toEqual({ hitPoints: 1, withinMinutes: 1 });
       expect(revivify.classes).toEqual(
         expect.arrayContaining(["cleric", "druid", "paladin", "ranger"])
       );

@@ -377,15 +377,16 @@ describe("spells batch 4: the cast's own consequence", () => {
   });
 
   it.each([
-    ["revivify", 1],
-    ["raise-dead", 1],
-    ["resurrection", "all"],
-    ["true-resurrection", "all"],
-  ] as const)("%s revives with %s Hit Point(s)", (id, hitPoints) => {
+    ["revivify", 1, 1],
+    ["raise-dead", 1, 14400],
+    ["resurrection", "all", 52560000],
+    ["true-resurrection", "all", 105120000],
+  ] as const)("%s revives with %s Hit Point(s)", (id, hitPoints, withinMinutes) => {
     const spell = getSpellById(id);
     if (!spell) throw new Error("no spell");
+    // Within a minute, ten days, a century, two centuries of game time.
     expect(translateSpell(spell).activity.effects).toEqual([
-      { kind: "revive", hitPoints },
+      { kind: "revive", hitPoints, withinMinutes },
     ]);
     const spec = combatResolutionSpec(castOf(id));
     expect(spec.revives).toEqual({ hitPoints });
