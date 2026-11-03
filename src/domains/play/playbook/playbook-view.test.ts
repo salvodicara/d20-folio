@@ -76,6 +76,8 @@ describe("playbookView", () => {
       strong: "riposo breve",
       after: " ti porterebbe al massimo.",
       why: "Ti restano 5 Dadi Vita su 5.",
+      // its bold words open the Short Rest itself (prototype x-play)
+      opens: "short-rest",
     });
   });
 

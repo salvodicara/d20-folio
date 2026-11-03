@@ -106,7 +106,16 @@ function usePlayTurn(doc: CharacterDoc): ActionTurnState {
   );
 }
 
-export function PlayCentre({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
+export function PlayCentre({
+  doc,
+  locale,
+  onShortRest,
+}: {
+  doc: CharacterDoc;
+  locale: Locale;
+  /** Opens the Short Rest (the advice line's «riposo breve»); absent read-only. */
+  onShortRest?: () => void;
+}) {
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>("all");
   const turn = usePlayTurn(doc);
@@ -126,7 +135,7 @@ export function PlayCentre({ doc, locale }: { doc: CharacterDoc; locale: Locale 
       />
       <div className="f-pnb f-stack">
         <TurnStrip doc={doc} locale={locale} />
-        <Playbook doc={doc} locale={locale} />
+        <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
         <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
           {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
             <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
@@ -222,7 +231,15 @@ function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   );
 }
 
-function Playbook({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
+function Playbook({
+  doc,
+  locale,
+  onShortRest,
+}: {
+  doc: CharacterDoc;
+  locale: Locale;
+  onShortRest?: () => void;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const fight = useSheetCombat();
@@ -248,9 +265,21 @@ function Playbook({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
       <ul className="f-playbook-lines">
         {lines.map((l) => (
           <li key={l.stepId} data-status={l.status}>
-            <span>
+            <span data-prose="">
               {l.before}
-              {l.strong && <b>{l.strong}</b>}
+              {l.strong &&
+                (l.opens === "short-rest" && onShortRest ? (
+                  <button
+                    type="button"
+                    className="f-link"
+                    aria-haspopup="dialog"
+                    onClick={onShortRest}
+                  >
+                    {l.strong}
+                  </button>
+                ) : (
+                  <b>{l.strong}</b>
+                ))}
               {l.after}
             </span>
             {open && l.why && <span className="f-tl-by">{l.why}</span>}

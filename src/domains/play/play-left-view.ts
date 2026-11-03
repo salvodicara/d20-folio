@@ -11,6 +11,7 @@ import {
   deriveSavesAndChecks,
   type SaveCheckSkillRow,
 } from "@/lib/views/saves-checks-view";
+import type { SheetEvent } from "@/lib/play/sheet-events";
 import type { CharacterDoc } from "@/types/character";
 
 export interface PlayResource {
@@ -62,4 +63,18 @@ export function playLeftView(doc: CharacterDoc, locale: Locale): PlayLeftView {
     topSkills: ranked.slice(0, TOP),
     allSkills: skills,
   };
+}
+
+/** What tapping a pool spends (prototype x-play «Tocca per spendere»): one spell slot
+ *  of its level, or one use of a class resource, while something is left. Hit Point
+ *  Dice go through a Short Rest and an item's charges through its own roll. */
+export function resourceSpend(
+  r: PlayResource
+): Extract<SheetEvent, { kind: "spend-slot" | "spend-tracker" }> | null {
+  if (r.left <= 0) return null;
+  if (r.row.kind === "spell-slot")
+    return { kind: "spend-slot", level: r.row.level, pactMagic: r.row.pact };
+  if (r.row.kind === "class-resource")
+    return { kind: "spend-tracker", trackerId: r.row.id, amount: 1 };
+  return null;
 }

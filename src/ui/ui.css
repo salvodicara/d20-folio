@@ -3211,3 +3211,30 @@
 .fui .f-rest-dice > .f-choice[data-tile] {
   min-height: 56px;
 }
+/* a link inside a sentence (the advice line's «riposo breve»): the words, underlined */
+.fui .f-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  color: var(--strong);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+/* a pool that spends on a tap: the row is the button (prototype «Tocca per spendere») */
+.fui button.f-res {
+  width: 100%;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fui button.f-res:hover {
+  background-color: var(--hover);
+}

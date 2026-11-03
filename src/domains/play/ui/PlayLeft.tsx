@@ -6,10 +6,17 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import { playLeftView, type PlayResource } from "@/domains/play/play-left-view";
+import {
+  playLeftView,
+  resourceSpend,
+  type PlayResource,
+} from "@/domains/play/play-left-view";
+import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { hitDiceLabel, hitDicePool } from "@/lib/play/hit-dice";
+import { useCharacterStore } from "@/stores/characterStore";
+import { registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Panel } from "@/ui";
 
@@ -28,6 +35,7 @@ export function PlayLeft({
 }) {
   const { t } = useTranslation();
   const view = playLeftView(doc, locale);
+  const readonly = useSheetReadonly();
   const [all, setAll] = useState(false);
   const skills = all ? view.allSkills : view.topSkills;
   const label = (r: PlayResource) => {
@@ -47,19 +55,56 @@ export function PlayLeft({
       {rests && <div className="f-rest-phone">{rests}</div>}
       {view.resources.length > 0 && (
         <Panel color="res" title={t("character.hud.resources")}>
-          {view.resources.map((r) => (
-            <div key={r.id} className="f-res" data-kind={r.row.kind}>
-              <span className="f-res-t">{label(r)}</span>
-              {r.max <= MAX_PIPS && (
-                <span className="f-pips" aria-hidden="true">
-                  {Array.from({ length: r.max }, (_, i) => (
-                    <i key={i} data-on={i < r.left || undefined} />
-                  ))}
-                </span>
-              )}
-              <span className="f-res-n">{`${String(r.left)}/${String(r.max)}`}</span>
-            </div>
-          ))}
+          {view.resources.map((r) => {
+            const body = (
+              <>
+                <span className="f-res-t">{label(r)}</span>
+                {r.max <= MAX_PIPS && (
+                  <span className="f-pips" aria-hidden="true">
+                    {Array.from({ length: r.max }, (_, i) => (
+                      <i key={i} data-on={i < r.left || undefined} />
+                    ))}
+                  </span>
+                )}
+                <span className="f-res-n">{`${String(r.left)}/${String(r.max)}`}</span>
+              </>
+            );
+            // A pool with something left spends one on a tap (prototype «Tocca per
+            // spendere»), with its undo toast.
+            const spend = readonly ? null : resourceSpend(r);
+            return spend ? (
+              <button
+                key={r.id}
+                type="button"
+                className="f-res"
+                data-kind={r.row.kind}
+                aria-label={t("play.res.spendLabel", {
+                  name: label(r),
+                  left: r.left,
+                  max: r.max,
+                })}
+                onClick={() =>
+                  registerUndoableToast(
+                    {
+                      message: t("play.res.spent", {
+                        name: label(r),
+                        left: r.left - 1,
+                        max: r.max,
+                      }),
+                    },
+                    () => useCharacterStore.getState().dispatch(spend),
+                    { turnScoped: false }
+                  )
+                }
+              >
+                {body}
+              </button>
+            ) : (
+              <div key={r.id} className="f-res" data-kind={r.row.kind}>
+                {body}
+              </div>
+            );
+          })}
         </Panel>
       )}
       <Panel color="abi" title={t("character.skills")}>
