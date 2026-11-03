@@ -31,6 +31,7 @@ import type { Locale } from "@/lib/locale";
 import type { EnchantOptionVM, WeaponRowVM } from "@/lib/views/inventory-view";
 import { DAMAGE_TYPES } from "@/types/damage";
 import { QuantityEditor } from "./QuantityEditor";
+import { SellButton } from "./SellButton";
 import { damageTypeAbbr, damageVerdictOutcome } from "./inventory-card-helpers";
 
 /** Field-update value union shared by the inventory edit handlers. */
@@ -39,6 +40,8 @@ export type ItemFieldValue = string | number | boolean | null;
 export interface WeaponCardCallbacks {
   onToggle: (id: string, open: boolean) => void;
   onDelete: (vm: WeaponRowVM) => void;
+  /** Sell one at half its list price (priced catalogue rows only). */
+  onSell?: (vm: WeaponRowVM) => void;
   onUpdateField: (idx: number, field: string, value: ItemFieldValue) => void;
 }
 
@@ -62,6 +65,7 @@ export const WeaponCard = memo(function WeaponCard({
   enchantOptions,
   onToggle,
   onDelete,
+  onSell,
   onUpdateField,
 }: WeaponCardProps) {
   const { t } = useTranslation();
@@ -355,6 +359,7 @@ export const WeaponCard = memo(function WeaponCard({
               />
             </div>
           )}
+          {onSell && <SellButton cp={vm.saleCp} onSell={() => onSell(vm)} />}
           {isPlay && vm.notes && <p className="uc-note">{vm.notes}</p>}
         </>
       )}

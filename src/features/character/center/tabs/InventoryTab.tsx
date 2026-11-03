@@ -17,7 +17,7 @@
  * theme-aware metal tokens. Honest blanks throughout; bilingual EN + IT.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -51,6 +51,9 @@ import { ArmorCard } from "./inventory/ArmorCard";
 import { GearCard } from "./inventory/GearCard";
 import { inventoryItemDisplayName } from "./inventory/inventory-card-helpers";
 import { useItemResourceSpend } from "@/features/character/useItemResourceSpend";
+import { sellItem } from "@/features/character/center/purchase-offer";
+import { armorCategoryOf, wearArmor } from "@/lib/play/armor-donning";
+import { showArmorToast } from "@/features/character/center/armor-toast";
 
 type CurrencyKey = "gp" | "sp" | "cp" | "pp" | "ep";
 // Order = highest→lowest denomination, ep last. The displayed abbreviation is
@@ -341,6 +344,16 @@ export function InventoryTab() {
     [t]
   );
 
+  // Selling one at half price (SRD): undoable, logged (`purchase-offer`).
+  const handleSellWeapon = useCallback(
+    (weapon: WeaponRowVM) => sellItem("weapons", weapon.idx, weapon.name, t),
+    [t]
+  );
+  const handleSellEquipment = useCallback(
+    (item: ItemRowVM) => sellItem("equipment", item.idx, item.name, t),
+    [t]
+  );
+
   const updateWeaponField = useCallback(
     (idx: number, field: string, value: ItemFieldValue) => {
       const store = useCharacterStore.getState();
@@ -467,35 +480,64 @@ export function InventoryTab() {
     });
   }, []);
 
-  const toggleEquip = useCallback((idx: number) => {
-    const store = useCharacterStore.getState();
-    const char = store.character;
-    if (!char) return;
-    const equipCopy = [...char.character.equipment];
-    const ref = equipCopy[idx];
-    if (!ref) return;
-    equipCopy[idx] = { ...ref, equipped: !(ref.equipped ?? false) };
-    const effectiveEquipment = effectiveEquipmentForItemResources(
-      equipCopy,
-      char.session.itemResources
-    );
-    const newAC = computeAC(
-      effectiveEquipment,
-      char.character.abilityScores,
-      getEquipment,
-      char.character.features
-    );
-    const nextCharacter = {
-      ...char,
-      character: { ...char.character, equipment: equipCopy, ac: newAC },
-    };
-    store.setCharacter(nextCharacter);
-    if (isHeavyArmorEquipped(effectiveEquipment, getEquipment)) {
-      for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
-        store.setActiveFeature(key, false);
+  // The latest view for the equip toggle's armor-swap line (read at tap time, so the
+  // toggle keeps a stable identity and the memoized cards do not re-render).
+  const viewRef = useRef(view);
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  const toggleEquip = useCallback(
+    (idx: number, name?: string) => {
+      const store = useCharacterStore.getState();
+      const char = store.character;
+      if (!char) return;
+      const ref = char.character.equipment[idx];
+      if (!ref) return;
+      const equipping = !(ref.equipped ?? false);
+      // One body armor at a time: putting armor on takes the worn one off.
+      const { equipment: equipCopy, doffed } = wearArmor(
+        char.character.equipment,
+        idx,
+        getEquipment
+      );
+      const effectiveEquipment = effectiveEquipmentForItemResources(
+        equipCopy,
+        char.session.itemResources
+      );
+      const newAC = computeAC(
+        effectiveEquipment,
+        char.character.abilityScores,
+        getEquipment,
+        char.character.features
+      );
+      const nextCharacter = {
+        ...char,
+        character: { ...char.character, equipment: equipCopy, ac: newAC },
+      };
+      store.setCharacter(nextCharacter);
+      if (isHeavyArmorEquipped(effectiveEquipment, getEquipment)) {
+        for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
+          store.setActiveFeature(key, false);
+        }
       }
-    }
-  }, []);
+      // SRD don / doff time as the reason line, ONE toast per tap (a swap reads as one
+      // change). Never blocks: the toggle above already applied (override everywhere).
+      const onCategory = armorCategoryOf(ref, getEquipment);
+      const offIdx = doffed[0];
+      const offRef = offIdx === undefined ? undefined : char.character.equipment[offIdx];
+      const offCategory = offRef && armorCategoryOf(offRef, getEquipment);
+      const offName = viewRef.current?.armor.find((r) => r.idx === offIdx)?.name;
+      if (onCategory && name) {
+        showArmorToast(
+          t,
+          { name, category: onCategory, equipping },
+          offCategory && offName ? { name: offName, category: offCategory } : undefined
+        );
+      }
+    },
+    [t]
+  );
 
   const updateCurrency = useCallback((key: CurrencyKey, value: number) => {
     const store = useCharacterStore.getState();
@@ -580,6 +622,7 @@ export function InventoryTab() {
                 enchantOptions={view.enchantOptions}
                 onToggle={onToggle}
                 onDelete={handleDeleteWeapon}
+                onSell={handleSellWeapon}
                 onUpdateField={updateWeaponField}
               />
             ))}
@@ -602,6 +645,7 @@ export function InventoryTab() {
                 locale={locale}
                 onToggle={(_, open) => onToggle(item.rowId, open)}
                 onDelete={handleDeleteEquipment}
+                onSell={handleSellEquipment}
                 onUpdateField={updateEquipmentField}
                 onToggleEquip={toggleEquip}
                 onToggleAttune={toggleAttunement}
@@ -628,6 +672,7 @@ export function InventoryTab() {
                 locale={locale}
                 onToggle={(_, open) => onToggle(item.rowId, open)}
                 onDelete={handleDeleteEquipment}
+                onSell={handleSellEquipment}
                 onUpdateField={updateEquipmentField}
                 onUse={handleUseItem}
                 onToggleEquip={toggleEquip}

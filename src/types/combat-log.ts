@@ -193,6 +193,10 @@ export type CombatEvent =
   | { kind: "tracker-regain"; trackerId: string; amount: number }
   /** Casting a spell gave back one expended spell slot (Expert Divination). */
   | { kind: "slot-regain"; level: number }
+  /** The character bought or sold a catalogue item with their coins; `cp` is the
+   *  price paid or received, in copper (rendered as gp / sp / cp). An older app
+   *  version reads it as its "entry from a newer version" row. */
+  | { kind: "item-trade"; trade: "buy" | "sell"; item: LocText; cp: number }
   /**
    * The Exhaustion level changed by hand or by an effect (`to` 0 = it ended). Lines
    * from `@/lib/play/resource-log`; an older reader shows a neutral line.

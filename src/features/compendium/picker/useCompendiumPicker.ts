@@ -15,7 +15,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useScrollMemory } from "@/hooks/useScrollMemory";
 import { useCharacterStore } from "@/stores/characterStore";
 import { rankedSearch } from "@/lib/search";
-import type { CompendiumPickerSpec, PickerCtx } from "./types";
+import type { CompendiumPickerSpec, PickerAddOptions, PickerCtx } from "./types";
 
 export type PickerMode = "add" | "browse";
 
@@ -77,7 +77,7 @@ export interface CompendiumPickerApi<T> {
    *  initial value (the no-match leaf's "start over" action). */
   reset: () => void;
   /** Commit the entry (add mode); no-ops if already added. Clears the detail. */
-  add: (entry: T) => void;
+  add: (entry: T, options?: PickerAddOptions) => void;
   /** D55 — add-time quantity for the open detail (1 unless the user steps it up). */
   quantity: number;
   setQuantity: (n: number) => void;
@@ -260,9 +260,9 @@ export function useCompendiumPicker<T>(
   }, [setSelected]);
 
   const add = useCallback(
-    (entry: T) => {
+    (entry: T, options?: PickerAddOptions) => {
       if (existingIds?.has(spec.getId(entry))) return;
-      spec.onAdd?.(entry, ctx, spec.supportsQuantity ? quantity : undefined);
+      spec.onAdd?.(entry, ctx, spec.supportsQuantity ? quantity : undefined, options);
       setSelected(null);
       setQuantity(1);
     },

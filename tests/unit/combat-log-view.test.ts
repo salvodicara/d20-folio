@@ -107,6 +107,12 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   "slot-spent": { kind: "slot-spent", level: 3, count: 1 },
   "slot-restored": { kind: "slot-restored", level: 2, count: 2, pactMagic: true },
   "inspiration-change": { kind: "inspiration-change", gained: true },
+  "item-trade": {
+    kind: "item-trade",
+    trade: "sell",
+    item: { srd: { kind: "equipment", key: "chain-mail", field: "name" } },
+    cp: 3750,
+  },
   "effect-given": {
     kind: "effect-given",
     effect: "heal",
@@ -474,5 +480,17 @@ describe("combat-log presenter — a kind this version does not know", () => {
     );
     expect(row.text).toBe("combatLog.unknownEvent");
     expect(row.style).toEqual(eventLogStyle({ kind: "legacy", text: "" }));
+  });
+});
+
+describe("buying and selling — the item and the coins", () => {
+  it("names the item and counts the copper out in gold and silver", () => {
+    expect(localize(SAMPLES["item-trade"])).toBe(
+      'combatLog.itemSold {"name":"⟨chain-mail⟩","price":"37 equipment.currencyAbbr.gp 5 equipment.currencyAbbr.sp"}'
+    );
+    const bought = { ...SAMPLES["item-trade"], trade: "buy", cp: 7500 } as CombatEvent;
+    expect(localize(bought)).toBe(
+      'combatLog.itemBought {"name":"⟨chain-mail⟩","price":"75 equipment.currencyAbbr.gp"}'
+    );
   });
 });
