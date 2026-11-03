@@ -51,7 +51,9 @@ import { removeCombatant, parseEncounterState } from "@/features/campaigns/encou
 import { passTurn, turnBack } from "@/features/campaigns/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
-import { peerDamageState } from "@/lib/play/peer-damage";
+import { peerDamageState, peerHit } from "@/lib/play/peer-damage";
+import { invertPeerSpends, type PeerSpend } from "@/lib/play/peer-spends";
+import { parsePeerSpends, peerSpendsRef } from "@/lib/peer-spends-io";
 import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
@@ -940,7 +942,24 @@ export type CampaignCombatMutation =
   | { kind: "death-save"; outcome: "success" | "failure" }
   /** Undo one earlier peer write: every root it changed that still reads as it wrote
    *  goes back to what it was before. */
-  | { kind: "revert"; written: CombatState; previous: CombatState };
+  | {
+      kind: "revert";
+      written: CombatState;
+      previous: CombatState;
+      /** The spends the reverted hit recorded: the undo appends their inverse. */
+      spends?: ReadonlyArray<PeerSpend>;
+    };
+
+/**
+ * Whether a hit from another device records what it spends on the target's sheet in
+ * the spends ledger (docs/architecture/2026-11-cross-device-hits.md). Off until the
+ * `combat/spends` rules are deployed (the build then sets `VITE_PEER_SPENDS_LEDGER`):
+ * before that every append would be refused and the hit with it. Off, a peer hit
+ * leaves the spending stages out (`peerDamageState`).
+ */
+export function peerSpendsWriterOn(): boolean {
+  return import.meta.env.VITE_PEER_SPENDS_LEDGER === "true";
+}
 
 /** The peer write's undo: each root the write changed (`previous` → `written`) and
  *  that nobody has touched since returns to `previous`; a root changed since keeps
@@ -1003,7 +1022,7 @@ export async function writeCampaignCombatEffect(
   preview: CombatState | null,
   maxHp: number,
   mutation: CampaignCombatMutation
-): Promise<{ before: CombatState; after: CombatState }> {
+): Promise<{ before: CombatState; after: CombatState; spends: PeerSpend[] }> {
   const fallback = preview ?? defaultCombatState(maxHp);
   if (import.meta.env.DEV && DEV_BYPASS) {
     // The same target rule as the app, on the dev replica's sheet.
@@ -1020,15 +1039,19 @@ export async function writeCampaignCombatEffect(
         ? peerDamageState(target, current, mutation.operation.amount)
         : reduceCampaignCombatMutation(current, mutation, maxHp, { status: "active" });
     });
-    return { before, after };
+    return { before, after, spends: [] };
   }
   const combatRef = combatStateRef(uid, characterId);
   const parentRef = memberCharacterDoc(uid, characterId);
+  const spendsRef = peerSpendsRef(uid, characterId);
+  const ledgerOn = peerSpendsWriterOn();
   return runTransaction(db, async (txn) => {
-    const [combatSnap, parentSnap] = await Promise.all([
+    const [combatSnap, parentSnap, spendsSnap] = await Promise.all([
       txn.get(combatRef),
       txn.get(parentRef),
+      ledgerOn ? txn.get(spendsRef) : Promise.resolve(null),
     ]);
+    const ledger = spendsSnap?.exists() ? parsePeerSpends(spendsSnap.data()) : [];
     const parentData = parentSnap.exists() ? parentSnap.data() : null;
     const rawCombat = combatSnap.exists() ? combatSnap.data() : null;
     const current = storedTargetCombatState(rawCombat, parentData);
@@ -1047,12 +1070,31 @@ export async function writeCampaignCombatEffect(
             }
           )
         : null;
-    const next =
-      target && mutation.kind === "hp"
-        ? peerDamageState(target, current, mutation.operation.amount)
-        : reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
+    let next: CombatState;
+    let spends: PeerSpend[] = [];
+    if (target && mutation.kind === "hp" && ledgerOn) {
+      // Every stage runs; what the hit spends on the target's sheet is appended to its
+      // ledger in this same transaction.
+      const hit = peerHit(target, current, ledger, mutation.operation.amount);
+      if (hit.ledgerFull) {
+        // Loud, never silent: the hit landed without the ward or the dodge.
+        diagnosticsLog("error", "combat.peer-spends-full", { characterId });
+      }
+      next = hit.state;
+      spends = hit.spends;
+    } else if (target && mutation.kind === "hp") {
+      next = peerDamageState(target, current, mutation.operation.amount);
+    } else {
+      next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
+    }
+    // Undoing a hit appends the inverse of what it spent, folded or not.
+    const appended =
+      mutation.kind === "revert" && ledgerOn && mutation.spends?.length
+        ? invertPeerSpends(mutation.spends, () => crypto.randomUUID())
+        : spends;
     writePeerCombatEffect(txn, combatRef, current, next);
-    return { before: current, after: next };
+    if (appended.length > 0) txn.set(spendsRef, { entries: [...ledger, ...appended] });
+    return { before: current, after: next, spends };
   });
 }
 

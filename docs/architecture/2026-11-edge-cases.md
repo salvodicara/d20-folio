@@ -98,3 +98,6 @@ rows it covers, and retires the special cases it lists. Shape changes go through
   is the read for rules; an immune creature gains no Exhaustion. Still open in M3: end rules
   (Hide's acts, on damage, repeat saves, the grappler incapacitated), Knock Out and Abjure Foes
   data, unseen sources.
+- **Hits from another device** (the shared root of the M1, M4 and M7 limits): the spends ledger,
+  [design](2026-11-cross-device-hits.md). Reader, fold and rules are in; the writer switches on
+  with `VITE_PEER_SPENDS_LEDGER` after the rules deploy.

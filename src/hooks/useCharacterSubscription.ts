@@ -36,6 +36,8 @@ import {
 } from "@/lib/character-snapshot-reconciler";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import { removeFoldedPeerSpends, subscribePeerSpends } from "@/lib/peer-spends-io";
+import type { PeerSpend } from "@/lib/play/peer-spends";
 import { combatTrioRootsChanged, sessionToCombatState } from "@/lib/combat-state";
 import { loadLogFromIDB } from "@/lib/log-persistence";
 import { diagnosticsLog, setDiagnosticsContext } from "@/lib/diagnostics";
@@ -530,6 +532,23 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       });
     };
 
+    // The spends ledger (docs/architecture/2026-11-cross-device-hits.md): what hits
+    // from other devices spent on this sheet. Folded once the sheet is loaded, then
+    // removed from the ledger; an entry appended meanwhile stays for the next fold.
+    let ledger: PeerSpend[] = [];
+    const foldLedger = (): void => {
+      if (quarantined || ledger.length === 0) return;
+      const cur = useCharacterStore.getState().character;
+      if (!cur || cur.id !== characterId) return;
+      const folded = useCharacterStore.getState().foldPeerSpends(ledger);
+      if (folded.length === 0) return;
+      removeFoldedPeerSpends(user.uid, characterId, folded).catch((error: unknown) => {
+        diagnosticsLog("warn", "combat.peer-spends-remove-failed", {
+          message: String(error),
+        });
+      });
+    };
+
     const publishResolvedPair = (): void => {
       if (quarantined) return;
       // The RESOLVED pair: each domain's unacknowledged local payload when it has one,
@@ -582,6 +601,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       const current = useCharacterStore.getState().character;
       if (current) restoreLocalLog(current);
       setLoading(false);
+      foldLedger();
     };
     republishRef.current = publishResolvedPair;
 
@@ -659,9 +679,26 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       }
     );
 
+    const unsubscribeSpends = subscribePeerSpends(
+      user.uid,
+      characterId,
+      (entries) => {
+        ledger = entries;
+        foldLedger();
+      },
+      (err) => {
+        // A missing rules deploy reads as permission-denied: the ledger is simply
+        // not there yet, and the sheet works as before.
+        diagnosticsLog("warn", "combat.peer-spends-subscription", {
+          message: err.message,
+        });
+      }
+    );
+
     return () => {
       unsubscribe();
       unsubscribeCombat();
+      unsubscribeSpends();
       // Flush any pending debounced save before tearing the handle down.
       // Without this, an edit made within the debounce window (~2s) is
       // silently lost when the user navigates away or closes the tab.

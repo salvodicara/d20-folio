@@ -158,6 +158,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     fadingPenalties: session.fadingPenalties,
     ...(session.zeroHpSaverUses ? { zeroHpSaverUses: session.zeroHpSaverUses } : {}),
     ...(session.zeroHpDrop ? { zeroHpDrop: session.zeroHpDrop } : {}),
+    ...(session.foldedPeerSpends ? { foldedPeerSpends: session.foldedPeerSpends } : {}),
     pinnedActions: session.pinnedActions ?? [],
     unpinnedActions: session.unpinnedActions ?? [],
     notes: session.notes ?? "",

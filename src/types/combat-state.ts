@@ -110,6 +110,13 @@ export interface PendingConcentrationSave {
   difficultyClass: number;
 }
 
+/** One thing a hit from another device spent on the PC's sheet (the spends ledger,
+ *  docs/architecture/2026-11-cross-device-hits.md). An undo appends the inverse. */
+export type PeerSpend =
+  | { id: string; kind: "tracker"; trackerId: string; amount: number }
+  | { id: string; kind: "state-end"; key: string }
+  | { id: string; kind: "state-restore"; key: string };
+
 export interface CombatState {
   hp: { current: number; temp: number };
   conditions: string[];

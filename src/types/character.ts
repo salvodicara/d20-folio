@@ -1136,6 +1136,12 @@ export interface SessionState {
    */
   zeroHpDrop?: { activeKeys: string[]; tried?: string[] };
   /**
+   * Ids of the spends-ledger entries this sheet has already applied (a hit from
+   * another device; docs/architecture/2026-11-cross-device-hits.md), so a repeat fold
+   * changes nothing. Pruned to the entries still in the ledger.
+   */
+  foldedPeerSpends?: string[];
+  /**
    * PLAY-NO-EDIT — defenses gained DURING play (a Potion of Fire Resistance,
    * Protection from Energy, a curse's vulnerability, Heroes' Feast's Frightened
    * immunity), layered ADDITIVELY on top of the build's permanent defenses

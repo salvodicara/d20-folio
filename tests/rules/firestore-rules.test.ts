@@ -2100,6 +2100,73 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
   });
 });
 
+describe("firestore.rules — combat/spends: the cross-device hits ledger", () => {
+  // docs/architecture/2026-11-cross-device-hits.md: the owner folds and empties it;
+  // an attached peer may only append, in the same transaction as its hit.
+  const SPENDS_PATH = [
+    "users",
+    "member",
+    "characters",
+    "char-spend",
+    "combat",
+    "spends",
+  ] as const;
+  const PARENT_PATH = ["users", "member", "characters", "char-spend"] as const;
+  const e = (id: string) => ({ id, kind: "tracker", trackerId: "ward", amount: 5 });
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(
+        doc(db, "campaigns", "campS"),
+        campaignDoc(["dm", "member", "peer"], "dm", { member: "char-spend" })
+      );
+      await setDoc(doc(db, ...PARENT_PATH), {
+        status: "active",
+        attachedCampaignId: "campS",
+        build: { name: "Mara" },
+        state: {},
+        cache: {},
+        revision: 3,
+      });
+    });
+  });
+
+  const as = (uid: string) =>
+    doc(testEnv.authenticatedContext(uid).firestore(), ...SPENDS_PATH);
+
+  it("an attached peer creates it and appends; it can't drop, rewrite or overfill entries", async () => {
+    await assertSucceeds(setDoc(as("peer"), { entries: [e("a")] }));
+    await assertSucceeds(setDoc(as("dm"), { entries: [e("a"), e("b")] }));
+    // Dropping or rewriting an entry, an extra key, or nothing appended: refused.
+    await assertFails(setDoc(as("peer"), { entries: [e("b")] }));
+    await assertFails(setDoc(as("peer"), { entries: [e("x"), e("b"), e("c")] }));
+    await assertFails(setDoc(as("peer"), { entries: [e("a"), e("b")], extra: 1 }));
+    await assertFails(setDoc(as("peer"), { entries: [e("a"), e("b")] }));
+    await assertFails(deleteDoc(as("peer")));
+    const full = Array.from({ length: 129 }, (_, i) => e(`f${i}`));
+    await assertFails(setDoc(as("peer"), { entries: full }));
+  });
+
+  it("the owner folds: it may remove entries and delete the ledger", async () => {
+    await assertSucceeds(setDoc(as("peer"), { entries: [e("a"), e("b")] }));
+    await assertSucceeds(updateDoc(as("member"), { entries: arrayRemove(e("a")) }));
+    await assertSucceeds(deleteDoc(as("member")));
+  });
+
+  it("read: owner, admin and attached peers; nobody else reads or writes", async () => {
+    await assertSucceeds(setDoc(as("peer"), { entries: [e("a")] }));
+    for (const uid of ["member", ADMIN_UID, "peer", "dm"]) {
+      await assertSucceeds(getDoc(as(uid)));
+    }
+    await assertFails(getDoc(as("outsider")));
+    await assertFails(setDoc(as("outsider"), { entries: [e("a"), e("z")] }));
+    await assertFails(
+      getDoc(doc(testEnv.unauthenticatedContext().firestore(), ...SPENDS_PATH))
+    );
+  });
+});
+
 describe("firestore.rules — encounterInit: the four-direction initiative matrix (INIT-SSOT)", () => {
   // THE PERMANENT REGRESSION for the owner's "none of us can set initiative" bug:
   // PC initiative lives in the campaign's `encounterInit` table (`uid → raw d20

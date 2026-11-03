@@ -348,7 +348,7 @@ function givePeer(
   };
   return import("@/features/campaigns/campaign-io")
     .then(async ({ writeCampaignCombatEffect }) => {
-      const { before, after } = await writeCampaignCombatEffect(
+      const { before, after, spends } = await writeCampaignCombatEffect(
         memberUid,
         characterId,
         null,
@@ -364,6 +364,7 @@ function givePeer(
           kind: "revert",
           written: after,
           previous: before,
+          spends,
         }).catch(failed);
       };
     })
