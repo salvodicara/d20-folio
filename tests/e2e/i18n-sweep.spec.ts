@@ -53,8 +53,8 @@ const SENTINEL_RE = /⟦[^⟧]+⟧/;
 /**
  * Curated English-in-IT denylist. Each token is a whole-word English UI string
  * whose IT translation in the catalogue is DIFFERENT — so seeing it in the IT
- * render means an English string leaked. Proper nouns (Lyra Voss, Starless
- * Keep, d20 Folio) and EN≈IT cognates (e.g. "Status") are deliberately excluded.
+ * render means an English string leaked. Proper nouns (Lyra Voss, d20 Folio)
+ * and EN≈IT cognates (e.g. "Status") are deliberately excluded.
  */
 const ENGLISH_IN_IT = [
   "Characters",
