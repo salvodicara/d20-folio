@@ -41,6 +41,9 @@ export interface ExecuteActionIntent {
    *  `bindingWeaponChoices`, and the damage type picked when the spell offers one. */
   weapon?: WeaponAddress;
   damageType?: string;
+  /** The creatures a "designate creatures" zone spares (Spirit Guardians), as the
+   *  caster edited them; absent, every ally (`defaultSpared`). */
+  spared?: ReadonlyArray<string>;
 }
 
 /** The economy commit surface shared by the center meter + the Play-tab cards. */

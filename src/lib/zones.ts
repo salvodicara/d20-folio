@@ -156,3 +156,25 @@ export function zoneEffectForCast(cast: {
       : { kind: "encounter" },
   };
 }
+
+/**
+ * Whom a "designate creatures" zone spares by default (Spirit Guardians: "you can
+ * designate any number of creatures you can see to be unaffected"): every ally on
+ * the field, the party's PCs and their companions, pre-selected for the caster to
+ * edit. Never none: that would hit the party on the first turn. A zone that spares
+ * no one by choice (Moonbeam) spares no one.
+ */
+export function defaultSpared(
+  zone: Pick<SpellZone, "spares">,
+  rows: ReadonlyArray<{ id: string; kind: "pc" | "monster"; side?: "ally" | "enemy" }>,
+  casterId: string
+): string[] {
+  if (zone.spares !== "chosen") return [];
+  return rows
+    .filter(
+      (row) =>
+        row.id !== casterId &&
+        (row.side ?? (row.kind === "pc" ? "ally" : "enemy")) === "ally"
+    )
+    .map((row) => row.id);
+}

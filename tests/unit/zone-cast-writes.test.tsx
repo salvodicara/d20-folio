@@ -68,7 +68,16 @@ describe("a zone spell cast in a fight", () => {
           status: "active",
           combatants: [],
         },
-        view: { rows: [], turnOrderIds: ["pc-u1"], currentId: "pc-u1" },
+        view: {
+          rows: [
+            { id: "pc-u1", kind: "pc", name: "Me" },
+            { id: "pc-u2", kind: "pc", name: "Ally" },
+            { id: "wolf", kind: "monster", side: "ally", name: "Wolf" },
+            { id: "goblin", kind: "monster", name: "Goblin" },
+          ],
+          turnOrderIds: ["pc-u1"],
+          currentId: "pc-u1",
+        },
         myId: "pc-u1",
         characterId: doc.id,
         gathering: false,
@@ -103,7 +112,12 @@ describe("a zone spell cast in a fight", () => {
       { payload: unknown; duration: unknown; source: { castLevel: number } },
     ];
     expect(campaignId).toBe("camp-1");
-    expect(effect.payload).toEqual({ kind: "zone", spellId: "spirit-guardians" });
+    // Every ally is spared unless the caster says otherwise; the goblin isn't.
+    expect(effect.payload).toEqual({
+      kind: "zone",
+      spellId: "spirit-guardians",
+      spared: ["pc-u2", "wolf"],
+    });
     expect(effect.duration).toMatchObject({
       kind: "concentration",
       sourceId: "spirit-guardians",
