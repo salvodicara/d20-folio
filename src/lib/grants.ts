@@ -1250,7 +1250,7 @@ export interface IncomingAttackClause {
  */
 /** Spells castable in a form that blocks casting (see the `form-casting` grant). */
 /** A trigger rule from a grant (M8), with the source whose counter limits it. */
-export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "do" | "limit"> & {
+export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "if" | "do" | "limit"> & {
   sourceId: string;
 };
 
@@ -2962,6 +2962,7 @@ export function evaluateGrants(
           sourceId,
           on: g.on,
           do: g.do,
+          ...(g.if ? { if: g.if } : {}),
           ...(g.limit ? { limit: g.limit } : {}),
         });
         break;
