@@ -2988,6 +2988,7 @@
   --ir-next: rgb(255 255 255 / 0.13);
   --ir-tag: rgb(232 220 196 / 0.4);
   --ir-token-bg: #2a1a12;
+  --r-tag: 4px;
 }
 .fui .f-ir {
   display: flex;
@@ -3051,7 +3052,7 @@
   min-height: 20px;
   padding: 0 8px;
   border: 1px solid var(--ir-tag);
-  border-radius: 4px;
+  border-radius: var(--r-tag);
   font: 700 var(--fs-xs) var(--font-label);
   letter-spacing: 0.08em;
   text-transform: uppercase;
