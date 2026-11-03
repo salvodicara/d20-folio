@@ -25,7 +25,9 @@ import {
   setCompanionHp,
   setCompanionVariant,
   setFamiliarDismissed,
+  summonCompanion,
   summonFamiliar,
+  withSummonsRecorded,
 } from "./companions";
 import { addCondition, removeCondition } from "./conditions";
 import { addSessionDefense, removeSessionDefense } from "./defenses";
@@ -133,6 +135,8 @@ export type SheetEvent =
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
+  /** A summoning spell cast (M6): its creature comes onto the field at full HP. */
+  | { kind: "summon-companion"; sourceId: string; castLevel?: number }
   | { kind: "set-companion-variant"; featureId: string; variantId: string }
   | { kind: "set-companion-count"; groupId: string; count: number }
   | { kind: "release-companion"; featureId: string }
@@ -278,7 +282,13 @@ export function applySheetEvent(
     case "set-readied-spell":
       return withSession(setReadiedSpell(doc.session, event.readied));
     case "set-companion-hp":
-      return withSession(setCompanionHp(doc.session, event.featureId, event.current));
+      return withSession(
+        setCompanionHp(withSummonsRecorded(doc), event.featureId, event.current)
+      );
+    case "summon-companion":
+      return withSession(
+        summonCompanion(withSummonsRecorded(doc), event.sourceId, event.castLevel)
+      );
     case "set-companion-variant":
       return withSession(
         setCompanionVariant(doc.session, event.featureId, event.variantId)

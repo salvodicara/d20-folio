@@ -119,7 +119,7 @@ describe("conformance · 4. summons and companions", () => {
       category: 4,
       case: "Find Familiar",
       source: "WIKI spell:find-familiar; SAC #123; SAC #124",
-      status: "M6",
+      status: "works",
     },
     () => {
       const doc = caster("wizard", 3, ["find-familiar"]);
@@ -155,7 +155,7 @@ describe("conformance · 4. summons and companions", () => {
       category: 4,
       case: "Find Steed",
       source: "WIKI spell:find-steed",
-      status: "M6",
+      status: "works",
     },
     () => {
       const doc = caster("paladin", 7, ["find-steed"]);

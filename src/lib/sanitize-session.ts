@@ -187,6 +187,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     // preserves the field. Absent on every non–companion doc (additive-only).
     companionVariant: session.companionVariant,
     companionCount: session.companionCount,
+    // The summons on the field (M6); an empty record is meaningful, so it is kept.
+    ...(session.summons ? { summons: session.summons } : {}),
     familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,

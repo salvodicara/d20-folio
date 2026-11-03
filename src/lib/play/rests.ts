@@ -3,6 +3,7 @@
  * The store ends Concentration first where the rest does (sleep), then applies these,
  * logs the rest, persists, and fences the undo stack.
  */
+import { endSummonsOn } from "./companions";
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
@@ -101,11 +102,15 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
     }
   }
   const endedActiveKeys = new Set(resolveActiveStatesEndingOnRest(character, "long"));
+  // A summon that lasts until its owner's Long Rest leaves the field (M6).
+  const restedSummons = character.session.summons
+    ? (endSummonsOn(character.session, "long-rest") ?? character.session)
+    : character.session;
   return {
     ...character,
     character: { ...character.character, equipment: newEquipment },
     session: {
-      ...sessionAfterLongRestReduction(character.session),
+      ...sessionAfterLongRestReduction(restedSummons),
       hp: { current: max, temp: 0 },
       hitDice: { used: newHitDiceUsed },
       spellSlots: {},

@@ -14,6 +14,8 @@ import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import { ruleFlag } from "@/lib/rules";
 import { resolveTrackers } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { DEATH_FAIL_LIMIT } from "@/lib/character-status";
+import { endSummonsOn, withSummonsRecorded } from "./companions";
 import { endFormIfDue } from "./forms";
 import { zeroHpDropOf } from "./vitals";
 import { commitWorldVitals, drainedTemporary } from "./world-commit";
@@ -161,9 +163,14 @@ export function takeDamage(
         }
       : {}),
   };
+  // A caster who dies takes with them the summons that end at their death (M6).
+  const afterDeath =
+    deathSaves.failures >= DEATH_FAIL_LIMIT
+      ? (endSummonsOn(withSummonsRecorded({ ...doc, session }), "owner-death") ?? session)
+      : session;
   return {
     // The hit can end a form: its Temporary HP ran out, or the fall incapacitates.
-    session: endFormIfDue(doc, session),
+    session: endFormIfDue(doc, afterDeath),
     transition,
     consumedEffectIds,
     dealt,

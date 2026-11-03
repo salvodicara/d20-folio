@@ -1220,6 +1220,16 @@ export interface SessionState {
    */
   companionCount?: Record<string, number>;
   /**
+   * The summons on the field (edge-case family M6, docs/architecture/2026-11-summons.md),
+   * keyed by the spell or feature that made them: a non-Concentration spell's summon
+   * once cast (`castLevel`), and a companion that died and can come back (`fallen`).
+   * HP, variant and count stay in `companionHp` / `companionVariant` /
+   * `companionCount`. A session without this key (written before it existed) keeps
+   * the older rule: a prepared summoning spell's creature shows. ADDITIVE-ONLY: an
+   * older client keeps it verbatim as an unknown key.
+   */
+  summons?: Record<string, { castLevel?: number; fallen?: true }>;
+  /**
    * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
    * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0
    * Beast or an unlocked Pact-of-the-Chain special form); `creatureType` is the
