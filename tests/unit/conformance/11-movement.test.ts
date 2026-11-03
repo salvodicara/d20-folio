@@ -1,6 +1,5 @@
 /** Conformance, category 11: movement and mounts (corpus.md § 11). */
 import { describe, expect } from "vitest";
-import { getSpellById } from "@/data/spells";
 import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
 import { addMonster } from "@/features/campaigns/encounter";
 import { CONDITION_RULES } from "@/lib/condition";
@@ -32,12 +31,22 @@ import type {
 } from "@/types/turn-economy";
 import { customInstanceId } from "../__helpers__/custom-items";
 import { rule } from "./rule";
+import { activeZones, zonePayload, zoneTriggers } from "@/lib/zones";
 
-/** The zone runtime (edge-case M9), which lands with the engine's family. Until
- *  then the data alone doesn't make these cases work. */
-async function zoneRuntime(): Promise<Record<string, unknown>> {
-  const id = "@/lib/zones";
-  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+/** A zone the caster left on the field, as the encounter stores it (edge-case M9). */
+function zoneOf(spellId: string, castLevel: number, spared: string[] = []) {
+  const [zone] = activeZones([
+    {
+      id: `zone-${spellId}`,
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "caster" },
+      source: { kind: "spell", id: spellId, actionId: `spell-${spellId}`, castLevel },
+      payload: zonePayload(spellId, spared),
+      duration: { kind: "encounter" },
+    },
+  ]);
+  if (!zone) throw new Error(`no zone for ${spellId}`);
+  return zone;
 }
 
 const withGrants = (grants: Grant[], exhaustion = 0): CharacterDoc => {
@@ -204,12 +213,23 @@ describe("conformance · 11. movement and mounts", () => {
   );
 
   rule(
-    { category: 11, case: "Forced movement", source: "SAC; KIBBLES #17", status: "M9" },
-    async () => {
-      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
-      // Being pushed into Spike Growth on someone else's turn triggers the area:
-      // the area must be a persistent zone with a per-creature ledger.
-      expect(JSON.stringify(getSpellById("spike-growth"))).toContain('"zone"');
+    {
+      category: 11,
+      case: "Forced movement",
+      source: "SAC; KIBBLES #17",
+      status: "works",
+    },
+    () => {
+      // Pushed into Spike Growth on someone else's turn: the area still counts it.
+      const spikes = zoneOf("spike-growth", 2);
+      expect(
+        zoneTriggers(spikes, {
+          kind: "move-within",
+          creatureId: "orc",
+          turn: { round: 1, combatantId: "druid" },
+          forced: true,
+        }).fires
+      ).toBe(true);
     }
   );
 
@@ -346,14 +366,28 @@ describe("conformance · 11. movement and mounts", () => {
       category: 11,
       case: "Moving the summoned pack",
       source: "WIKI spell:conjure-animals",
-      status: "M9",
+      status: "works",
     },
-    async () => {
-      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
-      const pack = JSON.stringify(getSpellById("conjure-animals"));
-      expect(pack).toContain('"recurrence"');
-      // Moving the pack triggers each creature's save once per turn: a zone ledger.
-      expect(pack).toContain('"zone"');
+    () => {
+      // Moving the pack onto a creature counts as it entering, once per turn.
+      const pack = zoneOf("conjure-animals", 3);
+      const first = zoneTriggers(pack, {
+        kind: "moved-onto",
+        creatureId: "orc",
+        turn: { round: 2, combatantId: "druid" },
+      });
+      expect(first.fires).toBe(true);
+      expect(
+        zoneTriggers(
+          pack,
+          {
+            kind: "end-turn",
+            creatureId: "orc",
+            turn: { round: 2, combatantId: "druid" },
+          },
+          first.fires ? first.ledger : {}
+        ).fires
+      ).toBe(false);
     }
   );
 

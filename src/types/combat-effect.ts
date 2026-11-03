@@ -86,6 +86,14 @@ export type CombatEffectPayload =
        * remain in the combat-state list and are never removed with this effect. */
       kind: "condition";
       conditionId: string;
+    }
+  | {
+      /** A persistent area the spell leaves on the field (edge-case M9: Spirit
+       * Guardians, Moonbeam, Darkness). Its rules are the spell's catalogue `zone`. */
+      kind: "zone";
+      spellId: string;
+      /** The creatures it leaves alone (Spirit Guardians: the caster's choice). */
+      spared?: string[];
     };
 
 export interface ActiveCombatEffect {

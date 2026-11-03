@@ -13,12 +13,22 @@ import { getSpellById } from "@/data/spells";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { getMonster } from "@/data/monsters";
 import { rule } from "./rule";
+import { activeZones, zoneLight, zonePayload } from "@/lib/zones";
 
-/** The zone runtime (edge-case M9), which lands with the engine's family. Until
- *  then the data alone doesn't make these cases work. */
-async function zoneRuntime(): Promise<Record<string, unknown>> {
-  const id = "@/lib/zones";
-  return (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+/** A zone the caster left on the field, as the encounter stores it (edge-case M9). */
+function zoneOf(spellId: string, castLevel: number, spared: string[] = []) {
+  const [zone] = activeZones([
+    {
+      id: `zone-${spellId}`,
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "caster" },
+      source: { kind: "spell", id: spellId, actionId: `spell-${spellId}`, castLevel },
+      payload: zonePayload(spellId, spared),
+      duration: { kind: "encounter" },
+    },
+  ]);
+  if (!zone) throw new Error(`no zone for ${spellId}`);
+  return zone;
 }
 
 const sightWith = sightUnder;
@@ -67,14 +77,14 @@ describe("conformance · 12. vision and light", () => {
       category: 12,
       case: "Darkness dispels weaker light",
       source: "WIKI spell:darkness",
-      status: "M9",
+      status: "works",
     },
-    async () => {
-      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
-      // The Darkness spell is a zone with a spell level, so it can dispel light of
-      // 2nd level or lower and be dispelled by Daylight.
-      expect(getSpellById("darkness")).toHaveProperty("zone.spellLevel", 2);
-      expect(getSpellById("darkness")).toHaveProperty("zone.light", "magical-darkness");
+    () => {
+      // Darkness (2nd level) loses to a 3rd-level Daylight, beats it cast at 4th.
+      expect(zoneLight([zoneOf("darkness", 2), zoneOf("daylight", 3)])).toBe("bright");
+      expect(zoneLight([zoneOf("daylight", 3), zoneOf("darkness", 4)])).toBe(
+        "magical-darkness"
+      );
     }
   );
 
@@ -83,12 +93,12 @@ describe("conformance · 12. vision and light", () => {
       category: 12,
       case: "Darkness on an object",
       source: "WIKI spell:darkness; rpgbot",
-      status: "M9",
+      status: "works",
     },
-    async () => {
-      expect(typeof (await zoneRuntime()).zoneTriggers).toBe("function");
-      // The zone can be anchored to an object and moves with it.
-      expect(getSpellById("darkness")).toHaveProperty("zone.anchor");
+    () => {
+      // The zone can sit on an object and moves with it: its anchor says so.
+      expect(zoneOf("darkness", 2).zone.anchor).toBe("point-or-object");
+      expect(zoneLight([zoneOf("darkness", 2)])).toBe("magical-darkness");
     }
   );
 

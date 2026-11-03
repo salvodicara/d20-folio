@@ -3060,7 +3060,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           activeKey:
             effect.payload.kind === "condition"
               ? `condition:${effect.payload.conditionId}`
-              : effect.payload.activeKey,
+              : effect.payload.kind === "zone"
+                ? `zone:${effect.payload.spellId}`
+                : effect.payload.activeKey,
           sourceId: effect.source.id,
         })),
       ],

@@ -55,6 +55,10 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
   const validPayload =
     isRecord(payload) &&
     ((payload.kind === "condition" && isString(payload.conditionId)) ||
+      (payload.kind === "zone" &&
+        isString(payload.spellId) &&
+        (payload.spared === undefined ||
+          (Array.isArray(payload.spared) && payload.spared.every(isString)))) ||
       (isString(payload.activeKey) &&
         ((payload.kind === "grant-group" &&
           (payload.phase === undefined ||
