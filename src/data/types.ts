@@ -887,6 +887,8 @@ export interface CombatTargeting {
   maxTargets?: number;
   maxTargetsPerUpcast?: number;
   sharedAmount?: boolean;
+  /** A dead creature is a legal target too (Revivify, Raise Dead). */
+  includesDead?: true;
 }
 
 /** Authored target count for feature/homebrew actions. The runtime resolves the
@@ -906,6 +908,9 @@ export interface ActionConditionRemoval {
 /** The Hit Points a revived creature returns with: a number, or all of them. */
 export interface SpellRevive {
   hitPoints: number | "all";
+  /** How long dead the creature may have been, in game minutes (Revivify: 1).
+   *  Absent (a homebrew spell that doesn't say): the table decides. */
+  withinMinutes?: number;
 }
 
 /**
@@ -1078,6 +1083,8 @@ export interface SelfFormRule {
   /** The character can't cast spells in the form, except what a `form-casting`
    *  grant allows (Wild Shape: Beast Spells, a Moon Druid's circle spells). */
   blocksCasting?: boolean;
+  /** Held for its full duration, the form lasts until dispelled (True Polymorph). */
+  permanentWhenHeld?: true;
 }
 
 export interface SrdSpellData {

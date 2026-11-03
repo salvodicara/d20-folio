@@ -63,6 +63,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   companionVariant?: NonNullable<SessionState["companionVariant"]>;
   companionCount?: NonNullable<SessionState["companionCount"]>;
   summons?: NonNullable<SessionState["summons"]>;
+  death?: NonNullable<SessionState["death"]>;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -126,6 +127,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "companionVariant",
   "companionCount",
   "summons",
+  "death",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -363,6 +365,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   // Written even when empty: an empty record says "summons are recorded" (a
   // prepared steed no longer shows by itself).
   if (session.summons) state.summons = session.summons;
+  if (session.death) state.death = session.death;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -742,6 +745,7 @@ function parseActiveForm(value: unknown): SessionState["activeForm"] {
   }
   const statBlock = parseFormStatBlock(value.statBlock);
   return {
+    ...(value.permanent === true ? { permanent: true as const } : {}),
     sourceId: value.sourceId,
     beastId: value.beastId,
     ...(statBlock ? { statBlock } : {}),
@@ -916,6 +920,14 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   session.companionHp = parseCompanionHp(state.companionHp);
   session.companionVariant = parseStringRecord(state.companionVariant);
   session.companionCount = parseCountRecord(state.companionCount);
+  if (
+    isRecord(state.death) &&
+    typeof state.death.minutesSince === "number" &&
+    Number.isFinite(state.death.minutesSince) &&
+    state.death.minutesSince >= 0
+  ) {
+    session.death = { minutesSince: state.death.minutesSince };
+  }
   const summons = parseSummons(state.summons);
   if (summons) session.summons = summons;
   if (

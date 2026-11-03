@@ -402,7 +402,7 @@ describe("activated item states", () => {
     expect(text(id)).toMatch(/Invisible creatures and objects are visible/);
     const { doc, key } = lit(id, id);
     const senses = () =>
-      deriveSensesAndSpeeds(aggregateCharacterGrants(doc.character, doc.session), 30)
+      deriveSensesAndSpeeds(aggregateCharacterGrants(doc.character, doc.session), 30, 0)
         .senses;
     expect(senses().some((s) => s.kind === "see-invisible")).toBe(false);
     doc.session.activeFeatures = [key];
@@ -454,7 +454,7 @@ describe("potions that give a spell's standing effect", () => {
     expect([...agg.conditionImmunities].sort()).toEqual(
       expect.arrayContaining(["paralyzed", "restrained"])
     );
-    expect(deriveSensesAndSpeeds(agg, 30).speeds).toContainEqual({
+    expect(deriveSensesAndSpeeds(agg, 30, 0).speeds).toContainEqual({
       kind: "swim",
       rangeFt: 30,
     });

@@ -35,7 +35,7 @@ describe("resolveAllGrantSources surfaces species traits", () => {
   it("makes the Elf mock surface Darkvision 60 ft + advantage vs Charmed", () => {
     const cd = MOCK_CHARACTER.character;
     const agg = evaluateGrants(resolveAllGrantSources(cd));
-    const { senses } = deriveSensesAndSpeeds(agg, parseInt(cd.speed, 10) || 0);
+    const { senses } = deriveSensesAndSpeeds(agg, parseInt(cd.speed, 10) || 0, 0);
     const chips = deriveAdvantageChips(agg, { advantages: [], disadvantages: [] });
     expect(senses.some((s) => s.kind === "darkvision" && s.rangeFt === 60)).toBe(true);
     expect(chips.some((c) => c.vs === "charmed")).toBe(true);

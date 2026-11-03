@@ -1,11 +1,14 @@
 /**
  * The Play action slot's icon (approved prototype x-play: each row's 46 px framed slot),
  * picked from the data, never from the name: a weapon its own kind, the unarmed strike a
- * fist, a spell or an attack by the damage it deals, a healing spell the support mark, a
+ * fist, a spell or an attack by the damage it deals, a healing spell the support mark,
+ * any other spell its school of magic, a
  * class feature its class, a base action (Dash, Dodge…) its own sign; otherwise a spell
  * book or a feature medal. Pure: the screen maps each key to its glyph.
  */
 import { classFeatureIndex } from "@/data/classes";
+import { getSpellById } from "@/data/spells";
+import type { SpellSchool } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import type { PlayActionRow } from "./play-actions-view";
 
@@ -16,6 +19,7 @@ export type ActionIconKey =
   | { kind: "heal" }
   | { kind: "class"; id: string }
   | { kind: "base"; id: string }
+  | { kind: "school"; id: SpellSchool }
   | { kind: "spell" }
   | { kind: "feature" };
 
@@ -45,6 +49,8 @@ export function actionIcon(row: PlayActionRow): ActionIconKey {
   if (row.id.startsWith("base-")) return { kind: "base", id: row.id.slice(5) };
   if (isDamageType(row.damageType)) return { kind: "damage", type: row.damageType };
   if (row.healing) return { kind: "heal" };
+  const school = row.spellId ? getSpellById(row.spellId)?.school : undefined;
+  if (school) return { kind: "school", id: school };
   if (row.spellId) return { kind: "spell" };
   const cls = featureClass(row);
   return cls ? { kind: "class", id: cls } : { kind: "feature" };

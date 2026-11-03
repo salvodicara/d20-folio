@@ -367,10 +367,10 @@ window.__audit = (opts) => {
         continue;
       if (
         a.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh,#fab,.f-secbar,.pills,.f-filters"
         ) !==
         b.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh,#fab,.f-secbar,.pills,.f-filters"
         )
       )
         continue;

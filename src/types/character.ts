@@ -1230,6 +1230,12 @@ export interface SessionState {
    */
   summons?: Record<string, { castLevel?: number; fallen?: true }>;
   /**
+   * When the character died, on the game clock: the game minutes since (time
+   * passing adds to it). Revivify reaches a creature dead within a minute, Raise
+   * Dead ten days. Absent: alive, or dead before the sheet recorded it. ADDITIVE.
+   */
+  death?: { minutesSince: number };
+  /**
    * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
    * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0
    * Beast or an unlocked Pact-of-the-Chain special form); `creatureType` is the
@@ -1311,6 +1317,8 @@ export interface SessionState {
    * the Temporary HP the character had, restored when the form ends.
    */
   activeForm?: {
+    /** Held for the spell's full duration: it lasts until dispelled (M12). */
+    permanent?: true;
     sourceId: string;
     beastId: string;
     statBlock?: BeastStatBlock;

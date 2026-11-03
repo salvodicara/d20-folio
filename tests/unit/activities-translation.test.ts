@@ -173,6 +173,7 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
             maxTargets: target.count as number | undefined,
             maxTargetsPerUpcast: target.countPerUpcast,
             sharedAmount: target.sharedAmount,
+            includesDead: target.includesDead,
           }
         : undefined,
     area: target?.area,
@@ -233,7 +234,15 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
         : undefined,
     stabilizes:
       activity.effects.some((effect) => effect.kind === "stabilize") || undefined,
-    revives: revive?.kind === "revive" ? { hitPoints: revive.hitPoints } : undefined,
+    revives:
+      revive?.kind === "revive"
+        ? {
+            hitPoints: revive.hitPoints,
+            ...(revive.withinMinutes !== undefined
+              ? { withinMinutes: revive.withinMinutes }
+              : {}),
+          }
+        : undefined,
     hitPointThreshold:
       threshold?.kind === "hp-threshold"
         ? {
@@ -336,6 +345,7 @@ function actionFromActivity(
             maxTargets: target.count,
             maxTargetsPerUpcast: target.countPerUpcast,
             sharedAmount: target.sharedAmount,
+            includesDead: target.includesDead,
           }
         : undefined,
     area: target?.area,

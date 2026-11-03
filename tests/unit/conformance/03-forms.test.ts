@@ -11,6 +11,7 @@ import {
   selfFormRule,
 } from "@/lib/polymorph";
 import { concentrationValue } from "@/lib/concentration";
+import { concentrationTimerKey } from "@/lib/spell-duration";
 import { changeConcentration } from "@/lib/play/concentration";
 import { assumeBeastForm, dropBeastForm } from "@/lib/play/forms";
 import { takeDamage } from "@/lib/play/damage";
@@ -248,7 +249,7 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "True Polymorph permanence vs temp HP",
       source: "WIKI spell:true-polymorph; KIBBLES #31",
-      status: "M12",
+      status: "works",
     },
     () => {
       const held = changeConcentration(
@@ -258,7 +259,9 @@ describe("conformance · 3. forms and transformations", () => {
       const { doc: shifted } = shift(held, monsterForm("iron-golem"), "true-polymorph");
       // Held for the full hour (its timer ran out), the transformation lasts until
       // dispelled: the concentration ends, the form stays.
-      const done = withSession(shifted, { effectTimers: {} });
+      const done = withSession(shifted, {
+        effectTimers: { [concentrationTimerKey("true-polymorph")]: { roundsLeft: 0 } },
+      });
       const after = changeConcentration(done, "").doc;
       expect(after.session.activeForm?.beastId).toBe("iron-golem");
     }

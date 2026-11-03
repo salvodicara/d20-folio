@@ -96,6 +96,7 @@ import type {
   SrdActionDef,
   ActionEconomyCategory,
   ResourceRecoveryTrigger,
+  SpellRevive,
 } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { isPoolAltRecovery, isSlotAltRecovery } from "@/data/types";
@@ -387,7 +388,7 @@ export interface ActionSummary {
   /** Set the selected 0-HP creature's death-save state to Stable. */
   stabilize?: true;
   /** Return the selected dead creature to life with these Hit Points. */
-  revive?: { hitPoints: number | "all" };
+  revive?: SpellRevive;
   /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
   hitPointThreshold?: {
     max: number;
@@ -6968,7 +6969,14 @@ function resolveSpellActions(
     if (condition) summary.conditionApplication = condition.apply;
     if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
     const [revive] = effectsOfKind(activity, "revive");
-    if (revive) summary.revive = { hitPoints: revive.hitPoints };
+    if (revive) {
+      summary.revive = {
+        hitPoints: revive.hitPoints,
+        ...(revive.withinMinutes !== undefined
+          ? { withinMinutes: revive.withinMinutes }
+          : {}),
+      };
+    }
     const [threshold] = effectsOfKind(activity, "hp-threshold");
     if (threshold) {
       summary.hitPointThreshold = {
@@ -9677,15 +9685,17 @@ export function firedTriggerRestores(
   if (rules.length === 0) return { used, limited };
   const trackers = resolveTrackers(character);
   for (const rule of rules) {
+    const action = rule.do;
+    if (action.kind !== "restore-tracker") continue;
     const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
     if (rule.limit && spent >= rule.limit.max) continue;
-    const tracker = trackers.find((t) => t.id === rule.do.trackerId);
+    const tracker = trackers.find((t) => t.id === action.trackerId);
     if (!tracker) continue;
     const current = used.get(tracker.id) ?? tracker.used;
-    const amount = rule.do.full
+    const amount = action.full
       ? current
       : resolveTrackerTotal(
-          rule.do.amount ?? "0",
+          action.amount ?? "0",
           character,
           featureScalingLevel(rule.sourceId, character)
         );

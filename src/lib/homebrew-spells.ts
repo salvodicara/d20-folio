@@ -138,6 +138,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
       crCap: numberSchema,
       excludedTypes: arraySchema(literals([...ALL_CREATURE_TYPES])),
       selfOnly: TRUE,
+      permanentWhenHeld: TRUE,
       sizeMax: literals([...CREATURE_SIZE_ORDER]),
     }
   ),
@@ -149,6 +150,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
       maxTargets: numberSchema,
       maxTargetsPerUpcast: numberSchema,
       sharedAmount: booleanSchema,
+      includesDead: literalSchema(true),
     }
   ),
   healingMode: literals(["full", "consumable"]),
@@ -161,9 +163,10 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   tempHpPool: numberSchema,
   selfHealingFromDamage: objectSchema({ fraction: numberSchema }),
   stabilizes: TRUE,
-  revives: objectSchema({
-    hitPoints: unionSchema([numberSchema, literalSchema("all")]),
-  }),
+  revives: objectSchema(
+    { hitPoints: unionSchema([numberSchema, literalSchema("all")]) },
+    { withinMinutes: numberSchema }
+  ),
   hitPointThreshold: objectSchema(
     { max: numberSchema, atOrBelow: literals(["dies", "condition"]) },
     { otherwise: literalSchema("speed-zero") }

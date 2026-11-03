@@ -2,6 +2,7 @@
  * `applySheetEvent`: every play event runs exactly its `lib/play` transition. Each case
  * names the direct call the event must equal, so a miswired branch fails by name.
  */
+import * as revive from "@/lib/play/revive";
 import { addEquipmentRef } from "@/lib/equipment-add";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -239,10 +240,12 @@ const CASES: {
     { kind: "set-readied-spell", readied: { expiresRound: 2 } },
     () => at(ready.setReadiedSpell(doc.session, { expiresRound: 2 })),
   ],
+  die: [{ kind: "die" }, () => at(vitals.killCharacter(doc))],
   "set-companion-hp": [
     { kind: "set-companion-hp", featureId: "wolf", current: 2 },
     () => at(companions.setCompanionHp(companions.withSummonsRecorded(doc), "wolf", 2)),
   ],
+  revive: [{ kind: "revive", hitPoints: 1 }, () => revive.reviveCharacter(doc, 1)],
   "revive-companion": [
     { kind: "revive-companion", sourceId: "wolf" },
     () => at(companions.reviveCompanion(doc.session, "wolf")),

@@ -155,6 +155,8 @@ export interface ActivityTarget {
   countPerUpcast?: number;
   /** One amount is divided among the targets (Mass Heal). */
   sharedAmount?: true;
+  /** A dead creature is a legal target too (Revivify). */
+  includesDead?: true;
   /** Only the first target takes the primary damage; the rest only riders. */
   primaryOnly?: true;
   /** Melee reach in feet. */
@@ -347,7 +349,12 @@ export type ActivityEffect =
   | (EffectBase & { kind: "heroic-inspiration" })
   | (EffectBase & { kind: "stabilize" })
   /** A dead target returns to life with these Hit Points (Revivify, Resurrection). */
-  | (EffectBase & { kind: "revive"; hitPoints: number | "all" })
+  | (EffectBase & {
+      kind: "revive";
+      hitPoints: number | "all";
+      /** How long dead the target may have been, in game minutes (Revivify: 1). */
+      withinMinutes?: number;
+    })
   /** The target's current Hit Points pick the outcome: at or below `max` it dies or
    *  takes the activity's condition; otherwise the rest applies, or `otherwise`. */
   | (EffectBase & {

@@ -189,6 +189,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     companionCount: session.companionCount,
     // The summons on the field (M6); an empty record is meaningful, so it is kept.
     ...(session.summons ? { summons: session.summons } : {}),
+    // When the character died, on the game clock (Revivify's window).
+    ...(session.death ? { death: session.death } : {}),
     familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,

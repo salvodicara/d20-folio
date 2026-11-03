@@ -295,6 +295,9 @@ export function setDeathSaves(
       ...(engine ? engine.session : doc.session),
       deathSucc: succ,
       deathFail: fail,
+      // The third failure is the death: its game clock starts (Revivify's minute).
+      ...(fail >= 3 && prevFail < 3 ? { death: { minutesSince: 0 } } : {}),
+      ...(fail < 3 && prevFail >= 3 ? { death: undefined } : {}),
     },
     newMark: succ > prevSucc ? "success" : fail > prevFail ? "failure" : null,
   };
@@ -328,4 +331,15 @@ function isImmuneTo(doc: CharacterDoc, condition: string): boolean {
 /** Heroic Inspiration held or not; null when it already is. */
 export function setInspiration(doc: CharacterDoc, held: boolean): SessionState | null {
   return doc.session.inspiration === held ? null : { ...doc.session, inspiration: held };
+}
+
+/**
+ * Killed outright (Power Word Kill on a creature with 100 Hit Points or fewer): Hit
+ * Points to 0 and the third death-save failure, so the character is dead at once.
+ * Null for a character already dead.
+ */
+export function killCharacter(doc: CharacterDoc): SessionState | null {
+  if (!isCharacterAlive(doc.status, doc.session)) return null;
+  const down = { ...doc, session: setHp(doc, 0) };
+  return setDeathSaves(down, down.session.deathSucc, 3)?.session ?? down.session;
 }

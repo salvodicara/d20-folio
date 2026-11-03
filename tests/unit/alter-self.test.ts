@@ -78,7 +78,7 @@ const SORCERER = { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 18 };
 function sheet(doc: CharacterDoc) {
   const aggregate = aggregateCharacterGrants(doc.character, doc.session);
   const unarmed = resolveActions(doc).find((a) => a.id === "unarmed-strike");
-  return { aggregate, unarmed, ...deriveSensesAndSpeeds(aggregate, 30) };
+  return { aggregate, unarmed, ...deriveSensesAndSpeeds(aggregate, 30, 0) };
 }
 
 describe("Alter Self declares its three options as a Concentration state", () => {

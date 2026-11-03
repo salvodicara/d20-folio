@@ -521,7 +521,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     duration: { kind: "instantaneous" },
     instantaneous: true,
     // SRD 5.2.1: "That creature revives with 1 Hit Point."
-    revives: { hitPoints: 1 },
+    revives: { hitPoints: 1, withinMinutes: 1 },
+    // A dead ally (Revivify: "A creature you touch that has died").
+    targeting: { affinity: "ally", maxTargets: 1, includesDead: true },
     source: "SRD",
   },
   {

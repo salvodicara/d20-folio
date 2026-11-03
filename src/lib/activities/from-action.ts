@@ -79,6 +79,7 @@ function target(action: SrdActionDef): ActivityTarget | undefined {
     count: targeting?.maxTargets,
     countPerUpcast: targeting?.maxTargetsPerUpcast,
     sharedAmount: targeting?.sharedAmount ? (true as const) : undefined,
+    includesDead: targeting?.includesDead,
   });
   return Object.keys(out).length > 0 ? out : undefined;
 }
@@ -221,7 +222,7 @@ function effects(action: SrdActionDef, owner: ActionOwner): ActivityEffect[] {
   }
   if (action.grantsNextAttackAdvantage) out.push({ kind: "next-attack-advantage" });
   if (action.locksMovement) out.push({ kind: "speed-zero" });
-  if (action.revives) out.push({ kind: "revive", hitPoints: action.revives.hitPoints });
+  if (action.revives) out.push({ kind: "revive", ...action.revives });
   if (action.hitPointThreshold) {
     out.push({ kind: "hp-threshold", ...action.hitPointThreshold });
   }

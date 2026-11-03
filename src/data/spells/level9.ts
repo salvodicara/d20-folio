@@ -233,7 +233,9 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     duration: { kind: "instantaneous" },
     instantaneous: true,
     // SRD 5.2.1: "The creature is revived with all its Hit Points."
-    revives: { hitPoints: "all" },
+    revives: { hitPoints: "all", withinMinutes: 105120000 },
+    // A dead ally (Revivify: "A creature you touch that has died").
+    targeting: { affinity: "ally", maxTargets: 1, includesDead: true },
     source: "SRD",
   },
   {
@@ -267,6 +269,9 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
       keepsMind: false,
       reshift: false,
       endsWithoutTempHp: true,
+      // "If you maintain Concentration on this spell for the full duration, the
+      // transformation lasts until it is dispelled."
+      permanentWhenHeld: true,
     },
     level: 9,
     school: "transmutation",

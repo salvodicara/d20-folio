@@ -47,6 +47,7 @@ import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { takeDamage, type DamageOptions } from "./damage";
 import { dropBeastForm } from "./forms";
+import { reviveCharacter } from "./revive";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
 import { longRestCharacter, shortRestCharacter } from "./rests";
@@ -68,6 +69,7 @@ import {
   restoreTracker,
   gainTempHp,
   healBy,
+  killCharacter,
   setDeathSaves,
   setExhaustion,
   setHp,
@@ -136,8 +138,12 @@ export type SheetEvent =
   | { kind: "drop-beast-form" }
   | { kind: "set-readied-spell"; readied: SessionState["readiedSpell"] }
   | { kind: "set-companion-hp"; featureId: string; current: number }
+  /** Killed outright (Power Word Kill): 0 HP and dead. */
+  | { kind: "die" }
   /** A summoning spell cast (M6): its creature comes onto the field at full HP. */
   | { kind: "summon-companion"; sourceId: string; castLevel?: number }
+  /** Revived by a spell (Revivify): back with these Hit Points, the death cleared. */
+  | { kind: "revive"; hitPoints: number }
   /** A fallen companion brought back with all its HP (M6). */
   | { kind: "revive-companion"; sourceId: string }
   | { kind: "set-companion-variant"; featureId: string; variantId: string }
@@ -284,10 +290,14 @@ export function applySheetEvent(
       return dropBeastForm(doc);
     case "set-readied-spell":
       return withSession(setReadiedSpell(doc.session, event.readied));
+    case "die":
+      return withSession(killCharacter(doc));
     case "set-companion-hp":
       return withSession(
         setCompanionHp(withSummonsRecorded(doc), event.featureId, event.current)
       );
+    case "revive":
+      return reviveCharacter(doc, event.hitPoints);
     case "revive-companion":
       return withSession(reviveCompanion(doc.session, event.sourceId));
     case "summon-companion":

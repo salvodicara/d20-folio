@@ -232,7 +232,7 @@ export function dumpSheet(doc: CharacterDoc): SheetDump {
   };
 
   const walkingSpeedFt = parseInt(c.speed, 10) || 0;
-  const { senses, speeds } = deriveSensesAndSpeeds(agg, walkingSpeedFt);
+  const { senses, speeds } = deriveSensesAndSpeeds(agg, walkingSpeedFt, exhaustion);
   const immunities = deriveImmunities(agg);
 
   const classId = primaryClassId(c);

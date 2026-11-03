@@ -122,6 +122,68 @@ export function eligibleBindingWeapons(
   );
 }
 
+/** One weapon a weapon-binding cast may name, for the picker: where it is and
+ *  whether it is in hand, and what the binding would do to it at this cast. */
+export interface BindingWeaponChoice {
+  address: WeaponAddress;
+  /** The catalogue weapon (an SRD row) or the homebrew weapon's own name. */
+  srdId?: string;
+  name?: CustomWeapon["name"];
+  /** In hand (its inventory copy is equipped); false in the pack; absent when the
+   *  inventory doesn't say. */
+  wielded?: boolean;
+  preview: {
+    /** +N to the attack and the damage. */
+    bonus: number;
+    attackAbility?: AbilityCode;
+    damageDie?: string;
+    damageTypeOptions?: ReadonlyArray<DamageType>;
+  };
+}
+
+/**
+ * The weapons a cast of `spell` at `castLevel` may name, each with its state and the
+ * binding's effect on it (Magic Weapon +1 at level 2, +2 at 4, +3 at 6; Shillelagh's
+ * spellcasting ability and die). Empty for a spell that binds nothing.
+ */
+export function bindingWeaponChoices(
+  spell: Pick<SrdSpellData, "grants">,
+  character: CharacterDoc,
+  castLevel: number
+): BindingWeaponChoice[] {
+  const binding = spellWeaponBindings(spell)[0];
+  if (!binding) return [];
+  const { grant } = binding;
+  const data = character.character;
+  const level = characterLevel(character);
+  const die = tierAt(grant.damageDieByLevel, level)?.die ?? grant.damageDie;
+  const preview: BindingWeaponChoice["preview"] = {
+    bonus: tierAt(grant.bonusByCastLevel, castLevel)?.amount ?? grant.bonus ?? 0,
+    ...(grant.spellcastingAbility && data.spellcasting?.ability
+      ? { attackAbility: data.spellcasting.ability }
+      : {}),
+    ...(die ? { damageDie: asDice(die) } : {}),
+    ...(grant.damageTypeChoice
+      ? { damageTypeOptions: grant.damageTypeChoice.options }
+      : {}),
+  };
+  return data.weapons.flatMap((weapon, index) => {
+    if (weaponRejection(grant, weapon)) return [];
+    const custom = "custom" in weapon;
+    const copies = custom
+      ? []
+      : data.equipment.filter((item) => "srdId" in item && item.srdId === weapon.srdId);
+    return [
+      {
+        address: addressAt(weapon, index),
+        ...(custom ? { name: weapon.name } : { srdId: weapon.srdId }),
+        ...(copies.length > 0 ? { wielded: copies.some((item) => item.equipped) } : {}),
+        preview,
+      },
+    ];
+  });
+}
+
 /** One cast of a weapon-binding spell: the weapon it names, the damage type picked. */
 export interface WeaponBindingCast {
   spell: Pick<SrdSpellData, "grants">;

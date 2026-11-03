@@ -617,20 +617,57 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
    */
   trigger: objectSchema(
     {
-      do: objectSchema(
-        {
-          kind: literalSchema("restore-tracker"),
-          trackerId: stringSchema,
-        },
-        { amount: stringSchema, full: literalSchema(true) }
-      ),
-      on: unionSchema([literalSchema("initiative"), literalSchema("short-rest")]),
+      do: unionSchema([
+        objectSchema(
+          {
+            kind: literalSchema("restore-tracker"),
+            trackerId: stringSchema,
+          },
+          { amount: stringSchema, full: literalSchema(true) }
+        ),
+        /** The rule offers an action the player may take (Hunter's Mark moving). */
+        objectSchema({ actionId: stringSchema, kind: literalSchema("offer") }),
+      ]),
+      /** The event. Today's runtime reads initiative and short-rest; the rest are
+       *  authored ahead and read as their families land (M8). */
+      on: unionSchema([
+        literalSchema("initiative"),
+        literalSchema("short-rest"),
+        literalSchema("long-rest"),
+        literalSchema("turn-start"),
+        literalSchema("turn-end"),
+        literalSchema("reduced-to-zero"),
+        literalSchema("d20-test-failed"),
+        literalSchema("cast-spell"),
+        literalSchema("damage-dealt"),
+      ]),
       type: literalSchema("trigger"),
     },
     {
+      /** When the event counts (every field must hold). */
+      if: objectSchema(
+        {},
+        {
+          /** cast-spell: the spell's school. */
+          school: stringSchema,
+          /** cast-spell: a spell cast with a slot (not a cantrip). */
+          slot: literalSchema(true),
+          /** reduced-to-zero: the creature is the one your effect marks. */
+          target: literalSchema("marked"),
+          /** d20-test-failed: within this many feet of you. */
+          within: numberSchema,
+          /** d20-test-failed: whose test counts. */
+          by: literalSchema("any-creature"),
+        }
+      ),
       limit: objectSchema({
         max: numberSchema,
-        per: unionSchema([literalSchema("long-rest"), literalSchema("short-rest")]),
+        per: unionSchema([
+          literalSchema("long-rest"),
+          literalSchema("short-rest"),
+          literalSchema("turn"),
+          literalSchema("round"),
+        ]),
       }),
     }
   ),
