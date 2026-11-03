@@ -37,7 +37,6 @@ import type { CharacterDoc } from "@/types/character";
 import {
   Button,
   Chip,
-  HeroFrame,
   HpRing,
   Icon,
   type IconName,
@@ -336,7 +335,6 @@ function PlayHeader({
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
-      <HeroFrame />
     </section>
   );
 }
