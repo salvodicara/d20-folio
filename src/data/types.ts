@@ -28,7 +28,21 @@ import type { Locale } from "@/lib/locale";
  */
 // One line on purpose: the partition guard sanctions the book names on this line only.
 // prettier-ignore
-export type SrdSource = "SRD" | "Wiki" | "Faerun" | "Eberron" | "Exotic" | "Lorwyn" | "Homebrew";
+/**
+ * The book an entry comes from. Everything but `"SRD"` lives in the private pack;
+ * a campaign's table rules may later choose which books it plays with (all on by
+ * default). `"DdbDrops"` is the D&D Beyond monthly Drops.
+ */
+export type SrdSource =
+  | "SRD"
+  | "Wiki"
+  | "Faerun"
+  | "Eberron"
+  | "Exotic"
+  | "Lorwyn"
+  | "ArcanaUnleashed"
+  | "DdbDrops"
+  | "Homebrew";
 
 // ============================================================
 // Shared Primitives
