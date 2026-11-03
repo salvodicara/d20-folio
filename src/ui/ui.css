@@ -3286,3 +3286,8 @@
 .fui .f-spell-sum[data-over] {
   color: var(--danger);
 }
+/* the DM's yes / no (Power Word): two chips, each a full target */
+.fui .f-yesno > .f-chip {
+  min-width: 56px;
+  justify-content: center;
+}

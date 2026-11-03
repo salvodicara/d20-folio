@@ -120,6 +120,24 @@
       "acBonus": "+{{bonus}} Armor Class",
       "charges": "{{current}} of {{max}} charges",
       "stealth": "Disadvantage on Stealth"
+    },
+    "tray": {
+      "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",
+      "otherwise": "Otherwise: {{then}}.",
+      "askDm": "Ask the DM: does it have {{max}} Hit Points or fewer?",
+      "branch": {
+        "dies": "it dies",
+        "condition": "it takes the condition",
+        "otherwise": "it takes the damage",
+        "speed-zero": "its Speed is 0 until your next turn"
+      },
+      "revive_one": "It comes back with {{count}} Hit Point.",
+      "revive_other": "It comes back with {{count}} Hit Points.",
+      "reviveUnknown": "It comes back to life.",
+      "alive": "Alive: no need.",
+      "deadWithin": "Dead for {{minutes}} min: within the limit ✓",
+      "deadTooLong": "Dead for {{minutes}} min: past the limit.",
+      "tableDecides": "How long it has been dead: the table decides."
     }
   }
 }

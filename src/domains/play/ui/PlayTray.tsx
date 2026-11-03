@@ -16,7 +16,7 @@ import {
   type DamageTrayOffer,
 } from "@/features/character/center/damage-tray-store";
 import { useTrayTargets } from "@/features/character/center/use-tray-targets";
-import { totalsByType, trayForm } from "@/domains/play/tray-form";
+import { totalsByType, trayForm, trayOutcomeView } from "@/domains/play/tray-form";
 import type { Locale } from "@/lib/locale";
 import {
   ATTACK_OUTCOMES,
@@ -25,6 +25,7 @@ import {
   rowConditions,
   setAttackOutcome,
   setMultiplier,
+  setThresholdAnswer,
   toggleCondition,
   toggleDefense,
   toggleSaved,
@@ -198,6 +199,13 @@ function TrayTargetRow({
 }) {
   const { t } = useTranslation();
   const conditions = rowConditions(row);
+  const selfDoc = useCharacterStore((st) => st.character);
+  const outcome = trayOutcomeView(
+    row,
+    plan,
+    target.hp !== undefined,
+    target.kind === "self" ? selfDoc : null
+  );
   return (
     <section className="f-tray-row" aria-label={target.name}>
       <div className="f-tray-head">
@@ -211,6 +219,62 @@ function TrayTargetRow({
         </span>
         <Preview plan={plan} amount={amount} hp={target.hp} conditions={conditions} />
       </div>
+      {outcome?.kind === "threshold" && (
+        <div className="f-ask">
+          <p className="f-help">
+            {`${t("play.tray.ifAtOrBelow", {
+              max: outcome.max,
+              then: t(`play.tray.branch.${outcome.atOrBelow}`),
+            })} ${t("play.tray.otherwise", {
+              then: t(`play.tray.branch.${outcome.otherwise}`),
+            })}`}
+          </p>
+          {outcome.ask && (
+            <div className="f-ask-row">
+              <span>{t("play.tray.askDm", { max: outcome.max })}</span>
+              <div className="f-chips f-yesno">
+                <Chip
+                  pressed={outcome.answer === true}
+                  onClick={() => onChange(setThresholdAnswer(row, plan, true))}
+                >
+                  {t("common.yes")}
+                </Chip>
+                <Chip
+                  pressed={outcome.answer === false}
+                  onClick={() => onChange(setThresholdAnswer(row, plan, false))}
+                >
+                  {t("common.no")}
+                </Chip>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {outcome?.kind === "revive" && (
+        <p className="f-note" data-c="ini" role="status">
+          {[
+            outcome.eligibility.kind === "alive"
+              ? t("play.tray.alive")
+              : outcome.eligibility.within === null
+                ? t("play.tray.tableDecides")
+                : t(
+                    outcome.eligibility.within
+                      ? "play.tray.deadWithin"
+                      : "play.tray.deadTooLong",
+                    {
+                      minutes: Math.ceil(outcome.eligibility.minutesSince),
+                    }
+                  ),
+            outcome.eligibility.kind === "alive"
+              ? null
+              : outcome.hitPoints !== null
+                ? t("play.tray.revive", { count: outcome.hitPoints })
+                : t("play.tray.reviveUnknown"),
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        </p>
+      )}
       {field && (
         <Field
           label={t("combat.damageTray.rowTotal", { name: target.name })}

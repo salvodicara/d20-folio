@@ -19,6 +19,8 @@ import {
   type DamageTrayPlan,
   type TrayRow,
 } from "@/lib/play/damage-tray";
+import { reviveEligibility, type ReviveEligibility } from "@/lib/play/revive";
+import type { CharacterDoc } from "@/types/character";
 import type { DamageType } from "@/types/damage";
 
 export interface TrayFormInput {
@@ -126,5 +128,56 @@ export function trayForm(input: TrayFormInput): TrayForm {
     typeInvalid,
     amounts,
     canApply,
+  };
+}
+
+/** What a spell does to one target from its Hit Points (prototypes cast-pw,
+ *  cast-revive): Power Word asks the DM when the creature's Hit Points are hidden and
+ *  keeps the answer; a revival says the Hit Points it comes back with and whether the
+ *  target has been dead too long (`reviveEligibility`; null `targetDoc` when the tray
+ *  can't read the target: the table decides). */
+export type TrayOutcomeView =
+  | {
+      kind: "threshold";
+      max: number;
+      atOrBelow: "dies" | "condition";
+      otherwise: "otherwise" | "speed-zero";
+      /** The viewer can't see the Hit Points: the DM answers. */
+      ask: boolean;
+      /** At or below the threshold; null until answered. */
+      answer: boolean | null;
+    }
+  | { kind: "revive"; hitPoints: number | null; eligibility: ReviveEligibility }
+  | null;
+
+export function trayOutcomeView(
+  row: TrayRow,
+  plan: DamageTrayPlan,
+  /** The viewer sees the target's Hit Points. */
+  seen: boolean,
+  targetDoc: CharacterDoc | null
+): TrayOutcomeView {
+  const outcome = row.outcome;
+  if (outcome?.kind === "revive")
+    return {
+      kind: "revive",
+      // a fixed number (Revivify's 1) needs no maximum to know
+      hitPoints:
+        outcome.hitPoints ??
+        (typeof plan.revive?.hitPoints === "number" ? plan.revive.hitPoints : null),
+      eligibility: targetDoc
+        ? reviveEligibility(targetDoc, plan.revive?.withinMinutes)
+        : { kind: "dead", within: null },
+    };
+  const threshold = plan.hitPointThreshold;
+  if (outcome?.kind !== "threshold" || !threshold) return null;
+  const otherwise = threshold.otherwise ?? "otherwise";
+  return {
+    kind: "threshold",
+    max: threshold.max,
+    atOrBelow: threshold.atOrBelow,
+    otherwise,
+    ask: !seen,
+    answer: outcome.branch === null ? null : outcome.branch === threshold.atOrBelow,
   };
 }
