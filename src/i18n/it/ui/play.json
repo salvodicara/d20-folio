@@ -68,6 +68,23 @@
     },
     "endTurn": "Fine turno",
     "turnMine": "Tocca a te",
-    "initiativeYou": "(tu)"
+    "initiativeYou": "(tu)",
+    "rest": {
+      "short": "Riposo breve",
+      "long": "Riposo lungo",
+      "shortTitle": "Riposo breve · 1 ora",
+      "longTitle": "Riposo lungo · 8 ore",
+      "spend": "Spendi i Dadi Vita",
+      "hpPreview": "Punti ferita {{from}} → {{to}}",
+      "alsoRecover": "Recuperi anche",
+      "onWaking": "Al risveglio",
+      "ends": "{{name}} finisce",
+      "slotsAll": "Slot incantesimo: tutti",
+      "slotsSome": "Slot incantesimo: +{{count}}",
+      "hitDiceLine": "Dadi Vita +{{count}} ({{total}} su {{total}})",
+      "exhaustionLine": "Indebolimento {{from}} → {{to}}",
+      "trackerLine": "{{name}} +{{count}}",
+      "nothing": "Niente da recuperare"
+    }
   }
 }

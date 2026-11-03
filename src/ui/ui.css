@@ -3182,3 +3182,32 @@
     padding: 8px 0;
   }
 }
+/* the rests (prototypes rest-short, rest-long): what comes back, one line each; on a
+   phone the two buttons sit at the top of «Risorse e abilità» */
+.fui .f-rest-lines {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fui .f-rest-lines > li {
+  padding-left: 16px;
+  border-left: 2px solid var(--line-strong);
+}
+.fui .f-rest-phone {
+  display: none;
+}
+@media (max-width: 800px) {
+  .fui .f-rest-phone {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+}
+.fui .f-rest-dice {
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+}
+.fui .f-rest-dice > .f-choice[data-tile] {
+  min-height: 56px;
+}

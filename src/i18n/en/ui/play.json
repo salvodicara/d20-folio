@@ -68,6 +68,23 @@
     },
     "endTurn": "End turn",
     "turnMine": "Your turn",
-    "initiativeYou": "(you)"
+    "initiativeYou": "(you)",
+    "rest": {
+      "short": "Short rest",
+      "long": "Long rest",
+      "shortTitle": "Short rest · 1 hour",
+      "longTitle": "Long rest · 8 hours",
+      "spend": "Spend Hit Point Dice",
+      "hpPreview": "Hit Points {{from}} → {{to}}",
+      "alsoRecover": "You also recover",
+      "onWaking": "When you wake",
+      "ends": "{{name}} ends",
+      "slotsAll": "Spell slots: all",
+      "slotsSome": "Spell slots: +{{count}}",
+      "hitDiceLine": "Hit Point Dice +{{count}} ({{total}} of {{total}})",
+      "exhaustionLine": "Exhaustion {{from}} → {{to}}",
+      "trackerLine": "{{name}} +{{count}}",
+      "nothing": "Nothing to recover"
+    }
   }
 }

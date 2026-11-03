@@ -6,7 +6,7 @@
  * ring, name and identity line, what is going on, the six abilities, the four header
  * numbers and HP.
  */
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 
@@ -15,6 +15,7 @@ import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
+import { PlayRest } from "@/domains/play/ui/PlayRest";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { useAttachedCampaign } from "@/domains/play/use-attached-campaign";
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
@@ -46,6 +47,7 @@ import {
   Toast,
 } from "@/ui";
 import type { CampaignDoc } from "@/types/campaign";
+import type { RestKind } from "@/lib/play/rest-preview";
 
 type Section = "actions" | "resources" | "fight";
 const SECTION_KEY: Record<Section, string> = {
@@ -78,6 +80,8 @@ export function PlayScreen() {
   // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
   const [section, setSection] = useState<Section>("actions");
   const [sectionsOpen, setSectionsOpen] = useState(false);
+  const [resting, setResting] = useState<RestKind | null>(null);
+  const readonly = useSheetReadonly();
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -87,6 +91,16 @@ export function PlayScreen() {
     );
   }
   const view = playHeaderView(doc, locale);
+  const rests = (
+    <>
+      <Button aria-haspopup="dialog" onClick={() => setResting("short")}>
+        {t("play.rest.short")}
+      </Button>
+      <Button aria-haspopup="dialog" onClick={() => setResting("long")}>
+        {t("play.rest.long")}
+      </Button>
+    </>
+  );
   const sections: Section[] = [
     "actions",
     "resources",
@@ -109,17 +123,31 @@ export function PlayScreen() {
           <Icon name="u-more" size={20} />
         </button>
       </PhoneBar>
-      <PlayHeader doc={doc} view={view} locale={locale} campaign={campaign} />
+      <PlayHeader
+        doc={doc}
+        view={view}
+        locale={locale}
+        campaign={campaign}
+        rests={rests}
+      />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
       <ItemResourceCommandProvider renderPrompts={false}>
         <TurnEconomyProvider renderPrompts={false}>
           <div className="f-play" data-section={section}>
-            <PlayLeft doc={doc} locale={locale} />
+            <PlayLeft doc={doc} locale={locale} rests={readonly ? undefined : rests} />
             <PlayCentre doc={doc} locale={locale} />
             <PlayRight campaign={campaign} locale={locale} onToast={setToast} />
           </div>
           <PlayPrompts locale={locale} />
+          {resting && (
+            <PlayRest
+              doc={doc}
+              kind={resting}
+              locale={locale}
+              onClose={() => setResting(null)}
+            />
+          )}
         </TurnEconomyProvider>
       </ItemResourceCommandProvider>
       <nav className="f-secbar" aria-label={t("palette.groupSections")}>
@@ -164,11 +192,13 @@ function PlayHeader({
   view,
   locale,
   campaign,
+  rests,
 }: {
   doc: CharacterDoc;
   view: PlayHeaderView;
   locale: Locale;
   campaign: CampaignDoc | null;
+  rests: ReactNode;
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
@@ -192,13 +222,16 @@ function PlayHeader({
       <div className="f-char-id">
         <h1>{view.name}</h1>
         <p className="f-hero-sub">{view.identity.join(" · ")}</p>
-        {/* D&D Beyond's header buttons; the rests arrive with their slice. */}
-        {campaign && (
+        {/* D&D Beyond's header buttons: the rests, the campaign. */}
+        {(!readonly || campaign) && (
           <div className="f-char-acts">
-            <Link className="f-btn" data-kind="ghost" to={`/campaigns/${campaign.id}`}>
-              <Icon name="g-campaign" />
-              {campaign.name}
-            </Link>
+            {!readonly && rests}
+            {campaign && (
+              <Link className="f-btn" data-kind="ghost" to={`/campaigns/${campaign.id}`}>
+                <Icon name="g-campaign" />
+                {campaign.name}
+              </Link>
+            )}
           </div>
         )}
         {(view.form || view.concentration || view.effects > 0 || view.conditions > 0) && (
