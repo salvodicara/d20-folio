@@ -124,7 +124,7 @@ describe("conformance · 11. movement and mounts", () => {
       category: 11,
       case: "Speed changes cover every speed",
       source: "GLOSS",
-      status: "M14",
+      status: "works",
     },
     () => {
       const fresh = deriveCharacter(withGrants([{ type: "fly-speed", amount: 40 }]));

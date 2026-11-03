@@ -25,6 +25,7 @@ import {
 } from "@/lib/rules";
 import type { SrdKind } from "@/i18n/srd-en";
 import { srdText } from "@/lib/loc-text";
+import { exhaustionSpeedReductionFt } from "@/lib/compute";
 import { locPart, termPart, type RawBreakdownPart } from "@/lib/value-breakdown";
 import type {
   AggregatedGrants,
@@ -692,14 +693,20 @@ export interface SensesSpeedsView {
  * Resolve a `NonWalkingSpeed | null` against the character's current walking
  * speed. `"equal-to-walking"` becomes the walking speed; `null` → null.
  */
+/**
+ * A non-walking speed in feet. One tied to the walking speed follows it (which
+ * already carries every reduction); a fixed one loses Exhaustion's 5 ft per level
+ * itself, since 2024 Exhaustion reduces every Speed (never below 0).
+ */
 export function resolveNonWalkingSpeed(
   value: NonWalkingSpeed | null,
-  walkingSpeedFt: number
+  walkingSpeedFt: number,
+  exhaustionLevel = 0
 ): number | null {
   if (value === null) return null;
   if (value === "equal-to-walking") return walkingSpeedFt;
   if (value === "twice-walking") return walkingSpeedFt * 2;
-  return value;
+  return Math.max(0, value - exhaustionSpeedReductionFt(exhaustionLevel));
 }
 
 /** The aggregate's value for one non-walking speed kind. */
@@ -731,11 +738,15 @@ function nonWalkingSpeedOf(
 export function nonWalkingSpeedBreakdown(
   aggregate: AggregatedGrants,
   kind: SpeedKind,
-  walkingSpeedFt: number
+  walkingSpeedFt: number,
+  exhaustionLevel = 0
 ): RawBreakdownPart[] {
   const value = nonWalkingSpeedOf(aggregate, kind);
   const rangeFt = resolveNonWalkingSpeed(value, walkingSpeedFt);
   if (value === null || rangeFt === null) return [];
+  const reduced = resolveNonWalkingSpeed(value, walkingSpeedFt, exhaustionLevel) ?? 0;
+  const exhaustion =
+    reduced !== rangeFt ? [termPart("character.exhaustion", reduced - rangeFt)] : [];
   const relative = typeof value !== "number";
   const winner = ruleParts(
     aggregate.ruleOrigins,
@@ -753,6 +764,7 @@ export function nonWalkingSpeedBreakdown(
     winner
       ? locPart(srdText(winner.kind as SrdKind, winner.key, "name"), rangeFt, note)
       : termPart("breakdown.speed.granted", rangeFt, note),
+    ...exhaustion,
   ];
 }
 
@@ -765,7 +777,8 @@ export function deriveSensesAndSpeeds(
   aggregate: AggregatedGrants & {
     form?: { speeds: Partial<Record<(typeof SPEED_KINDS)[number], number>> } | null;
   },
-  walkingSpeedFt: number
+  walkingSpeedFt: number,
+  exhaustionLevel = 0
 ): SensesSpeedsView {
   const senses: SenseEntry[] = [];
   if (aggregate.darkvisionFt > 0)
@@ -793,7 +806,11 @@ export function deriveSensesAndSpeeds(
     // An assumed form's speeds replace the character's (M2), even one it lacks.
     const rangeFt =
       aggregate.form?.speeds[kind] ??
-      resolveNonWalkingSpeed(nonWalkingSpeedOf(aggregate, kind), walkingSpeedFt);
+      resolveNonWalkingSpeed(
+        nonWalkingSpeedOf(aggregate, kind),
+        walkingSpeedFt,
+        exhaustionLevel
+      );
     return rangeFt !== null && rangeFt > 0 ? [{ kind, rangeFt }] : [];
   });
 

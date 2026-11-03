@@ -120,7 +120,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
   };
 
   const walkingSpeedFt = shownWalkingSpeedFt(doc, getEquipment);
-  const derived = deriveSensesAndSpeeds(aggregate, walkingSpeedFt);
+  const derived = deriveSensesAndSpeeds(aggregate, walkingSpeedFt, session.exhaustion);
   // A hand-set range wins (override-first), exactly as the sheet's rail shows it.
   const senses = derived.senses.map((sense) => ({
     ...sense,
