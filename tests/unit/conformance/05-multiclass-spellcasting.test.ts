@@ -165,7 +165,7 @@ describe("conformance · 5. multiclass and spellcasting", () => {
       category: 5,
       case: "Prepared spells belong to one class",
       source: "WIKI class:multiclassing",
-      status: "M13",
+      status: "works",
     },
     () => {
       // Cleric 5 (WIS) / Bard 3 (CHA), Cure Wounds prepared through both classes.

@@ -20,15 +20,20 @@
  *   2. `ref.speciesSpellAbility` — a DEFERRED species pick: read the live
  *      `character.speciesSpellAbility`, defaulting to `SPECIES_SPELL_ABILITY_DEFAULT`
  *      when the player hasn't chosen yet. Custom spells can't carry this marker.
- *   3. the OWNING class's spellcasting ability — the spell's owning caster class
+ *   3. `ref.viaClass` — the class the spell is prepared through, when the
+ *      character casts with that class (two copies, two abilities).
+ *   4. the OWNING class's spellcasting ability — the spell's owning caster class
  *      (multiclass-aware; identical to the single caster's ability for a
  *      single-class character). `spellClasses` (the SRD spell's `classes[]`)
  *      drives the derivation; omitting it falls back to the primary ability.
- *   4. `null` (homebrew custom spell on a non-caster character).
+ *   5. `null` (homebrew custom spell on a non-caster character).
  */
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData, CustomSpell, SrdSpellRef } from "@/types/character";
-import { resolveSpellOwningAbility } from "@/lib/spell-owning-class";
+import {
+  casterClassAbilities,
+  resolveSpellOwningAbility,
+} from "@/lib/spell-owning-class";
 
 /**
  * Default casting ability for "choose INT/WIS/CHA" species lineages when the
@@ -56,5 +61,11 @@ export function resolveSpellAbility(
   }
   const primary = character.spellcasting?.ability;
   if (primary == null) return null;
+  // Prepared through one class (a multiclass Cleric/Bard's Cure Wounds): that
+  // class's ability, when the character casts with it.
+  if (!("custom" in ref) && ref.viaClass) {
+    const via = casterClassAbilities(character).find((c) => c.classId === ref.viaClass);
+    if (via) return via.ability;
+  }
   return resolveSpellOwningAbility(spellClasses, character, primary);
 }
