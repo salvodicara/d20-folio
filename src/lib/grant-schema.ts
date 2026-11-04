@@ -673,18 +673,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           }
         ),
       ]),
-      /** The event. Today's runtime reads initiative and short-rest; the rest are
-       *  authored ahead and read as their families land (M8). */
+      /** The event. Each one has a runtime reader (`trigger-events.guard.test.ts`):
+       *  initiative and short-rest restore trackers, reduced-to-zero offers an action
+       *  (a mark moving), cast-spell restores or offers on a school's cast (M8). An
+       *  event joins this list with its reader. */
       on: unionSchema([
         literalSchema("initiative"),
         literalSchema("short-rest"),
-        literalSchema("long-rest"),
-        literalSchema("turn-start"),
-        literalSchema("turn-end"),
         literalSchema("reduced-to-zero"),
-        literalSchema("d20-test-failed"),
         literalSchema("cast-spell"),
-        literalSchema("damage-dealt"),
       ]),
       type: literalSchema("trigger"),
     },
@@ -699,10 +696,6 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           slot: literalSchema(true),
           /** reduced-to-zero: the creature is the one your effect marks. */
           target: literalSchema("marked"),
-          /** d20-test-failed: within this many feet of you. */
-          within: numberSchema,
-          /** d20-test-failed: whose test counts. */
-          by: literalSchema("any-creature"),
         }
       ),
       limit: objectSchema({

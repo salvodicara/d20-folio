@@ -19,6 +19,7 @@
     "spellEndFalls": "{{spell}} ended: anyone still aloft falls unless they can fly another way.",
     "proneInFlight": "Prone in flight: if you're aloft, you fall.",
     "markCanMove": "{{source}}: its target dropped to 0 HP. On a later turn, a Bonus Action moves it to a new creature.",
+    "castHitPointDice": "{{source}}: you can roll up to {{max}} of your Hit Point Dice and regain their total plus the slot's level.",
     "zoneBudgetSpent": "{{name}} vanishes: it has dealt all its damage.",
     "zoneEndTurnInside": "{{target}} ends its turn: inside {{zone}}?",
     "zoneStartTurnInside": "{{target}} starts its turn: inside {{zone}}?",
