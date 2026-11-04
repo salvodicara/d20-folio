@@ -243,6 +243,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     duration: { kind: "instantaneous" },
     instantaneous: true,
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
       options: ["stunned"],
       on: "automatic",
       lifetime: { kind: "manual" },
@@ -351,6 +352,7 @@ export const SRD_SPELLS_LEVEL8: SrdSpellData[] = [
     damageDice: "12d6",
     saveAbility: "CON",
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
       options: ["blinded"],
       on: "failed-save",
       lifetime: timedConditionLifetime(1),

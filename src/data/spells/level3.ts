@@ -362,6 +362,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     saveAbility: "WIS",
     area: true,
     conditionApplication: {
+      ends: [{ on: "target-damaged" }],
       options: ["charmed", "incapacitated"],
       on: "failed-save",
       lifetime: { kind: "source" },
