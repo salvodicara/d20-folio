@@ -24,6 +24,8 @@ export interface HitPointDiceRule {
   into?: "healing" | "damage" | "temp-hp" | "save";
   /** Only an even roll gives anything. */
   evenOnly?: true;
+  /** Where an odd roll goes instead (an even one goes `into`). */
+  oddInto?: "healing" | "damage" | "temp-hp" | "save";
   /** The target spends its own dice; the spender otherwise. */
   spender?: "target";
   /** Exactly `max` dice, not up to `max`. */
@@ -37,6 +39,8 @@ export interface HitPointDiceOffer {
   bonus: number;
   into: NonNullable<HitPointDiceRule["into"]>;
   evenOnly: boolean;
+  /** Where an odd roll goes, when the rule splits even from odd. */
+  oddInto?: NonNullable<HitPointDiceRule["into"]>;
 }
 
 /** The numbers a spend reads. `slotLevel`/`spellLevel` only for a spell's cast. */
@@ -91,6 +95,7 @@ export function hitPointDiceSpend(
     bonus: bonusOf(rule.bonus, ctx),
     into: rule.into ?? "healing",
     evenOnly: rule.evenOnly === true,
+    ...(rule.oddInto ? { oddInto: rule.oddInto } : {}),
   };
 }
 
@@ -119,4 +124,18 @@ export function hitPointDiceAmount(
   if (count <= 0) return 0;
   if (offer.evenOnly && rolled % 2 !== 0) return 0;
   return Math.max(0, rolled + offer.bonus);
+}
+
+/** What `count` dice rolling `rolled` give and where it goes: an odd roll goes to
+ *  `oddInto` when the rule splits them (temporary HP on even, damage on odd). */
+export function hitPointDiceGain(
+  offer: HitPointDiceOffer,
+  count: number,
+  rolled: number
+): { amount: number; into: HitPointDiceOffer["into"] } {
+  const odd = rolled % 2 !== 0;
+  if (offer.oddInto && odd && count > 0) {
+    return { amount: Math.max(0, rolled + offer.bonus), into: offer.oddInto };
+  }
+  return { amount: hitPointDiceAmount(offer, count, rolled), into: offer.into };
 }

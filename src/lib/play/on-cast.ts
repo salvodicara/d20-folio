@@ -58,7 +58,7 @@ export function onCastRegains(
   // Charm regain their uses when a spell of their school is cast with a slot.
   for (const [trackerId, nextUsed] of firedCastTriggers(
     doc,
-    castTriggerFacts(spellId, slotLevel)
+    castTriggerFacts(spellId, slotLevel, doc)
   ).used) {
     const amount = (doc.session.trackers[trackerId]?.used ?? 0) - nextUsed;
     if (amount <= 0 || regains.some((r) => isTrackerRefund(r, trackerId))) continue;

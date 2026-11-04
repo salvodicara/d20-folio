@@ -4,6 +4,7 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import {
   hitPointDiceAmount,
   hitPointDiceContext,
+  hitPointDiceGain,
   hitPointDiceSpend,
 } from "@/lib/play/hit-point-dice";
 
@@ -77,5 +78,19 @@ describe("hitPointDiceContext", () => {
       conMod: 2,
       proficiency: 4,
     });
+  });
+});
+
+describe("hitPointDiceGain", () => {
+  it("an even roll goes into the rule's gain, an odd one into oddInto", () => {
+    const offer = hitPointDiceSpend(
+      { max: 1, into: "temp-hp", oddInto: "damage", bonus: "con-mod" },
+      CTX
+    );
+    expect(offer && hitPointDiceGain(offer, 1, 4)).toEqual({
+      amount: 6,
+      into: "temp-hp",
+    });
+    expect(offer && hitPointDiceGain(offer, 1, 5)).toEqual({ amount: 7, into: "damage" });
   });
 });

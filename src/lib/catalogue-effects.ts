@@ -79,6 +79,12 @@ export const HIT_POINT_DICE_OPTIONAL = {
     literalSchema("save"),
   ]),
   evenOnly: literalSchema(true),
+  oddInto: unionSchema([
+    literalSchema("healing"),
+    literalSchema("damage"),
+    literalSchema("temp-hp"),
+    literalSchema("save"),
+  ]),
   spender: literalSchema("target"),
   exactly: literalSchema(true),
 } as const;
