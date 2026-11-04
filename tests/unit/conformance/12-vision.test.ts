@@ -174,12 +174,19 @@ describe("conformance · 12. vision and light", () => {
   );
 
   rule(
-    { category: 12, case: "Unseen sources", source: "SAC #12; SAC #29", status: "M3" },
+    { category: 12, case: "Unseen sources", source: "SAC #12; SAC #29", status: "works" },
     () => {
       // Frightened's Disadvantage applies only while you can see the source.
       expect(CONDITION_GATES.frightened).toHaveProperty("suppressedUnless", [
         "sees-source",
       ]);
+      const attackDisadvantage = (seesSource?: boolean) =>
+        resolveConditionEffects(["frightened"], { seesSource }).disadvantages.some(
+          (d) => d.rollType === "attack"
+        );
+      expect(attackDisadvantage()).toBe(true); // unknown: the table assumes it's seen
+      expect(attackDisadvantage(true)).toBe(true);
+      expect(attackDisadvantage(false)).toBe(false);
     }
   );
 

@@ -59,6 +59,23 @@ export interface ConditionGate {
     vs: string;
     description: LocText;
   }>;
+  /** The roll effects apply only while these facts hold (Frightened: while the
+   *  source of the fear is in sight). An unknown fact counts as holding. */
+  suppressedUnless?: ReadonlyArray<ConditionFact>;
+}
+
+/** A fact a condition's roll effects can depend on. */
+export type ConditionFact = "sees-source";
+
+/** Whether each condition fact holds; an unknown fact counts as holding. */
+const FACT_HOLDS: Readonly<Record<ConditionFact, (facts: ConditionFacts) => boolean>> = {
+  "sees-source": (facts) => facts.seesSource !== false,
+};
+
+/** What the table says about the facts a condition depends on (unknown = holds). */
+export interface ConditionFacts {
+  /** The character can see the source of its condition (Frightened). */
+  seesSource?: boolean;
 }
 
 /** A roll descriptor's name in the `rule` catalogue (`roll.<id>`). */
@@ -86,6 +103,8 @@ export const CONDITION_GATES: Readonly<Partial<Record<ConditionId, ConditionGate
     autoFailSenseChecks: ["hearing"],
   },
   frightened: {
+    // 2024: "while the source of fear is within line of sight".
+    suppressedUnless: ["sees-source"],
     disadvantages: [
       { rollType: "attack", vs: "frightened", description: ATTACKS },
       { rollType: "check", vs: "frightened", description: ABILITY_CHECKS },
@@ -209,7 +228,9 @@ export interface ResolvedConditionEffects {
 export function resolveConditionEffects(
   // Accepts the session's raw `conditions: string[]` — unknown / custom
   // condition strings simply have no gate and are skipped.
-  active: ReadonlyArray<string>
+  active: ReadonlyArray<string>,
+  /** What the table says about the facts a condition depends on. */
+  facts: ConditionFacts = {}
 ): ResolvedConditionEffects {
   const blockedSlots = new Set<GatedSlot>();
   const autoFailSaves = new Set<AbilityCode>();
@@ -231,7 +252,10 @@ export function resolveConditionEffects(
     for (const sense of gate.autoFailSenseChecks ?? []) autoFailSenseChecks.add(sense);
     if (gate.cantHarmSource) cantHarmSource = true;
     if (gate.sourceSocialAdvantage) sourceSocialAdvantage = true;
-    for (const a of gate.advantages ?? []) {
+    // A condition whose roll effects need a fact that doesn't hold (Frightened with
+    // its source out of sight) imposes none of them.
+    const holds = (gate.suppressedUnless ?? []).every((fact) => FACT_HOLDS[fact](facts));
+    for (const a of holds ? (gate.advantages ?? []) : []) {
       advantages.push({
         sourceId: id,
         rollType: a.rollType,
@@ -239,7 +263,7 @@ export function resolveConditionEffects(
         description: a.description,
       });
     }
-    for (const d of gate.disadvantages ?? []) {
+    for (const d of holds ? (gate.disadvantages ?? []) : []) {
       disadvantages.push({
         sourceId: id,
         rollType: d.rollType,

@@ -687,6 +687,25 @@ export function concentrationEffectIdsOwnedBy(
   );
 }
 
+/**
+ * The live effects that end when `actorId` becomes Incapacitated: its Concentration
+ * (every effect it holds by it) and the grapples it holds (2024 Grappled: "the
+ * condition ends if the grappler has the Incapacitated condition"). The caller revokes
+ * them.
+ */
+export function effectIdsEndingWhenIncapacitated(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  actorId: string
+): string[] {
+  return foldCombatEffectOps(operations).flatMap((effect) =>
+    effect.actor.combatantId === actorId &&
+    (effect.duration.kind === "concentration" ||
+      (effect.payload.kind === "condition" && effect.payload.conditionId === "grappled"))
+      ? [effect.id]
+      : []
+  );
+}
+
 /** Live occurrences on `targetId` whose state ends early when that creature does
  * `act` ("attack-roll", "cast-spell", "deal-damage"): Sanctuary cast on an ally ends
  * on the ally's own attack, spell or damage. The caller revokes them. */
