@@ -1330,6 +1330,16 @@ Common excluded because it is already seeded) and `creationChoiceSlots(build)` �
 background origin feats, and the class/subclass features through the starting level, with the level's
 spell-slot row as `SpellChoiceCtx`). The wizard RENDERS those slots; the preset engine FILLS them.
 
+**The creation DRAFT** (`src/lib/creation/`) is the character being built, as one pure state:
+`draft.ts` holds the reducer (`creationDraftReducer` — a class/level/species change resets what
+depends on it, a background swap re-seeds or clears), `creationFacts(draft)` (everything the draft
+implies: effective scores, HP/AC preview, the pruned choice picks, completeness) and
+`creationRequirements` / `creationStepBlocked` / `activeCreationSteps` (what is missing, and where);
+`build.ts` turns a finished draft into the stored character (`buildNewCharacter`). The ability-bonus
+choice (`ability-bonus.ts`), the point-buy table (`point-buy.ts`) and the pick toggles (`picks.ts`)
+live beside it. Every creation screen holds its form state through `useCreationDraft`
+(`features/creation/use-creation-draft.ts`) and keeps only UI state (path, step, saving) itself.
+
 Creation is therefore never a blank form: **Quick Start opens already complete** on the default
 class's ready-made build (`DEFAULT_QUICKBUILD_PRESET`), and picking another class on that page
 rebuilds the sheet from ITS preset — silently when nothing has been sculpted, behind the house

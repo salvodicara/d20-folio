@@ -17,7 +17,7 @@ export function SkillsPickerSection({
   bgSkillIds: string[];
   classSkillPool: string[];
   classSkillCount: number;
-  selectedClassSkills: string[];
+  selectedClassSkills: readonly string[];
   onToggle: (id: string) => void;
 }) {
   const { t } = useTranslation();

@@ -2,10 +2,11 @@
  * CreationWizard — character creation, mounted at `/characters/new`. Alt C:
  * Quick-Start + Guided Wizard.
  *
- * R6+R3 SLICE 3 — the wizard is a THIN ORCHESTRATOR: it owns the creation state +
- * `handleCreate` (the one place that assembles `CharacterData` and writes
- * Firestore), and it reads every SRD/locale-dependent string from the
- * `lib/views/creation-view` presenter (golden rules 5 + 7). The per-step
+ * The wizard is a THIN ORCHESTRATOR: the creation DRAFT — what is legal, what
+ * is missing, and the build that assembles `CharacterData` — lives in the core
+ * (`lib/creation/`), held here through `useCreationDraft`; the wizard keeps only
+ * UI state and the Firestore write, and it reads every SRD/locale-dependent
+ * string from the `lib/views/creation-view` presenter (golden rules 5 + 7). The per-step
  * presentational components live under `features/creation/steps/`. The wizard
  * makes ZERO direct `[locale]` / LocaleText reads.
  *
@@ -16,7 +17,6 @@
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
  */
 
-import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useBlocker } from "react-router";
@@ -41,7 +41,6 @@ import { PlaqueCard, PlaqueGrid, WizardHero } from "@/features/wizard/gallery";
 import { WizardFeatList } from "@/features/wizard/feat-list";
 import { WizardSpellList, type SpellListSlot } from "@/features/wizard/spell-list";
 import { WizardPointBuy } from "@/features/wizard/point-buy";
-import { togglePick } from "@/features/wizard/pick-utils";
 import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
 import { useAuthStore } from "@/stores/authStore";
@@ -49,83 +48,34 @@ import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
 import { createCharacter } from "@/lib/firestore";
-import { classTables } from "@/data/classes";
-import { SRD_RACES } from "@/data/races";
-import { asRaceId } from "@/data/srd-names";
-import { SRD_BACKGROUNDS, getBackgroundEquipmentOptions } from "@/data/backgrounds";
-import {
-  resolveStartingEquipment,
-  type ToolChoiceContext,
-} from "@/data/background-equipment";
+import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { FEATS_BY_ID } from "@/data/feats";
-import { buildGrantedFeatures } from "@/lib/character-build";
-import {
-  proficiencyBonus,
-  abilityModifier,
-  skillNameToId,
-  calculateMaxHP,
-} from "@/lib/compute";
-import { ALIGNMENT_IDS, asAlignmentId } from "@/lib/lore-utils";
-import { nonEmptyString } from "@/lib/non-empty-string";
-import type {
-  SessionState,
-  CharacterData,
-  SrdWeaponRef,
-  SrdEquipmentRef,
-  CustomEquipment,
-  SrdSpellRef,
-  CustomSpell,
-} from "@/types/character";
-import {
-  injectExpandedSpells,
-  getExpandedSpellsThroughLevel,
-  getAlwaysPreparedFromGrants,
-} from "@/lib/expanded-spells";
-import {
-  resolveGrantSourcesForFeatures,
-  toolChoiceContextForClass,
-  toolChoiceContextForBackground,
-} from "@/lib/resolve-grant-sources";
-import { subclassSpellcastingState } from "@/lib/subclass-spellcasting";
+import { ALIGNMENT_IDS } from "@/lib/lore-utils";
+import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import {
   collectChoiceSlots,
   partitionChoiceSlotsBySource,
-  pruneChoicePicks,
-  isAllChoicesComplete,
-  applyChoicePicks,
   hasAnyChoiceSlots,
   type ChoicePicks,
 } from "@/lib/feature-choices";
-import { isSpellChoicesComplete } from "@/lib/feat-spell-choices";
-import {
-  isLanguagePicksComplete,
-  applyLanguagePicks,
-  type LanguageChoicePicks,
-} from "@/lib/feat-language-choices";
-import {
-  ORIGIN_LANGUAGE_SLOTS,
-  ORIGIN_LANGUAGE_SLOT_ID,
-  creationChoiceSlots,
-} from "@/lib/creation-choices";
-import {
-  DEFAULT_QUICKBUILD_CLASS,
-  DEFAULT_QUICKBUILD_PRESET,
-  QUICKBUILD_PRESETS,
-  type QuickbuildPreset,
-} from "@/data/quickbuild";
-import {
-  appliedQuickbuildState,
-  reseedForBackground,
-  sameAppliedQuickbuild,
-  type AppliedQuickbuild,
-} from "@/lib/quickbuild";
+import type { LanguageChoicePicks } from "@/lib/feat-language-choices";
+import { ORIGIN_LANGUAGE_SLOTS, ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
+import { QUICKBUILD_PRESETS } from "@/data/quickbuild";
 import { cryptoRng, rollQuickbuildFlavor } from "@/lib/quickbuild-random";
+import {
+  activeCreationSteps,
+  creationFacts,
+  creationStepBlocked,
+  missingCreationRequirements,
+  type CreationRequirementKey,
+} from "@/lib/creation/draft";
+import type { AbilityScoreBonusMode } from "@/lib/creation/ability-bonus";
+import { buildNewCharacter, type CreationBuildError } from "@/lib/creation/build";
 import { FeatureChoicesSection } from "@/components/sheet/FeatureChoicesSection";
 import { LanguageChoicePicker } from "@/components/sheet/LanguageChoicePicker";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { FeatSpellChoicesPicker } from "@/components/sheet/FeatSpellChoicesPicker";
-import type { AbilityCode, BackgroundEquipmentOption } from "@/data/types";
-import { getEquipment } from "@/data/equipment";
+import type { AbilityCode } from "@/data/types";
 import {
   raceOptions,
   backgroundOptions,
@@ -147,9 +97,6 @@ import {
 import {
   GUIDED_STEPS,
   GUIDED_STEP_KEYS,
-  ABILITY_CODES,
-  pointBuyCost,
-  POINT_BUY_BUDGET,
   type Mode,
   type GuidedStep,
 } from "./steps/steps";
@@ -166,72 +113,31 @@ import {
 import { SkillsPickerSection } from "./steps/pickers";
 import { ClassGallery, ClassPlaques } from "./steps/ClassGallery";
 import { QuickChapter } from "./steps/QuickChapter";
+import { useCreationDraft } from "./use-creation-draft";
 import type { Locale } from "@/lib/locale";
-
-// ─── Starting equipment → character ──────────────────────────────────────────
-
-/**
- * Mark an equipment ref as WORN if it's an armor/shield row, so the new
- * character's AC is right immediately (matching the inventory add-item picker).
- * SRD-backed refs only — name-only / custom rows are always carried.
- */
-function withArmorEquipped(
-  ref: SrdEquipmentRef | CustomEquipment
-): SrdEquipmentRef | CustomEquipment {
-  if ("custom" in ref) return ref;
-  const srd = getEquipment(ref.srdId);
-  if (srd?.category === "armor" || srd?.category === "shield") {
-    return { ...ref, equipped: true };
-  }
-  return ref;
-}
-
-/**
- * Resolve + MERGE the chosen class and background starting-equipment packages
- * into the new character's weapons / equipment / starting gold. The single
- * source-agnostic resolver (`resolveStartingEquipment`) does the item routing
- * (weapon → `weapons`, everything else → `equipment`, unresolvable id → labelled
- * custom row) and the gold; this just concatenates the two sources and marks
- * armor worn. `classToolChoice` / `bgToolChoice` resolve each source's own
- * chosen-tool pack member (the Monk/Bard class `fromToolChoice`; the
- * "Choose one kind of <X>" background's "(same as above)" `fromToolChoice`) to the
- * player's picked tool — the SAME expansion the wizard preview uses, so each tool
- * lands EXACTLY once and matches what the preview showed (golden rule 6 — no
- * separate append, no double-add). Each context is keyed to its own source's grant,
- * so the class tool and the background tool never cross-resolve.
- */
-function mergeStartingEquipment(
-  classOptions: ReadonlyArray<BackgroundEquipmentOption>,
-  classLabel: string,
-  bgOptions: ReadonlyArray<BackgroundEquipmentOption>,
-  bgLabel: string,
-  classToolChoice: ToolChoiceContext | undefined,
-  bgToolChoice: ToolChoiceContext | undefined
-): {
-  weapons: SrdWeaponRef[];
-  equipment: (SrdEquipmentRef | CustomEquipment)[];
-  gold: number;
-} {
-  const cls = resolveStartingEquipment(classOptions, classLabel, classToolChoice);
-  const bg = resolveStartingEquipment(bgOptions, bgLabel, bgToolChoice);
-  return {
-    weapons: [...cls.weapons, ...bg.weapons],
-    equipment: [...cls.equipment, ...bg.equipment].map(withArmorEquipped),
-    gold: cls.gold + bg.gold,
-  };
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-/**
- * The build the page OPENS with: creation is never a blank form — the one-page
- * Quick Start arrives complete, on the wizard's default class, and every
- * control edits it from there (`data/quickbuild.ts`).
- */
-const INITIAL = appliedQuickbuildState(
-  DEFAULT_QUICKBUILD_CLASS,
-  DEFAULT_QUICKBUILD_PRESET
-);
+/** The "what's left" label of each creation requirement. */
+const REQUIREMENT_LABEL_KEYS: Record<CreationRequirementKey, string> = {
+  name: "create.needName",
+  class: "create.needClass",
+  subclass: "create.needSubclass",
+  lineage: "create.needLineage",
+  humanFeat: "create.needHumanFeat",
+  originFeat: "create.needOriginFeat",
+  languages: "create.needLanguages",
+  skills: "create.needSkills",
+  spells: "create.needSpells",
+  bgAsi: "create.needBgAsi",
+};
+
+/** The message of each reason a draft cannot be built yet. */
+const BUILD_ERROR_KEYS: Record<CreationBuildError, string> = {
+  name: "create.nameRequired",
+  class: "create.classRequired",
+  subclass: "create.subclassRequired",
+};
 
 export function CreationWizard() {
   const { t } = useTranslation();
@@ -251,74 +157,74 @@ export function CreationWizard() {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
 
+  // UI state — the path, the page, the open chapters, the save in flight.
   const [mode, setMode] = useState<Mode>("quick");
   const [guidedStep, setGuidedStep] = useState<GuidedStep>("class");
   const [quickOpenSteps, setQuickOpenSteps] = useState<Set<GuidedStep>>(() => new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Form state
-  const [name, setName] = useState("");
-  const [selectedClass, setSelectedClass] = useState(INITIAL.classId);
-  const [level, setLevel] = useState(1);
-  const [selectedRace, setSelectedRace] = useState(INITIAL.raceId);
-  const [selectedBackground, setSelectedBackground] = useState(INITIAL.backgroundId);
-  const [selectedSubclass, setSelectedSubclass] = useState("");
-  const [usePointBuy, setUsePointBuy] = useState(true);
-  const [abilityScores, setAbilityScores] = useState<Record<AbilityCode, number>>(
-    INITIAL.abilityScores
-  );
-  const [bgAsiMode, setBgAsiMode] = useState<"+2/+1" | "+1/+1/+1">("+2/+1");
-  const [bgAsiChoices, setBgAsiChoices] = useState<Partial<Record<AbilityCode, number>>>(
-    INITIAL.bgAsiChoices
-  );
-  // RA-28 — the origin +2 language picks (Common is seeded separately).
-  const [languagePicks, setLanguagePicks] = useState<LanguageChoicePicks>(
-    INITIAL.languagePicks
-  );
-  const [humanFeat, setHumanFeat] = useState(INITIAL.humanFeat);
-  // Creation-time lineage choice (Elven / Gnomish lineage); bundleKey → optionId.
-  const [lineageChoices, setLineageChoices] = useState<Record<string, string>>({
-    ...INITIAL.lineageChoices,
-  });
-  // L3 — unified origin-feat choices (Human Versatile + background feat) in one
-  // ChoicePicks keyed by SOURCE+kind-namespaced slot id.
-  const [creationChoicePicks, setCreationChoicePicks] = useState<ChoicePicks>(
-    INITIAL.choicePicks
-  );
-  const [alignment, setAlignment] = useState("");
   // The guided background gallery's find-as-you-type filter (60+ plaques).
   const [bgQuery, setBgQuery] = useState("");
-  const [selectedClassSkills, setSelectedClassSkills] = useState<string[]>([
-    ...INITIAL.classSkills,
-  ]);
-  const [selectedCantrips, setSelectedCantrips] = useState<string[]>([
-    ...INITIAL.cantrips,
-  ]);
-  const [selectedSpells, setSelectedSpells] = useState<string[]>([...INITIAL.spells]);
-  // The chosen starting-equipment option per source — the 2024 "Choose A or B"
-  // fork (default "A", the suggested gear package). TWO independent decisions:
-  // the class package and the background package.
-  const [classEquipLabel, setClassEquipLabel] = useState("A");
-  const [bgEquipLabel, setBgEquipLabel] = useState("A");
-  // The build the page last PREFILLED — the yardstick for "has the player
-  // sculpted anything since?".
-  const [applied, setApplied] = useState<AppliedQuickbuild>(INITIAL);
-  const [hpMode, setHpMode] = useState<"average" | "rolled">("average");
-  const [rolledHp, setRolledHp] = useState<number | null>(null);
+
+  // FORM state — the creation draft (core: `lib/creation/draft.ts`). What is
+  // legal, what is missing and the final build all derive from it there.
+  const [draft, dispatch] = useCreationDraft();
+  const facts = useMemo(() => creationFacts(draft), [draft]);
+  const {
+    name,
+    classId: selectedClass,
+    level,
+    raceId: selectedRace,
+    backgroundId: selectedBackground,
+    subclassId: selectedSubclass,
+    usePointBuy,
+    abilityScores,
+    bgAsiMode,
+    bgAsiChoices,
+    languagePicks,
+    humanFeat,
+    lineageChoices,
+    alignment,
+    classSkills: selectedClassSkills,
+    cantrips: selectedCantrips,
+    spells: selectedSpells,
+    hpMethod: hpMode,
+    rolledHp,
+  } = draft;
+  const {
+    classTable,
+    isHuman,
+    subclassLevel,
+    subclassDue: showSubclass,
+    backgroundFeat: bgFeatSlug,
+    backgroundSkillIds: bgSkillIds,
+    classSkillPool,
+    classSkillCount,
+    cantripsNeeded,
+    spellsNeeded,
+    maxSpellLevel,
+    isPreparedCaster,
+    hasClassSpellPicks: showSpellStep,
+    choicePicks: activeCreationChoicePicks,
+    humanFeatSlots,
+    otherChoiceSlots: creationRestSlots,
+    classEquipLabel: effClassEquipLabel,
+    bgEquipLabel: effBgEquipLabel,
+    hasStartingEquipment,
+    classToolChoice,
+    bgToolChoice,
+    sculpted,
+  } = facts;
+  const selectedBgData = facts.backgroundData;
+  // The core's verdicts on the draft — computed once, up front.
+  const missing = missingCreationRequirements(draft, facts);
+  const stepBlocked = creationStepBlocked(draft, facts);
+  const journeySteps = activeCreationSteps(facts);
 
   // A page turn starts at the TOP of the new page (owner 2026-06-11).
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [guidedStep, mode]);
-
-  const isHuman = selectedRace === "human";
-
-  const classTable = classTables.find((c) => c.id === selectedClass);
-  const selectedRaceData = SRD_RACES.find((r) => r.id === selectedRace);
-  const selectedBgData = SRD_BACKGROUNDS.find((b) => b.id === selectedBackground);
-  const subclassLevel = classTable?.subclassLevel ?? 3;
-  const showSubclass = level >= subclassLevel && (classTable?.subclasses.length ?? 0) > 0;
 
   // ── Localized view-models (the ONLY locale reads — all via the presenter) ──
   const raceOptionVMs = useMemo(() => raceOptions(locale), [locale]);
@@ -349,141 +255,31 @@ export function CreationWizard() {
     () => raceTraitPreview(selectedRace, locale),
     [selectedRace, locale]
   );
-  // The starting-equipment option VMs are built BELOW, after the tool picks are
-  // resolved — BOTH the CLASS fork (Monk/Bard `fromToolChoice`) AND the BACKGROUND
-  // fork ("Choose one kind of <X>" → "(same as above)" `fromToolChoice`) thread
-  // their own tool-choice context so the chosen instrument/set shows in the preview.
 
-  // Display names — cheap pure presenter lookups (no memo; matches the prior
-  // inline `loc(...)` pattern, and React Compiler can't memo over a `.find()` const).
+  // Display names — cheap pure presenter lookups.
   const classDisplay = classTable ? presClassName(selectedClass, locale) : "";
-  const raceDisplay = selectedRaceData ? presRaceName(selectedRace, locale) : "";
+  const raceDisplay = facts.raceData ? presRaceName(selectedRace, locale) : "";
   const bgDisplay = selectedBgData ? presBgName(selectedBackground, locale) : "";
   const tipText = classTip(selectedClass, t);
 
-  // Point-buy tracking
-  const pointsSpent = useMemo(
-    () => ABILITY_CODES.reduce((sum, code) => sum + pointBuyCost(abilityScores[code]), 0),
-    [abilityScores]
-  );
-  const pointsRemaining = POINT_BUY_BUDGET - pointsSpent;
-
-  // Effective scores = base + background ASI choices (previews + final save).
-  const effectiveScores = useMemo<Record<AbilityCode, number>>(() => {
-    const result = { ...abilityScores };
-    for (const [code, bonus] of Object.entries(bgAsiChoices)) {
-      // B19 — a background ASI can raise a score TO 20 but never past it (the
-      // 2024 cap; matches the level-up ASI treatment). The clamp is reachable
-      // via Manual entry — a base 19 receiving a +2 must land on 20, not 21.
-      if (bonus)
-        result[code as AbilityCode] = Math.min(20, result[code as AbilityCode] + bonus);
-    }
-    return result;
-  }, [abilityScores, bgAsiChoices]);
-
-  // Background ASI validity.
-  const bgAsiIsValid = useMemo(() => {
-    const entries = Object.entries(bgAsiChoices).filter(([, v]) => v && v > 0);
-    if (bgAsiMode === "+2/+1") {
-      return (
-        entries.length === 2 &&
-        entries.some(([, v]) => v === 2) &&
-        entries.some(([, v]) => v === 1)
-      );
-    }
-    return entries.length === 3 && entries.every(([, v]) => v === 1);
-  }, [bgAsiMode, bgAsiChoices]);
-
-  // RA-28 — both origin languages must be chosen before Create unlocks.
-  const languagesComplete = isLanguagePicksComplete(ORIGIN_LANGUAGE_SLOTS, languagePicks);
-
-  // Skill proficiency computation.
-  const bgSkillIds = useMemo<string[]>(
-    () =>
-      (selectedBgData?.skillProficiencies ?? [])
-        .map(skillNameToId)
-        .filter((id): id is string => id !== null),
-    [selectedBgData]
-  );
-
-  // L3 — every pending `choice-*` decision the new character's sources confer,
-  // via the unified choice engine: the origin feats (Human Versatile + background
-  // feat) PLUS the class/subclass features gained THROUGH the starting level —
-  // so a character created at L2+ is offered the same choices (Scholar expertise,
-  // College of Lore's bonus proficiencies, School Savant's free spellbook spells,
-  // …) the level-up wizard would have surfaced on the way. Slot ids are
-  // namespaced per source; pruned to the live slot set.
-  //
-  // A2 — the class's spell-slot row at the starting level feeds `SpellChoiceCtx`
-  // so a RECURRING entitlement (Wizard School Savant) offers its full
-  // level-scaled pick count (2 at L3 → 3 at L5 → … → 9 at L17).
-  // Computed inline (no manual useMemo): `classTable` is a freshly-derived
-  // `.find()` const the React Compiler can't preserve a manual memo over — the
-  // compiler auto-memoizes this render path itself (same pattern as the
-  // LevelUpModal's inline gates).
-  const bgFeatSlug = selectedBgData?.feat ?? "";
-  const creationSlots = creationChoiceSlots({
-    classId: selectedClass,
-    level,
-    subclassId: selectedSubclass,
-    backgroundId: selectedBackground,
-    humanFeat,
-    bgFeat: bgFeatSlug,
-  });
-  const activeCreationChoicePicks = pruneChoicePicks(creationSlots, creationChoicePicks);
-  // The Human Versatile feat is PICKED in this wizard — its nested choices
-  // (Magic Initiate's spells, Skilled's skills, …) expand INLINE directly
-  // under the feat picker, attributed to their cause (owner, 2026-06-10).
-  // Everything else (background feat + class features) keeps its home:
-  // spell slots in the Spells step, the rest in the catch-all section.
-  const { caused: humanFeatSlots, rest: creationRestSlots } =
-    partitionChoiceSlotsBySource(creationSlots, isHuman ? humanFeat : null);
   // Spell choices surface in the Spells step; the Review catch-all shows only the
   // NON-spell origin choices so a choice never appears twice in the same wizard.
   const reviewChoiceSlots = { ...creationRestSlots, spell: [] };
 
-  // The CLASS starting-equipment VMs — threaded with the tool-choice context so
-  // the chosen-tool pack member (Monk / Bard `fromToolChoice`) shows the actual
-  // picked tool, or a localized placeholder before a pick. The SAME context
-  // drives the create-time merge, so preview and creation never drift (rule 6).
-  // Computed inline (no manual `useMemo`): `activeCreationChoicePicks` is a
-  // freshly-derived object the React Compiler can't preserve a manual memo over —
-  // it auto-memoizes this render path itself (same pattern as `creationSlots`).
-  const classToolChoice = toolChoiceContextForClass(
-    selectedClass,
-    activeCreationChoicePicks.tool
-  );
+  // The starting-equipment option VMs — threaded with each source's tool-choice
+  // context so the chosen-tool pack member shows the actual picked tool (or a
+  // localized placeholder before a pick). The SAME contexts drive the build, so
+  // preview and creation never drift.
   const classEquipVMs = classStartingEquipment(selectedClass, locale, classToolChoice);
-  const effClassEquipLabel = classEquipVMs.some((o) => o.label === classEquipLabel)
-    ? classEquipLabel
-    : (classEquipVMs[0]?.label ?? classEquipLabel);
-  // The BACKGROUND fork's tool-choice context — for a "Choose one kind of <X>"
-  // background, the chosen instrument/set resolves the "(same as above)"
-  // `fromToolChoice` pack member to the picked tool (or a localized placeholder
-  // before a pick). The SAME context drives the create-time merge, so preview and
-  // creation never drift (rule 6). A fixed-tool background yields `undefined`.
-  const bgToolChoice = toolChoiceContextForBackground(
-    selectedBackground,
-    activeCreationChoicePicks.tool
-  );
   const bgEquipVMs = startingEquipmentOptions(
-    getBackgroundEquipmentOptions(selectedBackground),
+    facts.backgroundEquipmentOptions,
     locale,
     bgToolChoice
   );
-  const hasStartingEquipment = classEquipVMs.length > 0 || bgEquipVMs.length > 0;
-  // The EFFECTIVE chosen BACKGROUND label — if a stale pick no longer exists, fall
-  // back to the first option (the suggested gear default). Derived at render (no
-  // setState-in-effect); the same fallback lives in `resolveStartingEquipment`, so
-  // render AND create agree by construction.
-  const effBgEquipLabel = bgEquipVMs.some((o) => o.label === bgEquipLabel)
-    ? bgEquipLabel
-    : (bgEquipVMs[0]?.label ?? bgEquipLabel);
 
   // Spell ids the character already owns from OTHER sources (class-selected
   // cantrips / leveled spells) — the feat spell pickers exclude these. MUST NOT
-  // include the feat's own in-flight picks (that vanished a just-picked spell
-  // from its picker and blocked Acolyte-background creation).
+  // include the feat's own in-flight picks.
   const classSpellIds = useMemo(
     () => new Set<string>([...selectedCantrips, ...selectedSpells]),
     [selectedCantrips, selectedSpells]
@@ -491,13 +287,10 @@ export function CreationWizard() {
 
   // Name of the BACKGROUND feat driving the catch-all feat-choice pickers, so
   // the section can SAY where the choices come from. The Human Versatile feat
-  // is NOT listed here — its choices render inline under its own picker,
-  // already attributed.
+  // is NOT listed here — its choices render inline under its own picker.
   const originFeatNames = useMemo(() => {
     const names: string[] = [];
     for (const slug of [bgFeatSlug]) {
-      // Only resolve a name for a slug that maps to a real feat (the catalogue
-      // would otherwise throw); the localized name comes from the presenter.
       if (slug && FEATS_BY_ID.has(slug)) names.push(featName(slug, locale));
     }
     return names;
@@ -508,389 +301,26 @@ export function CreationWizard() {
       ? t("create.featChoicesHint", { feats: originFeatNames.join(" · ") })
       : "";
 
-  const classSkillCount = classTable ? classTable.skillChoices.count : 0;
-
-  const classSkillPool: string[] = (classTable ? classTable.skillChoices.from : [])
-    .map(skillNameToId)
-    .filter((id): id is string => id !== null);
-
-  const skillsComplete = selectedClassSkills.length >= classSkillCount;
-
-  // Spellcasting computation.
-  const levelData = classTable?.levels[level - 1];
-  const cantripsNeeded = levelData?.cantripsKnown ?? 0;
-  const hasSpellSlots = (levelData?.spellSlots ?? []).some((s) => s > 0);
-  const maxSpellLevel = (levelData?.spellSlots ?? []).reduce(
-    (max, slots, i) => (slots > 0 ? i + 1 : max),
-    0
-  );
-  /** Leveled spells to pick — from the class table's "Prepared Spells" column. */
-  const spellsNeeded = levelData?.spellsKnown ?? 0;
-  const showSpellStep =
-    classTable?.spellcasting != null && (cantripsNeeded > 0 || hasSpellSlots);
-  const cantripsComplete = selectedCantrips.length >= cantripsNeeded;
-  const spellsComplete = selectedSpells.length >= spellsNeeded;
-  // The whole spell step is done only when BOTH the cantrips AND the leveled
-  // (prepared/known) picks meet their counts — mirrors LevelUpWizard's
-  // `spellsComplete`. A caster with no spell step is trivially complete.
-  const spellStepComplete = !showSpellStep || (cantripsComplete && spellsComplete);
-  const isPreparedCaster = classTable?.spellcasting?.preparedCaster ?? false;
-
-  function toggleClassSkill(id: string) {
-    if (bgSkillIds.includes(id)) return; // background skills are locked
-    setSelectedClassSkills((prev) => {
-      if (prev.includes(id)) return prev.filter((s) => s !== id);
-      // At the limit → FIFO replace the oldest (matches the spell/feat picker).
-      if (prev.length >= classSkillCount) return [...prev.slice(1), id];
-      return [...prev, id];
-    });
-  }
-
-  // Computed preview values (using effectiveScores so background ASI is live).
-  const classHitDie = classTable?.hitDie ?? 0;
-  const averageHP = classHitDie
-    ? calculateMaxHP(classHitDie, effectiveScores.CON, level)
-    : 0;
-  // Per-level HP grants from features / feats — reads the same declarative
-  // `{ type: "hp-per-level", amount }` grants the level-up engine reads.
-  const previewFeatures =
-    classTable && level >= 1
-      ? getFeaturesForLevel(
-          classTable.id,
-          level,
-          selectedSubclass,
-          selectedRaceData?.id ?? selectedRace,
-          humanFeat,
-          selectedBgData?.feat
-        )
-      : [];
-  const perLevelHpBonus = (() => {
-    let total = 0;
-    for (const src of resolveGrantSourcesForFeatures(previewFeatures)) {
-      for (const g of src.grants ?? []) {
-        if (g.type === "hp-per-level") total += g.amount * level;
-      }
-    }
-    return total;
-  })();
-  const previewHP =
-    (hpMode === "rolled" && rolledHp != null ? rolledHp : averageHP) + perLevelHpBonus;
-
-  const previewAC = 10 + abilityModifier(effectiveScores.DEX);
-  const previewPB = proficiencyBonus(level);
-  const previewDC = classTable?.spellcasting
-    ? 8 + previewPB + abilityModifier(effectiveScores[classTable.spellcasting.ability])
-    : null;
-
-  function switchBgAsiMode(newMode: "+2/+1" | "+1/+1/+1") {
-    setBgAsiMode(newMode);
-    setBgAsiChoices({});
-  }
-
-  function toggleBgAsi(code: AbilityCode) {
-    setBgAsiChoices((prev) => {
-      const current = prev[code];
-      const withoutCode = Object.fromEntries(
-        Object.entries(prev).filter(([k]) => k !== code)
-      );
-      if (bgAsiMode === "+2/+1") {
-        if (current != null) return withoutCode;
-        const hasTwo = Object.values(prev).some((v) => v === 2);
-        const hasOne = Object.values(prev).some((v) => v === 1);
-        if (!hasTwo) return { ...prev, [code]: 2 };
-        if (!hasOne) return { ...prev, [code]: 1 };
-        return prev;
-      } else {
-        if (current === 1) return withoutCode;
-        if (Object.keys(prev).length >= 3) return prev;
-        return { ...prev, [code]: 1 };
-      }
-    });
-  }
-
-  /**
-   * Full granted-feature set for a new character: class/subclass features +
-   * species traits + origin/background feats, so their trackers/actions/passives
-   * are live. Closes over the selected race/feats.
-   */
-  function getFeaturesForLevel(
-    classId: string,
-    lvl: number,
-    subclassId: string,
-    raceId: string,
-    originFeat: string,
-    bgFeat: string | undefined
-  ) {
-    return buildGrantedFeatures({
-      classId,
-      level: lvl,
-      subclassId,
-      raceId,
-      originFeat,
-      bgFeat,
-    });
-  }
+  // Computed preview values (the background ASI is live in every one).
+  const classHitDie = facts.hitDie;
+  const averageHP = facts.averageHp;
+  const perLevelHpBonus = facts.hpBonus;
+  const previewHP = facts.maxHp;
+  const previewAC = facts.armorClass;
+  const previewPB = facts.proficiencyBonus;
+  const previewDC = facts.spellSaveDc;
 
   const handleCreate = useCallback(async () => {
     if (!user) return;
-    // Mint the branded non-empty name ONCE here — the single gate that makes an
-    // empty/whitespace name impossible to create (it returns before assembling the
-    // character). `validName` is a `NonEmptyString`, so it slots straight into the
-    // branded `CharacterData.name` with no cast.
-    const validName = nonEmptyString(name);
-    if (validName === null) {
-      setError(t("create.nameRequired"));
+    const built = buildNewCharacter(draft, { displayName: user.displayName });
+    if (!built.ok) {
+      setError(t(BUILD_ERROR_KEYS[built.error]));
       return;
     }
-    if (!classTable) {
-      setError(t("create.classRequired"));
-      return;
-    }
-    if (showSubclass && !selectedSubclass) {
-      setError(t("create.subclassRequired"));
-      return;
-    }
-
     setSaving(true);
     setError(null);
     try {
-      // Resolve + merge the chosen class + background starting-equipment
-      // packages into the new character's weapons / equipment / starting gold
-      // (the source-agnostic resolver; the all-gold options yield no items).
-      // BOTH the Monk/Bard class chosen-tool pack member AND the "Choose one kind
-      // of <X>" background's "(same as above)" pack member resolve from the SAME
-      // tool-choice context that drives the preview — one pick, both surfaces,
-      // exactly once.
-      const startingKit = mergeStartingEquipment(
-        classTable.startingEquipment,
-        effClassEquipLabel,
-        getBackgroundEquipmentOptions(selectedBackground),
-        effBgEquipLabel,
-        classToolChoice,
-        bgToolChoice
-      );
-
-      const isPactMagic = classTable.id === "warlock";
-      // L10 — Eldritch Knight / Arcane Trickster grant their own (third-caster)
-      // spellcasting; when the subclass casts and the class doesn't, the subclass
-      // supplies the slots.
-      const subSpell = subclassSpellcastingState(classTable.id, selectedSubclass, level);
-      const spellSlots = subSpell
-        ? subSpell.spellSlots
-        : (classTable.levels[level - 1]?.spellSlots ?? [])
-            .map((total, i) =>
-              isPactMagic
-                ? { level: i + 1, total, pactMagic: true }
-                : { level: i + 1, total }
-            )
-            .filter((s) => s.total > 0);
-
-      const characterData: CharacterData = {
-        name: validName,
-        quote: "",
-        // Stored as the stable, branded race ID (golden rule 7) — the
-        // selection already IS a canonical id; display derives from it via
-        // `localizeRaceName`. A species NAME can never live in the document.
-        race: asRaceId(selectedRaceData?.id ?? selectedRace),
-        // R4 — `classes[]` is the SOLE source of truth (single-class = one entry).
-        classes: [
-          {
-            classId: selectedClass,
-            ...(selectedSubclass ? { subclassId: selectedSubclass } : {}),
-            level,
-          },
-        ],
-        background: selectedBgData
-          ? presBgName(selectedBackground, "en")
-          : selectedBackground,
-        // The alignment SELECT binds + emits the stable alignment ID; brand it (the
-        // in-memory field is an AlignmentId — golden rule 7). Display derives
-        // from the id via `t("lore.alignments.<id>")`.
-        alignment: asAlignmentId(alignment),
-        // D30 — prefill the player's FIRST name from their Google account.
-        playerName: user.displayName?.trim().split(/\s+/)[0] ?? "",
-        speed: String(selectedRaceData?.speed ?? 30),
-        ac: previewAC,
-        acOverride: null,
-        armorNote: "Unarmored",
-        hp: { max: previewHP },
-        hitDieType: classTable.hitDie,
-        // Initiative is auto-computed from DEX/PB/Alert (`computeInitiative`); the
-        // override stays null until the user sets one. (The legacy `initiativeBonus`
-        // slot was deleted from the type — golden rule 10.)
-        initiativeBonusOverride: null,
-        // Languages are STABLE IDS (golden rule 7): the auto Origin "Common" lands
-        // as the id here; the RA-28 origin +2 picks (the guided/quick Languages step)
-        // append their ids via `applyLanguagePicks` at `finalCharacter`. Never a
-        // localized display string.
-        languageIds: ["common"],
-        customLanguages: [],
-        // Tool proficiencies are DERIVED, never baked as a locale string (golden
-        // rules 6 + 7): a FIXED tool flows through its `tool-proficiency` grant
-        // (`resolveGrantSourcesFor{Background,Class,Features}` →
-        // `displayToolProficiencies`); a "Choose one kind of <X>" / "3 instruments"
-        // CHOICE pick is recorded as STABLE TOOL IDS in `toolChoices` by the player's
-        // PICK via `applyChoicePicks` (`applyToolPicks`) at `finalCharacter`, and the
-        // proficiency is DERIVED from those ids by the synthetic tool-choice grant
-        // source — so the concrete instrument/set surfaces, never the umbrella, and
-        // never a free-text string. These MANUAL id lists stay EMPTY at creation
-        // (they hold only later hand-added picks).
-        toolProficiencyIds: [],
-        customToolProficiencies: [],
-        abilityBudget: 27,
-        proficiencyBonusOverride: null,
-        levelUpChecklist: null,
-        backgroundAsi: Object.fromEntries(Object.entries(bgAsiChoices)),
-        humanOriginFeat: humanFeat,
-        bgFeat: selectedBgData?.feat ?? "",
-        lore: {
-          traits: "",
-          ideals: "",
-          bonds: "",
-          flaws: "",
-          backstory: "",
-          age: "",
-          height: "",
-          weight: "",
-          eyes: "",
-          hair: "",
-          skin: "",
-        },
-        abilityScores: effectiveScores,
-        savingThrows: classTable.savingThrows,
-        skills: [...bgSkillIds, ...selectedClassSkills].reduce<
-          Record<string, "proficient">
-        >((acc, id) => {
-          acc[id] = "proficient";
-          return acc;
-        }, {}),
-        spellcasting: classTable.spellcasting
-          ? {
-              ability: classTable.spellcasting.ability,
-              preparedCaster: classTable.spellcasting.preparedCaster,
-              preparedMax: spellsNeeded,
-              saveDCOverride: null,
-              attackBonusOverride: null,
-            }
-          : subSpell
-            ? {
-                ability: subSpell.ability,
-                preparedCaster: true,
-                preparedMax: subSpell.preparedMax,
-                saveDCOverride: null,
-                attackBonusOverride: null,
-              }
-            : null,
-        spellSlots,
-        // H7 — inject subclass expanded spells + always-prepared-spell grants so
-        // the player begins with the always-prepared list correct from the start.
-        spells: (() => {
-          // 1. Class-selected cantrips + spells (prepared).
-          const initial: SrdSpellRef[] = [
-            ...selectedCantrips.map((id) => ({ srdId: id, prepared: true })),
-            ...selectedSpells.map((id) => ({ srdId: id, prepared: true })),
-          ];
-          let s: (SrdSpellRef | CustomSpell)[] = initial;
-          // 2. Subclass expanded-spells (Cleric Domain / Paladin Oath / …).
-          s = injectExpandedSpells(
-            s,
-            getExpandedSpellsThroughLevel(selectedClass, selectedSubclass, level)
-          );
-          // 3. Always-prepared spells from feature/feat grants.
-          s = injectExpandedSpells(
-            s,
-            getAlwaysPreparedFromGrants(
-              resolveGrantSourcesForFeatures(
-                getFeaturesForLevel(
-                  classTable.id,
-                  level,
-                  selectedSubclass,
-                  selectedRaceData?.id ?? selectedRace,
-                  humanFeat,
-                  selectedBgData?.feat
-                )
-              ),
-              {
-                level,
-                maxSlotLevel: highestSpellSlotLevel([
-                  {
-                    classId: selectedClass,
-                    level,
-                    ...(selectedSubclass ? { subclassId: selectedSubclass } : {}),
-                  },
-                ]),
-              }
-            )
-          );
-          // Origin-feat cantrip/spell picks are applied below via the unified
-          // choice engine (applyChoicePicks), alongside skill/tool/language picks.
-          return s;
-        })(),
-        weapons: startingKit.weapons,
-        equipment: startingKit.equipment,
-        // STORE only what's auto-granted by CLASS — race traits live OUTSIDE
-        // `features[]` (they resolve from `character.race` via
-        // `resolveGrantSourcesForRace` / the smart-tracker race branches) and Origin
-        // feats are re-derived from the build choices. Baking the race traits in
-        // here was the legacy double-surfacing source (the "Adrenaline Rush twice"
-        // report); `raceId: ""` keeps them out so the doc declares the least.
-        // (The class features minimize-drop on save; storing them is harmless and
-        // keeps the freshly-created in-memory sheet complete before the first save.)
-        features: getFeaturesForLevel(
-          classTable.id,
-          level,
-          selectedSubclass,
-          "",
-          humanFeat,
-          selectedBgData?.feat
-        ),
-        combatAlgorithm: [],
-        customConditions: [],
-        sidebar: [],
-      };
-
-      // Write creation-time lineage choices into grantBundleChoices so the
-      // character starts with the correct lineage grants active.
-      const grantBundleChoices: Record<string, string> =
-        Object.keys(lineageChoices).length > 0 ? { ...lineageChoices } : {};
-
-      const session: SessionState = {
-        hp: { current: previewHP, temp: 0 },
-        hitDice: { used: 0 },
-        trackers: {},
-        spellSlots: {},
-        // Starting gold = the chosen class option's GP + the chosen background
-        // option's GP (the 2024 "and N GP" rider / the all-gold alternative).
-        currency: { pp: 0, gp: startingKit.gold, ep: 0, sp: 0, cp: 0 },
-        concentration: "",
-        initiative: "",
-        conditions: [],
-        deathSucc: 0,
-        deathFail: 0,
-        inspiration: false,
-        exhaustion: 0,
-        pinnedActions: [],
-        unpinnedActions: [],
-        notes: "",
-        logEntries: [],
-        grantBundleChoices,
-      };
-
-      // Apply ALL origin-feat choices (Human Versatile + bg feat) in one pass via
-      // the unified choice engine. Jack-of-All-Trades is DERIVED from the feature
-      // at render (#57) — never baked into stored `skills`.
-      const finalCharacter = applyLanguagePicks(
-        applyChoicePicks(characterData, creationSlots, activeCreationChoicePicks),
-        languagePicks
-      );
-      const docId = await createCharacter(user.uid, {
-        portraitUrl: null,
-        portraitCrop: null,
-        shared: false,
-        status: "active",
-        character: finalCharacter,
-        session,
-      });
+      const docId = await createCharacter(user.uid, built.payload);
       // Land on the cockpit. Flag the leave-guard so this save doesn't prompt.
       finishingRef.current = true;
       void navigate(`/characters/${docId}`);
@@ -899,90 +329,7 @@ export function CreationWizard() {
       setError(err instanceof Error ? err.message : t("character.failedCreate"));
       setSaving(false);
     }
-  }, [
-    user,
-    name,
-    classTable,
-    selectedClass,
-    selectedSubclass,
-    showSubclass,
-    selectedRaceData,
-    selectedBgData,
-    selectedRace,
-    selectedBackground,
-    level,
-    previewAC,
-    previewHP,
-    effectiveScores,
-    bgAsiChoices,
-    humanFeat,
-    alignment,
-    selectedClassSkills,
-    bgSkillIds,
-    selectedCantrips,
-    selectedSpells,
-    spellsNeeded,
-    effClassEquipLabel,
-    effBgEquipLabel,
-    classToolChoice,
-    bgToolChoice,
-    creationSlots,
-    activeCreationChoicePicks,
-    lineageChoices,
-    languagePicks,
-    navigate,
-    t,
-  ]);
-
-  // Origin-feat picker completeness — every slot must be filled to its count.
-  // Split along the render split: the Human feat's slots live on the species
-  // step, every other slot on background/spells — so the "what's left" jump
-  // lands where the picker actually is.
-  const humanFeatChoicesComplete = isAllChoicesComplete(
-    humanFeatSlots,
-    activeCreationChoicePicks
-  );
-  const restChoicesComplete = isAllChoicesComplete(
-    creationRestSlots,
-    activeCreationChoicePicks
-  );
-  // Whether the REST slots' spell picks specifically are done — they render on
-  // the Spells step, so the "what's left" jump must land there, never on a step
-  // with no picker (the background dead-end regression).
-  const restSpellChoicesComplete = isSpellChoicesComplete(
-    creationRestSlots.spell,
-    activeCreationChoicePicks.spell
-  );
-
-  // Lineage completeness — every creation-time bundle must have a choice.
-  const lineageComplete =
-    lineageBundles.length === 0 ||
-    lineageBundles.every((b) => lineageChoices[b.bundleKey] !== undefined);
-
-  // Has the player changed anything since the build was applied? Compared field
-  // by field against what `applyPreset` writes (`appliedQuickbuildState`), so it
-  // can never drift from the thing it measures — the NAME and the other
-  // untouched fields are deliberately outside that yardstick.
-  const sculpted = !sameAppliedQuickbuild(applied, {
-    classId: selectedClass,
-    subclassId: selectedSubclass,
-    level,
-    raceId: selectedRace,
-    backgroundId: selectedBackground,
-    usePointBuy,
-    abilityScores,
-    bgAsiMode,
-    bgAsiChoices,
-    classSkills: selectedClassSkills,
-    cantrips: selectedCantrips,
-    spells: selectedSpells,
-    languagePicks,
-    lineageChoices,
-    humanFeat,
-    choicePicks: activeCreationChoicePicks,
-    classEquipLabel: effClassEquipLabel,
-    bgEquipLabel: effBgEquipLabel,
-  });
+  }, [user, draft, navigate, t]);
 
   // ── Leave-creation guard (A1) ───────────────────────────────────────────────
   // A half-built character is unsaved local state — but only once the player has
@@ -1049,102 +396,19 @@ export function CreationWizard() {
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
-  // ─── Create requirements (single source of truth) ────────────────────────────
+
+  // ─── Create requirements (single source of truth: the core) ──────────────────
   // ONE list drives BOTH the disabled gate AND the "what's left to finish"
   // explainer, so the button and the message can never disagree.
-  const createRequirements: {
-    key: string;
-    met: boolean;
-    label: string;
-    step: GuidedStep;
-  }[] = [
-    { key: "name", met: !!name.trim(), label: t("create.needName"), step: "class" },
-    { key: "class", met: !!classTable, label: t("create.needClass"), step: "class" },
-    {
-      key: "subclass",
-      met: !showSubclass || !!selectedSubclass,
-      label: t("create.needSubclass"),
-      step: "class",
-    },
-    {
-      key: "lineage",
-      met: lineageComplete,
-      label: t("create.needLineage"),
-      step: "race",
-    },
-    {
-      key: "humanFeat",
-      met: !isHuman || !!humanFeat,
-      label: t("create.needHumanFeat"),
-      step: "race",
-    },
-    {
-      key: "originFeat",
-      met: humanFeatChoicesComplete && restChoicesComplete,
-      label: t("create.needOriginFeat"),
-      // Jump where the first incomplete picker actually is: the Human feat's
-      // choices expand on the species step, spell picks on the Spells step,
-      // and every other catch-all choice on the Review step itself.
-      step: !humanFeatChoicesComplete
-        ? "race"
-        : !restSpellChoicesComplete
-          ? "spells"
-          : "review",
-    },
-    {
-      // RA-28 — the 2024 origin languages (Common + 2 of your choice) are part of
-      // a complete character; the guided Languages step already gates this, and
-      // quick mode / orb free-jumps honor the same bar so Create can never mint a
-      // Common-only character.
-      key: "languages",
-      met: languagesComplete,
-      label: t("create.needLanguages"),
-      step: "languages",
-    },
-    {
-      // B01 — a complete character has its CLASS skill proficiencies chosen.
-      // The guided Skills step already gated this (`stepNextDisabled.skills`);
-      // quick mode and orb free-jumps now honor the same bar so Create can
-      // never mint a `skills:{}` character. Trivially met when the class grants
-      // no skill choices.
-      key: "skills",
-      met: skillsComplete,
-      label: t("create.needSkills"),
-      step: "skills",
-    },
-    {
-      // B01 — a caster begins play with its cantrips AND its leveled
-      // (prepared/known) spells chosen; the guided Spells-step Next only
-      // checked cantrips, so a 0-spell caster slipped through. Mirrors
-      // LevelUpWizard's `spellsComplete`. Non-casters are trivially met.
-      key: "spells",
-      met: spellStepComplete,
-      label: t("create.needSpells"),
-      step: "spells",
-    },
-    {
-      // D5 — the 2024 background ASI is part of a complete character; the
-      // wizard prompts and `backgroundAsi` is populated before Create unlocks
-      // (the guided rail already gated this step — quick mode and orb
-      // free-jumps now honor the same bar).
-      key: "bgAsi",
-      met: bgAsiIsValid,
-      label: t("create.needBgAsi"),
-      step: "bg-asi",
-    },
-  ];
-  const missingRequirements = createRequirements.filter((r) => !r.met);
+  const missingRequirements = missing.map((r) => ({
+    ...r,
+    label: t(REQUIREMENT_LABEL_KEYS[r.key]),
+  }));
   const canCreate = missingRequirements.length === 0;
 
-  // ── C4 — the journey DERIVES from the class (golden rule 19): a non-caster
-  // gets NO spells step (unless an origin feat asks spell picks), a class with
-  // no starting-equipment table gets NO equipment step. The orb row morphs to
-  // the new count via the chrome's keyed swap (B2) — no perceived jump.
-  const activeGuidedSteps: GuidedStep[] = GUIDED_STEPS.filter((id) => {
-    if (id === "spells") return showSpellStep || creationRestSlots.spell.length > 0;
-    if (id === "equipment") return hasStartingEquipment;
-    return true;
-  });
+  // The journey DERIVES from the class (golden rule 19) — the core decides which
+  // steps exist; the orb row morphs to the new count via the chrome's keyed swap.
+  const activeGuidedSteps: GuidedStep[] = journeySteps;
 
   // Guided step navigation.
   const currentStepIndex = activeGuidedSteps.indexOf(guidedStep);
@@ -1154,83 +418,38 @@ export function CreationWizard() {
     setGuidedStep("class");
   }
 
-  /** Reset spell + subclass picks when the class or level changes (on-rails). */
-  function onClassChange(id: string) {
-    setSelectedClass(id);
-    setSelectedSubclass("");
-    setSelectedClassSkills([]);
-    setSelectedCantrips([]);
-    setSelectedSpells([]);
-  }
-  function onLevelChange(raw: number) {
-    setLevel(Math.max(1, Math.min(20, raw || 1)));
-    setSelectedSubclass("");
-    setSelectedCantrips([]);
-    setSelectedSpells([]);
-  }
-  function onRaceChange(id: string) {
-    setSelectedRace(id);
-    setHumanFeat("");
-    setLineageChoices({});
-  }
-
-  /**
-   * Apply a whole build in one go — the ONE state seam both preset legs use
-   * (a class's ready-made build, and a Randomize reroll of it). Every field
-   * comes from `appliedQuickbuildState`, the same object the sculpted-yardstick
-   * compares against, so the two can never fall out of step; it is kept beside
-   * the preset so no render has to recompute it.
-   */
-  function applyPreset(classId: string, preset: QuickbuildPreset) {
-    const state = appliedQuickbuildState(classId, preset);
-    setSelectedClass(state.classId);
-    setSelectedSubclass(state.subclassId);
-    setLevel(state.level);
-    setSelectedRace(state.raceId);
-    setSelectedBackground(state.backgroundId);
-    setUsePointBuy(state.usePointBuy);
-    setAbilityScores(state.abilityScores);
-    setBgAsiMode(state.bgAsiMode);
-    setBgAsiChoices(state.bgAsiChoices);
-    setSelectedClassSkills([...state.classSkills]);
-    setSelectedCantrips([...state.cantrips]);
-    setSelectedSpells([...state.spells]);
-    setLanguagePicks(state.languagePicks);
-    setLineageChoices({ ...state.lineageChoices });
-    setHumanFeat(state.humanFeat);
-    setCreationChoicePicks(state.choicePicks);
-    setClassEquipLabel(state.classEquipLabel);
-    setBgEquipLabel(state.bgEquipLabel);
-    // The NAME is never part of a build: a preset or a reroll must never wipe
-    // what the player typed (owner: "name is sacred").
-    setApplied(state);
-  }
-
-  /**
-   * The BACKGROUND control (both paths). A new background brings its own three
-   * eligible abilities and its own skill grants, so the prior +2/+1 and class
-   * skills cannot simply carry over (golden rule 20 — no reachable invalid
-   * state). Emptying them is legal but silent, and those sections sit far below
-   * the select: so a sheet that is still the build it was handed gets them
-   * RE-SEEDED for the new background instead, and only a sculpted one clears.
-   */
-  function changeBackground(backgroundId: string) {
-    setSelectedBackground(backgroundId);
-    const preset = QUICKBUILD_PRESETS[selectedClass];
-    if (sculpted || !preset) {
-      setSelectedClassSkills([]);
-      setBgAsiChoices({});
-      return;
-    }
-    const seeded = reseedForBackground(
-      selectedClass,
-      preset.abilityOrder,
-      selectedClassSkills,
-      backgroundId
-    );
-    setSelectedClassSkills(seeded.classSkills);
-    setBgAsiChoices(seeded.bgAsiChoices);
-  }
+  const onLevelChange = (raw: number) => dispatch({ type: "setLevel", level: raw });
+  const onClassChange = (classId: string) => dispatch({ type: "selectClass", classId });
+  const onRaceChange = (raceId: string) => dispatch({ type: "selectRace", raceId });
+  const changeBackground = (backgroundId: string) =>
+    dispatch({ type: "selectBackground", backgroundId });
+  const setSubclass = (subclassId: string) =>
+    dispatch({ type: "setSubclass", subclassId });
+  const setChoicePicks = (picks: ChoicePicks) =>
+    dispatch({ type: "setChoicePicks", picks });
+  const setLanguagePicks = (picks: LanguageChoicePicks) =>
+    dispatch({ type: "setLanguagePicks", picks });
+  const setAbilityScores = (scores: Record<AbilityCode, number>) =>
+    dispatch({ type: "setAbilityScores", abilityScores: scores });
+  const toggleClassSkill = (skillId: string) =>
+    dispatch({ type: "toggleClassSkill", skillId });
+  const toggleBgAsi = (code: AbilityCode) =>
+    dispatch({ type: "toggleAbilityBonus", code });
+  const switchBgAsiMode = (newMode: AbilityScoreBonusMode) =>
+    dispatch({ type: "switchAbilityBonusMode", mode: newMode });
+  const toggleClassSpell = (slotId: string, spellId: string, limit: number) =>
+    dispatch({
+      type: "toggleClassSpell",
+      list: slotId === "cantrips" ? "cantrips" : "spells",
+      spellId,
+      limit,
+    });
+  const setClassEquipLabel = (label: string) =>
+    dispatch({ type: "setClassEquipment", label });
+  const setBgEquipLabel = (label: string) =>
+    dispatch({ type: "setBackgroundEquipment", label });
+  const setLineageChoice = (bundleKey: string, optionId: string) =>
+    dispatch({ type: "setLineageChoice", bundleKey, optionId });
 
   /**
    * Replace the whole build — the two destructive acts on this page (choosing a
@@ -1263,7 +482,7 @@ export function CreationWizard() {
         message: t("create.rebuildMessage"),
         confirmLabel: t("create.rebuildConfirm"),
       },
-      () => applyPreset(classId, preset)
+      () => dispatch({ type: "applyQuickbuild", classId, preset })
     );
   }
 
@@ -1284,7 +503,11 @@ export function CreationWizard() {
         confirmLabel: t("create.rerollConfirm"),
       },
       () =>
-        applyPreset(selectedClass, rollQuickbuildFlavor(selectedClass, preset, cryptoRng))
+        dispatch({
+          type: "applyQuickbuild",
+          classId: selectedClass,
+          preset: rollQuickbuildFlavor(selectedClass, preset, cryptoRng),
+        })
     );
   }
 
@@ -1294,7 +517,7 @@ export function CreationWizard() {
       <Select
         aria-label={t("create.subclassLabel", { level: subclassLevel })}
         value={selectedSubclass}
-        onChange={(e) => setSelectedSubclass(e.target.value)}
+        onChange={(e) => setSubclass(e.target.value)}
       >
         <option value="">{t("create.subclassPlaceholder")}</option>
         {subclassVMs.map((sc) => (
@@ -1310,7 +533,7 @@ export function CreationWizard() {
     <Select
       aria-label={t("lore.alignment")}
       value={alignment}
-      onChange={(e) => setAlignment(e.target.value)}
+      onChange={(e) => dispatch({ type: "setAlignment", alignment: e.target.value })}
     >
       <option value="">{t("lore.alignmentPlaceholder")}</option>
       {ALIGNMENT_IDS.map((id) => (
@@ -1381,18 +604,7 @@ export function CreationWizard() {
     : t("create.title");
 
   /** Per-step on-rails Next gate (review's CTA is the create button). */
-  const stepNextDisabled: Record<GuidedStep, boolean> = {
-    class: !classTable || (showSubclass && !selectedSubclass),
-    race: !lineageComplete || (isHuman && (!humanFeat || !humanFeatChoicesComplete)),
-    background: false,
-    languages: !languagesComplete,
-    skills: !skillsComplete,
-    spells: showSpellStep && !(cantripsComplete && spellsComplete),
-    equipment: false,
-    "bg-asi": !bgAsiIsValid,
-    abilities: usePointBuy && pointsRemaining !== 0,
-    review: false,
-  };
+  const stepNextDisabled = stepBlocked;
 
   // ── wizard-F shared pieces ────────────────────────────────────────────────
   const selectedRaceVM = raceOptionVMs.find((r) => r.id === selectedRace);
@@ -1413,7 +625,7 @@ export function CreationWizard() {
       <WizardFeatList
         feats={originFeatPool}
         chosenId={humanFeat || null}
-        onChoose={(id) => setHumanFeat(id ?? "")}
+        onChoose={(id) => dispatch({ type: "setHumanFeat", featId: id ?? "" })}
         asksFor={(featId) => {
           const slots =
             featId === humanFeat
@@ -1431,7 +643,7 @@ export function CreationWizard() {
             <FeatureChoicesSection
               slots={unstamped}
               picks={activeCreationChoicePicks}
-              onChange={setCreationChoicePicks}
+              onChange={setChoicePicks}
               existingSkillIds={new Set([...selectedClassSkills, ...bgSkillIds])}
               existingSpellIds={classSpellIds}
               proficientSkillIds={new Set([...selectedClassSkills, ...bgSkillIds])}
@@ -1611,9 +823,7 @@ export function CreationWizard() {
                   <WizardForkTab
                     key={o.id}
                     active={chosenOpt === o.id}
-                    onClick={() =>
-                      setLineageChoices((prev) => ({ ...prev, [b.bundleKey]: o.id }))
-                    }
+                    onClick={() => setLineageChoice(b.bundleKey, o.id)}
                   >
                     {o.label}
                   </WizardForkTab>
@@ -1721,7 +931,7 @@ export function CreationWizard() {
                 <Input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => dispatch({ type: "setName", name: e.target.value })}
                   placeholder={t("create.namePlaceholder")}
                   className="w-full"
                   autoFocus
@@ -1803,10 +1013,7 @@ export function CreationWizard() {
                           aria-label={bundle.label}
                           value={lineageChoices[bundle.bundleKey] ?? ""}
                           onChange={(e) =>
-                            setLineageChoices((previous) => ({
-                              ...previous,
-                              [bundle.bundleKey]: e.target.value,
-                            }))
+                            setLineageChoice(bundle.bundleKey, e.target.value)
                           }
                         >
                           <option value="">{t("create.lineagePlaceholder")}</option>
@@ -1893,17 +1100,7 @@ export function CreationWizard() {
                       <WizardSpellList
                         slots={spellListSlots}
                         picks={{ cantrips: selectedCantrips, spells: selectedSpells }}
-                        onToggle={(slotId, spellId, limit) => {
-                          if (slotId === "cantrips") {
-                            setSelectedCantrips((previous) =>
-                              togglePick(previous, spellId, limit)
-                            );
-                          } else {
-                            setSelectedSpells((previous) =>
-                              togglePick(previous, spellId, limit)
-                            );
-                          }
-                        }}
+                        onToggle={toggleClassSpell}
                       />
                     )}
                     {creationRestSlots.spell.length > 0 && (
@@ -1911,7 +1108,7 @@ export function CreationWizard() {
                         slots={creationRestSlots.spell}
                         picks={activeCreationChoicePicks.spell}
                         onChange={(spell) =>
-                          setCreationChoicePicks({ ...activeCreationChoicePicks, spell })
+                          setChoicePicks({ ...activeCreationChoicePicks, spell })
                         }
                         existingSpellIds={classSpellIds}
                       />
@@ -1955,7 +1152,7 @@ export function CreationWizard() {
                     backgroundName={bgDisplay}
                     onSwitchMode={switchBgAsiMode}
                     onToggle={toggleBgAsi}
-                    isValid={bgAsiIsValid}
+                    isValid={facts.abilityBonusValid}
                   />
                 </QuickChapter>
 
@@ -1973,13 +1170,17 @@ export function CreationWizard() {
                   >
                     <WizardForkTab
                       active={usePointBuy}
-                      onClick={() => setUsePointBuy(true)}
+                      onClick={() =>
+                        dispatch({ type: "setUsePointBuy", usePointBuy: true })
+                      }
                     >
                       {t("create.pointBuy")}
                     </WizardForkTab>
                     <WizardForkTab
                       active={!usePointBuy}
-                      onClick={() => setUsePointBuy(false)}
+                      onClick={() =>
+                        dispatch({ type: "setUsePointBuy", usePointBuy: false })
+                      }
                     >
                       {t("create.manual")}
                     </WizardForkTab>
@@ -2009,7 +1210,7 @@ export function CreationWizard() {
                       <FeatureChoicesSection
                         slots={reviewChoiceSlots}
                         picks={activeCreationChoicePicks}
-                        onChange={setCreationChoicePicks}
+                        onChange={setChoicePicks}
                         existingSkillIds={
                           new Set([...selectedClassSkills, ...bgSkillIds])
                         }
@@ -2023,9 +1224,11 @@ export function CreationWizard() {
                   <FormField label={t("create.hpLabel")}>
                     <HpModeSelector
                       mode={hpMode}
-                      onModeChange={setHpMode}
+                      onModeChange={(method) => dispatch({ type: "setHpMethod", method })}
                       rolledHp={rolledHp}
-                      onRolledHpChange={setRolledHp}
+                      onRolledHpChange={(hp) =>
+                        dispatch({ type: "setRolledHp", rolledHp: hp })
+                      }
                       averageHp={averageHP}
                       hpBonus={perLevelHpBonus}
                       hitDie={classHitDie}
@@ -2081,7 +1284,9 @@ export function CreationWizard() {
                     <Input
                       type="text"
                       value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      onChange={(e) =>
+                        dispatch({ type: "setName", name: e.target.value })
+                      }
                       placeholder={t("create.namePlaceholder")}
                       className="w-full"
                     />
@@ -2105,7 +1310,7 @@ export function CreationWizard() {
                   selectedClass={selectedClass}
                   selectedSubclass={selectedSubclass}
                   onPickClass={onClassChange}
-                  onPickSubclass={setSelectedSubclass}
+                  onPickSubclass={setSubclass}
                 />
               </>
             )}
@@ -2209,13 +1414,7 @@ export function CreationWizard() {
                   <WizardSpellList
                     slots={spellListSlots}
                     picks={{ cantrips: selectedCantrips, spells: selectedSpells }}
-                    onToggle={(slotId, spellId, limit) => {
-                      if (slotId === "cantrips") {
-                        setSelectedCantrips((prev) => togglePick(prev, spellId, limit));
-                      } else {
-                        setSelectedSpells((prev) => togglePick(prev, spellId, limit));
-                      }
-                    }}
+                    onToggle={toggleClassSpell}
                   />
                 )}
                 {creationRestSlots.spell.length > 0 && (
@@ -2229,7 +1428,7 @@ export function CreationWizard() {
                       slots={creationRestSlots.spell}
                       picks={activeCreationChoicePicks.spell}
                       onChange={(spell) =>
-                        setCreationChoicePicks({ ...activeCreationChoicePicks, spell })
+                        setChoicePicks({ ...activeCreationChoicePicks, spell })
                       }
                       existingSpellIds={classSpellIds}
                     />
@@ -2272,7 +1471,7 @@ export function CreationWizard() {
                   backgroundName={bgDisplay}
                   onSwitchMode={switchBgAsiMode}
                   onToggle={toggleBgAsi}
-                  isValid={bgAsiIsValid}
+                  isValid={facts.abilityBonusValid}
                 />
               </div>
             )}
@@ -2286,13 +1485,17 @@ export function CreationWizard() {
                 >
                   <WizardForkTab
                     active={usePointBuy}
-                    onClick={() => setUsePointBuy(true)}
+                    onClick={() =>
+                      dispatch({ type: "setUsePointBuy", usePointBuy: true })
+                    }
                   >
                     {t("create.pointBuy")}
                   </WizardForkTab>
                   <WizardForkTab
                     active={!usePointBuy}
-                    onClick={() => setUsePointBuy(false)}
+                    onClick={() =>
+                      dispatch({ type: "setUsePointBuy", usePointBuy: false })
+                    }
                   >
                     {t("create.manual")}
                   </WizardForkTab>
@@ -2347,9 +1550,11 @@ export function CreationWizard() {
                 <FormField label={t("create.hpLabel")}>
                   <HpModeSelector
                     mode={hpMode}
-                    onModeChange={setHpMode}
+                    onModeChange={(method) => dispatch({ type: "setHpMethod", method })}
                     rolledHp={rolledHp}
-                    onRolledHpChange={setRolledHp}
+                    onRolledHpChange={(hp) =>
+                      dispatch({ type: "setRolledHp", rolledHp: hp })
+                    }
                     averageHp={averageHP}
                     hpBonus={perLevelHpBonus}
                     hitDie={classHitDie}
@@ -2368,7 +1573,7 @@ export function CreationWizard() {
                     <FeatureChoicesSection
                       slots={reviewChoiceSlots}
                       picks={activeCreationChoicePicks}
-                      onChange={setCreationChoicePicks}
+                      onChange={setChoicePicks}
                       existingSkillIds={new Set([...selectedClassSkills, ...bgSkillIds])}
                       existingSpellIds={classSpellIds}
                       proficientSkillIds={
