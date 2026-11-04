@@ -309,6 +309,7 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     damageDice: "10d10",
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
       options: ["frightened"],
       on: "failed-save",
       lifetime: { kind: "source" },
