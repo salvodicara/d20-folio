@@ -132,12 +132,11 @@ function targetRef(status: Status, targetId: string): CombatantRef {
     : { kind: "monster", combatantId: targetId };
 }
 
-/** Help (attack form), as the effect it leaves: on the enemy, spent by the named
- *  ally's next attack before the start of the helper's next turn. */
+/** Help (attack form), as the effect it leaves: on the enemy, spent by the next
+ *  attack of one of the helper's allies, before the start of the helper's next turn. */
 export function helpEffect(help: {
   helper: CombatantRef;
   enemy: CombatantRef;
-  allyId: string;
   round: number;
   effectId: string;
 }): ActiveCombatEffect {
@@ -147,7 +146,6 @@ export function helpEffect(help: {
     target: help.enemy,
     source: { kind: "feature", id: "action-help", actionId: "base-help" },
     payload: { kind: "grant-group", activeKey: "helped-against" },
-    bindings: { beneficiaryId: help.allyId },
     duration: {
       kind: "turn-boundary",
       combatantId: help.helper.combatantId,
@@ -158,17 +156,16 @@ export function helpEffect(help: {
 }
 
 /**
- * Help an ally against an enemy in the live fight (the Help action's «Su chi?» then
- * «Per chi?»): writes the effect, undoable. False outside a fight or before the
- * v0.26.0 rules.
+ * Help an ally attack an enemy in the live fight (the Help action's «Su chi?»):
+ * writes the effect on that enemy and returns its undo. Null outside a fight or
+ * before the v0.26.0 rules.
  */
-export function giveHelp(enemyId: string, allyId: string, characterId: string): boolean {
+export function giveHelp(enemyId: string, characterId: string): (() => void) | null {
   const status = useCombatStatusStore.getState().status;
-  if (!status || !combatEffectsV26On()) return false;
+  if (!status || !combatEffectsV26On()) return null;
   const effect = helpEffect({
     helper: selfRef(status, characterId),
     enemy: targetRef(status, enemyId),
-    allyId,
     round: status.round,
     effectId: crypto.randomUUID(),
   });
@@ -178,7 +175,28 @@ export function giveHelp(enemyId: string, allyId: string, characterId: string): 
       appendPersistentCombatEffect(status.campaignId, effect)
     )
     .catch(() => undefined);
-  return true;
+  return () => {
+    void io
+      .then(({ revokePersistentCombatEffect }) =>
+        revokePersistentCombatEffect(status.campaignId, effect.id)
+      )
+      .catch(() => undefined);
+  };
+}
+
+/** A fight's sides by combatant: a row's own side, else a PC's is the party's. */
+export function fightSideOf(
+  rows: ReadonlyArray<{ id: string; kind: "pc" | "monster"; side?: string }>
+): (combatantId: string) => "party" | "enemy" {
+  const sides = new Map(
+    rows.map((row) => [
+      row.id,
+      (row.side ?? (row.kind === "pc" ? "ally" : "enemy")) === "enemy"
+        ? ("enemy" as const)
+        : ("party" as const),
+    ])
+  );
+  return (id) => sides.get(id) ?? (id.startsWith("pc-") ? "party" : "enemy");
 }
 
 /** Two per-target writers as one (each may be absent). */

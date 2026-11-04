@@ -811,31 +811,6 @@ describe("firestore.rules — /campaigns access", () => {
           ],
         })
       );
-      // Help names the ally whose next attack spends it.
-      const help = (beneficiaryId: unknown) =>
-        apply("help:1", {
-          source: { kind: "feature", id: "action-help", actionId: "base-help" },
-          payload: { kind: "grant-group", activeKey: "helped-against" },
-          bindings: { beneficiaryId },
-          duration: {
-            kind: "turn-boundary",
-            combatantId: "pc-member",
-            round: 2,
-            phase: "turn-start",
-          },
-        });
-      await assertSucceeds(
-        updateDoc(doc(db, "campaigns", "camp1"), {
-          "encounter.effectOps": [...base, condition(15), help("pc-ally")],
-        })
-      );
-      for (const bad of ["", "x".repeat(129), 7]) {
-        await assertFails(
-          updateDoc(doc(db, "campaigns", "camp1"), {
-            "encounter.effectOps": [...base, condition(15), help("pc-ally"), help(bad)],
-          })
-        );
-      }
     });
 
     it("a member MAY reinstate a revoked occurrence (an undo), not malform one (v0.26.0)", async () => {
