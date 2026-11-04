@@ -64,6 +64,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   companionCount?: NonNullable<SessionState["companionCount"]>;
   summons?: NonNullable<SessionState["summons"]>;
   death?: NonNullable<SessionState["death"]>;
+  timeOfDay?: number;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -128,6 +129,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "companionCount",
   "summons",
   "death",
+  "timeOfDay",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -245,6 +247,13 @@ function flattenUsed(
     }
   }
   return out;
+}
+
+/** A stored time of day: whole minutes since midnight, or nothing. */
+function parseTimeOfDay(raw: unknown): number | undefined {
+  return typeof raw === "number" && Number.isInteger(raw) && raw >= 0 && raw < 1440
+    ? raw
+    : undefined;
 }
 
 /** Expand compact numeric counters and additive recorded-roll entries. */
@@ -371,6 +380,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   // prepared steed no longer shows by itself).
   if (session.summons) state.summons = session.summons;
   if (session.death) state.death = session.death;
+  if (session.timeOfDay !== undefined) state.timeOfDay = session.timeOfDay;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -933,6 +943,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   ) {
     session.death = { minutesSince: state.death.minutesSince };
   }
+  const timeOfDay = parseTimeOfDay(state.timeOfDay);
+  if (timeOfDay !== undefined) session.timeOfDay = timeOfDay;
   const summons = parseSummons(state.summons);
   if (summons) session.summons = summons;
   if (

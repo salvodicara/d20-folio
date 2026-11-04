@@ -105,6 +105,10 @@ const CASES: {
     { kind: "restore-slot", level: 2, pactMagic: false },
     () => at(vitals.restoreSpellSlot(doc, 2, false)),
   ],
+  "set-time-of-day": [
+    { kind: "set-time-of-day", minutes: 22 * 60 },
+    () => at(time.setTimeOfDay(doc, 22 * 60)),
+  ],
   "create-slot": [
     { kind: "create-slot", level: 2 },
     () => at(vitals.createSpellSlot(doc, 2)),

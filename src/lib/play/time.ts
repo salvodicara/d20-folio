@@ -15,7 +15,7 @@
 import { advanceEffectTimers, resolveActiveMaintainedEffects } from "@/lib/smart-tracker";
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import { endStatuses, endsConcentration } from "@/lib/status";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, SessionState } from "@/types/character";
 import { endExpiredSummons } from "./companions";
 import { changeConcentration } from "./concentration";
 import { passBreathRounds } from "./suffocation";
@@ -52,16 +52,79 @@ export function timePassEndsConcentration(doc: CharacterDoc, minutes: number): b
   );
 }
 
+const DAY = 24 * 60;
+/** Dawn and dusk on the clock, in minutes since midnight. */
+export const DAWN = 6 * 60;
+export const DUSK = 18 * 60;
+
+/** Whether `minutes` passing from `timeOfDay` crosses the time `at` (reaching it
+ *  counts; starting on it doesn't). No time of day: nothing is crossed. */
+function crosses(timeOfDay: number | undefined, minutes: number, at: number): boolean {
+  if (timeOfDay === undefined || !(minutes > 0)) return false;
+  const from = timeOfDay - at;
+  return Math.floor((from + minutes) / DAY) > Math.floor(from / DAY);
+}
+
+/** Whether `minutes` passing from `timeOfDay` crosses dawn (06:00). */
+export function crossedDawn(timeOfDay: number | undefined, minutes: number): boolean {
+  return crosses(timeOfDay, minutes, DAWN);
+}
+
+/** Whether `minutes` passing from `timeOfDay` crosses dusk (18:00). */
+export function crossedDusk(timeOfDay: number | undefined, minutes: number): boolean {
+  return crosses(timeOfDay, minutes, DUSK);
+}
+
+/** Whether a rest of `minutes` brings a dawn: when it crosses 06:00, or always when
+ *  the table has set no time of day (a Long Rest stands in for the night). */
+export function restCrossesDawn(doc: CharacterDoc, minutes: number): boolean {
+  const { timeOfDay } = doc.session;
+  return timeOfDay === undefined || crossedDawn(timeOfDay, minutes);
+}
+
+/** The time of day after `minutes`, around midnight; unset stays unset. */
+export function advanceTimeOfDay(
+  timeOfDay: number | undefined,
+  minutes: number
+): number | undefined {
+  if (timeOfDay === undefined || !(minutes > 0)) return timeOfDay;
+  return (((timeOfDay + Math.round(minutes)) % DAY) + DAY) % DAY;
+}
+
+/** The table sets the time of day (minutes since midnight), or clears it (null). */
+export function setTimeOfDay(
+  doc: CharacterDoc,
+  minutes: number | null
+): SessionState | null {
+  if (minutes === null) {
+    if (doc.session.timeOfDay === undefined) return null;
+    const session = { ...doc.session };
+    delete session.timeOfDay;
+    return session;
+  }
+  if (!Number.isFinite(minutes)) return null;
+  const timeOfDay = ((Math.round(minutes) % DAY) + DAY) % DAY;
+  return timeOfDay === doc.session.timeOfDay ? null : { ...doc.session, timeOfDay };
+}
+
 /** The character after `minutes` pass, or null when nothing on it runs out or counts. */
 export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | null {
   const passed = passEffects(doc, minutes);
   const dead = doc.session.death;
-  if (!dead || !(minutes > 0)) return passed;
-  // A dead character's clock runs on (Revivify reaches only the last minute).
+  const timeOfDay = advanceTimeOfDay(doc.session.timeOfDay, minutes);
+  const clockMoved = timeOfDay !== doc.session.timeOfDay;
+  if ((!dead || !(minutes > 0)) && !clockMoved) return passed;
   const base = passed ?? doc;
   return {
     ...base,
-    session: { ...base.session, death: { minutesSince: dead.minutesSince + minutes } },
+    session: {
+      ...base.session,
+      // A dead character's clock runs on (Revivify reaches only the last minute).
+      ...(dead && minutes > 0
+        ? { death: { minutesSince: dead.minutesSince + minutes } }
+        : {}),
+      ...(clockMoved ? { timeOfDay } : {}),
+    },
   };
 }
 

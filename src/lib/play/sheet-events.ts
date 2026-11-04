@@ -62,7 +62,7 @@ import {
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
 import { breatheAgain, holdBreath, passBreathRounds } from "./suffocation";
-import { passTime } from "./time";
+import { passTime, setTimeOfDay } from "./time";
 import { setWishStress } from "./wish";
 import {
   restoreSpellSlot,
@@ -187,6 +187,8 @@ export type SheetEvent =
    * Pinned in tests/unit/time-passes.test.ts.
    */
   | { kind: "time-passes"; minutes: number }
+  /** The table sets the time of day (minutes since midnight), or clears it. */
+  | { kind: "set-time-of-day"; minutes: number | null }
   /** Start holding breath (SRD Suffocation); `choking`: no air at all. */
   | { kind: "hold-breath"; choking?: boolean }
   /** The character can breathe again: the Exhaustion suffocating added goes. */
@@ -351,6 +353,8 @@ export function applySheetEvent(
       return withSession(recoverPerTurnTrackers(doc)?.session);
     case "time-passes":
       return passTime(doc, event.minutes);
+    case "set-time-of-day":
+      return withSession(setTimeOfDay(doc, event.minutes));
     case "hold-breath":
       return withSession(holdBreath(doc, { choking: event.choking }));
     case "breathe-again":

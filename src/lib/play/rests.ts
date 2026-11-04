@@ -4,6 +4,7 @@
  * logs the rest, persists, and fences the undo stack.
  */
 import { endSummonsOn, endSummonsOutlastedBy } from "./companions";
+import { advanceTimeOfDay } from "./time";
 
 /** A rest's length on the game clock, in minutes (SRD 5.2.1: a Short Rest is 1
  *  hour, a Long Rest 8). */
@@ -125,6 +126,10 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
       hp: { current: max, temp: 0 },
       hitDice: { used: newHitDiceUsed },
       spellSlots: {},
+      // The night passes on the clock (a set time of day moves 8 hours).
+      ...(character.session.timeOfDay !== undefined
+        ? { timeOfDay: advanceTimeOfDay(character.session.timeOfDay, LONG_REST_MINUTES) }
+        : {}),
       trackers,
       concentration: "",
       concentrationCastLevel: undefined,
@@ -247,6 +252,10 @@ export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
       bardicInspirationDie: "",
       // A Short Rest resets the escalating zero-HP saves (Relentless Rage's DC).
       zeroHpSaverUses: undefined,
+      // The hour passes on the clock.
+      ...(character.session.timeOfDay !== undefined
+        ? { timeOfDay: advanceTimeOfDay(character.session.timeOfDay, SHORT_REST_MINUTES) }
+        : {}),
     },
   };
 }
