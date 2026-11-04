@@ -33,6 +33,8 @@
  * live in the Licenses columns so the quoted statement stays pristine.
  */
 
+import { useEffect } from "react";
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -66,6 +68,12 @@ function OutLink({ href, label }: { href: string; label: string }) {
 
 export function LegalPage() {
   const { t } = useTranslation();
+  // A footer link names its section (#privacy, #terms, #attribution): open there.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (!hash) return;
+    document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
+  }, [hash]);
   useDocumentTitle(t("legal.title"));
   // Legal is a MANY-PARENTS leaf (linked from every footer + the login page), so
   // Back is history-back-with-fallback — the shared canonical hook, not an inline

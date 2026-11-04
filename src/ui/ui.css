@@ -1237,6 +1237,12 @@
   color: var(--faint);
   font-size: var(--fs-sm);
 }
+.fui .f-foot-links {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
 .fui .f-foot a {
   display: inline-flex;
   align-items: center;

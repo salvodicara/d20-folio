@@ -80,6 +80,11 @@
       "liabilityD": "To the extent the law allows, we are not liable for damages arising from the use of a free service. Keep local JSON exports of anything you care about.",
       "lawT": "Governing law",
       "lawD": "These terms are governed by Italian law; any mandatory consumer protections of your country of residence remain unaffected."
+    },
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "srd": "SRD 5.2.1 content · CC BY 4.0"
     }
   }
 }
