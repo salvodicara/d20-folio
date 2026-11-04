@@ -3348,3 +3348,49 @@
   padding: 8px 0;
   border-bottom: 1px solid var(--line-soft);
 }
+/* the first group sits right under its summary line, not a band lower */
+.fui :not(.f-act-group) + .f-act-group > .f-act-gh:first-child {
+  margin-top: 0;
+}
+@media (max-width: 640px) {
+  .fui .f-sheet .f-act.f-act-head {
+    display: none;
+  }
+}
+/* «Passa il tempo»: the durations and «Altro» on one row; on a phone, 3 + 2 */
+@media (min-width: 481px) {
+  .fui .f-slots.f-slots-row {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: none;
+  }
+}
+/* a long resource name keeps its line; many pips wrap into a second row instead */
+.fui .f-sheet .f-res-t {
+  flex: 1 0 auto;
+  /* room left for the count (and the pips, when the pool has them) */
+  max-width: calc(100% - 40px);
+}
+.fui .f-sheet .f-res:has(> .f-pips) > .f-res-t {
+  max-width: calc(100% - 72px);
+}
+.fui .f-sheet .f-res > .f-res-n {
+  margin-left: auto;
+}
+.fui .f-sheet .f-res > .f-pips {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 16px;
+}
+/* the narrowest phones: the three centre tabs at 12 px, so all three fit */
+@media (max-width: 360px) {
+  .fui .f-sheet .f-centre > .f-tabs > button {
+    padding-inline: 4px;
+    font-size: var(--fs-xs);
+    letter-spacing: 0;
+  }
+}
+.fui .f-sheet .f-res {
+  gap: 8px;
+}
