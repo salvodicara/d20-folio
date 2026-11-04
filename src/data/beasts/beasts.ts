@@ -58,6 +58,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 30 },
+    damageResistances: ["poison"],
   },
   // Bat (2024 SRD 5.2.1). AC 12, HP 1, CR 0.
   {
@@ -202,6 +203,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
     ],
     senses: { blindsightFt: 30 },
     traits: ["trait.illumination"],
+    damageResistances: ["fire"],
   },
   // Goat (2024 SRD 5.2.1). AC 10, HP 4, CR 0.
   {
@@ -780,6 +782,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
+    damageResistances: ["poison"],
   },
   // Giant Bat (2024 SRD 5.2.1). AC 13, HP 22, CR 1/4.
   {
@@ -1448,6 +1451,7 @@ export const BEASTS: ReadonlyArray<BeastStatBlock> = [
       },
     ],
     senses: { darkvisionFt: 60 },
+    damageResistances: ["cold"],
   },
   // Rhinoceros (2024 SRD 5.2.1). AC 13, HP 45, CR 2.
   {

@@ -11,6 +11,7 @@ import {
   type CreatureSize,
 } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
+import { CONDITION_IDS } from "@/types/condition";
 import { normalizeStoredConcentration } from "@/lib/concentration";
 import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { normalizeItemResources, parseItemResources } from "@/lib/item-resources";
@@ -761,7 +762,23 @@ function parseFormStatBlock(value: unknown): BeastStatBlock | undefined {
     attacks: attacks as BeastAttack[],
     ...(value.senses !== undefined ? { senses: { ...value.senses } } : {}),
     ...(value.traits !== undefined ? { traits: [...value.traits] } : {}),
+    // The form's defenses (M2): unknown ids are dropped, never a failed parse.
+    ...idList("damageResistances", value.damageResistances, DAMAGE_TYPES),
+    ...idList("damageImmunities", value.damageImmunities, DAMAGE_TYPES),
+    ...idList("damageVulnerabilities", value.damageVulnerabilities, DAMAGE_TYPES),
+    ...idList("conditionImmunities", value.conditionImmunities, CONDITION_IDS),
   };
+}
+
+/** A stored list of known ids under `key`, or nothing when absent or empty. */
+function idList<K extends string, T extends string>(
+  key: K,
+  value: unknown,
+  known: ReadonlyArray<T>
+): Partial<Record<K, T[]>> {
+  if (!Array.isArray(value)) return {};
+  const ids = value.filter((v): v is T => (known as ReadonlyArray<unknown>).includes(v));
+  return ids.length > 0 ? ({ [key]: ids } as Partial<Record<K, T[]>>) : {};
 }
 
 const nullableFinite = (value: unknown): value is number | null =>

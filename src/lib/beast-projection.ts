@@ -13,7 +13,12 @@
  * and True Polymorph (`lib/bestiary-forms.ts`, a lazy seam): one `BeastStatBlock` shape for every form,
  * so assuming and dropping a form stays one path. PURE: types only.
  */
-import type { BeastStatBlock, MonsterAttackEntry, MonsterStatBlock } from "@/data/types";
+import type {
+  BeastStatBlock,
+  ConditionId,
+  MonsterAttackEntry,
+  MonsterStatBlock,
+} from "@/data/types";
 
 type MonsterSenses = NonNullable<MonsterStatBlock["senses"]>;
 type BeastSenses = NonNullable<BeastStatBlock["senses"]>;
@@ -98,5 +103,18 @@ export function beastProjectionFromMonster(m: MonsterStatBlock): BeastStatBlock 
     attacks,
     ...(m.senses && hasBeastSense(m.senses) ? { senses: pickBeastSenses(m.senses) } : {}),
     ...(m.traits?.length ? { traits: m.traits.map((t) => `trait.${t.id}`) } : {}),
+    ...(m.damageResistances?.length ? { damageResistances: m.damageResistances } : {}),
+    ...(m.damageImmunities?.length ? { damageImmunities: m.damageImmunities } : {}),
+    ...(m.damageVulnerabilities?.length
+      ? { damageVulnerabilities: m.damageVulnerabilities }
+      : {}),
+    // A qualified immunity ("with Mind Blank") isn't the form's own: plain ids only.
+    ...(m.conditionImmunities?.some((c) => typeof c === "string")
+      ? {
+          conditionImmunities: m.conditionImmunities.filter(
+            (c): c is ConditionId => typeof c === "string"
+          ),
+        }
+      : {}),
   };
 }
