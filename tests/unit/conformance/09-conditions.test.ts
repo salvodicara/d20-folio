@@ -119,7 +119,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
         mode: "disadvantage",
       });
       // Advantage on Initiative, in the production gate table.
-      expect(resolveConditionEffects(["invisible"]).advantages).toContainEqual(
+      expect(resolveConditionEffects(["invisible"], {}).advantages).toContainEqual(
         expect.objectContaining({ rollType: "initiative" })
       );
     }
@@ -173,7 +173,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
   );
 
   rule({ category: 9, case: "Incapacitated", source: "GLOSS", status: "works" }, () => {
-    const gate = resolveConditionEffects(["incapacitated"]);
+    const gate = resolveConditionEffects(["incapacitated"], {});
     expect([...gate.blockedSlots].sort()).toEqual(["action", "bonus", "reaction"]);
     expect(gate.breaksConcentration).toBe(true);
     expect(JSON.stringify(getSrdFeatureSource("barbarian-rage"))).toContain(
@@ -189,10 +189,9 @@ describe("conformance · 9. conditions and exhaustion", () => {
     expect(withImpliedConditions(["unconscious"])).toEqual(
       expect.arrayContaining(["unconscious", "incapacitated", "prone"])
     );
-    expect([...resolveConditionEffects(["unconscious"]).autoFailSaves].sort()).toEqual([
-      "DEX",
-      "STR",
-    ]);
+    expect(
+      [...resolveConditionEffects(["unconscious"], {}).autoFailSaves].sort()
+    ).toEqual(["DEX", "STR"]);
     const against = attacksAgainstSelf("unconscious");
     expect(against).toContainEqual({ kind: "roll", mode: "advantage" });
     expect(against).toContainEqual({ kind: "autoCrit", distanceFt: 5 });
@@ -201,15 +200,15 @@ describe("conformance · 9. conditions and exhaustion", () => {
   rule(
     { category: 9, case: "Stunned can move", source: "SAC #5", status: "works" },
     () => {
-      expect(resolveConditionEffects(["stunned"]).speedZero).toBe(false);
-      expect(resolveConditionEffects(["paralyzed"]).speedZero).toBe(true);
+      expect(resolveConditionEffects(["stunned"], {}).speedZero).toBe(false);
+      expect(resolveConditionEffects(["paralyzed"], {}).speedZero).toBe(true);
     }
   );
 
   rule(
     { category: 9, case: "Grappled 2024", source: "GLOSS; SAC #31", status: "works" },
     () => {
-      const gate = resolveConditionEffects(["grappled"]);
+      const gate = resolveConditionEffects(["grappled"], {});
       expect(gate.speedZero).toBe(true);
       expect(gate.disadvantages).toContainEqual(
         expect.objectContaining({ rollType: "attack", vs: "grappled" })
@@ -252,7 +251,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
         })
       );
       // Grappled zeroes Speed, so the prone creature can't stand.
-      expect(resolveConditionEffects(["grappled", "prone"]).speedZero).toBe(true);
+      expect(resolveConditionEffects(["grappled", "prone"], {}).speedZero).toBe(true);
     }
   );
 
@@ -265,7 +264,7 @@ describe("conformance · 9. conditions and exhaustion", () => {
         within: "advantage",
         beyond: "disadvantage",
       });
-      expect(resolveConditionEffects(["prone"]).disadvantages).toContainEqual(
+      expect(resolveConditionEffects(["prone"], {}).disadvantages).toContainEqual(
         expect.objectContaining({ rollType: "attack" })
       );
     }

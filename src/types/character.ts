@@ -1098,6 +1098,11 @@ export interface SessionState {
   readiedSpell?: { expiresRound: number; castLogId?: string };
   initiative: string;
   conditions: string[];
+  /** Who caused a condition chip, when known: condition id → combatant id (M3). */
+  conditionSources?: Record<string, string>;
+  /** The table's answer to "can you see its source?", per condition instance
+   *  (`effect:<id>` or `condition:<id>`), where the sheet can't derive it (M3). */
+  seesSource?: Record<string, boolean>;
   /**
    * RA-12 — the DC to FIND the character while hidden: the successful DC-15
    * Dexterity (Stealth) check TOTAL from the Hide action (SRD 5.2.1 "Hide

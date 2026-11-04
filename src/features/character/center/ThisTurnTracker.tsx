@@ -21,6 +21,8 @@
  * Play-tab cards, which share the store), never the Left/Right HUD.
  */
 
+import { conditionFactsFor } from "@/lib/condition-sources";
+import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Swords, Zap, RefreshCw, ArrowRight, Flag, Info } from "lucide-react";
@@ -573,7 +575,11 @@ export function ThisTurnTracker({
   // manually editable (override-first — a feature may let the player move anyway),
   // so the speed-0 state is an informational note, never a hard lock.
   const conditions = effectiveConditions(character);
-  const conditionEffects = resolveConditionEffects(conditions);
+  const conditionFacts = conditionFactsFor(
+    character,
+    liveConditionEncounter(character.id)
+  );
+  const conditionEffects = resolveConditionEffects(conditions, conditionFacts);
   // RA-19 — SRD Prone "Restricted Movement": standing up costs half your Speed
   // (the BASE walking Speed — Dash extends movement, not Speed — so NOT
   // `moveBudgetFt`). While Prone, the meter offers a one-tap Stand that clears
@@ -596,7 +602,10 @@ export function ThisTurnTracker({
     const live = cs.character;
     if (!live || !isCharacterAlive(live.status, live.session)) return;
     const liveConditions = effectiveConditions(live);
-    const liveConditionEffects = resolveConditionEffects(liveConditions);
+    const liveConditionEffects = resolveConditionEffects(
+      liveConditions,
+      conditionFactsFor(live, liveConditionEncounter(live.id))
+    );
     const combat = useCombatStore.getState();
     const liveSpeedFt = shownWalkingSpeedFt(live, getEquipment, round);
     const liveStandCostFt = Math.floor(liveSpeedFt / 2);
@@ -636,7 +645,9 @@ export function ThisTurnTracker({
   // slider: it is carried solely by the "what's limiting you this turn" banner —
   // single source / DRY; the slider only shows a clean zeroed/locked readout.)
   const concBlockedReason = conditionEffects.breaksConcentration
-    ? (conditions.find((id) => resolveConditionEffects([id]).breaksConcentration) ?? null)
+    ? (conditions.find(
+        (id) => resolveConditionEffects([id], conditionFacts).breaksConcentration
+      ) ?? null)
     : null;
 
   // B3 — the turn's active limiters, composed from the SAME memoized condition
@@ -645,6 +656,7 @@ export function ThisTurnTracker({
   // the BG3-style badge row); renders ONLY when ≥1 status is active (rule 19).
   const limiters = composeTurnLimiters({
     conditions,
+    facts: conditionFacts,
     attackRollState,
     exhaustion,
     spellSlotCasts: spellSlotCastsThisTurn,

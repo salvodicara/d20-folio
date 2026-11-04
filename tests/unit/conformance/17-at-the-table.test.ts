@@ -234,7 +234,7 @@ describe("conformance · 17. at-the-table gaps", () => {
     () => {
       // Incapacitated rolls Initiative with Disadvantage.
       expect(
-        resolveConditionEffects(["incapacitated"]).disadvantages.some(
+        resolveConditionEffects(["incapacitated"], {}).disadvantages.some(
           (d) => d.rollType === "initiative"
         )
       ).toBe(true);

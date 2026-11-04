@@ -166,6 +166,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
   it("clean state (no conditions, no exhaustion, none roll-state) → no limiters", () => {
     expect(
       composeTurnLimiters({
+        facts: {},
         conditions: [],
         attackRollState: "none",
         exhaustion: 0,
@@ -295,7 +296,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it.each(cases)("$name", ({ conditions, attackRollState, exhaustion, expected }) => {
     expect(
-      kinds(composeTurnLimiters({ conditions, attackRollState, exhaustion }))
+      kinds(composeTurnLimiters({ facts: {}, conditions, attackRollState, exhaustion }))
     ).toEqual(expected);
   });
 
@@ -308,6 +309,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     [3, true],
   ])("spellSlotCasts=%s → spellSlotLimit present: %s", (spellSlotCasts, present) => {
     const ls = composeTurnLimiters({
+      facts: {},
       conditions: [],
       attackRollState: "none",
       exhaustion: 0,
@@ -322,6 +324,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it("the defensive spell-slot signal sorts LAST (after exhaustion)", () => {
     const ls = composeTurnLimiters({
+      facts: {},
       conditions: ["grappled"],
       attackRollState: "none",
       exhaustion: 1,
@@ -335,6 +338,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
   // `scoped`, so the edge picks the scoped sentence. Blanket conditions do not.
   it("Grappled + netted disadvantage → the attack limiter is flagged scoped; a blanket condition is not", () => {
     const grap = composeTurnLimiters({
+      facts: {},
       conditions: ["grappled"],
       attackRollState: "disadvantage",
       exhaustion: 0,
@@ -344,6 +348,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     expect(gAtk?.kind === "attackDisadvantage" && gAtk.causeId).toBe("grappled");
 
     const restr = composeTurnLimiters({
+      facts: {},
       conditions: ["restrained"],
       attackRollState: "disadvantage",
       exhaustion: 0,
@@ -354,6 +359,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it("resolves the cause to a STABLE condition id + stable ordered ability ids", () => {
     const ls = composeTurnLimiters({
+      facts: {},
       conditions: ["restrained", "paralyzed"],
       attackRollState: "disadvantage",
       exhaustion: 0,
@@ -369,6 +375,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it("blocked-economy limiter carries the forbidden slots (stable order) + the first-condition cause", () => {
     const ls = composeTurnLimiters({
+      facts: {},
       conditions: ["stunned"],
       attackRollState: "none",
       exhaustion: 0,
@@ -386,6 +393,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it("no blocked-economy limiter for a clean character (rule 19)", () => {
     const ls = composeTurnLimiters({
+      facts: {},
       conditions: ["frightened"],
       attackRollState: "disadvantage",
       exhaustion: 0,
@@ -396,6 +404,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
 
   it("carries the exhaustion LEVEL for the sentence (clamped to 0-6)", () => {
     const ls = composeTurnLimiters({
+      facts: {},
       conditions: [],
       attackRollState: "none",
       exhaustion: 9,
@@ -418,6 +427,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
     "exhaustion %i → d20Penalty %i, speedPenaltyFt %i (never a fixed −2)",
     (exhaustion, d20Penalty, speedPenaltyFt) => {
       const ex = composeTurnLimiters({
+        facts: {},
         conditions: [],
         attackRollState: "none",
         exhaustion,
@@ -430,6 +440,7 @@ describe("composeTurnLimiters — B3 turn-limiter summary (pure composer)", () =
   it("states exactly what the engine formulas compute, at every level", () => {
     for (let level = 1; level <= 6; level++) {
       const ex = composeTurnLimiters({
+        facts: {},
         conditions: [],
         attackRollState: "none",
         exhaustion: level,
@@ -452,6 +463,7 @@ describe("composeStatusBadges (one badge per cause, first-seen order)", () => {
     // Paralyzed alone imposes blocked-economy + speed-0 + auto-fail saves.
     const badges = composeStatusBadges(
       composeTurnLimiters({
+        facts: {},
         conditions: ["paralyzed"],
         attackRollState: "none",
         exhaustion: 0,
@@ -476,6 +488,7 @@ describe("composeStatusBadges (one badge per cause, first-seen order)", () => {
     // blocked-economy limiter is first), then restrained, exhaustion, slot-limit.
     const badges = composeStatusBadges(
       composeTurnLimiters({
+        facts: {},
         conditions: ["restrained", "paralyzed"],
         attackRollState: "disadvantage",
         exhaustion: 2,

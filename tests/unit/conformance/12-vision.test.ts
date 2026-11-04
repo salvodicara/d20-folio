@@ -145,7 +145,7 @@ describe("conformance · 12. vision and light", () => {
     () => {
       // Invisible changes the rolls (your attacks have Advantage); it doesn't make
       // you untargetable. "Can't see the target" is a separate situation fact.
-      const invisible = resolveConditionEffects(["invisible"]);
+      const invisible = resolveConditionEffects(["invisible"], {});
       expect(invisible.advantages.map((a) => a.rollType)).toContain("attack");
       expect(invisible.blockedSlots.size).toBe(0);
       expect(SITUATION_IDS).toContain("unseen-target");

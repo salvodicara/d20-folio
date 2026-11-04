@@ -38,6 +38,8 @@ export interface CompactSessionState extends Record<string, unknown> {
   initiative?: string;
   conditions?: string[];
   concentrationConditions?: ReadonlyArray<string>;
+  conditionSources?: Record<string, string>;
+  seesSource?: Record<string, boolean>;
   hiddenDc?: number;
   deathSucc?: number;
   deathFail?: number;
@@ -105,6 +107,8 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "initiative",
   "conditions",
   "concentrationConditions",
+  "conditionSources",
+  "seesSource",
   "hiddenDc",
   "deathSucc",
   "deathFail",
@@ -187,6 +191,21 @@ export type PersistedPlayStateParseResult =
       ok: false;
       reason: "invalid-play-state" | "unsupported-play-state-version";
     };
+
+/** A stored record keeping only the entries of the given type; undefined when empty. */
+function typedRecord<T extends "string" | "boolean">(
+  value: unknown,
+  type: T
+): Record<string, T extends "string" ? string : boolean> | undefined {
+  if (!isRecord(value)) return undefined;
+  const entries = Object.entries(value).filter(([, v]) => typeof v === type);
+  return entries.length > 0
+    ? (Object.fromEntries(entries) as Record<
+        string,
+        T extends "string" ? string : boolean
+      >)
+    : undefined;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -344,6 +363,12 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.conditions.length > 0) state.conditions = session.conditions;
   if (session.concentrationConditions?.length) {
     state.concentrationConditions = session.concentrationConditions;
+  }
+  if (session.conditionSources && Object.keys(session.conditionSources).length > 0) {
+    state.conditionSources = session.conditionSources;
+  }
+  if (session.seesSource && Object.keys(session.seesSource).length > 0) {
+    state.seesSource = session.seesSource;
   }
   if (typeof session.hiddenDc === "number") state.hiddenDc = session.hiddenDc;
   if (session.deathSucc !== 0) state.deathSucc = session.deathSucc;
@@ -873,6 +898,10 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   if (Array.isArray(state.concentrationConditions)) {
     session.concentrationConditions = stringArray(state.concentrationConditions);
   }
+  const conditionSources = typedRecord(state.conditionSources, "string");
+  if (conditionSources) session.conditionSources = conditionSources;
+  const seesSource = typedRecord(state.seesSource, "boolean");
+  if (seesSource) session.seesSource = seesSource;
   if (typeof state.hiddenDc === "number") session.hiddenDc = state.hiddenDc;
   session.deathSucc = numOr(state.deathSucc, 0);
   session.deathFail = numOr(state.deathFail, 0);

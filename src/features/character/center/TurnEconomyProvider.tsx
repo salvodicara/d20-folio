@@ -24,9 +24,11 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { sheetConditionEffects } from "@/lib/condition-sources";
+import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
 import { customText, srdText, type LocText } from "@/lib/loc-text";
-import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { runEndTurn } from "@/lib/play/end-turn";
 import { actsOfUse } from "@/lib/play/states";
 import {
@@ -76,7 +78,6 @@ import { offerMaterialCost } from "@/features/character/center/material-cost-off
 import { DamageTray } from "@/features/character/center/DamageTray";
 import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
 import { useLocale } from "@/hooks/useLocale";
-import { resolveConditionEffects } from "@/lib/condition-effects";
 import {
   resolveTrackers,
   getActionCostOptions,
@@ -332,7 +333,7 @@ export function TurnEconomyProvider({
     const slot = getEconomySlot(action);
     if (
       slot !== "free" &&
-      resolveConditionEffects(effectiveConditions(live)).blockedSlots.has(slot)
+      sheetConditionEffects(live, liveConditionEncounter(live.id)).blockedSlots.has(slot)
     ) {
       return t("combat.slotBlockedByCondition");
     }

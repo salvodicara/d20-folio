@@ -83,7 +83,7 @@ describe("one-tap states", () => {
 
 describe("condition gates", () => {
   it("Poisoned names its attack and check clauses", () => {
-    const { disadvantages } = resolveConditionEffects(["poisoned"]);
+    const { disadvantages } = resolveConditionEffects(["poisoned"], {});
     expect(lines(disadvantages, "en")).toEqual(["Attack rolls", "Ability checks"]);
     expect(lines(disadvantages, "it")).toEqual([
       "Tiri per colpire",
@@ -92,7 +92,7 @@ describe("condition gates", () => {
   });
 
   it("Restrained names its Dexterity save clause", () => {
-    const { disadvantages } = resolveConditionEffects(["restrained"]);
+    const { disadvantages } = resolveConditionEffects(["restrained"], {});
     expect(lines(disadvantages, "en")).toContain("Dexterity saving throws");
     expect(lines(disadvantages, "it")).toContain("Tiri salvezza su Destrezza");
   });

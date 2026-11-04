@@ -44,7 +44,8 @@ import { evaluateGrants, type RollDieAdjustmentClause } from "@/lib/grants";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { mergeSkillProficiencies, mergeSaveProficiencies } from "@/lib/views/sheet-view";
-import { resolveConditionEffects } from "@/lib/condition-effects";
+import { resolveConditionEffects, type ConditionFacts } from "@/lib/condition-effects";
+import { conditionFactsFor } from "@/lib/condition-sources";
 
 /**
  * The narrow slice of session state the derivation reads — a structural subset
@@ -64,6 +65,8 @@ export interface SavesChecksSession {
   fadingPenalties?: SessionState["fadingPenalties"];
   sessionDefenses?: SessionState["sessionDefenses"];
   activeForm?: SessionState["activeForm"];
+  conditionSources?: SessionState["conditionSources"];
+  seesSource?: SessionState["seesSource"];
 }
 
 /** One saving-throw row (STR…CHA), engine-computed + override-first. */
@@ -167,12 +170,13 @@ const PASSIVES: ReadonlyArray<{
  * Walks conditions in listed order (first-listed condition wins attribution).
  */
 function autoFailByAbility(
-  conditions: ReadonlyArray<string>
+  conditions: ReadonlyArray<string>,
+  facts: ConditionFacts
 ): ReadonlyMap<AbilityCode, string> {
   if (conditions.length === 0) return new Map();
   const out = new Map<AbilityCode, string>();
   for (const id of conditions) {
-    for (const code of resolveConditionEffects([id]).autoFailSaves) {
+    for (const code of resolveConditionEffects([id], facts).autoFailSaves) {
       if (!out.has(code)) out.set(code, id);
     }
   }
@@ -233,7 +237,10 @@ export function deriveSavesAndChecks(
       ability,
       effectiveScores
     );
-  const autoFail = autoFailByAbility(conditions);
+  const autoFail = autoFailByAbility(
+    conditions,
+    conditionFactsFor({ character: charData, session })
+  );
   const saveDice = fullAggregate.rollDieAdjustments.filter((d) => d.rollType === "save");
   const checkDiceFor = (skillId: string): RollDieAdjustmentClause[] =>
     fullAggregate.rollDieAdjustments.filter(

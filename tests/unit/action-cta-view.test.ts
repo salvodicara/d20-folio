@@ -20,8 +20,9 @@ if (!scenario) throw new Error("dev scenario twf-extra-attack is missing");
 const doc = scenario;
 const actions = localizeActions(doc, "en");
 const NO_CONDITIONS: ActionConditions = {
+  facts: {},
   list: [],
-  effects: resolveConditionEffects([]),
+  effects: resolveConditionEffects([], {}),
 };
 const fresh: ActionTurnState = {
   selected: { action: [], bonus: [], free: [] },
@@ -106,8 +107,9 @@ describe("actionCtaView", () => {
 
   it("a condition that forbids actions dims the button and names itself", () => {
     const view = actionCtaView(doc, actions, fresh, {
+      facts: {},
       list: ["incapacitated"],
-      effects: resolveConditionEffects(["incapacitated"]),
+      effects: resolveConditionEffects(["incapacitated"], {}),
     });
     expect(view.get(dagger?.id ?? "")).toMatchObject({
       reason: { kind: "condition", condition: "incapacitated" },

@@ -320,6 +320,10 @@ const CASES: {
     { kind: "recover-per-turn-trackers" },
     () => at(states.recoverPerTurnTrackers(doc)?.session),
   ],
+  "set-sees-source": [
+    { kind: "set-sees-source", key: "condition:frightened", sees: false },
+    () => at(conditions.setSeesSource(doc, "condition:frightened", false)),
+  ],
   "set-form-gear-worn": [
     { kind: "set-form-gear-worn", key: "ring-of-protection", worn: true },
     () => forms.setFormGearWorn(doc, "ring-of-protection", true),

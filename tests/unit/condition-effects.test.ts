@@ -75,14 +75,14 @@ describe("hasConcentrationSaveAdvantage — RA-15", () => {
 
 describe("resolveConditionEffects — single conditions", () => {
   it("poisoned → disadvantage on attacks + ability checks", () => {
-    const r = resolveConditionEffects(["poisoned"]);
+    const r = resolveConditionEffects(["poisoned"], {});
     expect(r.disadvantages.map((d) => d.rollType).sort()).toEqual(["attack", "check"]);
     expect(r.disadvantages.every((d) => d.sourceId === "poisoned")).toBe(true);
     expect(r.speedZero).toBe(false);
   });
 
   it("grappled → speed 0 + disadvantage on attacks (M12: 2024 adds Attacks Affected)", () => {
-    const r = resolveConditionEffects(["grappled"]);
+    const r = resolveConditionEffects(["grappled"], {});
     expect(r.speedZero).toBe(true);
     expect(r.disadvantages).toHaveLength(1);
     expect(r.disadvantages[0]?.rollType).toBe("attack");
@@ -91,13 +91,13 @@ describe("resolveConditionEffects — single conditions", () => {
   });
 
   it("incapacitated → blocks all economy slots + breaks concentration", () => {
-    const r = resolveConditionEffects(["incapacitated"]);
+    const r = resolveConditionEffects(["incapacitated"], {});
     expect([...r.blockedSlots].sort()).toEqual(["action", "bonus", "reaction"]);
     expect(r.breaksConcentration).toBe(true);
   });
 
   it("stunned → incapacitated effects + auto-fail STR/DEX saves, but NOT speed 0 (2024 drops the 2014 speed-zero clause)", () => {
-    const r = resolveConditionEffects(["stunned"]);
+    const r = resolveConditionEffects(["stunned"], {});
     expect(r.speedZero).toBe(false);
     expect([...r.autoFailSaves].sort()).toEqual(["DEX", "STR"]);
     expect(r.blockedSlots.has("action")).toBe(true);
@@ -108,12 +108,12 @@ describe("resolveConditionEffects — single conditions", () => {
   });
 
   it("invisible → self-side advantage on attacks and Initiative", () => {
-    const r = resolveConditionEffects(["invisible"]);
+    const r = resolveConditionEffects(["invisible"], {});
     expect(r.advantages.map((a) => a.rollType)).toEqual(["attack", "initiative"]);
   });
 
   it("restrained → speed 0 + disadvantage on attacks and DEX saves", () => {
-    const r = resolveConditionEffects(["restrained"]);
+    const r = resolveConditionEffects(["restrained"], {});
     expect(r.speedZero).toBe(true);
     expect(r.disadvantages.some((d) => d.rollType === "attack")).toBe(true);
     expect(r.disadvantages.some((d) => d.rollType === "save")).toBe(true);
@@ -122,7 +122,7 @@ describe("resolveConditionEffects — single conditions", () => {
 
 describe("resolveConditionEffects — unions + edge cases", () => {
   it("unions multiple conditions (poisoned + restrained)", () => {
-    const r = resolveConditionEffects(["poisoned", "restrained"]);
+    const r = resolveConditionEffects(["poisoned", "restrained"], {});
     // both contribute attack disadvantage (two clauses, distinct sources)
     const attackDis = r.disadvantages.filter((d) => d.rollType === "attack");
     expect(attackDis.map((d) => d.sourceId).sort()).toEqual(["poisoned", "restrained"]);
@@ -130,8 +130,8 @@ describe("resolveConditionEffects — unions + edge cases", () => {
   });
 
   it("ignores conditions with no mechanical gate (charmed, deafened) and empty input", () => {
-    expect(resolveConditionEffects([]).disadvantages).toHaveLength(0);
-    const r = resolveConditionEffects(["charmed", "deafened"]);
+    expect(resolveConditionEffects([], {}).disadvantages).toHaveLength(0);
+    const r = resolveConditionEffects(["charmed", "deafened"], {});
     expect(r.disadvantages).toHaveLength(0);
     expect(r.blockedSlots.size).toBe(0);
   });
@@ -218,22 +218,22 @@ describe("initiative from conditions (2024: Invisible rolls with Advantage, Inca
   });
 
   it.each(initiativeModes)("$id gives $mode on the Initiative roll", ({ id, mode }) => {
-    const effects = resolveConditionEffects([id]);
+    const effects = resolveConditionEffects([id], {});
     expect(initiativeRollState(NO_GRANTS, null, effects)).toBe(mode);
   });
 
   it("an implied Incapacitated (Stunned) also reaches the roll", () => {
-    const effects = resolveConditionEffects(withImpliedConditions(["stunned"]));
+    const effects = resolveConditionEffects(withImpliedConditions(["stunned"]), {});
     expect(initiativeRollState(NO_GRANTS, null, effects)).toBe("disadvantage");
   });
 
   it("Invisible and Incapacitated together cancel to a straight roll", () => {
-    const effects = resolveConditionEffects(["invisible", "incapacitated"]);
+    const effects = resolveConditionEffects(["invisible", "incapacitated"], {});
     expect(initiativeRollState(NO_GRANTS, null, effects)).toBe("none");
   });
 
   it("a manual override still wins over conditions", () => {
-    const effects = resolveConditionEffects(["incapacitated"]);
+    const effects = resolveConditionEffects(["incapacitated"], {});
     expect(initiativeRollState(NO_GRANTS, "advantage", effects)).toBe("advantage");
   });
 });
