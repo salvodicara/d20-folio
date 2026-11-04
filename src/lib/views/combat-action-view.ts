@@ -25,6 +25,7 @@ import type { AbilityCode } from "@/data/types";
 import type { CharacterDoc } from "@/types/character";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { formatModifier } from "@/lib/utils";
+import { weaponDisplayName } from "@/lib/views/weapon-display-name";
 import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
 import { uiText } from "@/lib/loc-text";
 import { resolveConditionEffects } from "@/lib/condition-effects";
@@ -399,10 +400,11 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
     action.source === "weapon" ? buildMasteryRiders(summary, locale) : [];
   // The dual-wield off-hand row wraps the weapon's own name in the off-hand
   // suffix (composed here — the engine carries only the base name ref).
+  // A magic weapon is named by its enchant (one formatter for every surface).
+  const baseName = (lang: Locale): string =>
+    weaponDisplayName(localizeText(name, lang), summary.weaponParts?.enchantItemId, lang);
   const displayName = (lang: Locale): string =>
-    action.offhand
-      ? offhandName(localizeText(name, lang), lang)
-      : localizeText(name, lang);
+    action.offhand ? offhandName(baseName(lang), lang) : baseName(lang);
   const localizedName = displayName(locale);
   // The unified weapon facts block (the SAME recipe the inventory WeaponCard
   // renders) — built only for weapon rows carrying the structured attack facts.
