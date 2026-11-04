@@ -109,25 +109,28 @@ export function CreationScreen() {
     window.scrollTo({ top: 0 });
   };
   const blocked =
+    (step === 4 && !facts.classChoicesComplete) ||
     (step === 1 && !bgPicked) ||
     (step === 2 && !speciesReady) ||
     (step === 3 && !abilitiesReady);
   const blockedHint =
-    step === 1
-      ? t("create.screen.pickBackground")
-      : step === 2
-        ? !speciesPicked
-          ? t("create.screen.pickSpecies")
-          : !facts.lineageComplete
-            ? t("create.lineageRequired")
-            : facts.needsSpeciesSpellAbility && !draft.speciesSpellAbility
-              ? t("create.screen.speciesAbilityRequired")
-              : facts.isHuman && !draft.humanFeat
-                ? t("create.needHumanFeat")
-                : t("create.screen.speciesPending")
-        : !facts.abilityBonusValid
-          ? t("create.screen.pickAbilities")
-          : t("create.screen.overBudget");
+    step === 4
+      ? t("create.screen.classChoicesPending")
+      : step === 1
+        ? t("create.screen.pickBackground")
+        : step === 2
+          ? !speciesPicked
+            ? t("create.screen.pickSpecies")
+            : !facts.lineageComplete
+              ? t("create.lineageRequired")
+              : facts.needsSpeciesSpellAbility && !draft.speciesSpellAbility
+                ? t("create.screen.speciesAbilityRequired")
+                : facts.isHuman && !draft.humanFeat
+                  ? t("create.needHumanFeat")
+                  : t("create.screen.speciesPending")
+          : !facts.abilityBonusValid
+            ? t("create.screen.pickAbilities")
+            : t("create.screen.overBudget");
   const last = step === STEPS.length - 1;
   const ready = missingCreationRequirements(draft, facts).length === 0;
   const create = async () => {

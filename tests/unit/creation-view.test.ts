@@ -12,7 +12,9 @@ import {
   classCards,
   creationSummary,
   choiceSlotRows,
+  classChoiceSections,
   creationReview,
+  toggleCount,
   speciesRows,
   suggestedBonus,
   toggleChoicePick,
@@ -211,5 +213,43 @@ describe("creationReview", () => {
     expect(review.skills).toHaveLength(4);
     expect(review.languages[0]).toBe("Common");
     expect(review.languages).toHaveLength(3);
+  });
+});
+
+describe("classChoiceSections", () => {
+  const ready = (classId: string) =>
+    [
+      { type: "selectClass", classId } as const,
+      { type: "selectBackground", backgroundId: "soldier" } as const,
+      { type: "fillReadyMade" } as const,
+    ].reduce(creationDraftReducer, initialCreationDraft());
+
+  it("a Cleric is asked its Divine Order, named", () => {
+    const draft = ready("cleric");
+    const [order] = classChoiceSections(draft, creationFacts(draft), "en");
+    expect(order).toMatchObject({
+      kind: "bundle",
+      bundleKey: "cleric-divine-order",
+      picked: null,
+    });
+    expect(order?.title).toBe("Divine Order");
+    expect(order?.options.map((o) => o.label)).toEqual(["Protector", "Thaumaturge"]);
+  });
+
+  it("a Fighter is asked a Fighting Style and three masteries, a Wizard nothing", () => {
+    const draft = ready("fighter");
+    const sections = classChoiceSections(draft, creationFacts(draft), "en");
+    expect(sections.map((s) => [s.kind, s.title])).toEqual([
+      ["fightingStyles", "Choose a Fighting Style"],
+      ["weaponMasteries", "Choose 3 Weapon Masteries"],
+    ]);
+    const wizard = ready("wizard");
+    expect(classChoiceSections(wizard, creationFacts(wizard), "en")).toEqual([]);
+  });
+
+  it("toggleCount fills to the count, then the oldest gives way", () => {
+    expect(toggleCount(["a", "b"], "c", 2)).toEqual(["b", "c"]);
+    expect(toggleCount(["a"], "a", 2)).toEqual([]);
+    expect(toggleCount([], "a", 1)).toEqual(["a"]);
   });
 });

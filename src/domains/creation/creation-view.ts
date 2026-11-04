@@ -23,7 +23,17 @@ import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
 import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import type { ChoicePicks, FeatureChoiceSlots } from "@/lib/feature-choices";
 import { spellPickVM } from "@/lib/views/spell-pick-view";
-import { spellName } from "@/lib/views/level-up-view";
+import {
+  equipmentName,
+  featName,
+  invocationName,
+  spellName,
+} from "@/lib/views/level-up-view";
+import { getFeaturesAtLevel } from "@/data/classes";
+import { collectGrantBundles } from "@/lib/feature-choices";
+import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
+import { localizeText } from "@/lib/views/srd-i18n";
+import type { ClassChoicePicks } from "@/lib/creation/class-choices";
 import { ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
 import { formatSpeed } from "@/lib/utils";
 import { buildNewCharacter } from "@/lib/creation/build";
@@ -386,4 +396,86 @@ export function creationReview(
     skills: ALL_SKILLS.filter((s) => picked.has(s.id)).map((s) => t(`skills.${s.id}`)),
     languages: languages.map((id) => localizeSrd("language", id, "name", locale)),
   };
+}
+
+/** One of the class's creation choices, ready to draw as chips. */
+export type ClassChoiceSection =
+  | {
+      kind: "bundle";
+      bundleKey: string;
+      title: string;
+      picked: string | null;
+      options: ReadonlyArray<{ id: string; label: string }>;
+    }
+  | {
+      kind: keyof ClassChoicePicks;
+      title: string;
+      count: number;
+      picked: readonly string[];
+      options: ReadonlyArray<{ id: string; label: string }>;
+    };
+
+/** What the class asks at creation (Divine Order, Fighting Style, …), named. */
+export function classChoiceSections(
+  draft: CreationDraft,
+  facts: CreationFacts,
+  locale: Locale
+): ClassChoiceSection[] {
+  const t = i18n.getFixedT(locale);
+  const { classNeeds, classOptions } = facts;
+  const refs = Array.from({ length: draft.level }, (_, i) =>
+    getFeaturesAtLevel(draft.classId, i + 1)
+  )
+    .flat()
+    .map((f) => ({ srdId: f.id }));
+  const bundles = collectGrantBundles(resolveGrantSourcesForFeatures(refs), new Map())
+    .filter((b) => classNeeds.bundleKeys.includes(b.bundleKey))
+    .map(
+      (b): ClassChoiceSection => ({
+        kind: "bundle",
+        bundleKey: b.bundleKey,
+        title: localizeText(b.label, locale),
+        picked: draft.lineageChoices[b.bundleKey] ?? null,
+        options: b.options.map((o) => ({
+          id: o.id,
+          label: localizeText(o.label, locale),
+        })),
+      })
+    );
+  const named: Record<keyof ClassChoicePicks, (id: string) => string> = {
+    fightingStyles: (id) => featName(id, locale),
+    weaponMasteries: (id) => equipmentName(id, locale),
+    invocations: (id) => invocationName(id, locale),
+    expertise: (id) => t(`skills.${id}`),
+  };
+  const titles: Record<keyof ClassChoicePicks, string> = {
+    fightingStyles: t("levelUp.chooseFightingStyle"),
+    weaponMasteries: t("levelUp.chooseWeaponMastery", { n: classNeeds.weaponMasteries }),
+    invocations: t("levelUp.chooseInvocations", { n: classNeeds.invocations }),
+    expertise: t("levelUp.chooseExpertise", { n: classNeeds.expertise }),
+  };
+  const picks = (
+    ["fightingStyles", "weaponMasteries", "invocations", "expertise"] as const
+  )
+    .filter((kind) => classNeeds[kind] > 0)
+    .map(
+      (kind): ClassChoiceSection => ({
+        kind,
+        title: titles[kind],
+        count: classNeeds[kind],
+        picked: draft.classPicks[kind],
+        options: classOptions[kind].map((id) => ({ id, label: named[kind](id) })),
+      })
+    );
+  return [...bundles, ...picks];
+}
+
+/** `picked` with `id` toggled, up to `count`; past it the oldest gives way. */
+export function toggleCount(
+  picked: readonly string[],
+  id: string,
+  count: number
+): string[] {
+  if (picked.includes(id)) return picked.filter((p) => p !== id);
+  return picked.length < count ? [...picked, id] : [...picked.slice(1), id];
 }

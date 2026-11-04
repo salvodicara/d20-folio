@@ -13,8 +13,10 @@ import { useTranslation } from "react-i18next";
 import {
   abilityTiles,
   choiceSlotRows,
+  classChoiceSections,
   creationReview,
   previewArmorClass,
+  toggleCount,
   signed,
   speciesRows,
   toggleChoicePick,
@@ -436,8 +438,52 @@ export function EquipmentStep({
         </div>
       </div>
     );
+  const sections = classChoiceSections(draft, facts, locale);
   return (
     <div className="f-ask">
+      {/* The class's own level-1 choices first (Divine Order, Fighting Style,
+          Weapon Mastery…): they can change the armor it wears and its attacks. */}
+      {sections.map((section) => (
+        <div
+          key={section.kind === "bundle" ? section.bundleKey : section.kind}
+          className="f-ask"
+        >
+          <span className="f-lbl">{section.title}</span>
+          <div className="f-chips">
+            {section.options.map((o) =>
+              section.kind === "bundle" ? (
+                <Chip
+                  key={o.id}
+                  pressed={section.picked === o.id}
+                  onClick={() =>
+                    dispatch({
+                      type: "setLineageChoice",
+                      bundleKey: section.bundleKey,
+                      optionId: o.id,
+                    })
+                  }
+                >
+                  {o.label}
+                </Chip>
+              ) : (
+                <Chip
+                  key={o.id}
+                  pressed={section.picked.includes(o.id)}
+                  onClick={() =>
+                    dispatch({
+                      type: "setClassPick",
+                      kind: section.kind,
+                      ids: toggleCount(section.picked, o.id, section.count),
+                    })
+                  }
+                >
+                  {o.label}
+                </Chip>
+              )
+            )}
+          </div>
+        </div>
+      ))}
       {group(t("create.equipFromClass"), classRows, facts.classEquipLabel, (label) =>
         dispatch({ type: "setClassEquipment", label })
       )}

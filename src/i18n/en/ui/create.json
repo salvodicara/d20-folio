@@ -181,7 +181,8 @@
       "preparedSpells": "Prepared spells",
       "rulesNote": "Everything is checked against the 2024 rules. You can change any of it later, from the sheet.",
       "createNamed": "Create {{name}}",
-      "creating": "Creating…"
+      "creating": "Creating…",
+      "classChoicesPending": "Finish the class choices to continue."
     }
   }
 }
