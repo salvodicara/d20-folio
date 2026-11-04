@@ -212,6 +212,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "instantaneous" },
     instantaneous: true,
+    // "Any spell of level 3 or lower on the target ends"; a higher one needs an
+    // ability check (DC 10 + its level); the automatic level rises with the slot.
+    effects: [{ kind: "dispel", autoMaxLevel: 3, perUpcast: 1 }],
     source: "SRD",
   },
   {

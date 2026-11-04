@@ -113,12 +113,18 @@ describe("conformance · 16. DM adjudication", () => {
       source: "SAC #9; SAC #118; SAC #150",
       status: "M17",
     },
-    () => {
-      // Dispel Magic ends one target's share of a spell: it needs a "dispel" effect
-      // that reaches another creature's spell state.
+    async () => {
+      // Dispel Magic ends one target's share of a spell: a level 3 or lower spell
+      // ends; a higher one needs an ability check (DC 10 + its level).
       const dispel = spells.find((s) => s.id === "dispel-magic");
       expect(dispel?.instantaneous).toBe(true);
-      expect(JSON.stringify(dispel)).toContain('"dispel"');
+      expect(dispel?.effects).toEqual([
+        { kind: "dispel", autoMaxLevel: 3, perUpcast: 1 },
+      ]);
+      // The case works once the sheet reaches another creature's spell state.
+      const id = "@/lib/play/dispel";
+      const reader = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof reader.dispelOutcome).toBe("function");
     }
   );
 
