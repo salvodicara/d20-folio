@@ -68,6 +68,8 @@ interface AppliedRow {
   knockOut?: true;
   /** The target made its save. */
   saved?: true;
+  /** The target failed a save whose state the use leaves (Bane). */
+  failed?: true;
 }
 
 /** Write the attack's one shared result onto the use's own log line; the returned
@@ -214,9 +216,22 @@ export function applyTray(
         ...(row?.attack ? { outcome: row.attack } : {}),
         ...(row?.knockOut ? { knockOut: true as const } : {}),
         ...(row?.saved && offer.onSaved ? { saved: true as const } : {}),
+        // A failed save that leaves a state (Bane) applies even with nothing else.
+        ...(row && plan.save && !row.saved && offer.onFailed
+          ? { failed: true as const }
+          : {}),
       };
     })
-    .filter((row) => row.amount > 0 || row.conditions.length > 0 || row.saved);
+    .filter(
+      (row) =>
+        row.amount > 0 ||
+        row.conditions.length > 0 ||
+        row.saved ||
+        row.failed ||
+        // A hit that leaves a state applies even when it deals nothing.
+        (offer.onHit !== undefined &&
+          (row.outcome === "hit" || row.outcome === "critical"))
+    );
   // Killed outright (Power Word Kill, its answer "100 HP or fewer"): each such target.
   const killed = targets.filter((_, index) => {
     const outcome = rows[index]?.outcome;
@@ -411,7 +426,7 @@ export function applyTray(
                   .filter((row) => row.saved)
                   .flatMap((row) => offer.onSaved?.(row.target.id) ?? []),
                 ...applied
-                  .filter((row) => !row.saved)
+                  .filter((row) => row.failed)
                   .flatMap((row) => offer.onFailed?.(row.target.id) ?? []),
               ]
             : [];
