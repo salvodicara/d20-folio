@@ -79,6 +79,16 @@ function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => v
   return store.amendLogEntry(entry.id, { ...entry.event, outcome }) ?? (() => {});
 }
 
+let campaignIoModule: Promise<typeof import("@/features/campaigns/campaign-io")> | null =
+  null;
+
+/** The campaign IO module, loaded once on first use (it stays out of the tray's
+ *  chunk until a fight write needs it). */
+function campaignIo(): Promise<typeof import("@/features/campaigns/campaign-io")> {
+  campaignIoModule ??= import("@/features/campaigns/campaign-io");
+  return campaignIoModule;
+}
+
 /** A fight-effect write in the background: a refusal says so, and never escapes as
  *  an unhandled rejection. */
 function writeFightEffect(
@@ -86,7 +96,7 @@ function writeFightEffect(
   op: { append: ActiveCombatEffect } | { revoke: string },
   t: T
 ): void {
-  void import("@/features/campaigns/campaign-io")
+  void campaignIo()
     .then((io) =>
       "append" in op
         ? io.appendPersistentCombatEffect(campaignId, op.append)
