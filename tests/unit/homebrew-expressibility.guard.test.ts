@@ -540,7 +540,25 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
   "speed-halved": { action: { ...base, effects: [{ kind: "speed-halved" }] } },
   "fall-if-aloft": { action: { ...base, effects: [{ kind: "fall-if-aloft" }] } },
   "recover-slots": {
-    action: { ...base, effects: [{ kind: "recover-slots", totalLevels: 3 }] },
+    action: {
+      ...base,
+      effects: [
+        { kind: "recover-slots", totalLevels: 3 },
+        {
+          kind: "recover-slots",
+          count: 2,
+          maxSlotLevel: {
+            kind: "table",
+            input: { kind: "binding", bindingId: "cast.level" },
+            below: { kind: "fixed", value: 2 },
+            rows: [
+              { atLeast: 6, value: { kind: "fixed", value: 3 } },
+              { atLeast: 8, value: { kind: "fixed", value: 4 } },
+            ],
+          },
+        },
+      ],
+    },
   },
   "speed-zero": { action: { ...base, locksMovement: true } },
   revive: { action: { ...base, revives: { hitPoints: 1 } } },
