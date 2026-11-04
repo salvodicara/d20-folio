@@ -78,3 +78,13 @@ describe("a state a spell leaves on the creature it names", () => {
     });
   }
 });
+
+describe("a state cast on yourself", () => {
+  it("opens no tray (Enlarge/Reduce on the caster: no save, the sheet lights it)", () => {
+    const action = castAction("enlarge-reduce", "wizard", 2);
+    expect(action).toBeDefined();
+    if (!action) return;
+    expect(damageTrayPlan(action, ["pc-me"], "pc-me")).toBeNull();
+    expect(damageTrayPlan(action, ["pc-me", "m-1"], "pc-me")?.targets).toEqual(["m-1"]);
+  });
+});

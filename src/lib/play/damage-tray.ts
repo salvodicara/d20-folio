@@ -134,8 +134,11 @@ export function damageTrayPlan(
   const attacks = rollsToHit(action);
   // A state a failed save leaves (Bane, Faerie Fire) asks who failed, even with no
   // damage or condition to apply.
+  // Only for another creature: the caster's own state lights on its sheet (a
+  // willing self-target of Enlarge/Reduce makes no save).
+  const otherTargets = targets.filter((id) => id !== selfId);
   const standsOnSave =
-    spec.standingEffect !== undefined && spec.kind === "save" && targets.length > 0;
+    spec.standingEffect !== undefined && spec.kind === "save" && otherTargets.length > 0;
   // An attack at a picked target always has its result to say, even with nothing
   // else to apply (Ray of Enfeeblement).
   if (items.length === 0 && !(attacks && targets.length > 0) && !standsOnSave)
@@ -192,7 +195,7 @@ export function damageTrayPlan(
   const planTargets = [
     ...new Set([
       ...items.map((item) => item.targetId),
-      ...(attacks || standsOnSave ? targets : []),
+      ...(attacks ? targets : standsOnSave ? otherTargets : []),
     ]),
   ];
   const split =
