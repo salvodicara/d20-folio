@@ -97,6 +97,14 @@
       "slotsLeft": "{{left}} su {{total}}"
     },
     "time": {
+      "setTimeOfDay": "Imposta l'ora del giorno",
+      "whatTime": "Che ora è? (facoltativo)",
+      "now": "Ora",
+      "span": "Dalle {{from}} alle {{to}}",
+      "recovers_dawn": "Sorge l'alba: {{item}} recupera {{amount}} {{unit}}",
+      "recoversAll_dawn": "Sorge l'alba: {{item}} si ricarica",
+      "recovers_dusk": "Cala il tramonto: {{item}} recupera {{amount}} {{unit}}",
+      "recoversAll_dusk": "Cala il tramonto: {{item}} si ricarica",
       "title": "Passa il tempo",
       "howMuch": "Quanto tempo passa?",
       "hours_one": "{{count}} ora",

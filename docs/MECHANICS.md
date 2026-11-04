@@ -796,8 +796,10 @@ A few cross-cutting behaviours ride the composite kinds; the per-kind TSDoc has 
   The shared item bridge emits the normal action with `activatesKey`; combat, Resources, Inventory,
   rests and the timer all commit through the same item-resource command provider. `ItemResourceSpec`
   declares fixed or table-entered capacity, initial state, exact recovery triggers/amounts and optional
-  last-unit outcomes. Dawn/Dusk are explicit Table Clock events, never Long-Rest or device-time aliases;
-  entered recovery dice are requested before the whole boundary commits. A copy can own several
+  last-unit outcomes. Dawn/Dusk fire when the game clock's time of day crosses 06:00/18:00 (passing
+  time or a rest), or by hand from the Table Clock when no time is set; never device time. Legacy
+  charges count a Long Rest as a dawn only when no time is set. Entered recovery dice are requested
+  before the whole boundary commits. A copy can own several
   independent pools (Wave's charges and Globe use), and disposal makes all of that copy's grants and
   intrinsic equipment effects inert. Legacy item-id trackers remain only for the not-yet-migrated corpus.
   A tracker whose uses belong to one activation declares `refreshOnActivationOf:<activeKey>`.

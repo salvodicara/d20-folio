@@ -5,6 +5,7 @@ vi.mock("@/lib/firebase", () => ({}));
 
 import { ItemResourceCommandProvider } from "@/features/character/center/ItemResourceCommandProvider";
 import { TableClockControl } from "@/features/character/molecules/TableClockControl";
+import { PlayTime } from "@/domains/play/ui/PlayTime";
 import i18n from "@/i18n";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { availableTableClockBoundaries } from "@/lib/views/item-resource-boundary-view";
@@ -236,5 +237,61 @@ describe("TableClockControl", () => {
       </ItemResourceCommandProvider>
     );
     expect(screen.queryByRole("button", { name: "Table clock" })).toBeNull();
+  });
+
+  it("with a time of day set, the clock fires dawn itself: no button", () => {
+    const doc = character();
+    doc.session.timeOfDay = 22 * 60;
+    useCharacterStore.setState({ character: doc });
+    mount();
+    expect(screen.queryByRole("button", { name: "Table clock" })).toBeNull();
+  });
+});
+
+describe("«Pass time» with a time of day (M18)", () => {
+  // jsdom has no modal <dialog>: open it in place.
+  beforeEach(() => {
+    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+      this.open = true;
+    };
+    HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+      this.open = false;
+    };
+  });
+
+  function mountTime(doc: CharacterDoc) {
+    useCharacterStore.setState({ character: doc });
+    return render(
+      <ItemResourceCommandProvider>
+        <PlayTime doc={doc} locale="en" onClose={() => {}} />
+      </ItemResourceCommandProvider>
+    );
+  }
+
+  it("asks the time only on request, then says what dawn brings and fires it", async () => {
+    mountTime(character());
+    // No time set: a quiet button, no field.
+    fireEvent.click(screen.getByRole("button", { name: "Set the time of day" }));
+    const field = screen.getByLabelText("What time is it? (optional)");
+    fireEvent.change(field, { target: { value: "22:00" } });
+    fireEvent.click(screen.getByRole("button", { name: "8 hours" }));
+    expect(screen.getByText("From 22:00 to 06:00")).toBeTruthy();
+    expect(screen.getByText(/^Dawn breaks: .+ regains/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Let it pass" }));
+    await answerRecovery(2);
+    await waitFor(() => expect(current(firstId)).toBe(3));
+    expect(useCharacterStore.getState().character?.session.timeOfDay).toBe(6 * 60);
+  });
+
+  it("once set, the time is shown, moved by the time passed: never asked twice", () => {
+    const doc = character();
+    doc.session.timeOfDay = 14 * 60;
+    mountTime(doc);
+    expect(screen.queryByRole("button", { name: "Set the time of day" })).toBeNull();
+    expect(screen.getByLabelText("Time")).toHaveProperty("value", "14:00");
+    // An hour in the afternoon: no dawn.
+    fireEvent.click(screen.getByRole("button", { name: "1 hour" }));
+    expect(screen.queryByText(/^Dawn breaks/)).toBeNull();
   });
 });

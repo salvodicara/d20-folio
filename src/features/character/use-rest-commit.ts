@@ -15,7 +15,10 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import type { CharacterDoc } from "@/types/character";
+import { LONG_REST_MINUTES, SHORT_REST_MINUTES } from "@/lib/play/rests";
+import { crossedBoundaries } from "@/lib/play/time";
 import { useItemResourceCommands } from "./center/useItemResourceCommands";
+import { declareClockBoundary } from "./clock-boundaries";
 import { restThroughWorld } from "./rest-world-boundary";
 
 type Prepared = NonNullable<
@@ -58,6 +61,18 @@ export function useRestCommit() {
     }
   }
 
+  /** With a time of day set, the dawn or dusk the rest crosses (M18): what recovers
+   *  then, recovers now, each with its undo toast. */
+  function fireClock(reviewed: CharacterDoc, minutes: number): void {
+    for (const kind of crossedBoundaries(reviewed.session.timeOfDay, minutes)) {
+      void declareClockBoundary(
+        itemResourceCommands,
+        kind,
+        t(`magicItems.clockApplied_${kind}`)
+      );
+    }
+  }
+
   /** A Short Rest healing `healedHp` (the entered roll + CON per die, 0 without
    *  dice) and spending `hitDice` dice. Null when it did not happen. */
   async function shortRest(
@@ -73,6 +88,7 @@ export function useRestCommit() {
       effectiveMaxHp(reviewed.character, session)
     );
     restThroughWorld("short", { healedHp });
+    fireClock(reviewed, SHORT_REST_MINUTES);
     if (healedHp > 0) setHP(newHp);
     if (hitDice > 0) updateSession({ hitDice: { used: session.hitDice.used + hitDice } });
     // A short rest ends the current fight — return combat to baseline.
@@ -85,6 +101,7 @@ export function useRestCommit() {
     const prepared = await commitBoundary("long-rest", reviewed);
     if (!prepared) return null;
     restThroughWorld("long");
+    fireClock(reviewed, LONG_REST_MINUTES);
     // A long rest ends the current fight — return combat to baseline.
     useCombatStore.getState().endCombat();
     return prepared;
