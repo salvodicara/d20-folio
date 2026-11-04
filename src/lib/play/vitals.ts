@@ -334,7 +334,9 @@ export function setDeathSaves(
  *  degrades to the legacy write. */
 export function setExhaustion(doc: CharacterDoc, level: number): SessionState | null {
   if (!Number.isFinite(level)) return null;
-  const target = Math.max(0, Math.min(6, Math.round(level)));
+  // Never past the table's maximum (RAW 6, where the creature dies).
+  const max = doc.session.tableRules?.exhaustion.maxLevel ?? 6;
+  const target = Math.max(0, Math.min(max, Math.round(level)));
   if (doc.session.exhaustion === target) return null;
   // An immune creature gains no level; it can still lose the ones it has.
   if (target > doc.session.exhaustion && isImmuneTo(doc, "exhaustion")) return null;

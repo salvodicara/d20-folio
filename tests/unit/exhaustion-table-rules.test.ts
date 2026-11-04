@@ -49,3 +49,28 @@ describe("Exhaustion by the table's rules", () => {
     expect(limiter).toMatchObject({ level: 2, d20Penalty: 2, speedPenaltyFt: 20 });
   });
 });
+
+describe("death at the table's maximum", () => {
+  it("a 4-level table: the track stops at 4, which is death", async () => {
+    const { setExhaustion } = await import("@/lib/play/vitals");
+    const { diedOfExhaustion } = await import("@/lib/character-status");
+    const short = effectiveTableRules({ tableRules: { exhaustion: { maxLevel: 4 } } });
+    const doc = makeCharacterDoc({ classId: "fighter", level: 5 });
+    const ruled = {
+      ...doc,
+      session: { ...doc.session, exhaustion: 3, tableRules: short },
+    };
+    const next = setExhaustion(ruled, 5);
+    expect(next?.exhaustion).toBe(4);
+    expect(next && diedOfExhaustion(next)).toBe(true);
+    expect(diedOfExhaustion({ exhaustion: 4 })).toBe(false);
+  });
+
+  it("a track longer than 6 is not accepted yet (the stored world knows 0–6)", async () => {
+    const { conformTableRules } = await import("@/lib/table-rules");
+    expect(conformTableRules({ exhaustion: { maxLevel: 10 } })).toEqual({});
+    expect(conformTableRules({ exhaustion: { maxLevel: 5 } })).toEqual({
+      exhaustion: { maxLevel: 5 },
+    });
+  });
+});

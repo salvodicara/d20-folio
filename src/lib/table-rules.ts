@@ -79,7 +79,9 @@ const flanking = (v: unknown): v is TableRules["flanking"] =>
 const GROUPS = {
   rest: { shortMinutes: positiveInt, longMinutes: positiveInt },
   exhaustion: {
-    maxLevel: positiveInt,
+    // At most 6: the stored world knows Exhaustion 0–6 (6 is death). A table can make
+    // death come sooner; a longer track needs a stored-schema change first.
+    maxLevel: (v: unknown): v is number => positiveInt(v) && v <= 6,
     d20PerLevel: nonPositiveInt,
     speedFtPerLevel: nonPositiveInt,
   },

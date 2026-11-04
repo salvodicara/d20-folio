@@ -32,9 +32,15 @@ export function diedInPlay(session: Pick<SessionState, "deathFail">): boolean {
   return session.deathFail >= DEATH_FAIL_LIMIT;
 }
 
-/** Died of Exhaustion — level 6 in the live session (SRD "Exhaustion"). */
-export function diedOfExhaustion(session: Pick<SessionState, "exhaustion">): boolean {
-  return session.exhaustion >= EXHAUSTION_DEATH_LEVEL;
+/** Died of Exhaustion — level 6 in the live session (SRD "Exhaustion"), or the
+ *  campaign's own maximum when its table rules set one (M16). */
+export function diedOfExhaustion(
+  session: Pick<SessionState, "exhaustion" | "tableRules">
+): boolean {
+  return (
+    session.exhaustion >=
+    (session.tableRules?.exhaustion.maxLevel ?? EXHAUSTION_DEATH_LEVEL)
+  );
 }
 
 /** Stabilised in play — three successful death saves in the live session. */
