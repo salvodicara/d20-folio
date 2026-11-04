@@ -36,9 +36,11 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
   deliverQueuedMemberEffects,
+  revokePersistentCombatEffect,
   revokePersistentCombatEffectsBySource,
   subscribeToSharedCampaigns,
 } from "@/features/campaigns/campaign-io";
+import { incapacitationSweep, type IncapacitationRow } from "@/lib/combat-effects";
 import { encounterRollFor, viewerActiveEncounters } from "@/features/campaigns/encounter";
 import {
   observePartyWorldFights,
@@ -103,6 +105,7 @@ export function GlobalCombatMount(): null {
     sourceId: string;
   } | null>(null);
   const observedTurn = useRef<string | null>(null);
+  const observedRows = useRef<{ scope: string; rows: IncapacitationRow[] } | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
   // tick, not ~2 s later when the autosave-debounced write echoes (the pip's "no echo lag").
@@ -293,6 +296,37 @@ export function GlobalCombatMount(): null {
       useCharacterStore.getState().setConcentration("", { undoable: false });
     }
   }, [status, live, setEncounterEffects]);
+
+  // The incapacitation sweep: a creature that can no longer act (0 HP, Unconscious,
+  // Stunned…) loses its Concentration effects and the grapples it holds. Each device
+  // answers for its own combatants (the DM's for the monsters, a player's for their
+  // PC), so each revocation is written once; a revocation is idempotent anyway. The
+  // first look at a fight only primes (a reload is not a fall).
+  useEffect(() => {
+    if (!live || !primaryId || !uid) {
+      observedRows.current = null;
+      return;
+    }
+    const scope = `${primaryId}:${live.encounter.epoch}`;
+    const rows: IncapacitationRow[] = live.view.rows.map((row) => ({
+      id: row.id,
+      currentHp: row.currentHp,
+      conditions: row.conditions,
+    }));
+    const before =
+      observedRows.current?.scope === scope ? observedRows.current.rows : null;
+    observedRows.current = { scope, rows };
+    const myId = `pc-${uid}`;
+    const kinds = new Map(live.view.rows.map((row) => [row.id, row.kind]));
+    const ended = incapacitationSweep(before, rows, live.encounter.effectOps, (id) =>
+      primaryIsDm ? kinds.get(id) === "monster" : id === myId
+    );
+    for (const effectId of ended) {
+      void revokePersistentCombatEffect(primaryId, effectId).catch(() => {
+        showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+      });
+    }
+  }, [live, primaryId, primaryIsDm, uid, showToast, t]);
 
   // Once-per-turn uses (Sneak Attack) come back on every turn, anyone's: an opportunity
   // attack on the enemy's turn can use it again. When the fight moves to a new turn,
