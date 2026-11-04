@@ -65,7 +65,11 @@
       "concentration": "Make a concentration save for {{spell}} (DC {{dc}})."
     },
     "form": {
-      "tempHp": "You gain {{amount}} Temporary Hit Points, and they stay when you return to your form."
+      "tempHp": "You gain {{amount}} Temporary Hit Points, and they stay when you return to your form.",
+      "worn": "Worn in the form",
+      "gearHint": "Gear merged into the form: it gives no bonus. Mark what the table rules worn.",
+      "gearWorn": "Worn in the form: {{name}}",
+      "gearMerged": "Merged into the form: {{name}}"
     },
     "table": {
       "hit": "Hit / DC",

@@ -8,6 +8,7 @@
  * Weights stay raw (pounds); the screen formats them.
  */
 import { localizeSrd } from "@/i18n/resolver";
+import { gearKey, selfFormRule } from "@/lib/polymorph";
 import type { Locale } from "@/lib/locale";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import {
@@ -37,11 +38,16 @@ export interface PlayItem {
   needsAttunement: boolean;
   /** The actions list's use of this item, for «Usa». */
   useActionId: string | null;
+  /** In a form whose gear merges (Wild Shape): the item's key for «Indossato nella
+   *  forma», and whether the table ruled it worn (only then does it work). */
+  formGear?: { key: string; worn: boolean };
   /** A Spell Scroll: its row in the equipment and the spell on it, once set. */
   scroll?: { index: number; spellId: string | null; spellName: string | null };
 }
 
 export interface PlayInventoryView {
+  /** The character's form merges its gear: it gives nothing unless ruled worn. */
+  formMerges: boolean;
   weight: { carried: number; capacity: number; over: boolean } | null;
   coins: CharacterDoc["session"]["currency"];
   attunement: { bonded: number; cap: number };
@@ -55,6 +61,16 @@ const SPELL_SCROLL = "spell-scroll";
 
 export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInventoryView {
   const vm = buildInventoryViewModel(doc, locale);
+  const form = doc.session.activeForm;
+  const formMerges =
+    form !== undefined && selfFormRule(form.sourceId).gearMerges === true;
+  const wornGear = new Set(form?.wornGear ?? []);
+  const formGear = (
+    ref: Parameters<typeof gearKey>[0] | undefined
+  ): Pick<PlayItem, "formGear"> =>
+    formMerges && ref
+      ? { formGear: { key: gearKey(ref), worn: wornGear.has(gearKey(ref)) } }
+      : {};
   const uses = new Map<string, string>();
   for (const action of localizeActions(doc, locale)) {
     const item = action.costEquipment ?? action.castPoolItemId;
@@ -73,6 +89,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     stealthDisadvantage: false,
     needsAttunement: false,
     useActionId: null,
+    ...formGear(doc.character.weapons[w.idx]),
   });
   const item = (i: ItemRowVM): PlayItem => {
     const ref = i.isCustom ? undefined : doc.character.equipment[i.idx];
@@ -110,6 +127,8 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     stealthDisadvantage: i.stealthDisadvantage,
     needsAttunement: i.requiresAttunement && !i.attuned,
     useActionId: uses.get(i.isCustom ? `custom-${i.id}` : i.id) ?? null,
+    // Only what is worn or bonded merges; the pack gives nothing in any form.
+    ...(i.equipped || i.attuned ? formGear(doc.character.equipment[i.idx]) : {}),
   });
   const rows = [...vm.armor, ...vm.gear];
   const equipped = [
@@ -119,6 +138,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
   const attuned = rows.filter((i) => i.attuned).map(item);
   const pack = rows.filter((i) => !i.equipped && !i.attuned).map(item);
   return {
+    formMerges,
     weight: vm.encumbrance
       ? {
           carried: vm.encumbrance.carried,
