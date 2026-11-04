@@ -43,6 +43,7 @@ import { actionIcon } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useCharacterStore } from "@/stores/characterStore";
+import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Icon, Tabs } from "@/ui";
@@ -287,6 +288,11 @@ function InventoryPane({
           ))}
         </p>
       )}
+      {view.formMerges && (
+        <p className="f-note" data-c="res" role="status">
+          {t("play.form.gearHint")}
+        </p>
+      )}
       {view.groups.map(({ kind, items }) => (
         <section key={kind} className="f-act-group" data-group="items">
           <h3 className="f-act-gh">
@@ -317,6 +323,35 @@ function InventoryPane({
                     {i.quantity > 1 && `\u00a0×\u2060${String(i.quantity)}`}
                   </div>
                   {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
+                  {/* Wild Shape merges gear: it works only if the table rules it worn. */}
+                  {i.formGear && !readonly && (
+                    <div className="f-chips">
+                      <Chip
+                        pressed={i.formGear.worn}
+                        onClick={() => {
+                          const gear = i.formGear;
+                          if (!gear) return;
+                          registerUndoableToast(
+                            {
+                              message: t(
+                                gear.worn ? "play.form.gearMerged" : "play.form.gearWorn",
+                                { name: i.name }
+                              ),
+                            },
+                            () =>
+                              useCharacterStore.getState().dispatch({
+                                kind: "set-form-gear-worn",
+                                key: gear.key,
+                                worn: !gear.worn,
+                              }),
+                            { turnScoped: false }
+                          );
+                        }}
+                      >
+                        {t("play.form.worn")}
+                      </Chip>
+                    </div>
+                  )}
                 </div>
                 <span className="f-act-c">
                   {formatWeight(i.weight * i.quantity, locale)}

@@ -99,3 +99,48 @@ describe("a Spell Scroll in the pack", () => {
     });
   });
 });
+
+describe("gear in a form that merges it (Wild Shape)", () => {
+  const inForm = (wornGear?: string[]) =>
+    playInventoryView(
+      {
+        ...MOCK_CHARACTER,
+        session: {
+          ...MOCK_CHARACTER.session,
+          activeForm: {
+            sourceId: "druid-wild-shape",
+            beastId: "wolf",
+            tempHpBefore: 0,
+            ...(wornGear ? { wornGear } : {}),
+          },
+        },
+      },
+      "it"
+    );
+
+  it("says the gear merged, and each equipped item can be ruled worn", () => {
+    const view = inForm();
+    expect(view.formMerges).toBe(true);
+    const equipped = view.groups.find((g) => g.kind === "equipped")?.items ?? [];
+    expect(equipped[0]?.formGear?.worn).toBe(false);
+    expect(equipped[0]?.formGear?.key).toMatch(/\S/);
+  });
+
+  it("an item the table ruled worn reads worn", () => {
+    const key =
+      inForm().groups.find((g) => g.kind === "equipped")?.items[0]?.formGear?.key ?? "";
+    const view = inForm([key]);
+    expect(view.groups.find((g) => g.kind === "equipped")?.items[0]?.formGear?.worn).toBe(
+      true
+    );
+  });
+
+  it("the pack has nothing to rule; out of the form, nothing either", () => {
+    expect(
+      inForm()
+        .groups.find((g) => g.kind === "pack")
+        ?.items.every((i) => !i.formGear)
+    ).toBe(true);
+    expect(playInventoryView(MOCK_CHARACTER, "it").formMerges).toBe(false);
+  });
+});
