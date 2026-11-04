@@ -262,6 +262,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     damageType: DAMAGE_TYPE_SCHEMA,
     type: literalSchema("damage-retaliation"),
   }),
+  /** A change to a creature a spell of yours summons (Familiar Friend: the
+   *  familiar's Hit Point maximum gains twice your character level). `companion` is
+   *  the summoning spell's id. */
+  "companion-mod": objectSchema({
+    companion: stringSchema,
+    hpBonus: objectSchema({ perCharacterLevel: numberSchema }),
+    type: literalSchema("companion-mod"),
+  }),
   "damage-immunity": objectSchema({
     damageType: DAMAGE_TYPE_SCHEMA,
     type: literalSchema("damage-immunity"),

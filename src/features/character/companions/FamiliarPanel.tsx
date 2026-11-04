@@ -15,6 +15,7 @@
  * destroys unconfirmed state).
  */
 
+import { summonMaxHp } from "@/lib/play/companions";
 import { Suspense, lazy, useState } from "react";
 import { ModalScroll } from "@/components/ui/modal-head";
 import { useTranslation } from "react-i18next";
@@ -65,7 +66,9 @@ export function FamiliarPanel({ formIds }: FamiliarPanelProps) {
   const form = getMonster(familiar.monsterId);
   const play = sheetMode === "play";
   const name = form ? localizeSrd("monster", form.id, "name", locale) : null;
-  const maxHp = form?.hp.average ?? 0;
+  const maxHp = form
+    ? summonMaxHp(character, FIND_FAMILIAR_SPELL_ID, form.hp.average)
+    : 0;
   const cur = character.session.companionHp?.[FIND_FAMILIAR_SPELL_ID]?.current ?? maxHp;
   const vanished = form != null && cur === 0;
 
