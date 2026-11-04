@@ -943,3 +943,185 @@ export function findCoverDrift(strings: ReadonlyArray<UiString>): string[] {
     }
   return hits;
 }
+
+// ── Cross-reference coverage (2026-11-04) ────────────────────────────────────────────────────────
+// The checks above catch a RETIRED lexeme coming back. They cannot see a NEW variant nobody has
+// retired yet: «Individuazione del Pensiero» where Detect Thoughts is «Individuazione dei
+// Pensieri», «Radiante» where the IT SRD prints «radioso». The two checks below read every name
+// from the JSON at runtime (so this public helper carries no private name) and flag:
+//   (5) a MISSING cross-reference — the EN string names an entity, the IT string at the same key
+//       does not carry that entity's canonical IT name;
+//   (6) one EN name translated TWO ways across entities (sub-entity `name` fields included).
+
+/** One localized string as an EN/IT pair at the same shard + key. */
+export type StringPair = { file: string; key: string; en: string; it: string };
+
+/** A named thing (entity or sub-entity row) with its EN and IT name. */
+export type NamedEnt = { kind: string; id: string; en: string; it: string };
+
+function flatten(v: unknown, prefix: string, out: Map<string, string>): void {
+  if (typeof v === "string") out.set(prefix, v);
+  else if (Array.isArray(v)) v.forEach((x, i) => flatten(x, `${prefix}[${i}]`, out));
+  else if (v && typeof v === "object")
+    for (const [k, val] of Object.entries(v as Record<string, unknown>))
+      flatten(val, prefix ? `${prefix}.${k}` : k, out);
+}
+
+function pairsOf(
+  file: string,
+  en: unknown,
+  it: unknown,
+  skipNames: boolean
+): StringPair[] {
+  const e = new Map<string, string>();
+  const i = new Map<string, string>();
+  flatten(en, "", e);
+  flatten(it, "", i);
+  const out: StringPair[] = [];
+  for (const [key, enValue] of e) {
+    if (skipNames && key.endsWith(".name")) continue;
+    const itValue = i.get(key);
+    if (itValue !== undefined) out.push({ file, key, en: enValue, it: itValue });
+  }
+  return out;
+}
+
+/**
+ * Every EN/IT string pair under `root`: the SRD catalogues (entity and sub-entity prose; `name`
+ * leaves are the names themselves, so they are left out) and the `ui/*.json` chrome shards.
+ */
+export function loadStringPairs(root: string): StringPair[] {
+  const out: StringPair[] = [];
+  for (const kind of KINDS) {
+    const en = readSrdKind(root, "en", kind);
+    const it = readSrdKind(root, "it", kind);
+    if (en && it) out.push(...pairsOf("srd/" + kind, en, it, true));
+  }
+  const uiDir = resolve(root, "en", "ui");
+  if (existsSync(uiDir))
+    for (const f of readdirSync(uiDir)) {
+      const itFile = resolve(root, "it", "ui", f);
+      if (!f.endsWith(".json") || !existsSync(itFile)) continue;
+      const read = (p: string): unknown => JSON.parse(readFileSync(p, "utf8"));
+      out.push(
+        ...pairsOf("ui/" + f.slice(0, -5), read(resolve(uiDir, f)), read(itFile), false)
+      );
+    }
+  return out;
+}
+
+/**
+ * Every named row under `root`, entities AND sub-entity rows (`<id>.mechanics.actions.<n>`,
+ * `<monster>.actions.<id>`, …) that carry a `name` in both locales.
+ */
+export function loadNamedEntities(root: string): NamedEnt[] {
+  const out: NamedEnt[] = [];
+  for (const kind of KINDS) {
+    const en = readSrdKind(root, "en", kind);
+    const it = readSrdKind(root, "it", kind);
+    if (!en || !it) continue;
+    for (const [id, ev] of Object.entries(en)) {
+      const iv = it[id];
+      const enName = (ev as { name?: unknown } | null)?.name;
+      const itName = (iv as { name?: unknown } | null)?.name;
+      if (typeof enName === "string" && typeof itName === "string")
+        out.push({ kind, id, en: enName, it: itName });
+    }
+  }
+  return out;
+}
+
+function foldIt(s: string): string {
+  return s.normalize("NFC").replace(/[’ʼ]/g, "'");
+}
+
+/**
+ * A tolerant matcher for one canonical IT name: case-insensitive; each word of 4+ letters keeps
+ * its stem and may end in any 0–3 letters (Radioso/Radiosi, Affascinato/Affascinata); "di" and the
+ * elided "d'" are interchangeable (Padronanza d'Armi / di Armi).
+ */
+function itNameMatcher(name: string): RegExp {
+  const tokens = foldIt(name).match(/\p{L}+'?|\d+|[^\s\p{L}\d]/gu) ?? [];
+  const parts = tokens.map((t) => {
+    if (/^d'$|^di$/i.test(t)) return "d(?:i\\s+|'\\s*)";
+    const word = t.endsWith("'") ? t.slice(0, -1) : t;
+    const apos = t.endsWith("'") ? "'\\s*" : "";
+    if (/^\p{L}{4,}$/u.test(word))
+      return escapeRegex(word.slice(0, -1)) + "\\p{L}{0,3}" + (apos || "\\s*");
+    return escapeRegex(word) + (apos || "\\s*");
+  });
+  return new RegExp("(?<!\\p{L})" + parts.join(""), "iu");
+}
+
+/**
+ * EN strings that name an entity whose canonical IT name is absent from the IT string at the same
+ * key. Checked names: every EN entity name of 2+ words, plus the single-word names in `allow`
+ * (closed-set terms like "Expertise" — a bare one-word EN name is otherwise too common a word to
+ * read as a cross-reference). Matching is word-bounded and case-sensitive on the EN side, longest
+ * name first (a name inside an already-matched longer name is not checked again). An entity's own
+ * prose (`<id>.…` in its catalogue) is skipped: it may refer to itself loosely. One EN name with
+ * several IT renderings accepts any of them. Returns `file:key «EN» → «IT»` lines.
+ */
+export function findMissingCrossRefs(
+  pairs: ReadonlyArray<StringPair>,
+  entities: ReadonlyArray<NamedEnt>,
+  allow: Iterable<string> = []
+): string[] {
+  const single = new Set(allow);
+  type Checked = { itNames: Set<string>; owners: Set<string>; en: RegExp; it: RegExp[] };
+  const byEn = new Map<string, Checked>();
+  for (const e of entities) {
+    if (!e.en.trim() || !e.it.trim()) continue;
+    if (!/\s/.test(e.en.trim()) && !single.has(e.en)) continue;
+    let c = byEn.get(e.en);
+    if (!c) {
+      const en = new RegExp(
+        "(?<![\\p{L}\\d'’-])" + escapeRegex(e.en) + "(?![\\p{L}\\d-])",
+        "u"
+      );
+      c = { itNames: new Set(), owners: new Set(), en, it: [] };
+      byEn.set(e.en, c);
+    }
+    c.itNames.add(e.it);
+    c.owners.add(`srd/${e.kind}:${e.id.split(".")[0] ?? e.id}`);
+  }
+  for (const c of byEn.values()) c.it = [...c.itNames].map(itNameMatcher);
+  const names = [...byEn].sort(([a], [b]) => b.length - a.length);
+  const out: string[] = [];
+  for (const p of pairs) {
+    const owner = `${p.file}:${p.key.split(".")[0] ?? p.key}`;
+    const itText = foldIt(p.it);
+    const used: string[] = [];
+    for (const [n, c] of names) {
+      if (used.some((u) => u.includes(n)) || !c.en.test(p.en)) continue;
+      used.push(n);
+      if (c.owners.has(owner) || c.it.some((re) => re.test(itText))) continue;
+      out.push(`${p.file}:${p.key} «${n}» → «${[...c.itNames].join(" / ")}»`);
+    }
+  }
+  return out;
+}
+
+/**
+ * One EN name rendered as two or more different IT names across the given rows (letter case,
+ * accents and apostrophe style ignored). `allow` lists EN names that legitimately split (an EN
+ * homonym the IT SRD prints two ways for two different things). Returns `EN → IT1 | IT2` lines.
+ */
+export function findSameEnDifferentIt(
+  entities: ReadonlyArray<NamedEnt>,
+  allow: Iterable<string> = []
+): string[] {
+  const skip = new Set(allow);
+  const byEn = new Map<string, Map<string, string>>();
+  for (const e of entities) {
+    if (!e.en.trim() || !e.it.trim() || skip.has(e.en)) continue;
+    let forms = byEn.get(e.en);
+    if (!forms) byEn.set(e.en, (forms = new Map<string, string>()));
+    const key = norm(foldIt(e.it));
+    if (!forms.has(key)) forms.set(key, e.it);
+  }
+  return [...byEn]
+    .filter(([, forms]) => forms.size > 1)
+    .map(([en, forms]) => `${en} → ${[...forms.values()].sort().join(" | ")}`)
+    .sort();
+}
