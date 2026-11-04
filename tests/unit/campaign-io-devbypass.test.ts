@@ -52,6 +52,9 @@ import {
   setCampaignBanner,
 } from "@/features/campaigns/campaign-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { giveHelp } from "@/features/character/center/outcome-offer";
+import { useAuthStore } from "@/stores/authStore";
 import { foldCombatEffectOps } from "@/lib/combat-effects";
 import {
   DEV_CAMPAIGN_ID,
@@ -289,6 +292,57 @@ describe("campaign-io under dev bypass", () => {
       "reinstate:reinstate:ward:1",
       "revoke:revoke:ward:1:1",
     ]);
+  });
+});
+
+describe("Help through the dev store", () => {
+  it("giveHelp lands Help on the enemy, and its undo revokes it", async () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+    const campaign = makeDevCampaign();
+    campaign.encounter = {
+      nextMonsterOrdinal: 2,
+      round: 2,
+      currentCombatantId: "pc-u1",
+      epoch: 1,
+      status: "active",
+      combatants: [
+        { kind: "pc", id: "pc-u1", memberUid: "u1", characterId: "char-u1" },
+        {
+          kind: "monster",
+          id: "monster-1",
+          name: "Goblin 1",
+          ac: 13,
+          initiative: 8,
+          conditions: [],
+          hp: { current: 7, temp: 0, max: 7 },
+        },
+      ],
+    };
+    useCampaignStore.setState({ campaign });
+    useAuthStore.setState({ user: { uid: "u1" } as never });
+    useCombatStatusStore.setState({
+      status: {
+        campaignId: campaign.id,
+        myId: "pc-u1",
+        characterId: "char-u1",
+        round: 2,
+        encounter: campaign.encounter,
+        view: { rows: [{ id: "monster-1", kind: "monster" }] },
+      } as never,
+    });
+    const helped = () =>
+      foldCombatEffectOps(
+        useCampaignStore.getState().campaign?.encounter?.effectOps
+      ).some(
+        (e) => e.source.id === "action-help" && e.target.combatantId === "monster-1"
+      );
+
+    const undo = giveHelp("monster-1", "char-u1");
+    expect(undo).toBeTypeOf("function");
+    await vi.waitFor(() => expect(helped()).toBe(true));
+    undo?.();
+    await vi.waitFor(() => expect(helped()).toBe(false));
+    vi.unstubAllEnvs();
   });
 });
 

@@ -192,7 +192,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await expect(actionToken).toHaveAttribute("data-state", "open");
   });
 
-  test("a blocking condition gates non-spell actions; spell bookkeeping stays available", async ({
+  test("a blocking condition gates non-spell actions; a Verbal spell is refused for speech", async ({
     page,
   }) => {
     // Add Incapacitated via the Resources rail condition picker (the in-app
@@ -203,7 +203,9 @@ test.describe("Combat live-play loop (cockpit)", () => {
       .click();
     await page.getByRole("option", { name: /^Incapacitated$/i }).click();
 
-    // Non-spell actions retain their condition gate; spells remain resource tracking.
+    // Non-spell actions retain their condition gate. Incapacitated also means
+    // "can't speak" (2024 rules), so a spell with a Verbal component is refused,
+    // says why, and spends nothing.
     await page.getByRole("button", { name: "Use: Dash" }).click();
     await expect(page.getByText(/a condition prevents this/i)).toBeVisible();
     await expect(page.locator('.econ-tok[data-kind="action"]')).toHaveAttribute(
@@ -214,7 +216,8 @@ test.describe("Combat live-play loop (cockpit)", () => {
       "Mage Hand"
     );
     await page.getByRole("button", { name: "Cast: Mage Hand" }).click();
-    await expect(page.getByRole("log", { name: "Action Log" })).toContainText(
+    await expect(page.getByText(/you can't speak here/i)).toBeVisible();
+    await expect(page.getByRole("log", { name: "Action Log" })).not.toContainText(
       "Mage Hand"
     );
     await expect(page.getByRole("button", { name: "Cast: Mage Hand" })).toBeEnabled();

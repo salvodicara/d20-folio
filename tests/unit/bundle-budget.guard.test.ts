@@ -159,7 +159,12 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // configuration adds ~1.7 KB), so the deploy gate flipped with no single leak: the same
 // 19 chunk families, `cockpit-engine` the bulk. +~5 KB never-exact-fit headroom over the
 // prod measurement; shaving cockpit-engine stays frontier #1.
-const EAGER_CEILING_KB = 856; // baseline 727.1 → ~+18% (over budget — see ARCHITECTURE P3 frontier #1)
+// 2026-11-04: raised 856→864. The 2026-11-03/04 engine waves (table rules, speech,
+// attunement, Vex/Help, reinstate, trigger readers) crept the composed eager closure
+// to 858.1 KB gz with the same chunk families, `cockpit-engine` the bulk (no lazy chunk
+// became eager). The prod client configuration adds ~1.7 KB, so 864 keeps ~4 KB
+// never-exact-fit headroom over production. Shaving cockpit-engine stays frontier #1.
+const EAGER_CEILING_KB = 864; // baseline 727.1 → ~+18% (over budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
 // on demand from the PDF export flow) and correctly precached for offline-first.
