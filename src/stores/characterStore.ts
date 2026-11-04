@@ -481,7 +481,11 @@ interface CharacterState {
   ) => string[];
   addCondition: (
     condition: string,
-    opts?: { registerConcentrationUndo?: boolean }
+    opts?: {
+      registerConcentrationUndo?: boolean;
+      /** The combatant that caused it («Da chi?»). */
+      sourceId?: string;
+    }
   ) => void;
   removeCondition: (condition: string) => void;
   /**
@@ -2409,7 +2413,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // WORLD-FIRST: a manual chip commits as a real world condition occurrence
     // (the manual-condition seam program); see `addCondition` in lib/play.
     const worldActionId = `condition-apply-${crypto.randomUUID()}`;
-    if (!get().dispatch({ kind: "add-condition", condition, worldActionId })) return;
+    const sourceId = opts?.sourceId;
+    if (
+      !get().dispatch({
+        kind: "add-condition",
+        condition,
+        worldActionId,
+        ...(sourceId ? { sourceId } : {}),
+      })
+    )
+      return;
     // Events-as-data: a gained condition is a story beat (the condition id is
     // stable; the presenter resolves its localized name).
     get().logEvent({ kind: "condition-gain", conditionId: condition });

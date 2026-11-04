@@ -157,7 +157,8 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
   return clean({
     level,
     castingTime: castingKey(activity),
-    reactionTrigger: cost.trigger,
+    // One token, or the list when the spell answers several (Moment of Prescience).
+    reactionTrigger: cost.triggers ?? cost.trigger,
     ritual: cost.ritual === true,
     components: {
       v: cost.components?.v === true,

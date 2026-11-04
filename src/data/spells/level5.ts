@@ -342,6 +342,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
       options: ["paralyzed"],
       on: "failed-save",
       lifetime: { kind: "source" },
@@ -640,6 +641,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "target-damaged" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: { kind: "source" },

@@ -30,3 +30,13 @@ export function useConditionEncounter(
   const rows = useCombatStatusStore((s) => encounterOf(s.status, characterId));
   return useMemo(() => (rows ? { rows } : undefined), [rows]);
 }
+
+/** The same fight with each combatant's name (a condition's source, «Da chi?»). */
+export function useNamedConditionEncounter(
+  characterId: string | undefined
+):
+  | { rows: ReadonlyArray<{ id: string; name: string; conditions: string[] }> }
+  | undefined {
+  const rows = useCombatStatusStore((s) => encounterOf(s.status, characterId));
+  return useMemo(() => (rows ? { rows } : undefined), [rows]);
+}

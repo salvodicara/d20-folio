@@ -169,6 +169,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
       options: ["blinded", "deafened"],
       max: 1,
       on: "failed-save",
@@ -499,6 +500,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     saveAbility: "WIS",
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
       options: ["paralyzed"],
       on: "failed-save",
       lifetime: { kind: "source" },

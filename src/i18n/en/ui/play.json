@@ -213,7 +213,12 @@
     },
     "companions": {
       "vitals": "{{current}}/{{max}} HP · AC {{ac}}",
-      "fallen": "It has fallen: it comes back when its spell or feature calls it again."
+      "fallen": "It has fallen: it comes back when its spell or feature calls it again.",
+      "reviveHint": "Bring it back with a Magic action and a spell slot: it returns after {{minutes}} min with all its Hit Points.",
+      "reviveWith": "Level {{level}} slot",
+      "reviveWithPact": "Level {{level}} pact slot",
+      "reviveNoSlot": "You have no spell slot left to spend.",
+      "revived": "{{name}} comes back to life"
     },
     "down": {
       "title": "At 0 Hit Points: death saving throws",
@@ -223,6 +228,13 @@
       "faceHint": "A 20 gets you up at 1 Hit Point; a 1 counts as two failures.",
       "stable": "Stable: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
       "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours)."
+    },
+    "conditions": {
+      "cantSeeSource": "I can't see the source",
+      "exhaustionLevel": "Level {{level}}: −{{d20}} to D20 Tests · Speed −{{speed}}",
+      "exhaustionDeath": "Level 6: the character dies",
+      "withSource": "{{name}} · by {{source}}",
+      "fromWhom": "{{name}}: by whom?"
     }
   }
 }

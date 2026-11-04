@@ -353,6 +353,7 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     concentration: false,
     duration: { kind: "until-dispelled" },
     conditionApplication: {
+      ends: [{ on: "target-damaged" }],
       options: ["invisible", "unconscious"],
       on: "automatic",
       lifetime: { kind: "manual" },

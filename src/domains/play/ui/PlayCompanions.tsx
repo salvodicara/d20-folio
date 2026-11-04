@@ -13,6 +13,7 @@ import {
   playCompanions,
   type PlayCompanion,
   type PlayCompanionAttack,
+  type ReviveOffer,
 } from "@/domains/play/play-companions-view";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { isDead } from "@/features/character/center/target-step";
@@ -21,6 +22,8 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import type { Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
+import { useCharacterStore } from "@/stores/characterStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatantRef } from "@/types/combat-effect";
 import { Button, Chip, Dialog, Icon } from "@/ui";
@@ -99,7 +102,10 @@ export function PlayCompanions({ doc, locale }: { doc: CharacterDoc; locale: Loc
               })}
             </span>
           </h3>
-          {c.fallen && <p className="f-help">{t("play.companions.fallen")}</p>}
+          {c.fallen && !c.revive && (
+            <p className="f-help">{t("play.companions.fallen")}</p>
+          )}
+          {c.revive && <ReviveRow companion={c} revive={c.revive} readonly={readonly} />}
           {c.attacks.map((a) => (
             <div key={a.id} className="f-act">
               <span className="f-act-slot" aria-hidden="true">
@@ -203,5 +209,69 @@ function CompanionTarget({
         </div>
       ))}
     </Dialog>
+  );
+}
+
+/** «Rianima»: a fallen companion that comes back for a spell slot (Beast Master,
+ *  Steel Defender). One tap spends the slot and revives it, with one undo. */
+export function ReviveRow({
+  companion,
+  revive,
+  readonly,
+}: {
+  companion: PlayCompanion;
+  revive: ReviveOffer;
+  readonly: boolean;
+}) {
+  const { t } = useTranslation();
+  const bringBack = (slot: ReviveOffer["slots"][number]) => {
+    const store = useCharacterStore.getState();
+    const spent = store.dispatch({
+      kind: "spend-slot",
+      level: slot.level,
+      pactMagic: slot.pact,
+    });
+    if (!spent) return;
+    const revived = store.dispatch({ kind: "revive-companion", sourceId: companion.key });
+    if (!revived) {
+      spent();
+      return;
+    }
+    useToastStore.getState().showToast({
+      message: t("play.companions.revived", { name: companion.name }),
+      duration: 5000,
+      onUndo: () => {
+        revived();
+        spent();
+      },
+    });
+  };
+  return (
+    <div className="f-revive">
+      <p className="f-help">
+        {t("play.companions.reviveHint", { minutes: revive.returnsAfterMinutes })}
+      </p>
+      {revive.slots.length === 0 ? (
+        <p className="f-help">{t("play.companions.reviveNoSlot")}</p>
+      ) : (
+        !readonly && (
+          <div className="f-chips">
+            {revive.slots.map((slot) => (
+              <Chip
+                key={`${String(slot.level)}-${String(slot.pact)}`}
+                onClick={() => bringBack(slot)}
+              >
+                {t(
+                  slot.pact
+                    ? "play.companions.reviveWithPact"
+                    : "play.companions.reviveWith",
+                  { level: slot.level }
+                )}
+              </Chip>
+            ))}
+          </div>
+        )
+      )}
+    </div>
   );
 }

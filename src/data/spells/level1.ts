@@ -1017,6 +1017,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     saveAbility: "WIS",
     area: true,
     conditionApplication: {
+      ends: [{ on: "target-damaged" }],
       options: ["unconscious"],
       on: "failed-save",
       lifetime: { kind: "source" },
@@ -1070,6 +1071,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // level above 1".
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
       options: ["prone", "incapacitated"],
       on: "failed-save",
       lifetime: { kind: "source" },
