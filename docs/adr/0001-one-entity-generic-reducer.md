@@ -1,7 +1,12 @@
 # ADR-0001: One entity-generic combat reducer over an Encounter aggregate
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: not adopted as written (superseded in practice, 2026-11-04)
+**Current state (2026-11-04)**: there is no single reducer over an Encounter aggregate. Each sheet commits
+through its turn flow (`TurnEconomyProvider` → `executeAction`); a campaign fight is the `encounter` field on the
+campaign doc (rows, turn order, `effectOps`), and effects cross sheets as combat effects. The engine grows family
+by family (`docs/architecture/2026-11-edge-cases.md`); the `mechanics-*` kernel is still wired (ADR-0003). See
+`docs/ARCHITECTURE.md`.
 **Deciders**: owner (rulings 2026-09-02), architecture round
 
 ## Context

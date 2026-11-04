@@ -1,7 +1,11 @@
 # ADR-0005: Firestore rules enforce identity, membership, ownership and shape; trust at the table
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: accepted as the direction; partly true today (2026-11-04)
+**Current state (2026-11-04)**: rules check identity, membership, ownership and shape, and new collections follow
+it (`privateNotes`, `dmItems` / `itemReveals`). Not yet true: attached peers still write another player's
+`combat/state` (field by field, `peerEffectUpdate`) and append to `combat/spends`, and the campaign rules still
+validate encounter and effect-op structure. See `docs/ARCHITECTURE.md`, "Security".
 **Deciders**: owner (rulings 4, 9, 10 of 2026-09-02), architecture round
 
 ## Context
