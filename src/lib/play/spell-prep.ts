@@ -13,3 +13,18 @@ export function togglePrepared(doc: CharacterDoc, spellIdx: number): CharacterDo
   spells[spellIdx] = { ...ref, prepared: !ref.prepared };
   return { ...doc, character: { ...doc.character, spells } };
 }
+
+/** Which class a shared prepared spell comes through (2024 multiclassing, its casting
+ *  ability); choosing the same class again goes back to the automatic one. */
+export function setViaClass(
+  doc: CharacterDoc,
+  spellIdx: number,
+  classId: string
+): CharacterDoc | null {
+  const spells = [...doc.character.spells];
+  const ref = spells[spellIdx];
+  if (!ref || "custom" in ref) return null;
+  const { viaClass, ...rest } = ref;
+  spells[spellIdx] = viaClass === classId ? rest : { ...rest, viaClass: classId };
+  return { ...doc, character: { ...doc.character, spells } };
+}

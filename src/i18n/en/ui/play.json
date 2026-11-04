@@ -133,7 +133,8 @@
       "prepared": "{{count}} of {{max}} prepared",
       "manage": "Manage spells",
       "always": "always prepared",
-      "overLimit": "That's more than your class allows: fine if your DM agrees."
+      "overLimit": "That's more than your class allows: fine if your DM agrees.",
+      "via": "through"
     },
     "inv": {
       "pack": "Pack",

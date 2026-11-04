@@ -3400,3 +3400,12 @@
   margin-top: 16px;
   overflow-y: auto;
 }
+/* «Gestisci incantesimi»: a shared spell's class chips under its choice */
+.fui .f-prep {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-prep > .f-chips {
+  align-items: center;
+  padding-left: 16px;
+}

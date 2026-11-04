@@ -133,7 +133,8 @@
       "prepared": "preparati {{count}} su {{max}}",
       "manage": "Gestisci incantesimi",
       "always": "sempre preparato",
-      "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo."
+      "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo.",
+      "via": "tramite"
     },
     "inv": {
       "pack": "Zaino",

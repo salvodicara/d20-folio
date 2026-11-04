@@ -6,7 +6,10 @@
  * the Spells model (`buildSpellsViewModel`) says whether it is prepared, so an
  * unprepared spell is shown but not cast.
  */
+import { getSpellById } from "@/data/spells";
+import { localizeSrd } from "@/i18n/resolver";
 import { primaryClassId } from "@/lib/classes";
+import { casterClassAbilities } from "@/lib/spell-owning-class";
 import type { Locale } from "@/lib/locale";
 import { buildSpellsViewModel } from "@/lib/views/spells-view";
 import type { CharacterDoc } from "@/types/character";
@@ -84,7 +87,15 @@ export interface PrepareList {
   overLimit: boolean;
   levels: {
     level: number;
-    spells: { idx: number; name: string; prepared: boolean; always: boolean }[];
+    spells: {
+      idx: number;
+      name: string;
+      prepared: boolean;
+      always: boolean;
+      /** A spell two of the character's caster classes share: which one it comes
+       *  through (2024 multiclassing, `viaClass`); `current` null is automatic. */
+      via?: { options: { classId: string; label: string }[]; current: string | null };
+    }[];
   }[];
 }
 
@@ -94,6 +105,7 @@ export interface PrepareList {
 export function prepareList(doc: CharacterDoc, locale: Locale): PrepareList {
   const model = buildSpellsViewModel(doc, primaryClassId(doc.character), locale, false);
   const cs = model.castSummary;
+  const casters = casterClassAbilities(doc.character);
   return {
     count: cs?.preparedCount ?? 0,
     max: cs?.preparedMax ?? 0,
@@ -102,13 +114,38 @@ export function prepareList(doc: CharacterDoc, locale: Locale): PrepareList {
       .filter((g) => g.level > 0)
       .map((g) => ({
         level: g.level,
-        spells: g.spells.map((card) => ({
-          idx: card.idx,
-          name: card.name,
-          prepared: card.isPrepared || card.isAlwaysPrepared,
-          always: card.isAlwaysPrepared,
-        })),
+        spells: g.spells.map((card) => {
+          const via = viaChoice(doc, card.idx, casters, locale);
+          return {
+            idx: card.idx,
+            name: card.name,
+            prepared: card.isPrepared || card.isAlwaysPrepared,
+            always: card.isAlwaysPrepared,
+            ...(via ? { via } : {}),
+          };
+        }),
       }))
       .filter((g) => g.spells.length > 0),
   };
+}
+
+/** The classes a shared spell may come through, when two or more of the character's
+ *  caster classes have it on their list. */
+function viaChoice(
+  doc: CharacterDoc,
+  idx: number,
+  casters: ReturnType<typeof casterClassAbilities>,
+  locale: Locale
+): { options: { classId: string; label: string }[]; current: string | null } | null {
+  const ref = doc.character.spells[idx];
+  if (!ref || "custom" in ref) return null;
+  const spell = getSpellById(ref.srdId);
+  if (!spell) return null;
+  const options = casters
+    .filter((c) => spell.classes.includes(c.spellListId))
+    .map((c) => ({
+      classId: c.classId,
+      label: localizeSrd("class", c.classId, "name", locale),
+    }));
+  return options.length >= 2 ? { options, current: ref.viaClass ?? null } : null;
 }
