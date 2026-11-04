@@ -134,7 +134,7 @@ function flankingState(variant: "advantage" | "plus-2"): SituationalState {
     ...state(
       id,
       "turn",
-      uiText("combat.situation.flanking"),
+      uiText("campaignScreen.tableRules.rows.flanking.title"),
       [],
       [],
       variant === "advantage" ? [{ mode: "advantage", kinds: ["melee"] }] : [],
