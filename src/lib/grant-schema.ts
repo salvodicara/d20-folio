@@ -652,6 +652,17 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         ),
         /** The rule offers an action the player may take (Hunter's Mark moving). */
         objectSchema({ actionId: stringSchema, kind: literalSchema("offer") }),
+        /** The player may roll up to `max` unexpended Hit Point Dice and regain
+         *  their total plus `bonus` (Necromancy Adept: the slot's level). */
+        objectSchema(
+          { kind: literalSchema("hit-point-dice"), max: numberSchema },
+          {
+            bonus: unionSchema([
+              literalSchema("slot-level"),
+              literalSchema("spellcasting-mod"),
+            ]),
+          }
+        ),
       ]),
       /** The event. Today's runtime reads initiative and short-rest; the rest are
        *  authored ahead and read as their families land (M8). */
