@@ -1,4 +1,5 @@
 /** Conformance, category 11: movement and mounts (corpus.md § 11). */
+import { selfMoveFeet, turnMovementBudgetFt } from "@/lib/play/self-move";
 import { fallsIfProne } from "@/lib/play/flight";
 import { describe, expect } from "vitest";
 import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
@@ -428,16 +429,16 @@ describe("conformance · 11. movement and mounts", () => {
       category: 11,
       case: "Movement before and after attacks",
       source: "WIKI barbarian:main; WIKI fighter:main",
-      status: "M14",
+      status: "works",
     },
-    async () => {
-      // Half speed attached to entering Rage / using Second Wind.
+    () => {
+      // Half speed attached to entering Rage / using Second Wind: the row carries
+      // it, and using it adds half the Speed to this turn's movement.
       expect(featureJson("barbarian-instinctive-pounce")).toContain("self-move");
       expect(featureJson("fighter-tactical-shift")).toContain("noOpportunityAttacks");
-      // The case works once the sheet moves the character by it.
-      const id = "@/lib/play/self-move";
-      const reader = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-      expect(typeof reader.selfMoveFeet).toBe("function");
+      const fraction = 0.5;
+      const turn = { dashesThisTurn: 0, extraMovementFt: selfMoveFeet(fraction, 30) };
+      expect(turnMovementBudgetFt(30, turn)).toBe(45);
     }
   );
 

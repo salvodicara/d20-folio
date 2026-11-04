@@ -93,6 +93,24 @@ describe("combatStore", () => {
     });
   });
 
+  // Tactical Shift / Instinctive Pounce: "move up to half your Speed" adds feet to
+  // this turn's movement, with its undo, until the turn ends.
+  describe("movement a use adds", () => {
+    it.each([
+      ["endTurn", () => s().endTurn()],
+      ["resetTurn", () => s().resetTurn()],
+      ["endCombat", () => s().endCombat()],
+    ])("adds its feet with an undo, and %s clears it", (_label, boundary) => {
+      const undo = s().grantMovement(15);
+      expect(s().extraMovementFt).toBe(15);
+      undo();
+      expect(s().extraMovementFt).toBe(0);
+      s().grantMovement(15);
+      boundary();
+      expect(s().extraMovementFt).toBe(0);
+    });
+  });
+
   describe("turn-scoped next-attack and movement effects", () => {
     it("arms, consumes, and exactly reverses next-attack Advantage", () => {
       const undoGrant = s().grantNextAttackAdvantage();

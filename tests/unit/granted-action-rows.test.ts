@@ -163,3 +163,17 @@ describe("granted actions on the board — homebrew", () => {
     expect(dc?.parts && breakdownTotal(dc.parts)).toBe(14);
   });
 });
+
+describe("a granted action that moves you", () => {
+  it("Tactical Shift's free row lets the fighter move half its Speed, no Opportunity Attacks", () => {
+    const fighter = makeCharacterDoc({
+      classId: "fighter",
+      level: 5,
+      features: [{ srdId: "fighter-tactical-shift" }],
+    });
+    const row = grantedActionRows(fighter).find(
+      (r) => r.id === "granted-action:fighter-tactical-shift:tactical-shift"
+    );
+    expect(row?.selfMove).toEqual({ fraction: 0.5, noOpportunityAttacks: true });
+  });
+});

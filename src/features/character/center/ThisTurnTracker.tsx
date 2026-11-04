@@ -21,6 +21,7 @@
  * Play-tab cards, which share the store), never the Left/Right HUD.
  */
 
+import { turnMovementBudgetFt } from "@/lib/play/self-move";
 import { conditionFactsFor } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
@@ -164,6 +165,7 @@ export function ThisTurnTracker({
   const difficultTerrain = useCombatStore((s) => s.difficultTerrain);
   // RA-09 — Dash commits this turn; each extends the movement budget by one Speed.
   const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
+  const extraMovementFt = useCombatStore((s) => s.extraMovementFt);
   // RA-08 — slot-paid casts tracked by the hard one-slot-per-global-turn gate.
   const spellSlotCastsThisTurn = useCombatStore((s) => s.spellSlotCastsThisTurn);
   // Exhaustion reads through the ONE vitals projection seam (session truth
@@ -572,7 +574,7 @@ export function ThisTurnTracker({
   // RA-09 — a committed Dash grants extra movement equal to Speed, so the turn's
   // movement budget is speed × (1 + dashes). The meter's total readout reflects
   // the extension (30 ft → 60 ft after one Dash); the base Speed is unchanged.
-  const moveBudgetFt = speedFt * (1 + dashesThisTurn);
+  const moveBudgetFt = turnMovementBudgetFt(speedFt, { dashesThisTurn, extraMovementFt });
 
   // B1 — the single self-side condition resolver, read here for the two states
   // this meter owns: the movement slider (speedZero) + the concentration banner
@@ -615,7 +617,7 @@ export function ThisTurnTracker({
     const combat = useCombatStore.getState();
     const liveSpeedFt = shownWalkingSpeedFt(live, getEquipment, round);
     const liveStandCostFt = Math.floor(liveSpeedFt / 2);
-    const liveBudgetFt = liveSpeedFt * (1 + combat.dashesThisTurn);
+    const liveBudgetFt = turnMovementBudgetFt(liveSpeedFt, combat);
     if (
       !liveConditions.includes("prone") ||
       liveSpeedFt <= 0 ||

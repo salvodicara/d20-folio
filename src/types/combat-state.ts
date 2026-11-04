@@ -83,6 +83,8 @@ export interface PersistedTurnEconomy {
   reactionOutcomeOccurrenceId: string | null;
   movementUsedFt: number;
   dashesThisTurn: number;
+  /** Optional for additive compatibility: movement a use added (Tactical Shift). */
+  extraMovementFt?: number;
   spellSlotCastsThisTurn: number;
   /** Additive global-turn identity for the hard one-slot-expenditure gate. A
    * legacy snapshot without it binds a non-zero count to this snapshot's `key`. */

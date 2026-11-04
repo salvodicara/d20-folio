@@ -28,6 +28,8 @@ import { firedCastTriggers } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { speechBlocksCast } from "@/lib/play/speech";
+import { selfMoveFeet } from "@/lib/play/self-move";
+import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import {
@@ -229,6 +231,7 @@ function durableTurnChanged(
     state.reactionOutcomeOccurrenceId !== prev.reactionOutcomeOccurrenceId ||
     state.movementUsedFt !== prev.movementUsedFt ||
     state.dashesThisTurn !== prev.dashesThisTurn ||
+    state.extraMovementFt !== prev.extraMovementFt ||
     state.spellSlotCastsThisTurn !== prev.spellSlotCastsThisTurn ||
     state.spellSlotCastTurnKey !== prev.spellSlotCastTurnKey ||
     state.damageTakenThisRound !== prev.damageTakenThisRound ||
@@ -888,6 +891,14 @@ export function TurnEconomyProvider({
     }
     // RA-09 — Dash extends the turn's movement budget by one Speed.
     if (economyActionCategory(action) === "dash") useCombatStore.getState().commitDash();
+    // Tactical Shift, Instinctive Pounce: up to half your Speed more this turn.
+    if (action.selfMove && cs.character) {
+      useCombatStore
+        .getState()
+        .grantMovement(
+          selfMoveFeet(action.selfMove.fraction, sheetNumbers(cs.character).speed.total)
+        );
+    }
     const combat = useCombatStore.getState();
     // An attack consumes the pending Advantage exactly once.
     if (action.source === "weapon" || action.summary.attackBonus !== undefined)

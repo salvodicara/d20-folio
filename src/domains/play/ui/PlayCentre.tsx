@@ -5,6 +5,7 @@
  * Lancia, Usa, Reagisci) commits through the engine's one turn flow (`executeAction`);
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
+import { turnMovementBudgetFt } from "@/lib/play/self-move";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -548,7 +549,13 @@ function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const budget = useCombatStore((s) => s.budget);
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
   const movementUsedFt = useCombatStore((s) => s.movementUsedFt);
-  const speedFt = sheetNumbers(doc).speed.total;
+  const dashesThisTurn = useCombatStore((s) => s.dashesThisTurn);
+  const extraMovementFt = useCombatStore((s) => s.extraMovementFt);
+  // The turn's movement: Speed, once more per Dash, plus what a use added.
+  const speedFt = turnMovementBudgetFt(sheetNumbers(doc).speed.total, {
+    dashesThisTurn,
+    extraMovementFt,
+  });
   const slots = turnBarView({
     mode: fight ? "combat" : "exploration",
     selected,
