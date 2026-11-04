@@ -73,6 +73,12 @@ export interface SrdSpellRef {
    */
   spellAbilityOverride?: AbilityCode;
   /**
+   * The class this spell is prepared through, for a multiclass caster whose classes
+   * share it (Cure Wounds as a Cleric and as a Bard: two copies, each cast with its
+   * own class's ability). Absent: derived from the spell's class list.
+   */
+  viaClass?: string;
+  /**
    * Wizard L18 Spell Mastery — the chosen 1st- and 2nd-level spell can be
    * cast at its base level without expending a spell slot, as long as it's
    * prepared. UI badges it as "MASTERY" and the cast modal can skip slot
