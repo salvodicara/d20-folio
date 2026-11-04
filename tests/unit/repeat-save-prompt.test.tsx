@@ -28,6 +28,7 @@ import {
   type PendingRepeatSave,
 } from "@/features/campaigns/repeat-save-store";
 import { useToastStore } from "@/stores/toastStore";
+import { useSaveTallyStore } from "@/features/campaigns/save-tally-store";
 
 const save: PendingRepeatSave = {
   id: "e1",
@@ -134,5 +135,58 @@ describe("RepeatSavePrompts", () => {
     fireEvent.click(screen.getByRole("button", { name: "Failed: it stays" }));
     expect(io.revokePersistentCombatEffect).not.toHaveBeenCalled();
     expect(useRepeatSaveStore.getState().saves).toEqual([]);
+  });
+});
+
+/**
+ * A save track (Contagion: "After three successes, the spell ends; after three
+ * failures, it lasts for the duration"; Flesh to Stone the same): each answer counts,
+ * only the last one decides.
+ */
+describe("a tracked repeat save", () => {
+  const tracked = { ...save, track: { successes: 3, failures: 3 } };
+  const answer = (name: "Saved: end it" | "Failed: it stays") => {
+    useRepeatSaveStore.setState({ saves: [tracked] });
+    const view = render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name }));
+    view.unmount();
+  };
+  const tally = () => useSaveTallyStore.getState().tallies["c1:e1"];
+
+  beforeEach(() => {
+    io.revokePersistentCombatEffect.mockClear();
+    useSaveTallyStore.setState({ tallies: {} });
+    useToastStore.setState({ toasts: [] });
+  });
+
+  it("shows the count, and a success before the third only counts", () => {
+    useSaveTallyStore.setState({ tallies: { "c1:e1": { successes: 1, failures: 2 } } });
+    useRepeatSaveStore.setState({ saves: [tracked] });
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    expect(screen.getByText("Successes 1/3 · failures 2/3")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
+    expect(io.revokePersistentCombatEffect).not.toHaveBeenCalled();
+    expect(tally()).toEqual({ successes: 2, failures: 2 });
+    expect(useRepeatSaveStore.getState().saves).toEqual([]);
+  });
+
+  it("the third success ends it and clears the count", async () => {
+    useSaveTallyStore.setState({ tallies: { "c1:e1": { successes: 2, failures: 0 } } });
+    answer("Saved: end it");
+    await waitFor(() =>
+      expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "e1")
+    );
+    expect(tally()).toBeUndefined();
+  });
+
+  it("the third failure settles it; undo puts the count and the prompt back", () => {
+    useSaveTallyStore.setState({ tallies: { "c1:e1": { successes: 1, failures: 2 } } });
+    answer("Failed: it stays");
+    expect(tally()).toEqual({ successes: 1, failures: 3 });
+    const toast = useToastStore.getState().toasts[0];
+    expect(toast?.message).toBe("Frightened lasts its full duration: Goblin");
+    toast?.onUndo?.();
+    expect(tally()).toEqual({ successes: 1, failures: 2 });
+    expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["e1"]);
   });
 });

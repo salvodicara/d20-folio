@@ -137,7 +137,11 @@ const CONDITION_END_SCHEMA = discriminatedUnionSchema("on", {
       at: REPEAT_SAVE_MOMENT_SCHEMA,
       on: literalSchema("repeat-save"),
     },
-    { advantage: literalSchema(true), when: literalSchema("out-of-actor-sight") }
+    {
+      advantage: literalSchema(true),
+      when: literalSchema("out-of-actor-sight"),
+      track: objectSchema({ successes: numberSchema, failures: numberSchema }),
+    }
   ),
   "actor-incapacitated": objectSchema({ on: literalSchema("actor-incapacitated") }),
 });

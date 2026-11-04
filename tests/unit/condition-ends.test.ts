@@ -10,6 +10,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   actionRepeatSaves,
+  answerTrackedSave,
+  trackSettled,
   conditionsEndingOn,
   type SourcedCondition,
 } from "@/lib/condition-ends";
@@ -234,5 +236,38 @@ describe("the SRD's other ways to end a condition", () => {
     ).toEqual([
       expect.objectContaining({ when: "out-of-actor-sight", actorId: "pc-wizard" }),
     ]);
+  });
+});
+
+describe("a save track", () => {
+  const track = { successes: 3, failures: 3 };
+  it("counts each answer; three successes end it, three failures settle it", () => {
+    expect(answerTrackedSave({ successes: 0, failures: 0 }, track, true)).toEqual({
+      tally: { successes: 1, failures: 0 },
+      outcome: "counted",
+    });
+    expect(answerTrackedSave({ successes: 2, failures: 2 }, track, true).outcome).toBe(
+      "ended"
+    );
+    expect(answerTrackedSave({ successes: 2, failures: 2 }, track, false).outcome).toBe(
+      "settled"
+    );
+  });
+
+  it("a settled track asks no more", () => {
+    expect(trackSettled({ successes: 2, failures: 3 }, track)).toBe(true);
+    expect(trackSettled({ successes: 0, failures: 2 }, track)).toBe(false);
+  });
+
+  it("a tracked repeat save carries its track", () => {
+    const contagion: SourcedCondition = {
+      id: "plague",
+      conditionId: "poisoned",
+      targetId: "ogre",
+      ends: [{ on: "repeat-save", ability: "CON", at: "target-turn-end", track }],
+    };
+    expect(
+      conditionsEndingOn([contagion], { kind: "turn-end", combatantId: "ogre" }).saves
+    ).toEqual([expect.objectContaining({ track })]);
   });
 });

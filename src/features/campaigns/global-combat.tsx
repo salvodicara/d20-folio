@@ -38,6 +38,8 @@ import { effectiveTableRules } from "@/lib/table-rules";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
 import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
+import { tallyOf } from "@/features/campaigns/save-tally-store";
+import { trackSettled } from "@/lib/condition-ends";
 import { fightSideOf } from "@/features/character/center/outcome-offer";
 import { useZoneHitStore } from "@/features/campaigns/zone-hit-store";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -415,6 +417,10 @@ export function GlobalCombatMount(): null {
     });
     for (const save of condition.saves) {
       if (!owns(save.targetId)) continue;
+      // A track settled by its failures asks no more (Contagion lasts its duration).
+      if (save.track && trackSettled(tallyOf(primaryId, save.id), save.track)) {
+        continue;
+      }
       const effect = active.find((e) => e.id === save.id);
       if (!effect) continue;
       saves.add({
