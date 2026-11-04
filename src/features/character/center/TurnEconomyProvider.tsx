@@ -24,6 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { saveSuccessWriter } from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
@@ -1437,7 +1438,15 @@ export function TurnEconomyProvider({
     const spell = action.spellId ? getSpellById(action.spellId) : undefined;
     const status = useCombatStatusStore.getState().status;
     const uid = useAuthStore.getState().user?.uid;
-    if (!spell?.zone || !status || !uid || status.characterId !== character?.id) {
+    // A player's zone needs the v0.26.0 rules (deployed-rules); before them the
+    // write would be refused.
+    if (
+      !spell?.zone ||
+      !status ||
+      !uid ||
+      status.characterId !== character?.id ||
+      !combatEffectsV26On()
+    ) {
       return null;
     }
     const effect = zoneEffectForCast({

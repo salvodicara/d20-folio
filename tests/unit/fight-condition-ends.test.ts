@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  sourcedFightConditions,
   conditionEndsOf,
   fightConditionEnds,
   fightConditionEvents,
@@ -66,5 +67,14 @@ describe("fight condition ends", () => {
       { kind: "incapacitated", combatantId: "monster-1" },
       { kind: "turn-end", combatantId: "monster-1" },
     ]);
+  });
+
+  it("carries the save DC the effect was written with", () => {
+    const withDc = {
+      ...frightened,
+      effect: { ...frightened.effect, bindings: { saveDc: 15 } },
+    } as CombatEffectOp;
+    expect(sourcedFightConditions([withDc])[0]?.saveDc).toBe(15);
+    expect(sourcedFightConditions([frightened])[0]).not.toHaveProperty("saveDc");
   });
 });

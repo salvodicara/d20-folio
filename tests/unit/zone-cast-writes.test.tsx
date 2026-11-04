@@ -36,6 +36,7 @@ import type { User } from "firebase/auth";
 import { makeCharacterDoc } from "./_helpers";
 
 afterEach(() => {
+  vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
   useCombatStatusStore.setState({ status: null });
   useUndoStore.getState().clear(null);
@@ -44,6 +45,7 @@ afterEach(() => {
 
 describe("a zone spell cast in a fight", () => {
   it("appends its zone to the encounter", async () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const doc = makeCharacterDoc({
       classId: "cleric",
       level: 5,
@@ -123,5 +125,15 @@ describe("a zone spell cast in a fight", () => {
       sourceId: "spirit-guardians",
     });
     expect(effect.source.castLevel).toBe(3);
+  });
+});
+
+describe("the v0.26.0 rules gate", () => {
+  it("is off unless the build says the rules shipped", async () => {
+    const { combatEffectsV26On } = await import("@/lib/deployed-rules");
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
+    expect(combatEffectsV26On()).toBe(false);
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+    expect(combatEffectsV26On()).toBe(true);
   });
 });
