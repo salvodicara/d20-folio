@@ -94,7 +94,7 @@ describe("conformance · 13. items", () => {
       category: 13,
       case: "Cursed attunement",
       source: "ITEMS; rpgbot",
-      status: "M20",
+      status: "works",
     },
     () => {
       // Armor of Vulnerability is cursed: you can't end its attunement voluntarily
@@ -113,17 +113,23 @@ describe("conformance · 13. items", () => {
       source: "ITEMS",
       status: "M20",
     },
-    () => {
+    async () => {
       // Charges are open information on the item ...
       expect(getMagicItem("wand-of-fireballs")?.resources?.[0]).toMatchObject({
         id: "charges",
         capacity: { kind: "fixed", amount: 7 },
       });
-      // ... while the curse is hidden state the DM reveals later.
-      expect(getMagicItem("armor-of-vulnerability")).toHaveProperty(
-        "curse.revealed",
-        false
+      // ... while a curse shows only where the item says Identify reveals it (Armor of
+      // Vulnerability: "revealed only when the Identify spell is cast on the armor or
+      // you attune to it"); a Berserker Axe's stays hidden. Whether THIS copy is cursed
+      // is the DM's state: the case works once the DM can reveal it.
+      expect(getMagicItem("armor-of-vulnerability")?.curse?.revealedByIdentify).toBe(
+        true
       );
+      expect(getMagicItem("berserker-axe")?.curse?.revealedByIdentify).toBeUndefined();
+      const id = "@/lib/item-overlays";
+      const overlays = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof overlays.revealCurse).toBe("function");
     }
   );
 

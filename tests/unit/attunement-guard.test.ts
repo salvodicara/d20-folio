@@ -277,3 +277,20 @@ describe("the attune sheet events", () => {
     expect(sword && "attuned" in sword ? sword.attuned : undefined).toBe(true);
   });
 });
+
+describe("a cursed attunement (Armor of Vulnerability: «Attuning to the armor curses you until you are targeted by a Remove Curse spell»)", () => {
+  it("ends only by force (the table's Remove Curse); an uncursed one ends freely", () => {
+    const cursed = makeCharacterDoc({
+      equipment: [item("armor-of-vulnerability", "armor", true)],
+    });
+    expect(unattuneItem(cursed, "armor")).toEqual({ ok: false, reason: "cursed" });
+    expect(unattuneItem(cursed, "armor", { force: true })).toMatchObject({
+      ok: true,
+      forced: true,
+    });
+    const plain = makeCharacterDoc({
+      equipment: [item("cloak-of-protection", "cloak", true)],
+    });
+    expect(unattuneItem(plain, "cloak")).toMatchObject({ ok: true, forced: false });
+  });
+});

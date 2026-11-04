@@ -273,9 +273,13 @@ describe("conformance · 17. at-the-table gaps", () => {
       source: "ITEMS",
       status: "M20",
     },
-    () => {
-      // A cursed item carries its curse as hidden, DM-revealed state.
+    async () => {
+      // A cursed item carries its curse as hidden, DM-revealed state: the catalogue
+      // says what the curse binds; the case works once the DM side reveals it.
       expect(getMagicItem("berserker-axe")).toHaveProperty("curse");
+      const id = "@/lib/item-overlays";
+      const overlays = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof overlays.revealCurse).toBe("function");
     }
   );
 

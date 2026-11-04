@@ -169,6 +169,14 @@ export const HOMEBREW_ITEM_FIELD_SCHEMAS: {
       attunedItem: stringSchema,
     }
   ),
+  curse: objectSchema(
+    {},
+    {
+      bindsAttunement: literalSchema(true),
+      bindsWearing: literalSchema(true),
+      revealedByIdentify: literalSchema(true),
+    }
+  ),
   commandWord: literalSchema(true),
   price: stringSchema,
   weight: numberSchema,
