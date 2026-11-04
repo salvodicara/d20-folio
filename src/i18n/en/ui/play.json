@@ -180,7 +180,12 @@
       "dust": "Turned to dust: only True Resurrection or Wish brings it back",
       "tableDecides": "How long it has been dead: the table decides.",
       "knockOut": "Knock out",
-      "nonLethal": "Nonlethal"
+      "nonLethal": "Nonlethal",
+      "faces": "Dice faces ({{dice}})",
+      "facesHint": "The faces rolled, for example 1+5",
+      "floorOne": "On the damage dice, a 1 counts as {{to}}",
+      "floorTwo": "On the damage dice, a 1 or 2 counts as {{to}}",
+      "floorUpTo": "On the damage dice, 1 to {{below}} count as {{to}}"
     },
     "weapon": {
       "which": "Which weapon?",
