@@ -3596,6 +3596,18 @@ export const ALL_MAGIC_ITEM_TYPES = [
   ["armor", "weapon", "wondrous", "potion", "ring", "rod", "scroll", "staff", "wand"]
 >;
 
+/** An item's attunement prerequisite: met when any listed condition holds. */
+export interface AttunementPrerequisite {
+  /** A creature that can cast at least one spell through its own traits or features. */
+  spellcaster?: true;
+  /** One of these classes. */
+  classes?: readonly string[];
+  /** One of these species (Dwarven Thrower: a Dwarf). */
+  species?: readonly string[];
+  /** Or attuned to this item (Dwarven Thrower: a Belt of Dwarvenkind). */
+  attunedItem?: string;
+}
+
 export interface SrdMagicItemData {
   /** Unique slug ID: "bag-of-holding" */
   id: string;
@@ -3605,6 +3617,10 @@ export interface SrdMagicItemData {
   type: MagicItemType;
   /** Whether attunement is required */
   attunement: boolean;
+  /** Who may attune («Requires Attunement by a Spellcaster», «… by a Paladin»,
+   *  «… by a Dwarf or a creature attuned to a Belt of Dwarvenkind»): any one
+   *  listed condition suffices. */
+  attunementBy?: AttunementPrerequisite;
   /** Suggested price: "400 GP", "B+4000 GP" */
   price?: string;
   /** Healing potion roll (e.g. "2d4+2") — derived display, see SrdEquipmentData. */

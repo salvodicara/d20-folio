@@ -14,7 +14,10 @@
  * possible: {@link attuneItem} with `force` attunes anyway, and no transition here
  * ever ends another item's attunement on its own.
  */
+import type { AttunementPrerequisite } from "@/data/types";
+import { getMagicItem } from "@/data/magic-items";
 import { attunementSatisfied, requiresAttunement } from "@/lib/attunement";
+import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import type { CharacterData, CharacterDoc } from "@/types/character";
@@ -30,6 +33,7 @@ export type AttunementRefusal =
   | { ok: false; reason: "attunement-limit"; limit: number; attuned: string[] }
   | { ok: false; reason: "duplicate-copy"; attuned: string[] }
   | { ok: false; reason: "no-attunement" }
+  | { ok: false; reason: "prerequisite"; requires: AttunementPrerequisite }
   | { ok: false; reason: "unknown-item" };
 
 export type CanAttune = { ok: true } | AttunementRefusal;
@@ -60,6 +64,11 @@ export function canAttune(doc: CharacterDoc, itemInstanceId: string): CanAttune 
   if (!target) return { ok: false, reason: "unknown-item" };
   if (!requiresAttunement(target)) return { ok: false, reason: "no-attunement" };
   if (isAttuned(target)) return { ok: true };
+  const requires =
+    "custom" in target ? undefined : getMagicItem(target.srdId)?.attunementBy;
+  if (requires && !meetsPrerequisite(doc, requires)) {
+    return { ok: false, reason: "prerequisite", requires };
+  }
 
   const attuned = equipment.filter(isAttuned);
   // One copy of an item: a homebrew item is its own thing, never a copy.
@@ -83,6 +92,36 @@ export function canAttune(doc: CharacterDoc, itemInstanceId: string): CanAttune 
   return { ok: true };
 }
 
+/**
+ * Whether the character meets an attunement prerequisite. A spellcaster (2024 rules
+ * glossary) can cast at least one spell through its own traits or features: spell
+ * slots, or any spell on the sheet (a cantrip from a feat or a species counts).
+ */
+export function meetsPrerequisite(
+  doc: CharacterDoc,
+  requires: AttunementPrerequisite
+): boolean {
+  const character = doc.character;
+  if (requires.spellcaster) {
+    if (highestSpellSlotLevel(character.classes) > 0 || character.spells.length > 0) {
+      return true;
+    }
+  }
+  if (requires.classes?.some((id) => character.classes.some((c) => c.classId === id))) {
+    return true;
+  }
+  if (requires.species?.includes(character.race)) return true;
+  if (
+    requires.attunedItem &&
+    character.equipment.some(
+      (ref) => !("custom" in ref) && ref.srdId === requires.attunedItem && isAttuned(ref)
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 const ids = (ref: EquipmentRef): string[] => {
   const id = idOf(ref);
   return id === undefined ? [] : [id];
@@ -103,7 +142,9 @@ export function attuneItem(
   const verdict = canAttune(doc, itemInstanceId);
   if (!verdict.ok) {
     const forceable =
-      verdict.reason === "attunement-limit" || verdict.reason === "duplicate-copy";
+      verdict.reason === "attunement-limit" ||
+      verdict.reason === "duplicate-copy" ||
+      verdict.reason === "prerequisite";
     if (!(forceable && options.force)) return verdict;
   }
   return {

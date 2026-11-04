@@ -25,6 +25,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "weapon",
     attunement: true,
+    attunementBy: { species: ["dwarf"], attunedItem: "belt-of-dwarvenkind" },
     // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
     // the weapon row it is bound to; other effects stay as noted).
     grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
@@ -60,6 +61,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
+    attunementBy: { classes: ["wizard"] },
     source: "SRD",
   },
   {
@@ -403,6 +405,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
+    attunementBy: { classes: ["druid", "sorcerer", "warlock", "wizard"] },
     resources: [
       {
         kind: "counter",
@@ -454,6 +457,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
+    attunementBy: { classes: ["druid", "sorcerer", "warlock", "wizard"] },
     resources: [
       {
         kind: "counter",
@@ -613,6 +617,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wand",
     attunement: true,
+    attunementBy: { spellcaster: true },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
     resources: [
@@ -884,6 +889,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: true,
+    attunementBy: { classes: ["sorcerer", "warlock", "wizard"] },
     properties: [
       "base AC 15 + DEX (unarmored)",
       "advantage on saves vs spells",
@@ -996,6 +1002,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "wondrous",
     attunement: true,
+    attunementBy: { classes: ["cleric", "paladin"] },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
     // +2 to spell attack rolls while worn or held.

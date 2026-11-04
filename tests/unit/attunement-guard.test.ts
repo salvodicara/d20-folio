@@ -163,3 +163,66 @@ describe("attuneItem — the transition the store applies", () => {
     });
   });
 });
+
+describe("attunement prerequisites (the item's «Requires Attunement by …»)", () => {
+  const wand = (extra: Parameters<typeof makeCharacterDoc>[0] = {}) =>
+    makeCharacterDoc({ ...extra, equipment: [item("wand-of-fireballs", "wand", false)] });
+
+  it("a Wand of Fireballs needs a spellcaster: a Fighter 5 can't attune", () => {
+    expect(canAttune(wand({ classId: "fighter", level: 5 }), "wand")).toEqual({
+      ok: false,
+      reason: "prerequisite",
+      requires: { spellcaster: true },
+    });
+  });
+
+  it("a Wizard 1 can; so can a Fighter who casts one spell (a cantrip from a feat)", () => {
+    expect(canAttune(wand({ classId: "wizard", level: 1 }), "wand").ok).toBe(true);
+    const initiate = wand({
+      classId: "fighter",
+      level: 5,
+      spells: [{ srdId: "fire-bolt" }] as never,
+    });
+    expect(canAttune(initiate, "wand").ok).toBe(true);
+  });
+
+  it("the player can still force it", () => {
+    const forced = attuneItem(wand({ classId: "fighter", level: 5 }), "wand", {
+      force: true,
+    });
+    expect(forced.ok).toBe(true);
+  });
+
+  it("a Holy Avenger needs a Paladin; a multiclass with a Paladin level qualifies", () => {
+    const avenger = (classes: CharacterDoc["character"]["classes"]) =>
+      makeCharacterDoc({ classes, equipment: [item("holy-avenger", "sword", false)] });
+    expect(canAttune(avenger([{ classId: "cleric", level: 5 }]), "sword")).toMatchObject({
+      reason: "prerequisite",
+      requires: { classes: ["paladin"] },
+    });
+    expect(
+      canAttune(
+        avenger([
+          { classId: "cleric", level: 4 },
+          { classId: "paladin", level: 1 },
+        ]),
+        "sword"
+      ).ok
+    ).toBe(true);
+  });
+
+  it("a Dwarven Thrower: a Dwarf, or anyone attuned to a Belt of Dwarvenkind", () => {
+    const thrower = (race: string, belt?: boolean) =>
+      makeCharacterDoc({
+        race: race as never,
+        equipment: [
+          item("dwarven-thrower", "hammer", false),
+          ...(belt === undefined ? [] : [item("belt-of-dwarvenkind", "belt", belt)]),
+        ],
+      });
+    expect(canAttune(thrower("dwarf"), "hammer").ok).toBe(true);
+    expect(canAttune(thrower("human"), "hammer").ok).toBe(false);
+    expect(canAttune(thrower("human", false), "hammer").ok).toBe(false);
+    expect(canAttune(thrower("human", true), "hammer").ok).toBe(true);
+  });
+});
