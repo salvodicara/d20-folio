@@ -9941,20 +9941,30 @@ export interface TriggerFacts {
   spellId?: string;
   cantrip?: boolean;
   damageType?: string;
+  /** cast-spell: the feature that gave the character this spell (its free cast's
+   *  source: a feat's chosen spell). */
+  fromSource?: string;
 }
 
 /** The facts a spell's cast gives its `cast-spell` trigger rules. */
 export function castTriggerFacts(
   spellId: string | undefined,
-  slotLevel: number | null
+  slotLevel: number | null,
+  /** The caster, to read which feature gave it the spell. */
+  doc?: CharacterDoc
 ): TriggerFacts {
   const spell = spellId ? spellIndex.get(spellId) : undefined;
+  const ref = doc?.character.spells.find(
+    (s): s is SrdSpellRef => "srdId" in s && s.srdId === spellId
+  );
+  const fromSource = ref?.freeCastSource?.sourceId;
   return {
     school: spell?.school,
     slot: slotLevel !== null,
     ...(spellId ? { spellId } : {}),
     cantrip: spell?.level === 0,
     ...(spell?.damageType ? { damageType: spell.damageType } : {}),
+    ...(fromSource ? { fromSource } : {}),
   };
 }
 
@@ -9990,6 +10000,7 @@ function triggerHolds(rule: TriggerRule, facts: TriggerFacts): boolean {
   if (when.damageType !== undefined && facts.damageType !== when.damageType) {
     return false;
   }
+  if (when.fromSource !== undefined && facts.fromSource !== when.fromSource) return false;
   return true;
 }
 

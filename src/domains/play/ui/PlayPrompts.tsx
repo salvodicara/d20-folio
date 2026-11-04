@@ -19,7 +19,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { selfFormRule } from "@/lib/polymorph";
 import { ARCANE_RECOVERY_MAX_SLOT_LEVEL, arcaneRecoveryCap } from "@/lib/arcane-recovery";
 import { recoverableSlots, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
-import { hitPointDiceAmount } from "@/lib/play/hit-point-dice";
+import { hitPointDiceGain } from "@/lib/play/hit-point-dice";
 import {
   metamagicChipStates,
   toggleMetamagicSelection,
@@ -669,7 +669,8 @@ function HitDiceStep({
   const rolled = /^\d{1,3}$/.test(typed.trim()) ? Number(typed.trim()) : null;
   const valid =
     count === 0 || (rolled !== null && rolled >= range.min && rolled <= range.max);
-  const amount = rolled === null ? null : hitPointDiceAmount(offer, count, rolled);
+  const gain = rolled === null ? null : hitPointDiceGain(offer, count, rolled);
+  const amount = gain?.amount ?? null;
   const dice = count > 0 ? `${String(count)}×${prompt.sizes}` : prompt.sizes;
   return (
     <Dialog
@@ -725,7 +726,7 @@ function HitDiceStep({
         <p className="f-help">
           {amount === 0 && offer.evenOnly
             ? t("play.hitDice.oddRoll")
-            : t(`play.hitDice.gain_${offer.into}`, { amount })}
+            : t(`play.hitDice.gain_${gain?.into ?? offer.into}`, { amount })}
         </p>
       )}
     </Dialog>

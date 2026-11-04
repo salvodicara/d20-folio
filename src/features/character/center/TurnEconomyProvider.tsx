@@ -33,7 +33,7 @@ import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import { dispelSpell } from "@/features/character/center/dispel-commit";
 import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
 import {
-  hitPointDiceAmount,
+  hitPointDiceGain,
   hitPointDiceContext,
   hitPointDiceSpend,
   type HitPointDiceOffer,
@@ -1627,11 +1627,11 @@ export function TurnEconomyProvider({
     rolled: number
   ) {
     if (count <= 0) return;
-    const amount = hitPointDiceAmount(offer, count, rolled);
+    const { amount, into } = hitPointDiceGain(offer, count, rolled);
     const name = localizeText(source, locale);
     registerUndoableToast(
       {
-        message: t(`combat.hitPointDiceSpent_${offer.into}`, {
+        message: t(`combat.hitPointDiceSpent_${into}`, {
           count,
           amount,
           source: name,
@@ -1646,9 +1646,9 @@ export function TurnEconomyProvider({
         // A rule with a limit (once per turn) counts this use on its source.
         if (limitedBy) cs.useTracker(limitedBy, 1);
         const undoGain =
-          offer.into === "healing"
+          into === "healing"
             ? cs.applyHealing(amount)
-            : offer.into === "temp-hp"
+            : into === "temp-hp"
               ? cs.gainTempHp(amount)
               : null;
         return () => {
@@ -1682,7 +1682,7 @@ export function TurnEconomyProvider({
         ? { slotLevel, spellLevel: spell?.level ?? slotLevel }
         : undefined
     );
-    const facts = castTriggerFacts(spellId, slotLevel);
+    const facts = castTriggerFacts(spellId, slotLevel, cs.character);
     for (const fired of firedCastTriggers(cs.character, facts).hitPointDice) {
       const source = featureNameLoc(fired.sourceId);
       const offer = hitPointDiceSpend(fired.rule, ctx);

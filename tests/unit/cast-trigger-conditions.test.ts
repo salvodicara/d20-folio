@@ -84,6 +84,33 @@ describe("cast-spell trigger conditions", () => {
     expect(fires(withRule(rule, 4, "PB"), "fire-bolt", null)).toBe(0);
   });
 
+  it("fromSource: only the spell that feature gave the character", () => {
+    const doc = withRule(spend({ fromSource: "my-feat" }));
+    const granted = {
+      ...doc,
+      character: {
+        ...doc.character,
+        spells: [
+          ...doc.character.spells,
+          {
+            srdId: "magic-missile",
+            prepared: true,
+            freeCastSource: {
+              sourceId: "my-feat",
+              rest: "long" as const,
+              usesPerRest: 1,
+            },
+          },
+        ],
+      },
+    };
+    const facts = (spellId: string) => castTriggerFacts(spellId, 1, granted);
+    expect(firedCastTriggers(granted, facts("magic-missile")).hitPointDice).toHaveLength(
+      1
+    );
+    expect(firedCastTriggers(granted, facts("shield")).hitPointDice).toHaveLength(0);
+  });
+
   it("the homebrew schema keeps the new conditions and rejects a bad damage type", () => {
     const grant = spend({ cantrip: true, spellId: "x", damageType: "radiant" });
     expect(conformHomebrewGrant(grant)).toEqual(grant);

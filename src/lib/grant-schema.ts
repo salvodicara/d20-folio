@@ -730,6 +730,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           spellId: stringSchema,
           /** cast-spell: a spell that deals this damage type. */
           damageType: DAMAGE_TYPE_SCHEMA,
+          /** cast-spell: the spell this feature gave you (a feat's chosen spell). */
+          fromSource: stringSchema,
           /** reduced-to-zero: the creature is the one your effect marks. */
           target: literalSchema("marked"),
         }
