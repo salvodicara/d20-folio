@@ -234,7 +234,7 @@ describe("conformance · 4. summons and companions", () => {
       source: "KIBBLES #20",
       status: "M6",
     },
-    () => {
+    async () => {
       const spider = GIANT_INSECT.variants?.find((v) => v.variantId === "spider");
       const web = spider?.attacks?.find((a) => a.id === "web-bolt");
       expect(web).toBeDefined();
@@ -243,6 +243,10 @@ describe("conformance · 4. summons and companions", () => {
         "effects",
         expect.arrayContaining([expect.objectContaining({ kind: "speed-zero" })])
       );
+      // The case works once the damage tray applies a companion attack's effects.
+      const id = "@/lib/play/companion-attack";
+      const tray = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof tray.companionAttackEffects).toBe("function");
     }
   );
 

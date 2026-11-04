@@ -653,6 +653,11 @@ function companionAttackFromActivity(activity: Activity): CompanionAttack {
       perLevel?.kind === "flat-per-upcast" ? perLevel.value : undefined,
     damageDicePerSpellLevel: damage?.dice?.perUpcast,
     addSpellMod: spellMod ? true : undefined,
+    // Everything past the damage is an authored effect (Web Bolt's Speed 0).
+    effects: (() => {
+      const authored = activity.effects.filter((e) => e.kind !== "damage");
+      return authored.length > 0 ? (authored as CompanionAttack["effects"]) : undefined;
+    })(),
   });
 }
 

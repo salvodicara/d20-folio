@@ -2111,6 +2111,10 @@ export interface CompanionAttack {
   /** Stable id (`slug(name.en)`) — the attack's catalogue-key segment
    *  (`<featureKey>.companion.attacks.<id>`); name + rider live in the catalogue. */
   id: string;
+  /** What a hit does beyond damage, as structured effects (Web Bolt: the target's
+   *  Speed is 0 until the start of the insect's next turn). The rider text stays
+   *  the card's words. */
+  effects?: ReadonlyArray<CatalogueEffect>;
   attackBonus: "spell-attack" | "PB+ability";
   /** Read only for `attackBonus: "PB+ability"`. */
   attackAbility?: AbilityCode;
