@@ -82,7 +82,15 @@ describe("the tray writes them for a Saved row", () => {
     });
   });
 
+  it("before the v0.26.0 rules ship, nothing is written (the old rules refuse it)", () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
+    if (!strike) throw new Error("no Stunning Strike");
+    expect(saveSuccessWriter(strike, monk.id)).toBeUndefined();
+    vi.unstubAllEnvs();
+  });
+
   it("a saved monster gets both states; a failed one gets none", async () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     if (!strike) throw new Error("no Stunning Strike");
     const onSaved = saveSuccessWriter(strike, monk.id);
     expect(onSaved).toBeDefined();

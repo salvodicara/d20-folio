@@ -26,6 +26,9 @@ interface ImportMetaEnv {
   readonly VITE_APPCHECK_DEBUG?: string;
   /** "true" once the combat/spends rules are deployed (cross-device hits ledger). */
   readonly VITE_PEER_SPENDS_LEDGER?: string;
+  /** "true" once the v0.26.0 combat-effect rules are deployed (feature target states,
+   *  zones, a condition's save DC). */
+  readonly VITE_COMBAT_EFFECTS_V26?: string;
 }
 
 interface ImportMeta {

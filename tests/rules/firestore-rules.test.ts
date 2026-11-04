@@ -729,6 +729,90 @@ describe("firestore.rules — /campaigns access", () => {
       );
     });
 
+    it("a member MAY apply a feature's target state, a zone and a condition with its save DC (v0.26.0)", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      const apply = (id: string, effect: Record<string, unknown>) => ({
+        id: `apply:${id}`,
+        kind: "apply",
+        effect: { ...persistentApply.effect, id, ...effect },
+      });
+      // Stunning Strike's success rider: a feature's state on its target.
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            apply("stun:1", {
+              source: { kind: "feature", id: "monk-stunning-strike", actionId: "a" },
+              payload: { kind: "grant-group", activeKey: "monk-stunning-strike-slowed" },
+              duration: {
+                kind: "turn-boundary",
+                combatantId: "pc-member",
+                round: 2,
+                phase: "turn-start",
+              },
+            }),
+          ],
+        })
+      );
+      // The area a cast leaves.
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            apply("stun:1", {
+              source: { kind: "feature", id: "monk-stunning-strike", actionId: "a" },
+              payload: { kind: "grant-group", activeKey: "monk-stunning-strike-slowed" },
+              duration: {
+                kind: "turn-boundary",
+                combatantId: "pc-member",
+                round: 2,
+                phase: "turn-start",
+              },
+            }),
+            apply("zone:1", {
+              source: { kind: "spell", id: "spirit-guardians", actionId: "cast" },
+              payload: {
+                kind: "zone",
+                spellId: "spirit-guardians",
+                spared: ["pc-member"],
+              },
+            }),
+          ],
+        })
+      );
+      const condition = (dc: unknown) =>
+        apply("fear:1", {
+          source: { kind: "feature", id: "paladin-abjure-foes", actionId: "abjure" },
+          payload: { kind: "condition", conditionId: "frightened" },
+          bindings: { saveDc: dc },
+          duration: { kind: "encounter" },
+        });
+      const stored = (await getDoc(doc(db, "campaigns", "camp1"))).data() as
+        | { encounter: { effectOps: unknown[] } }
+        | undefined;
+      const base = stored?.encounter.effectOps ?? [];
+      await assertSucceeds(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [...base, condition(15)],
+        })
+      );
+      // A DC out of range, or a binding the rules don't know, is refused.
+      for (const bad of [0, 41, 12.5, "15"]) {
+        await assertFails(
+          updateDoc(doc(db, "campaigns", "camp1"), {
+            "encounter.effectOps": [...base, condition(15), condition(bad)],
+          })
+        );
+      }
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            ...base,
+            condition(15),
+            apply("odd:1", { bindings: { spellcastingModifier: 3, other: 1 } }),
+          ],
+        })
+      );
+    });
+
     it("the effect-op ledger is append-only: apply, revoke and a bounded batch land", async () => {
       const db = testEnv.authenticatedContext("member").firestore();
       await assertSucceeds(

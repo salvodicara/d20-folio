@@ -31,6 +31,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import type { CombatEvent } from "@/types/combat-log";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import { useAuthStore } from "@/stores/authStore";
+import { combatEffectsV26On } from "@/lib/deployed-rules";
 
 import type { DamageTrayOffer } from "./damage-tray-store";
 
@@ -118,6 +119,7 @@ function sourcedConditionEffects(
   const status = useCombatStatusStore.getState().status;
   const source = offer.conditionSource;
   if (!status || !source) return [];
+  const dc = offer.plan.conditions?.save?.dc ?? offer.plan.save?.dc;
   const actor: CombatantRef = {
     kind: "pc",
     combatantId: status.myId,
@@ -143,6 +145,8 @@ function sourcedConditionEffects(
         target: ref,
         source: { kind: source.kind, id: source.id, actionId: offer.actionId },
         payload: { kind: "condition", conditionId },
+        // The repeat save's DC, once the deployed rules accept it.
+        ...(dc !== undefined && combatEffectsV26On() ? { bindings: { saveDc: dc } } : {}),
         duration: { kind: "encounter" },
       })
     );

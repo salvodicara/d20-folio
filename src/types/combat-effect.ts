@@ -60,6 +60,8 @@ export type CombatEffectDuration =
  * grants evaluator still resolves it; re-supplying the snapshot is recorded residue. */
 export interface CombatEffectBindings {
   spellcastingModifier?: number;
+  /** The DC a repeat save against this condition is made against (edge-case M3). */
+  saveDc?: number;
 }
 
 /** Exact state delta performed together with applying an effect. Persisting the landed

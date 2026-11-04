@@ -50,6 +50,9 @@ export function sourcedFightConditions(
         conditionId: effect.payload.conditionId,
         targetId: effect.target.combatantId,
         actorId: effect.actor.combatantId,
+        ...(effect.bindings?.saveDc !== undefined
+          ? { saveDc: effect.bindings.saveDc }
+          : {}),
         ends,
       },
     ];

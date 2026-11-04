@@ -773,8 +773,8 @@ service cloud.firestore {
           && source.keys().hasOnly(['kind', 'id', 'actionId', 'castLevel'])
           && payload is map
           && (
-            (source.get('kind', '') == 'spell'
-              && payload.get('kind', '') == 'grant-group'
+            // A spell's state, or a feature's state on its target (Stunning Strike).
+            (payload.get('kind', '') == 'grant-group'
               && nonEmptyEffectString(payload.get('activeKey', ''))
               && payload.get('phase', 'active') in ['active', 'aftereffect']
               && payload.keys().hasOnly(['kind', 'activeKey', 'phase']))
@@ -787,11 +787,23 @@ service cloud.firestore {
             (payload.get('kind', '') == 'condition'
               && nonEmptyEffectString(payload.get('conditionId', ''))
               && payload.keys().hasOnly(['kind', 'conditionId']))
+            ||
+            // The area a cast leaves (edge-case M9), with the creatures it spares.
+            (source.get('kind', '') == 'spell'
+              && payload.get('kind', '') == 'zone'
+              && nonEmptyEffectString(payload.get('spellId', ''))
+              && payload.get('spared', []) is list
+              && payload.get('spared', []).size() <= 32
+              && payload.keys().hasOnly(['kind', 'spellId', 'spared']))
           )
           && (bindings == null
             || (bindings is map
-              && bindings.keys().hasOnly(['spellcastingModifier'])
-              && bindings.get('spellcastingModifier', 0) is number))
+              && bindings.keys().hasOnly(['spellcastingModifier', 'saveDc'])
+              && bindings.get('spellcastingModifier', 0) is number
+              // The DC a repeat save is made against (edge-case M3).
+              && bindings.get('saveDc', 10) is int
+              && bindings.get('saveDc', 10) >= 1
+              && bindings.get('saveDc', 10) <= 40))
           && (applied == null
             || (applied is map
               && applied.keys().hasOnly(['currentHpDelta'])

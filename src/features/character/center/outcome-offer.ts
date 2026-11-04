@@ -4,6 +4,7 @@
  * fight. Absent outside a fight or when the action has none.
  */
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { outcomeEffects } from "@/lib/play/outcome-effects";
 import type { ActionSummary } from "@/lib/smart-tracker";
 import { useAuthStore } from "@/stores/authStore";
@@ -19,7 +20,8 @@ export function saveSuccessWriter(
   const effects = action.summary.saveSuccessEffects;
   const sourceId = action.summary.saveSuccessSourceId;
   const status = useCombatStatusStore.getState().status;
-  if (!effects?.length || !sourceId || !status) return undefined;
+  // A feature's state on its target needs the v0.26.0 rules (deployed-rules).
+  if (!effects?.length || !sourceId || !status || !combatEffectsV26On()) return undefined;
   const uid = useAuthStore.getState().user?.uid ?? "";
   const actor: CombatantRef = {
     kind: "pc",

@@ -49,6 +49,7 @@ describe("sourced conditions from the tray", () => {
   });
 
   it("its Frightened is written to the fight on the monster", async () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const plan = {
       effect: null,
       save: { ability: "WIS", dc: 15, onSave: "none" },
@@ -78,7 +79,9 @@ describe("sourced conditions from the tray", () => {
         source: { kind: "feature", id: "paladin-abjure-foes", actionId: "abjure" },
         payload: { kind: "condition", conditionId: "frightened" },
         target: { kind: "monster", combatantId: "monster-1" },
+        bindings: { saveDc: 15 },
       }),
     ]);
+    vi.unstubAllEnvs();
   });
 });

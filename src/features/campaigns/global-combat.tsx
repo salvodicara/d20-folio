@@ -376,11 +376,15 @@ export function GlobalCombatMount(): null {
       if (!owns(save.targetId)) continue;
       const name = live.view.rows.find((row) => row.id === save.targetId)?.name ?? "";
       showToast({
-        message: t("combat.repeatSaveDue", {
-          target: name,
-          ability: t(`abilities.${save.ability}_short`),
-          condition: localizeSrd("condition", save.conditionId, "name", locale),
-        }),
+        message: t(
+          save.dc !== undefined ? "combat.repeatSaveDueDc" : "combat.repeatSaveDue",
+          {
+            target: name,
+            ability: t(`abilities.${save.ability}_short`),
+            condition: localizeSrd("condition", save.conditionId, "name", locale),
+            ...(save.dc !== undefined ? { dc: save.dc } : {}),
+          }
+        ),
         duration: 30000,
         action: {
           label: t("combat.repeatSaveSucceeded"),
