@@ -21,7 +21,14 @@ import type { ActivityEffect } from "@/lib/activities/types";
 /** The ActivityEffect kinds the catalogue writes directly. */
 export type CatalogueEffect = Extract<
   ActivityEffect,
-  { kind: "fall-if-aloft" | "speed-halved" | "next-attack-advantage" | "recover-slots" }
+  {
+    kind:
+      | "fall-if-aloft"
+      | "speed-halved"
+      | "speed-zero"
+      | "next-attack-advantage"
+      | "recover-slots";
+  }
 >;
 
 /** A catalogue number (`@/lib/scalar`), conformed by the context's `scalar` custom. */
@@ -43,6 +50,10 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   "fall-if-aloft": objectSchema({ kind: literalSchema("fall-if-aloft") }, BASE),
   "speed-halved": objectSchema(
     { kind: literalSchema("speed-halved") },
+    { ...BASE, until: UNTIL }
+  ),
+  "speed-zero": objectSchema(
+    { kind: literalSchema("speed-zero") },
     { ...BASE, until: UNTIL }
   ),
   "next-attack-advantage": objectSchema(

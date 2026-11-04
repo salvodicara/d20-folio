@@ -236,6 +236,8 @@ export function activityFromCompanionAttack(
         }),
         types: [attack.damageType],
       },
+      // What a hit does beyond damage (Web Bolt's Speed 0).
+      ...(attack.effects ?? []),
     ],
   };
 }
