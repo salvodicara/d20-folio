@@ -687,6 +687,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
         activeKey: "giant-insect-web-bolt",
         recipient: "selected",
         activatedByAction: ["web-bolt"],
+        // Until the start of the insect's next turn (the reader anchors it).
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
         grants: [{ type: "speed-cap", maxFt: 0 }],
       },
     ],

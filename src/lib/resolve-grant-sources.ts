@@ -315,6 +315,9 @@ export function spellGrantSurfacesActiveControl(
   grant: Grant
 ): grant is WhileActiveGrant {
   if (grant.type !== "while-active") return false;
+  // A state its own action row enters (Web Bolt's Speed 0) is that action's, never
+  // a control on the caster's sheet.
+  if (grant.activatedByAction) return false;
   if (grant.grants.length > 0) return true;
   return (
     !spell.concentration &&
