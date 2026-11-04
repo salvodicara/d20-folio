@@ -254,6 +254,12 @@
       "exhaustionDeath": "Level 6: the character dies",
       "withSource": "{{name}} · by {{source}}",
       "fromWhom": "{{name}}: by whom?"
+    },
+    "help": {
+      "title": "Help",
+      "forWhom": "For whom?",
+      "hint": "Their next attack against that enemy before the start of your next turn has Advantage.",
+      "confirm": "Help"
     }
   }
 }

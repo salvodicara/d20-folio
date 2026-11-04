@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
+import { helpView, type HelpView } from "@/domains/play/help-view";
 import { spareView, type SpareView } from "@/domains/play/spare-view";
 import { weaponPickView, type WeaponPick } from "@/domains/play/weapon-pick-view";
 import {
@@ -42,6 +43,8 @@ import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
 import { actionIcon } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { giveHelp } from "@/features/character/center/outcome-offer";
+import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
@@ -50,6 +53,7 @@ import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
 import { PlayAttuneRow } from "./PlayAttune";
+import { PlayHelp } from "./PlayHelp";
 import { PlayPrepare } from "./PlayPrepare";
 import { PlayCompanions } from "./PlayCompanions";
 import { PlayScrollPick } from "./PlayScrollPick";
@@ -692,8 +696,20 @@ function ActionLine({
   const [picking, setPicking] = useState<WeaponPick[] | null>(null);
   // A zone that spares whom its caster designates (Spirit Guardians) asks whom.
   const [sparing, setSparing] = useState<SpareView | null>(null);
+  // Help in a fight asks «Su chi?» then «Per chi?» (the effect needs the v0.26 rules).
+  const [helping, setHelping] = useState<HelpView | null>(null);
   const cast = () => {
     const status = useCombatStatusStore.getState().status;
+    if (row.action.id === "base-help" && combatEffectsV26On()) {
+      const help =
+        status && doc && status.characterId === doc.id
+          ? helpView({ myId: status.myId, rows: status.view.rows })
+          : null;
+      if (help) {
+        setHelping(help);
+        return;
+      }
+    }
     const spare =
       row.spellId && status && doc && status.characterId === doc.id
         ? spareView(row.spellId, { myId: status.myId, rows: status.view.rows })
@@ -788,6 +804,17 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {helping && doc && (
+        <PlayHelp
+          view={helping}
+          onClose={() => setHelping(null)}
+          onHelp={(enemyId, allyId) => {
+            setHelping(null);
+            executeAction(row.action);
+            giveHelp(enemyId, allyId, doc.id);
+          }}
+        />
       )}
       {sparing && (
         <PlaySpare
