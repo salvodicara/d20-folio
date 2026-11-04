@@ -16429,6 +16429,16 @@ button.econ-tok-filter:active .econ-disc {
   background: color-mix(in oklab, var(--accent-primary) 16%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent-primary) 30%, transparent);
 }
+/* «Scelte da completare» can sit straight on the candlelit backdrop (above the
+   cockpit columns), where a translucent gold wash would let the art through and
+   drop its ink below 4.5:1. So it carries its own opaque ground: the same gold
+   tint mixed into the card surface, not into transparency. */
+.conc-banner.species-due {
+  background: color-mix(in oklab, var(--accent-primary) 10%, var(--bg-surface-2));
+}
+[data-theme="light"] .conc-banner.species-due {
+  background: color-mix(in oklab, var(--accent-primary) 16%, var(--bg-surface-2));
+}
 .conc-banner-mark {
   flex-shrink: 0;
   width: 16px;
