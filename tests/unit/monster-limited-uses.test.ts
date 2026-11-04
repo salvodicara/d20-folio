@@ -124,7 +124,7 @@ describe("monster limited uses", () => {
         kind: "spell",
         spellId: "fireball",
       },
-      { key: "legendary", max: 3, kind: "legendary" },
+      { key: "legendary", max: 3, kind: "legendary", lairMax: 4 },
     ]);
   });
 

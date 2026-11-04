@@ -1347,6 +1347,8 @@ export interface MonsterLimitedUse {
   recharge?: number;
   /** The spell this use casts (kind "spell" only). */
   spellId?: string;
+  /** The pool in the monster's lair (kind "legendary" only: "3, or 4 in its lair"). */
+  lairMax?: number;
 }
 
 /** The `spent` key of an entry's use (`actions:fire-breath`), or of one spell of its
@@ -1382,7 +1384,14 @@ export function monsterLimitedUses(block: MonsterStatBlock): MonsterLimitedUse[]
     }
   }
   if (block.legendary) {
-    out.push({ key: "legendary", max: block.legendary.uses, kind: "legendary" });
+    out.push({
+      key: "legendary",
+      max: block.legendary.uses,
+      kind: "legendary",
+      ...(block.legendary.usesInLair !== undefined
+        ? { lairMax: block.legendary.usesInLair }
+        : {}),
+    });
   }
   return out;
 }
