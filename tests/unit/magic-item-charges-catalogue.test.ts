@@ -12,7 +12,11 @@ import {
   parseMagicItemDawnRecharge,
 } from "@/lib/magic-item-utils";
 import { createMagicItemEquipmentRefs } from "@/lib/magic-item-equipment";
-import { equipmentAfterLongRest } from "@/lib/smart-tracker";
+import { longRestCharacter } from "@/lib/play/rests";
+import { equipmentAfterDawn, equipmentAfterLongRest } from "@/lib/smart-tracker";
+import type { CustomEquipment } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
+import { makeCharacterDoc } from "./_helpers";
 
 const text = (id: string): string =>
   (en as Record<string, { description?: string }>)[id]?.description ?? "";
@@ -84,7 +88,7 @@ describe("parseMagicItemCharges against the catalogue text", () => {
   );
 });
 
-describe("equipmentAfterLongRest against the catalogue text", () => {
+describe("equipmentAfterDawn against the catalogue text", () => {
   it("covers never-recharging items", () => {
     const never = legacy.filter(({ item }) => statedDawnRegain(item.id) === undefined);
     expect(never.map(({ item }) => item.id)).toEqual(
@@ -106,7 +110,7 @@ describe("equipmentAfterLongRest against the catalogue text", () => {
     "%s regains only what its text says",
     (id, ref, charges) => {
       const spent = { ...ref, charges: { ...charges, current: 0 } };
-      const [after] = equipmentAfterLongRest([spent]);
+      const [after] = equipmentAfterDawn([spent]);
       const regain = statedDawnRegain(id);
       const expected =
         regain === undefined
@@ -123,4 +127,50 @@ describe("equipmentAfterLongRest against the catalogue text", () => {
       );
     }
   );
+});
+
+describe("a Long Rest and a dawn are two boundaries", () => {
+  const custom = (recovery: "long-rest" | "dawn" | "short-rest"): CustomEquipment => ({
+    custom: true,
+    name: `Rod (${recovery})`,
+    quantity: 1,
+    equipped: true,
+    instanceId: customInstanceId(`Rod (${recovery})`),
+    charges: { current: 0, max: 3, recovery },
+  });
+
+  it("a Long Rest refills only Long Rest charges", () => {
+    const after = equipmentAfterLongRest([
+      custom("long-rest"),
+      custom("dawn"),
+      custom("short-rest"),
+    ]);
+    expect(after.map((ref) => ref.charges?.current)).toEqual([3, 0, 0]);
+  });
+
+  it("a Long Rest leaves a catalogue item that recharges at dawn alone", () => {
+    for (const { ref, charges } of legacy) {
+      const spent = { ...ref, charges: { ...charges, current: 0 } };
+      expect(equipmentAfterLongRest([spent])[0]?.charges?.current).toBe(0);
+    }
+  });
+
+  it("a dawn refills only dawn charges", () => {
+    const after = equipmentAfterDawn([
+      custom("long-rest"),
+      custom("dawn"),
+      custom("short-rest"),
+    ]);
+    expect(after.map((ref) => ref.charges?.current)).toEqual([0, 3, 0]);
+  });
+
+  it("a Long Rest with no time of day set passes a dawn", () => {
+    const doc = makeCharacterDoc({
+      classId: "fighter",
+      level: 3,
+      equipment: [custom("long-rest"), custom("dawn")],
+    });
+    const rested = longRestCharacter(doc).character.equipment;
+    expect(rested.map((ref) => ref.charges?.current)).toEqual([3, 3]);
+  });
 });
