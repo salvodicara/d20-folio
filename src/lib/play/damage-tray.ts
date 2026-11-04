@@ -330,6 +330,9 @@ export interface TrayRow {
   /** The target's own defense against each part's type, when the hit has several
    *  ({@link DamageTrayPlan.damageTypes}). Counted while the defense chip is on. */
   partDefense?: Partial<Record<DamageType, TargetDefense>>;
+  /** The target has Evasion for this save (a half-damage save of the ability its
+   *  rule names): a success takes nothing, a failure half. */
+  evades?: true;
 }
 
 /** Whether an on-a-20 rider reaches a target of this type. An unknown type meets
@@ -433,7 +436,7 @@ export function onRoll20Lines(
  * and resistant is ¼; saved and vulnerable is ×1.
  */
 function factsMultiplier(
-  row: Pick<TrayRow, "saved" | "defense" | "defenseOn" | "attack">,
+  row: Pick<TrayRow, "saved" | "defense" | "defenseOn" | "attack" | "evades">,
   plan: DamageTrayPlan
 ): TrayMultiplier {
   // A miss: nothing, half (Acid Arrow), or the whole Graze damage (its own base).
@@ -443,8 +446,12 @@ function factsMultiplier(
         ? 0.5
         : 0
       : 1;
-  const save =
-    row.saved && plan.save && plan.effect === "damage"
+  // Evasion: a success takes nothing, a failure half (it only rides a half save).
+  const save = row.evades
+    ? row.saved
+      ? 0
+      : 0.5
+    : row.saved && plan.save && plan.effect === "damage"
       ? plan.save.onSave === "half"
         ? 0.5
         : 0
@@ -500,11 +507,17 @@ export function initialTrayRow(
     }
   }
   const hasPartDefense = Object.keys(partDefense).length > 0;
+  const evades =
+    plan.effect === "damage" &&
+    plan.save?.onSave === "half" &&
+    (defenses?.saveDamageRules.some((rule) => rule.ability === plan.save?.ability) ??
+      false);
   const facts = {
     saved: false,
     defense,
     defenseOn: defense !== null || hasPartDefense,
     ...(plan.attack ? { attack: "hit" as const } : {}),
+    ...(evades ? { evades: true as const } : {}),
   };
   const onRoll20Defense: Partial<Record<DamageType, TargetDefense>> = {};
   for (const rider of plan.attack?.onRoll20 ?? []) {
