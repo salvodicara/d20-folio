@@ -1097,8 +1097,9 @@ service cloud.firestore {
 
     // Campaign subcollections (chronicle, sessions, the REVEALED `notes`) — members
     // of the parent only. (The DM "View Sheet" feature reads the member's real
-    // character doc via the `dmReaders` ACL above — there is no longer a denormalized
-    // full-sheet copy subcollection to gate here.) EXCLUDES `dmNotes`: those are the
+    // character doc through the live campaign-membership read grant on
+    // /users/{uid}/characters/{charId} above — there is no denormalized full-sheet copy
+    // subcollection to gate here.) EXCLUDES `dmNotes`: those are the
     // hidden-note collection gated DM-only ABOVE, and Firestore OR-combines matching
     // rules, so without this exclusion the broad member grant here would defeat the
     // hidden-note gate (a player could read a staged-hidden note through it).

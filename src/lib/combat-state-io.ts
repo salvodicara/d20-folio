@@ -28,8 +28,10 @@
  * authority derives LIVE from the campaign doc via the parent char's
  * `attachedCampaignId`, never a stored grant). Manual owner/DM corrections still use the
  * full offline-queueable writer and are whole-object last-write-wins. A reviewed action
- * against a peer does NOT use that path: `campaign-io.applyDeclaredCombatEffects` fresh-
- * reads and transactionally merges only HP/temp/conditions/held-die/death-save fields. Therefore
+ * against a peer does NOT use that path: `campaign-io.writeCampaignCombatEffect` (and the
+ * queued `deliverQueuedMemberEffects`) fresh-read and commit through `writePeerCombatEffect`,
+ * a transaction that patches only the fields that changed (HP, temp HP, conditions, held
+ * die, death saves, pending Concentration saves, applied encounter effects). Therefore
  * the acting device must be online to commit the shared action, but the target client does
  * not need to be online and an unrelated field cannot be clobbered.
  *
