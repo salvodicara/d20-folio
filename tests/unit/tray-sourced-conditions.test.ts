@@ -33,6 +33,7 @@ describe("sourced conditions from the tray", () => {
         myId: "pc-me",
         characterId: paladin.id,
         round: 2,
+        encounter: { effectOps: [] },
         view: { rows: [{ id: "monster-1", kind: "monster" }] },
       } as never,
     });

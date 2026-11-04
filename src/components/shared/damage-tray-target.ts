@@ -15,6 +15,7 @@ import {
 } from "@/lib/play/damage-tray";
 import type { CreatureType } from "@/data/types";
 import { conditionLabel } from "@/lib/views/tracker-view";
+import { localizeSrd } from "@/i18n/resolver";
 
 /** One target as the tray shows it. */
 export interface TrayTarget {
@@ -30,6 +31,17 @@ export interface TrayTarget {
    *  Smiting's 14 against a Construct). Absent for a player character. */
   creatureType?: CreatureType;
   row?: EncounterCombatantView;
+  /** What the fight's effects on this creature do to an attack against it (Guiding
+   *  Bolt's Advantage), and whether this attack spends them. */
+  incoming?: ReadonlyArray<IncomingAttackChip>;
+}
+
+/** One incoming attack-roll mode as the tray shows it. */
+export interface IncomingAttackChip {
+  sourceKind: "spell" | "feature";
+  sourceId: string;
+  mode: "advantage" | "disadvantage";
+  consumed: boolean;
 }
 
 /** The target's first tray row, with everything the tray reads from the creature:
@@ -96,4 +108,23 @@ function saveLabel(plan: DamageTrayPlan, t: T): string | null {
     ability: t(`abilities.${save.ability}_short`),
     dc: save.dc,
   });
+}
+
+/** «Vantaggio (Dardo Guida, si consuma)»: an incoming mode with its source, and
+ *  whether this attack spends it. */
+export function incomingAttackLabel(
+  chip: IncomingAttackChip,
+  t: ReturnType<typeof useTranslation>["t"],
+  locale: Locale
+): string {
+  const source = localizeSrd(
+    chip.sourceKind === "spell" ? "spell" : "class-feature",
+    chip.sourceId,
+    "name",
+    locale
+  );
+  const mode = t(chip.mode === "advantage" ? "common.advantage" : "common.disadvantage");
+  return chip.consumed
+    ? t("combat.damageTray.incomingConsumed", { mode, source })
+    : t("combat.damageTray.incoming", { mode, source });
 }

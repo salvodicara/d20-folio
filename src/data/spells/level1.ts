@@ -538,6 +538,28 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     damageDice: "4d6",
     damageDicePerUpcast: "1d6",
     attackType: "ranged",
+    // On a hit, "the next attack roll made against this target before the end of
+    // your next turn has Advantage": a state the hit puts on the target (written by
+    // the damage tray), spent by that next attack.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "guiding-bolt-glimmer",
+        activatedByAction: ["guiding-bolt"],
+        // Until the end of the caster's next turn (the reader anchors it).
+        duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+        consumedBy: "next-attack-against",
+        grants: [{ type: "incoming-attack-advantage" }],
+      },
+    ],
+    effects: [
+      {
+        kind: "next-attack-advantage",
+        against: "target",
+        until: { phase: "turn-end", anchor: "actor" },
+        activeKey: "guiding-bolt-glimmer",
+      },
+    ],
     source: "SRD",
   },
   {

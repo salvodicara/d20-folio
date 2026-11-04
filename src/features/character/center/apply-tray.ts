@@ -32,6 +32,7 @@ import type { CombatEvent } from "@/types/combat-log";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import { useAuthStore } from "@/stores/authStore";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
+import { effectIdsConsumedByAttack, foldCombatEffectOps } from "@/lib/combat-effects";
 
 import type { DamageTrayOffer } from "./damage-tray-store";
 
@@ -108,6 +109,25 @@ function writeFightEffect(
         .getState()
         .showToast({ message: t("combat.declareApplyFailed"), duration: 6000 })
     );
+}
+
+/** The fight's effects the tray's attacks spend: on each target the attack rolled
+ *  against (a Hit, a Miss or a Critical), those consumed by the next attack. */
+function consumedByAttacks(
+  targets: ReadonlyArray<TrayTarget>,
+  rows: ReadonlyArray<TrayRow>
+): ActiveCombatEffect[] {
+  const status = useCombatStatusStore.getState().status;
+  if (!status) return [];
+  const live = foldCombatEffectOps(status.encounter.effectOps);
+  const ids = new Set(
+    targets.flatMap((target, index) =>
+      rows[index]?.attack
+        ? effectIdsConsumedByAttack(status.encounter.effectOps, target.id, status.myId)
+        : []
+    )
+  );
+  return live.filter((effect) => ids.has(effect.id));
 }
 
 /** The sourced condition effects a tray apply writes in a fight: each condition on
@@ -193,7 +213,9 @@ export function applyTray(
     plan.attack && offer.occurrenceId
       ? trayOutcomeReceipts(offer.occurrenceId, offer.actionId, rows)
       : [];
-  const declares = shared !== undefined || receipts.length > 0;
+  // The effects each attack spends (Guiding Bolt's "next attack roll"), hit or miss.
+  const consumed = consumedByAttacks(targets, rows);
+  const declares = shared !== undefined || receipts.length > 0 || consumed.length > 0;
   if (applied.length === 0 && killed.length === 0 && revived.length === 0 && !declares)
     return;
 
@@ -303,6 +325,20 @@ export function applyTray(
               )
             );
           }
+        }
+        // The attack spends what it used: revoked now, back (as new occurrences) on undo.
+        const spentIn = useCombatStatusStore.getState().status?.campaignId;
+        if (consumed.length > 0 && spentIn) {
+          for (const spent of consumed)
+            writeFightEffect(spentIn, { revoke: spent.id }, t);
+          reversals.push(() => {
+            for (const spent of consumed)
+              writeFightEffect(
+                spentIn,
+                { append: { ...spent, id: crypto.randomUUID() } },
+                t
+              );
+          });
         }
         // A condition that can end early (Abjure Foes) lands in the fight as a
         // sourced effect, so the fight ends it by itself (`fightConditionEnds`).

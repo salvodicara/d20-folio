@@ -564,7 +564,9 @@
         "critical": "Critical"
       },
       "outcomeGroup": "Attack result on {{name}}",
-      "critHint": "dice doubled"
+      "critHint": "dice doubled",
+      "incoming": "{{mode}} ({{source}})",
+      "incomingConsumed": "{{mode}} ({{source}}, spent by this attack)"
     },
     "unarmedUnburdenedDie": "{{die}} if not holding a weapon or Shield",
     "gainTempHp": "Gain {{amount}} temporary HP",

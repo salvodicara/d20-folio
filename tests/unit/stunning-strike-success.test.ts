@@ -33,7 +33,10 @@ const strike = resolveActions(monk, "combat").find((a) =>
 
 describe("Stunning Strike's success rider", () => {
   it("the action carries the two states for a successful save", () => {
-    expect(strike?.summary.saveSuccessSourceId).toBe("monk-stunning-strike");
+    expect(strike?.summary.targetStateSource).toEqual({
+      kind: "feature",
+      id: "monk-stunning-strike",
+    });
     expect(strike?.summary.saveSuccessEffects?.map((e) => e.activeKey)).toEqual([
       "monk-stunning-strike-slowed",
       "monk-stunning-strike-exposed",
@@ -77,6 +80,7 @@ describe("the tray writes them for a Saved row", () => {
         myId: "pc-me",
         characterId: monk.id,
         round: 2,
+        encounter: { effectOps: [] },
         view: { rows: [{ id: "monster-1", kind: "monster" }] },
       } as never,
     });

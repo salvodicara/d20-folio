@@ -9,7 +9,11 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { trayRubric, type TrayTarget } from "@/components/shared/damage-tray-target";
+import {
+  incomingAttackLabel,
+  trayRubric,
+  type TrayTarget,
+} from "@/components/shared/damage-tray-target";
 import { applyTray } from "@/features/character/center/apply-tray";
 import {
   useDamageTrayStore,
@@ -387,6 +391,13 @@ function TrayTargetRow({
             </Chip>
           ))}
         </div>
+      )}
+      {row.attack && target.incoming && target.incoming.length > 0 && (
+        <p className="f-help">
+          {target.incoming
+            .map((chip) => incomingAttackLabel(chip, t, locale))
+            .join(" · ")}
+        </p>
       )}
       {row.attack === "critical" && plan.effect === "damage" && (
         <p className="f-help">{t("combat.damageTray.critHint")}</p>

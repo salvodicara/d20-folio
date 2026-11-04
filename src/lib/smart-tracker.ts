@@ -401,8 +401,12 @@ export interface ActionSummary {
   /** What a target's successful save still puts on it, as catalogue states
    *  (Stunning Strike): the damage tray applies them to a row marked Saved. */
   saveSuccessEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
-  /** The feature whose `targetStates` hold them. */
-  saveSuccessSourceId?: string;
+  /** What a hit puts on its target, as catalogue states (Guiding Bolt): the damage
+   *  tray applies them to a row marked Hit or Critical. */
+  hitEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
+  /** The spell or feature whose catalogue holds those states (a spell's
+   *  `while-active`, a feature's `targetStates`). */
+  targetStateSource?: { kind: "spell" | "feature"; id: string };
   /** The catalogue entry a condition that can end early comes from, so the fight
    *  keeps it as a sourced effect (Abjure Foes' Frightened ends on damage). */
   conditionSource?: { kind: "spell" | "feature"; id: string };
@@ -5432,6 +5436,26 @@ function featureActivation(grants: ReadonlyArray<Grant> | undefined): FeatureAct
   };
 }
 
+/** What a hit, or a target's successful save, puts on the target as catalogue
+ *  states, with the catalogue entry that holds them. */
+function stampTargetStates(summary: RawActionSummary, activity: Activity): void {
+  const states = activity.effects.filter(isCatalogueStateEffect);
+  if (states.length === 0) return;
+  const source = activity.source;
+  const kind =
+    source.kind === "spell"
+      ? { kind: "spell" as const, id: source.spellId }
+      : source.kind === "feature" && source.owner === "class-feature"
+        ? { kind: "feature" as const, id: source.ownerId }
+        : undefined;
+  if (!kind) return;
+  const onSave = stateEffectsFor(states, "save-success");
+  const onHit = stateEffectsFor(states, "hit");
+  if (onSave.length > 0) summary.saveSuccessEffects = onSave;
+  if (onHit.length > 0) summary.hitEffects = onHit;
+  if (onSave.length > 0 || onHit.length > 0) summary.targetStateSource = kind;
+}
+
 /** An Activity effect the catalogue can author as a target state. */
 function isCatalogueStateEffect(effect: ActivityEffect): effect is CatalogueEffect {
   return (
@@ -5498,14 +5522,7 @@ function applyActionEffectSummary(
   if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
   const riders = activity.effects.filter(isRiderEffect);
   if (riders.length > 0) summary.effectRiders = riders;
-  const onSave = stateEffectsFor(
-    activity.effects.filter(isCatalogueStateEffect),
-    "save-success"
-  );
-  if (onSave.length > 0) {
-    summary.saveSuccessEffects = onSave;
-    summary.saveSuccessSourceId = sourceId;
-  }
+  stampTargetStates(summary, activity);
   if (heals.some((effect) => effect.fromPool)) summary.poolSpendEffect = "healing";
   if (activity.skill) summary.skillCheck = activity.skill;
   const removals = effectsOfKind(activity, "end-condition");
@@ -7154,6 +7171,7 @@ function resolveSpellActions(
       summary.conditionApplication = condition.apply;
       stampConditionSource(summary, activity);
     }
+    stampTargetStates(summary, activity);
     if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
     const [revive] = effectsOfKind(activity, "revive");
     if (revive) {

@@ -45,7 +45,7 @@ import {
 } from "@/lib/play/damage-tray";
 import { conditionLabel } from "@/lib/views/tracker-view";
 
-import { trayRubric, type TrayTarget } from "./damage-tray-target";
+import { incomingAttackLabel, trayRubric, type TrayTarget } from "./damage-tray-target";
 import { combatTermName } from "./combat-glossary";
 import { GlossaryTip } from "./GlossaryTip";
 
@@ -375,6 +375,17 @@ function TrayTargetRow({
             {t(`combat.damageTray.${row.defense}`)}
           </button>
         )}
+        {/* An attack's Advantage or Disadvantage from the fight's effects on it. */}
+        {plan.attack &&
+          target.incoming?.map((chip) => (
+            <span
+              key={`${chip.sourceId}-${chip.mode}`}
+              className="fchip"
+              data-incoming={chip.mode}
+            >
+              {incomingAttackLabel(chip, t, locale)}
+            </span>
+          ))}
         {plan.conditions?.options.map((id) => (
           <button
             key={id}

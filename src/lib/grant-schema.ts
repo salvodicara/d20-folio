@@ -2134,6 +2134,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
        */
       activatedByAction: arraySchema(stringSchema),
       /**
+       * A state on a target that the next attack spends (edge-case family M17):
+       * any creature's next attack against it (Guiding Bolt, Stunning Strike), or
+       * only the next attack by the creature that put it there (Vex).
+       */
+      consumedBy: unionSchema([
+        literalSchema("next-attack-against"),
+        literalSchema("next-attack-by"),
+      ]),
+      /**
        * An equipped magic item's explicit activation contract. Magic items do
        * not own `mechanics.actions`, so this is the one declarative bridge that
        * lets the shared action/tracker/undo pipeline surface their activated
