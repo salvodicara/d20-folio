@@ -17,6 +17,7 @@ import {
   unattuneItem,
 } from "@/lib/attunement-guard";
 import { requiresAttunement } from "@/lib/attunement";
+import { applySheetEvent } from "@/lib/play/sheet-events";
 import type { CharacterDoc, SrdEquipmentRef } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -224,5 +225,38 @@ describe("attunement prerequisites (the item's «Requires Attunement by …»)",
     expect(canAttune(thrower("human"), "hammer").ok).toBe(false);
     expect(canAttune(thrower("human", false), "hammer").ok).toBe(false);
     expect(canAttune(thrower("human", true), "hammer").ok).toBe(true);
+  });
+});
+
+describe("the attune sheet events", () => {
+  const attunedIds = (doc: CharacterDoc | null) =>
+    (doc?.character.equipment ?? []).flatMap((ref) =>
+      "attuned" in ref && ref.attuned && ref.instanceId ? [ref.instanceId] : []
+    );
+
+  it("a fourth item is refused; forced, it attunes and the others stay", () => {
+    const doc = threeAttuned();
+    expect(
+      applySheetEvent(doc, { kind: "attune-item", instanceId: "gauntlets" })
+    ).toBeNull();
+    const forced = applySheetEvent(doc, {
+      kind: "attune-item",
+      instanceId: "gauntlets",
+      force: true,
+    });
+    expect(attunedIds(forced)).toEqual(["cloak", "amulet", "ring-1", "gauntlets"]);
+  });
+
+  it("ending an attunement frees the slot", () => {
+    const freed = applySheetEvent(threeAttuned(), {
+      kind: "unattune-item",
+      instanceId: "ring-1",
+    });
+    expect(attunedIds(freed)).toEqual(["cloak", "amulet"]);
+    expect(
+      attunedIds(
+        freed && applySheetEvent(freed, { kind: "attune-item", instanceId: "gauntlets" })
+      )
+    ).toEqual(["cloak", "amulet", "gauntlets"]);
   });
 });

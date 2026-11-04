@@ -328,6 +328,10 @@ const CASES: {
     { kind: "set-form-gear-worn", key: "ring-of-protection", worn: true },
     () => forms.setFormGearWorn(doc, "ring-of-protection", true),
   ],
+  // An item the sheet doesn't have: the guard refuses, nothing changes (the
+  // transitions themselves: attunement-guard.test.ts).
+  "attune-item": [{ kind: "attune-item", instanceId: "no-such-item" }, () => null],
+  "unattune-item": [{ kind: "unattune-item", instanceId: "no-such-item" }, () => null],
   "hold-breath": [
     { kind: "hold-breath", choking: true },
     () => at(suffocation.holdBreath(doc, { choking: true })),

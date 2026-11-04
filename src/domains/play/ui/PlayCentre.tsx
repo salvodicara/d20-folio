@@ -49,6 +49,7 @@ import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
+import { PlayAttuneRow } from "./PlayAttune";
 import { PlayPrepare } from "./PlayPrepare";
 import { PlayCompanions } from "./PlayCompanions";
 import { PlayScrollPick } from "./PlayScrollPick";
@@ -380,6 +381,11 @@ function InventoryPane({
                   </Button>
                 ) : (
                   <span />
+                )}
+                {i.attune && !readonly && (
+                  <div className="f-attune">
+                    <PlayAttuneRow attune={i.attune} name={i.name} locale={locale} />
+                  </div>
                 )}
               </div>
             );

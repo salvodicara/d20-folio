@@ -149,7 +149,17 @@
       "ac": "Classe Armatura {{ac}}",
       "acBonus": "+{{bonus}} Classe Armatura",
       "charges": "{{current}} cariche su {{max}}",
-      "stealth": "svantaggio a Furtività"
+      "stealth": "svantaggio a Furtività",
+      "unattune": "Termina sintonia",
+      "attuneAnyway": "Sintonizza comunque",
+      "attunedToast": "In sintonia con {{name}}",
+      "unattunedToast": "Sintonia terminata: {{name}}",
+      "refusedLimit": "Hai già {{limit}} oggetti in sintonia: {{names}}.",
+      "refusedCopy": "Sei già in sintonia con un'altra copia di questo oggetto.",
+      "refusedOnly": "Sintonia riservata a: {{who}}.",
+      "spellcasters": "incantatori",
+      "attunedTo": "chi è in sintonia con {{item}}",
+      "refusedLimitHint": "Termina una sintonia per liberare un posto."
     },
     "tray": {
       "ifAtOrBelow": "Se ha {{max}} punti ferita o meno: {{then}}.",

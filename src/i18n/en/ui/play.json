@@ -149,7 +149,17 @@
       "ac": "Armor Class {{ac}}",
       "acBonus": "+{{bonus}} Armor Class",
       "charges": "{{current}} of {{max}} charges",
-      "stealth": "Disadvantage on Stealth"
+      "stealth": "Disadvantage on Stealth",
+      "unattune": "End attunement",
+      "attuneAnyway": "Attune anyway",
+      "attunedToast": "Attuned to {{name}}",
+      "unattunedToast": "Attunement to {{name}} ended",
+      "refusedLimit": "You're already attuned to {{limit}} items: {{names}}.",
+      "refusedCopy": "You're already attuned to another copy of this item.",
+      "refusedOnly": "Attunement only for: {{who}}.",
+      "spellcasters": "spellcasters",
+      "attunedTo": "those attuned to {{item}}",
+      "refusedLimitHint": "End one to free a slot."
     },
     "tray": {
       "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",

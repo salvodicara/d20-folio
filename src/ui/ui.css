@@ -3796,3 +3796,16 @@
   gap: 8px;
   padding: 4px 0 8px;
 }
+
+/* Attunement on an item row: its own line under the row, the whole width. */
+.fui .f-attune {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* Why attuning is refused: a sentence that never ends on a word alone. */
+.fui .f-attune-why {
+  margin: 0;
+  text-wrap: balance;
+}

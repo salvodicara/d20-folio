@@ -7,7 +7,9 @@
  * list has its use (a potion, a charged item's spells), that action's id for «Usa».
  * Weights stay raw (pounds); the screen formats them.
  */
-import { localizeSrd } from "@/i18n/resolver";
+import { hasSrd, localizeSrd } from "@/i18n/resolver";
+import { attunementSatisfied, requiresAttunement } from "@/lib/attunement";
+import { canAttune, type AttunementRefusal } from "@/lib/attunement-guard";
 import { gearKey, selfFormRule } from "@/lib/polymorph";
 import type { Locale } from "@/lib/locale";
 import { localizeActions } from "@/lib/views/combat-action-view";
@@ -16,6 +18,7 @@ import {
   type ItemRowVM,
   type WeaponRowVM,
 } from "@/lib/views/inventory-view";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
 import type { CharacterDoc } from "@/types/character";
 import type { DamageType } from "@/types/damage";
 
@@ -41,9 +44,28 @@ export interface PlayItem {
   /** In a form whose gear merges (Wild Shape): the item's key for «Indossato nella
    *  forma», and whether the table ruled it worn (only then does it work). */
   formGear?: { key: string; worn: boolean };
+  /** An item that takes attunement: whether it is attuned, and why the rules say no
+   *  to attuning it now (the player may still force it). */
+  attune?: PlayAttune;
   /** A Spell Scroll: its row in the equipment and the spell on it, once set. */
   scroll?: { index: number; spellId: string | null; spellName: string | null };
 }
+
+export interface PlayAttune {
+  instanceId: string;
+  attuned: boolean;
+  refusal?: AttuneRefusalView;
+}
+
+/** Why attuning is refused, with the names the reason needs. */
+export type AttuneRefusalView =
+  /** Already at the limit: the items standing in the way. */
+  | { reason: "limit"; limit: number; names: string[] }
+  /** Already attuned to another copy of this item. */
+  | { reason: "copy" }
+  /** Only some creatures can: a spellcaster, these classes or species, or one
+   *  attuned to `attunedTo`. */
+  | { reason: "prerequisite"; spellcaster: boolean; names: string[]; attunedTo?: string };
 
 export interface PlayInventoryView {
   /** The character's form merges its gear: it gives nothing unless ruled worn. */
@@ -127,6 +149,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     stealthDisadvantage: i.stealthDisadvantage,
     needsAttunement: i.requiresAttunement && !i.attuned,
     useActionId: uses.get(i.isCustom ? `custom-${i.id}` : i.id) ?? null,
+    ...attuneOf(doc, doc.character.equipment[i.idx], locale),
     // Only what is worn or bonded merges; the pack gives nothing in any form.
     ...(i.equipped || i.attuned ? formGear(doc.character.equipment[i.idx]) : {}),
   });
@@ -154,4 +177,61 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
       { kind: "pack" as const, items: pack },
     ].filter((g) => g.items.length > 0),
   };
+}
+
+/** An attunable item's state and, when the guard says no, why. */
+function attuneOf(
+  doc: CharacterDoc,
+  ref: CharacterDoc["character"]["equipment"][number] | undefined,
+  locale: Locale
+): { attune?: PlayAttune } {
+  const instanceId = ref?.instanceId;
+  if (!ref || !instanceId || !requiresAttunement(ref)) return {};
+  const attuned = attunementSatisfied(ref);
+  const verdict = attuned ? null : canAttune(doc, instanceId);
+  const refusal = verdict && !verdict.ok ? refusalView(doc, verdict, locale) : null;
+  return { attune: { instanceId, attuned, ...(refusal ? { refusal } : {}) } };
+}
+
+function refusalView(
+  doc: CharacterDoc,
+  verdict: AttunementRefusal,
+  locale: Locale
+): AttuneRefusalView | null {
+  const nameOf = (id: string) => {
+    const ref = doc.character.equipment.find((r) => r.instanceId === id);
+    if (!ref) return id;
+    return "custom" in ref ? homebrewText(ref.name, locale) : itemName(ref.srdId, locale);
+  };
+  switch (verdict.reason) {
+    case "attunement-limit":
+      return {
+        reason: "limit",
+        limit: verdict.limit,
+        names: verdict.attuned.map(nameOf),
+      };
+    case "duplicate-copy":
+      return { reason: "copy" };
+    case "prerequisite": {
+      const r = verdict.requires;
+      return {
+        reason: "prerequisite",
+        spellcaster: r.spellcaster === true,
+        names: [
+          ...(r.classes ?? []).map((id) => localizeSrd("class", id, "name", locale)),
+          ...(r.species ?? []).map((id) => localizeSrd("race", id, "name", locale)),
+        ],
+        ...(r.attunedItem ? { attunedTo: itemName(r.attunedItem, locale) } : {}),
+      };
+    }
+    default:
+      return null;
+  }
+}
+
+/** An SRD item's name: a magic item's, else the equipment catalogue's. */
+function itemName(srdId: string, locale: Locale): string {
+  return hasSrd("magic-item", srdId, "name", locale)
+    ? localizeSrd("magic-item", srdId, "name", locale)
+    : localizeSrd("equipment", srdId, "name", locale);
 }

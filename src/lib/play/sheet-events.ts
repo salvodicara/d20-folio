@@ -5,6 +5,7 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import { attuneItem, unattuneItem, type AttuneResult } from "@/lib/attunement-guard";
 import { settleZeroHpConsequence } from "./zero-hp-savers";
 import { isCharacterAlive } from "@/lib/character-status";
 import { addEquipmentRef } from "@/lib/equipment-add";
@@ -184,6 +185,10 @@ export type SheetEvent =
   | { kind: "recover-per-turn-trackers"; turnKey?: string }
   /** The table rules an item still worn (or merged) in a form whose gear merges. */
   | { kind: "set-form-gear-worn"; key: string; worn: boolean }
+  /** Attune to an item (the guard refuses with its reason; `force` overrides a
+   *  forceable refusal) or end the attunement. */
+  | { kind: "attune-item"; instanceId: string; force?: boolean }
+  | { kind: "unattune-item"; instanceId: string }
   /** The table answers whether the character sees a condition's source (null: no
    *  answer, the condition applies in full). */
   | { kind: "set-sees-source"; key: string; sees: boolean | null }
@@ -444,6 +449,13 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       return withSession(recoverPerTurnTrackers(doc, event.turnKey)?.session);
     case "set-form-gear-worn":
       return setFormGearWorn(doc, event.key, event.worn);
+    case "attune-item":
+      return withEquipment(
+        doc,
+        attuneItem(doc, event.instanceId, event.force ? { force: true } : {})
+      );
+    case "unattune-item":
+      return withEquipment(doc, unattuneItem(doc, event.instanceId));
     case "set-sees-source":
       return withSession(setSeesSource(doc, event.key, event.sees));
     case "time-passes":
@@ -457,4 +469,12 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
     case "breath-turn-end":
       return withSession(passBreathRounds(doc, 1));
   }
+}
+
+/** The doc with the equipment an attunement transition returned, or null when the
+ *  guard refused. */
+function withEquipment(doc: CharacterDoc, result: AttuneResult): CharacterDoc | null {
+  return result.ok
+    ? { ...doc, character: { ...doc.character, equipment: result.equipment } }
+    : null;
 }
