@@ -250,7 +250,11 @@ function PlayHeader({
             )}
           </div>
         )}
-        {(view.form || view.concentration || view.effects > 0 || view.conditions > 0) && (
+        {(!readonly ||
+          view.form ||
+          view.concentration ||
+          view.effects > 0 ||
+          view.conditions > 0) && (
           <div className="f-chips">
             {/* In a form the sheet is the beast's: say so first (the source, then it). */}
             {view.form && (
@@ -264,9 +268,7 @@ function PlayHeader({
                 <span className="f-chip-n">{view.effects}</span>
               </Chip>
             )}
-            {view.conditions > 0 && (
-              <PlayConditions doc={doc} locale={locale} count={view.conditions} />
-            )}
+            <PlayConditions doc={doc} locale={locale} />
           </div>
         )}
       </div>

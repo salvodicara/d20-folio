@@ -1,38 +1,33 @@
 /**
  * «Condizioni» on the Play header (approved prototype x-play-cond): the chip opens a
- * panel with each condition and what it does, «Togli», and «Aggiungi una condizione».
- * A source-gated condition (Frightened) whose sight the sheet can't derive asks
- * «Non vedo la fonte» (`needsSeesAnswer`, the `set-sees-source` event). On a phone the
+ * panel with each condition and what it does, «Rimuovi», Exhaustion as a level 1–6,
+ * and «Aggiungi condizione». A source-gated condition (Frightened) whose sight the
+ * sheet can't derive asks «Non vedo la fonte»; Grappled, Frightened and Charmed added
+ * by hand ask «Da chi?» among the fight's other combatants (or skip). On a phone the
  * panel is a sheet from the bottom.
  */
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { SRD_CONDITIONS } from "@/data/conditions";
-import { useConditionEncounter } from "@/features/character/condition-encounter";
+import { asksSource, conditionsPanelView } from "@/domains/play/play-conditions-view";
+import { useNamedConditionEncounter } from "@/features/character/condition-encounter";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
-import { hasSrd, localizeSrd, localizeSrdList } from "@/i18n/resolver";
-import { conditionSourceInstances, needsSeesAnswer } from "@/lib/condition-sources";
+import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
+import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Panel } from "@/ui";
+import { Button, Chip, Panel, Stepper } from "@/ui";
 
-export function PlayConditions({
-  doc,
-  locale,
-  count,
-}: {
-  doc: CharacterDoc;
-  locale: Locale;
-  count: number;
-}) {
+export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
+  /** A condition waiting for «Da chi?». */
+  const [pending, setPending] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
-  const encounter = useConditionEncounter(doc.id);
+  const encounter = useNamedConditionEncounter(doc.id);
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent | KeyboardEvent) => {
@@ -50,19 +45,23 @@ export function PlayConditions({
       document.removeEventListener("keydown", close);
     };
   }, [open]);
-  const active = doc.session.conditions;
-  const asks = conditionSourceInstances(doc, encounter).filter(needsSeesAnswer);
+  const view = conditionsPanelView(doc, locale, encounter);
+  if (readonly && view.count === 0) return null;
+  const store = () => useCharacterStore.getState();
+  const add = (id: string, sourceId?: string) => {
+    if (id === "exhaustion") store().setExhaustion(1);
+    else store().addCondition(id, sourceId ? { sourceId } : undefined);
+    setPending(null);
+    setAdding(false);
+  };
+  const pick = (id: string) =>
+    asksSource(id) && view.sources.length > 0 ? setPending(id) : add(id);
   const name = (id: string) => localizeSrd("condition", id, "name", locale);
-  const effect = (id: string) =>
-    hasSrd("condition", id, "effects", locale)
-      ? (localizeSrdList("condition", id, "effects", locale)[0] ?? "")
-      : "";
-  const addable = SRD_CONDITIONS.map((c) => c.id).filter((id) => !active.includes(id));
   return (
     <div className="f-condwrap" ref={ref}>
       <Chip kind="cond" pressed={open} onClick={() => setOpen((o) => !o)}>
         {`⚠ ${t("combat.effectReview.conditions")}`}
-        {count > 0 && <span className="f-chip-n">{count}</span>}
+        {view.count > 0 && <span className="f-chip-n">{view.count}</span>}
       </Chip>
       {open && (
         <div
@@ -71,54 +70,94 @@ export function PlayConditions({
           aria-label={t("combat.effectReview.conditions")}
         >
           <Panel color="cond" title={t("combat.effectReview.conditions")}>
-            {active.length === 0 && (
-              <p className="f-quiet">{t("character.noConditions")}</p>
-            )}
-            {active.map((id) => {
-              const ask = asks.find((a) => a.conditionId === id);
-              return (
-                <div key={id} className="f-cond-row">
-                  <div className="f-cond-main">
-                    <span className="f-row-t">{name(id)}</span>
-                    {effect(id) && <span className="f-row-s">{effect(id)}</span>}
-                    {ask && !readonly && (
-                      <div className="f-chips">
-                        <Chip
-                          pressed={ask.seesSource === false}
-                          onClick={() =>
-                            useCharacterStore.getState().dispatch({
-                              kind: "set-sees-source",
-                              key: ask.key,
-                              sees: ask.seesSource === false ? null : false,
-                            })
-                          }
-                        >
-                          {t("play.conditions.cantSeeSource")}
-                        </Chip>
-                      </div>
-                    )}
-                  </div>
+            {view.count === 0 && <p className="f-quiet">{t("character.noConditions")}</p>}
+            {view.exhaustion > 0 && (
+              <div className="f-cond-row">
+                <div className="f-cond-main">
+                  <span className="f-row-t">{name("exhaustion")}</span>
+                  <span className="f-row-s">
+                    {view.exhaustion >= 6
+                      ? t("play.conditions.exhaustionDeath")
+                      : t("play.conditions.exhaustionLevel", {
+                          level: view.exhaustion,
+                          d20: 2 * view.exhaustion,
+                          speed: localeDistance(5 * view.exhaustion, locale),
+                        })}
+                  </span>
                   {!readonly && (
-                    <Button
-                      onClick={() => useCharacterStore.getState().removeCondition(id)}
-                    >
-                      {t("common.remove")}
-                    </Button>
+                    <Stepper
+                      value={view.exhaustion}
+                      min={1}
+                      max={6}
+                      label={`${name("exhaustion")} · ${t("common.level")}`}
+                      less={t("common.decrease")}
+                      more={t("common.increase")}
+                      onChange={(level) => store().setExhaustion(level)}
+                    />
                   )}
                 </div>
-              );
-            })}
+                {!readonly && (
+                  <Button onClick={() => store().setExhaustion(0)}>
+                    {t("common.remove")}
+                  </Button>
+                )}
+              </div>
+            )}
+            {view.rows.map((row) => (
+              <div key={row.id} className="f-cond-row">
+                <div className="f-cond-main">
+                  <span className="f-row-t">
+                    {row.source
+                      ? t("play.conditions.withSource", {
+                          name: row.name,
+                          source: row.source,
+                        })
+                      : row.name}
+                  </span>
+                  {row.effect && <span className="f-row-s">{row.effect}</span>}
+                  {row.ask && !readonly && (
+                    <div className="f-chips">
+                      <Chip
+                        pressed={row.ask.pressed}
+                        onClick={() =>
+                          store().dispatch({
+                            kind: "set-sees-source",
+                            key: row.ask?.key ?? "",
+                            sees: row.ask?.pressed ? null : false,
+                          })
+                        }
+                      >
+                        {t("play.conditions.cantSeeSource")}
+                      </Chip>
+                    </div>
+                  )}
+                </div>
+                {!readonly && (
+                  <Button onClick={() => store().removeCondition(row.id)}>
+                    {t("common.remove")}
+                  </Button>
+                )}
+              </div>
+            ))}
             {!readonly &&
-              (adding ? (
+              (pending ? (
+                <div className="f-cond-add">
+                  <p className="f-row-t">
+                    {t("play.conditions.fromWhom", { name: name(pending) })}
+                  </p>
+                  <div className="f-chips">
+                    {view.sources.map((s) => (
+                      <Chip key={s.id} onClick={() => add(pending, s.id)}>
+                        {s.name}
+                      </Chip>
+                    ))}
+                    <Chip onClick={() => add(pending)}>{t("common.skip")}</Chip>
+                  </div>
+                </div>
+              ) : adding ? (
                 <div className="f-chips f-cond-add">
-                  {addable.map((id) => (
-                    <Chip
-                      key={id}
-                      onClick={() => {
-                        useCharacterStore.getState().addCondition(id);
-                        setAdding(false);
-                      }}
-                    >
+                  {view.addable.map((id) => (
+                    <Chip key={id} onClick={() => pick(id)}>
                       {name(id)}
                     </Chip>
                   ))}
