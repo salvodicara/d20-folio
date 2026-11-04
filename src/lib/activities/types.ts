@@ -475,6 +475,10 @@ export interface Activity {
   skill?: ActivitySkillCheck;
   repeats?: ActivityRepeats;
   effects: ReadonlyArray<ActivityEffect>;
+  /** The caster picks, per target, one of these sets of effects (Distorted
+   *  Distance: the damage-and-save one, or the Speed one). Absent: every target
+   *  gets `effects`. */
+  perTargetChoice?: ReadonlyArray<{ id: string; effects: ReadonlyArray<ActivityEffect> }>;
   /** Held by the user's Concentration. */
   concentration?: true;
   /** Over as soon as it resolves. */

@@ -58,8 +58,6 @@ const KNOWN_GAPS: Readonly<Record<string, string>> = {
   budget: "a total the live effect spends before it ends, an encounter fact",
   onEnd: "an authored end hook (M12), not yet carried by the Activity",
   counter: "Counterspell's rule for the countered spell (M12)",
-  effects: "authored effects (M12), not yet carried by a spell's Activity",
-  perTargetChoice: "a per-target effect choice (M12), not yet carried by the Activity",
   spellcasting: "a list of spells, each its own Activity",
   text: "prose-only stat-block entry",
   performs: "a stat-block entry that uses another one, resolved on the block",
@@ -274,6 +272,8 @@ const SPELL_NOT_ROUND_TRIPPED = new Set([
   "formRule", // read by the Transform flow (lib/polymorph `selfFormRule`)
   "suppressesMagic", // read by the summon view (a held Antimagic Field, M6)
   "onReduceToZero", // read by the action summary into the tray plan (M7)
+  "effects", // authored effects, appended to the Activity's own (checked below)
+  "perTargetChoice", // carried as the Activity's own field (checked below)
 ]);
 
 function spellMechanics(
@@ -812,5 +812,34 @@ describe("activities — item activations", () => {
       return activity;
     });
     expectUniqueIds(activities);
+  });
+});
+
+describe("a spell's authored effects ride its Activity (M12)", () => {
+  it("its `effects` follow the derived ones, its `perTargetChoice` is carried whole", () => {
+    for (const spell of spells) {
+      const { activity } = translateSpell(spell);
+      if (spell.effects?.length) {
+        expect(activity.effects.slice(-spell.effects.length), spell.id).toEqual(
+          spell.effects
+        );
+      }
+      expect(activity.perTargetChoice, spell.id).toEqual(spell.perTargetChoice);
+    }
+  });
+
+  it("a per-target choice: each option's effects, by id", () => {
+    const base = spells[0];
+    if (!base) throw new Error("no spells");
+    const { activity } = translateSpell({
+      ...base,
+      perTargetChoice: [
+        { id: "a", effects: [{ kind: "next-attack-advantage" }] },
+        { id: "b", effects: [{ kind: "speed-halved" }] },
+      ],
+      effects: [{ kind: "fall-if-aloft" }],
+    });
+    expect(activity.perTargetChoice?.map((c) => c.id)).toEqual(["a", "b"]);
+    expect(activity.effects.at(-1)).toEqual({ kind: "fall-if-aloft" });
   });
 });
