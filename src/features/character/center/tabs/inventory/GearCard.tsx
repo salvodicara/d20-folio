@@ -10,6 +10,8 @@
  * SRD CONTENT arrives PRE-LOCALIZED on the VM — ZERO LocaleText / `[locale]` reads; the
  * only `t(...)` formats APP strings + raw numbers. Memoized (stable VM + callbacks).
  */
+import { useCharacterStore } from "@/stores/characterStore";
+import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Trash2, Sparkles, Check, Heart, Zap, Layers, Weight, Coins } from "lucide-react";
@@ -75,6 +77,8 @@ export const GearCard = memo(function GearCard({
   onSpendResource,
 }: GearCardProps) {
   const { t } = useTranslation();
+  // The campaign's table rules (a potion as an action): a narrow selection.
+  const tableRules = useCharacterStore((s) => s.character?.session.tableRules);
   const displayName = inventoryItemDisplayName(vm, t);
   const {
     unavailable: resourceUnavailable,
@@ -157,10 +161,10 @@ export const GearCard = memo(function GearCard({
     <UniversalCard
       kind={vm.isPotion ? "potion" : "gear"}
       sealIcon={itemSeal(vm)}
-      slot={consumableActionSlot({
-        isPotion: vm.isPotion,
-        isConsumable: vm.isConsumable,
-      })}
+      slot={consumableActionSlot(
+        { isPotion: vm.isPotion, isConsumable: vm.isConsumable },
+        tableRules ?? RAW_TABLE_RULES
+      )}
       name={displayName}
       quantity={showQty}
       gloss={resourceUnavailable ? t("magicItems.resourceUnavailable") : undefined}

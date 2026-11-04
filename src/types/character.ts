@@ -1069,6 +1069,10 @@ export interface SessionState {
    * occurrences stay in the encounter ledger; solo occurrences stay in `combat/state`.
    * The character codec deliberately never serializes this composed read field. */
   encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
+  /** The rules of the campaign the character plays in (edge-case M16), when its
+   *  table varies them; absent: RAW 2024. A composed read field like
+   *  `encounterEffects`: the codec never serializes it. */
+  tableRules?: import("@/lib/table-rules").TableRules;
   /** Conditions owned by the current solo concentration. `conditions` remains
    * the manual/base layer; consumers read their union through the shared projection. */
   concentrationConditions?: ReadonlyArray<string>;

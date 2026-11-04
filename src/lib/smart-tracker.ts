@@ -15,6 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { weaponAttunementSatisfied } from "@/lib/attunement";
 import { stateEffectsFor } from "@/lib/play/outcome-effects";
 import type { CatalogueEffect } from "@/lib/catalogue-effects";
@@ -8316,7 +8317,11 @@ function resolveWeaponActions(
       summary.effect = srdEffectText("magic-item", itemRef.srdId);
     }
 
-    const type = consumableActionSlot({ isPotion, isConsumable });
+    // The table may make drinking a potion an action (M16); RAW it is a Bonus Action.
+    const type = consumableActionSlot(
+      { isPotion, isConsumable },
+      character.session.tableRules ?? RAW_TABLE_RULES
+    );
     // Drinking applies what the potion grants on the spot (Heroism's 10 temp HP).
     const useEffects = isCustomItem
       ? []

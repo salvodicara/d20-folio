@@ -732,3 +732,23 @@ describe("GlobalCombatMount settles in a fight (P0, 2026-11-04)", () => {
     expect(writes).toBeLessThan(20);
   });
 });
+
+describe("GlobalCombatMount — the campaign's table rules", () => {
+  it("projects a varying table's rules onto the attached open character, and none for RAW", () => {
+    useCharacterStore.getState().setCharacter({ ...MOCK_CHARACTER, id: "char-1" });
+    mount();
+    const campaign = campWithEnc("c1", "char-1", 500);
+    act(() =>
+      h.state.campaignsCb?.([
+        { ...campaign, tableRules: { potions: { drink: "action" } } },
+      ])
+    );
+    expect(
+      useCharacterStore.getState().character?.session.tableRules?.potions.drink
+    ).toBe("action");
+    act(() => h.state.campaignsCb?.([campaign]));
+    expect(useCharacterStore.getState().character?.session).not.toHaveProperty(
+      "tableRules"
+    );
+  });
+});
