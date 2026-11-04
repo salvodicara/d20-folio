@@ -24,11 +24,12 @@ export function PlayHelp({
   const [target, setTarget] = useState<string | null>(
     only.length === 1 ? (only[0]?.id ?? null) : null
   );
-  const ally = view.allies.some((a) => a.id === target);
-  const group = (label: string, list: HelpView["enemies"]) =>
+  // Each side says what Help does to it: the attack form, or the ability-check form.
+  const group = (label: string, rule: string, list: HelpView["enemies"]) =>
     list.length > 0 && (
       <div className="f-ask">
         <span className="f-lbl">{label}</span>
+        <p className="f-help">{rule}</p>
         <div className="f-chips">
           {list.map((c) => (
             <Chip key={c.id} pressed={target === c.id} onClick={() => setTarget(c.id)}>
@@ -62,9 +63,8 @@ export function PlayHelp({
     >
       <div className="f-ask">
         <span className="f-lbl">{t("campaignHub.encounterActionOnWhom")}</span>
-        <p className="f-help">{t(ally ? "play.help.hintAlly" : "play.help.hint")}</p>
-        {group(t("play.help.enemies"), view.enemies)}
-        {group(t("play.help.allies"), view.allies)}
+        {group(t("play.help.enemies"), t("play.help.hint"), view.enemies)}
+        {group(t("play.help.allies"), t("play.help.hintAlly"), view.allies)}
       </div>
     </Dialog>
   );
